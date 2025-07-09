@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "moduleResolution": "node",
+    "outDir": "../dist-electron",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmitOnError": false, // เพิ่มเพื่อไม่หยุด build ทั้งหมดถ้ามี warning บางกรณี
+    "resolveJsonModule": true // เพิ่มรองรับ import json
+  },
+  "include": ["./main.ts", "./preload.ts"],
+  "exclude": ["../node_modules"]
+}
