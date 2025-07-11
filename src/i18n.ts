@@ -1,33 +1,17 @@
-// src/i18n.ts
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
 i18n
-  .use(LanguageDetector)
-  .use(initReactI18next)
+  .use(LanguageDetector) // Detect user's preferred language
+  .use(initReactI18next) // Pass i18n instance to react-i18next
   .init({
-    fallbackLng: 'th',
+    fallbackLng: 'en',  // Default language if none detected
+    debug: false,       // Set to true for debugging during development
     interpolation: {
-      escapeValue: false,
+      escapeValue: false, // React already escapes by default
     },
     resources: {
-      th: {
-        translation: {
-          bookNow: 'จองตอนนี้',
-          viewDetails: 'ดูรายละเอียด',
-          hot: '🔥 ฮอต',
-          top: '👑 ท็อป',
-          new: '🚀 ใหม่',
-          distance: 'ระยะทาง',
-          rating: 'คะแนน',
-          reviews: 'รีวิว',
-          image: 'รูปภาพ',
-          available: 'ว่าง',
-          bookable: 'จองได้',
-          resting: 'พักอยู่',
-        },
-      },
       en: {
         translation: {
           bookNow: 'Book Now',
@@ -42,6 +26,24 @@ i18n
           available: 'Available',
           bookable: 'Bookable',
           resting: 'Resting',
+          holiday: 'Holiday',
+        },
+      },
+      th: {
+        translation: {
+          bookNow: 'Book Now',
+          viewDetails: 'View Details',
+          hot: '🔥 Hot',
+          top: '👑 Top',
+          new: '🚀 New',
+          distance: 'Distance',
+          rating: 'Rating',
+          reviews: 'Reviews',
+          image: 'Image',
+          available: 'Available',
+          bookable: 'Bookable',
+          resting: 'Resting',
+          holiday: 'Holiday',
         },
       },
     },

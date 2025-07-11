@@ -1,4 +1,5 @@
-import React from "react";
+// src/pages/admin/AdminTherapistsPage.tsx
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -11,10 +12,19 @@ import {
   Paper,
   Button,
   Chip,
+  CircularProgress,
 } from "@mui/material";
-import therapists from '../../data/therapists';
-import { Therapist } from '../../types/therapist';
-// ../../ ไม่ใช่ ../ เพราะต้องย้อนออกจาก admin > pages > src
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/firebase";
+
+interface Therapist {
+  id: string;
+  name: string;
+  specialty: string;
+  available: "available" | "bookable" | "resting";
+  rating: number;
+}
+
 const statusColor = (status: Therapist["available"]) => {
   switch (status) {
     case "available":
@@ -29,20 +39,44 @@ const statusColor = (status: Therapist["available"]) => {
 };
 
 const AdminTherapistsPage: React.FC = () => {
+  const [therapists, setTherapists] = useState<Therapist[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTherapists = async () => {
+      const snapshot = await getDocs(collection(db, "therapists"));
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Therapist[];
+      setTherapists(data);
+      setLoading(false);
+    };
+    fetchTherapists();
+  }, []);
+
+  if (loading) {
+    return (
+      <Box p={3} textAlign="center">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Box p={3}>
-      <Typography variant="h4" mb={3}>
-        รายชื่อหมอนวดทั้งหมด
+      <Typography variant="h4" fontWeight="bold" mb={3}>
+        All Therapists
       </Typography>
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>ชื่อ</TableCell>
-              <TableCell>ความถนัด</TableCell>
-              <TableCell>สถานะ</TableCell>
-              <TableCell align="right">เรตติ้ง</TableCell>
-              <TableCell align="center">ดูรายละเอียด</TableCell>
+              <TableCell>Name</TableCell>
+              <TableCell>Specialty</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell align="right">Rating</TableCell>
+              <TableCell align="center">Detail</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -52,25 +86,19 @@ const AdminTherapistsPage: React.FC = () => {
                 <TableCell>{t.specialty}</TableCell>
                 <TableCell>
                   <Chip
-                    label={
-                      t.available === "available"
-                        ? "ว่าง"
-                        : t.available === "bookable"
-                        ? "จองได้"
-                        : "พัก"
-                    }
+                    label={t.available}
                     color={statusColor(t.available)}
                     size="small"
                   />
                 </TableCell>
-                <TableCell align="right">{t.rating.toFixed(1)}</TableCell>
+                <TableCell align="right">{t.rating?.toFixed(1) || "N/A"}</TableCell>
                 <TableCell align="center">
                   <Button
                     size="small"
                     variant="contained"
-                    href={`/therapists/${t.id}`}
+                    href={`/admin/therapists/${t.id}`}
                   >
-                    รายละเอียด
+                    View
                   </Button>
                 </TableCell>
               </TableRow>

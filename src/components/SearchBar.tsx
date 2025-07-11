@@ -7,7 +7,10 @@ interface SearchBarProps {
   placeholder?: string;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ onSearch, placeholder = 'Search name...' }) => {
+const SearchBar: React.FC<SearchBarProps> = ({
+  onSearch,
+  placeholder = 'Search name...',
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -15,13 +18,12 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, placeholder = 'Search n
     setSearchTerm(e.target.value);
   };
 
-  // 💡 เพิ่ม debounce ลดการ call onSearch บ่อยเกิน
   useEffect(() => {
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
 
     debounceTimeout.current = setTimeout(() => {
       onSearch(searchTerm.trim());
-    }, 300); // ปรับความไวตามต้องการ
+    }, 300);
 
     return () => {
       if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
@@ -53,7 +55,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, placeholder = 'Search n
         },
       }}
     >
-      <SearchIcon sx={{ color: '#fff', fontSize: 22, opacity: 0.8 }} />
+      <SearchIcon sx={{ color: '#fff', fontSize: 22, opacity: 0.8 }} aria-label="search" />
 
       <InputBase
         placeholder={placeholder}
@@ -77,6 +79,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, placeholder = 'Search n
       <Fade in={!!searchTerm}>
         <IconButton
           size="small"
+          aria-label="clear search"
           onClick={() => setSearchTerm('')}
           sx={{
             color: '#fff',

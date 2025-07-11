@@ -15,18 +15,17 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    
-    // ✅ เพิ่ม alias
+
     "baseUrl": "./src",
     "paths": {
-  "@/*": ["*"],
-  "@components/*": ["components/*"],
-  "@utils/*": ["utils/*"],
-  "@data/*": ["data/*"],
-  "@types/*": ["types/*"],
-  "@pages/*": ["pages/*"],
-  "@services/*": ["services/*"]       // ✅ เพิ่มตรงนี้
-}
+      "@/*": ["*"],
+      "@components/*": ["components/*"],
+      "@utils/*": ["utils/*"],
+      "@data/*": ["data/*"],
+      "@types/*": ["types/*"],
+      "@pages/*": ["pages/*"],
+      "@services/*": ["services/*"]
+    }
   },
   "include": ["src", "electron", "dist-electron/preload.js"],
   "exclude": ["node_modules"]

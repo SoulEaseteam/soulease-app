@@ -1,15 +1,20 @@
 // src/pages/BookingHistoryPage.tsx
-
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Typography, Card, CardContent, Button, Stack, Tabs, Tab, TextField, Rating, Snackbar, Alert
+  Box, Typography, Card, CardContent, Button, Stack, Tabs, Tab,
+  TextField, Rating, Snackbar, Avatar
 } from '@mui/material';
-import { collection, getDocs, updateDoc, doc, query, where } from 'firebase/firestore';
+import {
+  collection, getDocs, updateDoc, doc, query, where, addDoc, getDoc
+} from 'firebase/firestore';
 import { db } from '../firebase';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../providers/AuthProvider';
+import { useNavigate } from 'react-router-dom';
+import CustomAlert from '../components/CustomAlert';
 
 interface Booking {
   id: string;
+  therapistId: string;
   therapistName: string;
   serviceName: string;
   date: string;
@@ -24,13 +29,20 @@ interface Booking {
   userId?: string;
 }
 
+interface TherapistInfo {
+  name: string;
+  image?: string;
+}
+
 const BookingHistoryPage: React.FC = () => {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [therapists, setTherapists] = useState<Record<string, TherapistInfo>>({});
   const [tab, setTab] = useState(0);
   const [tempReviewMap, setTempReviewMap] = useState<{ [key: string]: string }>({});
   const [tempRatingMap, setTempRatingMap] = useState<{ [key: string]: number }>({});
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!user) return;
@@ -38,20 +50,48 @@ const BookingHistoryPage: React.FC = () => {
     const fetchData = async () => {
       const q = query(collection(db, 'bookings'), where('userId', '==', user.uid));
       const snapshot = await getDocs(q);
-      const data: Booking[] = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Booking));
+      const data: Booking[] = snapshot.docs.map(docSnap => ({
+        ...(docSnap.data() as Booking),
+        id: docSnap.id,
+      }));
+
+      const therapistIds = Array.from(new Set(data.map(b => b.therapistId)));
+      const therapistMap: Record<string, TherapistInfo> = {};
+      for (const id of therapistIds) {
+        const ref = doc(db, 'therapists', id);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          therapistMap[id] = {
+            name: snap.data().name,
+            image: snap.data().image,
+          };
+        }
+      }
+
+      setTherapists(therapistMap);
       setBookings(data);
     };
+
     fetchData();
   }, [user]);
 
-  const handleReview = async (id: string) => {
+  const handleReview = async (id: string, therapistId: string) => {
     const review = tempReviewMap[id] || '';
     const rating = tempRatingMap[id] || 0;
+
     await updateDoc(doc(db, 'bookings', id), {
       reviewed: true,
       reviewText: review,
-      rating
+      rating,
     });
+
+    await addDoc(collection(db, `therapists/${therapistId}/reviews`), {
+      userId: user?.uid,
+      rating,
+      reviewText: review,
+      createdAt: new Date(),
+    });
+
     setBookings(prev =>
       prev.map(b =>
         b.id === id ? { ...b, reviewed: true, reviewText: review, rating } : b
@@ -61,7 +101,13 @@ const BookingHistoryPage: React.FC = () => {
   };
 
   const handleRebook = (booking: Booking) => {
-    alert(`Processing your reservation ... : ${booking.serviceName}`);
+    navigate('/booking', {
+      state: {
+        therapistId: booking.therapistId,
+        therapistName: therapists[booking.therapistId]?.name,
+        serviceName: booking.serviceName,
+      },
+    });
   };
 
   const filtered = bookings.filter((b) => {
@@ -72,26 +118,19 @@ const BookingHistoryPage: React.FC = () => {
   });
 
   return (
-    <Box sx={{ minHeight: '100vh', py: 4, background: 'linear-gradient(to bottom right, #eee, #fff)', fontFamily: 'Orson, sans-serif' }}>
-      <Box sx={{ maxWidth: 430, mx: 'auto', px: 2 }}>
-        <Typography variant="h6" fontWeight="bold" textAlign="center" sx={{
-          py: 1.5, borderRadius: 2, mb: 2, background: 'rgba(255,255,255,0.4)',
-          backdropFilter: 'blur(12px)', boxShadow: '0 4px 12px rgba(0,0,0,0.06)'
-        }}>
+    <Box sx={{ minHeight: '100vh', py: 4, background: '#f8f9fa' }}>
+      <Box sx={{ maxWidth: 450, mx: 'auto', px: 2 }}>
+        <Typography variant="h6" fontWeight="bold" textAlign="center" mb={2}>
           Booking History
         </Typography>
 
-        <Box sx={{ background: 'linear-gradient(to bottom, #fff, #f2f2f2)', backdropFilter: 'blur(16px)', borderRadius: 6, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', p: 2, mx: 'auto', maxWidth: 360 }}>
+        <Box sx={{ background: '#fff', borderRadius: 4, p: 2, boxShadow: 3 }}>
           <Tabs
             value={tab}
-            onChange={(_, v) => setTab(v)}
+            onChange={(_, v: number) => setTab(v)}
             variant="fullWidth"
             textColor="primary"
             indicatorColor="primary"
-            sx={{
-              borderRadius: 4, background: 'rgba(255,255,255,0.2)', minHeight: '42px',
-              '& .MuiTabs-indicator': { height: 3, borderRadius: 2 },
-            }}
           >
             <Tab label="Upcoming" />
             <Tab label="Completed" />
@@ -104,30 +143,47 @@ const BookingHistoryPage: React.FC = () => {
             </Typography>
           ) : (
             filtered.map((b) => (
-              <Card key={b.id} sx={{ mt: 2, background: 'rgba(255,255,255,0.6)', borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+              <Card key={b.id} sx={{ mt: 2 }}>
                 <CardContent>
-                  <Typography fontWeight="bold">💆‍♀️ Therapist: {b.therapistName}</Typography>
-                  <Typography fontSize="0.9rem">📅 Date: {b.date} Time: {b.time}</Typography>
-                  <Typography fontSize="0.9rem">🧘🏼‍♀️ Service: {b.serviceName}</Typography>
+                  <Stack direction="row" alignItems="center" spacing={2}>
+                    <Avatar src={therapists[b.therapistId]?.image} />
+                    <Box>
+                      <Typography fontWeight="bold">{therapists[b.therapistId]?.name || b.therapistName}</Typography>
+                      <Typography fontSize="0.85rem">{b.serviceName}</Typography>
+                    </Box>
+                  </Stack>
+
+                  <Typography mt={1} fontSize="0.9rem">📅 {b.date} 🕒 {b.time}</Typography>
                   <Typography fontSize="0.9rem">📝 Note: {b.note || '-'}</Typography>
                   <Typography fontSize="0.9rem">💰 Total: ฿{b.total.toLocaleString()}</Typography>
                   <Typography fontSize="0.9rem">📌 Status: {b.status}</Typography>
 
-                  {b.status === 'completed' && !b.reviewed && b.userId === user?.uid && (
+                  {b.status === 'completed' && !b.reviewed && user?.uid === b.userId && (
                     <Box mt={2}>
                       <Typography fontWeight="bold" fontSize="0.9rem">Leave your review:</Typography>
                       <Rating
                         value={tempRatingMap[b.id] || 0}
-                        onChange={(_, newValue) => setTempRatingMap((prev) => ({ ...prev, [b.id]: newValue || 0 }))}
+                        onChange={(_, newValue) =>
+                          setTempRatingMap(prev => ({ ...prev, [b.id]: newValue || 0 }))
+                        }
                       />
                       <TextField
-                        label="Your feedback"
-                        fullWidth multiline rows={2}
+                        label="Feedback"
+                        fullWidth
+                        multiline
+                        rows={2}
                         value={tempReviewMap[b.id] || ''}
-                        onChange={(e) => setTempReviewMap((prev) => ({ ...prev, [b.id]: e.target.value }))}
+                        onChange={(e) =>
+                          setTempReviewMap(prev => ({ ...prev, [b.id]: e.target.value }))
+                        }
                         sx={{ mt: 1 }}
                       />
-                      <Button variant="contained" size="small" sx={{ mt: 1 }} onClick={() => handleReview(b.id)}>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        sx={{ mt: 1 }}
+                        onClick={() => handleReview(b.id, b.therapistId)}
+                      >
                         Submit
                       </Button>
                     </Box>
@@ -137,7 +193,9 @@ const BookingHistoryPage: React.FC = () => {
                     <Box mt={2}>
                       <Typography fontSize="0.9rem">⭐ Rating:</Typography>
                       <Rating value={b.rating || 0} readOnly size="small" />
-                      <Typography variant="body2" color="text.secondary" fontStyle="italic">"{b.reviewText}"</Typography>
+                      <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                        "{b.reviewText}"
+                      </Typography>
                     </Box>
                   )}
 
@@ -154,9 +212,12 @@ const BookingHistoryPage: React.FC = () => {
       </Box>
 
       <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={() => setSnackbarOpen(false)}>
-        <Alert onClose={() => setSnackbarOpen(false)} severity="success" sx={{ width: '100%' }}>
-          Review submitted successfully!
-        </Alert>
+        <CustomAlert
+open={snackbarOpen}
+  onClose={() => setSnackbarOpen(false)}
+  severity="success"
+  message="Review submitted successfully!"
+/>
       </Snackbar>
     </Box>
   );

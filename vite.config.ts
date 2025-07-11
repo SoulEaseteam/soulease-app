@@ -1,13 +1,10 @@
-// vite.config.ts (For Vercel/Web Deploy)
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
-  base: './',
-  plugins: [
-    react(),
-  ],
+  base: '/', // ✅ ถูกต้องสำหรับโปรดักชัน
+  plugins: [react()],
   build: {
     outDir: 'dist',
     emptyOutDir: true,
@@ -22,5 +19,10 @@ export default defineConfig({
       '@pages': path.resolve(__dirname, 'src/pages'),
       '@services': path.resolve(__dirname, 'src/services'),
     },
+  },
+  define: {
+    'process.env': {
+      VITE_API_KEY: JSON.stringify(process.env.VITE_API_KEY),
+    }
   },
 });

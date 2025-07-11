@@ -7,7 +7,9 @@ import RoomIcon from '@mui/icons-material/Room';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 declare global {
-  interface Window { google: any; }
+  interface Window {
+    google: any;
+  }
 }
 
 const MapSelectPage: React.FC = () => {
@@ -19,9 +21,8 @@ const MapSelectPage: React.FC = () => {
   const [address, setAddress] = useState('');
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
-  // Extract redirect page from query param
   const queryParams = new URLSearchParams(location.search);
-  const redirectPage = queryParams.get('redirect') || 'booking'; // default = booking
+  const redirectPage = queryParams.get('redirect') || 'booking';
 
   const loadGoogleMapsScript = (callback: () => void) => {
     if (typeof window.google === 'object' && window.google.maps) {
@@ -39,15 +40,17 @@ const MapSelectPage: React.FC = () => {
   useEffect(() => {
     loadGoogleMapsScript(() => {
       if (!mapRef.current) return;
+
       const gmap = new window.google.maps.Map(mapRef.current, {
-        center: { lat: 13.7563, lng: 100.5018 },
+        center: { lat: 13.7563, lng: 100.5018 }, // Bangkok
         zoom: 13,
         disableDefaultUI: true,
       });
+
       gmap.addListener('click', (e: any) => {
         placeMarker(e.latLng);
+        reverseGeocode(e.latLng.lat(), e.latLng.lng());
       });
-      setMap(gmap);
 
       const input = document.getElementById('place-search') as HTMLInputElement;
       const autocomplete = new window.google.maps.places.Autocomplete(input);
@@ -61,6 +64,8 @@ const MapSelectPage: React.FC = () => {
           setAddress(place.formatted_address || '');
         }
       });
+
+      setMap(gmap);
     });
   }, []);
 
@@ -71,8 +76,17 @@ const MapSelectPage: React.FC = () => {
     setCoords({ lat: pos.lat(), lng: pos.lng() });
   };
 
+  const reverseGeocode = (lat: number, lng: number) => {
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
+      if (status === 'OK' && results[0]) {
+        setAddress(results[0].formatted_address);
+      }
+    });
+  };
+
   const handleConfirm = () => {
-    if (!coords) return alert('Please select a location on the map');
+    if (!coords) return alert('⚠️ Please select a location on the map.');
     navigate(`/${redirectPage}`, {
       state: {
         selectedLat: coords.lat,
@@ -84,6 +98,7 @@ const MapSelectPage: React.FC = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f8f9fa', fontFamily: 'Prompt, sans-serif', pb: 6 }}>
+      {/* 🔙 Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', p: 2 }}>
         <IconButton onClick={() => navigate(-1)}>
           <ArrowBackIcon />
@@ -91,22 +106,29 @@ const MapSelectPage: React.FC = () => {
         <Typography fontWeight="bold" fontSize={18} ml={1}>Select Location</Typography>
       </Box>
 
+      {/* 🔍 Address Input */}
       <Box sx={{ px: 2, pb: 2 }}>
         <TextField
           id="place-search"
           fullWidth
           variant="outlined"
           size="small"
-          placeholder="Search for address"
-          sx={{ borderRadius: 3, '& .MuiOutlinedInput-root': { borderRadius: 3 }, bgcolor: '#fff' }}
+          placeholder="Search address..."
+          sx={{
+            borderRadius: 3,
+            bgcolor: '#fff',
+            '& .MuiOutlinedInput-root': { borderRadius: 3 },
+          }}
           onChange={(e) => setAddress(e.target.value)}
         />
       </Box>
 
+      {/* 🗺 Map */}
       <Paper sx={{ mx: 2, borderRadius: 4, height: '60vh', overflow: 'hidden' }} elevation={3}>
         <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
       </Paper>
 
+      {/* 📍 Confirm */}
       <Box sx={{ px: 2, pt: 2 }}>
         {address && (
           <Typography variant="body2" mb={1}>📍 {address}</Typography>

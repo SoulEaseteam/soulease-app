@@ -1,35 +1,66 @@
 // src/components/AdminFloatingChat.tsx
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { IconButton, Tooltip, Box } from '@mui/material';
 import { FaLine, FaTelegramPlane, FaWhatsapp, FaWeixin } from 'react-icons/fa';
 
 const chatButtons = [
-  { icon: <FaLine size={20} />, href: 'https://line.me/ti/p/-TZBrEWmPx', color: '#00c300', title: 'LINE', delay: 0.05 },
-  { icon: <FaTelegramPlane size={20} />, href: 'https://t.me/yourusername', color: '#229ED9', title: 'Telegram', delay: 0.15 },
-  { icon: <FaWhatsapp size={20} />, href: 'https://wa.me/66981234567', color: '#25D366', title: 'WhatsApp', delay: 0.25 },
-  { icon: <FaWeixin size={20} />, href: 'https://your-wechat-link-or-qr', color: '#7BB32E', title: 'WeChat', delay: 0.35 },
+  { 
+    icon: <FaLine size={20} />, 
+    href: 'https://line.me/ti/p/-TZBrEWmPx', 
+    color: '#00c300', 
+    title: 'LINE', 
+    delay: 0.05 
+  },
+  { 
+    icon: <FaTelegramPlane size={20} />, 
+    href: 'https://t.me/SoulEasevip_bkk', 
+    color: '#229ED9', 
+    title: 'Telegram', 
+    delay: 0.15 
+  },
+  { 
+    icon: <FaWhatsapp size={20} />, 
+    href: 'https://wa.me/66634350987',  // << อันนี้ใช้เบอร์ใหม่
+    color: '#25D366', 
+    title: 'WhatsApp', 
+    delay: 0.25 
+  },
+  { 
+    icon: <FaWeixin size={20} />, 
+    href: 'weixin://dl/chat?SoulEase2025', 
+    color: '#7BB32E', 
+    title: 'WeChat', 
+    delay: 0.35 
+  },
 ];
-
 const AdminFloatingChat: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsExpanded(false);
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, []);
+
   return (
     <>
-      {/* Main Floating Button */}
       <button
         className="admin-contact-btn"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={() => setIsExpanded((v) => !v)}
         aria-label="Contact Admin"
+        aria-expanded={isExpanded}
+        type="button"
       >
         <img
-          src="images/icon/admins.png"
+          src="/images/icon/admins.png"
           alt="admin"
-          style={{ width: 60, height: 60 }}
+          width={60}
+          height={60}
         />
       </button>
 
-      {/* Floating Chat Options */}
       {isExpanded && (
         <Box className="chat-buttons-container">
           {chatButtons.map((btn) => (
@@ -39,6 +70,7 @@ const AdminFloatingChat: React.FC = () => {
                 href={btn.href}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label={btn.title}
                 sx={{
                   bgcolor: btn.color,
                   color: 'white',
@@ -60,7 +92,6 @@ const AdminFloatingChat: React.FC = () => {
         </Box>
       )}
 
-      {/* Embedded CSS */}
       <style>{`
         .admin-contact-btn {
           position: fixed;
@@ -89,6 +120,17 @@ const AdminFloatingChat: React.FC = () => {
         @keyframes fadeSlideUpBtn {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 500px) {
+          .admin-contact-btn,
+          .admin-contact-btn img {
+            width: 48px;
+            height: 48px;
+          }
+          .chat-buttons-container {
+            right: 10px;
+            bottom: 110px;
+          }
         }
       `}</style>
     </>

@@ -11,16 +11,29 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import RoomIcon from '@mui/icons-material/Room';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../providers/AuthProvider';
 import { db } from '../firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 const LocationPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const location = useLocation();
+
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
+  const [selectedLat, setSelectedLat] = useState<number | null>(null);
+  const [selectedLng, setSelectedLng] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (location.state) {
+      const { selectedAddress, selectedLat, selectedLng } = location.state as any;
+      if (selectedAddress) setAddress(selectedAddress);
+      if (selectedLat) setSelectedLat(selectedLat);
+      if (selectedLng) setSelectedLng(selectedLng);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -29,8 +42,12 @@ const LocationPage: React.FC = () => {
       const snap = await getDoc(ref);
       if (snap.exists()) {
         const data = snap.data();
-        setAddress(data.address || '');
+        setAddress((prev) => prev || data.address || '');
         setPhone(data.phone || '');
+        if (data.location) {
+          setSelectedLat(data.location.lat);
+          setSelectedLng(data.location.lng);
+        }
       }
     };
     loadUserData();
@@ -49,6 +66,7 @@ const LocationPage: React.FC = () => {
       await updateDoc(doc(db, 'users', user.uid), {
         address,
         phone,
+        location: selectedLat && selectedLng ? { lat: selectedLat, lng: selectedLng } : null,
       });
       alert('✅ Customer information saved successfully');
       navigate('/profile');
@@ -60,7 +78,6 @@ const LocationPage: React.FC = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', background: '#f0f4f8', p: 3, pb: 8 }}>
-      {/* 🔙 Back Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
         <IconButton onClick={() => navigate('/profile')} sx={{ mr: 1 }}>
           <ArrowBackIcon />
@@ -70,20 +87,12 @@ const LocationPage: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* 📄 Input Card */}
       <Paper elevation={3} sx={{ p: 3, borderRadius: 4, bgcolor: '#fff' }}>
-        {/* 📍 Map Button */}
         <Button
           variant="outlined"
           startIcon={<RoomIcon />}
           fullWidth
-          sx={{
-            mb: 3,
-            py: 1.2,
-            borderRadius: 3,
-            fontWeight: 'bold',
-            textTransform: 'none',
-          }}
+          sx={{ mb: 3, py: 1.2, borderRadius: 3, fontWeight: 'bold', textTransform: 'none' }}
           onClick={() => navigate('/select-location')}
         >
           Select from Map
@@ -95,15 +104,7 @@ const LocationPage: React.FC = () => {
           variant="outlined"
           value={address}
           onChange={(e) => setAddress(e.target.value)}
-          sx={{
-            mb: 3,
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 2,
-              '& fieldset': { borderColor: '#ccc' },
-              '&:hover fieldset': { borderColor: '#999' },
-              '&.Mui-focused fieldset': { borderColor: '#2b3b53' },
-            },
-          }}
+          sx={{ mb: 3 }}
         />
 
         <Typography fontWeight="bold" mb={1}>Phone Number:</Typography>
@@ -112,27 +113,25 @@ const LocationPage: React.FC = () => {
           variant="outlined"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          sx={{
-            mb: 3,
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 2,
-              '& fieldset': { borderColor: '#ccc' },
-              '&:hover fieldset': { borderColor: '#999' },
-              '&.Mui-focused fieldset': { borderColor: '#2b3b53' },
-            },
-          }}
+          sx={{ mb: 3 }}
         />
+
+        {selectedLat && selectedLng && (
+          <iframe
+            title="Map"
+            width="100%"
+            height="180"
+            frameBorder="0"
+            style={{ borderRadius: 8, marginBottom: 16 }}
+            src={`https://maps.google.com/maps?q=${selectedLat},${selectedLng}&z=15&output=embed`}
+            allowFullScreen
+          />
+        )}
 
         <Button
           variant="contained"
           fullWidth
-          sx={{
-            py: 1.3,
-            borderRadius: 3,
-            fontWeight: 'bold',
-            bgcolor: '#2b3b53',
-            '&:hover': { bgcolor: '#3f5066' },
-          }}
+          sx={{ py: 1.3, borderRadius: 3, fontWeight: 'bold', bgcolor: '#2b3b53', '&:hover': { bgcolor: '#3f5066' } }}
           onClick={handleSave}
         >
           Save Information

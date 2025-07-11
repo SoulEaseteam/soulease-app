@@ -1,4 +1,3 @@
-// src/pages/ProfilePage.tsx
 import React from 'react';
 import {
   Box,
@@ -12,18 +11,92 @@ import {
   Paper,
 } from '@mui/material';
 import {
-  Mail,
+  Edit,
+  Notifications,
   Favorite,
+  Event,
+  Stars,
+  AdminPanelSettings,
+  Logout,
   LocationOn,
   Settings,
-  Logout,
-  Edit,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
+import { useAuth } from '../providers/AuthProvider';
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
+  const { user, role, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout?.();
+    localStorage.removeItem('token');
+    alert('You have been logged out!');
+    navigate('/login');
+  };
+
+  const renderMenuItems = () => {
+    switch (role) {
+      case 'user':
+        return (
+          <>
+            <ListItem button onClick={() => navigate('/edit-profile')}>
+              <ListItemIcon><Edit /></ListItemIcon>
+              <ListItemText primary="Edit Profile" />
+            </ListItem>
+            <ListItem button onClick={() => navigate('/notifications')}>
+              <ListItemIcon><Notifications /></ListItemIcon>
+              <ListItemText primary="Notifications" />
+            </ListItem>
+            <ListItem button onClick={() => navigate('/saved')}>
+              <ListItemIcon><Favorite /></ListItemIcon>
+              <ListItemText primary="Favourites" />
+            </ListItem>
+            <ListItem button onClick={() => navigate('/booking/history')}>
+              <ListItemIcon><Event /></ListItemIcon>
+              <ListItemText primary="My Bookings" />
+            </ListItem>
+          </>
+        );
+      case 'therapist':
+        return (
+          <>
+            <ListItem button onClick={() => navigate('/edit-profile')}>
+              <ListItemIcon><Edit /></ListItemIcon>
+              <ListItemText primary="Edit Profile" />
+            </ListItem>
+            <ListItem button onClick={() => navigate('/notifications')}>
+              <ListItemIcon><Notifications /></ListItemIcon>
+              <ListItemText primary="Notifications" />
+            </ListItem>
+            <ListItem button onClick={() => navigate('/my-bookings')}>
+              <ListItemIcon><Event /></ListItemIcon>
+              <ListItemText primary="My Booking Schedule" />
+            </ListItem>
+            <ListItem button onClick={() => navigate('/reviews')}>
+              <ListItemIcon><Stars /></ListItemIcon>
+              <ListItemText primary="My Reviews" />
+            </ListItem>
+          </>
+        );
+      case 'admin':
+        return (
+          <>
+            <ListItem button onClick={() => navigate('/admin')}>
+              <ListItemIcon><AdminPanelSettings /></ListItemIcon>
+              <ListItemText primary="Admin Dashboard" />
+            </ListItem>
+            <ListItem button onClick={() => navigate('/notifications')}>
+              <ListItemIcon><Notifications /></ListItemIcon>
+              <ListItemText primary="Notifications" />
+            </ListItem>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <Box
@@ -49,15 +122,9 @@ const ProfilePage: React.FC = () => {
           pb: 3,
         }}
       >
-        <Box
-          sx={{
-            position: 'relative',
-            height: 140,
-            background: '#2b3b53',
-          }}
-        >
+        <Box sx={{ position: 'relative', height: 140, background: '#2b3b53' }}>
           <Avatar
-            src="/images/massage/user.png"
+            src={user?.image || '/images/massage/user.png'}
             sx={{
               width: 100,
               height: 100,
@@ -72,59 +139,33 @@ const ProfilePage: React.FC = () => {
 
         <Box mt={6}>
           <Typography variant="h6" fontWeight="bold">
-            My Profile
+            {user?.username || 'My Profile'}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Create account
+            {role === 'therapist'
+              ? 'Therapist Account'
+              : role === 'admin'
+              ? 'Administrator'
+              : 'Customer'}
           </Typography>
         </Box>
 
         <List>
-          <ListItem button onClick={() => navigate('/edit-profile')}>
-            <ListItemIcon>
-              <Edit />
-            </ListItemIcon>
-            <ListItemText primary="Edit Profile" />
-          </ListItem>
-          <ListItem button onClick={() => navigate('/messages')}>
-            <ListItemIcon>
-              <Mail />
-            </ListItemIcon>
-            <ListItemText primary="Messages" />
-          </ListItem>
-          <ListItem button onClick={() => navigate('/saved')}>
-            <ListItemIcon>
-              <Favorite />
-            </ListItemIcon>
-            <ListItemText primary="Favourites" />
-          </ListItem>
+          {renderMenuItems()}
           <ListItem button onClick={() => navigate('/location')}>
-            <ListItemIcon>
-              <LocationOn />
-            </ListItemIcon>
+            <ListItemIcon><LocationOn /></ListItemIcon>
             <ListItemText primary="Location" />
           </ListItem>
           <ListItem button onClick={() => navigate('/settings')}>
-            <ListItemIcon>
-              <Settings />
-            </ListItemIcon>
+            <ListItemIcon><Settings /></ListItemIcon>
             <ListItemText primary="Settings" />
           </ListItem>
         </List>
 
         <Divider sx={{ my: 1 }} />
 
-        <ListItem
-          button
-          onClick={() => {
-            localStorage.removeItem('token'); // ✅ เดโม: ลบ token จำลอง
-            alert('You have been logged out!');
-            navigate('/login');
-          }}
-        >
-          <ListItemIcon sx={{ color: '#B00020' }}>
-            <Logout />
-          </ListItemIcon>
+        <ListItem button onClick={handleLogout}>
+          <ListItemIcon sx={{ color: '#B00020' }}><Logout /></ListItemIcon>
           <ListItemText primary="Logout" />
         </ListItem>
       </Paper>

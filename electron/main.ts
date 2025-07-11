@@ -3,7 +3,7 @@ import { app, BrowserWindow } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// ✅ สร้าง __dirname แบบ ESM
+// 👇 ทำ __dirname แบบ ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -12,13 +12,16 @@ function createWindow() {
     width: 1280,
     height: 800,
     webPreferences: {
-      preload: path.join(__dirname, '../dist-electron/preload.mjs'),
-      contextIsolation: true,
+      preload: path.join(__dirname, '../dist-electron/preload.js'),
+      contextIsolation: true, // ✅ ต้องใส่ใต้ webPreferences
     },
   });
 
-  if (import.meta.env.DEV) {
-  win.loadURL('http://localhost:5173'); // ✅ ให้ตรงกับพอร์ต Vite จริง
+  // 👇 Dev mode
+  const isDev = process.env.NODE_ENV === 'development';
+
+  if (isDev) {
+    win.loadURL('http://localhost:5173');
     win.webContents.openDevTools({ mode: 'detach' });
   } else {
     win.loadFile(path.join(__dirname, '../dist/index.html'));

@@ -1,11 +1,22 @@
-// src/components/LoadingSpinner.tsx
 import React from 'react';
 import { CircularProgress, Box, Typography } from '@mui/material';
 
-const LoadingSpinner: React.FC = () => {
-  const flowerCount = 20;
-  const flowers = Array.from({ length: flowerCount });
+const flowerCount = 20;
+const getFlowers = () =>
+  Array.from({ length: flowerCount }).map((_, i) => {
+    // แยก Math.random มาคำนวณก่อน เพื่อไม่ให้ rerender แล้วตำแหน่งเปลี่ยน
+    const top = Math.random() * 100;
+    const left = Math.random() * 100;
+    const duration = 5 + Math.random() * 5;
+    const delay = Math.random() * 3;
+    const fontSize = 16 + Math.random() * 20;
+    const opacity = 0.3 + Math.random() * 0.7;
+    return { top, left, duration, delay, fontSize, opacity, key: i };
+  });
 
+const flowerData = getFlowers();
+
+const LoadingSpinner: React.FC = () => {
   return (
     <>
       <Box
@@ -22,17 +33,17 @@ const LoadingSpinner: React.FC = () => {
         }}
       >
         {/* 🌸 Floating flowers */}
-        {flowers.map((_, i) => (
+        {flowerData.map((f) => (
           <Box
-            key={i}
+            key={f.key}
             sx={{
               position: 'absolute',
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              animation: `float ${5 + Math.random() * 5}s ease-in-out infinite`,
-              animationDelay: `${Math.random() * 3}s`,
-              fontSize: `${16 + Math.random() * 20}px`,
-              opacity: 0.3 + Math.random() * 0.7,
+              top: `${f.top}%`,
+              left: `${f.left}%`,
+              animation: `float ${f.duration}s ease-in-out infinite`,
+              animationDelay: `${f.delay}s`,
+              fontSize: `${f.fontSize}px`,
+              opacity: f.opacity,
               transform: 'translateY(0px)',
               pointerEvents: 'none',
               zIndex: 1,
@@ -69,7 +80,6 @@ const LoadingSpinner: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* Keyframes */}
       <style>
         {`
           @keyframes spin {

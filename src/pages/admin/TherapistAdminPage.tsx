@@ -1,47 +1,100 @@
 // src/pages/admin/TherapistAdminPage.tsx
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Switch, Paper, Stack } from '@mui/material';
-import therapistsData from '@/data/therapists';
+import {
+  Box,
+  Typography,
+  Switch,
+  Paper,
+  Stack,
+  CircularProgress,
+  Chip,
+} from '@mui/material';
+import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { db } from '@/firebase';
 
-const LOCAL_KEY = 'holidayOverrides';
+interface Therapist {
+  id: string;
+  name: string;
+  manualStatus: 'available' | 'holiday' | string;
+}
 
 const TherapistAdminPage: React.FC = () => {
-  const [overrides, setOverrides] = useState<Record<string, boolean>>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(LOCAL_KEY);
-      return stored ? JSON.parse(stored) : {};
-    }
-    return {};
-  });
+  const [therapists, setTherapists] = useState<Therapist[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleToggle = (id: string) => {
-    const updated = { ...overrides, [id]: !overrides[id] };
-    setOverrides(updated);
-    localStorage.setItem(LOCAL_KEY, JSON.stringify(updated));
+  useEffect(() => {
+    const fetchTherapists = async () => {
+      const snapshot = await getDocs(collection(db, 'therapists'));
+      const data = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      })) as Therapist[];
+      setTherapists(data);
+      setLoading(false);
+    };
+
+    fetchTherapists();
+  }, []);
+
+  const toggleHoliday = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'holiday' ? 'available' : 'holiday';
+    await updateDoc(doc(db, 'therapists', id), {
+      manualStatus: newStatus,
+    });
+    setTherapists((prev) =>
+      prev.map((t) =>
+        t.id === id ? { ...t, manualStatus: newStatus } : t
+      )
+    );
   };
+
+  if (loading) {
+    return (
+      <Box p={3} textAlign="center">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h5" sx={{ mb: 2 }}>
-        จัดการวันหยุดพนักงาน (Admin)
+      <Typography variant="h5" fontWeight="bold" mb={2}>
+        Manage Therapist Holidays
       </Typography>
 
       <Stack spacing={2}>
-        {therapistsData.map((t) => (
-          <Paper
-            key={t.id}
-            sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-          >
-            <Typography sx={{ fontSize: 16 }}>{t.name}</Typography>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Typography fontSize={14}>Holiday</Typography>
-              <Switch
-                checked={!!overrides[t.id]}
-                onChange={() => handleToggle(t.id)}
-              />
-            </Stack>
-          </Paper>
-        ))}
+        {therapists.map((t) => {
+          const isHoliday = t.manualStatus === 'holiday';
+          return (
+            <Paper
+              key={t.id}
+              sx={{
+                p: 2,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                backgroundColor: isHoliday ? '#fff5f5' : '#f0fdf4',
+                borderLeft: `6px solid ${isHoliday ? '#f44336' : '#4caf50'}`,
+              }}
+            >
+              <Typography sx={{ fontSize: 16, fontWeight: 500 }}>
+                {t.name}
+              </Typography>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Chip
+                  label={isHoliday ? 'On Holiday' : 'Available'}
+                  color={isHoliday ? 'error' : 'success'}
+                  size="small"
+                />
+                <Switch
+                  checked={isHoliday}
+                  onChange={() => toggleHoliday(t.id, t.manualStatus)}
+                  color="error"
+                />
+              </Stack>
+            </Paper>
+          );
+        })}
       </Stack>
     </Box>
   );

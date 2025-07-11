@@ -1,9 +1,9 @@
-// dist-electron/preload.js
-const { contextBridge, ipcRenderer } = require('electron');
-
+import { contextBridge, ipcRenderer } from 'electron';
 contextBridge.exposeInMainWorld('electronAPI', {
-  send: (channel, data) => ipcRenderer.send(channel, data),
-  receive: (channel, func) => {
-    ipcRenderer.on(channel, (event, ...args) => func(...args));
-  }
+    send: (channel, data) => {
+        ipcRenderer.send(channel, data);
+    },
+    receive: (channel, callback) => {
+        ipcRenderer.on(channel, (_, ...args) => callback(...args));
+    },
 });

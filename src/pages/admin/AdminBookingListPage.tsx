@@ -1,6 +1,6 @@
-// src/pages/admin/AdminBookingListPage.tsx
+// src/pages/admin/AdminTherapistListPage.tsx
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -11,94 +11,107 @@ import {
   Divider,
   Chip,
   Button,
+  Avatar,
+  CircularProgress,
 } from '@mui/material';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/firebase';
+import { Therapist } from '@/types/therapist';
+import { useNavigate } from 'react-router-dom';
 
-// ตัวอย่าง mock data สามารถเปลี่ยนเป็นข้อมูลจริงจาก backend ได้
-const mockBookings = [
-  {
-    id: 'b1',
-    customerName: 'คุณฟ้าใส',
-    therapistName: 'น้องแอม',
-    service: 'นวดน้ำมัน',
-    status: 'กำลังดำเนินการ',
-    date: '5 ก.ค. 2025 - 14:00',
-  },
-  {
-    id: 'b2',
-    customerName: 'คุณบอล',
-    therapistName: 'พี่บีม',
-    service: 'นวดแผนไทย',
-    status: 'สำเร็จแล้ว',
-    date: '4 ก.ค. 2025 - 17:30',
-  },
-  {
-    id: 'b3',
-    customerName: 'คุณตูน',
-    therapistName: 'น้องมุก',
-    service: 'นวดอโรม่า',
-    status: 'ยกเลิก',
-    date: '3 ก.ค. 2025 - 13:00',
-  },
-];
-
-const getStatusColor = (status: string) => {
+const getStatusLabel = (status: string) => {
   switch (status) {
-    case 'กำลังดำเนินการ':
-      return 'warning';
-    case 'สำเร็จแล้ว':
-      return 'success';
-    case 'ยกเลิก':
-      return 'error';
+    case 'available':
+      return { label: 'Available', color: 'success' };
+    case 'resting':
+      return { label: 'Resting', color: 'warning' };
+    case 'holiday':
+      return { label: 'On Leave', color: 'default' };
+    case 'bookable':
+      return { label: 'Bookable', color: 'info' };
     default:
-      return 'default';
+      return { label: 'Unknown', color: 'default' };
   }
 };
 
-const AdminBookingListPage: React.FC = () => {
+const AdminTherapistListPage: React.FC = () => {
+  const [therapists, setTherapists] = useState<Therapist[]>([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchTherapists = async () => {
+      const snapshot = await getDocs(collection(db, 'therapists'));
+      const list = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Therapist[];
+      setTherapists(list);
+      setLoading(false);
+    };
+
+    fetchTherapists();
+  }, []);
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" fontWeight="bold" mb={3}>
-        รายการจองทั้งหมด
+        Therapist Management
       </Typography>
-      <Paper elevation={2}>
-        <List>
-          {mockBookings.map((booking, index) => (
-            <React.Fragment key={booking.id}>
-              <ListItem alignItems="flex-start" sx={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-                <Box display="flex" justifyContent="space-between" width="100%" alignItems="center">
-                  <Typography variant="subtitle1" fontWeight={500}>
-                    🧖 {booking.service}
-                  </Typography>
-                  <Chip
-                    label={booking.status}
-                    color={getStatusColor(booking.status)}
-                    size="small"
-                    sx={{ minWidth: 90, textAlign: 'center' }}
-                  />
-                </Box>
-                <ListItemText
-                  sx={{ mt: 1 }}
-                  secondary={
-                    <>
-                      👤 <b>ผู้จอง:</b> {booking.customerName} <br />
-                      💆‍♀️ <b>หมอนวด:</b> {booking.therapistName} <br />
-                      ⏰ <b>เวลา:</b> {booking.date}
-                    </>
-                  }
-                />
-                <Box width="100%" display="flex" justifyContent="flex-end" mt={1}>
-                  <Button size="small" variant="outlined">
-                    รายละเอียด
-                  </Button>
-                </Box>
-              </ListItem>
-              {index < mockBookings.length - 1 && <Divider />}
-            </React.Fragment>
-          ))}
-        </List>
-      </Paper>
+      {loading ? (
+        <Box display="flex" justifyContent="center" mt={6}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <Paper elevation={2}>
+          <List>
+            {therapists.map((therapist, index) => {
+              const statusInfo = getStatusLabel(therapist.available);
+              return (
+                <React.Fragment key={therapist.id}>
+                  <ListItem alignItems="flex-start">
+                    <Avatar
+                      src={therapist.image}
+                      alt={therapist.name}
+                      sx={{ mr: 2, width: 56, height: 56 }}
+                    />
+                    <Box flex="1">
+                      <Box display="flex" justifyContent="space-between" alignItems="center">
+                        <Typography variant="subtitle1" fontWeight={600}>
+                          {therapist.name}
+                        </Typography>
+                        <Chip
+                          label={statusInfo.label}
+                          color={statusInfo.color as any}
+                          size="small"
+                        />
+                      </Box>
+                      <ListItemText
+                        secondary={
+                          <>
+                            ⭐ <b>Rating:</b> {therapist.rating || 0} &nbsp;&nbsp;
+                            📅 <b>Today:</b> {therapist.todayBookings ?? 0} &nbsp;&nbsp;
+                            🗓 <b>Total:</b> {therapist.totalBookings ?? 0}
+                          </>
+                        }
+                      />
+                      <Box display="flex" justifyContent="flex-end" mt={1}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => navigate(`/admin/therapists/${therapist.id}`)}
+                        >
+                          Details
+                        </Button>
+                      </Box>
+                    </Box>
+                  </ListItem>
+                  {index < therapists.length - 1 && <Divider />}
+                </React.Fragment>
+              );
+            })}
+          </List>
+        </Paper>
+      )}
     </Box>
   );
 };
 
-export default AdminBookingListPage;
+export default AdminTherapistListPage;

@@ -6,14 +6,14 @@ export type BadgeType = 'VIP' | 'HOT' | 'NEW';
 interface BadgeConfig {
   key: BadgeType;
   image: string;
-  priority: number;
+  priority: number; // 1 = สำคัญสุด
   animation: 'pulse' | 'float' | 'none';
   size: number;
   position: { top: number; right: number };
   condition: (therapist: Therapist) => boolean;
 }
 
-// ✅ Badge Configuration
+// 🔥 Badge Rules
 export const badgeConfig: BadgeConfig[] = [
   {
     key: 'VIP',
@@ -21,8 +21,8 @@ export const badgeConfig: BadgeConfig[] = [
     priority: 1,
     animation: 'pulse',
     size: 32,
-    position: { top: 10, right: 10 }, // ✅ ต้องใส่ comma
-    condition: (t) => (t.todayBookings || 0) >= 5,
+    position: { top: 10, right: 10 },
+    condition: (t) => (t.todayBookings || 0) >= 5 && t.available !== 'holiday',
   },
   {
     key: 'HOT',
@@ -31,7 +31,7 @@ export const badgeConfig: BadgeConfig[] = [
     animation: 'float',
     size: 30,
     position: { top: 10, right: 10 },
-    condition: (t) => (t.todayBookings || 0) >= 3,
+    condition: (t) => (t.todayBookings || 0) >= 3 && (t.todayBookings || 0) < 5 && t.available !== 'holiday',
   },
   {
     key: 'NEW',
@@ -40,18 +40,20 @@ export const badgeConfig: BadgeConfig[] = [
     animation: 'none',
     size: 80,
     position: { top: -30, right: -20 },
-    condition: (t) => (t.totalBookings || 0) < 100,
+    condition: (t) => (t.totalBookings || 0) < 100 && t.available !== 'holiday',
   },
 ];
 
-// ✅ คืนค่า badge ตัวเดียว (ลำดับความสำคัญสูงสุด)
-export function getTherapistBadge(therapist: Therapist) {
-  return badgeConfig
-    .filter((b) => b.condition(therapist))
-    .sort((a, b) => a.priority - b.priority)[0] || null;
+// ✅ Return highest-priority badge
+export function getTherapistBadge(therapist: Therapist): BadgeConfig | null {
+  return (
+    badgeConfig
+      .filter((b) => b.condition(therapist))
+      .sort((a, b) => a.priority - b.priority)[0] || null
+  );
 }
 
-// ✅ คืนค่า badge ทั้งหมดที่เข้าเงื่อนไข
-export function getAllTherapistBadges(therapist: Therapist) {
+// ✅ Return all matched badges (ถ้าอยากแสดงหลายอันพร้อมกัน)
+export function getAllTherapistBadges(therapist: Therapist): BadgeConfig[] {
   return badgeConfig.filter((b) => b.condition(therapist));
 }

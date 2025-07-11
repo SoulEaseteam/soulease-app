@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import debounce from 'lodash.debounce';
 
 interface Therapist {
   id: string;
@@ -30,21 +29,23 @@ const useSortedTherapists = (
 
   useEffect(() => {
     if (!userLocation?.lat || !userLocation?.lng || therapists.length === 0) {
-      const fallbackSorted = [...therapists].sort((a, b) => b.rating - a.rating);
-      setSortedTherapists(fallbackSorted);
+      // Default fallback: sorted by rating
+      setSortedTherapists([...therapists].sort((a, b) => b.rating - a.rating));
       return;
     }
 
     const cacheKey = `${userLocation.lat},${userLocation.lng}`;
-
     if (cacheRef.current[cacheKey]) {
       setSortedTherapists(cacheRef.current[cacheKey]);
       return;
     }
 
-    const fetchDistances = debounce(async () => {
+    let isMounted = true;
+    const timer = setTimeout(async () => {
+      if (!isMounted) return;
+
       if (useMock) {
-        // 🧪 MOCK API สำหรับทำงานแบบ offline
+        // 🧪 MOCK DATA
         const enriched = therapists.map((t) => ({
           ...t,
           distance: Math.floor(Math.random() * 3000 + 1000),
@@ -54,13 +55,11 @@ const useSortedTherapists = (
         }));
         const sorted = enriched.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
         cacheRef.current[cacheKey] = sorted;
-        setSortedTherapists(sorted);
+        if (isMounted) setSortedTherapists(sorted);
       } else {
-        // 🌐 เรียก Google Distance Matrix API
-        const destinations = therapists.map((t) => `${t.lat},${t.lng}`).join('|');
-
         try {
           const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+          const destinations = therapists.map((t) => `${t.lat},${t.lng}`).join('|');
           const res = await axios.get('https://maps.googleapis.com/maps/api/distancematrix/json', {
             params: {
               origins: `${userLocation.lat},${userLocation.lng}`,
@@ -73,7 +72,7 @@ const useSortedTherapists = (
 
           if (res.data.status !== 'OK') {
             console.error('Google API Error:', res.data.error_message);
-            setSortedTherapists([...therapists]);
+            if (isMounted) setSortedTherapists([...therapists].sort((a, b) => b.rating - a.rating));
             return;
           }
 
@@ -87,16 +86,18 @@ const useSortedTherapists = (
 
           const sorted = enriched.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
           cacheRef.current[cacheKey] = sorted;
-          setSortedTherapists(sorted);
+          if (isMounted) setSortedTherapists(sorted);
         } catch (err) {
           console.error('Error fetching distance from Google API:', err);
-          setSortedTherapists([...therapists]);
+          if (isMounted) setSortedTherapists([...therapists].sort((a, b) => b.rating - a.rating));
         }
       }
-    }, 300);
+    }, 300); // debounce 300ms
 
-    fetchDistances();
-    return () => fetchDistances.cancel();
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, [userLocation, therapists, useMock]);
 
   return sortedTherapists;

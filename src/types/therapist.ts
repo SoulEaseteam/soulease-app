@@ -1,5 +1,3 @@
-// ✅ therapist.ts (interface only)
-
 export interface Features {
   age: string;
   gender?: string;
@@ -15,6 +13,7 @@ export interface Features {
   language: string;
   style: string;
   skintone?: string;
+  [key: string]: string | undefined; // รองรับ key ใหม่ในอนาคต
 }
 
 export interface Therapist {
@@ -27,6 +26,7 @@ export interface Therapist {
   experience: string;
   lat: number;
   lng: number;
+  currentLocation?: { lat: number; lng: number };
   todayBookings?: number;
   totalBookings?: number;
   nextAvailable?: string;
@@ -38,9 +38,9 @@ export interface Therapist {
   manualStatus?: 'holiday';
   isHolidayManual?: boolean;
   isAvailableNow?: boolean;
-  badge?: any;
-  features: Record<string, string>;
-  
+  badge?: TherapistBadge;
+  features: Features;
+  distance?: number;
 }
 
 export interface TherapistBadge {

@@ -1,30 +1,69 @@
-// src/pages/admin/ToggleHolidayPage.tsx
-import React, { useState } from 'react';
-import { Box, Typography, Switch, List, ListItem, ListItemText } from '@mui/material';
-import therapistsData from '@/data/therapists';
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Typography,
+  Switch,
+  List,
+  ListItem,
+  ListItemText,
+  CircularProgress,
+} from '@mui/material';
+import { collection, onSnapshot, updateDoc, doc } from 'firebase/firestore';
+import { db } from '@/firebase';
 
-const ToggleHolidayPage = () => {
-  const [holidayMap, setHolidayMap] = useState<Record<string, boolean>>(() => {
-    const saved = localStorage.getItem('holidayOverrides');
-    return saved ? JSON.parse(saved) : {};
-  });
+interface Therapist {
+  id: string;
+  name: string;
+  manualStatus: 'available' | 'holiday' | string;
+}
 
-  const toggleHoliday = (id: string) => {
-    const newMap = { ...holidayMap, [id]: !holidayMap[id] };
-    setHolidayMap(newMap);
-    localStorage.setItem('holidayOverrides', JSON.stringify(newMap));
+const ToggleHolidayPage: React.FC = () => {
+  const [therapists, setTherapists] = useState<Therapist[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'therapists'), (snapshot) => {
+      const data = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      })) as Therapist[];
+      setTherapists(data);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const toggleHoliday = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'holiday' ? 'available' : 'holiday';
+    await updateDoc(doc(db, 'therapists', id), {
+      manualStatus: newStatus,
+    });
   };
+
+  if (loading) {
+    return (
+      <Box p={3} textAlign="center">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box p={3}>
-      <Typography variant="h5" gutterBottom>Toggle Holiday Status</Typography>
+      <Typography variant="h5" gutterBottom fontWeight="bold">
+        Toggle Therapist Holiday Status
+      </Typography>
       <List>
-        {therapistsData.map((t) => (
+        {therapists.map((t) => (
           <ListItem key={t.id} divider>
-            <ListItemText primary={t.name} />
+            <ListItemText
+              primary={t.name}
+              secondary={`Status: ${t.manualStatus}`}
+            />
             <Switch
-              checked={holidayMap[t.id] || false}
-              onChange={() => toggleHoliday(t.id)}
+              checked={t.manualStatus === 'holiday'}
+              onChange={() => toggleHoliday(t.id, t.manualStatus)}
               color="error"
             />
           </ListItem>

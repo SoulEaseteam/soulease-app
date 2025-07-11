@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Typography, Button, Stack, Dialog, IconButton } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -8,37 +8,43 @@ import { Therapist } from '@/types/therapist';
 import { getTherapistBadge } from '@/utils/therapistBadge';
 import { db } from '@/firebase';
 import { doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
-import { useAuth } from '@/providers/useAuth';
+import { useAuth } from '@/providers/AuthProvider';
 
-const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist }) => {
+interface TherapistProfileCardProps {
+  therapistId: string;
+}
+
+const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({ therapistId }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [therapist, setTherapist] = useState<Therapist | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  const statusMap = {
-    available: { label: 'Available', color: '#3CB371' },
-    bookable: { label: 'Bookable', color: '#FFA726' },
-    resting: { label: 'Resting', color: '#BDBDBD' },
-    holiday: { label: 'Holiday', color: '#607D8B' },
-  };
-
-  const badge = getTherapistBadge(therapist);
-  const isUnavailable = ['resting', 'holiday'].includes(therapist.available);
-
-  // 🔁 Sync favorite จาก Firebase
   useEffect(() => {
-    if (!user?.uid) return;
-    const favRef = doc(db, `users/${user.uid}/favorites`, therapist.id);
+    if (!therapistId) return;
+    const tRef = doc(db, 'therapists', therapistId);
+    const unsubscribe = onSnapshot(tRef, (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        setTherapist({ id: docSnapshot.id, ...docSnapshot.data() } as Therapist);
+      } else {
+        setTherapist(null);
+      }
+    });
+    return () => unsubscribe();
+  }, [therapistId]);
+
+  useEffect(() => {
+    if (!user?.uid || !therapistId) return;
+    const favRef = doc(db, `users/${user.uid}/favorites`, therapistId);
     const unsubscribe = onSnapshot(favRef, (docSnapshot) => {
       setIsFavorite(docSnapshot.exists());
     });
     return () => unsubscribe();
-  }, [user?.uid, therapist.id]);
+  }, [user?.uid, therapistId]);
 
-  // ❤️ Toggle Favorite
   const toggleFavorite = async () => {
-    if (!user?.uid) return;
+    if (!user?.uid || !therapist) return;
     const favRef = doc(db, `users/${user.uid}/favorites`, therapist.id);
     try {
       if (isFavorite) {
@@ -56,70 +62,62 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist })
     }
   };
 
+  if (!therapist) {
+    return <Box sx={{ textAlign: 'center', py: 4 }}>ไม่พบข้อมูลพนักงาน</Box>;
+  }
+
+  const statusMap = {
+    available: { label: 'Available', color: '#3CB371' },
+    bookable: { label: 'Bookable', color: '#FFA726' },
+    resting: { label: 'Resting', color: '#BDBDBD' },
+    holiday: { label: 'Holiday', color: '#607D8B' },
+  };
+
+  const badge = getTherapistBadge(therapist);
+  const isUnavailable = ['resting', 'holiday'].includes(therapist.available);
+  const imageSrc = therapist.image.startsWith('/') ? therapist.image : `/images/${therapist.image}`;
+
   return (
     <motion.div style={{ position: 'relative', width: '100%' }}>
-      {/* 🎖 Badge มุมขวาบน */}
       {badge && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: badge.position.top,
-            right: badge.position.right,
-            width: badge.size,
-            height: badge.size,
-            zIndex: 10,
-            animation:
-              badge.animation === 'pulse'
-                ? 'pulse 2s infinite'
-                : badge.animation === 'float'
+        <Box sx={{
+          position: 'absolute',
+          top: badge.position.top,
+          right: badge.position.right,
+          width: badge.size,
+          height: badge.size,
+          zIndex: 10,
+          animation:
+            badge.animation === 'pulse'
+              ? 'pulse 2s infinite'
+              : badge.animation === 'float'
                 ? 'float 3s ease-in-out infinite'
                 : 'none',
-          }}
-        >
-          <img
-            src={`/images/${therapist.image}`}
-            alt={badge.key}
-            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-          />
+        }}>
+          <img src={badge.image} alt={badge.key}
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </Box>
       )}
 
-      {/* ป้าย "หยุดวันนี้" */}
       {isUnavailable && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 12,
-            left: 12,
-            bgcolor: 'rgba(0,0,0,0.5)',
-            color: '#fff',
-            px: 1.5,
-            py: 0.5,
-            borderRadius: 2,
-            fontSize: 12,
-            fontWeight: 600,
-            zIndex: 15,
-          }}
-        >
-          หยุดวันนี้
+        <Box sx={{
+          position: 'absolute', top: 12, left: 12,
+          bgcolor: 'rgba(0,0,0,0.5)', color: '#fff',
+          px: 1.5, py: 0.5, borderRadius: 2, fontSize: 12, fontWeight: 600, zIndex: 15,
+        }}>
+          Holiday
         </Box>
       )}
 
-      {/* 📦 Card */}
-      <Box
-        sx={{
-          borderRadius: 6,
-          overflow: 'hidden',
-          boxShadow: '0 10px 28px rgba(0,0,0,0.1)',
-          position: 'relative',
-          transition: '0.3s ease',
-          '&:hover': { transform: 'translateY(-4px)' },
-        }}
-      >
-        {/* 🖼 รูปพนักงาน */}
+      <Box sx={{
+        borderRadius: 6, overflow: 'hidden',
+        boxShadow: '0 10px 28px rgba(0,0,0,0.1)',
+        position: 'relative', transition: '0.3s ease',
+        '&:hover': { transform: 'translateY(-4px)' },
+      }}>
         <Box
           component="img"
-          src={`/images/${therapist.image}`}
+          src={imageSrc}
           alt={therapist.name}
           sx={{
             width: '100%',
@@ -133,30 +131,18 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist })
           onClick={() => setOpen(true)}
         />
 
-        {/* 👤 ข้อมูลด้านล่าง */}
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: 0,
-            width: '100%',
-            bgcolor: 'rgba(255,255,255,0.15)',
-            backdropFilter: 'blur(2px)',
-            color: '#222',
-            p: 1.5,
-          }}
-        >
+        <Box sx={{
+          position: 'absolute', bottom: 0, width: '100%',
+          bgcolor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(2px)', color: '#222', p: 1.5,
+        }}>
           <Stack direction="row" alignItems="center" spacing={1}>
             <Typography sx={{ fontSize: 20, fontWeight: 600, fontFamily: 'Orson' }}>
               {therapist.name}
             </Typography>
-            <Box
-              sx={{
-                width: 12,
-                height: 12,
-                borderRadius: '50%',
-                bgcolor: statusMap[therapist.available].color,
-              }}
-            />
+            <Box sx={{
+              width: 12, height: 12, borderRadius: '50%',
+              bgcolor: statusMap[therapist.available].color,
+            }} />
           </Stack>
 
           <Stack direction="row" alignItems="center" spacing={1} mt={0.5}>
@@ -179,17 +165,10 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist })
               onClick={() => navigate(`/therapists/${therapist.id}`)}
               disabled={isUnavailable}
               sx={{
-                px: 3,
-                py: 0.5,
-                fontSize: 13,
-                fontWeight: 400,
-                textTransform: 'none',
-                borderRadius: 99,
-                backgroundColor: isUnavailable ? '#ccc' : '#2b3b53',
+                px: 3, py: 0.5, fontSize: 13, fontWeight: 400, textTransform: 'none',
+                borderRadius: 99, backgroundColor: isUnavailable ? '#ccc' : '#2b3b53',
                 color: isUnavailable ? '#777' : '#fff',
-                '&:hover': {
-                  backgroundColor: isUnavailable ? '#ccc' : '#3c4c66',
-                },
+                '&:hover': { backgroundColor: isUnavailable ? '#ccc' : '#3c4c66' },
               }}
             >
               {isUnavailable ? 'Unavailable' : 'Book Now'}
@@ -206,14 +185,8 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist })
         </Box>
       </Box>
 
-      {/* 🔍 รูปแบบเต็ม */}
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs">
-        <Box
-          component="img"
-          src={`/images/${therapist.image}`}
-          alt="Full"
-          sx={{ width: '100%' }}
-        />
+        <Box component="img" src={imageSrc} alt="Full" sx={{ width: '100%' }} />
       </Dialog>
     </motion.div>
   );

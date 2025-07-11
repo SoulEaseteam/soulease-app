@@ -1,91 +1,69 @@
 import React, { useEffect, useState } from 'react';
-import { collection, doc, getDocs, updateDoc } from 'firebase/firestore';
 import {
-  Container,
-  Typography,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  Switch,
-  Paper,
   Box,
+  Typography,
+  Switch,
+  List,
+  ListItem,
+  ListItemText,
   CircularProgress,
 } from '@mui/material';
+import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/firebase';
-import { Therapist } from '@/types/therapist';
 
-const AdminHolidayTogglePage = () => {
-  const [therapists, setTherapists] = useState<Therapist[]>([]);
+const AdminTherapistHolidayPage: React.FC = () => {
+  const [therapists, setTherapists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchTherapists = async () => {
-    const snapshot = await getDocs(collection(db, 'therapists'));
-    const data = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Therapist[];
-    setTherapists(data);
-    setLoading(false);
-  };
-
-  const handleToggleHoliday = async (id: string, value: boolean) => {
-    const therapistRef = doc(db, 'therapists', id);
-    await updateDoc(therapistRef, { manualStatus: value ? 'holiday' : 'available' });
-
-    // อัปเดต local state
-    setTherapists((prev) =>
-      prev.map((t) =>
-        t.id === id ? { ...t, manualStatus: value ? 'holiday' : 'available' } : t
-      )
-    );
-  };
-
   useEffect(() => {
+    const fetchTherapists = async () => {
+      const snapshot = await getDocs(collection(db, 'therapists'));
+      const list = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setTherapists(list);
+      setLoading(false);
+    };
     fetchTherapists();
   }, []);
 
-  return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Typography variant="h5" gutterBottom fontWeight="bold">
-        🚦 จัดการสถานะวันหยุด (Holiday)
-      </Typography>
+  const toggleHoliday = async (id: string, current: string) => {
+    const newStatus = current === 'holiday' ? 'available' : 'holiday';
+    await updateDoc(doc(db, 'therapists', id), {
+      manualStatus: newStatus,
+    });
+    setTherapists((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, manualStatus: newStatus } : t))
+    );
+  };
 
-      {loading ? (
-        <Box display="flex" justifyContent="center" mt={4}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <Paper elevation={3}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>ชื่อ</TableCell>
-                <TableCell>สถานะ</TableCell>
-                <TableCell align="center">เปิดวันหยุด</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {therapists.map((t) => (
-                <TableRow key={t.id}>
-                  <TableCell>{t.name}</TableCell>
-                  <TableCell>{t.manualStatus === 'holiday' ? '🛑 หยุด' : '✅ พร้อมทำงาน'}</TableCell>
-                  <TableCell align="center">
-                    <Switch
-                      checked={t.manualStatus === 'holiday'}
-                      onChange={(e) => handleToggleHoliday(t.id, e.target.checked)}
-                      color="primary"
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Paper>
-      )}
-    </Container>
+  if (loading)
+    return (
+      <Box p={3}>
+        <CircularProgress />
+      </Box>
+    );
+
+  return (
+    <Box p={3}>
+      <Typography variant="h5" fontWeight="bold" mb={2}>
+        Therapist Holiday Management
+      </Typography>
+      <List>
+        {therapists.map((t) => (
+          <ListItem key={t.id} divider>
+            <ListItemText
+              primary={t.name}
+              secondary={`Current status: ${t.manualStatus}`}
+            />
+            <Switch
+              checked={t.manualStatus === 'holiday'}
+              onChange={() => toggleHoliday(t.id, t.manualStatus)}
+              color="error"
+            />
+          </ListItem>
+        ))}
+      </List>
+    </Box>
   );
 };
 
-export default AdminHolidayTogglePage;
+export default AdminTherapistHolidayPage;

@@ -1,13 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { BottomNavigation, BottomNavigationAction, Paper, Box } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import {
-  UserCircle,
-} from 'phosphor-react';
-import {
-  FaRegHeart,
-  FaRegFileAlt,
-} from 'react-icons/fa';
+import { UserCircle } from 'phosphor-react';
+import { FaRegHeart, FaRegFileAlt } from 'react-icons/fa';
 import { SpaOutlined } from '@mui/icons-material';
 
 const BottomNav: React.FC = () => {
@@ -17,6 +12,7 @@ const BottomNav: React.FC = () => {
   const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return; // กัน SSR
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       setShowNav(currentScrollY < lastScrollY || currentScrollY < 10);
@@ -24,10 +20,11 @@ const BottomNav: React.FC = () => {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+    // eslint-disable-next-line
   }, [lastScrollY]);
 
   const handleChange = (event: React.SyntheticEvent, newValue: string) => {
-    navigate(newValue);
+    if (newValue !== location.pathname) navigate(newValue);
   };
 
   return (
@@ -41,15 +38,17 @@ const BottomNav: React.FC = () => {
         maxWidth: 430,
         zIndex: 1200,
         fontFamily: 'Orson, sans-serif',
+        pointerEvents: 'none', // ป้องกัน scroll ทับ input
       }}
     >
       <Paper
-          elevation={10}
-          sx={{
+        elevation={10}
+        sx={{
+          pointerEvents: 'auto', // กดปุ่มได้
           visibility: typeof window !== 'undefined' ? 'visible' : 'hidden',
           position: 'relative',
           bottom: showNav ? 0 : '-100px',
-          transition: 'bottom 0.4s ease',
+          transition: 'bottom 0.4s cubic-bezier(0.4,0,0.2,1)',
           background: 'rgba(12, 18, 28, 0.75)',
           backdropFilter: 'blur(18px)',
           borderTop: '1px solid rgba(255, 255, 255, 0.08)',

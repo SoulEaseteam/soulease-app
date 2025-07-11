@@ -10,12 +10,12 @@ import {
 } from '@mui/material';
 import CustomAppBar from '../components/CustomAppBar';
 import { motion } from 'framer-motion';
+import dayjs from 'dayjs';
 
 const PaymentPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 👇 รับค่าจากหน้าก่อน
   const {
     therapistName = 'Therapist',
     serviceName = 'Service',
@@ -33,6 +33,10 @@ const PaymentPage: React.FC = () => {
     distance?: string;
     total?: number;
   };
+
+  React.useEffect(() => {
+    if (!location.state) navigate('/');
+  }, [location.state, navigate]);
 
   const handlePayment = () => {
     alert('✅ Payment Successful!');
@@ -79,7 +83,7 @@ const PaymentPage: React.FC = () => {
               🧖‍♀️ Service: {serviceName} ({serviceDuration})
             </Typography>
             <Typography fontSize={14} mb={1}>
-              📅 Date: {date} ⏰ Time: {time}
+              📅 Date: {dayjs(date).format('DD MMM YYYY')} ⏰ Time: {time}
             </Typography>
             <Typography fontSize={14} mb={2}>
               🚗 Distance: {distance} (round trip incl.)

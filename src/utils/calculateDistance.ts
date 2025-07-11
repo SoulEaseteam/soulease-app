@@ -4,16 +4,17 @@ export async function calculateDistanceKm(
   destination: { lat: number; lng: number }
 ): Promise<number> {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const fallbackDistance = 10; // ✅ ค่า default กรณี error หรือไม่สำเร็จ
 
-  // ✅ ตรวจสอบค่าที่รับเข้ามา
-  if (!origin || !destination || !apiKey) {
-    console.warn('❌ Invalid input or missing API key');
-    return 10; // fallback default
+  if (!origin?.lat || !origin?.lng || !destination?.lat || !destination?.lng || !apiKey) {
+    console.warn('❌ Invalid coordinates or missing Google Maps API key.');
+    return fallbackDistance;
   }
 
-  // mock ขณะ dev
+  // 🔁 Mock ระยะทางตอน dev
   if (import.meta.env.DEV) {
-    return 8.5; // mock ค่าใน local dev
+    console.debug('[DEV] Mock distance used between:', origin, destination);
+    return 8.5;
   }
 
   const originStr = `${origin.lat},${origin.lng}`;
@@ -28,13 +29,15 @@ export async function calculateDistanceKm(
     const distanceValue = data?.rows?.[0]?.elements?.[0]?.distance?.value;
 
     if (status === 'OK' && typeof distanceValue === 'number') {
-      return distanceValue / 1000; // ✅ meters → km
+      const km = distanceValue / 1000;
+      console.debug(`✅ Distance from Google API: ${km} km`);
+      return km;
     } else {
-      console.warn(`❌ Distance Matrix returned bad status: ${status}`);
-      return 10;
+      console.warn(`❌ Google API returned status: ${status}`);
+      return fallbackDistance;
     }
-  } catch (error) {
-    console.error('❌ Distance Matrix API error:', error);
-    return 10;
+  } catch (err) {
+    console.error('❌ Failed to fetch distance from Google API:', err);
+    return fallbackDistance;
   }
 }

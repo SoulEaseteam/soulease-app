@@ -77,7 +77,7 @@ const services: MassageService[] = [
     price: 2900,
     duration: 80,
     count: 0,
-    image: 'public/images/servid/IMG_4237.jpg',
+    image: '/images/servid/IMG_4237.jpg',  // ✅ แก้ path
     detail:
       `Crafted exclusively for the modern man, this therapy merges tailored massage techniques with mindful relaxation. Restore emotional equilibrium and physical vigor in one transformative session.`,
     benefit: [

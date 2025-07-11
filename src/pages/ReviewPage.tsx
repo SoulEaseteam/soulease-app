@@ -1,17 +1,21 @@
 // src/pages/ReviewPage.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { doc, onSnapshot, collection, addDoc, getDocs, Timestamp, query, where } from 'firebase/firestore';
+import { db } from '../firebase';
+import { Therapist } from '../types/therapist';
+import { useAuth } from '../providers/AuthProvider';
 import {
   Box, Typography, Paper, TextField, Button, Stack, Avatar, Rating
 } from '@mui/material';
-import { collection, addDoc, getDocs, Timestamp } from 'firebase/firestore';
-import { db } from '../firebase';
-import therapists from '../data/therapists';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import CustomAppBar from '../components/CustomAppBar';
-import { useAuth } from '../hooks/useAuth';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+
+dayjs.extend(relativeTime);
 
 interface Review {
   id?: string;
@@ -20,6 +24,7 @@ interface Review {
   rating: number;
   comment: string;
   createdAt: any;
+  userName?: string;
 }
 
 const ReviewPage: React.FC = () => {
@@ -29,13 +34,27 @@ const ReviewPage: React.FC = () => {
   const [rating, setRating] = useState<number | null>(5);
   const [comment, setComment] = useState('');
   const [reviews, setReviews] = useState<Review[]>([]);
-  const therapist = therapists.find((t) => t.id === id);
+  const [therapist, setTherapist] = useState<Therapist | null>(null);
+
+  // ✅ โหลด therapist แบบ realtime
+  useEffect(() => {
+    if (!id) return;
+    const unsub = onSnapshot(doc(db, 'therapists', id), (snap) => {
+      if (snap.exists()) {
+        setTherapist({ id: snap.id, ...snap.data() } as Therapist);
+      } else {
+        setTherapist(null);
+      }
+    });
+    return () => unsub();
+  }, [id]);
 
   useEffect(() => {
     const fetchReviews = async () => {
-      const snapshot = await getDocs(collection(db, 'reviews'));
+      const q = query(collection(db, 'reviews'), where('therapistId', '==', id));
+      const snapshot = await getDocs(q);
       const data: Review[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
-      setReviews(data.filter(r => r.therapistId === id));
+      setReviews(data.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds));
     };
     fetchReviews();
   }, [id]);
@@ -51,7 +70,8 @@ const ReviewPage: React.FC = () => {
       userId: user?.uid!,
       rating: rating,
       comment: comment,
-      createdAt: Timestamp.now()
+      createdAt: Timestamp.now(),
+      userName: user?.email || 'Anonymous'
     };
 
     await addDoc(collection(db, 'reviews'), newReview);
@@ -88,7 +108,7 @@ const ReviewPage: React.FC = () => {
           <Rating
             name="rating"
             value={rating}
-            onChange={(e, newValue) => setRating(newValue)}
+            onChange={(_e: any, newValue: React.SetStateAction<number | null>) => setRating(newValue)}
             icon={<FavoriteIcon fontSize="inherit" color="error" />}
             emptyIcon={<FavoriteBorderIcon fontSize="inherit" />}
             size="large"
@@ -112,7 +132,6 @@ const ReviewPage: React.FC = () => {
           </Button>
         </Paper>
 
-        {/* ✅ Show existing reviews */}
         <Box mt={4}>
           <Typography fontWeight="bold" fontSize={16} mb={2}>⭐ All Reviews</Typography>
           {reviews.length === 0 ? (
@@ -121,11 +140,12 @@ const ReviewPage: React.FC = () => {
             reviews.map((r) => (
               <Paper key={r.id} sx={{ mb: 2, p: 2, borderRadius: 3, background: 'rgba(255,255,255,0.8)' }}>
                 <Stack direction="row" alignItems="center" mb={1}>
+                  <Typography fontWeight="bold" fontSize={14} mr={1}>{r.userName || 'User'}</Typography>
                   <Rating value={r.rating} readOnly size="small" />
                 </Stack>
                 <Typography fontSize={14}>{r.comment}</Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {r.createdAt?.toDate?.().toLocaleDateString?.() || ''}
+                  {dayjs(r.createdAt?.toDate?.()).fromNow()}
                 </Typography>
               </Paper>
             ))

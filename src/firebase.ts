@@ -1,19 +1,19 @@
-// src/firebase.ts
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage'; // ✅ เพิ่มบรรทัดนี้
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  apiKey: "AIzaSyCQ1gEIHBQYJJ5rGVMBbnsn1dw-P0siuok",
+  authDomain: "soulease-spa.firebaseapp.com",
+  projectId: "soulease-spa",
+  storageBucket: "soulease-spa.appspot.com",
+  messagingSenderId: "394341744641",
+  appId: "1:93414744641:web:9a846196f707de80208000",
 };
 
 const app = initializeApp(firebaseConfig);
-
-export const db = getFirestore(app);
 export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const storage = getStorage(app); // ✅ เพิ่มบรรทัดนี้
+export default app;

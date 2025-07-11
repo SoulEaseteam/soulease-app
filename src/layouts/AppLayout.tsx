@@ -5,7 +5,7 @@ import BottomNav from '../components/BottomNav';
 import TherapistBottomNav from '../components/TherapistBottomNav';
 import AdminFloatingChat from '../components/AdminFloatingChat';
 import IOSFloatingTopBar from '../components/FloatingTopBar';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../providers/AuthProvider';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -20,15 +20,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, title }) => {
   const noBottomNavPaths = ['/login', '/register', '/profile'];
   const noAdminChatPaths = ['/login', '/register', '/profile'];
 
-  const shouldShowBackButton = !noBackButtonPaths.some((path) =>
-    location.pathname.startsWith(path)
-  );
-  const shouldShowBottomNav = !noBottomNavPaths.some((path) =>
-    location.pathname.startsWith(path)
-  );
-  const shouldShowAdminChat = !noAdminChatPaths.some((path) =>
-    location.pathname.startsWith(path)
-  );
+  const shouldShowBackButton = !noBackButtonPaths.includes(location.pathname);
+  const shouldShowBottomNav = !noBottomNavPaths.includes(location.pathname);
+  const shouldShowAdminChat = !noAdminChatPaths.includes(location.pathname);
 
   const therapistPaths = [
     '/therapist-profile',

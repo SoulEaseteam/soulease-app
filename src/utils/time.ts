@@ -1,39 +1,48 @@
-// src/utils/time.ts
+import dayjs from 'dayjs';
 
+/**
+ * Check if the current time is within a given time range.
+ * Supports overnight range (e.g. 22:00 to 03:00)
+ */
 export function isNowInRange(startTime: string, endTime: string): boolean {
-  const now = new Date();
+  const now = dayjs();
   const [startHour, startMinute] = startTime.split(':').map(Number);
   const [endHour, endMinute] = endTime.split(':').map(Number);
 
-  const start = new Date(now);
-  start.setHours(startHour, startMinute, 0, 0);
+  const start = now.set('hour', startHour).set('minute', startMinute).set('second', 0);
+  let end = now.set('hour', endHour).set('minute', endMinute).set('second', 0);
 
-  const end = new Date(now);
-  end.setHours(endHour, endMinute, 0, 0);
+  // If end time is before start time (e.g., 22:00 - 03:00), move end to next day
+  if (end.isBefore(start)) {
+    end = end.add(1, 'day');
+  }
 
-  return now >= start && now <= end;
+  return now.isAfter(start) && now.isBefore(end);
 }
 
+/**
+ * Calculate the next available time for service
+ */
 export function calculateNextAvailable(
   duration: number,
   startTime: string,
   endTime: string
 ): string {
-  const now = new Date();
+  const now = dayjs();
   const [startHour, startMinute] = startTime.split(':').map(Number);
   const [endHour, endMinute] = endTime.split(':').map(Number);
 
-  const start = new Date(now);
-  start.setHours(startHour, startMinute, 0, 0);
+  const start = now.set('hour', startHour).set('minute', startMinute).set('second', 0);
+  let end = now.set('hour', endHour).set('minute', endMinute).set('second', 0);
 
-  const end = new Date(now);
-  end.setHours(endHour, endMinute, 0, 0);
+  if (end.isBefore(start)) {
+    end = end.add(1, 'day');
+  }
 
-  if (now < start) return startTime;
-  if (now > end) return 'N/A';
+  if (now.isBefore(start)) return start.format('HH:mm');
 
-  const next = new Date(now.getTime() + duration * 60000);
-  if (next > end) return 'N/A';
+  const next = now.add(duration, 'minute');
+  if (next.isAfter(end)) return 'N/A';
 
-  return `${next.getHours().toString().padStart(2, '0')}:${next.getMinutes().toString().padStart(2, '0')}`;
+  return next.format('HH:mm');
 }
