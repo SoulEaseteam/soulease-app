@@ -1,6 +1,6 @@
 import { Therapist } from '@/types/therapist';
 
-const therapistData: Omit<Therapist, 'badge'>[] = [
+const therapists: Omit<Therapist, 'badge'>[] = [
   {
     id: 'erYKvEtJSRoC2eWqn89U',
     name: 'Yuri',
@@ -39,7 +39,6 @@ const therapistData: Omit<Therapist, 'badge'>[] = [
       vaccinated: 'Yes',
       smoker: 'No',
       language: 'Thai / English',
-
     },
     available: 'available',
   },
@@ -79,7 +78,6 @@ const therapistData: Omit<Therapist, 'badge'>[] = [
       vaccinated: 'Yes',
       smoker: 'No',
       language: 'Thai / English',
-
     },
     available: 'available',
   },
@@ -117,7 +115,6 @@ const therapistData: Omit<Therapist, 'badge'>[] = [
       vaccinated: 'Yes',
       smoker: 'No',
       language: 'Thai / English',
-
     },
     available: 'available',
   },
@@ -135,7 +132,7 @@ const therapistData: Omit<Therapist, 'badge'>[] = [
     startTime: '06:00',
     endTime: '00:00',
     specialty: '',
-    gallery: ['/images', '/images', '/images', '/images', '/images', '/images'],
+    gallery: [],
     features: {
       age: '28',
       gender: 'Female',
@@ -149,7 +146,6 @@ const therapistData: Omit<Therapist, 'badge'>[] = [
       vaccinated: 'Yes',
       smoker: 'No',
       language: 'Thai / English',
-
     },
     available: 'available',
   },
@@ -167,7 +163,7 @@ const therapistData: Omit<Therapist, 'badge'>[] = [
     startTime: '20:00',
     endTime: '03:00',
     specialty: '',
-    gallery: ['/images', '/images', '/images', '/images', '/images', '/images'],
+    gallery: [],
     features: {
       age: '28',
       gender: 'Female',
@@ -181,7 +177,6 @@ const therapistData: Omit<Therapist, 'badge'>[] = [
       vaccinated: 'Yes',
       smoker: 'No',
       language: 'Thai / English',
-
     },
     available: 'available',
   },
@@ -199,12 +194,7 @@ const therapistData: Omit<Therapist, 'badge'>[] = [
     startTime: '21:00',
     endTime: '03:00',
     specialty: '',
-    gallery: ['/images',
-     '/images',
-      '/images',
-       '/images',
-        '/images',
-         '/images'],
+    gallery: [],
     features: {
       age: '28',
       gender: 'Female',
@@ -218,11 +208,9 @@ const therapistData: Omit<Therapist, 'badge'>[] = [
       vaccinated: 'Yes',
       smoker: 'No',
       language: 'Thai / English',
-
-  },
-  available: 'available',
     },
-  // เพิ่มพนักงานอื่น ๆ ตามตัวอย่างนี้ได้เลย
+    available: 'available',
+  },
 ];
 
 export default therapists;

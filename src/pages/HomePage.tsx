@@ -1,22 +1,35 @@
 import React, { useState } from 'react';
 import { Box, Typography } from '@mui/material';
-import therapists from '../data/therapists';
+import therapistsRaw from '../data/therapists';
 import TherapistProfileCard from '../components/TherapistProfileCard';
 import SearchBar from '../components/SearchBar';
 import NavBar from '../components/NavBar';
 import '@fontsource/chonburi';
-import '@fontsource/raleway'; // ✅ ตัวหนังสืออ่านง่าย
+import '@fontsource/raleway';
+import { Therapist } from '../types/therapist';
+
+// 🔧 เติม badge กลับเข้า Therapist เพื่อให้เป็น Therapist สมบูรณ์
+const therapists: Therapist[] = therapistsRaw.map((t) => ({
+  ...t,
+  badge: undefined, // หรือเพิ่ม logic กำหนด badge จริงได้ตามต้องการ
+}));
 
 const HomePage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredTherapists = searchTerm.trim()
+  const filteredTherapists: Therapist[] = searchTerm.trim()
     ? therapists
-        .filter((therapist) =>
+        .filter((therapist: Therapist) =>
           therapist.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
         )
-        .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity))
-    : therapists.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
+        .sort(
+          (a: Therapist, b: Therapist) =>
+            (a.distance ?? Infinity) - (b.distance ?? Infinity)
+        )
+    : therapists.sort(
+        (a: Therapist, b: Therapist) =>
+          (a.distance ?? Infinity) - (b.distance ?? Infinity)
+      );
 
   return (
     <Box
@@ -61,20 +74,18 @@ const HomePage: React.FC = () => {
           BROWSE ALL PROFILES
         </Typography>
 
-     <Box
-  sx={{
-    display: 'grid',
-    gridTemplateColumns: {
-      xs: 'repeat(2, 1fr)', // ✅ 2 คอลัมน์เสมอบนมือถือ
-    },
-    gap: 0,
-    justifyItems: 'center',
-  }}
->
-  {filteredTherapists.map((therapist) => (
-    <TherapistProfileCard key={therapist.id} therapist={therapist} />
-  ))}
-</Box>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: 'repeat(2, 1fr)' },
+            gap: 0,
+            justifyItems: 'center',
+          }}
+        >
+          {filteredTherapists.map((therapist: Therapist) => (
+            <TherapistProfileCard key={therapist.id} therapist={therapist} />
+          ))}
+        </Box>
       </Box>
     </Box>
   );

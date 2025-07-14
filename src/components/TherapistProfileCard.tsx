@@ -52,12 +52,11 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist })
     resting: { label: 'Resting', color: '#9E9E9E' },
   };
 
-  // ✅ รองรับทั้ง /yuri/yuri.jpeg, yuri.jpeg, images/yuri.jpeg, และ URL
   const resolvedImage = therapist.image.startsWith('/')
     ? therapist.image
     : therapist.image.startsWith('http')
     ? therapist.image
-    : `/images/${therapist.image.replace(/^\/?images\//, '')}`;
+    : `/images/${therapist.image.replace(/^\/??images\//, '')}`;
 
   return (
     <motion.div
@@ -217,7 +216,7 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist })
             </IconButton>
           </Stack>
 
-          {therapist.distance !== undefined && (
+          {typeof therapist.distance === 'number' && !isNaN(therapist.distance) && (
             <Typography
               fontSize={12}
               color="#666"
