@@ -1,24 +1,26 @@
+// ✅ Updated to auto-scroll to #features if hash present
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Typography, Avatar, Tabs, Tab, Button, Divider, ImageList, ImageListItem, Dialog
+  Box, Typography, Avatar, Tabs, Tab, Button, Divider, ImageList, ImageListItem, Dialog,
 } from '@mui/material';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import therapists from '../data/therapists';
 import services from '../data/services';
 import BackButton from '../components/BackButton';
 import BottomNav from '../components/BottomNav';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import { Share as ShareIcon, Face, Spa } from '@mui/icons-material';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/firebase';
-import { Therapist } from '@/types/therapist';
-import { useAuth } from '@/providers/AuthProvider';
+import { Share as ShareIcon } from '@mui/icons-material';
+
+
 import {
-  FaUser, FaVenusMars, FaFlag, FaRulerVertical, FaTshirt, FaWeight, FaEye, FaShoePrints, FaCut,
-  FaSmoking, FaSyringe, FaHeartbeat, FaMagic, FaSprayCan, FaAtom, FaFireAlt, FaLeaf, FaHeart, FaSpa, FaChessQueen,
-  FaHands, FaPaintBrush, FaGem, FaPassport, FaAirFreshener, FaHotjar, FaRuler, FaPenFancy
+  FaUser, FaVenusMars, FaFlag, FaRulerVertical, FaWeight, FaPassport,
+  FaHotjar, FaAirFreshener, FaLeaf, FaChessQueen, FaMagic, FaSpa,
+  FaPenFancy, FaSmoking, FaSyringe, FaHeartbeat,
 } from 'react-icons/fa';
+
+type SectionType = 'services' | 'features' | 'profile';
 
 const renderFeature = (icon: React.ReactNode, label: string, value?: string) => {
   if (!value) return null;
@@ -46,82 +48,119 @@ const handleShare = async () => {
 };
 
 const TherapistDetailPage: React.FC = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const defaultSection = (queryParams.get('section') as 'services' | 'features' | 'profile') || 'services';
+  const defaultSection = (queryParams.get('section') as SectionType) || 'services';
 
-  // 🟢 โหลด therapist จาก Firestore ตาม id (Realtime)
-  const [therapist, setTherapist] = useState<Therapist | null>(null);
-  const [section, setSection] = useState<'services' | 'features' | 'profile'>(defaultSection);
+  const therapist = therapists.find((t) => t.id === id);
+
+  const [section, setSection] = useState<SectionType>(defaultSection);
   const [openImage, setOpenImage] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  const { user } = useAuth();
+  useEffect(() => {
+    if (!therapist) return;
+    const favs = localStorage.getItem('favoriteTherapists');
+    if (favs) {
+      const favArray = JSON.parse(favs) as string[];
+      setIsFavorite(favArray.includes(therapist.id));
+    }
+  }, [therapist]);
 
   useEffect(() => {
-    if (!id) return;
-    const unsub = onSnapshot(doc(db, 'therapists', id), (snap) => {
-      if (snap.exists()) {
-        setTherapist({ id: snap.id, ...snap.data() } as Therapist);
-      } else {
-        setTherapist(null);
-      }
-    });
-    return () => unsub();
-  }, [id]);
+    if (location.hash === '#features') {
+      setSection('features');
+      setTimeout(() => {
+        const element = document.getElementById('features');
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 200);
+    }
+  }, [location.hash]);
 
-  // 🔴 ตัวอย่าง Favorite (ต้องใช้ฟีเจอร์จริงกรณีเชื่อม Firebase Users)
-  // useEffect(() => {
-  //   if (!user?.uid || !id) return;
-  //   const favRef = doc(db, `users/${user.uid}/favorites`, id);
-  //   const unsubscribe = onSnapshot(favRef, (docSnapshot) => {
-  //     setIsFavorite(docSnapshot.exists());
-  //   });
-  //   return () => unsubscribe();
-  // }, [user?.uid, id]);
+  const toggleFavorite = () => {
+    if (!therapist) return;
+    const favs = localStorage.getItem('favoriteTherapists');
+    let favArray: string[] = favs ? JSON.parse(favs) : [];
+    if (isFavorite) {
+      favArray = favArray.filter((id) => id !== therapist.id);
+    } else {
+      favArray.push(therapist.id);
+    }
+    localStorage.setItem('favoriteTherapists', JSON.stringify(favArray));
+    setIsFavorite(!isFavorite);
+  };
 
-  // ปุ่ม Favorite (demo toggle local state)
-  const toggleFavorite = () => setIsFavorite((f) => !f);
+  const avatarSrc = therapist?.image
+    ? (therapist.image.startsWith('http') || therapist.image.startsWith('/')
+      ? therapist.image
+      : `/images/${therapist.image}`)
+    : '/images/default-avatar.png';
 
-  if (!therapist) return <Box p={2}>No therapist found</Box>;
+  const galleryImages = therapist?.gallery && therapist.gallery.length > 0
+  ? therapist.gallery.map((img: string) => {
+      if (img.startsWith('http') || img.startsWith('/')) return img;
+      return `/images/yuri/${img}`;
+    })
+  : Array.from({ length: 6 }).map((_, index) => `/images/yuri/gallery${index + 1}.jpg`);
+  if (!therapist) {
+    return (
+      <Box p={2}>
+        <Typography variant="h6" color="error">Therapist not found.</Typography>
+      </Box>
+    );
+  }
 
-  const features = therapist.features;
-  const galleryImages =
-    therapist.gallery && therapist.gallery.length > 0
-      ? therapist.gallery
-      : Array.from({ length: 6 }).map((_, index) => `/images/gallery/${id}_${index + 1}.jpg`);
+  const isUnavailable = therapist.available === 'resting';
 
   return (
-    <Box sx={{
-      background: 'rgba(255, 255, 255, 0.6)',
-      color: '#2b3b53',
-      minHeight: '100vh',
-      display: 'flex',
-      justifyContent: 'center'
-    }}>
+    <Box
+      sx={{
+        background: 'rgba(255, 255, 255, 0.6)',
+        color: '#2b3b53',
+        minHeight: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+      }}
+    >
       <Box sx={{ width: '100%', maxWidth: 430, pb: 10, fontFamily: 'Orson, sans-serif' }}>
         <BackButton />
 
         {/* Header */}
-        <Box sx={{
-          width: '100%', height: 180,
-          background: 'linear-gradient(to right, #2e3a4f, #0f1113)',
-          position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}>
-          <Typography variant="h4" sx={{
-            letterSpacing: 6, fontWeight: 700, color: '#7b8b99',
-            textShadow: '0 1px 3px rgba(0,0,0,0.1)'
-          }}>
+        <Box
+          sx={{
+            width: '100%',
+            height: 180,
+            background: 'linear-gradient(to right, #2e3a4f, #0f1113)',
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Typography variant="h4" sx={{ letterSpacing: 6, fontWeight: 700, color: '#7b8b99', textShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
             FEATURED PROFILES
           </Typography>
-          <Button onClick={handleShare} sx={{
-            position: 'absolute', top: 16, right: 16, minWidth: 0, width: 36, height: 36,
-            borderRadius: '50%', backgroundColor: '#fff', color: '#333',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-            '&:hover': { backgroundColor: '#eee' }
-          }}>
+
+          <Button
+            onClick={handleShare}
+            sx={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              minWidth: 0,
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              backgroundColor: '#fff',
+              color: '#333',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+              '&:hover': { backgroundColor: '#eee' },
+            }}
+          >
             <ShareIcon />
           </Button>
         </Box>
@@ -129,55 +168,64 @@ const TherapistDetailPage: React.FC = () => {
         {/* Avatar & Favorite */}
         <Box sx={{ px: 2, mt: -6, position: 'relative', display: 'inline-block' }}>
           <Avatar
-            src={`/images/${therapist.image}`}
+            src={avatarSrc}
             sx={{
-              width: 120, height: 120,
-              border: '4px solid rgba(255,255,255,0.4)'
+              width: 120,
+              height: 120,
+              border: '4px solid rgba(255,255,255,0.4)',
             }}
             imgProps={{ style: { objectFit: 'cover', objectPosition: 'center top' } }}
           />
           <Button
-            onClick={toggleFavorite}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFavorite();
+            }}
             sx={{
-              position: 'absolute', top: 85, right: 13, minWidth: 0, width: 38, height: 38,
-              borderRadius: '50%', backgroundColor: isFavorite ? '#ff6b81' : 'rgba(255,255,255,0.8)',
-              color: isFavorite ? '#fff' : '#888', boxShadow: '0 2px 6px rgba(0,0,0,0.2)', zIndex: 10,
-              '&:hover': { backgroundColor: isFavorite ? '#ff4757' : '#eee' }
-            }}>
+              position: 'absolute',
+              top: 85,
+              right: 13,
+              minWidth: 0,
+              width: 38,
+              height: 38,
+              borderRadius: '50%',
+              backgroundColor: isFavorite ? '#ff6b81' : 'rgba(255,255,255,0.8)',
+              color: isFavorite ? '#fff' : '#888',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+              zIndex: 10,
+              '&:hover': { backgroundColor: isFavorite ? '#ff4757' : '#eee' },
+            }}
+            aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          >
             {isFavorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
           </Button>
         </Box>
 
-        {/* Therapist Info */}
+        {/* Name, Rating, Working Hours */}
         <Box sx={{ px: 2, mt: 1 }}>
-          <Typography variant="h5" sx={{
-            fontWeight: 'bold', fontSize: 30, color: '#2b3b53', letterSpacing: 1, mt: 1
-          }}>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', fontSize: 30, color: '#2b3b53', letterSpacing: 1, mt: 1 }}>
             {therapist.name}
-            <Box component="span" sx={{
-              display: 'inline-flex', alignItems: 'center', fontSize: 16,
-              fontWeight: 500, color: '#596a7c', ml: 1, cursor: 'pointer',
-              '&:hover': { textDecoration: 'underline' }
-            }} onClick={() => navigate(`/review/all/${therapist.id}`)}>
+            <Box
+              component="span"
+              sx={{ display: 'inline-flex', alignItems: 'center', fontSize: 16, fontWeight: 500, color: '#596a7c', ml: 1, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+              onClick={() => navigate(`/review/all/${therapist.id}`)}
+            >
               <img src="/images/icon/star.png" alt="star" style={{ width: 20, height: 20, marginRight: 6 }} />
               {therapist.rating} / review {therapist.reviews}+
             </Box>
           </Typography>
           <Typography variant="body2" sx={{ color: '#596a7c' }}>
-            WorkingHours {therapist.startTime} - {therapist.endTime}
+            Working Hours: {therapist.startTime} - {therapist.endTime}
           </Typography>
         </Box>
 
         {/* Tabs */}
-        <Box sx={{
-          mt: 2, px: 2, py: 1, borderRadius: 4,
-          background: 'linear-gradient(to right, #2e3a4f, #0f1113)',
-          backdropFilter: 'blur(12px)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
-        }}>
+        <Box
+          sx={{ mt: 2, px: 2, py: 1, borderRadius: 4, background: 'linear-gradient(to right, #2e3a4f, #0f1113)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
+        >
           <Tabs
             value={section}
-            onChange={(_, value) => setSection(value)}
+            onChange={(_, value) => setSection(value as SectionType)}
             textColor="inherit"
             indicatorColor="primary"
             variant="fullWidth"
@@ -185,55 +233,69 @@ const TherapistDetailPage: React.FC = () => {
               '& .MuiTab-root': { color: '#cccccc', fontWeight: 'bold' },
               '& .Mui-selected': { color: '#ffffff', background: 'rgba(255,255,255,0.1)', borderRadius: 2 },
               '& .MuiTabs-indicator': { backgroundColor: '#ffffff', height: 3, borderRadius: 2 },
-            }}>
+            }}
+          >
             <Tab label="Services" value="services" />
             <Tab label="Features" value="features" />
             <Tab label="Profile" value="profile" />
           </Tabs>
         </Box>
 
-        {/* Sections */}
+        {/* Section content */}
         {section === 'services' && <ServicesSection therapist={therapist} navigate={navigate} />}
-        {section === 'features' && features && (
-          <Box sx={{
-            mt: 4, mx: 2, borderRadius: 4, background: 'rgba(255, 255, 255, 0.5)',
-            backdropFilter: 'blur(14px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-            color: '#1c1c1c', maxHeight: '65vh', overflowY: 'auto', p: 3
-          }}>
+        {section === 'features' && therapist.features && (
+          <Box
+            sx={{ mt: 4, mx: 2, borderRadius: 4, background: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(14px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', color: '#1c1c1c', maxHeight: '65vh', overflowY: 'auto', p: 3 }}
+          >
             <Typography fontWeight="bold" fontSize={16} mb={1}>General Information</Typography>
-            {renderFeature(<Face style={{ color: '#2b3b53' }} />, 'Age', features.age)}
-            {renderFeature(<FaRuler style={{ color: '#2b3b53' }} />, 'Height', features.height)}
-            {renderFeature(<FaWeight style={{ color: '#2b3b53' }} />, 'Weight', features.weight)}
-            {renderFeature(<FaVenusMars style={{ color: '#2b3b53' }} />, 'Gender', features.gender)}
-            {renderFeature(<FaFlag style={{ color: '#2b3b53' }} />, 'Ethnicity', features.ethnicity)}
-            {renderFeature(<FaPassport style={{ color: '#2b3b53' }} />, 'Language', features.language)}
+            {renderFeature(<FaUser color="#2b3b53" />, 'Age', therapist.features.age)}
+            {renderFeature(<FaRulerVertical color="#2b3b53" />, 'Height', therapist.features.height)}
+            {renderFeature(<FaWeight color="#2b3b53" />, 'Weight', therapist.features.weight)}
+            {renderFeature(<FaVenusMars color="#2b3b53" />, 'Gender', therapist.features.gender)}
+            {renderFeature(<FaFlag color="#2b3b53" />, 'Ethnicity', therapist.features.ethnicity)}
+            {renderFeature(<FaPassport color="#2b3b53" />, 'Language', therapist.features.language)}
+
             <Divider sx={{ my: 2, bgcolor: 'rgba(255,255,255,0.2)' }} />
+
             <Typography fontWeight="bold" fontSize={16} mb={1}>Features</Typography>
-            {renderFeature(<FaHotjar color="#2b3b53" />, 'Body Type', features.bodyType)}
-            {renderFeature(<FaAirFreshener color="#2b3b53" />, 'Bust Size', features.bustSize)}
-            {renderFeature(<FaLeaf color="#2b3b53" />, 'Bust', features.bust)}
-            {renderFeature(<FaChessQueen color="#2b3b53" />, 'Hair Color', features.hairColor)}
-            {renderFeature(<FaMagic color="#2b3b53" />, 'Skin Tone', features.skintone)}
-            {renderFeature(<FaSpa color="#2b3b53" />, 'Skill', features.skill)}
+
+            {renderFeature(<FaHotjar color="#2b3b53" />, 'Body Type', therapist.features.bodyType)}
+            {renderFeature(<FaAirFreshener color="#2b3b53" />, 'Bust Size', therapist.features.bustSize)}
+            {renderFeature(<FaLeaf color="#2b3b53" />, 'Bust', therapist.features.bustSize)}
+            {renderFeature(<FaChessQueen color="#2b3b53" />, 'Hair Color', therapist.features.hairColor)}
+            {renderFeature(<FaMagic color="#2b3b53" />, 'Skin Tone', therapist.features.skintone)}
+
             <Divider sx={{ my: 2, bgcolor: 'rgba(255,255,255,0.2)' }} />
+
             <Typography fontWeight="bold" fontSize={16} mb={1}>Behavior & Health</Typography>
-            {renderFeature(<FaPenFancy color="#2b3b53" />, 'Tattoos', features.tattoos)}
-            {renderFeature(<FaSmoking color="#2b3b53" />, 'Smoker', features.smoker)}
-            {renderFeature(<FaSyringe color="#2b3b53" />, 'Vaccinated', features.vaccinated)}
-            {renderFeature(<FaHeartbeat color="#2b3b53" />, 'Personality', features.personality)}
+
+            {renderFeature(<FaSmoking color="#2b3b53" />, 'Smoker', therapist.features.smoker)}
+            {renderFeature(<FaSyringe color="#2b3b53" />, 'Vaccinated', therapist.features.vaccinated)}
           </Box>
         )}
+
         {section === 'profile' && (
           <GallerySection images={galleryImages} setOpenImage={setOpenImage} openImage={openImage} />
         )}
 
         <BottomNav />
       </Box>
+
+      {/* Gallery Image Dialog */}
+      <Dialog open={Boolean(openImage)} onClose={() => setOpenImage(null)} maxWidth="md">
+        <img src={openImage ?? undefined} alt="Preview" style={{ width: '100%' }} />
+      </Dialog>
     </Box>
   );
 };
 
-const ServicesSection = ({ therapist, navigate }: any) => (
+const ServicesSection = ({
+  therapist,
+  navigate,
+}: {
+  therapist: typeof therapists[number];
+  navigate: ReturnType<typeof useNavigate>;
+}) => (
   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, mt: 4, px: 2 }}>
     {services.map((svc, index) => (
       <motion.div
@@ -292,7 +354,9 @@ const ServicesSection = ({ therapist, navigate }: any) => (
                 borderTopRightRadius: 16,
               }}
             >
-              <Typography fontSize={16} fontWeight="bold" fontFamily="Playfair Display">{svc.name}</Typography>
+              <Typography fontSize={16} fontWeight="bold" fontFamily="Playfair Display">
+                {svc.name}
+              </Typography>
               <Typography
                 fontSize={13}
                 sx={{
@@ -311,8 +375,12 @@ const ServicesSection = ({ therapist, navigate }: any) => (
                 {svc.desc}
               </Typography>
               <Typography>
-                <Box component="span" sx={{ fontSize: 18, fontWeight: 'bold', color: '#7c4d00' }}>฿{svc.price}</Box>
-                <Box component="span" sx={{ fontSize: 13, fontWeight: 400, color: '#7c4d00', ml: 0.5 }}>• ⏱ {svc.duration}</Box>
+                <Box component="span" sx={{ fontSize: 18, fontWeight: 'bold', color: '#7c4d00' }}>
+                  ฿{svc.price}
+                </Box>
+                <Box component="span" sx={{ fontSize: 13, fontWeight: 400, color: '#7c4d00', ml: 0.5 }}>
+                  • ⏱ {svc.duration}
+                </Box>
               </Typography>
               <Button
                 onClick={(e) => {
@@ -354,18 +422,28 @@ const ServicesSection = ({ therapist, navigate }: any) => (
   </Box>
 );
 
-const GallerySection = ({ images, setOpenImage, openImage }: any) => (
+const GallerySection = ({
+  images,
+  setOpenImage,
+  openImage,
+}: {
+  images: string[];
+  setOpenImage: React.Dispatch<React.SetStateAction<string | null>>;
+  openImage: string | null;
+}) => (
   <Box sx={{ p: 2 }}>
-    <Typography fontWeight="bold" fontSize={16} mb={2}>Gallery</Typography>
+    <Typography fontWeight="bold" fontSize={16} mb={2}>
+      Gallery
+    </Typography>
     <ImageList cols={3} gap={8}>
-      {images.map((img: string, index: number) => (
+      {images.map((img, index) => (
         <ImageListItem key={index} onClick={() => setOpenImage(img)}>
           <img src={img} alt={`Gallery ${index}`} style={{ borderRadius: 8 }} />
         </ImageListItem>
       ))}
     </ImageList>
     <Dialog open={Boolean(openImage)} onClose={() => setOpenImage(null)} maxWidth="md">
-      <img src={openImage!} alt="Preview" style={{ width: '100%' }} />
+      <img src={openImage ?? undefined} alt="Preview" style={{ width: '100%' }} />
     </Dialog>
   </Box>
 );

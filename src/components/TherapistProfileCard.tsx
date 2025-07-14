@@ -1,193 +1,279 @@
-import React, { useEffect, useState } from 'react';
-import { Box, Typography, Button, Stack, Dialog, IconButton } from '@mui/material';
+import React, { useState } from 'react';
+import {
+  Box, Typography, Button, Stack, Paper, Dialog, IconButton
+} from '@mui/material';
+import RoomIcon from '@mui/icons-material/Room';
+import CloseIcon from '@mui/icons-material/Close';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useNavigate } from 'react-router-dom';
+import { ChatCircleDots } from 'phosphor-react';
 import { motion } from 'framer-motion';
-import { Therapist } from '@/types/therapist';
-import { getTherapistBadge } from '@/utils/therapistBadge';
-import { db } from '@/firebase';
-import { doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
-import { useAuth } from '@/providers/AuthProvider';
 
-interface TherapistProfileCardProps {
-  therapistId: string;
+interface Therapist {
+  id: string;
+  name: string;
+  image: string;
+  rating: number;
+  reviews: number;
+  distance?: number;
+  specialty: string;
+  experience: string;
+  available: 'available' | 'bookable' | 'resting';
+  hot?: boolean;
+  new?: boolean;
+  topRated?: boolean;
+  serviceCount?: string;
+  nextAvailableTime?: string;
+  badge?: 'VIP' | 'Hot' | 'New';
 }
 
-const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({ therapistId }) => {
+const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [therapist, setTherapist] = useState<Therapist | null>(null);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [open, setOpen] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(() => {
+    const stored = localStorage.getItem('favoriteTherapists');
+    return stored ? JSON.parse(stored).includes(therapist.id) : false;
+  });
 
-  useEffect(() => {
-    if (!therapistId) return;
-    const tRef = doc(db, 'therapists', therapistId);
-    const unsubscribe = onSnapshot(tRef, (docSnapshot) => {
-      if (docSnapshot.exists()) {
-        setTherapist({ id: docSnapshot.id, ...docSnapshot.data() } as Therapist);
-      } else {
-        setTherapist(null);
-      }
-    });
-    return () => unsubscribe();
-  }, [therapistId]);
-
-  useEffect(() => {
-    if (!user?.uid || !therapistId) return;
-    const favRef = doc(db, `users/${user.uid}/favorites`, therapistId);
-    const unsubscribe = onSnapshot(favRef, (docSnapshot) => {
-      setIsFavorite(docSnapshot.exists());
-    });
-    return () => unsubscribe();
-  }, [user?.uid, therapistId]);
-
-  const toggleFavorite = async () => {
-    if (!user?.uid || !therapist) return;
-    const favRef = doc(db, `users/${user.uid}/favorites`, therapist.id);
-    try {
-      if (isFavorite) {
-        await deleteDoc(favRef);
-      } else {
-        await setDoc(favRef, {
-          therapistId: therapist.id,
-          name: therapist.name,
-          image: therapist.image,
-          addedAt: new Date(),
-        });
-      }
-    } catch (error) {
-      console.error('Failed to update favorite:', error);
-    }
+  const toggleFavorite = () => {
+    const current = localStorage.getItem('favoriteTherapists');
+    const currentFavs: string[] = current ? JSON.parse(current) : [];
+    const updated = isFavorite
+      ? currentFavs.filter(id => id !== therapist.id)
+      : [...currentFavs, therapist.id];
+    localStorage.setItem('favoriteTherapists', JSON.stringify(updated));
+    setIsFavorite(!isFavorite);
   };
-
-  if (!therapist) {
-    return <Box sx={{ textAlign: 'center', py: 4 }}>ไม่พบข้อมูลพนักงาน</Box>;
-  }
 
   const statusMap = {
-    available: { label: 'Available', color: '#3CB371' },
-    bookable: { label: 'Bookable', color: '#FFA726' },
-    resting: { label: 'Resting', color: '#BDBDBD' },
-    holiday: { label: 'Holiday', color: '#607D8B' },
+    available: { label: 'Available', color: '#36A681' },
+    bookable: { label: 'Bookable', color: '#DB661C' },
+    resting: { label: 'Resting', color: '#9E9E9E' },
   };
 
-  const badge = getTherapistBadge(therapist);
-  const isUnavailable = ['resting', 'holiday'].includes(therapist.available);
-  const imageSrc = therapist.image.startsWith('/') ? therapist.image : `/images/${therapist.image}`;
+  // ✅ รองรับทั้ง /yuri/yuri.jpeg, yuri.jpeg, images/yuri.jpeg, และ URL
+  const resolvedImage = therapist.image.startsWith('/')
+    ? therapist.image
+    : therapist.image.startsWith('http')
+    ? therapist.image
+    : `/images/${therapist.image.replace(/^\/?images\//, '')}`;
 
   return (
-    <motion.div style={{ position: 'relative', width: '100%' }}>
-      {badge && (
-        <Box sx={{
-          position: 'absolute',
-          top: badge.position.top,
-          right: badge.position.right,
-          width: badge.size,
-          height: badge.size,
-          zIndex: 10,
-          animation:
-            badge.animation === 'pulse'
-              ? 'pulse 2s infinite'
-              : badge.animation === 'float'
-                ? 'float 3s ease-in-out infinite'
-                : 'none',
-        }}>
-          <img src={badge.image} alt={badge.key}
-            style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-        </Box>
-      )}
-
-      {isUnavailable && (
-        <Box sx={{
-          position: 'absolute', top: 12, left: 12,
-          bgcolor: 'rgba(0,0,0,0.5)', color: '#fff',
-          px: 1.5, py: 0.5, borderRadius: 2, fontSize: 12, fontWeight: 600, zIndex: 15,
-        }}>
-          Holiday
-        </Box>
-      )}
-
-      <Box sx={{
-        borderRadius: 6, overflow: 'hidden',
-        boxShadow: '0 10px 28px rgba(0,0,0,0.1)',
-        position: 'relative', transition: '0.3s ease',
-        '&:hover': { transform: 'translateY(-4px)' },
-      }}>
-        <Box
-          component="img"
-          src={imageSrc}
-          alt={therapist.name}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      style={{ width: '100%' }}
+    >
+      <Box sx={{ px: 1, pb: 2 }}>
+        <Paper
           sx={{
             width: '100%',
-            height: { xs: 300, sm: 320 },
-            objectFit: 'cover',
-            objectPosition: 'top center',
-            cursor: 'pointer',
-            filter: isUnavailable ? 'blur(2px)' : 'none',
-            transition: 'filter 0.3s ease-in-out',
+            maxWidth: 260,
+            borderRadius: 2,
+            backgroundColor: 'rgba(255,255,255,0.65)',
+            backdropFilter: 'blur(8px)',
+            p: 2,
+            boxShadow: '0 6px 16px rgba(0, 0, 0, 0.08)',
+            textAlign: 'center',
+            position: 'relative',
           }}
-          onClick={() => setOpen(true)}
-        />
-
-        <Box sx={{
-          position: 'absolute', bottom: 0, width: '100%',
-          bgcolor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(2px)', color: '#222', p: 1.5,
-        }}>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Typography sx={{ fontSize: 20, fontWeight: 600, fontFamily: 'Orson' }}>
-              {therapist.name}
-            </Typography>
-            <Box sx={{
-              width: 12, height: 12, borderRadius: '50%',
-              bgcolor: statusMap[therapist.available].color,
-            }} />
-          </Stack>
-
-          <Stack direction="row" alignItems="center" spacing={1} mt={0.5}>
-            <Box component="img" src="/images/icon/star.png" sx={{ width: 16, height: 16 }} />
-            <Typography sx={{ fontSize: 14 }}>{therapist.rating || '0.0'}</Typography>
-            <Typography fontSize={13} color="#777">|</Typography>
-            <Typography sx={{ fontSize: 14, color: '#444' }}>
-              {therapist.reviews ?? 0} Served
-            </Typography>
-          </Stack>
-
-          {therapist.available === 'bookable' && therapist.nextAvailable && (
-            <Typography sx={{ fontSize: 13, mt: 0.5, color: '#bb8800' }}>
-              Next: {therapist.nextAvailable}
-            </Typography>
-          )}
-
-          <Stack direction="row" spacing={1} alignItems="center" mt={1.2}>
-            <Button
-              onClick={() => navigate(`/therapists/${therapist.id}`)}
-              disabled={isUnavailable}
+        >
+          <Box sx={{ position: 'relative' }}>
+            <Box
+              component="img"
+              src={resolvedImage}
+              alt={therapist.name}
               sx={{
-                px: 3, py: 0.5, fontSize: 13, fontWeight: 400, textTransform: 'none',
-                borderRadius: 99, backgroundColor: isUnavailable ? '#ccc' : '#2b3b53',
-                color: isUnavailable ? '#777' : '#fff',
-                '&:hover': { backgroundColor: isUnavailable ? '#ccc' : '#3c4c66' },
+                width: '100%',
+                height: 220,
+                objectFit: 'contain',
+                objectPosition: 'center center',
+                borderRadius: 1,
+                cursor: 'pointer',
+                background: '#f5f5f5',
+              }}
+              onClick={() => setOpen(true)}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = '/images/placeholder.jpg';
+              }}
+            />
+            {therapist.badge && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  px: 1,
+                  py: 0.4,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  borderRadius: '12px',
+                  color: '#fff',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+                  background:
+                    therapist.badge === 'VIP'
+                      ? '#6C3483'
+                      : therapist.badge === 'Hot'
+                      ? '#E74C3C'
+                      : '#2ECC71',
+                }}
+              >
+                {therapist.badge === 'VIP' && '💎 VIP'}
+                {therapist.badge === 'Hot' && '🔥 HOT'}
+                {therapist.badge === 'New' && '✨ NEW'}
+              </Box>
+            )}
+          </Box>
+
+          <Typography fontWeight="bold" fontSize={17} mt={1.4}>
+            {therapist.name}
+            <Box
+              component="span"
+              ml={1}
+              sx={{
+                display: 'inline-block',
+                width: 12,
+                height: 12,
+                borderRadius: '50%',
+                backgroundColor: statusMap[therapist.available].color,
+                verticalAlign: 'middle',
+              }}
+            />
+          </Typography>
+
+          <Typography fontSize={13} color="#666">
+            <img
+              src="/images/icon/star.png"
+              alt="star"
+              style={{ width: 20, height: 20, marginRight: 6 }}
+            />
+            {therapist.rating?.toFixed(1) || '0.0'} | {therapist.serviceCount || 'N/A'} served
+          </Typography>
+
+          <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" mt={1}>
+            <ChatCircleDots
+              style={{ fontSize: 16, color: '#596a7c', cursor: 'pointer' }}
+              onClick={() => navigate(`/review/all/${therapist.id}`)}
+            />
+            <Typography fontSize={12}>{therapist.reviews || 0}</Typography>
+            <Button
+              size="small"
+              variant="outlined"
+              sx={{
+                fontSize: 7,
+                borderRadius: 99,
+                px: 1.6,
+                textTransform: 'none',
+                color: '#555',
+                borderColor: '#bbb',
+              }}
+              onClick={() => navigate(`/therapist/${therapist.id}?section=features#features`)}
+            >
+              See more
+            </Button>
+          </Stack>
+
+          <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} mt={1.5}>
+            <Button
+              variant="contained"
+              size="small"
+              disabled={therapist.available === 'resting'}
+              onClick={() => navigate(`/therapists/${therapist.id}`)}
+              sx={{
+                fontSize: 12,
+                px: 2,
+                py: 1,
+                textTransform: 'none',
+                borderRadius: 99,
+                backgroundColor:
+                  therapist.available === 'resting' ? '#ccc' :
+                  therapist.available === 'bookable' ? '#DB661C' :
+                  '#2b3b53',
+                color: therapist.available === 'resting' ? '#888' : '#fff',
+                '&:hover': {
+                  backgroundColor:
+                    therapist.available === 'resting' ? '#ccc' :
+                    therapist.available === 'bookable' ? '#e87033' :
+                    '#3c4e67',
+                },
+                flexGrow: 1,
               }}
             >
-              {isUnavailable ? 'Unavailable' : 'Book Now'}
+              {therapist.available === 'resting'
+                ? 'Resting'
+                : therapist.available === 'bookable'
+                ? 'Bookable'
+                : 'BOOK NOW'}
             </Button>
 
-            <IconButton onClick={toggleFavorite} sx={{ p: 0.5 }}>
+            <IconButton onClick={toggleFavorite} aria-label="Favorite Therapist">
               {isFavorite ? (
-                <FavoriteIcon sx={{ color: '#E63946', fontSize: 24 }} />
+                <FavoriteIcon sx={{ color: '#e74c3c', fontSize: 22 }} />
               ) : (
-                <FavoriteBorderIcon sx={{ color: '#222', fontSize: 24 }} />
+                <FavoriteBorderIcon sx={{ color: '#555', fontSize: 22 }} />
               )}
             </IconButton>
           </Stack>
-        </Box>
-      </Box>
 
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs">
-        <Box component="img" src={imageSrc} alt="Full" sx={{ width: '100%' }} />
-      </Dialog>
+          {therapist.distance !== undefined && (
+            <Typography
+              fontSize={12}
+              color="#666"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              mt={0.8}
+            >
+              <RoomIcon sx={{ fontSize: 16, mr: 0.5 }} />
+              {(therapist.distance / 1000).toFixed(1)} km
+            </Typography>
+          )}
+        </Paper>
+
+        <Dialog
+          open={open}
+          onClose={() => setOpen(false)}
+          maxWidth="xs"
+          PaperProps={{
+            sx: {
+              backgroundColor: 'transparent',
+              boxShadow: 'none',
+              borderRadius: 0,
+            },
+          }}
+        >
+          <Box sx={{ position: 'relative' }}>
+            <IconButton
+              onClick={() => setOpen(false)}
+              sx={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                color: '#fff',
+                zIndex: 1,
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+            <Box
+              component="img"
+              src={resolvedImage}
+              alt="Preview"
+              sx={{
+                width: '100%',
+                maxHeight: '80vh',
+                objectFit: 'contain',
+                borderRadius: 2,
+              }}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = '/images/placeholder.jpg';
+              }}
+            />
+          </Box>
+        </Dialog>
+      </Box>
     </motion.div>
   );
 };

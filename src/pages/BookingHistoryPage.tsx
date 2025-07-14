@@ -213,11 +213,11 @@ const BookingHistoryPage: React.FC = () => {
 
       <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={() => setSnackbarOpen(false)}>
         <CustomAlert
-open={snackbarOpen}
-  onClose={() => setSnackbarOpen(false)}
-  severity="success"
-  message="Review submitted successfully!"
-/>
+          open={snackbarOpen}
+          onClose={() => setSnackbarOpen(false)}
+          severity="success"
+          message="Review submitted successfully!"
+        />
       </Snackbar>
     </Box>
   );

@@ -2,7 +2,7 @@
 
 import { Therapist } from '@/types/therapist';
 import { getDistanceInKm } from './geoUtils';
-import { getBookingsForTherapist } from 'utils/bookingUtils';
+import { getBookingsForTherapist } from './bookingUtils';
 
 interface Booking {
   dateTime: string;
@@ -30,6 +30,7 @@ export const findNearestAvailableTherapist = async (
 
       if (hasConflict) return null;
 
+      // เรียกใช้งาน getDistanceInKm แบบ 4 อาร์กิวเมนต์
       const distance = getDistanceInKm(
         userLat,
         userLng,
@@ -41,6 +42,7 @@ export const findNearestAvailableTherapist = async (
     })
   );
 
+  // เรียงตามระยะทางจากใกล้ไปไกล
   const sorted = filteredTherapists
     .filter((t): t is Therapist & { distance: number } => t !== null)
     .sort((a, b) => a.distance - b.distance);

@@ -1,22 +1,46 @@
-// src/data/subscribeToNotifications.ts
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
+import { collection, onSnapshot, query, where, orderBy, Query, DocumentData } from 'firebase/firestore';
+import { db } from '@/firebase';
 
-export const subscribeToNotifications = (
-  userId: string,
-  onUpdate: (data: any[]) => void
-) => {
-  const q = query(
-    collection(db, 'notifications'),
-    where('userId', '==', userId),
-    orderBy('createdAt', 'desc')
-  );
+export interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  type: string;
+  createdAt: any;
+}
 
-  return onSnapshot(q, (snapshot) => {
-    const data = snapshot.docs.map((doc) => ({
+interface SubscribeOptions {
+  userId?: string;
+  onlyUnread?: boolean;
+  callback: (notifications: Notification[]) => void;
+}
+
+export const subscribeToNotifications = ({
+  userId,
+  onlyUnread = false,
+  callback,
+}: SubscribeOptions) => {
+  // กำหนดให้ q เป็น Query<DocumentData> ตั้งแต่แรก
+  let q: Query<DocumentData> = collection(db, 'notifications');
+
+  if (userId) {
+    q = query(q, where('userId', '==', userId));
+  }
+  if (onlyUnread) {
+    q = query(q, where('isRead', '==', false));
+  }
+
+  q = query(q, orderBy('createdAt', 'desc'));
+
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const notifications: Notification[] = snapshot.docs.map((doc) => ({
       id: doc.id,
-      ...doc.data(),
+      ...(doc.data() as Omit<Notification, 'id'>),
     }));
-    onUpdate(data);
+    callback(notifications);
   });
+
+  return unsubscribe;
 };

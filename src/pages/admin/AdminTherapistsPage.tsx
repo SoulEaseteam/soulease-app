@@ -25,16 +25,31 @@ interface Therapist {
   rating: number;
 }
 
+// ฟังก์ชันแปลงสถานะเป็นสีของ Chip
 const statusColor = (status: Therapist["available"]) => {
   switch (status) {
     case "available":
-      return "success";
+      return "success";  // สีเขียว
     case "bookable":
-      return "warning";
+      return "warning";  // สีส้ม
     case "resting":
-      return "default";
+      return "default";  // สีเทา
     default:
       return "default";
+  }
+};
+
+// ฟังก์ชันแปลงสถานะเป็นคำที่อ่านง่าย
+const statusLabel = (status: Therapist["available"]) => {
+  switch (status) {
+    case "available":
+      return "Available";
+    case "bookable":
+      return "Bookable";
+    case "resting":
+      return "Resting";
+    default:
+      return status;
   }
 };
 
@@ -44,13 +59,19 @@ const AdminTherapistsPage: React.FC = () => {
 
   useEffect(() => {
     const fetchTherapists = async () => {
-      const snapshot = await getDocs(collection(db, "therapists"));
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Therapist[];
-      setTherapists(data);
-      setLoading(false);
+      setLoading(true);
+      try {
+        const snapshot = await getDocs(collection(db, "therapists"));
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Therapist[];
+        setTherapists(data);
+      } catch (error) {
+        console.error("Failed to fetch therapists:", error);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchTherapists();
   }, []);
@@ -86,7 +107,7 @@ const AdminTherapistsPage: React.FC = () => {
                 <TableCell>{t.specialty}</TableCell>
                 <TableCell>
                   <Chip
-                    label={t.available}
+                    label={statusLabel(t.available)}
                     color={statusColor(t.available)}
                     size="small"
                   />

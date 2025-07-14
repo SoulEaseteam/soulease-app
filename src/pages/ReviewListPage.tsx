@@ -1,5 +1,4 @@
 // src/pages/ReviewListPage.tsx
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
@@ -12,8 +11,10 @@ import {
   Avatar,
   Button,
   Stack,
+  Tabs,
+  Tab,
 } from '@mui/material';
-import { collection, getDocs, query, where, orderBy, limit, startAfter } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import AppLayout from '../layouts/AppLayout';
 import dayjs from 'dayjs';
@@ -35,114 +36,89 @@ const ReviewListPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortNewest, setSortNewest] = useState(true);
-  const [lastVisible, setLastVisible] = useState<any>(null);
-  const [hasMore, setHasMore] = useState(true);
-
-  const fetchReviews = async (reset = false) => {
-    if (!id) return;
-    try {
-      const q = query(
-        collection(db, 'reviews'),
-        where('therapistId', '==', id),
-        orderBy('createdAt', sortNewest ? 'desc' : 'asc'),
-        ...(lastVisible && !reset ? [startAfter(lastVisible)] : []),
-        limit(10)
-      );
-
-      const snapshot = await getDocs(q);
-      const data: Review[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
-
-      if (reset) {
-        setReviews(data);
-      } else {
-        setReviews(prev => [...prev, ...data]);
-      }
-
-      setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
-      setHasMore(snapshot.docs.length === 10);
-    } catch (err) {
-      console.error('Failed to fetch reviews:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [tab, setTab] = useState(0);
 
   useEffect(() => {
-    setLoading(true);
-    setLastVisible(null);
-    fetchReviews(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, sortNewest]);
+    const fetchReviews = async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const q = query(
+          collection(db, 'reviews'),
+          where('therapistId', '==', id),
+          orderBy('createdAt', 'desc')
+        );
+        const snapshot = await getDocs(q);
+        const data: Review[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
+        setReviews(data);
+      } catch (error) {
+        console.error('Error fetching reviews:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReviews();
+  }, [id]);
+
+  const sortedReviews = tab === 0
+    ? reviews
+    : [...reviews].sort((a, b) => (tab === 1 ? b.rating - a.rating : a.rating - b.rating));
 
   return (
     <AppLayout title="Customer Reviews">
-      <Box
-        sx={{
-          minHeight: '100vh',
-          background: 'linear-gradient(to bottom, #e0f7fa, #fde2e4)',
-          pt: 6,
-          pb: 10,
-          px: 2,
-          maxWidth: 430,
-          mx: 'auto',
-        }}
-      >
-        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography fontWeight="bold">Reviews</Typography>
-          <Button onClick={() => setSortNewest(!sortNewest)} size="small">
-            Sort: {sortNewest ? 'Newest First' : 'Oldest First'}
-          </Button>
-        </Stack>
-
-        {loading ? (
-          <Box textAlign="center" mt={10}>
-            <CircularProgress />
-            <Typography mt={2} color="text.secondary">Loading reviews...</Typography>
-          </Box>
-        ) : reviews.length === 0 ? (
-          <Typography align="center" color="text.secondary" mt={8}>
-            No reviews yet for this therapist.
+      <Box sx={{ minHeight: '100vh', py: 4, background: '#f8f9fa' }}>
+        <Box sx={{ maxWidth: 420, mx: 'auto', px: 2 }}>
+          <Typography variant="h6" fontWeight="bold" textAlign="center" mb={2}>
+            Therapist Reviews
           </Typography>
-        ) : (
-          <>
-            {reviews.map((r) => (
-              <Card
-                key={r.id}
-                sx={{
-                  mb: 2,
-                  background: 'rgba(255,255,255,0.75)',
-                  borderRadius: 4,
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.06)',
-                }}
-              >
-                <CardContent>
-                  <Stack direction="row" spacing={2} alignItems="center" mb={1}>
-                    <Avatar src={r.userPhotoURL || '/images/user.png'} />
-                    <Box>
-                      <Typography fontWeight="bold" fontSize={15}>
-                        {r.userName || 'Customer'}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {dayjs(r.createdAt?.toDate?.()).fromNow() || 'N/A'}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                  <Rating value={r.rating} readOnly size="small" sx={{ mt: 0.5 }} />
-                  <Typography fontSize={13} color="text.secondary" mt={1}>
-                    "{r.comment}"
-                  </Typography>
-                </CardContent>
-              </Card>
-            ))}
 
-            {hasMore && (
-              <Button fullWidth variant="outlined" onClick={() => fetchReviews()}>
-                Load More
-              </Button>
+          <Box sx={{ background: '#fff', borderRadius: 4, p: 2, boxShadow: 3 }}>
+            <Tabs
+              value={tab}
+              onChange={(_, v: number) => setTab(v)}
+              variant="fullWidth"
+              textColor="primary"
+              indicatorColor="primary"
+            >
+              <Tab label="Recent" />
+              <Tab label="Highest Rated" />
+              <Tab label="Lowest Rated" />
+            </Tabs>
+
+            {loading ? (
+              <Box textAlign="center" mt={4}>
+                <CircularProgress />
+              </Box>
+            ) : sortedReviews.length === 0 ? (
+              <Typography align="center" color="text.secondary" mt={4}>
+                No reviews available.
+              </Typography>
+            ) : (
+              sortedReviews.map((r) => (
+                <Card
+                  key={r.id}
+                  sx={{ mt: 2, background: 'rgba(255,255,255,0.75)', borderRadius: 4, boxShadow: 3 }}
+                >
+                  <CardContent>
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Avatar src={r.userPhotoURL || '/images/user.png'} />
+                      <Box>
+                        <Typography fontWeight="bold">{r.userName || 'Customer'}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {dayjs(r.createdAt?.toDate?.()).fromNow() || 'N/A'}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                    <Rating value={r.rating} readOnly size="small" sx={{ mt: 0.5 }} />
+                    <Typography fontSize={13} color="text.secondary" mt={1}>
+                      "{r.comment}"
+                    </Typography>
+                  </CardContent>
+                </Card>
+              ))
             )}
-          </>
-        )}
+          </Box>
+        </Box>
       </Box>
     </AppLayout>
   );

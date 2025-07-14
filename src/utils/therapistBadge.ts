@@ -1,19 +1,5 @@
-// src/utils/therapistBadge.ts
-import { Therapist } from '@/types/therapist';
+import { Therapist, BadgeConfig } from '@/types/therapist';
 
-export type BadgeType = 'VIP' | 'HOT' | 'NEW';
-
-interface BadgeConfig {
-  key: BadgeType;
-  image: string;
-  priority: number; // 1 = สำคัญสุด
-  animation: 'pulse' | 'float' | 'none';
-  size: number;
-  position: { top: number; right: number };
-  condition: (therapist: Therapist) => boolean;
-}
-
-// 🔥 Badge Rules
 export const badgeConfig: BadgeConfig[] = [
   {
     key: 'VIP',
@@ -21,8 +7,9 @@ export const badgeConfig: BadgeConfig[] = [
     priority: 1,
     animation: 'pulse',
     size: 32,
-    position: { top: 10, right: 10 },
-    condition: (t) => (t.todayBookings || 0) >= 5 && t.available !== 'holiday',
+    position: { top: 10, left: 10 },
+    // แสดงเฉพาะพนักงานที่จองวันนี้ >= 5 และสถานะ available หรือ bookable เท่านั้น
+    condition: (t) => (t.todayBookings ?? 0) >= 5 && (t.available === 'available' || t.available === 'bookable'),
   },
   {
     key: 'HOT',
@@ -30,8 +17,12 @@ export const badgeConfig: BadgeConfig[] = [
     priority: 2,
     animation: 'float',
     size: 30,
-    position: { top: 10, right: 10 },
-    condition: (t) => (t.todayBookings || 0) >= 3 && (t.todayBookings || 0) < 5 && t.available !== 'holiday',
+    position: { top: 10, left: 10 },
+    // แสดงสำหรับจองวันนี้ 3-4 ครั้ง และสถานะ available หรือ bookable
+    condition: (t) => {
+      const today = t.todayBookings ?? 0;
+      return today >= 3 && today < 5 && (t.available === 'available' || t.available === 'bookable');
+    },
   },
   {
     key: 'NEW',
@@ -39,21 +30,15 @@ export const badgeConfig: BadgeConfig[] = [
     priority: 3,
     animation: 'none',
     size: 80,
-    position: { top: -30, right: -20 },
-    condition: (t) => (t.totalBookings || 0) < 100 && t.available !== 'holiday',
+    position: { top: -30, left: -20 },
+    // แสดงสำหรับพนักงานที่มีจำนวนจองสะสมต่ำกว่า 100 และสถานะ available หรือ bookable
+    condition: (t) => (t.totalBookings ?? 0) < 100 && (t.available === 'available' || t.available === 'bookable'),
   },
 ];
 
-// ✅ Return highest-priority badge
 export function getTherapistBadge(therapist: Therapist): BadgeConfig | null {
-  return (
-    badgeConfig
-      .filter((b) => b.condition(therapist))
-      .sort((a, b) => a.priority - b.priority)[0] || null
-  );
-}
-
-// ✅ Return all matched badges (ถ้าอยากแสดงหลายอันพร้อมกัน)
-export function getAllTherapistBadges(therapist: Therapist): BadgeConfig[] {
-  return badgeConfig.filter((b) => b.condition(therapist));
+  const matchedBadges = badgeConfig.filter((b) => b.condition(therapist));
+  if (matchedBadges.length === 0) return null;
+  matchedBadges.sort((a, b) => a.priority - b.priority);
+  return matchedBadges[0];
 }

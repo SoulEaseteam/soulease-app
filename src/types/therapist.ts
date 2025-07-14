@@ -4,6 +4,7 @@ export interface Features {
   ethnicity?: string;
   height: string;
   weight: string;
+  skintone?: string;
   bodyType: string;
   bustSize?: string;
   bust?: string;
@@ -11,10 +12,9 @@ export interface Features {
   vaccinated?: string;
   smoker?: string;
   language: string;
-  style: string;
-  skintone?: string;
-  [key: string]: string | undefined; // รองรับ key ใหม่ในอนาคต
 }
+
+export type AvailableStatus = 'available' | 'bookable' | 'resting';
 
 export interface Therapist {
   id: string;
@@ -22,35 +22,33 @@ export interface Therapist {
   image: string;
   rating: number;
   reviews: number;
-  specialty: string;
-  experience: string;
-  lat: number;
-  lng: number;
-  currentLocation?: { lat: number; lng: number };
-  todayBookings?: number;
-  totalBookings?: number;
-  nextAvailable?: string;
-  startTime?: string;
-  endTime?: string;
-  updatedAt?: string;
-  gallery?: string[];
-  available: 'available' | 'bookable' | 'resting' | 'holiday';
-  manualStatus?: 'holiday';
-  isHolidayManual?: boolean;
-  isAvailableNow?: boolean;
-  badge?: TherapistBadge;
-  features: Features;
+  todayBookings: number;
+  totalBookings: number;
+  nextAvailable: string;
+  startTime: string;
+  endTime: string;
+  gallery: string[];
+  features: Features;  // ใช้ interface Features ที่ประกาศไว้
+  available: AvailableStatus;
   distance?: number;
+  hot?: boolean;
+  new?: boolean;
+  topRated?: boolean;
+  serviceCount?: string;
+   // 👇 เพิ่มบรรทัดนี้เข้าไป
+  currentLocation?: {
+    lat: number;
+    lng: number;
+  };
+  // 👇 ถ้ามี field อื่นอยู่แล้วให้ใส่ไว้ล่างสุดได้เลย
+  [key: string]: any;
 }
-
-export interface TherapistBadge {
-  key: string;
+export interface BadgeConfig {
+  key: 'VIP' | 'HOT' | 'NEW' | string;
   image: string;
   priority: number;
-  animation?: 'pulse' | 'float' | 'none';
+  animation: 'pulse' | 'float' | 'none';
   size: number;
-  position: {
-    top: number;
-    left: number;
-  };
+  position: { top: number; left: number };
+  condition: (therapist: Therapist) => boolean;
 }

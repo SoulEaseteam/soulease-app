@@ -24,22 +24,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
+  const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    setUser(currentUser);
+    setLoading(false);
 
-      if (currentUser) {
+    if (currentUser) {
+      try {
         const docRef = doc(db, 'users', currentUser.uid);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           setRole(docSnap.data().role ?? null);
+        } else {
+          setRole(null);
         }
-      } else {
+      } catch (error) {
+        console.error('Failed to fetch user role:', error);
         setRole(null);
       }
-    });
-    return () => unsubscribe();
-  }, []);
+    } else {
+      setRole(null);
+    }
+  });
+  return () => unsubscribe();
+}, []);
 
   const logout = () => signOut(auth);
 

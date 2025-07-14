@@ -1,5 +1,4 @@
 {
-  "git": {
-    "submodules": true
-  }
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist"
 }

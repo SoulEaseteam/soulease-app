@@ -1,62 +1,81 @@
-import { useEffect, useState } from 'react';
-import { subscribeToTherapists } from '@/data/therapists';
-import TherapistProfileCard from '@/components/TherapistProfileCard';
-import {
-  Box,
-  CircularProgress,
-  Typography,
-  Fade,
-  Container,
-} from '@mui/material';
-import { Therapist } from '@/types/therapist';
-import { updateTherapistAvailability } from '@/utils/updateTherapistStatus';
+import React, { useState } from 'react';
+import { Box, Typography } from '@mui/material';
+import therapists from '../data/therapists';
+import TherapistProfileCard from '../components/TherapistProfileCard';
+import SearchBar from '../components/SearchBar';
+import NavBar from '../components/NavBar';
+import '@fontsource/chonburi';
+import '@fontsource/raleway'; // ✅ ตัวหนังสืออ่านง่าย
 
-const HomePage = () => {
-  const [therapists, setTherapists] = useState<Therapist[]>([]);
-  const [loading, setLoading] = useState(true);
+const HomePage: React.FC = () => {
+  const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    const unsubscribe = subscribeToTherapists({
-      callback: async (data: Therapist[]) => {
-        const updated = await Promise.all(data.map(updateTherapistAvailability));
-        setTherapists(updated);
-        setLoading(false);
-      },
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const availableTherapists = therapists.filter((t) => t.available === 'available');
+  const filteredTherapists = searchTerm.trim()
+    ? therapists
+        .filter((therapist) =>
+          therapist.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
+        )
+        .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity))
+    : therapists.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
 
   return (
-    <Box sx={{ p: 2, minHeight: '100vh', background: '#f8f9fb' }}>
-      {loading ? (
-        <Box textAlign="center" mt={10}>
-          <CircularProgress color="primary" />
-          <Typography mt={2} color="text.secondary">
-            Loading therapists...
-          </Typography>
-        </Box>
-      ) : availableTherapists.length === 0 ? (
-        <Typography textAlign="center" mt={8} color="text.secondary">
-          There are currently no staff available. Please try again later.
+    <Box
+      sx={{
+        background: 'linear-gradient(to bottom, #f7f8f9, #e8ecf1)',
+        minHeight: '100vh',
+        pb: 10,
+        fontFamily: 'Raleway, sans-serif',
+      }}
+    >
+      <NavBar />
+      <Box sx={{ maxWidth: 420, mx: 'auto', px: 0 }}>
+        <Typography
+          variant="h4"
+          textAlign="center"
+          sx={{
+            mt: 4,
+            fontFamily: 'Chonburi',
+            fontWeight: 'bold',
+            fontSize: 28,
+            color: '#3f5066',
+            letterSpacing: 2,
+          }}
+        >
+          ESCORTS
         </Typography>
-      ) : (
-        <Container maxWidth="sm">
-          <Typography variant="h6" fontWeight="bold" mb={2} textAlign="center">
-            Staff ready to serve ({availableTherapists.length} person)
-          </Typography>
-          <Box display="flex" flexDirection="column" gap={2}>
-            {availableTherapists.map((t, idx) => (
-              <Fade in key={t.id} style={{ transitionDelay: `${idx * 80}ms` }}>
-                <div>
-                  <TherapistProfileCard therapistId={t.id} />
-                </div>
-              </Fade>
-            ))}
-          </Box>
-        </Container>
-      )}
+
+        <SearchBar onSearch={setSearchTerm} />
+
+        <Typography
+          variant="h6"
+          textAlign="center"
+          sx={{
+            mt: 2,
+            mb: 2,
+            color: '#7b8b99',
+            fontWeight: 300,
+            letterSpacing: 3,
+            fontSize: 16,
+          }}
+        >
+          BROWSE ALL PROFILES
+        </Typography>
+
+     <Box
+  sx={{
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: 'repeat(2, 1fr)', // ✅ 2 คอลัมน์เสมอบนมือถือ
+    },
+    gap: 0,
+    justifyItems: 'center',
+  }}
+>
+  {filteredTherapists.map((therapist) => (
+    <TherapistProfileCard key={therapist.id} therapist={therapist} />
+  ))}
+</Box>
+      </Box>
     </Box>
   );
 };

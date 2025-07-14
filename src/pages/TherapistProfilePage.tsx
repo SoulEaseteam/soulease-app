@@ -1,155 +1,149 @@
-// src/pages/TherapistProfilePage.tsx
-
 import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
   Avatar,
-  Stack,
   Button,
+  CircularProgress,
+  Stack,
   Paper,
-  Divider,
-  Switch,
-  FormControlLabel,
-  Snackbar,
 } from '@mui/material';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
-import LogoutIcon from '@mui/icons-material/Logout';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import ScheduleIcon from '@mui/icons-material/Schedule';
-import GpsFixedIcon from '@mui/icons-material/GpsFixed';
-import { useAuth } from '../providers/AuthProvider';
-import { signOut } from 'firebase/auth';
-import { auth, db } from '../firebase';
-import {
-  doc,
-  getDoc,
-  updateDoc,
-  collection,
-  onSnapshot,
-  Timestamp,
-} from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/firebase';
+
+interface Therapist {
+  id: string;
+  name: string;
+  image: string;
+  rating: number;
+  reviews: number;
+  distance?: number;
+  specialty: string;
+  experience: string;
+  available: 'available' | 'bookable' | 'resting';
+  hot?: boolean;
+  new?: boolean;
+  topRated?: boolean;
+  serviceCount?: string;
+  nextAvailableTime?: string;
+}
+
+
+const statusColors: Record<string, string> = {
+  available: { label: 'Available', color: '#36A681' },
+    bookable: { label: 'Bookable', color: '#DB661C' },
+    resting: { label: 'Resting', color: '#9E9E9E' },
+  };
 
 const TherapistProfilePage: React.FC = () => {
-  const { user } = useAuth();
-  const [therapistData, setTherapistData] = useState<any>(null);
-  const [announcement, setAnnouncement] = useState('');
-  const [autoTime, setAutoTime] = useState(false);
-  const [autoGPS, setAutoGPS] = useState(false);
-  const [notification, setNotification] = useState(false);
-  const [snackbar, setSnackbar] = useState('');
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  const [therapist, setTherapist] = useState<Therapist | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
-    const ref = doc(db, 'therapists', user.uid);
-    const unsub = onSnapshot(ref, (snap) => {
-      if (snap.exists()) setTherapistData(snap.data());
-    });
+    if (!id) return;
 
-    const fetchAnnouncement = async () => {
-      const ref = doc(db, 'announcements', 'weekly');
-      const snap = await getDoc(ref);
-      if (snap.exists()) setAnnouncement(snap.data().message);
+    const fetchTherapist = async () => {
+      setLoading(true);
+      try {
+        const docRef = doc(db, 'therapists', id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setTherapist({ id: docSnap.id, ...docSnap.data() } as Therapist);
+        } else {
+          setTherapist(null);
+        }
+      } catch (error) {
+        console.error('Error fetching therapist:', error);
+        setTherapist(null);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetchAnnouncement();
-    return () => unsub();
-  }, [user]);
+    fetchTherapist();
+  }, [id]);
 
-  // Auto GPS Status Update
-  useEffect(() => {
-    if (!autoGPS || !therapistData?.manualStatus) return;
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      const { latitude, longitude } = pos.coords;
-      const inZone = latitude > 13.6 && latitude < 13.9 && longitude > 100.4 && longitude < 100.6;
-      const status = inZone ? 'bookable' : 'resting';
-      if (therapistData.manualStatus !== status) {
-        await updateDoc(doc(db, 'therapists', user!.uid), { manualStatus: status });
-        setSnackbar(`Status auto-set to ${status}`);
-      }
-    });
-  }, [autoGPS, therapistData]);
+  if (loading) {
+    return (
+      <Box sx={{ textAlign: 'center', mt: 10 }}>
+        <CircularProgress />
+        <Typography mt={2}>Loading therapist data...</Typography>
+      </Box>
+    );
+  }
 
-  // Auto Time Status Update
-  useEffect(() => {
-    if (!autoTime || !therapistData?.startTime || !therapistData?.endTime) return;
-    const interval = setInterval(() => {
-      const now = new Date();
-      const [startH, startM] = therapistData.startTime.split(':').map(Number);
-      const [endH, endM] = therapistData.endTime.split(':').map(Number);
-      const start = new Date(now);
-      const end = new Date(now);
-      start.setHours(startH, startM);
-      end.setHours(endH, endM);
-      const status = now >= start && now <= end ? 'bookable' : 'resting';
-      if (therapistData.manualStatus !== status) {
-        updateDoc(doc(db, 'therapists', user!.uid), { manualStatus: status });
-        setSnackbar(`Status auto-set to ${status} (time-based)`);
-      }
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [autoTime, therapistData]);
+  if (!therapist) {
+    return (
+      <Box sx={{ textAlign: 'center', mt: 10 }}>
+        <Typography variant="h6" color="error">
+          Therapist not found
+        </Typography>
+        <Button variant="contained" sx={{ mt: 2 }} onClick={() => navigate(-1)}>
+          Go Back
+        </Button>
+      </Box>
+    );
+  }
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    window.location.href = '/login';
-  };
+  // แก้ไขแสดงภาพรองรับกรณีชื่อไฟล์แบบ relative หรือ path จริง
+  const imageUrl = therapist.image.startsWith('/')
+    ? therapist.image
+    : `/images/${therapist.image}`;
 
-  const handleUpdateLocation = () => {
-    window.location.href = '/update-location';
-  };
-
-  if (!therapistData) return <Box p={4}>Loading...</Box>;
+  // กำหนดปุ่มจองตามสถานะ
+  const isBookable = ['available', 'bookable'].includes(therapist.available);
+  const isUnavailable = ['resting', 'holiday'].includes(therapist.available);
 
   return (
-    <Box sx={{ bgcolor: 'linear-gradient(to bottom, #d0f1f7, #f0eaff)', minHeight: '100vh', pt: 6 }}>
-      <Box sx={{ maxWidth: 430, mx: 'auto', px: 3 }}>
-        <Paper elevation={3} sx={{ p: 3, borderRadius: 4, mb: 3, textAlign: 'center', background: 'linear-gradient(to bottom, #e0f7fa, #fff)' }}>
-          <Avatar sx={{ width: 80, height: 80, mx: 'auto', mb: 1 }} src={therapistData.image || ''} />
-          <Typography fontWeight="bold" fontSize={18}>{therapistData.name}</Typography>
-          <Typography fontSize={14} color="text.secondary">ID: {user?.uid.slice(0, 6)}</Typography>
-        </Paper>
+    <Box sx={{ maxWidth: 480, mx: 'auto', p: 3 }}>
+      <Paper sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
+        <Stack spacing={2} alignItems="center">
+          <Avatar
+            src={imageUrl}
+            alt={therapist.name}
+            sx={{ width: 140, height: 140 }}
+          />
+          <Typography variant="h5" fontWeight="bold">
+            {therapist.name}
+          </Typography>
+          <Typography
+            sx={{
+              color: statusColors[therapist.available] || '#000',
+              fontWeight: 'bold',
+              textTransform: 'capitalize',
+            }}
+          >
+            Status: {therapist.available}
+          </Typography>
+          <Typography>
+            ⭐ {therapist.rating?.toFixed(1) || '0.0'} ({therapist.reviews} reviews)
+          </Typography>
+          <Typography>Today Bookings: {therapist.todayBookings}</Typography>
+          <Typography>Total Bookings: {therapist.totalBookings}</Typography>
+          <Typography>
+            Working Hours: {therapist.startTime} - {therapist.endTime}
+          </Typography>
 
-        <Stack direction="row" justifyContent="space-between" sx={{ mb: 2 }}>
-          <Box textAlign="center">
-            <Typography fontWeight="bold">{therapistData.totalBookings || 0}</Typography>
-            <Typography fontSize={12}>Total Bookings</Typography>
-          </Box>
-          <Box textAlign="center">
-            <Typography fontWeight="bold">{therapistData.rating || 0} ⭐</Typography>
-            <Typography fontSize={12}>Rating</Typography>
-          </Box>
-          <Box textAlign="center">
-            <Typography fontWeight="bold">{therapistData.positiveScore || 0}%</Typography>
-            <Typography fontSize={12}>Positive</Typography>
-          </Box>
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            onClick={() => alert('Booking functionality here')}
+            disabled={isUnavailable}
+            sx={{ mt: 2 }}
+          >
+            {isBookable ? 'Book Now' : 'Unavailable'}
+          </Button>
+
+          <Button variant="text" onClick={() => navigate(-1)} sx={{ mt: 1 }}>
+            Back
+          </Button>
         </Stack>
-
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 3, background: '#f8f8ff', mb: 3 }}>
-          <Typography fontWeight="bold" mb={1}>📢 Announcement</Typography>
-          <Typography fontSize={14}>{announcement || 'No announcement'}</Typography>
-        </Paper>
-
-        {/* ✅ Auto Systems */}
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 3, background: '#fff7f0', mb: 3 }}>
-          <Typography fontWeight="bold" mb={1}>⚙️ Auto Systems</Typography>
-          <FormControlLabel control={<Switch checked={notification} onChange={(e) => setNotification(e.target.checked)} />} label={<><NotificationsIcon sx={{ mr: 1 }} />Notify on Booking</>} />
-          <FormControlLabel control={<Switch checked={autoTime} onChange={(e) => setAutoTime(e.target.checked)} />} label={<><ScheduleIcon sx={{ mr: 1 }} />Auto by Time</>} />
-          <FormControlLabel control={<Switch checked={autoGPS} onChange={(e) => setAutoGPS(e.target.checked)} />} label={<><GpsFixedIcon sx={{ mr: 1 }} />Auto by GPS</>} />
-        </Paper>
-
-        <Stack direction="row" spacing={2} justifyContent="space-between" mb={3}>
-          <Button fullWidth variant="contained" startIcon={<CalendarMonthIcon />} onClick={() => window.location.href = '/my-bookings'}>My Bookings</Button>
-          <Button fullWidth variant="outlined" startIcon={<AssignmentTurnedInIcon />} onClick={() => window.location.href = '/booking-status'}>Status</Button>
-          <Button fullWidth variant="outlined" startIcon={<LocationOnIcon />} onClick={handleUpdateLocation}>Location</Button>
-        </Stack>
-
-        <Divider sx={{ my: 2 }} />
-        <Button variant="text" color="error" startIcon={<LogoutIcon />} fullWidth onClick={handleLogout}>Log Out</Button>
-      </Box>
-      <Snackbar open={!!snackbar} autoHideDuration={3000} onClose={() => setSnackbar('')} message={snackbar} />
+      </Paper>
     </Box>
   );
 };

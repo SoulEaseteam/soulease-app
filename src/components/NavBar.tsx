@@ -1,7 +1,10 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Button } from '@mui/material';
+import { useAuth } from '../providers/AuthProvider';
 
 const NavBar: React.FC = () => {
+  const { user, loading, logout } = useAuth();
+
   return (
     <>
       <Box
@@ -38,9 +41,10 @@ const NavBar: React.FC = () => {
             mx: 'auto',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'space-between',
             position: 'relative',
             zIndex: 2,
+            px: 2,
           }}
         >
           <Typography
@@ -58,6 +62,43 @@ const NavBar: React.FC = () => {
           >
             SoulEase
           </Typography>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {loading ? (
+              <Typography sx={{ color: '#fff' }}>Loading...</Typography>
+            ) : user ? (
+              <>
+                <Typography sx={{ color: '#fff', fontSize: 14, userSelect: 'none' }}>
+                  {user.email}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={logout}
+                  sx={{
+                    color: '#fff',
+                    borderColor: '#fff',
+                    '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
+                  }}
+                >
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="outlined"
+                size="small"
+                href="/login"
+                sx={{
+                  color: '#fff',
+                  borderColor: '#fff',
+                  '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
+                }}
+              >
+                Login
+              </Button>
+            )}
+          </Box>
         </Box>
       </Box>
 

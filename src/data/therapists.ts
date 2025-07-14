@@ -1,64 +1,228 @@
-import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
 import { Therapist } from '@/types/therapist';
 
-interface Options {
-  onlyAvailable?: boolean;
-  minRating?: number;
-  maxDistanceKm?: number;
-  userLocation?: { lat: number; lng: number };
-  callback: (data: Therapist[]) => void;
-}
+const therapistData: Omit<Therapist, 'badge'>[] = [
+  {
+    id: 'erYKvEtJSRoC2eWqn89U',
+    name: 'Yuri',
+    image: '/images/yuri/yuri.jpeg',
+    rating: 4.5,
+    reviews: 0,
+    lat: 13.7563,
+    lng: 100.5018,
+    todayBookings: 0,
+    totalBookings: 0,
+    nextAvailable: 'N/A',
+    startTime: '19:00',
+    endTime: '05:00',
+    specialty: '',
+    gallery: [
+      '/images/yuri/y9.jpeg',
+      '/images/yuri/y10.jpeg',
+      '/images/yuri/y7.jpeg',
+      '/images/yuri/y8.jpeg',
+      '/images/yuri/y5.jpeg',
+      '/images/yuri/y4.jpeg',
+      '/images/yuri/y11.jpeg',
+      '/images/yuri/y6.jpeg',
+      '/images/yuri/Y1.jpeg',
+    ],
+    features: {
+      age: '27',
+      gender: 'Female',
+      ethnicity: 'Thai',
+      height: '160 cm',
+      weight: '47 kg',
+      skintone: 'Olive Skin',
+      bodyType: 'Slim',
+      bustSize: 'D Cup',
+      hairColor: 'Black',
+      vaccinated: 'Yes',
+      smoker: 'No',
+      language: 'Thai / English',
 
-export const subscribeToTherapists = ({
-  onlyAvailable,
-  minRating,
-  maxDistanceKm,
-  userLocation,
-  callback,
-}: Options) => {
-  const q = collection(db, 'therapists');
+    },
+    available: 'available',
+  },
+  {
+    id: '3mxMYv5wMNHmOqQmXY6u',
+    name: 'Emily',
+    image: '/images/mint/mint.jpg',
+    rating: 4.5,
+    reviews: 0,
+    lat: 13.7563,
+    lng: 100.5018,
+    todayBookings: 0,
+    totalBookings: 0,
+    nextAvailable: 'N/A',
+    startTime: '19:00',
+    endTime: '05:00',
+    specialty: '',
+    gallery: [
+      '/images/mint/m7.jpeg',
+      '/images/mint/m3.jpeg',
+      '/images/mint/m6.jpeg',
+      '/images/mint/m5.jpeg',
+      '/images/mint/m5.JPG',
+      '/images/mint/m1.jpeg',
+      '/images/mint/m2.jpeg',
+    ],
+    features: {
+      age: '28',
+      gender: 'Female',
+      ethnicity: 'Thai',
+      height: '162 cm',
+      weight: '47 kg',
+      skintone: 'Light skin',
+      bodyType: 'Slim',
+      bustSize: 'D Cup',
+      hairColor: 'Light Brown',
+      vaccinated: 'Yes',
+      smoker: 'No',
+      language: 'Thai / English',
 
-  const unsubscribe = onSnapshot(q, (snapshot) => {
-    let data = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Therapist[];
+    },
+    available: 'available',
+  },
+  {
+    id: 'HntS3ZEcgtxkTn114lTT',
+    name: 'Ji A',
+    image: '/images/jimin/jimin.JPG',
+    rating: 4.5,
+    reviews: 0,
+    lat: 13.7563,
+    lng: 100.5018,
+    todayBookings: 0,
+    totalBookings: 0,
+    nextAvailable: 'N/A',
+    startTime: '21:00',
+    endTime: '05:00',
+    specialty: '',
+    gallery: [
+      '/images/jimin/j3.jpg',
+      '/images/jimin/j5.jpg',
+      '/images/jimin/j4.jpg',
+      '/images/jimin/j2.jpg',
+      '/images/jimin/j1.jpg',
+    ],
+    features: {
+      age: '27',
+      gender: 'Female',
+      ethnicity: 'Thai',
+      height: '160 cm',
+      weight: '53 kg',
+      skintone: 'Medium skin',
+      bodyType: 'Curvy',
+      bustSize: '34B',
+      hairColor: 'Black',
+      vaccinated: 'Yes',
+      smoker: 'No',
+      language: 'Thai / English',
 
-    if (onlyAvailable) {
-      data = data.filter((t) => t.available === 'available');
-    }
-    if (minRating !== undefined) {
-      data = data.filter((t) => t.rating >= minRating);
-    }
-    // filter ด้วยระยะทาง (optional)
-    if (userLocation && maxDistanceKm !== undefined) {
-      data = data.filter((t) => {
-        if (!t.currentLocation) return false;
-        const distance = getDistanceInKm(userLocation, t.currentLocation);
-        return distance <= maxDistanceKm;
-      });
-    }
-    callback(data);
-  });
+    },
+    available: 'available',
+  },
+  {
+    id: '1Sn1TSppDCFTwChknxsi',
+    name: 'xingxing',
+    image: '/images/xing/xing.JPG',
+    rating: 4.5,
+    reviews: 0,
+    lat: 13.7563,
+    lng: 100.5018,
+    todayBookings: 0,
+    totalBookings: 0,
+    nextAvailable: 'N/A',
+    startTime: '06:00',
+    endTime: '00:00',
+    specialty: '',
+    gallery: ['/images', '/images', '/images', '/images', '/images', '/images'],
+    features: {
+      age: '28',
+      gender: 'Female',
+      ethnicity: 'Thai',
+      height: '160 cm',
+      weight: '47 kg',
+      skintone: 'Light skin',
+      bodyType: 'Curvy',
+      bustSize: 'E Cup',
+      hairColor: 'Black',
+      vaccinated: 'Yes',
+      smoker: 'No',
+      language: 'Thai / English',
 
-  return unsubscribe;
-};
+    },
+    available: 'available',
+  },
+  {
+    id: 'sIvv3y5uPh4QSulzUWcn',
+    name: 'Popy',
+    image: '/images/popy/ti.JPG',
+    rating: 4.5,
+    reviews: 0,
+    lat: 13.7563,
+    lng: 100.5018,
+    todayBookings: 0,
+    totalBookings: 0,
+    nextAvailable: 'N/A',
+    startTime: '20:00',
+    endTime: '03:00',
+    specialty: '',
+    gallery: ['/images', '/images', '/images', '/images', '/images', '/images'],
+    features: {
+      age: '28',
+      gender: 'Female',
+      ethnicity: 'Thai',
+      height: '160 cm',
+      weight: '47 kg',
+      skintone: 'Medium skin',
+      bodyType: 'Slim',
+      bustSize: '34B',
+      hairColor: 'Black',
+      vaccinated: 'Yes',
+      smoker: 'No',
+      language: 'Thai / English',
 
-const getDistanceInKm = (
-  coord1: { lat: number; lng: number },
-  coord2: { lat: number; lng: number }
-): number => {
-  const toRad = (x: number) => (x * Math.PI) / 180;
-  const R = 6371;
-  const dLat = toRad(coord2.lat - coord1.lat);
-  const dLng = toRad(coord2.lng - coord1.lng);
+    },
+    available: 'available',
+  },
+  {
+    id: 'MpJgtiJeWNumxOO7L7X3',
+    name: 'Yomi',
+    image: '/images/yomi/ii.JPG',
+    rating: 4.5,
+    reviews: 0,
+    lat: 13.7563,
+    lng: 100.5018,
+    todayBookings: 0,
+    totalBookings: 0,
+    nextAvailable: 'N/A',
+    startTime: '21:00',
+    endTime: '03:00',
+    specialty: '',
+    gallery: ['/images',
+     '/images',
+      '/images',
+       '/images',
+        '/images',
+         '/images'],
+    features: {
+      age: '28',
+      gender: 'Female',
+      ethnicity: 'Thai',
+      height: '160 cm',
+      weight: '47 kg',
+      bodyType: 'Slim',
+      skintone: 'Medium skin',
+      bustSize: '34B',
+      hairColor: 'Black',
+      vaccinated: 'Yes',
+      smoker: 'No',
+      language: 'Thai / English',
 
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(coord1.lat)) *
-      Math.cos(toRad(coord2.lat)) *
-      Math.sin(dLng / 2) ** 2;
+  },
+  available: 'available',
+    },
+  // เพิ่มพนักงานอื่น ๆ ตามตัวอย่างนี้ได้เลย
+];
 
-  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-};
+export default therapists;
