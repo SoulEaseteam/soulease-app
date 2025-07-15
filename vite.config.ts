@@ -2,32 +2,24 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
-// vite.config.ts
 export default defineConfig({
-  // ...
   build: {
-    // (ของเดิมยังใช้ได้เหมือนเดิม)
     outDir: 'dist',
     emptyOutDir: true,
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
-      external: ['fsevents'], // 👈 เพิ่มบรรทัดนี้เข้าไป
+      external: ['fsevents'],
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'vendor_react';
-            }
-            if (id.includes('firebase')) {
-              return 'vendor_firebase';
-            }
+            if (id.includes('react') || id.includes('react-dom')) return 'vendor_react';
+            if (id.includes('firebase')) return 'vendor_firebase';
             return 'vendor';
           }
         },
       },
     },
   },
-  // ...
 
   resolve: {
     alias: {
@@ -40,6 +32,7 @@ export default defineConfig({
       '@services': path.resolve(__dirname, 'src/services'),
     },
   },
+
   define: {
     'process.env': {
       VITE_FIREBASE_API_KEY: JSON.stringify(process.env.VITE_FIREBASE_API_KEY),
