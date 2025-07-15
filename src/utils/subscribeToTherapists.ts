@@ -1,5 +1,6 @@
+// src/utils/subscribeToTherapists.ts
 import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from '@/firebase'; // ปรับ path ให้ถูกต้องกับโปรเจกต์คุณ
+import { db } from '../firebase';
 import { Therapist } from '@/types/therapist';
 
 interface Options {
@@ -11,7 +12,7 @@ interface Options {
 }
 
 export const subscribeToTherapists = ({
-  onlyAvailable = false, // แสดงทุกคนเสมอ
+  onlyAvailable = true,
   minRating,
   maxDistanceKm,
   userLocation,
@@ -20,24 +21,25 @@ export const subscribeToTherapists = ({
   const q = collection(db, 'therapists');
 
   const unsubscribe = onSnapshot(q, (snapshot) => {
-    let data = snapshot.docs.map((doc) => {
-      const t = doc.data() as Therapist;
-      return { ...t, available: 'available' } as Therapist; // แสดงพนักงานทุกคนเสมอ
-    });
+    let data = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Therapist[];
 
+    // กรองเฉพาะ therapist ที่ available เท่านั้น (ถ้ากำหนด)
     if (onlyAvailable) {
       data = data.filter((t) => t.available === 'available');
     }
 
+    // กรองตาม rating ขั้นต่ำ (ถ้ามี)
     if (minRating !== undefined) {
       data = data.filter((t) => t.rating >= minRating);
     }
 
+    // กรองตามระยะทาง (ถ้ามีพิกัดผู้ใช้และระยะทางกำหนด)
     if (userLocation && maxDistanceKm !== undefined) {
       data = data.filter((t) => {
-        if (!t.currentLocation || typeof t.currentLocation.lat !== 'number' || typeof t.currentLocation.lng !== 'number') {
-          return false;
-        }
+        if (!t.currentLocation) return false;
         const distance = getDistanceInKm(userLocation, t.currentLocation);
         return distance <= maxDistanceKm;
       });
@@ -49,11 +51,11 @@ export const subscribeToTherapists = ({
   return unsubscribe;
 };
 
-// ตัวอย่างฟังก์ชันคำนวณระยะทาง
-export function getDistanceInKm(
+// ฟังก์ชันคำนวณระยะทางแบบ Haversine (หน่วยเป็นกิโลเมตร)
+const getDistanceInKm = (
   coord1: { lat: number; lng: number },
   coord2: { lat: number; lng: number }
-): number {
+): number => {
   const toRad = (x: number) => (x * Math.PI) / 180;
   const R = 6371; // รัศมีโลกเป็นกิโลเมตร
   const dLat = toRad(coord2.lat - coord1.lat);
@@ -61,8 +63,9 @@ export function getDistanceInKm(
 
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(coord1.lat)) * Math.cos(toRad(coord2.lat)) * Math.sin(dLng / 2) ** 2;
+    Math.cos(toRad(coord1.lat)) *
+      Math.cos(toRad(coord2.lat)) *
+      Math.sin(dLng / 2) ** 2;
 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
+  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+};

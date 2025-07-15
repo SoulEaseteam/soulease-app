@@ -1,3 +1,5 @@
+// src/types/therapist.ts
+
 export interface Features {
   age: string;
   gender?: string;
@@ -28,21 +30,20 @@ export interface Therapist {
   startTime: string;
   endTime: string;
   gallery: string[];
-  features: Features;  // ใช้ interface Features ที่ประกาศไว้
+  features: Features;
   available: AvailableStatus;
   distance?: number;
   hot?: boolean;
   new?: boolean;
   topRated?: boolean;
   serviceCount?: string;
-   // 👇 เพิ่มบรรทัดนี้เข้าไป
   currentLocation?: {
     lat: number;
     lng: number;
   };
-  // 👇 ถ้ามี field อื่นอยู่แล้วให้ใส่ไว้ล่างสุดได้เลย
   [key: string]: any;
 }
+
 export interface BadgeConfig {
   key: 'VIP' | 'HOT' | 'NEW' | string;
   image: string;

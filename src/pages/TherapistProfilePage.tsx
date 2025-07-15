@@ -11,34 +11,42 @@ import {
 } from '@mui/material';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
+import { useAuth } from '@/providers/AuthProvider';
+import UploadAvatar from '@/components/UploadAvatar';
 
 interface Therapist {
   id: string;
   name: string;
   image: string;
+  avatar?: string;
   rating: number;
   reviews: number;
   distance?: number;
   specialty: string;
   experience: string;
-  available: 'available' | 'bookable' | 'resting';
+  available: 'available' | 'bookable' | 'resting' | 'holiday';
   hot?: boolean;
   new?: boolean;
   topRated?: boolean;
   serviceCount?: string;
   nextAvailableTime?: string;
+  todayBookings?: number;
+  totalBookings?: number;
+  startTime?: string;
+  endTime?: string;
 }
 
-
-const statusColors: Record<string, string> = {
+const statusColors: Record<string, { label: string; color: string }> = {
   available: { label: 'Available', color: '#36A681' },
-    bookable: { label: 'Bookable', color: '#DB661C' },
-    resting: { label: 'Resting', color: '#9E9E9E' },
-  };
+  bookable: { label: 'Bookable', color: '#DB661C' },
+  resting: { label: 'Resting', color: '#9E9E9E' },
+  holiday: { label: 'Holiday', color: '#BDBDBD' },
+};
 
 const TherapistProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [therapist, setTherapist] = useState<Therapist | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,12 +97,12 @@ const TherapistProfilePage: React.FC = () => {
     );
   }
 
-  // แก้ไขแสดงภาพรองรับกรณีชื่อไฟล์แบบ relative หรือ path จริง
-  const imageUrl = therapist.image.startsWith('/')
+  const imageUrl = therapist.avatar
+    ? therapist.avatar
+    : therapist.image.startsWith('/')
     ? therapist.image
     : `/images/${therapist.image}`;
 
-  // กำหนดปุ่มจองตามสถานะ
   const isBookable = ['available', 'bookable'].includes(therapist.available);
   const isUnavailable = ['resting', 'holiday'].includes(therapist.available);
 
@@ -107,25 +115,28 @@ const TherapistProfilePage: React.FC = () => {
             alt={therapist.name}
             sx={{ width: 140, height: 140 }}
           />
+
+          {user?.uid === therapist.id && <UploadAvatar />}
+
           <Typography variant="h5" fontWeight="bold">
             {therapist.name}
           </Typography>
           <Typography
             sx={{
-              color: statusColors[therapist.available] || '#000',
+              color: statusColors[therapist.available]?.color || '#000',
               fontWeight: 'bold',
               textTransform: 'capitalize',
             }}
           >
-            Status: {therapist.available}
+            Status: {statusColors[therapist.available]?.label || therapist.available}
           </Typography>
           <Typography>
             ⭐ {therapist.rating?.toFixed(1) || '0.0'} ({therapist.reviews} reviews)
           </Typography>
-          <Typography>Today Bookings: {therapist.todayBookings}</Typography>
-          <Typography>Total Bookings: {therapist.totalBookings}</Typography>
+          <Typography>Today Bookings: {therapist.todayBookings || 0}</Typography>
+          <Typography>Total Bookings: {therapist.totalBookings || 0}</Typography>
           <Typography>
-            Working Hours: {therapist.startTime} - {therapist.endTime}
+            Working Hours: {therapist.startTime || 'N/A'} - {therapist.endTime || 'N/A'}
           </Typography>
 
           <Button

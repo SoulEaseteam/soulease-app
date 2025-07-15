@@ -1,82 +1,51 @@
 // src/pages/NotificationsPage.tsx
+
 import React, { useEffect, useState } from 'react';
-import {
-  Box, Typography, List, ListItem, ListItemText, Paper, IconButton, Badge
-} from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { Box, Typography, Paper, Stack } from '@mui/material';
+import { useAuth } from '@/providers/AuthProvider';
+import { listenToNotifications } from '@/services/notificationService';
+import { Notification } from '@/types/firebaseSchemas';
+import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../providers/AuthProvider';
-import { subscribeToNotifications } from '../data/subscribeToNotifications';
+import BottomNav from '@/components/BottomNav';
 
 const NotificationsPage: React.FC = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!user?.uid) return;
-    const unsubscribe = subscribeToNotifications(user.uid, setNotifications);
+    const unsubscribe = listenToNotifications(user.uid, setNotifications);
     return () => unsubscribe();
   }, [user]);
 
   return (
-    <Box sx={{ minHeight: '100vh', background: '#1c2a3a', pb: 10 }}>
-      <Box
-        sx={{
-          background: '#2b3b53',
-          p: 2,
-          display: 'flex',
-          alignItems: 'center',
-          color: '#fff',
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-        }}
-      >
-        <IconButton onClick={() => navigate('/profile')} sx={{ color: '#fff' }}>
-          <ArrowBackIcon />
-        </IconButton>
-        <Typography variant="h6" fontWeight="bold" ml={1}>
-          Notifications
-        </Typography>
+    <Box sx={{ pb: 10 }}> {/* reserve space for BottomNav */}
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h5" fontWeight="bold" mb={3}>🔔 การแจ้งเตือน</Typography>
+
+        {notifications.length === 0 ? (
+          <Typography color="text.secondary">ยังไม่มีการแจ้งเตือน</Typography>
+        ) : (
+          notifications.map((n) => (
+            <Paper
+              key={n.id}
+              sx={{ p: 2, mb: 2, cursor: 'pointer', '&:hover': { backgroundColor: '#f1f1f1' } }}
+              onClick={() => navigate(n.link || '/')}
+            >
+              <Stack direction="row" justifyContent="space-between">
+                <Typography>{n.message}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {dayjs(n.createdAt?.toDate?.()).fromNow()}
+                </Typography>
+              </Stack>
+            </Paper>
+          ))
+        )}
       </Box>
 
-      <Box sx={{ p: 2 }}>
-        <Paper
-          elevation={4}
-          sx={{
-            borderRadius: 4,
-            overflow: 'hidden',
-            background: 'linear-gradient(to bottom, #fff, #f2f2f2)',
-          }}
-        >
-          <List>
-            {notifications.map((n) => (
-              <ListItem key={n.id} divider>
-                <ListItemText
-                  primary={
-                    <Typography fontWeight="bold">
-                      {n.type === 'review' && '📣 New Review'}
-                      {n.type === 'booking_confirmed' && '✅ Booking Confirmed'}
-                      {n.type === 'admin' && '📢 Admin Message'}
-                    </Typography>
-                  }
-                  secondary={
-                    <Typography color="text.secondary" fontSize={14}>
-                      {n.message}
-                    </Typography>
-                  }
-                />
-              </ListItem>
-            ))}
-            {notifications.length === 0 && (
-              <ListItem>
-                <ListItemText primary="No notifications yet." />
-              </ListItem>
-            )}
-          </List>
-        </Paper>
-      </Box>
+      <BottomNav />
     </Box>
   );
 };

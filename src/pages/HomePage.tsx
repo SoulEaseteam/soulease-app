@@ -8,10 +8,42 @@ import '@fontsource/chonburi';
 import '@fontsource/raleway';
 import { Therapist } from '../types/therapist';
 
-// 🔧 เติม badge กลับเข้า Therapist เพื่อให้เป็น Therapist สมบูรณ์
-const therapists: Therapist[] = therapistsRaw.map((t) => ({
-  ...t,
-  badge: undefined, // หรือเพิ่ม logic กำหนด badge จริงได้ตามต้องการ
+// 🔧 แปลง therapistsRaw ให้กลายเป็น Therapist[] ที่สมบูรณ์แบบ (กันพัง)
+const therapists: Therapist[] = therapistsRaw.map((t, index) => ({
+  id: t.id ?? `therapist-${index}`,
+  name: t.name ?? 'Unknown',
+  image: t.image ?? '/placeholder.png',
+  rating: t.rating ?? 0,
+  reviews: t.reviews ?? 0,
+  todayBookings: t.todayBookings ?? 0,
+  totalBookings: t.totalBookings ?? 0,
+  nextAvailable: t.nextAvailable ?? 'N/A',
+  startTime: t.startTime ?? '00:00',
+  endTime: t.endTime ?? '23:59',
+  gallery: t.gallery ?? [],
+  features: {
+    age: t.features?.age ?? 'N/A',
+    height: t.features?.height ?? 'N/A',
+    weight: t.features?.weight ?? 'N/A',
+    bodyType: t.features?.bodyType ?? 'N/A',
+    language: t.features?.language ?? 'N/A',
+    gender: t.features?.gender,
+    ethnicity: t.features?.ethnicity,
+    bustSize: t.features?.bustSize,
+    bust: t.features?.bust,
+    hairColor: t.features?.hairColor,
+    skintone: t.features?.skintone,
+    smoker: t.features?.smoker,
+    vaccinated: t.features?.vaccinated,
+  },
+  available: t.available ?? 'resting',
+  distance: t.distance,
+  hot: t.hot ?? false,
+  new: t.new ?? false,
+  topRated: t.topRated ?? false,
+  serviceCount: t.serviceCount ?? '0',
+  currentLocation: t.currentLocation ?? { lat: 0, lng: 0 },
+  badge: t.badge ?? undefined,
 }));
 
 const HomePage: React.FC = () => {
@@ -19,17 +51,11 @@ const HomePage: React.FC = () => {
 
   const filteredTherapists: Therapist[] = searchTerm.trim()
     ? therapists
-        .filter((therapist: Therapist) =>
+        .filter((therapist) =>
           therapist.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
         )
-        .sort(
-          (a: Therapist, b: Therapist) =>
-            (a.distance ?? Infinity) - (b.distance ?? Infinity)
-        )
-    : therapists.sort(
-        (a: Therapist, b: Therapist) =>
-          (a.distance ?? Infinity) - (b.distance ?? Infinity)
-      );
+        .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity))
+    : therapists.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
 
   return (
     <Box
@@ -82,7 +108,7 @@ const HomePage: React.FC = () => {
             justifyItems: 'center',
           }}
         >
-          {filteredTherapists.map((therapist: Therapist) => (
+          {filteredTherapists.map((therapist) => (
             <TherapistProfileCard key={therapist.id} therapist={therapist} />
           ))}
         </Box>

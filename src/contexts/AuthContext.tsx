@@ -1,10 +1,8 @@
-// src/providers/AuthProvider.tsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth, db } from '../firebase';
+import { auth, db } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
-// ✅ ประเภทของ Role ที่รองรับ
 type UserRole = 'admin' | 'therapist' | null;
 
 interface AuthContextType {
@@ -14,7 +12,6 @@ interface AuthContextType {
   logout: () => void;
 }
 
-// ✅ สร้าง context
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
@@ -22,7 +19,6 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => {},
 });
 
-// ✅ AuthProvider Component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,17 +31,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (currentUser) {
         try {
-          const userRef = doc(db, 'users', currentUser.uid);
-          const userSnap = await getDoc(userRef);
-          if (userSnap.exists()) {
-            const userData = userSnap.data();
+          const docRef = doc(db, 'users', currentUser.uid);
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+            const userData = docSnap.data();
             setRole(userData.role as UserRole);
           } else {
-            console.warn('No user data found in Firestore.');
+            console.warn('🔔 ไม่มีข้อมูล role ของผู้ใช้ใน Firestore');
             setRole(null);
           }
         } catch (err) {
-          console.error('Failed to get role from Firestore:', err);
+          console.error('❌ เกิดข้อผิดพลาดในการดึง role:', err);
           setRole(null);
         }
       } else {
@@ -57,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const logout = () => {
-    signOut(auth).catch((err) => console.error('Logout error:', err));
+    signOut(auth).catch((err) => console.error('❌ Logout failed:', err));
   };
 
   return (
@@ -67,5 +64,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-// ✅ Hook สำหรับใช้งาน Context
 export const useAuth = () => useContext(AuthContext);

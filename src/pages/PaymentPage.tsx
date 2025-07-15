@@ -1,5 +1,5 @@
 // src/pages/PaymentPage.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
@@ -11,12 +11,15 @@ import {
 import CustomAppBar from '../components/CustomAppBar';
 import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const PaymentPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const {
+    bookingId,
     therapistName = 'Therapist',
     serviceName = 'Service',
     serviceDuration = '60 mins',
@@ -25,6 +28,7 @@ const PaymentPage: React.FC = () => {
     distance = 'N/A',
     total = 1100,
   } = (location.state || {}) as {
+    bookingId?: string;
     therapistName?: string;
     serviceName?: string;
     serviceDuration?: string;
@@ -34,11 +38,14 @@ const PaymentPage: React.FC = () => {
     total?: number;
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!location.state) navigate('/');
   }, [location.state, navigate]);
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
+    if (!bookingId) return;
+    const ref = doc(db, 'bookings', bookingId);
+    await updateDoc(ref, { paymentStatus: 'paid' });
     alert('✅ Payment Successful!');
     navigate('/booking/history');
   };
