@@ -1,7 +1,7 @@
 // src/components/FloatingTopBar.tsx
 import React from 'react';
 import { Box } from '@mui/material';
-import BackButton from './BackButton';
+
 
 interface Props {
   title?: string;
@@ -26,7 +26,7 @@ const FloatingTopBar: React.FC<Props> = ({ title, noBack }) => (
       boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
     }}
   >
-    {!noBack && <BackButton fixed={false} />}
+    
     <Box sx={{ flex: 1, textAlign: 'center', mr: noBack ? 0 : 4 }}>
       {title && (
         <span

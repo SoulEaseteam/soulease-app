@@ -15,7 +15,7 @@ import { useAuth } from '../providers/AuthProvider';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import BottomNav from '../components/BottomNav';
-import BackButton from '../components/BackButton';
+
 
 interface FavoriteTherapist {
   id: string;
@@ -57,7 +57,7 @@ const SavedTherapistsPage: React.FC = () => {
   return (
     <Box sx={{ minHeight: '100vh', background: '#f9f9f9', pb: 10 }}>
       <Box sx={{ maxWidth: 430, mx: 'auto', px: 2 }}>
-        <BackButton />
+
         <Typography variant="h5" fontWeight="bold" mt={2} mb={3}>
           Saved Therapists
         </Typography>

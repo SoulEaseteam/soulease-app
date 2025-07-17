@@ -19,3 +19,6 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const storage = getStorage(app); // ✅ เพิ่ม export
 export const auth = getAuth(app);       // ✅ ถ้ามีระบบล็อกอินด้วย
+
+
+export { app };

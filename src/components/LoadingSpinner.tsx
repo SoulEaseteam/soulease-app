@@ -29,7 +29,7 @@ const LoadingSpinner: React.FC = () => {
           flexDirection: 'column',
           background: 'linear-gradient(to bottom right, #fff0f5, #f9f4ff)',
           overflow: 'hidden',
-          fontFamily: 'Orson, sans-serif',
+          fontFamily: 'Trebuchet MS, sans-serif',
         }}
       >
         {/* 🌸 Floating flowers */}
@@ -73,7 +73,7 @@ const LoadingSpinner: React.FC = () => {
             fontWeight: 600,
             letterSpacing: 1,
             zIndex: 10,
-            fontFamily: '"Orson", sans-serif',
+            fontFamily: 'Trebuchet MS, sans-serif',
           }}
         >
           ☁️ Please wait a moment...

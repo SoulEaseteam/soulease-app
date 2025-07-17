@@ -33,5 +33,17 @@ export default defineConfig(({ mode }) => {
         vi: 'undefined',
       },
     },
+    build: {
+      chunkSizeWarningLimit: 1000,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            booking: ['src/pages/BookingPage.tsx'],
+            services: ['src/pages/ServicesPage.tsx'],
+            admin: ['src/pages/admin/AdminDashboardPage.tsx'],
+          },
+        },
+      },
+    },
   };
 });

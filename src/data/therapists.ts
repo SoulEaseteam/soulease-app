@@ -27,7 +27,7 @@ const therapists: Omit<Therapist, 'badge'>[] = [
       '/images/yuri/Y1.jpeg',
     ],
     features: {
-      age: '27',
+      age: '28',
       gender: 'Female',
       ethnicity: 'Thai',
       height: '160 cm',

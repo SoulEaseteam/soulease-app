@@ -48,7 +48,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',
         transition: 'all 0.3s ease',
-        fontFamily: 'Orson, sans-serif',
+        fontFamily: 'Trebuchet MS, sans-serif',
         '&:focus-within': {
           borderColor: '#88ccff',
           boxShadow: '0 0 0 2px rgba(136,204,255,0.2)',
@@ -66,7 +66,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           flex: 1,
           fontSize: 15,
           color: '#fff',
-          fontFamily: 'Orson, sans-serif',
+          fontFamily: 'Trebuchet MS, sans-serif',
           '&::placeholder': {
             color: '#bbb',
             opacity: 0.7,

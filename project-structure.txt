@@ -4409,7 +4409,6 @@
 ./src/utils/time.ts
 ./src/index.css
 ./src/components
-./src/components/BackButton.tsx
 ./src/components/NavBar.tsx
 ./src/components/ScrollToTop.tsx
 ./src/components/FloatingTopBar.tsx

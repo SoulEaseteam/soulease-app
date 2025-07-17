@@ -1,140 +1,214 @@
-// src/pages/SelectLocationPage.tsx
-import React, { useEffect, useRef, useState } from 'react';
+// SelectLocationPage.tsx
+import React, { useRef, useState } from 'react';
 import {
-  Box, Typography, Button, IconButton, CircularProgress
+  Box,
+  Button,
+  Typography,
+  TextField,
+  IconButton,
+  InputAdornment,
+  Snackbar,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useNavigate, useLocation } from 'react-router-dom';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { useNavigate } from 'react-router-dom';
+import { GoogleMap, Marker, useJsApiLoader, Autocomplete } from '@react-google-maps/api';
 
-declare global {
-  interface Window {
-    google: any;
-  }
-}
+const containerStyle = {
+  width: '100%',
+  height: '60vh',
+  borderRadius: '12px',
+};
 
-const SelectLocationPage: React.FC = () => {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const markerRef = useRef<any>(null);
+const defaultCenter = {
+  lat: 13.736717,
+  lng: 100.523186,
+};
+
+const SelectLocationPage = () => {
   const navigate = useNavigate();
-  const routerState = useLocation().state as { therapistId?: string };
-  const [loading, setLoading] = useState(true);
-  const [latLng, setLatLng] = useState<{ lat: number; lng: number } | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [address, setAddress] = useState('');
+  const [copied, setCopied] = useState(false);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
-  // Load Google Maps script dynamically
-  useEffect(() => {
-    const loadScript = () => {
-      if (document.getElementById('google-maps-script')) return initMap();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-      const script = document.createElement('script');
-      script.id = 'google-maps-script';
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`;
-      script.async = true;
-      script.defer = true;
-      script.onload = initMap;
-      document.body.appendChild(script);
-    };
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    libraries: ['places'],
+  });
 
-    const initMap = () => {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const initialPos = {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          };
+  const handleMapClick = (e: google.maps.MapMouseEvent) => {
+    if (e.latLng) {
+      const lat = e.latLng.lat();
+      const lng = e.latLng.lng();
+      setCurrentLocation({ lat, lng });
+      getAddressFromLatLng(lat, lng);
+    }
+  };
 
-          const map = new window.google.maps.Map(mapRef.current, {
-            center: initialPos,
-            zoom: 16,
-          });
-
-          const marker = new window.google.maps.Marker({
-            position: initialPos,
-            map,
-            draggable: true,
-          });
-
-          markerRef.current = marker;
-          setLatLng(initialPos);
-          reverseGeocode(initialPos);
-
-          marker.addListener('dragend', () => {
-            const newPos = {
-              lat: marker.getPosition().lat(),
-              lng: marker.getPosition().lng(),
-            };
-            setLatLng(newPos);
-            reverseGeocode(newPos);
-          });
-
-          setLoading(false);
-        },
-        (err) => {
-          console.error(err);
-          alert('⚠️ Cannot access location. Please enable GPS.');
-          setLoading(false);
-        }
-      );
-    };
-
-    const reverseGeocode = async ({ lat, lng }: { lat: number; lng: number }) => {
-      try {
-        const res = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
-        );
-        const data = await res.json();
-        const result = data.results?.[0]?.formatted_address || '';
-        setAddress(result);
-      } catch (err) {
-        console.error('Geocode error:', err);
-        setAddress('');
+  const getAddressFromLatLng = (lat: number, lng: number) => {
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+      if (status === 'OK' && results && results.length > 0) {
+        setAddress(results[0].formatted_address);
+      } else {
+        setAddress('ไม่สามารถดึงที่อยู่ได้');
       }
-    };
+    });
+  };
 
-    loadScript();
-  }, []);
+  const handleUseMyLocation = () => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        setCurrentLocation({ lat, lng });
+        getAddressFromLatLng(lat, lng);
+        if (mapRef.current) {
+          mapRef.current.panTo({ lat, lng });
+        }
+      },
+      () => {
+        alert('ไม่สามารถเข้าถึงตำแหน่งของคุณได้');
+      }
+    );
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(address);
+    setCopied(true);
+  };
 
   const handleConfirm = () => {
-    if (latLng) {
-      navigate(`/booking/${routerState?.therapistId || ''}`, {
+    if (currentLocation && address) {
+      navigate('/booking', {
         state: {
-          selectedLat: latLng.lat,
-          selectedLng: latLng.lng,
-          selectedAddress: address || `Lat: ${latLng.lat.toFixed(5)}, Lng: ${latLng.lng.toFixed(5)}`
+          selectedLat: currentLocation.lat,
+          selectedLng: currentLocation.lng,
+          selectedAddress: address,
         },
       });
     }
   };
 
+  const handlePlaceChanged = () => {
+    const place = autocompleteRef.current?.getPlace();
+    if (place?.geometry?.location) {
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+      setCurrentLocation({ lat, lng });
+      setAddress(place.formatted_address || '');
+      if (mapRef.current) {
+        mapRef.current.panTo({ lat, lng });
+      }
+    }
+  };
+
+  if (!isLoaded) return <Typography>Loading map...</Typography>;
+
   return (
-    <Box sx={{ p: 3, pb: 8, minHeight: '100vh', background: '#f0f4f8' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <IconButton onClick={() => navigate(-1)} sx={{ mr: 1 }}>
-          <ArrowBackIcon />
-        </IconButton>
-        <Typography variant="h6" fontWeight="bold">Select Location</Typography>
+    <Box
+      p={isMobile ? 1 : 3}
+      sx={{
+        fontFamily: 'Trebuchet MS, sans-serif',
+        maxWidth: 600,
+        margin: '0 auto',
+      }}
+    >
+      <Typography variant="h6" gutterBottom>
+        เลือกตำแหน่งที่คุณต้องการให้หมอไป
+      </Typography>
+
+      {/* 🔍 Autocomplete Search Box */}
+      <Autocomplete
+        onLoad={(autocomplete) => (autocompleteRef.current = autocomplete)}
+        onPlaceChanged={handlePlaceChanged}
+      >
+        <TextField
+          label="ค้นหาสถานที่"
+          placeholder="พิมพ์ชื่อสถานที่หรือที่อยู่"
+          fullWidth
+          sx={{ mb: 2 }}
+        />
+      </Autocomplete>
+
+      <Box
+        sx={{
+          borderRadius: '12px',
+          overflow: 'hidden',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        }}
+      >
+        <GoogleMap
+          mapContainerStyle={containerStyle}
+          center={currentLocation || defaultCenter}
+          zoom={15}
+          onClick={handleMapClick}
+          onLoad={(map) => {
+  mapRef.current = map;
+}}
+        >
+          {currentLocation && <Marker position={currentLocation} />}
+        </GoogleMap>
       </Box>
 
-      {loading ? (
-        <Box display="flex" justifyContent="center" mt={8}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <>
-          <Box ref={mapRef} sx={{ height: 350, borderRadius: 3, overflow: 'hidden' }} />
-          <Typography mt={2} align="center" color="text.secondary">
-            {address || 'Drag the pin to update address'}
-          </Typography>
-          <Button
-            fullWidth
-            variant="contained"
-            onClick={handleConfirm}
-            sx={{ mt: 3, py: 1.3, borderRadius: 3, fontWeight: 'bold', bgcolor: '#2b3b53' }}
-          >
-            Use This Location
-          </Button>
-        </>
-      )}
+      <Button
+        variant="outlined"
+        fullWidth
+        onClick={handleUseMyLocation}
+        sx={{
+          mt: 2,
+          mb: 1,
+          borderRadius: '12px',
+          textTransform: 'none',
+        }}
+      >
+        ใช้ตำแหน่งของฉัน
+      </Button>
+
+      <TextField
+        label="ที่อยู่"
+        value={address}
+        onChange={(e) => setAddress(e.target.value)}
+        fullWidth
+        multiline
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton onClick={handleCopy}>
+                <ContentCopyIcon />
+              </IconButton>
+            </InputAdornment>
+          ),
+        }}
+        sx={{ mt: 1 }}
+      />
+
+      <Button
+        variant="contained"
+        fullWidth
+        onClick={handleConfirm}
+        disabled={!currentLocation || !address}
+        sx={{
+          mt: 3,
+          borderRadius: '12px',
+          textTransform: 'none',
+        }}
+      >
+        ยืนยันตำแหน่งนี้
+      </Button>
+
+      <Snackbar
+        open={copied}
+        autoHideDuration={2000}
+        onClose={() => setCopied(false)}
+        message="คัดลอกที่อยู่เรียบร้อยแล้ว"
+      />
     </Box>
   );
 };

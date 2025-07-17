@@ -118,13 +118,13 @@ const BookingHistoryPage: React.FC = () => {
   });
 
   return (
-    <Box sx={{ minHeight: '100vh', py: 4, background: '#f8f9fa' }}>
+    <Box sx={{ minHeight: '100vh', py: 1, background: '#f8f9fa' }}>
       <Box sx={{ maxWidth: 450, mx: 'auto', px: 2 }}>
         <Typography variant="h6" fontWeight="bold" textAlign="center" mb={2}>
           Booking History
         </Typography>
 
-        <Box sx={{ background: '#fff', borderRadius: 4, p: 2, boxShadow: 3 }}>
+        <Box sx={{ background: '#fff', borderRadius: 2, p: 2, boxShadow: 3 }}>
           <Tabs
             value={tab}
             onChange={(_, v: number) => setTab(v)}

@@ -9,7 +9,6 @@ export interface Features {
   skintone?: string;
   bodyType: string;
   bustSize?: string;
-  bust?: string;
   hairColor?: string;
   vaccinated?: string;
   smoker?: string;

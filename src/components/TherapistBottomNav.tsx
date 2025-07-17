@@ -35,7 +35,7 @@ const TherapistBottomNav: React.FC = () => {
         sx={{
           '& .Mui-selected': { color: '#2b3b53' },
           '& .MuiBottomNavigationAction-root': {
-            fontFamily: 'Orson, sans-serif',
+            fontFamily: 'Trebuchet MS, sans-serif',
           },
         }}
       >

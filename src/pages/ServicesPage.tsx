@@ -1,5 +1,15 @@
 import React from 'react';
-import {Box,Typography,Avatar,Button,IconButton,Tabs,Tab,Accordion,AccordionSummary,AccordionDetails,
+import {
+  Box,
+  Typography,
+  Avatar,
+  Button,
+  IconButton,
+  Tabs,
+  Tab,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -8,7 +18,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import services from '../data/services';
 import FollowButton from '../components/FollowButton';
-import '@fontsource/playfair-display'; // npm install @fontsource/playfair-display
 
 const getBadgeStyle = (badge: string) => {
   const baseStyle = {
@@ -18,123 +27,94 @@ const getBadgeStyle = (badge: string) => {
     border: '1px solid rgba(255,255,255,0.15)',
     boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
   };
-
-  switch (badge) {
-    case 'VIXI SIGNATURE':
-      return { ...baseStyle, background: 'rgba(132, 132, 132, 0.43)' };
-    case 'VIXI RECOMMEND':
-      return { ...baseStyle, background: 'rgba(132, 132, 132, 0.43)' };
-    case 'VIXI BEST SELLER':
-      return { ...baseStyle, background: 'rgba(132, 132, 132, 0.31)' };
-    default:
-      return { ...baseStyle, background: 'rgba(132, 132, 132, 0.43)' };
-  }
+  return { ...baseStyle, background: 'rgba(132, 132, 132, 0.43)' };
 };
 
 const ServicesPage: React.FC = () => {
   const navigate = useNavigate();
   const [section, setSection] = React.useState<'services' | 'about' | 'how'>('services');
 
-  const handleSelectService = (name: string) => {
-    navigate(`/service-detail/${encodeURIComponent(name)}`);
-  };
+  const handleSelectService = (id: string) => {
+  navigate(`/services/${encodeURIComponent(id)}`);
+};
 
   return (
-  <Box sx={{ bgcolor: 'rgba(255, 255, 255, 0.6)', pb: 10, minHeight: '100vh', display: 'flex', justifyContent: 'center' }}>
-    <Box sx={{ width: '100%', maxWidth: 430, pb: 20 }}>
-      <Box
-  sx={{
-    width: '100%',
-    height: 180,
-    background: 'transparent', // ไม่มีพื้นหลัง
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  }}
->
-  <Box
-    component="img"
-    src="public/images/massage/SYNTIA BANGKOK.png" // 👈 เปลี่ยน path ให้ตรงกับตำแหน่งจริง
-    alt="SYNTIA BANGKOK"
+    <Box sx={{ bgcolor: 'rgba(255, 255, 255, 0.6)', pb: 10, minHeight: '100vh', display: 'flex', justifyContent: 'center', fontFamily: `'Trebuchet MS', sans-serif` }}>
+      <Box sx={{ width: '100%', maxWidth: 430, pb: 20 }}>
+        <Box sx={{ width: '100%', height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          
+        </Box>
+
+      <Box sx={{ px: 2, mt: 2, display: 'flex', alignItems: 'flex-end' }}>
+  <Avatar
+    src="/images/profli/soullogo.png"
     sx={{
-      maxWidth: '90%',
-      height: 'auto',
-      objectFit: 'contain',
+      width: 150,
+      height: 150,
+      border: '4px solid rgba(255,255,255,0.5)',
     }}
   />
+  <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
+    <IconButton component="a" href="https://line.me/ti/p/-TZBrEWmPx" target="_blank">
+      <Box
+        component="img"
+        src="/images/profli/line.png"
+        alt="Line"
+        sx={{ width: 30, height: 30 }}
+      />
+    </IconButton>
+
+    <IconButton component="a" href="weixin://dl/chat?SoulEase2025" target="_blank">
+      <Box
+        component="img"
+        src="/images/profli/wechat_2626283.png"
+        alt="WeChat"
+        sx={{ width: 31, height: 31 }}
+      />
+    </IconButton>
+
+    <IconButton component="a" href="https://t.me/SoulEasevip_bkk" target="_blank">
+      <Box
+        component="img"
+        src="/images/profli/telegram.png"
+        alt="Telegram"
+        sx={{ width: 30, height: 30 }}
+      />
+    </IconButton>
+
+    <IconButton component="a" href="https://wa.me/66634350987" target="_blank">
+      <Box
+        component="img"
+        src="/images/profli/whatsapp.png"
+        alt="WhatsApp"
+        sx={{ width: 30, height: 30 }}
+      />
+    </IconButton>
+
+    <FollowButton />
+  </Box>
 </Box>
 
-        <Box sx={{ px: 2, mt: -6, display: 'flex', alignItems: 'flex-end' }}>
-          <Avatar src="public/images/massage/Wonderland - 4.PNG" sx={{ width: 100, height: 100, border: '4px solid rgba(255,255,255,0.5)' }} />
-          <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
-            <IconButton component="a" href="https://line.me/ti/p/your-id" target="_blank">
-              <FaLine size={20} color="#00c200" />
-            </IconButton>
-            <IconButton component="a" href="https://weixin.qq.com/" target="_blank">
-              <FaWeixin size={20} color="#09bb07" />
-            </IconButton>
-            <IconButton component="a" href="https://t.me/yourusername" target="_blank">
-              <FaTelegramPlane size={20} color="#0088cc" />
-            </IconButton>
-            <IconButton component="a" href="https://wa.me/66981234567" target="_blank">
-              <FaWhatsapp size={20} color="#25D366" />
-            </IconButton>
-            <FollowButton />
-          </Box>
+        <Box sx={{ px: 2, mt: 4 }}>
+          <Typography variant="h6" fontWeight="bold" sx={{ fontFamily: 'Trebuchet MS, sans-serif' }}>SoulEase <CheckCircleIcon fontSize="small" sx={{ color: '#1DA1F2', ml: 0 }} /></Typography>
+          <Typography variant="body2" sx={{ color: '#596a7c', mt: 0.5, fontFamily: 'Trebuchet MS, sans-serif' }}>@soulease.vip</Typography>
+         <Typography variant="h6" fontWeight="bold"fontSize={16} sx={{ mt: 1, color: '#2b3b53', fontFamily: 'Trebuchet MS, sans-serif' }}>
+          Premium Outcall Massage in Bangkok.</Typography>
+            <Typography fontSize={14} variant="body1" sx={{ textIndent: '1.5em', mt: 0.5, color: '#2b3b53', fontFamily: 'Trebuchet MS, sans-serif' }}>
+            Verified therapists. Discreet. Reliable.<br />
+            Every profile is screened before publishing.<br />
+            Unmatched support, 24/7. Your relaxation begins here.
+          </Typography>
         </Box>
 
-        <Box sx={{ px: 2, mt: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-            SoulEase  <CheckCircleIcon fontSize="small" sx={{ color: '#1DA1F2', ml: 1 }} />
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#596a7c' }}>@soulease.vip</Typography>
-          <Typography variant="body1" sx={{ mt: 1, color: '#2b3b53' }}>
-  <span style={{ fontWeight: 'bold' }}>Premium Outcall Massage in Bangkok.</span><br />
-  Verified therapists. Discreet. Reliable.<br />
-  Every profile is screened before publishing.<br />
-  Unmatched support, 24/7. Your relaxation begins here.
-</Typography>
+        <Box sx={{ mt: 2, px: 2, py: 1, borderRadius: 4, background: 'linear-gradient(to right, #0f1113,#2e3a4f)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+          <Tabs value={section} onChange={(_, value) => setSection(value)} textColor="inherit" indicatorColor="primary" variant="fullWidth"
+            sx={{ '& .MuiTab-root': { color: '#cccccc', fontWeight: 'bold', fontFamily: 'Trebuchet MS, sans-serif' }, '& .Mui-selected': { color: '#ffffff', background: 'rgba(255,255,255,0.1)', borderRadius: 2 }, '& .MuiTabs-indicator': { backgroundColor: '#ffffff', height: 3, borderRadius: 2 } }}>
+            <Tab label="SERVICES" value="services" />
+            <Tab label="ABOUT US" value="about" />
+            <Tab label="HOW TO BOOK" value="how" />
+          </Tabs>
         </Box>
-        
-        <Box
-              sx={{
-                mt: 2,
-                px: 2,
-                py: 1,
-                borderRadius: 4,
-                background: 'linear-gradient(to right, #0f1113,#2e3a4f)', // เปลี่ยนสีแท็บ
-                backdropFilter: 'blur(12px)',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-              }}
-            >
-              <Tabs
-                value={section}
-                onChange={(_, value) => setSection(value)}
-                textColor="inherit"
-                indicatorColor="primary"
-                variant="fullWidth"
-                sx={{
-                  '& .MuiTab-root': {
-                    color: '#cccccc', // สีตัวอักษรแท็บทั่วไป
-                    fontWeight: 'bold',
-                  },
-                  '& .Mui-selected': {
-                    color: '#ffffff', // สีตัวอักษรเมื่อเลือก
-                    background: 'rgba(255,255,255,0.1)',
-                    borderRadius: 2,
-                  },
-                  '& .MuiTabs-indicator': {
-                    backgroundColor: '#ffffff', // สีเส้นใต้
-                    height: 3,
-                    borderRadius: 2,
-                  },
-                }}
-              >
-                <Tab label="SERVICES" value="services" />
-                <Tab label="ABOUT US" value="about" />
-                <Tab label="HOW TO BOOK" value="how" />
-              </Tabs>
-            </Box>
 
         {section === 'services' && (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, mt: 3, px: 2 }}>
@@ -148,9 +128,12 @@ const ServicesPage: React.FC = () => {
               >
                 <Box
                   sx={{
+                  
+                    fontFamily: 'Trebuchet MS, sans-serif',
+                    textIndent: '1em',
                     position: 'relative',
                     height: 220,
-                    borderRadius: 5,
+                    borderRadius: 2,
                     overflow: 'hidden',
                     backgroundImage: `url(${svc.image})`,
                     backgroundSize: 'cover',
@@ -160,24 +143,26 @@ const ServicesPage: React.FC = () => {
                     justifyContent: 'flex-end',
                     cursor: 'pointer',
                     boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+                    
                   }}
-                  onClick={() => handleSelectService(svc.name)}
+                  onClick={() => handleSelectService(svc.id)}
                 >
-                  <Box sx={{ position: 'absolute', top: 14, left: 14, px: 1.5, py: 0.5, fontSize: 12, fontWeight:'bold', borderRadius: 2, ...getBadgeStyle(svc.badge) }}>
+                  <Box sx={{ position: 'absolute', top: 14, left: 14, px: 1.5, py: 0.5, fontSize: 12, borderRadius: 2, ...getBadgeStyle(svc.badge) }}>
                     {svc.badge}
                   </Box>
-                  <Box sx={{ px: 2, py: 1.5, background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(10px)' }}>
-                    <Typography fontSize={18} fontWeight="bold" fontFamily="Playfair Display" sx={{ color: '#2b3b53' }}>{svc.name}</Typography>
-                    <Typography fontSize={13} sx={{ mt: 0.3, color: '#3f5066' }}>{svc.desc}</Typography>
+                  <Box sx={{ px: 2, py: 1, background: 'rgba(255, 255, 255, 0.19)', backdropFilter: 'blur(1px)' }}>
+                    <Typography fontSize={18} fontWeight="bold" fontFamily="Trebuchet MS, sans-serif" sx={{ color: '#ffff' }}>{svc.name}</Typography>
+                    <Typography fontSize={14} sx={{ color: '#D3D3D3', fontFamily: 'Trebuchet MS, sans-serif' }}>{svc.desc}{svc.desc}</Typography>
                     <Typography>
-                      <Box component="span" sx={{ fontSize: 16, fontWeight: 'bold', color: '#7c4d00' }}>฿{svc.price}</Box>
-                      <Box component="span" sx={{ fontSize: 13, fontWeight: 400, color: '#7c4d00', ml: 0.5 }}>• ⏱ {svc.duration}</Box>
+                      <Box component="span" sx={{ fontSize: 16, fontWeight: 'bold', color: '#FF9900' }}>฿{svc.price}</Box>
+                      <Box component="span" sx={{ fontSize: 13, fontWeight: 400, color: '#BEBEBE', ml: 1 }}>• ⏱ {svc.duration}</Box>
                     </Typography>
                   </Box>
                 </Box>
               </motion.div>
             ))}
-            <Typography textAlign="center" mt={4} fontSize={13} sx={{ color: '#aaa', fontStyle: 'italic' }}> “Can’t find what you’re looking for? Chat with us for more options!” </Typography>
+            <Typography textAlign="center" mt={4} fontSize={13} sx={{ color: '#aaa', fontStyle: 'Trebuchet MS, sans-serif' }}> 
+              “Can’t find what you’re looking for? Chat with us for more options!” </Typography>
           </Box>
         )}
 
@@ -187,13 +172,13 @@ const ServicesPage: React.FC = () => {
           • ABOUT US •
         </Typography>
 
-        <Typography fontSize={14} lineHeight={1.9} mb={2} sx={{ textIndent: '1.5em', textAlign: 'left' }}>
+        <Typography fontSize={14} lineHeight={2} mb={2} sx={{ textAlign: 'justify', textIndent: '1.5em', color: '#1a2a3b', fontFamily: 'Trebuchet MS, sans-serif' }}>
           Welcome to SoulEase’s Massage Service Experience.  
           Step into a world where relaxation meets indulgence and every touch is designed to awaken your senses. 
           Discover a curated list of independent therapists, each specializing in diverse massage techniques tailored to your unique preferences.
         </Typography>
 
-        <Typography fontSize={14} lineHeight={1.9} sx={{ textIndent: '1.5em', textAlign: 'left' }}>
+<Typography fontSize={14} lineHeight={2} mb={2} sx={{ textAlign: 'justify', textIndent: '1.5em', color: '#1a2a3b', fontFamily: 'Trebuchet MS, sans-serif' }}>
           Whether you’re seeking deep relaxation or an elevated experience with a sensual finale, 
           SoulEase is here to create the perfect journey. Every therapist’s profile is verified 
           and thoughtfully crafted to help you find the ideal match.
@@ -241,25 +226,30 @@ While we strive to ensure honest and accurate representation, like any platform,
     elevation={0}
     sx={{
       mb: 1.5,
+      
       border: '1px solid #ccc',
-      borderRadius: 2,
+      borderRadius: 1,
       '&::before': { display: 'none' },
     }}
   >
-    <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#1a2a3b' }} />}>
-      <Typography fontWeight="bold" fontSize={16} sx={{ color: '#1a2a3b' }}>
-        {item.q}
-      </Typography>
-    </AccordionSummary>
+<AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#1a2a3b' }} />}>
+  <Typography fontWeight="bold" fontSize={14} sx={{ color: '#1a2a3b', fontFamily: 'Trebuchet MS, sans-serif' }}>
+    {item.q}
+  </Typography>
+</AccordionSummary>
+
     <AccordionDetails>
       {item.a.split('\n\n').map((para, i) => (
         <Typography
           key={i}
-          fontSize={14}
-          lineHeight={1.8}
-          color="text.secondary"
-          paragraph
-          sx={{ textIndent: '1.5em' }}
+        fontSize={14}
+        lineHeight={1.8}
+        color="text.secondary"
+        paragraph
+        sx={{
+          textIndent: '1.5em',
+          fontFamily: 'Trebuchet MS, sans-serif',
+        }}
         >
           {para}
         </Typography>
@@ -308,28 +298,31 @@ While we strive to ensure honest and accurate representation, like any platform,
     disableGutters
     elevation={0}
     sx={{
-      mb: 1.5,
+      mb: 2,
       border: '1px solid #ccc',
-      borderRadius: 2,
+      borderRadius: 1,
       '&::before': { display: 'none' },
+      
     }}
   >
-    <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#1a2a3b' }} />}>
-      <Typography fontWeight="bold" fontSize={16} sx={{ color: '1a2a3b' }}>
-        {item.q}
-      </Typography>
-    </AccordionSummary>
+<AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#1a2a3b' }} />}>
+  <Typography fontWeight="bold" fontSize={14} sx={{ color: '#1a2a3b', fontFamily: 'Trebuchet MS, sans-serif' }}>
+    {item.q}
+  </Typography>
+</AccordionSummary>
+
    <AccordionDetails>
   {typeof item.a === 'string' ? (
     item.a.split('\n\n').map((para, i) => (
       <Typography
         key={i}
         fontSize={14}
-        lineHeight={1.8}
+        lineHeight={1.7}
         color="text.secondary" // ✅ สีเทาอ่อนแบบเดียวกับพารากราฟด้านบน
         paragraph
         sx={{
-          textIndent: '1.5em',
+         textIndent: '1.5em',
+          fontFamily: 'Trebuchet MS, sans-serif',
         }}
       >
         {para}
@@ -349,7 +342,7 @@ While we strive to ensure honest and accurate representation, like any platform,
       sx={{
         mt: 5,
         p: 3,
-        borderRadius: 4,
+        borderRadius: 2,
         backgroundColor: '#ffffff',
         boxShadow: '0 6px 18px rgba(0,0,0,0.06)',
       }}
@@ -359,17 +352,17 @@ While we strive to ensure honest and accurate representation, like any platform,
       </Typography>
       <Box display="flex" alignItems="center" gap={1.5} mb={1}>
         <FaWhatsapp size={20} style={{ color: '#25D366' }} />
-        <Typography fontSize={14} sx={{ color: '#2c3e50' }}>
-          WhatsApp: <b>+66 981522825</b>
+        <Typography fontSize={14} sx={{ color: '#2c3e50', fontFamily: 'Trebuchet MS, sans-serif' }}>
+                WhatsApp: <b>+66 63 435 0987</b>
         </Typography>
       </Box>
       <Box display="flex" alignItems="center" gap={1.5}>
         <FaTelegramPlane size={20} style={{ color: '#229ED9' }} />
-        <Typography fontSize={14} sx={{ color: '#2c3e50' }}>
+        <Typography fontSize={14} sx={{ color: '#2c3e50', fontFamily: 'Trebuchet MS, sans-serif' }}>
           Telegram:{' '}
           <Box
             component="a"
-            href="https://t.me/missmevixibkk"
+            href="https://t.me/SoulEasevip_bkk"
             target="_blank"
             rel="noopener noreferrer"
             sx={{
@@ -382,7 +375,7 @@ While we strive to ensure honest and accurate representation, like any platform,
               },
             }}
           >
-            @missmevixibkk
+            @SoulEasevip_bkk
           </Box>
         </Typography>
       </Box>
@@ -395,10 +388,12 @@ While we strive to ensure honest and accurate representation, like any platform,
       <Box display="flex" gap={2}>
         <Button
           component="a"
+          href="https://t.me/+leM2NrBtS5w5ZTM1"
           target="_blank"
           rel="noopener noreferrer"
           variant="outlined"
           sx={{
+            fontFamily: 'Trebuchet MS, sans-serif',
             borderRadius: 4,
             borderColor: 'rgba(0, 0, 0, 0.06)',
             color: '#2b3b53',
@@ -412,11 +407,12 @@ While we strive to ensure honest and accurate representation, like any platform,
         </Button>
         <Button
           component="a"
-          href="https://yourblog.com"
+          href="https://t.me/+leM2NrBtS5w5ZTM1"
           target="_blank"
           rel="noopener noreferrer"
           variant="outlined"
           sx={{
+            fontFamily: 'Trebuchet MS, sans-serif',
             borderRadius: 4,
             borderColor: 'rgba(0, 0, 0, 0.06)',
             color: '#2b3b53',
@@ -439,7 +435,8 @@ While we strive to ensure honest and accurate representation, like any platform,
     textAlign: 'center',
   }}
 >
-  <Typography textAlign="center" mt={4} fontSize={14} sx={{ color: '#aaa', fontStyle: 'italic' }}> “Should you require any assistance, please do not hesitate to contact us.” ·</Typography>
+  <Typography textAlign="center" mt={4} fontSize={14} sx={{ color: '#aaa', fontFamily: 'Trebuchet MS, sans-serif' }}> 
+    “Should you require any assistance, please do not hesitate to contact us.” </Typography>
          
 </Box>
     </Box>

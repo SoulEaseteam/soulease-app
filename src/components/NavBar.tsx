@@ -17,7 +17,7 @@ const NavBar: React.FC = () => {
           minWidth: 0,
           background: 'linear-gradient(to right, #2b3b53, #3e506b)',
           boxShadow: '0 6px 16px rgba(0, 0, 0, 0.25)',
-          fontFamily: 'Orson, sans-serif',
+          fontFamily: 'Trebuchet MS, sans-serif',
           animation: 'fadeInNav 0.8s ease-out',
           '&:after': {
             // glass layer
@@ -55,7 +55,7 @@ const NavBar: React.FC = () => {
               fontSize: { xs: 20, sm: 26 },
               color: '#fff',
               textShadow: '0 2px 6px rgba(255,255,255,0.2)',
-              fontFamily: 'Orson, sans-serif',
+              fontFamily: 'Trebuchet MS, sans-serif',
               userSelect: 'none',
               zIndex: 2,
             }}

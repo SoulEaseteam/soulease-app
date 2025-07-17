@@ -30,16 +30,24 @@ const LoginPage: React.FC = () => {
         alignItems: 'center',
         flexDirection: 'column',
       }}>
-        <Paper elevation={10} sx={{
-          width: '100%', maxWidth: 310, textAlign: 'center', p: 4, borderRadius: 15,
-          background: 'linear-gradient(to bottom, #fff, #f2f2f2)', color: '#2b3b53'
-        }}>
-          <Box sx={{ textAlign: 'center', mt: -14 }}>
-            <Box component="img" src="/images/massage/user.png" alt="User Icon" sx={{
-              width: 130, height: 130, borderRadius: '50%', border: '4px solid #fff',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.2)', mb: 3,
-            }} />
-          </Box>
+       <Paper elevation={16} sx={{
+                 width: '100%',
+                 maxWidth: 335,
+                 textAlign: 'center',
+                 p: 4,
+                 borderRadius: 2,
+                 background: 'linear-gradient(to bottom, #fff, #f2f2f2)',
+                 color: '#2b3b53',
+                 position: 'relative'
+               }}>
+                 <Box sx={{ textAlign: 'center', mt: -16 }}>
+                   <Box sx={{ display: 'inline-block', p: 1, borderRadius: '50%', bgcolor: '#fff' }}>
+                     <Box sx={{ display: 'inline-block', p: 1.2, borderRadius: '50%', bgcolor: '#2b3b53' }}>
+                       <Box component="img" src="/images/icon/support-service.png" alt="User Icon"
+                         sx={{ width: 150, height: 150, borderRadius: '50%', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }} />
+                     </Box>
+                   </Box>
+                 </Box>
 
           <Typography variant="h6" fontWeight="bold" mt={4} mb={4}
             sx={{ fontFamily: 'Chonburi, serif', fontSize: '2rem' }}>
@@ -81,19 +89,21 @@ const LoginPage: React.FC = () => {
           />
 
           <Button onClick={handleLogin} fullWidth sx={{
-            mt: 1, mb: 2, py: 1.2, fontWeight: 'bold', fontSize: 14, borderRadius: '20px',
-            backgroundColor: '#2b3b53', color: '#fff',
-            backdropFilter: 'blur(8px)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+             mt: 1, py: 1.2, px: 5, fontWeight: 'bold', fontSize: 14,
+            borderRadius: '20px', color: '#fff', textTransform: 'uppercase',
+            maxWidth: 150, width: '100%', backgroundColor: '#2b3b53',
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
             '&:hover': { backgroundColor: '#7b8b99', transform: 'scale(1.02)' },
             transition: '0.2s ease-in-out'
           }}>
             LOGIN
           </Button>
 
-          <Typography mt={2} fontSize={14}>
+          <Typography mt={3} fontSize={14}>
             <Link href="#" underline="hover" color="#a4b0ba">Forgot password?</Link>
           </Typography>
-          <Typography mt={2} fontSize={14}>
+          <Typography mt={1} fontSize={14}>
             Don’t have an account?{' '}
             <Link href="/register" underline="always" color="#666" fontWeight="bold">
               Sign up

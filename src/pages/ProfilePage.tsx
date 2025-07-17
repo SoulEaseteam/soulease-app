@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -9,6 +9,7 @@ import {
   ListItemText,
   Divider,
   Paper,
+  Switch,
 } from '@mui/material';
 import {
   Edit,
@@ -20,14 +21,22 @@ import {
   Logout,
   LocationOn,
   Settings,
+  UploadFile,
+  Lock,
+  Brightness4,
+  HeartBrokenOutlined,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { useAuth } from '../providers/AuthProvider';
+import { Heart } from 'phosphor-react';
+import { HeartIcon } from 'lucide-react';
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, role, logout } = useAuth();
+  const { user, logout } = useAuth();
+  const [darkMode, setDarkMode] = useState(false);
+  const role = user?.role;
 
   const handleLogout = async () => {
     await logout?.();
@@ -116,20 +125,20 @@ const ProfilePage: React.FC = () => {
         sx={{
           width: '100%',
           maxWidth: 380,
-          borderRadius: 6,
+          borderRadius: 2,
           overflow: 'hidden',
           textAlign: 'center',
-          pb: 3,
+          pb: 4,
         }}
       >
-        <Box sx={{ position: 'relative', height: 140, background: '#2b3b53' }}>
+        <Box sx={{ position: 'relative', height: 130, background: '#2b3b53' }}>
           <Avatar
             src={user?.image || '/images/massage/user.png'}
             sx={{
-              width: 100,
-              height: 100,
+              width: 120,
+              height: 120,
               position: 'absolute',
-              bottom: -50,
+              bottom: -40,
               left: '50%',
               transform: 'translateX(-50%)',
               border: '4px solid #fff',
@@ -137,7 +146,7 @@ const ProfilePage: React.FC = () => {
           />
         </Box>
 
-        <Box mt={6}>
+        <Box mt={8}>
           <Typography variant="h6" fontWeight="bold">
             {user?.username || 'My Profile'}
           </Typography>
@@ -152,14 +161,28 @@ const ProfilePage: React.FC = () => {
 
         <List>
           {renderMenuItems()}
-          <ListItem button onClick={() => navigate('/location')}>
-            <ListItemIcon><LocationOn /></ListItemIcon>
-            <ListItemText primary="Location" />
-          </ListItem>
-          <ListItem button onClick={() => navigate('/settings')}>
-            <ListItemIcon><Settings /></ListItemIcon>
-            <ListItemText primary="Settings" />
-          </ListItem>
+
+        <ListItem button onClick={() => navigate('/edit-profile')}>
+          <ListItemIcon><Edit /></ListItemIcon>
+          <ListItemText primary="Edit Profile" />
+        </ListItem>
+
+        <ListItem button onClick={() => navigate('/notifications')}>
+          <ListItemIcon><Notifications /></ListItemIcon>
+          <ListItemText primary="Notifications" />
+        </ListItem>
+
+        <ListItem button onClick={() => navigate('/upload-profile-image')}>
+          <ListItemIcon><HeartIcon /></ListItemIcon>
+          <ListItemText primary="Favourites" />
+        </ListItem>
+
+        <ListItem button onClick={() => navigate('/booking/history')}>
+          <ListItemIcon><Event /></ListItemIcon>
+          <ListItemText primary="My Bookings" />
+        </ListItem>
+
+
         </List>
 
         <Divider sx={{ my: 1 }} />

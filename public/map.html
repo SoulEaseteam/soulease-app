@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Maps Autocomplete</title>
+    <meta charset="utf-8" />
+    <style>
+      #map {
+        height: 400px;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <h3>เลือกตำแหน่งของคุณ</h3>
+
+    <!-- Autocomplete -->
+    <input
+      id="autocomplete"
+      type="text"
+      placeholder="พิมพ์ชื่อสถานที่"
+      style="width: 100%; padding: 10px; font-size: 16px"
+    />
+
+    <!-- Map container -->
+    <div id="map"></div>
+
+    <!-- Load Google Maps JS SDK -->
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&callback=initMap"
+      async
+      defer
+    ></script>
+
+    <script>
+      let map, marker, autocomplete;
+
+      function initMap() {
+        // แผนที่เริ่มต้น
+        map = new google.maps.Map(document.getElementById("map"), {
+          center: { lat: 13.7563, lng: 100.5018 }, // กรุงเทพฯ
+          zoom: 13,
+        });
+
+        // มาร์กเกอร์
+        marker = new google.maps.Marker({
+          map: map,
+          draggable: true,
+        });
+
+        // Autocomplete
+        const input = document.getElementById("autocomplete");
+        autocomplete = new google.maps.places.Autocomplete(input);
+        autocomplete.bindTo("bounds", map);
+
+        autocomplete.addListener("place_changed", () => {
+          const place = autocomplete.getPlace();
+          if (!place.geometry) return;
+
+          // ซูมไปยังตำแหน่งที่เลือก
+          map.setCenter(place.geometry.location);
+          map.setZoom(15);
+
+          // วาง marker
+          marker.setPosition(place.geometry.location);
+
+          // ตัวอย่าง log lat/lng
+          console.log("Latitude:", place.geometry.location.lat());
+          console.log("Longitude:", place.geometry.location.lng());
+        });
+      }
+    </script>
+  </body>
+</html>

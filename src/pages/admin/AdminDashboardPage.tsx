@@ -1,20 +1,17 @@
-// src/pages/admin/AdminDashboardPage.tsx
-
 import React, { useEffect, useState } from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  Stack,
-  Grid,
-  CircularProgress,
-  Button,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
+import Grid from '@mui/material/Grid';
+import CircularProgress from '@mui/material/CircularProgress';
+import Button from '@mui/material/Button';
 import { db } from '@/firebase';
 import { collection, onSnapshot, DocumentData } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
+
 
 interface Booking {
   id: string;
@@ -104,7 +101,7 @@ const AdminDashboardPage: React.FC = () => {
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mt={4}>
         <Button
           variant="outlined"
-          fullWidth={true}
+          fullWidth
           onClick={() => navigate('/admin/change-password')}
         >
           🔐 Change Password
@@ -112,7 +109,7 @@ const AdminDashboardPage: React.FC = () => {
         <Button
           variant="contained"
           color="error"
-          fullWidth={true}
+          fullWidth
           onClick={handleLogout}
         >
           🚪 Logout

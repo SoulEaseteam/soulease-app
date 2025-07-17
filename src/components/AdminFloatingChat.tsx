@@ -1,36 +1,37 @@
 // src/components/AdminFloatingChat.tsx
 import React, { useState, useEffect } from 'react';
 import { IconButton, Tooltip, Box } from '@mui/material';
-import { FaLine, FaTelegramPlane, FaWhatsapp, FaWeixin } from 'react-icons/fa';
 
 const chatButtons = [
-  { 
-    icon: <FaLine size={20} />, 
-    href: 'https://line.me/ti/p/-TZBrEWmPx', 
-    color: '#00c300', 
-    title: 'LINE', 
-    delay: 0.05 
+  {
+    title: 'WeChat',
+    href: 'weixin://dl/chat?SoulEase2025',
+    src: '/images/profli/wechat_2626283.png',
+    delay: 0.1,
   },
-  { 
-    icon: <FaTelegramPlane size={20} />, 
-    href: 'https://t.me/SoulEasevip_bkk', 
-    color: '#229ED9', 
-    title: 'Telegram', 
-    delay: 0.15 
+  {
+    title: 'Telegram',
+    href: 'https://t.me/SoulEasevip_bkk',
+    src: '/images/profli/telegram.png',
+    delay: 0.2,
   },
-  { 
-    icon: <FaWhatsapp size={20} />, 
-    href: 'https://wa.me/66634350987',  // << อันนี้ใช้เบอร์ใหม่
-    color: '#25D366', 
-    title: 'WhatsApp', 
-    delay: 0.25 
+  {
+    title: 'WhatsApp',
+    href: 'https://wa.me/66634350987',
+    src: '/images/profli/whatsapp.png',
+    delay: 0.3,
   },
-  { 
-    icon: <FaWeixin size={20} />, 
-    href: 'weixin://dl/chat?SoulEase2025', 
-    color: '#7BB32E', 
-    title: 'WeChat', 
-    delay: 0.35 
+  {
+    title: 'LINE',
+    href: 'https://line.me/ti/p/-TZBrEWmPx',
+    src: '/images/profli/line.png',
+    delay: 0.4,
+  },
+  {
+    title: 'X (Twitter)',
+    href: 'https://x.com/SoulEase_bkk',
+    src: "public/images/profli/twitter.png",
+    delay: 0.5,
   },
 ];
 const AdminFloatingChat: React.FC = () => {
@@ -63,7 +64,7 @@ const AdminFloatingChat: React.FC = () => {
 
       {isExpanded && (
         <Box className="chat-buttons-container">
-          {chatButtons.map((btn) => (
+          {chatButtons.map((btn, index) => (
             <Tooltip title={btn.title} placement="left" key={btn.title}>
               <IconButton
                 component="a"
@@ -72,8 +73,7 @@ const AdminFloatingChat: React.FC = () => {
                 rel="noopener noreferrer"
                 aria-label={btn.title}
                 sx={{
-                  bgcolor: btn.color,
-                  color: 'white',
+                  bgcolor: 'white',
                   width: 48,
                   height: 48,
                   mb: 1,
@@ -81,11 +81,17 @@ const AdminFloatingChat: React.FC = () => {
                   boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                   opacity: 0,
                   transform: 'translateY(20px)',
-                  animation: `fadeSlideUpBtn 0.4s ease ${btn.delay}s forwards`,
+                  animation: `fadeSlideUpBtn 0.4s ease ${index * 0.1}s forwards`,
                   '&:hover': { transform: 'scale(1.1)' },
+                  p: 0
                 }}
               >
-                {btn.icon}
+                <Box
+                  component="img"
+                  src={btn.src}
+                  alt={btn.alt}
+                  sx={{ width: 30, height: 30 }}
+                />
               </IconButton>
             </Tooltip>
           ))}

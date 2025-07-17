@@ -1,3 +1,4 @@
+// TherapistProfileCard.tsx
 import React, { useState } from 'react';
 import {
   Box, Typography, Button, Stack, Paper, Dialog, IconButton
@@ -163,12 +164,12 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist })
               sx={{
                 fontSize: 7,
                 borderRadius: 99,
-                px: 1.6,
+                px: 1,
                 textTransform: 'none',
                 color: '#555',
                 borderColor: '#bbb',
               }}
-              onClick={() => navigate(`/therapist/${therapist.id}?section=features#features`)}
+              onClick={() => navigate(`/therapists/${therapist.id}?section=features#features`)}
             >
               See more
             </Button>
@@ -179,7 +180,7 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist })
               variant="contained"
               size="small"
               disabled={therapist.available === 'resting'}
-              onClick={() => navigate(`/therapists/${therapist.id}`)}
+              onClick={() => navigate(`/therapists/${therapist.id}?section=services`)}
               sx={{
                 fontSize: 12,
                 px: 2,
@@ -240,31 +241,40 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist })
               backgroundColor: 'transparent',
               boxShadow: 'none',
               borderRadius: 0,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
             },
           }}
         >
-          <Box sx={{ position: 'relative' }}>
+          <Box sx={{ position: 'relative', p: 2 }}>
             <IconButton
               onClick={() => setOpen(false)}
               sx={{
                 position: 'absolute',
-                top: 8,
-                right: 8,
+                top: 4,
+                right: 4,
+                background: 'rgba(0,0,0,0.5)',
                 color: '#fff',
-                zIndex: 1,
+                zIndex: 2,
+                '&:hover': { background: 'rgba(0,0,0,0.7)' },
               }}
             >
               <CloseIcon />
             </IconButton>
+
             <Box
               component="img"
               src={resolvedImage}
               alt="Preview"
               sx={{
                 width: '100%',
-                maxHeight: '80vh',
-                objectFit: 'contain',
-                borderRadius: 2,
+                maxWidth: 400,
+                maxHeight: '75vh',
+                height: 'auto',
+                objectFit: 'cover',
+                borderRadius: 4,
+                boxShadow: 3,
               }}
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).src = '/images/placeholder.jpg';

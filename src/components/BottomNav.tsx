@@ -37,7 +37,7 @@ const BottomNav: React.FC = () => {
         width: '100%',
         maxWidth: 430,
         zIndex: 1200,
-        fontFamily: 'Orson, sans-serif',
+        fontFamily: 'Trebuchet MS, sans-serif',
         pointerEvents: 'none', // ป้องกัน scroll ทับ input
       }}
     >
@@ -55,7 +55,7 @@ const BottomNav: React.FC = () => {
           borderTopLeftRadius: 20,
           borderTopRightRadius: 20,
           boxShadow: '0 -6px 24px rgba(0, 0, 0, 0.4)',
-          fontFamily: 'Orson, sans-serif',
+          fontFamily: 'Trebuchet MS, sans-serif',
         }}
       >
         <BottomNavigation
@@ -69,7 +69,7 @@ const BottomNav: React.FC = () => {
               borderRadius: '16px',
               mx: 0.5,
               py: 0.5,
-              fontFamily: 'Orson, sans-serif',
+              fontFamily: 'Trebuchet MS, sans-serif',
               '&:hover': {
                 transform: 'scale(1.08)',
                 backgroundColor: 'rgba(255, 255, 255, 0.08)',
@@ -80,7 +80,7 @@ const BottomNav: React.FC = () => {
               backgroundColor: 'rgba(255, 255, 255, 0.12)',
               transform: 'scale(1.2)',
               boxShadow: '0 6px 16px rgba(255, 255, 255, 0.2)',
-              fontFamily: 'Orson, sans-serif',
+              fontFamily: 'Trebuchet MS, sans-serif',
             },
           }}
         >
@@ -91,7 +91,7 @@ const BottomNav: React.FC = () => {
             sx={{
               '& .MuiBottomNavigationAction-label': {
                 fontSize: 10,
-                fontFamily: 'Orson, sans-serif',
+                fontFamily: 'Trebuchet MS, sans-serif',
               },
             }}
           />
@@ -103,7 +103,7 @@ const BottomNav: React.FC = () => {
             sx={{
               '& .MuiBottomNavigationAction-label': {
                 fontSize: 10,
-                fontFamily: 'Orson, sans-serif',
+                fontFamily: 'Trebuchet MS, sans-serif',
               },
             }}
           />
@@ -115,7 +115,7 @@ const BottomNav: React.FC = () => {
             sx={{
               '& .MuiBottomNavigationAction-label': {
                 fontSize: 10,
-                fontFamily: 'Orson, sans-serif',
+                fontFamily: 'Trebuchet MS, sans-serif',
               },
             }}
           />
@@ -127,7 +127,7 @@ const BottomNav: React.FC = () => {
             sx={{
               '& .MuiBottomNavigationAction-label': {
                 fontSize: 10,
-                fontFamily: 'Orson, sans-serif',
+                fontFamily: 'Trebuchet MS, sans-serif',
               },
             }}
           />

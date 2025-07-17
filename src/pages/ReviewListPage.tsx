@@ -72,7 +72,7 @@ const ReviewListPage: React.FC = () => {
             Therapist Reviews
           </Typography>
 
-          <Box sx={{ background: '#fff', borderRadius: 4, p: 2, boxShadow: 3 }}>
+          <Box sx={{ background: '#fff', borderRadius: 2, p: 2, boxShadow: 3 }}>
             <Tabs
               value={tab}
               onChange={(_, v: number) => setTab(v)}

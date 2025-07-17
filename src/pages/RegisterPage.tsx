@@ -68,12 +68,12 @@ const RegisterPage: React.FC = () => {
         flexDirection: 'column',
         p: 0,
       }}>
-        <Paper elevation={10} sx={{
+        <Paper elevation={16} sx={{
           width: '100%',
-          maxWidth: 310,
+          maxWidth: 350,
           textAlign: 'center',
           p: 4,
-          borderRadius: 15,
+          borderRadius: 2,
           background: 'linear-gradient(to bottom, #fff, #f2f2f2)',
           color: '#2b3b53',
           position: 'relative'
@@ -81,8 +81,8 @@ const RegisterPage: React.FC = () => {
           <Box sx={{ textAlign: 'center', mt: -16 }}>
             <Box sx={{ display: 'inline-block', p: 1, borderRadius: '50%', bgcolor: '#fff' }}>
               <Box sx={{ display: 'inline-block', p: 1.2, borderRadius: '50%', bgcolor: '#2b3b53' }}>
-                <Box component="img" src="/images/user.png" alt="User Icon"
-                  sx={{ width: 130, height: 130, borderRadius: '50%', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }} />
+                <Box component="img" src="/images/icon/support-service.png" alt="User Icon"
+                  sx={{ width: 150, height: 150, borderRadius: '50%', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }} />
               </Box>
             </Box>
           </Box>

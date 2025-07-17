@@ -38,21 +38,22 @@ const CustomAppBar: React.FC<CustomAppBarProps> = ({
   };
 
   return (
-    <AppBar
-      position="sticky"
-      elevation={0}
-      sx={{
-        backgroundColor: 'rgba(255,255,255,0.68)',
-        backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid rgba(0,0,0,0.04)',
-        boxShadow: '0 1px 6px rgba(0,0,0,0.08)',
-        height: 60,
-        display: 'flex',
-        justifyContent: 'center',
-        fontFamily: 'Orson, sans-serif',
-        ...sx,
-      }}
-    >
+<AppBar
+  position="sticky"
+  elevation={0}
+  sx={{
+    backgroundColor: 'rgba(255,255,255,0.68)',
+    backdropFilter: 'blur(16px)',
+    borderBottom: '1px solid rgba(0,0,0,0.04)',
+    boxShadow: '0 1px 6px rgba(0,0,0,0.08)',
+    height: 60,
+    display: 'flex',
+    justifyContent: 'center',
+    fontFamily: 'Trebuchet MS, sans-serif',
+    zIndex: (theme) => theme.zIndex.appBar + 1, // ✅ เพิ่มบรรทัดนี้
+    ...sx,
+  }}
+>
       <Toolbar sx={{ justifyContent: hideBack ? 'center' : 'flex-start', position: 'relative', minHeight: 60 }}>
         {!hideBack && (
           <IconButton
@@ -91,7 +92,7 @@ const CustomAppBar: React.FC<CustomAppBarProps> = ({
             fontWeight={600}
             sx={{
               color: '#222',
-              fontFamily: 'Orson, sans-serif',
+              fontFamily: 'Trebuchet MS, sans-serif',
               fontSize: 18,
               letterSpacing: 0.5,
             }}

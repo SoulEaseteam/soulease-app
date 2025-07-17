@@ -1,12 +1,12 @@
 import React, { Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom'; // ❌ ไม่ใช้ BrowserRouter ที่นี่
+import { Routes, Route } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
 import LoadingSpinner from './components/LoadingSpinner';
 import PrivateRoute from './components/PrivateRoute';
 import AppLayout from './layouts/AppLayout';
-import AdminLayout from './layouts/AdminLayout';
 
-// Lazy loaded pages
+
+// 🌐 Lazy Load Pages
 const HomePage = React.lazy(() => import('./pages/HomePage'));
 const ServicesPage = React.lazy(() => import('./pages/ServicesPage'));
 const BookingPage = React.lazy(() => import('./pages/BookingPage'));
@@ -29,7 +29,7 @@ const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 const LoginPage = React.lazy(() => import('./pages/LoginPage'));
 const RegisterPage = React.lazy(() => import('./pages/RegisterPage'));
 
-// Admin Pages
+// 🔐 Admin Pages
 const AdminLoginPage = React.lazy(() => import('./pages/admin/AdminLoginPage'));
 const AdminDashboardPage = React.lazy(() => import('./pages/admin/AdminDashboardPage'));
 const AdminTherapistsPage = React.lazy(() => import('./pages/admin/AdminTherapistsPage'));
@@ -40,6 +40,8 @@ const AdminUserDetailPage = React.lazy(() => import('./pages/admin/AdminUserDeta
 const AdminChangePasswordPage = React.lazy(() => import('./pages/admin/AdminChangePasswordPage'));
 const AddTherapistPage = React.lazy(() => import('./pages/admin/AddTherapistPage'));
 const EditTherapistPage = React.lazy(() => import('./pages/admin/EditTherapistPage'));
+const AdminAddAdminPage = React.lazy(() => import('./pages/admin/AdminAddAdminPage'));
+const AdminNotificationsPage = React.lazy(() => import('./pages/admin/AdminNotificationsPage'));
 
 const App: React.FC = () => {
   return (
@@ -47,13 +49,14 @@ const App: React.FC = () => {
       <ScrollToTop />
       <Routes>
 
-        {/* Public Pages */}
+        {/* 🟢 Public Pages */}
         <Route path="/" element={<AppLayout><HomePage /></AppLayout>} />
         <Route path="/services" element={<AppLayout><ServicesPage /></AppLayout>} />
         <Route path="/therapists/:id" element={<AppLayout><TherapistDetailPage /></AppLayout>} />
         <Route path="/booking" element={<AppLayout><BookingPage /></AppLayout>} />
         <Route path="/booking/:id" element={<AppLayout><BookingPage /></AppLayout>} />
         <Route path="/booking/history" element={<AppLayout><BookingHistoryPage /></AppLayout>} />
+        <Route path="/services/:id" element={<AppLayout><ServiceDetailPage /></AppLayout>} />
         <Route path="/service-detail/:name" element={<AppLayout><ServiceDetailPage /></AppLayout>} />
         <Route path="/review/:id" element={<AppLayout><ReviewPage /></AppLayout>} />
         <Route path="/review/all/:id" element={<AppLayout><ReviewListPage /></AppLayout>} />
@@ -65,13 +68,15 @@ const App: React.FC = () => {
         <Route path="/map-select" element={<AppLayout><MapSelectPage /></AppLayout>} />
         <Route path="/select-location" element={<AppLayout><SelectLocationPage /></AppLayout>} />
         <Route path="/payment" element={<AppLayout><PaymentPage /></AppLayout>} />
+        
 
-        {/* Auth Pages */}
+
+        {/* 🔑 Auth Pages */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/admin/login" element={<AdminLoginPage />} />
 
-        {/* Therapist Protected */}
+        {/* 🧑‍⚕ Therapist Pages (Protected) */}
         <Route path="/therapist/profile" element={
           <PrivateRoute requiredRoles={['therapist']}>
             <AppLayout><TherapistProfilePage /></AppLayout>
@@ -83,61 +88,70 @@ const App: React.FC = () => {
           </PrivateRoute>
         } />
 
-        {/* Admin Protected */}
+        {/* 🛡️ Admin Pages (Protected) */}
         <Route path="/admin" element={
           <PrivateRoute requiredRoles={['admin']}>
-            <AdminLayout><AdminDashboardPage /></AdminLayout>
+            <AppLayout><AdminDashboardPage /></AppLayout>
           </PrivateRoute>
         } />
         <Route path="/admin/dashboard" element={
           <PrivateRoute requiredRoles={['admin']}>
-            <AdminLayout><AdminDashboardPage /></AdminLayout>
+            <AppLayout><AdminDashboardPage /></AppLayout>
           </PrivateRoute>
         } />
         <Route path="/admin/therapists" element={
           <PrivateRoute requiredRoles={['admin']}>
-            <AdminLayout><AdminTherapistsPage /></AdminLayout>
+            <AppLayout><AdminTherapistsPage /></AppLayout>
           </PrivateRoute>
         } />
         <Route path="/admin/bookings" element={
           <PrivateRoute requiredRoles={['admin']}>
-            <AdminLayout><AdminBookingListPage /></AdminLayout>
+            <AppLayout><AdminBookingListPage /></AppLayout>
           </PrivateRoute>
         } />
         <Route path="/admin/holiday" element={
           <PrivateRoute requiredRoles={['admin']}>
-            <AdminLayout><AdminHolidayTogglePage /></AdminLayout>
+            <AppLayout><AdminHolidayTogglePage /></AppLayout>
           </PrivateRoute>
         } />
         <Route path="/admin/therapists/:id" element={
           <PrivateRoute requiredRoles={['admin']}>
-            <AdminLayout><AdminTherapistDetailPage /></AdminLayout>
+            <AppLayout><AdminTherapistDetailPage /></AppLayout>
           </PrivateRoute>
         } />
         <Route path="/admin/user/:id" element={
           <PrivateRoute requiredRoles={['admin']}>
-            <AdminLayout><AdminUserDetailPage /></AdminLayout>
+            <AppLayout><AdminUserDetailPage /></AppLayout>
           </PrivateRoute>
         } />
         <Route path="/admin/change-password" element={
           <PrivateRoute requiredRoles={['admin']}>
-            <AdminLayout><AdminChangePasswordPage /></AdminLayout>
+            <AppLayout><AdminChangePasswordPage /></AppLayout>
           </PrivateRoute>
         } />
         <Route path="/admin/add-therapist" element={
           <PrivateRoute requiredRoles={['admin']}>
-            <AdminLayout><AddTherapistPage /></AdminLayout>
+            <AppLayout><AddTherapistPage /></AppLayout>
           </PrivateRoute>
         } />
         <Route path="/admin/edit-therapist/:id" element={
           <PrivateRoute requiredRoles={['admin']}>
-            <AdminLayout><EditTherapistPage /></AdminLayout>
+            <AppLayout><EditTherapistPage /></AppLayout>
+          </PrivateRoute>
+        } />
+        <Route path="/admin/add-admin" element={
+          <PrivateRoute requiredRoles={['admin']}>
+            <AppLayout><AdminAddAdminPage /></AppLayout>
+          </PrivateRoute>
+        } />
+        <Route path="/admin/notifications" element={
+          <PrivateRoute requiredRoles={['admin']}>
+            <AppLayout><AdminNotificationsPage /></AppLayout>
           </PrivateRoute>
         } />
 
-        {/* Not Found */}
+        {/* ❌ Not Found */}
         <Route path="*" element={<AppLayout><NotFoundPage /></AppLayout>} />
-
       </Routes>
     </Suspense>
   );
