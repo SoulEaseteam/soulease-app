@@ -5,7 +5,6 @@ import LoadingSpinner from './components/LoadingSpinner';
 import PrivateRoute from './components/PrivateRoute';
 import AppLayout from './layouts/AppLayout';
 
-
 // 🌐 Lazy Load Pages
 const HomePage = React.lazy(() => import('./pages/HomePage'));
 const ServicesPage = React.lazy(() => import('./pages/ServicesPage'));
@@ -28,6 +27,8 @@ const PaymentPage = React.lazy(() => import('./pages/PaymentPage'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 const LoginPage = React.lazy(() => import('./pages/LoginPage'));
 const RegisterPage = React.lazy(() => import('./pages/RegisterPage'));
+const MaintenancePage = React.lazy(() => import('./pages/MaintenancePage'));
+const UnauthorizedPage = React.lazy(() => import('./pages/UnauthorizedPage'));
 
 // 🔐 Admin Pages
 const AdminLoginPage = React.lazy(() => import('./pages/admin/AdminLoginPage'));
@@ -45,19 +46,24 @@ const AdminNotificationsPage = React.lazy(() => import('./pages/admin/AdminNotif
 
 const App: React.FC = () => {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense
+      fallback={
+        <div style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <LoadingSpinner />
+        </div>
+      }
+    >
       <ScrollToTop />
       <Routes>
-
         {/* 🟢 Public Pages */}
         <Route path="/" element={<AppLayout><HomePage /></AppLayout>} />
         <Route path="/services" element={<AppLayout><ServicesPage /></AppLayout>} />
+        <Route path="/services/:id" element={<AppLayout><ServiceDetailPage /></AppLayout>} />
+        <Route path="/service-detail/:name" element={<AppLayout><ServiceDetailPage /></AppLayout>} />
         <Route path="/therapists/:id" element={<AppLayout><TherapistDetailPage /></AppLayout>} />
         <Route path="/booking" element={<AppLayout><BookingPage /></AppLayout>} />
         <Route path="/booking/:id" element={<AppLayout><BookingPage /></AppLayout>} />
         <Route path="/booking/history" element={<AppLayout><BookingHistoryPage /></AppLayout>} />
-        <Route path="/services/:id" element={<AppLayout><ServiceDetailPage /></AppLayout>} />
-        <Route path="/service-detail/:name" element={<AppLayout><ServiceDetailPage /></AppLayout>} />
         <Route path="/review/:id" element={<AppLayout><ReviewPage /></AppLayout>} />
         <Route path="/review/all/:id" element={<AppLayout><ReviewListPage /></AppLayout>} />
         <Route path="/saved" element={<AppLayout><SavedTherapistsPage /></AppLayout>} />
@@ -68,15 +74,15 @@ const App: React.FC = () => {
         <Route path="/map-select" element={<AppLayout><MapSelectPage /></AppLayout>} />
         <Route path="/select-location" element={<AppLayout><SelectLocationPage /></AppLayout>} />
         <Route path="/payment" element={<AppLayout><PaymentPage /></AppLayout>} />
-        
+        <Route path="/unauthorized" element={<AppLayout><UnauthorizedPage /></AppLayout>} />
+        <Route path="/maintenance" element={<MaintenancePage />} />
 
-
-        {/* 🔑 Auth Pages */}
+        {/* 🔑 Auth */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/admin/login" element={<AdminLoginPage />} />
 
-        {/* 🧑‍⚕ Therapist Pages (Protected) */}
+        {/* 🧑‍⚕ Therapist */}
         <Route path="/therapist/profile" element={
           <PrivateRoute requiredRoles={['therapist']}>
             <AppLayout><TherapistProfilePage /></AppLayout>
@@ -88,7 +94,7 @@ const App: React.FC = () => {
           </PrivateRoute>
         } />
 
-        {/* 🛡️ Admin Pages (Protected) */}
+        {/* 🛡️ Admin */}
         <Route path="/admin" element={
           <PrivateRoute requiredRoles={['admin']}>
             <AppLayout><AdminDashboardPage /></AppLayout>

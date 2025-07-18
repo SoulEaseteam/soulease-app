@@ -1,5 +1,15 @@
 {
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
+  "redirects": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.soulease.vip"
+        }
+      ],
+      "destination": "https://soulease.vip",
+      "permanent": true
+    }
   ]
 }

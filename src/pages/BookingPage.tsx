@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Avatar, Stack, Paper, Divider, TextField, Button,
 } from '@mui/material';
@@ -16,16 +16,16 @@ import { calculateDistanceKm } from '../utils/calculateDistance';
 
 const BookingPage: React.FC = () => {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
   const location = useLocation();
 
   const queryParams = new URLSearchParams(location.search);
+  const therapistId = location.pathname.split('/booking/')[1];
   const selectedServiceName = queryParams.get('service');
   const selectedLat = queryParams.get('selectedLat');
   const selectedLng = queryParams.get('selectedLng');
   const selectedAddress = queryParams.get('selectedAddress');
 
-  const therapist = therapists.find((t) => t.id === id);
+  const therapist = therapists.find((t) => t.id === therapistId);
   const selectedService = services.find((s) => s.name === selectedServiceName);
   const servicePrice = selectedService?.price || 0;
 
@@ -71,7 +71,12 @@ const BookingPage: React.FC = () => {
   const isValidPhone = (phone: string) => /^0[0-9]{8,9}$/.test(phone);
 
   const handleSelectLocation = () => {
-    navigate('/select-location');
+    navigate(`/select-location`, {
+      state: {
+        therapistId,
+        service: selectedServiceName,
+      },
+    });
   };
 
   const sendTelegramMessage = async (message: string) => {

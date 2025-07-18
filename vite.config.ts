@@ -3,15 +3,12 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
-// โหลด env
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
+  const env = loadEnv(mode, process.cwd());
 
   return {
-    plugins: [
-      react(),
-      // vercel(), // ❌ อย่าใช้จนกว่าจะแก้ bug ทางฝั่ง Vercel
-    ],
+    base: '/',
+    plugins: [react()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src'),
@@ -30,7 +27,6 @@ export default defineConfig(({ mode }) => {
         VITE_TELEGRAM_BOT_TOKEN: JSON.stringify(env.VITE_TELEGRAM_BOT_TOKEN),
         VITE_TELEGRAM_CHAT_ID: JSON.stringify(env.VITE_TELEGRAM_CHAT_ID),
         VITE_LINE_NOTIFY_TOKEN: JSON.stringify(env.VITE_LINE_NOTIFY_TOKEN),
-        vi: 'undefined',
       },
     },
     build: {
@@ -38,7 +34,7 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks: {
-            booking: ['src/pages/BookingPage.tsx'],
+            booking: ['src/pages/BookingPage.tsx', 'src/pages/PaymentPage.tsx'],
             services: ['src/pages/ServicesPage.tsx'],
             admin: ['src/pages/admin/AdminDashboardPage.tsx'],
           },

@@ -44,11 +44,11 @@ export interface Therapist {
 }
 
 export interface BadgeConfig {
-  key: 'VIP' | 'HOT' | 'NEW' | string;
+  key: 'VIP' | 'HOT' | 'NEW';
   image: string;
   priority: number;
   animation: 'pulse' | 'float' | 'none';
   size: number;
   position: { top: number; left: number };
-  condition: (therapist: Therapist) => boolean;
+  condition: (t: Therapist) => boolean;
 }

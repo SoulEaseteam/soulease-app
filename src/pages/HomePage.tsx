@@ -7,8 +7,9 @@ import NavBar from '../components/NavBar';
 import '@fontsource/chonburi';
 import '@fontsource/raleway';
 import { Therapist } from '../types/therapist';
+import { getBadgeForTherapist } from '../utils/getTherapistBadge'; // หรือใช้ '@/utils/...' ถ้ามี alias
 
-// 🔧 แปลง therapistsRaw ให้กลายเป็น Therapist[] ที่สมบูรณ์แบบ (กันพัง)
+// 🔧 แปลง therapistsRaw ให้เป็น Therapist[] ที่ปลอดภัย
 const therapists: Therapist[] = therapistsRaw.map((t, index) => ({
   id: t.id ?? `therapist-${index}`,
   name: t.name ?? 'Unknown',
@@ -43,19 +44,25 @@ const therapists: Therapist[] = therapistsRaw.map((t, index) => ({
   topRated: t.topRated ?? false,
   serviceCount: t.serviceCount ?? '0',
   currentLocation: t.currentLocation ?? { lat: 0, lng: 0 },
-  badge: t.badge ?? undefined,
+  badge: getBadgeForTherapist({
+  todayBookings: t.todayBookings ?? 0,
+  totalBookings: t.totalBookings ?? 0,
+}),
 }));
 
 const HomePage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
+  // ✅ ทำการ copy array ก่อน sort เพื่อไม่เปลี่ยนต้นฉบับ
+  const sortedTherapists = [...therapists].sort(
+    (a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity)
+  );
+
   const filteredTherapists: Therapist[] = searchTerm.trim()
-    ? therapists
-        .filter((therapist) =>
-          therapist.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
-        )
-        .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity))
-    : therapists.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
+    ? sortedTherapists.filter((therapist) =>
+        therapist.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
+      )
+    : sortedTherapists;
 
   return (
     <Box
@@ -63,7 +70,7 @@ const HomePage: React.FC = () => {
         background: 'linear-gradient(to bottom, #f7f8f9, #e8ecf1)',
         minHeight: '100vh',
         pb: 10,
-        fontFamily: 'Raleway, sans-serif',
+        fontFamily: 'Raleway, sans-serif', // ✅ ถ้าใช้ theme ก็สามารถลบได้
       }}
     >
       <NavBar />
@@ -104,7 +111,8 @@ const HomePage: React.FC = () => {
           sx={{
             display: 'grid',
             gridTemplateColumns: { xs: 'repeat(2, 1fr)' },
-            gap: 0,
+            gap: 2,
+            px: 1,
             justifyItems: 'center',
           }}
         >

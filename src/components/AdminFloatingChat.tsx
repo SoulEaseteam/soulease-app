@@ -30,7 +30,7 @@ const chatButtons = [
   {
     title: 'X (Twitter)',
     href: 'https://x.com/SoulEase_bkk',
-    src: "public/images/profli/twitter.png",
+    src: "/images/profli/twitter.png",
     delay: 0.5,
   },
 ];

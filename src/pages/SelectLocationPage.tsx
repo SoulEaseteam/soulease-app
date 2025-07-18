@@ -1,19 +1,11 @@
-// SelectLocationPage.tsx
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  Box,
-  Button,
-  Typography,
-  TextField,
-  IconButton,
-  InputAdornment,
-  Snackbar,
-  useMediaQuery,
-  useTheme,
+  Box, Button, Typography, TextField, IconButton,
+  InputAdornment, Snackbar, useMediaQuery, useTheme,
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { useNavigate } from 'react-router-dom';
-import { GoogleMap, Marker, useJsApiLoader, Autocomplete } from '@react-google-maps/api';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
 
 const containerStyle = {
   width: '100%',
@@ -28,11 +20,17 @@ const defaultCenter = {
 
 const SelectLocationPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as {
+    therapistId: string;
+    service: string;
+  };
+
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [address, setAddress] = useState('');
   const [copied, setCopied] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -41,6 +39,33 @@ const SelectLocationPage = () => {
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries: ['places'],
   });
+
+  useEffect(() => {
+    if (isLoaded && inputRef.current && window.google) {
+      const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current);
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (place.geometry?.location) {
+          const lat = place.geometry.location.lat();
+          const lng = place.geometry.location.lng();
+          setCurrentLocation({ lat, lng });
+          setAddress(place.formatted_address || '');
+          if (mapRef.current) mapRef.current.panTo({ lat, lng });
+        }
+      });
+    }
+  }, [isLoaded]);
+
+  const getAddressFromLatLng = (lat: number, lng: number) => {
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+      if (status === 'OK' && results?.length) {
+        setAddress(results[0].formatted_address);
+      } else {
+        setAddress('Unable to retrieve address');
+      }
+    });
+  };
 
   const handleMapClick = (e: google.maps.MapMouseEvent) => {
     if (e.latLng) {
@@ -51,17 +76,6 @@ const SelectLocationPage = () => {
     }
   };
 
-  const getAddressFromLatLng = (lat: number, lng: number) => {
-    const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-      if (status === 'OK' && results && results.length > 0) {
-        setAddress(results[0].formatted_address);
-      } else {
-        setAddress('ไม่สามารถดึงที่อยู่ได้');
-      }
-    });
-  };
-
   const handleUseMyLocation = () => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -69,12 +83,10 @@ const SelectLocationPage = () => {
         const lng = position.coords.longitude;
         setCurrentLocation({ lat, lng });
         getAddressFromLatLng(lat, lng);
-        if (mapRef.current) {
-          mapRef.current.panTo({ lat, lng });
-        }
+        if (mapRef.current) mapRef.current.panTo({ lat, lng });
       },
       () => {
-        alert('ไม่สามารถเข้าถึงตำแหน่งของคุณได้');
+        alert('Unable to access your location');
       }
     );
   };
@@ -85,27 +97,12 @@ const SelectLocationPage = () => {
   };
 
   const handleConfirm = () => {
-    if (currentLocation && address) {
-      navigate('/booking', {
-        state: {
-          selectedLat: currentLocation.lat,
-          selectedLng: currentLocation.lng,
-          selectedAddress: address,
-        },
-      });
-    }
-  };
-
-  const handlePlaceChanged = () => {
-    const place = autocompleteRef.current?.getPlace();
-    if (place?.geometry?.location) {
-      const lat = place.geometry.location.lat();
-      const lng = place.geometry.location.lng();
-      setCurrentLocation({ lat, lng });
-      setAddress(place.formatted_address || '');
-      if (mapRef.current) {
-        mapRef.current.panTo({ lat, lng });
-      }
+    if (currentLocation && address && state?.therapistId && state?.service) {
+      navigate(
+        `/booking/${state.therapistId}?service=${encodeURIComponent(state.service)}&selectedLat=${currentLocation.lat}&selectedLng=${currentLocation.lng}&selectedAddress=${encodeURIComponent(address)}`
+      );
+    } else {
+      alert('Please select the complete position first.');
     }
   };
 
@@ -121,21 +118,21 @@ const SelectLocationPage = () => {
       }}
     >
       <Typography variant="h6" gutterBottom>
-        เลือกตำแหน่งที่คุณต้องการให้หมอไป
+        Choose the location where you want the masseuse to go.
       </Typography>
 
-      {/* 🔍 Autocomplete Search Box */}
-      <Autocomplete
-        onLoad={(autocomplete) => (autocompleteRef.current = autocomplete)}
-        onPlaceChanged={handlePlaceChanged}
-      >
-        <TextField
-          label="ค้นหาสถานที่"
-          placeholder="พิมพ์ชื่อสถานที่หรือที่อยู่"
-          fullWidth
-          sx={{ mb: 2 }}
-        />
-      </Autocomplete>
+      <input
+        ref={inputRef}
+        placeholder="Find location"
+        style={{
+          width: '100%',
+          padding: '12px',
+          fontSize: '16px',
+          borderRadius: '8px',
+          border: '1px solid #ccc',
+          marginBottom: '16px',
+        }}
+      />
 
       <Box
         sx={{
@@ -149,8 +146,8 @@ const SelectLocationPage = () => {
           center={currentLocation || defaultCenter}
           zoom={15}
           onClick={handleMapClick}
-          onLoad={(map) => {
-  mapRef.current = map;
+         onLoad={(map: google.maps.Map) => {
+          mapRef.current = map;
 }}
         >
           {currentLocation && <Marker position={currentLocation} />}
@@ -161,18 +158,13 @@ const SelectLocationPage = () => {
         variant="outlined"
         fullWidth
         onClick={handleUseMyLocation}
-        sx={{
-          mt: 2,
-          mb: 1,
-          borderRadius: '12px',
-          textTransform: 'none',
-        }}
+        sx={{ mt: 2, mb: 1, borderRadius: '12px', textTransform: 'none' }}
       >
-        ใช้ตำแหน่งของฉัน
+        Use my current location
       </Button>
 
       <TextField
-        label="ที่อยู่"
+        label="Address"
         value={address}
         onChange={(e) => setAddress(e.target.value)}
         fullWidth
@@ -194,20 +186,16 @@ const SelectLocationPage = () => {
         fullWidth
         onClick={handleConfirm}
         disabled={!currentLocation || !address}
-        sx={{
-          mt: 3,
-          borderRadius: '12px',
-          textTransform: 'none',
-        }}
+        sx={{ mt: 3, borderRadius: '12px', textTransform: 'none' }}
       >
-        ยืนยันตำแหน่งนี้
+        Confirm this location
       </Button>
 
       <Snackbar
         open={copied}
         autoHideDuration={2000}
         onClose={() => setCopied(false)}
-        message="คัดลอกที่อยู่เรียบร้อยแล้ว"
+        message="Address copied to clipboard"
       />
     </Box>
   );

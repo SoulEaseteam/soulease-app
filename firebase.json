@@ -1,9 +1,12 @@
 {
   "hosting": {
-    "public": "dist",
+    "public": "dist",           // ✅ จุดสำคัญ: ต้องชี้มาที่ dist
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
-      { "source": "**", "destination": "/index.html" }
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
     ]
   }
 }

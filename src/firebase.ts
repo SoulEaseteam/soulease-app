@@ -1,8 +1,9 @@
-// ✅ แก้ไข firebase.ts
+// src/firebase.ts
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage'; // ✅ เพิ่ม
 import { getAuth } from 'firebase/auth';
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyCPJkRTNE1XuP_xkDq18bs3ygsSfk5kgRM",
@@ -12,6 +13,7 @@ const firebaseConfig = {
   messagingSenderId: "394341744641",
   appId: "1:394341744641:web:9a868196770d7b80308000",
   measurementId: "G-XEMLVVPN4W"
+  
 };
 
 const app = initializeApp(firebaseConfig);
