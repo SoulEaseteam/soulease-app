@@ -40,7 +40,7 @@ const services: MassageService[] = [
     price: 1400,
     duration: 60,
     count: 0,
-    image: '/images/servid/IMG_4270.jpg',
+    image: '/images/Service/IMG_5092.JPG',
     detail:
       `A timeless healing ritual rooted in Thai tradition. This massage integrates acupressure, deep stretches, and rhythmic techniques to enhance flexibility, energy flow, and holistic balance.`,
     benefit: [
@@ -56,10 +56,10 @@ const services: MassageService[] = [
     id: 'aromatherapy',
     name: 'Aromatherapy Massage',
     desc: 'Aromatic oil massage for deep body and mind relaxation.',
-    price: 1900,
+    price: 1700,
     duration: 70,
     count: 0,
-    image: '/images/servid/IMG_4232.jpg',
+    image: '/images/Service/IMG_5096.JPG',
     detail:
       `Immerse yourself in serenity with an oil-based massage using premium-grade essential oils. This treatment calms the nervous system and promotes total-body renewal through scent and touch.`,
     benefit: [
@@ -74,10 +74,10 @@ const services: MassageService[] = [
     id: 'manhood-relaxation',
     name: 'Manhood Relaxation Therapy',
     desc: 'Reconnect with your senses and restore your inner balance.',
-    price: 2900,
+    price: 2600,
     duration: 80,
     count: 0,
-    image: '/images/servid/IMG_4237.jpg',  // ✅ แก้ path
+    image: '/images/Service/IMG_5090.JPG',  // ✅ แก้ path
     detail:
       `Crafted exclusively for the modern man, this therapy merges tailored massage techniques with mindful relaxation. Restore emotional equilibrium and physical vigor in one transformative session.`,
     benefit: [

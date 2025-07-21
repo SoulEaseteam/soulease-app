@@ -79,7 +79,7 @@ const HomePage: React.FC = () => {
           variant="h4"
           textAlign="center"
           sx={{
-            mt: 4,
+            mt: 8,
             fontFamily: 'Chonburi',
             fontWeight: 'bold',
             fontSize: 28,
@@ -96,8 +96,8 @@ const HomePage: React.FC = () => {
           variant="h6"
           textAlign="center"
           sx={{
-            mt: 2,
-            mb: 2,
+            mt: 3,
+            mb: 4,
             color: '#7b8b99',
             fontWeight: 300,
             letterSpacing: 3,

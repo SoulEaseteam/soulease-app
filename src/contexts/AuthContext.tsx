@@ -1,64 +1,44 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth, db } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+// src/context/AuthContext.tsx
+import { createContext, useContext, useEffect, useState } from 'react';
+import { onAuthStateChanged, signOut, signInAnonymously, User } from 'firebase/auth';
+import { auth } from '@/firebase';
 
-type UserRole = 'admin' | 'therapist' | null;
-
-interface AuthContextType {
+type AuthContextType = {
   user: User | null;
-  loading: boolean;
-  role: UserRole;
+  isGuest: boolean;
+  loginAsGuest: () => Promise<void>;
   logout: () => void;
-}
+};
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  loading: true,
-  role: null,
+  isGuest: false,
+  loginAsGuest: async () => {},
   logout: () => {},
 });
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [role, setRole] = useState<UserRole>(null);
+  const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsub = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      setLoading(false);
-
-      if (currentUser) {
-        try {
-          const docRef = doc(db, 'users', currentUser.uid);
-          const docSnap = await getDoc(docRef);
-
-          if (docSnap.exists()) {
-            const userData = docSnap.data();
-            setRole(userData.role as UserRole);
-          } else {
-            console.warn('🔔 ไม่มีข้อมูล role ของผู้ใช้ใน Firestore');
-            setRole(null);
-          }
-        } catch (err) {
-          console.error('❌ เกิดข้อผิดพลาดในการดึง role:', err);
-          setRole(null);
-        }
-      } else {
-        setRole(null);
-      }
+      setIsGuest(currentUser?.isAnonymous ?? false);
     });
-
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
-  const logout = () => {
-    signOut(auth).catch((err) => console.error('❌ Logout failed:', err));
+  const loginAsGuest = async () => {
+    const result = await signInAnonymously(auth);
+    setUser(result.user);
+    setIsGuest(true);
   };
 
+  const logout = () => signOut(auth);
+
   return (
-    <AuthContext.Provider value={{ user, loading, role, logout }}>
+    <AuthContext.Provider value={{ user, isGuest, loginAsGuest, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -13,6 +13,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 
 
+
 interface Booking {
   id: string;
   createdAt: { seconds: number };
@@ -26,6 +27,7 @@ const AdminDashboardPage: React.FC = () => {
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'bookings'), (snapshot) => {
+      console.log('📦 Firestore snapshot:', snapshot.size);
       const data: Booking[] = snapshot.docs.map((doc) => {
         const booking = doc.data() as DocumentData;
         return {
@@ -75,10 +77,10 @@ const AdminDashboardPage: React.FC = () => {
               📅 Bookings Today
             </Typography>
             <Typography variant="h4" mt={1} color="primary">
-              {todayBookings.length} รายการ
+              {todayBookings.length} bookings
             </Typography>
             <Typography variant="body1" mt={1}>
-              ยอดวันนี้: ฿{totalToday.toLocaleString()}
+              Total Today: ฿{totalToday.toLocaleString()}
             </Typography>
           </Paper>
         </Grid>
@@ -89,10 +91,10 @@ const AdminDashboardPage: React.FC = () => {
               📦 All Bookings
             </Typography>
             <Typography variant="h4" mt={1} color="primary">
-              {bookings.length} รายการ
+              {bookings.length} bookings
             </Typography>
             <Typography variant="body1" mt={1}>
-              ยอดรวมทั้งหมด: ฿{totalAll.toLocaleString()}
+              Grand Total: ฿{totalAll.toLocaleString()}
             </Typography>
           </Paper>
         </Grid>

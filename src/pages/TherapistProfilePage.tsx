@@ -13,6 +13,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useAuth } from '@/providers/AuthProvider';
 import UploadAvatar from '@/components/UploadAvatar';
+import { updateUserLocation } from '@/utils/updateLocation';
+import { updateUserLocation } from '@/utils/updateUserLocation';
 
 interface Therapist {
   id: string;
@@ -74,6 +76,14 @@ const TherapistProfilePage: React.FC = () => {
 
     fetchTherapist();
   }, [id]);
+
+  const handleUpdateLocation = () => {
+    if (user?.uid) {
+      updateUserLocation(user.uid, 'therapist');
+    } else {
+      alert('Please login to update location');
+    }
+  };
 
   if (loading) {
     return (
@@ -138,6 +148,17 @@ const TherapistProfilePage: React.FC = () => {
           <Typography>
             Working Hours: {therapist.startTime || 'N/A'} - {therapist.endTime || 'N/A'}
           </Typography>
+
+          {/* ✅ ปุ่มอัปเดตตำแหน่ง */}
+          {user?.uid === therapist.id && (
+            <Button
+              variant="outlined"
+              onClick={handleUpdateLocation}
+              sx={{ mt: 1, borderRadius: 2 }}
+            >
+              📍 Update My Current Location
+            </Button>
+          )}
 
           <Button
             variant="contained"

@@ -66,18 +66,19 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist })
       transition={{ duration: 0.4 }}
       style={{ width: '100%' }}
     >
-      <Box sx={{ px: 2, pb: 2 }}>
+      <Box sx={{ px: 0, pb: 1 }}>
         <Paper
           sx={{
             width: '100%',
             maxWidth: 260,
             borderRadius: 4,
-            backgroundColor: 'rgba(255,255,255,0.65)',
-            backdropFilter: 'blur(8px)',
+            backgroundColor: 'rgba(246, 242, 242, 0.65)',
+            backdropFilter: 'blur(4px)',
             p: 0,
             boxShadow: '0 6px 16px rgba(0, 0, 0, 0.08)',
             textAlign: 'center',
             position: 'relative',
+            mt: 0,
           }}
         >
           <Box sx={{ position: 'relative' }}>
@@ -86,13 +87,14 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist })
               src={resolvedImage}
               alt={therapist.name}
               sx={{
-                width: '100%',
-                height: 240,
+                width: '90%',
+                height: 250,
                 objectFit: 'contain',
                 objectPosition: 'center center',
-                borderRadius: 2,
+                borderRadius: 3,
                 cursor: 'pointer',
                 background: '#f5f5f5',
+                mt: 1,
               }}
               onClick={() => setOpen(true)}
               onError={(e) => {
@@ -103,19 +105,19 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist })
                 <Box
                   sx={{
                     position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    width: 60,
-                    height: 24,
+                    top: -45,
+                    right: -25,
+                    width: 90,
+                    height: 90,
                     zIndex: 2,
                   }}
                   component="img"
                   src={
                     therapist.badge === 'VIP'
-                      ? '/badges/vip.gif'
+                      ? '/badges/Star.gif'
                       : therapist.badge === 'Hot'
                       ? '/badges/hot.gif'
-                      : '/badges/new.gif'
+                      : '/badges/New.gif'
                   }
                   alt={`${therapist.badge} badge`}
                 />
@@ -129,8 +131,8 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist })
               ml={1}
               sx={{
                 display: 'inline-block',
-                width: 10,
-                height: 10,
+                width: 12,
+                height: 12,
                 borderRadius: '50%',
                 backgroundColor: statusMap[therapist.available].color,
                 verticalAlign: 'middle',
@@ -157,7 +159,7 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist })
               size="small"
               variant="outlined"
               sx={{
-                fontSize: 8,
+                fontSize: 9,
                 borderRadius: 99,
                 px: 1,
                 textTransform: 'none',
@@ -170,7 +172,7 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist })
             </Button>
           </Stack>
 
-          <Stack direction="row" alignItems="center" justifyContent="center" spacing={4} mt={1}>
+          <Stack direction="row" alignItems="center" justifyContent="center" spacing={6} mt={1}>
             <Button
               variant="contained"
               size="small"
@@ -180,6 +182,8 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist })
                 fontSize: 12,
                 px: 0,
                 py: 0.5,
+                top: -6,
+                right: -38,
                 textTransform: 'none',
                 borderRadius: 99,
                 backgroundColor:
@@ -203,13 +207,15 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({ therapist })
                 : 'BOOK NOW'}
             </Button>
 
-            <IconButton onClick={toggleFavorite} aria-label="Favorite Therapist">
-              {isFavorite ? (
-                <FavoriteIcon sx={{ color: '#e74c3c', fontSize: 20 }} />
-              ) : (
-                <FavoriteBorderIcon sx={{ color: '#555', fontSize: 20 }} />
-              )}
-            </IconButton>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', mt: -1 }}>
+              <IconButton onClick={toggleFavorite}>
+                {isFavorite ? (
+                  <FavoriteIcon sx={{ color: '#e74c3c', fontSize: 28 }} />
+                ) : (
+                  <FavoriteBorderIcon sx={{ color: '#555', fontSize: 28 }} />
+                )}
+              </IconButton>
+            </Box>
           </Stack>
 
           {typeof therapist.distance === 'number' && !isNaN(therapist.distance) && (

@@ -4,6 +4,9 @@ import ScrollToTop from './components/ScrollToTop';
 import LoadingSpinner from './components/LoadingSpinner';
 import PrivateRoute from './components/PrivateRoute';
 import AppLayout from './layouts/AppLayout';
+import MockLoginPage from './pages/MockLoginPage'; // ✅ เพิ่มบรรทัดนี้
+
+
 
 // 🌐 Lazy Load Pages
 const HomePage = React.lazy(() => import('./pages/HomePage'));
@@ -15,7 +18,7 @@ const TherapistDetailPage = React.lazy(() => import('./pages/TherapistDetailPage
 const ReviewPage = React.lazy(() => import('./pages/ReviewPage'));
 const ReviewListPage = React.lazy(() => import('./pages/ReviewListPage'));
 const SavedTherapistsPage = React.lazy(() => import('./pages/SavedTherapistsPage'));
-const ProfilePage = React.lazy(() => import('./pages/ProfilePage'));
+const ProfilePage = React.lazy(() => import('./pages/RegisterPage'));
 const EditProfilePage = React.lazy(() => import('./pages/EditProfilePage'));
 const LocationPage = React.lazy(() => import('./pages/LocationPage'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
@@ -77,17 +80,23 @@ const App: React.FC = () => {
         <Route path="/unauthorized" element={<AppLayout><UnauthorizedPage /></AppLayout>} />
         <Route path="/maintenance" element={<MaintenancePage />} />
 
-        {/* 🔑 Auth */}
+     
+              {/* 🔑 Auth */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/admin/login" element={<AdminLoginPage />} />
 
         {/* 🧑‍⚕ Therapist */}
-        <Route path="/therapist/profile" element={
-          <PrivateRoute requiredRoles={['therapist']}>
-            <AppLayout><TherapistProfilePage /></AppLayout>
-          </PrivateRoute>
-        } />
+        <Route
+          path="/therapist/profile"
+          element={
+            <PrivateRoute requiredRoles={['therapist']}>
+              <AppLayout>
+                <TherapistProfilePage />
+              </AppLayout>
+            </PrivateRoute>
+          }
+        />
         <Route path="/update-location" element={
           <PrivateRoute requiredRoles={['therapist']}>
             <AppLayout><UpdateLocationPage /></AppLayout>
@@ -100,11 +109,14 @@ const App: React.FC = () => {
             <AppLayout><AdminDashboardPage /></AppLayout>
           </PrivateRoute>
         } />
-        <Route path="/admin/dashboard" element={
+       <Route
+        path="/admin/dashboard"
+        element={
           <PrivateRoute requiredRoles={['admin']}>
-            <AppLayout><AdminDashboardPage /></AppLayout>
+            <AdminDashboardPage />
           </PrivateRoute>
-        } />
+        }
+      />
         <Route path="/admin/therapists" element={
           <PrivateRoute requiredRoles={['admin']}>
             <AppLayout><AdminTherapistsPage /></AppLayout>
@@ -154,7 +166,12 @@ const App: React.FC = () => {
           <PrivateRoute requiredRoles={['admin']}>
             <AppLayout><AdminNotificationsPage /></AppLayout>
           </PrivateRoute>
-        } />
+         } /> 
+
+
+<Route path="/mock-login" element={<AppLayout><MockLoginPage /></AppLayout>} />
+
+      
 
         {/* ❌ Not Found */}
         <Route path="*" element={<AppLayout><NotFoundPage /></AppLayout>} />

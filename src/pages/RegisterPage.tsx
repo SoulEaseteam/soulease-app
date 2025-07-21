@@ -1,9 +1,9 @@
 // src/pages/RegisterPage.tsx
 import React, { useState } from 'react';
 import {
-  Box, TextField, Button, Typography, Paper, Link, MenuItem, Select, FormControl, InputLabel
+  Box, TextField, Button, Typography, Paper, Link
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom'; // ✅ สำคัญ
 import BottomNav from '../components/BottomNav';
 import '@fontsource/chonburi';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -15,7 +15,6 @@ const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<'customer' | 'therapist'>('customer');
 
   const handleRegister = async () => {
     if (!email || !password || !confirmPassword) {
@@ -33,22 +32,9 @@ const RegisterPage: React.FC = () => {
 
       await setDoc(doc(db, 'users', uid), {
         email,
-        role,
+        role: 'customer',
         createdAt: new Date(),
       });
-
-      if (role === 'therapist') {
-        await setDoc(doc(db, 'therapists', uid), {
-          name: '',
-          image: '',
-          rating: 0,
-          totalBookings: 0,
-          positiveScore: 0,
-          currentLat: null,
-          currentLng: null,
-          available: true,
-        });
-      }
 
       alert('🎉 Register successful!');
       navigate('/login');
@@ -131,20 +117,6 @@ const RegisterPage: React.FC = () => {
             sx={{ mb: 2, input: { color: '#999' }, '& .MuiOutlinedInput-root': { borderRadius: '16px' } }}
           />
 
-          <FormControl fullWidth sx={{ mb: 3 }}>
-            <InputLabel id="role-select-label">Register as</InputLabel>
-            <Select
-              labelId="role-select-label"
-              value={role}
-              label="Register as"
-              onChange={(e) => setRole(e.target.value as 'customer' | 'therapist')}
-              sx={{ borderRadius: 3 }}
-            >
-              <MenuItem value="customer">Customer</MenuItem>
-              <MenuItem value="therapist">Therapist</MenuItem>
-            </Select>
-          </FormControl>
-
           <Button onClick={handleRegister} sx={{
             mt: 1, py: 1.2, px: 5, fontWeight: 'bold', fontSize: 14,
             borderRadius: '20px', color: '#fff', textTransform: 'uppercase',
@@ -159,7 +131,7 @@ const RegisterPage: React.FC = () => {
 
           <Typography mt={3} fontSize={14}>
             Already have an account?{' '}
-            <Link href="/login" underline="always" color="#666" fontWeight="bold">
+            <Link component={RouterLink} to="/login" underline="always" color="#666" fontWeight="bold">
               Login
             </Link>
           </Typography>

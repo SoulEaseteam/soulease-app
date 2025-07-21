@@ -29,7 +29,7 @@ const NavBar: React.FC = () => {
             right: 0,
             height: 80,
             background: 'rgba(0,0,0,0.17)',
-            backdropFilter: 'blur(12px)',
+            backdropFilter: 'blur(2px)',
             zIndex: 1,
           },
         }}
@@ -50,9 +50,9 @@ const NavBar: React.FC = () => {
           <Typography
             variant="h6"
             fontWeight="bold"
-            letterSpacing={6}
+            letterSpacing={7}
             sx={{
-              fontSize: { xs: 20, sm: 26 },
+              fontSize: { xs: 22, sm: 26 },
               color: '#fff',
               textShadow: '0 2px 6px rgba(255,255,255,0.2)',
               fontFamily: 'Trebuchet MS, sans-serif',
@@ -63,54 +63,12 @@ const NavBar: React.FC = () => {
             SoulEase
           </Typography>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {loading ? (
-              <Typography sx={{ color: '#fff' }}>Loading...</Typography>
-            ) : user ? (
-              <>
-                <Typography sx={{ color: '#fff', fontSize: 14, userSelect: 'none' }}>
-                  {user.email}
-                </Typography>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={logout}
-                  sx={{
-                    color: '#fff',
-                    borderColor: '#fff',
-                    '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
-                  }}
-                >
-                  Logout
-                </Button>
-              </>
-            ) : (
-              <Button
-                variant="outlined"
-                size="small"
-                href="/login"
-                sx={{
-                  color: '#fff',
-                  borderColor: '#fff',
-                  '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
-                }}
-              >
-                Login
-              </Button>
-            )}
+         
+         
           </Box>
         </Box>
-      </Box>
-
-      {/* Keyframe animation */}
-      <style>
-        {`
-          @keyframes fadeInNav {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `}
-      </style>
+    
+   
     </>
   );
 };

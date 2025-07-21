@@ -3,7 +3,7 @@ import { BadgeConfig } from '@/types/therapist';
 export const badgeConfig: BadgeConfig[] = [
   {
     key: 'VIP',
-    image: '/badges/vip.gif',
+    image: '/badges/Star.gif',
     priority: 1,
     animation: 'pulse',
     size: 50,
@@ -21,7 +21,7 @@ export const badgeConfig: BadgeConfig[] = [
   },
   {
     key: 'NEW',
-    image: '/badges/new.gif',
+    image: '/badges/New.gif',
     priority: 3,
     animation: 'none',
     size: 40,

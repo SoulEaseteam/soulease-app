@@ -1,23 +1,35 @@
-// src/pages/UnauthorizedPage.tsx
 import React from 'react';
-import { Box, Typography, Button, Container } from '@mui/material';
-import LockIcon from '@mui/icons-material/Lock';
+import { Box, Typography, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
 const UnauthorizedPage: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <Container maxWidth="sm" sx={{ textAlign: 'center', mt: 10 }}>
-      <LockIcon sx={{ fontSize: 80, color: 'red' }} />
-      <Typography variant="h4" gutterBottom>
-        Unauthorized Access
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: '#f8f9fa',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        textAlign: 'center',
+        px: 3
+      }}
+    >
+      <Typography variant="h3" color="error" gutterBottom>
+        🚫 Access Denied
       </Typography>
-      <Typography variant="body1" gutterBottom>
+
+      <Typography variant="body1" color="textSecondary" mb={4}>
         You do not have permission to view this page.
       </Typography>
-      <Button variant="contained" color="primary" onClick={() => navigate('/')}>Go Home</Button>
-    </Container>
+
+      <Button variant="contained" onClick={() => navigate('/')}>
+        Go to Home
+      </Button>
+    </Box>
   );
 };
 

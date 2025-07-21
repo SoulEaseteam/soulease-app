@@ -39,9 +39,11 @@ const ServicesPage: React.FC = () => {
 };
 
   return (
-    <Box sx={{ bgcolor: 'rgba(255, 255, 255, 0.6)', pb: 10, minHeight: '100vh', display: 'flex', justifyContent: 'center', fontFamily: `'Trebuchet MS', sans-serif` }}>
+    <Box sx={{ bgcolor: 'rgba(255, 255, 255, 0.6)', pb: 10, minHeight: '100vh', display: 'flex', 
+    justifyContent: 'center', fontFamily: `'Trebuchet MS', sans-serif` }}>
       <Box sx={{ width: '100%', maxWidth: 430, pb: 20 }}>
-        <Box sx={{ width: '100%', height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ width: '100%', height: 50, display: 'flex', alignItems: 'center', 
+          justifyContent: 'center' }}>
           
         </Box>
 
@@ -54,7 +56,7 @@ const ServicesPage: React.FC = () => {
       border: '4px solid rgba(255,255,255,0.5)',
     }}
   />
-  <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
+  <Box sx={{ ml: 'auto', display: 'flex', gap: -1 }}>
     <IconButton component="a" href="https://line.me/ti/p/-TZBrEWmPx" target="_blank">
       <Box
         component="img"
@@ -107,9 +109,14 @@ const ServicesPage: React.FC = () => {
           </Typography>
         </Box>
 
-        <Box sx={{ mt: 2, px: 2, py: 1, borderRadius: 4, background: 'linear-gradient(to right, #0f1113,#2e3a4f)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-          <Tabs value={section} onChange={(_, value) => setSection(value)} textColor="inherit" indicatorColor="primary" variant="fullWidth"
-            sx={{ '& .MuiTab-root': { color: '#cccccc', fontWeight: 'bold', fontFamily: 'Trebuchet MS, sans-serif' }, '& .Mui-selected': { color: '#ffffff', background: 'rgba(255,255,255,0.1)', borderRadius: 2 }, '& .MuiTabs-indicator': { backgroundColor: '#ffffff', height: 3, borderRadius: 2 } }}>
+        <Box sx={{ mt: 2, px: 2, py: 1, borderRadius: 4, background: 'linear-gradient(to right, #0f1113,#2e3a4f)', 
+          backdropFilter: 'blur(12px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+          <Tabs value={section} onChange={(_, value) => setSection(value)} textColor="inherit" 
+          indicatorColor="primary" variant="fullWidth"
+            sx={{ '& .MuiTab-root': { color: '#cccccc', fontWeight: 'bold', 
+           
+              fontFamily: 'Trebuchet MS, sans-serif' }, '& .Mui-selected': { color: '#ffffff', background: 'rgba(255,255,255,0.1)',
+             borderRadius: 4 }, '& .MuiTabs-indicator': { backgroundColor: '#ffffff', height: 3, borderRadius: 2 } }}>
             <Tab label="SERVICES" value="services" />
             <Tab label="ABOUT US" value="about" />
             <Tab label="HOW TO BOOK" value="how" />
@@ -133,7 +140,7 @@ const ServicesPage: React.FC = () => {
                     textIndent: '1em',
                     position: 'relative',
                     height: 220,
-                    borderRadius: 2,
+                    borderRadius: 4,
                     overflow: 'hidden',
                     backgroundImage: `url(${svc.image})`,
                     backgroundSize: 'cover',
@@ -147,7 +154,7 @@ const ServicesPage: React.FC = () => {
                   }}
                   onClick={() => handleSelectService(svc.id)}
                 >
-                  <Box sx={{ position: 'absolute', top: 14, left: 14, px: 1.5, py: 0.5, fontSize: 12, borderRadius: 2, ...getBadgeStyle(svc.badge) }}>
+                  <Box sx={{ position: 'absolute', top: 14, left: 14, px: 1.5, py: 0.5, fontSize: 12, borderRadius: 4, ...getBadgeStyle(svc.badge) }}>
                     {svc.badge}
                   </Box>
                   <Box sx={{ px: 2, py: 1, background: 'rgba(255, 255, 255, 0.19)', backdropFilter: 'blur(1px)' }}>
@@ -155,7 +162,7 @@ const ServicesPage: React.FC = () => {
                     <Typography fontSize={14} sx={{ color: '#D3D3D3', fontFamily: 'Trebuchet MS, sans-serif' }}>{svc.desc}{svc.desc}</Typography>
                     <Typography>
                       <Box component="span" sx={{ fontSize: 16, fontWeight: 'bold', color: '#FF9900' }}>฿{svc.price}</Box>
-                      <Box component="span" sx={{ fontSize: 13, fontWeight: 400, color: '#BEBEBE', ml: 1 }}>• ⏱ {svc.duration}</Box>
+                      <Box component="span" sx={{ fontSize: 13, fontWeight: 400, color: '#fff', ml: 1 }}>•  {svc.duration}⏱</Box>
                     </Typography>
                   </Box>
                 </Box>
@@ -167,12 +174,12 @@ const ServicesPage: React.FC = () => {
         )}
 
         {section === 'about' && (
-          <Box sx={{ px: 3, py: 5 }}>
-          <Typography fontWeight="bold" textAlign="center" mb={3} sx={{ color: '#2b3b53', fontSize: 18 }}>
+          <Box sx={{ px: 4, py: 6 }}>
+          <Typography fontWeight="bold" textAlign="center" mb={4} sx={{ color: '#2b3b53', fontSize: 20 }}>
           • ABOUT US •
         </Typography>
 
-        <Typography fontSize={14} lineHeight={2} mb={2} sx={{ textAlign: 'justify', textIndent: '1.5em', color: '#1a2a3b', fontFamily: 'Trebuchet MS, sans-serif' }}>
+        <Typography fontSize={14} lineHeight={2} mb={4} sx={{ textAlign: 'justify', textIndent: '1.5em', color: '#1a2a3b', fontFamily: 'Trebuchet MS, sans-serif' }}>
           Welcome to SoulEase’s Massage Service Experience.  
           Step into a world where relaxation meets indulgence and every touch is designed to awaken your senses. 
           Discover a curated list of independent therapists, each specializing in diverse massage techniques tailored to your unique preferences.
@@ -186,13 +193,13 @@ const ServicesPage: React.FC = () => {
        </Box>
             )}
             {section === 'how' && (
-              <Box sx={{ px: 2, py: 5 }}>
-              <Typography fontWeight="bold" textAlign="center" mb={3} sx={{ color: '#2b3b53', fontSize: 18 }}>
+              <Box sx={{ px: 4, py: 6 }}>
+              <Typography fontWeight="bold" textAlign="center" mb={4} sx={{ color: '#2b3b53', fontSize: 20 }}>
               • Frequently Asked Questions •
             </Typography>
 
           
-<Typography fontWeight="bold" fontSize={24} mt={5} mb={3} sx={{ color: '#1a2a3b' }}>
+<Typography fontWeight="bold" fontSize={20} mt={5} mb={3} sx={{ color: '#1a2a3b' }}>
   BASICS
 </Typography>
 
@@ -228,7 +235,7 @@ While we strive to ensure honest and accurate representation, like any platform,
       mb: 1.5,
       
       border: '1px solid #ccc',
-      borderRadius: 1,
+      borderRadius: 3,
       '&::before': { display: 'none' },
     }}
   >
@@ -258,7 +265,7 @@ While we strive to ensure honest and accurate representation, like any platform,
   </Accordion>
 ))}
 
-<Typography fontWeight="bold" fontSize={24} mt={5} mb={3} sx={{ color: '#1a2a3b' }}>
+<Typography fontWeight="bold" fontSize={20} mt={5} mb={3} sx={{ color: '#1a2a3b' }}>
   PAYMENT
 </Typography>
 {[
@@ -300,13 +307,14 @@ While we strive to ensure honest and accurate representation, like any platform,
     sx={{
       mb: 2,
       border: '1px solid #ccc',
-      borderRadius: 1,
+      borderRadius: 3,
       '&::before': { display: 'none' },
       
     }}
   >
 <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#1a2a3b' }} />}>
-  <Typography fontWeight="bold" fontSize={14} sx={{ color: '#1a2a3b', fontFamily: 'Trebuchet MS, sans-serif' }}>
+  <Typography fontWeight="bold" fontSize={14} sx={{ color: '#1a2a3b', 
+    fontFamily: 'Trebuchet MS, sans-serif' }}>
     {item.q}
   </Typography>
 </AccordionSummary>
@@ -342,7 +350,7 @@ While we strive to ensure honest and accurate representation, like any platform,
       sx={{
         mt: 5,
         p: 3,
-        borderRadius: 2,
+        borderRadius: 5,
         backgroundColor: '#ffffff',
         boxShadow: '0 6px 18px rgba(0,0,0,0.06)',
       }}
@@ -388,13 +396,13 @@ While we strive to ensure honest and accurate representation, like any platform,
       <Box display="flex" gap={2}>
         <Button
           component="a"
-          href="https://t.me/+leM2NrBtS5w5ZTM1"
+          href="https://t.me/SoulEasevip_bkk"
           target="_blank"
           rel="noopener noreferrer"
           variant="outlined"
           sx={{
             fontFamily: 'Trebuchet MS, sans-serif',
-            borderRadius: 4,
+            borderRadius: 2,
             borderColor: 'rgba(0, 0, 0, 0.06)',
             color: '#2b3b53',
             fontSize: 14,
@@ -403,7 +411,7 @@ While we strive to ensure honest and accurate representation, like any platform,
             px: 3,
           }}
         >
-          Telegram channel
+          SoulEase Support 
         </Button>
         <Button
           component="a"
@@ -423,7 +431,7 @@ While we strive to ensure honest and accurate representation, like any platform,
             
           }}
         >
-          Blog
+          Telegram channel
         </Button>
       </Box>
       <Box

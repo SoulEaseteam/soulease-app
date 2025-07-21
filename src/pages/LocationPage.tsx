@@ -117,15 +117,15 @@ const LocationPage: React.FC = () => {
         />
 
         {selectedLat && selectedLng && (
-          <iframe
-            title="Map"
-            width="100%"
-            height="180"
-            frameBorder="0"
-            style={{ borderRadius: 8, marginBottom: 16 }}
-            src={`https://maps.google.com/maps?q=${selectedLat},${selectedLng}&z=15&output=embed`}
-            allowFullScreen
-          />
+        <iframe
+          title="Map"
+          width="100%"
+          height="180"
+          frameBorder="0"
+          style={{ borderRadius: 8, marginBottom: 16 }}
+          src={`https://maps.google.com/maps?q=${selectedLat},${selectedLng}&z=15&output=embed`}
+          allowFullScreen
+        />
         )}
 
         <Button

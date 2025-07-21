@@ -49,7 +49,7 @@ const ServiceDetailPage: React.FC = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', background: '#fefefe', pb: 10 }}>
-      <Box sx={{ maxWidth: 430, mx: 'auto', position: 'relative' }}>
+      <Box sx={{ maxWidth: 420, mx: 'auto', position: 'relative' }}>
         {/* 🧾 Title */}
         <Typography
           variant="h6"
@@ -59,7 +59,7 @@ const ServiceDetailPage: React.FC = () => {
           sx={{
             pt: 6,
             pb: 3,
-            background: 'rgba(255,255,255,0.85)',
+            background: 'rgba(255, 255, 255, 0.37)',
             backdropFilter: 'blur(2px)',
             position: 'sticky',
             top: 0,
@@ -87,7 +87,7 @@ const ServiceDetailPage: React.FC = () => {
                 px: 1.5,
                 py: 1.5,
                 fontSize: 12,
-                borderRadius: 2,
+                borderRadius: 4,
               }}
             >
               {service.badge}
@@ -96,7 +96,7 @@ const ServiceDetailPage: React.FC = () => {
         </Box>
 
         {/* 📌 Service Info */}
-        <Box sx={{ px: 3.5, mb: 1 }}>
+        <Box sx={{ px: 4, mb: 2 }}>
           <Typography fontWeight="bold" fontSize={20} sx={{ color: '#2b3b53'}}>
             {service.name}
           </Typography>
@@ -144,7 +144,7 @@ const ServiceDetailPage: React.FC = () => {
 
           {tab === 0 && (
             <>
-              <Typography fontWeight="bold" mb={1} sx={{ color: '#2b3b53' }}>
+               <Typography fontWeight="bold" mb={4} mt={6} sx={{ color: '#2b3b53' }}>
                 ▼ Service Description
               </Typography>
               <Typography
@@ -152,7 +152,7 @@ const ServiceDetailPage: React.FC = () => {
                 lineHeight={2}
                 color="text.secondary"
                 sx={{
-                  mb: '0.8',
+                  mb: '1',
                   textIndent: '2em',
                   fontFamily: 'Trebuchet MS, sans-serif',
                 }}
@@ -160,7 +160,7 @@ const ServiceDetailPage: React.FC = () => {
                 {service.detail}
               </Typography>
 
-              <Typography fontWeight="bold" mb={1} sx={{ color: '#2b3b53' }}>
+              <Typography fontWeight="bold" mb={3} mt={4} sx={{ color: '#2b3b53' }}>
                 ▼ Benefits of this service
               </Typography>
               <Box>
@@ -171,7 +171,7 @@ const ServiceDetailPage: React.FC = () => {
                     lineHeight={2}
                     color="text.secondary"
                     sx={{
-                      mb: '0.8',
+                      mb: '1',
                       textIndent: '2em',
                       fontFamily: 'Trebuchet MS, sans-serif',
                     }}
@@ -185,45 +185,68 @@ const ServiceDetailPage: React.FC = () => {
 
           {tab === 1 && (
             <Box>
-              <Typography
-                fontSize={16}
-                fontWeight="bold"
-                textAlign="center"
-                color="#2b3b53"
-                mb={3}
-              >
-                ・Project Details・
-              </Typography>
+  <Typography
+    fontSize={18}
+    fontWeight="bold"
+    textAlign="center"
+    color="#2b3b53"
+    mb={2}
+    mt={6}
+  >
+    ・Project Details・
+  </Typography>
 
-              <Typography fontWeight="bold" color="#2b3b53" fontSize={14} mb={1}>
-                ▼ [Recommendations]
-              </Typography>
-              <Typography fontSize={14} lineHeight={2} mb={2} sx={{ textAlign: 'justify', textIndent: '1em', color: "text.secondary", fontFamily: 'Trebuchet MS, sans-serif' }}>
-                1. Please send your order reference number to the service provider after booking.
-              </Typography>
-              <Typography fontSize={14} lineHeight={2} mb={2} sx={{ textAlign: 'justify', textIndent: '1em', color: "text.secondary", fontFamily: 'Trebuchet MS, sans-serif' }}>
-                2. If you are located close to the therapist, you can pay in cash upon arrival.
-              </Typography>
-              <Typography fontSize={14} lineHeight={2} mb={2} sx={{ textAlign: 'justify', textIndent: '1em', color: "text.secondary", fontFamily: 'Trebuchet MS, sans-serif' }}>
-                3. If you are far (e.g. 25km from Sukhumvit), a deposit of 500 THB may be required.
-              </Typography>
-              <Typography fontSize={14} lineHeight={2} mb={2} sx={{ textAlign: 'justify', textIndent: '1em', color: "text.secondary", fontFamily: 'Trebuchet MS, sans-serif' }}>
-                4. Payment methods accepted: VISA, PromptPay, PayNow, Cash, WeChat.
-              </Typography>
-              <Typography fontSize={14} lineHeight={2} mb={2} sx={{ textAlign: 'justify', textIndent: '1em', color: "text.secondary", fontFamily: 'Trebuchet MS, sans-serif' }}>
-                If you don’t have enough cash, message us to get account details and instructions.
-              </Typography>
+  <Typography fontWeight="bold" color="#2b3b53" fontSize={14} mb={4} mt={6}>
+    ▼ [Recommendations]
+  </Typography>
 
-              <Typography fontWeight="bold" color="#2b3b53" fontSize={14} mb={1}>
-                ▼ [Travel Fees]
-              </Typography>
-              <Typography fontSize={14} lineHeight={2} mb={2} sx={{ textAlign: 'justify', textIndent: '1em', color: "text.secondary", fontFamily: 'Trebuchet MS, sans-serif' }}>
-                1. An additional travel fee may apply.
-              </Typography>
-              <Typography fontSize={14} lineHeight={2} mb={2} sx={{ textAlign: 'justify', textIndent: '1em', color: "text.secondary", fontFamily: 'Trebuchet MS, sans-serif' }}>
-                2. Therapists are located in various parts of the city. Choose one nearby for faster service.
-              </Typography>
-            </Box>
+  {[
+    "1. Please send your order reference number to the service provider after booking.",
+    "2. If you are located close to the therapist, you can pay in cash upon arrival.",
+    "3. If you are far (e.g. 25km from Sukhumvit), a deposit of 500 THB may be required.",
+    "4. Payment methods accepted: VISA, PromptPay, PayNow, Cash, WeChat.",
+    "If you don’t have enough cash, message us to get account details and instructions.",
+  ].map((text, index) => (
+    <Typography
+      key={index}
+      fontSize={14}
+      lineHeight={1.7}
+      mb={2}
+      sx={{
+        textAlign: 'justify',
+        textIndent: '2em',
+        color: 'text.secondary',
+        fontFamily: 'Trebuchet MS, sans-serif',
+      }}
+    >
+      {text}
+    </Typography>
+  ))}
+
+  <Typography fontWeight="bold" color="#2b3b53" fontSize={14} mb={3} mt={4}>
+    ▼ [Travel Fees]
+  </Typography>
+
+  {[
+    "1. An additional travel fee may apply.",
+    "2. Therapists are located in various parts of the city. Choose one nearby for faster service.",
+  ].map((text, index) => (
+    <Typography
+      key={`travel-${index}`}
+      fontSize={14}
+      lineHeight={1.6}
+      mb={2}
+      sx={{
+        textAlign: 'justify',
+        textIndent: '2em',
+        color: 'text.secondary',
+        fontFamily: 'Trebuchet MS, sans-serif',
+      }}
+    >
+      {text}
+    </Typography>
+  ))}
+</Box>
           )}
         </Paper>
       </Box>

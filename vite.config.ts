@@ -33,10 +33,13 @@ export default defineConfig(({ mode }) => {
       chunkSizeWarningLimit: 1000,
       rollupOptions: {
         output: {
-          manualChunks: {
-            booking: ['src/pages/BookingPage.tsx', 'src/pages/PaymentPage.tsx'],
-            services: ['src/pages/ServicesPage.tsx'],
-            admin: ['src/pages/admin/AdminDashboardPage.tsx'],
+          manualChunks(id) {
+            if (id.includes('node_modules')) return 'vendor';
+            if (id.includes('src/pages/BookingPage')) return 'booking';
+            if (id.includes('src/pages/PaymentPage')) return 'booking';
+            if (id.includes('src/pages/ServicesPage')) return 'services';
+            if (id.includes('src/pages/admin')) return 'admin';
+            return undefined;
           },
         },
       },

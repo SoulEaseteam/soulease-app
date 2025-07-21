@@ -80,7 +80,7 @@ useEffect(() => {
   }
 }, [therapist]);
 
-  useEffect(() => {
+useEffect(() => {
     if (location.hash === '#features') {
       setSection('features');
       setTimeout(() => {
@@ -157,7 +157,7 @@ useEffect(() => {
   <Typography variant="h4" sx={{ letterSpacing: 6, fontWeight: 700, color: '#7b8b99', textShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
     FEATURED PROFILES
   </Typography>
-
+ 
 
   {/* ShareButton ขวาบน */}
   <Button
@@ -222,7 +222,8 @@ useEffect(() => {
             {therapist.name}
             <Box
               component="span"
-              sx={{ display: 'inline-flex', alignItems: 'center', fontSize: 16, fontWeight: 500, color: '#596a7c', ml: 1, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+              sx={{ display: 'inline-flex', alignItems: 'center', fontSize: 16, fontWeight: 500, color: '#596a7c', ml: 1, 
+                cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
               onClick={() => navigate(`/review/all/${therapist.id}`)}
             >
               <img src="/images/icon/star.png" alt="star" style={{ width: 20, height: 20, marginRight: 6 }} />
@@ -236,7 +237,9 @@ useEffect(() => {
 
         {/* Tabs */}
         <Box
-          sx={{ mt: 2, px: 2, py: 1, borderRadius: 4, background: 'linear-gradient(to right, #2e3a4f, #0f1113)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
+          sx={{ mt: 2, px: 2, py: 1, borderRadius: 4,
+             background: 'linear-gradient(to right, #2e3a4f, #0f1113)', backdropFilter: 'blur(12px)', 
+             boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
         >
           <Tabs
             value={section}
@@ -246,8 +249,8 @@ useEffect(() => {
             variant="fullWidth"
             sx={{
               '& .MuiTab-root': { color: '#cccccc', fontWeight: 'bold' },
-              '& .Mui-selected': { color: '#ffffff', background: 'rgba(255,255,255,0.1)', borderRadius: 2 },
-              '& .MuiTabs-indicator': { backgroundColor: '#ffffff', height: 3, borderRadius: 2 },
+              '& .Mui-selected': { color: '#ffffff', background: 'rgba(255,255,255,0.1)', borderRadius: 4 },
+              '& .MuiTabs-indicator': { backgroundColor: '#ffffff', height: 3, borderRadius: 3 },
             }}
           >
             <Tab label="Services" value="services" />
@@ -260,7 +263,8 @@ useEffect(() => {
         {section === 'services' && <ServicesSection therapist={therapist} navigate={navigate} />}
         {section === 'features' && therapist.features && (
           <Box
-            sx={{ mt: 4, mx: 2, borderRadius: 4, background: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(14px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', color: '#1c1c1c', maxHeight: '65vh', overflowY: 'auto', p: 3 }}
+            sx={{ mt: 4, mx: 2, borderRadius: 6, background: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(14px)', 
+              boxShadow: '0 4px 20px rgba(0,0,0,0.08)', color: '#1c1c1c', maxHeight: '65vh', overflowY: 'auto', p: 3 }}
           >
             <Typography fontWeight="bold" fontSize={16} mb={1}>General Information</Typography>
             {renderFeature(<FaUser color="#2b3b53" />, 'Age', therapist.features.age)}
@@ -323,7 +327,7 @@ const ServicesSection = ({
           sx={{
             position: 'relative',
             height: 220,
-            borderRadius: 2,
+            borderRadius: 4,
             overflow: 'hidden',
             backgroundImage: `url(${svc.image})`,
             backgroundSize: 'cover',
@@ -390,11 +394,11 @@ const ServicesSection = ({
                 {svc.desc}
               </Typography>
               <Typography>
-                <Box component="span" sx={{ fontSize: 18, fontWeight: 'bold', color: '#ffff' }}>
+                <Box component="span" sx={{ fontSize: 18, fontWeight: 'bold', color: '#FF9900' }}>
                   ฿{svc.price}
                 </Box>
-                <Box component="span" sx={{ fontSize: 15, fontWeight: 400, color: '#7c4d00', ml: 0.5 }}>
-                  • ⏱ {svc.duration}
+                <Box component="span" sx={{ fontSize: 15, fontWeight: 400, color: '#fff', ml: 0.5 }}>
+                  •  {svc.duration}⏱
                 </Box>
               </Typography>
               <Button
@@ -408,14 +412,14 @@ const ServicesSection = ({
                 sx={{
                   position: 'absolute',
                   right: 56,
-                  top: '50%',
+                  top: '65%',
                   transform: 'translateY(-50%)',
                   background: therapist.available === 'resting' ? '#ccc' : '#2b3b53',
                   color: therapist.available === 'resting' ? '#888' : '#fff',
-                  fontSize: 12,
-                  px: 3,
+                  fontSize: 14,
+                  px: 4,
                   py: 0.5,
-                  borderRadius: 3,
+                  borderRadius: 4,
                   fontWeight: 'bold',
                   textTransform: 'none',
                   boxShadow: '0 2px 6px rgba(0,0,0,0.2)',

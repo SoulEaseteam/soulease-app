@@ -1,127 +1,97 @@
-// src/pages/ReviewListPage.tsx
+// ✅ ReviewPage.tsx (เฉพาะส่วนที่เกี่ยวข้องกับการให้สิทธิ์รีวิว)
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  Rating,
-  CircularProgress,
-  Avatar,
-  Button,
-  Stack,
-  Tabs,
-  Tab,
-} from '@mui/material';
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { useParams, useNavigate } from 'react-router-dom';
+import { collection, query, where, getDocs, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import AppLayout from '../layouts/AppLayout';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-dayjs.extend(relativeTime);
+import { useAuth } from '../providers/AuthProvider';
+import { Box, Typography, TextField, Button, Rating } from '@mui/material';
 
 interface Review {
-  id?: string;
-  therapistId: string;
-  userId: string;
   rating: number;
   comment: string;
   createdAt: any;
-  userName?: string;
-  userPhotoURL?: string;
+  therapistId: string;
+  userId: string;
 }
 
-const ReviewListPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const [reviews, setReviews] = useState<Review[]>([]);
+const ReviewPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>(); // therapistId
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const [rating, setRating] = useState<number | null>(5);
+  const [comment, setComment] = useState('');
+  const [canReview, setCanReview] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState(0);
 
   useEffect(() => {
-    const fetchReviews = async () => {
-      if (!id) return;
-      setLoading(true);
-      try {
-        const q = query(
-          collection(db, 'reviews'),
-          where('therapistId', '==', id),
-          orderBy('createdAt', 'desc')
-        );
-        const snapshot = await getDocs(q);
-        const data: Review[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
-        setReviews(data);
-      } catch (error) {
-        console.error('Error fetching reviews:', error);
-      } finally {
-        setLoading(false);
-      }
+    const checkBooking = async () => {
+      if (!user?.uid || !id) return;
+      const q = query(
+        collection(db, 'bookings'),
+        where('userId', '==', user.uid),
+        where('therapistId', '==', id),
+        where('status', '==', 'completed') // ✅ ตรวจเฉพาะการจองที่สำเร็จแล้ว
+      );
+      const snap = await getDocs(q);
+      setCanReview(!snap.empty);
+      setLoading(false);
     };
-    fetchReviews();
-  }, [id]);
+    checkBooking();
+  }, [user, id]);
 
-  const sortedReviews = tab === 0
-    ? reviews
-    : [...reviews].sort((a, b) => (tab === 1 ? b.rating - a.rating : a.rating - b.rating));
+  const handleSubmit = async () => {
+    if (!rating || !comment.trim()) {
+      alert('Please complete all fields');
+      return;
+    }
+    const newReview: Review = {
+      rating,
+      comment,
+      therapistId: id!,
+      userId: user!.uid,
+      createdAt: Timestamp.now()
+    };
+    await addDoc(collection(db, 'reviews'), newReview);
+    alert('Review submitted!');
+    navigate(`/review-list/${id}`);
+  };
+
+  if (loading) return <Typography>Loading...</Typography>;
+  if (!user || !canReview) {
+    return (
+      <Box sx={{ p: 4 }}>
+        <Typography fontWeight="bold" fontSize={18} color="gray">
+          You can only review if you completed a booking with this therapist.
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
-    <AppLayout title="Customer Reviews">
-      <Box sx={{ minHeight: '100vh', py: 4, background: '#f8f9fa' }}>
-        <Box sx={{ maxWidth: 420, mx: 'auto', px: 2 }}>
-          <Typography variant="h6" fontWeight="bold" textAlign="center" mb={2}>
-            Therapist Reviews
-          </Typography>
-
-          <Box sx={{ background: '#fff', borderRadius: 2, p: 2, boxShadow: 3 }}>
-            <Tabs
-              value={tab}
-              onChange={(_, v: number) => setTab(v)}
-              variant="fullWidth"
-              textColor="primary"
-              indicatorColor="primary"
-            >
-              <Tab label="Recent" />
-              <Tab label="Highest Rated" />
-              <Tab label="Lowest Rated" />
-            </Tabs>
-
-            {loading ? (
-              <Box textAlign="center" mt={4}>
-                <CircularProgress />
-              </Box>
-            ) : sortedReviews.length === 0 ? (
-              <Typography align="center" color="text.secondary" mt={4}>
-                No reviews available.
-              </Typography>
-            ) : (
-              sortedReviews.map((r) => (
-                <Card
-                  key={r.id}
-                  sx={{ mt: 2, background: 'rgba(255,255,255,0.75)', borderRadius: 4, boxShadow: 3 }}
-                >
-                  <CardContent>
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      <Avatar src={r.userPhotoURL || '/images/user.png'} />
-                      <Box>
-                        <Typography fontWeight="bold">{r.userName || 'Customer'}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {dayjs(r.createdAt?.toDate?.()).fromNow() || 'N/A'}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                    <Rating value={r.rating} readOnly size="small" sx={{ mt: 0.5 }} />
-                    <Typography fontSize={13} color="text.secondary" mt={1}>
-                      "{r.comment}"
-                    </Typography>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </Box>
-        </Box>
-      </Box>
-    </AppLayout>
+    <Box sx={{ p: 4 }}>
+      <Typography fontSize={20} fontWeight="bold" mb={2}>
+        Write your review
+      </Typography>
+      <Rating
+        value={rating}
+        onChange={(_, newValue) => setRating(newValue)}
+        size="large"
+      />
+      <TextField
+        fullWidth
+        multiline
+        rows={4}
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        placeholder="Share your experience..."
+        sx={{ mt: 2 }}
+      />
+      <Button variant="contained" onClick={handleSubmit} sx={{ mt: 2 }}>
+        Submit Review
+      </Button>
+    </Box>
   );
 };
 
-export default ReviewListPage;
+export default ReviewPage;
