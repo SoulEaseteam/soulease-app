@@ -1,126 +1,108 @@
+// src/pages/AdminUserListPage.tsx
+
 import React, { useEffect, useState } from 'react';
 import {
-  Box, Typography, Paper, Grid, CircularProgress, Avatar, Stack
+  Box,
+  Typography,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  Button,
 } from '@mui/material';
-import { collection, getDocs } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
+import { doc, getDocs, collection, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import dayjs from 'dayjs';
-import { Therapist } from '../types/therapist';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import BlockIcon from '@mui/icons-material/Block';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 
-const AdminDashboardPage: React.FC = () => {
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [therapists, setTherapists] = useState<Therapist[]>([]);
-  const [loading, setLoading] = useState(true);
+interface User {
+  id: string;
+  email: string;
+  role: 'user' | 'therapist' | 'admin';
+  createdAt?: string;
+  isActive?: boolean;
+}
+
+const AdminUserListPage: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      const bookingSnap = await getDocs(collection(db, 'bookings'));
-      const therapistSnap = await getDocs(collection(db, 'therapists'));
-
-      const bookingData = bookingSnap.docs.map((doc) => doc.data());
-      const therapistData = therapistSnap.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Therapist[];
-
-      setBookings(bookingData);
-      setTherapists(therapistData);
-      setLoading(false);
+    const fetchUsers = async () => {
+      const snapshot = await getDocs(collection(db, 'users'));
+      const data: User[] = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      })) as User[];
+      setUsers(data);
     };
-
-    fetchData();
+    fetchUsers();
   }, []);
 
-  if (loading) {
-    return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const handleToggleRole = async (id: string, role: User['role']) => {
+    const newRole = role === 'therapist' ? 'user' : 'therapist';
+    await updateDoc(doc(db, 'users', id), { role: newRole });
+    alert(`Role updated to ${newRole}`);
+    window.location.reload();
+  };
 
-  const today = dayjs().format('YYYY-MM-DD');
-
-  const todayBookings = bookings.filter((b) =>
-    dayjs(b.selectedDate?.seconds * 1000).format('YYYY-MM-DD') === today
-  );
-
-  const totalRevenue = bookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
-
-  const bookingCountPerTherapist: Record<string, number> = {};
-
-  bookings.forEach((b) => {
-    if (b.therapistId) {
-      bookingCountPerTherapist[b.therapistId] = (bookingCountPerTherapist[b.therapistId] || 0) + 1;
-    }
-  });
-
-  const topTherapists = Object.entries(bookingCountPerTherapist)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 3)
-    .map(([id, count]) => {
-      const therapist = therapists.find((t) => t.id === id);
-      return {
-        id,
-        name: therapist?.name || 'Unknown',
-        image: therapist?.image || '/images/user.png',
-        count,
-      };
-    });
+  const handleToggleStatus = async (id: string, isActive: boolean = true) => {
+    await updateDoc(doc(db, 'users', id), { isActive: !isActive });
+    alert(`User has been ${isActive ? 'deactivated' : 'reactivated'}`);
+    window.location.reload();
+  };
 
   return (
-    <Box sx={{ minHeight: '100vh', background: '#f3f5f7', py: 4 }}>
-      <Box sx={{ maxWidth: 900, mx: 'auto', px: 2 }}>
-        <Typography variant="h4" fontWeight="bold" mb={4}>
-          Admin Dashboard
+    <Box sx={{ minHeight: '100vh', background: '#f4f6f8', py: 4 }}>
+      <Box sx={{ maxWidth: 960, mx: 'auto', px: 2 }}>
+        <Typography variant="h5" fontWeight="bold" gutterBottom>
+          👤 All Users Management
         </Typography>
 
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 3, borderRadius: 3 }}>
-              <Typography variant="h6">Today's Bookings</Typography>
-              <Typography variant="h4" fontWeight="bold">{todayBookings.length}</Typography>
-            </Paper>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 3, borderRadius: 3 }}>
-              <Typography variant="h6">Total Bookings</Typography>
-              <Typography variant="h4" fontWeight="bold">{bookings.length}</Typography>
-            </Paper>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 3, borderRadius: 3 }}>
-              <Typography variant="h6">Total Revenue</Typography>
-              <Typography variant="h4" fontWeight="bold">
-                ฿{totalRevenue.toLocaleString()}
-              </Typography>
-            </Paper>
-          </Grid>
-        </Grid>
-
-        <Typography variant="h6" mt={5} mb={2}>
-          🔝 Top 3 Most Booked Therapists
-        </Typography>
-
-        <Stack spacing={2}>
-          {topTherapists.map((t, index) => (
-            <Paper key={t.id} sx={{ p: 2, borderRadius: 2 }}>
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Avatar src={t.image} sx={{ width: 48, height: 48 }} />
-                <Box>
-                  <Typography fontWeight="bold">{index + 1}. {t.name}</Typography>
-                  <Typography color="text.secondary">{t.count} bookings</Typography>
-                </Box>
-              </Stack>
-            </Paper>
-          ))}
-        </Stack>
+        <TableContainer component={Paper} sx={{ borderRadius: 4 }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Email</TableCell>
+                <TableCell>Role</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Created At</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.role}</TableCell>
+                  <TableCell>{user.isActive === false ? 'Inactive' : 'Active'}</TableCell>
+                  <TableCell>{user.createdAt || '-'}</TableCell>
+                  <TableCell align="right">
+                    <IconButton onClick={() => navigate(`/admin/user/${user.id}`)}>
+                      <VisibilityIcon />
+                    </IconButton>
+                    <IconButton onClick={() => handleToggleRole(user.id, user.role)}>
+                      <AdminPanelSettingsIcon />
+                    </IconButton>
+                    <IconButton onClick={() => handleToggleStatus(user.id, user.isActive)}>
+                      {user.isActive === false ? <CheckCircleOutlineIcon /> : <BlockIcon />}
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Box>
     </Box>
   );
 };
 
-export default AdminDashboardPage;
+export default AdminUserListPage;

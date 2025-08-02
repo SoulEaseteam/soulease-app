@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -10,7 +10,7 @@ import {
   Divider,
   Paper,
   Switch,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Edit,
   Notifications,
@@ -19,85 +19,108 @@ import {
   Stars,
   AdminPanelSettings,
   Logout,
-  LocationOn,
-  Settings,
-  UploadFile,
-  Lock,
-  Brightness4,
-  HeartBrokenOutlined,
-} from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
-import BottomNav from '../components/BottomNav';
-import { useAuth } from '../providers/AuthProvider';
-import { Heart } from 'phosphor-react';
-import { HeartIcon } from 'lucide-react';
+  DarkMode,
+  LightMode,
+} from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import BottomNav from "../components/BottomNav";
+import { useAuth } from "../providers/AuthProvider";
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [darkMode, setDarkMode] = useState(false);
   const role = user?.role;
+
+  // ✅ จำสถานะ Dark Mode ไว้ใน localStorage
+  const [darkMode, setDarkMode] = useState<boolean>(
+    localStorage.getItem("darkMode") === "true"
+  );
+
+  useEffect(() => {
+    localStorage.setItem("darkMode", String(darkMode));
+  }, [darkMode]);
 
   const handleLogout = async () => {
     await logout?.();
-    localStorage.removeItem('token');
-    alert('You have been logged out!');
-    navigate('/login');
+    localStorage.removeItem("token");
+    alert("You have been logged out!");
+    navigate("/login");
   };
 
+  // ✅ เมนูตาม Role
   const renderMenuItems = () => {
     switch (role) {
-      case 'user':
+      case "user":
         return (
           <>
-            <ListItem button onClick={() => navigate('/edit-profile')}>
-              <ListItemIcon><Edit /></ListItemIcon>
+            <ListItem button onClick={() => navigate("/edit-profile")}>
+              <ListItemIcon>
+                <Edit />
+              </ListItemIcon>
               <ListItemText primary="Edit Profile" />
             </ListItem>
-            <ListItem button onClick={() => navigate('/notifications')}>
-              <ListItemIcon><Notifications /></ListItemIcon>
+            <ListItem button onClick={() => navigate("/notifications")}>
+              <ListItemIcon>
+                <Notifications />
+              </ListItemIcon>
               <ListItemText primary="Notifications" />
             </ListItem>
-            <ListItem button onClick={() => navigate('/saved')}>
-              <ListItemIcon><Favorite /></ListItemIcon>
+            <ListItem button onClick={() => navigate("/saved")}>
+              <ListItemIcon>
+                <Favorite />
+              </ListItemIcon>
               <ListItemText primary="Favourites" />
             </ListItem>
-            <ListItem button onClick={() => navigate('/booking/history')}>
-              <ListItemIcon><Event /></ListItemIcon>
+            <ListItem button onClick={() => navigate("/booking/history")}>
+              <ListItemIcon>
+                <Event />
+              </ListItemIcon>
               <ListItemText primary="My Bookings" />
             </ListItem>
           </>
         );
-      case 'therapist':
+      case "therapist":
         return (
           <>
-            <ListItem button onClick={() => navigate('/edit-profile')}>
-              <ListItemIcon><Edit /></ListItemIcon>
+            <ListItem button onClick={() => navigate("/edit-profile")}>
+              <ListItemIcon>
+                <Edit />
+              </ListItemIcon>
               <ListItemText primary="Edit Profile" />
             </ListItem>
-            <ListItem button onClick={() => navigate('/notifications')}>
-              <ListItemIcon><Notifications /></ListItemIcon>
+            <ListItem button onClick={() => navigate("/notifications")}>
+              <ListItemIcon>
+                <Notifications />
+              </ListItemIcon>
               <ListItemText primary="Notifications" />
             </ListItem>
-            <ListItem button onClick={() => navigate('/my-bookings')}>
-              <ListItemIcon><Event /></ListItemIcon>
+            <ListItem button onClick={() => navigate("/my-bookings")}>
+              <ListItemIcon>
+                <Event />
+              </ListItemIcon>
               <ListItemText primary="My Booking Schedule" />
             </ListItem>
-            <ListItem button onClick={() => navigate('/reviews')}>
-              <ListItemIcon><Stars /></ListItemIcon>
+            <ListItem button onClick={() => navigate("/reviews")}>
+              <ListItemIcon>
+                <Stars />
+              </ListItemIcon>
               <ListItemText primary="My Reviews" />
             </ListItem>
           </>
         );
-      case 'admin':
+      case "admin":
         return (
           <>
-            <ListItem button onClick={() => navigate('/admin')}>
-              <ListItemIcon><AdminPanelSettings /></ListItemIcon>
+            <ListItem button onClick={() => navigate("/admin")}>
+              <ListItemIcon>
+                <AdminPanelSettings />
+              </ListItemIcon>
               <ListItemText primary="Admin Dashboard" />
             </ListItem>
-            <ListItem button onClick={() => navigate('/notifications')}>
-              <ListItemIcon><Notifications /></ListItemIcon>
+            <ListItem button onClick={() => navigate("/notifications")}>
+              <ListItemIcon>
+                <Notifications />
+              </ListItemIcon>
               <ListItemText primary="Notifications" />
             </ListItem>
           </>
@@ -107,88 +130,84 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const pageBg = darkMode ? "#121212" : "#f5f5f5";
+  const paperBg = darkMode ? "#1e1e1e" : "#fff";
+  const textColor = darkMode ? "#fff" : "#000";
+
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        background: 'linear-gradient(to bottom right, #eee, #fff)',
+        minHeight: "100vh",
+        backgroundColor: pageBg,
         p: 2,
         pt: 8,
         pb: 10,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        transition: "background 0.3s",
       }}
     >
       <Paper
         elevation={3}
         sx={{
-          width: '100%',
+          width: "100%",
           maxWidth: 380,
-          borderRadius: 2,
-          overflow: 'hidden',
-          textAlign: 'center',
-          pb: 4,
+          borderRadius: 3,
+          overflow: "hidden",
+          textAlign: "center",
+          pb: 3,
+          backgroundColor: paperBg,
+          color: textColor,
         }}
       >
-        <Box sx={{ position: 'relative', height: 130, background: '#2b3b53' }}>
+        {/* ✅ ส่วนหัว */}
+        <Box sx={{ position: "relative", height: 130, background: "#1976d2" }}>
           <Avatar
-            src={user?.image || '/images/massage/user.png'}
+            src={user?.image || "/images/massage/user.png"}
             sx={{
               width: 120,
               height: 120,
-              position: 'absolute',
+              position: "absolute",
               bottom: -40,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              border: '4px solid #fff',
+              left: "50%",
+              transform: "translateX(-50%)",
+              border: "4px solid #fff",
             }}
           />
         </Box>
 
+        {/* ✅ ชื่อผู้ใช้ */}
         <Box mt={8}>
           <Typography variant="h6" fontWeight="bold">
-            {user?.username || 'My Profile'}
+            {user?.username || "My Profile"}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {role === 'therapist'
-              ? 'Therapist Account'
-              : role === 'admin'
-              ? 'Administrator'
-              : 'Customer'}
+          <Typography variant="body2" sx={{ color: darkMode ? "#aaa" : "#555" }}>
+            {role === "therapist"
+              ? "Therapist Account"
+              : role === "admin"
+              ? "Administrator"
+              : "Customer"}
           </Typography>
         </Box>
 
-        <List>
-          {renderMenuItems()}
+        <List>{renderMenuItems()}</List>
+        <Divider sx={{ my: 1 }} />
 
-        <ListItem button onClick={() => navigate('/edit-profile')}>
-          <ListItemIcon><Edit /></ListItemIcon>
-          <ListItemText primary="Edit Profile" />
+        {/* ✅ Toggle Dark Mode */}
+        <ListItem>
+          <ListItemIcon>{darkMode ? <DarkMode /> : <LightMode />}</ListItemIcon>
+          <ListItemText primary="Dark Mode" />
+          <Switch checked={darkMode} onChange={() => setDarkMode((prev) => !prev)} />
         </ListItem>
-
-        <ListItem button onClick={() => navigate('/notifications')}>
-          <ListItemIcon><Notifications /></ListItemIcon>
-          <ListItemText primary="Notifications" />
-        </ListItem>
-
-        <ListItem button onClick={() => navigate('/upload-profile-image')}>
-          <ListItemIcon><HeartIcon /></ListItemIcon>
-          <ListItemText primary="Favourites" />
-        </ListItem>
-
-        <ListItem button onClick={() => navigate('/booking/history')}>
-          <ListItemIcon><Event /></ListItemIcon>
-          <ListItemText primary="My Bookings" />
-        </ListItem>
-
-
-        </List>
 
         <Divider sx={{ my: 1 }} />
 
+        {/* ✅ Logout */}
         <ListItem button onClick={handleLogout}>
-          <ListItemIcon sx={{ color: '#B00020' }}><Logout /></ListItemIcon>
+          <ListItemIcon sx={{ color: "#B00020" }}>
+            <Logout />
+          </ListItemIcon>
           <ListItemText primary="Logout" />
         </ListItem>
       </Paper>

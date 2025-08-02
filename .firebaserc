@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "soulease-spa"
-  }
+    "default": "soulease-spa",
+    "npm run build": "soulease-spa"
+  },
+  "targets": {},
+  "etags": {}
 }

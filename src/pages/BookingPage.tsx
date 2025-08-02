@@ -10,12 +10,21 @@ import dayjs from 'dayjs';
 import { collection, addDoc, Timestamp, doc, getDoc } from 'firebase/firestore';
 import EditLocationAltIcon from '@mui/icons-material/EditLocationAlt';
 import { db } from '../firebase';
-import therapists from '../data/therapists';
 import services from '../data/services';
 import { calculateDistanceKm } from '../utils/calculateDistance';
-import { useAuth } from '../providers/AuthProvider'; // ✅ เพิ่มตรงนี้
+import { useAuth } from '../providers/AuthProvider';
 
-  const BookingPage: React.FC = () => {
+const BASE_FARE = 45; // ค่าเริ่มต้น
+const PER_KM = 7; // ราคา/กม.
+const PER_MIN = 2; // ราคา/นาที
+
+// ✅ ฟังก์ชันคำนวณค่า Grab
+const calculateGrabFare = (distanceKm: number, durationMin: number) => {
+  const oneWay = BASE_FARE + distanceKm * PER_KM + durationMin * PER_MIN;
+  return oneWay * 2; // ไป-กลับ
+};
+
+const BookingPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -26,10 +35,7 @@ import { useAuth } from '../providers/AuthProvider'; // ✅ เพิ่มต�
   const selectedLng = queryParams.get('selectedLng');
   const selectedAddress = queryParams.get('selectedAddress');
 
-  const therapist = therapists.find((t) => t.id === therapistId);
-  const selectedService = services.find((s) => s.name === selectedServiceName);
-  const servicePrice = selectedService?.price || 0;
-
+  const [therapist, setTherapist] = useState<any>(null);
   const [address, setAddress] = useState(selectedAddress || '');
   const [phone, setPhone] = useState('');
   const [note, setNote] = useState('');
@@ -37,42 +43,118 @@ import { useAuth } from '../providers/AuthProvider'; // ✅ เพิ่มต�
   const [selectedTime, setSelectedTime] = useState('');
   const [loading, setLoading] = useState(false);
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
+  const [durationMin, setDurationMin] = useState<number | null>(null);
+  const [locationName, setLocationName] = useState("");
 
-  const ratePerKm = 10;
-
+  // ✅ ใช้ calculateGrabFare แทนสูตรเดิม
   const travelCost = useMemo(() => {
-    return distanceKm ? Math.round(distanceKm * 2 * ratePerKm) : 0;
-  }, [distanceKm]);
+    if (distanceKm && durationMin) {
+      return Math.round(calculateGrabFare(distanceKm, durationMin));
+    }
+    return 0;
+  }, [distanceKm, durationMin]);
 
   const isLocationSelected = distanceKm !== null;
 
   const total = useMemo(() => {
-    return isLocationSelected ? servicePrice + travelCost : 0;
-  }, [isLocationSelected, servicePrice, travelCost]);
+    return isLocationSelected
+      ? (services.find((s) => s.name === selectedServiceName)?.price || 0) + travelCost
+      : 0;
+  }, [isLocationSelected, selectedServiceName, travelCost]);
 
+  // ✅ ฟังก์ชันดึงชื่อสถานที่
+  const getPlaceNameFromLatLng = (lat: number, lng: number) => {
+    if (!window.google) return;
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+      if (status === "OK" && results?.length) {
+        const placeId = results[0].place_id;
+        const service = new google.maps.places.PlacesService(document.createElement("div"));
+
+        service.getDetails({ placeId }, (place, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && place?.name) {
+            setAddress(place.name);
+          } else {
+            setAddress(results[0].formatted_address);
+          }
+        });
+      }
+    });
+  };
+
+  // ✅ โหลด Therapist และคำนวณสถานะ
+  useEffect(() => {
+    const fetchTherapist = async () => {
+      if (!therapistId) return;
+      const ref = doc(db, 'therapists', therapistId);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const data = snap.data();
+        const computedStatus = () => {
+          if (data.statusOverride) return data.statusOverride;
+          const now = new Date();
+          const [startHour = 0, startMin = 0] = data.startTime?.split(':').map(Number) || [];
+          const [endHour = 0, endMin = 0] = data.endTime?.split(':').map(Number) || [];
+          const start = new Date();
+          const end = new Date();
+          start.setHours(startHour, startMin, 0);
+          end.setHours(endHour, endMin, 0);
+          if (end <= start) end.setDate(end.getDate() + 1);
+          const inWorkingHours = now >= start && now <= end;
+          return inWorkingHours ? (data.isBooked ? 'bookable' : 'available') : 'resting';
+        };
+        setTherapist({ id: snap.id, ...data, status: computedStatus() });
+      }
+    };
+    fetchTherapist();
+  }, [therapistId]);
+
+  useEffect(() => {
+    if (selectedLat && selectedLng) {
+      getPlaceNameFromLatLng(parseFloat(selectedLat), parseFloat(selectedLng));
+    }
+  }, [selectedLat, selectedLng]);
+
+  // ✅ คำนวณระยะทาง + เวลาเดินทาง
   useEffect(() => {
     const fetchTherapistLocation = async () => {
       if (!therapist?.id || !selectedLat || !selectedLng) return;
-
       try {
         const ref = doc(db, 'therapists', therapist.id);
         const snap = await getDoc(ref);
         const tData = snap.data();
+        if (tData?.currentLocation && window.google) {
+          const origin = new google.maps.LatLng(
+            tData.currentLocation.lat,
+            tData.currentLocation.lng
+          );
+          const destination = new google.maps.LatLng(
+            parseFloat(selectedLat),
+            parseFloat(selectedLng)
+          );
 
-        if (tData?.currentLocation) {
-          const origin = tData.currentLocation;
-          const destination = {
-            lat: parseFloat(selectedLat),
-            lng: parseFloat(selectedLng),
-          };
-          const km = await calculateDistanceKm(origin, destination);
-          setDistanceKm(km);
+          const service = new google.maps.DistanceMatrixService();
+          service.getDistanceMatrix(
+            {
+              origins: [origin],
+              destinations: [destination],
+              travelMode: google.maps.TravelMode.DRIVING,
+            },
+            (response, status) => {
+              if (status === "OK") {
+                const element = response.rows[0].elements[0];
+                if (element.status === "OK") {
+                  setDistanceKm(element.distance.value / 1000);
+                  setDurationMin(element.duration.value / 60);
+                }
+              }
+            }
+          );
         }
       } catch (err) {
-        console.error('Error fetching therapist location:', err);
+        console.error("Error fetching therapist location:", err);
       }
     };
-
     fetchTherapistLocation();
   }, [therapist?.id, selectedLat, selectedLng]);
 
@@ -84,11 +166,10 @@ import { useAuth } from '../providers/AuthProvider'; // ✅ เพิ่มต�
     });
   };
 
-   const sendTelegramMessage = async (message: string) => {
-    const token = '7555034629:AAEH8FQcmQbMlRd1-5Z65XKXaOprWQQ8ahg';
-    const chatId = '-1002657430402';
+  const sendTelegramMessage = async (message: string) => {
+    const token = 'YOUR_TELEGRAM_TOKEN';
+    const chatId = 'YOUR_CHAT_ID';
     const url = `https://api.telegram.org/bot${token}/sendMessage`;
-
 
     try {
       await fetch(url, {
@@ -109,25 +190,30 @@ import { useAuth } from '../providers/AuthProvider'; // ✅ เพิ่มต�
     const lng = selectedLng ? parseFloat(selectedLng) : null;
     const googleMapLink = lat && lng ? `https://maps.google.com/?q=${lat},${lng}` : '-';
     const bookingTime = `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
+    const selectedService = services.find((s) => s.name === selectedServiceName);
+    const servicePrice = selectedService?.price || 0;
 
     const message = `
-💠 ${bookingTime}
+📅 ${bookingTime}
 
 🌟 Therapist: ${therapist?.name}
 ⏰ Booking: ${date} ${selectedTime}
-————————————
+────────────────────
+🏠 Location Name: ${locationName || "-"}
+
 🏢 Address: ${address}
-🧘🏼‍♀️ Service: ${selectedService?.name} (${selectedService?.duration})
-📝 Note: ${note || '-'}
-🚕 Taxi: ฿${travelCost.toLocaleString()}
+💆 Service: ${selectedService?.name} (${selectedService?.duration})
+📝 Note: ${note || "-"}
+🚖 Taxi: ฿${travelCost.toLocaleString()}
 
 💰 Total: ฿${total.toLocaleString()}
-————————————
+────────────────────
 📞 Phone: ${phone}
 
-🗺 Map: ${googleMapLink}`.trim();
+🗺️ Map: ${googleMapLink}
+`.trim();
 
-          try {
+    try {
       await sendTelegramMessage(message);
       await addDoc(collection(db, 'bookings'), {
         therapistId: therapist?.id,
@@ -136,6 +222,7 @@ import { useAuth } from '../providers/AuthProvider'; // ✅ เพิ่มต�
         servicePrice,
         date,
         time: selectedTime,
+        locationName,
         address,
         phone,
         note,
@@ -156,13 +243,15 @@ import { useAuth } from '../providers/AuthProvider'; // ✅ เพิ่มต�
     }
   };
 
+  const selectedService = services.find((s) => s.name === selectedServiceName);
+
   if (!therapist || !selectedService) {
     return <Box p={4}><Typography>Therapist or service not found.</Typography></Box>;
   }
 
   return (
     <Box sx={{ pb: 8, pt: 2, bgcolor: '#f5f5f7', minHeight: '100vh', fontFamily: 'Trebuchet MS, sans-serif' }}>
-      <Typography fontSize={30} color="#000000" fontWeight="bold" textAlign="center" mt={3}>Booking Confirmation</Typography>
+      <Typography fontSize={26} color="#3a3420" fontWeight="bold" textAlign="center" mt={3}>Reservation Order</Typography>
 
       <Box sx={{ maxWidth: 430, mx: 'auto', px: 2 }}>
         <Paper elevation={3} sx={{ p: 3, borderRadius: 6, mt: 3 }}>
@@ -177,7 +266,7 @@ import { useAuth } from '../providers/AuthProvider'; // ✅ เพิ่มต�
   </Box>
 
   <Box>
-    <Typography fontSize={26} color="#2b3b53" fontWeight="bold">
+    <Typography fontSize={26} color="#3a3420" fontWeight="bold">
       {therapist.name}
     </Typography>
 
@@ -194,51 +283,52 @@ import { useAuth } from '../providers/AuthProvider'; // ✅ เพิ่มต�
   </Box>
 </Stack>
 
-          <Paper onClick={handleSelectLocation} sx={{ mb: 2, p: 3, borderRadius: 4, cursor: 'pointer', border: '1px solid #ccc' }}>
-            <Typography fontWeight="bold" fontSize={14} mb={1}>Address</Typography>
+          <Paper onClick={handleSelectLocation} sx={{ mb: 2, p: 3, borderRadius: 3, cursor: 'pointer', border: '1px solid #ccc' }}>
+            <Typography fontWeight="bold" color="#3a3420" fontSize={14} mb={1}>Address</Typography>
             <Typography fontSize={14} color={address ? 'text.primary' : 'text.secondary'}>
               {address || 'Tap to select your location'}
             </Typography>
             <EditLocationAltIcon color="primary" />
           </Paper>
+          
 
           <TextField fullWidth label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} size="small"
-            sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 4 } }} />
+            sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
 
           <TextField fullWidth label="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)}
-            size="small" multiline rows={2} sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 4 } }} />
+            size="small" multiline rows={2} sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
 
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Stack direction="row" spacing={2} mb={2}>
               <DatePicker label="Date" value={dayjs(date || undefined)}
                 onChange={(newValue) => setDate(newValue?.format('YYYY-MM-DD') || '')} format="DD/MM/YYYY"
-                slotProps={{ textField: { fullWidth: true, size: 'small', sx: { height: 48, '& .MuiOutlinedInput-root': { borderRadius: 4 } } } }} />
+                slotProps={{ textField: { fullWidth: true, size: 'small', sx: { height: 48, '& .MuiOutlinedInput-root': { borderRadius: 3 } } } }} />
               <TextField label="Select time" type="time" value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)}
                 inputProps={{ step: 1800 }} fullWidth size="small" InputProps={{
-                  sx: { height: 40, '& .MuiOutlinedInput-notchedOutline': { borderRadius: 4 } }
+                  sx: { height: 40, '& .MuiOutlinedInput-notchedOutline': { borderRadius: 3 } }
                 }} />
             </Stack>
           </LocalizationProvider>
 
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 3 }}>
             <Stack direction="row" spacing={2}>
               <Avatar
                 src={selectedService.image}
                 variant="rounded"
-                sx={{ width: 80, height: 64, borderRadius: 2 }}
+                sx={{ width: 80, height: 80, borderRadius: 2 }}
               />
               <Box flex={1}>
-                <Typography fontWeight="bold" fontSize={16}>
+                <Typography fontWeight="bold" color="#3a3420" fontSize={16}>
                   {selectedService.name}
                 </Typography>
                 <Typography fontSize={13} color="text.secondary" mt={0.5}>
                   {selectedService.desc}
                 </Typography>
-              <Stack direction="row" justifyContent="flex-end" spacing={1} mt={1}>
+              <Stack direction="row" justifyContent="flex-end" spacing={1} mt={1.5}>
                 <Typography fontWeight="bold" color="#CC6600">
                   ฿{selectedService.price.toLocaleString()}
                 </Typography>
-                <Typography fontSize={13}>• ⏱ {selectedService.duration} นาที</Typography>
+                <Typography fontSize={14}>• ⏱ {selectedService.duration} minute</Typography>
               </Stack>
               </Box>
             </Stack>
@@ -253,15 +343,15 @@ import { useAuth } from '../providers/AuthProvider'; // ✅ เพิ่มต�
               alt="taxi"
               style={{ width: 55, height: 55, marginRight: 1 }}
             />
-            <Typography fontWeight="bold" color="#996600">
+            <Typography fontWeight="bold" color="#3a3420">
               Taxi fare: ฿{travelCost.toLocaleString()}
             </Typography>
           </Box>
-          <Box mt={2} bgcolor="#FFF7E0" border="1px solid #FFC107" borderRadius={4} p={2} display="flex" alignItems="flex-start">
+          <Box mt={2} bgcolor="#FFF7E0" border="1px solid #FFC107" borderRadius={3} p={2} display="flex" alignItems="flex-start">
             <img src="/badges/idea (1).png" alt="info" style={{ width: 30, height: 30, marginRight: 8, marginTop: 3 }} />
             <Box>
-              <Typography fontSize={14} sx={{ fontWeight: 'bold', color: '#5D4037' }}>Tip:</Typography>
-              <Typography fontSize={14} sx={{ color: '#4E342E', mt: 0.5 }}>
+              <Typography fontSize={14} sx={{ fontWeight: 'bold', color: '#3a3420' }}>Tip:</Typography>
+              <Typography fontSize={14} sx={{ color: '#3a3420', mt: 0.5 }}>
                 After placing your booking, please wait for confirmation from our admin.
               </Typography>
               <Typography fontSize={13} sx={{ color: 'orange', fontWeight: 'bold', mt: 1 }}>
@@ -301,7 +391,7 @@ import { useAuth } from '../providers/AuthProvider'; // ✅ เพิ่มต�
             variant="contained"
             onClick={handleSubmit}
             disabled={loading || !isLocationSelected}
-            sx={{ py: 1.4, fontWeight: 'bold', fontSize: 14, borderRadius: 4, background: '#1d3557' }}
+            sx={{ py: 1.4, fontWeight: 'bold', fontSize: 14, borderRadius: 4, background: '#FEAE96' }}
           >
             {loading ? 'Processing...' : 'Confirm'}
           </Button>

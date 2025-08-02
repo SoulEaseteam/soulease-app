@@ -12,10 +12,10 @@
       "has": [
         {
           "type": "host",
-          "value": "www.soulease.vip"
+          "value": "www.sunred.vip"
         }
       ],
-      "destination": "https://soulease.vip",
+      "destination": "https://sunred.vip",
       "permanent": true
     }
   ]

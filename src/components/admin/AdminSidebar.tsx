@@ -1,36 +1,42 @@
-// src/components/admin/AdminSidebar.tsx
-import React from 'react';
+import React from "react";
 import {
   Drawer,
   List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
+  Divider,
+  Box,
   Toolbar,
-  ListItemButton,
-} from '@mui/material';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import PeopleIcon from '@mui/icons-material/People';
-import EventIcon from '@mui/icons-material/Event';
-import ExitToAppIcon from '@mui/icons-material/ExitToApp';
-import { useNavigate, useLocation } from 'react-router-dom';
+} from "@mui/material";
+import {
+  Dashboard as DashboardIcon,
+  People as PeopleIcon,
+  EventNote as EventNoteIcon,
+  RateReview as RateReviewIcon,
+  Settings as SettingsIcon,
+  Assessment as AssessmentIcon,
+  Logout as LogoutIcon,
+} from "@mui/icons-material";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const drawerWidth = 240;
-
-const menuItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/admin/dashboard' },
-  { text: 'Therapists', icon: <PeopleIcon />, path: '/admin/therapists' },
-  { text: 'Bookings', icon: <EventIcon />, path: '/admin/bookings' },
-];
 
 const AdminSidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/admin/login');
-  };
+  const menuItems = [
+    { text: "Dashboard", icon: <DashboardIcon />, path: "/admin/dashboard" },
+    { text: "Therapists", icon: <PeopleIcon />, path: "/admin/therapists" },
+    { text: "Bookings", icon: <EventNoteIcon />, path: "/admin/bookings" },
+    { text: "Reviews", icon: <RateReviewIcon />, path: "/admin/reviews" },
+    { text: "Reports", icon: <AssessmentIcon />, path: "/admin/reports" },
+    { text: "Settings", icon: <SettingsIcon />, path: "/admin/settings" },
+  ];
+
+  const handleLogout = () => navigate("/login");
 
   return (
     <Drawer
@@ -38,35 +44,41 @@ const AdminSidebar: React.FC = () => {
       sx={{
         width: drawerWidth,
         flexShrink: 0,
-        [`& .MuiDrawer-paper`]: {
+        "& .MuiDrawer-paper": {
           width: drawerWidth,
-          boxSizing: 'border-box',
+          boxSizing: "border-box",
         },
-        display: { xs: 'none', md: 'block' }, // ✅ ซ่อนไว้บนมือถือ
       }}
     >
       <Toolbar />
-      <List>
-        {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              selected={location.pathname === item.path}
-              onClick={() => navigate(item.path)}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
+      <Box sx={{ overflow: "auto" }}>
+        <List>
+          {menuItems.map(({ text, icon, path }) => (
+            <ListItem key={text} disablePadding>
+              <ListItemButton
+                selected={location.pathname.startsWith(path)}
+                onClick={() => navigate(path)}
+              >
+                <ListItemIcon>{icon}</ListItemIcon>
+                <ListItemText primary={text} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+
+        <Divider />
+
+        <List>
+          <ListItem disablePadding>
+            <ListItemButton onClick={handleLogout}>
+              <ListItemIcon>
+                <LogoutIcon />
+              </ListItemIcon>
+              <ListItemText primary="Logout" />
             </ListItemButton>
           </ListItem>
-        ))}
-        <ListItem disablePadding>
-          <ListItemButton onClick={handleLogout}>
-            <ListItemIcon>
-              <ExitToAppIcon color="error" />
-            </ListItemIcon>
-            <ListItemText primary="Logout" />
-          </ListItemButton>
-        </ListItem>
-      </List>
+        </List>
+      </Box>
     </Drawer>
   );
 };

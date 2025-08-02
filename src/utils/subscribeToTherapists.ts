@@ -1,4 +1,5 @@
 // src/utils/subscribeToTherapists.ts
+
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Therapist } from '@/types/therapist';
@@ -21,22 +22,24 @@ export const subscribeToTherapists = ({
   const q = collection(db, 'therapists');
 
   const unsubscribe = onSnapshot(q, (snapshot) => {
-    let data = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Therapist[];
+    let data = snapshot.docs.map((doc) => {
+      const raw = doc.data() as Therapist;
 
-    // กรองเฉพาะ therapist ที่ available เท่านั้น (ถ้ากำหนด)
+      return {
+        ...raw,
+        id: doc.id,
+        available: getComputedStatus(raw), // ✅ คำนวณสถานะแบบอัตโนมัติ
+      };
+    });
+
     if (onlyAvailable) {
       data = data.filter((t) => t.available === 'available');
     }
 
-    // กรองตาม rating ขั้นต่ำ (ถ้ามี)
     if (minRating !== undefined) {
       data = data.filter((t) => t.rating >= minRating);
     }
 
-    // กรองตามระยะทาง (ถ้ามีพิกัดผู้ใช้และระยะทางกำหนด)
     if (userLocation && maxDistanceKm !== undefined) {
       data = data.filter((t) => {
         if (!t.currentLocation) return false;
@@ -51,13 +54,37 @@ export const subscribeToTherapists = ({
   return unsubscribe;
 };
 
-// ฟังก์ชันคำนวณระยะทางแบบ Haversine (หน่วยเป็นกิโลเมตร)
+// ✅ คำนวณสถานะอัตโนมัติจากเวลา, การจอง, และ override
+const getComputedStatus = (t: Therapist): Therapist['available'] => {
+  if (t.statusOverride === 'resting') return 'resting'; // แอดมินสั่งพัก
+
+  const now = new Date();
+  const [startHour = 0, startMin = 0] = t.startTime?.split(':').map(Number) || [];
+  const [endHour = 0, endMin = 0] = t.endTime?.split(':').map(Number) || [];
+
+  const start = new Date(now);
+  const end = new Date(now);
+  start.setHours(startHour, startMin, 0);
+  end.setHours(endHour, endMin, 0);
+
+  // รองรับกรณีข้ามคืน เช่น 20:00 - 03:00
+  if (end <= start) end.setDate(end.getDate() + 1);
+
+  const inWorkingHours = now >= start && now <= end;
+
+  if (inWorkingHours) {
+    return t.isBooked === true ? 'bookable' : 'available';
+  }
+
+  return 'resting';
+};
+// ✅ Haversine formula คำนวณระยะทาง (km)
 const getDistanceInKm = (
   coord1: { lat: number; lng: number },
   coord2: { lat: number; lng: number }
 ): number => {
   const toRad = (x: number) => (x * Math.PI) / 180;
-  const R = 6371; // รัศมีโลกเป็นกิโลเมตร
+  const R = 6371;
   const dLat = toRad(coord2.lat - coord1.lat);
   const dLng = toRad(coord2.lng - coord1.lng);
 

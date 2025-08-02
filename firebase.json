@@ -8,15 +8,26 @@
     ],
     "rewrites": [
       {
+        "source": "/LoginPage",
+        "destination": "/index.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
+      }
+    ],
+    "redirects": [
+      {
+        "source": "/LoginPage",
+        "destination": "/login",
+        "type": 301
       }
     ]
   },
   "firestore": {
     "database": "(default)",
     "location": "asia-southeast1",
-    "rules": " ",
+    "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   }
 }

@@ -25,7 +25,7 @@ type SectionType = 'services' | 'features' | 'profile';
 
 const renderFeature = (icon: React.ReactNode, label: string, value?: string) => {
   if (!value) return null;
-  return (
+  return ( 
     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
       <Box sx={{ width: 28, mr: 1 }}>{icon}</Box>
       <Typography sx={{ fontWeight: 600, width: 110, fontFamily: 'Trebuchet MS, sans-serif' }}>{label}:</Typography>
@@ -133,7 +133,7 @@ useEffect(() => {
     <Box
       sx={{
         background: 'rgba(255, 255, 255, 0.6)',
-        color: '#2b3b53',
+        color: '#567C8D',
         minHeight: '100vh',
         display: 'flex',
         justifyContent: 'center',
@@ -147,14 +147,14 @@ useEffect(() => {
   sx={{
     width: '100%',
     height: 180,
-    background: 'linear-gradient(to right, #2e3a4f, #0f1113)',
+    background: 'linear-gradient(to bottom, #FE0944, #FEAE96)',
     position: 'relative',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
   }}
 >
-  <Typography variant="h4" sx={{ letterSpacing: 6, fontWeight: 700, color: '#7b8b99', textShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+  <Typography variant="h4" sx={{ letterSpacing: 6, fontWeight: 700, color: '#ffff', textShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
     FEATURED PROFILES
   </Typography>
  
@@ -218,11 +218,11 @@ useEffect(() => {
 
         {/* Name, Rating, Working Hours */}
         <Box sx={{ px: 2, mt: 1 }}>
-          <Typography variant="h5" sx={{ fontWeight: 'bold', fontSize: 30, color: '#2b3b53', letterSpacing: 1, mt: 1 }}>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', fontSize: 30, color: '#37474f', letterSpacing: 1, mt: 1 }}>
             {therapist.name}
             <Box
               component="span"
-              sx={{ display: 'inline-flex', alignItems: 'center', fontSize: 16, fontWeight: 500, color: '#596a7c', ml: 1, 
+              sx={{ display: 'inline-flex', alignItems: 'center', fontSize: 16, fontWeight: 500, color: '#37474f', ml: 1, 
                 cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
               onClick={() => navigate(`/review/all/${therapist.id}`)}
             >
@@ -230,25 +230,26 @@ useEffect(() => {
               {therapist.rating} / review {therapist.reviews}+
             </Box>
           </Typography>
-          <Typography variant="body2" sx={{ color: '#596a7c' }}>
+          <Typography variant="body2" sx={{ color: '#37474f' }}>
             Working Hours: {therapist.startTime} - {therapist.endTime}
           </Typography>
         </Box>
 
         {/* Tabs */}
         <Box
-          sx={{ mt: 2, px: 2, py: 1, borderRadius: 4,
-             background: 'linear-gradient(to right, #2e3a4f, #0f1113)', backdropFilter: 'blur(12px)', 
+          sx={{ mt: 2, px: 2, py: 1, borderRadius: 1,
+             background: 'linear-gradient(to bottom, #FE0944, #FEAE96)',
+              backdropFilter: 'blur(12px)', 
              boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
         >
           <Tabs
             value={section}
-            onChange={(_, value) => setSection(value as SectionType)}
+            onChange={(_, value) => setSection(value)}
             textColor="inherit"
             indicatorColor="primary"
             variant="fullWidth"
             sx={{
-              '& .MuiTab-root': { color: '#cccccc', fontWeight: 'bold' },
+              '& .MuiTab-root': { color: '#ffffff', fontWeight: 'bold',fontFamily: 'Trebuchet MS, sans-serif' },
               '& .Mui-selected': { color: '#ffffff', background: 'rgba(255,255,255,0.1)', borderRadius: 4 },
               '& .MuiTabs-indicator': { backgroundColor: '#ffffff', height: 3, borderRadius: 3 },
             }}
@@ -263,32 +264,32 @@ useEffect(() => {
         {section === 'services' && <ServicesSection therapist={therapist} navigate={navigate} />}
         {section === 'features' && therapist.features && (
           <Box
-            sx={{ mt: 4, mx: 2, borderRadius: 6, background: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(14px)', 
-              boxShadow: '0 4px 20px rgba(0,0,0,0.08)', color: '#1c1c1c', maxHeight: '65vh', overflowY: 'auto', p: 3 }}
+            sx={{ mt: 4, mx: 2, borderRadius: 2, background: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(14px)', 
+              boxShadow: '0 4px 20px rgba(0,0,0,0.08)', color: '#3a3420', maxHeight: '65vh', overflowY: 'auto', p: 3 }}
           >
-            <Typography fontWeight="bold" fontSize={16} mb={1}>General Information</Typography>
-            {renderFeature(<FaUser color="#2b3b53" />, 'Age', therapist.features.age)}
-            {renderFeature(<FaRulerVertical color="#2b3b53" />, 'Height', therapist.features.height)}
-            {renderFeature(<FaWeight color="#2b3b53" />, 'Weight', therapist.features.weight)}
-            {renderFeature(<FaVenusMars color="#2b3b53" />, 'Gender', therapist.features.gender)}
-            {renderFeature(<FaFlag color="#2b3b53" />, 'Ethnicity', therapist.features.ethnicity)}
-            {renderFeature(<FaPassport color="#2b3b53" />, 'Language', therapist.features.language)}
+            <Typography color='#3a3420' fontWeight="bold" fontSize={16} mb={1}>General Information</Typography>
+            {renderFeature(<FaUser color="#FEAE96" />, 'Age', therapist.features.age)}
+            {renderFeature(<FaRulerVertical color="#FEAE96" />, 'Height', therapist.features.height)}
+            {renderFeature(<FaWeight color="#FEAE96" />, 'Weight', therapist.features.weight)}
+            {renderFeature(<FaVenusMars color="#FEAE96" />, 'Gender', therapist.features.gender)}
+            {renderFeature(<FaFlag color="#FEAE96" />, 'Ethnicity', therapist.features.ethnicity)}
+            {renderFeature(<FaPassport color="#FEAE96" />, 'Language', therapist.features.language)}
 
             <Divider sx={{ my: 2, bgcolor: 'rgba(255,255,255,0.2)' }} />
 
             <Typography fontWeight="bold" fontSize={16} mb={1}>Features</Typography>
 
-            {renderFeature(<FaHotjar color="#2b3b53" />, 'Body Type', therapist.features.bodyType)}
-            {renderFeature(<FaAirFreshener color="#2b3b53" />, 'Bust Size', therapist.features.bustSize)}
-            {renderFeature(<FaChessQueen color="#2b3b53" />, 'Hair Color', therapist.features.hairColor)}
-            {renderFeature(<FaMagic color="#2b3b53" />, 'Skin Tone', therapist.features.skintone)}
+            {renderFeature(<FaHotjar color="#FEAE96" />, 'Body Type', therapist.features.bodyType)}
+            {renderFeature(<FaAirFreshener color="#FEAE96" />, 'Bust Size', therapist.features.bustSize)}
+            {renderFeature(<FaChessQueen color="#FEAE96" />, 'Hair Color', therapist.features.hairColor)}
+            {renderFeature(<FaMagic color="#FEAE96" />, 'Skin Tone', therapist.features.skintone)}
 
             <Divider sx={{ my: 2, bgcolor: 'rgba(255,255,255,0.2)' }} />
 
             <Typography fontWeight="bold" fontSize={16} mb={1}>Behavior & Health</Typography>
 
-            {renderFeature(<FaSmoking color="#2b3b53" />, 'Smoker', therapist.features.smoker)}
-            {renderFeature(<FaSyringe color="#2b3b53" />, 'Vaccinated', therapist.features.vaccinated)}
+            {renderFeature(<FaSmoking color="#FEAE96" />, 'Smoker', therapist.features.smoker)}
+            {renderFeature(<FaSyringe color="#FEAE96" />, 'Vaccinated', therapist.features.vaccinated)}
           </Box>
         )}
 
@@ -327,7 +328,7 @@ const ServicesSection = ({
           sx={{
             position: 'relative',
             height: 220,
-            borderRadius: 4,
+            borderRadius: 2,
             overflow: 'hidden',
             backgroundImage: `url(${svc.image})`,
             backgroundSize: 'cover',
@@ -414,8 +415,8 @@ const ServicesSection = ({
                   right: 56,
                   top: '65%',
                   transform: 'translateY(-50%)',
-                  background: therapist.available === 'resting' ? '#ccc' : '#2b3b53',
-                  color: therapist.available === 'resting' ? '#888' : '#fff',
+                  background: therapist.available === 'resting' ? '#ccc' : '#FEAE96',
+                  color: therapist.available === 'resting' ? '#888' : '#FFF',
                   fontSize: 14,
                   px: 4,
                   py: 0.5,

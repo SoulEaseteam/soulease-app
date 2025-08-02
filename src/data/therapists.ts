@@ -34,13 +34,13 @@ const therapists: Omit<Therapist, 'badge'>[] = [
       weight: '49 kg',
       skintone: 'White skin',
       bodyType: 'Slim',
-      bustSize: 'D Cup',
+      bustSize: 'C Cup',
       hairColor: 'Black',
       vaccinated: 'Yes',
       smoker: 'No',
       language: 'Thai / English',
     },
-    available: 'available',
+    status: 'available',
   },
   {
     id: '3mxMYv5wMNHmOqQmXY6u',
@@ -80,7 +80,7 @@ const therapists: Omit<Therapist, 'badge'>[] = [
       smoker: 'No',
       language: 'Thai English Korea',
     },
-    available: 'available',
+    status: 'available',
   },
   {
     id: 'HntS3ZEcgtxkTn114lTT',
@@ -117,7 +117,7 @@ const therapists: Omit<Therapist, 'badge'>[] = [
       smoker: 'No',
       language: 'Thai English Korea',
     },
-    available: 'available',
+    status: 'available',
   },
   {
     id: '1Sn1TSppDCFTwChknxsi',
@@ -131,7 +131,7 @@ const therapists: Omit<Therapist, 'badge'>[] = [
     totalBookings: 0,
     nextAvailable: 'N/A',
     startTime: '06:00',
-    endTime: '00:00',
+    endTime: '23:00',
     specialty: '',
    gallery: [
       '/images/xing/IMG_4817.JPG',
@@ -154,7 +154,7 @@ const therapists: Omit<Therapist, 'badge'>[] = [
       smoker: 'No',
       language: 'Thai English Chinese',
     },
-    available: 'available',
+    status: 'available',
   },
   {
     id: 'sIvv3y5uPh4QSulzUWcn',
@@ -167,17 +167,18 @@ const therapists: Omit<Therapist, 'badge'>[] = [
     todayBookings: 0,
     totalBookings: 0,
     nextAvailable: 'N/A',
-    startTime: '20:00',
+    startTime: '19:00',
     endTime: '03:00',
     specialty: '',
     gallery: [],
+
     features: {
       age: '28',
       gender: 'Female',
       ethnicity: 'Thai',
       height: '160 cm',
-      weight: '47 kg',
-      skintone: 'Medium skin',
+      weight: '49 kg',
+      skintone: 'White skin',
       bodyType: 'Slim',
       bustSize: '34B',
       hairColor: 'Black',
@@ -185,7 +186,7 @@ const therapists: Omit<Therapist, 'badge'>[] = [
       smoker: 'No',
       language: 'Thai / English',
     },
-    available: 'resting',
+    status: 'resting',
   },
   {
     id: 'MpJgtiJeWNumxOO7L7X3',
@@ -216,7 +217,7 @@ const therapists: Omit<Therapist, 'badge'>[] = [
       smoker: 'No',
       language: 'Thai / English',
     },
-    available: 'resting',
+    status: 'resting',
   },
 ];
 

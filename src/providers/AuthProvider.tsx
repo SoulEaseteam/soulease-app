@@ -1,11 +1,11 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { auth, db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "@/firebase";
 
 interface AuthContextType {
-  user: FirebaseUser | null;
-  role: 'admin' | 'therapist' | 'customer' | null;
+  user: any;
+  role: "admin" | "therapist" | "user" | null;
   loading: boolean;
 }
 
@@ -15,26 +15,25 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
 });
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [role, setRole] = useState<'admin' | 'therapist' | 'customer' | null>(null);
+export const useAuth = () => useContext(AuthContext);
+
+const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<any>(null);
+  const [role, setRole] = useState<"admin" | "therapist" | "user" | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
+
       if (firebaseUser) {
-        try {
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-          if (userDoc.exists()) {
-            const role = userDoc.data().role;
-            setRole(role || null);
-          } else {
-            setRole(null);
-          }
-        } catch (error) {
-          console.error('Error fetching user role:', error);
-          setRole(null);
+        const ref = doc(db, "users", firebaseUser.uid);
+        const snap = await getDoc(ref);
+
+        if (snap.exists() && snap.data().role) {
+          setRole(snap.data().role);
+        } else {
+          setRole("user");
         }
       } else {
         setRole(null);
@@ -52,4 +51,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export default AuthProvider;

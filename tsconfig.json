@@ -27,6 +27,6 @@
       "@services/*": ["services/*"]
     }
   },
-  "include": ["src", "electron", "dist-electron/preload.js"],
+  "include": ["src"],
   "exclude": ["node_modules"]
 }

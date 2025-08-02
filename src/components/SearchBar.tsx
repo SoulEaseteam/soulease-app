@@ -42,7 +42,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         maxWidth: '70%',
         width: '100%',
         borderRadius: 99,
-        background: '#2b3b53',
+        background: '#FEAE96',
         border: '1px solid rgba(255, 255, 255, 0.12)',
         boxShadow: '0 6px 16px rgba(0, 0, 0, 0.15)',
         backdropFilter: 'blur(10px)',
@@ -50,8 +50,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
         transition: 'all 0.3s ease',
         fontFamily: 'Trebuchet MS, sans-serif',
         '&:focus-within': {
-          borderColor: '#88ccff',
-          boxShadow: '0 0 0 2px rgba(136,204,255,0.2)',
+          borderColor: '#ffffffff',
+          boxShadow: '0 0 0 2px rgba(255, 253, 235, 0.99)',
         },
       }}
     >

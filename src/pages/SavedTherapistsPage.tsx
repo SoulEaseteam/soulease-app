@@ -25,7 +25,7 @@ interface FavoriteTherapist {
   reviews?: number;
   specialty?: string;
 }
-
+ 
 const SavedTherapistsPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();

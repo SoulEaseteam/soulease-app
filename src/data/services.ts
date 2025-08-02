@@ -37,7 +37,7 @@ const services: MassageService[] = [
     id: 'thai-massage',
     name: 'Thai Massage',
     desc: 'Relieve deep muscle tension and restore body balance.',
-    price: 1400,
+    price: 1200,
     duration: 60,
     count: 0,
     image: '/images/Service/IMG_5092.JPG',
@@ -56,8 +56,8 @@ const services: MassageService[] = [
     id: 'aromatherapy',
     name: 'Aromatherapy Massage',
     desc: 'Aromatic oil massage for deep body and mind relaxation.',
-    price: 1700,
-    duration: 70,
+    price: 1600,
+    duration: 80,
     count: 0,
     image: '/images/Service/IMG_5096.JPG',
     detail:
@@ -74,8 +74,8 @@ const services: MassageService[] = [
     id: 'manhood-relaxation',
     name: 'Manhood Relaxation Therapy',
     desc: 'Reconnect with your senses and restore your inner balance.',
-    price: 2600,
-    duration: 80,
+    price: 2200,
+    duration: 70,
     count: 0,
     image: '/images/Service/IMG_5090.JPG',  // ✅ แก้ path
     detail:

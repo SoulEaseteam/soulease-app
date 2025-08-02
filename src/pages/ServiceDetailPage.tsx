@@ -55,7 +55,7 @@ const ServiceDetailPage: React.FC = () => {
           variant="h6"
           fontWeight="bold"
           textAlign="center"
-          color="#2b3b53"
+          color="#3a3420"
           sx={{
             pt: 6,
             pb: 3,
@@ -82,8 +82,8 @@ const ServiceDetailPage: React.FC = () => {
                 position: 'absolute',
                 top: 16,
                 left: 16,
-                background: 'rgba(0,0,0,0.4)',
-                color: '#fff',
+                background: 'rgba(244, 220, 193, 0.52)',
+                color: '#f4dccb',
                 px: 1.5,
                 py: 1.5,
                 fontSize: 12,
@@ -97,7 +97,7 @@ const ServiceDetailPage: React.FC = () => {
 
         {/* 📌 Service Info */}
         <Box sx={{ px: 4, mb: 2 }}>
-          <Typography fontWeight="bold" fontSize={20} sx={{ color: '#2b3b53'}}>
+          <Typography fontWeight="bold" fontSize={20} sx={{ color: '#3a3420'}}>
             {service.name}
           </Typography>
           <Typography fontWeight="bold" fontSize={16} sx={{ color: '#696969', fontFamily: 'Trebuchet MS, sans-serif' }}>
@@ -129,10 +129,10 @@ const ServiceDetailPage: React.FC = () => {
               '& .MuiTab-root': {
                 fontWeight: 'bold',
                 fontSize: 14,
-                color: '#2b3b53',
+                color: '#3a3420',
               },
               '& .Mui-selected': {
-                color: '#778899',
+                color: '#696969',
               },
             }}
           >
@@ -144,7 +144,7 @@ const ServiceDetailPage: React.FC = () => {
 
           {tab === 0 && (
             <>
-               <Typography fontWeight="bold" mb={4} mt={6} sx={{ color: '#2b3b53' }}>
+               <Typography fontWeight="bold" mb={4} mt={6} sx={{ color: '#3a3420' }}>
                 ▼ Service Description
               </Typography>
               <Typography
@@ -160,7 +160,7 @@ const ServiceDetailPage: React.FC = () => {
                 {service.detail}
               </Typography>
 
-              <Typography fontWeight="bold" mb={3} mt={4} sx={{ color: '#2b3b53' }}>
+              <Typography fontWeight="bold" mb={3} mt={4} sx={{ color: '#3a3420' }}>
                 ▼ Benefits of this service
               </Typography>
               <Box>
@@ -189,14 +189,14 @@ const ServiceDetailPage: React.FC = () => {
     fontSize={18}
     fontWeight="bold"
     textAlign="center"
-    color="#2b3b53"
+    color="#3a3420"
     mb={2}
     mt={6}
   >
     ・Project Details・
   </Typography>
 
-  <Typography fontWeight="bold" color="#2b3b53" fontSize={14} mb={4} mt={6}>
+  <Typography fontWeight="bold" color="#3a3420" fontSize={14} mb={4} mt={6}>
     ▼ [Recommendations]
   </Typography>
 
@@ -223,7 +223,7 @@ const ServiceDetailPage: React.FC = () => {
     </Typography>
   ))}
 
-  <Typography fontWeight="bold" color="#2b3b53" fontSize={14} mb={3} mt={4}>
+  <Typography fontWeight="bold" color="#3a3420" fontSize={14} mb={3} mt={4}>
     ▼ [Travel Fees]
   </Typography>
 

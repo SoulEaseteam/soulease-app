@@ -1,8 +1,27 @@
-import React, { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebase'; // ปรับ path ให้ตรงกับโปรเจกต์คุณ
-import { useNavigate } from 'react-router-dom';
-import { Therapist, AvailableStatus } from '@/types/therapist';
+import React, { useEffect, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/firebase";
+import { useNavigate } from "react-router-dom";
+import { Therapist } from "@/types/therapist";
+
+type Status = "available" | "bookable" | "resting";
+
+const computeStatus = (t: any): Status => {
+  if (t.statusOverride) return t.statusOverride;
+
+  const now = new Date();
+  const [startHour = 0, startMin = 0] = t.startTime?.split(":").map(Number) || [];
+  const [endHour = 0, endMin = 0] = t.endTime?.split(":").map(Number) || [];
+
+  const start = new Date(now);
+  const end = new Date(now);
+  start.setHours(startHour, startMin, 0);
+  end.setHours(endHour, endMin, 0);
+  if (end <= start) end.setDate(end.getDate() + 1);
+
+  const inWorkingHours = now >= start && now <= end;
+  return inWorkingHours ? (t.isBooked ? "bookable" : "available") : "resting";
+};
 
 const TherapistList: React.FC = () => {
   const [therapists, setTherapists] = useState<Therapist[]>([]);
@@ -10,60 +29,34 @@ const TherapistList: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    async function fetchTherapists() {
-      const snapshot = await getDocs(collection(db, 'therapists'));
+    const fetchTherapists = async () => {
+      const snapshot = await getDocs(collection(db, "therapists"));
 
-      const therapistsData: Therapist[] = snapshot.docs.map(doc => {
-        const data = doc.data();
-
-        // กำหนด default available เป็น 'resting' เผื่อข้อมูลผิดพลาด
-        let available: AvailableStatus = 'resting';
-
-        // ตรวจสอบค่า available จาก Firestore ว่าตรงกับ 3 ค่าไหม ถ้าไม่ให้เป็น resting
-        if (typeof data.available === 'string') {
-          const status = data.available.toLowerCase();
-          if (status === 'available' || status === 'bookable' || status === 'resting') {
-            available = status as AvailableStatus;
-          }
-        }
+      const therapistsData: Therapist[] = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data();
 
         return {
-          id: doc.id,
-          name: data.name || '',
-          image: data.image || '',
+          id: docSnap.id,
+          name: data.name || "",
+          image: data.image || "/images/default-avatar.png",
           rating: data.rating ?? 0,
           reviews: data.reviews ?? 0,
-          lat: data.lat ?? 0,
-          lng: data.lng ?? 0,
-          todayBookings: data.todayBookings ?? 0,
+          startTime: data.startTime || "00:00",
+          endTime: data.endTime || "23:59",
           totalBookings: data.totalBookings ?? 0,
-          nextAvailable: data.nextAvailable || 'N/A',
-          startTime: data.startTime || '00:00',
-          endTime: data.endTime || '23:59',
-          specialty: data.specialty || '',
+          todayBookings: data.todayBookings ?? 0,
+          specialty: data.specialty || "",
           gallery: Array.isArray(data.gallery) ? data.gallery : [],
-          features: {
-            age: data.features?.age || '',
-            gender: data.features?.gender,
-            ethnicity: data.features?.ethnicity,
-            height: data.features?.height || '',
-            weight: data.features?.weight || '',
-            skintone: data.features?.skintone,
-            bodyType: data.features?.bodyType || '',
-            bustSize: data.features?.bustSize,
-            hairColor: data.features?.hairColor,
-            vaccinated: data.features?.vaccinated,
-            smoker: data.features?.smoker,
-            language: data.features?.language || '',
-            style: data.features?.style,
-          },
-          available,
+          features: data.features || {},
+          statusOverride: data.statusOverride || null,
+          isBooked: data.isBooked || false,
+          available: computeStatus(data),
         };
       });
 
       setTherapists(therapistsData);
       setLoading(false);
-    }
+    };
 
     fetchTherapists();
   }, []);
@@ -74,13 +67,31 @@ const TherapistList: React.FC = () => {
   return (
     <div>
       <h2>Therapists</h2>
-      <ul>
+      <ul style={{ listStyle: "none", padding: 0 }}>
         {therapists.map((t) => (
-          <li key={t.id} style={{ cursor: 'pointer', marginBottom: 10 }} onClick={() => navigate(`/therapists/${t.id}`)}>
-            <img src={t.image} alt={t.name} width={80} style={{ borderRadius: 8 }} />
-            <div>{t.name}</div>
-            <div>Status: {t.available}</div>
-            <div>Rating: {t.rating}</div>
+          <li
+            key={t.id}
+            style={{
+              cursor: "pointer",
+              marginBottom: 12,
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+            onClick={() => navigate(`/therapist/${t.id}`)} // ✅ ใช้ path ที่ถูกต้อง
+          >
+            <img
+              src={t.image}
+              alt={t.name}
+              width={70}
+              height={70}
+              style={{ borderRadius: "50%", objectFit: "cover" }}
+            />
+            <div>
+              <strong>{t.name}</strong>
+              <div>Status: {t.available}</div>
+              <div>⭐ {t.rating.toFixed(1)} ({t.reviews})</div>
+            </div>
           </li>
         ))}
       </ul>

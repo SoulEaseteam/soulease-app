@@ -1,122 +1,103 @@
-// EditTherapistPage.tsx (Professional Version with Full Fields)
+// src/pages/admin/EditTherapistPage.tsx
 import React, { useEffect, useState } from 'react';
 import {
-  Box, Button, CircularProgress, Stack, TextField, Typography, Paper, Avatar
+  Box, Button, TextField, Typography, CircularProgress, MenuItem,
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
-import { db, storage } from '@/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
-import dayjs from 'dayjs';
+import { db } from '@/firebase';
 
 const EditTherapistPage: React.FC = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [therapist, setTherapist] = useState<any>(null);
-
-  const [name, setName] = useState('');
-  const [rating, setRating] = useState(0);
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [language, setLanguage] = useState('');
-  const [specialty, setSpecialty] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [therapist, setTherapist] = useState<any>({});
 
   useEffect(() => {
     const fetchTherapist = async () => {
-      if (!id) return;
-      const ref = doc(db, 'therapists', id);
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        const data = snap.data();
-        setTherapist(data);
-        setName(data.name || '');
-        setRating(data.rating || 0);
-        setStartTime(data.startTime || '');
-        setEndTime(data.endTime || '');
-        setLanguage(data.features?.language || '');
-        setSpecialty(data.specialty || '');
-        setImageUrl(data.image || '');
+      try {
+        const docRef = doc(db, 'therapists', id!);
+        const snapshot = await getDoc(docRef);
+        if (snapshot.exists()) {
+          setTherapist(snapshot.data());
+        }
+      } catch (error) {
+        console.error('Error fetching therapist:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchTherapist();
   }, [id]);
 
-  const handleUpdate = async () => {
-    if (!id) return;
-    const ref = doc(db, 'therapists', id);
-    await updateDoc(ref, {
-      name,
-      rating,
-      startTime,
-      endTime,
-      specialty,
-      image: imageUrl,
-      features: {
-        ...therapist.features,
-        language,
-      },
-    });
-    alert('✅ Therapist updated successfully');
-    navigate('/admin/therapists');
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTherapist({ ...therapist, [e.target.name]: e.target.value });
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    const storageRef = ref(storage, `therapists/${id}/${file.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
-    uploadTask.on('state_changed',
-      null,
-      (error) => {
-        console.error('Upload error', error);
-        setUploading(false);
-      },
-      async () => {
-        const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-        setImageUrl(downloadUrl);
-        setUploading(false);
-      }
-    );
+  const handleSave = async () => {
+    try {
+      await updateDoc(doc(db, 'therapists', id!), therapist);
+      navigate('/admin/therapists');
+    } catch (error) {
+      console.error('Error updating therapist:', error);
+    }
   };
 
-  if (loading) return <Box p={4}><CircularProgress /></Box>;
+  if (loading) {
+    return <Box p={3}><CircularProgress /></Box>;
+  }
 
   return (
-    <Box maxWidth={600} mx="auto" mt={4}>
-      <Typography variant="h5" fontWeight="bold" mb={2}>✏️ Edit Therapist</Typography>
-      <Paper sx={{ p: 3, borderRadius: 4 }}>
-        <Stack spacing={2}>
-          <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
-          <TextField label="Rating" type="number" value={rating} onChange={(e) => setRating(parseFloat(e.target.value))} fullWidth />
-          <TextField label="Start Time" value={startTime} onChange={(e) => setStartTime(e.target.value)} fullWidth />
-          <TextField label="End Time" value={endTime} onChange={(e) => setEndTime(e.target.value)} fullWidth />
-          <TextField label="Specialty" value={specialty} onChange={(e) => setSpecialty(e.target.value)} fullWidth />
-          <TextField label="Language" value={language} onChange={(e) => setLanguage(e.target.value)} fullWidth />
+    <Box p={3} maxWidth={600}>
+      <Typography variant="h5" mb={3}>✏️ Edit Therapist</Typography>
 
-          <Box>
-            <Typography variant="body2" mb={1}>Profile Image</Typography>
-            {uploading ? <CircularProgress /> : (
-              <>
-                <Avatar src={imageUrl} sx={{ width: 100, height: 100, mb: 1 }} />
-                <Button variant="outlined" component="label">
-                  Upload New Image
-                  <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
-                </Button>
-              </>
-            )}
-          </Box>
+      <TextField
+        fullWidth
+        margin="normal"
+        label="Name"
+        name="name"
+        value={therapist.name || ''}
+        onChange={handleChange}
+      />
 
-          <Button variant="contained" onClick={handleUpdate} sx={{ mt: 2 }}>
-            Save Changes
-          </Button>
-        </Stack>
-      </Paper>
+      <TextField
+        fullWidth
+        margin="normal"
+        label="Specialty"
+        name="specialty"
+        value={therapist.specialty || ''}
+        onChange={handleChange}
+      />
+
+      <TextField
+        fullWidth
+        margin="normal"
+        label="Rating"
+        name="rating"
+        type="number"
+        inputProps={{ step: 0.1, min: 0, max: 5 }}
+        value={therapist.rating || ''}
+        onChange={handleChange}
+      />
+
+      <TextField
+        fullWidth
+        margin="normal"
+        label="Available"
+        name="available"
+        select
+        value={therapist.available || ''}
+        onChange={handleChange}
+      >
+        <MenuItem value="available">Available</MenuItem>
+        <MenuItem value="bookable">Bookable</MenuItem>
+        <MenuItem value="resting">Resting</MenuItem>
+      </TextField>
+
+      <Box mt={3}>
+        <Button variant="contained" onClick={handleSave}>💾 Save</Button>
+        <Button sx={{ ml: 2 }} onClick={() => navigate(-1)}>Cancel</Button>
+      </Box>
     </Box>
   );
 };

@@ -36,6 +36,8 @@ export interface Therapist {
   new?: boolean;
   topRated?: boolean;
   serviceCount?: string;
+  isBooked?: boolean;
+  statusOverride?:"available" | "bookable" | "resting" | null,
   currentLocation?: {
     lat: number;
     lng: number;

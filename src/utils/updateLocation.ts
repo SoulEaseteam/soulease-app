@@ -1,13 +1,13 @@
 // src/utils/updateLocation.ts
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../firebase";
 
 export const updateUserLocation = async (
   userId: string,
-  role: 'therapist' | 'customer'
+  collection: "therapists" | "users"
 ) => {
   if (!navigator.geolocation) {
-    alert('Geolocation is not supported on this device');
+    alert("Geolocation is not supported on this device");
     return;
   }
 
@@ -15,15 +15,17 @@ export const updateUserLocation = async (
     async (position) => {
       const { latitude, longitude } = position.coords;
 
-      await setDoc(doc(db, 'locations', `${role}_${userId}`), {
-        userId,
-        role,
-        lat: latitude,
-        lng: longitude,
-        updatedAt: serverTimestamp(),
-      }, { merge: true });
+      try {
+        await updateDoc(doc(db, collection, userId), {
+          currentLocation: { lat: latitude, lng: longitude },
+          updatedAt: serverTimestamp(),
+        });
 
-      alert('📍 Location updated successfully!');
+        alert("📍 Location updated successfully!");
+      } catch (error) {
+        console.error("❌ Failed to update location:", error);
+        alert("❌ Failed to update location.");
+      }
     },
     (error) => {
       alert(`❌ Failed to get location: ${error.message}`);

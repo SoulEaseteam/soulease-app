@@ -56,10 +56,10 @@ const RegisterPage: React.FC = () => {
       }}>
         <Paper elevation={16} sx={{
           width: '100%',
-          maxWidth: 350,
+          maxWidth: 360,
           textAlign: 'center',
           p: 4,
-          borderRadius: 2,
+          borderRadius: 4,
           background: 'linear-gradient(to bottom, #fff, #f2f2f2)',
           color: '#2b3b53',
           position: 'relative'
@@ -104,8 +104,16 @@ const RegisterPage: React.FC = () => {
             onChange={(e) => setPassword(e.target.value)}
             size="small"
             fullWidth
-            sx={{ mb: 2, input: { color: '#999' }, '& .MuiOutlinedInput-root': { borderRadius: '16px' } }}
-          />
+                      sx={{
+                        mb: 2, input: { color: '#999' },
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '16px',
+                          '& fieldset': { borderColor: '#a4b0ba' },
+                          '&:hover fieldset': { borderColor: '#7b8b99' },
+                          '&.Mui-focused fieldset': { borderColor: '#2b3b53' }
+                        }
+                      }}
+                    />
 
           <TextField
             placeholder="Confirm Password"
@@ -113,11 +121,21 @@ const RegisterPage: React.FC = () => {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             size="small"
-            fullWidth
-            sx={{ mb: 2, input: { color: '#999' }, '& .MuiOutlinedInput-root': { borderRadius: '16px' } }}
-          />
+           fullWidth
+                      sx={{
+                        mb: 2, input: { color: '#999' },
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '16px',
+                          '& fieldset': { borderColor: '#a4b0ba' },
+                          '&:hover fieldset': { borderColor: '#7b8b99' },
+                          '&.Mui-focused fieldset': { borderColor: '#2b3b53' }
+                        }
+                      }}
+                    />
 
-          <Button onClick={handleRegister} sx={{
+          <Button 
+          onClick={handleRegister}
+           sx={{
             mt: 1, py: 1.2, px: 5, fontWeight: 'bold', fontSize: 14,
             borderRadius: '20px', color: '#fff', textTransform: 'uppercase',
             maxWidth: 150, width: '100%', backgroundColor: '#2b3b53',
