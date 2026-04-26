@@ -164,7 +164,7 @@ export async function updateNextAvailableInFirestore(params: {
 
   try {
     await updateDoc(doc(db, "therapists", therapistId), payload);
-    console.log(`[therapistStatus] updated for ${therapistId}:`, payload);
+    if (import.meta.env.DEV) console.log(`[therapistStatus] updated for ${therapistId}:`, payload);
   } catch (error) {
     console.error("[therapistStatus] Failed to update:", error);
   }

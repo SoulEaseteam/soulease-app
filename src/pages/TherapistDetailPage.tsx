@@ -116,6 +116,35 @@ const TherapistDetailPage: React.FC = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [reviewCount, setReviewCount] = useState(0);
 
+  // Dynamic <title> + canonical + og:image — SEO win for therapist pages
+  useEffect(() => {
+    if (!therapist) return;
+    const title = `${therapist.name} | SUNRED Outcall Massage Bangkok`;
+    document.title = title;
+
+    // canonical URL
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.rel = "canonical";
+      document.head.appendChild(canonical);
+    }
+    canonical.href = `https://sunred.vip/therapists/${therapist.id}`;
+
+    // og:image — Facebook/LINE share will use therapist photo
+    const ogImg = document.querySelector('meta[property="og:image"]') as HTMLMetaElement | null;
+    if (ogImg && therapist.image) {
+      const url = therapist.image.startsWith("http")
+        ? therapist.image
+        : `https://sunred.vip${therapist.image}`;
+      ogImg.content = url;
+    }
+
+    // og:title
+    const ogTitle = document.querySelector('meta[property="og:title"]') as HTMLMetaElement | null;
+    if (ogTitle) ogTitle.content = title;
+  }, [therapist]);
+
   useEffect(() => {
     if (!id) return;
     const q = query(
@@ -255,6 +284,7 @@ const TherapistDetailPage: React.FC = () => {
 
           <Button
             onClick={handleShare}
+            aria-label="Share therapist profile"
             sx={{
               position: "absolute",
               top: 16,
@@ -267,6 +297,8 @@ const TherapistDetailPage: React.FC = () => {
               color: "#333",
               boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
               "&:hover": { backgroundColor: "#eee" },
+              // iOS safe-area for notched phones
+              right: "max(16px, env(safe-area-inset-right))",
             }}
           >
             <ShareIcon />

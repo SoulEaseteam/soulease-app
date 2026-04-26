@@ -345,12 +345,12 @@ const BookingPage: React.FC = () => {
     };
     setErrors(nextErrors);
 
-    if (nextErrors.phone) return alert("Please enter a valid phone number.");
-    if (nextErrors.location) return alert("Please select a valid service location.");
-    if (nextErrors.time) return alert("Please select booking time.");
+    if (nextErrors.phone) return alert(t("booking.errPhone", "Please enter a valid phone number."));
+    if (nextErrors.location) return alert(t("booking.errLocation", "Please select a valid service location."));
+    if (nextErrors.time) return alert(t("booking.errTime", "Please select booking time."));
 
     if (!therapist || !selectedService) {
-      alert("Therapist not found.");
+      alert(t("booking.errTherapist", "Therapist not found."));
       return;
     }
 
@@ -362,14 +362,14 @@ const BookingPage: React.FC = () => {
       const endDate = dayjs(startDate).add(durationMinLocal, "minute").toDate();
 
       if (!isWithinWorkingHours(startDate, endDate)) {
-        alert("Selected time is outside working hours.");
+        alert(t("booking.errHours", "Selected time is outside working hours."));
         setLoading(false);
         return;
       }
 
       // Pre-check (UX): query existing bookings — give fast feedback before transaction
       if (await hasBookingConflict(therapist.id, startDate, endDate)) {
-        alert("This time slot is not available.");
+        alert(t("booking.errUnavailable", "This time slot is not available."));
         setLoading(false);
         return;
       }
@@ -451,7 +451,7 @@ const BookingPage: React.FC = () => {
         });
       } catch (err: any) {
         if (err?.message === "SLOT_TAKEN" || err?.message === "CONFLICT") {
-          alert("⚠️ This time slot was just taken by another customer. Please pick another time.");
+          alert(t("booking.errSlotTaken", "⚠️ This time slot was just taken by another customer. Please pick another time."));
           setLoading(false);
           return;
         }
@@ -522,11 +522,11 @@ const BookingPage: React.FC = () => {
       // ให้ user เห็น error message ที่ชัดเจน — เผื่อ retry ได้
       const msg = err?.message || "";
       if (msg.includes("network") || msg.includes("offline")) {
-        alert("⚠️ Network error. Please check your connection and try again.");
+        alert(t("booking.errNetwork", "⚠️ Network error. Please check your connection and try again."));
       } else if (msg.includes("permission")) {
-        alert("⚠️ Permission denied. Please log in and try again.");
+        alert(t("booking.errPermission", "⚠️ Permission denied. Please log in and try again."));
       } else {
-        alert(`⚠️ Booking failed: ${msg || "unknown error"}. Please try again.`);
+        alert(t("booking.errGeneric", "⚠️ Booking failed: {{msg}}. Please try again.", { msg: msg || "unknown error" }));
       }
     } finally {
       setLoading(false);

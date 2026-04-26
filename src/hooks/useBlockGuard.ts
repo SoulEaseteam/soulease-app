@@ -66,7 +66,7 @@ export function useBlockGuard(pageTag: string): UseBlockGuardResult {
     async (reason: BlockReason, ctx?: BlockContext) => {
       // 👑 ถ้าเป็น admin / owner → ห้าม block ตัวเอง
       if (role === "admin") {
-        console.log("Admin is exempt from auto-block.");
+        if (import.meta.env.DEV) console.log("Admin is exempt from auto-block.");
         return;
       }
 

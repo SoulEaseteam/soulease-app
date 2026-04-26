@@ -11,6 +11,7 @@ import {
   Alert,
 } from "@mui/material";
 import { useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import {
   collection,
@@ -26,6 +27,7 @@ import BottomNav from '../components/layouts/BottomNavGlass';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -71,7 +73,7 @@ const LoginPage: React.FC = () => {
     if (!email || !password) {
       return setSnackbar({
         open: true,
-        message: "❌ Please enter email and password",
+        message: t("auth.errEmailPasswordRequired", "❌ Please enter email and password"),
         severity: "error",
       });
     }
@@ -87,7 +89,7 @@ const LoginPage: React.FC = () => {
 
       setSnackbar({
         open: true,
-        message: "🎉 Login successful!",
+        message: t("auth.successLogin", "🎉 Login successful!"),
         severity: "success",
       });
 
@@ -99,7 +101,7 @@ const LoginPage: React.FC = () => {
     } catch (err: any) {
       setSnackbar({
         open: true,
-        message: `❌ Login failed: ${err.message}`,
+        message: `${t("auth.errLoginFailed", "❌ Login failed")}: ${err.message}`,
         severity: "error",
       });
     } finally {
@@ -164,12 +166,12 @@ const LoginPage: React.FC = () => {
               color: "#FE0944",
             }}
           >
-            Login
+            {t("auth.logIn", "Login")}
           </Typography>
 
           {/* Inputs */}
           <TextField
-            placeholder="Email"
+            placeholder={t("auth.email", "Email")}
             fullWidth
             size="small"
             value={email}

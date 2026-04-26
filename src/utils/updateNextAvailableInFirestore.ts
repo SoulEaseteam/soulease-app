@@ -43,9 +43,11 @@ export async function updateNextAvailableInFirestore(
       updatedAt: Timestamp.now(),
     });
 
-    console.log(
-      `✔ nextAvailable updated for ${therapistDocId}: ${nextAvailable}`
-    );
+    if (import.meta.env.DEV) {
+      console.log(
+        `✔ nextAvailable updated for ${therapistDocId}: ${nextAvailable}`
+      );
+    }
   } catch (err) {
     console.error("❌ Failed to update nextAvailable:", err);
   }
