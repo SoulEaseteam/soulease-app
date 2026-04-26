@@ -1,5 +1,5 @@
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '@/lib/firebase';
 import { Therapist } from '@/types/therapist';
 
 interface SubscribeOptions {

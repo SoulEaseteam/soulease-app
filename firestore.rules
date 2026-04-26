@@ -1,8 +1,194 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // =========================================================
+    // Helper functions
+    // =========================================================
+    function isAuthed() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuthed() && request.auth.uid == uid;
+    }
+
+    // Admin = มีเอกสารใน admins/{uid} (โครงสร้างปัจจุบันของระบบ)
+    //         หรือ users/{uid}.role == "admin" (เผื่อระบบเก่า/อนาคต)
+    function isAdmin() {
+      return isAuthed() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        || (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin"
+        )
+      );
+    }
+
+    // Therapist = มีเอกสารใน therapists/{uid}
+    //             หรือ users/{uid}.role == "therapist"
+    function isTherapist() {
+      return isAuthed() && (
+        exists(/databases/$(database)/documents/therapists/$(request.auth.uid))
+        || (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "therapist"
+        )
+      );
+    }
+
+    // ป้องกันผู้ใช้แก้ role ตัวเอง (privilege escalation)
+    function notChangingRole() {
+      return !("role" in request.resource.data.diff(resource.data).affectedKeys());
+    }
+
+    // =========================================================
+    // users — ข้อมูลผู้ใช้ทั่วไป
+    // =========================================================
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);  // สมัครใหม่ — สร้าง doc ของตัวเองได้
+      allow update: if (isOwner(userId) && notChangingRole()) || isAdmin();
+      allow delete: if isAdmin();
+
+      // ทุก subcollection ใต้ users/{uid}/ (favorites, notifications ฯลฯ)
+      // — owner หรือ admin เท่านั้น (recursive: ครอบคลุมทุกระดับ)
+      match /{subCollection=**} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // =========================================================
+    // admins — รายชื่อ admin (เฉพาะ admin จัดการกันเอง)
+    // =========================================================
+    match /admins/{adminId} {
+      // อ่านได้เฉพาะ admin (เพื่อป้องกันคนเช็คว่าใครเป็น admin)
+      allow read: if isAdmin();
+      // เพิ่ม/ลบ/แก้ — admin เท่านั้น
+      allow write: if isAdmin();
+    }
+
+    // =========================================================
+    // adminTokens — FCM tokens สำหรับแจ้งเตือน admin
+    // =========================================================
+    match /adminTokens/{tokenId} {
+      // admin อ่านได้, สร้างของตัวเองได้
+      allow read: if isAdmin();
+      allow create: if isAdmin() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // =========================================================
+    // therapists — โปรไฟล์นักนวด
+    // =========================================================
+    match /therapists/{therapistId} {
+      allow read: if true;  // public — ลูกค้าต้องเห็นรายชื่อ
+      allow create, delete: if isAdmin();
+      // admin แก้ได้ทุก field, นักนวดแก้ของตัวเองได้
+      allow update: if isAdmin() || isOwner(therapistId);
+    }
+
+    // =========================================================
+    // services — บริการที่เปิดให้จอง
+    // =========================================================
+    match /services/{serviceId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // =========================================================
+    // bookings — การจอง (สำคัญที่สุด)
+    // =========================================================
+    match /bookings/{bookingId} {
+      allow read: if isAuthed() && (
+                    request.auth.uid == resource.data.userId
+                    || request.auth.uid == resource.data.therapistId
+                    || isAdmin()
+                  );
+
+      allow create: if isAuthed()
+                    && request.resource.data.userId == request.auth.uid;
+
+      allow update: if isAuthed() && (
+                      request.auth.uid == resource.data.userId
+                      || request.auth.uid == resource.data.therapistId
+                      || isAdmin()
+                    );
+
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================
+    // reviews — รีวิวการจอง
+    // =========================================================
+    match /reviews/{reviewId} {
+      allow read: if true;  // public — ให้ลูกค้าใหม่เห็นรีวิว
+      allow create: if isAuthed()
+                    && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthed() && (
+                              request.auth.uid == resource.data.userId
+                              || isAdmin()
+                            );
+    }
+
+    // =========================================================
+    // notifications — แจ้งเตือนผู้ใช้
+    // =========================================================
+    match /notifications/{notifId} {
+      allow read: if isAuthed() && (
+                    request.auth.uid == resource.data.userId
+                    || isAdmin()
+                  );
+      allow create: if isAdmin();  // ระบบ/admin สร้างเท่านั้น
+      // ลูกค้าอัปเดตได้แค่ฟิลด์ readAt/isRead
+      allow update: if isAuthed()
+                    && request.auth.uid == resource.data.userId
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["readAt", "isRead"]);
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================
+    // settings — การตั้งค่าระบบ
+    // =========================================================
+    match /settings/{document=**} {
+      allow read: if true;  // public settings (ราคา, hours)
+      allow write: if isAdmin();
+    }
+
+    // =========================================================
+    // config — config สาธารณะ
+    // =========================================================
+    match /config/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // =========================================================
+    // adminSettings — การตั้งค่าเฉพาะ admin
+    // =========================================================
+    match /adminSettings/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // =========================================================
+    // Security: blocked devices/IPs
+    // =========================================================
+    match /blockedDevices/{deviceId} {
+      // ลูกค้าอ่านได้เพื่อเช็คว่าโดนแบน, admin จัดการ
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /blockedIps/{ipId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // =========================================================
+    // Default deny — ที่ไม่ได้ระบุ = ห้าม
+    // =========================================================
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }

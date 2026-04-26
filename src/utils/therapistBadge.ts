@@ -1,4 +1,4 @@
-import { BadgeConfig } from '@/types/therapist';
+import type { BadgeConfig } from '@/types/therapist';
 
 export const badgeConfig: BadgeConfig[] = [
   {
@@ -8,7 +8,7 @@ export const badgeConfig: BadgeConfig[] = [
     animation: 'pulse',
     size: 50,
     position: { top: -10, left: -10 },
-    condition: (t) => t.todayBookings >= 5,
+    condition: (t) => (t.todayBookings ?? 0) >= 5,
   },
   {
     key: 'HOT',
@@ -17,7 +17,8 @@ export const badgeConfig: BadgeConfig[] = [
     animation: 'float',
     size: 45,
     position: { top: -5, left: -5 },
-    condition: (t) => t.todayBookings >= 3 && t.todayBookings < 5,
+    condition: (t) =>
+      (t.todayBookings ?? 0) >= 3 && (t.todayBookings ?? 0) < 5,
   },
   {
     key: 'NEW',
@@ -26,6 +27,6 @@ export const badgeConfig: BadgeConfig[] = [
     animation: 'none',
     size: 40,
     position: { top: 0, left: 0 },
-    condition: (t) => t.totalBookings < 100,
+    condition: (t) => (t.totalBookings ?? 0) < 50,
   },
 ];

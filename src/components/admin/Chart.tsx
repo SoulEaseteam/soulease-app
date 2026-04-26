@@ -11,7 +11,7 @@ import {
   Legend,
 } from 'recharts';
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db } from "@/lib/firebase";
 import dayjs from 'dayjs';
 import { Typography, Box } from '@mui/material';
 

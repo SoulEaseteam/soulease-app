@@ -11,7 +11,7 @@ import {
   Alert,
 } from '@mui/material';
 import { collection, onSnapshot, updateDoc, doc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db } from '@/lib/firebase';
 
 interface Therapist {
   id: string;

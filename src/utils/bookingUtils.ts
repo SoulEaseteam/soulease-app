@@ -1,4 +1,4 @@
-import { db } from '@/firebase';
+import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from 'firebase/firestore';
 
 export interface Booking {

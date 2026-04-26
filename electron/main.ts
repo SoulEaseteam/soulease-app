@@ -1,41 +1,55 @@
 // src/electron/main.ts
-import { app, BrowserWindow } from 'electron';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { app, BrowserWindow } from "electron";
+import path from "path";
+import { fileURLToPath } from "url";
 
-// 👇 ทำ __dirname แบบ ESM
+// ESM version of __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+let mainWindow: BrowserWindow | null = null;
+
 function createWindow() {
-  const win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
+    backgroundColor: "#ffffff",
+    autoHideMenuBar: true, // 👌 สวยขึ้น มากเหมือน native app
     webPreferences: {
-      preload: path.join(__dirname, '../dist-electron/preload.js'),
-      contextIsolation: true, // ✅ ต้องใส่ใต้ webPreferences
+      preload: path.join(__dirname, "../dist-electron/preload.js"),
+      contextIsolation: true, // 👍 Safety for ESM + preload
+      nodeIntegration: false, // ป้องกัน RCE
+      sandbox: true,          // เพิ่มความปลอดภัย
     },
   });
 
-  // 👇 Dev mode
-  const isDev = process.env.NODE_ENV === 'development';
+  const isDev = !app.isPackaged;
 
   if (isDev) {
-    win.loadURL('http://localhost:5173');
-    win.webContents.openDevTools({ mode: 'detach' });
+    mainWindow.loadURL("http://localhost:5173/");
+    mainWindow.webContents.openDevTools({ mode: "detach" });
   } else {
-    win.loadFile(path.join(__dirname, '../dist/index.html'));
+    const indexPath = path.join(__dirname, "../dist/index.html");
+    console.log("Loading production index:", indexPath);
+    mainWindow.loadFile(indexPath);
   }
+
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
 }
 
+// macOS behavior
 app.whenReady().then(() => {
   createWindow();
 
-  app.on('activate', () => {
+  app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
 });

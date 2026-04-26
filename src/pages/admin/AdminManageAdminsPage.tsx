@@ -18,7 +18,7 @@ import {
 import { DataGrid, GridToolbarContainer, GridToolbarExport } from "@mui/x-data-grid";
 import { collection, getDocs, doc, deleteDoc, updateDoc, orderBy, query } from "firebase/firestore";
 import { sendPasswordResetEmail } from "firebase/auth";
-import { auth, db } from "@/firebase";
+import { auth, db } from "@/lib/firebase";
 import DeleteIcon from "@mui/icons-material/Delete";
 import LockResetIcon from "@mui/icons-material/LockReset";
 

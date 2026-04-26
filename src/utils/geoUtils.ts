@@ -5,6 +5,11 @@ export const getDistanceInKm = (
   lat2: number,
   lng2: number
 ): number => {
+  if (![lat1, lng1, lat2, lng2].every(Number.isFinite)) {
+    console.warn('❌ Invalid coordinates for distance calculation');
+    return Infinity; // หรือ 0 ถ้าต้องการ
+  }
+
   const toRad = (x: number) => (x * Math.PI) / 180;
   const R = 6371; // รัศมีโลก (กิโลเมตร)
   const dLat = toRad(lat2 - lat1);

@@ -3,27 +3,39 @@ import {
   Box,
   Typography,
   Avatar,
-  Paper,
-  Button,
-  Chip,
   CircularProgress,
+  Chip,
   IconButton,
+  Divider,
+  Button,
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useNavigate } from "react-router-dom";
-import { auth, db } from "@/firebase";
-import { doc, getDoc, getDocs, query, where, collection } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import {
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  collection,
+  Timestamp,
+} from "firebase/firestore";
 import { signOut } from "firebase/auth";
-import BottomNav from "@/components/BottomNav";
-import { Divider } from "@mui/material";
+import ProfileSummaryCard from "@/components/therapist/ProfileSummaryCard";
+
 
 const TherapistProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const [therapist, setTherapist] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [totalBookings, setTotalBookings] = useState(0);
-  const [rating, setRating] = useState(0);
 
+  // 📊 Summary states
+  const [todayBookings, setTodayBookings] = useState(0);
+  const [completedJobs, setCompletedJobs] = useState(0);
+  const [cancelledJobs, setCancelledJobs] = useState(0);
+
+  // 🟢 ฟังก์ชันคำนวณสถานะ
   const getComputedStatus = (data: any) => {
     if (!data) return "resting";
     if (data.statusOverride) return data.statusOverride;
@@ -37,10 +49,14 @@ const TherapistProfilePage: React.FC = () => {
     const end = new Date();
     end.setHours(endH, endM, 0, 0);
 
-    if (now >= start && now <= end) {
-      return data.isBooked ? "bookable" : "available";
+    // ✅ handle cross-midnight shift
+    if (end <= start) {
+      if (now < start) start.setDate(start.getDate() - 1);
+      end.setDate(end.getDate() + 1);
     }
-    return "resting";
+
+    if (now < start || now > end) return "resting";
+    return data.isBooked ? "bookable" : "available";
   };
 
   const getStatusColor = (status: string) => {
@@ -49,19 +65,19 @@ const TherapistProfilePage: React.FC = () => {
         return "green";
       case "bookable":
         return "orange";
-      case "resting":
       default:
         return "grey";
     }
   };
 
   useEffect(() => {
-    const fetchTherapist = async () => {
+    const fetchData = async () => {
       const user = auth.currentUser;
       if (!user) return;
 
       let data: any = null;
 
+      // 🔎 หา therapist doc
       const ref1 = doc(db, "therapists", user.uid);
       const snap1 = await getDoc(ref1);
       if (snap1.exists()) data = { id: snap1.id, ...snap1.data() };
@@ -80,16 +96,49 @@ const TherapistProfilePage: React.FC = () => {
 
       if (data) {
         setTherapist(data);
+
+        // 📊 ดึง bookings ของ therapist
         const bq = query(collection(db, "bookings"), where("therapistId", "==", data.id));
         const bSnap = await getDocs(bq);
-        setTotalBookings(bSnap.size);
-        setRating(data.rating || 0);
+
+        let todayCount = 0;
+        let completedCount = 0;
+        let cancelledCount = 0;
+
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+        const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+
+        bSnap.forEach((doc) => {
+          const booking = doc.data() as any;
+          const startAt: Date = booking.startAt?.toDate
+            ? booking.startAt.toDate()
+            : booking.startAt instanceof Timestamp
+            ? booking.startAt.toDate()
+            : new Date(booking.startAt);
+
+          const status = booking.status?.toLowerCase();
+
+          if (startAt >= todayStart && startAt <= todayEnd && ["confirmed", "completed", "done", "paid"].includes(status)) {
+            todayCount++;
+          }
+          if (["completed", "done"].includes(status)) {
+            completedCount++;
+          }
+          if (status === "cancelled" || status === "canceled") {
+            cancelledCount++;
+          }
+        });
+
+        setTodayBookings(todayCount);
+        setCompletedJobs(completedCount);
+        setCancelledJobs(cancelledCount);
       }
 
       setLoading(false);
     };
 
-    fetchTherapist();
+    fetchData();
   }, []);
 
   const handleLogout = async () => {
@@ -97,17 +146,19 @@ const TherapistProfilePage: React.FC = () => {
     navigate("/login");
   };
 
-  if (loading)
+  if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
         <CircularProgress />
       </Box>
     );
+  }
 
   const computedStatus = getComputedStatus(therapist);
 
   return (
     <Box sx={{ bgcolor: "#f6f8fa", minHeight: "100vh", maxWidth: 430, mx: "auto", pb: 7 }}>
+      {/* Header */}
       <Box
         sx={{
           position: "relative",
@@ -119,13 +170,11 @@ const TherapistProfilePage: React.FC = () => {
           borderBottomRightRadius: 24,
         }}
       >
-        <IconButton
-          onClick={handleLogout}
-          sx={{ position: "absolute", top: 10, right: 10, color: "#fff" }}
-        >
+        <IconButton onClick={handleLogout} sx={{ position: "absolute", top: 10, right: 10, color: "#fff" }}>
           <LogoutIcon />
         </IconButton>
 
+        {/* ✅ Avatar ใช้ img ห่อ */}
         <Avatar
           sx={{
             width: 120,
@@ -136,7 +185,11 @@ const TherapistProfilePage: React.FC = () => {
           }}
         >
           <img
-            src={therapist?.image?.startsWith("/") ? therapist.image : `/images/${therapist?.image}`}
+            src={
+              therapist?.image?.startsWith("/")
+                ? therapist.image
+                : `/images/${therapist?.image}`
+            }
             alt={therapist?.name}
             style={{
               width: "100%",
@@ -150,106 +203,68 @@ const TherapistProfilePage: React.FC = () => {
 
         <Box>
           <Typography variant="h6" fontWeight="bold" color="#fff">
-            {therapist?.name || therapist?.displayName || "Therapist"}
+            {therapist?.name}
           </Typography>
           <Typography variant="body2" color="#fff">
             {therapist?.email}
           </Typography>
           <Typography variant="body2" color="#fff">
-            Time : {therapist?.startTime || "--:--"} - {therapist?.endTime || "--:--"}
+            Working Hours: {therapist?.startTime} - {therapist?.endTime}
           </Typography>
 
           <Chip
             label={computedStatus}
             sx={{
-              mt: 2,
+              mt: 1,
               bgcolor: getStatusColor(computedStatus),
               color: "#fff",
               fontSize: 12,
-              height: 24,
+              height: 22,
             }}
           />
         </Box>
       </Box>
 
-      {/* Stats */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: 1,
-          p: 2,
-        }}
-      >
-        <Paper sx={{ p: 3, textAlign: "center", borderRadius: 3 }}>
-          <Typography variant="h6" fontWeight="bold" color="primary">
-            {totalBookings}
-          </Typography>
-          <Typography variant="caption">คำสั่งซื้อทั้งหมด</Typography>
-        </Paper>
-
-        <Paper sx={{ p: 3, textAlign: "center", borderRadius: 3 }}>
-          <Typography variant="h6" fontWeight="bold" color="primary">
-            0%
-          </Typography>
-          <Typography variant="caption">การเพิ่มเวลา</Typography>
-        </Paper>
-
-        <Paper sx={{ p: 3, textAlign: "center", borderRadius: 3 }}>
-          <Typography variant="h6" fontWeight="bold" color="primary">
-            {rating.toFixed(1)} ⭐
-          </Typography>
-          <Typography variant="caption">เรตติ้ง</Typography>
-        </Paper>
+      {/* ✅ Summary Card */}
+      <Box sx={{ px: 2, mt: 3 }}>
+        <ProfileSummaryCard
+          todayBookings={todayBookings}
+          completedJobs={completedJobs}
+          cancelledJobs={cancelledJobs}
+        />
       </Box>
 
       <Divider sx={{ my: 2, mx: 2 }} />
 
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: -3,
-          p: 1,
-        }}
-      >
-        
-       {[
-  { label: "การจองของฉัน", gif: "/images/icon/Gift Box.gif",  path: "/therapist/bookings" },
-  { label: "สถานะ", gif: "/images/icon/Coffee Break.gif",  path: "/therapist/status" },
-  { label: "ตำแหน่ง", gif: "/images/icon/Map pin.gif",  path: "/therapist/location" },
-].map((btn, i) => (
-<Button
-  key={i}
-  fullWidth
-  variant="text" // ✅ ใช้ text หรือ outlined จะไม่มีพื้นหลัง
-  sx={{
-    flexDirection: "column",
-    py: 1,
-    borderRadius: 3,
-    fontWeight: "bold",
-    boxShadow: "none", // ✅ เอาเงาออก
-    background: "transparent", // ✅ เอาพื้นหลังออก
-    "&:hover": {
-      background: "rgba(0,0,0,0.05)", // ✅ hover effect เบาๆ (จะเอาออกเลยก็ได้)
-    },
-  }}
-  onClick={() => navigate(btn.path)}
->
-  <img
-    src={btn.gif}
-    alt={btn.label}
-    style={{ width: 80, height: 80, marginBottom: -10 }}
-  />
-
-  <Typography variant="subtitle1" sx={{ fontWeight: "bold", fontSize: 16 }}>
-    {btn.label}
-  </Typography>
-</Button>
-))}
+      {/* Menu */}
+      <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", p: 1 }}>
+        {[
+          { label: "My Bookings", gif: "/images/icon/Gift Box.gif", path: "/therapist/bookings" },
+          { label: "Status", gif: "/images/icon/Coffee Break.gif", path: "/therapist/status" },
+          { label: "Location", gif: "/images/icon/Map pin.gif", path: "/therapist/location" },
+        ].map((btn, i) => (
+          <Button
+            key={i}
+            fullWidth
+            variant="text"
+            sx={{
+              flexDirection: "column",
+              py: 1,
+              borderRadius: 3,
+              fontWeight: "bold",
+              "&:hover": { background: "rgba(0,0,0,0.05)" },
+            }}
+            onClick={() => navigate(btn.path)}
+          >
+            <img src={btn.gif} alt={btn.label} style={{ width: 70, height: 70, marginBottom: -8 }} />
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold", fontSize: 15 }}>
+              {btn.label}
+            </Typography>
+          </Button>
+        ))}
       </Box>
 
-      <BottomNav />
+
     </Box>
   );
 };

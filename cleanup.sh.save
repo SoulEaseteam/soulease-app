@@ -1,0 +1,39 @@
+#!/bin/bash
+echo "🧹 Cleaning up Sunred Project..."
+
+# 1. ลบ sunred-next (เราใช้ Vite เป็น main)
+if [ -d "sunred-next" ]; then
+  rm -rf sunred-next
+  echo "✅ Removed sunred-next"
+fi
+
+# 2. ลบ node_modules (ทั้ง root และที่หลงเหลือ)
+find . -name "node_modules" -type d -prune -exec rm -rf '{}' +
+echo "✅ Removed all node_modules"
+
+# 3. ลบไฟล์ build cache (Vercel, dist, .turbo, .next, .vite)
+rm -rf .vercel dist .turbo .next
+echo "✅ Removed build caches"
+
+# 4. รวม contexts → ย้าย context/* ไป contexts/*
+if [ -d "src/context" ]; then
+  mv src/context/* src/contexts/ 2>/dev/null || true
+  rm -rf src/context
+  echo "✅ Merged context into contexts/"
+fi
+
+# 5. ลบไฟล์ duplicate types (ถ้าคุณรวม type ไว้แล้ว)
+if [ -f "src/types/firebaseSchemas.ts" ]; then
+  echo "⚠️  NOTE: firebaseSchemas.ts still exists. Consider merging into therapist.ts / booking.ts"
+fi
+
+# 6. ลบ log, DS_Store, temp
+find . -name "*.log" -type f -delete
+find . -name ".DS_Store" -type f -delete
+echo "✅ Removed logs and temp files"
+
+# 7. Reinstall dependencies
+npm install
+
+echo "🎉 Cleanup complete! Project is ready."O
+

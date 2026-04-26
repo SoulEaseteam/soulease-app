@@ -7,7 +7,7 @@ import {
   Typography,
   Alert,
 } from '@mui/material';
-import { auth, db } from '@/firebase';
+import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';

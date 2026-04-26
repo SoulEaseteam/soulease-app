@@ -20,7 +20,7 @@ import {
   TextField,
 } from '@mui/material';
 import { collection, getDocs, Timestamp } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db } from "@/lib/firebase";
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -54,7 +54,7 @@ const TopTherapistsChart: React.FC = () => {
       .map(([name, count]) => ({
         name,
         bookings: count,
-        percentage: ((count / totalBookings) * 100).toFixed(1),
+        percentage: ((count / totalBookings) * 30).toFixed(1),
       }))
       .sort((a, b) => b.bookings - a.bookings)
       .slice(0, 10);
@@ -93,7 +93,7 @@ const TopTherapistsChart: React.FC = () => {
 
       <Paper sx={{ p: 2 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={6} md={3}>
+          <Grid size={{ xs: 6, md: 3 }}>
             <TextField
               type="date"
               label="Start Date"
@@ -103,7 +103,7 @@ const TopTherapistsChart: React.FC = () => {
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
-          <Grid item xs={6} md={3}>
+          <Grid size={{ xs: 6, md: 3 }}>
             <TextField
               type="date"
               label="End Date"

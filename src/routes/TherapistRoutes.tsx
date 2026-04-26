@@ -1,27 +1,54 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
-import PrivateRoute from "@/components/PrivateRoute";
+import PrivateRoute from "@/routes/PrivateRoute";
+import TherapistLayout from "@/components/layouts/TherapistLayout";
 
-import TherapistProfilePage from "@/pages/therapist/TherapistProfilePage";
-import TherapistStatusPage from "@/pages/therapist/TherapistStatusPage";
-import TherapistLocationPage from "@/pages/therapist/TherapistLocationPage";
-import TherapistBookingsPage from "@/pages/therapist/TherapistBookingsPage";
-import TherapistLayout from "@/layouts/TherapistLayout";
+// Lazy pages
+const TherapistProfilePage = React.lazy(() =>
+  import("@/pages/therapist/TherapistProfilePage")
+);
+const TherapistStatusPage = React.lazy(() =>
+  import("@/pages/therapist/TherapistStatusPage")
+);
+const TherapistLocationPage = React.lazy(() =>
+  import("@/pages/therapist/TherapistLocationPage")
+);
+const TherapistBookingsPage = React.lazy(() =>
+  import("@/pages/therapist/TherapistBookingsPage")
+);
 
 const TherapistRoutes: React.FC = () => {
   return (
-    <Routes>
-      <Route element={<PrivateRoute allowedRoles={["therapist"]} />}>
-        {/* ✅ ครอบ Layout ให้ทุกหน้าของ Therapist */}
-        <Route element={<TherapistLayout />}>
-          <Route path="/therapist/profile" element={<TherapistProfilePage />} />
-          <Route path="/therapist/status" element={<TherapistStatusPage />} />
-          <Route path="/therapist/location" element={<TherapistLocationPage />} />
-          <Route path="/therapist/bookings" element={<TherapistBookingsPage />} />
-        
+    <Suspense
+      fallback={
+        <div
+          style={{
+            height: "100vh",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            fontSize: "18px",
+          }}
+        >
+          Loading...
+        </div>
+      }
+    >
+      <Routes>
+        <Route
+          element={
+            <PrivateRoute requiredRoles={["therapist"]}>
+              <TherapistLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route path="profile" element={<TherapistProfilePage />} />
+          <Route path="status" element={<TherapistStatusPage />} />
+          <Route path="location" element={<TherapistLocationPage />} />
+          <Route path="bookings" element={<TherapistBookingsPage />} />
         </Route>
-      </Route>
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 };
 

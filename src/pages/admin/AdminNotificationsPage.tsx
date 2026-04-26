@@ -26,7 +26,7 @@ import {
   deleteDoc,
   doc,
 } from "firebase/firestore";
-import { db } from "@/firebase";
+import { db } from "@/lib/firebase";
 
 interface Notification {
   id: string;

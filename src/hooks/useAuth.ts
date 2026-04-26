@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { auth, db } from "@/firebase";
+import { onAuthStateChanged, type User } from "firebase/auth";  // ← ใช้ type เท่านั้น
+import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
 interface AuthData {

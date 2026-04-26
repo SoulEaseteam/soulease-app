@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- หน้าแรก -->
+  <url>
+    <loc>https://sunred.vip/</loc>
+    <lastmod>2025-09-04</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://sunred.vip/?lang=th"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/?lang=zh"/>
+  </url>
+
+  <!-- รายชื่อนักบำบัด -->
+  <url>
+    <loc>https://sunred.vip/</loc>
+    <lastmod>2025-09-04</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- ระบบจอง -->
+  <url>
+    <loc>https://sunred.vip/services</loc>
+    <lastmod>2025-09-04</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- รีวิว -->
+  <url>
+    <loc>https://t.me/SunRed_BKK</loc>
+    <lastmod>2025-09-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+</urlset>

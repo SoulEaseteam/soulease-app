@@ -1,16 +1,16 @@
 // src/utils/subscribeToTherapists.ts
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import type { Therapist } from "@/types/therapist";
+import { computeStatus } from "./therapistStatus";
 
-import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
-import { Therapist } from '@/types/therapist';
-
-interface Options {
+type Options = {
   onlyAvailable?: boolean;
   minRating?: number;
   maxDistanceKm?: number;
   userLocation?: { lat: number; lng: number };
   callback: (data: Therapist[]) => void;
-}
+};
 
 export const subscribeToTherapists = ({
   onlyAvailable = true,
@@ -19,32 +19,26 @@ export const subscribeToTherapists = ({
   userLocation,
   callback,
 }: Options) => {
-  const q = collection(db, 'therapists');
+  const col = collection(db, "therapists");
 
-  const unsubscribe = onSnapshot(q, (snapshot) => {
+  const unsubscribe = onSnapshot(col, (snapshot) => {
     let data = snapshot.docs.map((doc) => {
       const raw = doc.data() as Therapist;
-
-      return {
-        ...raw,
+      const merged = Object.assign({}, raw, {
         id: doc.id,
-        available: getComputedStatus(raw), // ✅ คำนวณสถานะแบบอัตโนมัติ
-      };
+        available: computeStatus(raw),
+      }) as Therapist;
+      return merged;
     });
 
-    if (onlyAvailable) {
-      data = data.filter((t) => t.available === 'available');
-    }
+    if (onlyAvailable) data = data.filter((t) => t.available === "available");
+    if (minRating != null) data = data.filter((t) => (t.rating ?? 0) >= minRating);
 
-    if (minRating !== undefined) {
-      data = data.filter((t) => t.rating >= minRating);
-    }
-
-    if (userLocation && maxDistanceKm !== undefined) {
+    if (userLocation && maxDistanceKm != null) {
       data = data.filter((t) => {
         if (!t.currentLocation) return false;
-        const distance = getDistanceInKm(userLocation, t.currentLocation);
-        return distance <= maxDistanceKm;
+        const d = haversine(userLocation, t.currentLocation);
+        return d <= maxDistanceKm;
       });
     }
 
@@ -54,45 +48,43 @@ export const subscribeToTherapists = ({
   return unsubscribe;
 };
 
-// ✅ คำนวณสถานะอัตโนมัติจากเวลา, การจอง, และ override
 const getComputedStatus = (t: Therapist): Therapist['available'] => {
-  if (t.statusOverride === 'resting') return 'resting'; // แอดมินสั่งพัก
+  if (t.statusOverride === 'resting') return 'resting';
 
   const now = new Date();
-  const [startHour = 0, startMin = 0] = t.startTime?.split(':').map(Number) || [];
-  const [endHour = 0, endMin = 0] = t.endTime?.split(':').map(Number) || [];
 
-  const start = new Date(now);
-  const end = new Date(now);
-  start.setHours(startHour, startMin, 0);
-  end.setHours(endHour, endMin, 0);
-
-  // รองรับกรณีข้ามคืน เช่น 20:00 - 03:00
-  if (end <= start) end.setDate(end.getDate() + 1);
+  // ทำงานช่วงเวลา?
+  const [sh = 0, sm = 0] = t.startTime?.split(':').map(Number) || [];
+  const [eh = 0, em = 0] = t.endTime?.split(':').map(Number) || [];
+  const start = new Date(now); start.setHours(sh, sm, 0, 0);
+  const end = new Date(now);   end.setHours(eh, em, 0, 0);
+  if (end <= start) end.setDate(end.getDate() + 1); // ข้ามคืน
 
   const inWorkingHours = now >= start && now <= end;
 
-  if (inWorkingHours) {
-    return t.isBooked === true ? 'bookable' : 'available';
+  // ยังติดงานอยู่ไหม (busyUntil > now)
+  let busy = false;
+  if (t.busyUntil) {
+    const bu = (typeof t.busyUntil === 'string')
+      ? new Date(t.busyUntil)
+      : ('toDate' in (t.busyUntil as any) ? (t.busyUntil as any).toDate() : new Date(t.busyUntil as any));
+    busy = bu > now;
   }
 
-  return 'resting';
+  if (!inWorkingHours) return 'resting';
+  return busy ? 'bookable' : 'available';
 };
-// ✅ Haversine formula คำนวณระยะทาง (km)
-const getDistanceInKm = (
-  coord1: { lat: number; lng: number },
-  coord2: { lat: number; lng: number }
+
+const haversine = (
+  a: { lat: number; lng: number },
+  b: { lat: number; lng: number }
 ): number => {
   const toRad = (x: number) => (x * Math.PI) / 180;
   const R = 6371;
-  const dLat = toRad(coord2.lat - coord1.lat);
-  const dLng = toRad(coord2.lng - coord1.lng);
-
-  const a =
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const A =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(coord1.lat)) *
-      Math.cos(toRad(coord2.lat)) *
-      Math.sin(dLng / 2) ** 2;
-
-  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return R * (2 * Math.atan2(Math.sqrt(A), Math.sqrt(1 - A)));
 };

@@ -12,7 +12,7 @@ import {
   Settings as SettingsIcon, Add as AddAdminIcon, Map as MapIcon
 } from "@mui/icons-material";
 import { signOut } from "firebase/auth";
-import { auth, db } from "@/firebase";
+import { auth, db } from "@/lib/firebase";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { collection, getDocs } from "firebase/firestore";
 import { Outlet } from "react-router-dom";

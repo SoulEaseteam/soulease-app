@@ -1,5 +1,4 @@
 // src/data/services.ts
-
 import dayjs from 'dayjs';
 
 export interface MassageService {
@@ -12,7 +11,7 @@ export interface MassageService {
   image: string;
   detail: string;
   benefit: string[];
-  badge: 'SIGNATURE' | 'BEST SELLER' | 'RECOMMEND';
+  badge: 'SIGNATURE' | 'BEST SELLER' | 'RECOMMEND' | 'EXCLUSIVE';
 }
 
 export function calculateNextAvailable(
@@ -25,8 +24,7 @@ export function calculateNextAvailable(
   const proposed = now.add(duration, 'minute');
 
   if (proposed.isAfter(end)) {
-    // ถ้าเวลาจบเกินช่วงเวลาทำงาน ให้เริ่มวันถัดไป
-    return startTime;
+    return startTime; // next day
   }
 
   return proposed.format('HH:mm');
@@ -41,8 +39,7 @@ const services: MassageService[] = [
     duration: 60,
     count: 0,
     image: '/images/Service/IMG_5092.JPG',
-    detail:
-      `A timeless healing ritual rooted in Thai tradition. This massage integrates acupressure, deep stretches, and rhythmic techniques to enhance flexibility, energy flow, and holistic balance.`,
+    detail: `A timeless healing ritual rooted in Thai tradition. This massage integrates acupressure, deep stretches, and rhythmic techniques to enhance flexibility, energy flow, and holistic balance.`,
     benefit: [
       'Eases chronic tension and soreness',
       'Improves posture and circulation',
@@ -57,36 +54,55 @@ const services: MassageService[] = [
     name: 'Aromatherapy Massage',
     desc: 'Aromatic oil massage for deep body and mind relaxation.',
     price: 1600,
-    duration: 80,
+    duration: 70,
     count: 0,
     image: '/images/Service/IMG_5096.JPG',
-    detail:
-      `Immerse yourself in serenity with an oil-based massage using premium-grade essential oils. This treatment calms the nervous system and promotes total-body renewal through scent and touch.`,
+    detail: `Immerse yourself in serenity with an oil-based massage using premium-grade essential oils.`,
     benefit: [
-      'Relieves emotional stress and tension',
-      'Enhances sleep quality and mental clarity',
+      'Relieves emotional stress',
+      'Enhances sleep quality',
       'Stimulates detox and lymphatic flow',
       'Improves blood circulation',
     ],
     badge: 'BEST SELLER',
   },
   {
-    id: 'manhood-relaxation',
-    name: 'Manhood Relaxation Therapy',
-    desc: 'Reconnect with your senses and restore your inner balance.',
+    id: 'Gentleman’s',
+    name: "Gentleman’s Signature Therapy",
+    desc: 'Reconnect with your senses and restore inner balance.',
     price: 2200,
-    duration: 70,
+    duration: 80,
     count: 0,
-    image: '/images/Service/IMG_5090.JPG',  // ✅ แก้ path
-    detail:
-      `Crafted exclusively for the modern man, this therapy merges tailored massage techniques with mindful relaxation. Restore emotional equilibrium and physical vigor in one transformative session.`,
+    image: '/images/workphoto/IMG_5289.JPG',
+    detail: `Crafted exclusively for the modern man, merging massage with mindful relaxation.`,
     benefit: [
       'Rebalances internal energy',
-      'Dissolves tension from body and mind',
-      'Promotes groundedness and vitality',
+      'Dissolves tension',
+      'Promotes groundedness',
+      '[ Aromatherapy Massage + HandJob ]',
     ],
     badge: 'RECOMMEND',
   },
+
+  // ⭐⭐⭐ เมนูพิเศษใหม่ EXCLUSIVE ⭐⭐⭐
+  {
+    id: 'SunRed’exclusive',
+    name: 'SunRed Therapeutic Experience',
+    desc: 'Elite full-body therapeutic ritual crafted only by our top-tier specialists.',
+    price: 3200,
+    duration: 80,
+    count: 0,
+    image: '/images/workphoto/IMG_8368.JPG', // เปลี่ยนรูปได้เลย
+    detail: `An exclusive high-touch therapy designed to restore physical vitality, emotional clarity, and deep sensual balance. Only available with selected therapists.`,
+    benefit: [
+      'Premium deep-tissue techniques',
+      'Advanced aromatherapy blend',
+      'Signature SunRed ritual finish',
+      'Emotional and sensory harmonization',
+      '[ Body2Body + HandJob ]',
+    ],
+    badge: 'EXCLUSIVE',
+  }
 ];
 
 export default services;

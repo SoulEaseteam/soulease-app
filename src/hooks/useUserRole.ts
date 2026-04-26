@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
-import { db, auth } from "@/firebase";
+import { db, auth } from '@/lib/firebase';
 
 export function useUserRole() {
   const [role, setRole] = useState<string | null>(null);

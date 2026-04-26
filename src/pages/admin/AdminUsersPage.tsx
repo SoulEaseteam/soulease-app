@@ -12,9 +12,10 @@ import {
   TextField,
   MenuItem,
   useTheme,
+  Stack,
 } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { db } from "@/firebase";
+import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { auth, db } from "@/lib/firebase";
 import {
   collection,
   getDocs,
@@ -23,87 +24,153 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 
+type Role = "admin" | "therapist" | "user";
+
 interface User {
   id: string;
-  name?: string;
-  email?: string;
-  phone?: string;
-  role?: string;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  role?: Role | null;
 }
 
 const AdminUsersPage: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-
   const theme = useTheme();
 
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [form, setForm] = useState<User | null>(null);
+
+  const currentAdminUid = auth.currentUser?.uid;
+
+  // --------------------------------------------------------------------
+  // Load Users
+  // --------------------------------------------------------------------
   const fetchUsers = async () => {
-    setLoading(true);
-    const snapshot = await getDocs(collection(db, "users"));
-    const data = snapshot.docs.map((docSnap) => ({
-      id: docSnap.id,
-      ...docSnap.data(),
-    })) as User[];
-    setUsers(data);
-    setLoading(false);
+    try {
+      setLoading(true);
+      const snap = await getDocs(collection(db, "users"));
+
+      setUsers(
+        snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as any),
+        }))
+      );
+    } catch (err) {
+      console.error("Fetch users failed:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
+  // --------------------------------------------------------------------
+  // Edit functions
+  // --------------------------------------------------------------------
+  const handleOpenEdit = (u: User) => {
+    setEditingUser(u);
+    setForm({ ...u });
+  };
+
+  const handleCloseEdit = () => {
+    setEditingUser(null);
+    setForm(null);
+  };
+
   const handleSave = async () => {
-    if (editingUser) {
+    if (!editingUser || !form) return;
+
+    const isSelf = editingUser.id === currentAdminUid;
+
+    try {
       await updateDoc(doc(db, "users", editingUser.id), {
-        name: editingUser.name || "",
-        email: editingUser.email || "",
-        phone: editingUser.phone || "",
-        role: editingUser.role || "user",
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        role: isSelf ? editingUser.role : form.role, // ❗ ห้ามเปลี่ยน role ตัวเอง
       });
-      setEditingUser(null);
-      fetchUsers();
+      handleCloseEdit();
+      await fetchUsers();
+    } catch (err) {
+      console.error("Update failed:", err);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("❗ ต้องการลบผู้ใช้นี้หรือไม่?")) {
+  // --------------------------------------------------------------------
+  // Delete
+  // --------------------------------------------------------------------
+  const handleDelete = async (id?: string) => {
+    if (!id) return;
+
+    if (id === currentAdminUid) {
+      alert("⚠️ You cannot delete your own admin account.");
+      return;
+    }
+
+    if (!confirm("❗ ต้องการลบผู้ใช้นี้หรือไม่?")) return;
+
+    try {
       await deleteDoc(doc(db, "users", id));
-      fetchUsers();
+      await fetchUsers();
+    } catch (err) {
+      console.error("Delete user failed:", err);
     }
   };
 
-  const columns: GridColDef[] = [
+  // --------------------------------------------------------------------
+  // DataGrid Columns
+  // --------------------------------------------------------------------
+  const columns: GridColDef<User>[] = [
     { field: "name", headerName: "Name", flex: 1 },
-    { field: "email", headerName: "Email", flex: 1 },
+    { field: "email", headerName: "Email", flex: 1.2 },
     { field: "phone", headerName: "Phone", flex: 1 },
-    { field: "role", headerName: "Role", flex: 1 },
+    { field: "role", headerName: "Role", flex: 0.8 },
+
     {
       field: "actions",
       headerName: "Actions",
+      sortable: false,
+      filterable: false,
+      align: "center",
+      headerAlign: "center",
       flex: 1,
-      renderCell: (params) => (
-        <Box display="flex" gap={1}>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => setEditingUser(params.row)}
-          >
-            Edit
-          </Button>
-          <Button
-            variant="outlined"
-            color="error"
-            size="small"
-            onClick={() => handleDelete(params.row.id)}
-          >
-            Delete
-          </Button>
-        </Box>
-      ),
+      renderCell: (params) => {
+        const row = params.row;
+
+        return (
+          <Stack direction="row" spacing={1} justifyContent="center">
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => handleOpenEdit(row)}
+            >
+              Edit
+            </Button>
+
+            <Button
+              variant="outlined"
+              size="small"
+              color="error"
+              disabled={row.id === currentAdminUid} // ❗ ป้องกันลบตัวเอง
+              onClick={() => handleDelete(row.id)}
+            >
+              Delete
+            </Button>
+          </Stack>
+        );
+      },
     },
   ];
 
+  // --------------------------------------------------------------------
+  // Component Return
+  // --------------------------------------------------------------------
   return (
     <Box p={3}>
       <Typography variant="h4" fontWeight="bold" gutterBottom>
@@ -112,93 +179,79 @@ const AdminUsersPage: React.FC = () => {
 
       <Paper
         sx={{
-          height: 600,
+          height: 640,
           p: 2,
           borderRadius: 3,
-          bgcolor: theme.palette.mode === "dark" ? "#1e1e1e" : "#fff",
-          "& .MuiDataGrid-columnHeaders": {
-            backgroundColor: theme.palette.mode === "dark" ? "#333" : "#f5f5f5",
-            color: theme.palette.mode === "dark" ? "#fff" : "#000",
-            fontWeight: "bold",
-          },
-          "& .MuiDataGrid-cell": {
-            color: theme.palette.mode === "dark" ? "#fff" : "#000",
-          },
         }}
       >
         <DataGrid
-          rows={users || []}
+          rows={users}
           columns={columns}
           loading={loading}
           getRowId={(row) => row.id}
+          disableRowSelectionOnClick
         />
       </Paper>
 
-      {editingUser && (
-        <Dialog open onClose={() => setEditingUser(null)} fullWidth>
-          <DialogTitle>✏️ Edit User</DialogTitle>
-          <DialogContent>
-            <TextField
-              label="Name"
-              fullWidth
-              margin="dense"
-              value={editingUser.name || ""}
-              onChange={(e) =>
-                setEditingUser((prev) =>
-                  prev ? { ...prev, name: e.target.value } : null
-                )
-              }
-            />
-            <TextField
-              label="Email"
-              fullWidth
-              margin="dense"
-              value={editingUser.email || ""}
-              onChange={(e) =>
-                setEditingUser((prev) =>
-                  prev ? { ...prev, email: e.target.value } : null
-                )
-              }
-            />
-            <TextField
-              label="Phone"
-              fullWidth
-              margin="dense"
-              value={editingUser.phone || ""}
-              onChange={(e) =>
-                setEditingUser((prev) =>
-                  prev ? { ...prev, phone: e.target.value } : null
-                )
-              }
-            />
+      {/* ------------------ EDIT DIALOG ------------------ */}
+      <Dialog open={!!editingUser} onClose={handleCloseEdit} fullWidth maxWidth="sm">
+        <DialogTitle>✏️ Edit User</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Name"
+            fullWidth
+            margin="dense"
+            value={form?.name ?? ""}
+            onChange={(e) => setForm((p) => (p ? { ...p, name: e.target.value } : p))}
+          />
 
-            {/* 🔹 Role Dropdown */}
-            <TextField
-              select
-              label="Role"
-              fullWidth
-              margin="dense"
-              value={editingUser.role || ""}
-              onChange={(e) =>
-                setEditingUser((prev) =>
-                  prev ? { ...prev, role: e.target.value } : null
-                )
-              }
-            >
-              <MenuItem value="admin">Admin</MenuItem>
-              <MenuItem value="therapist">Therapist</MenuItem>
-              <MenuItem value="user">User</MenuItem>
-            </TextField>
-          </DialogContent>
+          <TextField
+            label="Email"
+            fullWidth
+            margin="dense"
+            value={form?.email ?? ""}
+            onChange={(e) => setForm((p) => (p ? { ...p, email: e.target.value } : p))}
+          />
 
-          <DialogActions>
-            <Button onClick={() => setEditingUser(null)}>Cancel</Button>
-            <Button onClick={handleSave} variant="contained">
-              Save
-            </Button>
-          </DialogActions>
-        </Dialog>
-      )}
+          <TextField
+            label="Phone"
+            fullWidth
+            margin="dense"
+            value={form?.phone ?? ""}
+            onChange={(e) => setForm((p) => (p ? { ...p, phone: e.target.value } : p))}
+          />
+
+          {/* ❗ ถ้าเป็น admin ตัวเอง => ปิดการแก้ role */}
+          <TextField
+            select
+            label="Role"
+            fullWidth
+            margin="dense"
+            value={form?.role ?? "user"}
+            onChange={(e) =>
+              setForm((p) => (p ? { ...p, role: e.target.value as Role } : p))
+            }
+            disabled={editingUser?.id === currentAdminUid}
+          >
+            <MenuItem value="admin">Admin</MenuItem>
+            <MenuItem value="therapist">Therapist</MenuItem>
+            <MenuItem value="user">User</MenuItem>
+          </TextField>
+
+          {editingUser?.id === currentAdminUid && (
+            <Typography color="error" fontSize={13} mt={1}>
+              ⚠️ You cannot modify your own admin role.
+            </Typography>
+          )}
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={handleCloseEdit}>Cancel</Button>
+          <Button variant="contained" onClick={handleSave}>
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

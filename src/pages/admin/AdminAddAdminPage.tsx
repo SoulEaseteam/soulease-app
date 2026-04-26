@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { setDoc, doc, serverTimestamp, getDocs, collection, query, where } from "firebase/firestore";
-import { auth, db } from "@/firebase";
+import { auth, db } from "@/lib/firebase";
 import { useNavigate } from "react-router-dom";
 import PersonIcon from "@mui/icons-material/Person";
 import EmailIcon from "@mui/icons-material/Email";

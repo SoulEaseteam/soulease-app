@@ -1,5 +1,5 @@
 // src/components/SocialLoginButtons.tsx
-import { auth, googleProvider, facebookProvider } from '@/firebase';
+import { auth, googleProvider, facebookProvider } from '@/lib/firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { Button, Stack } from '@mui/material';
 

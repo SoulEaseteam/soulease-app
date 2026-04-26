@@ -5,7 +5,7 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
-import { db, storage } from '@/firebase';
+import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import CustomAlert from '@/components/CustomAlert';

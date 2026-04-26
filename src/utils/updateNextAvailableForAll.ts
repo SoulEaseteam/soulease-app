@@ -1,6 +1,6 @@
 // src/utils/updateNextAvailableInFirestore.ts
 import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db } from '@/lib/firebase';
 import { calculateNextAvailable } from './calculateNextAvailable'; // นำเข้าฟังก์ชันจากไฟล์แยก
 
 export async function updateNextAvailableInFirestore(

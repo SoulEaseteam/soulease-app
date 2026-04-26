@@ -1,14 +1,33 @@
-import { Therapist } from '@/types/therapist';
+// src/utils/getTherapistStatus.ts
 
-export const getTherapistStatus = (t: Therapist): string => {
-  switch (t.available) {
-    case 'available':
-      return 'พร้อมรับงาน';
-    case 'bookable':
-      return 'จองล่วงหน้า';
-    case 'resting':
-      return 'กำลังพัก'; // ❗ แสดงบนเว็บเสมอได้ ไม่กรองออก
-    default:
-      return 'ไม่ระบุ';
+import type { Therapist } from "@/types/therapist";
+import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
+
+export type Avail = "available" | "bookable" | "resting";
+
+/**
+ * คืนสถานะสุดท้ายของ Therapist แบบ 100% safe
+ * ตอนนี้ใช้ TherapistEngine v2.0 เป็น single source of truth
+ * รองรับ: override, holiday, working hours, busyUntil, activeBooking ฯลฯ
+ */
+export function getTherapistStatus(t: Therapist): Avail {
+  const { status } = calculateTherapistStatus(t);
+
+  // ป้องกันกรณีค่า status แปลก ๆ (เผื่ออนาคตมี type ใหม่)
+  if (status === "available" || status === "bookable" || status === "resting") {
+    return status;
   }
-};
+
+  // fallback เดิม (กันไว้เฉย ๆ)
+  const override = t.statusOverride;
+  if (override && override !== "Auto") {
+    return override as Avail;
+  }
+
+  const auto = t.available;
+  if (auto === "available") return "available";
+  if (auto === "bookable") return "bookable";
+  if (auto === "resting") return "resting";
+
+  return "resting";
+}

@@ -1,159 +1,294 @@
-// src/pages/admin/AddTherapistPage.tsx
-import React, { useState } from 'react';
+
+
+import React, { useState } from "react";
 import {
   Box,
   Button,
   TextField,
   Typography,
-  Paper,
   Snackbar,
-  Alert,
-  InputLabel,
   MenuItem,
-  Select,
-  FormControl,
-} from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { auth, db, storage } from '@/firebase';
+  Stack,
+  Paper,
+  Alert,
+} from "@mui/material";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useNavigate } from "react-router-dom";
 
+// ------------------------
+// SERVICE NORMALIZATION MAP
+// ------------------------
+const SERVICE_MAP: Record<string, string> = {
+  thai: "Thai Massage",
+  "thai massage": "Thai Massage",
+  aromatherapy: "Aromatherapy",
+  aroma: "Aromatherapy",
+  gentleman: "Gentleman’s",
+  gentlemen: "Gentleman’s",
+  vip: "VIP Massage",
+};
+
+const normalizeService = (s: string) => {
+  const key = s.trim().toLowerCase();
+  return SERVICE_MAP[key] || s.trim();
+};
+
+// ------------------------
+// SEO SLUG MAKER
+// ------------------------
+const makeSlug = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+// ==========================================================
+// PAGE START
+// ==========================================================
 const AddTherapistPage: React.FC = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('123456');
-  const [phone, setPhone] = useState('');
-  const [gender, setGender] = useState('');
-  const [province, setProvince] = useState('');
-  const [startTime, setStartTime] = useState('10:00');
-  const [endTime, setEndTime] = useState('22:00');
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>('');
-  const [loading, setLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
-
   const navigate = useNavigate();
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-    }
+  const [data, setData] = useState<any>({
+    id: "",
+    name: "",
+    email: "",
+    phone: "",
+    image: "",
+    galleryInput: "",
+    rating: 5,
+    reviews: 0,
+
+    // Time
+    startTime: "10:00",
+    endTime: "04:00",
+
+    // Employment
+    employmentType: "",
+    specialty: "",
+
+    // Services
+    servicesAvailable: "",
+
+    // Features block
+    features: {
+      age: "",
+      height: "",
+      weight: "",
+      gender: "",
+      ethnicity: "",
+      bodyType: "",
+      bustSize: "",
+      hairColor: "",
+      skintone: "",
+      vaccinated: "",
+      smoker: "",
+      language: "",
+    },
+  });
+
+  const [snackbar, setSnackbar] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e: any) => {
+    const { name, value } = e.target;
+    setData((p: any) => ({ ...p, [name]: value }));
   };
 
-  const handleAddTherapist = async () => {
-    if (!name || !email || !phone || !gender || !province) {
-      setSnackbar({ open: true, message: 'Please fill out all fields.', severity: 'error' });
+  const handleFeatureChange = (k: string, v: string) => {
+    setData((p: any) => ({
+      ...p,
+      features: { ...p.features, [k]: v },
+    }));
+  };
+
+  // ==========================================================
+  // VALIDATION
+  // ==========================================================
+  const validate = () => {
+    if (!data.id.trim()) return "❌ ID is required";
+    if (!data.name.trim()) return "❌ Name is required";
+    if (!data.startTime || !data.endTime) return "❌ Working hours missing";
+
+    return null;
+  };
+
+  // ==========================================================
+  // SUBMIT HANDLER (ULTRA MODE)
+  // ==========================================================
+  const handleSubmit = async () => {
+    const error = validate();
+    if (error) {
+      setSnackbar(error);
       return;
     }
 
     setLoading(true);
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
 
-      let imageUrl = '';
-      if (imageFile) {
-        const imageRef = ref(storage, `therapists/${user.uid}/profile.jpg`);
-        await uploadBytes(imageRef, imageFile);
-        imageUrl = await getDownloadURL(imageRef);
+    try {
+      const ref = doc(db, "therapists", data.id);
+      const check = await getDoc(ref);
+
+      if (check.exists()) {
+        setSnackbar("❌ This therapist ID already exists");
+        setLoading(false);
+        return;
       }
 
-      await addDoc(collection(db, 'therapists'), {
-        uid: user.uid,
-        name,
-        email,
-        phone,
-        gender,
-        province,
-        role: 'therapist',
-        available: 'available',
-        startTime,
-        endTime,
-        image: imageUrl || '',
-        rating: 0,
-        reviews: [],
-        totalBookings: 0,
-        createdAt: serverTimestamp(),
-      });
+      // -----------------------------
+      // AUTO-NORMALIZE SERVICES
+      // -----------------------------
+      const serviceList = (data.servicesAvailable || "")
+        .split(",")
+        .map((x: string) => normalizeService(x))
+        .filter((x: string) => x.length > 0);
 
-      setSnackbar({ open: true, message: 'Therapist added successfully!', severity: 'success' });
-      setTimeout(() => navigate('/admin/therapists'), 1000);
-    } catch (error: any) {
-      setSnackbar({ open: true, message: error.message || 'Error occurred', severity: 'error' });
+      // -----------------------------
+      // CLEAN GALLERY
+      // -----------------------------
+      const gallery = (data.galleryInput || "")
+        .split(",")
+        .map((x: string) => x.trim())
+        .filter((x: string) => x.length > 3);
+
+      // -----------------------------
+      // AUTO GENERATE CUSTOM FIELDS
+      // -----------------------------
+      const slug = makeSlug(data.name);
+
+      // -----------------------------
+      // FINAL PAYLOAD
+      // -----------------------------
+      const payload = {
+        id: data.id.trim(),
+        name: data.name.trim(),
+        slug,
+        email: data.email.trim(),
+        phone: data.phone.trim(),
+        image: data.image.trim(),
+        gallery,
+
+        rating: Number(data.rating) || 5,
+        reviews: Number(data.reviews) || 0,
+
+        startTime: data.startTime,
+        endTime: data.endTime,
+
+        employmentType: data.employmentType.trim(),
+        specialty: data.specialty.trim(),
+        servicesAvailable: serviceList,
+
+        features: { ...data.features },
+
+        // ULTRA DEFAULTS
+        holiday: false,
+        todayBookings: 0,
+        totalBookings: 0,
+        badge: "NONE",
+
+        statusOverride: "Auto",
+        manualStatus: null,
+        isBooked: false,
+        busyUntil: null,
+
+        createdAt: new Date(),
+      };
+
+      // -----------------------------
+      // SAVE
+      // -----------------------------
+      await setDoc(ref, payload);
+
+      setSnackbar("✅ Therapist created successfully");
+      setTimeout(() => navigate("/admin/therapists"), 1200);
+    } catch (err) {
+      console.error(err);
+      setSnackbar("❌ Failed to add therapist");
     } finally {
       setLoading(false);
     }
   };
 
+  // ==========================================================
+  // UI
+  // ==========================================================
   return (
-    <Box p={4}>
-      <Paper sx={{ maxWidth: 600, mx: 'auto', p: 4, borderRadius: 3 }}>
-        <Typography variant="h5" gutterBottom>➕ Add New Therapist</Typography>
+    <Box p={3} maxWidth={600} mx="auto">
+      <Typography variant="h4" fontWeight="bold" mb={2}>
+        ➕ Add New Therapist (ULTRA)
+      </Typography>
 
-        <TextField label="Full Name" fullWidth margin="normal" value={name} onChange={(e) => setName(e.target.value)} />
-        <TextField label="Email" type="email" fullWidth margin="normal" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <TextField label="Password" type="password" fullWidth margin="normal" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <TextField label="Phone Number" fullWidth margin="normal" value={phone} onChange={(e) => setPhone(e.target.value)} />
+      <Paper sx={{ p: 3, borderRadius: 3 }}>
+        <Stack spacing={2}>
+          <TextField label="Therapist ID (Unique)" name="id" value={data.id} onChange={handleChange} />
 
-        <FormControl fullWidth margin="normal">
-          <InputLabel>Gender</InputLabel>
-          <Select value={gender} label="Gender" onChange={(e) => setGender(e.target.value)}>
-            <MenuItem value="female">Female</MenuItem>
-            <MenuItem value="male">Male</MenuItem>
-            <MenuItem value="other">Other</MenuItem>
-          </Select>
-        </FormControl>
+          <TextField label="Name" name="name" value={data.name} onChange={handleChange} fullWidth />
 
-        <TextField label="Province" fullWidth margin="normal" value={province} onChange={(e) => setProvince(e.target.value)} />
+          <TextField label="Email" name="email" value={data.email} onChange={handleChange} />
+          <TextField label="Phone" name="phone" value={data.phone} onChange={handleChange} />
 
-        <Box display="flex" gap={2} mt={2}>
+          <TextField label="Image URL" name="image" value={data.image} onChange={handleChange} fullWidth />
+
           <TextField
-            label="Start Time"
-            type="time"
+            label="Gallery URLs (comma separated)"
+            name="galleryInput"
+            value={data.galleryInput}
+            onChange={handleChange}
             fullWidth
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            InputLabelProps={{ shrink: true }}
           />
+
+          {/* Working Hours */}
+          <Stack direction="row" spacing={2}>
+            <TextField label="Start Time" name="startTime" type="time" value={data.startTime} onChange={handleChange} />
+            <TextField label="End Time" name="endTime" type="time" value={data.endTime} onChange={handleChange} />
+          </Stack>
+
+          <TextField label="Employment Type" name="employmentType" value={data.employmentType} onChange={handleChange} />
+
+          <TextField label="Specialty" name="specialty" value={data.specialty} onChange={handleChange} />
+
           <TextField
-            label="End Time"
-            type="time"
-            fullWidth
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-            InputLabelProps={{ shrink: true }}
+            label="Services Available (comma separated)"
+            name="servicesAvailable"
+            value={data.servicesAvailable}
+            onChange={handleChange}
           />
-        </Box>
 
-        <Box mt={3}>
-          <InputLabel>Profile Image</InputLabel>
-          <input type="file" accept="image/*" onChange={handleImageChange} />
-          {imagePreview && (
-            <Box mt={2}>
-              <img src={imagePreview} alt="Preview" style={{ width: 120, borderRadius: 8 }} />
-            </Box>
-          )}
-        </Box>
+          {/* FEATURES */}
+          <Typography fontWeight="bold" mt={2}>
+            Features
+          </Typography>
 
-        <Button
-          variant="contained"
-          color="primary"
-          fullWidth
-          sx={{ mt: 3 }}
-          onClick={handleAddTherapist}
-          disabled={loading}
-        >
-          {loading ? 'Adding...' : 'Add Therapist'}
-        </Button>
+          <Stack spacing={2}>
+            <Stack direction="row" spacing={2}>
+              <TextField label="Age" value={data.features.age} onChange={(e) => handleFeatureChange("age", e.target.value)} />
+              <TextField label="Height" value={data.features.height} onChange={(e) => handleFeatureChange("height", e.target.value)} />
+              <TextField label="Weight" value={data.features.weight} onChange={(e) => handleFeatureChange("weight", e.target.value)} />
+            </Stack>
+
+            <TextField label="Gender" value={data.features.gender} onChange={(e) => handleFeatureChange("gender", e.target.value)} />
+            <TextField label="Ethnicity" value={data.features.ethnicity} onChange={(e) => handleFeatureChange("ethnicity", e.target.value)} />
+            <TextField label="Body Type" value={data.features.bodyType} onChange={(e) => handleFeatureChange("bodyType", e.target.value)} />
+            <TextField label="Bust Size" value={data.features.bustSize} onChange={(e) => handleFeatureChange("bustSize", e.target.value)} />
+            <TextField label="Hair Color" value={data.features.hairColor} onChange={(e) => handleFeatureChange("hairColor", e.target.value)} />
+            <TextField label="Skin Tone" value={data.features.skintone} onChange={(e) => handleFeatureChange("skintone", e.target.value)} />
+            <TextField label="Vaccinated" value={data.features.vaccinated} onChange={(e) => handleFeatureChange("vaccinated", e.target.value)} />
+            <TextField label="Smoker" value={data.features.smoker} onChange={(e) => handleFeatureChange("smoker", e.target.value)} />
+            <TextField label="Language" value={data.features.language} onChange={(e) => handleFeatureChange("language", e.target.value)} />
+          </Stack>
+
+          <Button variant="contained" disabled={loading} onClick={handleSubmit}>
+            {loading ? "Saving…" : "Add Therapist"}
+          </Button>
+        </Stack>
       </Paper>
 
-      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
-          {snackbar.message}
-        </Alert>
+      <Snackbar
+        open={!!snackbar}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar(null)}
+      >
+        <Alert severity="info">{snackbar}</Alert>
       </Snackbar>
     </Box>
   );

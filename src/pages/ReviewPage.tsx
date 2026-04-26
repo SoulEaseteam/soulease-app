@@ -1,156 +1,309 @@
 // src/pages/ReviewPage.tsx
-
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { doc, onSnapshot, collection, addDoc, getDocs, Timestamp, query, where } from 'firebase/firestore';
-import { db } from '../firebase';
-import { Therapist } from '../types/therapist';
-import { useAuth } from '../providers/AuthProvider';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
-  Box, Typography, Paper, TextField, Button, Stack, Avatar, Rating
-} from '@mui/material';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import CustomAppBar from '../components/CustomAppBar';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  doc,
+  onSnapshot,
+  Timestamp,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/providers/AuthProvider";
 
-dayjs.extend(relativeTime);
+import {
+  Box,
+  Typography,
+  Paper,
+  TextField,
+  Button,
+  Stack,
+  Avatar,
+  Rating,
+  IconButton,
+  CircularProgress,
+} from "@mui/material";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 
-interface Review {
-  id?: string;
-  therapistId: string;
-  userId: string;
-  rating: number;
-  comment: string;
-  createdAt: any;
-  userName?: string;
-}
+type TherapistLite = {
+  id: string;
+  name: string;
+  image?: string;
+  rating?: number;
+  reviews?: number;
+};
 
 const ReviewPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { therapistId } = useParams<{ therapistId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [rating, setRating] = useState<number | null>(5);
-  const [comment, setComment] = useState('');
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [therapist, setTherapist] = useState<Therapist | null>(null);
 
-  // ✅ โหลด therapist แบบ realtime
+  const [therapist, setTherapist] = useState<TherapistLite | null>(null);
+
+  const [rating, setRating] = useState<number | null>(5);
+  const [comment, setComment] = useState("");
+  const [canReview, setCanReview] = useState(false);
+  const [hasExistingReview, setHasExistingReview] = useState(false);
+
+  const [checking, setChecking] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  // 🔹 Load therapist info (realtime)
   useEffect(() => {
-    if (!id) return;
-    const unsub = onSnapshot(doc(db, 'therapists', id), (snap) => {
+    if (!therapistId) return;
+    const ref = doc(db, "therapists", therapistId);
+    const unsub = onSnapshot(ref, (snap) => {
       if (snap.exists()) {
-        setTherapist({ id: snap.id, ...snap.data() } as Therapist);
+        const data = snap.data() as any;
+        setTherapist({
+          id: snap.id,
+          name: data.name ?? "Unknown",
+          image:
+            data.image &&
+            (data.image.startsWith("http") || data.image.startsWith("/"))
+              ? data.image
+              : data.image
+              ? `/images/${data.image}`
+              : "/images/placeholder.jpg",
+          rating: data.rating ?? 5,
+          reviews: data.reviews ?? 0,
+        });
       } else {
         setTherapist(null);
       }
     });
     return () => unsub();
-  }, [id]);
+  }, [therapistId]);
 
+  // 🔹 Check if user is allowed to review
   useEffect(() => {
-    const fetchReviews = async () => {
-      const q = query(collection(db, 'reviews'), where('therapistId', '==', id));
-      const snapshot = await getDocs(q);
-      const data: Review[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
-      setReviews(data.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds));
-    };
-    fetchReviews();
-  }, [id]);
+    const checkEligibility = async () => {
+      if (!user || !therapistId) {
+        setCanReview(false);
+        setHasExistingReview(false);
+        setChecking(false);
+        return;
+      }
 
+      try {
+        // 1) มี booking ที่จบแล้วกับ therapist คนนี้ไหม
+        const bookingsRef = collection(db, "bookings");
+        const bookingQ = query(
+          bookingsRef,
+          where("userId", "==", user.uid),
+          where("therapistId", "==", therapistId),
+          where("status", "in", ["completed", "done"])
+        );
+        const bookingSnap = await getDocs(bookingQ);
+        const hasCompletedBooking = !bookingSnap.empty;
+
+        // 2) เคยเขียนรีวิว therapist คนนี้ไปแล้วรึยัง
+        const reviewsRef = collection(db, "reviews");
+        const reviewQ = query(
+          reviewsRef,
+          where("userId", "==", user.uid),
+          where("therapistId", "==", therapistId)
+        );
+        const reviewSnap = await getDocs(reviewQ);
+        const alreadyReviewed = !reviewSnap.empty;
+
+        setHasExistingReview(alreadyReviewed);
+        setCanReview(hasCompletedBooking && !alreadyReviewed);
+      } catch (e) {
+        console.error("Review eligibility error:", e);
+        setCanReview(false);
+      } finally {
+        setChecking(false);
+      }
+    };
+
+    checkEligibility();
+  }, [user, therapistId]);
+
+  // 🔹 Submit review
   const handleSubmit = async () => {
-    if (!rating || comment.trim() === '') {
-      alert('Please fill rating and review.');
+    if (!user) {
+      alert("Please log in before writing a review.");
+      return;
+    }
+    if (!therapistId) {
+      alert("Invalid therapist.");
+      return;
+    }
+    if (!canReview) {
+      alert("You are not allowed to review this therapist.");
+      return;
+    }
+    if (!rating || comment.trim() === "") {
+      alert("Please add a rating and a comment.");
       return;
     }
 
-    const newReview: Omit<Review, 'id'> = {
-      therapistId: id!,
-      userId: user?.uid!,
-      rating: rating,
-      comment: comment,
-      createdAt: Timestamp.now(),
-      userName: user?.email || 'Anonymous'
-    };
+    setSubmitting(true);
+    try {
+      await addDoc(collection(db, "reviews"), {
+        therapistId,
+        userId: user.uid,
+        rating,
+        comment: comment.trim(),
+        createdAt: Timestamp.now(),
+        userName: user.email || "Anonymous",
+        status: "pending", // ✅ รอ admin อนุมัติ
+      });
 
-    await addDoc(collection(db, 'reviews'), newReview);
-    alert('✅ Review submitted!');
-    navigate(`/review/${id}`);
+      alert("✅ Review submitted! Waiting for admin approval.");
+      setComment("");
+      setRating(5);
+      navigate(`/review/all/${therapistId}`);
+    } catch (e) {
+      console.error("Submit review error:", e);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  if (!therapist) {
-    return <Typography color="#ccc">Therapist not found.</Typography>;
-  }
+  const disabledMessage = (() => {
+    if (!user) return "🔒 Please login before writing a review.";
+    if (checking) return "";
+    if (hasExistingReview)
+      return "💬 You already wrote a review for this therapist.";
+    return "🔒 You must complete a booking before writing a review.";
+  })();
 
   return (
-    <Box sx={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #e0f7fa, #b2dfdb)', pb: 8 }}>
-      <CustomAppBar title="Rate & Review" />
+    <Box sx={{ minHeight: "100vh", bgcolor: "#f9f9f9" }}>
+      {/* 🔹 iPhone-style Header */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          height: 56,
+          px: 2,
+          borderBottom: "1px solid rgba(0,0,0,0.05)",
+          bgcolor: "white",
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+        }}
+      >
+        <IconButton onClick={() => navigate(-1)}>
+          <ArrowBackIosNewIcon fontSize="small" />
+        </IconButton>
+        <Typography sx={{ flex: 1, textAlign: "center", fontWeight: 600 }}>
+          Write Review
+        </Typography>
+        {/* spacer */}
+        <Box sx={{ width: 32 }} />
+      </Box>
 
-      <Box sx={{ maxWidth: 430, mx: 'auto', px: 2, mt: 4 }}>
-        <Paper sx={{
-          p: 3, borderRadius: 4, backgroundColor: 'rgba(255, 255, 255, 0.85)',
-          backdropFilter: 'blur(8px)', boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
-        }}>
+      <Box sx={{ maxWidth: 430, mx: "auto", p: 2 }}>
+        {/* Therapist info */}
+        {therapist ? (
           <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-            <Avatar src={`/images/${therapist.image}`} sx={{ width: 64, height: 64 }} />
+            <Avatar
+              src={therapist.image}
+              sx={{ width: 60, height: 60, borderRadius: "50%" }}
+            />
             <Box>
-              <Typography fontWeight="bold" fontSize={18} color="#00695c">
-                {therapist.name}
-              </Typography>
-              <Typography fontSize={14} color="#666">
-                ⭐ {therapist.rating} / {therapist.reviews} reviews
-              </Typography>
+              <Typography fontWeight="bold">{therapist.name}</Typography>
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <img
+                  src="/images/icon/star.png"
+                  alt="star"
+                  style={{ width: 16, height: 16 }}
+                />
+                <Typography fontSize={13} color="text.secondary">
+                  {(therapist.rating ?? 5).toFixed(1)} ({therapist.reviews ?? 0}
+                  )
+                </Typography>
+              </Stack>
             </Box>
           </Stack>
+        ) : (
+          <Box textAlign="center" mt={3} mb={3}>
+            {therapistId ? (
+              <Typography color="text.secondary" fontSize={14}>
+                Loading therapist...
+              </Typography>
+            ) : (
+              <Typography color="error" fontSize={14}>
+                Therapist not found.
+              </Typography>
+            )}
+          </Box>
+        )}
 
-          <Typography fontWeight="bold" mb={1} color="#004d40">Your Rating</Typography>
-          <Rating
-            name="rating"
-            value={rating}
-            onChange={(_e: any, newValue: React.SetStateAction<number | null>) => setRating(newValue)}
-            icon={<FavoriteIcon fontSize="inherit" color="error" />}
-            emptyIcon={<FavoriteBorderIcon fontSize="inherit" />}
-            size="large"
-          />
-
-          <TextField
-            label="Write your review"
-            multiline rows={4}
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            fullWidth sx={{ mt: 2 }}
-          />
-
-          <Button fullWidth onClick={handleSubmit} variant="contained"
+        {/* Loading state while checking permission */}
+        {checking ? (
+          <Box
             sx={{
-              mt: 3, py: 1.5, fontWeight: 'bold', fontSize: 16,
-              background: 'linear-gradient(to right, #00bfa5, #1de9b6)',
-              color: '#fff', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
-            }}>
-            Submit Review
-          </Button>
-        </Paper>
+              mt: 6,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <CircularProgress size={28} />
+            <Typography fontSize={13} color="text.secondary">
+              Checking your booking history...
+            </Typography>
+          </Box>
+        ) : canReview ? (
+          // ✅ Allowed to review
+          <Paper sx={{ p: 3, borderRadius: 3 }}>
+            <Typography fontWeight="bold" mb={1}>
+              Your Rating
+            </Typography>
+            <Rating
+              value={rating}
+              onChange={(_, v) => setRating(v)}
+              size="large"
+            />
 
-        <Box mt={4}>
-          <Typography fontWeight="bold" fontSize={16} mb={2}>⭐ All Reviews</Typography>
-          {reviews.length === 0 ? (
-            <Typography>No reviews yet</Typography>
-          ) : (
-            reviews.map((r) => (
-              <Paper key={r.id} sx={{ mb: 2, p: 2, borderRadius: 3, background: 'rgba(255,255,255,0.8)' }}>
-                <Stack direction="row" alignItems="center" mb={1}>
-                  <Typography fontWeight="bold" fontSize={14} mr={1}>{r.userName || 'User'}</Typography>
-                  <Rating value={r.rating} readOnly size="small" />
-                </Stack>
-                <Typography fontSize={14}>{r.comment}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {dayjs(r.createdAt?.toDate?.()).fromNow()}
-                </Typography>
-              </Paper>
-            ))
-          )}
-        </Box>
+            <TextField
+              label="Write your review"
+              multiline
+              rows={4}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              fullWidth
+              sx={{ mt: 2 }}
+            />
+
+            <Button
+              fullWidth
+              variant="contained"
+              sx={{ mt: 3, borderRadius: 3, py: 1.3 }}
+              onClick={handleSubmit}
+              disabled={submitting}
+            >
+              {submitting ? "Sending..." : "Submit Review"}
+            </Button>
+          </Paper>
+        ) : (
+          // ❌ Not allowed
+          <Paper sx={{ p: 3, borderRadius: 3, mt: 2 }}>
+            <Typography align="center" color="text.secondary" fontSize={14}>
+              {disabledMessage}
+            </Typography>
+            {user && hasExistingReview && (
+              <Typography
+                align="center"
+                color="text.secondary"
+                fontSize={13}
+                mt={1.5}
+              >
+                If you need to update or remove your review, please contact
+                support.
+              </Typography>
+            )}
+          </Paper>
+        )}
       </Box>
     </Box>
   );

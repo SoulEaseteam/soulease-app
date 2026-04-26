@@ -1,23 +1,22 @@
 // src/utils/lineNotify.ts
-export const sendLineNotify = async (message: string) => {
-  const token = 'YOUR_LINE_NOTIFY_TOKEN_HERE'; // 🔐 เปลี่ยนตรงนี้
-  const url = 'https://notify-api.line.me/api/notify';
-
+export const sendLineNotify = async (
+  message: string,
+  opts?: { imageThumbnail?: string; imageFullsize?: string }
+): Promise<boolean> => {
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: new URLSearchParams({ message })
+    const res = await fetch("/api/line-notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, ...opts }),
     });
-
     if (!res.ok) {
-      const errorText = await res.text();
-      console.error('Line Notify Error:', errorText);
+      const err = await res.json().catch(() => ({}));
+      console.error("Line Notify failed:", err);
+      return false;
     }
-  } catch (err) {
-    console.error('Network Error while sending Line Notify:', err);
+    return true;
+  } catch (e) {
+    console.error("Network error sending Line Notify:", e);
+    return false;
   }
 };

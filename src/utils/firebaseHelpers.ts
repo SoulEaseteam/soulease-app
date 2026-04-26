@@ -1,10 +1,8 @@
 // src/utils/firebaseHelpers.ts
-
-import { db, storage } from '@/firebase';
+import { db, storage } from "@/lib/firebase";
 import {
   doc,
   getDoc,
-  setDoc,
   collection,
   addDoc,
   updateDoc,
@@ -15,109 +13,128 @@ import {
   onSnapshot,
   orderBy,
   serverTimestamp,
-} from 'firebase/firestore';
+} from "firebase/firestore";
+import type { Therapist, Booking, User } from "@/types/firebaseSchemas";
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
-import {
-  Therapist,
-  Booking,
-  User,
-  Notification,
-} from '@/types/firebaseSchemas';
+/** ใช้ type ภายในไฟล์ เพื่อเลี่ยงการอ้างถึง Notification ที่ไม่มี export ใน schema ปัจจุบัน */
+type AppNotification = {
+  id?: string;
+  userId: string;
+  title: string;
+  message: string;
+  type?: "info" | "success" | "warning" | "error";
+  read?: boolean;
+  createdAt?: any;
+};
 
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-
-/**
- * Therapist Helpers
- */
+/* -------------------- Therapist Helpers -------------------- */
 export const getTherapistById = async (id: string): Promise<Therapist | null> => {
-  const ref = doc(db, 'therapists', id);
+  const ref = doc(db, "therapists", id);
   const snap = await getDoc(ref);
   return snap.exists() ? (snap.data() as Therapist) : null;
 };
 
 export const fetchAllTherapists = async (): Promise<Therapist[]> => {
-  const ref = collection(db, 'therapists');
+  const ref = collection(db, "therapists");
   const snap = await getDocs(ref);
-  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Therapist[];
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Therapist[];
 };
 
 export const deleteTherapistById = async (id: string) => {
-  const ref = doc(db, 'therapists', id);
-  await deleteDoc(ref);
+  await deleteDoc(doc(db, "therapists", id));
 };
 
-/**
- * Booking Helpers
- */
+/* -------------------- Booking Helpers -------------------- */
 export const createBooking = async (booking: Booking) => {
-  const ref = collection(db, 'bookings');
-  await addDoc(ref, {
-    ...booking,
-    createdAt: serverTimestamp(),
-  });
+  try {
+    const ref = collection(db, "bookings");
+    await addDoc(ref, {
+      ...booking,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (e) {
+    console.error("createBooking failed:", e);
+    throw e;
+  }
 };
 
 export const getBookingsByUserId = async (userId: string): Promise<Booking[]> => {
-  const ref = query(collection(db, 'bookings'), where('userId', '==', userId), orderBy('time', 'desc'));
-  const snap = await getDocs(ref);
-  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Booking[];
+  const qRef = query(
+    collection(db, "bookings"),
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc")
+  );
+  const snap = await getDocs(qRef);
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Booking[];
 };
 
 export const listenToBookingsByUserId = (
   userId: string,
   callback: (bookings: Booking[]) => void
 ) => {
-  const ref = query(collection(db, 'bookings'), where('userId', '==', userId), orderBy('time', 'desc'));
-  return onSnapshot(ref, (snap) => {
-    const bookings = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Booking[];
+  const qRef = query(
+    collection(db, "bookings"),
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc")
+  );
+  return onSnapshot(qRef, (snap) => {
+    const bookings = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Booking[];
     callback(bookings);
   });
 };
 
-export const updateBookingStatus = async (bookingId: string, status: Booking['status']) => {
-  const ref = doc(db, 'bookings', bookingId);
-  await updateDoc(ref, { status, updatedAt: serverTimestamp() });
+export const updateBookingStatus = async (bookingId: string, status: Booking["status"]) => {
+  await updateDoc(doc(db, "bookings", bookingId), {
+    status,
+    updatedAt: serverTimestamp(),
+  });
 };
 
-/**
- * User Helpers
- */
+/* -------------------- User Helpers -------------------- */
 export const getUserById = async (uid: string): Promise<User | null> => {
-  const ref = doc(db, 'users', uid);
+  const ref = doc(db, "users", uid);
   const snap = await getDoc(ref);
   return snap.exists() ? (snap.data() as User) : null;
 };
 
 export const updateUserFavorites = async (uid: string, therapistIds: string[]) => {
-  const ref = doc(db, 'users', uid);
-  await updateDoc(ref, { favoriteTherapists: therapistIds });
+  await updateDoc(doc(db, "users", uid), { favoriteTherapists: therapistIds, updatedAt: serverTimestamp() });
 };
 
-/**
- * Notification Helpers
- */
-export const sendNotification = async (notif: Omit<Notification, 'createdAt'>) => {
-  const ref = collection(db, 'notifications');
-  await addDoc(ref, {
-    ...notif,
-    createdAt: serverTimestamp(),
-  });
+/* -------------------- Notification Helpers -------------------- */
+export const sendNotification = async (notif: Omit<AppNotification, "id" | "createdAt">) => {
+  try {
+    await addDoc(collection(db, "notifications"), {
+      ...notif,
+      read: false,
+      createdAt: serverTimestamp(),
+    });
+  } catch (e) {
+    console.error("sendNotification failed:", e);
+    throw e;
+  }
 };
 
 export const listenToNotifications = (
   userId: string,
-  callback: (notifications: Notification[]) => void
+  callback: (notifications: AppNotification[]) => void
 ) => {
-  const ref = query(collection(db, 'notifications'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
-  return onSnapshot(ref, (snap) => {
-    const notifications = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Notification[];
+  const qRef = query(
+    collection(db, "notifications"),
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc")
+  );
+  return onSnapshot(qRef, (snap) => {
+    const notifications = snap.docs.map(
+      (d) => ({ id: d.id, ...(d.data() as any) }) as AppNotification
+    );
     callback(notifications);
   });
 };
 
-/**
- * Upload Helpers
- */
+/* -------------------- Upload Helpers -------------------- */
 export const uploadImage = async (file: File, path: string): Promise<string> => {
   const imageRef = storageRef(storage, path);
   await uploadBytes(imageRef, file);

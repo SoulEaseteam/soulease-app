@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+// src/pages/admin/AdminBookingListPage.tsx
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -15,15 +16,25 @@ import {
   CircularProgress,
   TableContainer,
   TextField,
-  useTheme,
+  Chip,
+  Stack,
 } from "@mui/material";
-import { db } from "@/firebase";
-import { collection, onSnapshot, updateDoc, doc, Timestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  onSnapshot,
+  updateDoc,
+  doc,
+  Timestamp,
+  query,
+  orderBy,
+} from "firebase/firestore";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import DoneAllIcon from "@mui/icons-material/DoneAll";
 import SaveIcon from "@mui/icons-material/Save";
+import DoneAllIcon from "@mui/icons-material/DoneAll";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { format } from "date-fns";
+import * as XLSX from "xlsx";
 
 interface Booking {
   id: string;
@@ -41,16 +52,32 @@ interface Booking {
   adminNote?: string;
 }
 
-const AdminBookingListPage: React.FC = () => {
-  const theme = useTheme(); // ✅ ใช้ theme เพื่อตรวจโหมดมืด/สว่าง
-  const isDark = theme.palette.mode === "dark";
+const statusColors: any = {
+  pending: "warning",
+  confirmed: "info",
+  completed: "success",
+  cancelled: "error",
+};
 
+const paymentColors: any = {
+  paid: "success",
+  unpaid: "default",
+};
+
+const AdminBookingListPage: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [noteEdits, setNoteEdits] = useState<{ [key: string]: string }>({});
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState("all");
+  const [search, setSearch] = useState("");
 
+  // ============================
+  // 🔥 1) LOAD REALTIME BOOKINGS
+  // ============================
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "bookings"), (snapshot) => {
+    const q = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -58,83 +85,130 @@ const AdminBookingListPage: React.FC = () => {
       setBookings(data);
       setLoading(false);
     });
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
-  const handleStatusChange = async (id: string, newStatus: string) => {
+  // ============================
+  // 🔍 2) ADVANCED FILTERING
+  // ============================
+  const filtered = useMemo(() => {
+    return bookings.filter((b) => {
+      const matchStatus = statusFilter === "all" || b.status === statusFilter;
+      const matchPayment =
+        paymentFilter === "all" ||
+        (paymentFilter === "paid" && b.paid) ||
+        (paymentFilter === "unpaid" && !b.paid);
+
+      const matchSearch = [
+        b.userName,
+        b.therapistName,
+        b.serviceName,
+        b.address,
+        b.placeDetail,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(search.toLowerCase());
+
+      return matchStatus && matchPayment && matchSearch;
+    });
+  }, [bookings, statusFilter, paymentFilter, search]);
+
+  // ============================
+  // 💾 UPDATE FUNCTIONS
+  // ============================
+  const updateStatus = async (id: string, newStatus: string) => {
     await updateDoc(doc(db, "bookings", id), { status: newStatus });
   };
 
-  const handleTogglePayment = async (id: string, current: boolean) => {
+  const togglePayment = async (id: string, current: boolean) => {
     await updateDoc(doc(db, "bookings", id), { paid: !current });
   };
 
-  const handleSaveNote = async (id: string) => {
+  const saveNote = async (id: string) => {
     const note = noteEdits[id] ?? "";
     await updateDoc(doc(db, "bookings", id), { adminNote: note });
   };
 
-  const handleExport = () => {
-    const header =
-      "ID,User,Therapist,Service,Date,Address,Detail,AdminNote,Status,Paid,ServicePrice,TaxiFee,TotalPrice\n";
+  // ============================
+  // 🧾 EXPORT XLSX
+  // ============================
+  const exportExcel = () => {
+    const rows = filtered.map((b) => ({
+      ID: b.id,
+      User: b.userName || "-",
+      Therapist: b.therapistName,
+      Service: b.serviceName,
+      Date: format(b.createdAt.toDate(), "yyyy-MM-dd HH:mm"),
+      Address: b.address || "",
+      Detail: b.placeDetail || "",
+      Status: b.status,
+      Payment: b.paid ? "Paid" : "Unpaid",
+      ServicePrice: b.servicePrice || 0,
+      TaxiFee: b.taxiFee || 0,
+      Total: b.totalPrice || 0,
+      Note: b.adminNote || "",
+    }));
 
-    const csv = bookings
-      .map((b) =>
-        [
-          b.id,
-          b.userName || "-",
-          b.therapistName,
-          b.serviceName,
-          format(b.createdAt.toDate(), "yyyy-MM-dd HH:mm"),
-          `"${b.address || ""}"`,
-          `"${b.placeDetail || ""}"`,
-          `"${b.adminNote || ""}"`,
-          b.status,
-          b.paid ? "Paid" : "Unpaid",
-          b.servicePrice ?? 0,
-          b.taxiFee ?? 0,
-          b.totalPrice ?? 0,
-        ].join(",")
-      )
-      .join("\n");
+    const sheet = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, sheet, "Bookings");
 
-    const blob = new Blob([header + csv], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `booking-report-${new Date().toISOString()}.csv`;
-    link.click();
+    XLSX.writeFile(wb, `booking-report-${Date.now()}.xlsx`);
   };
 
   return (
-    <Box p={3}>
-      <Typography variant="h5" fontWeight="bold" mb={2}>
+    <Box p={10}>
+      <Typography variant="h5" fontWeight="bold" mb={3}>
         📋 Booking Management
       </Typography>
 
-      <Button
-        startIcon={<FileDownloadIcon />}
-        onClick={handleExport}
-        sx={{ mb: 2 }}
-        variant="contained"
-      >
-        Export CSV
-      </Button>
+      {/* ===================== FILTER BAR ===================== */}
+      <Stack direction="row" spacing={2} mb={2} flexWrap="wrap">
+        <TextField
+          label="Search…"
+          size="small"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
 
+        <Select
+          size="small"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <MenuItem value="all">All Status</MenuItem>
+          <MenuItem value="pending">Pending</MenuItem>
+          <MenuItem value="confirmed">Confirmed</MenuItem>
+          <MenuItem value="completed">Completed</MenuItem>
+          <MenuItem value="cancelled">Cancelled</MenuItem>
+        </Select>
+
+        <Select
+          size="small"
+          value={paymentFilter}
+          onChange={(e) => setPaymentFilter(e.target.value)}
+        >
+          <MenuItem value="all">All Payments</MenuItem>
+          <MenuItem value="paid">Paid</MenuItem>
+          <MenuItem value="unpaid">Unpaid</MenuItem>
+        </Select>
+
+        <Button variant="contained" startIcon={<FileDownloadIcon />} onClick={exportExcel}>
+          Export XLSX
+        </Button>
+      </Stack>
+
+      {/* ===================== TABLE ===================== */}
       <Paper sx={{ borderRadius: 3, overflow: "hidden" }}>
         {loading ? (
           <Box textAlign="center" p={3}>
             <CircularProgress />
           </Box>
         ) : (
-          <TableContainer>
-            <Table>
-              {/* ✅ หัวตารางปรับตามธีม */}
-              <TableHead
-                sx={{
-                  backgroundColor: isDark ? "#111" : "#f5f5f5",
-                }}
-              >
+          <TableContainer sx={{ maxHeight: "75vh" }}>
+            <Table stickyHeader>
+              <TableHead>
                 <TableRow>
                   {[
                     "ID",
@@ -142,114 +216,93 @@ const AdminBookingListPage: React.FC = () => {
                     "Therapist",
                     "Service",
                     "Date",
-                    "Address",
-                    "Detail",
-                    "Note (Admin)",
                     "Status",
                     "Payment",
-                    "Service Price",
-                    "Taxi Fee",
-                    "Total Price",
-                  ].map((head) => (
-                    <TableCell
-                      key={head}
-                      sx={{
-                        color: isDark ? "#fff" : "#000",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {head}
+                    "Address",
+                    "Note",
+                    "Service",
+                    "Taxi",
+                    "Total",
+                    "Save",
+                  ].map((h) => (
+                    <TableCell key={h} sx={{ fontWeight: "bold" }}>
+                      {h}
                     </TableCell>
                   ))}
                 </TableRow>
               </TableHead>
 
               <TableBody>
-                {bookings.map((b, index) => {
-                  const rowDark = isDark ? index % 2 === 0 : index % 2 !== 0;
+                {filtered.map((b) => (
+                  <TableRow
+                    key={b.id}
+                    hover
+                    sx={{ "&:hover": { backgroundColor: "#fff6f6" } }}
+                  >
+                    <TableCell>{b.id.slice(0, 6)}...</TableCell>
+                    <TableCell>{b.userName || "-"}</TableCell>
+                    <TableCell>{b.therapistName}</TableCell>
+                    <TableCell>{b.serviceName}</TableCell>
 
-                  return (
-                    <TableRow
-                      key={b.id}
-                      sx={{
-                        backgroundColor: rowDark
-                          ? isDark
-                            ? "#222"
-                            : "#f9f9f9"
-                          : "transparent",
-                        "& td": { color: isDark ? "#fff" : "#000" },
-                      }}
-                    >
-                      <TableCell>{b.id.slice(0, 6)}...</TableCell>
-                      <TableCell>{b.userName || "-"}</TableCell>
-                      <TableCell>{b.therapistName}</TableCell>
-                      <TableCell>{b.serviceName}</TableCell>
-                      <TableCell>
-                        {format(b.createdAt.toDate(), "yyyy-MM-dd HH:mm")}
-                      </TableCell>
-                      <TableCell>{b.address || "-"}</TableCell>
-                      <TableCell>{b.placeDetail || "-"}</TableCell>
+                    <TableCell>
+                      {format(b.createdAt.toDate(), "yyyy-MM-dd HH:mm")}
+                    </TableCell>
 
-                      <TableCell>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <TextField
-                            size="small"
-                            variant="outlined"
-                            value={noteEdits[b.id] ?? b.adminNote ?? ""}
-                            onChange={(e) =>
-                              setNoteEdits((prev) => ({
-                                ...prev,
-                                [b.id]: e.target.value,
-                              }))
-                            }
-                            sx={{
-                              width: 140,
-                              "& .MuiOutlinedInput-input": {
-                                color: isDark ? "#fff" : "#000",
-                              },
-                            }}
-                          />
-                          <IconButton
-                            color="primary"
-                            onClick={() => handleSaveNote(b.id)}
-                          >
-                            <SaveIcon />
-                          </IconButton>
-                        </Box>
-                      </TableCell>
+                    <TableCell>
+                      <Chip
+                        size="small"
+                        label={b.status}
+                        color={statusColors[b.status]}
+                        sx={{ textTransform: "capitalize", fontWeight: "bold" }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const next =
+                            b.status === "pending"
+                              ? "confirmed"
+                              : b.status === "confirmed"
+                              ? "completed"
+                              : "pending";
+                          updateStatus(b.id, next);
+                        }}
+                      />
+                    </TableCell>
 
-                      <TableCell>
-                        <Select
-                          size="small"
-                          value={b.status}
-                          onChange={(e) => handleStatusChange(b.id, e.target.value)}
-                          sx={{
-                            color: isDark ? "#fff" : "#000",
-                            "& .MuiSelect-icon": { color: isDark ? "#fff" : "#000" },
-                          }}
-                        >
-                          <MenuItem value="pending">Pending</MenuItem>
-                          <MenuItem value="confirmed">Confirmed</MenuItem>
-                          <MenuItem value="completed">Completed</MenuItem>
-                          <MenuItem value="cancelled">Cancelled</MenuItem>
-                        </Select>
-                      </TableCell>
+                    <TableCell>
+                      <Chip
+                        size="small"
+                        label={b.paid ? "Paid" : "Unpaid"}
+                        color={paymentColors[b.paid ? "paid" : "unpaid"]}
+                        onClick={() => togglePayment(b.id, b.paid)}
+                      />
+                    </TableCell>
 
-                      <TableCell>
-                        <IconButton
-                          color={b.paid ? "success" : "default"}
-                          onClick={() => handleTogglePayment(b.id, b.paid)}
-                        >
-                          {b.paid ? <DoneAllIcon /> : <CheckCircleIcon />}
-                        </IconButton>
-                      </TableCell>
+                    <TableCell>{b.address || "-"}</TableCell>
 
-                      <TableCell>{b.servicePrice ?? 0}฿</TableCell>
-                      <TableCell>{b.taxiFee ?? 0}฿</TableCell>
-                      <TableCell>{b.totalPrice ?? 0}฿</TableCell>
-                    </TableRow>
-                  );
-                })}
+                    <TableCell>
+                      <TextField
+                        size="small"
+                        value={noteEdits[b.id] ?? b.adminNote ?? ""}
+                        onChange={(e) =>
+                          setNoteEdits((prev) => ({
+                            ...prev,
+                            [b.id]: e.target.value,
+                          }))
+                        }
+                        sx={{ width: 140 }}
+                      />
+                    </TableCell>
+
+                    <TableCell>{b.servicePrice || 0}฿</TableCell>
+                    <TableCell>{b.taxiFee || 0}฿</TableCell>
+                    <TableCell>{b.totalPrice || 0}฿</TableCell>
+
+                    <TableCell>
+                      <IconButton onClick={() => saveNote(b.id)} color="primary">
+                        <SaveIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </TableContainer>

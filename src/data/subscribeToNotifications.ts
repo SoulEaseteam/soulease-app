@@ -1,5 +1,5 @@
-import { collection, onSnapshot, query, where, orderBy, Query, DocumentData } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { collection, onSnapshot, query, where, orderBy, Query, type DocumentData } from 'firebase/firestore';
+import { db } from "@/lib/firebase";
 
 export interface Notification {
   id: string;

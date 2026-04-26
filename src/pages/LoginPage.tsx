@@ -12,87 +12,110 @@ import {
 } from "@mui/material";
 import { useNavigate, Link } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { auth, db } from "../firebase";
-import BottomNav from "../components/BottomNav";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+} from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 import "@fontsource/chonburi";
+import BottomNav from '../components/layouts/BottomNavGlass';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success" as "success" | "error",
   });
 
-  // ✅ ฟังก์ชันหาว่า User มี role อะไร
-  const getUserRole = async (email: string) => {
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, where("email", "==", email.toLowerCase().trim()));
-    const snapshot = await getDocs(q);
+  // =============================================================
+  // 🔥 ROLE CHECK: SunRed Role Logic (Admin > Therapist > User)
+  // =============================================================
+  const getUserRole = async (uid: string, email: string) => {
+    const lower = email.toLowerCase();
 
-    if (!snapshot.empty) {
-      const userData = snapshot.docs[0].data();
-      return userData.role || "customer";
+    // 1) Check Admin
+    const adminDoc = await getDoc(doc(db, "admins", uid));
+    if (adminDoc.exists()) return "admin";
+
+    // 2) Check Therapist by email
+    const tQ = query(
+      collection(db, "therapists"),
+      where("email", "==", lower)
+    );
+    const tSnap = await getDocs(tQ);
+    if (!tSnap.empty) return "therapist";
+
+    // 3) Check Users
+    const uDoc = await getDoc(doc(db, "users", uid));
+    if (uDoc.exists()) {
+      return uDoc.data().role || "customer";
     }
+
     return "customer";
   };
 
- const handleLogin = async () => {
-  if (!email || !password) {
-    setSnackbar({
-      open: true,
-      message: "❌ Please enter email and password",
-      severity: "error",
-    });
-    return;
-  }
+  // =============================================================
+  // 🔥 HANDLE LOGIN
+  // =============================================================
+  const handleLogin = async () => {
+    if (!email || !password) {
+      return setSnackbar({
+        open: true,
+        message: "❌ Please enter email and password",
+        severity: "error",
+      });
+    }
 
-  setLoading(true);
-  try {
-    // ✅ Firebase Auth
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const userEmail = userCredential.user.email ?? "";
+    setLoading(true);
 
-    // ✅ อ่าน role จาก Firestore (collection users)
-    const role = await getUserRole(userEmail);
+    try {
+      const userCred = await signInWithEmailAndPassword(auth, email, password);
+      const uid = userCred.user.uid;
+      const userEmail = userCred.user.email ?? "";
 
-    setSnackbar({
-      open: true,
-      message: "🎉 Login successful!",
-      severity: "success",
-    });
+      const role = await getUserRole(uid, userEmail);
 
-    // ✅ Navigate ตาม role
-    setTimeout(() => {
-      if (role === "admin") {
-        navigate("/admin");
-      } else if (role === "therapist") {
-        navigate("/therapist/profile");
-      } else {
-        navigate("/profile"); // ผู้ใช้ทั่วไป
-      }
-    }, 800);
-  } catch (err: any) {
-    setSnackbar({
-      open: true,
-      message: `❌ Login failed: ${err.message}`,
-      severity: "error",
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+      setSnackbar({
+        open: true,
+        message: "🎉 Login successful!",
+        severity: "success",
+      });
 
+      setTimeout(() => {
+        if (role === "admin") return navigate("/admin/dashboard");
+        if (role === "therapist") return navigate("/therapist/profile");
+        return navigate("/profile");
+      }, 300);
+    } catch (err: any) {
+      setSnackbar({
+        open: true,
+        message: `❌ Login failed: ${err.message}`,
+        severity: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // =============================================================
+  // UI
+  // =============================================================
   return (
     <>
       <Box
         sx={{
           minHeight: "100vh",
-          background: "#1c2a3a",
+          background: "linear-gradient(to bottom, #FE0944, #FEAE96)",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
@@ -101,144 +124,125 @@ const LoginPage: React.FC = () => {
         }}
       >
         <Paper
-          elevation={16}
+          elevation={10}
           sx={{
             width: "100%",
-            maxWidth: 360,
+            maxWidth: 320,
             textAlign: "center",
             p: 4,
-            borderRadius: 4,
-            background: "linear-gradient(to bottom, #fff, #f8f8f8)",
-            color: "#2b3b53",
+            borderRadius: 6,
+            background: "rgba(255,255,255,0.95)",
+            backdropFilter: "blur(12px)",
+            color: "#3a3420", 
+            boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
           }}
         >
-          {/* 🔹 โลโก้ */}
-          <Box sx={{ textAlign: "center", mt: -16 }}>
-            <Box sx={{ display: "inline-block", p: 1, borderRadius: "50%", bgcolor: "#fff" }}>
-              <Box sx={{ display: "inline-block", p: 1.2, borderRadius: "50%", bgcolor: "#2b3b53" }}>
-                <Box
-                  component="img"
-                  src="/images/icon/support-service.png"
-                  alt="User Icon"
-                  sx={{
-                    width: 150,
-                    height: 150,
-                    borderRadius: "50%",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-                  }}
-                />
-              </Box>
-            </Box>
+          {/* Avatar */}
+          <Box sx={{ textAlign: "center", mt: -12 }}>
+            <Box
+              component="img"
+              src="/images/icon/User.gif"
+              alt="User Icon"
+              sx={{
+                width: 120,
+                height: 120,
+                borderRadius: "50%",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+              }}
+            />
           </Box>
 
+          {/* Title */}
           <Typography
             variant="h6"
             fontWeight="bold"
-            mt={4}
+            mt={3}
             mb={4}
-            sx={{ fontFamily: "Chonburi, serif", fontSize: "2rem" }}
+            sx={{
+              fontFamily: "Chonburi, serif",
+              fontSize: "2rem",
+              color: "#FE0944",
+            }}
           >
             Login
           </Typography>
 
-          {/* 🔹 Email */}
+          {/* Inputs */}
           <TextField
             placeholder="Email"
-            type="email"
+            fullWidth
+            size="small"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            variant="outlined"
-            size="small"
-            fullWidth
             sx={{
               mb: 2,
-              input: { color: "#999" },
               "& .MuiOutlinedInput-root": {
                 borderRadius: "16px",
-                "& fieldset": { borderColor: "#a4b0ba" },
-                "&:hover fieldset": { borderColor: "#7b8b99" },
-                "&.Mui-focused fieldset": { borderColor: "#2b3b53" },
               },
             }}
           />
 
-          {/* 🔹 Password */}
           <TextField
             placeholder="Password"
             type="password"
+            fullWidth
+            size="small"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            size="small"
-            fullWidth
             sx={{
               mb: 2,
-              input: { color: "#999" },
               "& .MuiOutlinedInput-root": {
                 borderRadius: "16px",
-                "& fieldset": { borderColor: "#a4b0ba" },
-                "&:hover fieldset": { borderColor: "#7b8b99" },
-                "&.Mui-focused fieldset": { borderColor: "#2b3b53" },
               },
             }}
           />
 
-          {/* 🔹 ปุ่ม Login */}
+          {/* LOGIN BUTTON */}
           <Button
-            onClick={handleLogin}
-            disabled={loading}
             fullWidth
-            variant="contained"
             sx={{
               mt: 1,
               py: 1.2,
-              px: 5,
               fontWeight: "bold",
-              fontSize: 14,
               borderRadius: "20px",
+              background: "#FE0944",
               color: "#fff",
-              textTransform: "uppercase",
-              maxWidth: 150,
-              backgroundColor: "#2b3b53",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-              "&:hover": { backgroundColor: "#7b8b99", transform: "scale(1.02)" },
-              transition: "0.2s ease-in-out",
+              "&:hover": { background: "#FEAE96" },
             }}
+            onClick={handleLogin}
+            disabled={loading}
           >
-            {loading ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "LOGIN"}
+            {loading ? (
+              <CircularProgress size={22} sx={{ color: "#fff" }} />
+            ) : (
+              "LOGIN"
+            )}
           </Button>
 
+          {/* Register */}
           <Typography mt={3} fontSize={14}>
-            Don&apos;t have an account?{" "}
-            <Link to="/register" style={{ color: "#1976d2", textDecoration: "underline" }}>
+            Don't have an account?{" "}
+            <Link to="/register" style={{ color: "#FE0944", fontWeight: "bold" }}>
               Sign up
             </Link>
           </Typography>
         </Paper>
-
-        <Typography mt={3} color="#ccc" fontSize={14}>
-          You can proceed to book without an account.
-        </Typography>
+        <Typography mt={4} fontSize={14} color="#fff" textAlign="center">
+                  You may proceed with booking without an account.
+                </Typography>
       </Box>
-
       <BottomNav />
-
-      {/* 🔹 Snackbar */}
+      {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+        autoHideDuration={2500}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert
-          severity={snackbar.severity}
-          onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-          sx={{ width: "100%" }}
-        >
-          {snackbar.message}
-        </Alert>
+        <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
       </Snackbar>
     </>
   );
 };
 
-export default LoginPage;
+export default LoginPage; 

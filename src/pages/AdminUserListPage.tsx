@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDocs, collection, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '@/lib/firebase';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import BlockIcon from '@mui/icons-material/Block';

@@ -6,22 +6,22 @@ import {
   CircularProgress,
   Typography,
   useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from "@mui/material";
-import {
-  DataGrid,
-  GridColDef,
-  GridRenderCellParams,
-  GridValueGetter,
-} from "@mui/x-data-grid";
-import { db } from "@/firebase";
+import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { db } from "@/lib/firebase";
 import {
   collection,
-  getDocs,
   updateDoc,
   doc,
-  getDoc,
   orderBy,
   query,
+  onSnapshot,
+  getDocs,
 } from "firebase/firestore";
 import dayjs from "dayjs";
 
@@ -40,48 +40,43 @@ const AdminReviewListPage: React.FC = () => {
   const theme = useTheme();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editDialog, setEditDialog] = useState(false);
+  const [editReviewId, setEditReviewId] = useState<string | null>(null);
+  const [editedComment, setEditedComment] = useState("");
 
-  const fetchReviews = async () => {
-    try {
-      const q = query(collection(db, "reviews"), orderBy("createdAt", "desc"));
-      const snap = await getDocs(q);
+  // 🧠 Load reviews + therapist name
+  useEffect(() => {
+    const q = query(collection(db, "reviews"), orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(q, async (snap) => {
+      try {
+        const therapistSnap = await getDocs(collection(db, "therapists"));
+        const therapistMap: Record<string, string> = {};
+        therapistSnap.docs.forEach((t) => {
+          therapistMap[t.id] = t.data().name || "Unknown";
+        });
 
-      const list: Review[] = await Promise.all(
-        snap.docs.map(async (docSnap) => {
+        const list: Review[] = snap.docs.map((docSnap) => {
           const data = docSnap.data();
-          let therapistName = "Unknown";
-
-          if (data.therapistId) {
-            try {
-              const tSnap = await getDoc(doc(db, "therapists", data.therapistId));
-              if (tSnap.exists()) {
-                therapistName = tSnap.data().name || therapistName;
-              }
-            } catch {}
-          }
-
           return {
             id: docSnap.id,
             therapistId: data.therapistId || "",
-            therapistName,
+            therapistName: therapistMap[data.therapistId] || "Unknown",
             comment: data.comment || "",
             rating: data.rating || 0,
             createdAt: data.createdAt || null,
             status: data.status || "pending",
           };
-        })
-      );
+        });
 
-      setReviews(list);
-    } catch (err) {
-      console.error("Error fetching reviews:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setReviews(list);
+      } catch (err) {
+        console.error("Error fetching reviews:", err);
+      } finally {
+        setLoading(false);
+      }
+    });
 
-  useEffect(() => {
-    fetchReviews();
+    return () => unsub();
   }, []);
 
   const handleUpdateStatus = async (
@@ -90,11 +85,28 @@ const AdminReviewListPage: React.FC = () => {
   ) => {
     try {
       await updateDoc(doc(db, "reviews", id), { status });
-      setReviews((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, status } : r))
-      );
     } catch (err) {
-      console.error("Error updating review:", err);
+      console.error("Error updating status:", err);
+    }
+  };
+
+  const handleEditReview = (review: Review) => {
+    setEditReviewId(review.id);
+    setEditedComment(review.comment);
+    setEditDialog(true);
+  };
+
+  const handleSaveComment = async () => {
+    if (!editReviewId) return;
+    try {
+      await updateDoc(doc(db, "reviews", editReviewId), {
+        comment: editedComment,
+      });
+      setEditDialog(false);
+      setEditReviewId(null);
+      setEditedComment("");
+    } catch (err) {
+      console.error("Error saving comment:", err);
     }
   };
 
@@ -106,9 +118,9 @@ const AdminReviewListPage: React.FC = () => {
       field: "createdAt",
       headerName: "Date",
       width: 180,
-      valueGetter: (params: GridValueGetter<Review>) => {
+      valueGetter: (_value: any, row: any) => {
         try {
-          const raw = params.row.createdAt;
+          const raw = row.createdAt;
           if (!raw) return "-";
           const date =
             raw?.toDate?.() || (raw?.seconds && new Date(raw.seconds * 1000));
@@ -122,7 +134,7 @@ const AdminReviewListPage: React.FC = () => {
       field: "status",
       headerName: "Status",
       width: 150,
-      renderCell: (params: GridRenderCellParams<Review, Review["status"]>) => {
+      renderCell: (params: any) => {
         const color =
           params.value === "approved"
             ? "success"
@@ -135,8 +147,8 @@ const AdminReviewListPage: React.FC = () => {
     {
       field: "actions",
       headerName: "Actions",
-      width: 220,
-      renderCell: (params: GridRenderCellParams<Review>) => (
+      width: 250,
+      renderCell: (params: any) => (
         <Box display="flex" gap={1}>
           <Button
             size="small"
@@ -155,6 +167,13 @@ const AdminReviewListPage: React.FC = () => {
             onClick={() => handleUpdateStatus(params.row.id, "rejected")}
           >
             Reject
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => handleEditReview(params.row)}
+          >
+            Edit
           </Button>
         </Box>
       ),
@@ -210,6 +229,26 @@ const AdminReviewListPage: React.FC = () => {
           />
         </Box>
       )}
+
+      {/* ✏️ Edit Dialog */}
+      <Dialog open={editDialog} onClose={() => setEditDialog(false)} fullWidth>
+        <DialogTitle>Edit Review Comment</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            value={editedComment}
+            onChange={(e) => setEditedComment(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialog(false)}>Cancel</Button>
+          <Button onClick={handleSaveComment} variant="contained">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

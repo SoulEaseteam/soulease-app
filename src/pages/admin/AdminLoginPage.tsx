@@ -1,44 +1,188 @@
-// ✅ src/pages/admin/AdminLoginPage.tsx
-import React, { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, db } from '@/firebase';
-import { collection, getDocs } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom';
+// src/pages/admin/AdminLoginPage.tsx
+import React, { useState } from "react";
+
 import {
-  Box, Button, TextField, Typography, Paper, Stack
-} from '@mui/material';
+  Box,
+  Paper,
+  TextField,
+  Typography,
+  Button,
+  Stack,
+  CircularProgress,
+  Snackbar,
+  Alert,
+} from "@mui/material";
+
+import {
+  signInWithEmailAndPassword,
+  setPersistence,
+  browserLocalPersistence,
+} from "firebase/auth";
+
+import { auth, db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { useNavigate } from "react-router-dom";
 
 const AdminLoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const [toast, setToast] = useState({
+    open: false,
+    message: "",
+    severity: "error" as "error" | "success",
+  });
+
   const navigate = useNavigate();
 
+  // -------------------------------------------------------------
+  // LOGIN HANDLER
+  // -------------------------------------------------------------
   const handleLogin = async () => {
+    if (!email || !password) {
+      return setToast({
+        open: true,
+        message: "⚠️ Please fill all fields.",
+        severity: "error",
+      });
+    }
+
+    setLoading(true);
+
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const snapshot = await getDocs(collection(db, 'admins'));
-      const isAdmin = snapshot.docs.some(doc => doc.data().email === email);
+      // stay logged in
+      await setPersistence(auth, browserLocalPersistence);
 
-      if (!isAdmin) throw new Error('You are not an admin');
+      const userCred = await signInWithEmailAndPassword(auth, email, password);
+      const uid = userCred.user.uid;
 
-      navigate('/admin/dashboard');
+      // check admin role
+      const adminRef = doc(db, "admins", uid);
+      const adminDoc = await getDoc(adminRef);
+
+      if (!adminDoc.exists()) {
+        throw new Error("not_admin");
+      }
+
+      setToast({
+        open: true,
+        message: "🎉 Welcome Admin!",
+        severity: "success",
+      });
+
+      setTimeout(() => navigate("/admin/dashboard"), 500); // redirect
+
     } catch (err: any) {
-      setError(err.message);
+      let msg = "Login failed.";
+
+      if (err.code === "auth/user-not-found") msg = "❌ User not found.";
+      if (err.code === "auth/wrong-password") msg = "❌ Wrong password.";
+      if (err.code === "auth/invalid-email") msg = "❌ Invalid email format.";
+      if (err.message === "not_admin") msg = "⚠️ This account is not an admin.";
+
+      setToast({ open: true, message: msg, severity: "error" });
+    } finally {
+      setLoading(false);
     }
   };
 
+  // -------------------------------------------------------------
+  // UI
+  // -------------------------------------------------------------
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <Paper sx={{ p: 4, width: 400 }}>
-        <Typography variant="h6" gutterBottom>🔐 Admin Login</Typography>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "linear-gradient(180deg, #FE0944, #FE7E6D)",
+        px: 2,
+      }}
+    >
+      <Paper
+        elevation={8}
+        sx={{
+          width: "100%",
+          maxWidth: 380,
+          borderRadius: 4,
+          p: 4,
+          textAlign: "center",
+          background: "rgba(255,255,255,0.9)",
+          backdropFilter: "blur(12px)",
+        }}
+      >
+        <Box sx={{ mb: 2 }}>
+          <img
+            src="/images/icon/admin.png"
+            alt="Admin Icon"
+            style={{ width: 90, height: 90 }}
+          />
+        </Box>
+
+        <Typography
+          variant="h5"
+          fontWeight="bold"
+          mb={3}
+          sx={{ color: "#FE0944" }}
+        >
+          Admin Login
+        </Typography>
+
         <Stack spacing={2}>
-          <TextField label="Email" fullWidth value={email} onChange={(e) => setEmail(e.target.value)} />
-          <TextField label="Password" type="password" fullWidth value={password} onChange={(e) => setPassword(e.target.value)} />
-          {error && <Typography color="error">{error}</Typography>}
-          <Button variant="contained" onClick={handleLogin}>Login</Button>
+          <TextField
+            label="Email"
+            fullWidth
+            size="small"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+          />
+
+          <TextField
+            label="Password"
+            type="password"
+            fullWidth
+            size="small"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+          />
+
+          <Button
+            variant="contained"
+            fullWidth
+            sx={{
+              mt: 1,
+              py: 1.2,
+              fontWeight: "bold",
+              borderRadius: 2,
+              background: "#FE0944",
+              "&:hover": { background: "#FE7144" },
+            }}
+            disabled={loading}
+            onClick={handleLogin}
+          >
+            {loading ? (
+              <CircularProgress size={24} sx={{ color: "#fff" }} />
+            ) : (
+              "Login"
+            )}
+          </Button>
         </Stack>
       </Paper>
+
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={2500}
+        onClose={() => setToast({ ...toast, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert severity={toast.severity} variant="filled">
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

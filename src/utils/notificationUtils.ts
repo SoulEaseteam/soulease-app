@@ -1,59 +1,45 @@
 // src/utils/notificationUtils.ts
+import { sendNotification } from "@/types/services/notificationService";
 
-import { sendNotification } from '@/services/notificationService';
-
-export const sendNotificationOnBooking = async ({
-  therapistId,
-  userId,
-  bookingId,
-  therapistName,
-}: {
+export const sendNotificationOnBooking = async (p: {
   therapistId: string;
   userId: string;
   bookingId: string;
   therapistName: string;
 }) => {
   await sendNotification({
-    userId: therapistId,
-    type: 'booking',
-    message: `คุณมีการจองใหม่กับ ${therapistName}`,
+    userId: p.therapistId,
+    type: "booking",
+    message: `You have a new booking with ${p.therapistName}`,
     link: `/therapist/profile`,
-    meta: { bookingId, from: userId },
+    meta: { bookingId: p.bookingId, from: p.userId },
   });
 };
 
-export const sendNotificationOnPayment = async ({
-  therapistId,
-  userId,
-  bookingId,
-}: {
+export const sendNotificationOnPayment = async (p: {
   therapistId: string;
   userId: string;
   bookingId: string;
 }) => {
   await sendNotification({
-    userId: therapistId,
-    type: 'payment',
-    message: `ลูกค้าได้ชำระเงินเรียบร้อยแล้ว`,
+    userId: p.therapistId,
+    type: "payment",
+    message: `Customer payment is completed.`,
     link: `/therapist/profile`,
-    meta: { bookingId, from: userId },
+    meta: { bookingId: p.bookingId, from: p.userId },
   });
 };
 
-export const sendNotificationOnReview = async ({
-  therapistId,
-  userId,
-  bookingId,
-}: {
+export const sendNotificationOnReview = async (p: {
   therapistId: string;
   userId: string;
   bookingId: string;
 }) => {
   await sendNotification({
-    userId: therapistId,
-    type: 'review',
-    message: `คุณได้รับรีวิวใหม่จากลูกค้า`,
-    link: `/review/${therapistId}`,
-    meta: { bookingId, from: userId },
+    userId: p.therapistId,
+    type: "review",
+    message: `You received a new review.`,
+    link: `/review/${p.therapistId}`,
+    meta: { bookingId: p.bookingId, from: p.userId },
   });
 };

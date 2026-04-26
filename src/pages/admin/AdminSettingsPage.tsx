@@ -18,7 +18,7 @@ import {
   Stack,
 } from "@mui/material";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db, auth } from "@/firebase";
+import { db, auth } from '@/lib/firebase';
 import {
   updatePassword,
   reauthenticateWithCredential,

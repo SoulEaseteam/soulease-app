@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Button, Avatar, Stack, Typography } from '@mui/material';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { storage, db } from '../firebase';
+import { storage, db } from '@/lib/firebase';
 import { useAuth } from '@/providers/AuthProvider';
 import { doc, updateDoc } from 'firebase/firestore';
 

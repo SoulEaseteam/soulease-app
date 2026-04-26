@@ -22,7 +22,7 @@ import {
   where,
   Timestamp,
 } from "firebase/firestore";
-import { db } from "@/firebase";
+import { db } from "@/lib/firebase";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 

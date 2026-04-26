@@ -8,7 +8,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import RoomIcon from "@mui/icons-material/Room";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
-import { db } from "@/firebase";
+import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 
 const LocationPage: React.FC = () => {

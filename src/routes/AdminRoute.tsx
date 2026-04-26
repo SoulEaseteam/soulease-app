@@ -1,43 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import { CircularProgress, Box, Typography } from '@mui/material';
+import React from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "@/providers/AuthProvider";
 
-const AdminRoute: React.FC = () => {
-  const [user, loading] = useAuthState(auth);
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, role, loading } = useAuth();
 
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (user) {
-        try {
-          const adminDocRef = doc(db, 'admins', user.uid);
-          const adminDocSnap = await getDoc(adminDocRef);
-          setIsAdmin(adminDocSnap.exists());
-        } catch (error) {
-          console.error('Error checking admin status:', error);
-          setIsAdmin(false); // fallback: treat as unauthorized
-        }
-      } else {
-        setIsAdmin(false); // not logged in
-      }
-    };
+  if (loading) return null;
+  if (!user) return <Navigate to="/admin/login" replace />;
+  if (role !== "admin") return <Navigate to="/unauthorized" replace />;
 
-    checkAdminStatus();
-  }, [user]);
-
-  if (loading || isAdmin === null) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-        <CircularProgress />
-        <Typography ml={2}>Checking access...</Typography>
-      </Box>
-    );
-  }
-
-  return isAdmin ? <Outlet /> : <Navigate to="/unauthorized" replace />;
+  return <>{children}</>;
 };
 
 export default AdminRoute;

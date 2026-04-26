@@ -1,63 +1,31 @@
-import React, { useEffect, useState } from "react";
-import { Navigate, Outlet } from "react-router-dom";
-import { useAuthState } from "react-firebase-hooks/auth";
-import { auth, db } from "@/firebase";
-import { doc, getDoc } from "firebase/firestore";
-import { CircularProgress, Box, Typography } from "@mui/material";
+// ===============================================
+// src/routes/PrivateRoute.tsx
+// ===============================================
+
+import React from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "@/providers/AuthProvider";
 
 interface PrivateRouteProps {
-  allowedRoles: string[];
+  children: React.ReactNode;
+  requiredRoles?: string[];
 }
 
-const PrivateRoute: React.FC<PrivateRouteProps> = ({ allowedRoles }) => {
-  const [user, loading] = useAuthState(auth);
-  const [role, setRole] = useState<string | null>(null);
+const PrivateRoute = ({ children, requiredRoles = [] }: PrivateRouteProps) => {
+  const { user, role, loading } = useAuth();
 
-  useEffect(() => {
-    const checkRole = async () => {
-      if (user) {
-        try {
-          const therapistRef = doc(db, "therapists", user.uid);
-          const therapistSnap = await getDoc(therapistRef);
-          if (therapistSnap.exists()) {
-            setRole("therapist");
-            return;
-          }
+  // ยังโหลด user / role อยู่ → ห้าม render เดี๋ยวจอขาว
+  if (loading) return null;
 
-          const adminRef = doc(db, "admins", user.uid);
-          const adminSnap = await getDoc(adminRef);
-          if (adminSnap.exists()) {
-            setRole("admin");
-            return;
-          }
+  // ไม่ได้ login → เด้งกลับ Login
+  if (!user) return <Navigate to="/login" replace />;
 
-          setRole("user");
-        } catch (error) {
-          console.error("Error checking role:", error);
-          setRole("user");
-        }
-      } else {
-        setRole(null);
-      }
-    };
-
-    checkRole();
-  }, [user]);
-
-  if (loading || role === null) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-        <CircularProgress />
-        <Typography ml={2}>Checking access...</Typography>
-      </Box>
-    );
+  // ถ้าหน้าต้องการ role เฉพาะ เช่น admin
+  if (requiredRoles.length > 0 && !requiredRoles.includes(role || "")) {
+    return <Navigate to="/unauthorized" replace />;
   }
 
-  return allowedRoles.includes(role || "") ? (
-    <Outlet />
-  ) : (
-    <Navigate to="/unauthorized" replace />
-  );
+  return <>{children}</>;
 };
 
 export default PrivateRoute;
