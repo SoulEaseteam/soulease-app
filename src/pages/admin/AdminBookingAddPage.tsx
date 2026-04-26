@@ -20,6 +20,7 @@ import dayjs, { Dayjs } from "dayjs";
 import {
   collection,
   getDocs,
+  onSnapshot,
   addDoc,
   Timestamp,
 } from "firebase/firestore";
@@ -76,10 +77,9 @@ const AdminBookingAddPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<any>({});
 
-  // load therapists
+  // Real-time subscribe to therapists — new therapists appear without page refresh
   useEffect(() => {
-    const fetchTherapists = async () => {
-      const snap = await getDocs(collection(db, "therapists"));
+    const unsub = onSnapshot(collection(db, "therapists"), (snap) => {
       const list: TherapistOption[] = snap.docs.map((d) => {
         const data = d.data() as any;
         return {
@@ -89,8 +89,8 @@ const AdminBookingAddPage: React.FC = () => {
         };
       });
       setTherapists(list);
-    };
-    fetchTherapists();
+    });
+    return () => unsub();
   }, []);
 
   const selectedService = useMemo(

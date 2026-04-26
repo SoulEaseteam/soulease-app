@@ -125,6 +125,18 @@ const AdminBlockedDevicesPage = React.lazy(
 const AdminUsersPage = React.lazy(
   () => import("@/pages/admin/AdminUsersPage")
 );
+const AdminManageAdminsPage = React.lazy(
+  () => import("@/pages/admin/AdminManageAdminsPage")
+);
+const AdminNotificationsPage = React.lazy(
+  () => import("@/pages/admin/AdminNotificationsPage")
+);
+const AdminSettingsPage = React.lazy(
+  () => import("@/pages/admin/AdminSettingsPage")
+);
+const AdminAddAdminPage = React.lazy(
+  () => import("@/pages/admin/AdminAddAdminPage")
+);
 const AdminPagesListPage = React.lazy(
   () => import("@/pages/admin/AdminPagesListPage")
 );
@@ -240,6 +252,12 @@ export default function App() {
           <Route path="holiday" element={<AdminTherapistHolidayPage />} />
           <Route path="status" element={<AdminTherapistHolidayPage />} />
           <Route path="add-therapist" element={<AddTherapistPage />} />
+          {/* Admin self-management */}
+          <Route path="manage-admins" element={<AdminManageAdminsPage />} />
+          <Route path="add-admin" element={<AdminAddAdminPage />} />
+          {/* Notifications + general settings */}
+          <Route path="notifications" element={<AdminNotificationsPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
           <Route
             path="edit-therapist/:id"
             element={<EditTherapistPage />}
