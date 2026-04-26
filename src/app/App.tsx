@@ -92,6 +92,9 @@ const AdminTherapistsPage = React.lazy(
 const AdminTherapistDetailPage = React.lazy(
   () => import("@/pages/admin/AdminTherapistDetailPage")
 );
+const AdminTherapistHolidayPage = React.lazy(
+  () => import("@/pages/admin/AdminTherapistHolidayPage")
+);
 const AdminUserDetailPage = React.lazy(
   () => import("@/pages/admin/AdminUserDetailPage")
 );
@@ -233,6 +236,9 @@ export default function App() {
             path="therapists/:id"
             element={<AdminTherapistDetailPage />}
           />
+          {/* Holiday/availability toggle — owner & admin can change therapist status */}
+          <Route path="holiday" element={<AdminTherapistHolidayPage />} />
+          <Route path="status" element={<AdminTherapistHolidayPage />} />
           <Route path="add-therapist" element={<AddTherapistPage />} />
           <Route
             path="edit-therapist/:id"

@@ -46,6 +46,7 @@ import {
 } from "recharts";
 
 import { ExportToExcel, ExportToPDF } from "@/utils/exportTools";
+import QuickStatusToggle from "@/components/admin/QuickStatusToggle";
 
 // ---------- helpers ----------
 type FBTS =
@@ -305,6 +306,11 @@ const AdminDashboardPage: React.FC = () => {
       <Typography variant="h4" gutterBottom fontWeight="bold">
         📊 Admin Dashboard
       </Typography>
+
+      {/* 🔴 Quick status toggle — เปิดปิด availability ของพนักงาน real-time */}
+      <Box sx={{ mb: 3 }}>
+        <QuickStatusToggle />
+      </Box>
 
       {/* Filters */}
       <Paper sx={{ p: 2, mb: 2 }}>
