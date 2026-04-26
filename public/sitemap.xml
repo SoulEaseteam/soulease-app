@@ -2,40 +2,79 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
-  <!-- หน้าแรก -->
+  <!-- ============ HOME ============ -->
   <url>
     <loc>https://sunred.vip/</loc>
-    <lastmod>2025-09-04</lastmod>
+    <lastmod>2026-04-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/?lang=en"/>
     <xhtml:link rel="alternate" hreflang="th" href="https://sunred.vip/?lang=th"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/?lang=zh"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/?lang=ja"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/?lang=ko"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://sunred.vip/?lang=ru"/>
   </url>
 
-  <!-- รายชื่อนักบำบัด -->
+  <!-- ============ SERVICE LANDING PAGES ============ -->
   <url>
-    <loc>https://sunred.vip/</loc>
-    <lastmod>2025-09-04</lastmod>
-    <changefreq>daily</changefreq>
+    <loc>https://sunred.vip/services/thai-massage</loc>
+    <lastmod>2026-04-26</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
-
-  <!-- ระบบจอง -->
   <url>
-    <loc>https://sunred.vip/services</loc>
-    <lastmod>2025-09-04</lastmod>
-    <changefreq>daily</changefreq>
+    <loc>https://sunred.vip/services/aromatherapy</loc>
+    <lastmod>2026-04-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://sunred.vip/services/oil-massage</loc>
+    <lastmod>2026-04-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://sunred.vip/services/foot-massage</loc>
+    <lastmod>2026-04-26</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 
-  <!-- รีวิว -->
+  <!-- ============ AREA / ZONE LANDING PAGES ============ -->
   <url>
-    <loc>https://t.me/SunRed_BKK</loc>
-    <lastmod>2025-09-04</lastmod>
+    <loc>https://sunred.vip/areas/sukhumvit</loc>
+    <lastmod>2026-04-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://sunred.vip/areas/silom</loc>
+    <lastmod>2026-04-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://sunred.vip/areas/asoke</loc>
+    <lastmod>2026-04-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- ============ FUNCTIONAL ============ -->
+  <url>
+    <loc>https://sunred.vip/services</loc>
+    <lastmod>2026-04-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sunred.vip/wechat-scan</loc>
+    <lastmod>2026-04-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
 
 </urlset>

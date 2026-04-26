@@ -59,6 +59,19 @@ const CHANNELS: Channel[] = [
     ),
   },
   {
+    key: "wechat",
+    label: "WeChat 微信",
+    hint: "中文客服 · Chinese support",
+    href: "/wechat-scan",
+    bg: "#07C160",
+    icon: (
+      // WeChat icon
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+        <path d="M9.5 4C5.36 4 2 6.69 2 10c0 1.89 1.08 3.56 2.78 4.66L4 17l2.5-1.36c.84.23 1.74.36 2.69.36.32 0 .63-.02.94-.05a5.46 5.46 0 0 1-.13-1.2c0-3.04 2.96-5.5 6.6-5.5.49 0 .96.05 1.42.14C17.27 6.43 13.81 4 9.5 4zM7 8.5c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm5 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm4.6 2c-3.06 0-5.6 2.02-5.6 4.5s2.54 4.5 5.6 4.5c.66 0 1.3-.1 1.9-.27L20 20l-.55-1.85c1.45-.84 2.55-2.16 2.55-3.65 0-2.48-2.54-4.5-5.4-4.5zm-1.6 2c.41 0 .75.34.75.75s-.34.75-.75.75-.75-.34-.75-.75.34-.75.75-.75zm3.5 0c.41 0 .75.34.75.75s-.34.75-.75.75-.75-.34-.75-.75.34-.75.75-.75z"/>
+      </svg>
+    ),
+  },
+  {
     key: "phone",
     label: "Call",
     hint: "+66 63 435 0987",
@@ -132,12 +145,18 @@ const ContactFloater: React.FC = () => {
             </div>
           </div>
 
-          {CHANNELS.map((c, i) => (
+          {CHANNELS.map((c, i) => {
+            // Internal routes (start with /) → same tab; external → new tab; tel → no target
+            const isExternal = /^https?:/.test(c.href);
+            const isTel = c.href.startsWith("tel:");
+            const target = isExternal ? "_blank" : undefined;
+            const rel = isExternal ? "noopener noreferrer" : undefined;
+            return (
             <a
               key={c.key}
               href={c.href}
-              target={c.href.startsWith("tel:") ? undefined : "_blank"}
-              rel={c.href.startsWith("tel:") ? undefined : "noopener noreferrer"}
+              target={target}
+              rel={rel}
               className="cf-channel"
               role="menuitem"
               onClick={() => setOpen(false)}
@@ -151,7 +170,8 @@ const ContactFloater: React.FC = () => {
                 <span className="cf-channel-hint">{c.hint}</span>
               </span>
             </a>
-          ))}
+            );
+          })}
         </div>
       )}
 

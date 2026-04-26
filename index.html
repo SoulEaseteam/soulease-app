@@ -32,6 +32,25 @@
     <link rel="apple-touch-icon" href="/sunred-logo.png" />
     <meta name="theme-color" content="#FE0944" />
 
+    <!-- PWA — installable on iOS/Android home screen -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Performance: preconnect to critical 3rd-party origins -->
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="dns-prefetch" href="https://api.telegram.org" />
+    <link rel="dns-prefetch" href="https://maps.googleapis.com" />
+
+    <!-- Preload critical brand font (used in hero) -->
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="https://fonts.gstatic.com/s/cormorantgaramond/v18/co3YmX5slCNuHLi8bLeY9MK7whWMhyjQAllvuQWJ5heb_w.woff2"
+      crossorigin
+    />
+
     <!-- Open Graph -->
     <meta property="og:site_name" content="SUNRED" />
     <meta property="og:type" content="website" />

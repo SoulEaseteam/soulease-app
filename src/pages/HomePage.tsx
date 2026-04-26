@@ -4,10 +4,10 @@ import { Box, Typography, Stack, Chip } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { Star, Clock, ShieldCheck, Sparkles } from "lucide-react";
 
-import FloatingNavBar from "@/components/layouts/FloatingNavBar";
 import SearchBar from "@/components/common/SearchBar";
 import TherapistProfileCard from "@/components/TherapistProfileCard";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
+import HomeBelowSections from "@/components/home/HomeBelowSections";
 import therapistsData from "@/data/therapists";
 
 // ==============================
@@ -201,8 +201,6 @@ const HomePage: React.FC = () => {
   // ----------------------- UI -----------------------
   return (
     <Box sx={{ minHeight: "100vh", pb: 12, background: "#FAFAFA" }}>
-      <FloatingNavBar />
-
       {/* ============== HERO ============== */}
       <Box
         sx={{
@@ -407,6 +405,9 @@ const HomePage: React.FC = () => {
             ))
           )}
         </Box>
+
+        {/* Below-grid trust sections — How It Works / Reviews / Hotels / Footer */}
+        <HomeBelowSections />
       </Box>
     </Box>
   );

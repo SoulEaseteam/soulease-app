@@ -60,6 +60,7 @@ const MaintenancePage = React.lazy(
   () => import("@/pages/MaintenancePage")
 );
 const NotFoundPage = React.lazy(() => import("@/pages/NotFoundPage"));
+const LandingPage = React.lazy(() => import("@/pages/LandingPage"));
 
 // Therapist
 const TherapistListPage = React.lazy(
@@ -158,6 +159,10 @@ export default function App() {
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/maintenance" element={<MaintenancePage />} />
         <Route path="/wechat-scan" element={<WeChatScanPage />} />
+
+        {/* SEO landing pages — services + areas */}
+        <Route path="/services/:slug" element={<LandingPage />} />
+        <Route path="/areas/:slug" element={<LandingPage />} />
         {/* ================= MAIN LAYOUT ================= */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
