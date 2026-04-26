@@ -1,69 +1,97 @@
 // src/components/AdminFloatingChat.tsx
-import React, { useState, useEffect } from 'react';
-import { IconButton, Tooltip, Box } from '@mui/material';
+import React, { useState, useEffect, useRef } from "react";
+import { IconButton, Tooltip, Box } from "@mui/material";
+import { useLocation } from "react-router-dom";
 
 const chatButtons = [
   {
-    title: 'WeChat',
-    href: 'weixin://dl/chat?SoulEase2025',
-    src: '/images/profli/wechat_2626283.png',
-    delay: 0.1,
+    title: "WeChat",
+    href: "/wechat-scan",
+    src: "/images/profli/wechat_2626283.png",
   },
   {
-    title: 'Telegram',
-    href: 'https://t.me/SoulEasevip_bkk',
-    src: '/images/profli/telegram.png',
-    delay: 0.2,
+    title: "Telegram",
+    href: "https://t.me/SunRedvip_bkk",
+    src: "/images/profli/telegram.png",
   },
   {
-    title: 'WhatsApp',
-    href: 'https://wa.me/66634350987',
-    src: '/images/profli/whatsapp.png',
-    delay: 0.3,
+    title: "WhatsApp",
+    href: "https://wa.me/66634350987",
+    src: "/images/profli/whatsapp.png",
   },
   {
-    title: 'LINE',
-    href: 'https://line.me/ti/p/-TZBrEWmPx',
-    src: '/images/profli/line.png',
-    delay: 0.4,
+    title: "LINE",
+    href: "https://lin.ee/uqvdwWt",
+    src: "/images/profli/line.png",
   },
   {
-    title: 'X (Twitter)',
-    href: 'https://x.com/SoulEase_bkk',
+    title: "X (Twitter)",
+    href: "https://x.com/SunredBangkok",
     src: "/images/profli/twitter.png",
-    delay: 0.5,
   },
 ];
+
 const AdminFloatingChat: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const location = useLocation();
 
   useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsExpanded(false);
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsExpanded(false);
     };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
   }, []);
+
+  useEffect(() => {
+    if (!isExpanded) return;
+
+    const onClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+
+      const clickedInsideContainer =
+        !!containerRef.current && containerRef.current.contains(target);
+
+      const clickedMainButton =
+        !!buttonRef.current && buttonRef.current.contains(target);
+
+      if (!clickedInsideContainer && !clickedMainButton) {
+        setIsExpanded(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [isExpanded]);
+
+  useEffect(() => {
+    setIsExpanded(false);
+  }, [location.pathname]);
+
+  const handleToggle = () => {
+    setIsExpanded((prev) => !prev);
+  };
+
+  const handleChatClick = () => {
+    setIsExpanded(false);
+  };
 
   return (
     <>
       <button
+        ref={buttonRef}
         className="admin-contact-btn"
-        onClick={() => setIsExpanded((v) => !v)}
-        aria-label="Contact Admin"
-        aria-expanded={isExpanded}
+        onClick={handleToggle}
         type="button"
+        aria-label="Open admin contact"
       >
-        <img
-          src="/images/icon/admins.png"
-          alt="admin"
-          width={60}
-          height={60}
-        />
+        <img src="/images/icon/24-hours.png" alt="Admin Contact" />
       </button>
 
       {isExpanded && (
-        <Box className="chat-buttons-container">
+        <Box className="chat-buttons-container" ref={containerRef}>
           {chatButtons.map((btn, index) => (
             <Tooltip title={btn.title} placement="left" key={btn.title}>
               <IconButton
@@ -72,25 +100,25 @@ const AdminFloatingChat: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={btn.title}
+                onClick={handleChatClick}
                 sx={{
-                  bgcolor: 'white',
-                  width: 48,
-                  height: 48,
-                  mb: 1,
-                  borderRadius: '50%',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  bgcolor: "white",
+                  width: 52,
+                  height: 52,
+                  mb: 2,
+                  borderRadius: "50%",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
                   opacity: 0,
-                  transform: 'translateY(20px)',
-                  animation: `fadeSlideUpBtn 0.4s ease ${index * 0.1}s forwards`,
-                  '&:hover': { transform: 'scale(1.1)' },
-                  p: 0
+                  transform: "translateY(16px)",
+                  animation: `fadeUp 0.35s ease ${index * 0.07}s forwards`,
+                  p: 0,
                 }}
               >
                 <Box
                   component="img"
                   src={btn.src}
-                  alt={btn.alt}
-                  sx={{ width: 30, height: 30 }}
+                  alt={btn.title}
+                  sx={{ width: 28, height: 28 }}
                 />
               </IconButton>
             </Tooltip>
@@ -101,41 +129,64 @@ const AdminFloatingChat: React.FC = () => {
       <style>{`
         .admin-contact-btn {
           position: fixed;
-          bottom: 80px;
+          bottom: 96px;
           right: 18px;
+          z-index: 1500;
           background: transparent;
           border: none;
-          padding: 0;
           cursor: pointer;
-          z-index: 1300;
-          transition: all 0.3s ease;
         }
-        .admin-contact-btn:hover {
+
+        .admin-contact-btn img {
+          width: 105px;
+          height: 105px;
+          transition: transform .25s ease, filter .25s ease;
+        }
+
+        .admin-contact-btn:hover img {
           transform: scale(1.06);
           filter: brightness(1.1);
         }
+
         .chat-buttons-container {
           position: fixed;
-          right: 20px;
-          bottom: 150px;
-          z-index: 1200;
+          right: 22px;
+          bottom: 182px;
+          z-index: 1400;
           display: flex;
           flex-direction: column;
           align-items: flex-end;
         }
-        @keyframes fadeSlideUpBtn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @media (max-width: 500px) {
-          .admin-contact-btn,
-          .admin-contact-btn img {
-            width: 48px;
-            height: 48px;
+
+        @keyframes fadeUp {
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .chat-buttons-container button {
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+          }
+        }
+
+        @media (max-width: 500px) {
+          .admin-contact-btn img {
+            width: 70px;
+            height: 70px;
+          }
+
+          .admin-contact-btn {
+            bottom: 88px;
+            right: 12px;
+          }
+
           .chat-buttons-container {
-            right: 10px;
-            bottom: 110px;
+            bottom: 158px;
+            right: 12px;
           }
         }
       `}</style>

@@ -1,102 +1,95 @@
-// src/pages/NotFoundPage.tsx
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Button, Paper } from '@mui/material';
-import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
+import React from "react";
+import { Box, Typography, Button, Stack, Paper, useTheme } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const NotFoundPage: React.FC = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
 
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        background: 'linear-gradient(to bottom, #dceeff, #ffffff)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        bgcolor:
+          theme.palette.mode === "dark" ? "#1d1d1d" : "linear-gradient(#fff6f6, #ffecec)",
         px: 2,
-        position: 'relative',
-        overflow: 'hidden',
       }}
     >
-      {/* 🌸 Floating Symbols */}
-      {Array.from({ length: 16 }).map((_, i) => (
-        <Box
-          key={i}
-          sx={{
-            position: 'absolute',
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
-            fontSize: `${16 + Math.random() * 16}px`,
-            animation: `float ${4 + Math.random() * 3}s ease-in-out infinite`,
-            opacity: 0.4,
-            pointerEvents: 'none',
-            zIndex: 0,
-          }}
-        >
-          💫
-        </Box>
-      ))}
-
       <Paper
-        elevation={4}
+        elevation={8}
         sx={{
-          p: { xs: 3, sm: 5 },
-          borderRadius: 6,
-          textAlign: 'center',
-          backdropFilter: 'blur(14px)',
-          backgroundColor: 'rgba(255,255,255,0.75)',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-          width: '100%',
-          maxWidth: 420,
-          zIndex: 2,
+          borderRadius: 5,
+          maxWidth: 400,
+          width: "100%",
+          overflow: "hidden",
+          bgcolor: theme.palette.background.paper,
         }}
       >
-        <SentimentVeryDissatisfiedIcon
-          sx={{ fontSize: { xs: 60, sm: 80 }, color: '#3f5066', mb: 1 }}
-        />
-        <Typography variant="h3" fontWeight="bold" color="primary" gutterBottom>
-          404
-        </Typography>
-        <Typography variant="h6" gutterBottom>
-          Page Not Found
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#666', mt: 1, mb: 2 }}>
-          The page you are looking for might have been removed or does not exist.
-        </Typography>
-
-        <Button
-          onClick={() => navigate('/')}
-          fullWidth
+        {/* Header */}
+        <Box
           sx={{
-            background: 'linear-gradient(to right, #4f87e3, #70c9ff)',
-            py: 1.4,
-            fontSize: 16,
-            fontWeight: 'bold',
-            borderRadius: 99,
-            color: '#fff',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
-            transition: 'all 0.3s ease',
-            '&:hover': {
-              transform: 'scale(1.05)',
-              background: 'linear-gradient(to right, #70c9ff, #4f87e3)',
-            },
+            height: 160,
+            background:
+              "linear-gradient(135deg, #C62828 0%, #FF8A65 100%)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#fff",
+            fontWeight: "bold",
+            fontSize: 52,
+            letterSpacing: 2,
+            textShadow: "0 4px 12px rgba(0,0,0,0.3)",
           }}
         >
-          Back to Home
-        </Button>
-      </Paper>
+          404
+        </Box>
 
-      <style>
-        {`
-          @keyframes float {
-            0% { transform: translateY(0) rotate(0deg); opacity: 0.4; }
-            50% { transform: translateY(-12px) rotate(4deg); opacity: 0.8; }
-            100% { transform: translateY(0) rotate(0deg); opacity: 0.4; }
-          }
-        `}
-      </style>
+        {/* Content */}
+        <Stack spacing={2.2} sx={{ p: 3, textAlign: "center" }}>
+          <Typography variant="h6" fontWeight="bold">
+            Page Not Found
+          </Typography>
+
+          <Typography variant="body2" color="text.secondary">
+            The page you are trying to access doesn’t exist or may have been moved.
+          </Typography>
+
+          <Box
+            component="img"
+            src="https://i.ibb.co/vZpPKkX/sad-cat-404.png"
+            alt="not found"
+            sx={{
+              width: 140,
+              mx: "auto",
+              mt: 1,
+              opacity: 0.95,
+              filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.15))",
+            }}
+          />
+
+          <Button
+            onClick={() => navigate("/")}
+            variant="contained"
+            sx={{
+              mt: 2,
+              py: 1.3,
+              borderRadius: 3,
+              fontWeight: "bold",
+              background: "linear-gradient(90deg, #C62828, #FF8A65)",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+              textTransform: "none",
+              "&:hover": {
+                background: "linear-gradient(90deg, #b32222, #ff7449)",
+              },
+            }}
+          >
+             Back to Home
+          </Button>
+        </Stack>
+      </Paper>
     </Box>
   );
 };

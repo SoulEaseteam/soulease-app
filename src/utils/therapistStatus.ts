@@ -1,62 +1,170 @@
-import dayjs from 'dayjs';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/firebase';  // ปรับ path ให้ตรงกับโปรเจกต์คุณ
+// src/utils/therapistStatus.ts
+import dayjs from "dayjs";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+
+export type TherapistStatus =
+  | "available"
+  | "bookable"
+  | "resting"
+  | "holiday";
+
+export type TherapistStatusOverride =
+  | "Auto"
+  | "available"
+  | "bookable"
+  | "resting"
+  | null;
+
+// === Helpers ===
+function toHM(d: dayjs.Dayjs) {
+  return d.format("HH:mm");
+}
+
+function parseHM(hm?: string) {
+  const [h = "0", m = "0"] = String(hm || "00:00").split(":");
+  return { h: Number(h), m: Number(m) };
+}
+
+function getWorkingWindow(startTime?: string, endTime?: string) {
+  const now = dayjs();
+  const { h: sh, m: sm } = parseHM(startTime);
+  const { h: eh, m: em } = parseHM(endTime);
+
+  let start = now.hour(sh).minute(sm).second(0).millisecond(0);
+  let end = now.hour(eh).minute(em).second(0).millisecond(0);
+
+  const crossesMidnight = end.isSame(start) || end.isBefore(start);
+
+  if (crossesMidnight) {
+    // เช่น 20:00 - 04:00
+    if (now.isBefore(end) || now.isSame(end)) {
+      start = start.subtract(1, "day");
+    } else {
+      end = end.add(1, "day");
+    }
+  }
+
+  return { now, start, end };
+}
 
 /**
- * คำนวณเวลา nextAvailable ของพนักงาน
- * @param serviceDurationMinutes จำนวนเวลาคอร์ส (นาที)
- * @param startTime เวลาเริ่มทำงาน เช่น '22:00'
- * @param endTime เวลาหยุดทำงาน เช่น '05:00'
- * @returns เวลา nextAvailable ในรูปแบบ 'HH:mm'
+ * คำนวณ nextAvailable (HH:mm)
  */
 export function calculateNextAvailable(
   serviceDurationMinutes: number,
   startTime: string,
   endTime: string
 ): string {
-  const now = dayjs();
-  let start = dayjs().hour(+startTime.split(':')[0]).minute(+startTime.split(':')[1]);
-  let end = dayjs().hour(+endTime.split(':')[0]).minute(+endTime.split(':')[1]);
-
-  // กรณีเวลาทำงานข้ามวัน เช่น 22:00 - 05:00
-  if (start.isAfter(end)) {
-    if (now.isBefore(start)) {
-      end = end.add(1, 'day');
-    } else {
-      start = start.subtract(1, 'day');
-      end = end.add(1, 'day');
-    }
-  }
-
-  const proposed = now.add(serviceDurationMinutes, 'minute');
+  const { now, start, end } = getWorkingWindow(startTime, endTime);
+  const proposed = now.add(serviceDurationMinutes, "minute");
 
   if (proposed.isAfter(end)) {
-    // ถ้าเวลาที่คำนวณเลยเวลาทำงาน จะเลื่อนเป็นวันถัดไปเริ่มต้น
-    return start.add(1, 'day').format('HH:mm');
+    return toHM(start.add(1, "day"));
   }
 
-  return proposed.format('HH:mm');
+  return toHM(proposed);
 }
 
 /**
- * อัปเดต nextAvailable ลงใน Firestore
- * @param therapistId ไอดีพนักงาน
- * @param serviceDurationMinutes ระยะเวลาคอร์ส (นาที)
- * @param startTime เวลาเริ่มงาน
- * @param endTime เวลาสิ้นสุดงาน
+ * สถานะกลางของทั้งระบบ
+ * ลำดับความสำคัญ:
+ * 1) statusOverride ถ้าไม่ใช่ Auto
+ * 2) isHoliday
+ * 3) เวลาเข้างาน
+ * 4) isBooked
  */
-export async function updateNextAvailableInFirestore(
-  therapistId: string,
-  serviceDurationMinutes: number,
-  startTime: string,
-  endTime: string
-) {
-  const nextAvailable = calculateNextAvailable(serviceDurationMinutes, startTime, endTime);
-  const therapistRef = doc(db, 'therapists', therapistId);
+export function computeStatus(options: {
+  startTime?: string;
+  endTime?: string;
+  isBooked?: boolean;
+  isHoliday?: boolean;
+  statusOverride?: TherapistStatusOverride;
+}): TherapistStatus {
+  const {
+    startTime,
+    endTime,
+    isBooked = false,
+    isHoliday = false,
+    statusOverride = null,
+  } = options;
+
+  // 1) Manual override มาก่อนเสมอ
+  if (
+    statusOverride &&
+    statusOverride !== "Auto" &&
+    ["available", "bookable", "resting"].includes(statusOverride)
+  ) {
+    return statusOverride as TherapistStatus;
+  }
+
+  // 2) Holiday
+  if (isHoliday) return "holiday";
+
+  // 3) ไม่มีเวลางาน
+  if (!startTime || !endTime) return "resting";
+
+  const { now, start, end } = getWorkingWindow(startTime, endTime);
+
+  const inWorkingHours =
+    (now.isAfter(start) || now.isSame(start)) &&
+    (now.isBefore(end) || now.isSame(end));
+
+  if (!inWorkingHours) return "resting";
+
+  // 4) อยู่ในเวลางาน
+  return isBooked ? "bookable" : "available";
+}
+
+/**
+ * อัปเดต nextAvailable และสถานะลง Firestore
+ */
+export async function updateNextAvailableInFirestore(params: {
+  therapistId: string;
+  serviceDurationMinutes: number;
+  startTime: string;
+  endTime: string;
+  alsoUpdateStatus?: boolean;
+  isBooked?: boolean;
+  isHoliday?: boolean;
+  statusOverride?: TherapistStatusOverride;
+}) {
+  const {
+    therapistId,
+    serviceDurationMinutes,
+    startTime,
+    endTime,
+    alsoUpdateStatus = false,
+    isBooked = false,
+    isHoliday = false,
+    statusOverride = null,
+  } = params;
+
+  const nextAvailable = calculateNextAvailable(
+    serviceDurationMinutes,
+    startTime,
+    endTime
+  );
+
+  const payload: Record<string, any> = { nextAvailable };
+
+  if (alsoUpdateStatus) {
+    const status = computeStatus({
+      startTime,
+      endTime,
+      isBooked,
+      isHoliday,
+      statusOverride,
+    });
+
+    // เก็บทั้งสอง field เผื่อหน้าระบบเก่ายังอ่าน available อยู่
+    payload.computedStatus = status;
+    payload.available = status;
+  }
+
   try {
-    await updateDoc(therapistRef, { nextAvailable });
-    console.log(`Updated nextAvailable for ${therapistId} to ${nextAvailable}`);
+    await updateDoc(doc(db, "therapists", therapistId), payload);
   } catch (error) {
-    console.error('Failed to update nextAvailable:', error);
+    console.error("[therapistStatus] Failed to update:", error);
   }
 }

@@ -1,4 +1,7 @@
 {
+  "version": 2,
+  "framework": "vite",
+  "buildCommand": "npm run vercel-build",
   "outputDirectory": "dist",
   "rewrites": [
     {
@@ -6,17 +9,20 @@
       "destination": "/index.html"
     }
   ],
-  "redirects": [
+  "headers": [
     {
-      "source": "/",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.sunred.vip"
-        }
-      ],
-      "destination": "https://sunred.vip",
-      "permanent": true
+      "source": "/(.*)\\.xml",
+      "headers": [
+        { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=0, s-maxage=86400" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.txt",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=0, s-maxage=86400" }
+      ]
     }
   ]
 }

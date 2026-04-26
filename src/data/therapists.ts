@@ -1,223 +1,558 @@
-import { Therapist } from '@/types/therapist';
+// src/data/therapists.ts
+import type { Therapist } from "@/types/therapist";
 
-const therapists: Omit<Therapist, 'badge'>[] = [
+export const therapists: Therapist[] = [
+  // =========================================================
+  // 1. YURI
+  // =========================================================
   {
-    id: 'erYKvEtJSRoC2eWqn89U',
-    name: 'Yuri',
-    image: '/images/yuri/yuri.jpeg',
-    rating: 4.5,
+    id: "YuriSunRed",
+    name: "Yuri",
+    image: "/images/yuri/yurie.jpeg",
+    rating: 4.7,
     reviews: 0,
+
+    startTime: "19:00",
+    endTime: "05:00",
+
+    todayBookings: 0,
+    totalBookings: 0,
+
+    isBooked: false,
+    statusOverride: "Auto",
+    manualStatus: null,
+    activeBooking: false,
+
+    busyUntil: null,
+    nextAvailable: null,
+    badge: "NONE",
+
     lat: 13.765336,
     lng: 100.5604635,
-    todayBookings: 0,
-    totalBookings: 0,
-    nextAvailable: 'N/A',
-    startTime: '18:00',
-    endTime: '05:00',
-    specialty: '',
+
+    distanceKm: null,
+
+    servicesAvailable: ["thai-massage", "aromatherapy", "Gentleman’s"],
+
     gallery: [
-      '/images/yuri/y9.jpeg',
-      '/images/yuri/y10.jpeg',
-      '/images/yuri/y7.jpeg',
-      '/images/yuri/y8.jpeg',
-      '/images/yuri/y5.jpeg',
-      '/images/yuri/y4.jpeg',
-      '/images/yuri/y11.jpeg',
-      '/images/yuri/y6.jpeg',
-      '/images/yuri/Y1.jpeg',
+      "/images/yuri/y88.jpeg",
+      "/images/yuri/yy3.jpeg",
+      "/images/yuri/y2.jpeg",
+      "/images/yuri/yr2.jpeg",
+      "/images/yuri/yuri2.jpeg",
+      "/images/yuri/yr43.jpeg",
+      "/images/yuri/yy5.jpeg",
+      "/images/yuri/yiyyu.jpeg",
+      "/images/yuri/yr3.jpeg",
     ],
-    features: {
-      age: '28',
-      gender: 'Female',
-      ethnicity: 'Thai',
-      height: '160 cm',
-      weight: '49 kg',
-      skintone: 'White skin',
-      bodyType: 'Slim',
-      bustSize: 'C Cup',
-      hairColor: 'Black',
-      vaccinated: 'Yes',
-      smoker: 'No',
-      language: 'Thai / English',
-    },
-    status: 'available',
-  },
-  {
-    id: '3mxMYv5wMNHmOqQmXY6u',
-    name: 'Jenny',
-    image: '/images/mint/mint.jpg',
-    rating: 4.5,
-    reviews: 0,
-    lat: 13.7563,
-    lng: 100.5018,
-    todayBookings: 0,
-    totalBookings: 0,
-    nextAvailable: 'N/A',
-    startTime: '19:00',
-    endTime: '05:00',
-    specialty: '',
-    gallery: [
-      '/images/mint/m7.jpeg',
-      '/images/mint/m3.jpeg',
-      '/images/mint/m6.jpeg',
-      '/images/mint/m5.jpeg',
-      '/images/mint/m5.JPG',
-      '/images/mint/m1.jpeg',
-      '/images/mint/m2.jpeg',
-      '/images/mint/mint4.JPG',
-    ],
-    features: {
-      age: '28',
-      gender: 'Female',
-      ethnicity: 'Thai',
-      height: '160 cm',
-      weight: '49 kg',
-      skintone: 'White skin',
-      bodyType: 'Slim',
-      bustSize: 'C Cup',
-      hairColor: 'Brown',
-      vaccinated: 'Yes',
-      smoker: 'No',
-      language: 'Thai English Korea',
-    },
-    status: 'available',
-  },
-  {
-    id: 'HntS3ZEcgtxkTn114lTT',
-    name: 'Ji A',
-    image: '/images/jimin/jimin.JPG',
-    rating: 4.5,
-    reviews: 0,
-    lat: 13.765336,
-    lng: 100.5604635,
-    todayBookings: 0,
-    totalBookings: 0,
-    nextAvailable: 'N/A',
-    startTime: '19:00',
-    endTime: '04:00',
-    specialty: '',
-    gallery: [
-      '/images/jimin/j3.jpg',
-      '/images/jimin/j5.jpg',
-      '/images/jimin/j4.jpg',
-      '/images/jimin/j2.jpg',
-      '/images/jimin/j1.jpg',
-    ],
-    features: {
-      age: '27',
-      gender: 'Female',
-      ethnicity: 'Thai',
-      height: '159 cm',
-      weight: '57 kg',
-      skintone: 'White skin',
-      bodyType: 'Curvy',
-      bustSize: '34B',
-      hairColor: 'Black',
-      vaccinated: 'Yes',
-      smoker: 'No',
-      language: 'Thai English Korea',
-    },
-    status: 'available',
-  },
-  {
-    id: '1Sn1TSppDCFTwChknxsi',
-    name: 'XingXing',
-    image: '/images/xing/Xing.jpeg',
-    rating: 4.5,
-    reviews: 0,
-    lat: 13.765336,
-    lng: 100.5604635,
-    todayBookings: 0,
-    totalBookings: 0,
-    nextAvailable: 'N/A',
-    startTime: '06:00',
-    endTime: '23:00',
-    specialty: '',
-   gallery: [
-      '/images/xing/IMG_4817.JPG',
-      '/images',
-      '/images',
-      '/images',
-      '/images',
-    ],
-    features: {
-      age: '26',
-      gender: 'Female',
-      ethnicity: 'Thai',
-      height: '160 cm',
-      weight: '56 kg',
-      skintone: 'Light skin',
-      bodyType: 'Curvy',
-      bustSize: 'D Cup',
-      hairColor: 'Light Brown',
-      vaccinated: 'Yes',
-      smoker: 'No',
-      language: 'Thai English Chinese',
-    },
-    status: 'available',
-  },
-  {
-    id: 'sIvv3y5uPh4QSulzUWcn',
-    name: 'Popy',
-    image: '/images/popy/ti.JPG',
-    rating: 4.5,
-    reviews: 0,
-    lat: 13.7563,
-    lng: 100.5018,
-    todayBookings: 0,
-    totalBookings: 0,
-    nextAvailable: 'N/A',
-    startTime: '19:00',
-    endTime: '03:00',
-    specialty: '',
-    gallery: [],
 
     features: {
-      age: '28',
-      gender: 'Female',
-      ethnicity: 'Thai',
-      height: '160 cm',
-      weight: '49 kg',
-      skintone: 'White skin',
-      bodyType: 'Slim',
-      bustSize: '34B',
-      hairColor: 'Black',
-      vaccinated: 'Yes',
-      smoker: 'No',
-      language: 'Thai / English',
+      employmentType: "Full-time therapist",
+      age: "28",
+      gender: "Female",
+      ethnicity: "Thai",
+      height: "160 cm",
+      weight: "49 kg",
+      skintone: "White skin",
+      bodyType: "Slim",
+      bustSize: "C Cup",
+      hairColor: "Black",
+      vaccinated: "Yes",
+      smoker: "No",
+      language: "Thai / English",
     },
-    status: 'resting',
   },
+
+  // =========================================================
+  // 2. JIMMY
+  // =========================================================
   {
-    id: 'MpJgtiJeWNumxOO7L7X3',
-    name: 'Yomi',
-    image: '/images/yomi/ii.JPG',
+    id: "JimmySunRed",
+    name: "Jimmy",
+    image: "/images/jinny/IMG_7136.JPG",
     rating: 4.5,
     reviews: 0,
-    lat: 13.7563,
-    lng: 100.5018,
+
+    startTime: "13:00",
+    endTime: "22:00",
+
     todayBookings: 0,
     totalBookings: 0,
-    nextAvailable: 'N/A',
-    startTime: '21:00',
-    endTime: '03:00',
-    specialty: '',
-    gallery: [],
+
+    isBooked: false,
+    statusOverride: "Auto",
+    manualStatus: null,
+    activeBooking: false,
+
+    busyUntil: null,
+    nextAvailable: null,
+    badge: "NONE",
+
+    lat: 13.7513099,
+    lng: 100.5730255,
+    distanceKm: null,
+
+    servicesAvailable: [
+      "thai-massage",
+      "aromatherapy",
+      "Gentleman’s",
+      "SunRed’exclusive"
+    ],
+
+    gallery: [
+      "/images/jinny/IMG_7120.JPG",
+      "/images/jinny/IMG_7130.JPG",
+      "/images/jinny/IMG_7132.JPG",
+      "/images/jinny/IMG_7139.JPG",
+      "/images/jinny/IMG_7133.JPG",
+      "/images/jinny/IMG_7137.JPG",
+      "/images/jinny/IMG_7138.JPG",
+      "/images/jinny/jmn.jpeg",
+      "/images/jinny/jimmy.jpeg",
+    ],
+
     features: {
-      age: '28',
-      gender: 'Female',
-      ethnicity: 'Thai',
-      height: '160 cm',
-      weight: '47 kg',
-      bodyType: 'Slim',
-      skintone: 'Medium skin',
-      bustSize: '34B',
-      hairColor: 'Black',
-      vaccinated: 'Yes',
-      smoker: 'No',
-      language: 'Thai / English',
+      employmentType: "Part-time therapist",
+      age: "29",
+      gender: "Female",
+      ethnicity: "Thai",
+      height: "155 cm",
+      weight: "45 kg",
+      skintone: "White skin",
+      bodyType: "Slim",
+      bustSize: "C Cup",
+      hairColor: "Black",
+      vaccinated: "Yes",
+      smoker: "No",
+      language: "English, Korean, Cantonese",
     },
-    status: 'resting',
+  },
+
+  // =========================================================
+  // 3. HAMI
+  // =========================================================
+  {
+    id: "HamiSunRed",
+    name: "Hami",
+    image: "/images/Hami/Hami3.jpeg",
+    rating: 4.5,
+    reviews: 0,
+
+    startTime: "18:00",
+    endTime: "02:00",
+
+    todayBookings: 0,
+    totalBookings: 0,
+
+    isBooked: false,
+    statusOverride: "Auto",
+    manualStatus: null,
+    activeBooking: false,
+
+    busyUntil: null,
+    nextAvailable: null,
+    badge: "NONE",
+
+    lat: 13.7829994,
+    lng: 100.5755031,
+    distanceKm: null,
+
+    servicesAvailable: [
+      "thai-massage",
+      "aromatherapy",
+      "Gentleman’s"
+    ],
+
+    gallery: [
+      "/images/Hami/hami.jpeg",
+      "/images/Hami/mami3.jpeg",
+      "/images/Hami/Hami88.jpeg",
+      "/images/Hami/hami4.jpeg",
+      "/images/Hami/hami5.JPG",
+      "/images/Hami/Hami3.jpeg",
+    ],
+
+    features: {
+      employmentType: "Part-time therapist",
+      age: "27",
+      gender: "Female",
+      ethnicity: "Thai",
+      height: "159 cm",
+      weight: "49 kg",
+      skintone: "Medium skin",
+      bodyType: "Slim",
+      bustSize: "D Cup",
+      hairColor: "Brown",
+      vaccinated: "Yes",
+      smoker: "No",
+      language: "English, Korean",
+    },
+  },
+
+  // =========================================================
+  // 4. XING XING
+  // =========================================================
+  {
+    id: "XingXingSunRed",
+    name: "XingXing",
+    image: "/images/xing/xi.jpeg",
+    rating: 4.6,
+    reviews: 0,
+
+    startTime: "11:00",
+    endTime: "03:00",
+
+    todayBookings: 0,
+    totalBookings: 0,
+
+    isBooked: false,
+    statusOverride: "Auto",
+    manualStatus: null,
+    activeBooking: false,
+
+    busyUntil: null,
+    nextAvailable: null,
+    badge: "NONE",
+
+    lat: 13.765336,
+    lng: 100.5604635,
+    distanceKm: null,
+
+    servicesAvailable: [
+      "thai-massage",
+      "aromatherapy",
+      "Gentleman’s"
+    ],
+
+    gallery: [
+      "/images/xing/xa.jpeg",
+      "/images/xing/xs.jpeg",
+      "/images/xing/xingxing2.jpeg",
+      "/images/xing/xingxing8.jpg",
+      "/images/xing/xingxing4.jpg",
+      "/images/xing/xingxing1.jpg",
+      "/images/xing/xingxing7.jpg",
+      "/images/xing/xxxx.jpeg",
+      "/images/xing/xingg.jpg",
+    ],
+
+    features: {
+      employmentType: "Full-time therapist",
+      age: "26",
+      gender: "Female",
+      ethnicity: "Thai",
+      height: "160 cm",
+      weight: "56 kg",
+      skintone: "Light skin",
+      bodyType: "Curvy",
+      bustSize: "D Cup",
+      hairColor: "Light Brown",
+      vaccinated: "Yes",
+      smoker: "No",
+      language: "Thai, English, Chinese",
+    },
+  },
+
+  // =========================================================
+  // 5. BARBIE
+  // =========================================================
+  {
+    id: "BarbieSunRed",
+    name: "Barbie",
+    image: "/images/Barbie/Barbie2.jpeg",
+    rating: 4.5,
+    reviews: 0,
+
+    startTime: "19:00",
+    endTime: "05:00",
+
+    todayBookings: 0,
+    totalBookings: 0,
+
+    isBooked: false,
+    statusOverride: "Auto",
+    manualStatus: null,
+    activeBooking: false,
+
+    busyUntil: null,
+    nextAvailable: null,
+    badge: "NONE",
+
+    lat: 13.765336,
+    lng: 100.5604635,
+    distanceKm: null,
+
+    servicesAvailable: [
+      "thai-massage",
+      "aromatherapy",
+      "Gentleman’s"
+    ],
+
+    gallery: [
+      "/images/Barbie/Barbie2.jpeg",
+      "/images/Barbie/Barbie3.jpeg",
+      "/images/Barbie/Barbie8.jpeg",
+      "/images/Barbie/Barbie4.jpeg",
+      "/images/Barbie/Barbie6.jpeg",
+      "/images/Barbie/Barbie7.jpeg",
+      "/images/Barbie/Barbie.jpeg",
+      "/images/Barbie/Barbie9.jpeg",
+      "/images/Barbie/Barbie5.jpeg",
+    ],
+
+    features: {
+      employmentType: "Full-time therapist",
+      age: "26",
+      gender: "Female",
+      ethnicity: "Thai",
+      height: "154 cm",
+      weight: "45 kg",
+      skintone: "White skin",
+      bodyType: "Slim",
+      bustSize: "32B",
+      hairColor: "Light Brown",
+      vaccinated: "Yes",
+      smoker: "No",
+      language: "Thai / English",
+    },
+  },
+  // =========================================================
+  // 6. MINI
+  // =========================================================
+  {
+    id: "MiniSunRed",
+    name: "Mini",
+    image: "/images/Mini/Mini3.jpeg",
+    rating: 4.5,
+    reviews: 0,
+
+    startTime: "14:00",
+    endTime: "01:00",
+
+    todayBookings: 0,
+    totalBookings: 0,
+
+   isBooked: false,
+    statusOverride: "Auto",
+    manualStatus: null,
+    activeBooking: false,
+
+    busyUntil: null,
+    nextAvailable: null,
+    badge: "NONE",
+
+    lat: 13.7513099,
+    lng: 100.5730255,
+    distanceKm: null,
+
+    servicesAvailable: [
+      "thai-massage",
+      "aromatherapy",
+      "Gentleman’s",
+      "SunRed’exclusive"
+    ],
+
+    gallery: [
+      "/images/Mini/Mini4.jpeg",
+      "/images/Mini/Mini6.jpeg",
+      "/images/Mini/Mini4.jpeg",
+    ],
+
+    features: {
+      employmentType: "Part-time therapist",
+      age: "28",
+      gender: "Female",
+      ethnicity: "Thai",
+      height: "155 cm",
+      weight: "46 kg",
+      skintone: "White skin",
+      bodyType: "Slim",
+      bustSize: "C Cup",
+      hairColor: "Brown",
+      vaccinated: "Yes",
+      smoker: "No",
+      language: "Thai / English / Korean",
+    },
+  },
+
+  // =========================================================
+  // 7. JI-A
+  // =========================================================
+  {
+    id: "JiASunRed",
+    name: "Ji A",
+    image: "/images/Ji-a (จีอา)/Ji-a2.jpeg",
+    rating: 4.5,
+    reviews: 0,
+
+    startTime: "16:00",
+    endTime: "01:30",
+    
+    todayBookings: 0,
+    totalBookings: 0,
+
+    isBooked: false,
+    statusOverride: "Auto",
+    manualStatus: null,
+    activeBooking: false,
+
+    busyUntil: null,
+    nextAvailable: null,
+    badge: "NONE",
+
+    lat: 13.7513099,
+    lng: 100.5730255,
+    distanceKm: null,
+
+    servicesAvailable: [
+      "thai-massage",
+      "aromatherapy",
+      "Gentleman’s",
+      "SunRed’exclusive"
+    ],
+
+    gallery: [
+      "/images/Ji-a (จีอา)/Ji-a6.jpeg",
+      "/images/Ji-a (จีอา)/Ji-a4.jpeg",
+      "/images/Ji-a (จีอา)/2568-11-23 11.57.45.jpg",
+    ],
+
+    features: {
+      employmentType: "Part-time therapist",
+      age: "28",
+      gender: "Female",
+      ethnicity: "Thai",
+      height: "160 cm",
+      weight: "48 kg",
+      skintone: "White skin",
+      bodyType: "Slim",
+      bustSize: "C Cup",
+      hairColor: "Black",
+      vaccinated: "Yes",
+      smoker: "No",
+      language: "Thai / English",
+    },
+  },
+
+  // =========================================================
+  // 8. VIVIAN
+  // =========================================================
+  {
+    id: "VivianSunRed",
+    name: "Vivian",
+    image: "/images/Vivian/Vivian1.jpeg",
+    rating: 4.5,
+    reviews: 0,
+
+    startTime: "16:00",
+    endTime: "02:00",
+
+    todayBookings: 0,
+    totalBookings: 0,
+
+    isBooked: false,
+    statusOverride: "Auto",
+    manualStatus: null,
+    activeBooking: false,
+
+    busyUntil: null,
+    nextAvailable: null,
+    badge: "NONE",
+
+    lat: 13.7513099,
+    lng: 100.5730255,
+    distanceKm: null,
+
+    servicesAvailable: [
+      "thai-massage",
+      "aromatherapy",
+      "Gentleman’s",
+      "SunRed’exclusive"
+    ],
+
+    gallery: [
+      "/images/Vivian/Vivian9.jpeg",
+      "/images/Vivian/Vivian7.jpeg",
+      "/images/Vivian/Vivian2.jpeg",
+      "/images/Vivian/Vivian8.jpeg",
+      "/images/Vivian/Vivian4.jpeg",
+      "/images/Vivian/Vivian3.jpeg",
+    ],
+
+    features: {
+      employmentType: "Part-time therapist",
+      age: "29",
+      gender: "Female",
+      ethnicity: "Thai",
+      height: "152 cm",
+      weight: "44 kg",
+      skintone: "White skin",
+      bodyType: "Slim",
+      bustSize: "C Cup",
+      hairColor: "Brown",
+      vaccinated: "Yes",
+      smoker: "No",
+      language: "English(well), Korea(little)",
+    },
+  },
+
+  // =========================================================
+  // 9. NANNY
+  // =========================================================
+  {
+    id: "NannySunRed",
+    name: "Nanny",
+    image: "/images/nanny/photo_2568-11-23 21.28.47.jpeg",
+    rating: 4.5,
+    reviews: 0,
+
+    startTime: "13:00",
+    endTime: "22:00",
+
+    todayBookings: 0,
+    totalBookings: 0,
+
+    isBooked: false,
+    statusOverride: "Auto",
+    manualStatus: null,
+    activeBooking: false,
+
+    busyUntil: null,
+    nextAvailable: null,
+    badge: "NONE",
+
+    lat: 13.7513099,
+    lng: 100.5730255,
+    distanceKm: null,
+
+    servicesAvailable: [
+      "thai-massage",
+      "aromatherapy",
+      "Gentleman’s",
+      "SunRed’exclusive"
+    ],
+    gallery: [
+      "/images/nanny/2568-11-23 11.58.03.jpg",
+      "/images/nanny/2568-11-23 11.03.29.jpg",
+      "/images/nanny/2568-11-23 11.04.01.jpg",
+      "/images/nanny/photo_2568-11-23 11.13.47.jpeg",
+    ],
+
+    features: {
+      employmentType: "Part-time therapist",
+      age: "26",
+      gender: "Female",
+      ethnicity: "Thai",
+      height: "160 cm",
+      weight: "48 kg",
+      skintone: "White skin",
+      bodyType: "Slim",
+      bustSize: "32B",
+      hairColor: "Black",
+      vaccinated: "Yes",
+      smoker: "No",
+      language: "Thai / English",
+    },
   },
 ];
 

@@ -1,0 +1,69 @@
+"use strict";
+// functions/src/index.ts
+//
+// Cloud Functions สำหรับ SunRed
+// — ที่นี่คือที่เก็บ "secret" ทั้งหมดที่ฝั่ง client ไม่ควรเห็น
+//   (Telegram bot token, LINE token, ฯลฯ) เพื่อกันคนดึง token จาก JS bundle
+//
+// Deploy:
+//   1) cd ~/sunred-vite/functions && npm install
+//   2) firebase functions:secrets:set TELEGRAM_BOT_TOKEN
+//      firebase functions:secrets:set TELEGRAM_CHAT_ID
+//   3) firebase deploy --only functions
+//
+// เรียกจาก client (BookingPage.tsx) ผ่าน httpsCallable:
+//   import { getFunctions, httpsCallable } from "firebase/functions";
+//   const fn = httpsCallable(getFunctions(), "notifyBooking");
+//   await fn({ message: "..." });
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.notifyBooking = void 0;
+const https_1 = require("firebase-functions/v2/https");
+const params_1 = require("firebase-functions/params");
+const app_1 = require("firebase-admin/app");
+(0, app_1.initializeApp)();
+// Secrets — ตั้งค่าผ่าน `firebase functions:secrets:set <NAME>`
+const TELEGRAM_BOT_TOKEN = (0, params_1.defineSecret)("TELEGRAM_BOT_TOKEN");
+const TELEGRAM_CHAT_ID = (0, params_1.defineSecret)("TELEGRAM_CHAT_ID");
+/**
+ * notifyBooking
+ * - ต้อง login ก่อน (กัน spam จากคนสุ่ม)
+ * - ส่งข้อความเข้า Telegram channel ที่ตั้งใน secrets
+ */
+exports.notifyBooking = (0, https_1.onCall)({
+    secrets: [TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID],
+    region: "asia-southeast1",
+    enforceAppCheck: false, // ถ้าเปิด App Check ค่อยเปลี่ยนเป็น true
+}, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Sign-in required");
+    }
+    const data = request.data;
+    const message = (data?.message || "").toString().trim();
+    if (!message) {
+        throw new https_1.HttpsError("invalid-argument", "message is required");
+    }
+    // กัน abuse: จำกัดความยาวข้อความ
+    if (message.length > 4000) {
+        throw new https_1.HttpsError("invalid-argument", "message too long");
+    }
+    const token = TELEGRAM_BOT_TOKEN.value();
+    const chatId = TELEGRAM_CHAT_ID.value();
+    if (!token || !chatId) {
+        throw new https_1.HttpsError("failed-precondition", "Telegram secrets not configured");
+    }
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            chat_id: chatId,
+            text: message,
+            parse_mode: "Markdown",
+        }),
+    });
+    if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new https_1.HttpsError("internal", `Telegram API error: ${res.status} ${txt}`);
+    }
+    return { ok: true };
+});
+//# sourceMappingURL=index.js.map

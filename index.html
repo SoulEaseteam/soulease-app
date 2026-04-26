@@ -2,18 +2,109 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SoulEase App</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
 
-    <!-- ✅ โหลดฟอนต์ -->
-    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700&family=Chonburi&display=swap" rel="stylesheet" />
+    <title>SUNRED</title>
 
+    <!-- Basic SEO -->
+    <meta
+      name="description"
+      content="SUNRED offers luxury outcall massage in Bangkok. Foreigner-friendly, professional therapists, live availability, and trusted reviews. Book now."
+    />
+    <meta
+      name="keywords"
+      content="Bangkok outcall massage, luxury massage Bangkok, sensual massage, tantric massage, SUNRED"
+    />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://sunred.vip/" />
+
+    <!-- Icons -->
+    <link rel="icon" type="image/png" href="/sunred-logo.png" />
+    <link rel="apple-touch-icon" href="/sunred-logo.png" />
+    <meta name="theme-color" content="#E11D48" />
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="SUNRED" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://sunred.vip/" />
+    <meta property="og:title" content="SUNRED Bangkok | Outcall Massage" />
+    <meta
+      property="og:description"
+      content="Trusted therapists, live availability, and 5-star reviews. Book your perfect outcall massage in Bangkok with SUNRED."
+    />
+    <meta property="og:image" content="https://sunred.vip/sunred-logo.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="th_TH" />
+    <meta property="og:locale:alternate" content="zh_CN" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="SUNRED Bangkok | Luxury Outcall Massage" />
+    <meta
+      name="twitter:description"
+      content="Professional therapists • Live booking • Foreigner-friendly."
+    />
+    <meta name="twitter:image" content="https://sunred.vip/sunred-logo.png" />
+
+    <!-- Hreflang -->
+    <link rel="alternate" hreflang="en" href="https://sunred.vip/" />
+    <link rel="alternate" hreflang="th" href="https://sunred.vip/?lang=th" />
+    <link rel="alternate" hreflang="zh" href="https://sunred.vip/?lang=zh" />
+    <link rel="alternate" hreflang="x-default" href="https://sunred.vip/" />
+
+    <!-- Organization JSON-LD -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "SUNRED",
+        "url": "https://sunred.vip",
+        "logo": "https://sunred.vip/sunred-logo.png",
+        "sameAs": [
+          "https://x.com/SunRedvip_bkk",
+          "https://www.instagram.com/longcheng956?igsh=MWRmdWFnaXp4cXhxMA==",
+          "https://t.me/SunRed_BKK",
+          "https://samsguide.shop/showthread.php?p=24626728#post24626728",
+          "https://www.tiktok.com/@sun.red59?_t=ZS-8zRXQslK8cm&_r=1"
+        ]
+      }
+    </script>
+
+    <!-- Local Business JSON-LD -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "HealthAndBeautyBusiness",
+        "name": "SUNRED",
+        "image": "https://sunred.vip/sunred-logo.png",
+        "url": "https://sunred.vip/",
+        "priceRange": "$$",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Bangkok",
+          "addressCountry": "TH"
+        },
+        "areaServed": "Bangkok",
+        "availableLanguage": ["en", "th", "zh"],
+        "description": "Luxury outcall massage service in Bangkok. Professional therapists, live availability and trusted reviews.",
+        "brand": "SUNRED",
+        "sameAs": [
+          "https://t.me/SunRed_BKK",
+          "https://samsguide.shop/showthread.php?p=24626728#post24626728"
+        ]
+      }
+    </script>
+
+    <!-- App CSS (Vite will handle it in build) -->
+    <link rel="stylesheet" href="/src/index.css" />
   </head>
-  <body style="margin:0; padding:0; font-family: 'Trebuchet MS', sans-serif; background-color: #f9f9f9;">
+  <body>
     <div id="root"></div>
-
-    <!-- ✅ ให้ Vite จัดการ script เอง -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

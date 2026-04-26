@@ -1,0 +1,32 @@
+# robots.txt — SunRed
+User-agent: *
+# อนุญาตให้บอทเก็บข้อมูลหน้าเว็บปกติ
+Allow: /
+
+# ไม่ต้องให้เก็บหน้า admin / ไฟล์ระบบ / source map
+Disallow: /admin/
+Disallow: /__private/
+Disallow: /*.map$
+
+# กัน duplicate จากพารามิเตอร์ที่ไม่จำเป็น (ปรับเพิ่มได้ตามจริง)
+Disallow: /*?*utm_=
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+Disallow: /*?*ref=
+
+# ปล่อยผ่านบอท Ads/มือถือด้วย (ไม่บังคับ แต่อุ่นใจ)
+User-agent: AdsBot-Google
+Allow: /
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /__private/
+Disallow: /*.map$
+Disallow: /*?*utm_=
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+Disallow: /*?*ref=
+
+# บอกที่อยู่ sitemap
+Sitemap: https://sunred.vip/sitemap.xml

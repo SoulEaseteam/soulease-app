@@ -1,8 +1,120 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ───────────── Helpers ─────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return isSignedIn() &&
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // ───────────── admins ─────────────
+    // เฉพาะ admin ดูกันเองและจัดการกันเอง — เพิ่มผ่าน Firebase Console เท่านั้น
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow write: if false; // ปิดการเขียนจากฝั่ง client; ใช้ Console
+    }
+
+    // ───────────── users ─────────────
+    // user ดู/แก้โปรไฟล์ตัวเอง; admin ดูได้ทุกคน
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      // ห้าม user เปลี่ยน role ของตัวเอง (กัน privilege escalation)
+      allow update: if (isOwner(userId)
+                        && (!('role' in request.resource.data)
+                            || request.resource.data.role == resource.data.role))
+                    || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ───────────── therapists ─────────────
+    // ลูกค้าทุกคน (รวม guest anonymous) ดูรายการได้
+    // therapist แก้โปรไฟล์ตัวเอง; admin จัดการได้ทุกคน
+    match /therapists/{therapistId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin();
+      allow update: if isOwner(therapistId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ───────────── services ─────────────
+    // public read (ทุกคนที่ login ดูได้); admin เพิ่ม/แก้
+    match /services/{serviceId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ───────────── bookings ─────────────
+    // user สร้าง booking ของตัวเองได้
+    // user อ่าน booking ของตัวเอง; therapist อ่าน booking ที่ถูก assign; admin อ่านทุกอัน
+    match /bookings/{bookingId} {
+      allow read: if isAdmin()
+                  || (isSignedIn() && resource.data.userId == request.auth.uid)
+                  || (isSignedIn() && resource.data.therapistId == request.auth.uid);
+
+      // สร้าง: ต้องเป็น user คนนั้นจริง + ห้ามตั้ง status เป็น completed/paid เอง
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.status in ['pending', 'confirmed'];
+
+      // update:
+      // - admin ทำได้ทุกอย่าง
+      // - therapist เปลี่ยนสถานะของ booking ตัวเองได้
+      // - user ยกเลิกของตัวเองได้
+      allow update: if isAdmin()
+                    || (isSignedIn() && resource.data.therapistId == request.auth.uid)
+                    || (isSignedIn() && resource.data.userId == request.auth.uid
+                        && request.resource.data.status in ['cancelled']);
+
+      allow delete: if isAdmin();
+    }
+
+    // ───────────── reviews ─────────────
+    // public read; user เขียน review ของ booking ตัวเองเท่านั้น
+    match /reviews/{reviewId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid;
+      allow update: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ───────────── notifications ─────────────
+    // user อ่าน noti ของตัวเอง; admin จัดการได้
+    match /notifications/{notifId} {
+      allow read: if isAdmin()
+                  || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isAdmin(); // notifications สร้างจาก backend/cloud function เท่านั้น
+      allow update: if isAdmin()
+                    || (isSignedIn() && resource.data.userId == request.auth.uid
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt']));
+      allow delete: if isAdmin();
+    }
+
+    // ───────────── blockedDevices ─────────────
+    // admin only — เกี่ยวกับการ block device ที่น่าสงสัย
+    match /blockedDevices/{deviceId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ───────────── adminSettings ─────────────
+    // admin only — config ของระบบ (Telegram chatId, LINE token, ฯลฯ)
+    match /adminSettings/{settingId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ───────────── default deny ─────────────
+    // กัน collection อื่นๆ ที่ยังไม่ได้กำหนด rules
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }

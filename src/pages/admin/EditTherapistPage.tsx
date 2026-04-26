@@ -1,11 +1,20 @@
 // src/pages/admin/EditTherapistPage.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
-  Box, Button, TextField, Typography, CircularProgress, MenuItem,
-} from '@mui/material';
-import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '@/firebase';
+  Box,
+  Button,
+  TextField,
+  Typography,
+  CircularProgress,
+  MenuItem,
+  Stack,
+} from "@mui/material";
+import { useParams, useNavigate } from "react-router-dom";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+
+const statusOptions = ["available", "bookable", "resting"];
+const badgeOptions = ["VIP", "HOT", "NEW", "none"];
 
 const EditTherapistPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,13 +25,13 @@ const EditTherapistPage: React.FC = () => {
   useEffect(() => {
     const fetchTherapist = async () => {
       try {
-        const docRef = doc(db, 'therapists', id!);
-        const snapshot = await getDoc(docRef);
-        if (snapshot.exists()) {
-          setTherapist(snapshot.data());
+        const ref = doc(db, "therapists", id!);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          setTherapist(snap.data());
         }
-      } catch (error) {
-        console.error('Error fetching therapist:', error);
+      } catch (err) {
+        console.error("Error loading therapist:", err);
       } finally {
         setLoading(false);
       }
@@ -31,72 +40,141 @@ const EditTherapistPage: React.FC = () => {
   }, [id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTherapist({ ...therapist, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    setTherapist((prev: any) => ({
+      ...prev,
+      [name]: name === "rating" ? Number(value) || 0 : value,
+    }));
   };
 
   const handleSave = async () => {
     try {
-      await updateDoc(doc(db, 'therapists', id!), therapist);
-      navigate('/admin/therapists');
-    } catch (error) {
-      console.error('Error updating therapist:', error);
+      await updateDoc(doc(db, "therapists", id!), {
+        name: therapist.name || "",
+        customId: therapist.customId || "",
+        image: therapist.image || "",
+        specialty: therapist.specialty || "",
+        rating: therapist.rating || 0,
+        startTime: therapist.startTime || "",
+        endTime: therapist.endTime || "",
+        badge: therapist.badge === "none" ? null : therapist.badge,
+        statusOverride: therapist.statusOverride || null,
+      });
+
+      navigate("/admin/therapists");
+    } catch (err) {
+      console.error("Error saving therapist:", err);
     }
   };
 
-  if (loading) {
-    return <Box p={3}><CircularProgress /></Box>;
-  }
+  if (loading) return <Box p={4}><CircularProgress /></Box>;
 
   return (
-    <Box p={3} maxWidth={600}>
-      <Typography variant="h5" mb={3}>✏️ Edit Therapist</Typography>
+    <Box sx={{ p: 4, maxWidth: 600 }}>
+      <Typography variant="h5" fontWeight="bold" gutterBottom>
+        ✏️ Edit Therapist
+      </Typography>
 
-      <TextField
-        fullWidth
-        margin="normal"
-        label="Name"
-        name="name"
-        value={therapist.name || ''}
-        onChange={handleChange}
-      />
+      <Stack spacing={2}>
+        <TextField
+          label="Name"
+          name="name"
+          fullWidth
+          value={therapist.name || ""}
+          onChange={handleChange}
+        />
 
-      <TextField
-        fullWidth
-        margin="normal"
-        label="Specialty"
-        name="specialty"
-        value={therapist.specialty || ''}
-        onChange={handleChange}
-      />
+        {/* Custom ID */}
+        <TextField
+          label="Custom ID (for URL)"
+          name="customId"
+          fullWidth
+          value={therapist.customId || ""}
+          onChange={handleChange}
+        />
 
-      <TextField
-        fullWidth
-        margin="normal"
-        label="Rating"
-        name="rating"
-        type="number"
-        inputProps={{ step: 0.1, min: 0, max: 5 }}
-        value={therapist.rating || ''}
-        onChange={handleChange}
-      />
+        <TextField
+          label="Image URL"
+          name="image"
+          fullWidth
+          value={therapist.image || ""}
+          onChange={handleChange}
+        />
 
-      <TextField
-        fullWidth
-        margin="normal"
-        label="Available"
-        name="available"
-        select
-        value={therapist.available || ''}
-        onChange={handleChange}
-      >
-        <MenuItem value="available">Available</MenuItem>
-        <MenuItem value="bookable">Bookable</MenuItem>
-        <MenuItem value="resting">Resting</MenuItem>
-      </TextField>
+        <TextField
+          label="Specialty"
+          name="specialty"
+          fullWidth
+          value={therapist.specialty || ""}
+          onChange={handleChange}
+        />
 
-      <Box mt={3}>
+        <TextField
+          label="Rating"
+          name="rating"
+          type="number"
+          fullWidth
+          inputProps={{ step: 0.1, min: 0, max: 5 }}
+          value={therapist.rating || 0}
+          onChange={handleChange}
+        />
+
+        <TextField
+          label="Start Time"
+          name="startTime"
+          type="time"
+          fullWidth
+          value={therapist.startTime || ""}
+          onChange={handleChange}
+        />
+
+        <TextField
+          label="End Time"
+          name="endTime"
+          type="time"
+          fullWidth
+          value={therapist.endTime || ""}
+          onChange={handleChange}
+        />
+
+        <TextField
+          label="Badge"
+          name="badge"
+          select
+          fullWidth
+          value={therapist.badge || "none"}
+          onChange={handleChange}
+        >
+          {badgeOptions.map((b) => (
+            <MenuItem key={b} value={b}>
+              {b === "none" ? "None" : b}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          label="Status Override"
+          name="statusOverride"
+          select
+          fullWidth
+          value={therapist.statusOverride || ""}
+          onChange={handleChange}
+        >
+          <MenuItem value="">Auto</MenuItem>
+          {statusOptions.map((s) => (
+            <MenuItem key={s} value={s}>
+              {s}
+            </MenuItem>
+          ))}
+        </TextField>
+      </Stack>
+
+      <Box mt={4}>
         <Button variant="contained" onClick={handleSave}>💾 Save</Button>
-        <Button sx={{ ml: 2 }} onClick={() => navigate(-1)}>Cancel</Button>
+        <Button sx={{ ml: 2 }} onClick={() => navigate(-1)}>
+          Cancel
+        </Button>
       </Box>
     </Box>
   );

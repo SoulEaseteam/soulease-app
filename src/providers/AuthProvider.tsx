@@ -1,18 +1,21 @@
+// src/providers/AuthProvider.tsx
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/firebase";
+import { auth, db } from "@/lib/firebase";
 
 interface AuthContextType {
   user: any;
   role: "admin" | "therapist" | "user" | null;
   loading: boolean;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   role: null,
   loading: true,
+  logout: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -27,25 +30,49 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       setUser(firebaseUser);
 
       if (firebaseUser) {
-        const ref = doc(db, "users", firebaseUser.uid);
-        const snap = await getDoc(ref);
+        const uid = firebaseUser.uid;
 
-        if (snap.exists() && snap.data().role) {
-          setRole(snap.data().role);
-        } else {
-          setRole("user");
+        let detectedRole: "admin" | "therapist" | "user" = "user";
+
+        // ⭐ 1) Admin = highest priority
+        const adminSnap = await getDoc(doc(db, "admins", uid));
+        if (adminSnap.exists()) {
+          detectedRole = "admin";
         }
+
+        // ⭐ 2) Therapist = 2nd priority
+        const therapistSnap = await getDoc(doc(db, "therapists", uid));
+        if (therapistSnap.exists()) {
+          detectedRole = "therapist";
+        }
+
+        // ⭐ 3) Normal user = default (users collection)
+        const userSnap = await getDoc(doc(db, "users", uid));
+        if (userSnap.exists() && userSnap.data().role) {
+          detectedRole = userSnap.data().role;
+        }
+
+        setRole(detectedRole);
       } else {
         setRole(null);
       }
+
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
+  const logout = async () => {
+    await signOut(auth);
+    setUser(null);
+    setRole(null);
+  };
+
+  if (loading) return null;
+
   return (
-    <AuthContext.Provider value={{ user, role, loading }}>
+    <AuthContext.Provider value={{ user, role, loading, logout }}>
       {children}
     </AuthContext.Provider>
   );

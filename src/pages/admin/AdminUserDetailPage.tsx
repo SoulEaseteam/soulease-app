@@ -5,15 +5,16 @@ import {
   Typography,
   Paper,
   Avatar,
-  Divider,
+  Divider, 
   CircularProgress,
   Button,
   Select,
   MenuItem,
 } from '@mui/material';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db, auth } from "@/lib/firebase";
 import { Timestamp } from 'firebase/firestore';
+import { toast } from 'react-toastify';
 
 interface User {
   id: string;
@@ -30,6 +31,8 @@ const AdminUserDetailPage: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const currentAdminUid = auth.currentUser?.uid; // 👈 ตรวจสอบ admin คนปัจจุบัน
+
   useEffect(() => {
     const fetchUser = async () => {
       const ref = doc(db, 'users', id!);
@@ -43,17 +46,29 @@ const AdminUserDetailPage: React.FC = () => {
   }, [id]);
 
   const handleRoleChange = async (newRole: string) => {
-    if (user) {
-      await updateDoc(doc(db, 'users', user.id), { role: newRole });
-      setUser({ ...user, role: newRole });
+    if (!user) return;
+
+    // ❌ Admin ห้ามเปลี่ยน role ของตัวเอง
+    if (user.id === currentAdminUid) {
+      toast.warning("You cannot change your own role.");
+      return;
     }
+
+    await updateDoc(doc(db, 'users', user.id), { role: newRole });
+    setUser({ ...user, role: newRole as User['role'] });
   };
 
   const handleToggleActive = async () => {
-    if (user) {
-      await updateDoc(doc(db, 'users', user.id), { isActive: !user.isActive });
-      setUser({ ...user, isActive: !user.isActive });
+    if (!user) return;
+
+    // ❌ Admin ห้ามปิด active ของตัวเอง
+    if (user.id === currentAdminUid) {
+      toast.warning("You cannot deactivate your own account.");
+      return;
     }
+
+    await updateDoc(doc(db, 'users', user.id), { isActive: !user.isActive });
+    setUser({ ...user, isActive: !user.isActive });
   };
 
   const formatDate = (timestamp?: Timestamp) => {
@@ -78,6 +93,8 @@ const AdminUserDetailPage: React.FC = () => {
     );
   }
 
+  const isSelf = user.id === currentAdminUid; // ตรวจสอบว่าดู user ตัวเอง
+
   return (
     <Box sx={{ p: 4, maxWidth: 600, mx: 'auto' }}>
       <Paper elevation={3} sx={{ p: 3, borderRadius: 3 }}>
@@ -95,15 +112,23 @@ const AdminUserDetailPage: React.FC = () => {
 
         <Box mt={2}>
           <Typography fontWeight="bold">Role:</Typography>
+
           <Select
             size="small"
             value={user.role}
             onChange={(e) => handleRoleChange(e.target.value)}
+            disabled={isSelf} // ❌ Admin แก้ตัวเองไม่ได้
           >
             <MenuItem value="user">User</MenuItem>
             <MenuItem value="therapist">Therapist</MenuItem>
             <MenuItem value="admin">Admin</MenuItem>
           </Select>
+
+          {isSelf && (
+            <Typography color="error" fontSize={12} mt={1}>
+              ⚠️ You cannot change your own role.
+            </Typography>
+          )}
         </Box>
 
         <Box mt={2}>
@@ -112,10 +137,17 @@ const AdminUserDetailPage: React.FC = () => {
             variant="contained"
             color={user.isActive === false ? 'error' : 'success'}
             onClick={handleToggleActive}
+            disabled={isSelf} // ❌ Admin ห้าม deactive ตัวเอง
             sx={{ mt: 1 }}
           >
             {user.isActive === false ? 'Inactive' : 'Active'}
           </Button>
+
+          {isSelf && (
+            <Typography color="error" fontSize={12} mt={1}>
+              ⚠️ You cannot deactivate your own account.
+            </Typography>
+          )}
         </Box>
       </Paper>
     </Box>

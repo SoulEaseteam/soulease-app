@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// src/pages/admin/AdminAdvancedSettingsPage.tsx
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -10,99 +11,371 @@ import {
   Button,
   Snackbar,
   Alert,
-} from '@mui/material';
+} from "@mui/material";
+
+import { db } from "@/lib/firebase";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+
+// =============================
+// 🔥 Type สำหรับ Settings
+// =============================
+interface AdvancedSettings {
+  telegramEnabled: boolean;
+  lineEnabled: boolean;
+  telegramToken: string;
+  lineToken: string;
+
+  promptPayEnabled: boolean;
+  stripeEnabled: boolean;
+  depositAmount: number;
+
+  maxDistance: number;
+  roundTrip: boolean;
+
+  minAdvanceMins: number;
+  maxFutureDays: number;
+
+  maintenanceMode: boolean;
+  blockedIps: string;
+}
+
+// =============================
+// ⭐ Default Settings
+// =============================
+const defaultSettings: AdvancedSettings = {
+  telegramEnabled: true,
+  lineEnabled: false,
+  telegramToken: "",
+  lineToken: "",
+
+  promptPayEnabled: true,
+  stripeEnabled: false,
+  depositAmount: 0,
+
+  maxDistance: 20,
+  roundTrip: true,
+
+  minAdvanceMins: 30,
+  maxFutureDays: 7,
+
+  maintenanceMode: false,
+  blockedIps: "",
+};
 
 const AdminAdvancedSettingsPage: React.FC = () => {
+  const [settings, setSettings] = useState<AdvancedSettings>(defaultSettings);
   const [loading, setLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'error' | 'info' | 'warning';
-  }>({
+
+  const [snackbar, setSnackbar] = useState({
     open: false,
-    message: '',
-    severity: 'success',
+    message: "",
+    severity: "success" as "success" | "error",
   });
 
+  // ============================================================
+  // 🔥 LOAD SETTINGS จาก Firestore
+  // ============================================================
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const ref = doc(db, "adminSettings", "advanced");
+        const snap = await getDoc(ref);
+
+        if (snap.exists()) {
+          setSettings((prev) => ({
+            ...prev,
+            ...snap.data(),
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to load admin settings:", err);
+        setSnackbar({
+          open: true,
+          message: "❌ Failed to load settings.",
+          severity: "error",
+        });
+      }
+    };
+
+    loadSettings();
+  }, []);
+
+  // ============================================================
+  // 🔥 SAVE SETTINGS
+  // ============================================================
   const handleSave = async () => {
     setLoading(true);
+
     try {
-      // 👇 ใส่ logic บันทึกข้อมูลที่นี่ เช่นอัปเดต Firestore
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // mock delay
+      const ref = doc(db, "adminSettings", "advanced");
+
+      await setDoc(
+        ref,
+        {
+          ...settings,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
       setSnackbar({
         open: true,
-        message: 'Settings saved successfully.',
-        severity: 'success',
+        message: "✅ Settings saved successfully.",
+        severity: "success",
       });
-    } catch (error) {
+    } catch (err) {
       setSnackbar({
         open: true,
-        message: 'Failed to save settings.',
-        severity: 'error',
+        message: "❌ Failed to save settings.",
+        severity: "error",
       });
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
+  // ============================================================
+  // 🔥 UI (Premium Admin Panel)
+  // ============================================================
   return (
     <Box p={3}>
-      <Typography variant="h4" gutterBottom>
-        Advanced Settings
+      <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold" }}>
+        ⚙️ Advanced Settings
       </Typography>
 
-      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6">🔔 Notifications</Typography>
-        <FormControlLabel control={<Switch defaultChecked />} label="Enable Telegram Notifications" />
-        <FormControlLabel control={<Switch />} label="Enable LINE Notify" />
-        <TextField fullWidth label="Telegram Bot Token" margin="normal" />
-        <TextField fullWidth label="LINE Notify Token" margin="normal" />
+      {/* 🔔 NOTIFICATIONS */}
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" sx={{ mb: 1 }}>
+          🔔 Notifications
+        </Typography>
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={settings.telegramEnabled}
+              onChange={(e) =>
+                setSettings((prev) => ({
+                  ...prev,
+                  telegramEnabled: e.target.checked,
+                }))
+              }
+            />
+          }
+          label="Enable Telegram Notifications"
+        />
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={settings.lineEnabled}
+              onChange={(e) =>
+                setSettings((prev) => ({
+                  ...prev,
+                  lineEnabled: e.target.checked,
+                }))
+              }
+            />
+          }
+          label="Enable LINE Notify"
+        />
+
+        <TextField
+          label="Telegram Bot Token"
+          fullWidth
+          margin="normal"
+          value={settings.telegramToken}
+          onChange={(e) =>
+            setSettings((prev) => ({
+              ...prev,
+              telegramToken: e.target.value,
+            }))
+          }
+        />
+
+        <TextField
+          label="LINE Notify Token"
+          fullWidth
+          margin="normal"
+          value={settings.lineToken}
+          onChange={(e) =>
+            setSettings((prev) => ({
+              ...prev,
+              lineToken: e.target.value,
+            }))
+          }
+        />
       </Paper>
 
-      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6">💳 Payment</Typography>
-        <FormControlLabel control={<Switch defaultChecked />} label="Enable PromptPay QR" />
-        <FormControlLabel control={<Switch />} label="Enable Stripe" />
-        <TextField fullWidth label="Deposit Amount (THB)" type="number" margin="normal" />
+      {/* 💳 PAYMENT */}
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" sx={{ mb: 1 }}>
+          💳 Payment Settings
+        </Typography>
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={settings.promptPayEnabled}
+              onChange={(e) =>
+                setSettings((prev) => ({
+                  ...prev,
+                  promptPayEnabled: e.target.checked,
+                }))
+              }
+            />
+          }
+          label="Enable PromptPay QR"
+        />
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={settings.stripeEnabled}
+              onChange={(e) =>
+                setSettings((prev) => ({
+                  ...prev,
+                  stripeEnabled: e.target.checked,
+                }))
+              }
+            />
+          }
+          label="Enable Stripe Payments"
+        />
+
+        <TextField
+          label="Deposit Amount (THB)"
+          fullWidth
+          type="number"
+          margin="normal"
+          value={settings.depositAmount}
+          onChange={(e) =>
+            setSettings((prev) => ({
+              ...prev,
+              depositAmount: Number(e.target.value),
+            }))
+          }
+        />
       </Paper>
 
-      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
+      {/* 📍 DISTANCE */}
+      <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6">📍 Distance Settings</Typography>
-        <TextField fullWidth label="Max Distance Allowed (KM)" type="number" margin="normal" />
-        <FormControlLabel control={<Switch defaultChecked />} label="Multiply by 2 for Round Trip" />
+
+        <TextField
+          label="Maximum Distance (KM)"
+          fullWidth
+          type="number"
+          margin="normal"
+          value={settings.maxDistance}
+          onChange={(e) =>
+            setSettings((prev) => ({
+              ...prev,
+              maxDistance: Number(e.target.value),
+            }))
+          }
+        />
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={settings.roundTrip}
+              onChange={(e) =>
+                setSettings((prev) => ({
+                  ...prev,
+                  roundTrip: e.target.checked,
+                }))
+              }
+            />
+          }
+          label="Multiply Distance ×2 (Round Trip)"
+        />
       </Paper>
 
-      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
+      {/* ⏰ BOOKING RULES */}
+      <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6">⏰ Booking Rules</Typography>
-        <TextField fullWidth label="Min Advance Booking (minutes)" type="number" margin="normal" />
-        <TextField fullWidth label="Max Future Booking (days)" type="number" margin="normal" />
+
+        <TextField
+          label="Minimum Advance Booking (minutes)"
+          fullWidth
+          type="number"
+          margin="normal"
+          value={settings.minAdvanceMins}
+          onChange={(e) =>
+            setSettings((prev) => ({
+              ...prev,
+              minAdvanceMins: Number(e.target.value),
+            }))
+          }
+        />
+
+        <TextField
+          label="Maximum Future Booking (days)"
+          fullWidth
+          type="number"
+          margin="normal"
+          value={settings.maxFutureDays}
+          onChange={(e) =>
+            setSettings((prev) => ({
+              ...prev,
+              maxFutureDays: Number(e.target.value),
+            }))
+          }
+        />
       </Paper>
 
-      <Paper elevation={3} sx={{ p: 3 }}>
-        <Typography variant="h6">🛡️ Security</Typography>
-        <FormControlLabel control={<Switch />} label="Enable Maintenance Mode" />
-        <TextField fullWidth label="Blocked IP Addresses (comma separated)" margin="normal" />
+      {/* 🛡 SECURITY */}
+      <Paper sx={{ p: 3 }}>
+        <Typography variant="h6">🛡 Security Settings</Typography>
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={settings.maintenanceMode}
+              onChange={(e) =>
+                setSettings((prev) => ({
+                  ...prev,
+                  maintenanceMode: e.target.checked,
+                }))
+              }
+            />
+          }
+          label="Enable Maintenance Mode"
+        />
+
+        <TextField
+          label="Blocked IPs (comma separated)"
+          fullWidth
+          margin="normal"
+          value={settings.blockedIps}
+          onChange={(e) =>
+            setSettings((prev) => ({
+              ...prev,
+              blockedIps: e.target.value.trim(),
+            }))
+          }
+        />
       </Paper>
 
       <Divider sx={{ my: 3 }} />
+
       <Button
         variant="contained"
         color="primary"
         disabled={loading}
         onClick={handleSave}
       >
-        {loading ? 'Saving...' : 'Save Settings'}
+        {loading ? "Saving..." : "Save Settings"}
       </Button>
 
-      {/* ✅ Snackbar แก้ type เรียบร้อย */}
+      {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={3000}
+        autoHideDuration={2800}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
         onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
       >
-        <Alert severity={snackbar.severity} sx={{ width: '100%' }}>
-          {snackbar.message}
-        </Alert>
+        <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
       </Snackbar>
     </Box>
   );
