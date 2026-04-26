@@ -75,6 +75,9 @@ const TherapistLocationPage = React.lazy(
 const TherapistProfilePage = React.lazy(
   () => import("@/pages/therapist/TherapistProfilePage")
 );
+const TherapistAvailabilityPage = React.lazy(
+  () => import("@/pages/therapist/TherapistAvailabilityPage")
+);
 
 // Admin
 const AdminLoginPage = React.lazy(
@@ -205,6 +208,10 @@ export default function App() {
           <Route
             path="/therapist/status"
             element={<TherapistStatusManagerPage />}
+          />
+          <Route
+            path="/therapist/availability"
+            element={<TherapistAvailabilityPage />}
           />
           <Route path="/update-location" element={<UpdateLocationPage />} />
           <Route path="/location" element={<TherapistLocationPage />} />

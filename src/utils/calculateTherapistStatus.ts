@@ -75,6 +75,30 @@ export function calculateTherapistStatus(t: Therapist): {
   const now = new Date();
 
   // ---------------------------------------------------------
+  // 0) MANUAL STATUS (admin holiday toggle — highest priority)
+  // ---------------------------------------------------------
+  // เมื่อ admin กด toggle "holiday" จาก Admin > Holiday Toggle page
+  // จะ set field `manualStatus` ลง Firestore — รับสัญญาณนี้ก่อน statusOverride
+  const manualStatus = (t as any).manualStatus as
+    | "available"
+    | "holiday"
+    | "bookable"
+    | "resting"
+    | undefined;
+
+  if (manualStatus === "holiday") {
+    return { status: "resting", nextAvailable: null };
+  }
+  if (manualStatus === "resting") {
+    return { status: "resting", nextAvailable: null };
+  }
+  if (manualStatus === "bookable") {
+    return { status: "bookable", nextAvailable: null };
+  }
+  // manualStatus === "available" → fall through to normal logic
+  // (so working hours + busy still apply)
+
+  // ---------------------------------------------------------
   // 1) ADMIN OVERRIDE
   // ---------------------------------------------------------
   if (t.statusOverride && t.statusOverride !== "Auto") {
@@ -87,7 +111,7 @@ export function calculateTherapistStatus(t: Therapist): {
   }
 
   // ---------------------------------------------------------
-  // 2) HOLIDAY
+  // 2) HOLIDAY (legacy boolean — kept for backward compat)
   // ---------------------------------------------------------
   if (t.isHoliday) {
     return {

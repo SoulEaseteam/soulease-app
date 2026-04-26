@@ -8,7 +8,7 @@ import SearchBar from "@/components/common/SearchBar";
 import TherapistProfileCard from "@/components/TherapistProfileCard";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 import HomeBelowSections from "@/components/home/HomeBelowSections";
-import therapistsData from "@/data/therapists";
+import useTherapistsLive from "@/hooks/useTherapistsLive";
 
 // ==============================
 // Helpers
@@ -75,6 +75,12 @@ const BADGE_ORDER: Record<string, number> = {
 
 const HomePage: React.FC = () => {
   const { t } = useTranslation();
+
+  // 🔴 Real-time จาก Firestore (sync กับ admin holiday toggle ทันที)
+  // ถ้า Firestore ว่าง → fallback ไปใช้ hardcoded เพื่อไม่ให้หน้าว่าง
+  const { therapists: therapistsData } = useTherapistsLive({
+    fallbackToHardcoded: true,
+  });
 
   const [searchTerm, setSearchTerm] = useState("");
   // Filter pill state — "all" | "available" | "top"
