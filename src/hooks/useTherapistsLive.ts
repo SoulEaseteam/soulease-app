@@ -34,9 +34,17 @@ export function useTherapistsLive(options: Options = {}) {
         if (cancelled) return;
         const data: Therapist[] = snapshot.docs.map((doc) => {
           const raw = doc.data() as any;
+          // Normalize types — Firestore ข้อมูลเก่าบางตัวมี rating/reviews เป็น string
+          // ป้องกัน .toFixed() crash + ทำให้ comparison ทำงานถูก
           return {
             ...raw,
-            id: raw.id || doc.id, // ใช้ custom id ถ้ามี ไม่งั้น fallback docId
+            id: raw.id || doc.id,
+            rating: Number(raw.rating) || 0,
+            reviews: Number(raw.reviews) || 0,
+            todayBookings: Number(raw.todayBookings) || 0,
+            totalBookings: Number(raw.totalBookings) || 0,
+            lat: raw.lat != null ? Number(raw.lat) : undefined,
+            lng: raw.lng != null ? Number(raw.lng) : undefined,
           } as Therapist;
         });
 

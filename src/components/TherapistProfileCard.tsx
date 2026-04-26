@@ -444,7 +444,7 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
               }}
             >
               <RoomIcon sx={{ fontSize: 14, mr: 0.5 }} />
-              {(therapist as any).distance.toFixed(1)} km
+              {(Number((therapist as any).distance) || 0).toFixed(1)} km
             </Typography>
           )}
         </Box>
@@ -484,7 +484,7 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
         >
           <Star size={16} color="#FBBF24" fill="#FBBF24" strokeWidth={1.5} />
           <Typography fontSize={14} color="#666" component="span">
-            {(profile.rating ?? 0).toFixed(1)} | {served} served
+            {(Number(profile.rating) || 0).toFixed(1)} | {served} served
           </Typography>
         </Stack>
 
