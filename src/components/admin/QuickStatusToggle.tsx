@@ -27,6 +27,10 @@ interface Therapist {
   name: string;
   image?: string;
   manualStatus?: "available" | "holiday" | "bookable" | "resting";
+  // Real-time booking state
+  isBooked?: boolean;
+  busyUntil?: any; // Timestamp
+  todayBookings?: number;
 }
 
 const QuickStatusToggle: React.FC = () => {
@@ -49,6 +53,9 @@ const QuickStatusToggle: React.FC = () => {
           name: raw.name || "—",
           image: raw.image,
           manualStatus: raw.manualStatus,
+          isBooked: raw.isBooked,
+          busyUntil: raw.busyUntil,
+          todayBookings: Number(raw.todayBookings) || 0,
         };
       });
       setTherapists(data);
@@ -56,6 +63,25 @@ const QuickStatusToggle: React.FC = () => {
     });
     return () => unsub();
   }, []);
+
+  // คำนวณ real-time computed status (busyUntil + booking)
+  const getComputedLabel = (t: Therapist): { label: string; color: string } => {
+    // Manual override ก่อน
+    if (t.manualStatus === "holiday") return { label: "🏖 On holiday", color: "#F59E0B" };
+    if (t.manualStatus === "resting") return { label: "💤 Resting", color: "#6B7280" };
+
+    // Check busyUntil — กำลังนวดอยู่?
+    const busyUntil = t.busyUntil?.toDate?.() || (t.busyUntil ? new Date(t.busyUntil) : null);
+    const now = new Date();
+    if (busyUntil && busyUntil > now) {
+      const hh = String(busyUntil.getHours()).padStart(2, "0");
+      const mm = String(busyUntil.getMinutes()).padStart(2, "0");
+      return { label: `🔴 In session · until ${hh}:${mm}`, color: "#EF4444" };
+    }
+    if (t.isBooked) return { label: "🔴 In session", color: "#EF4444" };
+
+    return { label: "✅ Available", color: "#10B981" };
+  };
 
   // Toggle: available ↔ holiday (one-click)
   const handleToggle = async (t: Therapist) => {
@@ -81,13 +107,23 @@ const QuickStatusToggle: React.FC = () => {
   };
 
   const stats = useMemo(() => {
-    return {
-      total: therapists.length,
-      onHoliday: therapists.filter((t) => t.manualStatus === "holiday").length,
-      available: therapists.filter(
-        (t) => !t.manualStatus || t.manualStatus === "available"
-      ).length,
-    };
+    const now = new Date();
+    let inSession = 0;
+    let available = 0;
+    let onHoliday = 0;
+    therapists.forEach((t) => {
+      if (t.manualStatus === "holiday") {
+        onHoliday++;
+        return;
+      }
+      const busyUntil = t.busyUntil?.toDate?.() || (t.busyUntil ? new Date(t.busyUntil) : null);
+      if ((busyUntil && busyUntil > now) || t.isBooked) {
+        inSession++;
+      } else {
+        available++;
+      }
+    });
+    return { total: therapists.length, onHoliday, available, inSession };
   }, [therapists]);
 
   return (
@@ -142,7 +178,7 @@ const QuickStatusToggle: React.FC = () => {
       </Stack>
 
       {/* Stats */}
-      <Stack direction="row" spacing={1} mb={2}>
+      <Stack direction="row" spacing={1} mb={2} flexWrap="wrap" gap={0.5}>
         <Chip
           size="small"
           label={`Total ${stats.total}`}
@@ -150,12 +186,17 @@ const QuickStatusToggle: React.FC = () => {
         />
         <Chip
           size="small"
-          label={`✅ ${stats.available}`}
+          label={`✅ Free ${stats.available}`}
           sx={{ bgcolor: "#D1FAE5", color: "#065F46", fontWeight: 700 }}
         />
         <Chip
           size="small"
-          label={`🏖 ${stats.onHoliday}`}
+          label={`🔴 In session ${stats.inSession}`}
+          sx={{ bgcolor: "#FEE2E2", color: "#991B1B", fontWeight: 700 }}
+        />
+        <Chip
+          size="small"
+          label={`🏖 Holiday ${stats.onHoliday}`}
           sx={{ bgcolor: "#FEF3C7", color: "#92400E", fontWeight: 700 }}
         />
       </Stack>
@@ -170,6 +211,7 @@ const QuickStatusToggle: React.FC = () => {
           {therapists.map((t) => {
             const isHoliday = t.manualStatus === "holiday";
             const isUpdating = updating === t.docId;
+            const status = getComputedLabel(t);
             return (
               <Stack
                 key={t.docId}
@@ -210,8 +252,10 @@ const QuickStatusToggle: React.FC = () => {
                   >
                     {t.name}
                   </Typography>
-                  <Typography sx={{ fontSize: 11, color: "#64748B" }}>
-                    {isHoliday ? "🏖 On holiday" : "✅ Available"}
+                  <Typography
+                    sx={{ fontSize: 11, color: status.color, fontWeight: 600 }}
+                  >
+                    {status.label}
                   </Typography>
                 </Box>
                 <Tooltip
