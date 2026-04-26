@@ -17,6 +17,7 @@ import { FaLine, FaWeixin, FaTelegramPlane, FaWhatsapp } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import services from '../data/services';
+import HowItWorks from '@/components/home/HowItWorks';
 
 
 const getBadgeStyle = (badge: string) => {
@@ -230,8 +231,12 @@ const ServicesPage: React.FC = () => {
        </Box>
             )}
             {section === 'how' && (
-              <Box sx={{ px: 4, py: 6 }}>
-              <Typography fontWeight="bold" textAlign="center" mb={4} sx={{ color: '#3a3420', fontSize: 20,fontStyle: 'Trebuchet MS, sans-serif' }}>
+              <Box sx={{ px: 2, py: 3 }}>
+
+              {/* NEW: Visual 3-step "Choose · Book · Relax" — ก่อน FAQ */}
+              <HowItWorks />
+
+              <Typography fontWeight="bold" textAlign="center" mb={4} mt={6} sx={{ color: '#3a3420', fontSize: 20, fontStyle: 'Trebuchet MS, sans-serif' }}>
               • Frequently Asked Questions •
             </Typography>
 
