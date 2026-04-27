@@ -34,6 +34,9 @@ const widthByVariant: Record<ImageVariant, number> = {
   full: 1600,
 };
 
+/** Production domain — ใช้สำหรับสร้าง absolute URL จาก local path */
+const PROD_DOMAIN = "https://sunred.vip";
+
 /**
  * แปลง image URL ปกติ → Cloudinary fetch URL พร้อม optimization
  *
@@ -41,7 +44,8 @@ const widthByVariant: Record<ImageVariant, number> = {
  *   enhanceImage("https://example.com/photo.jpg")
  *   → https://res.cloudinary.com/xxx/image/fetch/e_improve,q_auto,f_auto,w_500,c_limit/...
  *
- *   enhanceImage("/images/local.jpg") // local → return เดิม (Cloudinary fetch ไม่ได้)
+ *   enhanceImage("/images/local.jpg")
+ *   → https://res.cloudinary.com/xxx/image/fetch/.../https://sunred.vip/images/local.jpg
  */
 export function enhanceImage(
   url: string | undefined | null,
@@ -52,13 +56,32 @@ export function enhanceImage(
   // ถ้าไม่ได้ตั้ง CLOUD_NAME → return เดิม (graceful fallback)
   if (!CLOUD_NAME) return url;
 
-  // local path / data url → Cloudinary fetch ไม่ได้, return เดิม
-  if (url.startsWith("/") || url.startsWith("data:") || url.startsWith("blob:")) {
+  // data: / blob: → Cloudinary fetch ไม่ได้, return เดิม
+  if (url.startsWith("data:") || url.startsWith("blob:")) {
     return url;
   }
 
   // ถ้าเป็น Cloudinary URL อยู่แล้ว → ไม่ wrap ซ้ำ
   if (url.includes("res.cloudinary.com")) {
+    return url;
+  }
+
+  // 🌐 ถ้าเป็น relative path "/images/..." → แปลงเป็น absolute URL ก่อน
+  // เพราะ Cloudinary fetch mode ต้องใช้ public absolute URL
+  let absoluteUrl = url;
+  if (url.startsWith("/")) {
+    // Production / local dev → ใช้ window.location.origin (run-time)
+    // SSR safe → fallback PROD_DOMAIN
+    const origin =
+      typeof window !== "undefined" && window.location.origin
+        ? window.location.origin
+        : PROD_DOMAIN;
+    absoluteUrl = `${origin}${url}`;
+  }
+
+  // localhost ก็ใช้ Cloudinary fetch ไม่ได้ (Cloudinary CDN เข้าถึง localhost ไม่ได้)
+  // → return เดิม สำหรับ dev environment
+  if (absoluteUrl.includes("localhost") || absoluteUrl.includes("127.0.0.1")) {
     return url;
   }
 
@@ -78,7 +101,7 @@ export function enhanceImage(
     .join(",");
 
   return `https://res.cloudinary.com/${CLOUD_NAME}/image/fetch/${transforms}/${encodeURIComponent(
-    url
+    absoluteUrl
   )}`;
 }
 
