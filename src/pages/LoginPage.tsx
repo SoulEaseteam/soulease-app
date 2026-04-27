@@ -10,7 +10,7 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import {
   collection,
@@ -23,9 +23,16 @@ import {
 import { auth, db } from "@/lib/firebase";
 import "@fontsource/chonburi";
 import BottomNav from '../components/layouts/BottomNavGlass';
+import { getErrorMessage } from "@/utils/getErrorMessage";
+
+type LoginRole = "admin" | "therapist" | "user";
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  // redirect กลับหน้าเดิมถ้า PrivateRoute ส่งมา; default ไปหน้าโปรไฟล์
+  const fromPath =
+    (location.state as { from?: string } | null)?.from ?? null;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,29 +46,27 @@ const LoginPage: React.FC = () => {
 
   // =============================================================
   // 🔥 ROLE CHECK: SunRed Role Logic (Admin > Therapist > User)
+  //   normalize "customer" → "user" ให้ตรงกับ PrivateRoute / AuthProvider
   // =============================================================
-  const getUserRole = async (uid: string, email: string) => {
+  const getUserRole = async (uid: string, email: string): Promise<LoginRole> => {
     const lower = email.toLowerCase();
 
-    // 1) Check Admin
-    const adminDoc = await getDoc(doc(db, "admins", uid));
-    if (adminDoc.exists()) return "admin";
+    // ทำขนานเพื่อลด round-trip
+    const [adminDoc, tSnap, uDoc] = await Promise.all([
+      getDoc(doc(db, "admins", uid)),
+      getDocs(query(collection(db, "therapists"), where("email", "==", lower))),
+      getDoc(doc(db, "users", uid)),
+    ]);
 
-    // 2) Check Therapist by email
-    const tQ = query(
-      collection(db, "therapists"),
-      where("email", "==", lower)
-    );
-    const tSnap = await getDocs(tQ);
+    if (adminDoc.exists()) return "admin";
     if (!tSnap.empty) return "therapist";
 
-    // 3) Check Users
-    const uDoc = await getDoc(doc(db, "users", uid));
     if (uDoc.exists()) {
-      return uDoc.data().role || "customer";
+      const r = uDoc.data().role as string | undefined;
+      if (r === "admin" || r === "therapist") return r;
+      // legacy: เคยเก็บ "customer" → normalize เป็น "user"
     }
-
-    return "customer";
+    return "user";
   };
 
   // =============================================================
@@ -92,14 +97,16 @@ const LoginPage: React.FC = () => {
       });
 
       setTimeout(() => {
-        if (role === "admin") return navigate("/admin/dashboard");
-        if (role === "therapist") return navigate("/therapist/profile");
-        return navigate("/profile");
+        // ถ้าถูก redirect มาจาก PrivateRoute ให้กลับหน้าเดิม
+        if (fromPath && role !== "admin") return navigate(fromPath, { replace: true });
+        if (role === "admin") return navigate("/admin/dashboard", { replace: true });
+        if (role === "therapist") return navigate("/therapist/profile", { replace: true });
+        return navigate("/profile", { replace: true });
       }, 300);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setSnackbar({
         open: true,
-        message: `❌ Login failed: ${err.message}`,
+        message: `❌ Login failed: ${getErrorMessage(err)}`,
         severity: "error",
       });
     } finally {

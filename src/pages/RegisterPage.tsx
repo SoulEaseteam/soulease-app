@@ -8,8 +8,9 @@ import BottomNav from '../components/layouts/BottomNavGlass';
 import '@fontsource/chonburi';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from "../lib/firebase";
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+import { getErrorMessage } from "@/utils/getErrorMessage";
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -18,8 +19,14 @@ const RegisterPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleRegister = async () => {
-    if (!email || !password || !confirmPassword) {
+    const trimmedEmail = email.trim().toLowerCase();
+
+    if (!trimmedEmail || !password || !confirmPassword) {
       toast.warning('Please fill in all fields.');
+      return;
+    }
+    if (password.length < 8) {
+      toast.error('Password must be at least 8 characters.');
       return;
     }
     if (password !== confirmPassword) {
@@ -28,19 +35,19 @@ const RegisterPage: React.FC = () => {
     }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
       const uid = userCredential.user.uid;
 
       await setDoc(doc(db, 'users', uid), {
-        email,
-        role: 'customer',
-        createdAt: new Date(),
+        email: trimmedEmail,
+        role: 'user', // normalized — เลิกใช้ "customer" ที่ไม่ตรงกับ Role type
+        createdAt: serverTimestamp(),
       });
 
       toast.success('🎉 Register successful!');
       navigate('/login');
-    } catch (error: any) {
-      toast.error(error.message || 'Registration failed.');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Registration failed.'));
     }
   };
 

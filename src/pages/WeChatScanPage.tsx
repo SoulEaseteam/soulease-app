@@ -48,7 +48,7 @@ const WeChatScanPage: React.FC = () => {
         justifyContent: "center",
         alignItems: "center",
         backgroundColor: "#f5f5f5",
-        px: 2,
+        px: 1,
         textAlign: "center",
       }}
     >
@@ -62,7 +62,7 @@ const WeChatScanPage: React.FC = () => {
 
       <Box
         sx={{
-          p: 2,
+          p: 3,
           borderRadius: 4,
           background: "#fff",
           boxShadow: "0px 4px 12px rgba(0,0,0,0.08)",
@@ -81,7 +81,7 @@ const WeChatScanPage: React.FC = () => {
           style={{ width: "100%", height: "auto", objectFit: "contain" }}
         />
 
-        <Box display="flex" alignItems="center" justifyContent="center" gap={1} sx={{ mt: -6 }}>
+        <Box display="flex" alignItems="center" justifyContent="center" gap={3} sx={{ mt: 3 }}>
           <Typography variant="subtitle2" color="text.secondary" sx={{ fontSize: 18, fontWeight: "bold" }}>
             WeChat ID: {WECHAT_ID}
           </Typography>
@@ -96,7 +96,7 @@ const WeChatScanPage: React.FC = () => {
       <Button
         variant="contained"
         onClick={() => navigate("/")}
-        sx={{ px: 4, borderRadius: 4, backgroundColor: "#f36c60", maxWidth: 200, width: "100%" }}
+        sx={{ px: 5, borderRadius: 4, backgroundColor: "#f36c60", maxWidth: 200, width: "100%" }}
       >
         BACK TO HOME
       </Button>

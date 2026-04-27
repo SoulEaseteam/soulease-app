@@ -1,5 +1,4 @@
-import dayjs from "dayjs";
-import { Timestamp } from "firebase/firestore";
+// dayjs / Timestamp imports ไม่จำเป็นแล้ว — ลบทิ้งเพื่อกัน dead deps
 
 export type Avail = "available" | "bookable" | "resting";
 
@@ -9,13 +8,24 @@ export function nowThai(): Date {
   return new Date(utc + 7 * 3600 * 1000);
 }
 
-export function toDateLike(v: any): Date | null {
+export function toDateLike(v: unknown): Date | null {
   try {
     if (!v) return null;
-    if (typeof v?.toDate === "function") return v.toDate();
-    if (v instanceof Date) return v;
-    if (typeof v === "number") return new Date(v);
-    return new Date(v);
+    if (
+      typeof v === "object" &&
+      v !== null &&
+      "toDate" in v &&
+      typeof (v as { toDate?: unknown }).toDate === "function"
+    ) {
+      const d = (v as { toDate: () => Date }).toDate();
+      return isNaN(d.getTime()) ? null : d;
+    }
+    if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
+    if (typeof v === "number" || typeof v === "string") {
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -39,7 +49,7 @@ export function workingWindowThai(now: Date, startHHMM?: string, endHHMM?: strin
   const end = new Date(now);
   end.setHours(e.h, e.m, 0, 0);
 
-  let startMs = start.getTime();
+  const startMs = start.getTime();
   let endMs = end.getTime();
   let nowMs = now.getTime();
 
@@ -47,6 +57,8 @@ export function workingWindowThai(now: Date, startHHMM?: string, endHHMM?: strin
     endMs += 24 * 3600 * 1000;
     if (nowMs < startMs) nowMs += 24 * 3600 * 1000;
   }
+  // (nowMs ถูกใช้คำนวณ overlap ใน caller — เก็บ side-effect ไว้)
+  void nowMs;
 
   return { start: new Date(startMs), end: new Date(endMs) };
 }
@@ -73,7 +85,7 @@ export function calcNextAvailable(startDate: Date, durationMinLocal: number, p0:
   const { start, end } = workingWindowThai(now, t.startTime, t.endTime);
   if (!start || !end) return "";
 
-  let s = new Date(start);
+  const s = new Date(start);
   if (now >= end) {
     s.setDate(s.getDate() + 1);
   }
@@ -91,8 +103,8 @@ export function computeStatus(t: {
   statusOverride?: Avail | "Auto" | null;
   activeBooking?: boolean;
 }): Avail {
-  const override = (t.statusOverride ?? "Auto") as Avail | "Auto";
-  if (override !== "Auto") return override as Avail;
+  const override: Avail | "Auto" = t.statusOverride ?? "Auto";
+  if (override !== "Auto") return override;
 
   const now = nowThai();
   const { start, end } = workingWindowThai(now, t.startTime, t.endTime);

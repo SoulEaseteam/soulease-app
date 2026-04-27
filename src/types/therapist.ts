@@ -1,7 +1,12 @@
 // src/types/therapist.ts
 
+import type { Timestamp } from "firebase/firestore";
+
 export type Avail = "available" | "bookable" | "resting";
 export type StatusOverride = Avail | "Auto" | null;
+
+/** ค่าวันที่ที่อาจมาจาก Firestore (Timestamp) หรือ JS หรือ ISO string */
+export type FirestoreDateLike = Timestamp | Date | string | number | null;
 
 /** ---------- Sub Types ---------- */
 export interface Features {
@@ -47,7 +52,7 @@ export interface Therapist {
   statusOverride?: StatusOverride;     // Admin override: "Auto" | Avail
   isHoliday?: boolean;                 // force resting
   isBooked?: boolean;                  // legacy flag
-  busyUntil?: Date | any | null;       // Timestamp or Date
+  busyUntil?: FirestoreDateLike;       // Timestamp / Date / ISO / null
   activeBooking?: boolean;             // true if job ongoing
 
   /** computed by Engine (DO NOT STORE in Firestore) */
@@ -69,6 +74,7 @@ export interface Therapist {
   specialty?: string;
 
   /** services available */
+  services?: string[];           // legacy alias
   servicesAvailable?: string[];
 
   /** badge system */
@@ -79,8 +85,8 @@ export interface Therapist {
   employmentType?: string | null;
   serviceCount?: string;
 
-  /** fallback for smooth upgrades */
-  [key: string]: any;
+  /** fallback for smooth upgrades — ใช้ unknown ปลอดภัยกว่า any */
+  [key: string]: unknown;
 }
 
 /** Badge Configuration UI */

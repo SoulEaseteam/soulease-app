@@ -65,10 +65,22 @@ interface Booking {
 function toDateSafe(v: Booking["createdAt"]): Date | null {
   try {
     if (!v) return null;
-    if (typeof (v as any)?.toDate === "function")
+    if (
+      typeof v === "object" &&
+      v !== null &&
+      "toDate" in v &&
+      typeof (v as { toDate?: unknown }).toDate === "function"
+    ) {
       return (v as Timestamp).toDate();
-    if (typeof (v as any)?.seconds === "number")
-      return new Date((v as any).seconds * 1000);
+    }
+    if (
+      typeof v === "object" &&
+      v !== null &&
+      "seconds" in v &&
+      typeof (v as { seconds?: unknown }).seconds === "number"
+    ) {
+      return new Date((v as { seconds: number }).seconds * 1000);
+    }
     if (typeof v === "string") return new Date(v);
     if (v instanceof Date) return v;
     return null;
@@ -151,7 +163,7 @@ const AdminReportPage: React.FC = () => {
 
   // ===== CRUD helpers =====
   const updateBooking = async (id: string, patch: Partial<Booking>) =>
-    updateDoc(doc(db, "bookings", id), patch as any);
+    updateDoc(doc(db, "bookings", id), patch);
 
   const setStatus = (id: string, status: string) =>
     updateBooking(id, { status });

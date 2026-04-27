@@ -36,9 +36,11 @@ import { toast } from "react-toastify";
 
 import { useTranslation } from "react-i18next";
 import { db } from "@/lib/firebase";
-import services from "@/data/services";
+import services, { type MassageService } from "@/data/services";
 import { useAuth } from "@/providers/AuthProvider";
 import { calcNextAvailable } from "@/utils/calculateNextAvailable";
+import type { Therapist } from "@/types/therapist";
+import { getErrorMessage } from "@/utils/getErrorMessage";
 
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
@@ -90,12 +92,40 @@ const calculateGrabFare = (distanceKm: number, durationMin: number) => {
 
 const normalize = (s: string) => s.trim().toLowerCase();
 
-const getDurationMinutes = (svc: any): number => {
+const getDurationMinutes = (
+  svc: MassageService | null | undefined
+): number => {
   if (!svc) return 60;
-  const raw = svc.duration ?? svc.durationText ?? 60;
+  // ฟิลด์อย่างเป็นทางการคือ `duration` (number) — fallback เผื่อข้อมูลเก่า
+  const raw =
+    (svc as MassageService & { durationText?: string | number }).durationText ??
+    svc.duration ??
+    60;
   if (typeof raw === "number") return raw;
   const m = String(raw).match(/\d+/);
   return m ? Number(m[0]) : 60;
+};
+
+// ===================== TYPES =====================
+interface BookingLocationState {
+  selectedLat?: number | string;
+  selectedLng?: number | string;
+  selectedAddress?: string;
+}
+
+/** keys ตรงกับที่ JSX ใช้:  errors.phone / errors.time / errors.location */
+interface BookingFormErrors {
+  phone?: boolean;
+  time?: boolean;
+  location?: boolean;
+}
+
+/** narrow shape ของ therapist ที่ BookingPage ใช้จริง — ไม่ต้องคุมทุกฟิลด์ */
+type TherapistDoc = Partial<Therapist> & {
+  id: string;
+  /** ฟิลด์ legacy ที่อาจอยู่ตรงราก doc */
+  lat?: number | string;
+  lng?: number | string;
 };
 
 const escapeMd = (s: string = "") =>
@@ -133,7 +163,7 @@ const BookingPage: React.FC = () => {
   const { user } = useAuth();
 
   const queryParams = new URLSearchParams(location.search);
-  const state = location.state as any;
+  const state = (location.state ?? null) as BookingLocationState | null;
 
   const therapistId = location.pathname.split("/booking/")[1] || "";
   const serviceName = queryParams.get("service") || "";
@@ -155,7 +185,7 @@ const BookingPage: React.FC = () => {
   const formattedAddress = queryParams.get("formattedAddress");
   const placeId = queryParams.get("placeId");
 
-  const [therapist, setTherapist] = useState<any>(null);
+  const [therapist, setTherapist] = useState<TherapistDoc | null>(null);
   const [therapistDocId, setTherapistDocId] = useState<string | null>(null);
 
   const [address, setAddress] = useState(formattedAddress || selectedAddress || "");
@@ -168,7 +198,7 @@ const BookingPage: React.FC = () => {
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [durationMin, setDurationMin] = useState<number | null>(null);
   const [rainSurcharge, setRainSurcharge] = useState(0);
-  const [errors, setErrors] = useState<any>({});
+  const [errors, setErrors] = useState<BookingFormErrors>({});
   const [loading, setLoading] = useState(false);
 
   const [deviceId, setDeviceId] = useState<string | null>(null);
@@ -192,10 +222,10 @@ const BookingPage: React.FC = () => {
   useEffect(() => {
     const fetchTherapist = async () => {
       try {
-        let snap = await getDoc(doc(db, "therapists", therapistId));
+        const snap = await getDoc(doc(db, "therapists", therapistId));
         if (snap.exists()) {
           setTherapistDocId(snap.id);
-          setTherapist({ id: snap.id, ...snap.data() });
+          setTherapist({ id: snap.id, ...(snap.data() as Partial<Therapist>) });
           return;
         }
 
@@ -204,7 +234,7 @@ const BookingPage: React.FC = () => {
         if (!result.empty) {
           const d = result.docs[0];
           setTherapistDocId(d.id);
-          setTherapist({ id: d.id, ...d.data() });
+          setTherapist({ id: d.id, ...(d.data() as Partial<Therapist>) });
         }
       } catch (err) {
         console.error("Therapist fetch fail:", err);
@@ -218,13 +248,13 @@ const BookingPage: React.FC = () => {
     if (!selectedLat || !selectedLng) return;
     if (locationName || address) return;
 
-    const g = (window as any).google;
+    const g = window.google;
     if (!g?.maps?.Geocoder) return;
 
     new g.maps.Geocoder().geocode(
       { location: { lat: +selectedLat, lng: +selectedLng } },
-      (res: any, status: any) => {
-        if (status === "OK" && res?.length) {
+      (res, status) => {
+        if (status === "OK" && res && res.length > 0) {
           setAddress(res[0].formatted_address || "");
         }
       }
@@ -235,24 +265,28 @@ const BookingPage: React.FC = () => {
   useEffect(() => {
     if (!selectedLat || !selectedLng || !therapist) return;
 
-    const tLat = parseFloat(therapist?.currentLocation?.lat ?? therapist?.lat ?? "");
-    const tLng = parseFloat(therapist?.currentLocation?.lng ?? therapist?.lng ?? "");
+    const tLat = parseFloat(
+      String(therapist?.currentLocation?.lat ?? therapist?.lat ?? "")
+    );
+    const tLng = parseFloat(
+      String(therapist?.currentLocation?.lng ?? therapist?.lng ?? "")
+    );
 
     if (!tLat || !tLng) return;
 
-    const g = (window as any).google;
+    const g = window.google;
     if (!g?.maps?.DistanceMatrixService) return;
 
     new g.maps.DistanceMatrixService().getDistanceMatrix(
       {
         origins: [new g.maps.LatLng(tLat, tLng)],
         destinations: [new g.maps.LatLng(+selectedLat, +selectedLng)],
-        travelMode: "DRIVING",
+        travelMode: g.maps.TravelMode.DRIVING,
         unitSystem: g.maps.UnitSystem.METRIC,
       },
-      (res: any, status: any) => {
-        if (status === "OK" && res?.rows?.[0]?.elements?.[0]?.status === "OK") {
-          const el = res.rows[0].elements[0];
+      (res, status) => {
+        const el = res?.rows?.[0]?.elements?.[0];
+        if (status === "OK" && el?.status === "OK") {
           setDistanceKm(el.distance.value / 1000);
           setDurationMin(Math.ceil(el.duration.value / 60));
         }
@@ -265,17 +299,22 @@ const BookingPage: React.FC = () => {
     const key = import.meta.env.VITE_OPENWEATHER_KEY;
     if (!key || !selectedLat || !selectedLng) return;
 
+    interface OWMWeather { main?: string }
+    interface OWMResponse { weather?: OWMWeather[] }
+
     fetch(
       `https://api.openweathermap.org/data/2.5/weather?lat=${selectedLat}&lon=${selectedLng}&appid=${key}`
     )
-      .then((r) => r.json())
+      .then((r) => r.json() as Promise<OWMResponse>)
       .then((data) => {
-        const raining = (data?.weather || []).some((w: any) =>
-          String(w.main || "").toLowerCase().includes("rain")
+        const raining = (data?.weather ?? []).some((w) =>
+          String(w.main ?? "").toLowerCase().includes("rain")
         );
         setRainSurcharge(raining ? 0.2 : 0);
       })
-      .catch(() => {});
+      .catch(() => {
+        /* fail silently — fallback คือไม่บวก rain surcharge */
+      });
   }, [selectedLat, selectedLng]);
 
   const travelCost = useMemo(() => {

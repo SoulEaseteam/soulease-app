@@ -207,7 +207,7 @@ const BookingConfirmationPage: React.FC = () => {
       >
         <Box
           component="img"
-          src="/images/icon/Check Mark.gif"
+          src="/images/icon/Complete.gif"
           alt="Confirmed"
           sx={{
             width: 56,

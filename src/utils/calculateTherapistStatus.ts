@@ -15,18 +15,27 @@ function parseHHMM(hhmm?: string | null) {
 }
 
 /** Convert timestamp → JS Date safely */
-function toDateSafe(v: any): Date | null {
+function toDateSafe(v: unknown): Date | null {
   if (!v) return null;
 
-  if (typeof v?.toDate === "function") {
-    const d = v.toDate();
+  if (
+    typeof v === "object" &&
+    v !== null &&
+    "toDate" in v &&
+    typeof (v as { toDate?: unknown }).toDate === "function"
+  ) {
+    const d = (v as { toDate: () => Date }).toDate();
     return isNaN(d.getTime()) ? null : d;
   }
 
   if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
 
-  const d = new Date(v);
-  return isNaN(d.getTime()) ? null : d;
+  if (typeof v === "string" || typeof v === "number") {
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  return null;
 }
 
 /** Format hh:mm (24hr) */
@@ -123,13 +132,16 @@ export function calculateTherapistStatus(t: Therapist): {
 
   // ---------------------------------------------------------
   // 5) ACTIVE BOOKING (fallback)
+  //
+  // หมายเหตุ: ในทาง type declaration `activeBooking` คือ `boolean`
+  // แต่บางจุดของแอปก็เก็บเป็น object ที่มี endAt — รองรับทั้งสองแบบ
   // ---------------------------------------------------------
-  if (t.activeBooking || t.isBooked) {
-    let next = null;
+  if (t.activeBooking ?? t.isBooked) {
+    let next: string | null = null;
 
-    // If booking has endAt → set nextAvailable
-    if ((t as any).activeBooking?.endAt) {
-      const endAt = toDateSafe((t as any).activeBooking.endAt);
+    const ab = t.activeBooking as unknown;
+    if (ab && typeof ab === "object" && "endAt" in ab) {
+      const endAt = toDateSafe((ab as { endAt?: unknown }).endAt);
       if (endAt) next = formatHHMM(endAt);
     }
 

@@ -52,14 +52,16 @@ interface Booking {
   adminNote?: string;
 }
 
-const statusColors: any = {
+type ChipColor = "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning";
+
+const statusColors: Record<string, ChipColor> = {
   pending: "warning",
   confirmed: "info",
   completed: "success",
   cancelled: "error",
 };
 
-const paymentColors: any = {
+const paymentColors: Record<string, ChipColor> = {
   paid: "success",
   unpaid: "default",
 };

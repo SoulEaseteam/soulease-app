@@ -8,6 +8,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
@@ -27,20 +28,50 @@ import dayjs from "dayjs";
 // =======================================================
 // TYPES
 // =======================================================
+/** ค่าวันที่จาก Firestore อาจมาในหลายรูป — Timestamp / Date / ISO string / null */
+type FirestoreDateLike = Timestamp | Date | string | number | null | undefined;
+
 interface Review {
   id: string;
   therapistId: string;
   userId?: string | null;
   rating: number;
   comment: string;
-  createdAt: any;
+  createdAt: FirestoreDateLike;
   userName: string;
   photoURL?: string;
+}
+
+/** narrow shape ของ booking doc ที่ ReviewListPage อ่าน — รับเฉพาะฟิลด์ที่ใช้จริง */
+interface BookingReviewDoc {
+  id?: string;
+  therapistId?: string;
+  userId?: string | null;
+  rating?: number;
+  reviewText?: string;
+  startAt?: FirestoreDateLike;
+  createdAt?: FirestoreDateLike;
+  userName?: string;
+  userEmail?: string;
+  userAvatar?: string;
 }
 
 interface TherapistInfo {
   name?: string;
   image?: string;
+}
+
+/** แปลง FirestoreDateLike → epoch ms (สำหรับ sort) */
+function toMs(v: FirestoreDateLike): number {
+  if (!v) return 0;
+  if (v instanceof Timestamp) return v.toMillis();
+  if (v instanceof Date) return v.getTime();
+  if (typeof v === "number") return v;
+  if (typeof v === "string") {
+    const t = Date.parse(v);
+    return Number.isFinite(t) ? t : 0;
+  }
+  return 0;
 }
 
 // =======================================================
@@ -100,26 +131,23 @@ const ReviewListPage: React.FC = () => {
     );
 
     const unsub = onSnapshot(q, (snapshot) => {
-      const raw = snapshot.docs.map((d) => d.data());
-
       // enrich with fallback reviewer name + avatar
-      const enriched: Review[] = raw.map((r: any) => ({
-        id: r.id,
-        therapistId: r.therapistId,
-        userId: r.userId || null,
-        rating: r.rating || 5,
-        comment: r.reviewText || "",
-        createdAt: r.startAt || r.createdAt || null,
-        userName: r.userName || r.userEmail || `Booking: ${r.id}`,
-        photoURL: r.userAvatar || "/images/default-avatar.png",
-      }));
+      const enriched: Review[] = snapshot.docs.map((d) => {
+        const r = d.data() as BookingReviewDoc;
+        return {
+          id: d.id, // ใช้ docId ของจริง ไม่ใช่ field `id` ที่อาจไม่มี
+          therapistId: r.therapistId ?? "",
+          userId: r.userId ?? null,
+          rating: typeof r.rating === "number" ? r.rating : 5,
+          comment: r.reviewText ?? "",
+          createdAt: r.startAt ?? r.createdAt ?? null,
+          userName: r.userName ?? r.userEmail ?? `Booking: ${d.id}`,
+          photoURL: r.userAvatar ?? "/images/default-avatar.png",
+        };
+      });
 
       // Sort newest first
-      enriched.sort((a, b) => {
-        const t1 = a.createdAt?.seconds || a.createdAt?.toDate?.()?.getTime() || 0;
-        const t2 = b.createdAt?.seconds || b.createdAt?.toDate?.()?.getTime() || 0;
-        return t2 - t1;
-      });
+      enriched.sort((a, b) => toMs(b.createdAt) - toMs(a.createdAt));
 
       setReviews(enriched);
     });
@@ -271,7 +299,10 @@ const ReviewListPage: React.FC = () => {
                 color="text.secondary"
                 sx={{ mt: 1, display: "block" }}
               >
-                {dayjs(r.createdAt?.toDate?.()).format("YYYY-MM-DD HH:mm")}
+                {(() => {
+                  const ms = toMs(r.createdAt);
+                  return ms ? dayjs(ms).format("YYYY-MM-DD HH:mm") : "—";
+                })()}
               </Typography>
               <Typography textAlign="center" mt={3} fontSize={13} sx={{ color: '#aaa', fontStyle: 'Trebuchet MS, sans-serif' }}> 
                                   “Updated reviews & feedback in our Telegram channel"</Typography>

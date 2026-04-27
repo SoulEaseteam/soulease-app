@@ -12,9 +12,45 @@ import {
   Paper,
   Alert,
 } from "@mui/material";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useNavigate } from "react-router-dom";
+import { getErrorMessage } from "@/utils/getErrorMessage";
+
+// ------------------------
+// FORM TYPE
+// ------------------------
+interface TherapistFeatureForm {
+  age: string;
+  height: string;
+  weight: string;
+  gender: string;
+  ethnicity: string;
+  bodyType: string;
+  bustSize: string;
+  hairColor: string;
+  skintone: string;
+  vaccinated: string;
+  smoker: string;
+  language: string;
+}
+
+interface TherapistFormData {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  image: string;
+  galleryInput: string;
+  rating: number | string;
+  reviews: number | string;
+  startTime: string;
+  endTime: string;
+  employmentType: string;
+  specialty: string;
+  servicesAvailable: string;
+  features: TherapistFeatureForm;
+}
 
 // ------------------------
 // SERVICE NORMALIZATION MAP
@@ -49,7 +85,7 @@ const makeSlug = (name: string) =>
 const AddTherapistPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const [data, setData] = useState<any>({
+  const [data, setData] = useState<TherapistFormData>({
     id: "",
     name: "",
     email: "",
@@ -90,13 +126,15 @@ const AddTherapistPage: React.FC = () => {
   const [snackbar, setSnackbar] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: any) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setData((p: any) => ({ ...p, [name]: value }));
+    setData((p) => ({ ...p, [name]: value }));
   };
 
-  const handleFeatureChange = (k: string, v: string) => {
-    setData((p: any) => ({
+  const handleFeatureChange = (k: keyof TherapistFeatureForm, v: string) => {
+    setData((p) => ({
       ...p,
       features: { ...p.features, [k]: v },
     }));
@@ -140,16 +178,16 @@ const AddTherapistPage: React.FC = () => {
       // -----------------------------
       const serviceList = (data.servicesAvailable || "")
         .split(",")
-        .map((x: string) => normalizeService(x))
-        .filter((x: string) => x.length > 0);
+        .map((x) => normalizeService(x))
+        .filter((x) => x.length > 0);
 
       // -----------------------------
       // CLEAN GALLERY
       // -----------------------------
       const gallery = (data.galleryInput || "")
         .split(",")
-        .map((x: string) => x.trim())
-        .filter((x: string) => x.length > 3);
+        .map((x) => x.trim())
+        .filter((x) => x.length > 3);
 
       // -----------------------------
       // AUTO GENERATE CUSTOM FIELDS
@@ -191,7 +229,7 @@ const AddTherapistPage: React.FC = () => {
         isBooked: false,
         busyUntil: null,
 
-        createdAt: new Date(),
+        createdAt: serverTimestamp(),
       };
 
       // -----------------------------
@@ -201,9 +239,9 @@ const AddTherapistPage: React.FC = () => {
 
       setSnackbar("✅ Therapist created successfully");
       setTimeout(() => navigate("/admin/therapists"), 1200);
-    } catch (err) {
-      console.error(err);
-      setSnackbar("❌ Failed to add therapist");
+    } catch (err: unknown) {
+      console.error("[AddTherapist]", err);
+      setSnackbar(`❌ Failed to add therapist: ${getErrorMessage(err)}`);
     } finally {
       setLoading(false);
     }

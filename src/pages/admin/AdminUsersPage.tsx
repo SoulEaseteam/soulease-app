@@ -57,7 +57,7 @@ const AdminUsersPage: React.FC = () => {
       setUsers(
         snap.docs.map((d) => ({
           id: d.id,
-          ...(d.data() as any),
+          ...(d.data() as Omit<User, "id">),
         }))
       );
     } catch (err) {

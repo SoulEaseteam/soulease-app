@@ -21,6 +21,10 @@ import {
 import { useAuth } from "@/providers/AuthProvider";
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
 import dayjs from "dayjs";
+import type {
+  Therapist,
+  FirestoreDateLike,
+} from "@/types/therapist";
 
 // =============================
 // TYPE
@@ -33,7 +37,7 @@ interface TherapistData {
   isHoliday?: boolean;
   startTime?: string;
   endTime?: string;
-  busyUntil?: any;
+  busyUntil?: FirestoreDateLike;
 }
 
 // =============================
@@ -106,15 +110,25 @@ const TherapistStatusManager: React.FC = () => {
 
   // ======================================================
   // AUTO STATUS PREVIEW
+  // (สร้าง Therapist input ครบฟิลด์เพื่อเลี่ยง `as any`)
   // ======================================================
-  const autoStatusPreview = calculateTherapistStatus({
+  const previewInput: Therapist = {
+    id: user?.uid ?? "",
+    name: therapist.name ?? "",
+    image: "",
+    rating: 0,
+    reviews: 0,
     startTime: therapist.startTime ?? "",
     endTime: therapist.endTime ?? "",
-    busyUntil: therapist.busyUntil,
-    isHoliday: therapist.isHoliday,
-    isBooked: false,
     statusOverride: "Auto",
-  } as any);
+    isHoliday: therapist.isHoliday ?? false,
+    isBooked: false,
+    busyUntil: therapist.busyUntil ?? null,
+    activeBooking: false,
+    gallery: [],
+    features: { age: "", height: "", weight: "", bodyType: "", language: "" },
+  };
+  const autoStatusPreview = calculateTherapistStatus(previewInput);
 
   return (
     <Box p={3} sx={{ maxWidth: 480, mx: "auto" }}>

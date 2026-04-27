@@ -10,28 +10,45 @@ import {
   Stack,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { toast } from "react-toastify";
+import { getErrorMessage } from "@/utils/getErrorMessage";
 
-const statusOptions = ["available", "bookable", "resting"];
-const badgeOptions = ["VIP", "HOT", "NEW", "none"];
+const statusOptions = ["available", "bookable", "resting"] as const;
+const badgeOptions = ["VIP", "HOT", "NEW", "none"] as const;
+
+/** narrow shape ของฟอร์มแก้ therapist (subset ของ Therapist สำหรับ admin) */
+interface EditTherapistForm {
+  name?: string;
+  customId?: string;
+  image?: string;
+  specialty?: string;
+  rating?: number;
+  startTime?: string;
+  endTime?: string;
+  badge?: (typeof badgeOptions)[number];
+  statusOverride?: (typeof statusOptions)[number] | "" | null;
+}
 
 const EditTherapistPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [therapist, setTherapist] = useState<any>({});
+  const [therapist, setTherapist] = useState<EditTherapistForm>({});
 
   useEffect(() => {
+    if (!id) return;
     const fetchTherapist = async () => {
       try {
-        const ref = doc(db, "therapists", id!);
+        const ref = doc(db, "therapists", id);
         const snap = await getDoc(ref);
         if (snap.exists()) {
-          setTherapist(snap.data());
+          setTherapist(snap.data() as EditTherapistForm);
         }
       } catch (err) {
         console.error("Error loading therapist:", err);
+        toast.error(`Failed to load therapist: ${getErrorMessage(err)}`);
       } finally {
         setLoading(false);
       }
@@ -42,15 +59,16 @@ const EditTherapistPage: React.FC = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    setTherapist((prev: any) => ({
+    setTherapist((prev) => ({
       ...prev,
       [name]: name === "rating" ? Number(value) || 0 : value,
     }));
   };
 
   const handleSave = async () => {
+    if (!id) return;
     try {
-      await updateDoc(doc(db, "therapists", id!), {
+      await updateDoc(doc(db, "therapists", id), {
         name: therapist.name || "",
         customId: therapist.customId || "",
         image: therapist.image || "",
@@ -58,13 +76,16 @@ const EditTherapistPage: React.FC = () => {
         rating: therapist.rating || 0,
         startTime: therapist.startTime || "",
         endTime: therapist.endTime || "",
-        badge: therapist.badge === "none" ? null : therapist.badge,
+        badge: therapist.badge === "none" ? null : therapist.badge ?? null,
         statusOverride: therapist.statusOverride || null,
+        updatedAt: serverTimestamp(),
       });
 
+      toast.success("Saved");
       navigate("/admin/therapists");
     } catch (err) {
       console.error("Error saving therapist:", err);
+      toast.error(`Save failed: ${getErrorMessage(err)}`);
     }
   };
 

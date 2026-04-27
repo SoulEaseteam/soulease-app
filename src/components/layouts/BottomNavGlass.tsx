@@ -39,7 +39,7 @@ const BottomNavGlass: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
-  const handleChange = (_: any, next: string) => {
+  const handleChange = (_event: React.SyntheticEvent, next: string) => {
     if (next === "/profile") {
       if (!user) return navigate("/login");
 

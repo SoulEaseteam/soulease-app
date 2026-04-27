@@ -14,11 +14,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
 import { toast } from "react-toastify";
 
-declare global {
-  interface Window {
-    google: typeof google | any;
-  }
-}
+// Window.google ถูก declare ไว้แล้วที่ src/global.d.ts (เป็น optional)
 
 const containerStyle = { width: "100%", height: "50vh", borderRadius: "12px" };
 const defaultCenter = { lat: 13.736717, lng: 100.523186 }; // Bangkok

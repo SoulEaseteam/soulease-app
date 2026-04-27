@@ -17,6 +17,7 @@ import "@fontsource/chonburi/400.css";
 import App from "./app/App";
 import "./index.css";
 
+import ErrorBoundary from "@/components/common/ErrorBoundary";
 import AuthProvider from "@/providers/AuthProvider";
 import { GoogleMapsProvider } from "@/context/GoogleMapsContext";
 
@@ -37,7 +38,7 @@ function ensureGaLoaded() {
   window.dataLayer = window.dataLayer || [];
   window.gtag =
     window.gtag ||
-    function gtag(...args: any[]) {
+    function gtag(...args: unknown[]) {
       window.dataLayer.push(args);
     };
 
@@ -63,24 +64,26 @@ const Root = () => {
 
   return (
     <React.StrictMode>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <BrowserRouter>
-          <GoogleMapsProvider>
-            <AuthProvider>
-              <App />
-            </AuthProvider>
-          </GoogleMapsProvider>
-        </BrowserRouter>
-        <ToastContainer
-          position="top-right"
-          autoClose={3500}
-          newestOnTop
-          pauseOnFocusLoss={false}
-          pauseOnHover
-          theme="colored"
-        />
-      </ThemeProvider>
+      <ErrorBoundary>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <BrowserRouter>
+            <GoogleMapsProvider>
+              <AuthProvider>
+                <App />
+              </AuthProvider>
+            </GoogleMapsProvider>
+          </BrowserRouter>
+          <ToastContainer
+            position="top-right"
+            autoClose={3500}
+            newestOnTop
+            pauseOnFocusLoss={false}
+            pauseOnHover
+            theme="colored"
+          />
+        </ThemeProvider>
+      </ErrorBoundary>
     </React.StrictMode>
   );
 };

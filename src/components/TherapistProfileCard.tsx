@@ -30,12 +30,33 @@ import { badgeConfig } from "@/utils/badgeConfig";
 
 /** ---------------- Utility ---------------- */
 
-function toDateSafe(v: any): Date | null {
+/** narrow shape ของ booking ที่อ่านจาก Firestore (มีทั้ง legacy `start`/`end` และ official `startAt`/`endAt`) */
+interface BookingDoc {
+  startAt?: Timestamp | Date | string | null;
+  endAt?: Timestamp | Date | string | null;
+  start?: Timestamp | Date | string | null;
+  end?: Timestamp | Date | string | null;
+  status?: string;
+  reviewText?: string;
+}
+
+function toDateSafe(v: unknown): Date | null {
   try {
     if (!v) return null;
-    if (typeof v?.toDate === "function") return v.toDate();
-    const d = new Date(v);
-    return isNaN(d.getTime()) ? null : d;
+    if (
+      typeof v === "object" &&
+      v !== null &&
+      "toDate" in v &&
+      typeof (v as { toDate?: unknown }).toDate === "function"
+    ) {
+      return (v as { toDate: () => Date }).toDate();
+    }
+    if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
+    if (typeof v === "string" || typeof v === "number") {
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -92,7 +113,7 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
       if (snap.exists()) {
         setProfile((prev) => ({
           ...prev,
-          ...(snap.data() as any),
+          ...(snap.data() as Partial<Therapist>),
           id: therapist.id,
         }));
       }
@@ -114,8 +135,8 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
     const unsub = onSnapshot(q, (snap) => {
       let cnt = 0;
       snap.forEach((d) => {
-        const data = d.data() as any;
-        if (data?.reviewText?.trim()) cnt++;
+        const data = d.data() as BookingDoc;
+        if (data.reviewText?.trim()) cnt++;
       });
       setReviewCount(cnt);
     });
@@ -151,7 +172,7 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
     const unsub2 = onSnapshot(todayQ, (snap) => {
       let cnt = 0;
       snap.forEach((d) => {
-        const s = (d.data() as any)?.status?.toLowerCase();
+        const s = (d.data() as BookingDoc).status?.toLowerCase() ?? "";
         if (["confirmed", "paid", "completed"].includes(s)) cnt++;
       });
       setTodayBookings(cnt);
@@ -177,12 +198,12 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
       const now = nowThai();
 
       const list = snap.docs
-        .map((d) => d.data() as any)
+        .map((d) => d.data() as BookingDoc)
         .map((b) => ({
           start: toDateSafe(b.startAt ?? b.start),
           end: toDateSafe(b.endAt ?? b.end),
         }))
-        .filter((x) => x.start && x.end) as { start: Date; end: Date }[];
+        .filter((x): x is { start: Date; end: Date } => !!x.start && !!x.end);
 
       // Active booking now
       const active = list.find((b) => hasActiveBooking(now, b.start, b.end));
@@ -213,9 +234,9 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
       let inSession = false;
 
       snap.forEach((d) => {
-        const b = d.data();
-        const start = toDateSafe(b.startAt || b.start);
-        const end = toDateSafe(b.endAt || b.end);
+        const b = d.data() as BookingDoc;
+        const start = toDateSafe(b.startAt ?? b.start);
+        const end = toDateSafe(b.endAt ?? b.end);
 
         if (start && end && now >= start && now < end) {
           inSession = true;
@@ -250,15 +271,16 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
 
   /** ---------------- BADGE ---------------- */
   const activeBadge = useMemo(() => {
-    const base = {
+    const base: Therapist = {
       ...profile,
       todayBookings,
       totalBookings: served,
-    } as any;
+    };
     return badgeConfig.find((cfg) => cfg.condition(base)) ?? null;
   }, [profile, todayBookings, served]);
 
-  const badgeMotionProps: { animate?: any; transition?: any } = useMemo(() => {
+  // framer-motion props ใช้ shape ที่ยืดหยุ่นมาก ปล่อยให้ infer เองได้
+  const badgeMotionProps = useMemo(() => {
     if (!activeBadge || activeBadge.animation === "none") return {};
 
     if (activeBadge.animation === "pulse") {
@@ -336,8 +358,8 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
             />
           )}
 
-          {/* Distance */}
-          {typeof (therapist as any).distance === "number" && (
+          {/* Distance — Therapist type มี distanceKm อยู่แล้ว */}
+          {typeof therapist.distanceKm === "number" && (
             <Typography
               fontSize={12}
               color="#fff"
@@ -353,7 +375,7 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
               }}
             >
               <RoomIcon sx={{ fontSize: 14, mr: 0.5 }} />
-              {(therapist as any).distance.toFixed(1)} km
+              {therapist.distanceKm.toFixed(1)} km
             </Typography>
           )}
         </Box>

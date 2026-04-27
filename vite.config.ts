@@ -16,13 +16,13 @@ function manualChunks(id: string): string | undefined {
   if (!id.includes("node_modules")) return undefined;
 
   // React core — โหลดทุกหน้า
+  // (ตัด /react-error-boundary/ และ /react-helmet-async/ ออกแล้วเพราะยังไม่ได้ติดตั้ง
+  //  เปิด ErrorBoundary แบบ in-house ที่ src/components/common/ErrorBoundary.tsx แทน)
   if (
     id.includes("/react/") ||
     id.includes("/react-dom/") ||
     id.includes("/scheduler/") ||
-    id.includes("/react-router") ||
-    id.includes("/react-error-boundary/") ||
-    id.includes("/react-helmet-async/")
+    id.includes("/react-router")
   ) {
     return "react-vendor";
   }
@@ -48,11 +48,11 @@ function manualChunks(id: string): string | undefined {
   if (id.includes("/@emotion/")) return "emotion";
 
   // Firebase — หนัก ใช้หลายหน้า
+  // (ตัด /react-firebase-hooks/ ออก เพราะไม่ได้ติดตั้งจริง)
   if (
     id.includes("/firebase/") ||
     id.includes("/@firebase/") ||
-    id.includes("/firebase-functions/") ||
-    id.includes("/react-firebase-hooks/")
+    id.includes("/firebase-functions/")
   ) {
     return "firebase";
   }
@@ -72,12 +72,8 @@ function manualChunks(id: string): string | undefined {
   }
 
   // Maps — ใช้เฉพาะหน้าแผนที่
-  if (
-    id.includes("/@react-google-maps/") ||
-    id.includes("/leaflet/") ||
-    id.includes("/react-leaflet/") ||
-    id.includes("/use-places-autocomplete/")
-  ) {
+  // (ตัด leaflet / react-leaflet / use-places-autocomplete ออก เพราะไม่ได้ติดตั้งจริง)
+  if (id.includes("/@react-google-maps/")) {
     return "maps";
   }
 
@@ -89,52 +85,30 @@ function manualChunks(id: string): string | undefined {
     return "i18n";
   }
 
-  // Animation
-  if (
-    id.includes("/framer-motion/") ||
-    id.includes("/motion/") ||
-    id.includes("/aos/") ||
-    id.includes("/lottie-react/")
-  ) {
+  // Animation (ตัด aos / lottie-* ออก ไม่ได้ติดตั้ง)
+  if (id.includes("/framer-motion/") || id.includes("/motion/")) {
     return "motion";
   }
 
-  // Date / Utility
-  if (id.includes("/dayjs/") || id.includes("/date-fns/")) {
-    return "date-utils";
-  }
-  if (id.includes("/lodash")) return "lodash";
+  // Date / Utility (date-fns / lodash ไม่ได้ติดตั้ง)
+  if (id.includes("/dayjs/")) return "date-utils";
 
-  // Icons (อื่นๆ ที่ไม่ใช่ MUI)
+  // Icons (ตัด lucide-react ออก ไม่ได้ติดตั้ง)
   if (
-    id.includes("/lucide-react/") ||
     id.includes("/phosphor-react/") ||
     id.includes("/react-icons/")
   ) {
     return "icons";
   }
 
-  // Swiper / Image Gallery
-  if (
-    id.includes("/swiper/") ||
-    id.includes("/react-image-gallery/")
-  ) {
-    return "swiper";
-  }
+  // Swiper (ตัด react-image-gallery ออก ไม่ได้ติดตั้ง)
+  if (id.includes("/swiper/")) return "swiper";
 
-  // Form / phone / input
-  if (
-    id.includes("/react-phone-number-input/") ||
-    id.includes("/input-format/")
-  ) {
-    return "forms";
-  }
+  // Form / phone / input (ตัด input-format ออก ไม่ได้ติดตั้ง)
+  if (id.includes("/react-phone-number-input/")) return "forms";
 
   // Toast
   if (id.includes("/react-toastify/")) return "toast";
-
-  // Animations / loaders / fingerprints
-  if (id.includes("/lottie-")) return "lottie";
 
   // HTTP / network
   if (id.includes("/axios/")) return "http";
@@ -170,13 +144,6 @@ export default defineConfig({
       },
     },
   },
-  server: {
-    proxy: {
-      "/telegram": {
-        target: "https://api.telegram.org",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/telegram/, ""),
-      },
-    },
-  },
+  // ⚠️ /telegram dev proxy ถูกถอดออกแล้ว เพราะ client ไม่เรียก Telegram API ตรงๆ อีกต่อไป
+  // (ย้ายไป Cloud Function `notifyBooking` เพื่อกัน bot token หลุดผ่าน bundle)
 });

@@ -25,6 +25,14 @@ import {
 } from "firebase/firestore";
 import dayjs from "dayjs";
 
+type FirestoreDateLike =
+  | import("firebase/firestore").Timestamp
+  | Date
+  | string
+  | number
+  | { seconds: number; nanoseconds?: number }
+  | null;
+
 interface Review {
   id: string;
   therapistId: string;
@@ -32,7 +40,7 @@ interface Review {
   userId?: string;
   comment: string;
   rating: number;
-  createdAt?: any;
+  createdAt?: FirestoreDateLike;
   status?: "pending" | "approved" | "rejected";
 }
 
@@ -118,12 +126,22 @@ const AdminReviewListPage: React.FC = () => {
       field: "createdAt",
       headerName: "Date",
       width: 180,
-      valueGetter: (_value: any, row: any) => {
+      valueGetter: (_value, row: Review) => {
         try {
           const raw = row.createdAt;
           if (!raw) return "-";
-          const date =
-            raw?.toDate?.() || (raw?.seconds && new Date(raw.seconds * 1000));
+          let date: Date | null = null;
+          if (typeof raw === "object" && raw !== null) {
+            if ("toDate" in raw && typeof raw.toDate === "function") {
+              date = raw.toDate();
+            } else if ("seconds" in raw && typeof raw.seconds === "number") {
+              date = new Date(raw.seconds * 1000);
+            } else if (raw instanceof Date) {
+              date = raw;
+            }
+          } else if (typeof raw === "string" || typeof raw === "number") {
+            date = new Date(raw);
+          }
           return date ? dayjs(date).format("YYYY-MM-DD HH:mm") : "-";
         } catch {
           return "-";
@@ -134,21 +152,22 @@ const AdminReviewListPage: React.FC = () => {
       field: "status",
       headerName: "Status",
       width: 150,
-      renderCell: (params: any) => {
+      renderCell: (params) => {
+        const v = params.value as Review["status"];
         const color =
-          params.value === "approved"
+          v === "approved"
             ? "success"
-            : params.value === "rejected"
+            : v === "rejected"
             ? "error"
             : "warning";
-        return <Chip label={params.value} color={color} />;
+        return <Chip label={v} color={color} />;
       },
     },
     {
       field: "actions",
       headerName: "Actions",
       width: 250,
-      renderCell: (params: any) => (
+      renderCell: (params) => (
         <Box display="flex" gap={1}>
           <Button
             size="small"
