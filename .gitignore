@@ -24,6 +24,10 @@ dist-ssr
 *.sw?
 .env*
 .vercel
-# Firebase secrets
+# Firebase secrets / build artifacts
 admin-key.json
-scripts/serviceAccountKey.jsondist-electron
+scripts/serviceAccountKey.json
+.firebase/
+functions/lib/
+functions/node_modules/
+dist-electron/
