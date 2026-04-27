@@ -3,7 +3,9 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 
-i18n
+// i18n.init() return Promise — prefix `void` กัน floating promise warning
+// (ไม่ต้อง await เพราะ resources โหลด sync จาก code อยู่แล้ว)
+void i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({

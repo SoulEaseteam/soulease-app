@@ -33,11 +33,13 @@ module.exports = {
   ignorePatterns: [
     "dist/",
     "node_modules/",
-    "functions/lib/",
+    "functions/",          // functions มี tsconfig แยก — lint ใน functions/ เอง
+    "env.d.ts",            // type declaration only — ไม่ต้อง lint
     "scripts/",
     "removeAvailable.cjs",
     "cleanup.sh",
     ".eslintrc.js",
+    "*.config.cjs",
   ],
   rules: {
     "react-refresh/only-export-components": [

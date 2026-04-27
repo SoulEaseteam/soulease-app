@@ -97,7 +97,7 @@ const AdminAdvancedSettingsPage: React.FC = () => {
       }
     };
 
-    loadSettings();
+    void loadSettings();
   }, []);
 
   // ============================================================

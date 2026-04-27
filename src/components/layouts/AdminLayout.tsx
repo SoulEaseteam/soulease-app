@@ -70,12 +70,8 @@ const AdminLayout: React.FC = () => {
   const location = useLocation();
   const { user, role, loading } = useAuth();
 
-  // ⏳ auth loading
-  if (loading) return null;
-
-  // 🔒 admin only
-  if (!user || role !== "admin") return null;
-
+  // ⚠️ Rules of Hooks: hooks ทุกตัวต้องเรียกก่อน early return เสมอ
+  // (เดิมประกาศ useState ภายหลัง if-return → React จะ throw บน render ถัดไป)
   const [collapsed, setCollapsed] = useState<boolean>(() =>
     localStorage.getItem("admin_sidebar_collapsed") === "true"
   );
@@ -93,8 +89,14 @@ const AdminLayout: React.FC = () => {
         setNotifications(0);
       }
     };
-    load();
+    void load();
   }, []);
+
+  // ⏳ auth loading
+  if (loading) return null;
+
+  // 🔒 admin only
+  if (!user || role !== "admin") return null;
 
   const toggleSidebar = () => {
     setCollapsed((prev) => {
@@ -107,7 +109,7 @@ const AdminLayout: React.FC = () => {
     if (!window.confirm("Logout?")) return;
     try {
       await signOut(auth);
-      navigate("/admin/login");
+      void navigate("/admin/login");
     } catch (err) {
       console.error("Logout failed:", err);
     }

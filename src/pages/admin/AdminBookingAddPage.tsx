@@ -91,7 +91,7 @@ const AdminBookingAddPage: React.FC = () => {
       });
       setTherapists(list);
     };
-    fetchTherapists();
+    void fetchTherapists();
   }, []);
 
   const selectedService = useMemo(
@@ -156,7 +156,7 @@ const AdminBookingAddPage: React.FC = () => {
       });
 
       toast.success(`Booking created successfully. ID: ${bookingRef.id}`);
-      navigate("/admin/bookings");
+      void navigate("/admin/bookings");
     } catch (err) {
       console.error(err);
       toast.error("Failed to create booking.");

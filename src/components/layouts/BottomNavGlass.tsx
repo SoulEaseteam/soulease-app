@@ -40,16 +40,17 @@ const BottomNavGlass: React.FC = () => {
   }, [lastScrollY]);
 
   const handleChange = (_event: React.SyntheticEvent, next: string) => {
+    // navigate() ใน react-router v7 return Promise<void> — prefix `void` กัน floating
     if (next === "/profile") {
-      if (!user) return navigate("/login");
+      if (!user) return void navigate("/login");
 
-      if (role === "admin") return navigate("/admin/dashboard");
-      if (role === "therapist") return navigate("/therapist/profile");
+      if (role === "admin") return void navigate("/admin/dashboard");
+      if (role === "therapist") return void navigate("/therapist/profile");
 
-      return navigate("/profile");
+      return void navigate("/profile");
     }
 
-    navigate(next);
+    void navigate(next);
   };
 
   return (
