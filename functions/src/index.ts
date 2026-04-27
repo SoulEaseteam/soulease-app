@@ -45,10 +45,8 @@ export const notifyBooking = onCall(
     enforceAppCheck: false, // ถ้าเปิด App Check ค่อยเปลี่ยนเป็น true
   },
   async (request) => {
-    if (!request.auth) {
-      throw new HttpsError("unauthenticated", "Sign-in required");
-    }
-
+    // 🔓 อนุญาต guest call (MVP) — กัน spam ด้วย rate limit ระดับ network ของ Cloud Run
+    // TODO: เปิด App Check ภายหลัง
     const data = request.data as NotifyPayload;
     const message = (data?.message || "").toString().trim();
     if (!message) {
