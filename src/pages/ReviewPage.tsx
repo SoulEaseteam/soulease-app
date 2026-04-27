@@ -121,7 +121,7 @@ const ReviewPage: React.FC = () => {
       }
     };
 
-    checkEligibility();
+    void checkEligibility();
   }, [user, therapistId]);
 
   // 🔹 Submit review
@@ -158,7 +158,7 @@ const ReviewPage: React.FC = () => {
       toast.success("Review submitted! Waiting for admin approval.");
       setComment("");
       setRating(5);
-      navigate(`/review/all/${therapistId}`);
+      void navigate(`/review/all/${therapistId}`);
     } catch (e) {
       console.error("Submit review error:", e);
       toast.error("Something went wrong. Please try again.");

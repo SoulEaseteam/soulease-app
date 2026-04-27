@@ -228,7 +228,7 @@ const LoginPage: React.FC = () => {
 
           {/* Register */}
           <Typography mt={3} fontSize={14}>
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link to="/register" style={{ color: "#FE0944", fontWeight: "bold" }}>
               Sign up
             </Link>

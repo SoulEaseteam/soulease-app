@@ -57,8 +57,9 @@ const SelectLocationPage: React.FC = () => {
   useEffect(() => {
     if (!state.therapistId || !state.service) {
       console.warn("Invalid access to /select-location");
-      navigate("/");
+      void navigate("/");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ------- helpers -------
@@ -193,7 +194,7 @@ const SelectLocationPage: React.FC = () => {
       `&formattedAddress=${encodeURIComponent(formattedAddress)}` +
       `&address=${encodeURIComponent(placeName || formattedAddress)}`;
 
-    navigate(url);
+    void navigate(url);
   };
 
   const displayAddress = placeName || formattedAddress || "";
@@ -276,7 +277,7 @@ const SelectLocationPage: React.FC = () => {
               <IconButton
                 onClick={() => {
                   if (!displayAddress) return;
-                  navigator.clipboard.writeText(displayAddress);
+                  void navigator.clipboard.writeText(displayAddress);
                   setCopied(true);
                 }}
               >

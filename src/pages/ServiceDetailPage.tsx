@@ -50,7 +50,7 @@ const ServiceDetailPage: React.FC = () => {
       }
     };
 
-    fetchServed();
+    void fetchServed();
   }, [service?.name]);
 
   if (!service) {

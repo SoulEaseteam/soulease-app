@@ -100,7 +100,7 @@ const BookingConfirmationPage: React.FC = () => {
       }
     };
 
-    load();
+    void load();
   }, [bookingId]);
 
   const displayAddress = useMemo(() => {

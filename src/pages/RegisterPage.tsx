@@ -45,7 +45,7 @@ const RegisterPage: React.FC = () => {
       });
 
       toast.success('🎉 Register successful!');
-      navigate('/login');
+      void navigate('/login');
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, 'Registration failed.'));
     }

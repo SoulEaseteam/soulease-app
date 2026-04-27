@@ -103,52 +103,58 @@ const BookingHistoryPage: React.FC = () => {
         orderBy("createdAt", "desc")
       );
 
-      const unsub = onSnapshot(
-        qRef,
-        async (snapshot) => {
-          const data: Booking[] = snapshot.docs.map((d) => ({
-            ...(d.data() as Booking),
-            id: d.id,
-          }));
+      const handleBookingsSnap = async (
+        snapshot: import("firebase/firestore").QuerySnapshot
+      ) => {
+        const data: Booking[] = snapshot.docs.map((d) => ({
+          ...(d.data() as Booking),
+          id: d.id,
+        }));
 
-          setBookings(data);
+        setBookings(data);
 
-          const therapistIds = Array.from(
-            new Set(data.map((b) => b.therapistId).filter(Boolean))
-          );
-          const map: Record<string, TherapistInfo> = { ...therapists };
+        const therapistIds = Array.from(
+          new Set(data.map((b) => b.therapistId).filter(Boolean))
+        );
+        const map: Record<string, TherapistInfo> = { ...therapists };
 
-          // --- Load therapist info (fallback aware)
-          await Promise.all(
-            therapistIds.map(async (id) => {
-              if (map[id]) return;
-              try {
-                // 1) Try docId
-                const ref = doc(db, "therapists", id);
-                const snap1 = await getDoc(ref);
-                if (snap1.exists()) {
-                  const t = snap1.data() as TherapistInfo;
-                  map[id] = { name: t.name, image: t.image };
-                  return;
-                }
+        // --- Load therapist info (fallback aware)
+        await Promise.all(
+          therapistIds.map(async (id) => {
+            if (map[id]) return;
+            try {
+              // 1) Try docId
+              const ref = doc(db, "therapists", id);
+              const snap1 = await getDoc(ref);
+              if (snap1.exists()) {
+                const t = snap1.data() as TherapistInfo;
+                map[id] = { name: t.name, image: t.image };
+                return;
+              }
 
-                // 2) Try where("id" == customId)
-                const q2 = query(collection(db, "therapists"), where("id", "==", id));
-                const snap2 = await getDocs(q2);
-                if (!snap2.empty) {
-                  const t = snap2.docs[0].data() as TherapistInfo;
-                  map[id] = { name: t.name, image: t.image };
-                } else {
-                  map[id] = {};
-                }
-              } catch {
+              // 2) Try where("id" == customId)
+              const q2 = query(collection(db, "therapists"), where("id", "==", id));
+              const snap2 = await getDocs(q2);
+              if (!snap2.empty) {
+                const t = snap2.docs[0].data() as TherapistInfo;
+                map[id] = { name: t.name, image: t.image };
+              } else {
                 map[id] = {};
               }
-            })
-          );
+            } catch {
+              map[id] = {};
+            }
+          })
+        );
 
-          setTherapists(map);
-          setLoading(false);
+        setTherapists(map);
+        setLoading(false);
+      };
+
+      const unsub = onSnapshot(
+        qRef,
+        (snapshot) => {
+          void handleBookingsSnap(snapshot);
         },
         (err) => {
           console.error("Booking snapshot error:", err);
@@ -171,7 +177,7 @@ const BookingHistoryPage: React.FC = () => {
   const handleRebook = (booking: Booking) => {
     const normalizedService = normalize(booking.serviceName);
 
-    navigate("/select-location", {
+    void navigate("/select-location", {
       state: {
         therapistId: booking.therapistId,
         service: normalizedService,

@@ -708,7 +708,7 @@ const ServicesSection = ({
                   onClick={(e) => {
                     e.stopPropagation();
                     if (canSelect) {
-                      navigate(
+                      void navigate(
                         `/booking/${therapist.id}?service=${encodeURIComponent(
                           svc.name
                         )}`

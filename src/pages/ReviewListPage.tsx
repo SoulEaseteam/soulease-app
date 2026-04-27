@@ -115,7 +115,7 @@ const ReviewListPage: React.FC = () => {
       setLoading(false);
     };
 
-    loadTherapist();
+    void loadTherapist();
   }, [id]);
 
   // =======================================================
@@ -305,7 +305,7 @@ const ReviewListPage: React.FC = () => {
                 })()}
               </Typography>
               <Typography textAlign="center" mt={3} fontSize={13} sx={{ color: '#aaa', fontStyle: 'Trebuchet MS, sans-serif' }}> 
-                                  “Updated reviews & feedback in our Telegram channel"</Typography>
+                                  &ldquo;Updated reviews &amp; feedback in our Telegram channel&rdquo;</Typography>
      
             </Paper>
           ))

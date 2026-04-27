@@ -240,7 +240,7 @@ const BookingPage: React.FC = () => {
         console.error("Therapist fetch fail:", err);
       }
     };
-    if (therapistId) fetchTherapist();
+    if (therapistId) void fetchTherapist();
   }, [therapistId]);
 
   // GEOCODER
@@ -251,7 +251,8 @@ const BookingPage: React.FC = () => {
     const g = window.google;
     if (!g.maps.Geocoder) return;
 
-    new g.maps.Geocoder().geocode(
+    // geocode() คืน Promise (ใหม่) แต่เราใช้ callback signature — void prefix กัน floating
+    void new g.maps.Geocoder().geocode(
       { location: { lat: +selectedLat, lng: +selectedLng } },
       (res, status) => {
         if (status === "OK" && res && res.length > 0) {
@@ -277,7 +278,7 @@ const BookingPage: React.FC = () => {
     const g = window.google;
     if (!g.maps.DistanceMatrixService) return;
 
-    new g.maps.DistanceMatrixService().getDistanceMatrix(
+    void new g.maps.DistanceMatrixService().getDistanceMatrix(
       {
         origins: [new g.maps.LatLng(tLat, tLng)],
         destinations: [new g.maps.LatLng(+selectedLat, +selectedLng)],
@@ -487,7 +488,7 @@ const BookingPage: React.FC = () => {
         });
       }
 
-      navigate("/booking/confirm", { state: { bookingId: bookingRef.id } });
+      void navigate("/booking/confirm", { state: { bookingId: bookingRef.id } });
     } catch (err) {
       console.error("Booking Error:", err);
       toast.error("Something went wrong. Please try again.");

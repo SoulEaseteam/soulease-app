@@ -35,8 +35,8 @@ const ServicesPage: React.FC = () => {
   const [section, setSection] = React.useState<'services' | 'about' | 'how'>('services');
 
   const handleSelectService = (id: string) => {
-  navigate(`/services/${encodeURIComponent(id)}`);
-};
+    void navigate(`/services/${encodeURIComponent(id)}`);
+  };
 
   return (
     <Box sx={{ bgcolor: 'rgba(255, 255, 255, 0.6)', pb: 10, minHeight: '100vh', display: 'flex', 
