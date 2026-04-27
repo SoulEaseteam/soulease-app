@@ -71,7 +71,7 @@ function toDateSafe(v: Booking["createdAt"]): Date | null {
       "toDate" in v &&
       typeof (v as { toDate?: unknown }).toDate === "function"
     ) {
-      return (v as Timestamp).toDate();
+      return (v).toDate();
     }
     if (
       typeof v === "object" &&
@@ -180,17 +180,17 @@ const AdminReportPage: React.FC = () => {
 
   const setServicePrice = (b: Booking, v: string) => {
     const servicePrice = Number(v) || 0;
-    updateBooking(b.id, {
+    void updateBooking(b.id, {
       servicePrice,
-      totalPrice: servicePrice + (b.taxiFee || 0),
+      totalPrice: servicePrice + (b.taxiFee ?? 0),
     });
   };
 
   const setTaxiFee = (b: Booking, v: string) => {
     const taxiFee = Number(v) || 0;
-    updateBooking(b.id, {
+    void updateBooking(b.id, {
       taxiFee,
-      totalPrice: taxiFee + (b.servicePrice || 0),
+      totalPrice: taxiFee + (b.servicePrice ?? 0),
     });
   };
 
@@ -718,7 +718,7 @@ const AdminReportPage: React.FC = () => {
           <Button
             variant="contained"
             onClick={() => {
-              if (previewRow) handleExportBill(previewRow);
+              if (previewRow) void handleExportBill(previewRow);
               setPreviewRow(null);
             }}
           >

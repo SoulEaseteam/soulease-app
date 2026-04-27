@@ -69,7 +69,7 @@ const paymentColors: Record<string, ChipColor> = {
 const AdminBookingListPage: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [noteEdits, setNoteEdits] = useState<{ [key: string]: string }>({});
+  const [noteEdits, setNoteEdits] = useState<Record<string, string>>({});
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -260,7 +260,7 @@ const AdminBookingListPage: React.FC = () => {
                               : b.status === "confirmed"
                               ? "completed"
                               : "pending";
-                          updateStatus(b.id, next);
+                          void updateStatus(b.id, next);
                         }}
                       />
                     </TableCell>

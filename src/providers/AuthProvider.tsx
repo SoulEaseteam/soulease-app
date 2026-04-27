@@ -62,26 +62,20 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      // ✅ Guest → sign in anonymously
-      // เหตุผล: Cloud Function `notifyBooking` ต้องการ auth token เพื่อกัน spam
-      // ถ้า guest ไม่มี auth → จองได้แต่ Telegram noti จะ fail
-      // anonymous user มี uid ชั่วคราว, ไม่ได้ผูกกับอีเมล/ข้อมูลส่วนตัว
+    // แยก async logic ออกจาก callback ของ onAuthStateChanged
+    // (callback ต้องเป็น sync ตาม signature; ใช้ void prefix กัน floating promise)
+    const handleAuthChange = async (firebaseUser: User | null) => {
       if (!firebaseUser) {
         try {
-          const cred = await signInAnonymously(auth);
-          // onAuthStateChanged จะถูกเรียกอีกรอบหลัง sign-in
-          // → ไม่ต้อง setUser ตรงนี้, รอ event ถัดไป
-          void cred;
-          return;
+          await signInAnonymously(auth);
+          // onAuthStateChanged จะถูกเรียกอีกรอบหลัง sign-in สำเร็จ
         } catch (err) {
           console.error("[AuthProvider] anonymous sign-in failed:", err);
-          // ปล่อย flow ต่อ — booking จะทำได้แต่ Telegram noti อาจ fail
           setUser(null);
           setRole(null);
           setLoading(false);
-          return;
         }
+        return;
       }
 
       setUser(firebaseUser);
@@ -103,6 +97,10 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       }
 
       setLoading(false);
+    };
+
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      void handleAuthChange(firebaseUser);
     });
 
     return () => unsubscribe();

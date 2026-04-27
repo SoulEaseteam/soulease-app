@@ -87,10 +87,12 @@ const AdminTherapistDetailPage: React.FC = () => {
           docRef = directRef;
           docSnap = directSnap;
         }
-      } catch {}
+      } catch {
+        // doc not found at direct ID — fallback to query by field
+      }
 
       // 2) Try by field: id
-      if (!docSnap || !docSnap.exists()) {
+      if (!docSnap?.exists()) {
         const q = query(collection(db, "therapists"), where("id", "==", id));
         const snapshot = await getDocs(q);
         if (!snapshot.empty) {
@@ -99,7 +101,7 @@ const AdminTherapistDetailPage: React.FC = () => {
         }
       }
 
-      if (!docSnap || !docSnap.exists()) {
+      if (!docSnap?.exists()) {
         setTherapist(null);
         setLoading(false);
         return;
@@ -154,7 +156,7 @@ const AdminTherapistDetailPage: React.FC = () => {
       setLoading(false);
     };
 
-    fetchData();
+    void fetchData();
 
     return () => {
       if (unsubTherapist) unsubTherapist();

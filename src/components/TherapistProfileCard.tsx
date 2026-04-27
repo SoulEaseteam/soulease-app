@@ -106,7 +106,7 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
 
   /** ---------------- Firestore: Realtime Therapist Profile ---------------- */
   useEffect(() => {
-    if (!therapist?.id) return;
+    if (!therapist.id) return;
 
     const ref = doc(db, "therapists", therapist.id);
     const unsub = onSnapshot(ref, (snap) => {
@@ -124,7 +124,7 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
 
   /** ---------------- Firestore: Review Count ---------------- */
   useEffect(() => {
-    if (!therapist?.id) return;
+    if (!therapist.id) return;
 
     const q = query(
       collection(db, "bookings"),
@@ -146,7 +146,7 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
 
   /** ---------------- Firestore: Served / TodayBookings ---------------- */
   useEffect(() => {
-    if (!therapist?.id) return;
+    if (!therapist.id) return;
 
     const servedQ = query(
       collection(db, "bookings"),
@@ -186,7 +186,7 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
 
   /** ---------------- Firestore: Upcoming Bookings ---------------- */
   useEffect(() => {
-    if (!therapist?.id) return;
+    if (!therapist.id) return;
 
     const upcomingQ = query(
       collection(db, "bookings"),
@@ -220,7 +220,7 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
 
   /** ---------------- ACTIVE BOOKING REAL-TIME FIX ---------------- */
   useEffect(() => {
-    if (!therapist?.id) return;
+    if (!therapist.id) return;
 
     const now = nowThai();
 
@@ -301,7 +301,7 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
   }, [activeBadge]);
 
   const resolvedImage =
-    profile.image?.startsWith("http") || profile.image?.startsWith("/")
+    profile.image.startsWith("http") || profile.image.startsWith("/")
       ? profile.image
       : `/images/${profile.image ?? "placeholder.jpg"}`;
 

@@ -230,7 +230,7 @@ const AdminBookingAddPage: React.FC = () => {
             >
               {services.map((s) => (
                 <MenuItem key={s.name} value={s.name}>
-                  {s.name} — {s.price?.toLocaleString()}฿
+                  {s.name} — {s.price.toLocaleString()}฿
                 </MenuItem>
               ))}
             </Select>

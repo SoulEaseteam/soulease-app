@@ -74,7 +74,7 @@ const SavedTherapistsPage: React.FC = () => {
       }
     };
 
-    fetchFavorites();
+    void fetchFavorites();
   }, [user]);
 
   // ========================================================

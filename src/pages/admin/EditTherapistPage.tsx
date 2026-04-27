@@ -53,7 +53,7 @@ const EditTherapistPage: React.FC = () => {
         setLoading(false);
       }
     };
-    fetchTherapist();
+    void fetchTherapist();
   }, [id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,7 +82,7 @@ const EditTherapistPage: React.FC = () => {
       });
 
       toast.success("Saved");
-      navigate("/admin/therapists");
+      void navigate("/admin/therapists");
     } catch (err) {
       console.error("Error saving therapist:", err);
       toast.error(`Save failed: ${getErrorMessage(err)}`);

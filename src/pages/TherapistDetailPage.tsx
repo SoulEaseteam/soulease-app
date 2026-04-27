@@ -357,7 +357,7 @@ const TherapistDetailPage: React.FC = () => {
               sx={{ color: "#3a3420", display: "flex", alignItems: "center", mt: 0.5 }}
             >
               <FaHotjar color="#FE0944" style={{ marginRight: 4 }} />
-              {therapist.employmentType || therapist.features?.employmentType || "N/A"}
+              {therapist.employmentType || therapist.features.employmentType || "N/A"}
             </Typography>
           </Box>
         </Box>

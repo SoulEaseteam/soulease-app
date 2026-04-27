@@ -45,7 +45,7 @@ const EditProfilePage: React.FC = () => {
       }
     };
 
-    fetchUser();
+    void fetchUser();
   }, [user]);
 
   const handleSave = async () => {

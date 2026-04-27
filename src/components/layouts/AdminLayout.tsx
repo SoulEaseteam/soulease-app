@@ -144,7 +144,7 @@ const AdminLayout: React.FC = () => {
 
             <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
               <Avatar sx={{ bgcolor: "#fff", color: "#FE0944" }}>
-                {user?.email?.[0]?.toUpperCase()}
+                {user.email?.[0]?.toUpperCase()}
               </Avatar>
             </IconButton>
 

@@ -477,9 +477,9 @@ const AdminTherapistsPage: React.FC = () => {
         <Button
           onClick={() => {
             if (window.history.length > 1) {
-              navigate(-1);
+              void navigate(-1);
             } else {
-              navigate("/admin/dashboard");
+              void navigate("/admin/dashboard");
             }
           }}
           startIcon={<ArrowBackIosNewIcon />}

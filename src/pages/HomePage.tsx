@@ -83,7 +83,7 @@ const HomePage: React.FC = () => {
 
   // request location
   useEffect(() => {
-    if (!navigator?.geolocation) return;
+    if (!navigator.geolocation) return;
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {

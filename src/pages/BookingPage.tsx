@@ -128,7 +128,7 @@ type TherapistDoc = Partial<Therapist> & {
   lng?: number | string;
 };
 
-const escapeMd = (s: string = "") =>
+const escapeMd = (s = "") =>
   s
     .replace(/_/g, "\\_")
     .replace(/\*/g, "\\*")
@@ -249,7 +249,7 @@ const BookingPage: React.FC = () => {
     if (locationName || address) return;
 
     const g = window.google;
-    if (!g?.maps?.Geocoder) return;
+    if (!g.maps.Geocoder) return;
 
     new g.maps.Geocoder().geocode(
       { location: { lat: +selectedLat, lng: +selectedLng } },
@@ -266,16 +266,16 @@ const BookingPage: React.FC = () => {
     if (!selectedLat || !selectedLng || !therapist) return;
 
     const tLat = parseFloat(
-      String(therapist?.currentLocation?.lat ?? therapist?.lat ?? "")
+      String(therapist.currentLocation?.lat ?? therapist.lat ?? "")
     );
     const tLng = parseFloat(
-      String(therapist?.currentLocation?.lng ?? therapist?.lng ?? "")
+      String(therapist.currentLocation?.lng ?? therapist.lng ?? "")
     );
 
     if (!tLat || !tLng) return;
 
     const g = window.google;
-    if (!g?.maps?.DistanceMatrixService) return;
+    if (!g.maps.DistanceMatrixService) return;
 
     new g.maps.DistanceMatrixService().getDistanceMatrix(
       {
@@ -285,7 +285,7 @@ const BookingPage: React.FC = () => {
         unitSystem: g.maps.UnitSystem.METRIC,
       },
       (res, status) => {
-        const el = res?.rows?.[0]?.elements?.[0];
+        const el = res?.rows[0]?.elements?.[0];
         if (status === "OK" && el?.status === "OK") {
           setDistanceKm(el.distance.value / 1000);
           setDurationMin(Math.ceil(el.duration.value / 60));
@@ -307,7 +307,7 @@ const BookingPage: React.FC = () => {
     )
       .then((r) => r.json() as Promise<OWMResponse>)
       .then((data) => {
-        const raining = (data?.weather ?? []).some((w) =>
+        const raining = (data.weather ?? []).some((w) =>
           String(w.main ?? "").toLowerCase().includes("rain")
         );
         setRainSurcharge(raining ? 0.2 : 0);
@@ -333,7 +333,7 @@ const BookingPage: React.FC = () => {
   const total = (selectedService?.price || 0) + travelCost;
 
   const isWithinWorkingHours = (startDate: Date, endDate: Date): boolean => {
-    if (!therapist?.startTime || !therapist?.endTime) return true;
+    if (!therapist?.startTime || !therapist.endTime) return true;
 
     const startHH = dayjs(startDate).format("HH:mm");
     const endHH = dayjs(endDate).format("HH:mm");
@@ -533,7 +533,7 @@ const BookingPage: React.FC = () => {
           <Box sx={{ width: 90, height: 90, borderRadius: "50%", overflow: "hidden" }}>
             <img
               src={
-                therapist?.image
+                therapist.image
                   ? therapist.image.startsWith("/")
                     ? therapist.image
                     : `/images/${therapist.image}`
@@ -654,20 +654,20 @@ const BookingPage: React.FC = () => {
         <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
           <Stack direction="row" spacing={2}>
             <Avatar
-              src={selectedService?.image}
+              src={selectedService.image}
               variant="rounded"
               sx={{ width: 80, height: 80, borderRadius: 2 }}
             />
             <Box flex={1}>
               <Typography fontWeight="bold" color="#3a3420">
-                {selectedService?.name}
+                {selectedService.name}
               </Typography>
               <Typography fontSize={13} color="text.secondary" mt={0.5}>
-                {selectedService?.desc}
+                {selectedService.desc}
               </Typography>
               <Stack direction="row" justifyContent="flex-end" spacing={1} mt={1}>
                 <Typography fontWeight="bold" color="#CC6600">
-                  {(selectedService?.price ?? 0).toLocaleString()}฿
+                  {(selectedService.price ?? 0).toLocaleString()}฿
                 </Typography>
                 <Typography fontSize={14}>
                   • ⏱ {getDurationMinutes(selectedService)} min

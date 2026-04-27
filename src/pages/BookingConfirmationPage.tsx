@@ -45,7 +45,7 @@ const BookingConfirmationPage: React.FC = () => {
   // ✅ รองรับ 2 ทาง: state + querystring (กัน refresh/state หาย)
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const bookingId =
-    (location.state as any)?.bookingId ||
+    (location.state)?.bookingId ||
     queryParams.get("bookingId") ||
     "";
 
@@ -68,18 +68,18 @@ const BookingConfirmationPage: React.FC = () => {
         setBooking(data);
 
         // 1) ถ้ามี therapistImage ใน booking ก็ใช้เลย
-        if (data?.therapistImage && String(data.therapistImage).trim() !== "") {
+        if (data.therapistImage && String(data.therapistImage).trim() !== "") {
           setTherapistImage(String(data.therapistImage));
           return;
         }
 
-        const tid = data?.therapistId;
+        const tid = data.therapistId;
         if (!tid) return;
 
         // 2) ลองดึง therapists/{tid} (กรณี tid = docId)
         const tSnap = await getDoc(doc(db, "therapists", tid));
         if (tSnap.exists()) {
-          const img = tSnap.data()?.image;
+          const img = tSnap.data().image;
           if (img && String(img).trim() !== "") {
             setTherapistImage(String(img));
             return;
@@ -90,7 +90,7 @@ const BookingConfirmationPage: React.FC = () => {
         const qT = query(collection(db, "therapists"), where("id", "==", tid));
         const tRes = await getDocs(qT);
         if (!tRes.empty) {
-          const img = tRes.docs[0].data()?.image;
+          const img = tRes.docs[0].data().image;
           if (img && String(img).trim() !== "") setTherapistImage(String(img));
         }
       } catch (err) {

@@ -51,7 +51,9 @@ const TherapistLocationPage: React.FC = () => {
   });
 
   useEffect(() => {
-    initLocation();
+    void initLocation();
+    // initLocation อาศัย auth.currentUser — ตั้งใจไม่ใส่ใน deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /** ✅ โหลดตำแหน่ง therapist + เช็ก booking realtime */
@@ -107,22 +109,24 @@ const TherapistLocationPage: React.FC = () => {
   /** 👉 อัพเดตตำแหน่งจริงตอนนี้ */
   const handleUpdateCurrentLocation = () => {
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
+      (pos) => {
         const newCoords = {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         };
         setCoords(newCoords);
         if (therapistId) {
-          await updateDoc(doc(db, "therapists", therapistId), {
-            currentLocation: newCoords,
-            updatedAt: Timestamp.fromDate(new Date()),
-          });
-          setSnackbar({
-            open: true,
-            msg: "✅ Current location updated!",
-            severity: "success",
-          });
+          void (async () => {
+            await updateDoc(doc(db, "therapists", therapistId), {
+              currentLocation: newCoords,
+              updatedAt: Timestamp.fromDate(new Date()),
+            });
+            setSnackbar({
+              open: true,
+              msg: "✅ Current location updated!",
+              severity: "success",
+            });
+          })();
         }
       },
       () =>

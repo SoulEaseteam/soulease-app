@@ -68,7 +68,7 @@ const AdminUsersPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchUsers();
+    void fetchUsers();
   }, []);
 
   // --------------------------------------------------------------------

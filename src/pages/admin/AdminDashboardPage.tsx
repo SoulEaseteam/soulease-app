@@ -59,8 +59,8 @@ type FBTS =
 function toDateSafe(v: FBTS): Date | null {
   try {
     if (!v) return null;
-    // @ts-ignore
-    if (typeof v?.toDate === "function") return (v as any).toDate();
+    // @ts-expect-error — `toDate` exists on Firestore Timestamp but not narrow type
+    if (typeof v.toDate === "function") return (v as any).toDate();
     if (typeof (v as any)?.seconds === "number") {
       return new Date((v as any).seconds * 1000);
     }

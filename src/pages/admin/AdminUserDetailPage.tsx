@@ -42,7 +42,7 @@ const AdminUserDetailPage: React.FC = () => {
       }
       setLoading(false);
     };
-    fetchUser();
+    void fetchUser();
   }, [id]);
 
   const handleRoleChange = async (newRole: string) => {

@@ -138,12 +138,12 @@ const TherapistProfilePage: React.FC = () => {
       setLoading(false);
     };
 
-    fetchData();
+    void fetchData();
   }, []);
 
   const handleLogout = async () => {
     await signOut(auth);
-    navigate("/login");
+    void navigate("/login");
   };
 
   if (loading) {

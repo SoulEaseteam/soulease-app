@@ -55,7 +55,7 @@ const SelectLocationPage: React.FC = () => {
 
   // ❗ ถ้า therapistId / service หาย ให้เด้งกลับหน้าแรก
   useEffect(() => {
-    if (!state?.therapistId || !state?.service) {
+    if (!state.therapistId || !state.service) {
       console.warn("Invalid access to /select-location");
       navigate("/");
     }

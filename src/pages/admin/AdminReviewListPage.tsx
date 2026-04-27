@@ -55,12 +55,15 @@ const AdminReviewListPage: React.FC = () => {
   // 🧠 Load reviews + therapist name
   useEffect(() => {
     const q = query(collection(db, "reviews"), orderBy("createdAt", "desc"));
-    const unsub = onSnapshot(q, async (snap) => {
+    // wrap async logic เพื่อกัน floating promise ใน onSnapshot callback
+    const handleSnapshot = async (
+      snap: import("firebase/firestore").QuerySnapshot
+    ) => {
       try {
         const therapistSnap = await getDocs(collection(db, "therapists"));
         const therapistMap: Record<string, string> = {};
         therapistSnap.docs.forEach((t) => {
-          therapistMap[t.id] = t.data().name || "Unknown";
+          therapistMap[t.id] = (t.data().name as string | undefined) ?? "Unknown";
         });
 
         const list: Review[] = snap.docs.map((docSnap) => {
@@ -82,6 +85,10 @@ const AdminReviewListPage: React.FC = () => {
       } finally {
         setLoading(false);
       }
+    };
+
+    const unsub = onSnapshot(q, (snap) => {
+      void handleSnapshot(snap);
     });
 
     return () => unsub();

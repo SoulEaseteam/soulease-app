@@ -36,7 +36,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import CustomAlert from "@/components/common/CustomAlert";
 
-const normalize = (s: string = "") =>
+const normalize = (s = "") =>
   s
     .trim()
     .toLowerCase()
@@ -275,7 +275,7 @@ const BookingHistoryPage: React.FC = () => {
                 <CardContent>
                   <Stack direction="row" alignItems="center" spacing={2}>
                     <Avatar
-                      src={getTherapistImage(therapists[b.therapistId]?.image)}
+                      src={getTherapistImage(therapists[b.therapistId].image)}
                       sx={{
                         width: 56,
                         height: 56,
@@ -286,7 +286,7 @@ const BookingHistoryPage: React.FC = () => {
 
                     <Box>
                       <Typography fontWeight="bold">
-                        {therapists[b.therapistId]?.name ||
+                        {therapists[b.therapistId].name ||
                           b.therapistName ||
                           "Therapist"}
                       </Typography>
@@ -349,7 +349,7 @@ const BookingHistoryPage: React.FC = () => {
             <Box>
               <Typography>
                 <b>Therapist:</b>{" "}
-                {therapists[selectedBooking.therapistId]?.name ||
+                {therapists[selectedBooking.therapistId].name ||
                   selectedBooking.therapistName}
               </Typography>
               <Typography>
