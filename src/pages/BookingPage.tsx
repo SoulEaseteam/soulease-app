@@ -41,6 +41,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { calcNextAvailable } from "@/utils/calculateNextAvailable";
 import type { Therapist } from "@/types/therapist";
 import { getErrorMessage } from "@/utils/getErrorMessage";
+import { isInappropriate } from "@/utils/moderate";
 
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
@@ -397,6 +398,15 @@ const BookingPage: React.FC = () => {
 
       if (await hasBookingConflict(therapist.id, startDate, endDate)) {
         toast.warning("This time slot is not available.");
+        setLoading(false);
+        return;
+      }
+
+      // 🛡️ ตรวจ note ว่ามีเนื้อหาไม่เหมาะสมไหม (sexual / harassment / spam)
+      if (note.trim() && (await isInappropriate(note))) {
+        toast.error(
+          "Your note contains inappropriate content. Please revise."
+        );
         setLoading(false);
         return;
       }

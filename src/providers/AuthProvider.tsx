@@ -7,12 +7,7 @@ import React, {
   useMemo,
   useCallback,
 } from "react";
-import {
-  onAuthStateChanged,
-  signOut,
-  signInAnonymously,
-  type User,
-} from "firebase/auth";
+import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
@@ -34,24 +29,23 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
-/**
- * resolveRole — แยกออกมาเพื่อ test ง่ายและอ่านง่าย
- * priority: admin > therapist > users.role > "user"
- */
 async function resolveRole(uid: string): Promise<Role> {
-  // ทำงานพร้อมกันเพื่อลด round-trip (เดิมเรียกแบบ sequential)
-  const [adminSnap, therapistSnap, userSnap] = await Promise.all([
-    getDoc(doc(db, "admins", uid)),
-    getDoc(doc(db, "therapists", uid)),
-    getDoc(doc(db, "users", uid)),
-  ]);
+  try {
+    const [adminSnap, therapistSnap, userSnap] = await Promise.all([
+      getDoc(doc(db, "admins", uid)),
+      getDoc(doc(db, "therapists", uid)),
+      getDoc(doc(db, "users", uid)),
+    ]);
 
-  if (adminSnap.exists()) return "admin";
-  if (therapistSnap.exists()) return "therapist";
+    if (adminSnap.exists()) return "admin";
+    if (therapistSnap.exists()) return "therapist";
 
-  if (userSnap.exists()) {
-    const r = userSnap.data().role as Role | undefined;
-    if (r === "admin" || r === "therapist" || r === "user") return r;
+    if (userSnap.exists()) {
+      const r = userSnap.data().role as Role | undefined;
+      if (r === "admin" || r === "therapist" || r === "user") return r;
+    }
+  } catch (err) {
+    console.warn("[AuthProvider] resolveRole soft-fail:", err);
   }
   return "user";
 }
@@ -62,38 +56,16 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // แยก async logic ออกจาก callback ของ onAuthStateChanged
-    // (callback ต้องเป็น sync ตาม signature; ใช้ void prefix กัน floating promise)
+    // 🔓 ไม่ใช้ Anonymous Auth — รองรับ guest booking โดยตรง
+    // (เลี่ยงปัญหา API key referrer restriction ที่ Google Cloud)
     const handleAuthChange = async (firebaseUser: User | null) => {
-      if (!firebaseUser) {
-        try {
-          await signInAnonymously(auth);
-          // onAuthStateChanged จะถูกเรียกอีกรอบหลัง sign-in สำเร็จ
-        } catch (err) {
-          console.error("[AuthProvider] anonymous sign-in failed:", err);
-          setUser(null);
-          setRole(null);
-          setLoading(false);
-        }
-        return;
-      }
-
       setUser(firebaseUser);
 
-      // anonymous user → role = "user" ทันที, ไม่ต้องอ่าน admins/therapists
-      if (firebaseUser.isAnonymous) {
-        setRole("user");
-        setLoading(false);
-        return;
-      }
-
-      try {
+      if (firebaseUser) {
         const detectedRole = await resolveRole(firebaseUser.uid);
         setRole(detectedRole);
-      } catch (err) {
-        // ถ้า rules ไม่ให้อ่าน users/{uid} ก็ fallback เป็น "user"
-        console.error("[AuthProvider] resolveRole failed:", err);
-        setRole("user");
+      } else {
+        setRole(null);
       }
 
       setLoading(false);
@@ -112,7 +84,6 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     setRole(null);
   }, []);
 
-  // memoize เพื่อกัน re-render ทุก consumer ทุกครั้งที่ AuthProvider re-render
   const value = useMemo<AuthContextType>(
     () => ({ user, role, loading, logout }),
     [user, role, loading, logout]

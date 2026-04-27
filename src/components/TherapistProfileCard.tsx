@@ -27,6 +27,7 @@ import { db } from "@/lib/firebase";
 import type { Therapist } from "@/types/therapist";
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
 import { badgeConfig } from "@/utils/badgeConfig";
+import { enhanceImage } from "@/utils/cloudinary";
 
 /** ---------------- Utility ---------------- */
 
@@ -329,8 +330,9 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
         <Box sx={{ position: "relative" }}>
           <Box
             component="img"
-            src={resolvedImage}
+            src={enhanceImage(resolvedImage, { variant: "card" })}
             alt={profile.name}
+            loading="lazy"
             sx={{
               width: "100%",
               height: 260,
@@ -497,7 +499,7 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
             </IconButton>
             <Box
               component="img"
-              src={resolvedImage}
+              src={enhanceImage(resolvedImage, { variant: "hero" })}
               sx={{
                 width: "100%",
                 maxWidth: 400,

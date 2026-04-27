@@ -23,6 +23,9 @@ interface ImportMetaEnv {
 
   // 🧪 Mock mode (ใช้ใน dev เท่านั้น)
   readonly VITE_USE_MOCK_DIST?: string;
+
+  // 🖼️  Cloudinary (image enhancement) — set ที่ Vercel env
+  readonly VITE_CLOUDINARY_CLOUD_NAME?: string;
 }
 
 interface ImportMeta {

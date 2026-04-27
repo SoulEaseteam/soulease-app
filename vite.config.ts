@@ -8,42 +8,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * ⚠️ บทเรียน TDZ (Temporal Dead Zone) crashes ใน production:
+ * ⚠️ EMERGENCY MODE: ปิด manualChunks ทั้งหมด
  *
- *   manualChunks ที่แยกละเอียดเกินไป → rollup สร้าง chunks ที่มี circular import
- *   → เบราว์เซอร์โหลด init order ผิด → "Cannot access 'X' before initialization" → จอขาว
+ * เคสที่เคยเจอ:
+ *   - manualChunks ที่แยกแม้แต่ heavy admin libs ก็เกิด TDZ crash
+ *   - "Cannot access 'X' before initialization"
+ *   - หน้าจอขาวบน production ทุก browser
  *
- *   เคสที่เคยเจอ: emotion ↔ mui ↔ react-vendor circular
+ * ไม่ระบุ manualChunks เลย → rollup auto-split ตาม dynamic import boundaries
+ * → safest possible config
  *
- * แนวทางใหม่ (safe):
- * - แยกเฉพาะ libs ที่ "lazy-load อยู่แล้ว" (admin-only / export tools / charts)
- * - core stack (react / mui / emotion / firebase) → ปล่อย rollup auto-split
- *   = ไม่มีโอกาส circular เพราะ rollup เห็น dep graph ทั้งหมดและตัดสินใจเอง
- * - bundle ใหญ่ขึ้นนิด แต่ stable 100%
+ * Trade-off: chunk แต่ละตัวอาจใหญ่ขึ้น แต่ stable 100%
+ * ค่อย optimize ทีหลังเมื่อหา root cause ของ TDZ ได้
  */
-function manualChunks(id: string): string | undefined {
-  if (!id.includes("node_modules")) return undefined;
-
-  // 🟦 Heavy ADMIN-ONLY libs — ตัวจริง lazy-load (admin pages เท่านั้น)
-  if (id.includes("/@mui/x-data-grid")) return "mui-x-data-grid";
-  if (id.includes("/@mui/x-date-pickers")) return "mui-x-date-pickers";
-  if (id.includes("/recharts/") || id.includes("/d3-")) return "charts";
-
-  // 🟧 Export libs — หนักมาก ใช้แค่ admin export Excel/PDF
-  if (
-    id.includes("/exceljs/") ||
-    id.includes("/jspdf/") ||
-    id.includes("/html2canvas/") ||
-    id.includes("/file-saver/")
-  ) {
-    return "export-libs";
-  }
-
-  // ที่เหลือ → ปล่อย rollup auto-split
-  // (react, react-dom, mui-core, emotion, firebase, framer-motion ฯลฯ)
-  return undefined;
-}
-
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -64,11 +41,7 @@ export default defineConfig({
     },
   },
   build: {
-    chunkSizeWarningLimit: 1500,
-    rollupOptions: {
-      output: {
-        manualChunks,
-      },
-    },
+    chunkSizeWarningLimit: 2000,
+    // ⚠️ ไม่ใช้ manualChunks — ปล่อย rollup auto-split (safe)
   },
 });

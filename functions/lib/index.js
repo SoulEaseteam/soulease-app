@@ -54,8 +54,8 @@ exports.notifyBooking = (0, https_1.onCall)({
         throw new https_1.HttpsError("failed-precondition", "TELEGRAM_BOT_TOKEN secret not configured");
     }
     v2_1.logger.info("[notifyBooking] sending", {
-        uid: request.auth.uid,
-        isAnonymous: request.auth.token.firebase.sign_in_provider === "anonymous",
+        uid: request.auth?.uid ?? "guest",
+        isAnonymous: request.auth?.token.firebase.sign_in_provider === "anonymous",
         chatId,
         messageLen: message.length,
         format: data.format ?? "plain",

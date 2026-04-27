@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
+import { isInappropriate } from "@/utils/moderate";
 
 import {
   Box,
@@ -145,6 +146,15 @@ const ReviewPage: React.FC = () => {
 
     setSubmitting(true);
     try {
+      // 🛡️ Moderation — block inappropriate review content
+      if (await isInappropriate(comment.trim())) {
+        toast.error(
+          "Review contains inappropriate content. Please revise."
+        );
+        setSubmitting(false);
+        return;
+      }
+
       await addDoc(collection(db, "reviews"), {
         therapistId,
         userId: user.uid,
