@@ -9,15 +9,21 @@ const __dirname = path.dirname(__filename);
 
 /**
  * แยก vendor libraries ออกเป็น chunks ต่างกัน
- * เป้าหมาย: ลดขนาด initial bundle และเปิดให้ browser cache ได้นาน
- * libs ที่หนักและไม่ค่อยอัปจะอยู่คนละ chunk จากโค้ดแอปที่อัปบ่อย
+ *
+ * ⚠️ บทเรียนสำคัญ — circular chunk → TDZ runtime error:
+ *   ก่อนหน้านี้แยก emotion, vendor, react-vendor เป็น 3 chunks
+ *   → rollup เตือน "Circular chunk: vendor → react-vendor → emotion → vendor"
+ *   → ใน production บราว์เซอร์ throw "Cannot access 'H' before initialization" → จอขาว
+ *
+ * วิธีกัน TDZ:
+ * 1) อย่าให้ chunk ที่ "นำเข้ากันและกัน" ถูกแยก
+ * 2) emotion = peer dep ของ MUI → รวม emotion เข้ากับ mui chunk
+ * 3) "vendor" catch-all ตัดออก → ปล่อย rollup จัดการเอง (ปลอดภัยกว่า)
  */
 function manualChunks(id: string): string | undefined {
   if (!id.includes("node_modules")) return undefined;
 
   // React core — โหลดทุกหน้า
-  // (ตัด /react-error-boundary/ และ /react-helmet-async/ ออกแล้วเพราะยังไม่ได้ติดตั้ง
-  //  เปิด ErrorBoundary แบบ in-house ที่ src/components/common/ErrorBoundary.tsx แทน)
   if (
     id.includes("/react/") ||
     id.includes("/react-dom/") ||
@@ -27,28 +33,26 @@ function manualChunks(id: string): string | undefined {
     return "react-vendor";
   }
 
-  // MUI X (Data Grid + Date Pickers) — หนักมาก ใช้แค่ admin
+  // MUI X — หนักมาก ใช้แค่ admin
   if (id.includes("/@mui/x-data-grid")) return "mui-x-data-grid";
   if (id.includes("/@mui/x-date-pickers")) return "mui-x-date-pickers";
 
-  // MUI core — หนักรองลงมา ใช้ทั่วแอป
+  // MUI core + Emotion (peer dep) อยู่ chunk เดียวกัน
+  // → ป้องกัน circular: mui imports emotion, emotion imports react
   if (
     id.includes("/@mui/material") ||
     id.includes("/@mui/system") ||
     id.includes("/@mui/lab") ||
     id.includes("/@mui/utils") ||
     id.includes("/@mui/private-theming") ||
-    id.includes("/@mui/styled-engine")
+    id.includes("/@mui/styled-engine") ||
+    id.includes("/@emotion/")
   ) {
     return "mui";
   }
   if (id.includes("/@mui/icons-material")) return "mui-icons";
 
-  // Emotion — peer dep ของ MUI
-  if (id.includes("/@emotion/")) return "emotion";
-
   // Firebase — หนัก ใช้หลายหน้า
-  // (ตัด /react-firebase-hooks/ ออก เพราะไม่ได้ติดตั้งจริง)
   if (
     id.includes("/firebase/") ||
     id.includes("/@firebase/") ||
@@ -60,8 +64,7 @@ function manualChunks(id: string): string | undefined {
   // Charts — recharts หนัก ใช้แค่ admin dashboard
   if (id.includes("/recharts/") || id.includes("/d3-")) return "charts";
 
-  // Export libs — หนักมาก ควรอยู่ chunk ตัวเองเพื่อให้ browser cache แยกได้
-  // (ไฟล์ที่ใช้พวกนี้ส่วนใหญ่ lazy import แล้ว แต่กัน static import เผลอใส่)
+  // Export libs — หนักมาก lazy load บ่อย
   if (
     id.includes("/exceljs/") ||
     id.includes("/jspdf/") ||
@@ -71,40 +74,31 @@ function manualChunks(id: string): string | undefined {
     return "export-libs";
   }
 
-  // Maps — ใช้เฉพาะหน้าแผนที่
-  // (ตัด leaflet / react-leaflet / use-places-autocomplete ออก เพราะไม่ได้ติดตั้งจริง)
-  if (id.includes("/@react-google-maps/")) {
-    return "maps";
-  }
+  // Maps
+  if (id.includes("/@react-google-maps/")) return "maps";
 
   // i18n
-  if (
-    id.includes("/i18next") ||
-    id.includes("/react-i18next/")
-  ) {
+  if (id.includes("/i18next") || id.includes("/react-i18next/")) {
     return "i18n";
   }
 
-  // Animation (ตัด aos / lottie-* ออก ไม่ได้ติดตั้ง)
+  // Animation
   if (id.includes("/framer-motion/") || id.includes("/motion/")) {
     return "motion";
   }
 
-  // Date / Utility (date-fns / lodash ไม่ได้ติดตั้ง)
+  // Date utils
   if (id.includes("/dayjs/")) return "date-utils";
 
-  // Icons (ตัด lucide-react ออก ไม่ได้ติดตั้ง)
-  if (
-    id.includes("/phosphor-react/") ||
-    id.includes("/react-icons/")
-  ) {
+  // Icons (non-MUI)
+  if (id.includes("/phosphor-react/") || id.includes("/react-icons/")) {
     return "icons";
   }
 
-  // Swiper (ตัด react-image-gallery ออก ไม่ได้ติดตั้ง)
+  // Swiper
   if (id.includes("/swiper/")) return "swiper";
 
-  // Form / phone / input (ตัด input-format ออก ไม่ได้ติดตั้ง)
+  // Form / phone
   if (id.includes("/react-phone-number-input/")) return "forms";
 
   // Toast
@@ -113,8 +107,9 @@ function manualChunks(id: string): string | undefined {
   // HTTP / network
   if (id.includes("/axios/")) return "http";
 
-  // ที่เหลือใน node_modules → vendor รวม
-  return "vendor";
+  // ที่เหลือ = ปล่อย rollup จัดการเอง (return undefined)
+  // เลี่ยง catch-all "vendor" ที่ทำให้เกิด circular chunk → TDZ error
+  return undefined;
 }
 
 export default defineConfig({
@@ -144,6 +139,5 @@ export default defineConfig({
       },
     },
   },
-  // ⚠️ /telegram dev proxy ถูกถอดออกแล้ว เพราะ client ไม่เรียก Telegram API ตรงๆ อีกต่อไป
-  // (ย้ายไป Cloud Function `notifyBooking` เพื่อกัน bot token หลุดผ่าน bundle)
+  // ⚠️ /telegram dev proxy ถูกถอดออกแล้ว
 });
