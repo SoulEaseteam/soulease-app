@@ -12,6 +12,7 @@ import ServiceFilterChips, {
   type ServiceFilter,
 } from "@/components/home/ServiceFilterChips";
 import therapistsData from "@/data/therapists";
+import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 
 // ==============================
 // Helpers
@@ -77,7 +78,22 @@ const BADGE_ORDER: Record<string, number> = {
 };
 
 const HomePage: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  // 🌐 Per-page meta (language-aware) — Google sees different title per language version
+  useDocumentMeta({
+    title: t(
+      "meta.home.title",
+      "SUNRED Bangkok • #1 Luxury Outcall Massage • EN/中文/日本語/한국어"
+    ),
+    description: t(
+      "meta.home.description",
+      "Bangkok's #1 luxury outcall massage. Verified therapists delivered to your hotel — Sukhumvit, Silom, Asok, Thonglor & all major areas. English, 中文, 日本語, 한국어. 24/7 live availability."
+    ),
+    locale: langToLocale(i18n.language),
+    url: "https://sunred.vip/",
+    type: "website",
+  });
 
   const [searchTerm, setSearchTerm] = useState("");
   const [serviceFilter, setServiceFilter] = useState<ServiceFilter>("all");
@@ -111,9 +127,7 @@ const HomePage: React.FC = () => {
     );
   }, []);
 
-  useEffect(() => {
-    document.title = "SunRed • Outcall Massage in Bangkok";
-  }, []);
+  // (document.title handled by useDocumentMeta above)
 
   // extend data
   const therapists = useMemo(() => {

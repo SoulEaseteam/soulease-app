@@ -16,10 +16,13 @@ import {
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 
 import therapists from "../data/therapists";
 import services from "../data/services";
 import BottomNav from "../components/layouts/BottomNavGlass";
+import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
+import { enhanceImage } from "@/utils/cloudinary";
 
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
@@ -105,6 +108,7 @@ const TherapistDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { i18n } = useTranslation();
 
   const queryParams = new URLSearchParams(location.search);
   const defaultSection =
@@ -116,6 +120,71 @@ const TherapistDetailPage: React.FC = () => {
   const [openImage, setOpenImage] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [reviewCount, setReviewCount] = useState(0);
+
+  // 🌍 Multi-language bio (fallback chain: current lang → en → empty)
+  const currentLang = (i18n.language || "en").split("-")[0].toLowerCase() as
+    | "en"
+    | "th"
+    | "zh"
+    | "ja"
+    | "ko";
+  const bio =
+    therapist?.bios?.[currentLang] ?? therapist?.bios?.en ?? "";
+
+  // 🪶 Per-page SEO meta + Person/AggregateRating schema (huge SEO win — each
+  // therapist becomes its own indexed page with rich snippets in search results)
+  const therapistImage = therapist
+    ? enhanceImage(therapist.image, { variant: "hero" })
+    : "https://sunred.vip/images/icon/sunred-logo.png";
+  const therapistUrl = therapist
+    ? `https://sunred.vip/therapist/${therapist.id}`
+    : "https://sunred.vip/";
+  const metaTitle = therapist
+    ? `${therapist.name} • Bangkok Outcall Massage Therapist • SUNRED`
+    : "Therapist • SUNRED Bangkok";
+  const metaDesc = therapist
+    ? bio ||
+      `Book ${therapist.name} — verified outcall massage therapist in Bangkok. ${
+        therapist.features?.language ?? "Multi-language"
+      } service. Live availability and trusted reviews on SUNRED.`
+    : "Verified massage therapist in Bangkok • SUNRED outcall booking";
+
+  useDocumentMeta({
+    title: metaTitle,
+    description: metaDesc,
+    image: therapistImage,
+    url: therapistUrl,
+    locale: langToLocale(i18n.language),
+    type: "profile",
+    jsonLd: therapist
+      ? {
+          "@context": "https://schema.org",
+          "@type": "Person",
+          "@id": `${therapistUrl}#therapist`,
+          name: therapist.name,
+          image: therapistImage,
+          url: therapistUrl,
+          jobTitle: "Licensed Massage Therapist",
+          worksFor: { "@id": "https://sunred.vip/#business" },
+          knowsLanguage: (therapist.features?.language ?? "")
+            .split(/[,/]/)
+            .map((s) => s.trim())
+            .filter(Boolean),
+          description: metaDesc,
+          ...(therapist.rating && therapist.reviews && therapist.reviews > 0
+            ? {
+                aggregateRating: {
+                  "@type": "AggregateRating",
+                  ratingValue: therapist.rating.toFixed(1),
+                  reviewCount: String(therapist.reviews),
+                  bestRating: "5",
+                  worstRating: "1",
+                },
+              }
+            : {}),
+        }
+      : undefined,
+  });
 
   useEffect(() => {
     if (!id) return;
@@ -360,6 +429,34 @@ const TherapistDetailPage: React.FC = () => {
               {therapist.employmentType || therapist.features.employmentType || "N/A"}
             </Typography>
           </Box>
+
+          {/* 🌍 Multi-language AI bio (only renders if generator script has run) */}
+          {bio && (
+            <Box
+              sx={{
+                mt: 2,
+                p: 1.6,
+                borderRadius: 3,
+                background: "rgba(255, 255, 255, 0.55)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255, 255, 255, 0.55)",
+              }}
+            >
+              <Typography
+                component="p"
+                lang={currentLang}
+                sx={{
+                  fontSize: 13.5,
+                  color: "#3a3420",
+                  lineHeight: 1.6,
+                  fontStyle: "italic",
+                  letterSpacing: 0.1,
+                }}
+              >
+                {bio}
+              </Typography>
+            </Box>
+          )}
         </Box>
 
         <Box

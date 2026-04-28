@@ -77,6 +77,16 @@ export interface Therapist {
   services?: string[];           // legacy alias
   servicesAvailable?: string[];
 
+  /** AI-generated multi-language bios — produced by scripts/generate-bios.ts */
+  bios?: Partial<{
+    en: string;
+    th: string;
+    zh: string;
+    ja: string;
+    ko: string;
+  }>;
+  bioGeneratedAt?: FirestoreDateLike;
+
   /** badge system */
   badgeKey?: "VIP" | "HOT" | "NEW" | null;
   badgeUpdatedAt?: number | null;

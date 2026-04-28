@@ -20,6 +20,7 @@ import "./index.css";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import AuthProvider from "@/providers/AuthProvider";
 import { GoogleMapsProvider } from "@/context/GoogleMapsContext";
+import FloatingLanguageSwitcher from "@/components/common/FloatingLanguageSwitcher";
 
 import "./app/i18n";
 import i18n from "i18next";
@@ -71,6 +72,8 @@ const Root = () => {
             <GoogleMapsProvider>
               <AuthProvider>
                 <App />
+                {/* 🌐 Always-visible 5-language switcher (bottom-right pill) */}
+                <FloatingLanguageSwitcher />
               </AuthProvider>
             </GoogleMapsProvider>
           </BrowserRouter>
