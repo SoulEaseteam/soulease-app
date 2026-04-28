@@ -12,6 +12,8 @@ import ServiceFilterChips, {
   type ServiceFilter,
 } from "@/components/home/ServiceFilterChips";
 import PaymentTrustBar from "@/components/home/PaymentTrustBar";
+import SocialProofTicker from "@/components/home/SocialProofTicker";
+import AreaChips, { type BangkokArea } from "@/components/home/AreaChips";
 import therapistsData from "@/data/therapists";
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 
@@ -78,26 +80,90 @@ const BADGE_ORDER: Record<string, number> = {
   "": 4,
 };
 
+/** 🗺️ Approximate centroid of major Bangkok areas + match radius (km) */
+const AREA_CENTERS: Record<
+  string,
+  { lat: number; lng: number; radiusKm: number }
+> = {
+  sukhumvit: { lat: 13.7398, lng: 100.5602, radiusKm: 4 },
+  silom: { lat: 13.7286, lng: 100.534, radiusKm: 3 },
+  thonglor: { lat: 13.7368, lng: 100.5772, radiusKm: 3 },
+  asok: { lat: 13.7373, lng: 100.5611, radiusKm: 2.5 },
+  siam: { lat: 13.7456, lng: 100.5346, radiusKm: 3 },
+  pratunam: { lat: 13.7508, lng: 100.5417, radiusKm: 2.5 },
+};
+
 const HomePage: React.FC = () => {
   const { t, i18n } = useTranslation();
 
-  // 🌐 Per-page meta (language-aware) — Google sees different title per language version
-  useDocumentMeta({
-    title: t(
-      "meta.home.title",
-      "SUNRED Bangkok • #1 Luxury Outcall Massage • EN/中文/日本語/한국어"
-    ),
-    description: t(
-      "meta.home.description",
-      "Bangkok's #1 luxury outcall massage. Verified therapists delivered to your hotel — Sukhumvit, Silom, Asok, Thonglor & all major areas. English, 中文, 日本語, 한국어. 24/7 live availability."
-    ),
-    locale: langToLocale(i18n.language),
-    url: "https://sunred.vip/",
-    type: "website",
-  });
-
   const [searchTerm, setSearchTerm] = useState("");
   const [serviceFilter, setServiceFilter] = useState<ServiceFilter>("all");
+
+  // 🗺️ Area filter — sync ?area= URL param both ways for SEO friendliness
+  const [areaFilter, setAreaFilter] = useState<BangkokArea>(() => {
+    if (typeof window === "undefined") return "all";
+    const q = new URLSearchParams(window.location.search).get("area");
+    const valid: BangkokArea[] = [
+      "all",
+      "sukhumvit",
+      "silom",
+      "thonglor",
+      "asok",
+      "siam",
+      "pratunam",
+    ];
+    return valid.includes((q ?? "") as BangkokArea)
+      ? ((q ?? "all") as BangkokArea)
+      : "all";
+  });
+
+  // Reflect area selection back into URL (no full navigation)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (areaFilter === "all") {
+      url.searchParams.delete("area");
+    } else {
+      url.searchParams.set("area", areaFilter);
+    }
+    window.history.replaceState({}, "", url.toString());
+  }, [areaFilter]);
+
+  // 🌐 Per-page meta (language + area aware) — each /?area=sukhumvit URL gets
+  // a unique title/description, multiplying our indexed page count.
+  const areaLabel: Record<BangkokArea, string> = {
+    all: "Bangkok",
+    sukhumvit: "Sukhumvit",
+    silom: "Silom",
+    thonglor: "Thonglor",
+    asok: "Asok",
+    siam: "Siam",
+    pratunam: "Pratunam",
+  };
+  const areaLabelStr = areaLabel[areaFilter];
+
+  useDocumentMeta({
+    title:
+      areaFilter === "all"
+        ? t(
+            "meta.home.title",
+            "SUNRED Bangkok • #1 Luxury Outcall Massage • EN/中文/日本語/한국어"
+          )
+        : `Outcall Massage in ${areaLabelStr} • SUNRED Bangkok`,
+    description:
+      areaFilter === "all"
+        ? t(
+            "meta.home.description",
+            "Bangkok's #1 luxury outcall massage. Verified therapists delivered to your hotel — Sukhumvit, Silom, Asok, Thonglor & all major areas. English, 中文, 日本語, 한국어. 24/7 live availability."
+          )
+        : `Verified outcall massage therapists serving ${areaLabelStr} hotels in Bangkok. Live availability, multi-language support (EN/中文/日本語/한국어), and instant booking on SUNRED.`,
+    locale: langToLocale(i18n.language),
+    url:
+      areaFilter === "all"
+        ? "https://sunred.vip/"
+        : `https://sunred.vip/?area=${areaFilter}`,
+    type: "website",
+  });
   const [customerLocation, setCustomerLocation] = useState<{
     lat: number;
     lng: number;
@@ -154,11 +220,27 @@ const HomePage: React.FC = () => {
     });
   }, [customerLocation]);
 
-  // search + service filter
+  // search + service filter + area filter
   const filtered = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
+    const areaCenter =
+      areaFilter !== "all" ? AREA_CENTERS[areaFilter] : null;
 
     return therapists.filter((t) => {
+      // 🗺️ area filter — match by distance from area centroid
+      if (areaCenter) {
+        const tLat = Number((t as { lat?: number | string }).lat);
+        const tLng = Number((t as { lng?: number | string }).lng);
+        if (!tLat || !tLng) return false;
+        const dist = getDistanceKm(
+          areaCenter.lat,
+          areaCenter.lng,
+          tLat,
+          tLng
+        );
+        if (dist > areaCenter.radiusKm) return false;
+      }
+
       // service filter
       if (serviceFilter !== "all") {
         const services = (t.servicesAvailable ?? []).map((s) =>
@@ -183,7 +265,7 @@ const HomePage: React.FC = () => {
       const badgeMatch = (t.badge ?? "").toLowerCase().includes(q);
       return nameMatch || badgeMatch;
     });
-  }, [therapists, searchTerm, serviceFilter]);
+  }, [therapists, searchTerm, serviceFilter, areaFilter]);
 
   // ⭐⭐ SORTING ตามกติกาใหม่ ⭐⭐
   const sorted = useMemo(() => {
@@ -240,6 +322,12 @@ const HomePage: React.FC = () => {
 
         {/* 💳 Payment trust signals — builds confidence with foreign tourists */}
         <PaymentTrustBar />
+
+        {/* 🌟 Live social proof ticker (recent bookings) */}
+        <SocialProofTicker />
+
+        {/* 🗺️ Bangkok area quick-filter (also feeds SEO via ?area= URL) */}
+        <AreaChips active={areaFilter} onChange={setAreaFilter} />
 
         <SearchBar
           onSearch={setSearchTerm}

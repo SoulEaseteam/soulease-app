@@ -80,6 +80,28 @@ const HeroSection: React.FC = () => {
         }}
       />
 
+      {/* ✨ Twinkling sparkles overlay (pure CSS, no JS cost) */}
+      <Box
+        aria-hidden
+        sx={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          backgroundImage: `
+            radial-gradient(circle at 15% 25%, rgba(255,255,255,0.95) 0.5px, transparent 1.5px),
+            radial-gradient(circle at 78% 18%, rgba(255,255,255,0.85) 0.5px, transparent 1.2px),
+            radial-gradient(circle at 88% 70%, rgba(255,255,255,0.9) 0.4px, transparent 1.3px),
+            radial-gradient(circle at 22% 75%, rgba(255,255,255,0.8) 0.5px, transparent 1.4px),
+            radial-gradient(circle at 58% 35%, rgba(255,255,255,0.7) 0.4px, transparent 1.1px)
+          `,
+          animation: "twinkle 3.5s ease-in-out infinite",
+          "@keyframes twinkle": {
+            "0%, 100%": { opacity: 0.3 },
+            "50%": { opacity: 1 },
+          },
+        }}
+      />
+
       {/* 🪟 Glass card */}
       <Box
         sx={{
