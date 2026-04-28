@@ -1,13 +1,17 @@
 // src/components/home/HeroSection.tsx
 //
-// 🌅 Aurora Modern Hero — for SunRed home page
+// 🌅 SunRed Brand Hero — peach/coral/pink core (brand tokens) with subtle
+//    lavender accent for depth. Now sources colors from `@/theme` (`brand`)
+//    so future palette tweaks propagate automatically.
 //
-// Design:
-//   - Pastel gradient (peach → lavender → mint) ใน background
-//   - Glass-morphism card พร้อม tagline หลายภาษา
-//   - Trust badges (Verified / 24-7 / 5-star)
-//   - Floating gradient orbs (subtle animation)
-//   - Mobile-first (<= 430px)
+// Color story:
+//   • Background:   peach (FEAE96 / FFE5D9) → soft pink (FFD6E8) → light lavender accent
+//   • Title:        SunRed red (FE0944) → magenta → indigo  ← signature gradient
+//   • Orbs:         peach + pink (warm, on-brand) — replaced the cool blue orb
+//   • Trust pills:  white glass + SunRed red border + dark plum text
+//
+// Fits next to FloatingNavBar (peach→pink→lavender→violet) and BottomNavGlass
+// (peach-pink-lavender glass) — all three now share the same color story.
 
 import React from "react";
 import { Box, Typography, Stack } from "@mui/material";
@@ -17,6 +21,8 @@ import { useTranslation } from "react-i18next";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import AccessTimeFilledIcon from "@mui/icons-material/AccessTimeFilled";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
+
+import { brand } from "@/theme";
 
 const HeroSection: React.FC = () => {
   const { t } = useTranslation();
@@ -32,13 +38,18 @@ const HeroSection: React.FC = () => {
         mt: 2,
         px: 3,
         py: 4,
-        // 🌈 Aurora gradient background
-        background:
-          "linear-gradient(135deg, #FFE5D9 0%, #FFD6E8 35%, #E5D0FF 65%, #D4F4E2 100%)",
-        boxShadow: "0 12px 32px rgba(229, 208, 255, 0.35)",
+        // 🌅 Brand-led background — peach/pink dominant, lavender hint
+        // (FEAE96 = brand.peach baseline, blends into FloatingNavBar)
+        background: `linear-gradient(135deg,
+          ${brand.aurora.peach} 0%,
+          ${brand.aurora.pink} 35%,
+          ${brand.aurora.lavender} 75%,
+          rgba(196, 181, 253, 0.55) 100%)`,
+        boxShadow: `0 12px 32px rgba(254, 9, 68, 0.10),
+                    0 4px 14px rgba(254, 174, 150, 0.18)`,
       }}
     >
-      {/* 🔮 Floating gradient orbs (decoration) */}
+      {/* 🔮 Floating peach orb (top-right) */}
       <Box
         component={motion.div}
         animate={{
@@ -53,12 +64,15 @@ const HeroSection: React.FC = () => {
           width: 120,
           height: 120,
           borderRadius: "50%",
+          // SunRed peach (FEAE96) at 60% — warm and on-brand
           background:
-            "radial-gradient(circle, rgba(255,182,193,0.55) 0%, rgba(255,182,193,0) 70%)",
+            "radial-gradient(circle, rgba(254, 174, 150, 0.65) 0%, rgba(254, 174, 150, 0) 70%)",
           filter: "blur(8px)",
           pointerEvents: "none",
         }}
       />
+
+      {/* 🌸 Floating pink-coral orb (bottom-left) */}
       <Box
         component={motion.div}
         animate={{
@@ -73,9 +87,10 @@ const HeroSection: React.FC = () => {
           width: 140,
           height: 140,
           borderRadius: "50%",
+          // soft SunRed-red glow (FE0944) — diluted, not aggressive
           background:
-            "radial-gradient(circle, rgba(180, 220, 255, 0.5) 0%, rgba(180, 220, 255, 0) 70%)",
-          filter: "blur(10px)",
+            "radial-gradient(circle, rgba(254, 9, 68, 0.18) 0%, rgba(254, 9, 68, 0) 70%)",
+          filter: "blur(12px)",
           pointerEvents: "none",
         }}
       />
@@ -108,23 +123,26 @@ const HeroSection: React.FC = () => {
           position: "relative",
           zIndex: 1,
           backdropFilter: "blur(14px)",
-          backgroundColor: "rgba(255, 255, 255, 0.45)",
+          backgroundColor: "rgba(255, 255, 255, 0.5)",
           borderRadius: 3,
           border: "1px solid rgba(255, 255, 255, 0.6)",
           p: 2.5,
           textAlign: "center",
         }}
       >
-        {/* Tagline */}
+        {/* Tagline — SunRed signature gradient text */}
         <Typography
           component="h1"
           sx={{
             fontWeight: 800,
             fontSize: { xs: 19, sm: 23, md: 26 },
             lineHeight: 1.25,
-            // gradient text
-            background:
-              "linear-gradient(90deg, #E11D48 0%, #B91C9F 50%, #6366F1 100%)",
+            // 🔥 SunRed red (FE0944) → magenta → indigo
+            // ใช้สี brand จริงเป็นหลัก ตามด้วย accent
+            background: `linear-gradient(90deg,
+              ${brand.red} 0%,
+              #B91C9F 50%,
+              #6366F1 100%)`,
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
             backgroundClip: "text",
@@ -132,21 +150,19 @@ const HeroSection: React.FC = () => {
             letterSpacing: 0.2,
             // 🌐 multi-language safe wrapping
             textWrap: "balance",
-            wordBreak: "keep-all", // ป้องกัน break ภาษาเอเชียกลางคำ
+            wordBreak: "keep-all",
             overflowWrap: "break-word",
             px: 1,
           }}
         >
-          {t(
-            "hero.title",
-            "Bangkok's #1 Outcall Massage"
-          )}
+          {t("hero.title", "Bangkok's #1 Outcall Massage")}
         </Typography>
 
         <Typography
           sx={{
             fontSize: { xs: 12.5, sm: 13.5 },
-            color: "rgba(60, 60, 80, 0.85)",
+            // dark plum (matches BottomNav active text + TrustBadge family)
+            color: "rgba(74, 26, 51, 0.8)",
             mb: 1.5,
             fontWeight: 500,
             lineHeight: 1.55,
@@ -187,7 +203,7 @@ const HeroSection: React.FC = () => {
   );
 };
 
-/** Small pill-style badge */
+/** Small pill-style badge — uses SunRed red border for brand consistency */
 const TrustBadge: React.FC<{
   icon: React.ReactNode;
   label: string;
@@ -200,13 +216,15 @@ const TrustBadge: React.FC<{
       px: 1.2,
       py: 0.4,
       borderRadius: 99,
-      backgroundColor: "rgba(255, 255, 255, 0.75)",
-      border: "1px solid rgba(225, 29, 72, 0.15)",
+      backgroundColor: "rgba(255, 255, 255, 0.85)",
+      // SunRed red @ 25% — visible accent without shouting
+      border: `1px solid rgba(254, 9, 68, 0.25)`,
       color: "#7E1F4D",
       fontWeight: 600,
       fontSize: 11.5,
       letterSpacing: 0.2,
       whiteSpace: "nowrap",
+      boxShadow: "0 2px 6px rgba(254, 9, 68, 0.06)",
     }}
   >
     {icon}

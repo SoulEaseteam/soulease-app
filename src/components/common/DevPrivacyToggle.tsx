@@ -2,17 +2,20 @@
 //
 // 👁️  Dev Privacy Mode — สำหรับ "ผู้เขียนระบบ" ที่เอางานออกมาทำนอกสถานที่
 //
+// 🔒 จำกัดสิทธิ์: เฉพาะ user ที่ login เป็น role="admin" เท่านั้นที่เห็นปุ่มนี้
+//    ลูกค้าทั่วไปจะไม่มีทาง trigger ปุ่มนี้ + ไม่เห็นแถบ banner ด้วย
+//
 // ปัญหา: ทำงานคาเฟ่/รถไฟ → คนข้างๆ เห็นจอแล้วเห็นรูปนางแบบ ลำบากใจ
 //
 // วิธีใช้:
-//   - คลิกไอคอน 👁️ มุมขวาบน → blur รูปทั้งเว็บทันที
-//   - หรือกด Cmd/Ctrl + Shift + B
+//   - login admin ก่อน → เห็นไอคอน 👁️ มุมขวาบน
+//   - คลิก หรือกด Cmd/Ctrl + Shift + B
 //   - ค่าจะถูกจำใน localStorage → reload ก็ยัง blur ต่อ
 //   - ปิด blur ด้วยวิธีเดียวกัน
 //
 // CSS:
-//   - body.dev-blur img         → blur(20px)
-//   - body.dev-blur [role=img]  → blur(20px)
+//   - body.dev-blur img         → blur(22px)
+//   - body.dev-blur [role=img]  → blur(22px)
 //   - ยกเว้น icon/logo/star (alt มี "icon"/"logo"/"star")
 //
 // หมายเหตุ: ทำงานเฉพาะ device นี้ (localStorage local) — ไม่กระทบ user คนอื่น
@@ -21,6 +24,8 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Box, Tooltip } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+
+import { useAuth } from "@/providers/AuthProvider";
 
 const STORAGE_KEY = "sunred:dev-blur";
 const CSS_CLASS = "dev-blur";
@@ -36,23 +41,36 @@ function applyBodyClass(active: boolean) {
 }
 
 const DevPrivacyToggle: React.FC = () => {
+  const { role } = useAuth();
+  const isAdmin = role === "admin";
+
   const [active, setActive] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem(STORAGE_KEY) === "1";
   });
 
+  // 🛡️ Force-disable blur when user is NOT admin (e.g. logout while blurred)
+  // → กัน case admin เปิดไว้แล้ว logout ออก แต่ blur ยังติดอยู่
+  useEffect(() => {
+    if (!isAdmin && active) {
+      setActive(false);
+    }
+  }, [isAdmin, active]);
+
   // sync to body + localStorage whenever changed
   useEffect(() => {
-    applyBodyClass(active);
+    applyBodyClass(active && isAdmin);
     if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, active ? "1" : "0");
+      localStorage.setItem(STORAGE_KEY, active && isAdmin ? "1" : "0");
     }
-  }, [active]);
+  }, [active, isAdmin]);
 
-  // ⌨️ Keyboard shortcut — Cmd/Ctrl + Shift + B
+  // ⌨️ Keyboard shortcut — Cmd/Ctrl + Shift + B  (เฉพาะ admin)
   const toggle = useCallback(() => setActive((v) => !v), []);
 
   useEffect(() => {
+    if (!isAdmin) return; // ลูกค้ากดไม่ติด แม้รู้ shortcut
+
     const handler = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
       if (mod && e.shiftKey && (e.key === "B" || e.key === "b")) {
@@ -62,7 +80,11 @@ const DevPrivacyToggle: React.FC = () => {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [toggle]);
+  }, [toggle, isAdmin]);
+
+  // 🚫 ไม่ render อะไรเลย ถ้าไม่ใช่ admin
+  // ลูกค้าทั่วไป / therapist / guest จะไม่เห็นทั้งปุ่มและ banner
+  if (!isAdmin) return null;
 
   return (
     <>
