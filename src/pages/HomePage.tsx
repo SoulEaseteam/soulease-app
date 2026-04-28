@@ -11,6 +11,7 @@ import TherapistCardSkeleton from "@/components/home/TherapistCardSkeleton";
 import ServiceFilterChips, {
   type ServiceFilter,
 } from "@/components/home/ServiceFilterChips";
+import PaymentTrustBar from "@/components/home/PaymentTrustBar";
 import therapistsData from "@/data/therapists";
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 
@@ -236,6 +237,9 @@ const HomePage: React.FC = () => {
       <Box sx={{ maxWidth: 430, mx: "auto", px: 1.5 }}>
         {/* 🌟 Aurora Modern Hero (above the fold) */}
         <HeroSection />
+
+        {/* 💳 Payment trust signals — builds confidence with foreign tourists */}
+        <PaymentTrustBar />
 
         <SearchBar
           onSearch={setSearchTerm}

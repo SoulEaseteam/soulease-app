@@ -463,40 +463,63 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
             <Button
               variant="contained"
               size="small"
-              disabled={displayStatus === "resting"}
+              // 🌟 Resting → ยังให้กดเข้า detail page ดูข้อมูลได้ (positive UX)
               onClick={() =>
                 navigate(`/therapists/${profile.id}?section=services`)
               }
               sx={{
                 fontSize: 12,
                 borderRadius: 99,
-                minWidth: 100,
-                backgroundColor:
+                minWidth: 110,
+                fontWeight: 700,
+                letterSpacing: 0.4,
+                background:
                   displayStatus === "resting"
-                    ? "#9b9484"
+                    ? "linear-gradient(135deg, #FFD6E8 0%, #E5D0FF 100%)"
                     : displayStatus === "bookable"
-                    ? "#ef6c00"
-                    : "#f36c60",
-                "&.Mui-disabled": {
-                  backgroundColor: "#b0bec5",
-                  color: "#fff",
-                },
+                    ? "linear-gradient(135deg, #FFB088 0%, #FE7A52 100%)"
+                    : "linear-gradient(135deg, #FE0944 0%, #FEAE96 100%)",
+                color:
+                  displayStatus === "resting"
+                    ? "#7E1F4D"
+                    : "#fff",
+                boxShadow:
+                  displayStatus === "resting"
+                    ? "0 4px 12px rgba(225, 29, 72, 0.18)"
+                    : "0 6px 16px rgba(225, 29, 72, 0.32)",
               }}
             >
               {displayStatus === "available"
                 ? "BOOK NOW"
                 : displayStatus === "bookable"
                 ? "IN SESSION"
-                : "RESTING"}
+                : finalNext
+                ? `AT ${finalNext}` // 💡 positive framing — show next available time on button
+                : "PRE-BOOK"}
             </Button>
           </Stack>
         </Stack>
 
-        {/* Next Available */}
-        {finalNext && (
-          <Typography fontSize={12} color="#666" mt={1}>
-            Available: {finalNext}
-          </Typography>
+        {/* Next Available — show prominently for non-available states */}
+        {finalNext && displayStatus !== "available" && (
+          <Box
+            sx={{
+              mt: 1,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.4,
+              px: 1.1,
+              py: 0.3,
+              borderRadius: 99,
+              backgroundColor: "rgba(212, 244, 226, 0.7)", // mint pastel
+              border: "1px solid rgba(46, 196, 176, 0.3)",
+              fontSize: 11,
+              fontWeight: 600,
+              color: "#1a4f55",
+            }}
+          >
+            ⏰ Next: {finalNext}
+          </Box>
         )}
 
         {/* Preview dialog */}

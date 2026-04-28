@@ -44,16 +44,22 @@ const FloatingLanguageSwitcher: React.FC = () => {
     <Box
       sx={{
         position: "fixed",
-        // อยู่ใต้ FloatingNavBar ที่ฝั่งบน — มุมล่างขวา เหนือ bottom nav
-        right: 14,
+        // 🎯 ย้ายมาฝั่งซ้ายล่าง — กัน collision กับ AdminFloatingChat (ฝั่งขวา)
+        // Visual balance: left = world/language, right = contact/help
+        left: 14,
         bottom: 96,
         zIndex: 50,
         display: "flex",
         flexDirection: "column",
-        alignItems: "flex-end",
+        alignItems: "flex-start",
         gap: 1,
         pointerEvents: "none", // ให้กดทะลุพื้นหลัง — แต่ children = auto
         "& > *": { pointerEvents: "auto" },
+        // mobile: ขยับขึ้นเล็กน้อย เพราะ bottom nav สูงกว่า
+        "@media (max-width: 500px)": {
+          bottom: 88,
+          left: 12,
+        },
       }}
       aria-label="Language selector"
     >
@@ -72,7 +78,7 @@ const FloatingLanguageSwitcher: React.FC = () => {
                 <Tooltip
                   key={l.code}
                   title={l.label}
-                  placement="left"
+                  placement="right"
                   arrow
                 >
                   <Box

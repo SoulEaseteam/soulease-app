@@ -98,8 +98,8 @@ const HeroSection: React.FC = () => {
           component="h1"
           sx={{
             fontWeight: 800,
-            fontSize: { xs: 22, sm: 26 },
-            lineHeight: 1.2,
+            fontSize: { xs: 19, sm: 23, md: 26 },
+            lineHeight: 1.25,
             // gradient text
             background:
               "linear-gradient(90deg, #E11D48 0%, #B91C9F 50%, #6366F1 100%)",
@@ -107,7 +107,12 @@ const HeroSection: React.FC = () => {
             WebkitTextFillColor: "transparent",
             backgroundClip: "text",
             mb: 0.8,
-            letterSpacing: 0.3,
+            letterSpacing: 0.2,
+            // 🌐 multi-language safe wrapping
+            textWrap: "balance",
+            wordBreak: "keep-all", // ป้องกัน break ภาษาเอเชียกลางคำ
+            overflowWrap: "break-word",
+            px: 1,
           }}
         >
           {t(
@@ -118,11 +123,13 @@ const HeroSection: React.FC = () => {
 
         <Typography
           sx={{
-            fontSize: 13.5,
+            fontSize: { xs: 12.5, sm: 13.5 },
             color: "rgba(60, 60, 80, 0.85)",
             mb: 1.5,
             fontWeight: 500,
-            lineHeight: 1.5,
+            lineHeight: 1.55,
+            textWrap: "balance",
+            wordBreak: "keep-all",
           }}
         >
           {t(
