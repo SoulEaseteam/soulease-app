@@ -47,7 +47,15 @@ import {
 
 // Firestore
 import { db } from "../lib/firebase";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  doc,
+} from "firebase/firestore";
+import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
+import type { Therapist as TherapistType } from "@/types/therapist";
 
 type SectionType = "services" | "features" | "profile";
 
@@ -121,6 +129,44 @@ const TherapistDetailPage: React.FC = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [reviewCount, setReviewCount] = useState(0);
 
+  // 🔒 PRIVACY: live therapist doc — เพื่อตรวจว่า "ออกงานข้างนอก" หรือไม่
+  const [liveDoc, setLiveDoc] = useState<Partial<TherapistType> | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    const unsub = onSnapshot(
+      doc(db, "therapists", id),
+      (snap) => {
+        if (snap.exists()) {
+          setLiveDoc(snap.data() as Partial<TherapistType>);
+        } else {
+          setLiveDoc(null);
+        }
+      },
+      (err) => console.warn("therapist live doc error:", err)
+    );
+    return () => unsub();
+  }, [id]);
+
+  // Merge static + live → compute status
+  const merged: TherapistType | null = therapist
+    ? ({
+        ...therapist,
+        ...(liveDoc ?? {}),
+      } as TherapistType)
+    : null;
+  const liveStatus = merged ? calculateTherapistStatus(merged).status : null;
+  const nextAvailable = merged
+    ? calculateTherapistStatus(merged).nextAvailable
+    : null;
+
+  // 🔒 isOutOfPremises = true เมื่อ
+  //  1. status = "bookable" (busyUntil future, activeBooking)
+  //  2. มี manual flag `hideProfile = true` (admin toggle ใน Firestore)
+  const hideProfileFlag = !!(liveDoc as { hideProfile?: boolean } | null)
+    ?.hideProfile;
+  const isOutOfPremises = liveStatus === "bookable" || hideProfileFlag;
+
   // 🌍 Multi-language bio (fallback chain: current lang → en → empty)
   const currentLang = (i18n.language || "en").split("-")[0].toLowerCase() as
     | "en"
@@ -133,9 +179,11 @@ const TherapistDetailPage: React.FC = () => {
 
   // 🪶 Per-page SEO meta + Person/AggregateRating schema (huge SEO win — each
   // therapist becomes its own indexed page with rich snippets in search results)
-  const therapistImage = therapist
-    ? enhanceImage(therapist.image, { variant: "hero" })
-    : "https://sunred.vip/images/icon/sunred-logo.png";
+  // 🔒 Privacy: ใช้ logo เมื่อออกงานข้างนอก — กัน social-share preview เปิดเผยรูป
+  const therapistImage =
+    therapist && !isOutOfPremises
+      ? enhanceImage(therapist.image, { variant: "hero" })
+      : "https://sunred.vip/images/icon/sunred-logo.png";
   const therapistUrl = therapist
     ? `https://sunred.vip/therapist/${therapist.id}`
     : "https://sunred.vip/";
@@ -251,13 +299,18 @@ const TherapistDetailPage: React.FC = () => {
     }
   };
 
-  const avatarSrc = therapist?.image
+  // 🔒 PRIVACY: use placeholder when therapist is out at customer's location
+  const PLACEHOLDER_AVATAR = "/images/icon/sunred-logo.png";
+
+  const realAvatarSrc = therapist?.image
     ? therapist.image.startsWith("http") || therapist.image.startsWith("/")
       ? therapist.image
       : `/images/${therapist.image}`
     : "/images/default-avatar.png";
 
-  const galleryImages =
+  const avatarSrc = isOutOfPremises ? PLACEHOLDER_AVATAR : realAvatarSrc;
+
+  const realGallery =
     therapist?.gallery && therapist.gallery.length > 0
       ? therapist.gallery.map((img: string) =>
           img.startsWith("http") || img.startsWith("/")
@@ -267,6 +320,9 @@ const TherapistDetailPage: React.FC = () => {
       : Array.from({ length: 6 }).map(
           (_, i) => `/images/yuri/gallery${i + 1}.jpg`
         );
+
+  // ซ่อน gallery ทั้งหมดตอนออกงานข้างนอก
+  const galleryImages: string[] = isOutOfPremises ? [] : realGallery;
 
   if (!therapist) {
     return (
@@ -381,6 +437,59 @@ const TherapistDetailPage: React.FC = () => {
         </Box>
 
         <Box sx={{ px: 2, mt: 1 }}>
+          {/* 🔒 PRIVACY BANNER — therapist is out at a customer location */}
+          {isOutOfPremises && (
+            <Box
+              sx={{
+                mt: 1,
+                mb: 1.5,
+                p: 1.4,
+                borderRadius: 3,
+                background:
+                  "linear-gradient(135deg, rgba(212, 244, 226, 0.85) 0%, rgba(229, 208, 255, 0.85) 100%)",
+                border: "1px solid rgba(99, 102, 241, 0.2)",
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+              }}
+              role="status"
+            >
+              <Box
+                component="span"
+                sx={{
+                  fontSize: 20,
+                  filter: "grayscale(0.1)",
+                }}
+                aria-hidden
+              >
+                🔒
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography
+                  sx={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "#1a4f55",
+                    lineHeight: 1.3,
+                  }}
+                >
+                  Currently in service · profile hidden for privacy
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: 12,
+                    color: "rgba(60, 60, 80, 0.7)",
+                    mt: 0.3,
+                  }}
+                >
+                  {nextAvailable
+                    ? `Photos return at ${nextAvailable}. You can pre-book now.`
+                    : "Photos will return when the session ends. You can pre-book now."}
+                </Typography>
+              </Box>
+            </Box>
+          )}
+
           <Typography
             variant="h5"
             sx={{

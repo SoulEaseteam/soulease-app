@@ -73,8 +73,13 @@ const BottomNavGlass: React.FC = () => {
           position: "relative",
           bottom: showNav ? 0 : "-130px",
           transition: "all 0.4s ease",
-          background: "rgba(255,255,255,0.85)",
-          backdropFilter: "blur(1px)",
+          // 🌅 Aurora glass — soft peach-pink-lavender tint
+          background:
+            "linear-gradient(135deg, rgba(255, 245, 240, 0.92) 0%, rgba(255, 240, 248, 0.92) 50%, rgba(247, 240, 255, 0.92) 100%)",
+          backdropFilter: "blur(16px)",
+          border: "1px solid rgba(255, 255, 255, 0.55)",
+          boxShadow:
+            "0 12px 32px rgba(225, 29, 72, 0.10), 0 6px 16px rgba(99, 102, 241, 0.08)",
           borderRadius: "40px",
           px: 1,
           py: 0.5,
@@ -86,10 +91,15 @@ const BottomNavGlass: React.FC = () => {
           showLabels
           sx={{
             background: "transparent",
+            // 🌸 Aurora-themed active state
             "& .Mui-selected": {
-              color: "#f44444",
-              fontWeight: 700,
-              transform: "scale(1.12)",
+              color: "#B91C9F", // magenta from Aurora gradient
+              fontWeight: 600,
+              transform: "scale(1.10)",
+            },
+            "& .MuiBottomNavigationAction-root": {
+              color: "rgba(120, 105, 130, 0.7)",
+              transition: "all 0.2s ease",
             },
           }}
         >

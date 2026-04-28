@@ -342,24 +342,50 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
       >
         {/* Image */}
         <Box sx={{ position: "relative" }}>
-          <Box
-            component="img"
-            src={enhanceImage(resolvedImage, { variant: "card" })}
-            alt={profile.name}
-            loading={priority ? "eager" : "lazy"}
-            // ⚡ HTML attr: fetchpriority="high" — ช่วย LCP ของการ์ดบนสุด
-            {...(priority ? { fetchpriority: "high" as const } : {})}
-            decoding="async"
-            sx={{
-              width: "100%",
-              height: 260,
-              objectFit: "cover",
-              borderRadius: 4,
-              cursor: "pointer",
-              filter: displayStatus === "resting" ? "blur(2px)" : "none",
-            }}
-            onClick={() => setOpen(true)}
-          />
+          {/* 🔒 PRIVACY: when therapist is at a customer's location (bookable)
+              OR admin toggled `hideProfile = true` → swap photo with logo placeholder.
+              Customer ID can never be linked to which therapist is currently working. */}
+          {(() => {
+            const hideFlag = !!(profile as { hideProfile?: boolean })
+              .hideProfile;
+            const isOutOfPremises =
+              displayStatus === "bookable" || hideFlag;
+            const PRIVACY_PLACEHOLDER = "/images/icon/sunred-logo.png";
+
+            return (
+              <Box
+                component="img"
+                src={
+                  isOutOfPremises
+                    ? PRIVACY_PLACEHOLDER
+                    : enhanceImage(resolvedImage, { variant: "card" })
+                }
+                alt={isOutOfPremises ? "Profile hidden — therapist is in session" : profile.name}
+                loading={priority ? "eager" : "lazy"}
+                {...(priority ? { fetchpriority: "high" as const } : {})}
+                decoding="async"
+                sx={{
+                  width: "100%",
+                  height: 260,
+                  objectFit: isOutOfPremises ? "contain" : "cover",
+                  borderRadius: 4,
+                  cursor: isOutOfPremises ? "default" : "pointer",
+                  // resting → light blur, in-session → full hide already
+                  filter:
+                    !isOutOfPremises && displayStatus === "resting"
+                      ? "blur(2px)"
+                      : "none",
+                  background: isOutOfPremises
+                    ? "linear-gradient(135deg, #FFE5D9 0%, #E5D0FF 100%)"
+                    : "transparent",
+                  p: isOutOfPremises ? 4 : 0,
+                }}
+                onClick={() => {
+                  if (!isOutOfPremises) setOpen(true);
+                }}
+              />
+            );
+          })()}
 
           {/* Badge */}
           {activeBadge && (

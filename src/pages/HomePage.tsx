@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { collection, onSnapshot, type DocumentData } from "firebase/firestore";
 
 import FloatingNavBar from "@/components/layouts/FloatingNavBar";
 import SearchBar from "@/components/common/SearchBar";
@@ -15,7 +16,10 @@ import PaymentTrustBar from "@/components/home/PaymentTrustBar";
 import SocialProofTicker from "@/components/home/SocialProofTicker";
 import AreaChips, { type BangkokArea } from "@/components/home/AreaChips";
 import therapistsData from "@/data/therapists";
+import { db } from "@/lib/firebase";
+import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
+import type { Therapist, FirestoreDateLike } from "@/types/therapist";
 
 // ==============================
 // Helpers
@@ -177,6 +181,50 @@ const HomePage: React.FC = () => {
     return () => clearTimeout(t);
   }, []);
 
+  // 🔒 PRIVACY: Live therapist status overrides from Firestore
+  // เมื่อพนักงาน "ไปทำงานข้างนอก" (status = bookable / มี busyUntil / activeBooking)
+  // → ระบบจะซ่อนการ์ดออกจากหน้าแรกอัตโนมัติเพื่อความเป็นส่วนตัว
+  // คนอื่นจะมองไม่เห็นว่าพนักงานคนไหนกำลังออกงาน + กำลังอยู่ที่ไหน
+  type LiveStatusFields = Pick<
+    Therapist,
+    | "statusOverride"
+    | "isHoliday"
+    | "isBooked"
+    | "busyUntil"
+    | "activeBooking"
+  > & { hideProfile?: boolean };
+
+  const [liveOverrides, setLiveOverrides] = useState<
+    Record<string, LiveStatusFields>
+  >({});
+
+  useEffect(() => {
+    const unsub = onSnapshot(
+      collection(db, "therapists"),
+      (snap) => {
+        const map: Record<string, LiveStatusFields> = {};
+        snap.forEach((doc) => {
+          const d = doc.data() as DocumentData;
+          map[doc.id] = {
+            statusOverride: d.statusOverride ?? null,
+            isHoliday: !!d.isHoliday,
+            isBooked: !!d.isBooked,
+            busyUntil: (d.busyUntil ?? null) as FirestoreDateLike,
+            activeBooking: !!d.activeBooking,
+            // 🔒 manual privacy flag — admin/therapist สามารถเปิดได้ใน Firestore เพื่อซ่อนทันที
+            hideProfile: !!d.hideProfile,
+          };
+        });
+        setLiveOverrides(map);
+      },
+      (err) => {
+        // Subscription error — ไม่ block UI ตามปรกติ (static data fallback)
+        console.warn("therapists snapshot error:", err);
+      }
+    );
+    return () => unsub();
+  }, []);
+
   // request location
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -220,13 +268,35 @@ const HomePage: React.FC = () => {
     });
   }, [customerLocation]);
 
-  // search + service filter + area filter
+  // search + service filter + area filter + 🔒 PRIVACY filter
   const filtered = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
     const areaCenter =
       areaFilter !== "all" ? AREA_CENTERS[areaFilter] : null;
 
     return therapists.filter((t) => {
+      // 🔒 PRIVACY — hide therapist profile when out of premises
+      // Merge static data with live Firestore overrides (Firestore wins)
+      const live = liveOverrides[t.id];
+      const merged: Therapist = live
+        ? ({
+            ...t,
+            statusOverride: live.statusOverride ?? t.statusOverride,
+            isHoliday: live.isHoliday ?? t.isHoliday,
+            isBooked: live.isBooked ?? t.isBooked,
+            busyUntil: live.busyUntil ?? t.busyUntil,
+            activeBooking: live.activeBooking ?? t.activeBooking,
+          } as Therapist)
+        : (t as Therapist);
+
+      // 1) Manual privacy flag — admin/therapist toggled "hide me" in Firestore
+      if (live?.hideProfile) return false;
+
+      // 2) Auto-hide — therapist is out at customer's location (in session)
+      // status === "bookable" = มี busyUntil หรือ activeBooking ใน engine
+      const { status } = calculateTherapistStatus(merged);
+      if (status === "bookable") return false;
+
       // 🗺️ area filter — match by distance from area centroid
       if (areaCenter) {
         const tLat = Number((t as { lat?: number | string }).lat);
@@ -265,7 +335,7 @@ const HomePage: React.FC = () => {
       const badgeMatch = (t.badge ?? "").toLowerCase().includes(q);
       return nameMatch || badgeMatch;
     });
-  }, [therapists, searchTerm, serviceFilter, areaFilter]);
+  }, [therapists, searchTerm, serviceFilter, areaFilter, liveOverrides]);
 
   // ⭐⭐ SORTING ตามกติกาใหม่ ⭐⭐
   const sorted = useMemo(() => {
@@ -307,11 +377,9 @@ const HomePage: React.FC = () => {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        // Background now comes from MainLayout (Aurora gradient + glow)
+        // เก็บ pb และ structural styling ไว้
         pb: 12,
-        // 🌅 Aurora-aware soft background — pastel-ish, blends with HeroSection
-        background:
-          "linear-gradient(to bottom, #FFF8F4 0%, #FAF6FF 50%, #F4FAF7 100%)",
       }}
     >
       <FloatingNavBar />

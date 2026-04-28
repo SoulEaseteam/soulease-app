@@ -1,7 +1,15 @@
-/* src/fonts.css */
-@font-face {
-  font-family: "Orson";
-  src: url("/fonts/Orson/Orson-Regular.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-}
+/* src/fonts.css — DEPRECATED
+ *
+ * Modern fonts now load from Google Fonts CDN in index.html:
+ *   - Inter (body)
+ *   - Playfair Display (heading accent)
+ *   - Chonburi (brand wordmark — via @fontsource/chonburi)
+ *
+ * The previous "Orson" @font-face referenced a font file at
+ * /fonts/Orson/Orson-Regular.ttf which does not exist in public/.
+ * The rule was orphaned (no @import / no <link>) and is now removed.
+ *
+ * Keeping this file as a no-op to avoid breaking any stale references.
+ * Safe to delete after running: grep -rn "fonts.css" src/
+ * (and confirming no remaining imports).
+ */
