@@ -21,6 +21,7 @@ import ErrorBoundary from "@/components/common/ErrorBoundary";
 import AuthProvider from "@/providers/AuthProvider";
 import { GoogleMapsProvider } from "@/context/GoogleMapsContext";
 import FloatingLanguageSwitcher from "@/components/common/FloatingLanguageSwitcher";
+import DevPrivacyToggle from "@/components/common/DevPrivacyToggle";
 
 import "./app/i18n";
 import i18n from "i18next";
@@ -72,8 +73,12 @@ const Root = () => {
             <GoogleMapsProvider>
               <AuthProvider>
                 <App />
-                {/* 🌐 Always-visible 5-language switcher (bottom-right pill) */}
+                {/* 🌐 Always-visible 5-language switcher (bottom-left pill) */}
                 <FloatingLanguageSwitcher />
+                {/* 👁️  Dev privacy blur — for working on laptop in public.
+                    Toggle: top-right icon OR Cmd/Ctrl + Shift + B.
+                    Persists in localStorage. Local to your device only. */}
+                <DevPrivacyToggle />
               </AuthProvider>
             </GoogleMapsProvider>
           </BrowserRouter>
