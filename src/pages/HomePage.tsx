@@ -6,6 +6,11 @@ import { useTranslation } from "react-i18next";
 import FloatingNavBar from "@/components/layouts/FloatingNavBar";
 import SearchBar from "@/components/common/SearchBar";
 import TherapistProfileCard from "@/components/TherapistProfileCard";
+import HeroSection from "@/components/home/HeroSection";
+import TherapistCardSkeleton from "@/components/home/TherapistCardSkeleton";
+import ServiceFilterChips, {
+  type ServiceFilter,
+} from "@/components/home/ServiceFilterChips";
 import therapistsData from "@/data/therapists";
 
 // ==============================
@@ -75,11 +80,19 @@ const HomePage: React.FC = () => {
   const { t } = useTranslation();
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [serviceFilter, setServiceFilter] = useState<ServiceFilter>("all");
   const [customerLocation, setCustomerLocation] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
   const [geoDenied, setGeoDenied] = useState(false);
+
+  // ✨ Skeleton-on-mount: แสดง shimmer 350ms แรกเพื่อความ polished
+  const [showSkeleton, setShowSkeleton] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setShowSkeleton(false), 350);
+    return () => clearTimeout(t);
+  }, []);
 
   // request location
   useEffect(() => {
@@ -126,17 +139,36 @@ const HomePage: React.FC = () => {
     });
   }, [customerLocation]);
 
-  // search
+  // search + service filter
   const filtered = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
-    if (!q) return therapists;
 
     return therapists.filter((t) => {
+      // service filter
+      if (serviceFilter !== "all") {
+        const services = (t.servicesAvailable ?? []).map((s) =>
+          s.toLowerCase()
+        );
+        const hasService =
+          serviceFilter === "thai-massage"
+            ? services.some((s) => s.includes("thai"))
+            : serviceFilter === "aromatherapy"
+            ? services.some((s) => s.includes("aroma"))
+            : serviceFilter === "couple"
+            ? services.some((s) => s.includes("couple"))
+            : serviceFilter === "gentleman"
+            ? services.some((s) => s.includes("gentleman"))
+            : true;
+        if (!hasService) return false;
+      }
+
+      // text search
+      if (!q) return true;
       const nameMatch = t.name.toLowerCase().includes(q);
       const badgeMatch = (t.badge ?? "").toLowerCase().includes(q);
       return nameMatch || badgeMatch;
     });
-  }, [therapists, searchTerm]);
+  }, [therapists, searchTerm, serviceFilter]);
 
   // ⭐⭐ SORTING ตามกติกาใหม่ ⭐⭐
   const sorted = useMemo(() => {
@@ -180,42 +212,41 @@ const HomePage: React.FC = () => {
       sx={{
         minHeight: "100vh",
         pb: 12,
-        background: "linear-gradient(to bottom, #f7f8f9, #e8ecf1)",
+        // 🌅 Aurora-aware soft background — pastel-ish, blends with HeroSection
+        background:
+          "linear-gradient(to bottom, #FFF8F4 0%, #FAF6FF 50%, #F4FAF7 100%)",
       }}
     >
       <FloatingNavBar />
 
       <Box sx={{ maxWidth: 430, mx: "auto", px: 1.5 }}>
-        <Typography
-          variant="h4"
-          textAlign="center"
-          sx={{
-            mt: 4,
-            fontWeight: "bold",
-            fontSize: 27,
-            color: "#555",
-            letterSpacing: 3,
-          }}
-        >
-          {t("home.escorts", "ESCORTS")}
-        </Typography>
+        {/* 🌟 Aurora Modern Hero (above the fold) */}
+        <HeroSection />
 
         <SearchBar
           onSearch={setSearchTerm}
           placeholder={t("home.search", "Search name…")}
         />
 
+        {/* 🎯 Service quick-filter chips (Phase 2.5) */}
+        <ServiceFilterChips
+          active={serviceFilter}
+          onChange={setServiceFilter}
+        />
+
         <Typography
           textAlign="center"
           sx={{
-            mt: 3,
-            mb: 2,
-            color: "#898686ac",
-            fontSize: 14,
-            letterSpacing: 2,
+            mt: 2,
+            mb: 1.5,
+            color: "rgba(120, 105, 130, 0.75)",
+            fontSize: 13,
+            letterSpacing: 2.5,
+            fontWeight: 500,
+            textTransform: "uppercase",
           }}
         >
-          {t("home.subtitle", "OUTCALL MASSAGE IN BANGKOK")}
+          {t("home.subtitle", "Outcall Massage in Bangkok")}
         </Typography>
 
         {geoDenied && (
@@ -238,17 +269,30 @@ const HomePage: React.FC = () => {
             mt: 2,
           }}
         >
-          {sorted.length === 0 ? (
+          {showSkeleton ? (
+            // ✨ Aurora skeleton on first paint (~350ms) — feels polished
+            Array.from({ length: 6 }).map((_, i) => (
+              <Box key={`sk-${i}`} sx={{ width: "100%", maxWidth: 200 }}>
+                <TherapistCardSkeleton />
+              </Box>
+            ))
+          ) : sorted.length === 0 ? (
             <Typography
               variant="body2"
-              sx={{ gridColumn: "1 / -1", textAlign: "center", color: "#777" }}
+              sx={{
+                gridColumn: "1 / -1",
+                textAlign: "center",
+                color: "rgba(120, 105, 130, 0.65)",
+                py: 4,
+              }}
             >
-              No therapists found.
+              {t("home.noResults", "No therapists match your filters.")}
             </Typography>
           ) : (
-            sorted.map((t) => (
+            sorted.map((t, idx) => (
               <Box key={t.id} sx={{ width: "100%", maxWidth: 200 }}>
-                <TherapistProfileCard therapist={t} />
+                {/* การ์ด 2 ใบแรก = priority (eager + fetchpriority=high) → ดี LCP */}
+                <TherapistProfileCard therapist={t} priority={idx < 2} />
               </Box>
             ))
           )}

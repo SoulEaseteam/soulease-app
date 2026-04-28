@@ -28,8 +28,14 @@ type NavState = {
 };
 
 const SelectLocationPage: React.FC = () => {
-  const { ready } = useGoogleMaps();
+  const { ready, loadIfNeeded } = useGoogleMaps();
   const navigate = useNavigate();
+
+  // ⚡ Lazy-load Google Maps SDK เฉพาะตอนเข้าหน้านี้ (LCP win)
+  useEffect(() => {
+    loadIfNeeded();
+  }, [loadIfNeeded]);
+
   const location = useLocation();
   const state = (location.state || {}) as NavState;
 

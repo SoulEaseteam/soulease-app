@@ -42,6 +42,7 @@ import { calcNextAvailable } from "@/utils/calculateNextAvailable";
 import type { Therapist } from "@/types/therapist";
 import { getErrorMessage } from "@/utils/getErrorMessage";
 import { isInappropriate } from "@/utils/moderate";
+import { useGoogleMaps } from "@/context/GoogleMapsContext";
 
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
@@ -162,6 +163,12 @@ const BookingPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { loadIfNeeded: loadGoogleMaps } = useGoogleMaps();
+
+  // ⚡ Lazy-load Google Maps SDK when entering booking page (geocoder + distance)
+  useEffect(() => {
+    loadGoogleMaps();
+  }, [loadGoogleMaps]);
 
   const queryParams = new URLSearchParams(location.search);
   const state = (location.state ?? null) as BookingLocationState | null;
@@ -250,7 +257,7 @@ const BookingPage: React.FC = () => {
     if (locationName || address) return;
 
     const g = window.google;
-    if (!g.maps.Geocoder) return;
+    if (!g?.maps?.Geocoder) return;
 
     // geocode() คืน Promise (ใหม่) แต่เราใช้ callback signature — void prefix กัน floating
     void new g.maps.Geocoder().geocode(
@@ -277,7 +284,7 @@ const BookingPage: React.FC = () => {
     if (!tLat || !tLng) return;
 
     const g = window.google;
-    if (!g.maps.DistanceMatrixService) return;
+    if (!g?.maps?.DistanceMatrixService) return;
 
     void new g.maps.DistanceMatrixService().getDistanceMatrix(
       {

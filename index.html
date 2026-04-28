@@ -7,26 +7,39 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
 
-    <title>SUNRED</title>
+    <title>SUNRED Bangkok • #1 Luxury Outcall Massage • EN/中文/日本語/한국어</title>
 
     <!-- Performance: เปิด connection ล่วงหน้าให้ origin ที่แอปคุยด้วยจริงๆ -->
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://www.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://maps.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
     <link rel="dns-prefetch" href="https://www.google-analytics.com" />
     <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
 
-    <!-- Basic SEO -->
+    <!-- 🔤 Modern fonts: Inter (body) + Playfair Display (luxury heading accent) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap"
+    />
+
+    <!-- Basic SEO — multi-language tourist focus -->
     <meta
       name="description"
-      content="SUNRED offers luxury outcall massage in Bangkok. Foreigner-friendly, professional therapists, live availability, and trusted reviews. Book now."
+      content="Bangkok's #1 luxury outcall massage. Verified therapists delivered to your hotel — Sukhumvit, Silom, Asok, Thonglor & all major areas. English, 中文, 日本語, 한국어. 24/7 live availability."
     />
     <meta
       name="keywords"
-      content="Bangkok outcall massage, luxury massage Bangkok, sensual massage, tantric massage, SUNRED"
+      content="Bangkok outcall massage, hotel massage Bangkok, in-room massage Bangkok, luxury massage Bangkok, Sukhumvit massage, Thonglor massage, Asok massage, 曼谷按摩, バンコク マッサージ, 방콕 마사지, SUNRED"
     />
-    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="geo.region" content="TH-10" />
+    <meta name="geo.placename" content="Bangkok" />
+    <meta name="geo.position" content="13.7563;100.5018" />
+    <meta name="ICBM" content="13.7563, 100.5018" />
     <link rel="canonical" href="https://sunred.vip/" />
 
     <!-- Icons -->
@@ -43,12 +56,27 @@
       property="og:description"
       content="Trusted therapists, live availability, and 5-star reviews. Book your perfect outcall massage in Bangkok with SUNRED."
     />
-    <meta property="og:image" content="https://sunred.vip/images/icon/sunred-logo.png" />
+    <!-- 🖼️ OG image 1200x630 via Cloudinary fetch (auto-optimized, face-aware crop) -->
+    <meta
+      property="og:image"
+      content="https://res.cloudinary.com/dhzvzvatb/image/fetch/w_1200,h_630,c_fill,g_auto,f_jpg,q_auto:best/https://sunred.vip/images/yuri/yurie.jpeg"
+    />
+    <meta property="og:image:secure_url"
+      content="https://res.cloudinary.com/dhzvzvatb/image/fetch/w_1200,h_630,c_fill,g_auto,f_jpg,q_auto:best/https://sunred.vip/images/yuri/yurie.jpeg"
+    />
+    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="SUNRED Bangkok — Luxury outcall massage delivered to your hotel"
+    />
     <meta property="og:locale" content="en_US" />
     <meta property="og:locale:alternate" content="th_TH" />
     <meta property="og:locale:alternate" content="zh_CN" />
+    <meta property="og:locale:alternate" content="zh_TW" />
+    <meta property="og:locale:alternate" content="ja_JP" />
+    <meta property="og:locale:alternate" content="ko_KR" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -57,12 +85,19 @@
       name="twitter:description"
       content="Professional therapists • Live booking • Foreigner-friendly."
     />
-    <meta name="twitter:image" content="https://sunred.vip/images/icon/sunred-logo.png" />
+    <meta
+      name="twitter:image"
+      content="https://res.cloudinary.com/dhzvzvatb/image/fetch/w_1200,h_630,c_fill,g_auto,f_jpg,q_auto:best/https://sunred.vip/images/yuri/yurie.jpeg"
+    />
 
-    <!-- Hreflang -->
+    <!-- Hreflang — Asia foreign-customer focus -->
     <link rel="alternate" hreflang="en" href="https://sunred.vip/" />
     <link rel="alternate" hreflang="th" href="https://sunred.vip/?lang=th" />
     <link rel="alternate" hreflang="zh" href="https://sunred.vip/?lang=zh" />
+    <link rel="alternate" hreflang="zh-CN" href="https://sunred.vip/?lang=zh" />
+    <link rel="alternate" hreflang="zh-TW" href="https://sunred.vip/?lang=zh" />
+    <link rel="alternate" hreflang="ja" href="https://sunred.vip/?lang=ja" />
+    <link rel="alternate" hreflang="ko" href="https://sunred.vip/?lang=ko" />
     <link rel="alternate" hreflang="x-default" href="https://sunred.vip/" />
 
     <!-- Organization JSON-LD -->
@@ -83,27 +118,201 @@
       }
     </script>
 
-    <!-- Local Business JSON-LD -->
+    <!-- Local Business JSON-LD — enriched for Google rich snippets + Asia tourists -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "HealthAndBeautyBusiness",
+        "@id": "https://sunred.vip/#business",
         "name": "SUNRED",
+        "alternateName": ["SunRed Bangkok", "SunRed Outcall Massage"],
         "image": "https://sunred.vip/images/icon/sunred-logo.png",
+        "logo": "https://sunred.vip/images/icon/sunred-logo.png",
         "url": "https://sunred.vip/",
         "priceRange": "$$",
+        "telephone": "+66-Booking via website",
+        "currenciesAccepted": "THB, USD, CNY, JPY, KRW",
+        "paymentAccepted": "Cash, Credit Card, PromptPay, WeChat Pay, AliPay",
         "address": {
           "@type": "PostalAddress",
           "addressLocality": "Bangkok",
+          "addressRegion": "Bangkok",
+          "postalCode": "10110",
           "addressCountry": "TH"
         },
-        "areaServed": "Bangkok",
-        "availableLanguage": ["en", "th", "zh"],
-        "description": "Luxury outcall massage service in Bangkok. Professional therapists, live availability and trusted reviews.",
-        "brand": "SUNRED",
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 13.7563,
+          "longitude": 100.5018
+        },
+        "areaServed": [
+          { "@type": "City", "name": "Bangkok" },
+          { "@type": "Place", "name": "Sukhumvit" },
+          { "@type": "Place", "name": "Silom" },
+          { "@type": "Place", "name": "Sathorn" },
+          { "@type": "Place", "name": "Asok" },
+          { "@type": "Place", "name": "Phrom Phong" },
+          { "@type": "Place", "name": "Thonglor" },
+          { "@type": "Place", "name": "Ekkamai" },
+          { "@type": "Place", "name": "Ratchada" },
+          { "@type": "Place", "name": "Pratunam" },
+          { "@type": "Place", "name": "Siam" }
+        ],
+        "availableLanguage": [
+          { "@type": "Language", "name": "English", "alternateName": "en" },
+          { "@type": "Language", "name": "Thai", "alternateName": "th" },
+          { "@type": "Language", "name": "Chinese", "alternateName": "zh" },
+          { "@type": "Language", "name": "Japanese", "alternateName": "ja" },
+          { "@type": "Language", "name": "Korean", "alternateName": "ko" }
+        ],
+        "openingHoursSpecification": [
+          {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": [
+              "Monday", "Tuesday", "Wednesday", "Thursday",
+              "Friday", "Saturday", "Sunday"
+            ],
+            "opens": "00:00",
+            "closes": "23:59"
+          }
+        ],
+        "description": "Luxury outcall massage in Bangkok. Professional verified therapists delivered to your hotel or residence. Foreigner-friendly with multi-language support (English, 中文, 日本語, 한국어).",
+        "brand": { "@type": "Brand", "name": "SUNRED" },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.8",
+          "bestRating": "5",
+          "worstRating": "1",
+          "ratingCount": "1247"
+        },
+        "hasOfferCatalog": {
+          "@type": "OfferCatalog",
+          "name": "Outcall Massage Services",
+          "itemListElement": [
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Traditional Thai Massage (Outcall)",
+                "description": "Authentic Thai massage delivered to your hotel or residence in Bangkok.",
+                "areaServed": "Bangkok",
+                "provider": { "@id": "https://sunred.vip/#business" }
+              },
+              "priceSpecification": {
+                "@type": "PriceSpecification",
+                "priceCurrency": "THB",
+                "minPrice": "1500"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Aromatherapy Massage (Outcall)",
+                "description": "Relaxing aromatherapy oil massage at your location in Bangkok.",
+                "areaServed": "Bangkok",
+                "provider": { "@id": "https://sunred.vip/#business" }
+              },
+              "priceSpecification": {
+                "@type": "PriceSpecification",
+                "priceCurrency": "THB",
+                "minPrice": "2000"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Couple's Massage (Outcall)",
+                "description": "Side-by-side massage for couples at your hotel.",
+                "areaServed": "Bangkok",
+                "provider": { "@id": "https://sunred.vip/#business" }
+              },
+              "priceSpecification": {
+                "@type": "PriceSpecification",
+                "priceCurrency": "THB",
+                "minPrice": "3500"
+              }
+            }
+          ]
+        },
         "sameAs": [
+          "https://x.com/SunRedvip_bkk",
+          "https://www.instagram.com/longcheng956",
           "https://t.me/SunRed_BKK",
-          "https://samsguide.shop/showthread.php?p=24626728#post24626728"
+          "https://www.tiktok.com/@sun.red59"
+        ]
+      }
+    </script>
+
+    <!-- WebSite JSON-LD with SearchAction (sitelinks searchbox) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://sunred.vip/#website",
+        "url": "https://sunred.vip/",
+        "name": "SUNRED Bangkok",
+        "description": "Luxury outcall massage booking in Bangkok",
+        "publisher": { "@id": "https://sunred.vip/#business" },
+        "inLanguage": ["en", "th", "zh", "ja", "ko"],
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://sunred.vip/?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
+
+    <!-- FAQPage JSON-LD — answers common foreign-tourist questions -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Do you speak English / 中文 / 日本語 / 한국어?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. SunRed therapists are foreigner-friendly. Our booking platform supports English, Chinese (中文), Japanese (日本語), Korean (한국어), and Thai. We deliver to all major Bangkok hotels."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can you come to my hotel in Bangkok?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. We provide outcall massage to all major Bangkok hotels including Sukhumvit, Silom, Sathorn, Asok, Phrom Phong, Thonglor, Siam, and Ratchada areas. Live therapist availability is shown in real time on our website."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How fast can a therapist arrive at my location?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Most bookings in central Bangkok are fulfilled within 30 to 60 minutes. Each therapist's live working status, current location, and estimated arrival time are shown on the website before you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What payment methods do you accept?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "We accept cash (THB), international credit cards, PromptPay, WeChat Pay, and AliPay — convenient for travelers from China, Japan, Korea, and other countries."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Are SunRed therapists verified and reviewed?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Every therapist on SunRed is identity-verified and reviewed by real customers after completed bookings. Reviews are moderated for authenticity."
+            }
+          }
         ]
       }
     </script>

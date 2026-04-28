@@ -1,32 +1,64 @@
-# robots.txt — SunRed
+# robots.txt — SunRed Bangkok
+# Multi-language outcall massage booking site — open for all major search engines
+
 User-agent: *
-# อนุญาตให้บอทเก็บข้อมูลหน้าเว็บปกติ
 Allow: /
 
-# ไม่ต้องให้เก็บหน้า admin / ไฟล์ระบบ / source map
+# Block admin / private / source maps
 Disallow: /admin/
 Disallow: /__private/
 Disallow: /*.map$
 
-# กัน duplicate จากพารามิเตอร์ที่ไม่จำเป็น (ปรับเพิ่มได้ตามจริง)
+# Block tracking-parameter duplicates
 Disallow: /*?*utm_=
 Disallow: /*?*fbclid=
 Disallow: /*?*gclid=
 Disallow: /*?*ref=
+Disallow: /*?*mc_eid=
 
-# ปล่อยผ่านบอท Ads/มือถือด้วย (ไม่บังคับ แต่อุ่นใจ)
+# Crawl delay (politeness)
+Crawl-delay: 1
+
+# ───── Specific bots that drive Asia foreign-tourist traffic ─────
+
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /__private/
+
+User-agent: Googlebot-Image
+Allow: /
+
 User-agent: AdsBot-Google
 Allow: /
 
-User-agent: *
+User-agent: Bingbot
 Allow: /
 Disallow: /admin/
-Disallow: /__private/
-Disallow: /*.map$
-Disallow: /*?*utm_=
-Disallow: /*?*fbclid=
-Disallow: /*?*gclid=
-Disallow: /*?*ref=
+Crawl-delay: 1
 
-# บอกที่อยู่ sitemap
+User-agent: Slurp
+Allow: /
+Disallow: /admin/
+
+# Baidu (China — primary search engine for Chinese tourists)
+User-agent: Baiduspider
+Allow: /
+Disallow: /admin/
+
+# Yandex (Russia, common across Asia)
+User-agent: YandexBot
+Allow: /
+Disallow: /admin/
+
+# Yeti (Naver — South Korea primary search)
+User-agent: Yeti
+Allow: /
+Disallow: /admin/
+
+# DuckDuckGo
+User-agent: DuckDuckBot
+Allow: /
+
+# Sitemap location
 Sitemap: https://sunred.vip/sitemap.xml

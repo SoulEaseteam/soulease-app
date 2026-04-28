@@ -1,5 +1,6 @@
 // src/theme.ts
 // SunRed brand theme — แดง-พีช gradient + accent teal
+// Phase 2.5: switch body to Inter (modern), headings keep Chonburi brand serif
 import { createTheme } from "@mui/material/styles";
 
 // Brand tokens (ใช้อ้างอิงในโค้ดได้: theme.palette.primary.main ฯลฯ)
@@ -11,11 +12,34 @@ export const brand = {
   teal: "#2EC4B0",     // accent
   tealLight: "#8ecdd2",
   tealDark: "#1a4f55",
+  // Aurora pastel accents (Phase 2.5)
+  aurora: {
+    peach: "#FFE5D9",
+    pink: "#FFD6E8",
+    lavender: "#E5D0FF",
+    mint: "#D4F4E2",
+  },
 } as const;
 
 export const gradients = {
   primary: `linear-gradient(to bottom, ${brand.red}, ${brand.peach})`,
   primaryHover: "linear-gradient(to bottom, #e00738, #fd9b80)",
+  aurora:
+    "linear-gradient(135deg, #FFE5D9 0%, #FFD6E8 35%, #E5D0FF 65%, #D4F4E2 100%)",
+} as const;
+
+// 🔤 Font stacks (Phase 2.5)
+const FONT_BODY =
+  '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+const FONT_HEADING_LUXE =
+  '"Playfair Display", "Chonburi", Georgia, "Times New Roman", serif';
+const FONT_BRAND_SERIF = '"Chonburi", serif'; // คงไว้สำหรับ logo SunRed เดิม
+
+// Re-export fonts for components that want explicit family
+export const fonts = {
+  body: FONT_BODY,
+  heading: FONT_HEADING_LUXE,
+  brand: FONT_BRAND_SERIF,
 } as const;
 
 export const theme = createTheme({
@@ -42,38 +66,46 @@ export const theme = createTheme({
     },
   },
   typography: {
-    // body ใช้ Trebuchet MS, headings ใช้ Chonburi
-    fontFamily: '"Trebuchet MS", system-ui, -apple-system, sans-serif',
+    // body ใช้ Inter (modern), headings ใช้ Playfair Display (luxury serif accent)
+    fontFamily: FONT_BODY,
+    fontWeightRegular: 400,
+    fontWeightMedium: 500,
+    fontWeightBold: 700,
     h1: {
-      fontFamily: '"Chonburi", serif',
+      fontFamily: FONT_HEADING_LUXE,
       fontWeight: 700,
       fontSize: "2.5rem",
+      letterSpacing: "-0.02em",
       color: brand.red,
     },
     h2: {
-      fontFamily: '"Chonburi", serif',
+      fontFamily: FONT_HEADING_LUXE,
       fontWeight: 600,
       fontSize: "2rem",
+      letterSpacing: "-0.015em",
       color: brand.red,
     },
     h3: {
-      fontFamily: '"Chonburi", serif',
-      fontWeight: 500,
+      fontFamily: FONT_HEADING_LUXE,
+      fontWeight: 600,
       fontSize: "1.5rem",
+      letterSpacing: "-0.01em",
       color: brand.ink,
     },
     h4: {
-      fontFamily: '"Chonburi", serif',
-      fontWeight: 500,
+      fontFamily: FONT_HEADING_LUXE,
+      fontWeight: 600,
       fontSize: "1.25rem",
     },
-    h5: { fontFamily: '"Chonburi", serif', fontWeight: 500 },
-    h6: { fontFamily: '"Chonburi", serif', fontWeight: 500 },
-    body1: { fontSize: "1rem", lineHeight: 1.6 },
+    h5: { fontFamily: FONT_HEADING_LUXE, fontWeight: 500 },
+    h6: { fontFamily: FONT_HEADING_LUXE, fontWeight: 500 },
+    body1: { fontSize: "1rem", lineHeight: 1.6, fontFamily: FONT_BODY },
+    body2: { fontSize: "0.875rem", lineHeight: 1.55, fontFamily: FONT_BODY },
     button: {
+      fontFamily: FONT_BODY,
       textTransform: "none",
       fontWeight: 600,
-      letterSpacing: "0.5px",
+      letterSpacing: "0.02em",
     },
   },
   shape: { borderRadius: 16 },
@@ -121,15 +153,19 @@ export const theme = createTheme({
     },
     MuiChip: {
       styleOverrides: {
-        root: { fontWeight: 500 },
+        root: { fontWeight: 500, fontFamily: FONT_BODY },
       },
     },
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          fontFamily: '"Trebuchet MS", system-ui, -apple-system, sans-serif',
+          fontFamily: FONT_BODY,
           color: brand.ink,
           backgroundColor: "#FFFFFF",
+          // ⚡ better text rendering on retina
+          WebkitFontSmoothing: "antialiased",
+          MozOsxFontSmoothing: "grayscale",
+          textRendering: "optimizeLegibility",
         },
       },
     },

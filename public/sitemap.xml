@@ -1,39 +1,86 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/0.9">
 
-  <!-- หน้าแรก -->
+  <!-- ───── Home (multi-language entry) ───── -->
   <url>
     <loc>https://sunred.vip/</loc>
-    <lastmod>2025-09-04</lastmod>
+    <lastmod>2026-04-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/"/>
     <xhtml:link rel="alternate" hreflang="th" href="https://sunred.vip/?lang=th"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/?lang=zh"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://sunred.vip/?lang=zh"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://sunred.vip/?lang=zh"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/?lang=ja"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/?lang=ko"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/"/>
+    <image:image>
+      <image:loc>https://sunred.vip/images/og/sunred-og.jpg</image:loc>
+      <image:title>SUNRED Bangkok Outcall Massage</image:title>
+      <image:caption>Luxury outcall massage delivered to your hotel in Bangkok</image:caption>
+    </image:image>
   </url>
 
-  <!-- รายชื่อนักบำบัด -->
-  <url>
-    <loc>https://sunred.vip/</loc>
-    <lastmod>2025-09-04</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <!-- ระบบจอง -->
+  <!-- ───── Services (massage menu) ───── -->
   <url>
     <loc>https://sunred.vip/services</loc>
-    <lastmod>2025-09-04</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-04-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/services"/>
+    <xhtml:link rel="alternate" hreflang="th" href="https://sunred.vip/services?lang=th"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/services?lang=zh"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/services?lang=ja"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/services?lang=ko"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/services"/>
   </url>
 
-  <!-- รีวิว -->
+  <!-- ───── Login / Register ───── -->
   <url>
-    <loc>https://t.me/SunRed_BKK</loc>
-    <lastmod>2025-09-04</lastmod>
+    <loc>https://sunred.vip/login</loc>
+    <lastmod>2026-04-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://sunred.vip/register</loc>
+    <lastmod>2026-04-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- ───── Common service-area landing keywords (SEO seed pages handled by SPA router) ───── -->
+  <!-- These point at the home with location query — Google still indexes them as separate -->
+  <url>
+    <loc>https://sunred.vip/?area=sukhumvit</loc>
+    <lastmod>2026-04-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sunred.vip/?area=silom</loc>
+    <lastmod>2026-04-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sunred.vip/?area=thonglor</loc>
+    <lastmod>2026-04-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sunred.vip/?area=asok</loc>
+    <lastmod>2026-04-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sunred.vip/?area=siam</loc>
+    <lastmod>2026-04-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>

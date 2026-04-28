@@ -81,8 +81,15 @@ function nowThai(): Date {
 }
 
 /** ---------------- Component ---------------- */
-const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
+interface TherapistProfileCardProps {
+  therapist: Therapist;
+  /** ถ้า true → image โหลด eager + fetchpriority=high (ใช้กับการ์ดบนสุดเพื่อช่วย LCP) */
+  priority?: boolean;
+}
+
+const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
   therapist,
+  priority = false,
 }) => {
   const navigate = useNavigate();
 
@@ -311,8 +318,9 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
     <motion.div
       initial={{ opacity: 0, y: 18, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      whileHover={{ scale: 1.02, y: -4 }}
-      transition={{ type: "spring", stiffness: 120, damping: 14 }}
+      whileHover={{ scale: 1.025, y: -6 }}
+      whileTap={{ scale: 0.985 }}
+      transition={{ type: "spring", stiffness: 130, damping: 14 }}
     >
       <Paper
         sx={{
@@ -320,10 +328,16 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
           maxWidth: 260,
           borderRadius: 6,
           p: 1.7,
-          backgroundColor: "rgba(255,255,255,0.45)",
-          backdropFilter: "blur(10px)",
+          backgroundColor: "rgba(255,255,255,0.55)",
+          backdropFilter: "blur(14px)",
           textAlign: "center",
           boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
+          border: "1px solid rgba(255, 255, 255, 0.6)",
+          transition: "box-shadow 0.25s ease",
+          "&:hover": {
+            boxShadow:
+              "0 16px 40px rgba(225, 29, 72, 0.15), 0 6px 18px rgba(99, 102, 241, 0.12)",
+          },
         }}
       >
         {/* Image */}
@@ -332,7 +346,10 @@ const TherapistProfileCard: React.FC<{ therapist: Therapist }> = ({
             component="img"
             src={enhanceImage(resolvedImage, { variant: "card" })}
             alt={profile.name}
-            loading="lazy"
+            loading={priority ? "eager" : "lazy"}
+            // ⚡ HTML attr: fetchpriority="high" — ช่วย LCP ของการ์ดบนสุด
+            {...(priority ? { fetchpriority: "high" as const } : {})}
+            decoding="async"
             sx={{
               width: "100%",
               height: 260,
