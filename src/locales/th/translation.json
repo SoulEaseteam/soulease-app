@@ -165,5 +165,13 @@
   "meta.browse.description": "เลือกหมอนวดที่ยืนยันตัวตนแล้ว 32+ คนทั่วกรุงเทพฯ พร้อมเรียลไทม์ รองรับหลายภาษา",
   "meta.detail.title": "{{name}} · SUNRED Bangkok",
   "meta.detail.description": "{{name}} — หมอนวดที่ยืนยันตัวตนในกรุงเทพฯ {{rating}}★ ({{count}} รีวิว) จองได้ในไม่กี่วินาที",
-  "home.therapists.licensedNear": "มีใบประกอบ · {{distance}}"
+  "home.therapists.licensedNear": "มีใบประกอบ · {{distance}}",
+  "booking.stepCount": "ขั้นตอน {{current}} จาก {{total}}",
+  "booking.step.service": "เลือกบริการ",
+  "booking.step.dateTime": "เลือกวัน-เวลา",
+  "booking.step.location": "สถานที่",
+  "booking.step.details": "ข้อมูลของคุณ",
+  "booking.step.confirm": "ยืนยัน & ชำระเงิน",
+  "booking.cta.continue": "ถัดไป",
+  "booking.cta.confirmAndPay": "ยืนยัน & ชำระเงิน"
 }

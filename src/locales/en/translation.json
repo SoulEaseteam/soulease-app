@@ -165,5 +165,13 @@
   "meta.browse.description": "Browse 32+ verified massage therapists across Bangkok. Live availability, multilingual care.",
   "meta.detail.title": "{{name}} · SUNRED Bangkok",
   "meta.detail.description": "{{name}} — verified massage therapist in Bangkok. {{rating}}★ ({{count}} reviews). Book in seconds.",
-  "home.therapists.licensedNear": "Licensed · {{distance}}"
+  "home.therapists.licensedNear": "Licensed · {{distance}}",
+  "booking.stepCount": "Step {{current}} of {{total}}",
+  "booking.step.service": "Choose your service",
+  "booking.step.dateTime": "When works for you?",
+  "booking.step.location": "Where should we go?",
+  "booking.step.details": "Your details",
+  "booking.step.confirm": "Review & pay",
+  "booking.cta.continue": "Continue",
+  "booking.cta.confirmAndPay": "Confirm & Pay"
 }

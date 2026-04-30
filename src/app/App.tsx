@@ -28,7 +28,13 @@ const TherapistsBrowsePage = React.lazy(
   () => import("@/pages/TherapistsBrowsePage")
 );
 
-const BookingPage = React.lazy(() => import("@/pages/BookingPage"));
+// 🎨 Phase 3 — New 5-step booking wizard. Replaces legacy BookingPage
+//    incrementally: first /booking + /booking/:id (the entry points
+//    used by therapist cards / detail-page CTA), legacy confirm page
+//    remains until commit 6 wires the Firestore submission.
+const BookingFlowPage = React.lazy(
+  () => import("@/pages/booking/BookingFlowPage")
+);
 const BookingHistoryPage = React.lazy(
   () => import("@/pages/BookingHistoryPage")
 );
@@ -163,8 +169,9 @@ export default function App() {
           <Route path="/therapists/:id" element={<TherapistDetailPage />} />
           <Route path="/therapist/list" element={<TherapistListPage />} />
 
-          <Route path="/booking" element={<BookingPage />} />
-          <Route path="/booking/:id" element={<BookingPage />} />
+          {/* 🎨 Phase 3 — new wizard at /booking + /booking/:therapistId */}
+          <Route path="/booking" element={<BookingFlowPage />} />
+          <Route path="/booking/:id" element={<BookingFlowPage />} />
           <Route path="/booking/history" element={<BookingHistoryPage />} />
           <Route
             path="/booking/confirm"

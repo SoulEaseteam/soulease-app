@@ -165,5 +165,13 @@
   "meta.browse.description": "バンコクの認定セラピスト 32 名以上を閲覧。リアルタイム予約、多言語対応。",
   "meta.detail.title": "{{name}} · SUNRED バンコク",
   "meta.detail.description": "{{name}} — バンコクの認定セラピスト。{{rating}}★ ({{count}} 件のレビュー)。数秒で予約完了。",
-  "home.therapists.licensedNear": "認定 · {{distance}}"
+  "home.therapists.licensedNear": "認定 · {{distance}}",
+  "booking.stepCount": "ステップ {{current}} / {{total}}",
+  "booking.step.service": "サービスを選ぶ",
+  "booking.step.dateTime": "日時を選ぶ",
+  "booking.step.location": "場所を選ぶ",
+  "booking.step.details": "お客様情報",
+  "booking.step.confirm": "確認とお支払い",
+  "booking.cta.continue": "次へ",
+  "booking.cta.confirmAndPay": "確認して支払う"
 }

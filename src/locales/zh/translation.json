@@ -165,5 +165,13 @@
   "meta.browse.description": "浏览曼谷 32+ 位持证理疗师，实时预约，多语言服务。",
   "meta.detail.title": "{{name}} · SUNRED 曼谷",
   "meta.detail.description": "{{name}} — 曼谷持证理疗师。{{rating}}★ ({{count}} 评价)。秒级预约。",
-  "home.therapists.licensedNear": "持证 · {{distance}}"
+  "home.therapists.licensedNear": "持证 · {{distance}}",
+  "booking.stepCount": "第 {{current}} 步 / 共 {{total}} 步",
+  "booking.step.service": "选择服务",
+  "booking.step.dateTime": "选择时间",
+  "booking.step.location": "服务地点",
+  "booking.step.details": "您的信息",
+  "booking.step.confirm": "确认并支付",
+  "booking.cta.continue": "继续",
+  "booking.cta.confirmAndPay": "确认并支付"
 }

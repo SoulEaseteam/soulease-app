@@ -165,5 +165,13 @@
   "meta.browse.description": "방콕 32+ 인증 테라피스트 탐색. 실시간 예약, 다국어 서비스.",
   "meta.detail.title": "{{name}} · SUNRED 방콕",
   "meta.detail.description": "{{name}} — 방콕 인증 테라피스트. {{rating}}★ ({{count}}개 리뷰). 몇 초 만에 예약.",
-  "home.therapists.licensedNear": "인증 · {{distance}}"
+  "home.therapists.licensedNear": "인증 · {{distance}}",
+  "booking.stepCount": "{{total}}단계 중 {{current}}단계",
+  "booking.step.service": "서비스 선택",
+  "booking.step.dateTime": "일시 선택",
+  "booking.step.location": "장소 선택",
+  "booking.step.details": "예약 정보",
+  "booking.step.confirm": "확인 및 결제",
+  "booking.cta.continue": "다음",
+  "booking.cta.confirmAndPay": "확인 및 결제"
 }
