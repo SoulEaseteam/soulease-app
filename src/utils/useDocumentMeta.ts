@@ -148,7 +148,7 @@ export function useDocumentMeta(meta: DocumentMetaInput) {
     }
 
     return () => {
-      if (scriptEl && scriptEl.parentNode) {
+      if (scriptEl?.parentNode) {
         scriptEl.parentNode.removeChild(scriptEl);
       }
     };

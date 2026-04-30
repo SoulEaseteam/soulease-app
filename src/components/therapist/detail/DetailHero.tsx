@@ -185,7 +185,7 @@ const DetailHero: React.FC<Props> = ({
             label="back"
             onClick={(e) => {
               e?.stopPropagation();
-              navigate(-1);
+              void navigate(-1);
             }}
           >
             ←
