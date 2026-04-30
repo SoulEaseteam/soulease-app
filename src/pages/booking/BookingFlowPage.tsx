@@ -35,6 +35,7 @@ import { useTranslation } from "react-i18next";
 import StepIndicator from "@/components/booking/StepIndicator";
 import BookingNavBar from "@/components/booking/BookingNavBar";
 import StepService from "@/components/booking/StepService";
+import StepDateTime from "@/components/booking/StepDateTime";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -215,7 +216,19 @@ const BookingFlowPage: React.FC = () => {
           />
         )}
 
-        {step > 1 && (
+        {step === 2 && (
+          <StepDateTime
+            date={form.date}
+            time={form.time}
+            durationMin={form.duration}
+            therapistId={form.therapistId}
+            onChange={({ date, time }) =>
+              setForm((prev) => ({ ...prev, date, time }))
+            }
+          />
+        )}
+
+        {step > 2 && (
           <Box
             sx={{
               background: "rgba(255, 255, 255, 0.45)",
