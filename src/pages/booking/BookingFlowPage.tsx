@@ -36,6 +36,7 @@ import StepIndicator from "@/components/booking/StepIndicator";
 import BookingNavBar from "@/components/booking/BookingNavBar";
 import StepService from "@/components/booking/StepService";
 import StepDateTime from "@/components/booking/StepDateTime";
+import StepLocation from "@/components/booking/StepLocation";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -228,7 +229,19 @@ const BookingFlowPage: React.FC = () => {
           />
         )}
 
-        {step > 2 && (
+        {step === 3 && (
+          <StepLocation
+            locationName={form.locationName}
+            locationAddress={form.locationAddress}
+            lat={form.lat}
+            lng={form.lng}
+            onChange={(next) =>
+              setForm((prev) => ({ ...prev, ...next }))
+            }
+          />
+        )}
+
+        {step > 3 && (
           <Box
             sx={{
               background: "rgba(255, 255, 255, 0.45)",
