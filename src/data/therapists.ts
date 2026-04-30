@@ -32,7 +32,7 @@ export const therapists: Therapist[] = [
 
     distanceKm: null,
 
-    servicesAvailable: ["thai-massage", "aromatherapy", "Gentleman’s"],
+    servicesAvailable: ["thai-massage", "aromatherapy", "gentlemans-recovery"],
 
     gallery: [
       "/images/yuri/y88.jpeg",
@@ -95,8 +95,8 @@ export const therapists: Therapist[] = [
     servicesAvailable: [
       "thai-massage",
       "aromatherapy",
-      "Gentleman’s",
-      "SunRed’exclusive"
+      "gentlemans-recovery",
+      "sunred-signature"
     ],
 
     gallery: [
@@ -160,7 +160,7 @@ export const therapists: Therapist[] = [
     servicesAvailable: [
       "thai-massage",
       "aromatherapy",
-      "Gentleman’s"
+      "gentlemans-recovery"
     ],
 
     gallery: [
@@ -221,7 +221,7 @@ export const therapists: Therapist[] = [
     servicesAvailable: [
       "thai-massage",
       "aromatherapy",
-      "Gentleman’s"
+      "gentlemans-recovery"
     ],
 
     gallery: [
@@ -285,7 +285,7 @@ export const therapists: Therapist[] = [
     servicesAvailable: [
       "thai-massage",
       "aromatherapy",
-      "Gentleman’s"
+      "gentlemans-recovery"
     ],
 
     gallery: [
@@ -348,8 +348,8 @@ export const therapists: Therapist[] = [
     servicesAvailable: [
       "thai-massage",
       "aromatherapy",
-      "Gentleman’s",
-      "SunRed’exclusive"
+      "gentlemans-recovery",
+      "sunred-signature"
     ],
 
     gallery: [
@@ -407,8 +407,8 @@ export const therapists: Therapist[] = [
     servicesAvailable: [
       "thai-massage",
       "aromatherapy",
-      "Gentleman’s",
-      "SunRed’exclusive"
+      "gentlemans-recovery",
+      "sunred-signature"
     ],
 
     gallery: [
@@ -466,8 +466,8 @@ export const therapists: Therapist[] = [
     servicesAvailable: [
       "thai-massage",
       "aromatherapy",
-      "Gentleman’s",
-      "SunRed’exclusive"
+      "gentlemans-recovery",
+      "sunred-signature"
     ],
 
     gallery: [
@@ -528,8 +528,8 @@ export const therapists: Therapist[] = [
     servicesAvailable: [
       "thai-massage",
       "aromatherapy",
-      "Gentleman’s",
-      "SunRed’exclusive"
+      "gentlemans-recovery",
+      "sunred-signature"
     ],
     gallery: [
       "/images/nanny/2568-11-23 11.58.03.jpg",
