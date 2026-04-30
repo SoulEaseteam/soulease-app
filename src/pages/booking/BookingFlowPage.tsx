@@ -34,6 +34,7 @@ import { useTranslation } from "react-i18next";
 
 import StepIndicator from "@/components/booking/StepIndicator";
 import BookingNavBar from "@/components/booking/BookingNavBar";
+import StepService from "@/components/booking/StepService";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -202,29 +203,41 @@ const BookingFlowPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Step content placeholder — real components land in commits 2-6 */}
+      {/* Step content — components land step-by-step across commits 2-6 */}
       <Box sx={{ padding: "20px 16px" }}>
-        <Box
-          sx={{
-            background: "rgba(255, 255, 255, 0.45)",
-            backdropFilter: "blur(30px) saturate(180%)",
-            WebkitBackdropFilter: "blur(30px) saturate(180%)",
-            border: "1px solid rgba(255, 255, 255, 0.6)",
-            borderRadius: "20px",
-            padding: "24px 20px",
-            boxShadow: "0 8px 30px rgba(126, 30, 46, 0.08)",
-            minHeight: "300px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "rgba(60, 30, 20, 0.4)",
-            fontStyle: "italic",
-          }}
-        >
-          <Typography sx={{ fontFamily: SERIF, fontSize: "16px" }}>
-            {`Step ${step} content — landing in commit ${step + 1}`}
-          </Typography>
-        </Box>
+        {step === 1 && (
+          <StepService
+            value={form.serviceId}
+            therapistId={form.therapistId}
+            onChange={(serviceId, duration) =>
+              setForm((prev) => ({ ...prev, serviceId, duration }))
+            }
+          />
+        )}
+
+        {step > 1 && (
+          <Box
+            sx={{
+              background: "rgba(255, 255, 255, 0.45)",
+              backdropFilter: "blur(30px) saturate(180%)",
+              WebkitBackdropFilter: "blur(30px) saturate(180%)",
+              border: "1px solid rgba(255, 255, 255, 0.6)",
+              borderRadius: "20px",
+              padding: "24px 20px",
+              boxShadow: "0 8px 30px rgba(126, 30, 46, 0.08)",
+              minHeight: "300px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "rgba(60, 30, 20, 0.4)",
+              fontStyle: "italic",
+            }}
+          >
+            <Typography sx={{ fontFamily: SERIF, fontSize: "16px" }}>
+              {`Step ${step} content — landing in commit ${step + 1}`}
+            </Typography>
+          </Box>
+        )}
       </Box>
 
       {/* Sticky bottom nav */}
