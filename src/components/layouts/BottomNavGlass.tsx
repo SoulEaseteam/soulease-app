@@ -39,6 +39,13 @@ const BottomNavGlass: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
+  // 🃏 Phase-2 redesign: pages under /therapists/* render their own
+  //    pixel-perfect `<BottomNav />` matching the Phase-2 mockup. Hide
+  //    this global nav there to avoid a double-nav UI. Early return
+  //    placed AFTER all hooks to comply with rules-of-hooks.
+  const hideOnRedesignedRoutes = location.pathname.startsWith("/therapists");
+  if (hideOnRedesignedRoutes) return null;
+
   const handleChange = (_event: React.SyntheticEvent, next: string) => {
     // navigate() ใน react-router v7 return Promise<void> — prefix `void` กัน floating
     if (next === "/profile") {

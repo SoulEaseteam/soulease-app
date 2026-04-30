@@ -1,235 +1,451 @@
 // src/components/home/HeroSection.tsx
 //
-// 🌅 SunRed Brand Hero — peach/coral/pink core (brand tokens) with subtle
-//    lavender accent for depth. Now sources colors from `@/theme` (`brand`)
-//    so future palette tweaks propagate automatically.
+// 🎨 SunRed Hero — PIXEL-PERFECT port of `01-mockups/sunred-home.html`.
+// Per HANDOFF1.md §"Pixel-perfect copy, not creative interpretation":
+// every value below is copied verbatim from the mockup's <style> block.
+// DO NOT consolidate, "improve", or simplify — `padding: 16px 14px 16px`,
+// `border-radius: 24px`, `blur(50px)`, etc. are all literal mockup values.
 //
-// Color story:
-//   • Background:   peach (FEAE96 / FFE5D9) → soft pink (FFD6E8) → light lavender accent
-//   • Title:        SunRed red (FE0944) → magenta → indigo  ← signature gradient
-//   • Orbs:         peach + pink (warm, on-brand) — replaced the cool blue orb
-//   • Trust pills:  white glass + SunRed red border + dark plum text
+// DOM hierarchy (matches mockup `.hero` exactly):
+//   <section class="hero">
+//     <div class="blob blob-1"/>            ← red blob, top-left, 200×200
+//     <div class="blob blob-2"/>            ← peach blob, top-right
+//     <div class="blob blob-3"/>            ← cream blob, bottom-center
+//     <div class="leaf leaf-1"/>            ← coral leaf SVG, top-right
+//     <div class="leaf leaf-2"/>            ← peach leaf SVG, bottom-left, rotated 160°
+//     <div class="top-pill">                ← Concierge · Live · Bangkok
+//     <div class="glass-card">              ← divider + h1 + sub + 3 badges
+//     <button class="cta-primary">          ← Book your therapist →
 //
-// Fits next to FloatingNavBar (peach→pink→lavender→violet) and BottomNavGlass
-// (peach-pink-lavender glass) — all three now share the same color story.
+// Mockup CSS variables resolved:
+//   --red:       #FE0944
+//   --coral:     #FE7A52
+//   --peach:     #FFB088
+//   --cream:     #FEC9A7
+//   --burgundy:  #831843
+//   --accent:    #b85c3c
+//   --text:      #2a1a14
+//   --text-muted: rgba(60, 30, 20, 0.72)
 
 import React from "react";
-import { Box, Typography, Stack } from "@mui/material";
-import { motion } from "framer-motion";
+import { Box, Typography, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
-import VerifiedIcon from "@mui/icons-material/Verified";
-import AccessTimeFilledIcon from "@mui/icons-material/AccessTimeFilled";
-import StarRoundedIcon from "@mui/icons-material/StarRounded";
-
-import { brand } from "@/theme";
+const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 const HeroSection: React.FC = () => {
   const { t } = useTranslation();
+
+  // 🔻 Scroll-to-list helper — sends users to `<Box id="therapist-list">`
+  //    rendered later in HomePage.tsx. Falls back silently if absent.
+  const handleCta = () => {
+    if (typeof document === "undefined") return;
+    const el = document.getElementById("therapist-list");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <Box
       component="section"
       aria-label="hero"
       sx={{
+        // ── verbatim from mockup `.hero` ──
         position: "relative",
         overflow: "hidden",
-        borderRadius: 4,
-        mt: 2,
-        px: 3,
-        py: 4,
-        // 🌅 Brand-led background — peach/pink dominant, lavender hint
-        // (FEAE96 = brand.peach baseline, blends into FloatingNavBar)
-        background: `linear-gradient(135deg,
-          ${brand.aurora.peach} 0%,
-          ${brand.aurora.pink} 35%,
-          ${brand.aurora.lavender} 75%,
-          rgba(196, 181, 253, 0.55) 100%)`,
-        boxShadow: `0 12px 32px rgba(254, 9, 68, 0.10),
-                    0 4px 14px rgba(254, 174, 150, 0.18)`,
+        borderRadius: "24px",
+        margin: "0 14px",
+        padding: "16px 14px 16px",
+        minHeight: "460px",
+
+        // Scoped @keyframes — verbatim from mockup
+        "@keyframes blobMove1": {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "33%": { transform: "translate(40px, -30px) scale(1.15)" },
+          "66%": { transform: "translate(-20px, 30px) scale(0.95)" },
+        },
+        "@keyframes blobMove2": {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "33%": { transform: "translate(-50px, 40px) scale(1.1)" },
+          "66%": { transform: "translate(30px, -20px) scale(1.2)" },
+        },
+        "@keyframes blobMove3": {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "50%": { transform: "translate(20px, -40px) scale(1.25)" },
+        },
+        "@keyframes pulseDot": {
+          "0%, 100%": { opacity: 1 },
+          "50%": { opacity: 0.4 },
+        },
+        "@keyframes leafFloat": {
+          "0%, 100%": { transform: "rotate(0deg) translate(0, 0)" },
+          "50%": { transform: "rotate(8deg) translate(3px, -4px)" },
+        },
       }}
     >
-      {/* 🔮 Floating peach orb (top-right) */}
-      <Box
-        component={motion.div}
-        animate={{
-          y: [0, -14, 0],
-          x: [0, 8, 0],
-        }}
-        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-        sx={{
-          position: "absolute",
-          top: -30,
-          right: -20,
-          width: 120,
-          height: 120,
-          borderRadius: "50%",
-          // SunRed peach (FEAE96) at 60% — warm and on-brand
-          background:
-            "radial-gradient(circle, rgba(254, 174, 150, 0.65) 0%, rgba(254, 174, 150, 0) 70%)",
-          filter: "blur(8px)",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* 🌸 Floating pink-coral orb (bottom-left) */}
-      <Box
-        component={motion.div}
-        animate={{
-          y: [0, 10, 0],
-          x: [0, -12, 0],
-        }}
-        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
-        sx={{
-          position: "absolute",
-          bottom: -40,
-          left: -30,
-          width: 140,
-          height: 140,
-          borderRadius: "50%",
-          // soft SunRed-red glow (FE0944) — diluted, not aggressive
-          background:
-            "radial-gradient(circle, rgba(254, 9, 68, 0.18) 0%, rgba(254, 9, 68, 0) 70%)",
-          filter: "blur(12px)",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* ✨ Twinkling sparkles overlay (pure CSS, no JS cost) */}
+      {/* ── .blob.blob-1 ── verbatim ── */}
       <Box
         aria-hidden
         sx={{
           position: "absolute",
-          inset: 0,
+          top: "-50px",
+          left: "-30px",
+          width: "200px",
+          height: "200px",
+          borderRadius: "50%",
+          background: "#FE0944",
+          opacity: 0.65,
+          filter: "blur(50px)",
           pointerEvents: "none",
-          backgroundImage: `
-            radial-gradient(circle at 15% 25%, rgba(255,255,255,0.95) 0.5px, transparent 1.5px),
-            radial-gradient(circle at 78% 18%, rgba(255,255,255,0.85) 0.5px, transparent 1.2px),
-            radial-gradient(circle at 88% 70%, rgba(255,255,255,0.9) 0.4px, transparent 1.3px),
-            radial-gradient(circle at 22% 75%, rgba(255,255,255,0.8) 0.5px, transparent 1.4px),
-            radial-gradient(circle at 58% 35%, rgba(255,255,255,0.7) 0.4px, transparent 1.1px)
-          `,
-          animation: "twinkle 3.5s ease-in-out infinite",
-          "@keyframes twinkle": {
-            "0%, 100%": { opacity: 0.3 },
-            "50%": { opacity: 1 },
-          },
+          animation: "blobMove1 14s ease-in-out infinite",
+        }}
+      />
+      {/* ── .blob.blob-2 ── verbatim ── */}
+      <Box
+        aria-hidden
+        sx={{
+          position: "absolute",
+          top: "25%",
+          right: "-50px",
+          width: "200px",
+          height: "200px",
+          borderRadius: "50%",
+          background: "#FFB088",
+          opacity: 0.65,
+          filter: "blur(50px)",
+          pointerEvents: "none",
+          animation: "blobMove2 16s ease-in-out infinite",
+        }}
+      />
+      {/* ── .blob.blob-3 ── verbatim ── */}
+      <Box
+        aria-hidden
+        sx={{
+          position: "absolute",
+          bottom: "-40px",
+          left: "30%",
+          width: "180px",
+          height: "180px",
+          borderRadius: "50%",
+          background: "#FEC9A7",
+          opacity: 0.65,
+          filter: "blur(50px)",
+          pointerEvents: "none",
+          animation: "blobMove3 12s ease-in-out infinite",
         }}
       />
 
-      {/* 🪟 Glass card */}
+      {/* ── .leaf.leaf-1 ── verbatim ── */}
+      <Box
+        aria-hidden
+        sx={{
+          position: "absolute",
+          top: "12px",
+          right: "22px",
+          opacity: 0.5,
+          zIndex: 2,
+          pointerEvents: "none",
+          animation: "leafFloat 6s ease-in-out infinite",
+        }}
+      >
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M12 2C8 6 6 10 8 14C9 17 11 18 12 22C13 18 15 17 16 14C18 10 16 6 12 2Z"
+            fill="#FE7A52"
+            opacity="0.7"
+          />
+          <path d="M12 6V18" stroke="#FE0944" strokeWidth="0.5" />
+        </svg>
+      </Box>
+      {/* ── .leaf.leaf-2 ── verbatim ── */}
+      <Box
+        aria-hidden
+        sx={{
+          position: "absolute",
+          bottom: "80px",
+          left: "12px",
+          opacity: 0.4,
+          transform: "rotate(160deg)",
+          zIndex: 2,
+          pointerEvents: "none",
+          animation: "leafFloat 6s ease-in-out infinite -2s",
+        }}
+      >
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M12 2C8 6 6 10 8 14C9 17 11 18 12 22C13 18 15 17 16 14C18 10 16 6 12 2Z"
+            fill="#FFB088"
+            opacity="0.6"
+          />
+        </svg>
+      </Box>
+
+      {/* ── .top-pill ── verbatim ── */}
       <Box
         sx={{
           position: "relative",
-          zIndex: 1,
-          backdropFilter: "blur(14px)",
-          backgroundColor: "rgba(255, 255, 255, 0.5)",
-          borderRadius: 3,
-          border: "1px solid rgba(255, 255, 255, 0.6)",
-          p: 2.5,
-          textAlign: "center",
+          zIndex: 3,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "8px 14px",
+          borderRadius: "99px",
+          background: "rgba(255, 255, 255, 0.55)",
+          backdropFilter: "blur(20px) saturate(180%)",
+          WebkitBackdropFilter: "blur(20px) saturate(180%)",
+          border: "1px solid rgba(255, 255, 255, 0.7)",
+          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.6)",
+          marginBottom: "14px",
         }}
       >
-        {/* Tagline — SunRed signature gradient text */}
+        {/* .top-pill .label */}
+        <Box
+          component="span"
+          sx={{
+            fontFamily: SERIF,
+            fontStyle: "italic",
+            fontWeight: 500,
+            fontSize: "14px",
+            color: "#831843",
+          }}
+        >
+          {t("hero.concierge", "Concierge")}
+        </Box>
+        {/* .top-pill .live */}
+        <Box
+          component="span"
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+            fontFamily: SANS,
+            fontSize: "10px",
+            fontWeight: 600,
+            color: "#831843",
+            letterSpacing: "0.05em",
+            textTransform: "uppercase",
+          }}
+        >
+          {/* .top-pill .dot */}
+          <Box
+            aria-hidden
+            sx={{
+              width: "6px",
+              height: "6px",
+              borderRadius: "50%",
+              background: "#16a34a",
+              boxShadow: "0 0 8px #16a34a",
+              animation: "pulseDot 1.5s ease-in-out infinite",
+            }}
+          />
+          {t("hero.live", "Live · Bangkok")}
+        </Box>
+      </Box>
+
+      {/* ── .glass-card ── verbatim ── */}
+      <Box
+        sx={{
+          position: "relative",
+          zIndex: 3,
+          borderRadius: "22px",
+          padding: "28px 20px 24px",
+          background: "rgba(255, 255, 255, 0.45)",
+          backdropFilter: "blur(30px) saturate(180%)",
+          WebkitBackdropFilter: "blur(30px) saturate(180%)",
+          border: "1px solid rgba(255, 255, 255, 0.65)",
+          boxShadow:
+            "0 12px 40px rgba(254, 9, 68, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.7)",
+          textAlign: "center",
+          marginBottom: "14px",
+        }}
+      >
+        {/* .divider-label */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+            marginBottom: "12px",
+            "&::before, &::after": {
+              content: '""',
+              width: "18px",
+              height: "1px",
+              background: "rgba(184, 92, 60, 0.4)",
+            },
+          }}
+        >
+          <Box
+            component="span"
+            sx={{
+              fontFamily: SANS,
+              fontSize: "9.5px",
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: "#b85c3c",
+              fontWeight: 600,
+            }}
+          >
+            {t("hero.tagline", "Bangkok · Outcall Wellness")}
+          </Box>
+        </Box>
+
+        {/* h1 */}
         <Typography
           component="h1"
           sx={{
-            fontWeight: 800,
-            fontSize: { xs: 19, sm: 23, md: 26 },
-            lineHeight: 1.25,
-            // 🔥 SunRed red (FE0944) → magenta → indigo
-            // ใช้สี brand จริงเป็นหลัก ตามด้วย accent
-            background: `linear-gradient(90deg,
-              ${brand.red} 0%,
-              #B91C9F 50%,
-              #6366F1 100%)`,
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-            mb: 0.8,
-            letterSpacing: 0.2,
-            // 🌐 multi-language safe wrapping
-            textWrap: "balance",
-            wordBreak: "keep-all",
-            overflowWrap: "break-word",
-            px: 1,
+            fontFamily: SERIF,
+            fontWeight: 400,
+            fontSize: "34px",
+            lineHeight: 1.05,
+            letterSpacing: "-0.02em",
+            color: "#2a1a14",
+            marginBottom: "12px",
+            "& em": {
+              fontStyle: "italic",
+              color: "#FE0944",
+            },
           }}
         >
-          {t("hero.title", "Bangkok's #1 Outcall Massage")}
+          {t("hero.title", "Restore.")}
+          <br />
+          <em>{t("hero.title.accent", "Delivered")}</em>{" "}
+          {t("hero.title.tail", "to you.")}
         </Typography>
 
-        <Typography
+        {/* .sub */}
+        <Box
+          component="p"
           sx={{
-            fontSize: { xs: 12.5, sm: 13.5 },
-            // dark plum (matches BottomNav active text + TrustBadge family)
-            color: "rgba(74, 26, 51, 0.8)",
-            mb: 1.5,
-            fontWeight: 500,
+            fontFamily: SANS,
+            fontSize: "13px",
+            color: "rgba(60, 30, 20, 0.72)",
             lineHeight: 1.55,
-            textWrap: "balance",
-            wordBreak: "keep-all",
+            marginBottom: "18px",
+            fontWeight: 500,
           }}
         >
           {t(
             "hero.subtitle",
-            "Verified therapists • Live availability • English / 中文 / 日本語 / 한국어"
+            "Licensed therapists, real-time availability, multilingual care — at your hotel, on your schedule."
           )}
-        </Typography>
+        </Box>
 
-        {/* 🏅 Trust badges row */}
-        <Stack
-          direction="row"
-          spacing={1}
-          justifyContent="center"
-          flexWrap="wrap"
-          useFlexGap
-          sx={{ mt: 1 }}
+        {/* .badges */}
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "6px",
+            justifyContent: "center",
+          }}
         >
-          <TrustBadge
-            icon={<VerifiedIcon sx={{ fontSize: 14 }} />}
-            label={t("hero.badge.verified", "Verified")}
-          />
-          <TrustBadge
-            icon={<AccessTimeFilledIcon sx={{ fontSize: 14 }} />}
-            label={t("hero.badge.always", "24 / 7")}
-          />
-          <TrustBadge
-            icon={<StarRoundedIcon sx={{ fontSize: 15 }} />}
-            label={t("hero.badge.rating", "4.8 ★ • 1,200+")}
-          />
-        </Stack>
+          {/* .badge ✓ Licensed */}
+          <Box
+            component="span"
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "5px 11px",
+              borderRadius: "99px",
+              background: "rgba(255, 255, 255, 0.7)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              border: "1px solid rgba(254, 9, 68, 0.15)",
+              color: "#be1d4a",
+              fontFamily: SANS,
+              fontSize: "11px",
+              fontWeight: 600,
+              boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.6)",
+            }}
+          >
+            ✓ {t("hero.badge.verified", "Licensed")}
+          </Box>
+          {/* .badge ⏰ 24 / 7 */}
+          <Box
+            component="span"
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "5px 11px",
+              borderRadius: "99px",
+              background: "rgba(255, 255, 255, 0.7)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              border: "1px solid rgba(254, 9, 68, 0.15)",
+              color: "#be1d4a",
+              fontFamily: SANS,
+              fontSize: "11px",
+              fontWeight: 600,
+              boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.6)",
+            }}
+          >
+            ⏰ {t("hero.badge.always", "24 / 7")}
+          </Box>
+          {/* .badge ★ 4.8 · 1,200+ */}
+          <Box
+            component="span"
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "5px 11px",
+              borderRadius: "99px",
+              background: "rgba(255, 255, 255, 0.7)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              border: "1px solid rgba(254, 9, 68, 0.15)",
+              color: "#be1d4a",
+              fontFamily: SANS,
+              fontSize: "11px",
+              fontWeight: 600,
+              boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.6)",
+            }}
+          >
+            ★ {t("hero.badge.rating", "4.8 · 1,200+")}
+          </Box>
+        </Box>
       </Box>
+
+      {/* ── .cta-primary ── verbatim ── */}
+      <Button
+        type="button"
+        onClick={handleCta}
+        aria-label={t("hero.cta", "Book your therapist")}
+        sx={{
+          position: "relative",
+          zIndex: 3,
+          width: "100%",
+          background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+          color: "#fff",
+          padding: "14px",
+          border: "none",
+          borderRadius: "99px",
+          fontFamily: SANS,
+          fontSize: "14px",
+          fontWeight: 700,
+          letterSpacing: "-0.01em",
+          textTransform: "none",
+          boxShadow:
+            "0 8px 24px rgba(254, 9, 68, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "8px",
+          cursor: "pointer",
+          "&:hover": {
+            background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+            boxShadow:
+              "0 10px 28px rgba(254, 9, 68, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.3)",
+          },
+        }}
+      >
+        {t("hero.cta", "Book your therapist")} <span>→</span>
+      </Button>
     </Box>
   );
 };
-
-/** Small pill-style badge — uses SunRed red border for brand consistency */
-const TrustBadge: React.FC<{
-  icon: React.ReactNode;
-  label: string;
-}> = ({ icon, label }) => (
-  <Box
-    sx={{
-      display: "inline-flex",
-      alignItems: "center",
-      gap: 0.5,
-      px: 1.2,
-      py: 0.4,
-      borderRadius: 99,
-      backgroundColor: "rgba(255, 255, 255, 0.85)",
-      // SunRed red @ 25% — visible accent without shouting
-      border: `1px solid rgba(254, 9, 68, 0.25)`,
-      color: "#7E1F4D",
-      fontWeight: 600,
-      fontSize: 11.5,
-      letterSpacing: 0.2,
-      whiteSpace: "nowrap",
-      boxShadow: "0 2px 6px rgba(254, 9, 68, 0.06)",
-    }}
-  >
-    {icon}
-    {label}
-  </Box>
-);
 
 export default HeroSection;

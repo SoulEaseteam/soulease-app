@@ -1,995 +1,442 @@
 // src/pages/TherapistDetailPage.tsx
-import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Typography,
-  Avatar,
-  Tabs,
-  Tab,
-  Button,
-  Divider,
-  ImageList,
-  ImageListItem,
-  Dialog,
-  IconButton,
-} from "@mui/material";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
-import { toast } from "react-toastify";
+//
+// 🎨 Phase 2 — Therapist Detail (route `/therapists/:id`).
+// Pixel-perfect composition of `01-mockups/sunred-therapists.html` Phone B
+// (canonical mockup `sunred-therapists2.html`).
+//
+// Section flow (verbatim mockup):
+//   DetailHero → StatsCard → About → Credentials → Specialties →
+//   Languages → Pricing → Calendar → Reviews → StickyBookCTA
+//
+// NOTE: previous TherapistDetailPage.tsx (Tabs/Cloudinary/ImageList) replaced
+// to match Phase 2 design. Real data integration via `therapistsData` lookup
+// + Firestore live status in Task 7 (i18n sweep / data wiring).
+
+import React from "react";
+import { Box } from "@mui/material";
+import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-import therapists from "../data/therapists";
-import services from "../data/services";
-import BottomNav from "../components/layouts/BottomNavGlass";
+import DetailHero from "@/components/therapist/detail/DetailHero";
+import StatsCard from "@/components/therapist/detail/StatsCard";
+import {
+  About,
+  Credentials,
+  Specialties,
+  Languages,
+  Pricing,
+  Calendar,
+  Reviews,
+} from "@/components/therapist/detail/DetailSections";
+import StickyBookCTA from "@/components/therapist/detail/StickyBookCTA";
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
+import therapistsData from "@/data/therapists";
+import type { Therapist } from "@/types/therapist";
 import { enhanceImage } from "@/utils/cloudinary";
 
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import { Share as ShareIcon, Close as CloseIcon } from "@mui/icons-material";
+// Demo data shaped exactly to mockup Phone B. Keyed by `:id` so each card
+// in the Browse grid lands on its own profile. Unknown ids fall back to Mai.
+// TODO (Task 7 / data wiring): replace with `therapistsData` lookup +
+// Firestore live status overrides.
+type DemoTherapist = {
+  id: string;
+  name: string;
+  age: number;
+  area: string;
+  distance: string;
+  online: boolean;
+  photoBg: string;
+  /** Cloudinary-enhanced gallery URLs. First entry = cover photo. */
+  images?: string[];
+  rating: string;
+  reviewCount: number;
+  yearsExp: number;
+  rebookRate: string;
+  about: string;
+  creds: { icon: string; label: string; meta: string }[];
+  specs: { icon: string; name: string; yrs: string }[];
+  langs: { flag: string; name: string; level: string }[];
+  pricing: { name: string; duration: string; price: string }[];
+  days: { dow: string; num: string; unavailable?: boolean }[];
+  slots: { time: string; taken?: boolean }[];
+  reviewBuckets: { num: number; count: number; pct: number }[];
+  reviews: {
+    initial: string;
+    name: string;
+    flag: string;
+    meta: string;
+    quote: string;
+  }[];
+};
 
-import { Swiper, SwiperSlide } from "swiper/react";
-import "swiper/css";
-import {
-  FaUser,
-  FaVenusMars,
-  FaFlag,
-  FaRulerVertical,
-  FaWeight,
-  FaPassport,
-  FaHotjar,
-  FaAirFreshener,
-  FaChessQueen,
-  FaMagic,
-  FaSmoking,
-  FaSyringe,
-} from "react-icons/fa";
+const MAI: DemoTherapist = {
+  id: "mai",
+  name: "Mai",
+  age: 28,
+  area: "Sukhumvit",
+  distance: "1.2 km",
+  online: true,
+  photoBg: "linear-gradient(135deg, #d4a574, #8b6f47)",
 
-// Firestore
-import { db } from "../lib/firebase";
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  doc,
-} from "firebase/firestore";
-import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
-import type { Therapist as TherapistType } from "@/types/therapist";
+  rating: "4.9",
+  reviewCount: 203,
+  yearsExp: 8,
+  rebookRate: "98%",
 
-type SectionType = "services" | "features" | "profile";
+  about:
+    "Eight years specializing in traditional Thai and oil massage. Licensed by the Thai Ministry of Public Health, trained at Wat Pho. Speaks Mandarin natively, English fluently. Travels with full equipment to hotels across Bangkok.",
 
-function formatAMPM(timeStr: string) {
-  if (!timeStr) return "";
-  const [h, m] = timeStr.split(":").map(Number);
-  const hour = h % 12 || 12;
-  const ampm = h >= 12 ? "PM" : "AM";
-  return `${hour}:${String(m).padStart(2, "0")} ${ampm}`;
+  creds: [
+    {
+      icon: "✓",
+      label: "Thai Ministry of Public Health License",
+      meta: "ผ.พ. 67-12-3456-7890 · Verified",
+    },
+    {
+      icon: "🎓",
+      label: "Wat Pho Traditional Massage Diploma",
+      meta: "2017 · 800 hours certified",
+    },
+    {
+      icon: "🛡",
+      label: "Background-checked",
+      meta: "Last verified: Apr 2026",
+    },
+  ],
+
+  specs: [
+    { icon: "🌿", name: "Thai Traditional", yrs: "8 yrs · 1,400+ sessions" },
+    { icon: "💆", name: "Oil Relaxation", yrs: "6 yrs · 900+ sessions" },
+    { icon: "🌸", name: "Aromatherapy", yrs: "4 yrs · 320+ sessions" },
+    { icon: "🤰", name: "Pre-natal", yrs: "Certified · 2 yrs" },
+  ],
+
+  langs: [
+    { flag: "🇨🇳", name: "Mandarin", level: "Native" },
+    { flag: "🇬🇧", name: "English", level: "Fluent" },
+    { flag: "🇹🇭", name: "Thai", level: "Native" },
+  ],
+
+  pricing: [
+    { name: "Thai Traditional", duration: "60 min", price: "฿1,800" },
+    { name: "Thai Traditional", duration: "90 min", price: "฿2,500" },
+    { name: "Oil Relaxation", duration: "60 min", price: "฿2,000" },
+    { name: "Aromatherapy", duration: "90 min", price: "฿2,500" },
+  ],
+
+  days: [
+    { dow: "Today", num: "30" },
+    { dow: "Fri", num: "01" },
+    { dow: "Sat", num: "02" },
+    { dow: "Sun", num: "03", unavailable: true },
+    { dow: "Mon", num: "04" },
+    { dow: "Tue", num: "05" },
+    { dow: "Wed", num: "06" },
+  ],
+
+  slots: [
+    { time: "14:00", taken: true },
+    { time: "15:00", taken: true },
+    { time: "16:00" },
+    { time: "17:00" },
+    { time: "18:00" },
+    { time: "19:00" },
+    { time: "20:00" },
+    { time: "21:00" },
+  ],
+
+  reviewBuckets: [
+    { num: 5, count: 173, pct: 85 },
+    { num: 4, count: 24, pct: 12 },
+    { num: 3, count: 4, pct: 2 },
+    { num: 2, count: 1, pct: 1 },
+    { num: 1, count: 1, pct: 0.5 },
+  ],
+
+  reviews: [
+    {
+      initial: "L",
+      name: "Li Wen",
+      flag: "🇨🇳",
+      meta: "2 weeks ago · Thai 90min · Anantara",
+      quote:
+        "Mai是非常专业的按摩师。我中文交流毫无障碍，按摩技术非常好。下次来曼谷一定再预约。",
+    },
+    {
+      initial: "D",
+      name: "David R.",
+      flag: "🇬🇧",
+      meta: "1 month ago · Oil 60min · St. Regis",
+      quote:
+        "Punctual, professional, exactly what I needed after a 14-hour flight. Will book again on next trip.",
+    },
+    {
+      initial: "A",
+      name: "Amelia C.",
+      flag: "🇸🇬",
+      meta: "2 months ago · Thai 60min · Park Hyatt",
+      quote:
+        "Absolutely professional. Mai brought all her own equipment and oils. The session was deeply restorative.",
+    },
+  ],
+};
+
+// Other therapists — overrides on top of MAI's structure so we don't
+// duplicate the whole shape. Matches `TherapistsBrowsePage` DEMO list.
+const DEMO_BY_ID: Record<string, DemoTherapist> = {
+  mai: MAI,
+  ploy: {
+    ...MAI,
+    id: "ploy",
+    name: "Ploy",
+    age: 26,
+    distance: "2.4 km",
+    photoBg: "linear-gradient(135deg, #e8c4a0, #c89968)",
+    rating: "5.0",
+    reviewCount: 167,
+    yearsExp: 6,
+    rebookRate: "96%",
+    about:
+      "Six years specializing in aromatherapy and pre-natal massage. Licensed by the Thai Ministry of Public Health. Speaks Japanese and English. Trained in essential oil therapy at the Bangkok School of Aromatherapy.",
+    specs: [
+      { icon: "🌸", name: "Aromatherapy", yrs: "6 yrs · 1,100+ sessions" },
+      { icon: "🤰", name: "Pre-natal", yrs: "Certified · 3 yrs" },
+      { icon: "💆", name: "Oil Relaxation", yrs: "5 yrs · 700+ sessions" },
+    ],
+    langs: [
+      { flag: "🇯🇵", name: "Japanese", level: "Fluent" },
+      { flag: "🇬🇧", name: "English", level: "Fluent" },
+      { flag: "🇹🇭", name: "Thai", level: "Native" },
+    ],
+  },
+  nan: {
+    ...MAI,
+    id: "nan",
+    name: "Nan",
+    age: 31,
+    distance: "3.1 km",
+    online: false,
+    photoBg: "linear-gradient(135deg, #c89c7a, #6b4a2f)",
+    rating: "4.8",
+    reviewCount: 412,
+    yearsExp: 10,
+    rebookRate: "99%",
+    about:
+      "Ten years specializing in sport recovery and deep-tissue massage. Licensed by the Thai Ministry of Public Health. Speaks Korean and English. Trained in athletic therapy at Mahidol University.",
+    specs: [
+      { icon: "🔥", name: "Sport Recovery", yrs: "10 yrs · 2,400+ sessions" },
+      { icon: "💪", name: "Deep Tissue", yrs: "8 yrs · 1,800+ sessions" },
+      { icon: "🌿", name: "Thai Traditional", yrs: "10 yrs · 1,900+ sessions" },
+    ],
+    langs: [
+      { flag: "🇰🇷", name: "Korean", level: "Fluent" },
+      { flag: "🇬🇧", name: "English", level: "Fluent" },
+      { flag: "🇹🇭", name: "Thai", level: "Native" },
+    ],
+  },
+  fern: {
+    ...MAI,
+    id: "fern",
+    name: "Fern",
+    age: 24,
+    distance: "2.8 km",
+    photoBg: "linear-gradient(135deg, #f4d4b4, #d4a574)",
+    rating: "4.9",
+    reviewCount: 89,
+    yearsExp: 5,
+    rebookRate: "94%",
+    about:
+      "Five years specializing in Thai traditional and aromatherapy. Licensed by the Thai Ministry of Public Health. Speaks Mandarin and English. Trained at Wat Pho.",
+    specs: [
+      { icon: "🌿", name: "Thai Traditional", yrs: "5 yrs · 800+ sessions" },
+      { icon: "🌸", name: "Aromatherapy", yrs: "3 yrs · 320+ sessions" },
+    ],
+  },
+  wan: {
+    ...MAI,
+    id: "wan",
+    name: "Wan",
+    age: 29,
+    distance: "3.8 km",
+    online: false,
+    photoBg: "linear-gradient(135deg, #d8b89c, #a08060)",
+    rating: "4.9",
+    reviewCount: 276,
+    yearsExp: 7,
+    rebookRate: "97%",
+    about:
+      "Seven years specializing in oil relaxation and aromatherapy. Licensed by the Thai Ministry of Public Health. Speaks Japanese, Mandarin, and English.",
+    specs: [
+      { icon: "💆", name: "Oil Relaxation", yrs: "7 yrs · 1,500+ sessions" },
+      { icon: "🌸", name: "Aromatherapy", yrs: "5 yrs · 800+ sessions" },
+    ],
+    langs: [
+      { flag: "🇯🇵", name: "Japanese", level: "Fluent" },
+      { flag: "🇨🇳", name: "Mandarin", level: "Fluent" },
+      { flag: "🇬🇧", name: "English", level: "Fluent" },
+      { flag: "🇹🇭", name: "Thai", level: "Native" },
+    ],
+  },
+  aom: {
+    ...MAI,
+    id: "aom",
+    name: "Aom",
+    age: 27,
+    distance: "1.8 km",
+    photoBg: "linear-gradient(135deg, #e8d0b4, #b89878)",
+    rating: "5.0",
+    reviewCount: 134,
+    yearsExp: 6,
+    rebookRate: "98%",
+    about:
+      "Six years specializing in Thai traditional and sport recovery. Licensed by the Thai Ministry of Public Health. Speaks Mandarin and English.",
+    specs: [
+      { icon: "🌿", name: "Thai Traditional", yrs: "6 yrs · 1,000+ sessions" },
+      { icon: "🔥", name: "Sport Recovery", yrs: "4 yrs · 540+ sessions" },
+    ],
+  },
+};
+
+// stable per-id gradient (mirrors useTherapists.gradientForId)
+function gradientForId(id: string): string {
+  const palette: [string, string][] = [
+    ["#d4a574", "#8b6f47"],
+    ["#e8c4a0", "#c89968"],
+    ["#c89c7a", "#6b4a2f"],
+    ["#f4d4b4", "#d4a574"],
+    ["#d8b89c", "#a08060"],
+    ["#e8d0b4", "#b89878"],
+    ["#dabd9a", "#aa8866"],
+    ["#e0c8a0", "#b08858"],
+  ];
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
+  const [a, b] = palette[Math.abs(hash) % palette.length];
+  return `linear-gradient(135deg, ${a}, ${b})`;
 }
 
-const renderFeature = (
-  icon: React.ReactNode,
-  label: string,
-  value?: string
-) => {
-  if (!value) return null;
-  return (
-    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-      <Box sx={{ width: 28, mr: 1 }}>{icon}</Box>
-      <Typography
-        sx={{
-          fontWeight: 600,
-          width: 110,
-          fontFamily: "Trebuchet MS, sans-serif",
-        }}
-      >
-        {label}:
-      </Typography>
-      <Typography
-        sx={{
-          color: "#333",
-          fontSize: 14,
-          fontFamily: "Trebuchet MS, sans-serif",
-        }}
-      >
-        {value}
-      </Typography>
-    </Box>
-  );
-};
+// Build a DemoTherapist shape from a real Therapist record. Mockup-only
+// fields (about / creds / specs / langs / reviews / etc) reuse Mai's
+// content as a placeholder until Task 7 wires real data per therapist.
+function buildFromReal(real: Therapist): DemoTherapist {
+  const ageStr = real.features.age ?? "";
+  const ageNum = ageStr ? parseInt(ageStr, 10) || 28 : 28;
 
-const handleShare = async () => {
-  const url = window.location.href;
-  try {
-    if (navigator.share) {
-      await navigator.share({ title: "Therapist Profile", url });
-    } else {
-      await navigator.clipboard.writeText(url);
-      toast.info("Link copied to clipboard");
+  // 🖼 Cloudinary-enhanced gallery — cover (`real.image`) first, then
+  //    `real.gallery` deduped. Falls back to gradient if no images.
+  const rawImages: string[] = [];
+  if (real.image) rawImages.push(real.image);
+  if (real.gallery.length > 0) {
+    for (const g of real.gallery) {
+      if (g && !rawImages.includes(g)) rawImages.push(g);
     }
-  } catch (error) {
-    console.error("Failed to share:", error);
   }
-};
+  const images = rawImages.map((url) =>
+    enhanceImage(url, { variant: "hero" })
+  );
+  const photoBg = images.length > 0
+    ? `center / cover no-repeat url("${images[0]}")`
+    : gradientForId(real.id);
+
+  return {
+    ...MAI, // mockup placeholder content for sections we don't have data for
+    id: real.id,
+    name: real.name,
+    age: ageNum,
+    photoBg,
+    images,
+    rating: real.rating.toFixed(1),
+    reviewCount: real.reviews ?? 0,
+    yearsExp: typeof real.experience === "number" ? real.experience : MAI.yearsExp,
+  };
+}
 
 const TherapistDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { id } = useParams();
 
-  const queryParams = new URLSearchParams(location.search);
-  const defaultSection =
-    (queryParams.get("section") as SectionType) || "services";
-
-  const therapist = therapists.find((t) => t.id === id);
-
-  const [section, setSection] = useState<SectionType>(defaultSection);
-  const [openImage, setOpenImage] = useState<string | null>(null);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [reviewCount, setReviewCount] = useState(0);
-
-  // 🔒 PRIVACY: live therapist doc — เพื่อตรวจว่า "ออกงานข้างนอก" หรือไม่
-  const [liveDoc, setLiveDoc] = useState<Partial<TherapistType> | null>(null);
-
-  useEffect(() => {
-    if (!id) return;
-    const unsub = onSnapshot(
-      doc(db, "therapists", id),
-      (snap) => {
-        if (snap.exists()) {
-          setLiveDoc(snap.data() as Partial<TherapistType>);
-        } else {
-          setLiveDoc(null);
-        }
-      },
-      (err) => console.warn("therapist live doc error:", err)
-    );
-    return () => unsub();
-  }, [id]);
-
-  // Merge static + live → compute status
-  const merged: TherapistType | null = therapist
-    ? ({
-        ...therapist,
-        ...(liveDoc ?? {}),
-      } as TherapistType)
-    : null;
-  const liveStatus = merged ? calculateTherapistStatus(merged).status : null;
-  const nextAvailable = merged
-    ? calculateTherapistStatus(merged).nextAvailable
-    : null;
-
-  // 🔒 isOutOfPremises = true เมื่อ
-  //  1. status = "bookable" (busyUntil future, activeBooking)
-  //  2. มี manual flag `hideProfile = true` (admin toggle ใน Firestore)
-  const hideProfileFlag = !!(liveDoc as { hideProfile?: boolean } | null)
-    ?.hideProfile;
-  const isOutOfPremises = liveStatus === "bookable" || hideProfileFlag;
-
-  // 🌍 Multi-language bio (fallback chain: current lang → en → empty)
-  const currentLang = (i18n.language || "en").split("-")[0].toLowerCase() as
-    | "en"
-    | "th"
-    | "zh"
-    | "ja"
-    | "ko";
-  const bio =
-    therapist?.bios?.[currentLang] ?? therapist?.bios?.en ?? "";
-
-  // 🪶 Per-page SEO meta + Person/AggregateRating schema (huge SEO win — each
-  // therapist becomes its own indexed page with rich snippets in search results)
-  // 🔒 Privacy: ใช้ logo เมื่อออกงานข้างนอก — กัน social-share preview เปิดเผยรูป
-  const therapistImage =
-    therapist && !isOutOfPremises
-      ? enhanceImage(therapist.image, { variant: "hero" })
-      : "https://sunred.vip/images/icon/sunred-logo.png";
-  const therapistUrl = therapist
-    ? `https://sunred.vip/therapist/${therapist.id}`
-    : "https://sunred.vip/";
-  const metaTitle = therapist
-    ? `${therapist.name} • Bangkok Outcall Massage Therapist • SUNRED`
-    : "Therapist • SUNRED Bangkok";
-  const metaDesc = therapist
-    ? bio ||
-      `Book ${therapist.name} — verified outcall massage therapist in Bangkok. ${
-        therapist.features?.language ?? "Multi-language"
-      } service. Live availability and trusted reviews on SUNRED.`
-    : "Verified massage therapist in Bangkok • SUNRED outcall booking";
+  // 🔌 3-tier lookup chain:
+  //   1. `therapistsData[id]` (real Yuri/Jimmy/Hami/...) — wire real name/
+  //      age/rating/photo on top of Mai's mockup content for the sections
+  //      we don't have data for yet (about/creds/specs/langs/reviews).
+  //   2. `DEMO_BY_ID[id]` (mai/ploy/nan/fern/wan/aom from Browse page DEMO).
+  //   3. MAI as last-resort fallback.
+  const therapist: DemoTherapist = (() => {
+    if (id) {
+      const real = therapistsData.find((t) => t.id === id);
+      if (real) return buildFromReal(real);
+      if (DEMO_BY_ID[id]) return DEMO_BY_ID[id];
+    }
+    return MAI;
+  })();
 
   useDocumentMeta({
-    title: metaTitle,
-    description: metaDesc,
-    image: therapistImage,
-    url: therapistUrl,
+    title: t("meta.detail.title", "{{name}} · SUNRED Bangkok", {
+      name: therapist.name,
+    }),
+    description: t(
+      "meta.detail.description",
+      "{{name}} — verified massage therapist in Bangkok. {{rating}}★ ({{count}} reviews). Book in seconds.",
+      { name: therapist.name, rating: therapist.rating, count: therapist.reviewCount }
+    ),
     locale: langToLocale(i18n.language),
+    url: `https://sunred.vip/therapists/${id ?? therapist.id}`,
     type: "profile",
-    jsonLd: therapist
-      ? {
-          "@context": "https://schema.org",
-          "@type": "Person",
-          "@id": `${therapistUrl}#therapist`,
-          name: therapist.name,
-          image: therapistImage,
-          url: therapistUrl,
-          jobTitle: "Licensed Massage Therapist",
-          worksFor: { "@id": "https://sunred.vip/#business" },
-          knowsLanguage: (therapist.features?.language ?? "")
-            .split(/[,/]/)
-            .map((s) => s.trim())
-            .filter(Boolean),
-          description: metaDesc,
-          ...(therapist.rating && therapist.reviews && therapist.reviews > 0
-            ? {
-                aggregateRating: {
-                  "@type": "AggregateRating",
-                  ratingValue: therapist.rating.toFixed(1),
-                  reviewCount: String(therapist.reviews),
-                  bestRating: "5",
-                  worstRating: "1",
-                },
-              }
-            : {}),
-        }
-      : undefined,
   });
-
-  useEffect(() => {
-    if (!id) return;
-    const q = query(
-      collection(db, "bookings"),
-      where("therapistId", "==", id),
-      where("reviewText", "!=", "")
-    );
-
-    const unsub = onSnapshot(q, (snapshot) => {
-      setReviewCount(snapshot.size);
-    });
-
-    return () => unsub();
-  }, [id]);
-
-  useEffect(() => {
-    if (!therapist) return;
-    try {
-      const favs = localStorage.getItem("favoriteTherapists");
-      if (favs) {
-        const favArray = JSON.parse(favs) as string[];
-        if (Array.isArray(favArray)) {
-          setIsFavorite(favArray.includes(therapist.id));
-        }
-      }
-    } catch (e) {
-      console.warn("Cannot parse favoriteTherapists from localStorage", e);
-      setIsFavorite(false);
-    }
-  }, [therapist]);
-
-  useEffect(() => {
-    if (location.hash === "#features") {
-      setSection("features");
-      setTimeout(() => {
-        const el = document.getElementById("features");
-        if (el) el.scrollIntoView({ behavior: "smooth" });
-      }, 200);
-    }
-  }, [location.hash]);
-
-  const toggleFavorite = () => {
-    if (!therapist) return;
-    try {
-      const favs = localStorage.getItem("favoriteTherapists");
-      let favArray: string[] = [];
-
-      if (favs) {
-        const parsed = JSON.parse(favs);
-        if (Array.isArray(parsed)) favArray = parsed;
-      }
-
-      if (isFavorite) {
-        favArray = favArray.filter((x) => x !== therapist.id);
-      } else {
-        favArray.push(therapist.id);
-      }
-
-      localStorage.setItem("favoriteTherapists", JSON.stringify(favArray));
-      setIsFavorite((v) => !v);
-    } catch (e) {
-      console.warn("Cannot update favoriteTherapists", e);
-    }
-  };
-
-  // 🔒 PRIVACY: use placeholder when therapist is out at customer's location
-  const PLACEHOLDER_AVATAR = "/images/icon/sunred-logo.png";
-
-  const realAvatarSrc = therapist?.image
-    ? therapist.image.startsWith("http") || therapist.image.startsWith("/")
-      ? therapist.image
-      : `/images/${therapist.image}`
-    : "/images/default-avatar.png";
-
-  const avatarSrc = isOutOfPremises ? PLACEHOLDER_AVATAR : realAvatarSrc;
-
-  const realGallery =
-    therapist?.gallery && therapist.gallery.length > 0
-      ? therapist.gallery.map((img: string) =>
-          img.startsWith("http") || img.startsWith("/")
-            ? img
-            : `/images/yuri/${img}`
-        )
-      : Array.from({ length: 6 }).map(
-          (_, i) => `/images/yuri/gallery${i + 1}.jpg`
-        );
-
-  // ซ่อน gallery ทั้งหมดตอนออกงานข้างนอก
-  const galleryImages: string[] = isOutOfPremises ? [] : realGallery;
-
-  if (!therapist) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h6" color="error">
-          Therapist not found.
-        </Typography>
-      </Box>
-    );
-  }
 
   return (
     <Box
       sx={{
-        background: "rgba(255, 255, 255, 0.6)",
-        color: "#3a3420",
+        // .phone — verbatim
+        maxWidth: "430px",
+        margin: "0 auto",
+        background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
+        borderRadius: "28px",
+        overflow: "hidden",
+        boxShadow: "0 20px 60px rgba(126, 30, 46, 0.15)",
+        position: "relative",
         minHeight: "100vh",
-        display: "flex",
-        justifyContent: "center",
       }}
     >
-      <Box
-        sx={{
-          width: "100%",
-          maxWidth: 430,
-          pb: 10,
-          fontFamily: "Trebuchet MS, sans-serif",
-        }}
-      >
-        <Box
-          sx={{
-            width: "100%",
-            height: 180,
-            background: "linear-gradient(to bottom, #FE0944, #FEAE96)",
-            position: "relative",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Typography
-            variant="h6"
-            textAlign="center"
-            sx={{
-              mt: 4,
-              mb: 4,
-              px: 2,
-              color: "#ffffffff",
-              fontWeight: 400,
-              letterSpacing: 3,
-              fontSize: 20,
-            }}
-          >
-            FEATURED PROFILES
-          </Typography>
+      <DetailHero
+        name={therapist.name}
+        age={therapist.age}
+        area={therapist.area}
+        distance={therapist.distance}
+        online={therapist.online}
+        photoBg={therapist.photoBg}
+        images={therapist.images}
+      />
 
-          <Button
-            onClick={handleShare}
-            sx={{
-              position: "absolute",
-              top: 16,
-              right: 16,
-              minWidth: 0,
-              width: 36,
-              height: 36,
-              borderRadius: "50%",
-              backgroundColor: "#fff",
-              color: "#333",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-              "&:hover": { backgroundColor: "#eee" },
-            }}
-          >
-            <ShareIcon />
-          </Button>
-        </Box>
+      <StatsCard
+        rating={therapist.rating}
+        reviewCount={therapist.reviewCount}
+        yearsExp={therapist.yearsExp}
+        rebookRate={therapist.rebookRate}
+      />
 
-        <Box
-          sx={{ px: 2, mt: -6, position: "relative", display: "inline-block" }}
-        >
-          <Avatar
-            src={avatarSrc}
-            sx={{
-              width: 120,
-              height: 120,
-              border: "4px solid rgba(255,255,255,0.4)",
-            }}
-            imgProps={{ style: { objectFit: "cover", objectPosition: "center top" } }}
-          />
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleFavorite();
-            }}
-            sx={{
-              position: "absolute",
-              top: 85,
-              right: 13,
-              minWidth: 0,
-              width: 38,
-              height: 38,
-              borderRadius: "50%",
-              backgroundColor: isFavorite ? "#ff6b81" : "rgba(255,255,255,0.8)",
-              color: isFavorite ? "#fff" : "#888",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-              zIndex: 10,
-              "&:hover": { backgroundColor: isFavorite ? "#ff4757" : "#eee" },
-            }}
-            aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-          >
-            {isFavorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-          </Button>
-        </Box>
+      <About name={therapist.name} body={therapist.about} />
+      <Credentials creds={therapist.creds} />
+      <Specialties specs={therapist.specs} />
+      <Languages langs={therapist.langs} />
+      <Pricing items={therapist.pricing} />
+      <Calendar days={therapist.days} slots={therapist.slots} />
+      <Reviews
+        rating={therapist.rating}
+        total={therapist.reviewCount}
+        buckets={therapist.reviewBuckets}
+        reviews={therapist.reviews}
+      />
 
-        <Box sx={{ px: 2, mt: 1 }}>
-          {/* 🔒 PRIVACY BANNER — therapist is out at a customer location */}
-          {isOutOfPremises && (
-            <Box
-              sx={{
-                mt: 1,
-                mb: 1.5,
-                p: 1.4,
-                borderRadius: 3,
-                background:
-                  "linear-gradient(135deg, rgba(212, 244, 226, 0.85) 0%, rgba(229, 208, 255, 0.85) 100%)",
-                border: "1px solid rgba(99, 102, 241, 0.2)",
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-              }}
-              role="status"
-            >
-              <Box
-                component="span"
-                sx={{
-                  fontSize: 20,
-                  filter: "grayscale(0.1)",
-                }}
-                aria-hidden
-              >
-                🔒
-              </Box>
-              <Box sx={{ flex: 1 }}>
-                <Typography
-                  sx={{
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: "#1a4f55",
-                    lineHeight: 1.3,
-                  }}
-                >
-                  Currently in service · profile hidden for privacy
-                </Typography>
-                <Typography
-                  sx={{
-                    fontSize: 12,
-                    color: "rgba(60, 60, 80, 0.7)",
-                    mt: 0.3,
-                  }}
-                >
-                  {nextAvailable
-                    ? `Photos return at ${nextAvailable}. You can pre-book now.`
-                    : "Photos will return when the session ends. You can pre-book now."}
-                </Typography>
-              </Box>
-            </Box>
-          )}
-
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: "bold",
-              fontSize: 30,
-              color: "#3a3420",
-              letterSpacing: 1,
-              mt: 1,
-            }}
-          >
-            {therapist.name}
-            <Box
-              component="span"
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                fontSize: 16,
-                fontWeight: 500,
-                color: "#3a3420",
-                ml: 1,
-                cursor: "pointer",
-                "&:hover": { textDecoration: "underline" },
-              }}
-              onClick={() => navigate(`/review/all/${therapist.id}`)}
-            >
-              <img
-                src="/images/icon/star.png"
-                alt="star"
-                style={{ width: 20, height: 20, marginRight: 6 }}
-              />
-              {therapist.rating} | {reviewCount} reviews
-            </Box>
-          </Typography>
-
-          <Box sx={{ mt: 1 }}>
-            <Typography variant="body2" sx={{ color: "#3a3420" }}>
-              Working Hours: {formatAMPM(therapist.startTime)} -{" "}
-              {formatAMPM(therapist.endTime)}
-            </Typography>
-
-            <Typography
-              variant="body2"
-              sx={{ color: "#3a3420", display: "flex", alignItems: "center", mt: 0.5 }}
-            >
-              <FaHotjar color="#FE0944" style={{ marginRight: 4 }} />
-              {therapist.employmentType || therapist.features.employmentType || "N/A"}
-            </Typography>
-          </Box>
-
-          {/* 🌍 Multi-language AI bio (only renders if generator script has run) */}
-          {bio && (
-            <Box
-              sx={{
-                mt: 2,
-                p: 1.6,
-                borderRadius: 3,
-                background: "rgba(255, 255, 255, 0.55)",
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255, 255, 255, 0.55)",
-              }}
-            >
-              <Typography
-                component="p"
-                lang={currentLang}
-                sx={{
-                  fontSize: 13.5,
-                  color: "#3a3420",
-                  lineHeight: 1.6,
-                  fontStyle: "italic",
-                  letterSpacing: 0.1,
-                }}
-              >
-                {bio}
-              </Typography>
-            </Box>
-          )}
-        </Box>
-
-        <Box
-          sx={{
-            mt: 2,
-            px: 2,
-            py: 1,
-            borderRadius: 1,
-            background: "linear-gradient(to bottom, #FE0944, #FEAE96)",
-            backdropFilter: "blur(12px)",
-            boxShadow: "0 4px 20px rgba(255, 147, 147, 0.08)",
-          }}
-        >
-          <Tabs
-            value={section}
-            onChange={(_, value) => setSection(value)}
-            textColor="inherit"
-            indicatorColor="primary"
-            variant="fullWidth"
-            sx={{
-              "& .MuiTab-root": {
-                color: "#ffffff",
-                fontWeight: "bold",
-                fontStyle: "Trebuchet MS, sans-serif",
-              },
-              "& .Mui-selected": {
-                color: "#ffffff",
-                background: "rgba(255,255,255,0.1)",
-                borderRadius: 4,
-              },
-              "& .MuiTabs-indicator": {
-                backgroundColor: "#ffffff",
-                height: 3,
-                borderRadius: 3,
-              },
-            }}
-          >
-            <Tab label="Services" value="services" />
-            <Tab label="Features" value="features" />
-            <Tab label="Profile" value="profile" />
-          </Tabs>
-        </Box>
-
-        {section === "services" && (
-          <ServicesSection therapist={therapist} navigate={navigate} />
-        )}
-
-        {section === "features" && therapist.features && (
-          <Box
-            id="features"
-            sx={{
-              mt: 4,
-              mx: 2,
-              borderRadius: 2,
-              background: "rgba(255, 255, 255, 0.5)",
-              backdropFilter: "blur(14px)",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-              color: "#3a3420",
-              maxHeight: "65vh",
-              overflowY: "auto",
-              p: 3,
-            }}
-          >
-            <Typography color="#3a3420" fontWeight="bold" fontSize={16} mb={1}>
-              General Information
-            </Typography>
-            {renderFeature(<FaUser color="#FEAE96" />, "Age", therapist.features.age)}
-            {renderFeature(<FaRulerVertical color="#FEAE96" />, "Height", therapist.features.height)}
-            {renderFeature(<FaWeight color="#FEAE96" />, "Weight", therapist.features.weight)}
-            {renderFeature(<FaVenusMars color="#FEAE96" />, "Gender", therapist.features.gender)}
-            {renderFeature(<FaFlag color="#FEAE96" />, "Ethnicity", therapist.features.ethnicity)}
-            {renderFeature(<FaPassport color="#FEAE96" />, "Language", therapist.features.language)}
-
-            <Divider sx={{ my: 2, bgcolor: "rgba(255,255,255,0.2)" }} />
-
-            <Typography fontWeight="bold" fontSize={16} mb={1}>
-              Features
-            </Typography>
-            {renderFeature(<FaHotjar color="#FEAE96" />, "Body Type", therapist.features.bodyType)}
-            {renderFeature(<FaAirFreshener color="#FEAE96" />, "Bust Size", therapist.features.bustSize)}
-            {renderFeature(<FaChessQueen color="#FEAE96" />, "Hair Color", therapist.features.hairColor)}
-            {renderFeature(<FaMagic color="#FEAE96" />, "Skin Tone", therapist.features.skintone)}
-
-            <Divider sx={{ my: 2, bgcolor: "rgba(255,255,255,0.2)" }} />
-
-            <Typography fontWeight="bold" fontSize={16} mb={1}>
-              Behavior & Health
-            </Typography>
-            {renderFeature(<FaSmoking color="#FEAE96" />, "Smoker", therapist.features.smoker)}
-            {renderFeature(<FaSyringe color="#FEAE96" />, "Vaccinated", therapist.features.vaccinated)}
-          </Box>
-        )}
-
-        {section === "profile" && (
-          <GallerySection
-            images={galleryImages}
-            setOpenImage={setOpenImage}
-            openImage={openImage}
-          />
-        )}
-
-        <BottomNav />
-      </Box>
-
-      <Dialog
-        open={Boolean(openImage)}
-        onClose={() => setOpenImage(null)}
-        maxWidth="md"
-        PaperProps={{
-          sx: {
-            backgroundColor: "transparent",
-            boxShadow: "none",
-          },
-        }}
-        BackdropProps={{
-          sx: {
-            backgroundColor: "rgba(0,0,0,0.7)",
-          },
-        }}
-      >
-        <IconButton
-          onClick={(e) => {
-            e.stopPropagation();
-            setOpenImage(null);
-          }}
-          sx={{
-            position: "absolute",
-            top: 10,
-            right: 20,
-            color: "#ffffffff",
-            zIndex: 10,
-            background: "rgba(153, 152, 152, 0.4)",
-            "&:hover": { background: "rgba(0,0,0,0.6)" },
-          }}
-        >
-          <CloseIcon />
-        </IconButton>
-
-        <Swiper
-          initialSlide={galleryImages.findIndex((img) => img === openImage)}
-          spaceBetween={20}
-          slidesPerView={1}
-          style={{ width: "100%", height: "100%" }}
-        >
-          {galleryImages.map((img, i) => (
-            <SwiperSlide key={img}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: "100%",
-                }}
-              >
-                <img
-                  src={img}
-                  alt={`Gallery ${i}`}
-                  style={{
-                    maxWidth: "100%",
-                    maxHeight: "100%",
-                    objectFit: "contain",
-                    borderRadius: 8,
-                  }}
-                />
-              </Box>
-            </SwiperSlide>
-          ))}
-        </Swiper>
-      </Dialog>
+      <StickyBookCTA
+        therapistId={therapist.id}
+        therapistName={therapist.name}
+        fromPrice={therapist.pricing[0].price}
+        duration="60min"
+        selectedSlot="17:00"
+      />
     </Box>
   );
 };
-
-const ServicesSection = ({
-  therapist,
-  navigate,
-}: {
-  therapist: typeof therapists[number];
-  navigate: ReturnType<typeof useNavigate>;
-}) => {
-  const [canSelect, setCanSelect] = useState(true);
-  const [buttonText, setButtonText] = useState("Select");
-
-  const filteredServices = services.filter((svc) => {
-    const therapistServices = therapist.services || [];
-    const therapistServicesAvailable = therapist.servicesAvailable || [];
-
-    if (
-      therapistServices.length === 0 &&
-      therapistServicesAvailable.length === 0
-    ) {
-      return true;
-    }
-
-    return (
-      therapistServices.includes(svc.id) ||
-      therapistServices.includes(svc.name) ||
-      therapistServicesAvailable.includes(svc.id) ||
-      therapistServicesAvailable.includes(svc.name)
-    );
-  });
-
-  useEffect(() => {
-    const now = new Date();
-    const [startH, startM] = therapist.startTime.split(":").map(Number);
-    const [endH, endM] = therapist.endTime.split(":").map(Number);
-
-    const startWork = new Date();
-    const endWork = new Date();
-    startWork.setHours(startH, startM, 0, 0);
-    endWork.setHours(endH, endM, 0, 0);
-
-    let inWorkingTime: boolean;
-    if (endWork <= startWork) {
-      inWorkingTime = now >= startWork || now <= endWork;
-    } else {
-      inWorkingTime = now >= startWork && now <= endWork;
-    }
-
-    if (therapist.available === "resting") {
-      setCanSelect(false);
-      setButtonText("Resting");
-    } else if (!inWorkingTime) {
-      setCanSelect(false);
-      setButtonText("Not Available");
-    } else {
-      setCanSelect(true);
-      setButtonText("Select");
-    }
-  }, [therapist]);
-
-  return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, mt: 4, px: 2 }}>
-      {filteredServices.map((svc, index) => (
-        <motion.div
-          key={svc.id}
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            type: "spring",
-            stiffness: 80,
-            damping: 15,
-            delay: index * 0.05,
-          }}
-        >
-        <Box
-  sx={{
-    fontStyle: "Trebuchet MS, sans-serif",
-    textIndent: "1em",
-    position: "relative",
-    height: 220,
-    borderRadius: 2,
-    overflow: "hidden",
-    backgroundImage: `url(${svc.image})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "flex-end",
-    cursor: canSelect ? "pointer" : "not-allowed",
-    boxShadow: "0 10px 30px rgba(175, 59, 59, 0.08)",
-  }}
-  onClick={() =>
-    canSelect &&
-    navigate(`/services/${svc.id}?therapistId=${therapist.id}`)
-  }
->
-            <Box
-              sx={{
-                position: "absolute",
-                top: 14,
-                left: 14,
-                px: 1.3,
-                py: 0.5,
-                fontSize: 12,
-                fontWeight: "bold",
-                color: "#fff",
-                background: "linear-gradient(to bottom, #FE0944, #FEAE96)",
-                borderRadius: 2,
-                textTransform: "uppercase",
-              }}
-            >
-              {svc.badge}
-            </Box>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ delay: index * 0.1, duration: 0.5 }}
-              whileHover={{ scale: 1.015 }}
-            >
-              <Box
-                sx={{
-                  position: "absolute",
-                  color: "rgb(255, 255, 255)",
-                  bottom: 0,
-                  width: "100%",
-                  px: 2,
-                  py: 2,
-                  background: "rgba(255, 255, 255, 0.12)",
-                  backdropFilter: "blur(1px)",
-                  borderTopLeftRadius: 16,
-                  borderTopRightRadius: 16,
-                }}
-              >
-                <Typography
-                  fontSize={18}
-                  fontWeight="bold"
-                  fontFamily="Playfair Display"
-                >
-                  {svc.name}
-                </Typography>
-
-                <Typography
-                  fontSize={13}
-                  sx={{
-                    mt: 0.5,
-                    color: "#ede5e5d4",
-                    display: "flex",
-                    overflow: "hidden",
-                    WebkitBoxOrient: "vertical",
-                    WebkitLineClamp: 2,
-                    minHeight: 36,
-                    pr: 10,
-                  }}
-                >
-                  {svc.desc}
-                </Typography>
-
-                <Typography>
-                  <Box
-                    component="span"
-                    sx={{ fontSize: 18, fontWeight: "bold", color: "#FF9900" }}
-                  >
-                    {svc.price}฿
-                  </Box>
-                  <Box
-                    component="span"
-                    sx={{ fontSize: 15, fontWeight: 400, color: "#FF9900", ml: 0.5 }}
-                  >
-                    • {svc.duration}⏱
-                  </Box>
-                </Typography>
-
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (canSelect) {
-                      void navigate(
-                        `/booking/${therapist.id}?service=${encodeURIComponent(
-                          svc.name
-                        )}`
-                      );
-                    }
-                  }}
-                  disabled={!canSelect}
-                  sx={{
-                    position: "absolute",
-                    right: 56,
-                    top: "65%",
-                    transform: "translateY(-50%)",
-                    background: !canSelect ? "#ccc" : "#f36c60",
-                    color: !canSelect ? "#888" : "#fff",
-                    fontSize: 14,
-                    px: 4,
-                    py: 0.5,
-                    borderRadius: 4,
-                    fontWeight: "bold",
-                    textTransform: "none",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-                  }}
-                >
-                  {buttonText}
-                </Button>
-              </Box>
-            </motion.div>
-          </Box>
-        </motion.div>
-      ))}
-
-      <Typography
-        textAlign="center"
-        mt={1}
-        fontSize={13}
-        sx={{ color: "#aaa", fontStyle: "Trebuchet MS, sans-serif" }}
-      >
-        “Can’t find what you’re looking for? Chat with us for more options!”
-      </Typography>
-    </Box>
-  );
-};
-
-const GallerySection = ({
-  images,
-  setOpenImage,
-  openImage,
-}: {
-  images: string[];
-  setOpenImage: React.Dispatch<React.SetStateAction<string | null>>;
-  openImage: string | null;
-}) => (
-  <Box sx={{ p: 2 }}>
-    <Typography fontWeight="bold" fontSize={24} mb={4}>
-      Gallery
-    </Typography>
-    <ImageList cols={3} gap={8}>
-      {images.map((img, index) => (
-        <ImageListItem key={img} onClick={() => setOpenImage(img)}>
-          <img src={img} alt={`Gallery ${index}`} style={{ borderRadius: 8 }} />
-        </ImageListItem>
-      ))}
-    </ImageList>
-    <Dialog open={Boolean(openImage)} onClose={() => setOpenImage(null)} maxWidth="md">
-      <img src={openImage ?? undefined} alt="Preview" style={{ width: "100%" }} />
-    </Dialog>
-    <Typography
-      textAlign="center"
-      mt={3}
-      fontSize={13}
-      sx={{ color: "#aaa", fontStyle: "Trebuchet MS, sans-serif" }}
-    >
-      “More updated photos of our girls in our Telegram channel”
-    </Typography>
-  </Box>
-);
 
 export default TherapistDetailPage;

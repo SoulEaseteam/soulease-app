@@ -23,6 +23,10 @@ const ServiceDetailPage = React.lazy(() => import("@/pages/ServiceDetailPage"));
 const TherapistDetailPage = React.lazy(
   () => import("@/pages/TherapistDetailPage")
 );
+// 🃏 Phase 2 — Browse page (route /therapists)
+const TherapistsBrowsePage = React.lazy(
+  () => import("@/pages/TherapistsBrowsePage")
+);
 
 const BookingPage = React.lazy(() => import("@/pages/BookingPage"));
 const BookingHistoryPage = React.lazy(
@@ -154,6 +158,8 @@ export default function App() {
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/services/:id" element={<ServiceDetailPage />} />
 
+          {/* 🃏 Phase 2 — Browse + Detail */}
+          <Route path="/therapists" element={<TherapistsBrowsePage />} />
           <Route path="/therapists/:id" element={<TherapistDetailPage />} />
           <Route path="/therapist/list" element={<TherapistListPage />} />
 
