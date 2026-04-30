@@ -92,12 +92,20 @@ interface Props {
   locationAddress: string | null;
   lat: number | null;
   lng: number | null;
+  /**
+   * Free-text refinement on top of the picked location — room number,
+   * floor, gate code, landmarks. Independent from `locationAddress`.
+   */
+  addressDetails: string;
+  /** Updates the canonical picked-location fields (search/preset/geo). */
   onChange: (next: {
     locationName: string | null;
     locationAddress: string | null;
     lat: number | null;
     lng: number | null;
   }) => void;
+  /** Updates the free-text refinement (room/floor/landmarks) only. */
+  onChangeAddressDetails: (val: string) => void;
 }
 
 const StepLocation: React.FC<Props> = ({
@@ -105,13 +113,13 @@ const StepLocation: React.FC<Props> = ({
   locationAddress,
   lat,
   lng,
+  addressDetails,
   onChange,
+  onChangeAddressDetails,
 }) => {
   const { ready, loadIfNeeded } = useGoogleMaps();
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
-  const [manualAddress, setManualAddress] = useState(locationAddress ?? "");
-  const lastSyncedRef = useRef<string>(locationAddress ?? "");
   const [searchValue, setSearchValue] = useState<string>("");
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const autocompleteRef = useRef<unknown>(null);
@@ -182,14 +190,8 @@ const StepLocation: React.FC<Props> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
 
-  // Keep manual input in sync if the parent updates address externally
-  // (e.g., picking a preset clears any user typing).
-  useEffect(() => {
-    if ((locationAddress ?? "") !== lastSyncedRef.current) {
-      setManualAddress(locationAddress ?? "");
-      lastSyncedRef.current = locationAddress ?? "";
-    }
-  }, [locationAddress]);
+  // (No sync needed — the textarea is now bound to addressDetails which
+  // is independent from the canonical pick.)
 
   const selectPreset = (h: PresetHotel) => {
     onChange({
@@ -264,19 +266,6 @@ const StepLocation: React.FC<Props> = ({
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
-  };
-
-  const onManualAddressChange = (val: string) => {
-    setManualAddress(val);
-    // Only update parent — DO NOT clear lat/lng here; keep the picked
-    // coordinates valid even when user adds extra detail (room number,
-    // floor, etc) to the address text.
-    onChange({
-      locationName,
-      locationAddress: val || null,
-      lat,
-      lng,
-    });
   };
 
   const hasCoords = lat != null && lng != null;
@@ -429,45 +418,7 @@ const StepLocation: React.FC<Props> = ({
         </Box>
       </Box>
 
-      {/* Manual address — refines preset/current */}
-      <Box>
-        <Typography
-          sx={{
-            fontFamily: SANS,
-            fontSize: "11px",
-            fontWeight: 700,
-            color: "rgba(60, 30, 20, 0.55)",
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            marginBottom: "10px",
-            paddingLeft: "4px",
-          }}
-        >
-          Address details
-        </Typography>
-        <TextField
-          fullWidth
-          multiline
-          minRows={2}
-          maxRows={4}
-          placeholder="Hotel name, room number, building, floor, landmarks…"
-          value={manualAddress}
-          onChange={(e) => onManualAddressChange(e.target.value)}
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              background: "rgba(255, 255, 255, 0.65)",
-              borderRadius: "14px",
-              fontFamily: SANS,
-              fontSize: "13.5px",
-              "& fieldset": { borderColor: "rgba(0, 0, 0, 0.08)" },
-              "&:hover fieldset": { borderColor: "#FE0944" },
-              "&.Mui-focused fieldset": { borderColor: "#FE0944" },
-            },
-          }}
-        />
-      </Box>
-
-      {/* Selected preview card */}
+      {/* Selected preview card — appears first, then Add details below */}
       {hasCoords && (
         <Box
           sx={{
@@ -511,6 +462,77 @@ const StepLocation: React.FC<Props> = ({
           >
             {locationAddress ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`}
           </Typography>
+          {addressDetails.trim() && (
+            <Typography
+              sx={{
+                fontFamily: SANS,
+                fontSize: "12px",
+                color: "rgba(60, 30, 20, 0.7)",
+                lineHeight: 1.4,
+                marginTop: "8px",
+                paddingTop: "8px",
+                borderTop: "1px dashed rgba(254, 9, 68, 0.2)",
+                fontStyle: "italic",
+              }}
+            >
+              📍 {addressDetails}
+            </Typography>
+          )}
+        </Box>
+      )}
+
+      {/* Add details — additive refinement on top of selected location.
+          Only renders once a place is picked. Independent from
+          locationAddress (which holds the canonical address). */}
+      {hasCoords && (
+        <Box>
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: "11px",
+              fontWeight: 700,
+              color: "rgba(60, 30, 20, 0.55)",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              marginBottom: "6px",
+              paddingLeft: "4px",
+            }}
+          >
+            Add details (optional)
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: "11.5px",
+              color: "rgba(60, 30, 20, 0.55)",
+              marginBottom: "10px",
+              paddingLeft: "4px",
+              lineHeight: 1.4,
+            }}
+          >
+            Help your therapist find you — room number, floor, building,
+            side entrance, gate code, landmarks.
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            minRows={2}
+            maxRows={4}
+            placeholder="e.g. Tower 2, 21st floor, Room 2104. Side entrance on Soi 21."
+            value={addressDetails}
+            onChange={(e) => onChangeAddressDetails(e.target.value)}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                background: "rgba(255, 255, 255, 0.65)",
+                borderRadius: "14px",
+                fontFamily: SANS,
+                fontSize: "13.5px",
+                "& fieldset": { borderColor: "rgba(0, 0, 0, 0.08)" },
+                "&:hover fieldset": { borderColor: "#FE0944" },
+                "&.Mui-focused fieldset": { borderColor: "#FE0944" },
+              },
+            }}
+          />
         </Box>
       )}
 

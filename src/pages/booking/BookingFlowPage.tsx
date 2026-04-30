@@ -54,10 +54,16 @@ export interface BookingFormState {
   locationAddress: string | null;
   lat: number | null;
   lng: number | null;
+  /**
+   * Free-text refinement on top of the picked location — room number,
+   * floor, building, side entrance, gate code, etc. Independent from
+   * `locationAddress` (which holds the canonical address from the picked
+   * place). Surfaces in the booking confirmation + therapist's en-route view.
+   */
+  addressDetails: string;
   // Step 4 — Details
   customerName: string;
   customerPhone: string;
-  roomNumber: string;
   notes: string;
   // Step 5 — Payment
   paymentMethod: "card" | "wechat" | "alipay" | "promptpay" | "cash" | null;
@@ -74,9 +80,9 @@ const initialFormState: BookingFormState = {
   locationAddress: null,
   lat: null,
   lng: null,
+  addressDetails: "",
   customerName: "",
   customerPhone: "",
-  roomNumber: "",
   notes: "",
   paymentMethod: null,
   therapistId: null,
@@ -235,8 +241,12 @@ const BookingFlowPage: React.FC = () => {
             locationAddress={form.locationAddress}
             lat={form.lat}
             lng={form.lng}
+            addressDetails={form.addressDetails}
             onChange={(next) =>
               setForm((prev) => ({ ...prev, ...next }))
+            }
+            onChangeAddressDetails={(addressDetails) =>
+              setForm((prev) => ({ ...prev, addressDetails }))
             }
           />
         )}
