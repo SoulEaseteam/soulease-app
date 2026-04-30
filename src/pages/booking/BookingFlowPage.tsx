@@ -37,6 +37,8 @@ import BookingNavBar from "@/components/booking/BookingNavBar";
 import StepService from "@/components/booking/StepService";
 import StepDateTime from "@/components/booking/StepDateTime";
 import StepLocation from "@/components/booking/StepLocation";
+import StepDetails from "@/components/booking/StepDetails";
+import { isValidPhoneNumber } from "react-phone-number-input";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -111,8 +113,11 @@ const BookingFlowPage: React.FC = () => {
       case 3:
         return !!form.lat && !!form.lng;
       case 4:
-        return form.customerName.trim().length >= 2 &&
-          form.customerPhone.trim().length >= 8;
+        return (
+          form.customerName.trim().length >= 2 &&
+          form.customerPhone.trim().length >= 8 &&
+          isValidPhoneNumber(form.customerPhone)
+        );
       case 5:
         return !!form.paymentMethod;
       default:
@@ -251,7 +256,18 @@ const BookingFlowPage: React.FC = () => {
           />
         )}
 
-        {step > 3 && (
+        {step === 4 && (
+          <StepDetails
+            customerName={form.customerName}
+            customerPhone={form.customerPhone}
+            notes={form.notes}
+            onChange={(next) =>
+              setForm((prev) => ({ ...prev, ...next }))
+            }
+          />
+        )}
+
+        {step > 4 && (
           <Box
             sx={{
               background: "rgba(255, 255, 255, 0.45)",
