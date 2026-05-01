@@ -79,9 +79,9 @@ const NotFoundPage = React.lazy(() => import("@/pages/NotFoundPage"));
 const TherapistListPage = React.lazy(
   () => import("@/pages/therapist/TherapistListPage")
 );
-const TherapistStatusManagerPage = React.lazy(
-  () => import("@/components/therapist/TherapistStatusManager")
-);
+// 🆕 Round 22b (founder 2026-05-01): TherapistStatusManager file deleted
+//    along with the merge cleanup. Status overrides (holiday/forceAvail)
+//    still live on therapist docs and are managed via the admin panel.
 const TherapistLocationPage = React.lazy(
   () => import("@/pages/therapist/TherapistLocationPage")
 );
@@ -223,10 +223,8 @@ export default function App() {
             path="/therapist/profile"
             element={<TherapistProfilePage />}
           />
-          <Route
-            path="/therapist/status"
-            element={<TherapistStatusManagerPage />}
-          />
+          {/* /therapist/status route removed Round 22b — TherapistStatusManager
+              component was deleted in the merge cleanup. */}
           <Route path="/update-location" element={<UpdateLocationPage />} />
           <Route path="/location" element={<TherapistLocationPage />} />
         </Route>
