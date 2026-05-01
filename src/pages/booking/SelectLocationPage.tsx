@@ -41,7 +41,12 @@ import {
   Menu,
   MenuItem,
 } from "@mui/material";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import {
+  useNavigate,
+  useParams,
+  useLocation,
+  useSearchParams,
+} from "react-router-dom";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import MyLocationRoundedIcon from "@mui/icons-material/MyLocationRounded";
@@ -78,6 +83,14 @@ export interface AddressNavState {
   locationType: LocationType | null;
   /** Auto-generated Google Maps deep-link */
   mapUrl: string | null;
+  // 🆕 Round 9 (founder 2026-05-01): backup channel for the booking
+  //    context (service / duration / date / time). URL params are the
+  //    primary source of truth, but if a refresh / replace strips them
+  //    these state fields keep BookingFlowPage's Order Details alive.
+  serviceId?: string | null;
+  duration?: number | null;
+  date?: string | null;
+  time?: string | null;
 }
 
 const EMPTY: AddressNavState = {
@@ -159,6 +172,11 @@ const SelectLocationPage: React.FC = () => {
   const { id: therapistId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const routerLoc = useLocation();
+  // 🆕 Round 8 (founder 2026-05-01): preserve the booking-context query
+  //    string (?service=…&duration=…&date=…&time=…) on the round-trip
+  //    back to /booking/:id so the Confirm Order page can rehydrate
+  //    its full state without going through TherapistDetailPage again.
+  const [searchParams] = useSearchParams();
   const incoming = (routerLoc.state ?? null) as Partial<AddressNavState> | null;
 
   const { ready, loadIfNeeded } = useGoogleMaps();
@@ -414,10 +432,34 @@ const SelectLocationPage: React.FC = () => {
 
   const onConfirm = () => {
     if (!canConfirm) return;
-    void navigate(`/booking/${therapistId ?? ""}`, {
-      replace: true,
-      state: { ...form, mapUrl: buildMapUrl(form.lat, form.lng) },
-    });
+    // 🆕 Round 9: forward BOTH the URL query string AND the booking
+    //    context fields via router state so /booking/:id can rehydrate
+    //    Order Details + Pricing reliably regardless of which channel
+    //    survives the navigation. Service / duration / date / time
+    //    arrive here either from the inbound URL or from the inbound
+    //    state (BookingFlowPage forwards both); we pass them back the
+    //    same way.
+    const qs = searchParams.toString();
+    const ctx = {
+      serviceId:
+        searchParams.get("service") ?? incoming?.serviceId ?? null,
+      duration: searchParams.get("duration")
+        ? parseInt(searchParams.get("duration") ?? "0", 10) || null
+        : incoming?.duration ?? null,
+      date: searchParams.get("date") ?? incoming?.date ?? null,
+      time: searchParams.get("time") ?? incoming?.time ?? null,
+    };
+    void navigate(
+      `/booking/${therapistId ?? ""}${qs ? `?${qs}` : ""}`,
+      {
+        replace: true,
+        state: {
+          ...form,
+          mapUrl: buildMapUrl(form.lat, form.lng),
+          ...ctx,
+        },
+      }
+    );
   };
 
   // 🆕 Founder 2026-05-01: 'Phone Number เลือกประเทศได้'.

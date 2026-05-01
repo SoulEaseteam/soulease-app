@@ -41,7 +41,6 @@ import React, { useState, useMemo, useEffect } from "react";
 import {
   Box,
   Typography,
-  TextField,
   IconButton,
   Tooltip,
   Button,
@@ -61,11 +60,10 @@ import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
-// 🆕 Phase 5 round 5 — Language + Add-ons merged into one PreferencesSheet
-//    (founder: 'Optional add-ons + Preferred language อยู่ sheet เดียวกัน').
-//    Payment method dropped entirely (founder: 'Payment method เอาออก').
-import PreferencesSheet from "@/components/booking/PreferencesSheet";
-import SelectionCell from "@/components/booking/SelectionCell";
+// 🆕 Round 8 (founder 2026-05-01): PreferencesSheet + SelectionCell +
+//    inline Notes textarea all dropped from this page. Confirm Order is
+//    now strictly: Therapist → Address → Pricing → Confirm. Special
+//    requests go via admin chat.
 // PaymentMethod / PaymentPicker dropped 2026-05-01 (founder feedback).
 import type { AddressNavState } from "@/pages/booking/SelectLocationPage";
 
@@ -83,11 +81,7 @@ import { priceForDuration, formatTHB } from "@/utils/servicePricing";
 import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
 import services from "@/data/services";
 import therapistsData from "@/data/therapists";
-import {
-  ADDONS,
-  LANGUAGE_OPTIONS,
-  type AddOn,
-} from "@/data/bookingExtras";
+import { ADDONS, type AddOn } from "@/data/bookingExtras";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -157,8 +151,8 @@ const BookingFlowPage: React.FC = () => {
 
   const [submitting, setSubmitting] = useState(false);
 
-  // Sheet open state — Language + Add-ons live in ONE merged sheet now.
-  const [preferencesOpen, setPreferencesOpen] = useState(false);
+  // Preferences sheet (Language + Add-ons) was removed 2026-05-01 round 8
+  // (founder feedback). Language defaults to 'en'; admin handles requests.
 
   const [form, setForm] = useState<BookingFormState>({
     ...initialFormState,
@@ -178,6 +172,9 @@ const BookingFlowPage: React.FC = () => {
   // 🔁 When SelectLocationPage navigates back with state, merge it in.
   //    Reads the address payload once, then clears it from history state
   //    so a refresh doesn't re-apply.
+  //    🆕 Round 9: also rehydrate Order Details (service / duration /
+  //       date / time) from the state payload — backup for cases where
+  //       URL params get stripped between navigations.
   useEffect(() => {
     const incoming = routerLoc.state as Partial<AddressNavState> | null;
     if (incoming?.lat == null || incoming.lng == null) return;
@@ -194,6 +191,12 @@ const BookingFlowPage: React.FC = () => {
       meetingPoint: incoming.meetingPoint ?? p.meetingPoint,
       locationType: incoming.locationType ?? p.locationType,
       mapUrl: incoming.mapUrl ?? p.mapUrl,
+      // 🆕 Order Details fallback — only fill when the form's missing
+      //    them (URL params take precedence on initial mount).
+      serviceId: p.serviceId ?? incoming.serviceId ?? null,
+      duration: p.duration ?? incoming.duration ?? null,
+      date: p.date ?? incoming.date ?? null,
+      time: p.time ?? incoming.time ?? null,
     }));
     // Clear the state so a manual refresh doesn't re-merge stale data.
     void navigate(routerLoc.pathname + routerLoc.search, {
@@ -204,21 +207,43 @@ const BookingFlowPage: React.FC = () => {
   }, []);
 
   const goEditAddress = () => {
-    void navigate(`/booking/${therapistId ?? ""}/address`, {
-      state: {
-        locationName: form.locationName,
-        locationAddress: form.locationAddress,
-        lat: form.lat,
-        lng: form.lng,
-        addressDetails: form.addressDetails,
-        contactName: form.contactName,
-        customerPhone: form.customerPhone || "+66",
-        addressNote: form.addressNote,
-        meetingPoint: form.meetingPoint,
-        locationType: form.locationType,
-        mapUrl: form.mapUrl,
-      },
-    });
+    // 🆕 Round 8 (founder 2026-05-01): 'พอเลือกโลเคชั่นเสร็จ ดึงข้อมูล
+    //    ค้างไว้ Confirm Order'. The /address detour is in a separate
+    //    component (not preserved in memory), and SelectLocationPage
+    //    navigates back with `replace: true` — so without forwarding
+    //    the booking context, service/duration/date/time get reset to
+    //    null on remount. Forward them as URL params; SelectLocationPage
+    //    preserves location.search on its way back.
+    const params = new URLSearchParams();
+    if (form.serviceId) params.set("service", form.serviceId);
+    if (form.duration != null) params.set("duration", String(form.duration));
+    if (form.date) params.set("date", form.date);
+    if (form.time) params.set("time", form.time);
+    const qs = params.toString();
+    void navigate(
+      `/booking/${therapistId ?? ""}/address${qs ? `?${qs}` : ""}`,
+      {
+        state: {
+          locationName: form.locationName,
+          locationAddress: form.locationAddress,
+          lat: form.lat,
+          lng: form.lng,
+          addressDetails: form.addressDetails,
+          contactName: form.contactName,
+          customerPhone: form.customerPhone || "+66",
+          addressNote: form.addressNote,
+          meetingPoint: form.meetingPoint,
+          locationType: form.locationType,
+          mapUrl: form.mapUrl,
+          // 🆕 Round 9: backup channel for Order Details — survives
+          //    even if the URL params get stripped somewhere.
+          serviceId: form.serviceId,
+          duration: form.duration,
+          date: form.date,
+          time: form.time,
+        },
+      }
+    );
   };
 
   // ── Resolved entities
@@ -234,7 +259,7 @@ const BookingFlowPage: React.FC = () => {
     () => ADDONS.filter((a) => form.selectedAddons.includes(a.id)),
     [form.selectedAddons]
   );
-  const selectedLanguage = LANGUAGE_OPTIONS.find((l) => l.code === form.language);
+  // selectedLanguage removed — Preferences cell was dropped 2026-05-01.
 
   // ── Pricing
   const servicePrice =
@@ -642,116 +667,12 @@ const BookingFlowPage: React.FC = () => {
           </Box>
         </SectionCard>
 
-        {/* 🆕 Phase 5 round 5 — Single Preferences cell (Language + Add-ons
-            in one merged sheet). Payment cell removed entirely. */}
-        <SelectionCell
-          label="Preferences"
-          icon={selectedLanguage?.flag ?? "🌐"}
-          value={
-            selectedAddons.length === 0
-              ? selectedLanguage?.label ?? "Set language &amp; add-ons"
-              : `${selectedLanguage?.label ?? "Language"} · ${
-                  selectedAddons.length === 1
-                    ? selectedAddons[0].name
-                    : `${selectedAddons.length} add-ons`
-                }`
-          }
-          hint={
-            addonsTotal > 0 ? `+${formatTHB(addonsTotal)}` : undefined
-          }
-          filled={!!selectedLanguage || selectedAddons.length > 0}
-          onClick={() => setPreferencesOpen(true)}
-        />
-
-        {/* 💰 Deposit policy hint — surfaces when distance is long enough
-            that we may need a deposit confirmation through the admin. */}
-        <Box
-          sx={{
-            display: "flex",
-            gap: "10px",
-            padding: "12px 14px",
-            borderRadius: "12px",
-            background: "rgba(249, 115, 22, 0.08)",
-            border: "1px solid rgba(249, 115, 22, 0.2)",
-            marginTop: "-6px", // visually couples with the Payment cell above
-          }}
-        >
-          <Box
-            sx={{
-              width: 18,
-              height: 18,
-              flexShrink: 0,
-              borderRadius: "50%",
-              background: "#f97316",
-              color: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "11px",
-              fontWeight: 800,
-              marginTop: "1px",
-            }}
-          >
-            i
-          </Box>
-          <Typography
-            sx={{
-              fontFamily: SANS,
-              fontSize: "11.5px",
-              color: "rgba(60, 30, 20, 0.78)",
-              lineHeight: 1.5,
-            }}
-          >
-            Long-distance bookings (over {FREE_DISTANCE_KM * 3} km / high
-            travel fee) may require a small deposit. If your booking falls in
-            that range, our admin will reach out to confirm before dispatch.
-          </Typography>
-        </Box>
-
-        {/* ─────────── Notes (inline) ─────────── */}
-        <SectionCard
-          label={`Notes for ${therapist?.name ?? "your therapist"} (optional)`}
-          icon="📝"
-        >
-          <TextField
-            fullWidth
-            multiline
-            minRows={3}
-            maxRows={6}
-            placeholder="e.g. Focus on lower back, prefer firm pressure…"
-            value={form.notes}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, notes: e.target.value }))
-            }
-            inputProps={{ maxLength: 500 }}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                background: "rgba(255, 255, 255, 0.7)",
-                borderRadius: "12px",
-                fontFamily: SANS,
-                fontSize: "13.5px",
-                "& fieldset": { borderColor: "rgba(0, 0, 0, 0.08)" },
-                "&:hover fieldset": { borderColor: "rgba(254, 9, 68, 0.4)" },
-                "&.Mui-focused fieldset": {
-                  borderColor: "#FE0944",
-                  borderWidth: "1.5px",
-                },
-              },
-            }}
-          />
-          <Typography
-            sx={{
-              fontFamily: SANS,
-              fontSize: "11px",
-              color: "rgba(60, 30, 20, 0.5)",
-              marginTop: "6px",
-              paddingLeft: "8px",
-              textAlign: "right",
-            }}
-          >
-            {form.notes.length}/500
-          </Typography>
-        </SectionCard>
+        {/* 🆕 Founder 2026-05-01 round 8 (founder feedback):
+            • Preferences cell ลบ — language defaults to 'en', add-ons unused
+            • Deposit info tip ลบ — Travel fee chip below already surfaces
+              long-distance / admin-quote state
+            • Notes-for-therapist textarea ลบ — keep page focused on the
+              must-do (location). Special requests go via admin chat. */}
 
         {/* ─────────── Pricing card (pattern 5A) ─────────── */}
         <SectionCard label="Pricing" icon="💵">
@@ -970,18 +891,9 @@ const BookingFlowPage: React.FC = () => {
         onConfirm={() => void handleSubmit()}
       />
 
-      {/* ─────────── Sheets ─────────── */}
-      {/* One merged sheet (Language + Add-ons). Payment sheet dropped. */}
-      <PreferencesSheet
-        open={preferencesOpen}
-        onClose={() => setPreferencesOpen(false)}
-        language={form.language}
-        addons={form.selectedAddons}
-        onConfirm={({ language, addons }) => {
-          setForm((p) => ({ ...p, language, selectedAddons: addons }));
-          setPreferencesOpen(false);
-        }}
-      />
+      {/* PreferencesSheet removed 2026-05-01 round 8 — no in-page sheets
+          on the Confirm Order page anymore; the only out-of-page detour
+          is the dedicated /address route. */}
     </Box>
   );
 };
