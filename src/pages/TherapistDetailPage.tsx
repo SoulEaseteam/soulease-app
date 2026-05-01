@@ -28,7 +28,6 @@ import StickyBookCTA from "@/components/therapist/detail/StickyBookCTA";
 //   pick service+duration+date+time inline. Booking flow then opens at
 //   "Where should we go?" (Step 3) instead of restarting from Step 1.
 import StepService from "@/components/booking/StepService";
-import StepDateTime from "@/components/booking/StepDateTime";
 import {
   startingPrice,
   priceForDuration,
@@ -481,7 +480,34 @@ const TherapistDetailPage: React.FC = () => {
           Service tap → bottom sheet picks 60/90/120 → date pills + time
           slot grid → user lands on /booking/:id?service=…&date=… and
           jumps straight to "Where should we go?". */}
-      <PickerSection title={t("detail.picker.serviceTitle", "Choose your service")}>
+      {/* 🆕 Phase 4 — Service section is the ONLY picker on DetailPage now.
+          DateTime + Location + Customer details all live on the
+          single-page Reservation Order at /booking/:id.
+          Heading + helper copy follow sunred-booking3 mockup. */}
+      <PickerSection
+        title={
+          <>
+            What kind of <em>session</em>?
+          </>
+        }
+        subtitle={t(
+          "detail.picker.serviceSubtitle",
+          "Select your service and preferred duration."
+        )}
+      >
+        {/* Sub-header above the cards (mockup: 'Service') */}
+        <Typography
+          sx={{
+            fontFamily: SERIF,
+            fontSize: "16px",
+            fontWeight: 600,
+            color: "#3c1e14",
+            marginBottom: "10px",
+          }}
+        >
+          {t("detail.picker.serviceLabel", "Service")}
+        </Typography>
+
         <StepService
           value={selection.serviceId}
           selectedDuration={selection.duration}
@@ -491,39 +517,28 @@ const TherapistDetailPage: React.FC = () => {
               ...p,
               serviceId,
               duration,
-              // changing service may change min slot — clear time only
+              // changing service may change min slot in booking flow
               time: null,
             }))
           }
         />
-      </PickerSection>
 
-      <PickerSection
-        title={t("detail.picker.timeTitle", "When works for you?")}
-        subtitle={
-          selectedService
-            ? t("detail.picker.timeSubtitle", "{{name}} · {{duration}} min · {{price}}", {
-                name: selectedService.name,
-                duration: selection.duration ?? selectedService.duration,
-                price: formatTHB(
-                  selection.duration
-                    ? priceForDuration(selectedService, selection.duration)
-                    : startingPrice(selectedService)
-                ),
-              })
-            : t("detail.picker.timeHint", "Pick a service above to unlock time slots")
-        }
-        muted={!selectedService}
-      >
-        <StepDateTime
-          date={selection.date}
-          time={selection.time}
-          durationMin={selection.duration}
-          therapistId={therapist.id}
-          onChange={({ date, time }) =>
-            setSelection((p) => ({ ...p, date, time }))
-          }
-        />
+        {/* Helper copy under the cards — chat fallback for edge requests */}
+        <Typography
+          sx={{
+            fontFamily: SANS,
+            fontSize: "12px",
+            color: "rgba(60, 30, 20, 0.5)",
+            textAlign: "center",
+            marginTop: "14px",
+            lineHeight: 1.5,
+          }}
+        >
+          {t(
+            "detail.picker.serviceHint",
+            "Can't find what you're looking for? Chat with us for more options."
+          )}
+        </Typography>
       </PickerSection>
 
       {/* (Reviews moved into TherapistProfileTabs as Tab 2.) */}
@@ -604,7 +619,7 @@ const TherapistDetailPage: React.FC = () => {
 
 // ─── Picker section wrapper — matches dSection style of legacy sections ───
 const PickerSection: React.FC<{
-  title: string;
+  title: React.ReactNode;
   subtitle?: string;
   muted?: boolean;
   children: React.ReactNode;
@@ -621,11 +636,16 @@ const PickerSection: React.FC<{
       component="h3"
       sx={{
         fontFamily: SERIF,
-        fontSize: "20px",
+        fontSize: "22px",
         fontWeight: 500,
         color: "#2a1a14",
         letterSpacing: "-0.02em",
         marginBottom: subtitle ? "4px" : "16px",
+        "& em": {
+          fontStyle: "italic",
+          color: "#FE0944",
+          fontWeight: 500,
+        },
       }}
     >
       {title}
