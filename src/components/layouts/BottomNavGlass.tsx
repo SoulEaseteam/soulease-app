@@ -39,11 +39,13 @@ const BottomNavGlass: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
-  // 🃏 Phase-2 redesign: pages under /therapists/* render their own
-  //    pixel-perfect `<BottomNav />` matching the Phase-2 mockup. Hide
-  //    this global nav there to avoid a double-nav UI. Early return
-  //    placed AFTER all hooks to comply with rules-of-hooks.
-  const hideOnRedesignedRoutes = location.pathname.startsWith("/therapists");
+  // 🃏 Phase-2/3 redesign: pages with their own sticky bottom CTAs
+  //    (the new `<BottomNav />` on /therapists/* + the booking flow's
+  //    `<BookingNavBar />` with Confirm & Pay) would get overlapped by
+  //    this global nav. Hide on those routes.
+  const hideOnRedesignedRoutes =
+    location.pathname.startsWith("/therapists") ||
+    location.pathname.startsWith("/booking");
   if (hideOnRedesignedRoutes) return null;
 
   const handleChange = (_event: React.SyntheticEvent, next: string) => {
