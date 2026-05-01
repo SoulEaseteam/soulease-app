@@ -28,7 +28,8 @@ import StickyBookCTA from "@/components/therapist/detail/StickyBookCTA";
 //   pick service+duration+date+time inline. Booking flow then opens at
 //   "Where should we go?" (Step 3) instead of restarting from Step 1.
 import StepService from "@/components/booking/StepService";
-import StepDateTime from "@/components/booking/StepDateTime";
+import DateTimePickerCell from "@/components/booking/DateTimePickerCell";
+import DateTimeSheet from "@/components/booking/DateTimeSheet";
 import {
   startingPrice,
   priceForDuration,
@@ -421,6 +422,11 @@ const TherapistDetailPage: React.FC = () => {
     "profile" | "reviews" | "loyalty" | null
   >(null);
 
+  // 🆕 Phase 4 — Date+Time picker now lives in a bottom sheet so the
+  //    detail page surfaces a compact cell instead of an always-expanded
+  //    grid that ate ~700px of vertical space.
+  const [dateTimeSheetOpen, setDateTimeSheetOpen] = useState(false);
+
   // Resolve the picked service object (if any) for header/sticky CTA copy.
   const selectedService =
     services.find((s) => s.id === selection.serviceId) ?? null;
@@ -542,9 +548,9 @@ const TherapistDetailPage: React.FC = () => {
         </Typography>
       </PickerSection>
 
-      {/* DateTime picker — date pills + time slot grid grouped by daypart.
-          Muted until a service is picked (so duration is known and slot
-          length can be calculated correctly). */}
+      {/* 🆕 Phase 4 — Date+Time is a compact cell now. Tap → opens the
+          full date pills + time grid in a bottom sheet. Cell summarizes
+          'Today · 17:00 · 1h 30m' inline so the detail page stays short. */}
       <PickerSection
         title={
           <>
@@ -553,15 +559,19 @@ const TherapistDetailPage: React.FC = () => {
         }
         subtitle={
           selectedService
-            ? t("detail.picker.timeSubtitle", "{{name}} · {{duration}} min · {{price}}", {
-                name: selectedService.name,
-                duration: selection.duration ?? selectedService.duration,
-                price: formatTHB(
-                  selection.duration
-                    ? priceForDuration(selectedService, selection.duration)
-                    : startingPrice(selectedService)
-                ),
-              })
+            ? t(
+                "detail.picker.timeSubtitle",
+                "{{name}} · {{duration}} min · {{price}}",
+                {
+                  name: selectedService.name,
+                  duration: selection.duration ?? selectedService.duration,
+                  price: formatTHB(
+                    selection.duration
+                      ? priceForDuration(selectedService, selection.duration)
+                      : startingPrice(selectedService)
+                  ),
+                }
+              )
             : t(
                 "detail.picker.timeHint",
                 "Pick a service above to unlock time slots."
@@ -569,14 +579,12 @@ const TherapistDetailPage: React.FC = () => {
         }
         muted={!selectedService}
       >
-        <StepDateTime
+        <DateTimePickerCell
           date={selection.date}
           time={selection.time}
           durationMin={selection.duration}
-          therapistId={therapist.id}
-          onChange={({ date, time }) =>
-            setSelection((p) => ({ ...p, date, time }))
-          }
+          enabled={!!selectedService}
+          onClick={() => setDateTimeSheetOpen(true)}
         />
       </PickerSection>
 
@@ -600,6 +608,20 @@ const TherapistDetailPage: React.FC = () => {
         durationMin={selection.duration}
         date={selection.date}
         time={selection.time}
+      />
+
+      {/* 🆕 Phase 4 — Date+Time bottom sheet. Opens from the cell. */}
+      <DateTimeSheet
+        open={dateTimeSheetOpen}
+        onClose={() => setDateTimeSheetOpen(false)}
+        date={selection.date}
+        time={selection.time}
+        durationMin={selection.duration}
+        therapistId={therapist.id}
+        onConfirm={(date, time) => {
+          setSelection((p) => ({ ...p, date, time }));
+          setDateTimeSheetOpen(false);
+        }}
       />
 
       {/* 🆕 Phase 4 — Therapist info sheet (Verified Profile / Reviews).
