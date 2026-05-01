@@ -21,6 +21,7 @@ import DetailHero from "@/components/therapist/detail/DetailHero";
 import StatsCard from "@/components/therapist/detail/StatsCard";
 import { About } from "@/components/therapist/detail/DetailSections";
 import TherapistInfoSheet from "@/components/therapist/detail/TherapistInfoSheet";
+import StatusPill from "@/components/therapist/detail/StatusPill";
 import StickyBookCTA from "@/components/therapist/detail/StickyBookCTA";
 
 // 🆕 Phase 4 — Pricing + Calendar legacy sections REPLACED by the booking
@@ -474,6 +475,16 @@ const TherapistDetailPage: React.FC = () => {
         onTapRating={() => setInfoSheet("reviews")}
         onTapProfile={() => setInfoSheet("profile")}
         onTapLoyalty={() => setInfoSheet("loyalty")}
+      />
+
+      {/* 🆕 Phase 4 — Live availability pill (pattern 3 from Aine reference,
+          adapted into our brand). Surfaces estimated-arrival copy when
+          the therapist is online; offers a 'Wait or switch?' nudge when
+          busy. Status comes from the same online/busy/offline taxonomy
+          used by TherapistCard + DetailHero. */}
+      <StatusPill
+        status={therapist.online ? "online" : "offline"}
+        nextAvailable={null}
       />
 
       <About name={therapist.name} body={therapist.about} />

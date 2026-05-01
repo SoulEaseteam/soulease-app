@@ -1,46 +1,51 @@
 // src/pages/booking/BookingFlowPage.tsx
 //
-// 🎨 Phase 4 — Single-page Reservation Order.
+// 🎨 Phase 4 — Single-page Confirm Order.
 //
-// Replaces the Phase-3 5-step wizard with a single scrollable form.
-// Service + Date + Time are picked on the DetailPage and passed in via
-// URL search params (?service=…&duration=…&date=…&time=…). This page
-// only collects what's left:
+// Page title: "Confirm Order" (centered) + ← back. Below, a stacked
+// card layout per founder-approved pattern combo (1A·4A·5A·7A from
+// Aine reference + 2B·3B·6B·8B keeping our patterns):
 //
-//   ┌─────────────────────────────────────────────┐
-//   │  [avatar] Mai · ★4.7                    EDIT│  Therapist header
-//   │           Today · 17:00 · Thai 60min        │
-//   ├─────────────────────────────────────────────┤
-//   │  ADDRESS                                    │
-//   │  📍 Tap to set your location          ›     │
-//   │                                             │
-//   │  PHONE NUMBER                               │
-//   │  +66 [────────────────────]                 │
-//   │                                             │
-//   │  PREFERRED LANGUAGE                         │
-//   │  [🇨🇳 中文] [🇬🇧 English] [🇯🇵 日本語] [🇰🇷 한국어]
-//   │                                             │
-//   │  OPTIONAL ADD-ONS                           │
-//   │  ☐ Hot stone therapy            +฿400      │
-//   │  ☐ Premium oil upgrade          +฿200      │
-//   │  ☐ Pair booking                 +฿2,500    │
-//   │                                             │
-//   │  NOTES FOR MAI (optional)                   │
-//   │  [textarea ──────────────────────]          │
-//   │                                             │
-//   │  Service                          ฿1,800   │
-//   │  Add-ons                          ฿0       │
-//   │  🚖 Taxi (round-trip)              —       │
-//   │  Total                          ฿1,800     │
-//   └─────────────────────────────────────────────┘
-//   [ ← back ]  [ Place Order · ฿1,800 ]   ← sticky
+//   ┌─ Confirm Order ─────────────────────────────┐
+//   │                                              │
+//   │  📍 Address tile  (tap → Location sheet)     │
+//   │                                              │
+//   │  📑 Order Details                            │
+//   │  [avatar] Mai · ★4.7 (29 reviews)  EDIT      │
+//   │           Today · 17:00                      │
+//   │  ─────────                                   │
+//   │  Thai Massage              90 min · ฿1,800   │
+//   │                                              │
+//   │  📞 Phone Number  (inline input)             │
+//   │                                              │
+//   │  🌐 Preferred language   ›   (sheet cell)    │
+//   │  ➕ Add-ons              ›   (sheet cell)    │
+//   │  💳 Payment method       ›   (sheet cell)    │
+//   │                                              │
+//   │  📝 Notes for {name}  (inline textarea)      │
+//   │                                              │
+//   │  💵 Pricing                                  │
+//   │  Service fee                       ฿1,800    │
+//   │  Travel fee ⓘ                      ฿0        │
+//   │     ✓ Within free distance (4km)             │
+//   │  Total                             ฿1,800    │
+//   │                                              │
+//   │  Cancellation: free up to 30 min …           │
+//   └──────────────────────────────────────────────┘
+//   ┌─ Sticky bottom: TOTAL ฿1,800   [Confirm] ─┐
 //
-// Taxi fare is gated — shows "—" until the customer picks a location.
-// All inputs persist locally; submit fires Firestore addDoc + redirects
-// to /booking/success/:id.
+// Booking submission writes the same Firestore booking schema as before;
+// only the visual layout changes.
 
 import React, { useState, useMemo } from "react";
-import { Box, Typography, TextField, IconButton } from "@mui/material";
+import {
+  Box,
+  Typography,
+  TextField,
+  IconButton,
+  Tooltip,
+  Button,
+} from "@mui/material";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
@@ -50,22 +55,29 @@ import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
+import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
-import BookingNavBar from "@/components/booking/BookingNavBar";
 import LocationSheet from "@/components/booking/LocationSheet";
-import PaymentPicker, {
-  type PaymentMethod,
-} from "@/components/booking/PaymentPicker";
+import LanguageSheet from "@/components/booking/LanguageSheet";
+import AddonsSheet from "@/components/booking/AddonsSheet";
+import PaymentSheet from "@/components/booking/PaymentSheet";
+import SelectionCell from "@/components/booking/SelectionCell";
+import type { PaymentMethod } from "@/components/booking/PaymentPicker";
 
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import { isInappropriate } from "@/utils/moderate";
-import { estimateTaxiFare } from "@/utils/taxiFare";
+import { estimateTaxiFare, FREE_DISTANCE_KM } from "@/utils/taxiFare";
 import { priceForDuration, formatTHB } from "@/utils/servicePricing";
 import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
 import services from "@/data/services";
 import therapistsData from "@/data/therapists";
-import { ADDONS, LANGUAGE_OPTIONS } from "@/data/bookingExtras";
+import {
+  ADDONS,
+  LANGUAGE_OPTIONS,
+  type AddOn,
+} from "@/data/bookingExtras";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -81,8 +93,8 @@ export interface BookingFormState {
   lng: number | null;
   addressDetails: string;
   customerPhone: string;
-  language: string; // language code "zh" | "en" | "ja" | "ko"
-  selectedAddons: string[]; // ADDON ids
+  language: string;
+  selectedAddons: string[];
   notes: string;
   paymentMethod: PaymentMethod | null;
   therapistId: string | null;
@@ -113,7 +125,7 @@ const BookingFlowPage: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
 
-  // Pre-fill from URL params (DetailPage StickyBookCTA forwards these)
+  // ── Pre-fill from URL params (DetailPage StickyBookCTA forwards these)
   const preService = searchParams.get("service");
   const preDuration = searchParams.get("duration");
   const preDate = searchParams.get("date");
@@ -121,7 +133,13 @@ const BookingFlowPage: React.FC = () => {
 
   const [submitting, setSubmitting] = useState(false);
   const [phoneTouched, setPhoneTouched] = useState(false);
-  const [locationSheetOpen, setLocationSheetOpen] = useState(false);
+
+  // Sheet open states
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
+  const [addonsOpen, setAddonsOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
+
   const [form, setForm] = useState<BookingFormState>({
     ...initialFormState,
     therapistId: therapistId ?? null,
@@ -131,7 +149,7 @@ const BookingFlowPage: React.FC = () => {
     time: preTime ?? null,
   });
 
-  // ── Resolve therapist + service for header + summary
+  // ── Resolved entities
   const therapist = useMemo(
     () => therapistsData.find((tt) => tt.id === form.therapistId) ?? null,
     [form.therapistId]
@@ -140,18 +158,19 @@ const BookingFlowPage: React.FC = () => {
     () => services.find((s) => s.id === form.serviceId) ?? null,
     [form.serviceId]
   );
+  const selectedAddons = useMemo<AddOn[]>(
+    () => ADDONS.filter((a) => form.selectedAddons.includes(a.id)),
+    [form.selectedAddons]
+  );
+  const selectedLanguage = LANGUAGE_OPTIONS.find((l) => l.code === form.language);
 
   // ── Pricing
   const servicePrice =
     service && form.duration
       ? priceForDuration(service, form.duration)
       : service?.price ?? 0;
-  const addonsTotal = ADDONS.filter((a) =>
-    form.selectedAddons.includes(a.id)
-  ).reduce((sum, a) => sum + a.price, 0);
+  const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.price, 0);
 
-  // 🚖 Taxi — gated on a real location being picked. Per founder request:
-  //    "ตอนยังไม่จองจะยังไม่คิด หลังจากทราบตำแหน่งจะคำนวนแท็กซี่"
   const locationSet = form.lat != null && form.lng != null;
   const { distanceKm, fare: taxiFare } = locationSet
     ? estimateTaxiFare({
@@ -165,7 +184,7 @@ const BookingFlowPage: React.FC = () => {
 
   const total = servicePrice + addonsTotal + taxiFare;
 
-  // ── Validation: ready to place order
+  // ── Validation
   const phoneValid =
     form.customerPhone.trim().length >= 8 &&
     isValidPhoneNumber(form.customerPhone);
@@ -178,25 +197,14 @@ const BookingFlowPage: React.FC = () => {
     phoneValid &&
     !!form.paymentMethod;
 
-  // ── Format header summary line: "Today · 17:00 · Thai 60min"
-  const summaryLine = (() => {
-    const parts: string[] = [];
-    if (form.date) {
-      const d = dayjs(form.date);
-      parts.push(
-        d.isSame(dayjs(), "day")
-          ? "Today"
-          : d.isSame(dayjs().add(1, "day"), "day")
-          ? "Tomorrow"
-          : d.format("MMM D")
-      );
-    }
-    if (form.time) parts.push(form.time);
-    if (service && form.duration) {
-      parts.push(`${service.name} · ${form.duration}min`);
-    }
-    return parts.join(" · ");
-  })();
+  // ── Header summary line
+  const dateLabel = form.date
+    ? dayjs(form.date).isSame(dayjs(), "day")
+      ? "Today"
+      : dayjs(form.date).isSame(dayjs().add(1, "day"), "day")
+      ? "Tomorrow"
+      : dayjs(form.date).format("MMM D")
+    : null;
 
   // ── Submit
   const handleSubmit = async () => {
@@ -219,7 +227,6 @@ const BookingFlowPage: React.FC = () => {
         return;
       }
 
-      // Compose start/end Timestamps (overnight-shift handling)
       let startDate = dayjs(`${form.date}T${form.time}`);
       const startMin =
         parseInt(therapist.startTime.split(":")[0]) * 60 +
@@ -276,373 +283,321 @@ const BookingFlowPage: React.FC = () => {
     }
   };
 
+  // ── Render
   return (
     <Box
       sx={{
         minHeight: "100vh",
         background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
-        // Room for stacked sticky CTA + global BottomNavGlass
         paddingBottom: "210px",
         fontFamily: SANS,
       }}
     >
-      {/* ── Therapist header card ─────────────────────────────────── */}
-      <Box sx={{ padding: "16px 16px 12px" }}>
-        <Box
+      {/* ─────────── Page header ─────────── */}
+      <Box
+        sx={{
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          background: "rgba(255, 248, 240, 0.92)",
+          backdropFilter: "blur(20px) saturate(180%)",
+          WebkitBackdropFilter: "blur(20px) saturate(180%)",
+          borderBottom: "1px solid rgba(0, 0, 0, 0.04)",
+          display: "flex",
+          alignItems: "center",
+          padding: "14px 16px",
+        }}
+      >
+        <IconButton
+          aria-label="back"
+          onClick={() => void navigate(-1)}
           sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            padding: "14px",
-            borderRadius: "18px",
+            width: 36,
+            height: 36,
             background: "rgba(255, 255, 255, 0.7)",
-            backdropFilter: "blur(20px) saturate(180%)",
-            WebkitBackdropFilter: "blur(20px) saturate(180%)",
-            border: "1px solid rgba(255, 255, 255, 0.6)",
-            boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
+            border: "1px solid rgba(0, 0, 0, 0.06)",
+            color: "#3c1e14",
+            "&:hover": { background: "rgba(255, 255, 255, 0.9)" },
           }}
         >
-          {/* Avatar */}
+          <ArrowBackRoundedIcon fontSize="small" />
+        </IconButton>
+        <Typography
+          component="h1"
+          sx={{
+            flex: 1,
+            textAlign: "center",
+            fontFamily: SERIF,
+            fontSize: "18px",
+            fontWeight: 600,
+            color: "#3c1e14",
+            letterSpacing: "-0.01em",
+            marginRight: "36px", // visual balance for the left icon button
+          }}
+        >
+          Confirm Order
+        </Typography>
+      </Box>
+
+      <Box
+        sx={{
+          padding: "16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "14px",
+        }}
+      >
+        {/* ─────────── Address tile ─────────── */}
+        <AddressTile
+          location={{
+            name: form.locationName,
+            address: form.locationAddress,
+            addressDetails: form.addressDetails,
+            hasCoords: locationSet,
+          }}
+          onTap={() => setLocationOpen(true)}
+        />
+
+        {/* ─────────── Order Details card (pattern 4A) ─────────── */}
+        <SectionCard label="Order Details" icon="📑">
+          {/* Therapist row + EDIT */}
           <Box
             sx={{
-              width: 48,
-              height: 48,
-              flexShrink: 0,
-              borderRadius: "50%",
-              background: therapist?.image
-                ? `center / cover no-repeat url("${therapist.image}"), linear-gradient(135deg, #d4a574, #8b6f47)`
-                : "linear-gradient(135deg, #d4a574, #8b6f47)",
-              border: "2px solid #fff",
-              boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              marginBottom: "12px",
             }}
-          />
-          {/* Name + summary */}
-          <Box sx={{ flex: 1, minWidth: 0 }}>
+          >
             <Box
               sx={{
-                display: "flex",
-                alignItems: "baseline",
-                gap: "8px",
-                marginBottom: "2px",
+                width: 56,
+                height: 56,
+                flexShrink: 0,
+                borderRadius: "50%",
+                background: therapist?.image
+                  ? `center / cover no-repeat url("${therapist.image}"), linear-gradient(135deg, #d4a574, #8b6f47)`
+                  : "linear-gradient(135deg, #d4a574, #8b6f47)",
+                border: "2px solid #fff",
+                boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
               }}
-            >
+            />
+            <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography
                 sx={{
                   fontFamily: SERIF,
                   fontSize: "16px",
                   fontWeight: 600,
                   color: "#3c1e14",
-                  lineHeight: 1.1,
+                  lineHeight: 1.2,
                 }}
               >
                 {therapist?.name ?? "Therapist"}
               </Typography>
-              <Typography
-                component="span"
+              <Box
                 sx={{
-                  fontFamily: SANS,
-                  fontSize: "11.5px",
-                  color: "rgba(60, 30, 20, 0.7)",
-                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  marginTop: "3px",
                 }}
               >
-                ★{" "}
-                {therapist
-                  ? formatRating(
-                      bayesianRatingFromAggregate(
-                        therapist.rating * (therapist.reviews ?? 0),
-                        therapist.reviews ?? 0
+                <Typography
+                  component="span"
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: "#FE0944",
+                  }}
+                >
+                  ★{" "}
+                  {therapist
+                    ? formatRating(
+                        bayesianRatingFromAggregate(
+                          therapist.rating * (therapist.reviews ?? 0),
+                          therapist.reviews ?? 0
+                        )
                       )
-                    )
-                  : "—"}
+                    : "—"}
+                </Typography>
+                <Typography
+                  component="span"
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: "11.5px",
+                    color: "rgba(60, 30, 20, 0.6)",
+                  }}
+                >
+                  ({therapist?.reviews ?? 0} reviews)
+                </Typography>
+              </Box>
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "11px",
+                  color: "rgba(60, 30, 20, 0.55)",
+                  marginTop: "2px",
+                }}
+              >
+                {dateLabel && form.time
+                  ? `${dateLabel} · ${form.time}`
+                  : "Pick date & time on the detail page"}
               </Typography>
             </Box>
-            <Typography
-              sx={{
-                fontFamily: SANS,
-                fontSize: "12px",
-                color: "rgba(60, 30, 20, 0.6)",
-                lineHeight: 1.3,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {summaryLine || "Tap EDIT to pick a service & time"}
-            </Typography>
-          </Box>
-          {/* EDIT — back to detail page to change service/date/time */}
-          <IconButton
-            aria-label="edit"
-            onClick={() =>
-              void navigate(`/therapists/${form.therapistId ?? ""}`)
-            }
-            sx={{
-              flexShrink: 0,
-              color: "#FE0944",
-              fontFamily: SANS,
-              fontSize: "11px",
-              fontWeight: 800,
-              borderRadius: "10px",
-              padding: "6px 10px",
-              gap: "4px",
-              "&:hover": { background: "rgba(254, 9, 68, 0.08)" },
-            }}
-          >
-            <EditRoundedIcon fontSize="small" />
-            <Typography
-              component="span"
+            <Button
+              size="small"
+              onClick={() =>
+                void navigate(`/therapists/${form.therapistId ?? ""}`)
+              }
+              startIcon={<EditRoundedIcon sx={{ fontSize: "14px !important" }} />}
               sx={{
                 fontFamily: SANS,
                 fontSize: "11px",
                 fontWeight: 800,
+                color: "#FE0944",
                 letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                background: "rgba(254, 9, 68, 0.08)",
+                borderRadius: "10px",
+                padding: "4px 10px",
+                "&:hover": { background: "rgba(254, 9, 68, 0.14)" },
               }}
             >
-              EDIT
-            </Typography>
-          </IconButton>
-        </Box>
-      </Box>
+              Edit
+            </Button>
+          </Box>
 
-      {/* ── Form sections ─────────────────────────────────────────── */}
-      <Box sx={{ padding: "8px 16px", display: "flex", flexDirection: "column", gap: "20px" }}>
-        {/* Address tile */}
-        <FormSection label="Address">
-          <AddressTile
-            location={{
-              name: form.locationName,
-              address: form.locationAddress,
-              addressDetails: form.addressDetails,
-              hasCoords: locationSet,
+          {/* Service summary row */}
+          <Box
+            sx={{
+              borderTop: "1px solid rgba(0, 0, 0, 0.06)",
+              paddingTop: "12px",
+              display: "flex",
+              alignItems: "baseline",
+              justifyContent: "space-between",
+              gap: "12px",
             }}
-            onTap={() => setLocationSheetOpen(true)}
-          />
-        </FormSection>
-
-        {/* Phone */}
-        <FormSection label="Phone number">
-          <Box>
-            <PhoneInput
-              international
-              defaultCountry="TH"
-              value={form.customerPhone || undefined}
-              onChange={(val) =>
-                setForm((p) => ({ ...p, customerPhone: val ?? "" }))
-              }
-              onBlur={() => setPhoneTouched(true)}
-              placeholder="Enter phone number"
-              className={
-                phoneTouched && form.customerPhone && !phoneValid
-                  ? "PhoneInput--invalid"
-                  : undefined
-              }
-            />
-            <PhoneStyleInjector />
-            {phoneTouched && form.customerPhone && !phoneValid && (
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                sx={{
+                  fontFamily: SERIF,
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  color: "#3c1e14",
+                }}
+              >
+                {service?.name ?? "—"}
+              </Typography>
               <Typography
                 sx={{
                   fontFamily: SANS,
                   fontSize: "11.5px",
-                  color: "#FE0944",
-                  marginTop: "6px",
-                  paddingLeft: "8px",
+                  color: "rgba(60, 30, 20, 0.6)",
+                  marginTop: "2px",
                 }}
               >
-                Please enter a valid phone number with country code
+                {form.duration ? `${form.duration} mins` : "—"}
               </Typography>
-            )}
+            </Box>
+            <Typography
+              sx={{
+                fontFamily: SERIF,
+                fontSize: "18px",
+                fontWeight: 700,
+                color: "#3c1e14",
+                letterSpacing: "-0.02em",
+                flexShrink: 0,
+              }}
+            >
+              {formatTHB(servicePrice)}
+            </Typography>
           </Box>
-        </FormSection>
+        </SectionCard>
 
-        {/* Language */}
-        <FormSection label="Preferred language with therapist">
-          <Box
-            role="radiogroup"
-            sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}
-          >
-            {LANGUAGE_OPTIONS.map((l) => {
-              const isActive = form.language === l.code;
-              return (
-                <Box
-                  key={l.code}
-                  role="radio"
-                  aria-checked={isActive}
-                  tabIndex={0}
-                  onClick={() =>
-                    setForm((p) => ({ ...p, language: l.code }))
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === " " || e.key === "Enter") {
-                      e.preventDefault();
-                      setForm((p) => ({ ...p, language: l.code }));
-                    }
-                  }}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    padding: "12px 14px",
-                    borderRadius: "12px",
-                    cursor: "pointer",
-                    background: isActive
-                      ? "rgba(254, 9, 68, 0.08)"
-                      : "rgba(255, 255, 255, 0.7)",
-                    border: isActive
-                      ? "1.5px solid #FE0944"
-                      : "1px solid rgba(0, 0, 0, 0.06)",
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  <Box sx={{ fontSize: "16px" }}>{l.flag}</Box>
-                  <Typography
-                    sx={{
-                      fontFamily: SANS,
-                      fontSize: "13.5px",
-                      fontWeight: 600,
-                      color: isActive ? "#FE0944" : "#3c1e14",
-                    }}
-                  >
-                    {l.label}
-                  </Typography>
-                </Box>
-              );
-            })}
-          </Box>
-        </FormSection>
+        {/* ─────────── Phone (inline) ─────────── */}
+        <SectionCard label="Phone Number" icon="📞" tight>
+          <PhoneInput
+            international
+            defaultCountry="TH"
+            value={form.customerPhone || undefined}
+            onChange={(val) =>
+              setForm((p) => ({ ...p, customerPhone: val ?? "" }))
+            }
+            onBlur={() => setPhoneTouched(true)}
+            placeholder="Enter phone number"
+            className={
+              phoneTouched && form.customerPhone && !phoneValid
+                ? "PhoneInput--invalid"
+                : undefined
+            }
+          />
+          <PhoneStyleInjector />
+          {phoneTouched && form.customerPhone && !phoneValid && (
+            <Typography
+              sx={{
+                fontFamily: SANS,
+                fontSize: "11.5px",
+                color: "#FE0944",
+                marginTop: "6px",
+                paddingLeft: "8px",
+              }}
+            >
+              Please enter a valid phone number with country code
+            </Typography>
+          )}
+        </SectionCard>
 
-        {/* Add-ons */}
-        <FormSection label="Optional add-ons">
-          <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {ADDONS.map((a) => {
-              const isSelected = form.selectedAddons.includes(a.id);
-              return (
-                <Box
-                  key={a.id}
-                  role="checkbox"
-                  aria-checked={isSelected}
-                  tabIndex={0}
-                  onClick={() =>
-                    setForm((p) => ({
-                      ...p,
-                      selectedAddons: isSelected
-                        ? p.selectedAddons.filter((x) => x !== a.id)
-                        : [...p.selectedAddons, a.id],
-                    }))
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === " " || e.key === "Enter") {
-                      e.preventDefault();
-                      setForm((p) => ({
-                        ...p,
-                        selectedAddons: isSelected
-                          ? p.selectedAddons.filter((x) => x !== a.id)
-                          : [...p.selectedAddons, a.id],
-                      }));
-                    }
-                  }}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    padding: "12px 14px",
-                    borderRadius: "14px",
-                    cursor: "pointer",
-                    background: "rgba(255, 255, 255, 0.7)",
-                    border: isSelected
-                      ? "1.5px solid #FE0944"
-                      : "1px solid rgba(0, 0, 0, 0.06)",
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 36,
-                      height: 36,
-                      flexShrink: 0,
-                      borderRadius: "10px",
-                      background: isSelected
-                        ? "linear-gradient(135deg, #FE0944, #FE7A52)"
-                        : "rgba(254, 201, 167, 0.35)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "18px",
-                    }}
-                  >
-                    {a.icon}
-                  </Box>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography
-                      sx={{
-                        fontFamily: SERIF,
-                        fontSize: "13.5px",
-                        fontWeight: 600,
-                        color: "#3c1e14",
-                        lineHeight: 1.2,
-                      }}
-                    >
-                      {a.name}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontFamily: SANS,
-                        fontSize: "11.5px",
-                        color: "rgba(60, 30, 20, 0.6)",
-                        marginTop: "2px",
-                      }}
-                    >
-                      {a.description}
-                    </Typography>
-                  </Box>
-                  <Typography
-                    sx={{
-                      fontFamily: SERIF,
-                      fontSize: "14px",
-                      fontWeight: 700,
-                      color: "#FE0944",
-                      flexShrink: 0,
-                    }}
-                  >
-                    +{formatTHB(a.price)}
-                  </Typography>
-                  <Box
-                    aria-hidden
-                    sx={{
-                      width: 22,
-                      height: 22,
-                      flexShrink: 0,
-                      borderRadius: "6px",
-                      border: isSelected
-                        ? "none"
-                        : "2px solid rgba(0, 0, 0, 0.2)",
-                      background: isSelected ? "#FE0944" : "transparent",
-                      color: "#fff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "14px",
-                      fontWeight: 800,
-                    }}
-                  >
-                    {isSelected && "✓"}
-                  </Box>
-                </Box>
-              );
-            })}
-          </Box>
-        </FormSection>
+        {/* ─────────── Selection cells (Language / Add-ons / Payment) ─────────── */}
+        <SelectionCell
+          label="Preferred language"
+          icon={selectedLanguage?.flag ?? "🌐"}
+          value={selectedLanguage?.label ?? "Pick a language"}
+          filled={!!selectedLanguage}
+          onClick={() => setLanguageOpen(true)}
+        />
 
-        {/* Notes */}
-        <FormSection
+        <SelectionCell
+          label="Optional add-ons"
+          icon="➕"
+          value={
+            selectedAddons.length === 0
+              ? "None selected"
+              : selectedAddons.length === 1
+              ? selectedAddons[0].name
+              : `${selectedAddons.length} add-ons`
+          }
+          hint={
+            addonsTotal > 0 ? `+${formatTHB(addonsTotal)}` : undefined
+          }
+          filled={selectedAddons.length > 0}
+          onClick={() => setAddonsOpen(true)}
+        />
+
+        <SelectionCell
+          label="Payment method"
+          icon="💳"
+          value={
+            form.paymentMethod
+              ? PAYMENT_LABELS[form.paymentMethod]
+              : "Pick a payment method"
+          }
+          filled={!!form.paymentMethod}
+          onClick={() => setPaymentOpen(true)}
+        />
+
+        {/* ─────────── Notes (inline) ─────────── */}
+        <SectionCard
           label={`Notes for ${therapist?.name ?? "your therapist"} (optional)`}
+          icon="📝"
         >
           <TextField
             fullWidth
             multiline
             minRows={3}
             maxRows={6}
-            placeholder="e.g. Focus on lower back, prefer firm pressure, allergies, mobility limitations…"
+            placeholder="e.g. Focus on lower back, prefer firm pressure…"
             value={form.notes}
             onChange={(e) =>
               setForm((p) => ({ ...p, notes: e.target.value }))
@@ -651,7 +606,7 @@ const BookingFlowPage: React.FC = () => {
             sx={{
               "& .MuiOutlinedInput-root": {
                 background: "rgba(255, 255, 255, 0.7)",
-                borderRadius: "14px",
+                borderRadius: "12px",
                 fontFamily: SANS,
                 fontSize: "13.5px",
                 "& fieldset": { borderColor: "rgba(0, 0, 0, 0.08)" },
@@ -673,53 +628,100 @@ const BookingFlowPage: React.FC = () => {
               textAlign: "right",
             }}
           >
-            {form.notes.length}/500 · Reviewed for safety before delivery
+            {form.notes.length}/500
           </Typography>
-        </FormSection>
+        </SectionCard>
 
-        {/* Payment method */}
-        <FormSection label="Payment method">
-          <PaymentPicker
-            value={form.paymentMethod}
-            onChange={(paymentMethod) =>
-              setForm((p) => ({ ...p, paymentMethod }))
-            }
-          />
-        </FormSection>
-
-        {/* Price breakdown */}
-        <Box
-          sx={{
-            padding: "16px 18px",
-            borderRadius: "16px",
-            background: "rgba(255, 255, 255, 0.7)",
-            border: "1px solid rgba(255, 255, 255, 0.6)",
-            boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
-          }}
-        >
+        {/* ─────────── Pricing card (pattern 5A) ─────────── */}
+        <SectionCard label="Pricing" icon="💵">
           <PriceRow
-            label={`Service${form.duration ? ` (${form.duration} min)` : ""}`}
+            label={`Service fee${
+              form.duration ? ` · ${form.duration} min` : ""
+            }`}
             value={formatTHB(servicePrice)}
           />
-          {form.selectedAddons.length > 0 && (
+          {selectedAddons.length > 0 && (
             <PriceRow
-              label={`Add-ons (${form.selectedAddons.length})`}
-              value={formatTHB(addonsTotal)}
+              label={`Add-ons (${selectedAddons.length})`}
+              value={`+${formatTHB(addonsTotal)}`}
             />
           )}
-          <PriceRow
-            label={`🚖 Taxi (round-trip${
-              locationSet ? ` · ${distanceKm.toFixed(1)} km` : ""
-            })`}
-            value={
-              locationSet ? formatTHB(taxiFare) : "Set address to calculate"
-            }
-            muted={!locationSet}
-          />
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              marginBottom: "6px",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "13px",
+                  color: "rgba(60, 30, 20, 0.7)",
+                }}
+              >
+                🚖 Travel fee
+              </Typography>
+              <Tooltip
+                title={`Round-trip taxi from therapist's home. Free within ${FREE_DISTANCE_KM} km. Beyond that: 25฿ + 7฿/km + 2฿/min × 2.`}
+                placement="top"
+                arrow
+              >
+                <InfoOutlinedIcon
+                  sx={{
+                    fontSize: 14,
+                    color: "rgba(60, 30, 20, 0.5)",
+                    cursor: "help",
+                  }}
+                />
+              </Tooltip>
+            </Box>
+            <Typography
+              sx={{
+                fontFamily: SANS,
+                fontSize: "13px",
+                fontWeight: 600,
+                color: locationSet
+                  ? taxiFare === 0
+                    ? "#16a34a"
+                    : "#3c1e14"
+                  : "rgba(60, 30, 20, 0.5)",
+                fontStyle: locationSet ? "normal" : "italic",
+              }}
+            >
+              {locationSet
+                ? taxiFare === 0
+                  ? "FREE"
+                  : formatTHB(taxiFare)
+                : "Set address"}
+            </Typography>
+          </Box>
+          {locationSet && distanceKm <= FREE_DISTANCE_KM && (
+            <Box
+              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+                padding: "5px 10px",
+                marginBottom: "8px",
+                background: "rgba(22, 163, 74, 0.1)",
+                color: "#16a34a",
+                borderRadius: "999px",
+                fontFamily: SANS,
+                fontSize: "11px",
+                fontWeight: 700,
+              }}
+            >
+              ✓ Within free distance ({FREE_DISTANCE_KM} km)
+            </Box>
+          )}
+
           <Box
             sx={{
               borderTop: "1px solid rgba(0, 0, 0, 0.08)",
-              marginTop: "10px",
+              marginTop: "8px",
               paddingTop: "10px",
               display: "flex",
               justifyContent: "space-between",
@@ -734,7 +736,7 @@ const BookingFlowPage: React.FC = () => {
             <Typography
               sx={{
                 fontFamily: SERIF,
-                fontSize: "26px",
+                fontSize: "24px",
                 fontWeight: 700,
                 color: "#FE0944",
                 letterSpacing: "-0.02em",
@@ -757,46 +759,38 @@ const BookingFlowPage: React.FC = () => {
               Total updates when address is set.
             </Typography>
           )}
-        </Box>
+        </SectionCard>
 
-        {/* Cancellation policy */}
-        <Box
+        {/* ─────────── Cancellation policy ─────────── */}
+        <Typography
           sx={{
-            padding: "12px 14px",
-            borderRadius: "12px",
-            background: "rgba(0, 0, 0, 0.03)",
             fontFamily: SANS,
+            fontSize: "10.5px",
+            color: "rgba(60, 30, 20, 0.55)",
+            lineHeight: 1.5,
+            padding: "0 8px",
           }}
         >
-          <Typography
-            sx={{
-              fontSize: "11px",
-              color: "rgba(60, 30, 20, 0.6)",
-              lineHeight: 1.5,
-            }}
-          >
-            <Box component="span" sx={{ fontWeight: 700 }}>
-              Cancellation:
-            </Box>{" "}
-            Free up to 30 minutes before booking time. After that, 50% of the
-            service fee.
-          </Typography>
-        </Box>
+          <Box component="span" sx={{ fontWeight: 700 }}>
+            Cancellation:
+          </Box>{" "}
+          Free up to 30 minutes before booking time. After that, 50% of the
+          service fee.
+        </Typography>
       </Box>
 
-      {/* ── Sticky bottom CTA ─────────────────────────────────────── */}
-      <BookingNavBar
-        ctaLabel={`Place Order · ${formatTHB(total)}`}
-        onNext={() => void handleSubmit()}
-        onBack={() => void navigate(-1)}
-        disabled={!canPlaceOrder || submitting}
-        loading={submitting}
+      {/* ─────────── Sticky bottom (pattern 7A: Total left + Confirm right) ─────────── */}
+      <ConfirmBar
+        total={total}
+        canPlace={canPlaceOrder}
+        submitting={submitting}
+        onConfirm={() => void handleSubmit()}
       />
 
-      {/* ── Address bottom sheet ──────────────────────────────────── */}
+      {/* ─────────── Sheets ─────────── */}
       <LocationSheet
-        open={locationSheetOpen}
-        onClose={() => setLocationSheetOpen(false)}
+        open={locationOpen}
+        onClose={() => setLocationOpen(false)}
         initial={{
           locationName: form.locationName,
           locationAddress: form.locationAddress,
@@ -806,7 +800,34 @@ const BookingFlowPage: React.FC = () => {
         }}
         onConfirm={(next) => {
           setForm((p) => ({ ...p, ...next }));
-          setLocationSheetOpen(false);
+          setLocationOpen(false);
+        }}
+      />
+      <LanguageSheet
+        open={languageOpen}
+        onClose={() => setLanguageOpen(false)}
+        value={form.language}
+        onConfirm={(code) => {
+          setForm((p) => ({ ...p, language: code }));
+          setLanguageOpen(false);
+        }}
+      />
+      <AddonsSheet
+        open={addonsOpen}
+        onClose={() => setAddonsOpen(false)}
+        value={form.selectedAddons}
+        onConfirm={(next) => {
+          setForm((p) => ({ ...p, selectedAddons: next }));
+          setAddonsOpen(false);
+        }}
+      />
+      <PaymentSheet
+        open={paymentOpen}
+        onClose={() => setPaymentOpen(false)}
+        value={form.paymentMethod}
+        onConfirm={(m) => {
+          setForm((p) => ({ ...p, paymentMethod: m }));
+          setPaymentOpen(false);
         }}
       />
     </Box>
@@ -817,34 +838,58 @@ const BookingFlowPage: React.FC = () => {
 // Helpers
 // ─────────────────────────────────────────────────────────────────────
 
-const FormSection: React.FC<{ label: string; children: React.ReactNode }> = ({
-  label,
-  children,
-}) => (
-  <Box>
-    <Typography
+const PAYMENT_LABELS: Record<PaymentMethod, string> = {
+  card: "Credit / Debit Card",
+  wechat: "WeChat Pay",
+  alipay: "AliPay",
+  promptpay: "PromptPay",
+  cash: "Cash",
+};
+
+// Card with eyebrow label + emoji icon (Order Details / Pricing / etc.)
+const SectionCard: React.FC<{
+  label: string;
+  icon?: string;
+  tight?: boolean;
+  children: React.ReactNode;
+}> = ({ label, icon, tight, children }) => (
+  <Box
+    sx={{
+      padding: tight ? "14px 14px 16px" : "14px 16px 18px",
+      borderRadius: "16px",
+      background: "rgba(255, 255, 255, 0.7)",
+      border: "1px solid rgba(255, 255, 255, 0.6)",
+      boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
+    }}
+  >
+    <Box
       sx={{
-        fontFamily: SANS,
-        fontSize: "10.5px",
-        fontWeight: 800,
-        color: "rgba(60, 30, 20, 0.55)",
-        textTransform: "uppercase",
-        letterSpacing: "0.1em",
-        marginBottom: "8px",
-        paddingLeft: "2px",
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        marginBottom: "12px",
       }}
     >
-      {label}
-    </Typography>
+      {icon && <Box sx={{ fontSize: "16px", lineHeight: 1 }}>{icon}</Box>}
+      <Typography
+        sx={{
+          fontFamily: SERIF,
+          fontSize: "15px",
+          fontWeight: 600,
+          color: "#3c1e14",
+        }}
+      >
+        {label}
+      </Typography>
+    </Box>
     {children}
   </Box>
 );
 
-const PriceRow: React.FC<{
-  label: string;
-  value: React.ReactNode;
-  muted?: boolean;
-}> = ({ label, value, muted }) => (
+const PriceRow: React.FC<{ label: string; value: React.ReactNode }> = ({
+  label,
+  value,
+}) => (
   <Box
     sx={{
       display: "flex",
@@ -857,7 +902,7 @@ const PriceRow: React.FC<{
       sx={{
         fontFamily: SANS,
         fontSize: "13px",
-        color: muted ? "rgba(60, 30, 20, 0.5)" : "rgba(60, 30, 20, 0.7)",
+        color: "rgba(60, 30, 20, 0.7)",
       }}
     >
       {label}
@@ -867,8 +912,7 @@ const PriceRow: React.FC<{
         fontFamily: SANS,
         fontSize: "13px",
         fontWeight: 600,
-        color: muted ? "rgba(60, 30, 20, 0.5)" : "#3c1e14",
-        fontStyle: muted ? "italic" : "normal",
+        color: "#3c1e14",
       }}
     >
       {value}
@@ -876,7 +920,7 @@ const PriceRow: React.FC<{
   </Box>
 );
 
-// Inline address tile shown on the form (tap → bottom sheet)
+// Address tile (top of form)
 const AddressTile: React.FC<{
   location: {
     name: string | null;
@@ -987,8 +1031,92 @@ const AddressTile: React.FC<{
   </Box>
 );
 
-// Scoped CSS injector for react-phone-number-input — same recipe used in
-// the legacy StepDetails (kept here so this single-page form is self-contained).
+// Sticky bottom — Total left + Confirm right (pattern 7A)
+const ConfirmBar: React.FC<{
+  total: number;
+  canPlace: boolean;
+  submitting: boolean;
+  onConfirm: () => void;
+}> = ({ total, canPlace, submitting, onConfirm }) => (
+  <Box
+    sx={{
+      position: "fixed",
+      bottom: "calc(100px + env(safe-area-inset-bottom, 0px))",
+      left: "50%",
+      transform: "translateX(-50%)",
+      width: "100%",
+      maxWidth: "430px",
+      zIndex: 50,
+      background: "rgba(255, 248, 240, 0.92)",
+      backdropFilter: "blur(30px) saturate(180%)",
+      WebkitBackdropFilter: "blur(30px) saturate(180%)",
+      borderTop: "1px solid rgba(0, 0, 0, 0.06)",
+      borderRadius: "20px 20px 0 0",
+      padding: "12px 16px",
+      display: "flex",
+      alignItems: "center",
+      gap: "12px",
+      boxShadow: "0 -8px 24px rgba(126, 30, 46, 0.08)",
+    }}
+  >
+    <Box>
+      <Typography
+        sx={{
+          fontFamily: SANS,
+          fontSize: "10px",
+          fontWeight: 700,
+          color: "rgba(60, 30, 20, 0.55)",
+          textTransform: "uppercase",
+          letterSpacing: "0.08em",
+        }}
+      >
+        Total
+      </Typography>
+      <Typography
+        sx={{
+          fontFamily: SERIF,
+          fontSize: "22px",
+          fontWeight: 700,
+          color: "#FE0944",
+          letterSpacing: "-0.02em",
+          lineHeight: 1,
+          marginTop: "2px",
+        }}
+      >
+        {formatTHB(total)}
+      </Typography>
+    </Box>
+    <Button
+      onClick={onConfirm}
+      disabled={!canPlace || submitting}
+      sx={{
+        flex: 1,
+        height: 50,
+        borderRadius: "999px",
+        background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+        color: "#fff",
+        fontFamily: SANS,
+        fontSize: "15px",
+        fontWeight: 700,
+        letterSpacing: "0.02em",
+        textTransform: "none",
+        boxShadow: "0 6px 20px rgba(254, 9, 68, 0.35)",
+        "&:hover": {
+          background: "linear-gradient(135deg, #E50840, #E56A47)",
+        },
+        "&.Mui-disabled": {
+          background: "rgba(0, 0, 0, 0.12)",
+          color: "rgba(0, 0, 0, 0.35)",
+          boxShadow: "none",
+        },
+      }}
+    >
+      {submitting ? "..." : "Confirm"}
+    </Button>
+  </Box>
+);
+
+// Scoped CSS injector for react-phone-number-input
 const PhoneStyleInjector: React.FC = () => {
   React.useEffect(() => {
     const id = "sunred-phone-style";
@@ -999,7 +1127,7 @@ const PhoneStyleInjector: React.FC = () => {
       .PhoneInput {
         background: rgba(255, 255, 255, 0.7);
         border: 1px solid rgba(0, 0, 0, 0.08);
-        border-radius: 14px;
+        border-radius: 12px;
         padding: 12px 14px;
         font-family: 'Inter', sans-serif;
         font-size: 13.5px;

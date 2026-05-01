@@ -16,6 +16,12 @@ const PER_KM = 7;           // baht per km
 const PER_MIN = 2;          // baht per session-min (proxy for driver wait)
 
 /**
+ * Distance threshold under which we waive the travel fee entirely.
+ * Confirmed with founder 2026-05-01 — short trips ride free.
+ */
+export const FREE_DISTANCE_KM = 4;
+
+/**
  * Haversine distance in kilometers between two lat/lng pairs.
  */
 export function haversineKm(
@@ -37,8 +43,11 @@ export function haversineKm(
 
 /**
  * Round-trip taxi fare (baht). Matches legacy `calculateGrabFare(...) × 2`.
+ * Returns 0 when the distance is under FREE_DISTANCE_KM (4 km) — short
+ * trips are subsidised so the surcharge doesn't deter nearby bookings.
  */
 export function calcTaxiFare(distanceKm: number, sessionMin: number): number {
+  if (distanceKm <= FREE_DISTANCE_KM) return 0;
   const oneWay = BASE_FARE + distanceKm * PER_KM + sessionMin * PER_MIN;
   return Math.max(0, Math.round(oneWay * 2));
 }
