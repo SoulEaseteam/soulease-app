@@ -48,6 +48,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import { isInappropriate } from "@/utils/moderate";
 import { estimateTaxiFare } from "@/utils/taxiFare";
+import { priceForDuration } from "@/utils/servicePricing";
 import services from "@/data/services";
 import therapistsData from "@/data/therapists";
 
@@ -208,7 +209,12 @@ const BookingFlowPage: React.FC = () => {
         customerLng: form.lng,
         durationMin: form.duration ?? service.duration,
       });
-      const totalPrice = service.price + taxiFee;
+      // Service price scales with chosen duration (60/90/120 multipliers).
+      const servicePrice = priceForDuration(
+        service,
+        form.duration ?? service.duration
+      );
+      const totalPrice = servicePrice + taxiFee;
 
       const ref = await addDoc(collection(db, "bookings"), {
         userId: user?.uid ?? null,
@@ -216,7 +222,8 @@ const BookingFlowPage: React.FC = () => {
         therapistName: therapist?.name ?? null,
         serviceId: service.id,
         serviceName: service.name,
-        servicePrice: service.price,
+        servicePrice,
+        basePrice: service.price, // canonical 60-min price for analytics
         duration: form.duration ?? service.duration,
         date: form.date,
         time: form.time,
@@ -327,6 +334,7 @@ const BookingFlowPage: React.FC = () => {
         {step === 1 && (
           <StepService
             value={form.serviceId}
+            selectedDuration={form.duration}
             therapistId={form.therapistId}
             onChange={(serviceId, duration) =>
               setForm((prev) => ({ ...prev, serviceId, duration }))

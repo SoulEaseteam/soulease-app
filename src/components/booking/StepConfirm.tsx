@@ -32,6 +32,7 @@ import PaymentPicker, {
 } from "@/components/booking/PaymentPicker";
 import type { BookingFormState } from "@/pages/booking/BookingFlowPage";
 import { estimateTaxiFare } from "@/utils/taxiFare";
+import { priceForDuration } from "@/utils/servicePricing";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -98,7 +99,12 @@ const StepConfirm: React.FC<Props> = ({ form, onChangePayment }) => {
     durationMin: form.duration,
   });
 
-  const servicePrice = service?.price ?? 0;
+  // Service price reflects the user's chosen duration (60/90/120 min).
+  // Falls back to the canonical 60-min price when duration not yet picked.
+  const servicePrice =
+    service && form.duration
+      ? priceForDuration(service, form.duration)
+      : service?.price ?? 0;
   const total = servicePrice + taxiFare;
 
   return (

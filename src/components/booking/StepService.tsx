@@ -24,10 +24,16 @@
 //   • Outer wrapper is `role="radiogroup"`
 //   • Keyboard: Space/Enter selects
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import services, { type MassageService } from "@/data/services";
 import therapistsData from "@/data/therapists";
+import {
+  startingPrice,
+  durationsFor,
+  formatTHB,
+} from "@/utils/servicePricing";
+import ServiceDurationSheet from "@/components/booking/ServiceDurationSheet";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -35,7 +41,9 @@ const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 interface Props {
   /** Currently selected service id (null when nothing picked yet) */
   value: string | null;
-  /** Called when user taps a card */
+  /** Currently selected duration (so the sheet can pre-highlight it) */
+  selectedDuration: number | null;
+  /** Called after the duration sheet is confirmed */
   onChange: (serviceId: string, duration: number) => void;
   /** If set, only show services the therapist offers */
   therapistId: string | null;
@@ -48,7 +56,12 @@ const BADGE_COLORS: Record<MassageService["badge"], { bg: string; fg: string }> 
   EXCLUSIVE: { bg: "rgba(60, 30, 20, 0.95)", fg: "#FEC9A7" },
 };
 
-const StepService: React.FC<Props> = ({ value, onChange, therapistId }) => {
+const StepService: React.FC<Props> = ({
+  value,
+  selectedDuration,
+  onChange,
+  therapistId,
+}) => {
   // Filter to therapist's offered services if a therapist is preselected.
   // Falls back to ALL services if therapist has no `servicesAvailable` set
   // (legacy data) or therapist not found.
@@ -61,6 +74,19 @@ const StepService: React.FC<Props> = ({ value, onChange, therapistId }) => {
     return filtered.length > 0 ? filtered : services;
   }, [therapistId]);
 
+  // Bottom-sheet state — opens when a card is tapped, closes on backdrop
+  // dismiss or Confirm. Only one service is "in flight" at a time.
+  const [sheetService, setSheetService] = useState<MassageService | null>(null);
+
+  const openSheet = (s: MassageService) => setSheetService(s);
+  const closeSheet = () => setSheetService(null);
+
+  const confirmDuration = (durationMin: number) => {
+    if (!sheetService) return;
+    onChange(sheetService.id, durationMin);
+    setSheetService(null);
+  };
+
   return (
     <Box
       role="radiogroup"
@@ -70,17 +96,19 @@ const StepService: React.FC<Props> = ({ value, onChange, therapistId }) => {
       {visibleServices.map((s) => {
         const isSelected = value === s.id;
         const badgeColor = BADGE_COLORS[s.badge];
+        const fromPrice = startingPrice(s);
+        const tiers = durationsFor(s);
         return (
           <Box
             key={s.id}
             role="radio"
             aria-checked={isSelected}
             tabIndex={0}
-            onClick={() => onChange(s.id, s.duration)}
+            onClick={() => openSheet(s)}
             onKeyDown={(e) => {
               if (e.key === " " || e.key === "Enter") {
                 e.preventDefault();
-                onChange(s.id, s.duration);
+                openSheet(s);
               }
             }}
             sx={{
@@ -179,10 +207,24 @@ const StepService: React.FC<Props> = ({ value, onChange, therapistId }) => {
                 sx={{
                   display: "flex",
                   alignItems: "baseline",
-                  gap: "8px",
+                  gap: "6px",
                   fontFamily: SANS,
+                  flexWrap: "wrap",
                 }}
               >
+                <Typography
+                  component="span"
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    color: "rgba(60, 30, 20, 0.5)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                  }}
+                >
+                  From
+                </Typography>
                 <Typography
                   component="span"
                   sx={{
@@ -193,7 +235,7 @@ const StepService: React.FC<Props> = ({ value, onChange, therapistId }) => {
                     letterSpacing: "-0.02em",
                   }}
                 >
-                  ฿{s.price.toLocaleString()}
+                  {formatTHB(fromPrice)}
                 </Typography>
                 <Typography
                   component="span"
@@ -203,30 +245,73 @@ const StepService: React.FC<Props> = ({ value, onChange, therapistId }) => {
                     fontWeight: 500,
                   }}
                 >
-                  · {s.duration} min
+                  · {tiers.join("/")} min
                 </Typography>
               </Box>
             </Box>
 
-            {/* Radio indicator (right) */}
-            <Box
-              aria-hidden
-              sx={{
-                width: 22,
-                height: 22,
-                flexShrink: 0,
-                alignSelf: "center",
-                borderRadius: "50%",
-                border: isSelected
-                  ? "6px solid #FE0944"
-                  : "2px solid rgba(0, 0, 0, 0.2)",
-                background: isSelected ? "#fff" : "transparent",
-                transition: "all 0.2s ease",
-              }}
-            />
+            {/* Chevron / radio (right) — chevron when not selected,
+                filled radio + selected duration when picked */}
+            {isSelected && selectedDuration ? (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "2px",
+                  flexShrink: 0,
+                }}
+              >
+                <Box
+                  aria-hidden
+                  sx={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: "50%",
+                    border: "6px solid #FE0944",
+                    background: "#fff",
+                  }}
+                />
+                <Typography
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    color: "#FE0944",
+                  }}
+                >
+                  {selectedDuration}m
+                </Typography>
+              </Box>
+            ) : (
+              <Box
+                aria-hidden
+                sx={{
+                  fontSize: "20px",
+                  color: "rgba(60, 30, 20, 0.35)",
+                  flexShrink: 0,
+                  alignSelf: "center",
+                }}
+              >
+                ›
+              </Box>
+            )}
           </Box>
         );
       })}
+
+      {/* Bottom-sheet duration picker — opens on card tap */}
+      <ServiceDurationSheet
+        service={sheetService}
+        initialDuration={
+          sheetService && value === sheetService.id
+            ? selectedDuration ?? undefined
+            : undefined
+        }
+        open={!!sheetService}
+        onClose={closeSheet}
+        onConfirm={confirmDuration}
+      />
 
       {visibleServices.length === 0 && (
         <Typography
