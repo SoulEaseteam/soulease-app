@@ -21,6 +21,11 @@ import services from '../data/services';
 //    services.ts via servicePricing helpers — old hardcoded svc.price
 //    string was untyped + brittle.
 import { startingPrice, formatTHB } from '../utils/servicePricing';
+// 🆕 Round 20: HowItWorks moved out of HomePage (founder: 'ลูกค้าไม่
+//    อ่านเกิน 8 บรรทัด'). Lives here at the top of the HOW TO BOOK tab
+//    as a quick 3-step visual before the detailed FAQ. Curious users
+//    opt-in by tapping the tab — never blocks the booking funnel.
+import HowItWorks from '@/components/home/HowItWorks';
 
 
 const ServicesPage: React.FC = () => {
@@ -365,7 +370,13 @@ const ServicesPage: React.FC = () => {
        </Box>
             )}
             {section === 'how' && (
-              <Box sx={{ px: 4, py: 6 }}>
+              <Box sx={{ py: 4 }}>
+              {/* 🆕 Round 20: 3-step visual relocated from HomePage to here.
+                  Quick scan above the detailed FAQ — keeps HomePage lean
+                  while preserving the explainer for curious users. */}
+              <HowItWorks />
+
+              <Box sx={{ px: 4, pt: 2 }}>
               <Typography fontWeight="bold" textAlign="center" mb={4} sx={{ color: '#3a3420', fontSize: 20 }}>
               • Frequently Asked Questions •
             </Typography>
@@ -600,9 +611,10 @@ While we strive to ensure honest and accurate representation, like any platform,
 >
   <Typography textAlign="center" mt={2} fontSize={14} sx={{ color: '#3a3420aa' }}> 
     Should you require any assistance, please do not hesitate to contact us. </Typography>
-         
+
 </Box>
     </Box>
+  </Box>
   </Box>
 )}
       </Box>

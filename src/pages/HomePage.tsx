@@ -29,13 +29,12 @@ import { useTranslation } from "react-i18next";
 
 import TopNav from "@/components/home/TopNav";
 import HeroSection from "@/components/home/HeroSection";
-import HowItWorks from "@/components/home/HowItWorks";
-// 🆕 Round 18 (founder 2026-05-01): removed sections that duplicate
-//    dedicated pages — ServicesGrid (→ /services / ServicesPage),
-//    Testimonials (→ /review/all/:id / ReviewListPage), FAQ (→ the
-//    How-To-Book FAQ tab on the SunRed about/profile page).
-//    HomePage stays lean as a conversion funnel:
-//      hero → explain → preview therapists → trust → CTA → footer.
+// 🆕 Round 20 (founder 2026-05-01): 'พฤติกรรมลูกค้าไม่อ่านเกิน 8 บรรทัด'.
+//    HowItWorks moved to /services 'HOW TO BOOK' tab so HomePage stays
+//    above-the-fold compact — visitors get straight from hero → therapist
+//    list. The 3-step explanation lives where curious users opt-in.
+//    Round 18 also dropped ServicesGrid (→ /services), Testimonials
+//    (→ /review/all/:id), FAQ (→ /services HOW TO BOOK).
 import FeaturedTherapists from "@/components/home/FeaturedTherapists";
 import TrustSection from "@/components/home/TrustSection";
 import FinalCTA from "@/components/home/FinalCTA";
@@ -82,7 +81,6 @@ const HomePage: React.FC = () => {
     >
       <TopNav />
       <HeroSection />
-      <HowItWorks />
 
       {/* Featured therapists — anchored to #therapist-list so HeroSection's
           CTA can scroll to it. Receives live data from `useTherapists()`;
