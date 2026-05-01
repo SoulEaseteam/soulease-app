@@ -43,6 +43,9 @@ const SelectLocationPage = React.lazy(
 const PaymentMethodsPage = React.lazy(
   () => import("@/pages/booking/PaymentMethodsPage")
 );
+const NotificationsPage = React.lazy(
+  () => import("@/pages/NotificationsPage")
+);
 const BookingHistoryPage = React.lazy(
   () => import("@/pages/BookingHistoryPage")
 );
@@ -187,6 +190,9 @@ export default function App() {
               Opened from the Confirm Order Payment cell. Persists choice
               to localStorage. Admin still confirms via Telegram. */}
           <Route path="/payment-methods" element={<PaymentMethodsPage />} />
+          {/* 🆕 Round 16 (founder 2026-05-01): customer in-app notifications.
+              Reads notifications collection for the signed-in user. */}
+          <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/booking/history" element={<BookingHistoryPage />} />
 
           <Route path="/review/:id" element={<ReviewPage />} />

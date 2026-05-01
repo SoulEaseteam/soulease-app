@@ -32,3 +32,4 @@ functions/lib/
 functions/node_modules/
 dist-electron/
 .firebase/
+.firebase/

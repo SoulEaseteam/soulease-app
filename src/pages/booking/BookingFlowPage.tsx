@@ -55,7 +55,12 @@ import {
   useLocation,
 } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { addDoc, collection, Timestamp } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  Timestamp,
+  serverTimestamp,
+} from "firebase/firestore";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
@@ -442,8 +447,33 @@ const BookingFlowPage: React.FC = () => {
         distanceKm,
         totalPrice: total,
         status: "confirmed",
-        createdAt: Timestamp.now(),
+        // 🆕 Round 16: align with Firestore architecture spec.
+        paymentStatus: "unpaid", // → "paid" once admin confirms via Telegram
+        yearMonth: dayjs(startDate.toDate()).format("YYYY-MM"), // analytics
+        createdAt: serverTimestamp(), // server clock — gracefully handles user device clock skew
       });
+
+      // 🆕 Round 16: write an in-app notification for the customer so the
+      //    /notifications screen has something to show. Fail-open (admin
+      //    flow is unaffected if this write errors out).
+      try {
+        if (user?.uid) {
+          await addDoc(collection(db, "notifications"), {
+            userId: user.uid,
+            type: "bookingConfirmed",
+            title: "Booking confirmed",
+            content: `Your session with ${therapist.name} is set for ${
+              form.date ?? "—"
+            } at ${form.time ?? "—"}.`,
+            link: `/booking/success/${ref.id}`,
+            read: false,
+            priority: "normal",
+            createdAt: serverTimestamp(),
+          });
+        }
+      } catch (notifErr) {
+        console.warn("[booking] in-app notification write failed:", notifErr);
+      }
 
       // 📱 Notify staff via Telegram bot — fail-open (logged on error).
       //    Not awaited; the user shouldn't wait for Telegram on success
