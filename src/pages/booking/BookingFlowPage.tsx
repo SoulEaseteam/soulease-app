@@ -71,6 +71,7 @@ import type { AddressNavState } from "@/pages/booking/SelectLocationPage";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import { isInappropriate } from "@/utils/moderate";
+import { sendBookingNotification } from "@/utils/telegram";
 import {
   estimateTaxiFare,
   FREE_DISTANCE_KM,
@@ -363,6 +364,36 @@ const BookingFlowPage: React.FC = () => {
         totalPrice: total,
         status: "confirmed",
         createdAt: Timestamp.now(),
+      });
+
+      // 📱 Notify staff via Telegram bot — fail-open (logged on error).
+      //    Not awaited; the user shouldn't wait for Telegram on success
+      //    redirect. The Cloud Function persists its own delivery log.
+      void sendBookingNotification({
+        bookingId: ref.id,
+        therapistName: therapist.name,
+        serviceName: service.name,
+        duration: form.duration ?? service.duration,
+        date: form.date,
+        time: form.time,
+        startAt: startDate.toDate(),
+        locationName: form.locationName,
+        address: form.locationAddress,
+        addressDetails: form.addressDetails,
+        contactName: form.contactName,
+        phone: form.customerPhone,
+        note: form.notes,
+        servicePrice,
+        taxiFee: taxiFare,
+        total,
+        distanceKm,
+        payment: form.paymentMethod,
+        language: form.language,
+        addons: selectedAddons.map((a) => ({ name: a.name, price: a.price })),
+        rainTier: taxiResult?.rain.tier ?? "none",
+        meetingPoint: form.meetingPoint,
+        locationType: form.locationType,
+        mapUrl: form.mapUrl,
       });
 
       void navigate(`/booking/success/${ref.id}`);
