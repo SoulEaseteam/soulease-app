@@ -42,20 +42,26 @@ const BookingNavBar: React.FC<Props> = ({
     <Box
       sx={{
         position: "fixed",
-        bottom: 0,
+        // 🪜 Stack above the global BottomNavGlass (sits at bottom: 20px,
+        //    pill ~76px tall = visually occupies 20–96px). Lift this CTA
+        //    to ~100px so the two never overlap on /booking/*.
+        bottom: "calc(100px + env(safe-area-inset-bottom, 0px))",
         left: "50%",
         transform: "translateX(-50%)",
         width: "100%",
         maxWidth: "430px",
         zIndex: 50,
-        background: "rgba(255, 248, 240, 0.85)",
+        background: "rgba(255, 248, 240, 0.92)",
         backdropFilter: "blur(30px) saturate(180%)",
         WebkitBackdropFilter: "blur(30px) saturate(180%)",
         borderTop: "1px solid rgba(0, 0, 0, 0.06)",
-        padding: "12px 16px calc(12px + env(safe-area-inset-bottom, 0px))",
+        // Rounded so it reads as a floating pill above BottomNavGlass
+        borderRadius: "20px 20px 0 0",
+        padding: "12px 16px",
         display: "flex",
         alignItems: "center",
         gap: "10px",
+        boxShadow: "0 -8px 24px rgba(126, 30, 46, 0.08)",
       }}
     >
       {onBack && (

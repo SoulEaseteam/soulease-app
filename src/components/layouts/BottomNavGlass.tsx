@@ -39,14 +39,10 @@ const BottomNavGlass: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
-  // 🃏 Phase-2/3 redesign: pages with their own sticky bottom CTAs
-  //    (the new `<BottomNav />` on /therapists/* + the booking flow's
-  //    `<BookingNavBar />` with Confirm & Pay) would get overlapped by
-  //    this global nav. Hide on those routes.
-  const hideOnRedesignedRoutes =
-    location.pathname.startsWith("/therapists") ||
-    location.pathname.startsWith("/booking");
-  if (hideOnRedesignedRoutes) return null;
+  // Show BottomNavGlass on every public route (founder request 2026-05-01:
+  // "ทุกที่ทั้งเว็บ"). Pages with their own sticky CTAs (booking flow's
+  // BookingNavBar) are responsible for offsetting their CTA upward by the
+  // BOTTOM_NAV_HEIGHT so the two stack cleanly instead of overlapping.
 
   const handleChange = (_event: React.SyntheticEvent, next: string) => {
     // navigate() ใน react-router v7 return Promise<void> — prefix `void` กัน floating

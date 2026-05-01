@@ -28,6 +28,7 @@ import StickyBookCTA from "@/components/therapist/detail/StickyBookCTA";
 //   pick service+duration+date+time inline. Booking flow then opens at
 //   "Where should we go?" (Step 3) instead of restarting from Step 1.
 import StepService from "@/components/booking/StepService";
+import StepDateTime from "@/components/booking/StepDateTime";
 import {
   startingPrice,
   priceForDuration,
@@ -480,10 +481,10 @@ const TherapistDetailPage: React.FC = () => {
           Service tap → bottom sheet picks 60/90/120 → date pills + time
           slot grid → user lands on /booking/:id?service=…&date=… and
           jumps straight to "Where should we go?". */}
-      {/* 🆕 Phase 4 — Service section is the ONLY picker on DetailPage now.
-          DateTime + Location + Customer details all live on the
-          single-page Reservation Order at /booking/:id.
-          Heading + helper copy follow sunred-booking3 mockup. */}
+      {/* 🆕 Phase 4 — Service + DateTime pickers stay on DetailPage; the
+          single-page Reservation Order at /booking/:id picks up where
+          these left off (location + customer details + payment).
+          Service heading + helper copy follow sunred-booking3 mockup. */}
       <PickerSection
         title={
           <>
@@ -539,6 +540,44 @@ const TherapistDetailPage: React.FC = () => {
             "Can't find what you're looking for? Chat with us for more options."
           )}
         </Typography>
+      </PickerSection>
+
+      {/* DateTime picker — date pills + time slot grid grouped by daypart.
+          Muted until a service is picked (so duration is known and slot
+          length can be calculated correctly). */}
+      <PickerSection
+        title={
+          <>
+            When works <em>for you</em>?
+          </>
+        }
+        subtitle={
+          selectedService
+            ? t("detail.picker.timeSubtitle", "{{name}} · {{duration}} min · {{price}}", {
+                name: selectedService.name,
+                duration: selection.duration ?? selectedService.duration,
+                price: formatTHB(
+                  selection.duration
+                    ? priceForDuration(selectedService, selection.duration)
+                    : startingPrice(selectedService)
+                ),
+              })
+            : t(
+                "detail.picker.timeHint",
+                "Pick a service above to unlock time slots."
+              )
+        }
+        muted={!selectedService}
+      >
+        <StepDateTime
+          date={selection.date}
+          time={selection.time}
+          durationMin={selection.duration}
+          therapistId={therapist.id}
+          onChange={({ date, time }) =>
+            setSelection((p) => ({ ...p, date, time }))
+          }
+        />
       </PickerSection>
 
       {/* (Reviews moved into TherapistProfileTabs as Tab 2.) */}

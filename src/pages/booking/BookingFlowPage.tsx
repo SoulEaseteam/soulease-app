@@ -299,7 +299,9 @@ const BookingFlowPage: React.FC = () => {
       sx={{
         minHeight: "100vh",
         background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
-        paddingBottom: "120px", // room for sticky BookingNavBar
+        // Room for the stacked stickies: BookingNavBar (Confirm CTA, ~80px)
+        // sits above BottomNavGlass (~96px from bottom). Total clearance ~200.
+        paddingBottom: "210px",
         fontFamily: SANS,
       }}
     >
