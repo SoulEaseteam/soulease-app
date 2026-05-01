@@ -129,6 +129,16 @@ function mapToCardData(
     price: "฿1,800",
     unit: "/60min",
     online: workingNow,
+    // 3-state status — derived from live status + working hours:
+    //   "available" / "online" → green
+    //   "resting" / "bookable" / inside shift but busy → orange
+    //   else → offline (gray, hidden on cards)
+    status: ((): "online" | "busy" | "offline" => {
+      if (!workingNow) return "offline";
+      if (status === "available") return "online";
+      if (status === "resting" || status === "bookable") return "busy";
+      return workingNow ? "online" : "offline";
+    })(),
     availability: workingNow ? "●Now" : (t.startTime ?? ""),
     availabilityColor: workingNow ? "#16a34a" : "#b85c3c",
     photoBg,

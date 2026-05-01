@@ -11,8 +11,20 @@
 //   • 📤 Share button (top-right) — Web Share API with copy-to-clipboard
 //        fallback + toast notification.
 
-import React, { useState } from "react";
-import { Box, Typography, Dialog, IconButton } from "@mui/material";
+import React, { useRef, useState } from "react";
+import {
+  Box,
+  Typography,
+  Dialog,
+  IconButton,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+} from "@mui/material";
+import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
+import FavoriteBorderRoundedIcon from "@mui/icons-material/FavoriteBorderRounded";
+import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
@@ -70,6 +82,9 @@ const DetailHero: React.FC<Props> = ({
   const navigate = useNavigate();
   const [activeIdx, setActiveIdx] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
+  // ⋯ menu — combines Share + Save + Report into one anchor (was 3 buttons)
+  const moreBtnRef = useRef<HTMLDivElement | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const photoCount = Math.max(images.length, 1);
   const currentImage = images[activeIdx];
@@ -214,31 +229,31 @@ const DetailHero: React.FC<Props> = ({
           >
             ←
           </IconBtnGlass>
-          <Box sx={{ display: "flex", gap: "8px" }}>
+          <Box ref={moreBtnRef}>
             <IconBtnGlass
-              label="share"
+              label="more"
               onClick={(e) => {
                 e?.stopPropagation();
-                void handleShare();
+                setMenuOpen(true);
               }}
             >
-              ↗
-            </IconBtnGlass>
-            <IconBtnGlass label="more" onClick={(e) => e?.stopPropagation()}>
               ⋯
             </IconBtnGlass>
           </Box>
         </Box>
 
-        {/* .photo-dots — reflects activeIdx now (was static in mockup) */}
+        {/* .photo-dots — moved BELOW the status line (bottom 38px) so the
+            top edge stays clean. Centered ~70% width, 2px tall, 3px gap
+            for a more refined look — Instagram story bars but slimmer. */}
         <Box
           sx={{
             position: "absolute",
-            top: "60px",
-            left: "14px",
-            right: "14px",
+            bottom: "38px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "70%",
             display: "flex",
-            gap: "4px",
+            gap: "3px",
             zIndex: 3,
           }}
         >
@@ -247,9 +262,12 @@ const DetailHero: React.FC<Props> = ({
               key={i}
               sx={{
                 flex: 1,
-                height: "3px",
+                height: "2px",
                 borderRadius: "2px",
-                background: i === activeIdx ? "#fff" : "rgba(255, 255, 255, 0.4)",
+                background:
+                  i === activeIdx
+                    ? "#fff"
+                    : "rgba(255, 255, 255, 0.32)",
                 transition: "background 0.2s ease",
               }}
             />
@@ -342,16 +360,15 @@ const DetailHero: React.FC<Props> = ({
                         height: 8,
                         borderRadius: "50%",
                         background: meta.dot,
-                        boxShadow: `0 0 0 2px rgba(255,255,255,0.95), 0 0 8px ${meta.dot}`,
+                        boxShadow: `0 0 10px ${meta.dot}`,
                         display: "inline-block",
                         flexShrink: 0,
-                        ...(status === "online" && {
-                          animation: "sunredPulseDot 1.8s ease-in-out infinite",
-                          "@keyframes sunredPulseDot": {
-                            "0%, 100%": { transform: "scale(1)", opacity: 1 },
-                            "50%": { transform: "scale(1.18)", opacity: 0.78 },
-                          },
-                        }),
+                        // Pulse for all statuses (color-tinted glow per status).
+                        animation: "sunredPulseDot 1.8s ease-in-out infinite",
+                        "@keyframes sunredPulseDot": {
+                          "0%, 100%": { transform: "scale(1)", opacity: 1 },
+                          "50%": { transform: "scale(1.2)", opacity: 0.72 },
+                        },
                       }}
                     />
                     {meta.label}
@@ -468,6 +485,104 @@ const DetailHero: React.FC<Props> = ({
           </>
         )}
       </Dialog>
+
+      {/* ⋯ More menu — Share / Save / Report. Replaces the standalone
+          ↗ Share button so the hero top row is just [← back] [⋯ more]. */}
+      <Menu
+        anchorEl={moreBtnRef.current}
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        PaperProps={{
+          sx: {
+            marginTop: "6px",
+            minWidth: 180,
+            borderRadius: "14px",
+            background: "rgba(255, 248, 240, 0.96)",
+            backdropFilter: "blur(20px) saturate(180%)",
+            WebkitBackdropFilter: "blur(20px) saturate(180%)",
+            border: "1px solid rgba(0, 0, 0, 0.06)",
+            boxShadow: "0 12px 32px rgba(126, 30, 46, 0.18)",
+          },
+        }}
+      >
+        <MenuItem
+          onClick={() => {
+            setMenuOpen(false);
+            void handleShare();
+          }}
+        >
+          <ListItemIcon>
+            <IosShareRoundedIcon
+              fontSize="small"
+              sx={{ color: "#3c1e14" }}
+            />
+          </ListItemIcon>
+          <ListItemText
+            primaryTypographyProps={{
+              sx: {
+                fontFamily: SANS,
+                fontSize: "13.5px",
+                fontWeight: 600,
+                color: "#3c1e14",
+              },
+            }}
+          >
+            Share profile
+          </ListItemText>
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setMenuOpen(false);
+            // TODO Task 5 — wire to favoriteTherapists in users/{uid}
+          }}
+        >
+          <ListItemIcon>
+            <FavoriteBorderRoundedIcon
+              fontSize="small"
+              sx={{ color: "#FE0944" }}
+            />
+          </ListItemIcon>
+          <ListItemText
+            primaryTypographyProps={{
+              sx: {
+                fontFamily: SANS,
+                fontSize: "13.5px",
+                fontWeight: 600,
+                color: "#3c1e14",
+              },
+            }}
+          >
+            Save to favorites
+          </ListItemText>
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setMenuOpen(false);
+            // TODO Task 6 — open ReportPage with therapistId pre-filled
+          }}
+        >
+          <ListItemIcon>
+            <FlagOutlinedIcon
+              fontSize="small"
+              sx={{ color: "rgba(60, 30, 20, 0.7)" }}
+            />
+          </ListItemIcon>
+          <ListItemText
+            primaryTypographyProps={{
+              sx: {
+                fontFamily: SANS,
+                fontSize: "13.5px",
+                fontWeight: 600,
+                color: "rgba(60, 30, 20, 0.7)",
+              },
+            }}
+          >
+            Report
+          </ListItemText>
+        </MenuItem>
+      </Menu>
     </>
   );
 };

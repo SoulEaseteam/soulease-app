@@ -39,6 +39,14 @@ export type TherapistCardData = {
   price: string;
   unit: string;
   online: boolean;
+  /**
+   * Optional 3-state status. Drives the colored corner dot:
+   *   online  → ●green   (pulsing, live)
+   *   busy    → ●orange  (in session / on the way)
+   *   offline → ●gray    (not currently working — dot hidden by default)
+   * When omitted, falls back to `online` boolean (true → online, false → no dot).
+   */
+  status?: "online" | "busy" | "offline";
   /** "●Now" or "19:30" — already-formatted */
   availability: string;
   /** "color:#16a34a" or "#b85c3c" — drives availability text color */
@@ -54,8 +62,20 @@ interface Props {
   t: TherapistCardData;
 }
 
+// Status dot color map — same hues used in DetailHero
+const STATUS_DOT: Record<NonNullable<TherapistCardData["status"]>, string | null> = {
+  online: "#16a34a",  // green
+  busy: "#f97316",    // orange
+  offline: null,      // hide entirely on cards (would clutter the grid)
+};
+
 const TherapistCard: React.FC<Props> = ({ t }) => {
   const navigate = useNavigate();
+
+  // Resolve dot color: prefer 3-state status, fall back to legacy boolean.
+  const statusKey: "online" | "busy" | "offline" =
+    t.status ?? (t.online ? "online" : "offline");
+  const dotColor = STATUS_DOT[statusKey];
 
   return (
     <Box
@@ -70,8 +90,9 @@ const TherapistCard: React.FC<Props> = ({ t }) => {
         boxShadow: "0 6px 20px rgba(126, 30, 46, 0.1)",
         cursor: "pointer",
         position: "relative",
-        // .t-card.online::before — green online dot
-        ...(t.online && {
+        // 🆕 Phase 4 — colored status dot per 3-state availability.
+        //    Pulses for all visible statuses (color-tinted glow).
+        ...(dotColor && {
           "&::before": {
             content: '""',
             position: "absolute",
@@ -80,9 +101,14 @@ const TherapistCard: React.FC<Props> = ({ t }) => {
             width: "8px",
             height: "8px",
             borderRadius: "50%",
-            background: "#16a34a",
-            boxShadow: "0 0 0 2px #fff, 0 0 8px #16a34a",
+            background: dotColor,
+            boxShadow: `0 0 8px ${dotColor}`,
             zIndex: 3,
+            animation: "sunredCardPulse 1.8s ease-in-out infinite",
+            "@keyframes sunredCardPulse": {
+              "0%, 100%": { transform: "scale(1)", opacity: 1 },
+              "50%": { transform: "scale(1.2)", opacity: 0.72 },
+            },
           },
         }),
       }}
