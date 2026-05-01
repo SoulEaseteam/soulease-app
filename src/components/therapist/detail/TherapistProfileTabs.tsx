@@ -39,9 +39,10 @@
 //   • Languages with native-speaker priority sort
 //   • Reviews show "Verified booking" tag for social proof
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Box, Typography, Tabs, Tab } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { bayesianRating, formatRating } from "@/utils/rating";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -50,13 +51,18 @@ const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 type Cred = { icon: string; title: string; sub: string };
 type Spec = { icon: string; name: string; sub: string };
 type Lang = { flag: string; name: string; level: string };
+// 🛡 Privacy: reviews never expose customer name, country flag, or
+// pickup hotel. Only the booking id (truncated to 8 chars) + service
+// + duration + rating + verified-status badge.
 type Review = {
-  name: string;
-  flag: string;
+  /** Firestore booking doc id — display only first 8 chars uppercased */
+  bookingId: string;
   rating: number;
+  /** "Thai 90min" — service summary (no hotel name to avoid identifying) */
   service: string;
   body: string;
   ago: string;
+  /** True when the booking exists in our Firestore (not a fake review). */
   verified: boolean;
 };
 
@@ -417,9 +423,19 @@ const ReviewsTab: React.FC<{
   buckets: { stars: number; pct: number; count: number }[];
   reviews: Review[];
 }> = ({ rating, reviewCount, buckets, reviews }) => {
+  // ⭐ Bayesian rating — overrides whatever rating string the parent
+  //    passes in, so the displayed value always honors PRIOR_MEAN=4.5
+  //    when reviews are sparse. Falls back to the parent rating only
+  //    when computing locally would yield NaN (defensive).
+  const bayesian = useMemo(() => {
+    if (reviews.length === 0) return formatRating(4.5);
+    return formatRating(bayesianRating(reviews));
+  }, [reviews]);
+  const displayedRating = bayesian || rating;
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-      {/* Rating headline */}
+      {/* Rating headline — Bayesian-adjusted */}
       <Box
         sx={{
           display: "flex",
@@ -438,7 +454,7 @@ const ReviewsTab: React.FC<{
               letterSpacing: "-0.02em",
             }}
           >
-            {rating}
+            {displayedRating}
           </Typography>
           <Typography
             sx={{
@@ -448,7 +464,7 @@ const ReviewsTab: React.FC<{
               marginTop: "4px",
             }}
           >
-            {reviewCount.toLocaleString()} reviews
+            ({reviewCount.toLocaleString()} reviews)
           </Typography>
           <Box sx={{ color: "#FBBF24", fontSize: "13px", marginTop: "2px" }}>
             ★★★★★
@@ -543,15 +559,17 @@ const ReviewsTab: React.FC<{
                 }}
               >
                 <Box sx={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  {/* 🛡 Privacy — booking ID only (no name/flag/hotel) */}
                   <Typography
                     sx={{
-                      fontFamily: SERIF,
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      color: "#3c1e14",
+                      fontFamily: SANS,
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      color: "rgba(60, 30, 20, 0.7)",
+                      letterSpacing: "0.04em",
                     }}
                   >
-                    {r.flag} {r.name}
+                    Booking #{r.bookingId.slice(0, 8).toUpperCase()}
                   </Typography>
                   {r.verified && (
                     <Box

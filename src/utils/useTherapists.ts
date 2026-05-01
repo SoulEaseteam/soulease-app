@@ -23,6 +23,10 @@ import { db } from "@/lib/firebase";
 import therapistsData from "@/data/therapists";
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
 import { enhanceImage } from "@/utils/cloudinary";
+import {
+  bayesianRatingFromAggregate,
+  formatRating,
+} from "@/utils/rating";
 import type { Therapist, FirestoreDateLike } from "@/types/therapist";
 import type { TherapistCardData } from "@/components/therapist/TherapistCard";
 
@@ -111,7 +115,12 @@ function mapToCardData(
     name: t.name,
     age: ageNum,
     langs: langs.length > 0 ? langs : ["EN"],
-    rating: t.rating.toFixed(1),
+    // ⭐ Bayesian-adjusted rating (prior 4.5★, weight 10) — keeps the
+    //    browse cards consistent with the detail-page Reviews tab. New
+    //    therapists with 0 reviews show 4.5★ rather than crashing to 0.
+    rating: formatRating(
+      bayesianRatingFromAggregate(t.rating * (t.reviews ?? 0), t.reviews ?? 0)
+    ),
     reviewCount: t.reviews ?? 0,
     distanceKm: distanceKm != null ? `${distanceKm.toFixed(1)} km` : "—",
     specs,

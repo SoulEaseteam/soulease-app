@@ -34,6 +34,10 @@ import {
   priceForDuration,
   formatTHB,
 } from "@/utils/servicePricing";
+import {
+  bayesianRatingFromAggregate,
+  formatRating,
+} from "@/utils/rating";
 import services from "@/data/services";
 
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
@@ -439,7 +443,17 @@ const TherapistDetailPage: React.FC = () => {
       />
 
       <StatsCard
-        rating={therapist.rating}
+        // ⭐ Bayesian rating — same algorithm used in the Reviews tab so
+        //    the headline + tab agree. Uses the demo aggregate fields
+        //    (sumOfRatings ≈ rating × reviewCount when reviews stored
+        //    only as count + average — Firestore wiring in Task 7 will
+        //    pass the actual review list for exact computation).
+        rating={formatRating(
+          bayesianRatingFromAggregate(
+            parseFloat(therapist.rating) * therapist.reviewCount,
+            therapist.reviewCount
+          )
+        )}
         reviewCount={therapist.reviewCount}
         yearsExp={therapist.yearsExp}
         rebookRate={therapist.rebookRate}
@@ -450,24 +464,55 @@ const TherapistDetailPage: React.FC = () => {
       {/* 🆕 Phase 4 — Compact tabs replacing 4 stacked sections
           (Credentials → Specialties → Languages → Reviews). User feedback:
           'too long to reach the booking section'. Tabs let in-a-rush
-          customers skim or skip; engaged customers can dive deep. */}
+          customers skim or skip; engaged customers can dive deep.
+
+          The DemoTherapist data shape predates this component, so we
+          adapt fields here. Once Task 7 wires real Firestore docs the
+          adapters disappear — Firestore docs follow the new shape. */}
       <TherapistProfileTabs
         yearsExp={therapist.yearsExp}
         totalSessions={therapist.specs.reduce((sum, s) => {
-          const m = /(\d[\d,]*)/.exec(s.sub);
+          const m = /(\d[\d,]*)/.exec(s.yrs);
           return sum + (m ? parseInt(m[1].replace(/,/g, ""), 10) : 0);
         }, 0)}
         rebookRate={therapist.rebookRate}
         hasLicense={therapist.creds.some((c) =>
-          /licen[cs]e|ผ\.พ\./i.test(c.title)
+          /licen[cs]e|ผ\.พ\./i.test(c.label)
         )}
-        creds={therapist.creds}
-        specs={therapist.specs}
+        creds={therapist.creds.map((c) => ({
+          icon: c.icon,
+          title: c.label,
+          sub: c.meta,
+        }))}
+        specs={therapist.specs.map((s) => ({
+          icon: s.icon,
+          name: s.name,
+          sub: s.yrs,
+        }))}
         langs={therapist.langs}
         rating={therapist.rating}
         reviewCount={therapist.reviewCount}
-        reviewBuckets={therapist.reviewBuckets}
-        reviews={therapist.reviews}
+        reviewBuckets={therapist.reviewBuckets.map((b) => ({
+          stars: b.num,
+          pct: b.pct,
+          count: b.count,
+        }))}
+        reviews={therapist.reviews.map((r, i) => ({
+          // 🛡 Privacy: synthesize a stable booking-like id from the demo
+          //    index. Real reviews from Firestore will carry their actual
+          //    bookingId (8-char Firestore auto-id slice).
+          bookingId: `DEMO${String(i + 1).padStart(4, "0")}${(
+            r.initial + therapist.id
+          )
+            .replace(/[^A-Z0-9]/gi, "")
+            .slice(0, 4)
+            .toUpperCase()}`,
+          rating: 5, // demo defaults — real reviews carry user's rating
+          service: r.meta.split("·")[1]?.trim() ?? "Service",
+          body: r.quote,
+          ago: r.meta.split("·")[0]?.trim() ?? "",
+          verified: true,
+        }))}
       />
 
       {/* 🆕 Phase 4 — Inline picker (replaces legacy Pricing + Calendar)
