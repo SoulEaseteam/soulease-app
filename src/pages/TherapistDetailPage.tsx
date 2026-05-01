@@ -14,7 +14,7 @@
 
 import React, { useState } from "react";
 import { Box, Typography } from "@mui/material";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import DetailHero from "@/components/therapist/detail/DetailHero";
@@ -22,25 +22,17 @@ import StatsCard from "@/components/therapist/detail/StatsCard";
 import { About } from "@/components/therapist/detail/DetailSections";
 import TherapistInfoSheet from "@/components/therapist/detail/TherapistInfoSheet";
 import StatusPill from "@/components/therapist/detail/StatusPill";
-import StickyBookCTA from "@/components/therapist/detail/StickyBookCTA";
+// StickyBookCTA — kept on disk but no longer mounted (Phase 5 auto-nav).
 
-// 🆕 Phase 4 — Pricing + Calendar legacy sections REPLACED by the booking
-//   flow's own pickers, surfaced here on the detail page so the user can
-//   pick service+duration+date+time inline. Booking flow then opens at
-//   "Where should we go?" (Step 3) instead of restarting from Step 1.
+// 🆕 Phase 5 — Service + Duration + Date + Time picker now lives in ONE
+//   merged bottom sheet (founder feedback 2026-05-01 'ในsheet เดียวกัน').
+//   The detail page just renders the service cards; tapping a card opens
+//   the merged sheet, and Confirm auto-navigates to /booking/:id.
 import StepService from "@/components/booking/StepService";
-import DateTimePickerCell from "@/components/booking/DateTimePickerCell";
-import DateTimeSheet from "@/components/booking/DateTimeSheet";
-import {
-  startingPrice,
-  priceForDuration,
-  formatTHB,
-} from "@/utils/servicePricing";
 import {
   bayesianRatingFromAggregate,
   formatRating,
 } from "@/utils/rating";
-import services from "@/data/services";
 
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 import therapistsData from "@/data/therapists";
@@ -370,6 +362,7 @@ function buildFromReal(real: Therapist): DemoTherapist {
 const TherapistDetailPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { id } = useParams();
+  const navigate = useNavigate();
 
   // 🔌 3-tier lookup chain:
   //   1. `therapistsData[id]` (real Yuri/Jimmy/Hami/...) — wire real name/
@@ -423,33 +416,24 @@ const TherapistDetailPage: React.FC = () => {
     "profile" | "reviews" | "loyalty" | null
   >(null);
 
-  // 🆕 Phase 4 — Date+Time picker now lives in a bottom sheet so the
-  //    detail page surfaces a compact cell instead of an always-expanded
-  //    grid that ate ~700px of vertical space.
-  const [dateTimeSheetOpen, setDateTimeSheetOpen] = useState(false);
-
   // 🆕 Phase 5 — Auto-navigate to /booking/:id once all four prerequisites
   //    (service, duration, date, time) are confirmed. Founder request
   //    'เลือกเสร็จ ก็ไปหน้า Confirm Order' — skips the manual sticky CTA tap.
-  const goConfirmOrderIfReady = (next: {
-    serviceId: string | null;
-    duration: number | null;
-    date: string | null;
-    time: string | null;
-  }) => {
-    if (next.serviceId && next.duration && next.date && next.time) {
-      const params = new URLSearchParams();
-      params.set("service", next.serviceId);
-      params.set("duration", String(next.duration));
-      params.set("date", next.date);
-      params.set("time", next.time);
-      void navigate(`/booking/${therapist.id}?${params.toString()}`);
-    }
+  //    Phase 5B: triggered once from the merged ServiceDurationSheet's
+  //    Confirm button (which guarantees all four are set).
+  const goConfirmOrder = (
+    serviceId: string,
+    duration: number,
+    date: string,
+    time: string
+  ) => {
+    const params = new URLSearchParams();
+    params.set("service", serviceId);
+    params.set("duration", String(duration));
+    params.set("date", date);
+    params.set("time", time);
+    void navigate(`/booking/${therapist.id}?${params.toString()}`);
   };
-
-  // Resolve the picked service object (if any) for header/sticky CTA copy.
-  const selectedService =
-    services.find((s) => s.id === selection.serviceId) ?? null;
 
   return (
     <Box
@@ -515,14 +499,12 @@ const TherapistDetailPage: React.FC = () => {
           taps a stat-card cell. Removes ~600px of always-visible vertical
           space so the booking picker lands one screen earlier. */}
 
-      {/* 🆕 Phase 4 — Inline picker (replaces legacy Pricing + Calendar)
-          Service tap → bottom sheet picks 60/90/120 → date pills + time
-          slot grid → user lands on /booking/:id?service=…&date=… and
-          jumps straight to "Where should we go?". */}
-      {/* 🆕 Phase 4 — Service + DateTime pickers stay on DetailPage; the
-          single-page Reservation Order at /booking/:id picks up where
-          these left off (location + customer details + payment).
-          Service heading + helper copy follow sunred-booking3 mockup. */}
+      {/* 🆕 Phase 5 — One merged bottom sheet (service + duration + date +
+          time). Tapping a service card opens the sheet pre-loaded with that
+          service; user picks duration/date/time inside the sheet and the
+          single Confirm tap auto-navigates to /booking/:id. The previously-
+          separate "When works for you?" PickerSection + DateTimePickerCell +
+          DateTimeSheet are gone — everything lives ในsheet เดียวกัน. */}
       <PickerSection
         title={
           <>
@@ -531,7 +513,7 @@ const TherapistDetailPage: React.FC = () => {
         }
         subtitle={t(
           "detail.picker.serviceSubtitle",
-          "Select your service and preferred duration."
+          "Select your service, duration, date and time — all in one step."
         )}
       >
         {/* Sub-header above the cards (mockup: 'Service') */}
@@ -550,23 +532,14 @@ const TherapistDetailPage: React.FC = () => {
         <StepService
           value={selection.serviceId}
           selectedDuration={selection.duration}
+          selectedDate={selection.date}
+          selectedTime={selection.time}
           therapistId={therapist.id}
-          onChange={(serviceId, duration) => {
-            setSelection((p) => {
-              // Changing service may change min slot — keep time only if
-              // the same service is re-confirmed at the same duration.
-              const sameService =
-                p.serviceId === serviceId && p.duration === duration;
-              const next = {
-                ...p,
-                serviceId,
-                duration,
-                time: sameService ? p.time : null,
-              };
-              // 🆕 Auto-jump to Confirm Order if everything else is set.
-              goConfirmOrderIfReady(next);
-              return next;
-            });
+          onConfirm={(serviceId, duration, date, time) => {
+            // Persist locally so the detail card reflects the picked tier
+            // (the radio shows '90m', etc.), then navigate to confirm order.
+            setSelection({ serviceId, duration, date, time });
+            goConfirmOrder(serviceId, duration, date, time);
           }}
         />
 
@@ -588,87 +561,14 @@ const TherapistDetailPage: React.FC = () => {
         </Typography>
       </PickerSection>
 
-      {/* 🆕 Phase 4 — Date+Time is a compact cell now. Tap → opens the
-          full date pills + time grid in a bottom sheet. Cell summarizes
-          'Today · 17:00 · 1h 30m' inline so the detail page stays short. */}
-      <PickerSection
-        title={
-          <>
-            When works <em>for you</em>?
-          </>
-        }
-        subtitle={
-          selectedService
-            ? t(
-                "detail.picker.timeSubtitle",
-                "{{name}} · {{duration}} min · {{price}}",
-                {
-                  name: selectedService.name,
-                  duration: selection.duration ?? selectedService.duration,
-                  price: formatTHB(
-                    selection.duration
-                      ? priceForDuration(selectedService, selection.duration)
-                      : startingPrice(selectedService)
-                  ),
-                }
-              )
-            : t(
-                "detail.picker.timeHint",
-                "Pick a service above to unlock time slots."
-              )
-        }
-        muted={!selectedService}
-      >
-        <DateTimePickerCell
-          date={selection.date}
-          time={selection.time}
-          durationMin={selection.duration}
-          enabled={!!selectedService}
-          onClick={() => setDateTimeSheetOpen(true)}
-        />
-      </PickerSection>
-
       {/* (Reviews moved into TherapistProfileTabs as Tab 2.) */}
 
-      <StickyBookCTA
-        therapistId={therapist.id}
-        therapistName={therapist.name}
-        fromPrice={
-          selectedService
-            ? formatTHB(
-                selection.duration
-                  ? priceForDuration(selectedService, selection.duration)
-                  : startingPrice(selectedService)
-              )
-            : therapist.pricing[0].price
-        }
-        duration={selection.duration ? `${selection.duration}min` : "—"}
-        selectedSlot={selection.time ?? ""}
-        serviceId={selection.serviceId}
-        durationMin={selection.duration}
-        date={selection.date}
-        time={selection.time}
-      />
-
-      {/* 🆕 Phase 4 — Date+Time bottom sheet. Opens from the cell.
-          Phase 5 — On confirm, auto-jump to /booking/:id when all four
-          prerequisites are now set (skip manual CTA tap). */}
-      <DateTimeSheet
-        open={dateTimeSheetOpen}
-        onClose={() => setDateTimeSheetOpen(false)}
-        date={selection.date}
-        time={selection.time}
-        durationMin={selection.duration}
-        therapistId={therapist.id}
-        onConfirm={(date, time) => {
-          setSelection((p) => {
-            const next = { ...p, date, time };
-            goConfirmOrderIfReady(next);
-            return next;
-          });
-          setDateTimeSheetOpen(false);
-        }}
-      />
+      {/* 🆕 Phase 5 — StickyBookCTA removed (founder feedback 2026-05-01).
+          Auto-navigate in goConfirmOrder() forwards the user to
+          /booking/:id as soon as the merged sheet's Confirm fires, so the
+          manual sticky 'Continue with X →' bar was redundant. The
+          component file is kept around in case we need a manual confirm
+          fallback later. */}
 
       {/* 🆕 Phase 4 — Therapist info sheet (Verified Profile / Reviews).
           Opened from StatsCard's tappable cells; closed by backdrop tap,

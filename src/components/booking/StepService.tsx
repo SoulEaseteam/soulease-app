@@ -43,8 +43,21 @@ interface Props {
   value: string | null;
   /** Currently selected duration (so the sheet can pre-highlight it) */
   selectedDuration: number | null;
-  /** Called after the duration sheet is confirmed */
-  onChange: (serviceId: string, duration: number) => void;
+  /** Currently selected date — sheet pre-highlights, parent navigates on confirm. */
+  selectedDate: string | null;
+  /** Currently selected time — sheet pre-highlights, parent navigates on confirm. */
+  selectedTime: string | null;
+  /**
+   * Called after the bottom sheet's Confirm is tapped with all four fields
+   * picked (service, duration, date, time). Parent then auto-navigates to
+   * /booking/:therapistId.
+   */
+  onConfirm: (
+    serviceId: string,
+    duration: number,
+    date: string,
+    time: string
+  ) => void;
   /** If set, only show services the therapist offers */
   therapistId: string | null;
 }
@@ -59,7 +72,9 @@ const BADGE_COLORS: Record<MassageService["badge"], { bg: string; fg: string }> 
 const StepService: React.FC<Props> = ({
   value,
   selectedDuration,
-  onChange,
+  selectedDate,
+  selectedTime,
+  onConfirm,
   therapistId,
 }) => {
   // Filter to therapist's offered services if a therapist is preselected.
@@ -81,9 +96,11 @@ const StepService: React.FC<Props> = ({
   const openSheet = (s: MassageService) => setSheetService(s);
   const closeSheet = () => setSheetService(null);
 
-  const confirmDuration = (durationMin: number) => {
+  // Parent fires onConfirm with all four fields once user taps Confirm
+  // inside the now-combined sheet (service+duration+date+time).
+  const confirmFull = (durationMin: number, date: string, time: string) => {
     if (!sheetService) return;
-    onChange(sheetService.id, durationMin);
+    onConfirm(sheetService.id, durationMin, date, time);
     setSheetService(null);
   };
 
@@ -300,7 +317,10 @@ const StepService: React.FC<Props> = ({
         );
       })}
 
-      {/* Bottom-sheet duration picker — opens on card tap */}
+      {/* Bottom-sheet — service info + duration + date+time picker.
+          Phase 5 (founder feedback 'ในsheet เดียวกัน') merges the
+          previously-separate DateTimeSheet into here so the customer
+          finishes the picking flow without leaving the sheet. */}
       <ServiceDurationSheet
         service={sheetService}
         initialDuration={
@@ -308,9 +328,16 @@ const StepService: React.FC<Props> = ({
             ? selectedDuration ?? undefined
             : undefined
         }
+        initialDate={
+          sheetService && value === sheetService.id ? selectedDate : null
+        }
+        initialTime={
+          sheetService && value === sheetService.id ? selectedTime : null
+        }
+        therapistId={therapistId}
         open={!!sheetService}
         onClose={closeSheet}
-        onConfirm={confirmDuration}
+        onConfirm={confirmFull}
       />
 
       {visibleServices.length === 0 && (

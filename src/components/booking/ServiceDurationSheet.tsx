@@ -39,6 +39,7 @@ import {
   durationsFor,
   formatTHB,
 } from "@/utils/servicePricing";
+import StepDateTime from "@/components/booking/StepDateTime";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -56,9 +57,20 @@ interface Props {
   service: MassageService | null;
   /** Initial duration to highlight when sheet opens. */
   initialDuration?: number;
+  /** Initial date (YYYY-MM-DD) to highlight when sheet opens. */
+  initialDate?: string | null;
+  /** Initial time (HH:mm) to highlight when sheet opens. */
+  initialTime?: string | null;
+  /** Therapist context — required for slot availability filtering. */
+  therapistId: string | null;
   open: boolean;
   onClose: () => void;
-  onConfirm: (durationMin: number) => void;
+  /**
+   * Called when the user taps Confirm with a fully picked combo:
+   * service (props) + duration + date + time. The parent then
+   * navigates to /booking/:id with the URL params.
+   */
+  onConfirm: (durationMin: number, date: string, time: string) => void;
 }
 
 const DURATION_LABELS: Record<number, { tag: string; tagColor?: string }> = {
@@ -77,6 +89,9 @@ const BADGE_COLORS: Record<MassageService["badge"], { bg: string; fg: string }> 
 const ServiceDurationSheet: React.FC<Props> = ({
   service,
   initialDuration,
+  initialDate,
+  initialTime,
+  therapistId,
   open,
   onClose,
   onConfirm,
@@ -89,6 +104,11 @@ const ServiceDurationSheet: React.FC<Props> = ({
     initialDuration ?? durations[1] ?? durations[0] ?? 60
   );
   const [tab, setTab] = useState<"details" | "notices">("details");
+  // 🆕 Phase 5 — Date+Time picker now lives inside this same sheet so the
+  //    customer picks service+duration+date+time in one place. Founder
+  //    feedback: 'ในsheet เดียวกัน'.
+  const [draftDate, setDraftDate] = useState<string | null>(initialDate ?? null);
+  const [draftTime, setDraftTime] = useState<string | null>(initialTime ?? null);
 
   // Sync state each time the sheet (re-)opens for a service
   useEffect(() => {
@@ -96,8 +116,10 @@ const ServiceDurationSheet: React.FC<Props> = ({
       const d = durationsFor(service);
       setSelected(initialDuration ?? d[1] ?? d[0] ?? 60);
       setTab("details");
+      setDraftDate(initialDate ?? null);
+      setDraftTime(initialTime ?? null);
     }
-  }, [open, service, initialDuration]);
+  }, [open, service, initialDuration, initialDate, initialTime]);
 
   if (!service) return null;
 
@@ -215,11 +237,11 @@ const ServiceDurationSheet: React.FC<Props> = ({
                 fontFamily: SERIF,
                 fontSize: "16px",
                 fontWeight: 600,
-                color: "#3c1e14",
+                color: "#FE0944",
                 letterSpacing: "-0.01em",
               }}
             >
-              {service.price.toLocaleString()}฿
+              {totalPrice.toLocaleString()}฿
             </Typography>
             <Typography
               component="span"
@@ -229,7 +251,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                 color: "rgba(60, 30, 20, 0.6)",
               }}
             >
-              | ⏱ {service.duration} mins.
+              | ⏱ {selected} mins.
             </Typography>
           </Box>
           {service.count > 0 && (
@@ -409,7 +431,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
           <Box sx={{ padding: "16px 18px 18px" }}>
             {tab === "details" ? (
               <>
-                <Section title="Description">
+                <Section title="Description" defaultOpen={false}>
                   <Typography
                     sx={{
                       fontFamily: SANS,
@@ -422,7 +444,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                     {service.detail}
                   </Typography>
                 </Section>
-                <Section title="Benefits">
+                <Section title="Benefits" defaultOpen={false}>
                   <Box component="ul" sx={{ paddingLeft: "20px", margin: 0 }}>
                     {service.benefit.map((b) => (
                       <Typography
@@ -475,9 +497,39 @@ const ServiceDurationSheet: React.FC<Props> = ({
             )}
           </Box>
         </Box>
+
+        {/* 🆕 Phase 5 — Pick date & time inline (was a separate sheet).
+            User picks duration ABOVE → this section recomputes valid
+            slot length → user picks a date pill + time slot → Confirm
+            CTA below enables. */}
+        <Typography
+          sx={{
+            fontFamily: SANS,
+            fontSize: "10.5px",
+            fontWeight: 700,
+            color: "rgba(60, 30, 20, 0.55)",
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            margin: "20px 0 10px",
+            paddingLeft: "4px",
+          }}
+        >
+          Pick date &amp; time
+        </Typography>
+        <StepDateTime
+          date={draftDate}
+          time={draftTime}
+          durationMin={selected}
+          therapistId={therapistId}
+          onChange={({ date, time }) => {
+            setDraftDate(date);
+            setDraftTime(time);
+          }}
+        />
       </Box>
 
-      {/* Confirm CTA — pinned to bottom (outside scroll area) */}
+      {/* Confirm CTA — pinned to bottom. Disabled until duration AND
+          date AND time are all picked (auto-navigates the parent on tap). */}
       <Box
         sx={{
           flexShrink: 0,
@@ -487,8 +539,11 @@ const ServiceDurationSheet: React.FC<Props> = ({
       >
         <Button
           fullWidth
+          disabled={!draftDate || !draftTime}
           onClick={() => {
-            onConfirm(selected);
+            if (draftDate && draftTime) {
+              onConfirm(selected, draftDate, draftTime);
+            }
           }}
           sx={{
             height: 50,
@@ -504,9 +559,16 @@ const ServiceDurationSheet: React.FC<Props> = ({
             "&:hover": {
               background: "linear-gradient(135deg, #E50840, #E56A47)",
             },
+            "&.Mui-disabled": {
+              background: "rgba(0, 0, 0, 0.12)",
+              color: "rgba(0, 0, 0, 0.35)",
+              boxShadow: "none",
+            },
           }}
         >
-          Confirm · {formatTHB(totalPrice)}
+          {!draftDate || !draftTime
+            ? "Pick date & time to continue"
+            : `Confirm · ${formatTHB(totalPrice)}`}
         </Button>
       </Box>
     </Drawer>
