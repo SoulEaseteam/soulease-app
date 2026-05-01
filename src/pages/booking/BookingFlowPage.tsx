@@ -59,6 +59,17 @@ import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+// 🆕 Round 11 (founder 2026-05-01): replace emoji icons across Confirm
+//   Order with MUI icons in the same pink-boxed style as the address tile.
+import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
+import PaidRoundedIcon from "@mui/icons-material/PaidRounded";
+import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
+import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import LocalTaxiRoundedIcon from "@mui/icons-material/LocalTaxiRounded";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import SavingsRoundedIcon from "@mui/icons-material/SavingsRounded";
+import UmbrellaRoundedIcon from "@mui/icons-material/UmbrellaRounded";
+import SupportAgentRoundedIcon from "@mui/icons-material/SupportAgentRounded";
 
 // 🆕 Round 8 (founder 2026-05-01): PreferencesSheet + SelectionCell +
 //    inline Notes textarea all dropped from this page. Confirm Order is
@@ -522,7 +533,7 @@ const BookingFlowPage: React.FC = () => {
         />
 
         {/* ─────────── Order Details card (pattern 4A) ─────────── */}
-        <SectionCard label="Order Details" icon="📑">
+        <SectionCard label="Order Details" icon={<ReceiptLongRoundedIcon />}>
           {/* Therapist row + EDIT */}
           <Box
             sx={{
@@ -687,7 +698,7 @@ const BookingFlowPage: React.FC = () => {
               must-do (location). Special requests go via admin chat. */}
 
         {/* ─────────── Pricing card (pattern 5A) ─────────── */}
-        <SectionCard label="Pricing" icon="💵">
+        <SectionCard label="Pricing" icon={<PaidRoundedIcon />}>
           <PriceRow
             label={`Service fee${
               form.duration ? ` · ${form.duration} min` : ""
@@ -711,21 +722,36 @@ const BookingFlowPage: React.FC = () => {
                 display: "flex",
                 alignItems: "center",
                 flexWrap: "wrap",
-                gap: "6px",
+                gap: "8px",
                 fontFamily: SANS,
                 fontSize: "12px",
                 color: "rgba(60, 30, 20, 0.65)",
                 marginBottom: "8px",
+                "& svg": { fontSize: 14, color: "#FE0944" },
               }}
             >
-              <Box component="span">
-                📍 Distance: <Box component="strong" sx={{ color: "#3c1e14" }}>{distanceKm.toFixed(1)} km</Box>
+              <Box
+                component="span"
+                sx={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
+              >
+                <PlaceRoundedIcon />
+                Distance:&nbsp;
+                <Box component="strong" sx={{ color: "#3c1e14" }}>
+                  {distanceKm.toFixed(1)} km
+                </Box>
               </Box>
               <Box component="span" sx={{ opacity: 0.5 }}>
                 •
               </Box>
-              <Box component="span">
-                ⏱ ETA: <Box component="strong" sx={{ color: "#3c1e14" }}>{etaMinutes} min</Box>
+              <Box
+                component="span"
+                sx={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
+              >
+                <AccessTimeRoundedIcon />
+                ETA:&nbsp;
+                <Box component="strong" sx={{ color: "#3c1e14" }}>
+                  {etaMinutes} min
+                </Box>
               </Box>
             </Box>
           )}
@@ -740,13 +766,19 @@ const BookingFlowPage: React.FC = () => {
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: "4px" }}>
               <Typography
+                component="div"
                 sx={{
                   fontFamily: SANS,
                   fontSize: "13px",
                   color: "rgba(60, 30, 20, 0.7)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  "& > svg": { fontSize: 16, color: "#FE0944" },
                 }}
               >
-                🚖 Travel fee
+                <LocalTaxiRoundedIcon />
+                Travel fee
                 {locationSet && taxiResult && taxiResult.tier !== "free" && (
                   <Box
                     component="span"
@@ -754,7 +786,7 @@ const BookingFlowPage: React.FC = () => {
                       fontFamily: SANS,
                       fontSize: "10.5px",
                       color: "rgba(60, 30, 20, 0.5)",
-                      marginLeft: "6px",
+                      marginLeft: "2px",
                     }}
                   >
                     · {taxiResult.label}
@@ -838,7 +870,7 @@ const BookingFlowPage: React.FC = () => {
             }}
           >
             {locationSet && distanceKm <= FREE_DISTANCE_KM && (
-              <FareChip color="green" icon="✓">
+              <FareChip color="green" icon={<CheckCircleRoundedIcon />}>
                 Within free distance ({FREE_DISTANCE_KM} km)
               </FareChip>
             )}
@@ -846,19 +878,19 @@ const BookingFlowPage: React.FC = () => {
               taxiResult &&
               taxiResult.savingsVsGrab > 0 &&
               !adminQuoteRequired && (
-                <FareChip color="green" icon="💰">
+                <FareChip color="green" icon={<SavingsRoundedIcon />}>
                   Save {formatTHB(taxiResult.savingsVsGrab)} vs Grab
                 </FareChip>
               )}
             {locationSet &&
               taxiResult &&
               taxiResult.rain.tier !== "none" && (
-                <FareChip color="amber" icon="🌧">
+                <FareChip color="amber" icon={<UmbrellaRoundedIcon />}>
                   {taxiResult.rain.label}
                 </FareChip>
               )}
             {adminQuoteRequired && (
-              <FareChip color="amber" icon="📞">
+              <FareChip color="amber" icon={<SupportAgentRoundedIcon />}>
                 Long-distance · contact admin to confirm
               </FareChip>
             )}
@@ -947,7 +979,10 @@ const BookingFlowPage: React.FC = () => {
 // Card with eyebrow label + emoji icon (Order Details / Pricing / etc.)
 const SectionCard: React.FC<{
   label: string;
-  icon?: string;
+  /** MUI icon node (preferred) — rendered inside a soft pink rounded box
+   *  matching the address tile. Plain string emoji is still accepted for
+   *  back-compat. */
+  icon?: React.ReactNode;
   tight?: boolean;
   children: React.ReactNode;
 }> = ({ label, icon, tight, children }) => (
@@ -964,11 +999,29 @@ const SectionCard: React.FC<{
       sx={{
         display: "flex",
         alignItems: "center",
-        gap: "8px",
+        gap: "10px",
         marginBottom: "12px",
       }}
     >
-      {icon && <Box sx={{ fontSize: "16px", lineHeight: 1 }}>{icon}</Box>}
+      {icon && (
+        <Box
+          aria-hidden
+          sx={{
+            width: 30,
+            height: 30,
+            flexShrink: 0,
+            borderRadius: "9px",
+            background: "rgba(254, 9, 68, 0.10)",
+            color: "#FE0944",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            "& svg": { fontSize: 18 },
+          }}
+        >
+          {icon}
+        </Box>
+      )}
       <Typography
         sx={{
           fontFamily: SERIF,
@@ -988,7 +1041,7 @@ const SectionCard: React.FC<{
 // (free zone, savings vs Grab, rain surcharge, admin quote requirement).
 const FareChip: React.FC<{
   color: "green" | "amber";
-  icon: string;
+  icon: React.ReactNode;
   children: React.ReactNode;
 }> = ({ color, icon, children }) => {
   const palette =
@@ -1008,9 +1061,13 @@ const FareChip: React.FC<{
         fontFamily: SANS,
         fontSize: "11px",
         fontWeight: 700,
+        "& svg": { fontSize: 13 },
       }}
     >
-      <Box component="span" sx={{ fontSize: "12px" }}>
+      <Box
+        component="span"
+        sx={{ display: "inline-flex", alignItems: "center" }}
+      >
         {icon}
       </Box>
       {children}
