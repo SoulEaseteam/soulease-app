@@ -283,6 +283,18 @@ const BookingFlowPage: React.FC = () => {
   const taxiResult = taxi.result;
   const adminQuoteRequired = taxiResult?.tier === "admin";
 
+  // 🆕 Round 10 (founder 2026-05-01): Distance + ETA line on Confirm
+  //    Order. ETA = travel time from distance + a 10-min prep buffer
+  //    (staff getting ready + calling taxi). Average urban Bangkok /
+  //    Grab speed: 35 km/h (mix of city + sois). Tune AVG_SPEED_KMH /
+  //    STAFF_PREP_MIN if real-world ETAs drift from observed values.
+  const AVG_SPEED_KMH = 35;
+  const STAFF_PREP_MIN = 10;
+  const etaMinutes =
+    distanceKm > 0
+      ? Math.round((distanceKm * 60) / AVG_SPEED_KMH + STAFF_PREP_MIN)
+      : 0;
+
   const total = servicePrice + addonsTotal + taxiFare;
 
   // ── Validation. Phone + contact name are captured on the dedicated
@@ -688,6 +700,36 @@ const BookingFlowPage: React.FC = () => {
               value={`+${formatTHB(addonsTotal)}`}
             />
           )}
+
+          {/* 🆕 Round 10 (founder 2026-05-01): Distance + ETA line. ETA
+              factors in a 10-min staff prep buffer + travel time from
+              the configured average city speed. Only renders once a
+              location is set so we have a real distance to show. */}
+          {locationSet && distanceKm > 0 && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "6px",
+                fontFamily: SANS,
+                fontSize: "12px",
+                color: "rgba(60, 30, 20, 0.65)",
+                marginBottom: "8px",
+              }}
+            >
+              <Box component="span">
+                📍 Distance: <Box component="strong" sx={{ color: "#3c1e14" }}>{distanceKm.toFixed(1)} km</Box>
+              </Box>
+              <Box component="span" sx={{ opacity: 0.5 }}>
+                •
+              </Box>
+              <Box component="span">
+                ⏱ ETA: <Box component="strong" sx={{ color: "#3c1e14" }}>{etaMinutes} min</Box>
+              </Box>
+            </Box>
+          )}
+
           <Box
             sx={{
               display: "flex",
