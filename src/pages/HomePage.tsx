@@ -30,11 +30,14 @@ import { useTranslation } from "react-i18next";
 import TopNav from "@/components/home/TopNav";
 import HeroSection from "@/components/home/HeroSection";
 import HowItWorks from "@/components/home/HowItWorks";
-import ServicesGrid from "@/components/home/ServicesGrid";
+// 🆕 Round 18 (founder 2026-05-01): removed sections that duplicate
+//    dedicated pages — ServicesGrid (→ /services / ServicesPage),
+//    Testimonials (→ /review/all/:id / ReviewListPage), FAQ (→ the
+//    How-To-Book FAQ tab on the SunRed about/profile page).
+//    HomePage stays lean as a conversion funnel:
+//      hero → explain → preview therapists → trust → CTA → footer.
 import FeaturedTherapists from "@/components/home/FeaturedTherapists";
 import TrustSection from "@/components/home/TrustSection";
-import Testimonials from "@/components/home/Testimonials";
-import FAQ from "@/components/home/FAQ";
 import FinalCTA from "@/components/home/FinalCTA";
 import HomeFooter from "@/components/home/HomeFooter";
 
@@ -80,18 +83,16 @@ const HomePage: React.FC = () => {
       <TopNav />
       <HeroSection />
       <HowItWorks />
-      <ServicesGrid />
 
       {/* Featured therapists — anchored to #therapist-list so HeroSection's
-          and FinalCTA's CTAs can scroll to it. Receives live data from
-          `useTherapists()`; falls back to static demo if subscription empty. */}
+          CTA can scroll to it. Receives live data from `useTherapists()`;
+          falls back to static demo if subscription empty. The 'View all
+          therapists' button below the scroll navigates to /therapists. */}
       <Box id="therapist-list" sx={{ scrollMarginTop: "80px" }}>
         <FeaturedTherapists therapists={therapists} />
       </Box>
 
       <TrustSection />
-      <Testimonials />
-      <FAQ />
       <FinalCTA />
       <HomeFooter />
     </Box>
