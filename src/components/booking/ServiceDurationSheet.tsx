@@ -268,131 +268,12 @@ const ServiceDurationSheet: React.FC<Props> = ({
           )}
         </Box>
 
-        {/* 🆕 Phase 4 (B-pattern) — Duration picker FIRST so user can
-            decide before reading the long info. Tabs (Details/Notices)
-            follow as supporting context. */}
-        <Typography
-          sx={{
-            fontFamily: SANS,
-            fontSize: "10.5px",
-            fontWeight: 700,
-            color: "rgba(60, 30, 20, 0.55)",
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-            margin: "0 0 10px",
-            paddingLeft: "4px",
-          }}
-        >
-          Choose duration
-        </Typography>
-        <Box
-          role="radiogroup"
-          aria-label="Service duration"
-          sx={{ display: "flex", flexDirection: "column", gap: "10px" }}
-        >
-          {durations.map((min) => {
-            const isActive = selected === min;
-            const price = priceForDuration(service, min);
-            const meta = DURATION_LABELS[min] ?? { tag: `${min} min` };
-            return (
-              <Box
-                key={min}
-                role="radio"
-                aria-checked={isActive}
-                tabIndex={0}
-                onClick={() => setSelected(min)}
-                onKeyDown={(e) => {
-                  if (e.key === " " || e.key === "Enter") {
-                    e.preventDefault();
-                    setSelected(min);
-                  }
-                }}
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  padding: "14px 16px",
-                  borderRadius: "16px",
-                  cursor: "pointer",
-                  userSelect: "none",
-                  background: "rgba(255, 255, 255, 0.7)",
-                  backdropFilter: "blur(20px) saturate(180%)",
-                  WebkitBackdropFilter: "blur(20px) saturate(180%)",
-                  border: isActive
-                    ? "2px solid #FE0944"
-                    : "1px solid rgba(0, 0, 0, 0.06)",
-                  boxShadow: isActive
-                    ? "0 6px 18px rgba(254, 9, 68, 0.15)"
-                    : "0 2px 6px rgba(126, 30, 46, 0.05)",
-                  transition: "all 0.15s ease",
-                  "&:focus-visible": {
-                    outline: "2px solid #FE0944",
-                    outlineOffset: "2px",
-                  },
-                }}
-              >
-                <Box
-                  aria-hidden
-                  sx={{
-                    width: 18,
-                    height: 18,
-                    flexShrink: 0,
-                    borderRadius: "50%",
-                    border: isActive
-                      ? "5px solid #FE0944"
-                      : "2px solid rgba(0, 0, 0, 0.2)",
-                    background: isActive ? "#fff" : "transparent",
-                    transition: "all 0.15s ease",
-                  }}
-                />
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography
-                    sx={{
-                      fontFamily: SERIF,
-                      fontSize: "16px",
-                      fontWeight: 600,
-                      color: "#3c1e14",
-                      lineHeight: 1.1,
-                      marginBottom: "2px",
-                    }}
-                  >
-                    {min} min
-                  </Typography>
-                  <Typography
-                    component="span"
-                    sx={{
-                      fontFamily: SANS,
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      color: meta.tagColor ?? "rgba(60, 30, 20, 0.55)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
-                    }}
-                  >
-                    {meta.tag}
-                  </Typography>
-                </Box>
-                <Typography
-                  sx={{
-                    fontFamily: SERIF,
-                    fontSize: "18px",
-                    fontWeight: 700,
-                    color: isActive ? "#FE0944" : "#3c1e14",
-                    letterSpacing: "-0.02em",
-                    flexShrink: 0,
-                  }}
-                >
-                  {formatTHB(price)}
-                </Typography>
-              </Box>
-            );
-          })}
-        </Box>
-
-        {/* Supporting info — Tabs (Details / Notices) BELOW duration. */}
+        {/* 🆕 Phase 5 — Tabs (Details / Notices) FIRST per founder mockup
+            'Tabs [Details] | [Notices] กดหรือ tap เพื่อเปิดดูรายละเอียด'.
+            Inside Details, Description and Benefits are collapsible (tap ▼
+            to open). Choose Duration follows tabs, then Pick date & time. */}
         <Box
           sx={{
-            marginTop: "20px",
             background: "rgba(255, 255, 255, 0.7)",
             backdropFilter: "blur(20px) saturate(180%)",
             WebkitBackdropFilter: "blur(20px) saturate(180%)",
@@ -496,6 +377,127 @@ const ServiceDurationSheet: React.FC<Props> = ({
               </>
             )}
           </Box>
+        </Box>
+
+        {/* 🎯 CHOOSE DURATION — 3 cards (60 / 90 / 120). Sits between the
+            Tabs (Details/Notices) and the date+time picker per the founder
+            mockup ('Tabs ... 🎯 CHOOSE DURATION (3 cards: 60/90/120)'). */}
+        <Typography
+          sx={{
+            fontFamily: SANS,
+            fontSize: "10.5px",
+            fontWeight: 700,
+            color: "rgba(60, 30, 20, 0.55)",
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            margin: "20px 0 10px",
+            paddingLeft: "4px",
+          }}
+        >
+          🎯 Choose duration
+        </Typography>
+        <Box
+          role="radiogroup"
+          aria-label="Service duration"
+          sx={{ display: "flex", flexDirection: "column", gap: "10px" }}
+        >
+          {durations.map((min) => {
+            const isActive = selected === min;
+            const price = priceForDuration(service, min);
+            const meta = DURATION_LABELS[min] ?? { tag: `${min} min` };
+            return (
+              <Box
+                key={min}
+                role="radio"
+                aria-checked={isActive}
+                tabIndex={0}
+                onClick={() => setSelected(min)}
+                onKeyDown={(e) => {
+                  if (e.key === " " || e.key === "Enter") {
+                    e.preventDefault();
+                    setSelected(min);
+                  }
+                }}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "14px 16px",
+                  borderRadius: "16px",
+                  cursor: "pointer",
+                  userSelect: "none",
+                  background: "rgba(255, 255, 255, 0.7)",
+                  backdropFilter: "blur(20px) saturate(180%)",
+                  WebkitBackdropFilter: "blur(20px) saturate(180%)",
+                  border: isActive
+                    ? "2px solid #FE0944"
+                    : "1px solid rgba(0, 0, 0, 0.06)",
+                  boxShadow: isActive
+                    ? "0 6px 18px rgba(254, 9, 68, 0.15)"
+                    : "0 2px 6px rgba(126, 30, 46, 0.05)",
+                  transition: "all 0.15s ease",
+                  "&:focus-visible": {
+                    outline: "2px solid #FE0944",
+                    outlineOffset: "2px",
+                  },
+                }}
+              >
+                <Box
+                  aria-hidden
+                  sx={{
+                    width: 18,
+                    height: 18,
+                    flexShrink: 0,
+                    borderRadius: "50%",
+                    border: isActive
+                      ? "5px solid #FE0944"
+                      : "2px solid rgba(0, 0, 0, 0.2)",
+                    background: isActive ? "#fff" : "transparent",
+                    transition: "all 0.15s ease",
+                  }}
+                />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography
+                    sx={{
+                      fontFamily: SERIF,
+                      fontSize: "16px",
+                      fontWeight: 600,
+                      color: "#3c1e14",
+                      lineHeight: 1.1,
+                      marginBottom: "2px",
+                    }}
+                  >
+                    {min} min
+                  </Typography>
+                  <Typography
+                    component="span"
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      color: meta.tagColor ?? "rgba(60, 30, 20, 0.55)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                    }}
+                  >
+                    {meta.tag}
+                  </Typography>
+                </Box>
+                <Typography
+                  sx={{
+                    fontFamily: SERIF,
+                    fontSize: "18px",
+                    fontWeight: 700,
+                    color: isActive ? "#FE0944" : "#3c1e14",
+                    letterSpacing: "-0.02em",
+                    flexShrink: 0,
+                  }}
+                >
+                  {formatTHB(price)}
+                </Typography>
+              </Box>
+            );
+          })}
         </Box>
 
         {/* 🆕 Phase 5 — Pick date & time inline (was a separate sheet).
