@@ -305,7 +305,7 @@ const BookingHistoryPage: React.FC = () => {
             ctaLabel={tab === "upcoming" ? "Browse therapists" : undefined}
             onCta={
               tab === "upcoming"
-                ? () => void navigate("/therapists")
+                ? () => void navigate("/")
                 : undefined
             }
           />

@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import ScrollToTop from "@/components/common/ScrollToTop";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
@@ -76,9 +76,11 @@ const MaintenancePage = React.lazy(
 const NotFoundPage = React.lazy(() => import("@/pages/NotFoundPage"));
 
 // Therapist
-const TherapistListPage = React.lazy(
-  () => import("@/pages/therapist/TherapistListPage")
-);
+// 🆕 Round 25c (founder 2026-05-02): TherapistListPage no longer routed.
+//    Founder asked: "therapists ทั้งหมด กลับไปหน้าหลัก" — the live list
+//    now lives on HomePage as HomeTherapistGrid (2-col grid). /therapists
+//    and /therapist/list redirect to / for back-compat with old links.
+//    The TherapistListPage.tsx file is orphan — pending git rm on Mac.
 // 🆕 Round 22b (founder 2026-05-01): TherapistStatusManager file deleted
 //    along with the merge cleanup. Status overrides (holiday/forceAvail)
 //    still live on therapist docs and are managed via the admin panel.
@@ -171,12 +173,13 @@ export default function App() {
           <Route path="/services/:id" element={<ServiceDetailPage />} />
 
           {/* 🃏 Phase 2 — Browse + Detail */}
-          {/* 🆕 Round 22: /therapists now serves the live-Firestore
-              TherapistListPage (was TherapistsBrowsePage which used DEMO
-              data). The legacy /therapist/list path is redirected to
-              /therapists for back-compat with old links. */}
-          <Route path="/therapists" element={<TherapistListPage />} />
-          <Route path="/therapist/list" element={<TherapistListPage />} />
+          {/* 🆕 Round 25c: full therapist list is now on HomePage
+              (HomeTherapistGrid). /therapists and /therapist/list redirect
+              to / so any external/old link still lands somewhere useful.
+              Detail route /therapists/:id stays — it's the per-therapist
+              page that the home grid clicks into. */}
+          <Route path="/therapists" element={<Navigate to="/" replace />} />
+          <Route path="/therapist/list" element={<Navigate to="/" replace />} />
           <Route path="/therapists/:id" element={<TherapistDetailPage />} />
 
           {/* 🎨 Phase 3 — new wizard at /booking + /booking/:therapistId

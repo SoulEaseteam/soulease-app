@@ -649,17 +649,7 @@ const ReviewsTab: React.FC<{
   );
 };
 
-// ─────────────────────────────────────────────────────────────────────
-// TAB 3 — Loyalty (rebook stats with industry benchmark)
-//
-// Why this tab exists: rebook rate is a powerful trust signal but most
-// customers don't know if 98% is good or normal. This tab provides
-// context — Bangkok industry average, repeat-customer breakdown, and
-// rebook timing distribution — so the number becomes meaningful.
-//
-// Industry benchmark numbers (Bangkok outcall massage market) are
-// founder-confirmed estimates. When real BI data lands, swap to a
-// Firestore-driven benchmark per service category.
+
 // ─────────────────────────────────────────────────────────────────────
 const INDUSTRY_REBOOK_AVG = 35; // Bangkok outcall avg (founder estimate)
 const TOP_5_PCT_THRESHOLD = 75; // ≥ this = top 5% in market

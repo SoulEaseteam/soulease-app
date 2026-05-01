@@ -42,6 +42,11 @@ import HeroSection from "@/components/home/HeroSection";
 //    "Why SunRed" section (ผ.พ. licensed / Outcall / 5 Languages) to
 //    bridge the Hero→Footer gap WITHOUT reintroducing fake stats.
 import PromiseStrip from "@/components/home/PromiseStrip";
+// 🆕 Round 25b (founder 2026-05-02): brought /therapists onto HomePage
+//    as a 2-col compact grid. Same Firestore live data + sort logic as
+//    TherapistListPage — no DEMO fallback. /therapists still exists as
+//    the canonical full list (linked via "See all →" header).
+import HomeTherapistGrid from "@/components/home/HomeTherapistGrid";
 import HomeFooter from "@/components/home/HomeFooter";
 
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
@@ -78,6 +83,7 @@ const HomePage: React.FC = () => {
     >
       <TopNav />
       <HeroSection />
+      <HomeTherapistGrid />
       <PromiseStrip />
       <HomeFooter />
     </Box>

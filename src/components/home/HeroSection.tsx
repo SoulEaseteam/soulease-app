@@ -39,11 +39,19 @@ const HeroSection: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // 🆕 Round 21 (founder 2026-05-01): direct nav to /therapists.
-  //    Previously scrolled to in-page #therapist-list, but Round 21
-  //    removed FeaturedTherapists from HomePage. Hero CTA now hits the
-  //    real therapist list page (live Firestore data) immediately.
-  const handleCta = () => void navigate("/therapists");
+  // 🆕 Round 25c (founder 2026-05-02): /therapists list is now on
+  //    HomePage itself (HomeTherapistGrid). CTA scrolls down to the
+  //    grid section instead of routing — feels instant, no page swap.
+  //    Falls back to navigate('/') if the grid isn't on the page (e.g.
+  //    if Hero is reused elsewhere later).
+  const handleCta = () => {
+    const el = document.getElementById("therapist-grid");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      void navigate("/");
+    }
+  };
 
   return (
     <Box
