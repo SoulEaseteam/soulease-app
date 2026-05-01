@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import LanguageIcon from "@mui/icons-material/Language";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router-dom";
 
 interface LangOption {
   code: string;
@@ -29,10 +30,20 @@ const LANGS: LangOption[] = [
 
 const FloatingLanguageSwitcher: React.FC = () => {
   const { i18n } = useTranslation();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
 
   const current = (i18n.language || "en").split("-")[0].toLowerCase();
   const currentLang = LANGS.find((l) => l.code === current) ?? LANGS[0];
+
+  // 🆕 Phase 4 — Hide on therapist detail + booking flow pages.
+  //    On those pages the floating EN globe collided with the
+  //    StickyBookCTA / Confirm bar (founder feedback 2026-05-01).
+  //    Available on Home / Browse / History / Profile etc. as before.
+  const path = location.pathname;
+  if (path.startsWith("/therapists/") || path.startsWith("/booking")) {
+    return null;
+  }
 
   const handleSelect = async (code: string) => {
     await i18n.changeLanguage(code);

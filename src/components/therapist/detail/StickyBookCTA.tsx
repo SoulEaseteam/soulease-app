@@ -3,7 +3,7 @@
 // 🎨 Phase 2 Detail — sticky bottom CTA (verbatim port of `.cta-bottom`).
 // Price display + book button (red→coral gradient pill) + circular fav button.
 
-import React, { useState } from "react";
+import React from "react";
 import { Box, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -50,7 +50,6 @@ const StickyBookCTA: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [fav, setFav] = useState(false);
 
   // CTA disabled until at least a service is picked. Date/time can still
   // be filled inside the booking flow if user prefers.
@@ -162,30 +161,8 @@ const StickyBookCTA: React.FC<Props> = ({
         →
       </Button>
 
-      {/* .fav-btn */}
-      <Box
-        component="button"
-        type="button"
-        onClick={() => setFav((f) => !f)}
-        aria-label={t("detail.cta.fav", "Save to favorites")}
-        sx={{
-          width: "44px",
-          height: "44px",
-          borderRadius: "50%",
-          background: "rgba(255, 255, 255, 0.7)",
-          border: "1px solid rgba(254, 9, 68, 0.2)",
-          color: "#FE0944",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "16px",
-          flexShrink: 0,
-          cursor: "pointer",
-          fontFamily: SANS,
-        }}
-      >
-        {fav ? "♥" : "♡"}
-      </Box>
+      {/* Favorite button removed (founder feedback 2026-05-01).
+          Save-to-favorites is still accessible via the ⋯ menu in DetailHero. */}
     </Box>
   );
 };
