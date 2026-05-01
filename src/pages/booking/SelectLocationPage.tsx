@@ -881,10 +881,13 @@ const SelectLocationPage: React.FC = () => {
             }
             sx={inputSx}
           />
+          {/* 🆕 Founder 2026-05-01: 'เรียง 3' — equal-width 3-column grid
+              so all chips fit on one row instead of wrapping to 2+1.
+              Smaller padding + tighter gap keep them readable on 430px. */}
           <Box
             sx={{
-              display: "flex",
-              flexWrap: "wrap",
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
               gap: "8px",
               marginTop: "10px",
             }}
@@ -915,10 +918,12 @@ const SelectLocationPage: React.FC = () => {
                   sx={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "6px",
-                    padding: "8px 14px",
+                    justifyContent: "center",
+                    gap: "5px",
+                    padding: "9px 6px",
                     borderRadius: "999px",
                     cursor: "pointer",
+                    minWidth: 0,
                     background: isActive
                       ? "linear-gradient(135deg, rgba(254, 9, 68, 0.12), rgba(254, 122, 82, 0.12))"
                       : "rgba(255, 255, 255, 0.7)",
@@ -926,14 +931,25 @@ const SelectLocationPage: React.FC = () => {
                       ? "1.5px solid #FE0944"
                       : "1px solid rgba(0, 0, 0, 0.08)",
                     fontFamily: SANS,
-                    fontSize: "12.5px",
+                    fontSize: "11.5px",
                     fontWeight: 600,
                     color: isActive ? "#FE0944" : "#3c1e14",
                     transition: "all 0.15s ease",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
                   }}
                 >
-                  <Box sx={{ fontSize: "13px" }}>{m.icon}</Box>
-                  {m.label}
+                  <Box sx={{ fontSize: "13px", flexShrink: 0 }}>{m.icon}</Box>
+                  <Box
+                    component="span"
+                    sx={{
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {m.label}
+                  </Box>
                 </Box>
               );
             })}
