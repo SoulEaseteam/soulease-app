@@ -34,3 +34,6 @@ dist-electron/
 .firebase/
 .firebase/
 .firebase/
+.DS_Store
+**/.DS_Store
+.firebase/
