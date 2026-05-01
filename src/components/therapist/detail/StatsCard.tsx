@@ -34,6 +34,8 @@ interface Props {
   onTapRating?: () => void;
   /** Optional — opens an info sheet on the Verified Profile tab. */
   onTapProfile?: () => void;
+  /** Optional — opens an info sheet on the Loyalty tab (rebook stats). */
+  onTapLoyalty?: () => void;
 }
 
 const StatsCard: React.FC<Props> = ({
@@ -43,12 +45,13 @@ const StatsCard: React.FC<Props> = ({
   rebookRate,
   onTapRating,
   onTapProfile,
+  onTapLoyalty,
 }) => {
   const { t } = useTranslation();
 
   // First-visit hint — shown once per browser, auto-dismiss after 5s
   // or on first cell tap. Only shows when at least one cell is tappable.
-  const hasInteractiveCell = !!(onTapRating || onTapProfile);
+  const hasInteractiveCell = !!(onTapRating || onTapProfile || onTapLoyalty);
   const [showHint, setShowHint] = useState(false);
 
   useEffect(() => {
@@ -115,7 +118,7 @@ const StatsCard: React.FC<Props> = ({
     {
       num: rebookRate,
       label: t("detail.stats.rebook", "Rebook rate"),
-      onTap: wrap(onTapProfile),
+      onTap: wrap(onTapLoyalty),
     },
   ];
 
@@ -292,14 +295,15 @@ const StatsCard: React.FC<Props> = ({
                   marginLeft: "1px",
                   lineHeight: 1,
                   display: "inline-block",
-                  // Subtle horizontal pulse — slides right ~3px and
-                  // back, twice per cycle, looping every 2.4s. Calls
-                  // attention to the tappable affordance without
-                  // becoming visual noise.
-                  animation: "sunredChevronPulse 2.4s ease-in-out infinite",
+                  // Horizontal pulse — slides right 7px and back,
+                  // looping every 2s. Big enough to be noticed
+                  // peripherally; speed kept calm so it doesn't
+                  // compete with hero photo or popover.
+                  fontSize: "12px",
+                  animation: "sunredChevronPulse 2s ease-in-out infinite",
                   "@keyframes sunredChevronPulse": {
                     "0%, 100%": { transform: "translateX(0)", opacity: 0.7 },
-                    "50%": { transform: "translateX(3px)", opacity: 1 },
+                    "50%": { transform: "translateX(7px)", opacity: 1 },
                   },
                 }}
               >

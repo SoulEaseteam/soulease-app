@@ -22,16 +22,40 @@ import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
+/** 3-state availability — drives the colored status dot in the hero
+ *  name strip:
+ *    online  = ●green  · available now
+ *    busy    = ●orange · in a session / on the way
+ *    offline = ●gray   · not currently working
+ */
+export type AvailabilityStatus = "online" | "busy" | "offline";
+
 interface Props {
   name: string;
   age: number;
   area: string;
   distance: string;
-  online: boolean;
+  /**
+   * Either the legacy boolean (true → online, false → offline) or a
+   * 3-state status string. Existing callers passing `online={t.online}`
+   * keep working; pass `status="busy"` for the new orange state.
+   */
+  online: boolean | AvailabilityStatus;
   /** Cloudinary-enhanced image URLs. First is cover. Empty → photoBg only. */
   images?: string[];
   /** Fallback CSS background when `images` is empty (gradient placeholder). */
   photoBg: string;
+}
+
+const STATUS_COLORS: Record<AvailabilityStatus, { dot: string; label: string }> = {
+  online: { dot: "#16a34a", label: "Online" },
+  busy: { dot: "#f97316", label: "Busy" },
+  offline: { dot: "#9ca3af", label: "Offline" },
+};
+
+function resolveStatus(input: boolean | AvailabilityStatus): AvailabilityStatus {
+  if (typeof input === "string") return input;
+  return input ? "online" : "offline";
 }
 
 const DetailHero: React.FC<Props> = ({
@@ -304,8 +328,36 @@ const DetailHero: React.FC<Props> = ({
             <Box sx={{ display: "flex", alignItems: "center", gap: "4px" }}>
               📍 {area} · {distance}
             </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              {online ? "●Online" : "●Offline"}
+            <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
+              {(() => {
+                const status = resolveStatus(online);
+                const meta = STATUS_COLORS[status];
+                return (
+                  <>
+                    <Box
+                      component="span"
+                      aria-hidden
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        background: meta.dot,
+                        boxShadow: `0 0 0 2px rgba(255,255,255,0.95), 0 0 8px ${meta.dot}`,
+                        display: "inline-block",
+                        flexShrink: 0,
+                        ...(status === "online" && {
+                          animation: "sunredPulseDot 1.8s ease-in-out infinite",
+                          "@keyframes sunredPulseDot": {
+                            "0%, 100%": { transform: "scale(1)", opacity: 1 },
+                            "50%": { transform: "scale(1.18)", opacity: 0.78 },
+                          },
+                        }),
+                      }}
+                    />
+                    {meta.label}
+                  </>
+                );
+              })()}
             </Box>
           </Box>
         </Box>

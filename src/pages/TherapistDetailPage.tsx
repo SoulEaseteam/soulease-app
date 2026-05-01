@@ -417,9 +417,9 @@ const TherapistDetailPage: React.FC = () => {
   // 🆕 Phase 4 — Stats cells now open this sheet (Reviews tab from the
   //    rating cell, Profile tab from years/rebook cells). Lets us drop
   //    the always-visible TherapistProfileTabs section to save space.
-  const [infoSheet, setInfoSheet] = useState<"profile" | "reviews" | null>(
-    null
-  );
+  const [infoSheet, setInfoSheet] = useState<
+    "profile" | "reviews" | "loyalty" | null
+  >(null);
 
   // Resolve the picked service object (if any) for header/sticky CTA copy.
   const selectedService =
@@ -467,6 +467,7 @@ const TherapistDetailPage: React.FC = () => {
         // Tap-to-open info sheet — saves vertical space on the detail page
         onTapRating={() => setInfoSheet("reviews")}
         onTapProfile={() => setInfoSheet("profile")}
+        onTapLoyalty={() => setInfoSheet("loyalty")}
       />
 
       <About name={therapist.name} body={therapist.about} />
