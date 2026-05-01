@@ -1,87 +1,90 @@
 // src/pages/booking/BookingFlowPage.tsx
 //
-// 🎨 Phase 3 Booking — 5-step wizard orchestrator.
+// 🎨 Phase 4 — Single-page Reservation Order.
 //
-// Replaces legacy BookingPage.tsx (761 lines) with a step-by-step flow:
-//   1. Service       — pick a licensed therapeutic service
-//   2. DateTime      — choose date + time slot
-//   3. Location      — Google Maps + saved hotels
-//   4. Details       — name, phone, room, notes (with profanity moderation)
-//   5. Confirm + Pay — order summary + payment method picker
+// Replaces the Phase-3 5-step wizard with a single scrollable form.
+// Service + Date + Time are picked on the DetailPage and passed in via
+// URL search params (?service=…&duration=…&date=…&time=…). This page
+// only collects what's left:
 //
-// 🚧 SCAFFOLD COMMIT 1 — only the shell, indicator, nav, and step
-//    placeholders. Each step's UI lands in its own commit (2-6) with
-//    full validation + i18n. Logic ports (Firestore booking creation,
-//    time conflict checks, moderation) come in commit 6.
+//   ┌─────────────────────────────────────────────┐
+//   │  [avatar] Mai · ★4.7                    EDIT│  Therapist header
+//   │           Today · 17:00 · Thai 60min        │
+//   ├─────────────────────────────────────────────┤
+//   │  ADDRESS                                    │
+//   │  📍 Tap to set your location          ›     │
+//   │                                             │
+//   │  PHONE NUMBER                               │
+//   │  +66 [────────────────────]                 │
+//   │                                             │
+//   │  PREFERRED LANGUAGE                         │
+//   │  [🇨🇳 中文] [🇬🇧 English] [🇯🇵 日本語] [🇰🇷 한국어]
+//   │                                             │
+//   │  OPTIONAL ADD-ONS                           │
+//   │  ☐ Hot stone therapy            +฿400      │
+//   │  ☐ Premium oil upgrade          +฿200      │
+//   │  ☐ Pair booking                 +฿2,500    │
+//   │                                             │
+//   │  NOTES FOR MAI (optional)                   │
+//   │  [textarea ──────────────────────]          │
+//   │                                             │
+//   │  Service                          ฿1,800   │
+//   │  Add-ons                          ฿0       │
+//   │  🚖 Taxi (round-trip)              —       │
+//   │  Total                          ฿1,800     │
+//   └─────────────────────────────────────────────┘
+//   [ ← back ]  [ Place Order · ฿1,800 ]   ← sticky
 //
-// Architecture notes:
-//   • Step state is local — keeps URL stable at /booking, allows back-
-//     button navigation between steps without page reload.
-//   • Form state lives in `formState` — typed, immutable updates per step.
-//   • Therapist preselection: if /booking/:therapistId, we pre-pick that
-//     therapist and skip nothing (user can still change service freely).
-//   • Validation is per-step — `canAdvance` derived from formState shape.
-//
-// 🔌 Wiring (deferred to commit 6):
-//   • runTransaction(db) booking creation pattern from old BookingPage
-//   • calculateTherapistStatus availability check
-//   • isInappropriate() profanity gate
+// Taxi fare is gated — shows "—" until the customer picks a location.
+// All inputs persist locally; submit fires Firestore addDoc + redirects
+// to /booking/success/:id.
 
 import React, { useState, useMemo } from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, TextField, IconButton } from "@mui/material";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
+import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
+import "react-phone-number-input/style.css";
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
+import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 
-import StepIndicator from "@/components/booking/StepIndicator";
 import BookingNavBar from "@/components/booking/BookingNavBar";
-import StepService from "@/components/booking/StepService";
-import StepDateTime from "@/components/booking/StepDateTime";
-import StepLocation from "@/components/booking/StepLocation";
-import StepDetails from "@/components/booking/StepDetails";
-import StepConfirm from "@/components/booking/StepConfirm";
-import { isValidPhoneNumber } from "react-phone-number-input";
+import LocationSheet from "@/components/booking/LocationSheet";
+import PaymentPicker, {
+  type PaymentMethod,
+} from "@/components/booking/PaymentPicker";
 
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import { isInappropriate } from "@/utils/moderate";
 import { estimateTaxiFare } from "@/utils/taxiFare";
-import { priceForDuration } from "@/utils/servicePricing";
+import { priceForDuration, formatTHB } from "@/utils/servicePricing";
+import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
 import services from "@/data/services";
 import therapistsData from "@/data/therapists";
+import { ADDONS, LANGUAGE_OPTIONS } from "@/data/bookingExtras";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
-// ── Form state — single source of truth across steps
 export interface BookingFormState {
-  // Step 1 — Service
   serviceId: string | null;
-  duration: number | null; // minutes
-  // Step 2 — DateTime
-  date: string | null; // YYYY-MM-DD
-  time: string | null; // HH:mm
-  // Step 3 — Location
+  duration: number | null;
+  date: string | null;
+  time: string | null;
   locationName: string | null;
   locationAddress: string | null;
   lat: number | null;
   lng: number | null;
-  /**
-   * Free-text refinement on top of the picked location — room number,
-   * floor, building, side entrance, gate code, etc. Independent from
-   * `locationAddress` (which holds the canonical address from the picked
-   * place). Surfaces in the booking confirmation + therapist's en-route view.
-   */
   addressDetails: string;
-  // Step 4 — Details
-  customerName: string;
   customerPhone: string;
+  language: string; // language code "zh" | "en" | "ja" | "ko"
+  selectedAddons: string[]; // ADDON ids
   notes: string;
-  // Step 5 — Payment
-  paymentMethod: "card" | "wechat" | "alipay" | "promptpay" | "cash" | null;
-  // Therapist context (preselected from /booking/:therapistId)
+  paymentMethod: PaymentMethod | null;
   therapistId: string | null;
 }
 
@@ -95,14 +98,13 @@ const initialFormState: BookingFormState = {
   lat: null,
   lng: null,
   addressDetails: "",
-  customerName: "",
   customerPhone: "",
+  language: "en",
+  selectedAddons: [],
   notes: "",
   paymentMethod: null,
   therapistId: null,
 };
-
-const TOTAL_STEPS = 5;
 
 const BookingFlowPage: React.FC = () => {
   const { id: therapistId } = useParams<{ id?: string }>();
@@ -111,17 +113,15 @@ const BookingFlowPage: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
 
-  // 🆕 Phase 4 — Pre-fill from URL params forwarded by DetailPage's
-  //    StickyBookCTA. When service+duration+date+time are all present,
-  //    we skip Step 1 (service) + Step 2 (date/time) and start at Step 3
-  //    "Where should we go?". Total steps shrinks accordingly.
+  // Pre-fill from URL params (DetailPage StickyBookCTA forwards these)
   const preService = searchParams.get("service");
   const preDuration = searchParams.get("duration");
   const preDate = searchParams.get("date");
   const preTime = searchParams.get("time");
-  const isPreFilled = !!(preService && preDuration && preDate && preTime);
 
-  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  const [locationSheetOpen, setLocationSheetOpen] = useState(false);
   const [form, setForm] = useState<BookingFormState>({
     ...initialFormState,
     therapistId: therapistId ?? null,
@@ -130,116 +130,120 @@ const BookingFlowPage: React.FC = () => {
     date: preDate ?? null,
     time: preTime ?? null,
   });
-  // When pre-filled, jump to Step 3. Otherwise start at Step 1.
-  const [step, setStep] = useState<number>(isPreFilled ? 3 : 1);
 
-  // Per-step validation — drives BookingNavBar `disabled` state.
-  const canAdvance = useMemo(() => {
-    switch (step) {
-      case 1:
-        return !!form.serviceId;
-      case 2:
-        return !!form.date && !!form.time;
-      case 3:
-        return !!form.lat && !!form.lng;
-      case 4:
-        return (
-          form.customerName.trim().length >= 2 &&
-          form.customerPhone.trim().length >= 8 &&
-          isValidPhoneNumber(form.customerPhone)
-        );
-      case 5:
-        return !!form.paymentMethod;
-      default:
-        return false;
+  // ── Resolve therapist + service for header + summary
+  const therapist = useMemo(
+    () => therapistsData.find((tt) => tt.id === form.therapistId) ?? null,
+    [form.therapistId]
+  );
+  const service = useMemo(
+    () => services.find((s) => s.id === form.serviceId) ?? null,
+    [form.serviceId]
+  );
+
+  // ── Pricing
+  const servicePrice =
+    service && form.duration
+      ? priceForDuration(service, form.duration)
+      : service?.price ?? 0;
+  const addonsTotal = ADDONS.filter((a) =>
+    form.selectedAddons.includes(a.id)
+  ).reduce((sum, a) => sum + a.price, 0);
+
+  // 🚖 Taxi — gated on a real location being picked. Per founder request:
+  //    "ตอนยังไม่จองจะยังไม่คิด หลังจากทราบตำแหน่งจะคำนวนแท็กซี่"
+  const locationSet = form.lat != null && form.lng != null;
+  const { distanceKm, fare: taxiFare } = locationSet
+    ? estimateTaxiFare({
+        therapistLat: therapist?.lat,
+        therapistLng: therapist?.lng,
+        customerLat: form.lat,
+        customerLng: form.lng,
+        durationMin: form.duration ?? service?.duration ?? 60,
+      })
+    : { distanceKm: 0, fare: 0 };
+
+  const total = servicePrice + addonsTotal + taxiFare;
+
+  // ── Validation: ready to place order
+  const phoneValid =
+    form.customerPhone.trim().length >= 8 &&
+    isValidPhoneNumber(form.customerPhone);
+  const canPlaceOrder =
+    !!form.serviceId &&
+    !!form.duration &&
+    !!form.date &&
+    !!form.time &&
+    locationSet &&
+    phoneValid &&
+    !!form.paymentMethod;
+
+  // ── Format header summary line: "Today · 17:00 · Thai 60min"
+  const summaryLine = (() => {
+    const parts: string[] = [];
+    if (form.date) {
+      const d = dayjs(form.date);
+      parts.push(
+        d.isSame(dayjs(), "day")
+          ? "Today"
+          : d.isSame(dayjs().add(1, "day"), "day")
+          ? "Tomorrow"
+          : d.format("MMM D")
+      );
     }
-  }, [step, form]);
-
-  const ctaLabel = useMemo(() => {
-    if (step === TOTAL_STEPS) {
-      return t("booking.cta.confirmAndPay", "Confirm & Pay");
+    if (form.time) parts.push(form.time);
+    if (service && form.duration) {
+      parts.push(`${service.name} · ${form.duration}min`);
     }
-    return t("booking.cta.continue", "Continue");
-  }, [step, t]);
+    return parts.join(" · ");
+  })();
 
-  const stepTitle = useMemo(() => {
-    const titles = [
-      t("booking.step.service", "Choose your service"),
-      t("booking.step.dateTime", "When works for you?"),
-      t("booking.step.location", "Where should we go?"),
-      t("booking.step.details", "Your details"),
-      t("booking.step.confirm", "Review & pay"),
-    ];
-    return titles[step - 1];
-  }, [step, t]);
-
+  // ── Submit
   const handleSubmit = async () => {
-    if (submitting) return;
+    if (submitting || !canPlaceOrder) return;
     setSubmitting(true);
-
     try {
-      // Profanity moderation on notes (server-side OpenAI Moderation).
-      // Fail-open via isInappropriate's catch — only block when explicitly
-      // flagged.
       if (form.notes && (await isInappropriate(form.notes))) {
-        toast.error(t(
-          "booking.error.inappropriateNotes",
-          "Notes contain inappropriate content. Please revise."
-        ));
+        toast.error(
+          t(
+            "booking.error.inappropriateNotes",
+            "Notes contain inappropriate content. Please revise."
+          )
+        );
         setSubmitting(false);
         return;
       }
-
-      const service = services.find((s) => s.id === form.serviceId);
-      const therapist = therapistsData.find(
-        (tt) => tt.id === form.therapistId
-      );
-      if (!service || !form.date || !form.time) {
+      if (!service || !therapist || !form.date || !form.time) {
         toast.error("Missing booking details");
         setSubmitting(false);
         return;
       }
 
-      // Compose start/end timestamps. For overnight shifts, slot times
-      // before the therapist's startTime are assumed to be next-day —
-      // we add 1 day in that case so startAt sorts correctly.
+      // Compose start/end Timestamps (overnight-shift handling)
       let startDate = dayjs(`${form.date}T${form.time}`);
-      if (therapist) {
-        const startMin = parseInt(therapist.startTime.split(":")[0]) * 60 +
-          parseInt(therapist.startTime.split(":")[1]);
-        const endMin = parseInt(therapist.endTime.split(":")[0]) * 60 +
-          parseInt(therapist.endTime.split(":")[1]);
-        const slotMin = startDate.hour() * 60 + startDate.minute();
-        if (endMin <= startMin && slotMin < startMin) {
-          // overnight + slot looks early-morning → it's actually next day
-          startDate = startDate.add(1, "day");
-        }
+      const startMin =
+        parseInt(therapist.startTime.split(":")[0]) * 60 +
+        parseInt(therapist.startTime.split(":")[1]);
+      const endMin =
+        parseInt(therapist.endTime.split(":")[0]) * 60 +
+        parseInt(therapist.endTime.split(":")[1]);
+      const slotMin = startDate.hour() * 60 + startDate.minute();
+      if (endMin <= startMin && slotMin < startMin) {
+        startDate = startDate.add(1, "day");
       }
-      const endDate = startDate.add(form.duration ?? service.duration, "minute");
-
-      // 🚖 Taxi fare (round-trip from therapist's home → customer location)
-      const { distanceKm, fare: taxiFee } = estimateTaxiFare({
-        therapistLat: therapist?.lat,
-        therapistLng: therapist?.lng,
-        customerLat: form.lat,
-        customerLng: form.lng,
-        durationMin: form.duration ?? service.duration,
-      });
-      // Service price scales with chosen duration (60/90/120 multipliers).
-      const servicePrice = priceForDuration(
-        service,
-        form.duration ?? service.duration
+      const endDate = startDate.add(
+        form.duration ?? service.duration,
+        "minute"
       );
-      const totalPrice = servicePrice + taxiFee;
 
       const ref = await addDoc(collection(db, "bookings"), {
         userId: user?.uid ?? null,
         therapistId: form.therapistId,
-        therapistName: therapist?.name ?? null,
+        therapistName: therapist.name,
         serviceId: service.id,
         serviceName: service.name,
         servicePrice,
-        basePrice: service.price, // canonical 60-min price for analytics
+        basePrice: service.price,
         duration: form.duration ?? service.duration,
         date: form.date,
         time: form.time,
@@ -248,17 +252,16 @@ const BookingFlowPage: React.FC = () => {
         locationName: form.locationName,
         address: form.locationAddress,
         addressDetails: form.addressDetails,
-        location:
-          form.lat != null && form.lng != null
-            ? { lat: form.lat, lng: form.lng }
-            : null,
-        customerName: form.customerName,
+        location: { lat: form.lat, lng: form.lng },
         phone: form.customerPhone,
+        language: form.language,
+        addons: form.selectedAddons,
+        addonsTotal,
         note: form.notes,
         payment: form.paymentMethod,
-        taxiFee,
+        taxiFee: taxiFare,
         distanceKm,
-        totalPrice,
+        totalPrice: total,
         status: "confirmed",
         createdAt: Timestamp.now(),
       });
@@ -273,161 +276,743 @@ const BookingFlowPage: React.FC = () => {
     }
   };
 
-  const handleNext = () => {
-    if (step < TOTAL_STEPS) {
-      setStep(step + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } else {
-      void handleSubmit();
-    }
-  };
-
-  const handleBack = () => {
-    // When pre-filled and at the first effective step (internal Step 3),
-    // back returns to the detail page instead of stale Step 2.
-    const minStep = isPreFilled ? 3 : 1;
-    if (step > minStep) {
-      setStep(step - 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } else {
-      void navigate(-1);
-    }
-  };
-
   return (
     <Box
       sx={{
         minHeight: "100vh",
         background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
-        // Room for the stacked stickies: BookingNavBar (Confirm CTA, ~80px)
-        // sits above BottomNavGlass (~96px from bottom). Total clearance ~200.
+        // Room for stacked sticky CTA + global BottomNavGlass
         paddingBottom: "210px",
         fontFamily: SANS,
       }}
     >
-      {/* Top bar — step indicator + title */}
-      <Box
-        sx={{
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-          background: "rgba(255, 248, 240, 0.85)",
-          backdropFilter: "blur(20px) saturate(180%)",
-          WebkitBackdropFilter: "blur(20px) saturate(180%)",
-          borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
-        }}
-      >
-        {/* When pre-filled from DetailPage, the indicator collapses from
-            5 dots to 3 (we hide the already-completed Service + DateTime
-            steps to avoid implying the user must re-do them). */}
-        <StepIndicator
-          current={isPreFilled ? step - 2 : step}
-          total={isPreFilled ? 3 : TOTAL_STEPS}
-        />
-        <Box sx={{ padding: "4px 20px 14px" }}>
+      {/* ── Therapist header card ─────────────────────────────────── */}
+      <Box sx={{ padding: "16px 16px 12px" }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            padding: "14px",
+            borderRadius: "18px",
+            background: "rgba(255, 255, 255, 0.7)",
+            backdropFilter: "blur(20px) saturate(180%)",
+            WebkitBackdropFilter: "blur(20px) saturate(180%)",
+            border: "1px solid rgba(255, 255, 255, 0.6)",
+            boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
+          }}
+        >
+          {/* Avatar */}
+          <Box
+            sx={{
+              width: 48,
+              height: 48,
+              flexShrink: 0,
+              borderRadius: "50%",
+              background: therapist?.image
+                ? `center / cover no-repeat url("${therapist.image}"), linear-gradient(135deg, #d4a574, #8b6f47)`
+                : "linear-gradient(135deg, #d4a574, #8b6f47)",
+              border: "2px solid #fff",
+              boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
+            }}
+          />
+          {/* Name + summary */}
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: "8px",
+                marginBottom: "2px",
+              }}
+            >
+              <Typography
+                sx={{
+                  fontFamily: SERIF,
+                  fontSize: "16px",
+                  fontWeight: 600,
+                  color: "#3c1e14",
+                  lineHeight: 1.1,
+                }}
+              >
+                {therapist?.name ?? "Therapist"}
+              </Typography>
+              <Typography
+                component="span"
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "11.5px",
+                  color: "rgba(60, 30, 20, 0.7)",
+                  fontWeight: 600,
+                }}
+              >
+                ★{" "}
+                {therapist
+                  ? formatRating(
+                      bayesianRatingFromAggregate(
+                        therapist.rating * (therapist.reviews ?? 0),
+                        therapist.reviews ?? 0
+                      )
+                    )
+                  : "—"}
+              </Typography>
+            </Box>
+            <Typography
+              sx={{
+                fontFamily: SANS,
+                fontSize: "12px",
+                color: "rgba(60, 30, 20, 0.6)",
+                lineHeight: 1.3,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {summaryLine || "Tap EDIT to pick a service & time"}
+            </Typography>
+          </Box>
+          {/* EDIT — back to detail page to change service/date/time */}
+          <IconButton
+            aria-label="edit"
+            onClick={() =>
+              void navigate(`/therapists/${form.therapistId ?? ""}`)
+            }
+            sx={{
+              flexShrink: 0,
+              color: "#FE0944",
+              fontFamily: SANS,
+              fontSize: "11px",
+              fontWeight: 800,
+              borderRadius: "10px",
+              padding: "6px 10px",
+              gap: "4px",
+              "&:hover": { background: "rgba(254, 9, 68, 0.08)" },
+            }}
+          >
+            <EditRoundedIcon fontSize="small" />
+            <Typography
+              component="span"
+              sx={{
+                fontFamily: SANS,
+                fontSize: "11px",
+                fontWeight: 800,
+                letterSpacing: "0.06em",
+              }}
+            >
+              EDIT
+            </Typography>
+          </IconButton>
+        </Box>
+      </Box>
+
+      {/* ── Form sections ─────────────────────────────────────────── */}
+      <Box sx={{ padding: "8px 16px", display: "flex", flexDirection: "column", gap: "20px" }}>
+        {/* Address tile */}
+        <FormSection label="Address">
+          <AddressTile
+            location={{
+              name: form.locationName,
+              address: form.locationAddress,
+              addressDetails: form.addressDetails,
+              hasCoords: locationSet,
+            }}
+            onTap={() => setLocationSheetOpen(true)}
+          />
+        </FormSection>
+
+        {/* Phone */}
+        <FormSection label="Phone number">
+          <Box>
+            <PhoneInput
+              international
+              defaultCountry="TH"
+              value={form.customerPhone || undefined}
+              onChange={(val) =>
+                setForm((p) => ({ ...p, customerPhone: val ?? "" }))
+              }
+              onBlur={() => setPhoneTouched(true)}
+              placeholder="Enter phone number"
+              className={
+                phoneTouched && form.customerPhone && !phoneValid
+                  ? "PhoneInput--invalid"
+                  : undefined
+              }
+            />
+            <PhoneStyleInjector />
+            {phoneTouched && form.customerPhone && !phoneValid && (
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "11.5px",
+                  color: "#FE0944",
+                  marginTop: "6px",
+                  paddingLeft: "8px",
+                }}
+              >
+                Please enter a valid phone number with country code
+              </Typography>
+            )}
+          </Box>
+        </FormSection>
+
+        {/* Language */}
+        <FormSection label="Preferred language with therapist">
+          <Box
+            role="radiogroup"
+            sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}
+          >
+            {LANGUAGE_OPTIONS.map((l) => {
+              const isActive = form.language === l.code;
+              return (
+                <Box
+                  key={l.code}
+                  role="radio"
+                  aria-checked={isActive}
+                  tabIndex={0}
+                  onClick={() =>
+                    setForm((p) => ({ ...p, language: l.code }))
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === " " || e.key === "Enter") {
+                      e.preventDefault();
+                      setForm((p) => ({ ...p, language: l.code }));
+                    }
+                  }}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "12px 14px",
+                    borderRadius: "12px",
+                    cursor: "pointer",
+                    background: isActive
+                      ? "rgba(254, 9, 68, 0.08)"
+                      : "rgba(255, 255, 255, 0.7)",
+                    border: isActive
+                      ? "1.5px solid #FE0944"
+                      : "1px solid rgba(0, 0, 0, 0.06)",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <Box sx={{ fontSize: "16px" }}>{l.flag}</Box>
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: "13.5px",
+                      fontWeight: 600,
+                      color: isActive ? "#FE0944" : "#3c1e14",
+                    }}
+                  >
+                    {l.label}
+                  </Typography>
+                </Box>
+              );
+            })}
+          </Box>
+        </FormSection>
+
+        {/* Add-ons */}
+        <FormSection label="Optional add-ons">
+          <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {ADDONS.map((a) => {
+              const isSelected = form.selectedAddons.includes(a.id);
+              return (
+                <Box
+                  key={a.id}
+                  role="checkbox"
+                  aria-checked={isSelected}
+                  tabIndex={0}
+                  onClick={() =>
+                    setForm((p) => ({
+                      ...p,
+                      selectedAddons: isSelected
+                        ? p.selectedAddons.filter((x) => x !== a.id)
+                        : [...p.selectedAddons, a.id],
+                    }))
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === " " || e.key === "Enter") {
+                      e.preventDefault();
+                      setForm((p) => ({
+                        ...p,
+                        selectedAddons: isSelected
+                          ? p.selectedAddons.filter((x) => x !== a.id)
+                          : [...p.selectedAddons, a.id],
+                      }));
+                    }
+                  }}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    padding: "12px 14px",
+                    borderRadius: "14px",
+                    cursor: "pointer",
+                    background: "rgba(255, 255, 255, 0.7)",
+                    border: isSelected
+                      ? "1.5px solid #FE0944"
+                      : "1px solid rgba(0, 0, 0, 0.06)",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      flexShrink: 0,
+                      borderRadius: "10px",
+                      background: isSelected
+                        ? "linear-gradient(135deg, #FE0944, #FE7A52)"
+                        : "rgba(254, 201, 167, 0.35)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "18px",
+                    }}
+                  >
+                    {a.icon}
+                  </Box>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography
+                      sx={{
+                        fontFamily: SERIF,
+                        fontSize: "13.5px",
+                        fontWeight: 600,
+                        color: "#3c1e14",
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {a.name}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: "11.5px",
+                        color: "rgba(60, 30, 20, 0.6)",
+                        marginTop: "2px",
+                      }}
+                    >
+                      {a.description}
+                    </Typography>
+                  </Box>
+                  <Typography
+                    sx={{
+                      fontFamily: SERIF,
+                      fontSize: "14px",
+                      fontWeight: 700,
+                      color: "#FE0944",
+                      flexShrink: 0,
+                    }}
+                  >
+                    +{formatTHB(a.price)}
+                  </Typography>
+                  <Box
+                    aria-hidden
+                    sx={{
+                      width: 22,
+                      height: 22,
+                      flexShrink: 0,
+                      borderRadius: "6px",
+                      border: isSelected
+                        ? "none"
+                        : "2px solid rgba(0, 0, 0, 0.2)",
+                      background: isSelected ? "#FE0944" : "transparent",
+                      color: "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "14px",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {isSelected && "✓"}
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+        </FormSection>
+
+        {/* Notes */}
+        <FormSection
+          label={`Notes for ${therapist?.name ?? "your therapist"} (optional)`}
+        >
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            maxRows={6}
+            placeholder="e.g. Focus on lower back, prefer firm pressure, allergies, mobility limitations…"
+            value={form.notes}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, notes: e.target.value }))
+            }
+            inputProps={{ maxLength: 500 }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                background: "rgba(255, 255, 255, 0.7)",
+                borderRadius: "14px",
+                fontFamily: SANS,
+                fontSize: "13.5px",
+                "& fieldset": { borderColor: "rgba(0, 0, 0, 0.08)" },
+                "&:hover fieldset": { borderColor: "rgba(254, 9, 68, 0.4)" },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#FE0944",
+                  borderWidth: "1.5px",
+                },
+              },
+            }}
+          />
           <Typography
             sx={{
               fontFamily: SANS,
               fontSize: "11px",
-              fontWeight: 600,
-              color: "rgba(60, 30, 20, 0.55)",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
+              color: "rgba(60, 30, 20, 0.5)",
+              marginTop: "6px",
+              paddingLeft: "8px",
+              textAlign: "right",
             }}
           >
-            {t("booking.stepCount", "Step {{current}} of {{total}}", {
-              current: isPreFilled ? step - 2 : step,
-              total: isPreFilled ? 3 : TOTAL_STEPS,
-            })}
+            {form.notes.length}/500 · Reviewed for safety before delivery
           </Typography>
-          <Typography
-            component="h1"
+        </FormSection>
+
+        {/* Payment method */}
+        <FormSection label="Payment method">
+          <PaymentPicker
+            value={form.paymentMethod}
+            onChange={(paymentMethod) =>
+              setForm((p) => ({ ...p, paymentMethod }))
+            }
+          />
+        </FormSection>
+
+        {/* Price breakdown */}
+        <Box
+          sx={{
+            padding: "16px 18px",
+            borderRadius: "16px",
+            background: "rgba(255, 255, 255, 0.7)",
+            border: "1px solid rgba(255, 255, 255, 0.6)",
+            boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
+          }}
+        >
+          <PriceRow
+            label={`Service${form.duration ? ` (${form.duration} min)` : ""}`}
+            value={formatTHB(servicePrice)}
+          />
+          {form.selectedAddons.length > 0 && (
+            <PriceRow
+              label={`Add-ons (${form.selectedAddons.length})`}
+              value={formatTHB(addonsTotal)}
+            />
+          )}
+          <PriceRow
+            label={`🚖 Taxi (round-trip${
+              locationSet ? ` · ${distanceKm.toFixed(1)} km` : ""
+            })`}
+            value={
+              locationSet ? formatTHB(taxiFare) : "Set address to calculate"
+            }
+            muted={!locationSet}
+          />
+          <Box
             sx={{
-              fontFamily: SERIF,
-              fontSize: "26px",
-              fontWeight: 500,
-              letterSpacing: "-0.02em",
-              color: "#3c1e14",
-              marginTop: "2px",
+              borderTop: "1px solid rgba(0, 0, 0, 0.08)",
+              marginTop: "10px",
+              paddingTop: "10px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
             }}
           >
-            {stepTitle}
+            <Typography
+              sx={{ fontFamily: SERIF, fontSize: "16px", fontWeight: 600 }}
+            >
+              Total
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: SERIF,
+                fontSize: "26px",
+                fontWeight: 700,
+                color: "#FE0944",
+                letterSpacing: "-0.02em",
+                lineHeight: 1,
+              }}
+            >
+              {formatTHB(total)}
+            </Typography>
+          </Box>
+          {!locationSet && (
+            <Typography
+              sx={{
+                fontFamily: SANS,
+                fontSize: "10.5px",
+                color: "rgba(60, 30, 20, 0.55)",
+                marginTop: "6px",
+                fontStyle: "italic",
+              }}
+            >
+              Total updates when address is set.
+            </Typography>
+          )}
+        </Box>
+
+        {/* Cancellation policy */}
+        <Box
+          sx={{
+            padding: "12px 14px",
+            borderRadius: "12px",
+            background: "rgba(0, 0, 0, 0.03)",
+            fontFamily: SANS,
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: "11px",
+              color: "rgba(60, 30, 20, 0.6)",
+              lineHeight: 1.5,
+            }}
+          >
+            <Box component="span" sx={{ fontWeight: 700 }}>
+              Cancellation:
+            </Box>{" "}
+            Free up to 30 minutes before booking time. After that, 50% of the
+            service fee.
           </Typography>
         </Box>
       </Box>
 
-      {/* Step content — components land step-by-step across commits 2-6 */}
-      <Box sx={{ padding: "20px 16px" }}>
-        {step === 1 && (
-          <StepService
-            value={form.serviceId}
-            selectedDuration={form.duration}
-            therapistId={form.therapistId}
-            onChange={(serviceId, duration) =>
-              setForm((prev) => ({ ...prev, serviceId, duration }))
-            }
-          />
-        )}
-
-        {step === 2 && (
-          <StepDateTime
-            date={form.date}
-            time={form.time}
-            durationMin={form.duration}
-            therapistId={form.therapistId}
-            onChange={({ date, time }) =>
-              setForm((prev) => ({ ...prev, date, time }))
-            }
-          />
-        )}
-
-        {step === 3 && (
-          <StepLocation
-            locationName={form.locationName}
-            locationAddress={form.locationAddress}
-            lat={form.lat}
-            lng={form.lng}
-            addressDetails={form.addressDetails}
-            onChange={(next) =>
-              setForm((prev) => ({ ...prev, ...next }))
-            }
-            onChangeAddressDetails={(addressDetails) =>
-              setForm((prev) => ({ ...prev, addressDetails }))
-            }
-          />
-        )}
-
-        {step === 4 && (
-          <StepDetails
-            customerName={form.customerName}
-            customerPhone={form.customerPhone}
-            notes={form.notes}
-            onChange={(next) =>
-              setForm((prev) => ({ ...prev, ...next }))
-            }
-          />
-        )}
-
-        {step === 5 && (
-          <StepConfirm
-            form={form}
-            onChangePayment={(paymentMethod) =>
-              setForm((prev) => ({ ...prev, paymentMethod }))
-            }
-          />
-        )}
-      </Box>
-
-      {/* Sticky bottom nav */}
+      {/* ── Sticky bottom CTA ─────────────────────────────────────── */}
       <BookingNavBar
-        ctaLabel={ctaLabel}
-        onNext={handleNext}
-        onBack={handleBack}
-        disabled={!canAdvance || submitting}
+        ctaLabel={`Place Order · ${formatTHB(total)}`}
+        onNext={() => void handleSubmit()}
+        onBack={() => void navigate(-1)}
+        disabled={!canPlaceOrder || submitting}
         loading={submitting}
+      />
+
+      {/* ── Address bottom sheet ──────────────────────────────────── */}
+      <LocationSheet
+        open={locationSheetOpen}
+        onClose={() => setLocationSheetOpen(false)}
+        initial={{
+          locationName: form.locationName,
+          locationAddress: form.locationAddress,
+          lat: form.lat,
+          lng: form.lng,
+          addressDetails: form.addressDetails,
+        }}
+        onConfirm={(next) => {
+          setForm((p) => ({ ...p, ...next }));
+          setLocationSheetOpen(false);
+        }}
       />
     </Box>
   );
+};
+
+// ─────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────
+
+const FormSection: React.FC<{ label: string; children: React.ReactNode }> = ({
+  label,
+  children,
+}) => (
+  <Box>
+    <Typography
+      sx={{
+        fontFamily: SANS,
+        fontSize: "10.5px",
+        fontWeight: 800,
+        color: "rgba(60, 30, 20, 0.55)",
+        textTransform: "uppercase",
+        letterSpacing: "0.1em",
+        marginBottom: "8px",
+        paddingLeft: "2px",
+      }}
+    >
+      {label}
+    </Typography>
+    {children}
+  </Box>
+);
+
+const PriceRow: React.FC<{
+  label: string;
+  value: React.ReactNode;
+  muted?: boolean;
+}> = ({ label, value, muted }) => (
+  <Box
+    sx={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "baseline",
+      marginBottom: "6px",
+    }}
+  >
+    <Typography
+      sx={{
+        fontFamily: SANS,
+        fontSize: "13px",
+        color: muted ? "rgba(60, 30, 20, 0.5)" : "rgba(60, 30, 20, 0.7)",
+      }}
+    >
+      {label}
+    </Typography>
+    <Typography
+      sx={{
+        fontFamily: SANS,
+        fontSize: "13px",
+        fontWeight: 600,
+        color: muted ? "rgba(60, 30, 20, 0.5)" : "#3c1e14",
+        fontStyle: muted ? "italic" : "normal",
+      }}
+    >
+      {value}
+    </Typography>
+  </Box>
+);
+
+// Inline address tile shown on the form (tap → bottom sheet)
+const AddressTile: React.FC<{
+  location: {
+    name: string | null;
+    address: string | null;
+    addressDetails: string;
+    hasCoords: boolean;
+  };
+  onTap: () => void;
+}> = ({ location, onTap }) => (
+  <Box
+    role="button"
+    tabIndex={0}
+    onClick={onTap}
+    onKeyDown={(e) => {
+      if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        onTap();
+      }
+    }}
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      gap: "12px",
+      padding: "14px",
+      borderRadius: "16px",
+      cursor: "pointer",
+      background: "rgba(255, 255, 255, 0.7)",
+      border: location.hasCoords
+        ? "1.5px solid #FE0944"
+        : "1px solid rgba(0, 0, 0, 0.06)",
+      transition: "all 0.15s ease",
+      "&:hover": { background: "rgba(255, 255, 255, 0.85)" },
+    }}
+  >
+    <Box
+      sx={{
+        width: 40,
+        height: 40,
+        flexShrink: 0,
+        borderRadius: "10px",
+        background: location.hasCoords
+          ? "linear-gradient(135deg, rgba(254, 9, 68, 0.14), rgba(254, 122, 82, 0.14))"
+          : "rgba(254, 201, 167, 0.35)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#FE0944",
+      }}
+    >
+      <LocationOnRoundedIcon fontSize="small" />
+    </Box>
+    <Box sx={{ flex: 1, minWidth: 0 }}>
+      {location.hasCoords ? (
+        <>
+          <Typography
+            sx={{
+              fontFamily: SERIF,
+              fontSize: "14px",
+              fontWeight: 600,
+              color: "#3c1e14",
+              lineHeight: 1.2,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {location.name ?? "Pinned location"}
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: "11.5px",
+              color: "rgba(60, 30, 20, 0.6)",
+              marginTop: "2px",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {location.addressDetails || location.address || "—"}
+          </Typography>
+        </>
+      ) : (
+        <Typography
+          sx={{
+            fontFamily: SERIF,
+            fontSize: "14px",
+            fontWeight: 600,
+            color: "rgba(60, 30, 20, 0.55)",
+            lineHeight: 1.2,
+          }}
+        >
+          Tap to set your location
+        </Typography>
+      )}
+    </Box>
+    <Box
+      aria-hidden
+      sx={{
+        fontSize: "20px",
+        color: location.hasCoords ? "#FE0944" : "rgba(60, 30, 20, 0.35)",
+        flexShrink: 0,
+        fontWeight: 800,
+      }}
+    >
+      ›
+    </Box>
+  </Box>
+);
+
+// Scoped CSS injector for react-phone-number-input — same recipe used in
+// the legacy StepDetails (kept here so this single-page form is self-contained).
+const PhoneStyleInjector: React.FC = () => {
+  React.useEffect(() => {
+    const id = "sunred-phone-style";
+    if (document.getElementById(id)) return;
+    const style = document.createElement("style");
+    style.id = id;
+    style.textContent = `
+      .PhoneInput {
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        transition: border-color 0.15s ease;
+      }
+      .PhoneInput:focus-within { border-color: #FE0944; border-width: 1.5px; padding: calc(12px - 0.5px) calc(14px - 0.5px); }
+      .PhoneInput--invalid { border-color: #FE0944; }
+      .PhoneInputInput { background: transparent; border: none; outline: none; font-family: inherit; font-size: inherit; color: #3c1e14; }
+      .PhoneInputCountrySelect { margin-right: 8px; }
+    `;
+    document.head.appendChild(style);
+  }, []);
+  return null;
 };
 
 export default BookingFlowPage;
