@@ -12,18 +12,19 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 const FinalCTA: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
-  const handleCta = () => {
-    if (typeof document === "undefined") return;
-    const el = document.getElementById("therapist-list");
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  // 🆕 Founder 2026-05-01: FinalCTA navigates straight to /therapists
+  //    (full list with filters) — Hero CTA still scrolls to in-page
+  //    Featured section so the user can preview before committing.
+  const handleCta = () => void navigate("/therapists");
 
   return (
     <Box

@@ -7,6 +7,7 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -15,18 +16,32 @@ type Service = {
   id: string;
   icon: string;
   featured?: boolean;
+  /** Real services.ts id this tile maps to. Tap → /services/{realId}.
+   *  Tiles without a realId fall back to /therapists (browse all). */
+  realId?: string;
 };
 
+// 🆕 Founder 2026-05-01: each tile now navigates somewhere real.
+//    Mapping home-tile ids → src/data/services.ts ids:
 const SERVICES: Service[] = [
-  { id: "signatureThai", icon: "🌿", featured: true },
-  { id: "oil", icon: "💆" },
-  { id: "aroma", icon: "🌸" },
-  { id: "sport", icon: "🔥" },
-  { id: "prenatal", icon: "🤰" },
+  { id: "signatureThai", icon: "🌿", featured: true, realId: "thai-massage" },
+  { id: "oil", icon: "💆", realId: "aromatherapy" },
+  { id: "aroma", icon: "🌸", realId: "aromatherapy" },
+  { id: "sport", icon: "🔥", realId: "gentlemans-recovery" },
+  { id: "prenatal", icon: "🤰" }, // no direct match → falls through to /therapists
 ];
 
 const ServicesGrid: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const goToService = (s: Service) => {
+    if (s.realId) {
+      void navigate(`/services/${s.realId}`);
+    } else {
+      void navigate("/therapists");
+    }
+  };
 
   return (
     <Box>
@@ -109,6 +124,13 @@ const ServicesGrid: React.FC = () => {
               key={s.id}
               role="button"
               tabIndex={0}
+              onClick={() => goToService(s)}
+              onKeyDown={(e) => {
+                if (e.key === " " || e.key === "Enter") {
+                  e.preventDefault();
+                  goToService(s);
+                }
+              }}
               sx={{
                 // .service-card — verbatim
                 background: featured
@@ -129,6 +151,17 @@ const ServicesGrid: React.FC = () => {
                 overflow: "hidden",
                 color: featured ? "#fff" : "#2a1a14",
                 gridColumn: featured ? "1 / -1" : "auto",
+                transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                "&:hover": {
+                  transform: "translateY(-2px)",
+                  boxShadow: featured
+                    ? "0 16px 40px rgba(254, 9, 68, 0.38)"
+                    : "0 8px 24px rgba(254, 9, 68, 0.12)",
+                },
+                "&:focus-visible": {
+                  outline: "2px solid #FE0944",
+                  outlineOffset: "2px",
+                },
                 // .service-card.featured::before — verbatim
                 ...(featured && {
                   "&::before": {

@@ -381,7 +381,9 @@ const FeaturedTherapists: React.FC<Props> = ({ therapists }) => {
         ))}
       </Box>
 
-      {/* .scroll-indicator */}
+      {/* .scroll-indicator + View-all CTA. Founder feedback 2026-05-01:
+          home page needs a real link to /therapists — the swipe hint
+          alone gave no path forward to the full list. */}
       <Box
         sx={{
           textAlign: "center",
@@ -391,16 +393,58 @@ const FeaturedTherapists: React.FC<Props> = ({ therapists }) => {
           textTransform: "uppercase",
           fontWeight: 600,
           marginTop: "-16px",
-          marginBottom: "16px",
+          marginBottom: "12px",
           fontFamily: SANS,
         }}
       >
         ←{" "}
-        {t(
-          "home.therapists.scrollHint",
-          "swipe to see all 32 therapists"
-        )}{" "}
+        {t("home.therapists.scrollHint", "swipe to see more")}{" "}
         →
+      </Box>
+
+      <Box sx={{ padding: "0 20px 24px" }}>
+        <Box
+          role="button"
+          tabIndex={0}
+          onClick={() => void navigate("/therapists")}
+          onKeyDown={(e) => {
+            if (e.key === " " || e.key === "Enter") {
+              e.preventDefault();
+              void navigate("/therapists");
+            }
+          }}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "6px",
+            height: 48,
+            borderRadius: "999px",
+            background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+            color: "#fff",
+            fontFamily: SANS,
+            fontSize: "14px",
+            fontWeight: 700,
+            letterSpacing: "0.02em",
+            cursor: "pointer",
+            userSelect: "none",
+            boxShadow: "0 8px 24px rgba(254, 9, 68, 0.32)",
+            transition: "transform 0.15s ease, box-shadow 0.15s ease",
+            "&:hover": {
+              transform: "translateY(-1px)",
+              boxShadow: "0 12px 30px rgba(254, 9, 68, 0.42)",
+            },
+            "&:focus-visible": {
+              outline: "2px solid #FE0944",
+              outlineOffset: "3px",
+            },
+          }}
+        >
+          {t("home.therapists.viewAll", "View all therapists")}
+          <Box component="span" aria-hidden sx={{ fontSize: "16px" }}>
+            →
+          </Box>
+        </Box>
       </Box>
     </Box>
   );
