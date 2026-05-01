@@ -71,7 +71,12 @@ import type { AddressNavState } from "@/pages/booking/SelectLocationPage";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import { isInappropriate } from "@/utils/moderate";
-import { estimateTaxiFare, FREE_DISTANCE_KM } from "@/utils/taxiFare";
+import {
+  estimateTaxiFare,
+  FREE_DISTANCE_KM,
+  ADMIN_QUOTE_KM,
+} from "@/utils/taxiFare";
+import { getRainStatus } from "@/utils/weather";
 import { priceForDuration, formatTHB } from "@/utils/servicePricing";
 import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
 import services from "@/data/services";
@@ -166,6 +171,12 @@ const BookingFlowPage: React.FC = () => {
     time: preTime ?? null,
   });
 
+  // 🌧 Warm the rain-status cache on mount — surcharge surfaces in the
+  //    pricing card without an extra round-trip when location is set.
+  useEffect(() => {
+    void getRainStatus();
+  }, []);
+
   // 🔁 When SelectLocationPage navigates back with state, merge it in.
   //    Reads the address payload once, then clears it from history state
   //    so a refresh doesn't re-apply.
@@ -235,7 +246,7 @@ const BookingFlowPage: React.FC = () => {
   const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.price, 0);
 
   const locationSet = form.lat != null && form.lng != null;
-  const { distanceKm, fare: taxiFare } = locationSet
+  const taxi = locationSet
     ? estimateTaxiFare({
         therapistLat: therapist?.lat,
         therapistLng: therapist?.lng,
@@ -243,7 +254,11 @@ const BookingFlowPage: React.FC = () => {
         customerLng: form.lng,
         durationMin: form.duration ?? service?.duration ?? 60,
       })
-    : { distanceKm: 0, fare: 0 };
+    : { distanceKm: 0, fare: 0, result: undefined };
+  const distanceKm = taxi.distanceKm;
+  const taxiFare = taxi.fare;
+  const taxiResult = taxi.result;
+  const adminQuoteRequired = taxiResult?.tier === "admin";
 
   const total = servicePrice + addonsTotal + taxiFare;
 
@@ -258,6 +273,7 @@ const BookingFlowPage: React.FC = () => {
     !!form.date &&
     !!form.time &&
     locationSet &&
+    !adminQuoteRequired && // > 20 km bookings require admin contact first
     form.contactName.trim().length >= 2 &&
     phoneValid &&
     !!form.paymentMethod;
@@ -337,6 +353,12 @@ const BookingFlowPage: React.FC = () => {
         note: form.notes,
         payment: form.paymentMethod,
         taxiFee: taxiFare,
+        taxiTier: taxiResult?.tier ?? null,
+        taxiBaseFee: taxiResult?.baseFareBeforeRain ?? taxiFare,
+        rainTier: taxiResult?.rain.tier ?? "none",
+        rainSurchargePct: taxiResult?.rain.surchargePct ?? 0,
+        grabEstimate: taxiResult?.grabEstimate ?? null,
+        savingsVsGrab: taxiResult?.savingsVsGrab ?? 0,
         distanceKm,
         totalPrice: total,
         status: "confirmed",
@@ -747,6 +769,19 @@ const BookingFlowPage: React.FC = () => {
                 }}
               >
                 🚖 Travel fee
+                {locationSet && taxiResult && taxiResult.tier !== "free" && (
+                  <Box
+                    component="span"
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: "10.5px",
+                      color: "rgba(60, 30, 20, 0.5)",
+                      marginLeft: "6px",
+                    }}
+                  >
+                    · {taxiResult.label}
+                  </Box>
+                )}
               </Typography>
               <Tooltip
                 title={
@@ -759,18 +794,22 @@ const BookingFlowPage: React.FC = () => {
                         marginBottom: "4px",
                       }}
                     >
-                      Travel Fee Information
+                      Travel Fee — Tiered
                     </Typography>
-                    <Typography sx={{ fontFamily: SANS, fontSize: "11.5px", lineHeight: 1.5 }}>
-                      Free within {FREE_DISTANCE_KM} km. Fee calculated for
-                      round trip from the therapist&rsquo;s standby location:
+                    <Typography sx={{ fontFamily: SANS, fontSize: "11.5px", lineHeight: 1.6 }}>
+                      0–4 km · <strong>FREE</strong> (free zone)
                       <br />
-                      <Box component="span" sx={{ opacity: 0.8 }}>
-                        (25฿ base + 7฿/km + 2฿/min) × 2
+                      4–8 km · ฿200 flat
+                      <br />
+                      8–12 km · ฿350 flat
+                      <br />
+                      12–{ADMIN_QUOTE_KM} km · ฿350 + ฿20/km beyond 12
+                      <br />
+                      &gt; {ADMIN_QUOTE_KM} km · admin quote + deposit
+                      <br />
+                      <Box component="span" sx={{ opacity: 0.85, display: "block", marginTop: "6px" }}>
+                        Rain may add 15-30% surcharge.
                       </Box>
-                      <br />
-                      Listing distance is straight-line; actual route may
-                      vary slightly.
                     </Typography>
                   </Box>
                 }
@@ -792,39 +831,60 @@ const BookingFlowPage: React.FC = () => {
                 fontSize: "13px",
                 fontWeight: 600,
                 color: locationSet
-                  ? taxiFare === 0
+                  ? adminQuoteRequired
+                    ? "#f97316"
+                    : taxiFare === 0
                     ? "#16a34a"
                     : "#3c1e14"
                   : "rgba(60, 30, 20, 0.5)",
                 fontStyle: locationSet ? "normal" : "italic",
               }}
             >
-              {locationSet
-                ? taxiFare === 0
-                  ? "FREE"
-                  : formatTHB(taxiFare)
-                : "Set address"}
+              {!locationSet
+                ? "Set address"
+                : adminQuoteRequired
+                ? "Admin quote"
+                : taxiFare === 0
+                ? "FREE"
+                : formatTHB(taxiFare)}
             </Typography>
           </Box>
-          {locationSet && distanceKm <= FREE_DISTANCE_KM && (
-            <Box
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-                padding: "5px 10px",
-                marginBottom: "8px",
-                background: "rgba(22, 163, 74, 0.1)",
-                color: "#16a34a",
-                borderRadius: "999px",
-                fontFamily: SANS,
-                fontSize: "11px",
-                fontWeight: 700,
-              }}
-            >
-              ✓ Within free distance ({FREE_DISTANCE_KM} km)
-            </Box>
-          )}
+
+          {/* Tier chips — shown below the row depending on state */}
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "6px",
+              marginBottom: "8px",
+            }}
+          >
+            {locationSet && distanceKm <= FREE_DISTANCE_KM && (
+              <FareChip color="green" icon="✓">
+                Within free distance ({FREE_DISTANCE_KM} km)
+              </FareChip>
+            )}
+            {locationSet &&
+              taxiResult &&
+              taxiResult.savingsVsGrab > 0 &&
+              !adminQuoteRequired && (
+                <FareChip color="green" icon="💰">
+                  Save {formatTHB(taxiResult.savingsVsGrab)} vs Grab
+                </FareChip>
+              )}
+            {locationSet &&
+              taxiResult &&
+              taxiResult.rain.tier !== "none" && (
+                <FareChip color="amber" icon="🌧">
+                  {taxiResult.rain.label}
+                </FareChip>
+              )}
+            {adminQuoteRequired && (
+              <FareChip color="amber" icon="📞">
+                Long-distance · contact admin to confirm
+              </FareChip>
+            )}
+          </Box>
 
           <Box
             sx={{
@@ -978,6 +1038,40 @@ const SectionCard: React.FC<{
     {children}
   </Box>
 );
+
+// Small inline chip used under the Travel fee row to communicate context
+// (free zone, savings vs Grab, rain surcharge, admin quote requirement).
+const FareChip: React.FC<{
+  color: "green" | "amber";
+  icon: string;
+  children: React.ReactNode;
+}> = ({ color, icon, children }) => {
+  const palette =
+    color === "green"
+      ? { bg: "rgba(22, 163, 74, 0.1)", fg: "#16a34a" }
+      : { bg: "rgba(249, 115, 22, 0.1)", fg: "#d97706" };
+  return (
+    <Box
+      sx={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "5px",
+        padding: "5px 10px",
+        background: palette.bg,
+        color: palette.fg,
+        borderRadius: "999px",
+        fontFamily: SANS,
+        fontSize: "11px",
+        fontWeight: 700,
+      }}
+    >
+      <Box component="span" sx={{ fontSize: "12px" }}>
+        {icon}
+      </Box>
+      {children}
+    </Box>
+  );
+};
 
 const PriceRow: React.FC<{ label: string; value: React.ReactNode }> = ({
   label,
