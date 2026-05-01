@@ -23,10 +23,11 @@ const ServiceDetailPage = React.lazy(() => import("@/pages/ServiceDetailPage"));
 const TherapistDetailPage = React.lazy(
   () => import("@/pages/TherapistDetailPage")
 );
-// 🃏 Phase 2 — Browse page (route /therapists)
-const TherapistsBrowsePage = React.lazy(
-  () => import("@/pages/TherapistsBrowsePage")
-);
+// 🆕 Round 22 (founder 2026-05-01): TherapistsBrowsePage merged into
+//    TherapistListPage (one canonical browse page). TherapistsBrowsePage
+//    file deleted along with its dependents (TherapistGrid, TherapistMap,
+//    BrowseHeader, TherapistCard, FeaturedTherapists, useTherapists,
+//    TherapistCardSkeleton). All used DEMO fallback data — not from DB.
 
 // 🎨 Phase 3 — New 5-step booking wizard. Owns /booking, /booking/:id,
 //    and /booking/success/:id (post-submit). Legacy confirm page kept
@@ -170,9 +171,13 @@ export default function App() {
           <Route path="/services/:id" element={<ServiceDetailPage />} />
 
           {/* 🃏 Phase 2 — Browse + Detail */}
-          <Route path="/therapists" element={<TherapistsBrowsePage />} />
-          <Route path="/therapists/:id" element={<TherapistDetailPage />} />
+          {/* 🆕 Round 22: /therapists now serves the live-Firestore
+              TherapistListPage (was TherapistsBrowsePage which used DEMO
+              data). The legacy /therapist/list path is redirected to
+              /therapists for back-compat with old links. */}
+          <Route path="/therapists" element={<TherapistListPage />} />
           <Route path="/therapist/list" element={<TherapistListPage />} />
+          <Route path="/therapists/:id" element={<TherapistDetailPage />} />
 
           {/* 🎨 Phase 3 — new wizard at /booking + /booking/:therapistId
               + /booking/success/:bookingId (post-submit) */}
