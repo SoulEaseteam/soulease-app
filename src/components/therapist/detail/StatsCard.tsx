@@ -291,6 +291,16 @@ const StatsCard: React.FC<Props> = ({
                   fontWeight: 800,
                   marginLeft: "1px",
                   lineHeight: 1,
+                  display: "inline-block",
+                  // Subtle horizontal pulse — slides right ~3px and
+                  // back, twice per cycle, looping every 2.4s. Calls
+                  // attention to the tappable affordance without
+                  // becoming visual noise.
+                  animation: "sunredChevronPulse 2.4s ease-in-out infinite",
+                  "@keyframes sunredChevronPulse": {
+                    "0%, 100%": { transform: "translateX(0)", opacity: 0.7 },
+                    "50%": { transform: "translateX(3px)", opacity: 1 },
+                  },
                 }}
               >
                 ›
