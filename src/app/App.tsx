@@ -28,12 +28,17 @@ const TherapistsBrowsePage = React.lazy(
   () => import("@/pages/TherapistsBrowsePage")
 );
 
-// 🎨 Phase 3 — New 5-step booking wizard. Replaces legacy BookingPage
-//    incrementally: first /booking + /booking/:id (the entry points
-//    used by therapist cards / detail-page CTA), legacy confirm page
-//    remains until commit 6 wires the Firestore submission.
+// 🎨 Phase 3 — New 5-step booking wizard. Owns /booking, /booking/:id,
+//    and /booking/success/:id (post-submit). Legacy confirm page kept
+//    around until Task 8 cleanup; new flow uses BookingSuccessPage.
 const BookingFlowPage = React.lazy(
   () => import("@/pages/booking/BookingFlowPage")
+);
+const BookingSuccessPage = React.lazy(
+  () => import("@/pages/booking/BookingSuccessPage")
+);
+const SelectLocationPage = React.lazy(
+  () => import("@/pages/booking/SelectLocationPage")
 );
 const BookingHistoryPage = React.lazy(
   () => import("@/pages/BookingHistoryPage")
@@ -169,9 +174,18 @@ export default function App() {
           <Route path="/therapists/:id" element={<TherapistDetailPage />} />
           <Route path="/therapist/list" element={<TherapistListPage />} />
 
-          {/* 🎨 Phase 3 — new wizard at /booking + /booking/:therapistId */}
+          {/* 🎨 Phase 3 — new wizard at /booking + /booking/:therapistId
+              + /booking/success/:bookingId (post-submit) */}
           <Route path="/booking" element={<BookingFlowPage />} />
           <Route path="/booking/:id" element={<BookingFlowPage />} />
+          <Route path="/booking/success/:id" element={<BookingSuccessPage />} />
+          {/* 🆕 Phase 4 — Dedicated Select Location route opened from
+              the Confirm Order Address tile. Returns the address payload
+              via react-router state. */}
+          <Route
+            path="/booking/:id/address"
+            element={<SelectLocationPage />}
+          />
           <Route path="/booking/history" element={<BookingHistoryPage />} />
           <Route
             path="/booking/confirm"

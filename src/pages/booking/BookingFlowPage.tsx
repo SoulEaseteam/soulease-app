@@ -37,7 +37,7 @@
 // Booking submission writes the same Firestore booking schema as before;
 // only the visual layout changes.
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -46,24 +46,27 @@ import {
   Tooltip,
   Button,
 } from "@mui/material";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  useNavigate,
+  useParams,
+  useSearchParams,
+  useLocation,
+} from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
-import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
-import "react-phone-number-input/style.css";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
-import LocationSheet from "@/components/booking/LocationSheet";
 import LanguageSheet from "@/components/booking/LanguageSheet";
 import AddonsSheet from "@/components/booking/AddonsSheet";
 import PaymentSheet from "@/components/booking/PaymentSheet";
 import SelectionCell from "@/components/booking/SelectionCell";
 import type { PaymentMethod } from "@/components/booking/PaymentPicker";
+import type { AddressNavState } from "@/pages/booking/SelectLocationPage";
 
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
@@ -92,7 +95,17 @@ export interface BookingFormState {
   lat: number | null;
   lng: number | null;
   addressDetails: string;
+  /** Customer's contact name — required, captured on Select Location page */
+  contactName: string;
   customerPhone: string;
+  /** Note attached to the address (Floor/Room/Landmarks) */
+  addressNote: string;
+  /** Optional meeting-point convention (lobby / lift / direct) */
+  meetingPoint: string | null;
+  /** Optional building category (hotel / condo / house / office / other) */
+  locationType: string | null;
+  /** Auto-generated Google Maps deep-link to the pinned location */
+  mapUrl: string | null;
   language: string;
   selectedAddons: string[];
   notes: string;
@@ -110,7 +123,12 @@ const initialFormState: BookingFormState = {
   lat: null,
   lng: null,
   addressDetails: "",
+  contactName: "",
   customerPhone: "",
+  addressNote: "",
+  meetingPoint: null,
+  locationType: null,
+  mapUrl: null,
   language: "en",
   selectedAddons: [],
   notes: "",
@@ -122,6 +140,7 @@ const BookingFlowPage: React.FC = () => {
   const { id: therapistId } = useParams<{ id?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const routerLoc = useLocation();
   const { t } = useTranslation();
   const { user } = useAuth();
 
@@ -132,10 +151,8 @@ const BookingFlowPage: React.FC = () => {
   const preTime = searchParams.get("time");
 
   const [submitting, setSubmitting] = useState(false);
-  const [phoneTouched, setPhoneTouched] = useState(false);
 
-  // Sheet open states
-  const [locationOpen, setLocationOpen] = useState(false);
+  // Sheet open states (Location now uses dedicated route, not a sheet)
   const [languageOpen, setLanguageOpen] = useState(false);
   const [addonsOpen, setAddonsOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -148,6 +165,52 @@ const BookingFlowPage: React.FC = () => {
     date: preDate ?? null,
     time: preTime ?? null,
   });
+
+  // 🔁 When SelectLocationPage navigates back with state, merge it in.
+  //    Reads the address payload once, then clears it from history state
+  //    so a refresh doesn't re-apply.
+  useEffect(() => {
+    const incoming = routerLoc.state as Partial<AddressNavState> | null;
+    if (incoming?.lat == null || incoming.lng == null) return;
+    setForm((p) => ({
+      ...p,
+      locationName: incoming.locationName ?? p.locationName,
+      locationAddress: incoming.locationAddress ?? p.locationAddress,
+      lat: incoming.lat ?? p.lat,
+      lng: incoming.lng ?? p.lng,
+      addressDetails: incoming.addressDetails ?? p.addressDetails,
+      contactName: incoming.contactName ?? p.contactName,
+      customerPhone: incoming.customerPhone ?? p.customerPhone,
+      addressNote: incoming.addressNote ?? p.addressNote,
+      meetingPoint: incoming.meetingPoint ?? p.meetingPoint,
+      locationType: incoming.locationType ?? p.locationType,
+      mapUrl: incoming.mapUrl ?? p.mapUrl,
+    }));
+    // Clear the state so a manual refresh doesn't re-merge stale data.
+    void navigate(routerLoc.pathname + routerLoc.search, {
+      replace: true,
+      state: null,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const goEditAddress = () => {
+    void navigate(`/booking/${therapistId ?? ""}/address`, {
+      state: {
+        locationName: form.locationName,
+        locationAddress: form.locationAddress,
+        lat: form.lat,
+        lng: form.lng,
+        addressDetails: form.addressDetails,
+        contactName: form.contactName,
+        customerPhone: form.customerPhone || "+66",
+        addressNote: form.addressNote,
+        meetingPoint: form.meetingPoint,
+        locationType: form.locationType,
+        mapUrl: form.mapUrl,
+      },
+    });
+  };
 
   // ── Resolved entities
   const therapist = useMemo(
@@ -184,16 +247,18 @@ const BookingFlowPage: React.FC = () => {
 
   const total = servicePrice + addonsTotal + taxiFare;
 
-  // ── Validation
-  const phoneValid =
-    form.customerPhone.trim().length >= 8 &&
-    isValidPhoneNumber(form.customerPhone);
+  // ── Validation. Phone + contact name are captured on the dedicated
+  //    SelectLocationPage; if they've been filled there, they come back
+  //    on the form. Fallback validation is "non-empty" — the address
+  //    page already enforces shape.
+  const phoneValid = form.customerPhone.replace(/\D/g, "").length >= 10;
   const canPlaceOrder =
     !!form.serviceId &&
     !!form.duration &&
     !!form.date &&
     !!form.time &&
     locationSet &&
+    form.contactName.trim().length >= 2 &&
     phoneValid &&
     !!form.paymentMethod;
 
@@ -260,6 +325,11 @@ const BookingFlowPage: React.FC = () => {
         address: form.locationAddress,
         addressDetails: form.addressDetails,
         location: { lat: form.lat, lng: form.lng },
+        mapUrl: form.mapUrl,
+        meetingPoint: form.meetingPoint,
+        locationType: form.locationType,
+        addressNote: form.addressNote,
+        contactName: form.contactName,
         phone: form.customerPhone,
         language: form.language,
         addons: form.selectedAddons,
@@ -347,15 +417,17 @@ const BookingFlowPage: React.FC = () => {
           gap: "14px",
         }}
       >
-        {/* ─────────── Address tile ─────────── */}
+        {/* ─────────── Address tile (tap → /booking/:id/address) ─────────── */}
         <AddressTile
           location={{
             name: form.locationName,
             address: form.locationAddress,
             addressDetails: form.addressDetails,
             hasCoords: locationSet,
+            contactName: form.contactName,
+            phone: form.customerPhone,
           }}
-          onTap={() => setLocationOpen(true)}
+          onTap={goEditAddress}
         />
 
         {/* ─────────── Order Details card (pattern 4A) ─────────── */}
@@ -516,39 +588,6 @@ const BookingFlowPage: React.FC = () => {
           </Box>
         </SectionCard>
 
-        {/* ─────────── Phone (inline) ─────────── */}
-        <SectionCard label="Phone Number" icon="📞" tight>
-          <PhoneInput
-            international
-            defaultCountry="TH"
-            value={form.customerPhone || undefined}
-            onChange={(val) =>
-              setForm((p) => ({ ...p, customerPhone: val ?? "" }))
-            }
-            onBlur={() => setPhoneTouched(true)}
-            placeholder="Enter phone number"
-            className={
-              phoneTouched && form.customerPhone && !phoneValid
-                ? "PhoneInput--invalid"
-                : undefined
-            }
-          />
-          <PhoneStyleInjector />
-          {phoneTouched && form.customerPhone && !phoneValid && (
-            <Typography
-              sx={{
-                fontFamily: SANS,
-                fontSize: "11.5px",
-                color: "#FE0944",
-                marginTop: "6px",
-                paddingLeft: "8px",
-              }}
-            >
-              Please enter a valid phone number with country code
-            </Typography>
-          )}
-        </SectionCard>
-
         {/* ─────────── Selection cells (Language / Add-ons / Payment) ─────────── */}
         <SelectionCell
           label="Preferred language"
@@ -586,6 +625,51 @@ const BookingFlowPage: React.FC = () => {
           filled={!!form.paymentMethod}
           onClick={() => setPaymentOpen(true)}
         />
+
+        {/* 💰 Deposit policy hint — surfaces when distance is long enough
+            that we may need a deposit confirmation through the admin. */}
+        <Box
+          sx={{
+            display: "flex",
+            gap: "10px",
+            padding: "12px 14px",
+            borderRadius: "12px",
+            background: "rgba(249, 115, 22, 0.08)",
+            border: "1px solid rgba(249, 115, 22, 0.2)",
+            marginTop: "-6px", // visually couples with the Payment cell above
+          }}
+        >
+          <Box
+            sx={{
+              width: 18,
+              height: 18,
+              flexShrink: 0,
+              borderRadius: "50%",
+              background: "#f97316",
+              color: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "11px",
+              fontWeight: 800,
+              marginTop: "1px",
+            }}
+          >
+            i
+          </Box>
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: "11.5px",
+              color: "rgba(60, 30, 20, 0.78)",
+              lineHeight: 1.5,
+            }}
+          >
+            Long-distance bookings (over {FREE_DISTANCE_KM * 3} km / high
+            travel fee) may require a small deposit. If your booking falls in
+            that range, our admin will reach out to confirm before dispatch.
+          </Typography>
+        </Box>
 
         {/* ─────────── Notes (inline) ─────────── */}
         <SectionCard
@@ -665,7 +749,31 @@ const BookingFlowPage: React.FC = () => {
                 🚖 Travel fee
               </Typography>
               <Tooltip
-                title={`Round-trip taxi from therapist's home. Free within ${FREE_DISTANCE_KM} km. Beyond that: 25฿ + 7฿/km + 2฿/min × 2.`}
+                title={
+                  <Box sx={{ padding: "2px 0" }}>
+                    <Typography
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        marginBottom: "4px",
+                      }}
+                    >
+                      Travel Fee Information
+                    </Typography>
+                    <Typography sx={{ fontFamily: SANS, fontSize: "11.5px", lineHeight: 1.5 }}>
+                      Free within {FREE_DISTANCE_KM} km. Fee calculated for
+                      round trip from the therapist&rsquo;s standby location:
+                      <br />
+                      <Box component="span" sx={{ opacity: 0.8 }}>
+                        (25฿ base + 7฿/km + 2฿/min) × 2
+                      </Box>
+                      <br />
+                      Listing distance is straight-line; actual route may
+                      vary slightly.
+                    </Typography>
+                  </Box>
+                }
                 placement="top"
                 arrow
               >
@@ -788,21 +896,6 @@ const BookingFlowPage: React.FC = () => {
       />
 
       {/* ─────────── Sheets ─────────── */}
-      <LocationSheet
-        open={locationOpen}
-        onClose={() => setLocationOpen(false)}
-        initial={{
-          locationName: form.locationName,
-          locationAddress: form.locationAddress,
-          lat: form.lat,
-          lng: form.lng,
-          addressDetails: form.addressDetails,
-        }}
-        onConfirm={(next) => {
-          setForm((p) => ({ ...p, ...next }));
-          setLocationOpen(false);
-        }}
-      />
       <LanguageSheet
         open={languageOpen}
         onClose={() => setLanguageOpen(false)}
@@ -920,116 +1013,149 @@ const PriceRow: React.FC<{ label: string; value: React.ReactNode }> = ({
   </Box>
 );
 
-// Address tile (top of form)
+// Address tile — summary only. Tap to open the full Select Location page.
 const AddressTile: React.FC<{
   location: {
     name: string | null;
     address: string | null;
     addressDetails: string;
     hasCoords: boolean;
+    contactName: string;
+    phone: string;
   };
   onTap: () => void;
-}> = ({ location, onTap }) => (
-  <Box
-    role="button"
-    tabIndex={0}
-    onClick={onTap}
-    onKeyDown={(e) => {
-      if (e.key === " " || e.key === "Enter") {
-        e.preventDefault();
-        onTap();
-      }
-    }}
-    sx={{
-      display: "flex",
-      alignItems: "center",
-      gap: "12px",
-      padding: "14px",
-      borderRadius: "16px",
-      cursor: "pointer",
-      background: "rgba(255, 255, 255, 0.7)",
-      border: location.hasCoords
-        ? "1.5px solid #FE0944"
-        : "1px solid rgba(0, 0, 0, 0.06)",
-      transition: "all 0.15s ease",
-      "&:hover": { background: "rgba(255, 255, 255, 0.85)" },
-    }}
-  >
+}> = ({ location, onTap }) => {
+  const phoneClean = location.phone.replace(/\D/g, "");
+  const phoneOk = phoneClean.length >= 10;
+  const fullySet = location.hasCoords && location.contactName.trim() && phoneOk;
+
+  return (
     <Box
+      role="button"
+      tabIndex={0}
+      onClick={onTap}
+      onKeyDown={(e) => {
+        if (e.key === " " || e.key === "Enter") {
+          e.preventDefault();
+          onTap();
+        }
+      }}
       sx={{
-        width: 40,
-        height: 40,
-        flexShrink: 0,
-        borderRadius: "10px",
-        background: location.hasCoords
-          ? "linear-gradient(135deg, rgba(254, 9, 68, 0.14), rgba(254, 122, 82, 0.14))"
-          : "rgba(254, 201, 167, 0.35)",
         display: "flex",
         alignItems: "center",
-        justifyContent: "center",
-        color: "#FE0944",
+        gap: "12px",
+        padding: "14px",
+        borderRadius: "16px",
+        cursor: "pointer",
+        background: "rgba(255, 255, 255, 0.85)",
+        border: fullySet
+          ? "1.5px solid #FE0944"
+          : "1px solid rgba(0, 0, 0, 0.06)",
+        transition: "all 0.15s ease",
+        "&:hover": { background: "rgba(255, 255, 255, 0.95)" },
       }}
     >
-      <LocationOnRoundedIcon fontSize="small" />
-    </Box>
-    <Box sx={{ flex: 1, minWidth: 0 }}>
-      {location.hasCoords ? (
-        <>
+      <Box
+        sx={{
+          width: 40,
+          height: 40,
+          flexShrink: 0,
+          borderRadius: "10px",
+          background: location.hasCoords
+            ? "linear-gradient(135deg, rgba(254, 9, 68, 0.14), rgba(254, 122, 82, 0.14))"
+            : "rgba(254, 201, 167, 0.35)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#FE0944",
+        }}
+      >
+        <LocationOnRoundedIcon fontSize="small" />
+      </Box>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        {location.hasCoords ? (
+          <>
+            <Typography
+              sx={{
+                fontFamily: SERIF,
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "#3c1e14",
+                lineHeight: 1.2,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {location.name ?? "Pinned location"}
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: SANS,
+                fontSize: "11px",
+                color: "rgba(60, 30, 20, 0.6)",
+                marginTop: "2px",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {location.addressDetails || location.address || "—"}
+            </Typography>
+            {fullySet && (
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "11px",
+                  color: "rgba(60, 30, 20, 0.55)",
+                  marginTop: "3px",
+                }}
+              >
+                👤 {location.contactName} · 📞 {location.phone}
+              </Typography>
+            )}
+            {!fullySet && (
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "11px",
+                  color: "#FE0944",
+                  fontWeight: 600,
+                  marginTop: "3px",
+                }}
+              >
+                ⚠ Add contact name + phone
+              </Typography>
+            )}
+          </>
+        ) : (
           <Typography
             sx={{
               fontFamily: SERIF,
               fontSize: "14px",
               fontWeight: 600,
-              color: "#3c1e14",
+              color: "rgba(60, 30, 20, 0.55)",
               lineHeight: 1.2,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
             }}
           >
-            {location.name ?? "Pinned location"}
+            Tap to set your location
           </Typography>
-          <Typography
-            sx={{
-              fontFamily: SANS,
-              fontSize: "11.5px",
-              color: "rgba(60, 30, 20, 0.6)",
-              marginTop: "2px",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
-            {location.addressDetails || location.address || "—"}
-          </Typography>
-        </>
-      ) : (
-        <Typography
-          sx={{
-            fontFamily: SERIF,
-            fontSize: "14px",
-            fontWeight: 600,
-            color: "rgba(60, 30, 20, 0.55)",
-            lineHeight: 1.2,
-          }}
-        >
-          Tap to set your location
-        </Typography>
-      )}
+        )}
+      </Box>
+      <Box
+        aria-hidden
+        sx={{
+          fontSize: "20px",
+          color: fullySet ? "#FE0944" : "rgba(60, 30, 20, 0.35)",
+          flexShrink: 0,
+          fontWeight: 800,
+        }}
+      >
+        ›
+      </Box>
     </Box>
-    <Box
-      aria-hidden
-      sx={{
-        fontSize: "20px",
-        color: location.hasCoords ? "#FE0944" : "rgba(60, 30, 20, 0.35)",
-        flexShrink: 0,
-        fontWeight: 800,
-      }}
-    >
-      ›
-    </Box>
-  </Box>
-);
+  );
+};
 
 // Sticky bottom — Total left + Confirm right (pattern 7A)
 const ConfirmBar: React.FC<{
@@ -1115,32 +1241,5 @@ const ConfirmBar: React.FC<{
     </Button>
   </Box>
 );
-
-// Scoped CSS injector for react-phone-number-input
-const PhoneStyleInjector: React.FC = () => {
-  React.useEffect(() => {
-    const id = "sunred-phone-style";
-    if (document.getElementById(id)) return;
-    const style = document.createElement("style");
-    style.id = id;
-    style.textContent = `
-      .PhoneInput {
-        background: rgba(255, 255, 255, 0.7);
-        border: 1px solid rgba(0, 0, 0, 0.08);
-        border-radius: 12px;
-        padding: 12px 14px;
-        font-family: 'Inter', sans-serif;
-        font-size: 13.5px;
-        transition: border-color 0.15s ease;
-      }
-      .PhoneInput:focus-within { border-color: #FE0944; border-width: 1.5px; padding: calc(12px - 0.5px) calc(14px - 0.5px); }
-      .PhoneInput--invalid { border-color: #FE0944; }
-      .PhoneInputInput { background: transparent; border: none; outline: none; font-family: inherit; font-size: inherit; color: #3c1e14; }
-      .PhoneInputCountrySelect { margin-right: 8px; }
-    `;
-    document.head.appendChild(style);
-  }, []);
-  return null;
-};
 
 export default BookingFlowPage;
