@@ -149,13 +149,14 @@ const ServiceDurationSheet: React.FC<Props> = ({
           padding: "8px 20px 20px",
         }}
       >
-        {/* Hero image with badge overlay */}
+        {/* Hero image with badge overlay — compact 16:10 to keep duration
+            picker above the fold (decision-first UX, B-pattern). */}
         <Box
           sx={{
             position: "relative",
             width: "100%",
-            aspectRatio: "1 / 1",
-            maxHeight: "320px",
+            aspectRatio: "16 / 10",
+            maxHeight: "200px",
             borderRadius: "20px",
             overflow: "hidden",
             background: `center / cover no-repeat url("${service.image}"), linear-gradient(135deg, #d4a574, #8b6f47)`,
@@ -243,115 +244,9 @@ const ServiceDurationSheet: React.FC<Props> = ({
           )}
         </Box>
 
-        {/* Tabs — Details / Notices */}
-        <Box
-          sx={{
-            background: "rgba(255, 255, 255, 0.7)",
-            backdropFilter: "blur(20px) saturate(180%)",
-            WebkitBackdropFilter: "blur(20px) saturate(180%)",
-            borderRadius: "18px",
-            boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
-            overflow: "hidden",
-          }}
-        >
-          <Tabs
-            value={tab}
-            onChange={(_, v: "details" | "notices") => setTab(v)}
-            variant="fullWidth"
-            sx={{
-              minHeight: 44,
-              "& .MuiTab-root": {
-                fontFamily: SANS,
-                fontSize: "14px",
-                fontWeight: 600,
-                textTransform: "none",
-                color: "rgba(60, 30, 20, 0.55)",
-                minHeight: 44,
-                "&.Mui-selected": { color: "#FE0944" },
-              },
-              "& .MuiTabs-indicator": {
-                background: "#14b8a6",
-                height: "3px",
-                borderRadius: "2px 2px 0 0",
-              },
-            }}
-          >
-            <Tab value="details" label="Details" />
-            <Tab value="notices" label="Notices" />
-          </Tabs>
-
-          {/* Tab content */}
-          <Box sx={{ padding: "16px 18px 18px" }}>
-            {tab === "details" ? (
-              <>
-                <Section title="Description">
-                  <Typography
-                    sx={{
-                      fontFamily: SANS,
-                      fontSize: "13px",
-                      lineHeight: 1.6,
-                      color: "rgba(60, 30, 20, 0.78)",
-                      textIndent: "16px",
-                    }}
-                  >
-                    {service.detail}
-                  </Typography>
-                </Section>
-                <Section title="Benefits">
-                  <Box component="ul" sx={{ paddingLeft: "20px", margin: 0 }}>
-                    {service.benefit.map((b) => (
-                      <Typography
-                        key={b}
-                        component="li"
-                        sx={{
-                          fontFamily: SANS,
-                          fontSize: "13px",
-                          lineHeight: 1.7,
-                          color: "rgba(60, 30, 20, 0.78)",
-                        }}
-                      >
-                        {b}
-                      </Typography>
-                    ))}
-                  </Box>
-                </Section>
-              </>
-            ) : (
-              <>
-                <Typography
-                  sx={{
-                    fontFamily: SERIF,
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    color: "#3c1e14",
-                    textAlign: "center",
-                    marginBottom: "12px",
-                  }}
-                >
-                  • Service Notes •
-                </Typography>
-                {SERVICE_NOTES.map((note, i) => (
-                  <Typography
-                    key={i}
-                    sx={{
-                      fontFamily: SANS,
-                      fontSize: "13px",
-                      lineHeight: 1.6,
-                      color: "rgba(60, 30, 20, 0.78)",
-                      marginBottom: "10px",
-                      paddingLeft: "16px",
-                      textIndent: "-16px",
-                    }}
-                  >
-                    {i + 1}.&nbsp;&nbsp;{note}
-                  </Typography>
-                ))}
-              </>
-            )}
-          </Box>
-        </Box>
-
-        {/* Duration tiers */}
+        {/* 🆕 Phase 4 (B-pattern) — Duration picker FIRST so user can
+            decide before reading the long info. Tabs (Details/Notices)
+            follow as supporting context. */}
         <Typography
           sx={{
             fontFamily: SANS,
@@ -360,7 +255,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
             color: "rgba(60, 30, 20, 0.55)",
             textTransform: "uppercase",
             letterSpacing: "0.1em",
-            margin: "20px 0 10px",
+            margin: "0 0 10px",
             paddingLeft: "4px",
           }}
         >
@@ -468,6 +363,115 @@ const ServiceDurationSheet: React.FC<Props> = ({
               </Box>
             );
           })}
+        </Box>
+
+        {/* Supporting info — Tabs (Details / Notices) BELOW duration. */}
+        <Box
+          sx={{
+            marginTop: "20px",
+            background: "rgba(255, 255, 255, 0.7)",
+            backdropFilter: "blur(20px) saturate(180%)",
+            WebkitBackdropFilter: "blur(20px) saturate(180%)",
+            borderRadius: "18px",
+            boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
+            overflow: "hidden",
+          }}
+        >
+          <Tabs
+            value={tab}
+            onChange={(_, v: "details" | "notices") => setTab(v)}
+            variant="fullWidth"
+            sx={{
+              minHeight: 44,
+              "& .MuiTab-root": {
+                fontFamily: SANS,
+                fontSize: "14px",
+                fontWeight: 600,
+                textTransform: "none",
+                color: "rgba(60, 30, 20, 0.55)",
+                minHeight: 44,
+                "&.Mui-selected": { color: "#FE0944" },
+              },
+              "& .MuiTabs-indicator": {
+                background: "#14b8a6",
+                height: "3px",
+                borderRadius: "2px 2px 0 0",
+              },
+            }}
+          >
+            <Tab value="details" label="Details" />
+            <Tab value="notices" label="Notices" />
+          </Tabs>
+
+          {/* Tab content */}
+          <Box sx={{ padding: "16px 18px 18px" }}>
+            {tab === "details" ? (
+              <>
+                <Section title="Description">
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: "13px",
+                      lineHeight: 1.6,
+                      color: "rgba(60, 30, 20, 0.78)",
+                      textIndent: "16px",
+                    }}
+                  >
+                    {service.detail}
+                  </Typography>
+                </Section>
+                <Section title="Benefits">
+                  <Box component="ul" sx={{ paddingLeft: "20px", margin: 0 }}>
+                    {service.benefit.map((b) => (
+                      <Typography
+                        key={b}
+                        component="li"
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: "13px",
+                          lineHeight: 1.7,
+                          color: "rgba(60, 30, 20, 0.78)",
+                        }}
+                      >
+                        {b}
+                      </Typography>
+                    ))}
+                  </Box>
+                </Section>
+              </>
+            ) : (
+              <>
+                <Typography
+                  sx={{
+                    fontFamily: SERIF,
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: "#3c1e14",
+                    textAlign: "center",
+                    marginBottom: "12px",
+                  }}
+                >
+                  • Service Notes •
+                </Typography>
+                {SERVICE_NOTES.map((note, i) => (
+                  <Typography
+                    key={i}
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: "13px",
+                      lineHeight: 1.6,
+                      color: "rgba(60, 30, 20, 0.78)",
+                      marginBottom: "10px",
+                      paddingLeft: "16px",
+                      textIndent: "-16px",
+                    }}
+                  >
+                    {i + 1}.&nbsp;&nbsp;{note}
+                  </Typography>
+                ))}
+              </>
+            )}
+          </Box>
         </Box>
       </Box>
 
