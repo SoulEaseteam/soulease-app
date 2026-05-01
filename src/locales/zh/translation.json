@@ -173,5 +173,7 @@
   "booking.step.details": "您的信息",
   "booking.step.confirm": "确认并支付",
   "booking.cta.continue": "继续",
-  "booking.cta.confirmAndPay": "确认并支付"
+  "booking.cta.confirmAndPay": "确认并支付",
+  "booking.error.inappropriateNotes": "备注包含不当内容,请修改。",
+  "booking.error.submitFailed": "无法创建预约,请重试。"
 }

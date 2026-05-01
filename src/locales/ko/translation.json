@@ -173,5 +173,7 @@
   "booking.step.details": "예약 정보",
   "booking.step.confirm": "확인 및 결제",
   "booking.cta.continue": "다음",
-  "booking.cta.confirmAndPay": "확인 및 결제"
+  "booking.cta.confirmAndPay": "확인 및 결제",
+  "booking.error.inappropriateNotes": "메모에 부적절한 내용이 포함되어 있습니다. 수정해주세요.",
+  "booking.error.submitFailed": "예약을 생성할 수 없습니다. 다시 시도해주세요."
 }

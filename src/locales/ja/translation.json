@@ -173,5 +173,7 @@
   "booking.step.details": "お客様情報",
   "booking.step.confirm": "確認とお支払い",
   "booking.cta.continue": "次へ",
-  "booking.cta.confirmAndPay": "確認して支払う"
+  "booking.cta.confirmAndPay": "確認して支払う",
+  "booking.error.inappropriateNotes": "備考に不適切な内容が含まれています。修正してください。",
+  "booking.error.submitFailed": "予約を作成できませんでした。もう一度お試しください。"
 }

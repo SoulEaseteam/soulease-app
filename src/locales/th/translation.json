@@ -173,5 +173,7 @@
   "booking.step.details": "ข้อมูลของคุณ",
   "booking.step.confirm": "ยืนยัน & ชำระเงิน",
   "booking.cta.continue": "ถัดไป",
-  "booking.cta.confirmAndPay": "ยืนยัน & ชำระเงิน"
+  "booking.cta.confirmAndPay": "ยืนยัน & ชำระเงิน",
+  "booking.error.inappropriateNotes": "ข้อความหมายเหตุไม่เหมาะสม กรุณาแก้ไข",
+  "booking.error.submitFailed": "ไม่สามารถสร้างการจองได้ กรุณาลองอีกครั้ง"
 }

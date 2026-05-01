@@ -43,9 +43,6 @@ const SelectLocationPage = React.lazy(
 const BookingHistoryPage = React.lazy(
   () => import("@/pages/BookingHistoryPage")
 );
-const BookingConfirmationPage = React.lazy(
-  () => import("@/pages/BookingConfirmationPage")
-);
 
 const ReviewPage = React.lazy(() => import("@/pages/ReviewPage"));
 const ReviewListPage = React.lazy(() => import("@/pages/ReviewListPage"));
@@ -59,7 +56,12 @@ const EditProfilePage = React.lazy(
   () => import("@/pages/user/EditProfilePage")
 );
 
-const SelectLocationPage = React.lazy(
+// Legacy SelectLocationPage at /select-location — used by old booking
+// flow. Phase 4 replacement (with map + form) lives at
+// `@/pages/booking/SelectLocationPage` and is route-targeted by
+// /booking/:id/address. Renamed here to avoid the duplicate-import
+// build error.
+const LegacySelectLocationPage = React.lazy(
   () => import("@/pages/SelectLocationPage")
 );
 const UpdateLocationPage = React.lazy(
@@ -187,10 +189,6 @@ export default function App() {
             element={<SelectLocationPage />}
           />
           <Route path="/booking/history" element={<BookingHistoryPage />} />
-          <Route
-            path="/booking/confirm"
-            element={<BookingConfirmationPage />}
-          />
 
           <Route path="/review/:id" element={<ReviewPage />} />
           <Route path="/review/all/:id" element={<ReviewListPage />} />
@@ -199,7 +197,7 @@ export default function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/edit-profile" element={<EditProfilePage />} />
 
-          <Route path="/select-location" element={<SelectLocationPage />} />
+          <Route path="/select-location" element={<LegacySelectLocationPage />} />
         </Route>
 
         {/* ================= THERAPIST ================= */}

@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SunRed — System Architecture Diagram</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #0a0a0f;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  .page-header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .page-header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #f97316, #fb923c, #fbbf24);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 1px;
+  }
+  .page-header p {
+    color: #94a3b8;
+    margin-top: 6px;
+    font-size: 0.95rem;
+  }
+
+  /* ─── TAB NAV ─── */
+  .tab-nav {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    padding: 8px 20px;
+    border-radius: 999px;
+    border: 1.5px solid #334155;
+    background: #1e293b;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .tab-btn:hover { border-color: #f97316; color: #f97316; }
+  .tab-btn.active { background: #f97316; border-color: #f97316; color: #fff; }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ─── CARDS ─── */
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #f97316;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title span { font-size: 1.3rem; }
+
+  .grid {
+    display: grid;
+    gap: 16px;
+  }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+  .card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 16px 20px;
+    position: relative;
+  }
+  .card-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card ul {
+    list-style: none;
+    padding: 0;
+  }
+  .card ul li {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    padding: 3px 0;
+    padding-left: 14px;
+    position: relative;
+  }
+  .card ul li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: #f97316;
+    font-size: 0.7rem;
+    top: 4px;
+  }
+  .card ul li .badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+    font-weight: 600;
+  }
+  .badge-green { background: #14532d; color: #4ade80; }
+  .badge-blue { background: #1e3a5f; color: #60a5fa; }
+  .badge-orange { background: #431407; color: #fb923c; }
+  .badge-purple { background: #3b0764; color: #c084fc; }
+  .badge-red { background: #450a0a; color: #f87171; }
+
+  /* Color variants */
+  .card-user { border-color: #2563eb44; }
+  .card-user .card-title { color: #60a5fa; }
+  .card-therapist { border-color: #16a34a44; }
+  .card-therapist .card-title { color: #4ade80; }
+  .card-admin { border-color: #dc262644; }
+  .card-admin .card-title { color: #f87171; }
+  .card-firebase { border-color: #f9731644; }
+  .card-firebase .card-title { color: #fb923c; }
+  .card-external { border-color: #7c3aed44; }
+  .card-external .card-title { color: #c084fc; }
+  .card-flow { border-color: #fbbf2444; }
+  .card-flow .card-title { color: #fcd34d; }
+
+  /* ─── FLOW DIAGRAM ─── */
+  .flow-container {
+    overflow-x: auto;
+    padding: 8px 0;
+  }
+  .flow {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    min-width: max-content;
+    padding: 8px 16px;
+  }
+  .flow-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .flow-box {
+    background: #1e293b;
+    border: 1.5px solid #334155;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+    min-width: 120px;
+    color: #e2e8f0;
+    transition: all 0.2s;
+    cursor: default;
+  }
+  .flow-box:hover { border-color: #f97316; color: #f97316; transform: translateY(-2px); }
+  .flow-box.highlight { border-color: #f97316; background: #431407; color: #fb923c; }
+  .flow-sub {
+    font-size: 0.7rem;
+    color: #64748b;
+    text-align: center;
+    max-width: 120px;
+  }
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    padding-top: 10px;
+    color: #f97316;
+    font-size: 1.2rem;
+  }
+  .flow-arrow-down {
+    display: flex;
+    justify-content: center;
+    color: #f97316;
+    font-size: 1.2rem;
+    margin: 4px 0;
+  }
+
+  /* ─── FIRESTORE SCHEMA ─── */
+  .schema-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .schema-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .schema-header {
+    background: #0f172a;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .schema-body {
+    padding: 10px 14px;
+  }
+  .schema-field {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    padding: 3px 0;
+    border-bottom: 1px solid #1e293b;
+    color: #94a3b8;
+  }
+  .schema-field:last-child { border-bottom: none; }
+  .field-name { color: #e2e8f0; font-family: monospace; }
+  .field-type { color: #60a5fa; font-family: monospace; font-size: 0.7rem; }
+
+  /* ─── STATUS LEGEND ─── */
+  .status-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .status-pill {
+    padding: 4px 14px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+  .status-available { background: #14532d; color: #4ade80; }
+  .status-bookable { background: #1e3a5f; color: #60a5fa; }
+  .status-resting { background: #431407; color: #fb923c; }
+  .status-holiday { background: #3b0764; color: #c084fc; }
+  .status-offline { background: #292524; color: #78716c; }
+
+  /* ─── TECH STACK ─── */
+  .tech-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .tech-chip {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #94a3b8;
+  }
+  .tc-react { border-color: #0ea5e9; color: #38bdf8; }
+  .tc-ts { border-color: #3178c6; color: #60a5fa; }
+  .tc-firebase { border-color: #f97316; color: #fb923c; }
+  .tc-vite { border-color: #a855f7; color: #c084fc; }
+  .tc-mui { border-color: #2563eb; color: #93c5fd; }
+  .tc-vercel { border-color: #e2e8f0; color: #e2e8f0; }
+  .tc-maps { border-color: #16a34a; color: #4ade80; }
+  .tc-line { border-color: #22c55e; color: #86efac; }
+  .tc-electron { border-color: #9ca3af; color: #d1d5db; }
+
+  /* ─── SEPARATOR ─── */
+  .sep { border: none; border-top: 1px solid #1e293b; margin: 24px 0; }
+
+  /* ─── SUMMARY BOX ─── */
+  .summary-box {
+    background: #0f172a;
+    border: 1px solid #1e3a5f;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .summary-box h3 { color: #60a5fa; font-size: 0.9rem; margin-bottom: 10px; }
+  .stat-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 12px;
+  }
+  .stat-item { text-align: center; }
+  .stat-num { font-size: 1.8rem; font-weight: 800; color: #f97316; }
+  .stat-label { font-size: 0.72rem; color: #64748b; }
+
+  /* ─── ROLE TABLE ─── */
+  .role-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .role-table th { background: #0f172a; color: #94a3b8; padding: 8px 12px; text-align: left; }
+  .role-table td { padding: 7px 12px; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+  .role-table tr:last-child td { border-bottom: none; }
+  .role-table .yes { color: #4ade80; font-weight: 700; }
+  .role-table .no { color: #475569; }
+  .role-table .partial { color: #fbbf24; }
+
+  /* scroll bar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0f172a; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>☀️ SunRed — System Architecture</h1>
+  <p>แผนผังการทำงานทั้งหมดของระบบ | sunred.vip · Bangkok Outcall Massage Platform</p>
+</div>
+
+<!-- TAB NAV -->
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('overview')">📊 Overview</button>
+  <button class="tab-btn" onclick="showTab('booking')">📋 Booking Flow</button>
+  <button class="tab-btn" onclick="showTab('therapist')">👤 Therapist System</button>
+  <button class="tab-btn" onclick="showTab('admin')">🛡️ Admin Dashboard</button>
+  <button class="tab-btn" onclick="showTab('database')">🗄️ Database Schema</button>
+  <button class="tab-btn" onclick="showTab('roles')">🔐 Roles & Permissions</button>
+</div>
+
+<!-- ═══════════════════════════════════ OVERVIEW ═══════════════════════════════════ -->
+<div id="tab-overview" class="tab-panel active">
+
+  <div class="summary-box">
+    <h3>📌 System Summary</h3>
+    <p style="color:#94a3b8; font-size:0.85rem;">
+      SunRed เป็นแพลตฟอร์ม Outcall Massage ในกรุงเทพ สร้างด้วย React + TypeScript + Firebase
+      รองรับ 3 role: User, Therapist, Admin — มีระบบจองแบบ real-time, แจ้งเตือนผ่าน LINE Notify, คำนวณค่าเดินทาง GPS อัตโนมัติ
+    </p>
+    <div class="stat-row">
+      <div class="stat-item"><div class="stat-num">3</div><div class="stat-label">User Roles</div></div>
+      <div class="stat-item"><div class="stat-num">20+</div><div class="stat-label">Pages</div></div>
+      <div class="stat-item"><div class="stat-num">5</div><div class="stat-label">Firestore Collections</div></div>
+      <div class="stat-item"><div class="stat-num">4</div><div class="stat-label">Therapist Statuses</div></div>
+      <div class="stat-item"><div class="stat-num">3</div><div class="stat-label">External APIs</div></div>
+    </div>
+  </div>
+
+  <!-- Tech Stack -->
+  <div class="section-title"><span>⚙️</span> Tech Stack</div>
+  <div class="card" style="margin-bottom:20px;">
+    <div class="tech-row">
+      <span class="tech-chip tc-react">React 18</span>
+      <span class="tech-chip tc-ts">TypeScript</span>
+      <span class="tech-chip tc-vite">Vite</span>
+      <span class="tech-chip tc-mui">MUI (Material UI)</span>
+      <span class="tech-chip tc-firebase">Firebase Auth</span>
+      <span class="tech-chip tc-firebase">Firestore</span>
+      <span class="tech-chip tc-firebase">Firebase Storage</span>
+      <span class="tech-chip tc-maps">Google Maps API</span>
+      <span class="tech-chip tc-line">LINE Notify</span>
+      <span class="tech-chip tc-vercel">Vercel (Deploy)</span>
+      <span class="tech-chip tc-electron">Electron (Desktop)</span>
+      <span class="tech-chip" style="border-color:#f59e0b;color:#fcd34d;">React Router v6</span>
+      <span class="tech-chip" style="border-color:#06b6d4;color:#67e8f9;">i18n (EN/TH)</span>
+      <span class="tech-chip" style="border-color:#ec4899;color:#f9a8d4;">dayjs</span>
+    </div>
+  </div>
+
+  <!-- 3 Roles -->
+  <div class="section-title"><span>👥</span> 3 User Roles</div>
+  <div class="grid grid-3" style="margin-bottom:20px;">
+    <div class="card card-user">
+      <div class="card-title">🙋 User (ลูกค้า)</div>
+      <ul>
+        <li>สมัครสมาชิก / Login (Firebase Auth)</li>
+        <li>ดูบริการ & หมอนวด</li>
+        <li>เลือก Location (GPS / แผนที่)</li>
+        <li>จองบริการ real-time</li>
+        <li>ดูประวัติการจอง</li>
+        <li>รีวิวหมอนวด</li>
+        <li>บันทึกหมอนวดโปรด</li>
+        <li>รับ Notification</li>
+      </ul>
+    </div>
+    <div class="card card-therapist">
+      <div class="card-title">💆 Therapist (หมอนวด)</div>
+      <ul>
+        <li>Login ด้วย role = therapist</li>
+        <li>อัปเดต Status (Available / Resting)</li>
+        <li>แชร์ตำแหน่ง GPS real-time</li>
+        <li>ดู Booking ของตัวเอง</li>
+        <li>จัดการ Profile / รูป</li>
+        <li>ดู Schedule ประจำวัน</li>
+      </ul>
+    </div>
+    <div class="card card-admin">
+      <div class="card-title">🛡️ Admin</div>
+      <ul>
+        <li>Dashboard + Charts รายได้</li>
+        <li>จัดการหมอนวดทั้งหมด</li>
+        <li>ดู/แก้ไข Booking ทั้งระบบ</li>
+        <li>จัดการ Users</li>
+        <li>ดู Reviews</li>
+        <li>Export รายงาน Excel</li>
+        <li>Block Devices</li>
+        <li>ตั้งค่าระบบ</li>
+        <li>Floating Chat กับ User</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- External Services -->
+  <div class="section-title"><span>🌐</span> External Services & APIs</div>
+  <div class="grid grid-3">
+    <div class="card card-external">
+      <div class="card-title">🗺️ Google Maps API</div>
+      <ul>
+        <li>เลือกสถานที่จาก Map</li>
+        <li>คำนวณระยะทาง (Directions API)</li>
+        <li>Haversine fallback ถ้าไม่มี key</li>
+        <li>แสดง Live Map หมอนวด</li>
+        <li>สร้าง Short Link แผนที่</li>
+      </ul>
+    </div>
+    <div class="card card-external">
+      <div class="card-title">📱 LINE Notify</div>
+      <ul>
+        <li>แจ้งเตือน Staff เมื่อมีการจองใหม่</li>
+        <li>ส่งผ่าน /api/line-notify</li>
+        <li>รายละเอียด: หมอ, เวลา, ที่อยู่, ราคา</li>
+        <li>ลิงก์ Google Map ฝังในข้อความ</li>
+      </ul>
+    </div>
+    <div class="card card-external">
+      <div class="card-title">🚀 Vercel</div>
+      <ul>
+        <li>Deploy Frontend + API routes</li>
+        <li>Production: sunred.vip</li>
+        <li>Serverless functions (/api/*)</li>
+        <li>มี Electron build (Desktop App)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ BOOKING FLOW ═══════════════════════════════════ -->
+<div id="tab-booking" class="tab-panel">
+
+  <div class="section-title"><span>📋</span> Booking Flow (User Journey)</div>
+
+  <!-- Full booking flow -->
+  <div class="flow-container" style="margin-bottom:28px;">
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-box">🏠 HomePage</div>
+        <div class="flow-sub">เลือก Service หรือ Therapist</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box">🧖 ServicesPage / TherapistsPage</div>
+        <div class="flow-sub">ดูรายการ + กรอง</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box highlight">📍 SelectLocationPage</div>
+        <div class="flow-sub">GPS หรือ พิมพ์ที่อยู่ + Google Maps</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box highlight">📋 BookingPage</div>
+        <div class="flow-sub">เลือกวัน/เวลา, กรอกข้อมูล</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box">💾 createBooking()</div>
+        <div class="flow-sub">เขียน Firestore + คำนวณค่าเดินทาง</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box">✅ BookingConfirmationPage</div>
+        <div class="flow-sub">แสดงใบยืนยัน</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box">📱 LINE Notify → Staff</div>
+        <div class="flow-sub">แจ้ง Admin ทันที</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-2" style="margin-bottom:20px;">
+    <div class="card card-flow">
+      <div class="card-title">📋 BookingPage — Logic</div>
+      <ul>
+        <li>รับ therapistId + serviceId จาก navigation state</li>
+        <li>ดึง therapist data จาก Firestore</li>
+        <li>เลือกวันที่ (DatePicker) + เวลา</li>
+        <li>ตรวจสอบ Slot ว่าง (check existing bookings)</li>
+        <li>คำนวณ Grab Fare: BASE 25฿ + 7฿/km + 2฿/min (× 2 ไปกลับ)</li>
+        <li>กรอก Address, Phone, Note</li>
+        <li>สร้าง Google Maps URL อัตโนมัติ</li>
+        <li>runTransaction: เพิ่ม todayBookings + totalBookings</li>
+        <li>ส่ง LINE Notify หา Staff</li>
+        <li>ส่ง Notification เข้า Firestore</li>
+      </ul>
+    </div>
+    <div class="card card-flow">
+      <div class="card-title">💰 ค่าเดินทาง (Taxi Fare)</div>
+      <ul>
+        <li>ดึง therapist.currentLocation จาก Firestore</li>
+        <li>ใช้ Google Directions API คำนวณระยะทาง</li>
+        <li>Fallback: Haversine formula ถ้าไม่มี API key</li>
+        <li>สูตร: (25 + km×7 + min×2) × 2</li>
+        <li>แสดงค่าเดินทางให้ลูกค้าเห็นก่อนยืนยัน</li>
+        <li>บันทึก taxiFee ลง booking document</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Post-booking flow -->
+  <div class="section-title"><span>⭐</span> หลังการจอง</div>
+  <div class="grid grid-3">
+    <div class="card card-user">
+      <div class="card-title">📖 BookingHistoryPage</div>
+      <ul>
+        <li>ดูประวัติการจองทั้งหมด</li>
+        <li>Filter ตาม status</li>
+        <li>ดูรายละเอียดแต่ละ booking</li>
+        <li>กดรีวิวหลังเสร็จงาน</li>
+      </ul>
+    </div>
+    <div class="card card-user">
+      <div class="card-title">⭐ ReviewPage</div>
+      <ul>
+        <li>ให้ดาว 1-5</li>
+        <li>เขียน comment</li>
+        <li>บันทึก review ลง booking document</li>
+        <li>อัปเดต therapist.rating เฉลี่ย</li>
+      </ul>
+    </div>
+    <div class="card card-user">
+      <div class="card-title">💳 PaymentPage</div>
+      <ul>
+        <li>แสดงสรุปยอด</li>
+        <li>กด "Pay" → update paymentStatus: "paid"</li>
+        <li>Redirect ไป BookingHistory</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ THERAPIST SYSTEM ═══════════════════════════════════ -->
+<div id="tab-therapist" class="tab-panel">
+
+  <div class="section-title"><span>💆</span> Therapist Status System</div>
+
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-title">🔄 4 สถานะของหมอนวด</div>
+    <div class="status-row">
+      <span class="status-pill status-available">available — รับงานได้ทันที</span>
+      <span class="status-pill status-bookable">bookable — จองล่วงหน้าได้</span>
+      <span class="status-pill status-resting">resting — พักอยู่ / มีงาน</span>
+      <span class="status-pill status-holiday">holiday — วันหยุด</span>
+      <span class="status-pill status-offline">offline — ออฟไลน์</span>
+    </div>
+    <p style="font-size:0.8rem; color:#64748b; margin-top:12px;">
+      สถานะถูกคำนวณอัตโนมัติจาก: working hours + existing bookings + manualStatus (admin/therapist override)
+    </p>
+  </div>
+
+  <!-- Status calculation flow -->
+  <div class="section-title"><span>⚙️</span> Status Calculation Logic</div>
+  <div class="flow-container" style="margin-bottom:28px;">
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-box">therapist.manualStatus</div>
+        <div class="flow-sub">holiday / forceAvailable / offline</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box highlight">computeTherapistStatus()</div>
+        <div class="flow-sub">ตรวจ working hours & bookings</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box">Working Hours Check</div>
+        <div class="flow-sub">startHHMM – endHHMM (overnight support)</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box">Booking Overlap Check</div>
+        <div class="flow-sub">service duration = slot block</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box highlight">calculateNextAvailable()</div>
+        <div class="flow-sub">คำนวณเวลาที่ว่างถัดไป</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box">nextAvailable String</div>
+        <div class="flow-sub">เขียนกลับ Firestore</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-2" style="margin-bottom:20px;">
+    <div class="card card-therapist">
+      <div class="card-title">📍 Location Sharing (Real-time)</div>
+      <ul>
+        <li>TherapistLocationPage — อัปเดต GPS</li>
+        <li>บันทึก currentLocation {lat, lng} ลง Firestore</li>
+        <li>TherapistLiveMap แสดงบน Google Maps</li>
+        <li>ใช้ระยะทางคำนวณค่าเดินทางให้ลูกค้า</li>
+        <li>Admin ดู Live Map ได้ใน Dashboard</li>
+      </ul>
+    </div>
+    <div class="card card-therapist">
+      <div class="card-title">👤 Therapist Portal Pages</div>
+      <ul>
+        <li>/therapist/profile — จัดการ Profile</li>
+        <li>/therapist/status — เปลี่ยน Status</li>
+        <li>/therapist/bookings — ดูงานของตัวเอง</li>
+        <li>/location — อัปเดต GPS</li>
+        <li>/update-location — แก้ตำแหน่ง</li>
+        <li>Protected: role = "therapist" เท่านั้น</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section-title"><span>🏅</span> Badge System</div>
+  <div class="card card-therapist">
+    <div class="card-title">🏅 getTherapistBadge()</div>
+    <ul>
+      <li>คำนวณจาก totalBookings + rating + isNew</li>
+      <li>ใช้ badgeConfig.ts กำหนด tier</li>
+      <li>แสดงบน TherapistProfileCard และ Admin view</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ ADMIN DASHBOARD ═══════════════════════════════════ -->
+<div id="tab-admin" class="tab-panel">
+
+  <div class="section-title"><span>🛡️</span> Admin Dashboard — Full Feature List</div>
+
+  <div class="grid grid-2" style="margin-bottom:20px;">
+    <div class="card card-admin">
+      <div class="card-title">📊 AdminDashboardPage</div>
+      <ul>
+        <li>Revenue Line Chart — รายได้รายวัน/เดือน</li>
+        <li>Top Services Chart — บริการยอดนิยม</li>
+        <li>Top Therapists Chart — หมอที่มี booking มากสุด</li>
+        <li>Therapist Booking Chart — เปรียบเทียบหมอ</li>
+        <li>จำนวน booking วันนี้ / เดือนนี้</li>
+        <li>รายได้รวม (total revenue)</li>
+      </ul>
+    </div>
+    <div class="card card-admin">
+      <div class="card-title">👤 Admin User Management</div>
+      <ul>
+        <li>AdminUsersPage — ดู user ทั้งหมด</li>
+        <li>AdminUserDetailPage — ดูรายละเอียด + booking history</li>
+        <li>UserTable component — ตารางพร้อม filter</li>
+        <li>แก้ไข role ของ user</li>
+        <li>Block / unblock user</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="grid grid-2" style="margin-bottom:20px;">
+    <div class="card card-admin">
+      <div class="card-title">💆 Admin Therapist Management</div>
+      <ul>
+        <li>AdminTherapistsPage — รายชื่อทั้งหมด</li>
+        <li>AddTherapistPage — เพิ่มหมอนวดใหม่</li>
+        <li>EditTherapistPage — แก้ไขข้อมูล</li>
+        <li>AdminTherapistDetailPage — ดู booking + รีวิว</li>
+        <li>Override manualStatus (holiday/forceAvailable)</li>
+        <li>ดู Live Location บน Map</li>
+      </ul>
+    </div>
+    <div class="card card-admin">
+      <div class="card-title">📋 Admin Booking Management</div>
+      <ul>
+        <li>AdminBookingListPage — ดูทุก booking</li>
+        <li>AdminBookingAddPage — สร้าง booking แทน user</li>
+        <li>Filter: ตาม status / วันที่ / therapist</li>
+        <li>Update status: confirmed/completed/cancelled</li>
+        <li>ดู address บน Google Maps</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="grid grid-3">
+    <div class="card card-admin">
+      <div class="card-title">📝 Admin Reviews</div>
+      <ul>
+        <li>AdminReviewListPage</li>
+        <li>ดูรีวิวทั้งระบบ</li>
+        <li>Filter ตาม rating / therapist</li>
+        <li>ลบ review ที่ไม่เหมาะสม</li>
+      </ul>
+    </div>
+    <div class="card card-admin">
+      <div class="card-title">📊 Reports & Export</div>
+      <ul>
+        <li>AdminReportPage</li>
+        <li>Export เป็น Excel (.xlsx)</li>
+        <li>exportTools.ts utility</li>
+        <li>สรุปรายได้ตาม yearMonth</li>
+      </ul>
+    </div>
+    <div class="card card-admin">
+      <div class="card-title">⚙️ Settings & Security</div>
+      <ul>
+        <li>AdminSettingsPage — ตั้งค่าทั่วไป</li>
+        <li>AdminAdvancedSettingsPage</li>
+        <li>AdminBlockedDevicesPage — block device fingerprint</li>
+        <li>AdminNotificationsPage — ส่ง notification</li>
+        <li>AdminFloatingChat — แชทกับ user</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ DATABASE ═══════════════════════════════════ -->
+<div id="tab-database" class="tab-panel">
+
+  <div class="section-title"><span>🗄️</span> Firestore Collections</div>
+
+  <div class="schema-grid" style="margin-bottom:24px;">
+
+    <div class="schema-card">
+      <div class="schema-header" style="color:#4ade80;">💆 therapists</div>
+      <div class="schema-body">
+        <div class="schema-field"><span class="field-name">id</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">name</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">image</span><span class="field-type">string (url)</span></div>
+        <div class="schema-field"><span class="field-name">rating</span><span class="field-type">number</span></div>
+        <div class="schema-field"><span class="field-name">reviews</span><span class="field-type">number</span></div>
+        <div class="schema-field"><span class="field-name">available</span><span class="field-type">"available"|"bookable"|"resting"|"holiday"</span></div>
+        <div class="schema-field"><span class="field-name">manualStatus</span><span class="field-type">"holiday"|"forceAvailable"|"offline"</span></div>
+        <div class="schema-field"><span class="field-name">currentLocation</span><span class="field-type">{lat, lng}</span></div>
+        <div class="schema-field"><span class="field-name">todayBookings</span><span class="field-type">number</span></div>
+        <div class="schema-field"><span class="field-name">totalBookings</span><span class="field-type">number</span></div>
+        <div class="schema-field"><span class="field-name">nextAvailable</span><span class="field-type">string (HH:mm)</span></div>
+        <div class="schema-field"><span class="field-name">badge</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">features</span><span class="field-type">{age, gender, style...}</span></div>
+        <div class="schema-field"><span class="field-name">updatedAt</span><span class="field-type">Timestamp</span></div>
+      </div>
+    </div>
+
+    <div class="schema-card">
+      <div class="schema-header" style="color:#60a5fa;">📋 bookings</div>
+      <div class="schema-body">
+        <div class="schema-field"><span class="field-name">id</span><span class="field-type">string (auto)</span></div>
+        <div class="schema-field"><span class="field-name">userId</span><span class="field-type">string (uid)</span></div>
+        <div class="schema-field"><span class="field-name">therapistId</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">therapistName</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">serviceName</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">servicePrice</span><span class="field-type">number</span></div>
+        <div class="schema-field"><span class="field-name">taxiFee</span><span class="field-type">number</span></div>
+        <div class="schema-field"><span class="field-name">total</span><span class="field-type">number</span></div>
+        <div class="schema-field"><span class="field-name">date</span><span class="field-type">string (YYYY-MM-DD)</span></div>
+        <div class="schema-field"><span class="field-name">time</span><span class="field-type">string (HH:mm)</span></div>
+        <div class="schema-field"><span class="field-name">dateTime</span><span class="field-type">ISO string</span></div>
+        <div class="schema-field"><span class="field-name">yearMonth</span><span class="field-type">string (YYYY-MM)</span></div>
+        <div class="schema-field"><span class="field-name">address</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">phone</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">status</span><span class="field-type">"pending"|"confirmed"|"completed"|"cancelled"</span></div>
+        <div class="schema-field"><span class="field-name">paymentStatus</span><span class="field-type">"paid"|"unpaid"</span></div>
+        <div class="schema-field"><span class="field-name">note</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">review</span><span class="field-type">{rating, comment, createdAt}</span></div>
+        <div class="schema-field"><span class="field-name">createdAt</span><span class="field-type">ServerTimestamp</span></div>
+      </div>
+    </div>
+
+    <div class="schema-card">
+      <div class="schema-header" style="color:#c084fc;">👤 users</div>
+      <div class="schema-body">
+        <div class="schema-field"><span class="field-name">uid</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">name</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">email</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">phone</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">photoURL</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">role</span><span class="field-type">"user"|"therapist"|"admin"</span></div>
+        <div class="schema-field"><span class="field-name">favoriteTherapists</span><span class="field-type">string[]</span></div>
+        <div class="schema-field"><span class="field-name">createdAt</span><span class="field-type">Timestamp</span></div>
+      </div>
+    </div>
+
+    <div class="schema-card">
+      <div class="schema-header" style="color:#fcd34d;">🔔 notifications</div>
+      <div class="schema-body">
+        <div class="schema-field"><span class="field-name">id</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">userId</span><span class="field-type">string (receiver)</span></div>
+        <div class="schema-field"><span class="field-name">type</span><span class="field-type">"bookingConfirmed"|"newReview"|"adminMessage"</span></div>
+        <div class="schema-field"><span class="field-name">title</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">content</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">link</span><span class="field-type">string (url)</span></div>
+        <div class="schema-field"><span class="field-name">read</span><span class="field-type">boolean</span></div>
+        <div class="schema-field"><span class="field-name">priority</span><span class="field-type">"low"|"normal"|"high"</span></div>
+        <div class="schema-field"><span class="field-name">createdAt</span><span class="field-type">Timestamp</span></div>
+      </div>
+    </div>
+
+    <div class="schema-card">
+      <div class="schema-header" style="color:#f87171;">📂 services (static data)</div>
+      <div class="schema-body">
+        <div class="schema-field"><span class="field-name">id</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">name</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">price</span><span class="field-type">number (฿)</span></div>
+        <div class="schema-field"><span class="field-name">duration</span><span class="field-type">number (minutes)</span></div>
+        <div class="schema-field"><span class="field-name">description</span><span class="field-type">string</span></div>
+        <div class="schema-field"><span class="field-name">image</span><span class="field-type">string</span></div>
+        <div class="schema-field" style="color:#64748b; font-size:0.72rem;"><span>⚠️ ข้อมูล static อยู่ใน src/data/services.ts</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Firebase Architecture -->
+  <div class="section-title"><span>🔥</span> Firebase Services Used</div>
+  <div class="grid grid-3">
+    <div class="card card-firebase">
+      <div class="card-title">🔑 Firebase Auth</div>
+      <ul>
+        <li>Email/Password login</li>
+        <li>AuthContext / AuthProvider</li>
+        <li>useAuth() hook</li>
+        <li>role อ่านจาก Firestore users/{uid}</li>
+        <li>PrivateRoute / AdminRoute guards</li>
+      </ul>
+    </div>
+    <div class="card card-firebase">
+      <div class="card-title">🗄️ Firestore</div>
+      <ul>
+        <li>Real-time listeners (onSnapshot)</li>
+        <li>runTransaction สำหรับ counter</li>
+        <li>serverTimestamp()</li>
+        <li>composite queries (where + orderBy)</li>
+        <li>Rules: อ่าน/เขียนได้ทั้งหมด (dev mode)</li>
+      </ul>
+    </div>
+    <div class="card card-firebase">
+      <div class="card-title">📦 Firebase Storage</div>
+      <ul>
+        <li>รูปภาพหมอนวด</li>
+        <li>Avatar ของ user</li>
+        <li>UploadAvatarPage</li>
+        <li>getStorage() utility</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ ROLES & PERMISSIONS ═══════════════════════════════════ -->
+<div id="tab-roles" class="tab-panel">
+
+  <div class="section-title"><span>🔐</span> Role-Based Access Control</div>
+
+  <div class="card" style="margin-bottom:24px; overflow-x:auto;">
+    <table class="role-table">
+      <thead>
+        <tr>
+          <th>Feature / Page</th>
+          <th>🙋 User</th>
+          <th>💆 Therapist</th>
+          <th>🛡️ Admin</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>ดูรายการบริการ</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+        <tr><td>ดูรายชื่อหมอนวด</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+        <tr><td>จองบริการ</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓ (admin add)</td></tr>
+        <tr><td>ดูประวัติการจอง (ของตัวเอง)</td><td class="yes">✓</td><td class="partial">เฉพาะงานตัวเอง</td><td class="yes">✓ ทั้งหมด</td></tr>
+        <tr><td>รีวิวหมอนวด</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td></tr>
+        <tr><td>บันทึกหมอนวดโปรด</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>แก้ไข Profile</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+        <tr><td>อัปเดต Status ตัวเอง</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+        <tr><td>แชร์ GPS Location</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td></tr>
+        <tr><td>ดู Dashboard + Charts</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
+        <tr><td>จัดการ Therapists ทั้งหมด</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
+        <tr><td>จัดการ Users ทั้งหมด</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
+        <tr><td>Export Reports Excel</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
+        <tr><td>Block Devices</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
+        <tr><td>ส่ง Notifications</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
+        <tr><td>Floating Chat</td><td class="partial">รับได้</td><td class="no">—</td><td class="yes">✓ ส่ง/รับ</td></tr>
+        <tr><td>Advanced Settings</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-title"><span>🔒</span> Route Guards</div>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-title">🔓 Public Routes</div>
+      <ul>
+        <li>/login</li>
+        <li>/register</li>
+        <li>/admin/login</li>
+        <li>/maintenance</li>
+        <li>/wechat-scan</li>
+        <li>/ (home)</li>
+        <li>/services/*</li>
+        <li>/therapists/*</li>
+      </ul>
+    </div>
+    <div class="card card-therapist">
+      <div class="card-title" style="color:#4ade80;">🔒 Therapist-Only</div>
+      <ul>
+        <li>/therapist/profile</li>
+        <li>/therapist/status</li>
+        <li>/location</li>
+        <li>/update-location</li>
+        <li>Guard: PrivateRoute (role="therapist")</li>
+      </ul>
+    </div>
+    <div class="card card-admin">
+      <div class="card-title">🛡️ Admin-Only</div>
+      <ul>
+        <li>/admin/* (ทั้งหมด)</li>
+        <li>Guard: PrivateRoute (role="admin")</li>
+        <li>AdminRoute component</li>
+        <li>Loading state ขณะตรวจสอบ role</li>
+        <li>Redirect → /admin/login ถ้าไม่ผ่าน</li>
+      </ul>
+    </div>
+  </div>
+
+  <hr class="sep">
+
+  <div class="section-title"><span>🛡️</span> Security Features</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title">📱 Device Fingerprinting</div>
+      <ul>
+        <li>deviceFingerprint.ts — สร้าง fingerprint ของ device</li>
+        <li>blocking.ts — ตรวจสอบ block list</li>
+        <li>Admin block ได้จาก AdminBlockedDevicesPage</li>
+        <li>useBlockGuard hook — redirect ถ้าถูก block</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">🔐 Auth Context</div>
+      <ul>
+        <li>AuthProvider — wraps ทั้งแอป</li>
+        <li>MockAuthProvider — สำหรับ dev testing</li>
+        <li>MockAuthSwitcher — toggle mock auth</li>
+        <li>useAuth() hook — user, role, loading</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

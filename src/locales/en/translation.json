@@ -173,5 +173,7 @@
   "booking.step.details": "Your details",
   "booking.step.confirm": "Review & pay",
   "booking.cta.continue": "Continue",
-  "booking.cta.confirmAndPay": "Confirm & Pay"
+  "booking.cta.confirmAndPay": "Confirm & Pay",
+  "booking.error.inappropriateNotes": "Notes contain inappropriate content. Please revise.",
+  "booking.error.submitFailed": "Could not create booking. Please try again."
 }
