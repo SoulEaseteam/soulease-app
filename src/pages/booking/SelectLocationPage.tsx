@@ -100,13 +100,9 @@ const MEETING_POINTS: { id: MeetingPoint; label: string; icon: string }[] = [
   { id: "direct", label: "Come Directly", icon: "🚪" },
 ];
 
-const LOCATION_TYPES: { id: LocationType; label: string; icon: string }[] = [
-  { id: "hotel", label: "Hotel", icon: "🏨" },
-  { id: "condo", label: "Condo / Apartment", icon: "🏢" },
-  { id: "house", label: "House", icon: "🏠" },
-  { id: "office", label: "Office", icon: "🏢" },
-  { id: "other", label: "Other", icon: "📍" },
-];
+// LOCATION_TYPES removed 2026-05-01 (founder: 'Location Type (Optional) ลบ').
+// `LocationType` enum is still exported for back-compat with existing
+// bookings in Firestore; new bookings just leave the field null.
 
 // 🆕 Founder 2026-05-01: 'Phone Number เลือกประเทศได้'.
 //    Curated list of dial codes ordered by likely customer origin in
@@ -634,21 +630,8 @@ const SelectLocationPage: React.FC = () => {
           </Box>
         )}
 
-        {/* Address details (room/floor) */}
-        <FieldLabel label="Address details" icon="📍" optional>
-          <TextField
-            fullWidth
-            multiline
-            minRows={2}
-            maxRows={3}
-            placeholder="e.g. Tower 2, Floor 21, Room 1204. Side entrance on Soi 21."
-            value={form.addressDetails}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, addressDetails: e.target.value }))
-            }
-            sx={inputSx}
-          />
-        </FieldLabel>
+        {/* 🆕 Founder 2026-05-01: 'Address details (Optional) ลบ' — dropped.
+            Floor/Room/Special notes now live in the Note field below. */}
 
         {/* Contact Person */}
         <FieldLabel label="Contact Person" icon="👤" required>
@@ -804,8 +787,11 @@ const SelectLocationPage: React.FC = () => {
         </FieldLabel>
 
         {/* Note — matches founder reference (2026-05-01): green doc icon
-            + bold 'Note' + muted '(Optional)', long single-line-ish
-            placeholder 'Floor/Room No./Special notes'. */}
+            + bold 'Note' + muted '(Optional)', placeholder
+            'Floor/Room No./Special notes'. The Meeting Point chips
+            (Lobby / Lift / Direct) sit directly under the Note textarea
+            without their own header — founder feedback 'Meeting Point
+            (Optional) ลบ' (drop the section header, keep the chips). */}
         <FieldLabel label="Note" icon="📝" optional>
           <TextField
             fullWidth
@@ -819,11 +805,14 @@ const SelectLocationPage: React.FC = () => {
             }
             sx={inputSx}
           />
-        </FieldLabel>
-
-        {/* Meeting Point — chips */}
-        <FieldLabel label="Meeting Point" icon="🤝" optional>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "8px",
+              marginTop: "10px",
+            }}
+          >
             {MEETING_POINTS.map((m) => {
               const isActive = form.meetingPoint === m.id;
               return (
@@ -874,60 +863,9 @@ const SelectLocationPage: React.FC = () => {
             })}
           </Box>
         </FieldLabel>
-
-        {/* Location Type — chips */}
-        <FieldLabel label="Location Type" icon="🏢" optional>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {LOCATION_TYPES.map((l) => {
-              const isActive = form.locationType === l.id;
-              return (
-                <Box
-                  key={l.id}
-                  role="radio"
-                  aria-checked={isActive}
-                  tabIndex={0}
-                  onClick={() =>
-                    setForm((p) => ({
-                      ...p,
-                      locationType: isActive ? null : l.id,
-                    }))
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === " " || e.key === "Enter") {
-                      e.preventDefault();
-                      setForm((p) => ({
-                        ...p,
-                        locationType: isActive ? null : l.id,
-                      }));
-                    }
-                  }}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    padding: "8px 14px",
-                    borderRadius: "999px",
-                    cursor: "pointer",
-                    background: isActive
-                      ? "linear-gradient(135deg, rgba(254, 9, 68, 0.12), rgba(254, 122, 82, 0.12))"
-                      : "rgba(255, 255, 255, 0.7)",
-                    border: isActive
-                      ? "1.5px solid #FE0944"
-                      : "1px solid rgba(0, 0, 0, 0.08)",
-                    fontFamily: SANS,
-                    fontSize: "12.5px",
-                    fontWeight: 600,
-                    color: isActive ? "#FE0944" : "#3c1e14",
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  <Box sx={{ fontSize: "13px" }}>{l.icon}</Box>
-                  {l.label}
-                </Box>
-              );
-            })}
-          </Box>
-        </FieldLabel>
+        {/* 🆕 Founder 2026-05-01: 'Location Type (Optional) ลบ' — chips
+            removed; the meeting-point chip + map context already give
+            therapists what they need to know. */}
       </Box>
 
       {/* Sticky bottom CTA */}
