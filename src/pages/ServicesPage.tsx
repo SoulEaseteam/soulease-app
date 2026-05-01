@@ -12,21 +12,16 @@ import {
   AccordionDetails } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { FaLine, FaWeixin, FaTelegramPlane, FaWhatsapp } from 'react-icons/fa';
+import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
+import { FaTelegramPlane, FaWhatsapp } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import services from '../data/services';
+// 🆕 Round 19 (founder 2026-05-01): use real prices/durations from
+//    services.ts via servicePricing helpers — old hardcoded svc.price
+//    string was untyped + brittle.
+import { startingPrice, formatTHB } from '../utils/servicePricing';
 
-
-const getBadgeStyle = (badge: string) => {
-  const baseStyle = {
-    color: 'white',
-    backdropFilter: 'blur(6px)',
-    fontWeight: 'bold' as const,
-    border: '1px solid rgba(255,255,255,0.15)',
-    boxShadow: '0 2px 6px rgba(0,0,0,0.2)' };
-  return { ...baseStyle, background: 'rgba(132, 132, 132, 0.43)' };
-};
 
 const ServicesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -36,9 +31,29 @@ const ServicesPage: React.FC = () => {
     void navigate(`/services/${encodeURIComponent(id)}`);
   };
 
+  // 🆕 Round 19: 'Book now' on each service tile → direct to /therapists
+  //    pre-filtered by service. Saves a click vs going to /services/:id detail.
+  const handleBookService = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    void navigate(`/therapists?service=${encodeURIComponent(id)}`);
+  };
+
   return (
-    <Box sx={{ bgcolor: 'rgba(255, 255, 255, 0.6)', pb: 10, minHeight: '100vh', display: 'flex', 
-    justifyContent: 'center' }}>
+    <Box
+      sx={{
+        // 🆕 Round 19: phone-shell wrapper (founder 2026-05-01: 'หน้าเว็บ
+        //    ขนาดเดียวกันทั้งเว็บ') — match BookingFlowPage / HomePage rhythm.
+        maxWidth: 430,
+        margin: '0 auto',
+        minHeight: '100vh',
+        background: 'linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)',
+        borderRadius: '28px',
+        overflow: 'hidden',
+        boxShadow: '0 20px 60px rgba(126, 30, 46, 0.15)',
+        position: 'relative',
+        pb: 10,
+      }}
+    >
       <Box sx={{ width: '100%', maxWidth: 430, pb: 20 }}>
         <Box sx={{ width: '100%', height: 50, display: 'flex', alignItems: 'center', 
           justifyContent: 'center' }}>
@@ -115,24 +130,48 @@ const ServicesPage: React.FC = () => {
           </Typography>
         </Box>
 
-        <Box 
-          sx={{ mt: 2, px: 2, py: 1, borderRadius: 1,
-            background: 'linear-gradient(135deg, #FFD6A5 0%, #FFD6E8 35%, #E5D0FF 70%, #C4B5FD 100%)',
-            backdropFilter: 'blur(12px)', 
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
-            
-            >
-           <Tabs
-                     value={section}
-                     onChange={(_, value) => setSection(value)}
-                     textColor="inherit"
-                     indicatorColor="primary"
-                     variant="fullWidth"
-                     sx={{
-                       '& .MuiTab-root': { color: 'rgba(126, 31, 77, 0.65)', fontWeight: 600 },
-                       '& .Mui-selected': { color: '#7E1F4D', background: 'rgba(255,255,255,0.55)', borderRadius: 4, fontWeight: 700 },
-                       '& .MuiTabs-indicator': { backgroundColor: '#B91C9F', height: 3, borderRadius: 3 } }}
-                   >
+        {/* 🆕 Round 19: brand-red tabs (was purple/pink). Match
+            ServiceDurationSheet & detail page accent palette. */}
+        <Box
+          sx={{
+            mt: 2,
+            mx: 2,
+            px: 1,
+            py: 0.5,
+            borderRadius: 999,
+            background:
+              'linear-gradient(135deg, rgba(254, 9, 68, 0.85) 0%, rgba(254, 122, 82, 0.85) 100%)',
+            boxShadow: '0 8px 22px rgba(254, 9, 68, 0.18)',
+          }}
+        >
+          <Tabs
+            value={section}
+            onChange={(_, value) => setSection(value)}
+            textColor="inherit"
+            indicatorColor="primary"
+            variant="fullWidth"
+            sx={{
+              minHeight: 40,
+              '& .MuiTab-root': {
+                color: 'rgba(255, 255, 255, 0.75)',
+                fontWeight: 600,
+                fontSize: 12,
+                letterSpacing: '0.05em',
+                minHeight: 40,
+              },
+              '& .Mui-selected': {
+                color: '#fff',
+                background: 'rgba(255, 255, 255, 0.18)',
+                borderRadius: 999,
+                fontWeight: 700,
+              },
+              '& .MuiTabs-indicator': {
+                background: '#fff',
+                height: 2,
+                borderRadius: 2,
+              },
+            }}
+          >
             <Tab label="SERVICES" value="services" />
             <Tab label="ABOUT US" value="about" />
             <Tab label="HOW TO BOOK" value="how" />
@@ -151,11 +190,9 @@ const ServicesPage: React.FC = () => {
               >
                 <Box
                   sx={{
-                  
-                                        textIndent: '1em',
                     position: 'relative',
-                    height: 220,
-                    borderRadius: 2,
+                    height: 240,
+                    borderRadius: 3,
                     overflow: 'hidden',
                     backgroundImage: `url(${svc.image})`,
                     backgroundSize: 'cover',
@@ -164,34 +201,141 @@ const ServicesPage: React.FC = () => {
                     flexDirection: 'column',
                     justifyContent: 'flex-end',
                     cursor: 'pointer',
-                    boxShadow: '0 10px 30px rgba(175, 59, 59, 0.08)' }}
+                    boxShadow: '0 10px 30px rgba(175, 59, 59, 0.12)',
+                    // Dark overlay for legible text on any photo
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      inset: 0,
+                      background:
+                        'linear-gradient(180deg, rgba(0,0,0,0) 35%, rgba(0,0,0,0.7) 100%)',
+                      pointerEvents: 'none',
+                    },
+                  }}
                   onClick={() => handleSelectService(svc.id)}
                 >
-                <Box
-                             sx={{
-                               position: "absolute",
-                               top: 14,
-                               left: 14,
-                               px: 1.3,
-                               py: 0.5,
-                               fontSize: 12,
-                               fontWeight: "bold",
-                               color: "#ffffffff",
-                               background: "linear-gradient(135deg, #FE0944 0%, #B91C9F 60%, #6366F1 100%)",
-                               backdropFilter: "blur(6px)",
-                               borderRadius: 2,
-                               
-                               textTransform: "uppercase" }}
-                           >
-                             {svc.badge}
-                           </Box>
-                  <Box sx={{ px: 2, py: 2, background: "rgba(255, 255, 255, 0.12)", backdropFilter: 'blur(1px)' }}>
-                    <Typography fontSize={18} fontWeight="bold" fontFamily="Playfair Display" sx={{ color: '#f0e3d3ff' }}>{svc.name}</Typography>
-                    <Typography fontSize={14} sx={{ color: '#f5e0caaa' }}>{svc.desc}</Typography>
-                    <Typography>
-                      <Box component="span" sx={{ fontSize: 16, fontWeight: 'bold', color: '#FF9900' }}>{svc.price}฿</Box>
-                      <Box component="span" sx={{ fontSize: 14, fontWeight: 400, color: '#FF9900', ml: 1 }}>|  {svc.duration}⏱</Box>
+                  {/* Badge — brand red (was purple gradient) */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 14,
+                      left: 14,
+                      px: 1.3,
+                      py: 0.5,
+                      fontSize: 11,
+                      fontWeight: 'bold',
+                      color: '#fff',
+                      background:
+                        'linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)',
+                      borderRadius: 1.5,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      boxShadow: '0 4px 10px rgba(254, 9, 68, 0.35)',
+                      zIndex: 1,
+                    }}
+                  >
+                    {svc.badge}
+                  </Box>
+
+                  {/* Body — uses servicePricing.startingPrice() to show real
+                      starting price (e.g. 60-min) + duration tier list */}
+                  <Box sx={{ position: 'relative', px: 2, py: 2, zIndex: 1 }}>
+                    <Typography
+                      fontSize={20}
+                      fontWeight={700}
+                      fontFamily="Fraunces, Georgia, serif"
+                      sx={{ color: '#fff', letterSpacing: '-0.01em' }}
+                    >
+                      {svc.name}
                     </Typography>
+                    <Typography
+                      fontSize={12.5}
+                      sx={{
+                        color: 'rgba(255, 255, 255, 0.85)',
+                        mt: 0.25,
+                        mb: 1.25,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {svc.desc}
+                    </Typography>
+
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <Box
+                        component="span"
+                        sx={{
+                          fontFamily: 'Fraunces, Georgia, serif',
+                          fontSize: 19,
+                          fontWeight: 700,
+                          color: '#fff',
+                          letterSpacing: '-0.02em',
+                        }}
+                      >
+                        From {formatTHB(startingPrice(svc))}
+                      </Box>
+                      <Box
+                        component="span"
+                        sx={{
+                          fontSize: 11,
+                          color: 'rgba(255, 255, 255, 0.7)',
+                        }}
+                      >
+                        · {svc.duration} min
+                      </Box>
+                      {svc.count > 0 && (
+                        <Box
+                          component="span"
+                          sx={{
+                            ml: 'auto',
+                            fontSize: 10.5,
+                            fontWeight: 600,
+                            color: 'rgba(255, 255, 255, 0.85)',
+                            background: 'rgba(0, 0, 0, 0.3)',
+                            px: 0.8,
+                            py: 0.25,
+                            borderRadius: 1,
+                            backdropFilter: 'blur(6px)',
+                          }}
+                        >
+                          ⭐ {svc.count.toLocaleString()} used
+                        </Box>
+                      )}
+                    </Box>
+
+                    {/* 🆕 Round 19: 'Book now' fast-path — direct to
+                        /therapists?service=… without pause on detail page */}
+                    <Button
+                      variant="contained"
+                      onClick={(e) => handleBookService(svc.id, e)}
+                      endIcon={<ArrowForwardRoundedIcon />}
+                      sx={{
+                        mt: 1.25,
+                        height: 38,
+                        borderRadius: 999,
+                        background:
+                          'linear-gradient(135deg, #FE0944, #FE7A52)',
+                        color: '#fff',
+                        fontFamily: 'Inter, system-ui, sans-serif',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        textTransform: 'none',
+                        boxShadow: '0 6px 18px rgba(254, 9, 68, 0.35)',
+                        px: 2.5,
+                        '&:hover': {
+                          background:
+                            'linear-gradient(135deg, #E50840, #E56A47)',
+                        },
+                      }}
+                    >
+                      Book now
+                    </Button>
                   </Box>
                 </Box>
               </motion.div>
