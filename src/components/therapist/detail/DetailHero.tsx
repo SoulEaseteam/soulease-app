@@ -232,11 +232,12 @@ const DetailHero: React.FC<Props> = ({
           ))}
         </Box>
 
-        {/* .info-overlay */}
+        {/* .info-overlay — bottom 70px lifts the name+status above the
+            StatsCard's -30px overlap zone (was 24px → got covered). */}
         <Box
           sx={{
             position: "absolute",
-            bottom: "24px",
+            bottom: "70px",
             left: "20px",
             right: "20px",
             zIndex: 3,

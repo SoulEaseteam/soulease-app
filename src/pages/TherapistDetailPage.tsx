@@ -19,13 +19,8 @@ import { useTranslation } from "react-i18next";
 
 import DetailHero from "@/components/therapist/detail/DetailHero";
 import StatsCard from "@/components/therapist/detail/StatsCard";
-import {
-  About,
-  Credentials,
-  Specialties,
-  Languages,
-  Reviews,
-} from "@/components/therapist/detail/DetailSections";
+import { About } from "@/components/therapist/detail/DetailSections";
+import TherapistProfileTabs from "@/components/therapist/detail/TherapistProfileTabs";
 import StickyBookCTA from "@/components/therapist/detail/StickyBookCTA";
 
 // 🆕 Phase 4 — Pricing + Calendar legacy sections REPLACED by the booking
@@ -451,9 +446,29 @@ const TherapistDetailPage: React.FC = () => {
       />
 
       <About name={therapist.name} body={therapist.about} />
-      <Credentials creds={therapist.creds} />
-      <Specialties specs={therapist.specs} />
-      <Languages langs={therapist.langs} />
+
+      {/* 🆕 Phase 4 — Compact tabs replacing 4 stacked sections
+          (Credentials → Specialties → Languages → Reviews). User feedback:
+          'too long to reach the booking section'. Tabs let in-a-rush
+          customers skim or skip; engaged customers can dive deep. */}
+      <TherapistProfileTabs
+        yearsExp={therapist.yearsExp}
+        totalSessions={therapist.specs.reduce((sum, s) => {
+          const m = /(\d[\d,]*)/.exec(s.sub);
+          return sum + (m ? parseInt(m[1].replace(/,/g, ""), 10) : 0);
+        }, 0)}
+        rebookRate={therapist.rebookRate}
+        hasLicense={therapist.creds.some((c) =>
+          /licen[cs]e|ผ\.พ\./i.test(c.title)
+        )}
+        creds={therapist.creds}
+        specs={therapist.specs}
+        langs={therapist.langs}
+        rating={therapist.rating}
+        reviewCount={therapist.reviewCount}
+        reviewBuckets={therapist.reviewBuckets}
+        reviews={therapist.reviews}
+      />
 
       {/* 🆕 Phase 4 — Inline picker (replaces legacy Pricing + Calendar)
           Service tap → bottom sheet picks 60/90/120 → date pills + time
@@ -504,12 +519,7 @@ const TherapistDetailPage: React.FC = () => {
         />
       </PickerSection>
 
-      <Reviews
-        rating={therapist.rating}
-        total={therapist.reviewCount}
-        buckets={therapist.reviewBuckets}
-        reviews={therapist.reviews}
-      />
+      {/* (Reviews moved into TherapistProfileTabs as Tab 2.) */}
 
       <StickyBookCTA
         therapistId={therapist.id}
