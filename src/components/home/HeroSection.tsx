@@ -30,20 +30,20 @@
 import React from "react";
 import { Box, Typography, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 const HeroSection: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
-  // 🔻 Scroll-to-list helper — sends users to `<Box id="therapist-list">`
-  //    rendered later in HomePage.tsx. Falls back silently if absent.
-  const handleCta = () => {
-    if (typeof document === "undefined") return;
-    const el = document.getElementById("therapist-list");
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  // 🆕 Round 21 (founder 2026-05-01): direct nav to /therapists.
+  //    Previously scrolled to in-page #therapist-list, but Round 21
+  //    removed FeaturedTherapists from HomePage. Hero CTA now hits the
+  //    real therapist list page (live Firestore data) immediately.
+  const handleCta = () => void navigate("/therapists");
 
   return (
     <Box
@@ -384,7 +384,11 @@ const HeroSection: React.FC = () => {
           >
             ⏰ {t("hero.badge.always", "24 / 7")}
           </Box>
-          {/* .badge ★ 4.8 · 1,200+ */}
+          {/* .badge 🌐 5 Languages
+              🆕 Round 25 (founder 2026-05-02): replaced fake "★ 4.8 · 1,200+"
+              stat (was hardcoded, no data backing) with factual claim that
+              the platform actually supports 5 languages. Same anti-fake-data
+              rationale as Round 21 stripping TrustSection. */}
           <Box
             component="span"
             sx={{
@@ -404,7 +408,7 @@ const HeroSection: React.FC = () => {
               boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.6)",
             }}
           >
-            ★ {t("hero.badge.rating", "4.8 · 1,200+")}
+            🌐 {t("hero.badge.languages", "5 Languages")}
           </Box>
         </Box>
       </Box>

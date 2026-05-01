@@ -29,28 +29,25 @@ import { useTranslation } from "react-i18next";
 
 import TopNav from "@/components/home/TopNav";
 import HeroSection from "@/components/home/HeroSection";
-// 🆕 Round 20 (founder 2026-05-01): 'พฤติกรรมลูกค้าไม่อ่านเกิน 8 บรรทัด'.
-//    HowItWorks moved to /services 'HOW TO BOOK' tab so HomePage stays
-//    above-the-fold compact — visitors get straight from hero → therapist
-//    list. The 3-step explanation lives where curious users opt-in.
-//    Round 18 also dropped ServicesGrid (→ /services), Testimonials
-//    (→ /review/all/:id), FAQ (→ /services HOW TO BOOK).
-import FeaturedTherapists from "@/components/home/FeaturedTherapists";
-import TrustSection from "@/components/home/TrustSection";
-import FinalCTA from "@/components/home/FinalCTA";
+// 🆕 Round 21 (founder 2026-05-01): ultra-lean. Removed:
+//    • FeaturedTherapists — used DEMO fallback data, not authoritative
+//      Firestore live therapists. Real list is at /therapists.
+//    • TrustSection — stats were hardcoded ('100% Licensed' / '4.8★ /
+//      1,200 reviews') not backed by DB; misleading.
+//    • FinalCTA — duplicates Hero CTA; redundant on a now-3-section page.
+//    • Round 20 dropped HowItWorks → /services HOW TO BOOK tab.
+//    • Round 18 dropped ServicesGrid / Testimonials / FAQ.
+//    HomePage was: TopNav → Hero → Footer (felt visually empty).
+// 🆕 Round 25 (founder 2026-05-02): added PromiseStrip — factual-only
+//    "Why SunRed" section (ผ.พ. licensed / Outcall / 5 Languages) to
+//    bridge the Hero→Footer gap WITHOUT reintroducing fake stats.
+import PromiseStrip from "@/components/home/PromiseStrip";
 import HomeFooter from "@/components/home/HomeFooter";
 
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
-import useTherapists from "@/utils/useTherapists";
 
 const HomePage: React.FC = () => {
   const { t, i18n } = useTranslation();
-  // 🔌 Restored Firestore live therapist data — see src/utils/useTherapists.ts.
-  // Static seed (`therapistsData`) merged with live overrides
-  // (`onSnapshot(therapists)`), distance-sorted with privacy filtering. The
-  // home featured-scroll shows the first 4; FeaturedTherapists handles the
-  // empty/loading state with a static demo fallback.
-  const therapists = useTherapists();
 
   useDocumentMeta({
     title: t(
@@ -81,17 +78,7 @@ const HomePage: React.FC = () => {
     >
       <TopNav />
       <HeroSection />
-
-      {/* Featured therapists — anchored to #therapist-list so HeroSection's
-          CTA can scroll to it. Receives live data from `useTherapists()`;
-          falls back to static demo if subscription empty. The 'View all
-          therapists' button below the scroll navigates to /therapists. */}
-      <Box id="therapist-list" sx={{ scrollMarginTop: "80px" }}>
-        <FeaturedTherapists therapists={therapists} />
-      </Box>
-
-      <TrustSection />
-      <FinalCTA />
+      <PromiseStrip />
       <HomeFooter />
     </Box>
   );

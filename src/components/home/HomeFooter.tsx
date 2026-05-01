@@ -12,9 +12,26 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
+// 🆕 Round 25 (founder 2026-05-02): emoji socials (📱📧💬) replaced with
+//    MUI icons per Round 15 mandate "no emojis, use MUI icons" — matches
+//    BookingSuccessPage / Confirm Order / TherapistListPage rounds.
+import PhoneIphoneRoundedIcon from "@mui/icons-material/PhoneIphoneRounded";
+import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
+import ChatRoundedIcon from "@mui/icons-material/ChatRounded";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
+
+type SocialIcon = {
+  Icon: typeof PhoneIphoneRoundedIcon;
+  label: string;
+};
+
+const SOCIALS: SocialIcon[] = [
+  { Icon: PhoneIphoneRoundedIcon, label: "Phone" },
+  { Icon: EmailRoundedIcon, label: "Email" },
+  { Icon: ChatRoundedIcon, label: "Chat" },
+];
 
 type LinkItem = { key: string; fallback: string };
 type Col = { titleKey: string; titleFallback: string; links: LinkItem[] };
@@ -100,11 +117,13 @@ const HomeFooter: React.FC = () => {
           {t("hero.brand", "SunRed")}
         </Typography>
 
-        {/* .socials */}
+        {/* .socials — MUI icons per Round 15 no-emoji standard */}
         <Box sx={{ display: "flex", gap: "8px" }}>
-          {["📱", "📧", "💬"].map((icon, i) => (
+          {SOCIALS.map(({ Icon, label }) => (
             <Box
-              key={i}
+              key={label}
+              role="button"
+              aria-label={label}
               sx={{
                 width: "32px",
                 height: "32px",
@@ -114,11 +133,15 @@ const HomeFooter: React.FC = () => {
                 alignItems: "center",
                 justifyContent: "center",
                 color: "#FE0944",
-                fontSize: "14px",
                 cursor: "pointer",
+                transition: "background 0.2s ease, transform 0.2s ease",
+                "&:hover": {
+                  background: "rgba(254, 9, 68, 0.16)",
+                  transform: "translateY(-1px)",
+                },
               }}
             >
-              {icon}
+              <Icon sx={{ fontSize: 16 }} />
             </Box>
           ))}
         </Box>

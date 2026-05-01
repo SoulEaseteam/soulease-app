@@ -457,7 +457,7 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
             alt="star"
             style={{ width: 18, height: 18, marginRight: 6 }}
           />
-          {(profile.rating ?? 0).toFixed(1)} | {served} served
+          {(Number(profile.rating) || 0).toFixed(1)} | {served} served
         </Typography>
 
         {/* Reviews + Button */}

@@ -361,7 +361,7 @@ function buildFromReal(real: Therapist): DemoTherapist {
     age: ageNum,
     photoBg,
     images,
-    rating: real.rating.toFixed(1),
+    rating: (Number(real.rating) || 0).toFixed(1),
     reviewCount: real.reviews ?? 0,
     yearsExp: typeof real.experience === "number" ? real.experience : MAI.yearsExp,
   };
