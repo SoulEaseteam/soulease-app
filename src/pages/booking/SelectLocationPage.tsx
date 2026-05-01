@@ -57,7 +57,7 @@ import { useGoogleMaps } from "@/context/GoogleMapsContext";
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
-export type MeetingPoint = "lobby" | "lift" | "direct";
+export type MeetingPoint = "lobby" | "lift" | "direct" | "other";
 export type LocationType =
   | "hotel"
   | "condo"
@@ -107,10 +107,18 @@ const EMPTY: AddressNavState = {
   mapUrl: null,
 };
 
-const MEETING_POINTS: { id: MeetingPoint; label: string; icon: string }[] = [
+// 🆕 Founder 2026-05-01 round 13: rename 'Meet at Lift' → 'Wait for me at
+//    the lift' + add 'Other' option. Now rendered as a radio list inside
+//    the new 'Delivery instructions' card (no longer inline chips).
+const MEETING_POINTS: {
+  id: MeetingPoint;
+  label: string;
+  icon: string;
+}[] = [
   { id: "lobby", label: "Meet at Lobby", icon: "🏨" },
-  { id: "lift", label: "Meet at Lift", icon: "🛗" },
+  { id: "lift", label: "Wait for me at the lift", icon: "🛗" },
   { id: "direct", label: "Come Directly", icon: "🚪" },
+  { id: "other", label: "Other", icon: "📍" },
 ];
 
 // LOCATION_TYPES removed 2026-05-01 (founder: 'Location Type (Optional) ลบ').
@@ -904,37 +912,58 @@ const SelectLocationPage: React.FC = () => {
           </Typography>
         </FieldLabel>
 
-        {/* Note — matches founder reference (2026-05-01): green doc icon
-            + bold 'Note' + muted '(Optional)', placeholder
-            'Floor/Room No./Special notes'. The Meeting Point chips
-            (Lobby / Lift / Direct) sit directly under the Note textarea
-            without their own header — founder feedback 'Meeting Point
-            (Optional) ลบ' (drop the section header, keep the chips). */}
+        {/* 🆕 Founder 2026-05-01 round 13:
+            • Note → helper subtitle 'Add instructions for therapist arrival',
+              placeholder 'Add room number / villa'
+            • The 3-chip Meeting Point row inside Note has been removed —
+              moved into a dedicated 'Delivery instructions' radio list
+              section below. */}
         <FieldLabel label="Note" icon="📝" optional>
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: "12px",
+              color: "rgba(60, 30, 20, 0.6)",
+              marginTop: "-4px",
+              marginBottom: "8px",
+              paddingLeft: "2px",
+            }}
+          >
+            Add instructions for therapist arrival
+          </Typography>
           <TextField
             fullWidth
             multiline
             minRows={3}
             maxRows={6}
-            placeholder="e.g., Floor/Room No./Special notes"
+            placeholder="Add room number / villa"
             value={form.addressNote}
             onChange={(e) =>
               setForm((p) => ({ ...p, addressNote: e.target.value }))
             }
             sx={inputSx}
           />
-          {/* 🆕 Founder 2026-05-01: 'เรียง 3' — equal-width 3-column grid
-              so all chips fit on one row instead of wrapping to 2+1.
-              Smaller padding + tighter gap keep them readable on 430px. */}
+        </FieldLabel>
+
+        {/* 🆕 Founder 2026-05-01 round 13: 'Delivery instructions' radio
+            list — replaces the 3-chip Meeting Point row, adds 'Wait for
+            me at the lift' (renamed from 'Meet at Lift') and a 4th
+            'Other' option. Vertical, full-width tappable rows with the
+            radio dot on the right (matches Grab/Lalamove pattern). */}
+        <FieldLabel label="Delivery instructions" icon="🚪" optional>
           <Box
+            role="radiogroup"
+            aria-label="Delivery instructions"
             sx={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: "8px",
-              marginTop: "10px",
+              display: "flex",
+              flexDirection: "column",
+              borderRadius: "14px",
+              background: "#fff",
+              border: "1px solid rgba(0, 0, 0, 0.08)",
+              overflow: "hidden",
             }}
           >
-            {MEETING_POINTS.map((m) => {
+            {MEETING_POINTS.map((m, idx) => {
               const isActive = form.meetingPoint === m.id;
               return (
                 <Box
@@ -960,46 +989,101 @@ const SelectLocationPage: React.FC = () => {
                   sx={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    gap: "5px",
-                    padding: "9px 6px",
-                    borderRadius: "999px",
+                    gap: "12px",
+                    padding: "14px 16px",
                     cursor: "pointer",
-                    minWidth: 0,
+                    userSelect: "none",
+                    borderTop:
+                      idx === 0
+                        ? "none"
+                        : "1px solid rgba(0, 0, 0, 0.06)",
                     background: isActive
-                      ? "linear-gradient(135deg, rgba(254, 9, 68, 0.12), rgba(254, 122, 82, 0.12))"
-                      : "rgba(255, 255, 255, 0.7)",
-                    border: isActive
-                      ? "1.5px solid #FE0944"
-                      : "1px solid rgba(0, 0, 0, 0.08)",
-                    fontFamily: SANS,
-                    fontSize: "11.5px",
-                    fontWeight: 600,
-                    color: isActive ? "#FE0944" : "#3c1e14",
-                    transition: "all 0.15s ease",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
+                      ? "rgba(254, 9, 68, 0.05)"
+                      : "transparent",
+                    transition: "background 0.15s ease",
+                    "&:hover": {
+                      background: isActive
+                        ? "rgba(254, 9, 68, 0.08)"
+                        : "rgba(0, 0, 0, 0.02)",
+                    },
+                    "&:focus-visible": {
+                      outline: "2px solid #FE0944",
+                      outlineOffset: "-2px",
+                    },
                   }}
                 >
-                  <Box sx={{ fontSize: "13px", flexShrink: 0 }}>{m.icon}</Box>
                   <Box
                     component="span"
+                    sx={{ fontSize: "18px", flexShrink: 0 }}
+                  >
+                    {m.icon}
+                  </Box>
+                  <Typography
                     sx={{
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
+                      flex: 1,
+                      fontFamily: SANS,
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      color: "#1a1a1a",
                     }}
                   >
                     {m.label}
-                  </Box>
+                  </Typography>
+                  <Box
+                    aria-hidden
+                    sx={{
+                      width: 20,
+                      height: 20,
+                      flexShrink: 0,
+                      borderRadius: "50%",
+                      border: isActive
+                        ? "6px solid #FE0944"
+                        : "2px solid rgba(0, 0, 0, 0.25)",
+                      background: isActive ? "#fff" : "transparent",
+                      transition: "all 0.15s ease",
+                    }}
+                  />
                 </Box>
               );
             })}
           </Box>
         </FieldLabel>
-        {/* 🆕 Founder 2026-05-01: 'Location Type (Optional) ลบ' — chips
-            removed; the meeting-point chip + map context already give
-            therapists what they need to know. */}
+
+        {/* 🆕 Founder 2026-05-01 round 13: helper info card explaining
+            the 'Go up to your room' policy. Soft cream tile, no
+            interaction — pure communication. */}
+        <Box
+          sx={{
+            padding: "14px 16px",
+            borderRadius: "14px",
+            background: "rgba(254, 201, 167, 0.18)",
+            border: "1px solid rgba(254, 122, 82, 0.18)",
+            marginTop: "-4px",
+          }}
+        >
+          <Typography
+            sx={{
+              fontFamily: SERIF,
+              fontSize: "14px",
+              fontWeight: 700,
+              color: "#3c1e14",
+              marginBottom: "4px",
+            }}
+          >
+            Go up to your room
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: "12.5px",
+              color: "rgba(60, 30, 20, 0.75)",
+              lineHeight: 1.55,
+            }}
+          >
+            Just let me know the name on your booking and the room
+            number, and I&rsquo;ll ask her to contact the front desk.
+          </Typography>
+        </Box>
         </Box>
         {/* end "Your details" form card */}
       </Box>

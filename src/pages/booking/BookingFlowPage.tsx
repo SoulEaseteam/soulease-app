@@ -44,7 +44,10 @@ import {
   IconButton,
   Tooltip,
   Button,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
+import LocalOfferRoundedIcon from "@mui/icons-material/LocalOfferRounded";
 import {
   useNavigate,
   useParams,
@@ -77,6 +80,14 @@ import SupportAgentRoundedIcon from "@mui/icons-material/SupportAgentRounded";
 //    requests go via admin chat.
 // PaymentMethod / PaymentPicker dropped 2026-05-01 (founder feedback).
 import type { AddressNavState } from "@/pages/booking/SelectLocationPage";
+// 🆕 Round 14 (founder 2026-05-01): Payment detail tile + Payment Methods page.
+import {
+  readSelectedPaymentMethod,
+  PAYMENT_LABELS,
+  type PaymentMethodId,
+} from "@/pages/booking/PaymentMethodsPage";
+import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
+import PaymentRoundedIcon from "@mui/icons-material/PaymentRounded";
 
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
@@ -121,6 +132,9 @@ export interface BookingFormState {
   language: string;
   selectedAddons: string[];
   notes: string;
+  /** Customer-entered discount code (no backend validation yet — admin
+   *  applies it manually after seeing the booking). */
+  discountCode: string;
   therapistId: string | null;
 }
 
@@ -143,6 +157,7 @@ const initialFormState: BookingFormState = {
   language: "en",
   selectedAddons: [],
   notes: "",
+  discountCode: "",
   therapistId: null,
 };
 
@@ -164,6 +179,21 @@ const BookingFlowPage: React.FC = () => {
 
   // Preferences sheet (Language + Add-ons) was removed 2026-05-01 round 8
   // (founder feedback). Language defaults to 'en'; admin handles requests.
+
+  // 🆕 Round 14: read the user's selected payment method from localStorage.
+  //    Re-read on window focus so navigating to /payment-methods → back
+  //    updates the cell label without a full reload.
+  const [paymentMethod, setPaymentMethod] =
+    useState<PaymentMethodId>(readSelectedPaymentMethod);
+  useEffect(() => {
+    const handler = () => setPaymentMethod(readSelectedPaymentMethod());
+    window.addEventListener("focus", handler);
+    window.addEventListener("storage", handler);
+    return () => {
+      window.removeEventListener("focus", handler);
+      window.removeEventListener("storage", handler);
+    };
+  }, []);
 
   const [form, setForm] = useState<BookingFormState>({
     ...initialFormState,
@@ -396,7 +426,12 @@ const BookingFlowPage: React.FC = () => {
         addons: form.selectedAddons,
         addonsTotal,
         note: form.notes,
-        // payment field intentionally omitted — collected via admin chat.
+        // 🆕 Round 13: discount code (admin verifies + applies after booking)
+        discountCode: form.discountCode || null,
+        // 🆕 Round 14: customer-selected payment method label (admin still
+        // confirms via Telegram, but we capture intent here).
+        payment: PAYMENT_LABELS[paymentMethod],
+        paymentMethodId: paymentMethod,
         taxiFee: taxiFare,
         taxiTier: taxiResult?.tier ?? null,
         taxiBaseFee: taxiResult?.baseFareBeforeRain ?? taxiFare,
@@ -426,7 +461,7 @@ const BookingFlowPage: React.FC = () => {
         addressDetails: form.addressDetails,
         contactName: form.contactName,
         phone: form.customerPhone,
-        note: form.notes,
+        note: form.addressNote || form.notes, // prefer address note
         servicePrice,
         taxiFee: taxiFare,
         total,
@@ -437,6 +472,11 @@ const BookingFlowPage: React.FC = () => {
         meetingPoint: form.meetingPoint,
         locationType: form.locationType,
         mapUrl: form.mapUrl,
+        // 🆕 Round 13: extra fields for the new Telegram template
+        discountCode: form.discountCode || null,
+        // 🆕 Round 14: send chosen payment method label to Telegram so
+        //    admin sees what the customer selected (e.g. "PromptPay").
+        payment: PAYMENT_LABELS[paymentMethod],
       });
 
       void navigate(`/booking/success/${ref.id}`);
@@ -896,10 +936,73 @@ const BookingFlowPage: React.FC = () => {
             )}
           </Box>
 
+          {/* 🆕 Founder 2026-05-01 round 13: Discount code input. No
+              backend validation yet — admin verifies and applies it
+              manually after seeing the booking in Telegram. */}
+          <Box sx={{ marginTop: "10px" }}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Discount code (optional)"
+              value={form.discountCode}
+              onChange={(e) =>
+                setForm((p) => ({
+                  ...p,
+                  discountCode: e.target.value
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9-]/g, ""),
+                }))
+              }
+              inputProps={{ maxLength: 20 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LocalOfferRoundedIcon
+                      sx={{ fontSize: 16, color: "#FE0944" }}
+                    />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  background: "#fff",
+                  borderRadius: "12px",
+                  fontFamily: SANS,
+                  fontSize: "13.5px",
+                  letterSpacing: "0.04em",
+                  fontVariantNumeric: "tabular-nums",
+                  "& fieldset": { borderColor: "rgba(0, 0, 0, 0.08)" },
+                  "&:hover fieldset": {
+                    borderColor: "rgba(254, 9, 68, 0.4)",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#FE0944",
+                    borderWidth: "1.5px",
+                  },
+                },
+              }}
+            />
+            {form.discountCode && (
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "10.5px",
+                  color: "rgba(60, 30, 20, 0.55)",
+                  marginTop: "4px",
+                  paddingLeft: "8px",
+                  fontStyle: "italic",
+                }}
+              >
+                We&rsquo;ll verify and apply your discount when we
+                confirm your booking.
+              </Typography>
+            )}
+          </Box>
+
           <Box
             sx={{
               borderTop: "1px solid rgba(0, 0, 0, 0.08)",
-              marginTop: "8px",
+              marginTop: "12px",
               paddingTop: "10px",
               display: "flex",
               justifyContent: "space-between",
@@ -938,6 +1041,85 @@ const BookingFlowPage: React.FC = () => {
             </Typography>
           )}
         </SectionCard>
+
+        {/* 🆕 Round 14 (founder 2026-05-01): Payment detail cell —
+            tap → navigate to /payment-methods to pick the method.
+            Mirrors the AddressTile pattern for visual consistency. */}
+        <Box
+          role="button"
+          tabIndex={0}
+          onClick={() => void navigate("/payment-methods")}
+          onKeyDown={(e) => {
+            if (e.key === " " || e.key === "Enter") {
+              e.preventDefault();
+              void navigate("/payment-methods");
+            }
+          }}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            padding: "14px 16px",
+            borderRadius: "16px",
+            background: "rgba(255, 255, 255, 0.7)",
+            border: "1px solid rgba(255, 255, 255, 0.6)",
+            boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
+            cursor: "pointer",
+            transition: "background 0.15s ease",
+            "&:hover": { background: "rgba(255, 255, 255, 0.9)" },
+            "&:focus-visible": {
+              outline: "2px solid #FE0944",
+              outlineOffset: "2px",
+            },
+          }}
+        >
+          <Box
+            aria-hidden
+            sx={{
+              width: 36,
+              height: 36,
+              flexShrink: 0,
+              borderRadius: "10px",
+              background: "rgba(254, 9, 68, 0.10)",
+              color: "#FE0944",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              "& svg": { fontSize: 20 },
+            }}
+          >
+            <PaymentRoundedIcon />
+          </Box>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography
+              sx={{
+                fontFamily: SANS,
+                fontSize: "11px",
+                fontWeight: 700,
+                color: "rgba(60, 30, 20, 0.55)",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                marginBottom: "2px",
+              }}
+            >
+              Payment detail
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: SERIF,
+                fontSize: "15px",
+                fontWeight: 600,
+                color: "#3c1e14",
+                lineHeight: 1.2,
+              }}
+            >
+              {PAYMENT_LABELS[paymentMethod]}
+            </Typography>
+          </Box>
+          <ChevronRightRoundedIcon
+            sx={{ color: "rgba(60, 30, 20, 0.4)", fontSize: 22 }}
+          />
+        </Box>
 
         {/* ─────────── Cancellation policy ─────────── */}
         <Typography

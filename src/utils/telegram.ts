@@ -71,6 +71,9 @@ interface NotifyPayload {
   meetingPoint: string | null;
   locationType: string | null;
   mapUrl: string | null;
+  /** 🆕 Round 13 (founder 2026-05-01): customer-entered discount code,
+   *  admin verifies + applies after booking. Null when not entered. */
+  discountCode?: string | null;
 }
 
 /**
@@ -95,42 +98,96 @@ export async function sendBookingNotification(
   }
 }
 
+/**
+ * 🆕 Founder 2026-05-01 round 13: rewrite Telegram template to match
+ * the founder's reference layout. Sections separated by 35× underscore
+ * lines so the message reads cleanly on Telegram clients of any width.
+ *
+ * Template:
+ *
+ *   dd/mm/yyyy hh:mm AM/PM (เวลาจอง)
+ *   🧾 Booking ID: <id>
+ *
+ *   Therapist: <name>
+ *   Booking Time: <YYYY-MM-DD HH:mm>
+ *   ___________________________________
+ *
+ *   📍 Address:
+ *   <full address>
+ *
+ *   Service: <name>
+ *   Duration: <X> minute
+ *   Payment: Cash
+ *   Price: ฿<price>
+ *
+ *   🚖 Taxi: ฿<fee>
+ *   💰 Total: ฿<total>
+ *   [💸 Discount: <code>]    ← only when present
+ *   ___________________________________
+ *
+ *   👤 Contact Person: <name>
+ *   📞 Phone: <phone>
+ *   Note: <note>
+ *   ___________________________________
+ *
+ *   🗺 Map: <url>
+ */
 function formatMessage(p: NotifyPayload): string {
-  const when = dayjs(p.startAt).format("DD/MM/YYYY HH:mm");
-  const map = p.mapUrl || buildGoogleMapsUrl(p.locationName, p.address, null, null);
+  const when = dayjs(p.startAt).format("DD/MM/YYYY hh:mm A");
+  const bookingTime = `${p.date} · ${p.time}`;
+  const map =
+    p.mapUrl || buildGoogleMapsUrl(p.locationName, p.address, null, null);
+  const divider = "___________________________________";
+
+  // Build full address: name + address + addressDetails (room/floor)
+  const addressLines: string[] = [];
+  if (p.locationName) addressLines.push(escapeMd(p.locationName));
+  if (p.address) addressLines.push(escapeMd(p.address));
+  if (p.addressDetails) addressLines.push(escapeMd(p.addressDetails));
+  if (p.meetingPoint) addressLines.push(`Meeting: ${escapeMd(p.meetingPoint)}`);
+  const addressBlock =
+    addressLines.length > 0 ? addressLines.join("\n") : "—";
+
+  // Add-ons line (only when present)
   const addonsLine =
-    p.addons.length === 0
-      ? "—"
-      : p.addons
+    p.addons.length > 0
+      ? p.addons
           .map((a) => `${escapeMd(a.name)} (+${a.price.toLocaleString()}฿)`)
-          .join(", ");
-  const lines = [
-    `🆕 *New Booking* · ${escapeMd(when)}`,
-    `🧾 ID: \`${p.bookingId}\``,
+          .join(", ")
+      : null;
+
+  const lines: (string | null)[] = [
+    `${escapeMd(when)} (เวลาจอง)`,
+    `🧾 Booking ID: \`${p.bookingId}\``,
     "",
     `Therapist: ${escapeMd(p.therapistName ?? "—")}`,
-    `Service: ${escapeMd(p.serviceName)} · ${p.duration} min`,
-    `When: ${escapeMd(p.date)} · ${escapeMd(p.time)}`,
-    p.rainTier !== "none" ? `Weather: ${escapeMd(p.rainTier)} (surcharge applied)` : null,
-    "────────────────────",
-    `📍 ${escapeMd(p.locationName ?? "—")}`,
-    `   ${escapeMd(p.address ?? "—")}`,
-    p.addressDetails ? `   ${escapeMd(p.addressDetails)}` : null,
-    p.meetingPoint ? `   Meeting: ${escapeMd(p.meetingPoint)}` : null,
-    p.locationType ? `   Type: ${escapeMd(p.locationType)}` : null,
-    `   Distance: ${p.distanceKm.toFixed(1)} km`,
-    "────────────────────",
-    `Contact: ${escapeMd(p.contactName)}`,
-    `Phone: ${escapeMd(p.phone)}`,
+    `Booking Time: ${escapeMd(bookingTime)}`,
+    divider,
+    "",
+    `📍 Address:`,
+    addressBlock,
+    "",
+    `Service: ${escapeMd(p.serviceName)}`,
+    `Duration: ${p.duration} minute`,
+    `Payment: ${escapeMd(p.payment ?? "Cash")}`,
+    `Price: ฿${p.servicePrice.toLocaleString()}`,
+    addonsLine ? `Add-ons: ${addonsLine}` : null,
+    "",
+    `🚖 Taxi: ฿${p.taxiFee.toLocaleString()}`,
+    `💰 Total: ฿${p.total.toLocaleString()}`,
+    p.discountCode ? `💸 Discount: \`${escapeMd(p.discountCode)}\`` : null,
+    p.rainTier !== "none"
+      ? `🌧 Weather: ${escapeMd(p.rainTier)} (surcharge applied)`
+      : null,
+    divider,
+    "",
+    `👤 Contact Person: ${escapeMd(p.contactName)}`,
+    `📞 Phone: ${escapeMd(p.phone)}`,
+    p.note ? `Note: ${escapeMd(p.note)}` : `Note: —`,
     `Language: ${escapeMd(p.language)}`,
-    `Add-ons: ${addonsLine}`,
-    p.note ? `Note: ${escapeMd(p.note)}` : null,
-    "────────────────────",
-    `💼 Service: ${p.servicePrice.toLocaleString()}฿`,
-    `🚖 Taxi: ${p.taxiFee.toLocaleString()}฿`,
-    `💰 Total: ${p.total.toLocaleString()}฿`,
-    `Payment: ${escapeMd(p.payment ?? "—")}`,
-    map ? `🗺️ ${map}` : null,
-  ].filter(Boolean);
-  return lines.join("\n");
+    divider,
+    "",
+    map ? `🗺 Map: ${map}` : null,
+  ];
+  return lines.filter((l) => l !== null).join("\n");
 }
