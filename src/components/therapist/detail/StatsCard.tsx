@@ -289,17 +289,16 @@ const StatsCard: React.FC<Props> = ({
                 component="span"
                 aria-hidden
                 sx={{
-                  fontSize: "10px",
-                  color: "#FE0944",
-                  fontWeight: 800,
-                  marginLeft: "1px",
-                  lineHeight: 1,
-                  display: "inline-block",
                   // Horizontal pulse — slides right 7px and back,
                   // looping every 2s. Big enough to be noticed
                   // peripherally; speed kept calm so it doesn't
                   // compete with hero photo or popover.
                   fontSize: "12px",
+                  color: "#FE0944",
+                  fontWeight: 800,
+                  marginLeft: "1px",
+                  lineHeight: 1,
+                  display: "inline-block",
                   animation: "sunredChevronPulse 2s ease-in-out infinite",
                   "@keyframes sunredChevronPulse": {
                     "0%, 100%": { transform: "translateX(0)", opacity: 0.7 },

@@ -66,6 +66,11 @@ export interface Therapist {
   /** location and distance */
   homeLocation?: Location | null;      // ค่าเริ่มต้นของ therapist
   currentLocation?: Location | null;   // real-time location
+  /** Flat lat/lng (legacy alias for homeLocation.lat/lng) — used by
+   *  taxi-fare estimator and BookingFlowPage. Kept here so the
+   *  `[key: string]: unknown` index signature doesn't shadow them. */
+  lat?: number;
+  lng?: number;
   distanceKm?: number | null;          // computed client-side
 
   /** gallery & features */

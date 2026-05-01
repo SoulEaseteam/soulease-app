@@ -598,7 +598,11 @@ const TherapistDetailPage: React.FC = () => {
       <TherapistInfoSheet
         open={infoSheet !== null}
         onClose={() => setInfoSheet(null)}
-        initialTab={infoSheet ?? "profile"}
+        // 'loyalty' isn't a tab in TherapistInfoSheet yet — fall back to
+        // 'profile' so tapping the loyalty cell still opens something useful.
+        initialTab={
+          infoSheet === "reviews" ? "reviews" : "profile"
+        }
         data={{
           yearsExp: therapist.yearsExp,
           totalSessions: therapist.specs.reduce((sum, s) => {
