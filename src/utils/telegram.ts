@@ -63,7 +63,8 @@ interface NotifyPayload {
   taxiFee: number;
   total: number;
   distanceKm: number;
-  payment: string | null;
+  /** Optional — payment is now collected via admin chat (founder 2026-05-01). */
+  payment?: string | null;
   language: string;
   addons: { name: string; price: number }[];
   rainTier: string;

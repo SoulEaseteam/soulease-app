@@ -61,11 +61,12 @@ import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
-import LanguageSheet from "@/components/booking/LanguageSheet";
-import AddonsSheet from "@/components/booking/AddonsSheet";
-import PaymentSheet from "@/components/booking/PaymentSheet";
+// 🆕 Phase 5 round 5 — Language + Add-ons merged into one PreferencesSheet
+//    (founder: 'Optional add-ons + Preferred language อยู่ sheet เดียวกัน').
+//    Payment method dropped entirely (founder: 'Payment method เอาออก').
+import PreferencesSheet from "@/components/booking/PreferencesSheet";
 import SelectionCell from "@/components/booking/SelectionCell";
-import type { PaymentMethod } from "@/components/booking/PaymentPicker";
+// PaymentMethod / PaymentPicker dropped 2026-05-01 (founder feedback).
 import type { AddressNavState } from "@/pages/booking/SelectLocationPage";
 
 import { db } from "@/lib/firebase";
@@ -115,7 +116,6 @@ export interface BookingFormState {
   language: string;
   selectedAddons: string[];
   notes: string;
-  paymentMethod: PaymentMethod | null;
   therapistId: string | null;
 }
 
@@ -138,7 +138,6 @@ const initialFormState: BookingFormState = {
   language: "en",
   selectedAddons: [],
   notes: "",
-  paymentMethod: null,
   therapistId: null,
 };
 
@@ -158,10 +157,8 @@ const BookingFlowPage: React.FC = () => {
 
   const [submitting, setSubmitting] = useState(false);
 
-  // Sheet open states (Location now uses dedicated route, not a sheet)
-  const [languageOpen, setLanguageOpen] = useState(false);
-  const [addonsOpen, setAddonsOpen] = useState(false);
-  const [paymentOpen, setPaymentOpen] = useState(false);
+  // Sheet open state — Language + Add-ons live in ONE merged sheet now.
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
 
   const [form, setForm] = useState<BookingFormState>({
     ...initialFormState,
@@ -276,8 +273,7 @@ const BookingFlowPage: React.FC = () => {
     locationSet &&
     !adminQuoteRequired && // > 20 km bookings require admin contact first
     form.contactName.trim().length >= 2 &&
-    phoneValid &&
-    !!form.paymentMethod;
+    phoneValid;
 
   // ── Header summary line
   const dateLabel = form.date
@@ -352,7 +348,7 @@ const BookingFlowPage: React.FC = () => {
         addons: form.selectedAddons,
         addonsTotal,
         note: form.notes,
-        payment: form.paymentMethod,
+        // payment field intentionally omitted — collected via admin chat.
         taxiFee: taxiFare,
         taxiTier: taxiResult?.tier ?? null,
         taxiBaseFee: taxiResult?.baseFareBeforeRain ?? taxiFare,
@@ -387,7 +383,6 @@ const BookingFlowPage: React.FC = () => {
         taxiFee: taxiFare,
         total,
         distanceKm,
-        payment: form.paymentMethod,
         language: form.language,
         addons: selectedAddons.map((a) => ({ name: a.name, price: a.price })),
         rainTier: taxiResult?.rain.tier ?? "none",
@@ -647,42 +642,25 @@ const BookingFlowPage: React.FC = () => {
           </Box>
         </SectionCard>
 
-        {/* ─────────── Selection cells (Language / Add-ons / Payment) ─────────── */}
+        {/* 🆕 Phase 5 round 5 — Single Preferences cell (Language + Add-ons
+            in one merged sheet). Payment cell removed entirely. */}
         <SelectionCell
-          label="Preferred language"
+          label="Preferences"
           icon={selectedLanguage?.flag ?? "🌐"}
-          value={selectedLanguage?.label ?? "Pick a language"}
-          filled={!!selectedLanguage}
-          onClick={() => setLanguageOpen(true)}
-        />
-
-        <SelectionCell
-          label="Optional add-ons"
-          icon="➕"
           value={
             selectedAddons.length === 0
-              ? "None selected"
-              : selectedAddons.length === 1
-              ? selectedAddons[0].name
-              : `${selectedAddons.length} add-ons`
+              ? selectedLanguage?.label ?? "Set language &amp; add-ons"
+              : `${selectedLanguage?.label ?? "Language"} · ${
+                  selectedAddons.length === 1
+                    ? selectedAddons[0].name
+                    : `${selectedAddons.length} add-ons`
+                }`
           }
           hint={
             addonsTotal > 0 ? `+${formatTHB(addonsTotal)}` : undefined
           }
-          filled={selectedAddons.length > 0}
-          onClick={() => setAddonsOpen(true)}
-        />
-
-        <SelectionCell
-          label="Payment method"
-          icon="💳"
-          value={
-            form.paymentMethod
-              ? PAYMENT_LABELS[form.paymentMethod]
-              : "Pick a payment method"
-          }
-          filled={!!form.paymentMethod}
-          onClick={() => setPaymentOpen(true)}
+          filled={!!selectedLanguage || selectedAddons.length > 0}
+          onClick={() => setPreferencesOpen(true)}
         />
 
         {/* 💰 Deposit policy hint — surfaces when distance is long enough
@@ -993,31 +971,15 @@ const BookingFlowPage: React.FC = () => {
       />
 
       {/* ─────────── Sheets ─────────── */}
-      <LanguageSheet
-        open={languageOpen}
-        onClose={() => setLanguageOpen(false)}
-        value={form.language}
-        onConfirm={(code) => {
-          setForm((p) => ({ ...p, language: code }));
-          setLanguageOpen(false);
-        }}
-      />
-      <AddonsSheet
-        open={addonsOpen}
-        onClose={() => setAddonsOpen(false)}
-        value={form.selectedAddons}
-        onConfirm={(next) => {
-          setForm((p) => ({ ...p, selectedAddons: next }));
-          setAddonsOpen(false);
-        }}
-      />
-      <PaymentSheet
-        open={paymentOpen}
-        onClose={() => setPaymentOpen(false)}
-        value={form.paymentMethod}
-        onConfirm={(m) => {
-          setForm((p) => ({ ...p, paymentMethod: m }));
-          setPaymentOpen(false);
+      {/* One merged sheet (Language + Add-ons). Payment sheet dropped. */}
+      <PreferencesSheet
+        open={preferencesOpen}
+        onClose={() => setPreferencesOpen(false)}
+        language={form.language}
+        addons={form.selectedAddons}
+        onConfirm={({ language, addons }) => {
+          setForm((p) => ({ ...p, language, selectedAddons: addons }));
+          setPreferencesOpen(false);
         }}
       />
     </Box>
@@ -1027,14 +989,6 @@ const BookingFlowPage: React.FC = () => {
 // ─────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────
-
-const PAYMENT_LABELS: Record<PaymentMethod, string> = {
-  card: "Credit / Debit Card",
-  wechat: "WeChat Pay",
-  alipay: "AliPay",
-  promptpay: "PromptPay",
-  cash: "Cash",
-};
 
 // Card with eyebrow label + emoji icon (Order Details / Pricing / etc.)
 const SectionCard: React.FC<{

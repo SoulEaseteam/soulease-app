@@ -347,8 +347,18 @@ const SelectLocationPage: React.FC = () => {
   return (
     <Box
       sx={{
+        // 🆕 Phone-shell wrapper (founder 2026-05-01: 'หน้าเว็บ ขนาดเดียวกัน
+        //    ทั้งเว็บ') so the address page matches BookingFlowPage and
+        //    BookingHistoryPage rhythm on desktop instead of stretching
+        //    full-bleed across a wide viewport.
+        maxWidth: "430px",
+        margin: "0 auto",
         minHeight: "100vh",
-        background: "#f5ede2",
+        background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
+        borderRadius: "28px",
+        overflow: "hidden",
+        boxShadow: "0 20px 60px rgba(126, 30, 46, 0.15)",
+        position: "relative",
         paddingBottom: "calc(120px + env(safe-area-inset-bottom, 0px))",
         fontFamily: SANS,
       }}
