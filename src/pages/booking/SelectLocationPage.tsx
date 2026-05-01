@@ -462,7 +462,7 @@ const SelectLocationPage: React.FC = () => {
         fontFamily: SANS,
       }}
     >
-      {/* Header */}
+      {/* Header — title + small subtitle for context */}
       <Box
         sx={{
           position: "sticky",
@@ -481,45 +481,71 @@ const SelectLocationPage: React.FC = () => {
           aria-label="back"
           onClick={() => void navigate(-1)}
           sx={{
-            width: 36,
-            height: 36,
-            background: "rgba(255, 255, 255, 0.7)",
+            width: 38,
+            height: 38,
+            background: "rgba(255, 255, 255, 0.85)",
             border: "1px solid rgba(0, 0, 0, 0.06)",
             color: "#3c1e14",
-            "&:hover": { background: "rgba(255, 255, 255, 0.9)" },
+            boxShadow: "0 2px 8px rgba(126, 30, 46, 0.06)",
+            "&:hover": { background: "#fff" },
           }}
         >
           <ArrowBackRoundedIcon fontSize="small" />
         </IconButton>
-        <Typography
-          component="h1"
+        <Box
           sx={{
             flex: 1,
             textAlign: "center",
-            fontFamily: SERIF,
-            fontSize: "18px",
-            fontWeight: 600,
-            color: "#3c1e14",
-            letterSpacing: "-0.01em",
-            marginRight: "36px",
+            marginRight: "38px",
           }}
         >
-          Select Location
-        </Typography>
+          <Typography
+            component="h1"
+            sx={{
+              fontFamily: SERIF,
+              fontSize: "18px",
+              fontWeight: 600,
+              color: "#3c1e14",
+              letterSpacing: "-0.01em",
+              lineHeight: 1.15,
+            }}
+          >
+            Select Location
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: "11px",
+              color: "rgba(60, 30, 20, 0.55)",
+              marginTop: "2px",
+            }}
+          >
+            Where should we send your therapist?
+          </Typography>
+        </Box>
       </Box>
 
-      <Box sx={{ padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
-        {/* Search */}
-        <Box sx={{ position: "relative" }}>
+      <Box sx={{ padding: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
+        {/* Search — soft white pill with subtle shadow + mint focus accent */}
+        <Box
+          sx={{
+            position: "relative",
+            "&:focus-within input": {
+              borderColor: "#14b8a6",
+              boxShadow: "0 0 0 3px rgba(20, 184, 166, 0.12)",
+            },
+          }}
+        >
           <SearchRoundedIcon
             sx={{
               position: "absolute",
-              left: 14,
+              left: 16,
               top: "50%",
               transform: "translateY(-50%)",
-              color: "rgba(60, 30, 20, 0.55)",
+              color: "rgba(60, 30, 20, 0.5)",
               fontSize: 20,
               pointerEvents: "none",
+              zIndex: 1,
             }}
           />
           <input
@@ -527,77 +553,96 @@ const SelectLocationPage: React.FC = () => {
             placeholder={ready ? "Search for a location…" : "Loading…"}
             style={{
               width: "100%",
-              padding: "12px 14px 12px 42px",
-              borderRadius: "999px",
-              border: "1px solid rgba(0, 0, 0, 0.08)",
-              background: "rgba(255, 255, 255, 0.85)",
+              padding: "13px 16px 13px 44px",
+              borderRadius: "16px",
+              border: "1px solid rgba(0, 0, 0, 0.06)",
+              background: "#fff",
               fontFamily: "Inter, sans-serif",
-              fontSize: "13.5px",
+              fontSize: "14px",
+              color: "#1a1a1a",
               outline: "none",
+              boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
+              transition: "border-color 0.15s ease, box-shadow 0.15s ease",
             }}
           />
         </Box>
 
-        {/* Map */}
+        {/* Map — softer shadow + bigger radius for a polished card feel */}
         <Box
           ref={mapContainerRef}
           sx={{
             width: "100%",
-            height: "44vh",
+            height: "42vh",
             minHeight: 280,
-            borderRadius: "16px",
+            borderRadius: "20px",
             overflow: "hidden",
             background: "rgba(0, 0, 0, 0.04)",
-            border: "1px solid rgba(0, 0, 0, 0.06)",
+            border: "1px solid rgba(0, 0, 0, 0.04)",
+            boxShadow: "0 8px 24px rgba(126, 30, 46, 0.10)",
           }}
         />
 
-        {/* Use current location */}
+        {/* Use current location — soft mint pill (matches the mint accent
+            we use for Optional labels + ✓ Set chip on Pick date & time) */}
         <Button
           onClick={useCurrentLocation}
           disabled={geoLoading}
           startIcon={<MyLocationRoundedIcon />}
           sx={{
             alignSelf: "stretch",
-            height: 46,
+            height: 48,
             borderRadius: "999px",
-            background: "rgba(255, 255, 255, 0.9)",
-            color: "#FE0944",
+            background:
+              "linear-gradient(180deg, rgba(20, 184, 166, 0.10), rgba(20, 184, 166, 0.06))",
+            color: "#14b8a6",
             fontFamily: SANS,
             fontWeight: 700,
-            fontSize: "13.5px",
+            fontSize: "14px",
             textTransform: "none",
-            border: "1.5px solid rgba(254, 9, 68, 0.4)",
-            "&:hover": { background: "rgba(255, 255, 255, 1)" },
+            border: "1.5px solid rgba(20, 184, 166, 0.35)",
+            boxShadow: "0 2px 8px rgba(20, 184, 166, 0.08)",
+            transition: "all 0.15s ease",
+            "&:hover": {
+              background:
+                "linear-gradient(180deg, rgba(20, 184, 166, 0.18), rgba(20, 184, 166, 0.10))",
+              borderColor: "#14b8a6",
+            },
+            "&.Mui-disabled": {
+              opacity: 0.55,
+              color: "#14b8a6",
+            },
           }}
         >
           {geoLoading ? "Locating…" : "Use my current location"}
         </Button>
 
-        {/* Picked place card */}
+        {/* Picked place card — elevated white tile with red accent corner */}
         {form.lat != null && (
           <Box
             sx={{
-              padding: "14px",
-              borderRadius: "16px",
-              background: "rgba(255, 255, 255, 0.92)",
-              border: "1px solid rgba(254, 9, 68, 0.18)",
+              padding: "16px",
+              borderRadius: "18px",
+              background: "#fff",
+              border: "1px solid rgba(254, 9, 68, 0.16)",
+              boxShadow: "0 6px 18px rgba(254, 9, 68, 0.08)",
               display: "flex",
-              gap: "10px",
+              gap: "12px",
+              alignItems: "flex-start",
             }}
           >
             <Box
               sx={{
-                width: 36,
-                height: 36,
+                width: 40,
+                height: 40,
                 flexShrink: 0,
-                borderRadius: "10px",
+                borderRadius: "12px",
                 background:
-                  "linear-gradient(135deg, rgba(254, 9, 68, 0.14), rgba(254, 122, 82, 0.14))",
-                color: "#FE0944",
+                  "linear-gradient(135deg, #FE0944, #FE7A52)",
+                color: "#fff",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                boxShadow: "0 4px 10px rgba(254, 9, 68, 0.25)",
               }}
             >
               <LocationOnRoundedIcon fontSize="small" />
@@ -606,10 +651,11 @@ const SelectLocationPage: React.FC = () => {
               <Typography
                 sx={{
                   fontFamily: SERIF,
-                  fontSize: "14px",
+                  fontSize: "14.5px",
                   fontWeight: 600,
-                  color: "#3c1e14",
-                  lineHeight: 1.2,
+                  color: "#1a1a1a",
+                  lineHeight: 1.25,
+                  marginBottom: "3px",
                 }}
               >
                 {form.locationName ?? "Pinned location"}
@@ -617,10 +663,9 @@ const SelectLocationPage: React.FC = () => {
               <Typography
                 sx={{
                   fontFamily: SANS,
-                  fontSize: "11.5px",
-                  color: "rgba(60, 30, 20, 0.65)",
-                  marginTop: "2px",
-                  lineHeight: 1.4,
+                  fontSize: "12px",
+                  color: "rgba(60, 30, 20, 0.6)",
+                  lineHeight: 1.45,
                 }}
               >
                 {form.locationAddress ??
@@ -631,7 +676,38 @@ const SelectLocationPage: React.FC = () => {
         )}
 
         {/* 🆕 Founder 2026-05-01: 'Address details (Optional) ลบ' — dropped.
-            Floor/Room/Special notes now live in the Note field below. */}
+            Floor/Room/Special notes now live in the Note field below.
+            Form fields wrapped in a clean white card so they group as
+            'Your details' instead of floating on the gradient bg. */}
+
+        {/* "Your details" form card — wraps Contact / Phone / Note + chips */}
+        <Box
+          sx={{
+            marginTop: "4px",
+            padding: "18px 16px 16px",
+            borderRadius: "20px",
+            background: "rgba(255, 255, 255, 0.85)",
+            backdropFilter: "blur(20px) saturate(180%)",
+            WebkitBackdropFilter: "blur(20px) saturate(180%)",
+            border: "1px solid rgba(0, 0, 0, 0.04)",
+            boxShadow: "0 8px 24px rgba(126, 30, 46, 0.06)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "18px",
+          }}
+        >
+          <Typography
+            sx={{
+              fontFamily: SERIF,
+              fontSize: "16px",
+              fontWeight: 600,
+              color: "#1a1a1a",
+              letterSpacing: "-0.01em",
+              marginBottom: "-4px",
+            }}
+          >
+            Your details
+          </Typography>
 
         {/* Contact Person */}
         <FieldLabel label="Contact Person" icon="👤" required>
@@ -866,6 +942,8 @@ const SelectLocationPage: React.FC = () => {
         {/* 🆕 Founder 2026-05-01: 'Location Type (Optional) ลบ' — chips
             removed; the meeting-point chip + map context already give
             therapists what they need to know. */}
+        </Box>
+        {/* end "Your details" form card */}
       </Box>
 
       {/* Sticky bottom CTA */}
@@ -885,21 +963,26 @@ const SelectLocationPage: React.FC = () => {
           disabled={!canConfirm}
           onClick={onConfirm}
           sx={{
-            height: 52,
+            height: 54,
             borderRadius: "999px",
             background: "linear-gradient(135deg, #FE0944, #FE7A52)",
             color: "#fff",
             fontFamily: SANS,
-            fontSize: "15px",
+            fontSize: "15.5px",
             fontWeight: 700,
             letterSpacing: "0.02em",
             textTransform: "none",
-            boxShadow: "0 8px 24px rgba(254, 9, 68, 0.35)",
+            boxShadow:
+              "0 12px 28px rgba(254, 9, 68, 0.38), 0 4px 10px rgba(254, 122, 82, 0.18)",
+            transition: "transform 0.15s ease, box-shadow 0.15s ease",
             "&:hover": {
               background: "linear-gradient(135deg, #E50840, #E56A47)",
+              transform: "translateY(-1px)",
+              boxShadow:
+                "0 16px 32px rgba(254, 9, 68, 0.42), 0 6px 14px rgba(254, 122, 82, 0.22)",
             },
             "&.Mui-disabled": {
-              background: "rgba(0, 0, 0, 0.12)",
+              background: "rgba(0, 0, 0, 0.10)",
               color: "rgba(0, 0, 0, 0.35)",
               boxShadow: "none",
             },
