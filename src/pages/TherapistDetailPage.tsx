@@ -33,6 +33,14 @@ import {
   bayesianRatingFromAggregate,
   formatRating,
 } from "@/utils/rating";
+// 🆕 Live-bookings (founder 2026-05-01): StatusPill flips to 'busy' with
+//    a 'Available from HH:mm' subtitle whenever there's an ongoing
+//    booking; updates real-time via Firestore onSnapshot.
+import {
+  useTherapistBookings,
+  findActiveBooking,
+  nextAvailableHHMM,
+} from "@/utils/useTherapistBookings";
 
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 import therapistsData from "@/data/therapists";
@@ -416,6 +424,18 @@ const TherapistDetailPage: React.FC = () => {
     "profile" | "reviews" | "loyalty" | null
   >(null);
 
+  // 🆕 Phase 5 — Live bookings → drives the StatusPill.
+  const liveBookings = useTherapistBookings(therapist.id);
+  const activeBooking = findActiveBooking(liveBookings);
+  const livePillStatus: "online" | "busy" | "offline" = !therapist.online
+    ? "offline"
+    : activeBooking
+      ? "busy"
+      : "online";
+  const liveNextAvailable = activeBooking
+    ? nextAvailableHHMM(liveBookings)
+    : null;
+
   // 🆕 Phase 5 — Auto-navigate to /booking/:id once all four prerequisites
   //    (service, duration, date, time) are confirmed. Founder request
   //    'เลือกเสร็จ ก็ไปหน้า Confirm Order' — skips the manual sticky CTA tap.
@@ -482,15 +502,17 @@ const TherapistDetailPage: React.FC = () => {
 
       <About name={therapist.name} body={therapist.about} />
 
-      {/* 🆕 Phase 4 — Live availability pill (pattern 3 from Aine reference,
-          adapted into our brand). Sits right above the Service picker so
-          customers see availability + estimated arrival just before they
-          decide. Same online/busy/offline taxonomy as TherapistCard +
-          DetailHero. */}
+      {/* 🆕 Phase 5 — Live availability pill driven by Firestore bookings.
+          • offline   = therapist marked off-shift in profile data
+          • busy      = there's a booking covering 'now' → show end time
+          • online    = otherwise (free right now)
+          The 'Next available' time is the active booking's endAt, so as
+          soon as someone confirms a booking the label updates everywhere
+          via the onSnapshot subscription. */}
       <Box sx={{ marginTop: "4px" }}>
         <StatusPill
-          status={therapist.online ? "online" : "offline"}
-          nextAvailable={null}
+          status={livePillStatus}
+          nextAvailable={liveNextAvailable}
         />
       </Box>
 

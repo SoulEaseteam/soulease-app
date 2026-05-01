@@ -28,6 +28,14 @@ import React, { useMemo, useState, useEffect } from "react";
 import { Box, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import therapistsData from "@/data/therapists";
+// 🆕 Phase 5 — Cross-check candidate slots against live Firestore bookings
+//    so the same therapist can never be double-booked. The hook returns
+//    [] while the therapist id is null (no live data), which means slots
+//    behave as before until we have something to compare against.
+import {
+  useTherapistBookings,
+  isSlotTaken,
+} from "@/utils/useTherapistBookings";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -143,6 +151,10 @@ const StepDateTime: React.FC<Props> = ({
 
   const startTime = therapist?.startTime || "09:00";
   const endTime = therapist?.endTime || "22:00";
+
+  // 🆕 Phase 5 — Live booking subscription for this therapist. Slots
+  //    overlapping any of these intervals will render as 'Taken'.
+  const liveBookings = useTherapistBookings(therapistId);
 
   // Build the 7-day pill list.
   const days = useMemo(() => {
@@ -344,14 +356,37 @@ const StepDateTime: React.FC<Props> = ({
                   >
                     {group.map((s) => {
                       const isActive = time === s.time;
+                      // Build the absolute Date for this slot start so we
+                      // can check overlap with live bookings (B-feature).
+                      const slotDate = s.nextDay
+                        ? internalDate.add(1, "day")
+                        : internalDate;
+                      const [sh, sm] = s.time.split(":").map(Number);
+                      const slotStartMs = slotDate
+                        .hour(sh)
+                        .minute(sm)
+                        .second(0)
+                        .millisecond(0)
+                        .valueOf();
+                      // durationMin is narrowed to number here — the outer
+                      // `!durationMin ? <…> :` branch returned early.
+                      const taken = isSlotTaken(
+                        liveBookings,
+                        slotStartMs,
+                        durationMin
+                      );
                       return (
                         <Box
                           key={`${s.time}-${s.nextDay ? "nd" : "sd"}`}
                           role="button"
-                          tabIndex={0}
+                          tabIndex={taken ? -1 : 0}
                           aria-pressed={isActive}
-                          onClick={() => selectTime(s.time)}
+                          aria-disabled={taken}
+                          onClick={() => {
+                            if (!taken) selectTime(s.time);
+                          }}
                           onKeyDown={(e) => {
+                            if (taken) return;
                             if (e.key === " " || e.key === "Enter") {
                               e.preventDefault();
                               selectTime(s.time);
@@ -360,22 +395,33 @@ const StepDateTime: React.FC<Props> = ({
                           sx={{
                             padding: "10px 0",
                             borderRadius: "12px",
-                            cursor: "pointer",
+                            cursor: taken ? "not-allowed" : "pointer",
                             textAlign: "center",
-                            background: isActive
-                              ? "linear-gradient(135deg, #FE0944, #FE7A52)"
-                              : "rgba(255, 255, 255, 0.65)",
-                            color: isActive ? "#fff" : "#3c1e14",
-                            border: isActive
-                              ? "none"
-                              : "1px solid rgba(0, 0, 0, 0.06)",
+                            background: taken
+                              ? "rgba(0, 0, 0, 0.04)"
+                              : isActive
+                                ? "linear-gradient(135deg, #FE0944, #FE7A52)"
+                                : "rgba(255, 255, 255, 0.65)",
+                            color: taken
+                              ? "rgba(60, 30, 20, 0.32)"
+                              : isActive
+                                ? "#fff"
+                                : "#3c1e14",
+                            border: taken
+                              ? "1px dashed rgba(60, 30, 20, 0.18)"
+                              : isActive
+                                ? "none"
+                                : "1px solid rgba(0, 0, 0, 0.06)",
                             fontFamily: SANS,
                             fontSize: "13.5px",
                             fontWeight: 600,
                             letterSpacing: "0.01em",
-                            boxShadow: isActive
-                              ? "0 4px 12px rgba(254, 9, 68, 0.25)"
-                              : "0 2px 6px rgba(126, 30, 46, 0.05)",
+                            textDecoration: taken ? "line-through" : "none",
+                            boxShadow: taken
+                              ? "none"
+                              : isActive
+                                ? "0 4px 12px rgba(254, 9, 68, 0.25)"
+                                : "0 2px 6px rgba(126, 30, 46, 0.05)",
                             transition: "all 0.15s ease",
                             "&:focus-visible": {
                               outline: "2px solid #FE0944",
@@ -395,6 +441,21 @@ const StepDateTime: React.FC<Props> = ({
                               }}
                             >
                               +1d
+                            </Typography>
+                          )}
+                          {taken && (
+                            <Typography
+                              component="div"
+                              sx={{
+                                fontSize: "9px",
+                                fontWeight: 700,
+                                opacity: 0.7,
+                                letterSpacing: "0.06em",
+                                textTransform: "uppercase",
+                                marginTop: "2px",
+                              }}
+                            >
+                              Taken
                             </Typography>
                           )}
                         </Box>
