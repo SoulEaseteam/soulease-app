@@ -53,7 +53,7 @@ const services: MassageService[] = [
     desc: 'Relieve deep muscle tension and restore body balance.',
     price: 1200,
     duration: 60,
-    count: 0,
+    count: 62,
     image: '/images/workphoto/IMG_5092.JPG',
     detail: `A timeless healing ritual rooted in Thai tradition. This massage integrates acupressure, deep stretches, and rhythmic techniques to enhance flexibility, energy flow, and holistic balance.`,
     benefit: [
