@@ -5,8 +5,24 @@ export interface MassageService {
   id: string;
   name: string;
   desc: string;
+  /**
+   * Base price (THB) for the 60-minute version. Other durations are derived
+   * via DURATION_MULTIPLIERS in src/utils/servicePricing.ts.
+   */
   price: number;
+  /**
+   * Default duration for this service (minutes). Used as the initial
+   * popup selection. Always 60 in the canonical pricing model — kept on
+   * the type for back-compat with legacy admin/booking pages still on
+   * the single-duration flow.
+   */
   duration: number;
+  /**
+   * Allowed duration tiers for this service (minutes). Defaults to
+   * [60, 90, 120] when undefined. Use to lock specific services to
+   * fewer options (e.g. signature ritual at [80, 120] only).
+   */
+  availableDurations?: number[];
   count: number;
   image: string;
   detail: string;
@@ -54,7 +70,7 @@ const services: MassageService[] = [
     name: 'Aromatherapy Massage',
     desc: 'Aromatic oil massage for deep body and mind relaxation.',
     price: 1600,
-    duration: 70,
+    duration: 60,
     count: 0,
     image: '/images/workphoto/IMG_5096.JPG',
     detail: `Immerse yourself in serenity with an oil-based massage using premium-grade essential oils.`,
@@ -71,7 +87,7 @@ const services: MassageService[] = [
     name: "Gentleman's Recovery Massage",
     desc: 'Deep-tissue therapy tailored for active men.',
     price: 2200,
-    duration: 80,
+    duration: 60,
     count: 0,
     image: '/images/workphoto/IMG_5289.JPG',
     detail: `A focused therapy combining deep-tissue techniques with warming aromatic oils. Designed to release muscle tension built up from work, training, or travel — performed by licensed therapists trained in sports recovery techniques.`,
@@ -89,9 +105,12 @@ const services: MassageService[] = [
   {
     id: 'sunred-signature',
     name: 'SunRed Signature Ritual',
-    desc: 'Our 80-minute premium ritual by senior licensed therapists.',
+    desc: 'Premium ritual by senior licensed therapists.',
     price: 3200,
-    duration: 80,
+    duration: 60,
+    // Signature is offered in 60/90/120 like other services — senior
+    // therapists handle each duration with the appropriate ritual depth.
+    availableDurations: [60, 90, 120],
     count: 0,
     image: '/images/workphoto/IMG_8368.JPG',
     detail: `Our most refined therapeutic ritual — a fusion of hot Thai herbal compress, aromatic oil massage, and gentle Thai-style stretching. Reserved for senior practitioners with 8+ years of licensed experience (ผ.พ.).`,
