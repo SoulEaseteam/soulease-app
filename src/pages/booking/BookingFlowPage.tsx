@@ -31,6 +31,9 @@ import React, { useState, useMemo } from "react";
 import { Box, Typography } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { addDoc, collection, Timestamp } from "firebase/firestore";
+import { toast } from "react-toastify";
+import dayjs from "dayjs";
 
 import StepIndicator from "@/components/booking/StepIndicator";
 import BookingNavBar from "@/components/booking/BookingNavBar";
@@ -38,7 +41,15 @@ import StepService from "@/components/booking/StepService";
 import StepDateTime from "@/components/booking/StepDateTime";
 import StepLocation from "@/components/booking/StepLocation";
 import StepDetails from "@/components/booking/StepDetails";
+import StepConfirm from "@/components/booking/StepConfirm";
 import { isValidPhoneNumber } from "react-phone-number-input";
+
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/providers/AuthProvider";
+import { isInappropriate } from "@/utils/moderate";
+import { estimateTaxiFare } from "@/utils/taxiFare";
+import services from "@/data/services";
+import therapistsData from "@/data/therapists";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -96,8 +107,10 @@ const BookingFlowPage: React.FC = () => {
   const { id: therapistId } = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { user } = useAuth();
 
   const [step, setStep] = useState<number>(1);
+  const [submitting, setSubmitting] = useState<boolean>(false);
   const [form, setForm] = useState<BookingFormState>({
     ...initialFormState,
     therapistId: therapistId ?? null,
@@ -143,13 +156,106 @@ const BookingFlowPage: React.FC = () => {
     return titles[step - 1];
   }, [step, t]);
 
+  const handleSubmit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+
+    try {
+      // Profanity moderation on notes (server-side OpenAI Moderation).
+      // Fail-open via isInappropriate's catch — only block when explicitly
+      // flagged.
+      if (form.notes && (await isInappropriate(form.notes))) {
+        toast.error(t(
+          "booking.error.inappropriateNotes",
+          "Notes contain inappropriate content. Please revise."
+        ));
+        setSubmitting(false);
+        return;
+      }
+
+      const service = services.find((s) => s.id === form.serviceId);
+      const therapist = therapistsData.find(
+        (tt) => tt.id === form.therapistId
+      );
+      if (!service || !form.date || !form.time) {
+        toast.error("Missing booking details");
+        setSubmitting(false);
+        return;
+      }
+
+      // Compose start/end timestamps. For overnight shifts, slot times
+      // before the therapist's startTime are assumed to be next-day —
+      // we add 1 day in that case so startAt sorts correctly.
+      let startDate = dayjs(`${form.date}T${form.time}`);
+      if (therapist) {
+        const startMin = parseInt(therapist.startTime.split(":")[0]) * 60 +
+          parseInt(therapist.startTime.split(":")[1]);
+        const endMin = parseInt(therapist.endTime.split(":")[0]) * 60 +
+          parseInt(therapist.endTime.split(":")[1]);
+        const slotMin = startDate.hour() * 60 + startDate.minute();
+        if (endMin <= startMin && slotMin < startMin) {
+          // overnight + slot looks early-morning → it's actually next day
+          startDate = startDate.add(1, "day");
+        }
+      }
+      const endDate = startDate.add(form.duration ?? service.duration, "minute");
+
+      // 🚖 Taxi fare (round-trip from therapist's home → customer location)
+      const { distanceKm, fare: taxiFee } = estimateTaxiFare({
+        therapistLat: therapist?.lat,
+        therapistLng: therapist?.lng,
+        customerLat: form.lat,
+        customerLng: form.lng,
+        durationMin: form.duration ?? service.duration,
+      });
+      const totalPrice = service.price + taxiFee;
+
+      const ref = await addDoc(collection(db, "bookings"), {
+        userId: user?.uid ?? null,
+        therapistId: form.therapistId,
+        therapistName: therapist?.name ?? null,
+        serviceId: service.id,
+        serviceName: service.name,
+        servicePrice: service.price,
+        duration: form.duration ?? service.duration,
+        date: form.date,
+        time: form.time,
+        startAt: Timestamp.fromDate(startDate.toDate()),
+        endAt: Timestamp.fromDate(endDate.toDate()),
+        locationName: form.locationName,
+        address: form.locationAddress,
+        addressDetails: form.addressDetails,
+        location:
+          form.lat != null && form.lng != null
+            ? { lat: form.lat, lng: form.lng }
+            : null,
+        customerName: form.customerName,
+        phone: form.customerPhone,
+        note: form.notes,
+        payment: form.paymentMethod,
+        taxiFee,
+        distanceKm,
+        totalPrice,
+        status: "confirmed",
+        createdAt: Timestamp.now(),
+      });
+
+      void navigate(`/booking/success/${ref.id}`);
+    } catch (err) {
+      console.error("[booking] submit failed", err);
+      toast.error(
+        t("booking.error.submitFailed", "Could not create booking. Try again.")
+      );
+      setSubmitting(false);
+    }
+  };
+
   const handleNext = () => {
     if (step < TOTAL_STEPS) {
       setStep(step + 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
-      // Step 5 → submit booking (commit 6 wires Firestore here)
-      console.log("[booking] submit", form);
+      void handleSubmit();
     }
   };
 
@@ -267,28 +373,13 @@ const BookingFlowPage: React.FC = () => {
           />
         )}
 
-        {step > 4 && (
-          <Box
-            sx={{
-              background: "rgba(255, 255, 255, 0.45)",
-              backdropFilter: "blur(30px) saturate(180%)",
-              WebkitBackdropFilter: "blur(30px) saturate(180%)",
-              border: "1px solid rgba(255, 255, 255, 0.6)",
-              borderRadius: "20px",
-              padding: "24px 20px",
-              boxShadow: "0 8px 30px rgba(126, 30, 46, 0.08)",
-              minHeight: "300px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "rgba(60, 30, 20, 0.4)",
-              fontStyle: "italic",
-            }}
-          >
-            <Typography sx={{ fontFamily: SERIF, fontSize: "16px" }}>
-              {`Step ${step} content — landing in commit ${step + 1}`}
-            </Typography>
-          </Box>
+        {step === 5 && (
+          <StepConfirm
+            form={form}
+            onChangePayment={(paymentMethod) =>
+              setForm((prev) => ({ ...prev, paymentMethod }))
+            }
+          />
         )}
       </Box>
 
@@ -297,7 +388,8 @@ const BookingFlowPage: React.FC = () => {
         ctaLabel={ctaLabel}
         onNext={handleNext}
         onBack={handleBack}
-        disabled={!canAdvance}
+        disabled={!canAdvance || submitting}
+        loading={submitting}
       />
     </Box>
   );
