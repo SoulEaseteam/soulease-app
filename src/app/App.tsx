@@ -56,14 +56,6 @@ const EditProfilePage = React.lazy(
   () => import("@/pages/user/EditProfilePage")
 );
 
-// Legacy SelectLocationPage at /select-location — used by old booking
-// flow. Phase 4 replacement (with map + form) lives at
-// `@/pages/booking/SelectLocationPage` and is route-targeted by
-// /booking/:id/address. Renamed here to avoid the duplicate-import
-// build error.
-const LegacySelectLocationPage = React.lazy(
-  () => import("@/pages/SelectLocationPage")
-);
 const UpdateLocationPage = React.lazy(
   () => import("@/pages/UpdateLocationPage")
 );
@@ -197,7 +189,8 @@ export default function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/edit-profile" element={<EditProfilePage />} />
 
-          <Route path="/select-location" element={<LegacySelectLocationPage />} />
+          {/* Legacy /select-location route removed — Phase 5A's BookingHistoryPage
+              rewrites Rebook to navigate to /therapists/:id instead. */}
         </Route>
 
         {/* ================= THERAPIST ================= */}
