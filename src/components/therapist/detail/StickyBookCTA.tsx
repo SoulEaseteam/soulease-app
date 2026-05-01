@@ -51,9 +51,12 @@ const StickyBookCTA: React.FC<Props> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // CTA disabled until at least a service is picked. Date/time can still
-  // be filled inside the booking flow if user prefers.
-  const canBook = !!serviceId;
+  // 🆕 Phase 5 — CTA stays disabled until ALL prerequisites are picked
+  //    (service + duration + date + time). Founder feedback: button was
+  //    enabling on service-only and the booking page would then need a
+  //    forced detour back to the detail page to get a time. Safer to
+  //    block here and prompt explicitly.
+  const canBook = !!(serviceId && durationMin && date && time);
 
   const goBooking = () => {
     const params = new URLSearchParams();
@@ -148,15 +151,17 @@ const StickyBookCTA: React.FC<Props> = ({
           },
         }}
       >
-        {!canBook
+        {/* CTA copy maps to which prerequisite is missing, so the
+            disabled label is always action-specific. */}
+        {!serviceId
           ? t("detail.cta.pickService", "Pick a service to continue")
-          : selectedSlot
-          ? t("detail.cta.book", "Book {{name}} for {{slot}}", {
+          : !durationMin
+          ? t("detail.cta.pickDuration", "Pick a duration to continue")
+          : !date || !time
+          ? t("detail.cta.pickTime", "Pick date & time to continue")
+          : t("detail.cta.book", "Book {{name}} for {{slot}}", {
               name: therapistName,
               slot: selectedSlot,
-            })
-          : t("detail.cta.bookNoSlot", "Continue with {{name}}", {
-              name: therapistName,
             })}{" "}
         →
       </Button>

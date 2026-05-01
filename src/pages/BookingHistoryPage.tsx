@@ -160,10 +160,15 @@ const BookingHistoryPage: React.FC = () => {
   return (
     <Box
       sx={{
+        // Phone-shell wrapper — same pattern as Home/Detail/Browse so the
+        // page reads consistently at 430px width on desktop.
+        maxWidth: "430px",
+        margin: "0 auto",
         minHeight: "100vh",
         background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
         paddingBottom: "120px",
         fontFamily: SANS,
+        position: "relative",
       }}
     >
       {/* ── Page header ── */}

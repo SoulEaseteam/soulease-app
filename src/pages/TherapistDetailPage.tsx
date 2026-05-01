@@ -428,6 +428,25 @@ const TherapistDetailPage: React.FC = () => {
   //    grid that ate ~700px of vertical space.
   const [dateTimeSheetOpen, setDateTimeSheetOpen] = useState(false);
 
+  // 🆕 Phase 5 — Auto-navigate to /booking/:id once all four prerequisites
+  //    (service, duration, date, time) are confirmed. Founder request
+  //    'เลือกเสร็จ ก็ไปหน้า Confirm Order' — skips the manual sticky CTA tap.
+  const goConfirmOrderIfReady = (next: {
+    serviceId: string | null;
+    duration: number | null;
+    date: string | null;
+    time: string | null;
+  }) => {
+    if (next.serviceId && next.duration && next.date && next.time) {
+      const params = new URLSearchParams();
+      params.set("service", next.serviceId);
+      params.set("duration", String(next.duration));
+      params.set("date", next.date);
+      params.set("time", next.time);
+      void navigate(`/booking/${therapist.id}?${params.toString()}`);
+    }
+  };
+
   // Resolve the picked service object (if any) for header/sticky CTA copy.
   const selectedService =
     services.find((s) => s.id === selection.serviceId) ?? null;
@@ -477,17 +496,19 @@ const TherapistDetailPage: React.FC = () => {
         onTapLoyalty={() => setInfoSheet("loyalty")}
       />
 
-      {/* 🆕 Phase 4 — Live availability pill (pattern 3 from Aine reference,
-          adapted into our brand). Surfaces estimated-arrival copy when
-          the therapist is online; offers a 'Wait or switch?' nudge when
-          busy. Status comes from the same online/busy/offline taxonomy
-          used by TherapistCard + DetailHero. */}
-      <StatusPill
-        status={therapist.online ? "online" : "offline"}
-        nextAvailable={null}
-      />
-
       <About name={therapist.name} body={therapist.about} />
+
+      {/* 🆕 Phase 4 — Live availability pill (pattern 3 from Aine reference,
+          adapted into our brand). Sits right above the Service picker so
+          customers see availability + estimated arrival just before they
+          decide. Same online/busy/offline taxonomy as TherapistCard +
+          DetailHero. */}
+      <Box sx={{ marginTop: "4px" }}>
+        <StatusPill
+          status={therapist.online ? "online" : "offline"}
+          nextAvailable={null}
+        />
+      </Box>
 
       {/* 🆕 Phase 4 — TherapistProfileTabs lives inside <TherapistInfoSheet/>
           now (rendered at the bottom of the page). It opens when the user
@@ -530,15 +551,23 @@ const TherapistDetailPage: React.FC = () => {
           value={selection.serviceId}
           selectedDuration={selection.duration}
           therapistId={therapist.id}
-          onChange={(serviceId, duration) =>
-            setSelection((p) => ({
-              ...p,
-              serviceId,
-              duration,
-              // changing service may change min slot in booking flow
-              time: null,
-            }))
-          }
+          onChange={(serviceId, duration) => {
+            setSelection((p) => {
+              // Changing service may change min slot — keep time only if
+              // the same service is re-confirmed at the same duration.
+              const sameService =
+                p.serviceId === serviceId && p.duration === duration;
+              const next = {
+                ...p,
+                serviceId,
+                duration,
+                time: sameService ? p.time : null,
+              };
+              // 🆕 Auto-jump to Confirm Order if everything else is set.
+              goConfirmOrderIfReady(next);
+              return next;
+            });
+          }}
         />
 
         {/* Helper copy under the cards — chat fallback for edge requests */}
@@ -621,7 +650,9 @@ const TherapistDetailPage: React.FC = () => {
         time={selection.time}
       />
 
-      {/* 🆕 Phase 4 — Date+Time bottom sheet. Opens from the cell. */}
+      {/* 🆕 Phase 4 — Date+Time bottom sheet. Opens from the cell.
+          Phase 5 — On confirm, auto-jump to /booking/:id when all four
+          prerequisites are now set (skip manual CTA tap). */}
       <DateTimeSheet
         open={dateTimeSheetOpen}
         onClose={() => setDateTimeSheetOpen(false)}
@@ -630,7 +661,11 @@ const TherapistDetailPage: React.FC = () => {
         durationMin={selection.duration}
         therapistId={therapist.id}
         onConfirm={(date, time) => {
-          setSelection((p) => ({ ...p, date, time }));
+          setSelection((p) => {
+            const next = { ...p, date, time };
+            goConfirmOrderIfReady(next);
+            return next;
+          });
           setDateTimeSheetOpen(false);
         }}
       />

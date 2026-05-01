@@ -53,6 +53,13 @@ const services: MassageService[] = [
     desc: 'Relieve deep muscle tension and restore body balance.',
     price: 1200,
     duration: 60,
+    // Founder confirmed prices 2026-05-01:
+    //   60: ฿1,200 · 90: ฿1,800 · 120: ฿2,400
+    // (= base × 1.0/1.5/2.0 multiplier — see src/utils/servicePricing.ts)
+    // The ATTRACTIVE prices proposal (1,500/1,900) is reserved as a
+    // future promotional campaign — wired in via DURATION_PRICE_OVERRIDES
+    // when the promo launches.
+    availableDurations: [60, 90, 120],
     count: 62,
     image: '/images/workphoto/IMG_5092.JPG',
     detail: `A timeless healing ritual rooted in Thai tradition. This massage integrates acupressure, deep stretches, and rhythmic techniques to enhance flexibility, energy flow, and holistic balance.`,
@@ -71,6 +78,8 @@ const services: MassageService[] = [
     desc: 'Aromatic oil massage for deep body and mind relaxation.',
     price: 1600,
     duration: 60,
+    // 60: ฿1,600 · 90: ฿2,400 · 120: ฿3,200
+    availableDurations: [60, 90, 120],
     count: 0,
     image: '/images/workphoto/IMG_5096.JPG',
     detail: `Immerse yourself in serenity with an oil-based massage using premium-grade essential oils.`,
@@ -88,6 +97,8 @@ const services: MassageService[] = [
     desc: 'Deep-tissue therapy tailored for active men.',
     price: 2200,
     duration: 60,
+    // 60: ฿2,200 · 90: ฿3,300 · 120: ฿4,400
+    availableDurations: [60, 90, 120],
     count: 0,
     image: '/images/workphoto/IMG_5289.JPG',
     detail: `A focused therapy combining deep-tissue techniques with warming aromatic oils. Designed to release muscle tension built up from work, training, or travel — performed by licensed therapists trained in sports recovery techniques.`,
@@ -108,8 +119,7 @@ const services: MassageService[] = [
     desc: 'Premium ritual by senior licensed therapists.',
     price: 3200,
     duration: 60,
-    // Signature is offered in 60/90/120 like other services — senior
-    // therapists handle each duration with the appropriate ritual depth.
+    // 60: ฿3,200 · 90: ฿4,800 · 120: ฿6,400
     availableDurations: [60, 90, 120],
     count: 0,
     image: '/images/workphoto/IMG_8368.JPG',

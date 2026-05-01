@@ -410,10 +410,16 @@ const BookingFlowPage: React.FC = () => {
   return (
     <Box
       sx={{
+        // 🆕 Phase 5 — Match the rest of the site (HomePage / TherapistDetailPage
+        //   / TherapistsBrowsePage all use a 430px max-width 'phone' shell on
+        //   desktop). Without this, the booking page rendered full-width.
+        maxWidth: "430px",
+        margin: "0 auto",
         minHeight: "100vh",
         background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
         paddingBottom: "210px",
         fontFamily: SANS,
+        position: "relative",
       }}
     >
       {/* ─────────── Page header ─────────── */}

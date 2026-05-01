@@ -82,6 +82,9 @@ const ServiceDurationSheet: React.FC<Props> = ({
   onConfirm,
 }) => {
   const durations = service ? durationsFor(service) : [];
+  // Default to the MIDDLE tier (90 min — 'Most popular' label) when the
+  // service offers 60/90/120; falls through to first tier for services
+  // that override DEFAULT_DURATIONS to a shorter list.
   const [selected, setSelected] = useState<number>(
     initialDuration ?? durations[1] ?? durations[0] ?? 60
   );
@@ -90,9 +93,8 @@ const ServiceDurationSheet: React.FC<Props> = ({
   // Sync state each time the sheet (re-)opens for a service
   useEffect(() => {
     if (open && service) {
-      setSelected(
-        initialDuration ?? durationsFor(service)[1] ?? durationsFor(service)[0]
-      );
+      const d = durationsFor(service);
+      setSelected(initialDuration ?? d[1] ?? d[0] ?? 60);
       setTab("details");
     }
   }, [open, service, initialDuration]);
@@ -511,31 +513,83 @@ const ServiceDurationSheet: React.FC<Props> = ({
   );
 };
 
-// ─── Collapsible-looking section header for the Details tab ───
-const Section: React.FC<{ title: string; children: React.ReactNode }> = ({
-  title,
-  children,
-}) => (
-  <Box sx={{ marginBottom: "16px", "&:last-child": { marginBottom: 0 } }}>
-    <Typography
-      sx={{
-        fontFamily: SERIF,
-        fontSize: "15px",
-        fontWeight: 700,
-        color: "#3c1e14",
-        marginBottom: "8px",
-        display: "flex",
-        alignItems: "center",
-        gap: "6px",
-      }}
-    >
-      <Box component="span" sx={{ fontSize: "10px", color: "#3c1e14" }}>
-        ▼
+// ─── Collapsible accordion section for the Details tab ───
+//
+// Click the ▼ header to collapse/expand. Default is OPEN so the user
+// can read at first glance; tapping toggles. Pure CSS transition keeps
+// the bottom-sheet scroll smooth.
+const Section: React.FC<{
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}> = ({ title, children, defaultOpen = true }) => {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Box sx={{ marginBottom: "12px", "&:last-child": { marginBottom: 0 } }}>
+      <Box
+        role="button"
+        tabIndex={0}
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        onKeyDown={(e) => {
+          if (e.key === " " || e.key === "Enter") {
+            e.preventDefault();
+            setOpen((o) => !o);
+          }
+        }}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          padding: "6px 0",
+          cursor: "pointer",
+          userSelect: "none",
+          "&:focus-visible": {
+            outline: "2px solid #FE0944",
+            outlineOffset: "2px",
+            borderRadius: "4px",
+          },
+        }}
+      >
+        <Box
+          component="span"
+          aria-hidden
+          sx={{
+            fontSize: "10px",
+            color: "#3c1e14",
+            display: "inline-block",
+            transform: open ? "rotate(0deg)" : "rotate(-90deg)",
+            transition: "transform 0.2s ease",
+          }}
+        >
+          ▼
+        </Box>
+        <Typography
+          component="span"
+          sx={{
+            fontFamily: SERIF,
+            fontSize: "15px",
+            fontWeight: 700,
+            color: "#3c1e14",
+          }}
+        >
+          {title}
+        </Typography>
       </Box>
-      {title}
-    </Typography>
-    {children}
-  </Box>
-);
+      <Box
+        sx={{
+          overflow: "hidden",
+          maxHeight: open ? "1000px" : 0,
+          opacity: open ? 1 : 0,
+          transition:
+            "max-height 0.3s ease, opacity 0.2s ease, margin 0.2s ease",
+          marginTop: open ? "6px" : 0,
+        }}
+      >
+        {children}
+      </Box>
+    </Box>
+  );
+};
 
 export default ServiceDurationSheet;
