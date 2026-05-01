@@ -14,6 +14,8 @@ const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 interface Stat {
   num: React.ReactNode;
   label: string;
+  /** Tap handler — when set, cell becomes a button with affordance. */
+  onTap?: () => void;
 }
 
 interface Props {
@@ -21,9 +23,20 @@ interface Props {
   reviewCount: number;
   yearsExp: number;
   rebookRate: string;
+  /** Optional — opens an info sheet on the Reviews tab. */
+  onTapRating?: () => void;
+  /** Optional — opens an info sheet on the Verified Profile tab. */
+  onTapProfile?: () => void;
 }
 
-const StatsCard: React.FC<Props> = ({ rating, reviewCount, yearsExp, rebookRate }) => {
+const StatsCard: React.FC<Props> = ({
+  rating,
+  reviewCount,
+  yearsExp,
+  rebookRate,
+  onTapRating,
+  onTapProfile,
+}) => {
   const { t } = useTranslation();
 
   const stats: Stat[] = [
@@ -34,14 +47,17 @@ const StatsCard: React.FC<Props> = ({ rating, reviewCount, yearsExp, rebookRate 
         </>
       ),
       label: t("detail.stats.reviews", "{{count}} reviews", { count: reviewCount }),
+      onTap: onTapRating,
     },
     {
       num: t("detail.stats.years", "{{years}} yrs", { years: yearsExp }),
       label: t("detail.stats.experience", "Experience"),
+      onTap: onTapProfile,
     },
     {
       num: rebookRate,
       label: t("detail.stats.rebook", "Rebook rate"),
+      onTap: onTapProfile,
     },
   ];
 
@@ -68,12 +84,41 @@ const StatsCard: React.FC<Props> = ({ rating, reviewCount, yearsExp, rebookRate 
       {stats.map((s, i) => (
         <Box
           key={i}
+          {...(s.onTap
+            ? {
+                role: "button",
+                tabIndex: 0,
+                onClick: s.onTap,
+                onKeyDown: (e: React.KeyboardEvent) => {
+                  if (e.key === " " || e.key === "Enter") {
+                    e.preventDefault();
+                    s.onTap?.();
+                  }
+                },
+              }
+            : {})}
           sx={{
             // .stat-cell — verbatim
             textAlign: "center",
             padding: "4px 0",
+            position: "relative",
+            cursor: s.onTap ? "pointer" : "default",
+            borderRadius: "10px",
+            transition: "background 0.15s ease, transform 0.15s ease",
             ...(i > 0 && {
               borderLeft: "1px solid rgba(184, 92, 60, 0.18)",
+            }),
+            ...(s.onTap && {
+              "&:hover": {
+                background: "rgba(254, 9, 68, 0.04)",
+              },
+              "&:active": {
+                transform: "scale(0.97)",
+              },
+              "&:focus-visible": {
+                outline: "2px solid #FE0944",
+                outlineOffset: "2px",
+              },
             }),
           }}
         >
@@ -97,9 +142,28 @@ const StatsCard: React.FC<Props> = ({ rating, reviewCount, yearsExp, rebookRate 
               letterSpacing: "0.08em",
               fontWeight: 700,
               marginTop: "2px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "3px",
             }}
           >
             {s.label}
+            {s.onTap && (
+              <Box
+                component="span"
+                aria-hidden
+                sx={{
+                  fontSize: "10px",
+                  color: "#FE0944",
+                  fontWeight: 800,
+                  marginLeft: "1px",
+                  lineHeight: 1,
+                }}
+              >
+                ›
+              </Box>
+            )}
           </Box>
         </Box>
       ))}

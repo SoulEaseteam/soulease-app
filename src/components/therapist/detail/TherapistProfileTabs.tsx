@@ -81,6 +81,13 @@ interface Props {
   reviewCount: number;
   reviewBuckets: { stars: number; pct: number; count: number }[];
   reviews: Review[];
+
+  /**
+   * Optional starting tab — used when this component lives inside a
+   * sheet opened from a stat-card cell ('reviews' from the rating cell,
+   * 'profile' from the years/rebook cells).
+   */
+  initialTab?: "profile" | "reviews";
 }
 
 const TherapistProfileTabs: React.FC<Props> = ({
@@ -95,9 +102,10 @@ const TherapistProfileTabs: React.FC<Props> = ({
   reviewCount,
   reviewBuckets,
   reviews,
+  initialTab = "profile",
 }) => {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<"profile" | "reviews">("profile");
+  const [tab, setTab] = useState<"profile" | "reviews">(initialTab);
 
   return (
     <Box sx={{ padding: "20px" }}>

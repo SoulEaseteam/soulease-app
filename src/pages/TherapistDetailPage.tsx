@@ -20,7 +20,7 @@ import { useTranslation } from "react-i18next";
 import DetailHero from "@/components/therapist/detail/DetailHero";
 import StatsCard from "@/components/therapist/detail/StatsCard";
 import { About } from "@/components/therapist/detail/DetailSections";
-import TherapistProfileTabs from "@/components/therapist/detail/TherapistProfileTabs";
+import TherapistInfoSheet from "@/components/therapist/detail/TherapistInfoSheet";
 import StickyBookCTA from "@/components/therapist/detail/StickyBookCTA";
 
 // 🆕 Phase 4 — Pricing + Calendar legacy sections REPLACED by the booking
@@ -414,6 +414,13 @@ const TherapistDetailPage: React.FC = () => {
     time: null,
   });
 
+  // 🆕 Phase 4 — Stats cells now open this sheet (Reviews tab from the
+  //    rating cell, Profile tab from years/rebook cells). Lets us drop
+  //    the always-visible TherapistProfileTabs section to save space.
+  const [infoSheet, setInfoSheet] = useState<"profile" | "reviews" | null>(
+    null
+  );
+
   // Resolve the picked service object (if any) for header/sticky CTA copy.
   const selectedService =
     services.find((s) => s.id === selection.serviceId) ?? null;
@@ -457,63 +464,17 @@ const TherapistDetailPage: React.FC = () => {
         reviewCount={therapist.reviewCount}
         yearsExp={therapist.yearsExp}
         rebookRate={therapist.rebookRate}
+        // Tap-to-open info sheet — saves vertical space on the detail page
+        onTapRating={() => setInfoSheet("reviews")}
+        onTapProfile={() => setInfoSheet("profile")}
       />
 
       <About name={therapist.name} body={therapist.about} />
 
-      {/* 🆕 Phase 4 — Compact tabs replacing 4 stacked sections
-          (Credentials → Specialties → Languages → Reviews). User feedback:
-          'too long to reach the booking section'. Tabs let in-a-rush
-          customers skim or skip; engaged customers can dive deep.
-
-          The DemoTherapist data shape predates this component, so we
-          adapt fields here. Once Task 7 wires real Firestore docs the
-          adapters disappear — Firestore docs follow the new shape. */}
-      <TherapistProfileTabs
-        yearsExp={therapist.yearsExp}
-        totalSessions={therapist.specs.reduce((sum, s) => {
-          const m = /(\d[\d,]*)/.exec(s.yrs);
-          return sum + (m ? parseInt(m[1].replace(/,/g, ""), 10) : 0);
-        }, 0)}
-        rebookRate={therapist.rebookRate}
-        hasLicense={therapist.creds.some((c) =>
-          /licen[cs]e|ผ\.พ\./i.test(c.label)
-        )}
-        creds={therapist.creds.map((c) => ({
-          icon: c.icon,
-          title: c.label,
-          sub: c.meta,
-        }))}
-        specs={therapist.specs.map((s) => ({
-          icon: s.icon,
-          name: s.name,
-          sub: s.yrs,
-        }))}
-        langs={therapist.langs}
-        rating={therapist.rating}
-        reviewCount={therapist.reviewCount}
-        reviewBuckets={therapist.reviewBuckets.map((b) => ({
-          stars: b.num,
-          pct: b.pct,
-          count: b.count,
-        }))}
-        reviews={therapist.reviews.map((r, i) => ({
-          // 🛡 Privacy: synthesize a stable booking-like id from the demo
-          //    index. Real reviews from Firestore will carry their actual
-          //    bookingId (8-char Firestore auto-id slice).
-          bookingId: `DEMO${String(i + 1).padStart(4, "0")}${(
-            r.initial + therapist.id
-          )
-            .replace(/[^A-Z0-9]/gi, "")
-            .slice(0, 4)
-            .toUpperCase()}`,
-          rating: 5, // demo defaults — real reviews carry user's rating
-          service: r.meta.split("·")[1]?.trim() ?? "Service",
-          body: r.quote,
-          ago: r.meta.split("·")[0]?.trim() ?? "",
-          verified: true,
-        }))}
-      />
+      {/* 🆕 Phase 4 — TherapistProfileTabs lives inside <TherapistInfoSheet/>
+          now (rendered at the bottom of the page). It opens when the user
+          taps a stat-card cell. Removes ~600px of always-visible vertical
+          space so the booking picker lands one screen earlier. */}
 
       {/* 🆕 Phase 4 — Inline picker (replaces legacy Pricing + Calendar)
           Service tap → bottom sheet picks 60/90/120 → date pills + time
@@ -584,6 +545,57 @@ const TherapistDetailPage: React.FC = () => {
         durationMin={selection.duration}
         date={selection.date}
         time={selection.time}
+      />
+
+      {/* 🆕 Phase 4 — Therapist info sheet (Verified Profile / Reviews).
+          Opened from StatsCard's tappable cells; closed by backdrop tap,
+          drag, or the × button in the sheet header. */}
+      <TherapistInfoSheet
+        open={infoSheet !== null}
+        onClose={() => setInfoSheet(null)}
+        initialTab={infoSheet ?? "profile"}
+        data={{
+          yearsExp: therapist.yearsExp,
+          totalSessions: therapist.specs.reduce((sum, s) => {
+            const m = /(\d[\d,]*)/.exec(s.yrs);
+            return sum + (m ? parseInt(m[1].replace(/,/g, ""), 10) : 0);
+          }, 0),
+          rebookRate: therapist.rebookRate,
+          hasLicense: therapist.creds.some((c) =>
+            /licen[cs]e|ผ\.พ\./i.test(c.label)
+          ),
+          creds: therapist.creds.map((c) => ({
+            icon: c.icon,
+            title: c.label,
+            sub: c.meta,
+          })),
+          specs: therapist.specs.map((s) => ({
+            icon: s.icon,
+            name: s.name,
+            sub: s.yrs,
+          })),
+          langs: therapist.langs,
+          rating: therapist.rating,
+          reviewCount: therapist.reviewCount,
+          reviewBuckets: therapist.reviewBuckets.map((b) => ({
+            stars: b.num,
+            pct: b.pct,
+            count: b.count,
+          })),
+          reviews: therapist.reviews.map((r, i) => ({
+            bookingId: `DEMO${String(i + 1).padStart(4, "0")}${(
+              r.initial + therapist.id
+            )
+              .replace(/[^A-Z0-9]/gi, "")
+              .slice(0, 4)
+              .toUpperCase()}`,
+            rating: 5,
+            service: r.meta.split("·")[1]?.trim() ?? "Service",
+            body: r.quote,
+            ago: r.meta.split("·")[0]?.trim() ?? "",
+            verified: true,
+          })),
+        }}
       />
     </Box>
   );
