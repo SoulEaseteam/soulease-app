@@ -40,6 +40,9 @@ const BookingSuccessPage = React.lazy(
 const SelectLocationPage = React.lazy(
   () => import("@/pages/booking/SelectLocationPage")
 );
+const PaymentMethodsPage = React.lazy(
+  () => import("@/pages/booking/PaymentMethodsPage")
+);
 const BookingHistoryPage = React.lazy(
   () => import("@/pages/BookingHistoryPage")
 );
@@ -180,6 +183,10 @@ export default function App() {
             path="/booking/:id/address"
             element={<SelectLocationPage />}
           />
+          {/* 🆕 Round 14 (founder 2026-05-01): Payment Methods picker.
+              Opened from the Confirm Order Payment cell. Persists choice
+              to localStorage. Admin still confirms via Telegram. */}
+          <Route path="/payment-methods" element={<PaymentMethodsPage />} />
           <Route path="/booking/history" element={<BookingHistoryPage />} />
 
           <Route path="/review/:id" element={<ReviewPage />} />

@@ -1515,7 +1515,7 @@ const ConfirmBar: React.FC<{
         },
       }}
     >
-      {submitting ? "..." : "Confirm"}
+      {submitting ? "..." : "Place Order"}
     </Button>
   </Box>
 );
