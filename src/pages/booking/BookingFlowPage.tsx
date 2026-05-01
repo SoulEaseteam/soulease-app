@@ -29,7 +29,7 @@
 
 import React, { useState, useMemo } from "react";
 import { Box, Typography } from "@mui/material";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
 import { toast } from "react-toastify";
@@ -106,16 +106,32 @@ const TOTAL_STEPS = 5;
 
 const BookingFlowPage: React.FC = () => {
   const { id: therapistId } = useParams<{ id?: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { user } = useAuth();
 
-  const [step, setStep] = useState<number>(1);
+  // 🆕 Phase 4 — Pre-fill from URL params forwarded by DetailPage's
+  //    StickyBookCTA. When service+duration+date+time are all present,
+  //    we skip Step 1 (service) + Step 2 (date/time) and start at Step 3
+  //    "Where should we go?". Total steps shrinks accordingly.
+  const preService = searchParams.get("service");
+  const preDuration = searchParams.get("duration");
+  const preDate = searchParams.get("date");
+  const preTime = searchParams.get("time");
+  const isPreFilled = !!(preService && preDuration && preDate && preTime);
+
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [form, setForm] = useState<BookingFormState>({
     ...initialFormState,
     therapistId: therapistId ?? null,
+    serviceId: preService ?? null,
+    duration: preDuration ? parseInt(preDuration, 10) : null,
+    date: preDate ?? null,
+    time: preTime ?? null,
   });
+  // When pre-filled, jump to Step 3. Otherwise start at Step 1.
+  const [step, setStep] = useState<number>(isPreFilled ? 3 : 1);
 
   // Per-step validation — drives BookingNavBar `disabled` state.
   const canAdvance = useMemo(() => {
@@ -267,7 +283,10 @@ const BookingFlowPage: React.FC = () => {
   };
 
   const handleBack = () => {
-    if (step > 1) {
+    // When pre-filled and at the first effective step (internal Step 3),
+    // back returns to the detail page instead of stale Step 2.
+    const minStep = isPreFilled ? 3 : 1;
+    if (step > minStep) {
       setStep(step - 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
@@ -296,7 +315,13 @@ const BookingFlowPage: React.FC = () => {
           borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
         }}
       >
-        <StepIndicator current={step} total={TOTAL_STEPS} />
+        {/* When pre-filled from DetailPage, the indicator collapses from
+            5 dots to 3 (we hide the already-completed Service + DateTime
+            steps to avoid implying the user must re-do them). */}
+        <StepIndicator
+          current={isPreFilled ? step - 2 : step}
+          total={isPreFilled ? 3 : TOTAL_STEPS}
+        />
         <Box sx={{ padding: "4px 20px 14px" }}>
           <Typography
             sx={{
@@ -309,8 +334,8 @@ const BookingFlowPage: React.FC = () => {
             }}
           >
             {t("booking.stepCount", "Step {{current}} of {{total}}", {
-              current: step,
-              total: TOTAL_STEPS,
+              current: isPreFilled ? step - 2 : step,
+              total: isPreFilled ? 3 : TOTAL_STEPS,
             })}
           </Typography>
           <Typography

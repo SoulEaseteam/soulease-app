@@ -12,8 +12,8 @@
 // to match Phase 2 design. Real data integration via `therapistsData` lookup
 // + Firestore live status in Task 7 (i18n sweep / data wiring).
 
-import React from "react";
-import { Box } from "@mui/material";
+import React, { useState } from "react";
+import { Box, Typography } from "@mui/material";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -24,15 +24,30 @@ import {
   Credentials,
   Specialties,
   Languages,
-  Pricing,
-  Calendar,
   Reviews,
 } from "@/components/therapist/detail/DetailSections";
 import StickyBookCTA from "@/components/therapist/detail/StickyBookCTA";
+
+// 🆕 Phase 4 — Pricing + Calendar legacy sections REPLACED by the booking
+//   flow's own pickers, surfaced here on the detail page so the user can
+//   pick service+duration+date+time inline. Booking flow then opens at
+//   "Where should we go?" (Step 3) instead of restarting from Step 1.
+import StepService from "@/components/booking/StepService";
+import StepDateTime from "@/components/booking/StepDateTime";
+import {
+  startingPrice,
+  priceForDuration,
+  formatTHB,
+} from "@/utils/servicePricing";
+import services from "@/data/services";
+
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 import therapistsData from "@/data/therapists";
 import type { Therapist } from "@/types/therapist";
 import { enhanceImage } from "@/utils/cloudinary";
+
+const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // Demo data shaped exactly to mockup Phone B. Keyed by `:id` so each card
 // in the Browse grid lands on its own profile. Unknown ids fall back to Mai.
@@ -384,6 +399,26 @@ const TherapistDetailPage: React.FC = () => {
     type: "profile",
   });
 
+  // 🆕 Phase 4 — Inline picker state. The user picks service+duration+
+  //    date+time on this page; StickyBookCTA forwards everything to
+  //    /booking/:id via URL params and the booking flow opens directly
+  //    at "Where should we go?".
+  const [selection, setSelection] = useState<{
+    serviceId: string | null;
+    duration: number | null;
+    date: string | null;
+    time: string | null;
+  }>({
+    serviceId: null,
+    duration: null,
+    date: null,
+    time: null,
+  });
+
+  // Resolve the picked service object (if any) for header/sticky CTA copy.
+  const selectedService =
+    services.find((s) => s.id === selection.serviceId) ?? null;
+
   return (
     <Box
       sx={{
@@ -419,8 +454,56 @@ const TherapistDetailPage: React.FC = () => {
       <Credentials creds={therapist.creds} />
       <Specialties specs={therapist.specs} />
       <Languages langs={therapist.langs} />
-      <Pricing items={therapist.pricing} />
-      <Calendar days={therapist.days} slots={therapist.slots} />
+
+      {/* 🆕 Phase 4 — Inline picker (replaces legacy Pricing + Calendar)
+          Service tap → bottom sheet picks 60/90/120 → date pills + time
+          slot grid → user lands on /booking/:id?service=…&date=… and
+          jumps straight to "Where should we go?". */}
+      <PickerSection title={t("detail.picker.serviceTitle", "Choose your service")}>
+        <StepService
+          value={selection.serviceId}
+          selectedDuration={selection.duration}
+          therapistId={therapist.id}
+          onChange={(serviceId, duration) =>
+            setSelection((p) => ({
+              ...p,
+              serviceId,
+              duration,
+              // changing service may change min slot — clear time only
+              time: null,
+            }))
+          }
+        />
+      </PickerSection>
+
+      <PickerSection
+        title={t("detail.picker.timeTitle", "When works for you?")}
+        subtitle={
+          selectedService
+            ? t("detail.picker.timeSubtitle", "{{name}} · {{duration}} min · {{price}}", {
+                name: selectedService.name,
+                duration: selection.duration ?? selectedService.duration,
+                price: formatTHB(
+                  selection.duration
+                    ? priceForDuration(selectedService, selection.duration)
+                    : startingPrice(selectedService)
+                ),
+              })
+            : t("detail.picker.timeHint", "Pick a service above to unlock time slots")
+        }
+        muted={!selectedService}
+      >
+        <StepDateTime
+          date={selection.date}
+          time={selection.time}
+          durationMin={selection.duration}
+          therapistId={therapist.id}
+          onChange={({ date, time }) =>
+            setSelection((p) => ({ ...p, date, time }))
+          }
+        />
+      </PickerSection>
+
       <Reviews
         rating={therapist.rating}
         total={therapist.reviewCount}
@@ -431,12 +514,68 @@ const TherapistDetailPage: React.FC = () => {
       <StickyBookCTA
         therapistId={therapist.id}
         therapistName={therapist.name}
-        fromPrice={therapist.pricing[0].price}
-        duration="60min"
-        selectedSlot="17:00"
+        fromPrice={
+          selectedService
+            ? formatTHB(
+                selection.duration
+                  ? priceForDuration(selectedService, selection.duration)
+                  : startingPrice(selectedService)
+              )
+            : therapist.pricing[0].price
+        }
+        duration={selection.duration ? `${selection.duration}min` : "—"}
+        selectedSlot={selection.time ?? ""}
+        serviceId={selection.serviceId}
+        durationMin={selection.duration}
+        date={selection.date}
+        time={selection.time}
       />
     </Box>
   );
 };
+
+// ─── Picker section wrapper — matches dSection style of legacy sections ───
+const PickerSection: React.FC<{
+  title: string;
+  subtitle?: string;
+  muted?: boolean;
+  children: React.ReactNode;
+}> = ({ title, subtitle, muted, children }) => (
+  <Box
+    sx={{
+      padding: "20px",
+      borderTop: "1px solid rgba(184, 92, 60, 0.12)",
+      opacity: muted ? 0.55 : 1,
+      transition: "opacity 0.2s ease",
+    }}
+  >
+    <Typography
+      component="h3"
+      sx={{
+        fontFamily: SERIF,
+        fontSize: "20px",
+        fontWeight: 500,
+        color: "#2a1a14",
+        letterSpacing: "-0.02em",
+        marginBottom: subtitle ? "4px" : "16px",
+      }}
+    >
+      {title}
+    </Typography>
+    {subtitle && (
+      <Typography
+        sx={{
+          fontFamily: SANS,
+          fontSize: "12px",
+          color: "rgba(60, 30, 20, 0.6)",
+          marginBottom: "16px",
+        }}
+      >
+        {subtitle}
+      </Typography>
+    )}
+    {children}
+  </Box>
+);
 
 export default TherapistDetailPage;

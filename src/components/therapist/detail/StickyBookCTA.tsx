@@ -14,9 +14,27 @@ const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 interface Props {
   therapistId: string;
   therapistName: string;
+  /** Pre-formatted price string (e.g. "฿1,800") or starting price fallback */
   fromPrice: string;
+  /** "60min" / "90min" / "120min" — what the user has chosen */
   duration: string;
+  /**
+   * Currently picked time slot. Empty string => no slot picked yet
+   * (CTA shows generic "Book {{name}}" copy).
+   */
   selectedSlot: string;
+  /**
+   * Pre-selection forwarded to /booking/:id via URL search params so the
+   * booking flow can pre-fill its form and skip Step 1+2. Booking flow
+   * starts at "Where should we go?" when all 4 are present.
+   */
+  serviceId?: string | null;
+  /** Duration in minutes (60 / 90 / 120). Forwarded as ?duration= */
+  durationMin?: number | null;
+  /** Selected date YYYY-MM-DD. Forwarded as ?date= */
+  date?: string | null;
+  /** Selected time HH:mm. Forwarded as ?time= */
+  time?: string | null;
 }
 
 const StickyBookCTA: React.FC<Props> = ({
@@ -25,10 +43,28 @@ const StickyBookCTA: React.FC<Props> = ({
   fromPrice,
   duration,
   selectedSlot,
+  serviceId,
+  durationMin,
+  date,
+  time,
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [fav, setFav] = useState(false);
+
+  // CTA disabled until at least a service is picked. Date/time can still
+  // be filled inside the booking flow if user prefers.
+  const canBook = !!serviceId;
+
+  const goBooking = () => {
+    const params = new URLSearchParams();
+    if (serviceId) params.set("service", serviceId);
+    if (durationMin) params.set("duration", String(durationMin));
+    if (date) params.set("date", date);
+    if (time) params.set("time", time);
+    const qs = params.toString();
+    void navigate(`/booking/${therapistId}${qs ? `?${qs}` : ""}`);
+  };
 
   return (
     <Box
@@ -80,7 +116,8 @@ const StickyBookCTA: React.FC<Props> = ({
       {/* .book-btn */}
       <Button
         type="button"
-        onClick={() => navigate(`/booking/${therapistId}`)}
+        onClick={goBooking}
+        disabled={!canBook}
         sx={{
           flex: 1,
           background: "linear-gradient(135deg, #FE0944, #FE7A52)",
@@ -105,12 +142,23 @@ const StickyBookCTA: React.FC<Props> = ({
             background: "linear-gradient(135deg, #FE0944, #FE7A52)",
             boxShadow: "0 10px 28px rgba(254, 9, 68, 0.36)",
           },
+          "&.Mui-disabled": {
+            background: "rgba(0, 0, 0, 0.12)",
+            color: "rgba(0, 0, 0, 0.35)",
+            boxShadow: "none",
+          },
         }}
       >
-        {t("detail.cta.book", "Book {{name}} for {{slot}}", {
-          name: therapistName,
-          slot: selectedSlot,
-        })}{" "}
+        {!canBook
+          ? t("detail.cta.pickService", "Pick a service to continue")
+          : selectedSlot
+          ? t("detail.cta.book", "Book {{name}} for {{slot}}", {
+              name: therapistName,
+              slot: selectedSlot,
+            })
+          : t("detail.cta.bookNoSlot", "Continue with {{name}}", {
+              name: therapistName,
+            })}{" "}
         →
       </Button>
 
