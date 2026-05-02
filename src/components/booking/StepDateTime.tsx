@@ -27,7 +27,10 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { Box, Typography } from "@mui/material";
 import dayjs from "dayjs";
-import therapistsData from "@/data/therapists";
+// 🆕 Round 28x — shared therapist-record hook (live Firestore + static
+// fallback) replaces direct `therapistsData.find()` so working hours
+// updates in admin propagate to the booking flow live.
+import useTherapistRecord from "@/hooks/useTherapistRecord";
 // 🆕 Phase 5 — Cross-check candidate slots against live Firestore bookings
 //    so the same therapist can never be double-booked. The hook returns
 //    [] while the therapist id is null (no live data), which means slots
@@ -144,13 +147,14 @@ const StepDateTime: React.FC<Props> = ({
     if (!date) setInternalDate(dayjs());
   }, [date]);
 
-  const therapist = useMemo(
-    () => therapistsData.find((t) => t.id === therapistId),
-    [therapistId]
-  );
+  // 🆕 Round 28x finalised — uses live Firestore record (hook returns the
+  // first matching therapist by id, with static fallback). Replaces the
+  // legacy `therapistsData.find()` reference that broke after Round 22-25
+  // when several therapist data files were removed.
+  const { therapist } = useTherapistRecord(therapistId);
 
-  const startTime = therapist?.startTime || "09:00";
-  const endTime = therapist?.endTime || "22:00";
+  const startTime = therapist?.startTime ?? "09:00";
+  const endTime = therapist?.endTime ?? "22:00";
 
   // 🆕 Phase 5 — Live booking subscription for this therapist. Slots
   //    overlapping any of these intervals will render as 'Taken'.

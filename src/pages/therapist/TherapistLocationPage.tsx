@@ -1,4 +1,14 @@
 // src/pages/therapist/TherapistLocationPage.tsx
+//
+// 🆕 Round 26 (founder 2026-05-02): real-data + memory-safe refactor.
+//   • The legacy version started an onSnapshot inside an async helper but
+//     never stored the unsub → listener leaked on every component unmount.
+//     Fixed: subscriptions return a cleanup chain.
+//   • `any` types replaced with Therapist / BookingDoc shapes.
+//   • Snackbar emojis removed (Round 15 mandate "no emojis, use icons").
+//   • AppBar legacy salmon (#FB8085) replaced with brand red→coral gradient.
+//   • Initial therapist lookup also moved into a live onSnapshot so admin
+//     edits to homeLocation propagate instantly.
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -26,19 +36,20 @@ import {
 } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/layouts/BottomNavGlass";
+import type { Therapist, Location as TherapistLocation } from "@/types/therapist";
 
 const containerStyle = { width: "100%", height: "100%" };
 const defaultCenter = { lat: 13.736717, lng: 100.523186 };
 
+interface BookingDoc {
+  location?: TherapistLocation;
+  status?: string;
+}
+
 const TherapistLocationPage: React.FC = () => {
   const [therapistId, setTherapistId] = useState<string | null>(null);
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
-    null
-  );
-  const [homeCoords, setHomeCoords] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
+  const [coords, setCoords] = useState<TherapistLocation | null>(null);
+  const [homeCoords, setHomeCoords] = useState<TherapistLocation | null>(null);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     msg: string;
@@ -50,63 +61,81 @@ const TherapistLocationPage: React.FC = () => {
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
   });
 
+  // ── 1. Resolve therapist doc id once via auth uid ─────────────────────
   useEffect(() => {
-    void initLocation();
-    // initLocation อาศัย auth.currentUser — ตั้งใจไม่ใส่ใน deps
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let cancelled = false;
+    void (async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      const q = query(
+        collection(db, "therapists"),
+        where("uid", "==", user.uid)
+      );
+      const snap = await getDocs(q);
+      if (!cancelled && !snap.empty) {
+        setTherapistId(snap.docs[0].id);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  /** ✅ โหลดตำแหน่ง therapist + เช็ก booking realtime */
-  const initLocation = async () => {
-    const user = auth.currentUser;
-    if (!user) return;
+  // ── 2. Live therapist subscription (homeLocation + currentLocation) ───
+  //       Plus daily auto-reset to home if last update was on a previous day.
+  useEffect(() => {
+    if (!therapistId) return;
+    const ref = doc(db, "therapists", therapistId);
+    const unsub = onSnapshot(ref, (snap) => {
+      if (!snap.exists()) return;
+      const data = snap.data() as Therapist;
 
-    const q = query(collection(db, "therapists"), where("uid", "==", user.uid));
-    const snap = await getDocs(q);
-    if (snap.empty) return;
+      if (data.homeLocation) setHomeCoords(data.homeLocation);
 
-    const therapist = { id: snap.docs[0].id, ...snap.docs[0].data() } as any;
-    setTherapistId(therapist.id);
+      const now = new Date();
+      const updatedAtRaw = (data as { updatedAt?: { toDate?: () => Date } })
+        .updatedAt;
+      const lastUpdate = updatedAtRaw?.toDate?.() ?? now;
 
-    if (therapist.homeLocation) setHomeCoords(therapist.homeLocation);
+      if (isNewDay(lastUpdate, now) && data.homeLocation) {
+        // Daily reset: snap therapist back to standby (home) location.
+        void updateDoc(ref, {
+          currentLocation: data.homeLocation,
+          updatedAt: Timestamp.fromDate(now),
+        });
+        setCoords(data.homeLocation);
+      }
+    });
+    return () => unsub();
+  }, [therapistId]);
 
-    const now = new Date();
-    const lastUpdate = therapist.updatedAt?.toDate?.() ?? now;
-
-    // ✅ reset ทุกวัน → กลับบ้าน
-    if (isNewDay(lastUpdate, now)) {
-      await updateDoc(doc(db, "therapists", therapist.id), {
-        currentLocation: therapist.homeLocation,
-        updatedAt: Timestamp.fromDate(now),
-      });
-      setCoords(therapist.homeLocation);
-      return;
-    }
-
-    // ✅ เช็ก booking realtime
+  // ── 3. Live active-booking subscription — if there's an ongoing booking,
+  //       show the customer's location on the map; otherwise show home.
+  useEffect(() => {
+    if (!therapistId) return;
     const bQ = query(
       collection(db, "bookings"),
-      where("therapistId", "==", therapist.id),
+      where("therapistId", "==", therapistId),
       where("status", "in", ["ongoing", "accepted", "confirmed"])
     );
-
-    onSnapshot(bQ, (bSnap) => {
+    const unsub = onSnapshot(bQ, (bSnap) => {
       if (!bSnap.empty) {
-        const booking = bSnap.docs[0].data() as any;
+        const booking = bSnap.docs[0].data() as BookingDoc;
         if (booking.location) {
-          setCoords(booking.location); // 👉 ใช้ location ลูกค้า
+          setCoords(booking.location);
           return;
         }
       }
-      // ถ้าไม่มี booking active → ใช้ currentLocation หรือ home
-      setCoords(therapist.currentLocation || therapist.homeLocation || defaultCenter);
+      // No active booking — fall back to home (or default if missing)
+      setCoords((prev) => prev ?? homeCoords ?? defaultCenter);
     });
-  };
+    return () => unsub();
+  }, [therapistId, homeCoords]);
 
   const isNewDay = (last: Date, now: Date) =>
     last.toDateString() !== now.toDateString();
 
-  /** 👉 อัพเดตตำแหน่งจริงตอนนี้ */
+  /** Capture the device's GPS and persist to Firestore. */
   const handleUpdateCurrentLocation = () => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -123,7 +152,7 @@ const TherapistLocationPage: React.FC = () => {
             });
             setSnackbar({
               open: true,
-              msg: "✅ Current location updated!",
+              msg: "Current location updated",
               severity: "success",
             });
           })();
@@ -132,13 +161,13 @@ const TherapistLocationPage: React.FC = () => {
       () =>
         setSnackbar({
           open: true,
-          msg: "❌ Cannot access location",
+          msg: "Cannot access device location",
           severity: "error",
         })
     );
   };
 
-  /** 👉 กลับบ้าน (standby) */
+  /** Snap therapist back to standby (home) location. */
   const handleReturnHome = async () => {
     if (!homeCoords || !therapistId) return;
     setCoords(homeCoords);
@@ -148,7 +177,7 @@ const TherapistLocationPage: React.FC = () => {
     });
     setSnackbar({
       open: true,
-      msg: "🏠 Returned to standby location",
+      msg: "Returned to standby location",
       severity: "success",
     });
   };
@@ -173,13 +202,13 @@ const TherapistLocationPage: React.FC = () => {
         pb: 8,
       }}
     >
-      {/* AppBar */}
+      {/* AppBar — brand red→coral gradient (replaces legacy salmon) */}
       <AppBar
         position="static"
         elevation={0}
         sx={{
-          background: "linear-gradient(90deg, #FB8085, #F9C1B1)",
-          boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+          background: "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+          boxShadow: "0 4px 12px rgba(254, 9, 68, 0.22)",
         }}
       >
         <Toolbar>
@@ -188,7 +217,14 @@ const TherapistLocationPage: React.FC = () => {
           </IconButton>
           <Typography
             variant="h6"
-            sx={{ flexGrow: 1, textAlign: "center", mr: 5 }}
+            sx={{
+              flexGrow: 1,
+              textAlign: "center",
+              mr: 5,
+              fontFamily: '"Fraunces", Georgia, serif',
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+            }}
           >
             Location
           </Typography>
@@ -199,7 +235,7 @@ const TherapistLocationPage: React.FC = () => {
       <Box sx={{ width: "100%", height: "100%" }}>
         <GoogleMap
           mapContainerStyle={containerStyle}
-          center={coords || defaultCenter}
+          center={coords ?? defaultCenter}
           zoom={14}
         >
           {coords && <Marker position={coords} />}
@@ -227,15 +263,22 @@ const TherapistLocationPage: React.FC = () => {
           fullWidth
           onClick={handleReturnHome}
           sx={{
-            bgcolor: "#FB8085",
-            fontSize: 15,
-            borderRadius: 10,
+            background: "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+            color: "#fff",
+            fontSize: 14,
+            fontWeight: 800,
+            letterSpacing: "0.04em",
+            borderRadius: 99,
             py: 1.25,
-            boxShadow: "0 3px 6px rgba(0,0,0,0.1)",
-            "&:hover": { bgcolor: "#f78b90" },
+            boxShadow: "0 6px 16px rgba(254, 9, 68, 0.26)",
+            textTransform: "none",
+            "&:hover": {
+              background: "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+              boxShadow: "0 8px 20px rgba(254, 9, 68, 0.36)",
+            },
           }}
         >
-          RETURN TO STANDBY LOCATION
+          Return to standby
         </Button>
 
         <Button
@@ -243,15 +286,20 @@ const TherapistLocationPage: React.FC = () => {
           fullWidth
           onClick={handleUpdateCurrentLocation}
           sx={{
-            bgcolor: "#F9C1B1",
-            fontSize: 15,
-            borderRadius: 10,
+            background: "rgba(255, 248, 240, 0.95)",
+            color: "#831843",
+            fontSize: 14,
+            fontWeight: 800,
+            letterSpacing: "0.04em",
+            borderRadius: 99,
             py: 1.25,
-            boxShadow: "0 3px 6px rgba(0,0,0,0.1)",
-            "&:hover": { bgcolor: "#facfc0" },
+            border: "1px solid rgba(184, 92, 60, 0.22)",
+            boxShadow: "0 4px 12px rgba(126, 30, 46, 0.08)",
+            textTransform: "none",
+            "&:hover": { background: "#fff" },
           }}
         >
-          UPDATE CURRENT LOCATION
+          Update current GPS
         </Button>
       </Box>
 
