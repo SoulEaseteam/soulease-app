@@ -20,7 +20,10 @@ import "./index.css";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import AuthProvider from "@/providers/AuthProvider";
 import { GoogleMapsProvider } from "@/context/GoogleMapsContext";
-import FloatingLanguageSwitcher from "@/components/common/FloatingLanguageSwitcher";
+// 🆕 Round 28j — language pill lives ONLY in TopNav (home) per founder
+// direction. No global floating pill anywhere on the site. HtmlLangSync
+// stays mounted so `<html lang>` follows i18n.language for SEO + a11y.
+import HtmlLangSync from "@/components/common/HtmlLangSync";
 import DevPrivacyToggle from "@/components/common/DevPrivacyToggle";
 
 import "./app/i18n";
@@ -73,8 +76,10 @@ const Root = () => {
             <GoogleMapsProvider>
               <AuthProvider>
                 <App />
-                {/* 🌐 Always-visible 5-language switcher (bottom-left pill) */}
-                <FloatingLanguageSwitcher />
+                {/* Keeps <html lang="…"> in sync with i18n.language so
+                    SEO + screen readers always see the correct locale.
+                    The visible language pill lives in TopNav (home only). */}
+                <HtmlLangSync />
                 {/* 👁️  Dev privacy blur — for working on laptop in public.
                     Toggle: top-right icon OR Cmd/Ctrl + Shift + B.
                     Persists in localStorage. Local to your device only. */}

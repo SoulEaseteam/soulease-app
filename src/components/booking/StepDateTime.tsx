@@ -1,0 +1,678 @@
+// src/components/booking/StepDateTime.tsx
+//
+// 🎨 Phase 3 Booking — Step 2 Date + Time picker.
+//
+// Two parts:
+//   1. Date pills — horizontal scroll, 7 days starting today.
+//      "Today" / "Tomorrow" / "Wed Apr 30" pattern.
+//   2. Time slot grid — 30-min increments, grouped by daypart
+//      (Morning 06-12, Afternoon 12-17, Evening 17-21, Night 21-06).
+//
+// Filtering rules:
+//   • If a therapist is preselected, slots must fit within their
+//     `startTime..endTime` window. Overnight shifts (start > end) are
+//     supported — slots after midnight are labeled with "+1d".
+//   • Slot must end BEFORE therapist's endTime so the session fits
+//     (slot + service duration ≤ endTime).
+//   • Today only: slots must be at least 60 min in the future
+//     (BRAND.md "average arrival 60 min").
+//   • If no therapist preselected, default to 09:00–22:00.
+//
+// 🚧 NOT YET WIRED (commit 6):
+//   • Cross-checking against existing Firestore bookings (no double-book)
+//   • Therapist holiday/break overrides from `useTherapists` live data
+//
+// Accessibility: Each pill/slot is `role="button"` with aria-pressed.
+
+import React, { useMemo, useState, useEffect } from "react";
+import { Box, Typography } from "@mui/material";
+import dayjs from "dayjs";
+import therapistsData from "@/data/therapists";
+// 🆕 Round 28an — anchor all "now" / "today" comparisons to BKK so the
+//    time picker filters past slots correctly even if the user's phone
+//    is on a different timezone or has clock drift.
+import { nowBKK } from "@/utils/time";
+// 🆕 Phase 5 — Cross-check candidate slots against live Firestore bookings
+//    so the same therapist can never be double-booked. The hook returns
+//    [] while the therapist id is null (no live data), which means slots
+//    behave as before until we have something to compare against.
+import {
+  useTherapistBookings,
+  isSlotTaken,
+} from "@/utils/useTherapistBookings";
+
+const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SANS = '"Inter", system-ui, -apple-system, sans-serif';
+
+const SLOT_INCREMENT_MIN = 30;
+// 🆕 Round 28ao (founder 2026-05-03): จองล่วงหน้าอย่างน้อย 10 นาที
+//   เพื่อให้พนักงานเตรียมตัว (gentle minimum — therapist needs to
+//   acknowledge the booking + start traveling).
+const TODAY_MIN_LEAD_MIN = 10;
+// 🆕 Round 28ao — gap between consecutive bookings of the same therapist.
+//   After a session ends, we block the next 10 minutes so the therapist
+//   can wrap up + travel to the next location. Used by isSlotTaken
+//   below via the `bufferMin` argument.
+const BOOKING_BUFFER_MIN = 10;
+
+interface Props {
+  /** Currently selected YYYY-MM-DD (null = nothing picked) */
+  date: string | null;
+  /** Currently selected HH:mm (null = nothing picked) */
+  time: string | null;
+  /** Required to filter slots fit within startTime..endTime */
+  durationMin: number | null;
+  /** Therapist context — falls back to default working hours if null */
+  therapistId: string | null;
+  /** Called when date OR time changes. Resets time when date changes. */
+  onChange: (next: { date: string; time: string | null }) => void;
+}
+
+// ── helpers
+function toMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+}
+function fromMinutes(mins: number): string {
+  const m = ((mins % 1440) + 1440) % 1440; // wrap
+  const h = Math.floor(m / 60);
+  const min = m % 60;
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+}
+
+// Build the list of valid slot start-times for a given day, given the
+// therapist's shift and the service duration.
+function buildSlots(
+  date: dayjs.Dayjs,
+  startTime: string,
+  endTime: string,
+  durationMin: number
+): { time: string; nextDay: boolean }[] {
+  const start = toMinutes(startTime);
+  const end = toMinutes(endTime);
+  const isOvernight = end <= start; // 19:00 → 05:00
+
+  // Effective end: in overnight mode the shift extends past midnight.
+  // Slots are placed in absolute minutes from `start` (0..shiftLen).
+  const shiftLen = isOvernight ? 1440 - start + end : end - start;
+  const lastSlotOffset = shiftLen - durationMin; // last slot start
+  if (lastSlotOffset < 0) return [];
+
+  const slots: { time: string; nextDay: boolean }[] = [];
+
+  // 🆕 Round 28an — "today" is the BKK calendar day (not user's local).
+  //    Past slots are filtered out + a small lead-time so the customer
+  //    has time to confirm + the therapist has time to travel.
+  //    Re-rendered every minute via the parent's <NowTicker/> so the
+  //    list shrinks live as time passes.
+  const nowBkk = nowBKK();
+  const isToday = date.format("YYYY-MM-DD") === nowBkk.format("YYYY-MM-DD");
+  const earliestNowMin = isToday
+    ? nowBkk.hour() * 60 + nowBkk.minute() + TODAY_MIN_LEAD_MIN
+    : -Infinity;
+
+  for (let off = 0; off <= lastSlotOffset; off += SLOT_INCREMENT_MIN) {
+    const absMin = start + off; // could exceed 1440
+    const nextDay = absMin >= 1440;
+    const slotMin = absMin % 1440;
+
+    // Lead-time check (only meaningful when slot is on `date` itself, not nextDay)
+    if (!nextDay && slotMin < earliestNowMin) continue;
+
+    slots.push({
+      time: fromMinutes(slotMin),
+      nextDay,
+    });
+  }
+  return slots;
+}
+
+// Group slots into dayparts for visual sectioning.
+function groupSlots(slots: { time: string; nextDay: boolean }[]) {
+  const groups: Record<string, { time: string; nextDay: boolean }[]> = {
+    morning: [],
+    afternoon: [],
+    evening: [],
+    night: [],
+  };
+  for (const s of slots) {
+    const h = parseInt(s.time.split(":")[0], 10);
+    if (h >= 6 && h < 12) groups.morning.push(s);
+    else if (h >= 12 && h < 17) groups.afternoon.push(s);
+    else if (h >= 17 && h < 21) groups.evening.push(s);
+    else groups.night.push(s);
+  }
+  return groups;
+}
+
+const StepDateTime: React.FC<Props> = ({
+  date,
+  time,
+  durationMin,
+  therapistId,
+  onChange,
+}) => {
+  const [internalDate, setInternalDate] = useState<dayjs.Dayjs>(
+    date ? dayjs(date) : dayjs()
+  );
+
+  // If the parent clears the date, sync.
+  useEffect(() => {
+    if (!date) setInternalDate(dayjs());
+  }, [date]);
+
+  // 🆕 Round 28an — minute ticker. Re-renders the slot grid every
+  //   60 seconds so any slot that just slipped into "the past + lead
+  //   time" disappears without requiring the user to refresh the page.
+  //   The ticker only runs while the picker is mounted, so no perf cost
+  //   when the user navigates away.
+  const [, setMinuteTick] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => setMinuteTick((n) => n + 1), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const therapist = useMemo(
+    () => therapistsData.find((t) => t.id === therapistId),
+    [therapistId]
+  );
+
+  const startTime = therapist?.startTime || "09:00";
+  const endTime = therapist?.endTime || "22:00";
+
+  // 🆕 Phase 5 — Live booking subscription for this therapist. Slots
+  //    overlapping any of these intervals will render as 'Taken'.
+  const liveBookings = useTherapistBookings(therapistId);
+
+  // Build the 7-day pill list.
+  const days = useMemo(() => {
+    return Array.from({ length: 7 }).map((_, i) => dayjs().add(i, "day"));
+  }, []);
+
+  // Build slots for the active date.
+  const slotGroups = useMemo(() => {
+    if (!durationMin) return null;
+    const slots = buildSlots(internalDate, startTime, endTime, durationMin);
+    return groupSlots(slots);
+  }, [internalDate, startTime, endTime, durationMin]);
+
+  // 🆕 Round 28ap — earliest non-taken slot, used to surface a
+  //   "Earliest available: 13:00" hint above the slot grid so users
+  //   immediately see the soonest option without scanning the grid.
+  const earliestSlot = useMemo(() => {
+    if (!slotGroups || !durationMin) return null;
+    for (const group of [
+      slotGroups.morning,
+      slotGroups.afternoon,
+      slotGroups.evening,
+      slotGroups.night,
+    ]) {
+      for (const s of group) {
+        const [h, m] = s.time.split(":").map(Number);
+        const slotStartMs = internalDate
+          .add(s.nextDay ? 1 : 0, "day")
+          .hour(h)
+          .minute(m)
+          .second(0)
+          .millisecond(0)
+          .valueOf();
+        const taken = isSlotTaken(
+          liveBookings,
+          slotStartMs,
+          durationMin,
+          BOOKING_BUFFER_MIN
+        );
+        if (!taken) return s;
+      }
+    }
+    return null;
+  }, [slotGroups, liveBookings, internalDate, durationMin]);
+
+  const selectDate = (d: dayjs.Dayjs) => {
+    setInternalDate(d);
+    onChange({ date: d.format("YYYY-MM-DD"), time: null });
+  };
+  const selectTime = (t: string) => {
+    onChange({ date: internalDate.format("YYYY-MM-DD"), time: t });
+  };
+
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      {/* Date pills — horizontal scroll */}
+      <Box>
+        <Box
+          sx={{
+            display: "flex",
+            gap: "8px",
+            overflowX: "auto",
+            paddingBottom: "4px",
+            scrollSnapType: "x mandatory",
+            "&::-webkit-scrollbar": { display: "none" },
+            scrollbarWidth: "none",
+          }}
+        >
+          {days.map((d, i) => {
+            const isActive = d.isSame(internalDate, "day");
+            const label = i === 0 ? "Today" : i === 1 ? "Tomorrow" : d.format("ddd");
+            const sub = i <= 1 ? d.format("MMM D") : d.format("MMM D");
+            return (
+              <Box
+                key={d.format("YYYY-MM-DD")}
+                role="button"
+                tabIndex={0}
+                aria-pressed={isActive}
+                onClick={() => selectDate(d)}
+                onKeyDown={(e) => {
+                  if (e.key === " " || e.key === "Enter") {
+                    e.preventDefault();
+                    selectDate(d);
+                  }
+                }}
+                sx={{
+                  flexShrink: 0,
+                  minWidth: 72,
+                  padding: "10px 14px",
+                  borderRadius: "16px",
+                  cursor: "pointer",
+                  scrollSnapAlign: "start",
+                  textAlign: "center",
+                  background: isActive
+                    ? "linear-gradient(135deg, #FE0944, #FE7A52)"
+                    : "rgba(255, 255, 255, 0.65)",
+                  color: isActive ? "#fff" : "#3c1e14",
+                  border: isActive
+                    ? "none"
+                    : "1px solid rgba(0, 0, 0, 0.06)",
+                  boxShadow: isActive
+                    ? "0 6px 18px rgba(254, 9, 68, 0.25)"
+                    : "0 2px 8px rgba(126, 30, 46, 0.05)",
+                  fontFamily: SANS,
+                  transition: "all 0.2s ease",
+                  "&:focus-visible": {
+                    outline: "2px solid #FE0944",
+                    outlineOffset: "2px",
+                  },
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    opacity: 0.85,
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {label}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: SERIF,
+                    fontSize: "15px",
+                    fontWeight: 600,
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  {sub}
+                </Typography>
+              </Box>
+            );
+          })}
+        </Box>
+        {therapist && (
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: "11.5px",
+              color: "rgba(60, 30, 20, 0.55)",
+              marginTop: "10px",
+              paddingLeft: "4px",
+            }}
+          >
+            {therapist.name}&rsquo;s shift: {startTime}&ndash;{endTime}
+            {toMinutes(endTime) <= toMinutes(startTime) ? " (overnight)" : ""}
+          </Typography>
+        )}
+
+        {/* 🆕 Round 28an — explicit Bangkok time disclaimer so travelers
+            and overseas customers don't get confused about the slot times. */}
+        <Box
+          sx={{
+            marginTop: "8px",
+            paddingLeft: "4px",
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+          }}
+        >
+          <Box
+            component="svg"
+            viewBox="0 0 24 24"
+            aria-hidden
+            sx={{
+              width: 13,
+              height: 13,
+              color: "rgba(60, 30, 20, 0.45)",
+              flexShrink: 0,
+            }}
+          >
+            <path
+              fill="currentColor"
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"
+            />
+          </Box>
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: "10.5px",
+              color: "rgba(60, 30, 20, 0.5)",
+              fontStyle: "italic",
+              letterSpacing: "0.01em",
+            }}
+          >
+            All times shown in Bangkok time (GMT+7)
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* 🆕 Round 28ap — Earliest available banner. Highlights the
+          soonest free slot so users don't have to scan the grid. Tap
+          to select it directly. */}
+      {earliestSlot && durationMin && (
+        <Box
+          role="button"
+          onClick={() => selectTime(earliestSlot.time)}
+          sx={{
+            margin: "0 14px",
+            padding: "12px 14px",
+            borderRadius: "14px",
+            background:
+              "linear-gradient(135deg, rgba(22, 163, 74, 0.12), rgba(22, 163, 74, 0.04))",
+            border: "1px solid rgba(22, 163, 74, 0.28)",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            cursor: "pointer",
+            transition: "transform 0.15s ease, box-shadow 0.15s ease",
+            "&:hover": {
+              transform: "translateY(-1px)",
+              boxShadow: "0 6px 18px rgba(22, 163, 74, 0.18)",
+            },
+          }}
+        >
+          <Box
+            sx={{
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              background: "#16a34a",
+              color: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              fontSize: "16px",
+            }}
+          >
+            ⚡
+          </Box>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography
+              sx={{
+                fontFamily: SANS,
+                fontSize: "10.5px",
+                fontWeight: 700,
+                color: "#15803d",
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                lineHeight: 1.2,
+              }}
+            >
+              Earliest available
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: SERIF,
+                fontSize: "16px",
+                fontWeight: 700,
+                color: "#3c1e14",
+                lineHeight: 1.2,
+              }}
+            >
+              {earliestSlot.time}
+              {earliestSlot.nextDay && (
+                <Box
+                  component="span"
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    marginLeft: "6px",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    background: "rgba(60, 30, 20, 0.08)",
+                    color: "rgba(60, 30, 20, 0.7)",
+                    verticalAlign: "middle",
+                  }}
+                >
+                  +1d
+                </Box>
+              )}
+            </Typography>
+          </Box>
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: "11px",
+              fontWeight: 700,
+              color: "#15803d",
+              letterSpacing: "0.04em",
+            }}
+          >
+            TAP TO BOOK 
+          </Typography>
+        </Box>
+      )}
+
+      {/* Time slot grid */}
+      {!durationMin ? (
+        <Typography
+          sx={{
+            fontFamily: SANS,
+            color: "rgba(60, 30, 20, 0.5)",
+            textAlign: "center",
+            padding: "40px 20px",
+            fontStyle: "italic",
+          }}
+        >
+          Pick a service first
+        </Typography>
+      ) : !slotGroups ||
+        Object.values(slotGroups).every((g) => g.length === 0) ? (
+        <Box
+          sx={{
+            background: "rgba(255, 255, 255, 0.5)",
+            borderRadius: "16px",
+            padding: "32px 20px",
+            textAlign: "center",
+          }}
+        >
+          <Typography
+            sx={{
+              fontFamily: SERIF,
+              fontSize: "16px",
+              color: "#3c1e14",
+              marginBottom: "4px",
+            }}
+          >
+            No slots available
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: "12px",
+              color: "rgba(60, 30, 20, 0.6)",
+            }}
+          >
+            Try another day or another therapist.
+          </Typography>
+        </Box>
+      ) : (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {(["morning", "afternoon", "evening", "night"] as const).map(
+            (key) => {
+              const group = slotGroups[key];
+              if (group.length === 0) return null;
+              const labels: Record<typeof key, string> = {
+                morning: "Morning",
+                afternoon: "Afternoon",
+                evening: "Evening",
+                night: "Night",
+              };
+              return (
+                <Box key={key}>
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      color: "rgba(60, 30, 20, 0.55)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                      marginBottom: "8px",
+                      paddingLeft: "4px",
+                    }}
+                  >
+                    {labels[key]}
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(3, 1fr)",
+                      gap: "8px",
+                    }}
+                  >
+                    {group.map((s) => {
+                      const isActive = time === s.time;
+                      // Build the absolute Date for this slot start so we
+                      // can check overlap with live bookings (B-feature).
+                      const slotDate = s.nextDay
+                        ? internalDate.add(1, "day")
+                        : internalDate;
+                      const [sh, sm] = s.time.split(":").map(Number);
+                      const slotStartMs = slotDate
+                        .hour(sh)
+                        .minute(sm)
+                        .second(0)
+                        .millisecond(0)
+                        .valueOf();
+                      // durationMin is narrowed to number here — the outer
+                      // `!durationMin ? <…> :` branch returned early.
+                      // 🆕 Round 28ao — pass BOOKING_BUFFER_MIN so the
+                      //   slot-taken check respects the 10-min therapist
+                      //   prep buffer between consecutive bookings.
+                      const taken = isSlotTaken(
+                        liveBookings,
+                        slotStartMs,
+                        durationMin,
+                        BOOKING_BUFFER_MIN
+                      );
+                      return (
+                        <Box
+                          key={`${s.time}-${s.nextDay ? "nd" : "sd"}`}
+                          role="button"
+                          tabIndex={taken ? -1 : 0}
+                          aria-pressed={isActive}
+                          aria-disabled={taken}
+                          onClick={() => {
+                            if (!taken) selectTime(s.time);
+                          }}
+                          onKeyDown={(e) => {
+                            if (taken) return;
+                            if (e.key === " " || e.key === "Enter") {
+                              e.preventDefault();
+                              selectTime(s.time);
+                            }
+                          }}
+                          sx={{
+                            padding: "10px 0",
+                            borderRadius: "12px",
+                            cursor: taken ? "not-allowed" : "pointer",
+                            textAlign: "center",
+                            background: taken
+                              ? "rgba(0, 0, 0, 0.04)"
+                              : isActive
+                                ? "linear-gradient(135deg, #FE0944, #FE7A52)"
+                                : "rgba(255, 255, 255, 0.65)",
+                            color: taken
+                              ? "rgba(60, 30, 20, 0.32)"
+                              : isActive
+                                ? "#fff"
+                                : "#3c1e14",
+                            border: taken
+                              ? "1px dashed rgba(60, 30, 20, 0.18)"
+                              : isActive
+                                ? "none"
+                                : "1px solid rgba(0, 0, 0, 0.06)",
+                            fontFamily: SANS,
+                            fontSize: "13.5px",
+                            fontWeight: 600,
+                            letterSpacing: "0.01em",
+                            textDecoration: taken ? "line-through" : "none",
+                            boxShadow: taken
+                              ? "none"
+                              : isActive
+                                ? "0 4px 12px rgba(254, 9, 68, 0.25)"
+                                : "0 2px 6px rgba(126, 30, 46, 0.05)",
+                            transition: "all 0.15s ease",
+                            "&:focus-visible": {
+                              outline: "2px solid #FE0944",
+                              outlineOffset: "2px",
+                            },
+                          }}
+                        >
+                          {s.time}
+                          {s.nextDay && (
+                            <Typography
+                              component="span"
+                              sx={{
+                                fontSize: "9px",
+                                fontWeight: 600,
+                                opacity: 0.7,
+                                marginLeft: "4px",
+                              }}
+                            >
+                              +1d
+                            </Typography>
+                          )}
+                          {taken && (
+                            <Typography
+                              component="div"
+                              sx={{
+                                fontSize: "9px",
+                                fontWeight: 700,
+                                opacity: 0.7,
+                                letterSpacing: "0.06em",
+                                textTransform: "uppercase",
+                                marginTop: "2px",
+                              }}
+                            >
+                              Taken
+                            </Typography>
+                          )}
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </Box>
+              );
+            }
+          )}
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+export default StepDateTime;

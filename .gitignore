@@ -31,3 +31,9 @@ scripts/serviceAccountKey.json
 functions/lib/
 functions/node_modules/
 dist-electron/
+.firebase/
+.firebase/
+.firebase/
+.DS_Store
+**/.DS_Store
+.firebase/

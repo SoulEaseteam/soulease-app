@@ -16,7 +16,9 @@
     "lint": "eslint . --ext .ts,.tsx",
     "lint:strict": "eslint . --ext .ts,.tsx --max-warnings=0",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
-    "check": "npm run typecheck && npm run lint"
+    "check": "npm run typecheck && npm run lint",
+    "deploy": "npm run build && firebase deploy --only hosting",
+    "deploy:vercel": "npm run build && vercel --prod"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

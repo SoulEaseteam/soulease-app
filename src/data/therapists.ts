@@ -9,7 +9,7 @@ export const therapists: Therapist[] = [
     id: "YuriSunRed",
     name: "Yuri",
     image: "/images/yuri/yurie.jpeg",
-    rating: 4.7,
+    rating: 0,
     reviews: 0,
 
     startTime: "19:00",
@@ -27,12 +27,12 @@ export const therapists: Therapist[] = [
     nextAvailable: null,
     badge: "NONE",
 
-    lat: 13.765336,
-    lng: 100.5604635,
+    lat: 13.7656,
+    lng: 100.5704,
 
     distanceKm: null,
 
-    servicesAvailable: ["thai-massage", "aromatherapy", "Gentleman’s"],
+    servicesAvailable: ["thai-massage", "aromatherapy", "gentlemans-recovery"],
 
     gallery: [
       "/images/yuri/y88.jpeg",
@@ -59,8 +59,29 @@ export const therapists: Therapist[] = [
       hairColor: "Black",
       vaccinated: "Yes",
       smoker: "No",
-      language: "Thai / English",
+      language: "Korean,English",
     },
+    area: "Din Daeng · Ratchada",
+    homeAddress: "889 ซ.รัชดาภิเษก 3, ดินแดง, กรุงเทพฯ 10400",
+    languageSkills: [
+      { code: "ko", level: "Fluent" },
+      { code: "en", level: "Fluent" },
+    ],
+    /** SunRed-uniform baseline credentials — TRUE for every onboarded
+     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
+     *  certifications) are added by admin after physical verification. */
+    credentials: [
+      {
+        type: "background",
+        label: "Background-checked by SunRed",
+        meta: "ID + clearance verified at onboarding",
+      },
+      {
+        type: "certification",
+        label: "SunRed onboarded therapist",
+        meta: "Code of conduct + service standards trained",
+      },
+    ],
   },
 
   // =========================================================
@@ -70,7 +91,7 @@ export const therapists: Therapist[] = [
     id: "JimmySunRed",
     name: "Jimmy",
     image: "/images/jinny/IMG_7136.JPG",
-    rating: 4.5,
+    rating: 0,
     reviews: 0,
 
     startTime: "13:00",
@@ -88,15 +109,15 @@ export const therapists: Therapist[] = [
     nextAvailable: null,
     badge: "NONE",
 
-    lat: 13.7513099,
-    lng: 100.5730255,
+    lat: 13.7548,
+    lng: 100.5656,
     distanceKm: null,
 
     servicesAvailable: [
       "thai-massage",
       "aromatherapy",
-      "Gentleman’s",
-      "SunRed’exclusive"
+      "gentlemans-recovery",
+      "sunred-signature"
     ],
 
     gallery: [
@@ -126,6 +147,27 @@ export const therapists: Therapist[] = [
       smoker: "No",
       language: "English, Korean, Cantonese",
     },
+    area: "Huai Khwang · RCA",
+    languageSkills: [
+      { code: "en", level: "Fluent" },
+      { code: "ko", level: "Conversational" },
+      { code: "zh", level: "Conversational" },
+    ],
+    /** SunRed-uniform baseline credentials — TRUE for every onboarded
+     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
+     *  certifications) are added by admin after physical verification. */
+    credentials: [
+      {
+        type: "background",
+        label: "Background-checked by SunRed",
+        meta: "ID + clearance verified at onboarding",
+      },
+      {
+        type: "certification",
+        label: "SunRed onboarded therapist",
+        meta: "Code of conduct + service standards trained",
+      },
+    ],
   },
 
   // =========================================================
@@ -135,7 +177,7 @@ export const therapists: Therapist[] = [
     id: "HamiSunRed",
     name: "Hami",
     image: "/images/Hami/Hami3.jpeg",
-    rating: 4.5,
+    rating: 0,
     reviews: 0,
 
     startTime: "18:00",
@@ -153,14 +195,14 @@ export const therapists: Therapist[] = [
     nextAvailable: null,
     badge: "NONE",
 
-    lat: 13.7829994,
-    lng: 100.5755031,
+    lat: 13.7779,
+    lng: 100.574,
     distanceKm: null,
 
     servicesAvailable: [
       "thai-massage",
       "aromatherapy",
-      "Gentleman’s"
+      "gentlemans-recovery"
     ],
 
     gallery: [
@@ -187,6 +229,26 @@ export const therapists: Therapist[] = [
       smoker: "No",
       language: "English, Korean",
     },
+    area: "Huai Khwang",
+    languageSkills: [
+      { code: "en", level: "Fluent" },
+      { code: "ko", level: "Conversational" },
+    ],
+    /** SunRed-uniform baseline credentials — TRUE for every onboarded
+     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
+     *  certifications) are added by admin after physical verification. */
+    credentials: [
+      {
+        type: "background",
+        label: "Background-checked by SunRed",
+        meta: "ID + clearance verified at onboarding",
+      },
+      {
+        type: "certification",
+        label: "SunRed onboarded therapist",
+        meta: "Code of conduct + service standards trained",
+      },
+    ],
   },
 
   // =========================================================
@@ -196,7 +258,7 @@ export const therapists: Therapist[] = [
     id: "XingXingSunRed",
     name: "XingXing",
     image: "/images/xing/xi.jpeg",
-    rating: 4.6,
+    rating: 0,
     reviews: 0,
 
     startTime: "11:00",
@@ -214,14 +276,14 @@ export const therapists: Therapist[] = [
     nextAvailable: null,
     badge: "NONE",
 
-    lat: 13.765336,
-    lng: 100.5604635,
+    lat: 13.7656,
+    lng: 100.5704,
     distanceKm: null,
 
     servicesAvailable: [
       "thai-massage",
       "aromatherapy",
-      "Gentleman’s"
+      "gentlemans-recovery"
     ],
 
     gallery: [
@@ -249,8 +311,30 @@ export const therapists: Therapist[] = [
       hairColor: "Light Brown",
       vaccinated: "Yes",
       smoker: "No",
-      language: "Thai, English, Chinese",
+      language: "English, Chinese",
     },
+    area: "Din Daeng · Ratchada",
+    homeAddress: "889 ซ.รัชดาภิเษก 3, ดินแดง, กรุงเทพฯ 10400",
+    languageSkills: [
+      { code: "th", level: "Native" },
+      { code: "en", level: "Fluent" },
+      { code: "zh", level: "Conversational" },
+    ],
+    /** SunRed-uniform baseline credentials — TRUE for every onboarded
+     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
+     *  certifications) are added by admin after physical verification. */
+    credentials: [
+      {
+        type: "background",
+        label: "Background-checked by SunRed",
+        meta: "ID + clearance verified at onboarding",
+      },
+      {
+        type: "certification",
+        label: "SunRed onboarded therapist",
+        meta: "Code of conduct + service standards trained",
+      },
+    ],
   },
 
   // =========================================================
@@ -260,7 +344,7 @@ export const therapists: Therapist[] = [
     id: "BarbieSunRed",
     name: "Barbie",
     image: "/images/Barbie/Barbie2.jpeg",
-    rating: 4.5,
+    rating: 0,
     reviews: 0,
 
     startTime: "19:00",
@@ -278,14 +362,14 @@ export const therapists: Therapist[] = [
     nextAvailable: null,
     badge: "NONE",
 
-    lat: 13.765336,
-    lng: 100.5604635,
+    lat: 13.782,
+    lng: 100.608,
     distanceKm: null,
 
     servicesAvailable: [
       "thai-massage",
       "aromatherapy",
-      "Gentleman’s"
+      "gentlemans-recovery"
     ],
 
     gallery: [
@@ -313,8 +397,29 @@ export const therapists: Therapist[] = [
       hairColor: "Light Brown",
       vaccinated: "Yes",
       smoker: "No",
-      language: "Thai / English",
+      language: "English",
     },
+    area: "Lat Phrao · Wang Thonglang",
+    homeAddress: "ซอยลาดพร้าว 80/3, วังทองหลาง, กรุงเทพฯ 10310",
+    languageSkills: [
+      { code: "th", level: "Native" },
+      { code: "en", level: "Fluent" },
+    ],
+    /** SunRed-uniform baseline credentials — TRUE for every onboarded
+     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
+     *  certifications) are added by admin after physical verification. */
+    credentials: [
+      {
+        type: "background",
+        label: "Background-checked by SunRed",
+        meta: "ID + clearance verified at onboarding",
+      },
+      {
+        type: "certification",
+        label: "SunRed onboarded therapist",
+        meta: "Code of conduct + service standards trained",
+      },
+    ],
   },
   // =========================================================
   // 6. MINI
@@ -323,7 +428,7 @@ export const therapists: Therapist[] = [
     id: "MiniSunRed",
     name: "Mini",
     image: "/images/Mini/Mini3.jpeg",
-    rating: 4.5,
+    rating: 0,
     reviews: 0,
 
     startTime: "14:00",
@@ -341,15 +446,15 @@ export const therapists: Therapist[] = [
     nextAvailable: null,
     badge: "NONE",
 
-    lat: 13.7513099,
-    lng: 100.5730255,
+    lat: 13.7548,
+    lng: 100.5656,
     distanceKm: null,
 
     servicesAvailable: [
       "thai-massage",
       "aromatherapy",
-      "Gentleman’s",
-      "SunRed’exclusive"
+      "gentlemans-recovery",
+      "sunred-signature"
     ],
 
     gallery: [
@@ -371,8 +476,29 @@ export const therapists: Therapist[] = [
       hairColor: "Brown",
       vaccinated: "Yes",
       smoker: "No",
-      language: "Thai / English / Korean",
+      language: "English, Korean",
     },
+    area: "Huai Khwang · RCA",
+    languageSkills: [
+      { code: "th", level: "Native" },
+      { code: "en", level: "Fluent" },
+      { code: "ko", level: "Conversational" },
+    ],
+    /** SunRed-uniform baseline credentials — TRUE for every onboarded
+     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
+     *  certifications) are added by admin after physical verification. */
+    credentials: [
+      {
+        type: "background",
+        label: "Background-checked by SunRed",
+        meta: "ID + clearance verified at onboarding",
+      },
+      {
+        type: "certification",
+        label: "SunRed onboarded therapist",
+        meta: "Code of conduct + service standards trained",
+      },
+    ],
   },
 
   // =========================================================
@@ -382,7 +508,7 @@ export const therapists: Therapist[] = [
     id: "JiASunRed",
     name: "Ji A",
     image: "/images/Ji-a (จีอา)/Ji-a2.jpeg",
-    rating: 4.5,
+    rating: 0,
     reviews: 0,
 
     startTime: "16:00",
@@ -400,15 +526,15 @@ export const therapists: Therapist[] = [
     nextAvailable: null,
     badge: "NONE",
 
-    lat: 13.7513099,
-    lng: 100.5730255,
+    lat: 13.7548,
+    lng: 100.5656,
     distanceKm: null,
 
     servicesAvailable: [
       "thai-massage",
       "aromatherapy",
-      "Gentleman’s",
-      "SunRed’exclusive"
+      "gentlemans-recovery",
+      "sunred-signature"
     ],
 
     gallery: [
@@ -430,8 +556,28 @@ export const therapists: Therapist[] = [
       hairColor: "Black",
       vaccinated: "Yes",
       smoker: "No",
-      language: "Thai / English",
+      language: "English, Korean",
     },
+    area: "Huai Khwang · RCA",
+    languageSkills: [
+      { code: "en", level: "Fluent" },
+      { code: "ko", level: "Conversational" },
+    ],
+    /** SunRed-uniform baseline credentials — TRUE for every onboarded
+     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
+     *  certifications) are added by admin after physical verification. */
+    credentials: [
+      {
+        type: "background",
+        label: "Background-checked by SunRed",
+        meta: "ID + clearance verified at onboarding",
+      },
+      {
+        type: "certification",
+        label: "SunRed onboarded therapist",
+        meta: "Code of conduct + service standards trained",
+      },
+    ],
   },
 
   // =========================================================
@@ -441,7 +587,7 @@ export const therapists: Therapist[] = [
     id: "VivianSunRed",
     name: "Vivian",
     image: "/images/Vivian/Vivian1.jpeg",
-    rating: 4.5,
+    rating: 0,
     reviews: 0,
 
     startTime: "16:00",
@@ -459,15 +605,15 @@ export const therapists: Therapist[] = [
     nextAvailable: null,
     badge: "NONE",
 
-    lat: 13.7513099,
-    lng: 100.5730255,
+    lat: 13.7548,
+    lng: 100.5656,
     distanceKm: null,
 
     servicesAvailable: [
       "thai-massage",
       "aromatherapy",
-      "Gentleman’s",
-      "SunRed’exclusive"
+      "gentlemans-recovery",
+      "sunred-signature"
     ],
 
     gallery: [
@@ -494,6 +640,26 @@ export const therapists: Therapist[] = [
       smoker: "No",
       language: "English(well), Korea(little)",
     },
+    area: "Huai Khwang · RCA",
+    languageSkills: [
+      { code: "en", level: "Fluent" },
+      { code: "ko", level: "Basic" },
+    ],
+    /** SunRed-uniform baseline credentials — TRUE for every onboarded
+     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
+     *  certifications) are added by admin after physical verification. */
+    credentials: [
+      {
+        type: "background",
+        label: "Background-checked by SunRed",
+        meta: "ID + clearance verified at onboarding",
+      },
+      {
+        type: "certification",
+        label: "SunRed onboarded therapist",
+        meta: "Code of conduct + service standards trained",
+      },
+    ],
   },
 
   // =========================================================
@@ -503,7 +669,7 @@ export const therapists: Therapist[] = [
     id: "NannySunRed",
     name: "Nanny",
     image: "/images/nanny/photo_2568-11-23 21.28.47.jpeg",
-    rating: 4.5,
+    rating: 0,
     reviews: 0,
 
     startTime: "13:00",
@@ -521,15 +687,15 @@ export const therapists: Therapist[] = [
     nextAvailable: null,
     badge: "NONE",
 
-    lat: 13.7513099,
-    lng: 100.5730255,
+    lat: 13.7548,
+    lng: 100.5656,
     distanceKm: null,
 
     servicesAvailable: [
       "thai-massage",
       "aromatherapy",
-      "Gentleman’s",
-      "SunRed’exclusive"
+      "gentlemans-recovery",
+      "sunred-signature"
     ],
     gallery: [
       "/images/nanny/2568-11-23 11.58.03.jpg",
@@ -551,8 +717,270 @@ export const therapists: Therapist[] = [
       hairColor: "Black",
       vaccinated: "Yes",
       smoker: "No",
-      language: "Thai / English",
+      language: "English",
     },
+    area: "Huai Khwang · RCA",
+    languageSkills: [
+      { code: "th", level: "Native" },
+      { code: "en", level: "Fluent" },
+    ],
+    /** SunRed-uniform baseline credentials — TRUE for every onboarded
+     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
+     *  certifications) are added by admin after physical verification. */
+    credentials: [
+      {
+        type: "background",
+        label: "Background-checked by SunRed",
+        meta: "ID + clearance verified at onboarding",
+      },
+      {
+        type: "certification",
+        label: "SunRed onboarded therapist",
+        meta: "Code of conduct + service standards trained",
+      },
+    ],
+  },
+
+  // =========================================================
+  // 10. YA YA  — new therapist (starts fresh)
+  // =========================================================
+  {
+    id: "YaYaSunRed",
+    name: "YaYa",
+    image: "/images/yaya/yaya.jpeg",
+    rating: 0,
+    reviews: 0,
+
+    startTime: "17:00",
+    endTime: "02:00",
+
+    todayBookings: 0,
+    totalBookings: 0,
+
+    isBooked: false,
+    statusOverride: "Auto",
+    manualStatus: null,
+    activeBooking: false,
+
+    busyUntil: null,
+    nextAvailable: null,
+    badge: "NEW",
+
+    // RCA · Huai Khwang (Royal City Avenue area)
+    lat: 13.7548,
+    lng: 100.5656,
+    distanceKm: null,
+
+    servicesAvailable: [
+      "thai-massage",
+      "aromatherapy",
+      "gentlemans-recovery",
+      "sunred-signature",
+    ],
+
+    gallery: [
+      "/images/yaya/yaya.jpeg",
+    ],
+
+    features: {
+      employmentType: "Full-time therapist",
+      age: "30",
+      gender: "Female",
+      ethnicity: "Thai",
+      height: "168 cm",
+      weight: "53 kg",
+      skintone: "Fair skin",
+      // 34-24-37 (in) — small waist + balanced bust/hip = classic hourglass.
+      bodyType: "Hourglass",
+      bustSize: "34B",
+      hairColor: "Brown",
+      vaccinated: "Yes",
+      smoker: "No",
+      language: "English",
+    },
+
+    // Round 28z — new-hire profile. No track record yet, so we omit
+    // rebookRate and seed counts at zero. Specialties show "New therapist"
+    // labels until the first sessions roll in.
+    area: "Huai Khwang · RCA",
+    languageSkills: [
+      { code: "th", level: "Native" },
+      { code: "en", level: "Fluent" },
+    ],
+    /** SunRed-uniform baseline credentials — TRUE for every onboarded
+     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
+     *  certifications) are added by admin after physical verification. */
+    credentials: [
+      {
+        type: "background",
+        label: "Background-checked by SunRed",
+        meta: "ID + clearance verified at onboarding",
+      },
+      {
+        type: "certification",
+        label: "SunRed onboarded therapist",
+        meta: "Code of conduct + service standards trained",
+      },
+    ],
+  },
+
+  // =========================================================
+  // 11. NICKY  — new therapist (starts fresh)
+  // =========================================================
+  {
+    id: "NickySunRed",
+    name: "Nicky",
+    image: "/images/nicky/nicky.jpeg",
+    rating: 0,
+    reviews: 0,
+
+    startTime: "15:00",
+    endTime: "03:00",
+
+    todayBookings: 0,
+    totalBookings: 0,
+
+    isBooked: false,
+    statusOverride: "Auto",
+    manualStatus: null,
+    activeBooking: false,
+
+    busyUntil: null,
+    nextAvailable: null,
+    badge: "NEW",
+
+    // Rama 4 Road · Silom corridor
+    lat: 13.7283,
+    lng: 100.5374,
+    distanceKm: null,
+
+    servicesAvailable: [
+      "thai-massage",
+      "aromatherapy",
+      "gentlemans-recovery",
+      "sunred-signature",
+    ],
+
+    gallery: [
+      "/images/nicky/nicky.jpeg",
+    ],
+
+    features: {
+      employmentType: "Full-time therapist",
+      age: "27",
+      gender: "Female",
+      ethnicity: "Thai",
+      height: "154 cm",
+      weight: "45 kg",
+      skintone: "Tan",
+      bodyType: "Slim",
+      bustSize: "34B",
+      hairColor: "Black",
+      vaccinated: "Yes",
+      smoker: "No",
+      language: "English, Korean",
+    },
+
+    area: "Rama 4 · Silom",
+    languageSkills: [
+      { code: "en", level: "Fluent" },
+      { code: "ko", level: "Conversational" },
+    ],
+    /** SunRed-uniform baseline credentials — TRUE for every onboarded
+     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
+     *  certifications) are added by admin after physical verification. */
+    credentials: [
+      {
+        type: "background",
+        label: "Background-checked by SunRed",
+        meta: "ID + clearance verified at onboarding",
+      },
+      {
+        type: "certification",
+        label: "SunRed onboarded therapist",
+        meta: "Code of conduct + service standards trained",
+      },
+    ],
+  },
+
+  // =========================================================
+  // 12. RICHIE  — new therapist (starts fresh, founder 2026-05-03)
+  // =========================================================
+  {
+    id: "RichieSunRed",
+    name: "Richie",
+    image: "/images/richie/richie.jpeg",
+    rating: 0,
+    reviews: 0,
+
+    startTime: "12:00",
+    endTime: "00:00",
+
+    todayBookings: 0,
+    totalBookings: 0,
+
+    isBooked: false,
+    statusOverride: "Auto",
+    manualStatus: null,
+    activeBooking: false,
+
+    busyUntil: null,
+    nextAvailable: null,
+    badge: "NEW",
+
+    // Rama 9 · RCA / Central Rama 9 corridor
+    lat: 13.7548,
+    lng: 100.5656,
+    distanceKm: null,
+
+    servicesAvailable: [
+      "thai-massage",
+      "aromatherapy",
+      "gentlemans-recovery",
+      "sunred-signature",
+    ],
+
+    gallery: [
+      "/images/richie/richie.jpeg",
+    ],
+
+    features: {
+      employmentType: "Full-time therapist",
+      age: "27",
+      gender: "Female",
+      ethnicity: "Thai",
+      height: "155 cm",
+      weight: "41 kg",
+      skintone: "Fair",
+      bodyType: "Slim",
+      bustSize: "33A",
+      hairColor: "Black",
+      vaccinated: "Yes",
+      smoker: "No",
+      language: "English,Chinese",
+    },
+
+    area: "Rama 9",
+    languageSkills: [
+      { code: "th", level: "Native" },
+      { code: "en", level: "Basic" },
+      { code: "zh", level: "Basic" },
+    ],
+    /** SunRed-uniform baseline credentials — TRUE for every onboarded
+     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
+     *  certifications) are added by admin after physical verification. */
+    credentials: [
+      {
+        type: "background",
+        label: "Background-checked by SunRed",
+        meta: "ID + clearance verified at onboarding",
+      },
+      {
+        type: "certification",
+        label: "SunRed onboarded therapist",
+        meta: "Code of conduct + service standards trained",
+      },
+    ],
   },
 ];
 

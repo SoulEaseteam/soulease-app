@@ -1,94 +1,53 @@
 // src/utils/calculateTherapistStatus.ts
+//
+// 🆕 Round 28an — fully anchored to Asia/Bangkok via /utils/time.
+//
+// All time math previously used JS `new Date()` + `.setHours()` (which
+// reads the user's device timezone). For an outcall service that runs
+// strictly on Bangkok wall-clock — that was a bug for any user whose
+// phone was set to a different TZ (or had clock drift).
+//
+// Now: every comparison is done in BKK. Results stay identical for a
+// user already in BKK, but become correct for travelers / wrong-TZ
+// devices.
+
 import type { Therapist } from "@/types/therapist";
+import {
+  nowBKK,
+  toBKK,
+  fmtBKK,
+  workingWindowBKK,
+} from "@/utils/time";
 
 export type Avail = "available" | "bookable" | "resting";
 
-/** Convert "HH:MM" to hours/minutes safely */
-function parseHHMM(hhmm?: string | null) {
-  if (!hhmm) return null;
-  const m = /^([0-9]{1,2}):([0-9]{2})$/.exec(hhmm);
-  if (!m) return null;
-  return {
-    h: Math.min(23, Number(m[1])),
-    m: Math.min(59, Number(m[2])),
-  };
-}
-
-/** Convert timestamp → JS Date safely */
-function toDateSafe(v: unknown): Date | null {
-  if (!v) return null;
-
-  if (
-    typeof v === "object" &&
-    v !== null &&
-    "toDate" in v &&
-    typeof (v as { toDate?: unknown }).toDate === "function"
-  ) {
-    const d = (v as { toDate: () => Date }).toDate();
-    return isNaN(d.getTime()) ? null : d;
-  }
-
-  if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
-
-  if (typeof v === "string" || typeof v === "number") {
-    const d = new Date(v);
-    return isNaN(d.getTime()) ? null : d;
-  }
-
-  return null;
-}
-
-/** Format hh:mm (24hr) */
-function formatHHMM(d: Date): string {
-  return `${String(d.getHours()).padStart(2, "0")}:${String(
-    d.getMinutes()
-  ).padStart(2, "0")}`;
-}
-
-/** Handle working window + overnight logic robustly */
+/** Re-export for backwards compatibility with code that imports from here. */
 export function getWorkingWindow(
   now: Date,
   startHHMM?: string,
   endHHMM?: string
 ) {
-  const s = parseHHMM(startHHMM);
-  const e = parseHHMM(endHHMM);
-
-  if (!s || !e) return { start: null, end: null };
-
-  const start = new Date(now);
-  start.setHours(s.h, s.m, 0, 0);
-
-  const end = new Date(now);
-  end.setHours(e.h, e.m, 0, 0);
-
-  // Overnight (end next day)
-  if (end <= start) {
-    // If now is before start → means we are already past midnight window
-    if (now < start) {
-      start.setDate(start.getDate() - 1);
-      end.setDate(start.getDate() + 1);
-    } else {
-      end.setDate(end.getDate() + 1);
-    }
-  }
-
-  return { start, end };
+  // Convert to BKK Dayjs objects internally, then back to Date so older
+  // callers (using .getTime() / Date methods) keep working unchanged.
+  const w = workingWindowBKK(now, startHHMM, endHHMM);
+  return {
+    start: w.start ? w.start.toDate() : null,
+    end: w.end ? w.end.toDate() : null,
+  };
 }
 
-/** MASTER LOGIC — SunRed Official Therapist Engine */
+/** MASTER LOGIC — SunRed Official Therapist Engine (BKK-anchored) */
 export function calculateTherapistStatus(t: Therapist): {
   status: Avail;
   nextAvailable: string | null;
 } {
-  const now = new Date();
+  const now = nowBKK();
 
   // ---------------------------------------------------------
   // 1) ADMIN OVERRIDE
   // ---------------------------------------------------------
   if (t.statusOverride && t.statusOverride !== "Auto") {
     const override = t.statusOverride as Avail;
-
     return {
       status: override,
       nextAvailable: override === "available" ? "Now" : null,
@@ -106,45 +65,49 @@ export function calculateTherapistStatus(t: Therapist): {
   }
 
   // ---------------------------------------------------------
-  // 3) WORKING HOURS
+  // 3) WORKING HOURS — anchored to BKK, handles overnight shifts
   // ---------------------------------------------------------
-  const { start, end } = getWorkingWindow(now, t.startTime, t.endTime);
-  const isInShift = !!(start && end && now >= start && now <= end);
+  const { start, end } = workingWindowBKK(now, t.startTime, t.endTime);
+  const isInShift = !!(
+    start &&
+    end &&
+    now.isSameOrAfter(start) &&
+    now.isSameOrBefore(end)
+  );
 
   if (!isInShift) {
     return {
       status: "resting",
-      nextAvailable: start ? formatHHMM(start) : null,
+      nextAvailable: start ? start.format("HH:mm") : null,
     };
   }
 
   // ---------------------------------------------------------
   // 4) BUSY UNTIL
   // ---------------------------------------------------------
-  const busyUntil = toDateSafe(t.busyUntil);
+  const busyUntil = toBKK(t.busyUntil);
 
-  if (busyUntil && busyUntil > now) {
+  if (busyUntil?.isAfter(now)) {
     return {
       status: "bookable",
-      nextAvailable: formatHHMM(busyUntil),
+      nextAvailable: busyUntil.format("HH:mm"),
     };
   }
 
   // ---------------------------------------------------------
   // 5) ACTIVE BOOKING (fallback)
   //
-  // หมายเหตุ: ในทาง type declaration `activeBooking` คือ `boolean`
-  // แต่บางจุดของแอปก็เก็บเป็น object ที่มี endAt — รองรับทั้งสองแบบ
+  //   `activeBooking` is typed as boolean but some legacy paths store
+  //   an object with `endAt` — support both shapes defensively.
   // ---------------------------------------------------------
   if (t.activeBooking ?? t.isBooked) {
     let next: string | null = null;
-
     const ab = t.activeBooking as unknown;
     if (ab && typeof ab === "object" && "endAt" in ab) {
-      const endAt = toDateSafe((ab as { endAt?: unknown }).endAt);
-      if (endAt) next = formatHHMM(endAt);
+      const endAt = (ab as { endAt?: unknown }).endAt;
+      next = fmtBKK(endAt as never, "HH:mm", "");
+      if (!next) next = null;
     }
-
     return {
       status: "bookable",
       nextAvailable: next,

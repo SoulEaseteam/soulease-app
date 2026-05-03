@@ -1,15 +1,44 @@
-import React, { useEffect, useState } from "react";
+// src/pages/therapist/TherapistProfilePage.tsx
+//
+// 🆕 Round 26 (founder 2026-05-02): refactor for real Firestore live data.
+//    Founder asked: "จัดการหน้า src/pages/therapist ให้ดึงข้อมูลจิง มาใช้".
+//
+// Changes vs. legacy version:
+//   • One-shot getDoc/getDocs → onSnapshot live subscriptions on therapist
+//     doc + bookings query. Stats refresh in real time as bookings move.
+//   • Inline `getComputedStatus()` removed — use canonical
+//     calculateTherapistStatus engine (same as customer-side cards) so the
+//     therapist-self view never disagrees with what customers see.
+//   • `any` types replaced with Therapist + BookingDoc shapes.
+//   • Number()/safe-string coercion on rating + image (matches the dodge
+//     we applied across HomeTherapistGrid, TherapistProfileCard, etc.).
+//   • Live review count (bookings with non-empty reviewText) +
+//     served count (completed bookings) — same pattern as Round 25f.
+//   • Dead menu links removed: /therapist/bookings doesn't exist (no
+//     route in App.tsx) and /therapist/status was deleted in Round 22b.
+//   • Brand-consistent styling: warm cream gradient + Fraunces serif +
+//     brand red. Replaces legacy salmon (#FB8085).
+
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Typography,
-  Avatar,
   CircularProgress,
   Chip,
   IconButton,
   Divider,
   Button,
+  Switch,
+  Snackbar,
+  Alert,
 } from "@mui/material";
-import LogoutIcon from "@mui/icons-material/Logout";
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import RoomRoundedIcon from "@mui/icons-material/RoomRounded";
+import MyLocationRoundedIcon from "@mui/icons-material/MyLocationRounded";
+import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
+import EventBusyRoundedIcon from "@mui/icons-material/EventBusyRounded";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
 import {
@@ -19,214 +48,617 @@ import {
   query,
   where,
   collection,
+  onSnapshot,
+  updateDoc,
+  serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
 import { signOut } from "firebase/auth";
-import ProfileSummaryCard from "@/components/therapist/ProfileSummaryCard";
 
+import ProfileSummaryCard from "@/components/therapist/ProfileSummaryCard";
+import type { Therapist, Avail, StatusOverride } from "@/types/therapist";
+import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
+import { enhanceImage } from "@/utils/cloudinary";
+
+const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SANS = '"Inter", system-ui, -apple-system, sans-serif';
+
+/** Narrow shape of a booking record we read from Firestore. */
+interface BookingDoc {
+  startAt?: Timestamp | Date | string | null;
+  status?: string;
+  reviewText?: string;
+}
+
+/** Status pill colors — brand-consistent, no salmon. */
+const STATUS_PILL: Record<Avail, { bg: string; color: string; label: string }> = {
+  available: { bg: "#16a34a", color: "#fff", label: "Available" },
+  bookable: { bg: "#831843", color: "#FCEBDC", label: "In session" },
+  resting: { bg: "rgba(184,92,60,0.18)", color: "#831843", label: "Resting" },
+};
 
 const TherapistProfilePage: React.FC = () => {
   const navigate = useNavigate();
-  const [therapist, setTherapist] = useState<any>(null);
+  const [therapist, setTherapist] = useState<Therapist | null>(null);
+  const [therapistDocId, setTherapistDocId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 📊 Summary states
+  // Bookings-derived stats (all live)
   const [todayBookings, setTodayBookings] = useState(0);
   const [completedJobs, setCompletedJobs] = useState(0);
   const [cancelledJobs, setCancelledJobs] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
 
-  // 🟢 ฟังก์ชันคำนวณสถานะ
-  const getComputedStatus = (data: any) => {
-    if (!data) return "resting";
-    if (data.statusOverride) return data.statusOverride;
+  // Self-service toggle state
+  const [savingField, setSavingField] = useState<
+    null | "statusOverride" | "isHoliday"
+  >(null);
+  const [toast, setToast] = useState<{
+    msg: string;
+    severity: "success" | "error";
+  } | null>(null);
 
-    const now = new Date();
-    const [startH, startM] = (data.startTime || "00:00").split(":").map(Number);
-    const [endH, endM] = (data.endTime || "00:00").split(":").map(Number);
-
-    const start = new Date();
-    start.setHours(startH, startM, 0, 0);
-    const end = new Date();
-    end.setHours(endH, endM, 0, 0);
-
-    // ✅ handle cross-midnight shift
-    if (end <= start) {
-      if (now < start) start.setDate(start.getDate() - 1);
-      end.setDate(end.getDate() + 1);
-    }
-
-    if (now < start || now > end) return "resting";
-    return data.isBooked ? "bookable" : "available";
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "available":
-        return "green";
-      case "bookable":
-        return "orange";
-      default:
-        return "grey";
-    }
-  };
-
+  // ── 1. Resolve therapist doc id (one-time lookup) ───────────────────────
+  //    UID match on therapists/{uid}, fallback to where("uid", "==", ...)
+  //    or where("email", "==", ...). After resolution we hand off to a
+  //    onSnapshot listener so subsequent doc edits stream live.
   useEffect(() => {
-    const fetchData = async () => {
+    let cancelled = false;
+    void (async () => {
       const user = auth.currentUser;
-      if (!user) return;
-
-      let data: any = null;
-
-      // 🔎 หา therapist doc
-      const ref1 = doc(db, "therapists", user.uid);
-      const snap1 = await getDoc(ref1);
-      if (snap1.exists()) data = { id: snap1.id, ...snap1.data() };
-
-      if (!data) {
-        const q = query(collection(db, "therapists"), where("uid", "==", user.uid));
-        const snap2 = await getDocs(q);
-        if (!snap2.empty) data = { id: snap2.docs[0].id, ...snap2.docs[0].data() };
+      if (!user) {
+        setLoading(false);
+        return;
       }
 
-      if (!data) {
-        const q = query(collection(db, "therapists"), where("email", "==", user.email));
-        const snap3 = await getDocs(q);
-        if (!snap3.empty) data = { id: snap3.docs[0].id, ...snap3.docs[0].data() };
+      let resolvedId: string | null = null;
+
+      // Try direct lookup by uid
+      const directRef = doc(db, "therapists", user.uid);
+      const directSnap = await getDoc(directRef);
+      if (directSnap.exists()) resolvedId = directSnap.id;
+
+      // Fallback: query by uid field
+      if (!resolvedId) {
+        const q = query(
+          collection(db, "therapists"),
+          where("uid", "==", user.uid)
+        );
+        const snap = await getDocs(q);
+        if (!snap.empty) resolvedId = snap.docs[0].id;
       }
 
-      if (data) {
-        setTherapist(data);
-
-        // 📊 ดึง bookings ของ therapist
-        const bq = query(collection(db, "bookings"), where("therapistId", "==", data.id));
-        const bSnap = await getDocs(bq);
-
-        let todayCount = 0;
-        let completedCount = 0;
-        let cancelledCount = 0;
-
-        const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-        const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-
-        bSnap.forEach((doc) => {
-          const booking = doc.data() as any;
-          const startAt: Date = booking.startAt?.toDate
-            ? booking.startAt.toDate()
-            : booking.startAt instanceof Timestamp
-            ? booking.startAt.toDate()
-            : new Date(booking.startAt);
-
-          const status = booking.status?.toLowerCase();
-
-          if (startAt >= todayStart && startAt <= todayEnd && ["confirmed", "completed", "done", "paid"].includes(status)) {
-            todayCount++;
-          }
-          if (["completed", "done"].includes(status)) {
-            completedCount++;
-          }
-          if (status === "cancelled" || status === "canceled") {
-            cancelledCount++;
-          }
-        });
-
-        setTodayBookings(todayCount);
-        setCompletedJobs(completedCount);
-        setCancelledJobs(cancelledCount);
+      // Fallback: query by email field
+      if (!resolvedId && user.email) {
+        const q = query(
+          collection(db, "therapists"),
+          where("email", "==", user.email)
+        );
+        const snap = await getDocs(q);
+        if (!snap.empty) resolvedId = snap.docs[0].id;
       }
 
-      setLoading(false);
+      if (!cancelled) {
+        setTherapistDocId(resolvedId);
+        if (!resolvedId) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
     };
-
-    void fetchData();
   }, []);
+
+  // ── 2. Live therapist doc subscription ──────────────────────────────────
+  useEffect(() => {
+    if (!therapistDocId) return;
+    const unsub = onSnapshot(doc(db, "therapists", therapistDocId), (snap) => {
+      if (snap.exists()) {
+        // Spread first, then override id with the canonical doc id so a
+        // stale `id` field embedded in the document can't shadow it.
+        setTherapist({ ...(snap.data() as Therapist), id: snap.id });
+      }
+      setLoading(false);
+    });
+    return () => unsub();
+  }, [therapistDocId]);
+
+  // ── 3. Live bookings subscription — derive today/completed/cancelled +
+  //       review count in one place. Replaces the old getDocs one-shot.
+  useEffect(() => {
+    if (!therapistDocId) return;
+    const q = query(
+      collection(db, "bookings"),
+      where("therapistId", "==", therapistDocId)
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      const now = new Date();
+      const todayStart = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        0,
+        0,
+        0
+      );
+      const todayEnd = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        23,
+        59,
+        59
+      );
+
+      let today = 0;
+      let completed = 0;
+      let cancelled = 0;
+      let reviewed = 0;
+
+      snap.forEach((d) => {
+        const b = d.data() as BookingDoc;
+        const status = (b.status ?? "").toLowerCase();
+        const startAt =
+          b.startAt instanceof Timestamp
+            ? b.startAt.toDate()
+            : b.startAt instanceof Date
+            ? b.startAt
+            : typeof b.startAt === "string"
+            ? new Date(b.startAt)
+            : null;
+
+        if (
+          startAt &&
+          startAt >= todayStart &&
+          startAt <= todayEnd &&
+          ["confirmed", "completed", "done", "paid"].includes(status)
+        ) {
+          today += 1;
+        }
+        if (["completed", "done"].includes(status)) {
+          completed += 1;
+          if (
+            typeof b.reviewText === "string" &&
+            b.reviewText.trim().length > 0
+          ) {
+            reviewed += 1;
+          }
+        }
+        if (status === "cancelled" || status === "canceled") {
+          cancelled += 1;
+        }
+      });
+
+      setTodayBookings(today);
+      setCompletedJobs(completed);
+      setCancelledJobs(cancelled);
+      setReviewCount(reviewed);
+    });
+    return () => unsub();
+  }, [therapistDocId]);
+
+  // ── 4. Computed status via canonical engine — one source of truth ──────
+  const computedStatus: Avail = useMemo(() => {
+    if (!therapist) return "resting";
+    const { status } = calculateTherapistStatus(therapist);
+    // Defensive: clamp to a known Avail union (admin typos can leak through).
+    /* eslint-disable @typescript-eslint/no-unnecessary-condition */
+    return status === "available" || status === "bookable" || status === "resting"
+      ? status
+      : "resting";
+    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+  }, [therapist]);
 
   const handleLogout = async () => {
     await signOut(auth);
     void navigate("/login");
   };
 
+  // ── 5. Self-service writes ──────────────────────────────────────────────
+  //   Therapist toggles their own statusOverride / isHoliday. Firestore
+  //   rules whitelist these fields, so the write succeeds for the doc
+  //   owner and is rejected for anyone else.
+  const updateOverride = async (next: StatusOverride) => {
+    if (!therapistDocId) return;
+    try {
+      setSavingField("statusOverride");
+      await updateDoc(doc(db, "therapists", therapistDocId), {
+        statusOverride: next,
+        updatedAt: serverTimestamp(),
+        updatedBy: auth.currentUser?.uid ?? null,
+      });
+      const labelMap: Record<string, string> = {
+        Auto: "Auto (engine decides)",
+        available: "Available",
+        bookable: "In session",
+        resting: "Resting",
+      };
+      setToast({
+        msg: `Status set to ${labelMap[next ?? "Auto"] ?? "Auto"}`,
+        severity: "success",
+      });
+    } catch (err) {
+      console.error("[TherapistProfile] updateOverride failed:", err);
+      setToast({
+        msg: "Couldn't update status — please try again.",
+        severity: "error",
+      });
+    } finally {
+      setSavingField(null);
+    }
+  };
+
+  const updateHoliday = async (next: boolean) => {
+    if (!therapistDocId) return;
+    try {
+      setSavingField("isHoliday");
+      await updateDoc(doc(db, "therapists", therapistDocId), {
+        isHoliday: next,
+        updatedAt: serverTimestamp(),
+        updatedBy: auth.currentUser?.uid ?? null,
+      });
+      setToast({
+        msg: next ? "Holiday mode ON — you're off today." : "Holiday mode OFF",
+        severity: "success",
+      });
+    } catch (err) {
+      console.error("[TherapistProfile] updateHoliday failed:", err);
+      setToast({
+        msg: "Couldn't update holiday mode — please try again.",
+        severity: "error",
+      });
+    } finally {
+      setSavingField(null);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-        <CircularProgress />
+        <CircularProgress sx={{ color: "#FE0944" }} />
       </Box>
     );
   }
 
-  const computedStatus = getComputedStatus(therapist);
+  if (!therapist) {
+    return (
+      <Box
+        sx={{
+          maxWidth: 430,
+          margin: "0 auto",
+          padding: "40px 24px",
+          textAlign: "center",
+        }}
+      >
+        <Typography
+          sx={{
+            fontFamily: SERIF,
+            fontSize: "18px",
+            fontWeight: 600,
+            color: "#3c1e14",
+            marginBottom: 1,
+          }}
+        >
+          Therapist profile not found
+        </Typography>
+        <Typography
+          sx={{
+            fontFamily: SANS,
+            fontSize: "13px",
+            color: "rgba(60,30,20,0.6)",
+            marginBottom: 3,
+          }}
+        >
+          Please contact admin if this is unexpected.
+        </Typography>
+        <Button onClick={handleLogout} variant="outlined">
+          Sign out
+        </Button>
+      </Box>
+    );
+  }
+
+  // ── Image resolution: defensive against missing/empty image string ──
+  const rawImage = therapist.image || "placeholder.jpg";
+  const resolvedImage =
+    rawImage.startsWith("http") || rawImage.startsWith("/")
+      ? rawImage
+      : `/images/${rawImage}`;
+
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+  const ratingNum = (Number(therapist.rating) || 0).toFixed(1);
+  const pill = STATUS_PILL[computedStatus];
 
   return (
-    <Box sx={{ bgcolor: "#f6f8fa", minHeight: "100vh", maxWidth: 430, mx: "auto", pb: 7 }}>
-      {/* Header */}
+    <Box
+      sx={{
+        // Phone-shell wrapper — match brand pattern
+        maxWidth: 430,
+        margin: "0 auto",
+        minHeight: "100vh",
+        background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
+        paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
+        fontFamily: SANS,
+      }}
+    >
+      {/* Header — brand red→coral gradient (replaces legacy salmon) */}
       <Box
         sx={{
           position: "relative",
-          background: "linear-gradient(90deg, #FB8085, #F9C1B1)",
-          p: 3,
-          display: "flex",
-          alignItems: "center",
-          borderBottomLeftRadius: 24,
-          borderBottomRightRadius: 24,
+          padding: "24px 20px 28px",
+          background: "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+          borderBottomLeftRadius: 28,
+          borderBottomRightRadius: 28,
+          color: "#fff",
+          boxShadow: "0 12px 30px rgba(254, 9, 68, 0.22)",
         }}
       >
-        <IconButton onClick={handleLogout} sx={{ position: "absolute", top: 10, right: 10, color: "#fff" }}>
-          <LogoutIcon />
-        </IconButton>
-
-        {/* ✅ Avatar ใช้ img ห่อ */}
-        <Avatar
+        <IconButton
+          aria-label="sign out"
+          onClick={handleLogout}
           sx={{
-            width: 120,
-            height: 120,
-            border: "3px solid white",
-            boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
-            mr: 2,
+            position: "absolute",
+            top: 10,
+            right: 10,
+            color: "#fff",
+            background: "rgba(0,0,0,0.18)",
+            "&:hover": { background: "rgba(0,0,0,0.32)" },
           }}
         >
-          <img
-            src={
-              therapist?.image?.startsWith("/")
-                ? therapist.image
-                : `/images/${therapist?.image}`
-            }
-            alt={therapist?.name}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              objectPosition: "center top",
-              borderRadius: "50%",
-            }}
-          />
-        </Avatar>
+          <LogoutRoundedIcon />
+        </IconButton>
 
-        <Box>
-          <Typography variant="h6" fontWeight="bold" color="#fff">
-            {therapist?.name}
-          </Typography>
-          <Typography variant="body2" color="#fff">
-            {therapist?.email}
-          </Typography>
-          <Typography variant="body2" color="#fff">
-            Working Hours: {therapist?.startTime} - {therapist?.endTime}
-          </Typography>
-
-          <Chip
-            label={computedStatus}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box
+            component="img"
+            src={enhanceImage(resolvedImage, { variant: "card" })}
+            alt={therapist.name}
             sx={{
-              mt: 1,
-              bgcolor: getStatusColor(computedStatus),
-              color: "#fff",
-              fontSize: 12,
-              height: 22,
+              width: 96,
+              height: 96,
+              borderRadius: "50%",
+              objectFit: "cover",
+              border: "3px solid rgba(255,255,255,0.85)",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
+              flexShrink: 0,
             }}
           />
+
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography
+              sx={{
+                fontFamily: SERIF,
+                fontWeight: 600,
+                fontSize: "20px",
+                lineHeight: 1.1,
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {therapist.name}
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: SANS,
+                fontSize: "11px",
+                opacity: 0.85,
+                marginTop: "2px",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {(therapist as { email?: string }).email ?? ""}
+            </Typography>
+
+            <Box
+              sx={{
+                marginTop: "6px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                flexWrap: "wrap",
+              }}
+            >
+              <Chip
+                size="small"
+                label={pill.label}
+                sx={{
+                  height: 22,
+                  background: pill.bg,
+                  color: pill.color,
+                  fontWeight: 700,
+                  fontSize: "10px",
+                  letterSpacing: "0.04em",
+                }}
+              />
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "10.5px",
+                  opacity: 0.85,
+                  fontWeight: 600,
+                }}
+              >
+                ★ {ratingNum} · {reviewCount} review
+                {reviewCount === 1 ? "" : "s"}
+              </Typography>
+            </Box>
+
+            <Typography
+              sx={{
+                fontFamily: SANS,
+                fontSize: "10.5px",
+                opacity: 0.78,
+                marginTop: "4px",
+              }}
+            >
+              Hours · {therapist.startTime ?? "—"} – {therapist.endTime ?? "—"}
+            </Typography>
+          </Box>
         </Box>
       </Box>
 
-      {/* ✅ Summary Card */}
-      <Box sx={{ px: 2, mt: 3 }}>
+      {/* Working Status — therapist self-service toggle.
+          Round 28aa: Firestore rules whitelist statusOverride + isHoliday
+          on therapist docs, so writes here succeed for the doc owner and
+          are rejected for anyone else. */}
+      <Box sx={{ paddingX: 2, marginTop: 2.5 }}>
+        <Box
+          sx={{
+            background: "rgba(255,255,255,0.85)",
+            border: "1px solid rgba(184,92,60,0.18)",
+            borderRadius: 3,
+            padding: "14px 16px 16px",
+            boxShadow: "0 6px 18px rgba(126,30,46,0.06)",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 1,
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: SERIF,
+                fontWeight: 700,
+                fontSize: "15px",
+                color: "#3c1e14",
+              }}
+            >
+              Working Status
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: SANS,
+                fontSize: "10.5px",
+                color: "rgba(60,30,20,0.55)",
+              }}
+            >
+              Live · customers see this
+            </Typography>
+          </Box>
+
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: "11.5px",
+              color: "rgba(60,30,20,0.65)",
+              lineHeight: 1.45,
+              marginBottom: 1.25,
+            }}
+          >
+            Pick how SunRed should show you. <b>Auto</b> lets the engine
+            decide based on bookings + working hours.
+          </Typography>
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, 1fr)",
+              gap: 1,
+            }}
+          >
+            <StatusChoice
+              label="Auto"
+              hint="Engine decides"
+              Icon={AutorenewRoundedIcon}
+              accent="#3c1e14"
+              active={
+                !therapist.statusOverride || therapist.statusOverride === "Auto"
+              }
+              disabled={savingField === "statusOverride"}
+              onClick={() => void updateOverride("Auto")}
+            />
+            <StatusChoice
+              label="Available"
+              hint="Open for bookings"
+              Icon={CheckCircleRoundedIcon}
+              accent="#16a34a"
+              active={therapist.statusOverride === "available"}
+              disabled={savingField === "statusOverride"}
+              onClick={() => void updateOverride("available")}
+            />
+            <StatusChoice
+              label="In session"
+              hint="Currently with a client"
+              Icon={EventBusyRoundedIcon}
+              accent="#831843"
+              active={therapist.statusOverride === "bookable"}
+              disabled={savingField === "statusOverride"}
+              onClick={() => void updateOverride("bookable")}
+            />
+            <StatusChoice
+              label="Resting"
+              hint="Hide from results"
+              Icon={HotelRoundedIcon}
+              accent="#B85C3C"
+              active={therapist.statusOverride === "resting"}
+              disabled={savingField === "statusOverride"}
+              onClick={() => void updateOverride("resting")}
+            />
+          </Box>
+
+          {/* Holiday switch */}
+          <Box
+            sx={{
+              marginTop: 1.5,
+              padding: "10px 12px",
+              borderRadius: 2,
+              background: therapist.isHoliday
+                ? "linear-gradient(135deg, rgba(254,9,68,0.08), rgba(254,122,82,0.08))"
+                : "rgba(252,235,220,0.5)",
+              border: therapist.isHoliday
+                ? "1px solid rgba(254,9,68,0.22)"
+                : "1px solid rgba(184,92,60,0.12)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 1,
+            }}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontWeight: 700,
+                  fontSize: "12.5px",
+                  color: "#3c1e14",
+                }}
+              >
+                Holiday mode
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "10.5px",
+                  color: "rgba(60,30,20,0.6)",
+                  lineHeight: 1.4,
+                }}
+              >
+                Force-rest the whole day, override Auto + working hours.
+              </Typography>
+            </Box>
+            <Switch
+              checked={Boolean(therapist.isHoliday)}
+              disabled={savingField === "isHoliday"}
+              onChange={(_, checked) => void updateHoliday(checked)}
+              sx={{
+                "& .MuiSwitch-switchBase.Mui-checked": {
+                  color: "#FE0944",
+                },
+                "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                  backgroundColor: "#FE0944",
+                },
+              }}
+            />
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Live stats card */}
+      <Box sx={{ paddingX: 2, marginTop: 2 }}>
         <ProfileSummaryCard
           todayBookings={todayBookings}
           completedJobs={completedJobs}
@@ -234,39 +666,220 @@ const TherapistProfilePage: React.FC = () => {
         />
       </Box>
 
-      <Divider sx={{ my: 2, mx: 2 }} />
+      <Divider sx={{ my: 2, mx: 2, borderColor: "rgba(184,92,60,0.15)" }} />
 
-      {/* Menu */}
-      <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", p: 1 }}>
-        {[
-          { label: "My Bookings", gif: "/images/icon/Gift Box.gif", path: "/therapist/bookings" },
-          { label: "Status", gif: "/images/icon/Coffee Break.gif", path: "/therapist/status" },
-          { label: "Location", gif: "/images/icon/Map pin.gif", path: "/therapist/location" },
-        ].map((btn) => (
-          <Button
-            key={btn.path}
-            fullWidth
-            variant="text"
-            sx={{
-              flexDirection: "column",
-              py: 1,
-              borderRadius: 3,
-              fontWeight: "bold",
-              "&:hover": { background: "rgba(0,0,0,0.05)" },
-            }}
-            onClick={() => navigate(btn.path)}
-          >
-            <img src={btn.gif} alt={btn.label} style={{ width: 70, height: 70, marginBottom: -8 }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold", fontSize: 15 }}>
-              {btn.label}
-            </Typography>
-          </Button>
-        ))}
+      {/* Menu — only routes that actually exist (Round 22b removed
+          /therapist/status; /therapist/bookings was never wired in App.tsx).
+          Kept tight: Location + Update GPS. */}
+      <Box
+        sx={{
+          paddingX: 2,
+          display: "grid",
+          gridTemplateColumns: "repeat(2, 1fr)",
+          gap: 1.5,
+        }}
+      >
+        <MenuTile
+          label="Standby Location"
+          Icon={RoomRoundedIcon}
+          onClick={() => navigate("/location")}
+        />
+        <MenuTile
+          label="Update GPS"
+          Icon={MyLocationRoundedIcon}
+          onClick={() => navigate("/update-location")}
+        />
       </Box>
 
-
+      {/* Toast for save success / failure */}
+      <Snackbar
+        open={Boolean(toast)}
+        autoHideDuration={2400}
+        onClose={() => setToast(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        {toast ? (
+          <Alert
+            onClose={() => setToast(null)}
+            severity={toast.severity}
+            variant="filled"
+            sx={{
+              fontFamily: SANS,
+              fontSize: "12.5px",
+              fontWeight: 600,
+              borderRadius: 2,
+            }}
+          >
+            {toast.msg}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
     </Box>
   );
 };
+
+/** Small reusable menu tile — keeps card body declarative + brand-consistent. */
+interface MenuTileProps {
+  label: string;
+  Icon: typeof RoomRoundedIcon;
+  onClick: () => void;
+}
+
+const MenuTile: React.FC<MenuTileProps> = ({ label, Icon, onClick }) => (
+  <Button
+    onClick={onClick}
+    sx={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "8px",
+      padding: "16px 8px",
+      borderRadius: "16px",
+      background: "rgba(255,255,255,0.7)",
+      border: "1px solid rgba(184,92,60,0.15)",
+      boxShadow: "0 4px 12px rgba(126,30,46,0.06)",
+      textTransform: "none",
+      transition: "transform 0.2s ease, box-shadow 0.2s ease",
+      "&:hover": {
+        background: "rgba(255,255,255,0.9)",
+        transform: "translateY(-2px)",
+        boxShadow: "0 8px 20px rgba(254,9,68,0.12)",
+      },
+    }}
+  >
+    <Box
+      sx={{
+        width: 40,
+        height: 40,
+        borderRadius: "50%",
+        background: "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        boxShadow: "0 4px 10px rgba(254,9,68,0.25)",
+      }}
+    >
+      <Icon sx={{ fontSize: 20 }} />
+    </Box>
+    <Typography
+      sx={{
+        fontFamily: SANS,
+        fontSize: "12px",
+        fontWeight: 700,
+        color: "#3c1e14",
+        letterSpacing: "0.01em",
+      }}
+    >
+      {label}
+    </Typography>
+  </Button>
+);
+
+/** ------------------------------------------------------------------
+ *  StatusChoice — single tile in the Working Status grid.
+ *  Shows label, hint, accent-coloured icon, and a strong-active state
+ *  when the therapist's `statusOverride` matches this tile.
+ *  ------------------------------------------------------------------ */
+interface StatusChoiceProps {
+  label: string;
+  hint: string;
+  Icon: typeof RoomRoundedIcon;
+  accent: string;
+  active: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}
+
+const StatusChoice: React.FC<StatusChoiceProps> = ({
+  label,
+  hint,
+  Icon,
+  accent,
+  active,
+  disabled,
+  onClick,
+}) => (
+  <Button
+    onClick={onClick}
+    disabled={disabled}
+    sx={{
+      display: "flex",
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "flex-start",
+      gap: "8px",
+      padding: "10px 12px",
+      borderRadius: "12px",
+      textTransform: "none",
+      textAlign: "left",
+      background: active
+        ? `linear-gradient(135deg, ${accent}E6 0%, ${accent} 100%)`
+        : "rgba(255,255,255,0.85)",
+      border: active
+        ? `1px solid ${accent}`
+        : "1px solid rgba(184,92,60,0.18)",
+      boxShadow: active
+        ? `0 6px 14px ${accent}33`
+        : "0 2px 6px rgba(126,30,46,0.04)",
+      color: active ? "#fff" : "#3c1e14",
+      transition: "transform 0.15s ease, box-shadow 0.15s ease",
+      "&:hover": !disabled
+        ? {
+            transform: "translateY(-1px)",
+            background: active
+              ? `linear-gradient(135deg, ${accent} 0%, ${accent} 100%)`
+              : "rgba(255,255,255,1)",
+          }
+        : undefined,
+      "&.Mui-disabled": {
+        opacity: 0.55,
+        color: active ? "#fff" : "#3c1e14",
+      },
+    }}
+  >
+    <Box
+      sx={{
+        width: 30,
+        height: 30,
+        borderRadius: "50%",
+        background: active ? "rgba(255,255,255,0.18)" : `${accent}1A`,
+        color: active ? "#fff" : accent,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+      }}
+    >
+      <Icon sx={{ fontSize: 17 }} />
+    </Box>
+    <Box sx={{ minWidth: 0 }}>
+      <Typography
+        sx={{
+          fontFamily: SANS,
+          fontSize: "12px",
+          fontWeight: 700,
+          lineHeight: 1.15,
+          color: "inherit",
+        }}
+      >
+        {label}
+      </Typography>
+      <Typography
+        sx={{
+          fontFamily: SANS,
+          fontSize: "9.5px",
+          fontWeight: 500,
+          opacity: active ? 0.85 : 0.6,
+          color: "inherit",
+          lineHeight: 1.25,
+        }}
+      >
+        {hint}
+      </Typography>
+    </Box>
+  </Button>
+);
 
 export default TherapistProfilePage;

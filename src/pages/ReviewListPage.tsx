@@ -23,7 +23,16 @@ import {
   CircularProgress,
 } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+// 🆕 Round 19 (founder 2026-05-01): human-friendly review timestamps
+//    via dayjs.fromNow() — '2 days ago' beats '2025-11-22 01:30'.
+dayjs.extend(relativeTime);
+
+const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // =======================================================
 // TYPES
@@ -165,13 +174,25 @@ const ReviewListPage: React.FC = () => {
     return path.startsWith("/") ? path : `/${path}`;
   };
 
+  // 🆕 Round 19: rating distribution (5★ X / 4★ Y / …) for trust signal.
+  const total = reviews.length;
+  const avgRating =
+    total > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / total
+      : 0;
+  const buckets: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+  reviews.forEach((r) => {
+    const k = Math.max(1, Math.min(5, Math.round(r.rating)));
+    buckets[k]++;
+  });
+
   // =======================================================
   // UI: LOADING
   // =======================================================
   if (loading) {
     return (
       <Box minHeight="80vh" display="flex" justifyContent="center" alignItems="center">
-        <CircularProgress color="error" />
+        <CircularProgress sx={{ color: "#FE0944" }} />
       </Box>
     );
   }
@@ -180,7 +201,21 @@ const ReviewListPage: React.FC = () => {
   // UI PAGE
   // =======================================================
   return (
-    <Box sx={{ minHeight: "100vh", backgroundColor: "#fdfdfd", pb: 10 }}>
+    <Box
+      sx={{
+        // 🆕 Round 19: phone-shell wrapper for site rhythm consistency.
+        maxWidth: 430,
+        margin: "0 auto",
+        minHeight: "100vh",
+        background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
+        borderRadius: "28px",
+        overflow: "hidden",
+        boxShadow: "0 20px 60px rgba(126, 30, 46, 0.15)",
+        position: "relative",
+        pb: 10,
+        fontFamily: SANS,
+      }}
+    >
       {/* HEADER */}
       <Box
         sx={{
@@ -235,18 +270,150 @@ const ReviewListPage: React.FC = () => {
           />
         </Box>
 
-        <Typography fontWeight="bold" fontSize={26} mt={2}>
+        <Typography
+          fontFamily={SERIF}
+          fontWeight={700}
+          fontSize={26}
+          mt={2}
+          sx={{ color: "#3c1e14", letterSpacing: "-0.02em" }}
+        >
           {therapistInfo.name || "Therapist"}
         </Typography>
 
-        <Typography fontSize={14} color="text.secondary" mt={0.5}>
+        <Typography
+          fontSize={13}
+          mt={0.5}
+          sx={{
+            color: "rgba(60, 30, 20, 0.6)",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 0.5,
+          }}
+        >
+          <CheckCircleIcon sx={{ fontSize: 14, color: "#16a34a" }} />
           Verified SunRed Professional
         </Typography>
       </Box>
 
+      {/* 🆕 Round 19: rating summary card with 5-bar distribution.
+          Trust signal — visitors can size up the rating shape at a glance. */}
+      {total > 0 && (
+        <Box sx={{ maxWidth: 430, mx: "auto", px: 3, mt: 3 }}>
+          <Box
+            sx={{
+              p: 2.5,
+              borderRadius: 4,
+              background: "rgba(255, 255, 255, 0.85)",
+              backdropFilter: "blur(20px) saturate(180%)",
+              WebkitBackdropFilter: "blur(20px) saturate(180%)",
+              border: "1px solid rgba(255, 255, 255, 0.6)",
+              boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
+              display: "flex",
+              gap: 2.5,
+              alignItems: "center",
+            }}
+          >
+            {/* Avg rating big number */}
+            <Box sx={{ textAlign: "center", flexShrink: 0 }}>
+              <Typography
+                fontFamily={SERIF}
+                fontWeight={700}
+                fontSize={36}
+                sx={{ color: "#FE0944", letterSpacing: "-0.02em", lineHeight: 1 }}
+              >
+                {avgRating.toFixed(1)}
+              </Typography>
+              <Rating
+                value={avgRating}
+                precision={0.1}
+                readOnly
+                size="small"
+                sx={{ color: "#FF9800", mt: 0.25 }}
+              />
+              <Typography
+                fontSize={11}
+                sx={{ color: "rgba(60, 30, 20, 0.55)", mt: 0.25 }}
+              >
+                {total} {total === 1 ? "review" : "reviews"}
+              </Typography>
+            </Box>
+            {/* 5-bar distribution */}
+            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 0.5 }}>
+              {[5, 4, 3, 2, 1].map((star) => {
+                const count = buckets[star];
+                const pct = total > 0 ? (count / total) * 100 : 0;
+                return (
+                  <Box
+                    key={star}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      fontSize: 11,
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        width: 14,
+                        textAlign: "right",
+                        color: "rgba(60, 30, 20, 0.7)",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {star}
+                    </Typography>
+                    <Box
+                      component="span"
+                      sx={{ color: "#FF9800", fontSize: 11, lineHeight: 1 }}
+                    >
+                      ★
+                    </Box>
+                    <Box
+                      sx={{
+                        flex: 1,
+                        height: 6,
+                        borderRadius: 999,
+                        background: "rgba(0, 0, 0, 0.06)",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          height: "100%",
+                          width: `${pct}%`,
+                          background:
+                            "linear-gradient(90deg, #FE0944, #FE7A52)",
+                          transition: "width 0.4s ease",
+                        }}
+                      />
+                    </Box>
+                    <Typography
+                      sx={{
+                        width: 22,
+                        textAlign: "right",
+                        color: "rgba(60, 30, 20, 0.55)",
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {count}
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+          </Box>
+        </Box>
+      )}
+
       {/* REVIEW LIST */}
       <Box sx={{ maxWidth: 450, mx: "auto", p: 3 }}>
-        <Typography fontWeight="bold" fontSize={20} mb={2}>
+        <Typography
+          fontFamily={SERIF}
+          fontWeight={600}
+          fontSize={18}
+          mb={2}
+          sx={{ color: "#3c1e14" }}
+        >
           ⭐ All Reviews ({reviews.length})
         </Typography>
 
@@ -296,16 +463,24 @@ const ReviewListPage: React.FC = () => {
             
               <Typography
                 variant="caption"
-                color="text.secondary"
-                sx={{ mt: 1, display: "block" }}
+                sx={{
+                  mt: 1,
+                  display: "block",
+                  color: "rgba(60, 30, 20, 0.55)",
+                  fontSize: 11.5,
+                }}
+                title={(() => {
+                  const ms = toMs(r.createdAt);
+                  return ms
+                    ? dayjs(ms).format("YYYY-MM-DD HH:mm")
+                    : "";
+                })()}
               >
                 {(() => {
                   const ms = toMs(r.createdAt);
-                  return ms ? dayjs(ms).format("YYYY-MM-DD HH:mm") : "—";
+                  return ms ? dayjs(ms).fromNow() : "—";
                 })()}
               </Typography>
-              <Typography textAlign="center" mt={3} fontSize={13} sx={{ color: '#aaa', fontStyle: 'Trebuchet MS, sans-serif' }}> 
-                                  &ldquo;Updated reviews &amp; feedback in our Telegram channel&rdquo;</Typography>
      
             </Paper>
           ))

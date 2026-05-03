@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import ScrollToTop from "@/components/common/ScrollToTop";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
@@ -23,13 +23,32 @@ const ServiceDetailPage = React.lazy(() => import("@/pages/ServiceDetailPage"));
 const TherapistDetailPage = React.lazy(
   () => import("@/pages/TherapistDetailPage")
 );
+// 🆕 Round 22 (founder 2026-05-01): TherapistsBrowsePage merged into
+//    TherapistListPage (one canonical browse page). TherapistsBrowsePage
+//    file deleted along with its dependents (TherapistGrid, TherapistMap,
+//    BrowseHeader, TherapistCard, FeaturedTherapists, useTherapists,
+//    TherapistCardSkeleton). All used DEMO fallback data — not from DB.
 
-const BookingPage = React.lazy(() => import("@/pages/BookingPage"));
+// 🎨 Phase 3 — New 5-step booking wizard. Owns /booking, /booking/:id,
+//    and /booking/success/:id (post-submit). Legacy confirm page kept
+//    around until Task 8 cleanup; new flow uses BookingSuccessPage.
+const BookingFlowPage = React.lazy(
+  () => import("@/pages/booking/BookingFlowPage")
+);
+const BookingSuccessPage = React.lazy(
+  () => import("@/pages/booking/BookingSuccessPage")
+);
+const SelectLocationPage = React.lazy(
+  () => import("@/pages/booking/SelectLocationPage")
+);
+const PaymentMethodsPage = React.lazy(
+  () => import("@/pages/booking/PaymentMethodsPage")
+);
+const NotificationsPage = React.lazy(
+  () => import("@/pages/NotificationsPage")
+);
 const BookingHistoryPage = React.lazy(
   () => import("@/pages/BookingHistoryPage")
-);
-const BookingConfirmationPage = React.lazy(
-  () => import("@/pages/BookingConfirmationPage")
 );
 
 const ReviewPage = React.lazy(() => import("@/pages/ReviewPage"));
@@ -44,9 +63,6 @@ const EditProfilePage = React.lazy(
   () => import("@/pages/user/EditProfilePage")
 );
 
-const SelectLocationPage = React.lazy(
-  () => import("@/pages/SelectLocationPage")
-);
 const UpdateLocationPage = React.lazy(
   () => import("@/pages/UpdateLocationPage")
 );
@@ -60,12 +76,14 @@ const MaintenancePage = React.lazy(
 const NotFoundPage = React.lazy(() => import("@/pages/NotFoundPage"));
 
 // Therapist
-const TherapistListPage = React.lazy(
-  () => import("@/pages/therapist/TherapistListPage")
-);
-const TherapistStatusManagerPage = React.lazy(
-  () => import("@/components/therapist/TherapistStatusManager")
-);
+// 🆕 Round 25c (founder 2026-05-02): TherapistListPage no longer routed.
+//    Founder asked: "therapists ทั้งหมด กลับไปหน้าหลัก" — the live list
+//    now lives on HomePage as HomeTherapistGrid (2-col grid). /therapists
+//    and /therapist/list redirect to / for back-compat with old links.
+//    The TherapistListPage.tsx file is orphan — pending git rm on Mac.
+// 🆕 Round 22b (founder 2026-05-01): TherapistStatusManager file deleted
+//    along with the merge cleanup. Status overrides (holiday/forceAvail)
+//    still live on therapist docs and are managed via the admin panel.
 const TherapistLocationPage = React.lazy(
   () => import("@/pages/therapist/TherapistLocationPage")
 );
@@ -154,16 +172,36 @@ export default function App() {
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/services/:id" element={<ServiceDetailPage />} />
 
+          {/* 🃏 Phase 2 — Browse + Detail */}
+          {/* 🆕 Round 25c: full therapist list is now on HomePage
+              (HomeTherapistGrid). /therapists and /therapist/list redirect
+              to / so any external/old link still lands somewhere useful.
+              Detail route /therapists/:id stays — it's the per-therapist
+              page that the home grid clicks into. */}
+          <Route path="/therapists" element={<Navigate to="/" replace />} />
+          <Route path="/therapist/list" element={<Navigate to="/" replace />} />
           <Route path="/therapists/:id" element={<TherapistDetailPage />} />
-          <Route path="/therapist/list" element={<TherapistListPage />} />
 
-          <Route path="/booking" element={<BookingPage />} />
-          <Route path="/booking/:id" element={<BookingPage />} />
-          <Route path="/booking/history" element={<BookingHistoryPage />} />
+          {/* 🎨 Phase 3 — new wizard at /booking + /booking/:therapistId
+              + /booking/success/:bookingId (post-submit) */}
+          <Route path="/booking" element={<BookingFlowPage />} />
+          <Route path="/booking/:id" element={<BookingFlowPage />} />
+          <Route path="/booking/success/:id" element={<BookingSuccessPage />} />
+          {/* 🆕 Phase 4 — Dedicated Select Location route opened from
+              the Confirm Order Address tile. Returns the address payload
+              via react-router state. */}
           <Route
-            path="/booking/confirm"
-            element={<BookingConfirmationPage />}
+            path="/booking/:id/address"
+            element={<SelectLocationPage />}
           />
+          {/* 🆕 Round 14 (founder 2026-05-01): Payment Methods picker.
+              Opened from the Confirm Order Payment cell. Persists choice
+              to localStorage. Admin still confirms via Telegram. */}
+          <Route path="/payment-methods" element={<PaymentMethodsPage />} />
+          {/* 🆕 Round 16 (founder 2026-05-01): customer in-app notifications.
+              Reads notifications collection for the signed-in user. */}
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/booking/history" element={<BookingHistoryPage />} />
 
           <Route path="/review/:id" element={<ReviewPage />} />
           <Route path="/review/all/:id" element={<ReviewListPage />} />
@@ -172,7 +210,8 @@ export default function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/edit-profile" element={<EditProfilePage />} />
 
-          <Route path="/select-location" element={<SelectLocationPage />} />
+          {/* Legacy /select-location route removed — Phase 5A's BookingHistoryPage
+              rewrites Rebook to navigate to /therapists/:id instead. */}
         </Route>
 
         {/* ================= THERAPIST ================= */}
@@ -187,10 +226,8 @@ export default function App() {
             path="/therapist/profile"
             element={<TherapistProfilePage />}
           />
-          <Route
-            path="/therapist/status"
-            element={<TherapistStatusManagerPage />}
-          />
+          {/* /therapist/status route removed Round 22b — TherapistStatusManager
+              component was deleted in the merge cleanup. */}
           <Route path="/update-location" element={<UpdateLocationPage />} />
           <Route path="/location" element={<TherapistLocationPage />} />
         </Route>

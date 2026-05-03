@@ -60,9 +60,11 @@ const SERVICE_MAP: Record<string, string> = {
   "thai massage": "Thai Massage",
   aromatherapy: "Aromatherapy",
   aroma: "Aromatherapy",
-  gentleman: "Gentleman’s",
-  gentlemen: "Gentleman’s",
-  vip: "VIP Massage",
+  gentleman: "gentlemans-recovery",
+  gentlemen: "gentlemans-recovery",
+  recovery: "gentlemans-recovery",
+  signature: "sunred-signature",
+  exclusive: "sunred-signature",
 };
 
 const normalizeService = (s: string) => {

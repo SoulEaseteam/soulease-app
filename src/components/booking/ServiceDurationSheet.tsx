@@ -1,0 +1,772 @@
+// src/components/booking/ServiceDurationSheet.tsx
+//
+// 🎨 Phase 4 Booking — Bottom-sheet popup for picking a service duration
+//                      WITH full service details (Description + Benefits +
+//                      Notices) so the user has everything in one screen
+//                      instead of needing a separate detail page.
+//
+// Layout (mobile bottom sheet — scrollable):
+//   ┌──────────────────────────────────┐
+//   │            ▬▬▬▬                   │  drag handle
+//   │  ┌────────────────────────────┐  │
+//   │  │ [SIGNATURE]                │  │  hero image
+//   │  │                            │  │  + badge overlay
+//   │  └────────────────────────────┘  │
+//   │  Thai Massage                    │
+//   │  ฿1,200 · 60 mins · ⭐ 62 used  │
+//   │                                  │
+//   │  [ Details | Notices ]           │  tab switcher
+//   │  ───────────────────────────     │
+//   │  ▼ Description                   │
+//   │     A timeless healing ritual…   │
+//   │  ▼ Benefits                      │
+//   │     • Eases chronic tension      │
+//   │     • Improves posture …         │
+//   │                                  │
+//   │  CHOOSE DURATION                 │
+//   │  [60 min ฿1,200]                 │
+//   │  [90 min ⭐ ฿1,800]               │
+//   │  [120 min ฿2,400]                │
+//   │                                  │
+//   │  [ Confirm ฿1,800 ]              │
+//   └──────────────────────────────────┘
+
+import React, { useEffect, useRef, useState } from "react";
+import { Drawer, Box, Typography, Button } from "@mui/material";
+import type { MassageService } from "@/data/services";
+import {
+  priceForDuration,
+  durationsFor,
+  formatTHB,
+} from "@/utils/servicePricing";
+import StepDateTime from "@/components/booking/StepDateTime";
+
+const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SANS = '"Inter", system-ui, -apple-system, sans-serif';
+
+// Service notes shown under the "Notices" tab. Identical for all services
+// today — when notes need to be per-service, lift these to services.ts.
+const SERVICE_NOTES: string[] = [
+  "Please send your booking ID to customer service after completing the reservation.",
+  "If your location is nearby, you may pay in cash.",
+  "If the travel distance is far (over 25 km), a 500 THB deposit may be required.",
+  "Supported payment: VISA, PromptPay, PayNow, Cash, WeChat.",
+];
+
+interface Props {
+  service: MassageService | null;
+  /** Initial duration to highlight when sheet opens. */
+  initialDuration?: number;
+  /** Initial date (YYYY-MM-DD) to highlight when sheet opens. */
+  initialDate?: string | null;
+  /** Initial time (HH:mm) to highlight when sheet opens. */
+  initialTime?: string | null;
+  /** Therapist context — required for slot availability filtering. */
+  therapistId: string | null;
+  open: boolean;
+  onClose: () => void;
+  /**
+   * Called when the user taps Confirm with a fully picked combo:
+   * service (props) + duration + date + time. The parent then
+   * navigates to /booking/:id with the URL params.
+   */
+  onConfirm: (durationMin: number, date: string, time: string) => void;
+}
+
+const DURATION_LABELS: Record<number, { tag: string; tagColor?: string }> = {
+  60: { tag: "Standard" },
+  90: { tag: "⭐ Most popular", tagColor: "#FE0944" },
+  120: { tag: "Best value" },
+};
+
+const BADGE_COLORS: Record<MassageService["badge"], { bg: string; fg: string }> = {
+  SIGNATURE: { bg: "rgba(254, 9, 68, 0.95)", fg: "#fff" },
+  "BEST SELLER": { bg: "rgba(254, 122, 82, 0.95)", fg: "#fff" },
+  RECOMMEND: { bg: "rgba(184, 92, 60, 0.95)", fg: "#fff" },
+  EXCLUSIVE: { bg: "rgba(60, 30, 20, 0.95)", fg: "#FEC9A7" },
+};
+
+const ServiceDurationSheet: React.FC<Props> = ({
+  service,
+  initialDuration,
+  initialDate,
+  initialTime,
+  therapistId,
+  open,
+  onClose,
+  onConfirm,
+}) => {
+  const durations = service ? durationsFor(service) : [];
+  // Default to the MIDDLE tier (90 min — 'Most popular' label) when the
+  // service offers 60/90/120; falls through to first tier for services
+  // that override DEFAULT_DURATIONS to a shorter list.
+  const [selected, setSelected] = useState<number>(
+    initialDuration ?? durations[1] ?? durations[0] ?? 60
+  );
+  // 🆕 Founder 2026-05-01 round 4: 'Tabs ซ้อนข้อมูลไปก่อน กดก่อนแทบ
+  //    เนือหาค่อยเลือนออกมา' — content stays hidden by default; tapping
+  //    a tab slides the panel out. Tapping the active tab again closes
+  //    it (so the customer can re-collapse without picking another tab).
+  const [tab, setTab] = useState<"details" | "notices" | null>(null);
+  // 🆕 Phase 5 — Date+Time picker lives inside this same sheet so the
+  //    customer picks service+duration+date+time in one place. Founder
+  //    feedback: 'ในsheet เดียวกัน'.
+  const [draftDate, setDraftDate] = useState<string | null>(initialDate ?? null);
+  const [draftTime, setDraftTime] = useState<string | null>(initialTime ?? null);
+
+  // 🆕 Founder 2026-05-01 round 3: 'เวลาเปิดการ์ดมาจะเห็น 🎯 Choose duration
+  //    อยู่กลางจอเสมอ เพื่อเป็นจุดนำสายตา'. We park a ref on the
+  //    Choose duration heading and scroll it into the vertical center of
+  //    the sheet's scroll container right after the drawer finishes its
+  //    open animation. This guarantees the most important decision point
+  //    is the first thing the eye lands on.
+  const chooseDurationRef = useRef<HTMLDivElement | null>(null);
+
+  // Sync state each time the sheet (re-)opens for a service
+  useEffect(() => {
+    if (open && service) {
+      const d = durationsFor(service);
+      setSelected(initialDuration ?? d[1] ?? d[0] ?? 60);
+      setTab(null); // hidden by default — see comment on the state above
+      setDraftDate(initialDate ?? null);
+      setDraftTime(initialTime ?? null);
+      // Wait for MUI Drawer's open transition (~250ms) before scrolling so
+      // the layout is settled. requestAnimationFrame inside the timeout
+      // ensures the browser has painted before we measure/scroll.
+      const timer = window.setTimeout(() => {
+        requestAnimationFrame(() => {
+          chooseDurationRef.current?.scrollIntoView({
+            block: "center",
+            behavior: "smooth",
+          });
+        });
+      }, 300);
+      return () => window.clearTimeout(timer);
+    }
+  }, [open, service, initialDuration, initialDate, initialTime]);
+
+  if (!service) return null;
+
+  const totalPrice = priceForDuration(service, selected);
+  const badgeColor = BADGE_COLORS[service.badge];
+
+  return (
+    <Drawer
+      anchor="bottom"
+      open={open}
+      onClose={onClose}
+      PaperProps={{
+        sx: {
+          background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
+          borderRadius: "24px 24px 0 0",
+          paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))",
+          maxWidth: "430px",
+          margin: "0 auto",
+          left: 0,
+          right: 0,
+          maxHeight: "92vh",
+          display: "flex",
+          flexDirection: "column",
+        },
+      }}
+    >
+      {/* Drag handle (sticky top) */}
+      <Box
+        sx={{
+          flexShrink: 0,
+          display: "flex",
+          justifyContent: "center",
+          padding: "10px 0 6px",
+        }}
+      >
+        <Box
+          sx={{
+            width: 40,
+            height: 4,
+            background: "rgba(60, 30, 20, 0.18)",
+            borderRadius: "2px",
+          }}
+        />
+      </Box>
+
+      {/* Scrollable content */}
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "8px 20px 20px",
+        }}
+      >
+        {/* Hero image with badge overlay — compact 16:10 to keep duration
+            picker above the fold (decision-first UX, B-pattern). */}
+        <Box
+          sx={{
+            position: "relative",
+            width: "100%",
+            aspectRatio: "16 / 10",
+            maxHeight: "200px",
+            borderRadius: "20px",
+            overflow: "hidden",
+            background: `center / cover no-repeat url("${service.image}"), linear-gradient(135deg, #d4a574, #8b6f47)`,
+            boxShadow: "0 8px 24px rgba(126, 30, 46, 0.12)",
+          }}
+        >
+          <Box
+            sx={{
+              position: "absolute",
+              top: 12,
+              left: 12,
+              fontFamily: SANS,
+              fontSize: "10px",
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+              background: badgeColor.bg,
+              color: badgeColor.fg,
+              padding: "4px 10px",
+              borderRadius: "999px",
+              textTransform: "uppercase",
+            }}
+          >
+            {service.badge}
+          </Box>
+        </Box>
+
+        {/* Service header — name + simple inline price/duration/usage.
+            Reverted from the big hero pill (founder 2026-05-01: 'มันตลก'). */}
+        <Box sx={{ marginTop: "16px", marginBottom: "20px" }}>
+          <Typography
+            component="h2"
+            sx={{
+              fontFamily: SERIF,
+              fontSize: "24px",
+              fontWeight: 600,
+              color: "#3c1e14",
+              letterSpacing: "-0.02em",
+              lineHeight: 1.1,
+              marginBottom: "6px",
+            }}
+          >
+            {service.name}
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: "10px",
+              flexWrap: "wrap",
+            }}
+          >
+            <Typography
+              component="span"
+              sx={{
+                fontFamily: SERIF,
+                fontSize: "18px",
+                fontWeight: 700,
+                color: "#FE0944",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              ฿{totalPrice.toLocaleString()}
+            </Typography>
+            <Typography
+              component="span"
+              sx={{
+                fontFamily: SANS,
+                fontSize: "13px",
+                color: "rgba(60, 30, 20, 0.6)",
+              }}
+            >
+              · ⏱ {selected} mins
+            </Typography>
+            {service.count > 0 && (
+              <Typography
+                component="span"
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "12px",
+                  color: "rgba(60, 30, 20, 0.55)",
+                }}
+              >
+                · ⭐ {service.count.toLocaleString()} used
+              </Typography>
+            )}
+          </Box>
+        </Box>
+
+        {/* 🆕 Founder round 4 (2026-05-01) — Tabs HIDE content by default;
+            tap a tab to slide its panel out, tap the same tab again to
+            slide it back in. Chevron ▼ rotates to ▶ when closed. */}
+        <Box
+          role="tablist"
+          aria-label="Service info"
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "8px",
+          }}
+        >
+          {(["details", "notices"] as const).map((id) => {
+            const isOpen = tab === id;
+            return (
+              <Box
+                key={id}
+                role="tab"
+                aria-selected={isOpen}
+                aria-expanded={isOpen}
+                tabIndex={0}
+                onClick={() => setTab((cur) => (cur === id ? null : id))}
+                onKeyDown={(e) => {
+                  if (e.key === " " || e.key === "Enter") {
+                    e.preventDefault();
+                    setTab((cur) => (cur === id ? null : id));
+                  }
+                }}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  height: 44,
+                  borderRadius: "12px",
+                  cursor: "pointer",
+                  userSelect: "none",
+                  fontFamily: SANS,
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  color: isOpen ? "#FE0944" : "rgba(60, 30, 20, 0.62)",
+                  background: isOpen
+                    ? "rgba(254, 9, 68, 0.08)"
+                    : "rgba(255, 255, 255, 0.7)",
+                  border: isOpen
+                    ? "2px solid #FE0944"
+                    : "1px solid rgba(0, 0, 0, 0.06)",
+                  boxShadow: isOpen
+                    ? "0 4px 14px rgba(254, 9, 68, 0.12)"
+                    : "0 2px 6px rgba(126, 30, 46, 0.05)",
+                  transition: "all 0.15s ease",
+                  "&:focus-visible": {
+                    outline: "2px solid #FE0944",
+                    outlineOffset: "2px",
+                  },
+                }}
+              >
+                {id === "details" ? "Details" : "Notices"}
+                <Box
+                  component="span"
+                  aria-hidden
+                  sx={{
+                    fontSize: "10px",
+                    display: "inline-block",
+                    color: isOpen ? "#FE0944" : "rgba(60, 30, 20, 0.45)",
+                    transform: isOpen ? "rotate(0deg)" : "rotate(-90deg)",
+                    transition: "transform 0.2s ease",
+                  }}
+                >
+                  ▼
+                </Box>
+              </Box>
+            );
+          })}
+        </Box>
+
+        {/* Tab panel — collapsed (max-height: 0) by default; slides open
+            when a tab is active. Different content swaps based on which
+            tab is open. The whole card shrinks away when both tabs closed
+            so the sheet stays compact and Choose Duration stays in view. */}
+        <Box
+          sx={{
+            overflow: "hidden",
+            maxHeight: tab === null ? 0 : "1500px",
+            opacity: tab === null ? 0 : 1,
+            marginTop: tab === null ? 0 : "10px",
+            transition:
+              "max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease",
+            background: "rgba(255, 255, 255, 0.7)",
+            backdropFilter: "blur(20px) saturate(180%)",
+            WebkitBackdropFilter: "blur(20px) saturate(180%)",
+            borderRadius: tab === null ? 0 : "18px",
+            boxShadow:
+              tab === null ? "none" : "0 4px 14px rgba(126, 30, 46, 0.06)",
+          }}
+        >
+          <Box sx={{ padding: tab === null ? 0 : "16px 18px 18px" }}>
+          {tab === null ? null : tab === "details" ? (
+            <>
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "10.5px",
+                  fontWeight: 700,
+                  color: "rgba(60, 30, 20, 0.55)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  marginBottom: "8px",
+                }}
+              >
+                Description
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "13px",
+                  lineHeight: 1.6,
+                  color: "rgba(60, 30, 20, 0.78)",
+                  textIndent: "16px",
+                  marginBottom: "14px",
+                }}
+              >
+                {service.detail}
+              </Typography>
+
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "10.5px",
+                  fontWeight: 700,
+                  color: "rgba(60, 30, 20, 0.55)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  marginBottom: "8px",
+                }}
+              >
+                Benefits
+              </Typography>
+              <Box component="ul" sx={{ paddingLeft: "20px", margin: 0 }}>
+                {service.benefit.map((b) => (
+                  <Typography
+                    key={b}
+                    component="li"
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: "13px",
+                      lineHeight: 1.7,
+                      color: "rgba(60, 30, 20, 0.78)",
+                    }}
+                  >
+                    {b}
+                  </Typography>
+                ))}
+              </Box>
+            </>
+          ) : (
+            <>
+              <Typography
+                sx={{
+                  fontFamily: SERIF,
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  color: "#3c1e14",
+                  textAlign: "center",
+                  marginBottom: "12px",
+                }}
+              >
+                • Service Notes •
+              </Typography>
+              {SERVICE_NOTES.map((note, i) => (
+                <Typography
+                  key={i}
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: "13px",
+                    lineHeight: 1.6,
+                    color: "rgba(60, 30, 20, 0.78)",
+                    marginBottom: "10px",
+                    paddingLeft: "16px",
+                    textIndent: "-16px",
+                  }}
+                >
+                  {i + 1}.&nbsp;&nbsp;{note}
+                </Typography>
+              ))}
+            </>
+          )}
+          </Box>
+        </Box>
+
+        {/* 🎯 CHOOSE DURATION — 3 cards (60 / 90 / 120). Auto-scrolled into
+            the vertical center of the sheet on open (founder: 'เห็น 🎯 Choose
+            duration อยู่กลางจอเสมอเพื่อเป็นจุดนำสายตา'). */}
+        <Typography
+          ref={chooseDurationRef}
+          sx={{
+            fontFamily: SANS,
+            fontSize: "10.5px",
+            fontWeight: 700,
+            color: "rgba(60, 30, 20, 0.55)",
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            margin: "20px 0 10px",
+            paddingLeft: "4px",
+            scrollMarginTop: "20px",
+          }}
+        >
+          🎯 Choose duration
+        </Typography>
+        <Box
+          role="radiogroup"
+          aria-label="Service duration"
+          sx={{ display: "flex", flexDirection: "column", gap: "10px" }}
+        >
+          {durations.map((min) => {
+            const isActive = selected === min;
+            const price = priceForDuration(service, min);
+            const meta = DURATION_LABELS[min] ?? { tag: `${min} min` };
+            // 🆕 Founder round 4 (2026-05-01): 'pulse + ขยายใหญ่ขึ้นนิดหน่อย
+            //    เหมือนกำลังดิลข้อเสนอ แม้จะเลือกอยู่' — popular tier keeps
+            //    pulsing & scaling even after the user selects it (it's the
+            //    deal we're pushing, so don't stop pitching).
+            const isPopular = !!meta.tagColor;
+            const shouldPulse = isPopular;
+            return (
+              <Box
+                key={min}
+                role="radio"
+                aria-checked={isActive}
+                tabIndex={0}
+                onClick={() => setSelected(min)}
+                onKeyDown={(e) => {
+                  if (e.key === " " || e.key === "Enter") {
+                    e.preventDefault();
+                    setSelected(min);
+                  }
+                }}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  // 🆕 Founder 2026-05-01 round 3: 'ขยายขึ้นนิดหน่อย' for the
+                  //    popular tier — bigger padding so the card feels taller
+                  //    and a tiny scale-up so it lifts above its neighbours.
+                  padding: isPopular ? "18px 18px" : "14px 16px",
+                  borderRadius: "16px",
+                  cursor: "pointer",
+                  userSelect: "none",
+                  background: "rgba(255, 255, 255, 0.7)",
+                  backdropFilter: "blur(20px) saturate(180%)",
+                  WebkitBackdropFilter: "blur(20px) saturate(180%)",
+                  border: isActive
+                    ? "2px solid #FE0944"
+                    : isPopular
+                      ? "2px solid rgba(254, 9, 68, 0.55)"
+                      : "1px solid rgba(0, 0, 0, 0.06)",
+                  boxShadow: isActive
+                    ? "0 6px 18px rgba(254, 9, 68, 0.15)"
+                    : "0 2px 6px rgba(126, 30, 46, 0.05)",
+                  transform: isPopular ? "scale(1.025)" : "scale(1)",
+                  transformOrigin: "center",
+                  transition:
+                    "background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease",
+                  animation: shouldPulse
+                    ? "popularPulse 2.4s ease-in-out infinite"
+                    : "none",
+                  "@keyframes popularPulse": {
+                    "0%, 100%": {
+                      boxShadow:
+                        "0 2px 6px rgba(126, 30, 46, 0.05), 0 0 0 0 rgba(254, 9, 68, 0.45)",
+                      transform: "scale(1.025)",
+                    },
+                    "50%": {
+                      boxShadow:
+                        "0 8px 22px rgba(254, 9, 68, 0.22), 0 0 0 8px rgba(254, 9, 68, 0)",
+                      transform: "scale(1.045)",
+                    },
+                  },
+                  "&:focus-visible": {
+                    outline: "2px solid #FE0944",
+                    outlineOffset: "2px",
+                  },
+                  // Respect reduced-motion preference
+                  "@media (prefers-reduced-motion: reduce)": {
+                    animation: "none",
+                  },
+                }}
+              >
+                <Box
+                  aria-hidden
+                  sx={{
+                    width: 18,
+                    height: 18,
+                    flexShrink: 0,
+                    borderRadius: "50%",
+                    border: isActive
+                      ? "5px solid #FE0944"
+                      : "2px solid rgba(0, 0, 0, 0.2)",
+                    background: isActive ? "#fff" : "transparent",
+                    transition: "all 0.15s ease",
+                  }}
+                />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography
+                    sx={{
+                      fontFamily: SERIF,
+                      fontSize: "16px",
+                      fontWeight: 600,
+                      color: "#3c1e14",
+                      lineHeight: 1.1,
+                      marginBottom: "2px",
+                    }}
+                  >
+                    {min} min
+                  </Typography>
+                  <Typography
+                    component="span"
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      color: meta.tagColor ?? "rgba(60, 30, 20, 0.55)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                    }}
+                  >
+                    {meta.tag}
+                  </Typography>
+                </Box>
+                <Typography
+                  sx={{
+                    fontFamily: SERIF,
+                    fontSize: "18px",
+                    fontWeight: 700,
+                    color: isActive ? "#FE0944" : "#3c1e14",
+                    letterSpacing: "-0.02em",
+                    flexShrink: 0,
+                  }}
+                >
+                  {formatTHB(price)}
+                </Typography>
+              </Box>
+            );
+          })}
+        </Box>
+
+        {/* 🆕 Phase 5 — Pick date & time wrapped in a soft glass card with
+            a serif heading + small status hint. Founder 2026-05-01:
+            'Pick date & time เปลี่ยนแบบ ปรับให้สวยขึ้น'. */}
+        <Box
+          sx={{
+            marginTop: "24px",
+            padding: "18px 18px 16px",
+            borderRadius: "20px",
+            background:
+              "linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 248, 240, 0.85))",
+            backdropFilter: "blur(20px) saturate(180%)",
+            WebkitBackdropFilter: "blur(20px) saturate(180%)",
+            border: "1px solid rgba(254, 122, 82, 0.18)",
+            boxShadow: "0 8px 24px rgba(126, 30, 46, 0.08)",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "14px",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Box
+                aria-hidden
+                sx={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "14px",
+                  background:
+                    "linear-gradient(135deg, #FE0944, #FE7A52)",
+                  color: "#fff",
+                  boxShadow: "0 4px 10px rgba(254, 9, 68, 0.25)",
+                }}
+              >
+                📅
+              </Box>
+              <Typography
+                sx={{
+                  fontFamily: SERIF,
+                  fontSize: "16px",
+                  fontWeight: 700,
+                  color: "#3c1e14",
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                Pick date &amp; time
+              </Typography>
+            </Box>
+            {draftDate && draftTime && (
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  color: "#14b8a6",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                }}
+              >
+                ✓ Set
+              </Typography>
+            )}
+          </Box>
+          <StepDateTime
+            date={draftDate}
+            time={draftTime}
+            durationMin={selected}
+            therapistId={therapistId}
+            onChange={({ date, time }) => {
+              setDraftDate(date);
+              setDraftTime(time);
+            }}
+          />
+        </Box>
+      </Box>
+
+      {/* Confirm CTA — pinned to bottom. Disabled until duration AND
+          date AND time are all picked (auto-navigates the parent on tap). */}
+      <Box
+        sx={{
+          flexShrink: 0,
+          padding: "12px 20px 0",
+          background: "linear-gradient(180deg, transparent, #FCEBDC 30%)",
+        }}
+      >
+        <Button
+          fullWidth
+          disabled={!draftDate || !draftTime}
+          onClick={() => {
+            if (draftDate && draftTime) {
+              onConfirm(selected, draftDate, draftTime);
+            }
+          }}
+          sx={{
+            height: 50,
+            borderRadius: "999px",
+            background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+            color: "#fff",
+            fontFamily: SANS,
+            fontSize: "15px",
+            fontWeight: 700,
+            letterSpacing: "0.02em",
+            textTransform: "none",
+            boxShadow: "0 6px 20px rgba(254, 9, 68, 0.35)",
+            "&:hover": {
+              background: "linear-gradient(135deg, #E50840, #E56A47)",
+            },
+            "&.Mui-disabled": {
+              background: "rgba(0, 0, 0, 0.12)",
+              color: "rgba(0, 0, 0, 0.35)",
+              boxShadow: "none",
+            },
+          }}
+        >
+          {!draftDate || !draftTime
+            ? "Pick date & time to continue"
+            : `Confirm · ${formatTHB(totalPrice)}`}
+        </Button>
+      </Box>
+    </Drawer>
+  );
+};
+
+export default ServiceDurationSheet;

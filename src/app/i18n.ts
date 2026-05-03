@@ -3,6 +3,16 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 
+// 🌐 Phase-1 (redesign/foundation) hero locales — source of truth for hero
+//    keys. Loaded after init via addResourceBundle so they OVERRIDE the
+//    older inline keys below. Other (non-hero) keys keep their existing
+//    inline values until they're migrated to JSON in Task 7 (i18n sweep).
+import heroEn from "@/locales/en/translation.json";
+import heroTh from "@/locales/th/translation.json";
+import heroZh from "@/locales/zh/translation.json";
+import heroJa from "@/locales/ja/translation.json";
+import heroKo from "@/locales/ko/translation.json";
+
 // i18n.init() return Promise — prefix `void` กัน floating promise warning
 // (ไม่ต้อง await เพราะ resources โหลด sync จาก code อยู่แล้ว)
 void i18n
@@ -12,6 +22,12 @@ void i18n
     fallbackLng: "en",
     supportedLngs: ["en", "th", "zh", "ja", "ko"],
     debug: false,
+
+    // ⚠️ flat keys — keys like "hero.title" / "hero.badge.verified" are stored
+    //    as literal strings, not as a nested tree. Required because the inline
+    //    `resources` block below uses dotted keys.
+    keySeparator: false,
+    nsSeparator: false,
 
     detection: {
       order: ["localStorage", "querystring", "navigator", "htmlTag", "cookie", "path"],
@@ -214,5 +230,18 @@ void i18n
       },
     },
   });
+
+// ─────────────────────────────────────────────────────────────────────
+// 🌐 Override hero keys with the canonical JSON locales (Phase 1).
+//    This MUST come after init — `addResourceBundle(deep=true, overwrite=true)`
+//    deep-merges and lets the JSON values win for matching keys (hero.*),
+//    while every other inline key (services, filter, home.*, meta.*) is
+//    untouched.
+// ─────────────────────────────────────────────────────────────────────
+i18n.addResourceBundle("en", "translation", heroEn, /*deep*/ true, /*overwrite*/ true);
+i18n.addResourceBundle("th", "translation", heroTh, /*deep*/ true, /*overwrite*/ true);
+i18n.addResourceBundle("zh", "translation", heroZh, /*deep*/ true, /*overwrite*/ true);
+i18n.addResourceBundle("ja", "translation", heroJa, /*deep*/ true, /*overwrite*/ true);
+i18n.addResourceBundle("ko", "translation", heroKo, /*deep*/ true, /*overwrite*/ true);
 
 export default i18n;

@@ -39,6 +39,11 @@ const BottomNavGlass: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
+  // Show BottomNavGlass on every public route (founder request 2026-05-01:
+  // "ทุกที่ทั้งเว็บ"). Pages with their own sticky CTAs (booking flow's
+  // BookingNavBar) are responsible for offsetting their CTA upward by the
+  // BOTTOM_NAV_HEIGHT so the two stack cleanly instead of overlapping.
+
   const handleChange = (_event: React.SyntheticEvent, next: string) => {
     // navigate() ใน react-router v7 return Promise<void> — prefix `void` กัน floating
     if (next === "/profile") {

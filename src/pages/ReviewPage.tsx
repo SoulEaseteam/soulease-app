@@ -228,7 +228,7 @@ const ReviewPage: React.FC = () => {
                   style={{ width: 16, height: 16 }}
                 />
                 <Typography fontSize={13} color="text.secondary">
-                  {(therapist.rating ?? 5).toFixed(1)} ({therapist.reviews ?? 0}
+                  {(Number(therapist.rating) || 5).toFixed(1)} ({therapist.reviews ?? 0}
                   )
                 </Typography>
               </Stack>

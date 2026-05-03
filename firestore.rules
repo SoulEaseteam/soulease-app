@@ -1,28 +1,88 @@
 rules_version = '2';
 
-// ⚠️ MVP RULES — relaxed สำหรับให้ระบบ work ก่อน
-// TODO: tighten กลับเมื่อตั้ง App Check + Anonymous Auth ทำงานเต็มที่
+// 🔐 SunRed Firestore Rules — Round 28aa (founder 2026-05-02)
+//
+// Goal: lock therapist self-service to a small set of "safe" fields,
+//       keep sensitive things (rating / reviews / totalSessions /
+//       isBooked / credentials / badge) as admin-only writes, and
+//       still let customers read the public catalog.
+//
+// Roles
+//   • Admin   — entry exists in /admins/{uid}.
+//   • Therapist owner — auth.uid matches the doc id, OR the doc's
+//                       `uid` field, OR the doc's `email` field.
+//   • Customer / guest — anyone else (signed-in or not).
+//
+// MVP-friendly: bookings/reviews still allow public-create with
+// minimal validation so guest checkout works. Tighten when App Check
+// + Anonymous Auth are fully wired.
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // helpers
+    // ── helpers ────────────────────────────────────────────────────
     function isSignedIn() { return request.auth != null; }
+
     function isAdmin() {
       return isSignedIn() &&
              exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
+
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // admins — read by self, write only via Console
+    /** True if the signed-in user owns this therapist doc.
+     *  Matches by docId, by `uid` field, or by `email` field. */
+    function isTherapistOwner(therapistId) {
+      return isSignedIn() && (
+        request.auth.uid == therapistId ||
+        (resource.data.uid is string && resource.data.uid == request.auth.uid) ||
+        (resource.data.email is string &&
+         request.auth.token.email is string &&
+         resource.data.email == request.auth.token.email)
+      );
+    }
+
+    /** Whitelist of fields a therapist may edit on their own profile.
+     *  Anything outside this list = admin-only. */
+    function therapistEditableKeys() {
+      return [
+        // status / availability self-service
+        'statusOverride', 'isHoliday', 'busyUntil', 'activeBooking',
+        // working hours
+        'startTime', 'endTime',
+        // location
+        'currentLocation', 'homeLocation', 'lat', 'lng', 'area',
+        // media
+        'image', 'gallery',
+        // soft profile
+        'features', 'specialty', 'servicesAvailable', 'services',
+        'bios', 'bioGeneratedAt',
+        // bookkeeping (audit metadata — read by Functions trigger)
+        'updatedAt', 'updatedBy'
+      ];
+    }
+
+    /** True if the proposed update only touches whitelisted keys. */
+    function therapistUpdateIsSelfEditable() {
+      return request.resource.data
+        .diff(resource.data)
+        .affectedKeys()
+        .hasOnly(therapistEditableKeys());
+    }
+
+    // ── admins ─────────────────────────────────────────────────────
+    // Self-read is allowed (so LoginPage can check isAdmin via direct
+    // doc read without leaking other admins' info), peer-admin can
+    // read the full collection. Writes only via Firebase Console
+    // (or an Admin SDK script with service account creds).
     match /admins/{adminId} {
-      allow read: if isAdmin();
+      allow read: if isOwner(adminId) || isAdmin();
       allow write: if false;
     }
 
-    // users — public-create (ตอนสมัคร), read/update self, admin manages
+    // ── users (customer profiles) ──────────────────────────────────
     match /users/{userId} {
       allow read: if true;
       allow create: if true;
@@ -30,22 +90,29 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // therapists — public read (catalog), admin manages
+    // ── therapists ─────────────────────────────────────────────────
+    // Public read (catalog). Self-service updates are limited to a
+    // whitelist of fields; everything else is admin-only.
     match /therapists/{therapistId} {
       allow read: if true;
       allow create: if isAdmin();
-      allow update: if isOwner(therapistId) || isAdmin();
+
+      allow update: if isAdmin() ||
+                    (isTherapistOwner(therapistId) &&
+                     therapistUpdateIsSelfEditable());
+
       allow delete: if isAdmin();
     }
 
-    // services — public read
+    // ── services ───────────────────────────────────────────────────
     match /services/{serviceId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // bookings — public create (guest booking), public read (admin/therapist filter ใน UI)
-    // ⚠️ ปลอดภัยพอสำหรับ MVP — admin เห็น booking ทุกอันใน admin panel
+    // ── bookings ───────────────────────────────────────────────────
+    // Public create (guest checkout). Updates allowed for the
+    // associated therapist, the booking customer, or admin.
     match /bookings/{bookingId} {
       allow read: if true;
       allow create: if request.resource.data.status in ['pending', 'confirmed'];
@@ -55,7 +122,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // reviews — public read, public create
+    // ── reviews ────────────────────────────────────────────────────
     match /reviews/{reviewId} {
       allow read: if true;
       allow create: if request.resource.data.rating is int
@@ -65,7 +132,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // notifications — admin only
+    // ── notifications ──────────────────────────────────────────────
     match /notifications/{notifId} {
       allow read: if true;
       allow create: if true;
@@ -73,17 +140,22 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // blockedDevices — admin only
+    // ── blocked devices / admin settings ───────────────────────────
     match /blockedDevices/{deviceId} {
       allow read, write: if isAdmin();
     }
 
-    // adminSettings — admin only
     match /adminSettings/{settingId} {
       allow read, write: if isAdmin();
     }
 
-    // default deny อื่นๆ
+    // ── audit log (write-only from server, read by admin) ─────────
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // populated by Cloud Functions only
+    }
+
+    // ── default deny ───────────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
     }

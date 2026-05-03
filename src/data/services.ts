@@ -5,8 +5,24 @@ export interface MassageService {
   id: string;
   name: string;
   desc: string;
+  /**
+   * Base price (THB) for the 60-minute version. Other durations are derived
+   * via DURATION_MULTIPLIERS in src/utils/servicePricing.ts.
+   */
   price: number;
+  /**
+   * Default duration for this service (minutes). Used as the initial
+   * popup selection. Always 60 in the canonical pricing model — kept on
+   * the type for back-compat with legacy admin/booking pages still on
+   * the single-duration flow.
+   */
   duration: number;
+  /**
+   * Allowed duration tiers for this service (minutes). Defaults to
+   * [60, 90, 120] when undefined. Use to lock specific services to
+   * fewer options (e.g. signature ritual at [80, 120] only).
+   */
+  availableDurations?: number[];
   count: number;
   image: string;
   detail: string;
@@ -37,7 +53,14 @@ const services: MassageService[] = [
     desc: 'Relieve deep muscle tension and restore body balance.',
     price: 1200,
     duration: 60,
-    count: 0,
+    // Founder confirmed prices 2026-05-01:
+    //   60: ฿1,200 · 90: ฿1,800 · 120: ฿2,400
+    // (= base × 1.0/1.5/2.0 multiplier — see src/utils/servicePricing.ts)
+    // The ATTRACTIVE prices proposal (1,500/1,900) is reserved as a
+    // future promotional campaign — wired in via DURATION_PRICE_OVERRIDES
+    // when the promo launches.
+    availableDurations: [60, 90, 120],
+    count: 62,
     image: '/images/workphoto/IMG_5092.JPG',
     detail: `A timeless healing ritual rooted in Thai tradition. This massage integrates acupressure, deep stretches, and rhythmic techniques to enhance flexibility, energy flow, and holistic balance.`,
     benefit: [
@@ -54,7 +77,9 @@ const services: MassageService[] = [
     name: 'Aromatherapy Massage',
     desc: 'Aromatic oil massage for deep body and mind relaxation.',
     price: 1600,
-    duration: 70,
+    duration: 60,
+    // 60: ฿1,600 · 90: ฿2,400 · 120: ฿3,200
+    availableDurations: [60, 90, 120],
     count: 0,
     image: '/images/workphoto/IMG_5096.JPG',
     detail: `Immerse yourself in serenity with an oil-based massage using premium-grade essential oils.`,
@@ -67,39 +92,44 @@ const services: MassageService[] = [
     badge: 'BEST SELLER',
   },
   {
-    id: 'Gentleman’s',
-    name: "Gentleman’s Signature Therapy",
-    desc: 'Reconnect with your senses and restore inner balance.',
+    id: 'gentlemans-recovery',
+    name: "Gentleman's Recovery Massage",
+    desc: 'Deep-tissue therapy tailored for active men.',
     price: 2200,
-    duration: 80,
+    duration: 60,
+    // 60: ฿2,200 · 90: ฿3,300 · 120: ฿4,400
+    availableDurations: [60, 90, 120],
     count: 0,
     image: '/images/workphoto/IMG_5289.JPG',
-    detail: `Crafted exclusively for the modern man, merging massage with mindful relaxation.`,
+    detail: `A focused therapy combining deep-tissue techniques with warming aromatic oils. Designed to release muscle tension built up from work, training, or travel — performed by licensed therapists trained in sports recovery techniques.`,
     benefit: [
-      'Rebalances internal energy',
-      'Dissolves tension',
-      'Promotes groundedness',
-      '[ Aromatherapy Massage + HandJob ]',
+      'Deep-tissue muscle release',
+      'Eases shoulder, back, and neck strain',
+      'Reduces post-training inflammation',
+      'Improves circulation and recovery',
+      'Restores mental focus and calm',
     ],
     badge: 'RECOMMEND',
   },
 
-  // ⭐⭐⭐ เมนูพิเศษใหม่ EXCLUSIVE ⭐⭐⭐
+  // ⭐⭐⭐ EXCLUSIVE — Senior licensed practitioners only ⭐⭐⭐
   {
-    id: 'SunRed’exclusive',
-    name: 'SunRed Therapeutic Experience',
-    desc: 'Elite full-body therapeutic ritual crafted only by our top-tier specialists.',
+    id: 'sunred-signature',
+    name: 'SunRed Signature Ritual',
+    desc: 'Premium ritual by senior licensed therapists.',
     price: 3200,
-    duration: 80,
+    duration: 60,
+    // 60: ฿3,200 · 90: ฿4,800 · 120: ฿6,400
+    availableDurations: [60, 90, 120],
     count: 0,
-    image: '/images/workphoto/IMG_8368.JPG', // เปลี่ยนรูปได้เลย
-    detail: `An exclusive high-touch therapy designed to restore physical vitality, emotional clarity, and deep sensual balance. Only available with selected therapists.`,
+    image: '/images/workphoto/IMG_8368.JPG',
+    detail: `Our most refined therapeutic ritual — a fusion of hot Thai herbal compress, aromatic oil massage, and gentle Thai-style stretching. Reserved for senior practitioners with 8+ years of licensed experience (ผ.พ.).`,
     benefit: [
-      'Premium deep-tissue techniques',
-      'Advanced aromatherapy blend',
-      'Signature SunRed ritual finish',
-      'Emotional and sensory harmonization',
-      '[ Body2Body + HandJob ]',
+      'Hot Thai herbal compress',
+      'Premium aromatherapy blend',
+      'Deep-tissue + Thai stretch fusion',
+      'Senior-therapist exclusive (8+ yr)',
+      'Full-body therapeutic ritual',
     ],
     badge: 'EXCLUSIVE',
   }

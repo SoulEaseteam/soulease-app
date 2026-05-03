@@ -37,6 +37,16 @@ export interface Therapist {
   name: string;
   image: string;
 
+  /** Login email — used by `setRoleOnSignup` Cloud Function to
+   *  auto-link a Firebase Auth user to this therapist doc.
+   *  Must match the email used when creating the Auth user
+   *  (lowercase, no whitespace). Onboarding flow: set email on
+   *  therapist doc FIRST, then create Auth user. */
+  email?: string;
+  /** Auth UID — written by `setRoleOnSignup` after auto-link.
+   *  Lets `firestore.rules` match doc owner without docId magic. */
+  uid?: string;
+
   /** rating */
   rating: number;
   reviews: number;     // review count
@@ -66,6 +76,11 @@ export interface Therapist {
   /** location and distance */
   homeLocation?: Location | null;      // ค่าเริ่มต้นของ therapist
   currentLocation?: Location | null;   // real-time location
+  /** Flat lat/lng (legacy alias for homeLocation.lat/lng) — used by
+   *  taxi-fare estimator and BookingFlowPage. Kept here so the
+   *  `[key: string]: unknown` index signature doesn't shadow them. */
+  lat?: number;
+  lng?: number;
   distanceKm?: number | null;          // computed client-side
 
   /** gallery & features */
@@ -95,6 +110,19 @@ export interface Therapist {
   employmentType?: string | null;
   serviceCount?: string;
 
+  /** Round 28z — richer profile data (see types defined at the bottom). */
+  area?: string;
+  /** Round 28at — full standby address (Thai postal). Used by admin
+   *  panel + booking dispatch for therapist locating. Display layer
+   *  prefers `area` chip on profile cards; full address shows in
+   *  admin tools / Telegram dispatch only. */
+  homeAddress?: string;
+  rebookRate?: number;
+  totalSessions?: number;
+  credentials?: Credential[];
+  serviceExperience?: ServiceExperience[];
+  languageSkills?: LanguageSkill[];
+
   /** fallback for smooth upgrades — ใช้ unknown ปลอดภัยกว่า any */
   [key: string]: unknown;
 }
@@ -109,3 +137,37 @@ export interface BadgeConfig {
   position: { top: number; left: number };
   condition: (t: Therapist) => boolean;
 }
+
+// =============================================================
+// Round 28z (founder 2026-05-02) — richer profile data so the
+// detail page + InfoSheet can render Mai-mockup-level depth from
+// real records.
+// =============================================================
+
+/** Single credential row shown on the Profile tab. */
+export interface Credential {
+  /** Drives the icon/colour scheme on the row. */
+  type: "license" | "diploma" | "background" | "certification";
+  /** Headline label, e.g. "Thai Ministry of Public Health License". */
+  label: string;
+  /** Sub-line, e.g. "ผ.พ. 67-12-3456-7890 · Verified". */
+  meta: string;
+}
+
+/** Per-service experience used by the Specialties section. */
+export interface ServiceExperience {
+  /** Maps to a service id in `src/data/services.ts`. */
+  serviceId: string;
+  years: number;
+  sessionCount: number;
+  /** Optional badge label, e.g. "Certified". */
+  label?: string;
+}
+
+/** Structured language proficiency — replaces parsing features.language. */
+export interface LanguageSkill {
+  /** ISO 639-1 code (lowercase): "en", "th", "zh", "ja", "ko". */
+  code: string;
+  level: "Native" | "Fluent" | "Conversational" | "Basic";
+}
+

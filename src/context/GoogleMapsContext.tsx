@@ -61,8 +61,14 @@ export const GoogleMapsProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const script = document.createElement("script");
-    // ⚡ loading=async = Google's recommended modern loader (no console warning)
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${api}&libraries=places,geometry&language=en&loading=async`;
+    // ⚠️ loading=async REMOVED 2026-05-01 — with that mode, Google does
+    //    NOT auto-attach constructors like `google.maps.Map`; pages have
+    //    to call `await google.maps.importLibrary('maps')` to get them.
+    //    SelectLocationPage uses the legacy `new google.maps.Map(...)`
+    //    pattern, so we keep the classic loader. The console deprecation
+    //    warning is cosmetic; revisit when we refactor map pages to use
+    //    importLibrary.
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${api}&libraries=places,geometry&language=en`;
     script.async = true;
     script.defer = true;
 
