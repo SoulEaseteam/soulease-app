@@ -8,23 +8,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * 🆕 Round 28b13 (perf) — Safe manualChunks for HTTP-cache reuse.
+ * ⚠️ ROLLBACK Round 28b13b — manualChunks ทำให้เกิด TDZ crash อีก
+ *    "Cannot access 'X' before initialization" → จอขาวบน production
+ *    เก็บ comment ไว้เตือนใจว่าเคสนี้แม้ split แบบ "ปลอดภัย" ก็พัง
  *
- * Previous attempts crashed with TDZ ("Cannot access X before
- * initialization") because they tried to split too aggressively.
- * Safe boundaries this time:
- *   • react / react-dom / react-router  → `vendor-react`
- *   • firebase                           → `vendor-firebase`
- *   • @mui/material + @emotion           → `vendor-mui`
- *   • @mui/icons-material                → `vendor-mui-icons`
+ * อนาคต ถ้าจะลอง split อีก ต้อง:
+ *   - ทดสอบบน production preview ก่อน merge
+ *   - ใช้ vite-plugin-bundle-analyzer หา circular deps ก่อน
+ *   - อาจต้อง upgrade vite/rollup version ก่อน
  *
- * Each is self-contained (no circular deps with app code) and the
- * standard pattern Vite docs recommend. The remaining app code +
- * smaller libs stay in the main entry chunk per Rollup defaults.
+ * ตอนนี้ปล่อย rollup auto-split ตาม dynamic-import boundaries (lazy
+ * routes ใน App.tsx ก็ทำให้ split ระดับหนึ่งอยู่แล้ว — แค่ initial
+ * main bundle ใหญ่กว่าที่ควร แต่ไม่ crash)
  *
- * Wins on PSI:
- *   - Initial main shrinks (fewer bytes to parse)
- *   - Shared chunks cached across deploys (only changed code re-fetches)
+ * Round 28b13 perf wins ที่ยังเหลือ (ไม่กระทบจอขาว):
+ *   ✅ ToastContainer lazy
+ *   ✅ Chonburi font ออกจาก main bundle
+ *   ✅ i18n locales lazy (เฉพาะ active lang)
+ *   ✅ Google Fonts non-blocking (media print → all)
  */
 export default defineConfig({
   plugins: [react()],
@@ -47,30 +48,7 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 2000,
-    rollupOptions: {
-      output: {
-        manualChunks(id: string) {
-          if (!id.includes("node_modules")) return undefined;
-          if (
-            id.includes("/react/") ||
-            id.includes("/react-dom/") ||
-            id.includes("/react-router") ||
-            id.includes("/scheduler/")
-          ) {
-            return "vendor-react";
-          }
-          if (id.includes("/firebase/") || id.includes("/@firebase/")) {
-            return "vendor-firebase";
-          }
-          if (id.includes("/@mui/icons-material/")) {
-            return "vendor-mui-icons";
-          }
-          if (id.includes("/@mui/") || id.includes("/@emotion/")) {
-            return "vendor-mui";
-          }
-          return undefined;
-        },
-      },
-    },
+    // ⚠️ ห้ามใช้ manualChunks — เคยเกิด TDZ crash + จอขาว
+    //    rollup auto-split ผ่าน lazy routes ก็พอแล้ว safest
   },
 });
