@@ -1,12 +1,3 @@
-// src/theme.ts
-//
-// 🎨 SunRed brand theme — Phase 1 (`redesign/foundation`)
-// Source of truth: 00-handoff/BRAND.md (warm cream + brand red liquid-glass).
-//
-// Migrated from "monochrome editorial" / "aurora" / "queen of hearts"
-// theme drift back to the canonical BRAND.md tokens. Existing imports are
-// preserved (`brand`, `gradients`, `fonts`, default theme export) so other
-// files don't break.
 
 import { createTheme } from "@mui/material/styles";
 
@@ -20,9 +11,21 @@ export const brand = {
   peach: "#FFB088",          // tertiary accent + animated blob
   cream: "#FEC9A7",          // soft accent + animated blob
 
-  // background gradient stops
-  bg1: "#FFF8F0",            // top of warm-cream gradient
-  bg2: "#FCEBDC",            // bottom of warm-cream gradient
+  // 🆕 Round 28b1 (founder 2026-05-03): "Clean v3" — competitor-inspired
+  //   cooler neutral palette. Founder feedback: "อันนี้ ร้านคู่แข่ง
+  //   ดูว่ามันสบายตากว่า" — cool gray-green looks crisper than warm
+  //   cream because cards/photos pop instead of blending into the bg.
+  //   Keeping the SunRed red/coral accents — only the base canvas is
+  //   neutralised. Old warm cream tones kept as legacy aliases.
+  bg1: "#FAFBFC",            // top — neutral off-white (was #FAFBFC cream)
+  bg2: "#F1F3F5",            // bottom — soft cool gray (was #F1F3F5 sand)
+  /** Legacy warm cream tones — kept for backward compat. */
+  bg1Legacy: "#FFF8F0",
+  bg2Legacy: "#FCEBDC",
+  /** Round 28b0 warm cream pair — kept for any caller that
+   *  intentionally wants the previous cleaner-but-still-warm look. */
+  bg1Warm: "#FAFBFC",
+  bg2Warm: "#F1F3F5",
 
   // text
   text: "#2a1a14",           // primary text on cream bg

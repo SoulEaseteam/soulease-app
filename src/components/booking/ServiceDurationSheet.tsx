@@ -157,7 +157,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
       onClose={onClose}
       PaperProps={{
         sx: {
-          background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
+          background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
           borderRadius: "24px 24px 0 0",
           paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))",
           maxWidth: "430px",

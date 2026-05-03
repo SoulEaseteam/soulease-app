@@ -29,6 +29,8 @@ interface Props {
   rating: string;
   reviewCount: number;
   yearsExp: number;
+  /** Round 28ak — real lifetime sessions count from useTherapistBookingStats. */
+  totalSessions?: number;
   rebookRate: string;
   /** Optional — opens an info sheet on the Reviews tab. */
   onTapRating?: () => void;
@@ -42,6 +44,7 @@ const StatsCard: React.FC<Props> = ({
   rating,
   reviewCount,
   yearsExp,
+  totalSessions = 0,
   rebookRate,
   onTapRating,
   onTapProfile,
@@ -111,8 +114,25 @@ const StatsCard: React.FC<Props> = ({
       onTap: wrap(onTapRating),
     },
     {
-      num: t("detail.stats.years", "{{years}} yrs", { years: yearsExp }),
-      label: t("detail.stats.experience", "Experience"),
+      // 🆕 Round 28ak — replace "X yrs experience" with real lifetime
+      //    Sessions count. Years was a hardcoded mock; sessions is a
+      //    live count from bookings collection. Falls back to yearsExp
+      //    only when admin has explicitly set a per-therapist value
+      //    AND no real sessions exist (rare migration window).
+      num:
+        totalSessions > 0
+          ? totalSessions >= 1000
+            ? `${Math.round(totalSessions / 100) / 10}k`
+            : `${totalSessions}`
+          : yearsExp > 0
+          ? t("detail.stats.years", "{{years}} yrs", { years: yearsExp })
+          : "—",
+      label:
+        totalSessions > 0
+          ? t("detail.stats.sessions", "Sessions")
+          : yearsExp > 0
+          ? t("detail.stats.experience", "Experience")
+          : t("detail.stats.experience", "Experience"),
       onTap: wrap(onTapProfile),
     },
     {
@@ -170,7 +190,7 @@ const StatsCard: React.FC<Props> = ({
               gap: "6px",
             }}
           >
-            👆 Tap any stat to see details
+            Tap any stat to see details
             <Box
               component="span"
               sx={{

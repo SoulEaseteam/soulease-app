@@ -43,13 +43,21 @@ import React, { useState, useMemo } from "react";
 import { Box, Typography, Tabs, Tab } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { bayesianRating, formatRating } from "@/utils/rating";
+// 🆕 Round 28al — Phase 2 emoji → MUI icons.
+import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
+import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
+import SpaRoundedIcon from "@mui/icons-material/SpaRounded";
+import LocalFireDepartmentRoundedIcon from "@mui/icons-material/LocalFireDepartmentRounded";
+import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // ── shared types (kept loose to match existing DemoTherapist shape)
-type Cred = { icon: string; title: string; sub: string };
-type Spec = { icon: string; name: string; sub: string };
+// 🆕 Round 28b3 — `Cred.icon` widened from string to ReactNode so the
+//   detail page can pass MUI icons (founder no-emoji rule).
+type Cred = { icon: React.ReactNode; title: string; sub: string };
+type Spec = { icon: React.ReactNode; name: string; sub: string };
 type Lang = { flag: string; name: string; level: string };
 // 🛡 Privacy: reviews never expose customer name, country flag, or
 // pickup hotel. Only the booking id (truncated to 8 chars) + service
@@ -70,6 +78,8 @@ interface Props {
   /** Headline trust facts shown in the hero strip */
   yearsExp: number;
   totalSessions: number;
+  /** Live "today's bookings" count from useTherapistBookingStats. */
+  todayBookings?: number;
   rebookRate: string;
   hasLicense: boolean;
 
@@ -81,6 +91,25 @@ interface Props {
   reviewCount: number;
   reviewBuckets: { stars: number; pct: number; count: number }[];
   reviews: Review[];
+
+  /**
+   * Optional real Loyalty aggregates — when provided, LoyaltyTab uses
+   * Firestore-derived numbers. When absent, falls back to synthetic
+   * estimates (rebookPct + totalSessions math).
+   * (Round 28af — replaces the all-synthetic Loyalty tab.)
+   */
+  loyaltyStats?: {
+    totalCompleted: number;
+    uniqueCustomers: number;
+    repeatCustomers: number;
+    repeatPct: number;
+    avgSessions: number;
+    timingBuckets: {
+      within7: number;
+      within30: number;
+      within90: number;
+    };
+  };
 
   /**
    * Optional starting tab — used when this component lives inside a
@@ -95,6 +124,7 @@ interface Props {
 const TherapistProfileTabs: React.FC<Props> = ({
   yearsExp,
   totalSessions,
+  todayBookings = 0,
   rebookRate,
   hasLicense,
   creds,
@@ -104,6 +134,7 @@ const TherapistProfileTabs: React.FC<Props> = ({
   reviewCount,
   reviewBuckets,
   reviews,
+  loyaltyStats,
   initialTab = "profile",
 }) => {
   const { t } = useTranslation();
@@ -181,6 +212,7 @@ const TherapistProfileTabs: React.FC<Props> = ({
           <ProfileTab
             yearsExp={yearsExp}
             totalSessions={totalSessions}
+            todayBookings={todayBookings}
             rebookRate={rebookRate}
             hasLicense={hasLicense}
             creds={creds}
@@ -200,6 +232,7 @@ const TherapistProfileTabs: React.FC<Props> = ({
           <LoyaltyTab
             rebookPct={rebookPct}
             totalSessions={totalSessions}
+            loyaltyStats={loyaltyStats}
           />
         )}
       </Box>
@@ -213,46 +246,98 @@ const TherapistProfileTabs: React.FC<Props> = ({
 const ProfileTab: React.FC<{
   yearsExp: number;
   totalSessions: number;
+  todayBookings: number;
   rebookRate: string;
   hasLicense: boolean;
   creds: Cred[];
   specs: Spec[];
   langs: Lang[];
-}> = ({ yearsExp, totalSessions, rebookRate, hasLicense, creds, specs, langs }) => {
+}> = ({ yearsExp, totalSessions, todayBookings, rebookRate, hasLicense, creds, specs, langs }) => {
+  // 🆕 Round 28al — Trust strip cells with MUI icons (Phase 2 emoji
+  //    replacement). Only render cells with real values — License when
+  //    admin-verified, Experience/Sessions/Rebook when > 0, Today as
+  //    live momentum signal.
+  const trustCells: {
+    icon: React.ReactNode;
+    color: string;
+    value: string;
+    label: string;
+  }[] = [];
+  if (hasLicense) {
+    trustCells.push({
+      icon: <VerifiedRoundedIcon sx={{ fontSize: 18 }} />,
+      color: "#16a34a",
+      value: "ผ.พ.",
+      label: "Licensed",
+    });
+  }
+  if (yearsExp > 0) {
+    trustCells.push({
+      icon: <HistoryRoundedIcon sx={{ fontSize: 18 }} />,
+      color: "#B45309",
+      value: `${yearsExp}y`,
+      label: "Experience",
+    });
+  }
+  if (totalSessions > 0) {
+    trustCells.push({
+      icon: <SpaRoundedIcon sx={{ fontSize: 18 }} />,
+      color: "#FE0944",
+      value:
+        totalSessions >= 1000
+          ? `${Math.round(totalSessions / 100) / 10}k`
+          : `${totalSessions}`,
+      label: "Sessions",
+    });
+  }
+  // Today's bookings — momentum signal, live from Firestore.
+  if (todayBookings > 0) {
+    trustCells.push({
+      icon: <LocalFireDepartmentRoundedIcon sx={{ fontSize: 18 }} />,
+      color: "#FE7A52",
+      value: `${todayBookings}`,
+      label: "Today",
+    });
+  }
+  if (rebookRate && rebookRate !== "—" && rebookRate !== "0%") {
+    trustCells.push({
+      icon: <AutorenewRoundedIcon sx={{ fontSize: 18 }} />,
+      color: "#0284C7",
+      value: rebookRate,
+      label: "Rebook",
+    });
+  }
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      {/* 🟢 Trust hero strip — 4 quick proof points, animated count-feel */}
-      <Box
-        sx={{
-          padding: "14px 16px",
-          borderRadius: "14px",
-          background:
-            "linear-gradient(135deg, rgba(254, 9, 68, 0.08), rgba(254, 122, 82, 0.08))",
-          border: "1px solid rgba(254, 9, 68, 0.18)",
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "8px",
-        }}
-      >
-        <TrustCell
-          icon={hasLicense ? "✅" : "⚠️"}
-          value={hasLicense ? "ผ.พ." : "—"}
-          label="Licensed"
-        />
-        <TrustCell icon="⏳" value={`${yearsExp}y`} label="Experience" />
-        <TrustCell
-          icon="💆"
-          value={
-            totalSessions >= 1000
-              ? `${Math.round(totalSessions / 100) / 10}k`
-              : `${totalSessions}`
-          }
-          label="Sessions"
-        />
-        <TrustCell icon="🔁" value={rebookRate} label="Rebook" />
-      </Box>
+      {/* 🟢 Trust hero strip — only render when at least one cell has data */}
+      {trustCells.length > 0 && (
+        <Box
+          sx={{
+            padding: "14px 16px",
+            borderRadius: "14px",
+            background:
+              "linear-gradient(135deg, rgba(254, 9, 68, 0.08), rgba(254, 122, 82, 0.08))",
+            border: "1px solid rgba(254, 9, 68, 0.18)",
+            display: "grid",
+            gridTemplateColumns: `repeat(${trustCells.length}, 1fr)`,
+            gap: "8px",
+          }}
+        >
+          {trustCells.map((c) => (
+            <TrustCell
+              key={c.label}
+              icon={c.icon}
+              color={c.color}
+              value={c.value}
+              label={c.label}
+            />
+          ))}
+        </Box>
+      )}
 
-      {/* Credentials — compact chip stack */}
+      {/* Credentials — only render when admin-verified credentials exist */}
+      {creds.length > 0 && (
       <Section title="Credentials">
         <Box sx={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           {creds.map((c) => (
@@ -301,8 +386,10 @@ const ProfileTab: React.FC<{
           ))}
         </Box>
       </Section>
+      )}
 
-      {/* Specialties — 2-column grid with hours-of-experience badge */}
+      {/* Specialties — only when therapist offers any service */}
+      {specs.length > 0 && (
       <Section title="Specialties">
         <Box
           sx={{
@@ -336,23 +423,29 @@ const ProfileTab: React.FC<{
                 >
                   {s.name}
                 </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: SANS,
-                    fontSize: "10.5px",
-                    color: "rgba(60, 30, 20, 0.55)",
-                    marginTop: "2px",
-                  }}
-                >
-                  {s.sub}
-                </Typography>
+                {/* Round 28ai — only render subtext when present (real
+                    serviceExperience set by admin). Empty by default. */}
+                {s.sub && s.sub.length > 0 && (
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: "10.5px",
+                      color: "rgba(60, 30, 20, 0.55)",
+                      marginTop: "2px",
+                    }}
+                  >
+                    {s.sub}
+                  </Typography>
+                )}
               </Box>
             </Box>
           ))}
         </Box>
       </Section>
+      )}
 
-      {/* Languages — flag chips + level pill (NATIVE highlighted) */}
+      {/* Languages — only when at least one structured language present */}
+      {langs.length > 0 && (
       <Section title="Languages">
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
           {langs.map((l) => {
@@ -402,17 +495,47 @@ const ProfileTab: React.FC<{
           })}
         </Box>
       </Section>
+      )}
+
+      {/* 🆕 Round 28ai — empty-state hint when no real data yet */}
+      {trustCells.length === 0 &&
+        creds.length === 0 &&
+        specs.length === 0 &&
+        langs.length === 0 && (
+          <Box
+            sx={{
+              padding: "20px 16px",
+              textAlign: "center",
+              fontFamily: SANS,
+              fontSize: "12px",
+              color: "rgba(60, 30, 20, 0.5)",
+              fontStyle: "italic",
+            }}
+          >
+            New therapist — profile details coming soon.
+          </Box>
+        )}
     </Box>
   );
 };
 
-const TrustCell: React.FC<{ icon: string; value: string; label: string }> = ({
-  icon,
-  value,
-  label,
-}) => (
+const TrustCell: React.FC<{
+  icon: React.ReactNode;
+  color?: string;
+  value: string;
+  label: string;
+}> = ({ icon, color = "#3c1e14", value, label }) => (
   <Box sx={{ textAlign: "center" }}>
-    <Box sx={{ fontSize: "16px", lineHeight: 1, marginBottom: "4px" }}>
+    <Box
+      sx={{
+        lineHeight: 1,
+        marginBottom: "4px",
+        color,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       {icon}
     </Box>
     <Typography
@@ -451,15 +574,17 @@ const ReviewsTab: React.FC<{
   buckets: { stars: number; pct: number; count: number }[];
   reviews: Review[];
 }> = ({ rating, reviewCount, buckets, reviews }) => {
-  // ⭐ Bayesian rating — overrides whatever rating string the parent
-  //    passes in, so the displayed value always honors PRIOR_MEAN=4.5
-  //    when reviews are sparse. Falls back to the parent rating only
-  //    when computing locally would yield NaN (defensive).
-  const bayesian = useMemo(() => {
-    if (reviews.length === 0) return formatRating(4.5);
-    return formatRating(bayesianRating(reviews));
-  }, [reviews]);
-  const displayedRating = bayesian || rating;
+  // ⭐ Round 28ad — trust the parent-passed rating when there are no
+  //    real reviews to compute Bayesian against. Parent already has
+  //    the seed value from data.rating (e.g. Yuri 4.7) — overriding
+  //    that to 4.5 here would erase real backend data.
+  //
+  //    When real reviews ARE present, recompute Bayesian-adjusted from
+  //    the actual review list — same fairness logic as before.
+  const displayedRating = useMemo(() => {
+    if (reviews.length > 0) return formatRating(bayesianRating(reviews));
+    return rating; // honor parent (real data.rating)
+  }, [reviews, rating]);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -657,28 +782,68 @@ const TOP_5_PCT_THRESHOLD = 75; // ≥ this = top 5% in market
 const LoyaltyTab: React.FC<{
   rebookPct: number;
   totalSessions: number;
-}> = ({ rebookPct, totalSessions }) => {
-  // Repeat vs first-time split — derived from rebookPct (rebook % of
-  // customers ≈ % of customer-base that became repeat). Conservative
-  // assumption: avg repeat customer books 2.4× sessions.
-  const avgSessionsPerCustomer = rebookPct >= 50 ? 2.4 : 1.6;
-  const estCustomers = Math.round(totalSessions / avgSessionsPerCustomer);
-  const repeatPct = Math.min(100, rebookPct);
+  loyaltyStats?: {
+    totalCompleted: number;
+    uniqueCustomers: number;
+    repeatCustomers: number;
+    repeatPct: number;
+    avgSessions: number;
+    timingBuckets: {
+      within7: number;
+      within30: number;
+      within90: number;
+    };
+  };
+}> = ({ rebookPct, totalSessions, loyaltyStats }) => {
+  // 🆕 Round 28af — prefer real Firestore aggregates as soon as we
+  //    have ANY identifiable customer (userId or phone). Below that,
+  //    fall back to synthetic derivations from the seed rebookRate.
+  //    Sample size is shown in the customer-mix row so users can
+  //    judge the math themselves.
+  const useReal =
+    Boolean(loyaltyStats) && (loyaltyStats?.uniqueCustomers ?? 0) >= 1;
+
+  const avgSessionsPerCustomer = useReal
+    ? loyaltyStats!.avgSessions
+    : rebookPct >= 50
+    ? 2.4
+    : 1.6;
+  const estCustomers = useReal
+    ? loyaltyStats!.uniqueCustomers
+    : Math.round(totalSessions / avgSessionsPerCustomer);
+  const repeatPct = useReal
+    ? loyaltyStats!.repeatPct
+    : Math.min(100, rebookPct);
   const firstTimePct = 100 - repeatPct;
 
-  const isTopTier = rebookPct >= TOP_5_PCT_THRESHOLD;
+  const isTopTier = (useReal ? repeatPct : rebookPct) >= TOP_5_PCT_THRESHOLD;
 
-  // Synthetic rebook-timing distribution — when a customer rebooks,
-  // 45% do so within 7 days, 98% within 30, 100% within 90 (rough
-  // industry shape). Replace with Firestore aggregate in Task 7.
-  const timingBuckets = [
-    { label: "Within 7 days", pct: Math.round(rebookPct * 0.46) },
-    { label: "Within 30 days", pct: rebookPct },
-    {
-      label: "Within 90 days",
-      pct: Math.min(100, Math.round(rebookPct * 1.02)),
-    },
-  ];
+  // Headline rebook % — use real if available
+  const headlinePct = useReal ? repeatPct : rebookPct;
+
+  const timingBuckets = useReal
+    ? [
+        {
+          label: "Within 7 days",
+          pct: loyaltyStats!.timingBuckets.within7,
+        },
+        {
+          label: "Within 30 days",
+          pct: loyaltyStats!.timingBuckets.within30,
+        },
+        {
+          label: "Within 90 days",
+          pct: loyaltyStats!.timingBuckets.within90,
+        },
+      ]
+    : [
+        { label: "Within 7 days", pct: Math.round(rebookPct * 0.46) },
+        { label: "Within 30 days", pct: rebookPct },
+        {
+          label: "Within 90 days",
+          pct: Math.min(100, Math.round(rebookPct * 1.02)),
+        },
+      ];
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -710,7 +875,7 @@ const LoyaltyTab: React.FC<{
               lineHeight: 1,
             }}
           >
-            {rebookPct}%
+            {headlinePct}%
           </Typography>
           <Typography
             sx={{
@@ -731,8 +896,25 @@ const LoyaltyTab: React.FC<{
             lineHeight: 1.5,
           }}
         >
-          {Math.round(rebookPct)} in 100 customers booked again within 30 days.
+          {useReal
+            ? `${loyaltyStats!.repeatCustomers} of ${
+                loyaltyStats!.uniqueCustomers
+              } customers booked again within 30 days.`
+            : `${Math.round(rebookPct)} in 100 customers booked again within 30 days.`}
         </Typography>
+        {!useReal && (
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: "10px",
+              color: "rgba(60, 30, 20, 0.45)",
+              fontStyle: "italic",
+              marginTop: "4px",
+            }}
+          >
+            Estimate — accumulates real data as bookings complete.
+          </Typography>
+        )}
         {isTopTier && (
           <Typography
             sx={{
@@ -772,7 +954,7 @@ const LoyaltyTab: React.FC<{
         </Typography>
         <BenchmarkBar
           label="This therapist"
-          pct={rebookPct}
+          pct={headlinePct}
           color="linear-gradient(90deg, #FE0944, #FE7A52)"
           highlight
         />

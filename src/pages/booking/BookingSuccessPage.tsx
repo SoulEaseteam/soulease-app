@@ -56,6 +56,8 @@ import WaterDropRoundedIcon from "@mui/icons-material/WaterDropRounded";
 import { useNavigate, useParams } from "react-router-dom";
 import { doc, getDoc, type DocumentData } from "firebase/firestore";
 import dayjs from "dayjs";
+// 🆕 Round 28an — BKK-anchored time helpers.
+import { fmtBKK, sameDayBKK, nowBKK, toBKK } from "@/utils/time";
 
 import { db } from "@/lib/firebase";
 
@@ -104,16 +106,21 @@ const BookingSuccessPage: React.FC = () => {
   const endAt: Date | null = booking?.endAt?.toDate
     ? (booking.endAt.toDate() as Date)
     : null;
-  const timeLabel = startAt ? dayjs(startAt).format("HH:mm") : "—";
+  // 🆕 Round 28an — all wall-clock display anchored to BKK.
+  const timeLabel = fmtBKK(startAt, "HH:mm");
   const dateLabel = startAt
-    ? dayjs(startAt).isSame(dayjs(), "day")
+    ? sameDayBKK(startAt, nowBKK())
       ? "Today"
-      : dayjs(startAt).isSame(dayjs().add(1, "day"), "day")
+      : sameDayBKK(startAt, nowBKK().add(1, "day"))
         ? "Tomorrow"
-        : dayjs(startAt).format("ddd, MMM D")
+        : fmtBKK(startAt, "ddd, MMM D")
     : "—";
   const leaveLabel = startAt
-    ? dayjs(startAt).subtract(PREP_BUFFER_MIN, "minute").format("HH:mm")
+    ? fmtBKK(
+        toBKK(startAt)?.subtract(PREP_BUFFER_MIN, "minute") ?? null,
+        "HH:mm",
+        ""
+      )
     : null;
 
   // Booking ref code: SR + first 8 chars of doc id, uppercased.
@@ -195,7 +202,7 @@ const BookingSuccessPage: React.FC = () => {
         maxWidth: "430px",
         margin: "0 auto",
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
+        background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
         borderRadius: "28px",
         overflow: "hidden",
         boxShadow: "0 20px 60px rgba(126, 30, 46, 0.15)",

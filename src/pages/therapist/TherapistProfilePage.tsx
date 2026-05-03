@@ -28,10 +28,17 @@ import {
   IconButton,
   Divider,
   Button,
+  Switch,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import RoomRoundedIcon from "@mui/icons-material/RoomRounded";
 import MyLocationRoundedIcon from "@mui/icons-material/MyLocationRounded";
+import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
+import EventBusyRoundedIcon from "@mui/icons-material/EventBusyRounded";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
 import {
@@ -42,12 +49,14 @@ import {
   where,
   collection,
   onSnapshot,
+  updateDoc,
+  serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 
 import ProfileSummaryCard from "@/components/therapist/ProfileSummaryCard";
-import type { Therapist, Avail } from "@/types/therapist";
+import type { Therapist, Avail, StatusOverride } from "@/types/therapist";
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
 import { enhanceImage } from "@/utils/cloudinary";
 
@@ -79,6 +88,15 @@ const TherapistProfilePage: React.FC = () => {
   const [completedJobs, setCompletedJobs] = useState(0);
   const [cancelledJobs, setCancelledJobs] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
+
+  // Self-service toggle state
+  const [savingField, setSavingField] = useState<
+    null | "statusOverride" | "isHoliday"
+  >(null);
+  const [toast, setToast] = useState<{
+    msg: string;
+    severity: "success" | "error";
+  } | null>(null);
 
   // ── 1. Resolve therapist doc id (one-time lookup) ───────────────────────
   //    UID match on therapists/{uid}, fallback to where("uid", "==", ...)
@@ -235,6 +253,64 @@ const TherapistProfilePage: React.FC = () => {
     void navigate("/login");
   };
 
+  // ── 5. Self-service writes ──────────────────────────────────────────────
+  //   Therapist toggles their own statusOverride / isHoliday. Firestore
+  //   rules whitelist these fields, so the write succeeds for the doc
+  //   owner and is rejected for anyone else.
+  const updateOverride = async (next: StatusOverride) => {
+    if (!therapistDocId) return;
+    try {
+      setSavingField("statusOverride");
+      await updateDoc(doc(db, "therapists", therapistDocId), {
+        statusOverride: next,
+        updatedAt: serverTimestamp(),
+        updatedBy: auth.currentUser?.uid ?? null,
+      });
+      const labelMap: Record<string, string> = {
+        Auto: "Auto (engine decides)",
+        available: "Available",
+        bookable: "In session",
+        resting: "Resting",
+      };
+      setToast({
+        msg: `Status set to ${labelMap[next ?? "Auto"] ?? "Auto"}`,
+        severity: "success",
+      });
+    } catch (err) {
+      console.error("[TherapistProfile] updateOverride failed:", err);
+      setToast({
+        msg: "Couldn't update status — please try again.",
+        severity: "error",
+      });
+    } finally {
+      setSavingField(null);
+    }
+  };
+
+  const updateHoliday = async (next: boolean) => {
+    if (!therapistDocId) return;
+    try {
+      setSavingField("isHoliday");
+      await updateDoc(doc(db, "therapists", therapistDocId), {
+        isHoliday: next,
+        updatedAt: serverTimestamp(),
+        updatedBy: auth.currentUser?.uid ?? null,
+      });
+      setToast({
+        msg: next ? "Holiday mode ON — you're off today." : "Holiday mode OFF",
+        severity: "success",
+      });
+    } catch (err) {
+      console.error("[TherapistProfile] updateHoliday failed:", err);
+      setToast({
+        msg: "Couldn't update holiday mode — please try again.",
+        severity: "error",
+      });
+    } finally {
+      setSavingField(null);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
@@ -299,7 +375,7 @@ const TherapistProfilePage: React.FC = () => {
         maxWidth: 430,
         margin: "0 auto",
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
+        background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
         paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
         fontFamily: SANS,
       }}
@@ -421,8 +497,168 @@ const TherapistProfilePage: React.FC = () => {
         </Box>
       </Box>
 
+      {/* Working Status — therapist self-service toggle.
+          Round 28aa: Firestore rules whitelist statusOverride + isHoliday
+          on therapist docs, so writes here succeed for the doc owner and
+          are rejected for anyone else. */}
+      <Box sx={{ paddingX: 2, marginTop: 2.5 }}>
+        <Box
+          sx={{
+            background: "rgba(255,255,255,0.85)",
+            border: "1px solid rgba(184,92,60,0.18)",
+            borderRadius: 3,
+            padding: "14px 16px 16px",
+            boxShadow: "0 6px 18px rgba(126,30,46,0.06)",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 1,
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: SERIF,
+                fontWeight: 700,
+                fontSize: "15px",
+                color: "#3c1e14",
+              }}
+            >
+              Working Status
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: SANS,
+                fontSize: "10.5px",
+                color: "rgba(60,30,20,0.55)",
+              }}
+            >
+              Live · customers see this
+            </Typography>
+          </Box>
+
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: "11.5px",
+              color: "rgba(60,30,20,0.65)",
+              lineHeight: 1.45,
+              marginBottom: 1.25,
+            }}
+          >
+            Pick how SunRed should show you. <b>Auto</b> lets the engine
+            decide based on bookings + working hours.
+          </Typography>
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, 1fr)",
+              gap: 1,
+            }}
+          >
+            <StatusChoice
+              label="Auto"
+              hint="Engine decides"
+              Icon={AutorenewRoundedIcon}
+              accent="#3c1e14"
+              active={
+                !therapist.statusOverride || therapist.statusOverride === "Auto"
+              }
+              disabled={savingField === "statusOverride"}
+              onClick={() => void updateOverride("Auto")}
+            />
+            <StatusChoice
+              label="Available"
+              hint="Open for bookings"
+              Icon={CheckCircleRoundedIcon}
+              accent="#16a34a"
+              active={therapist.statusOverride === "available"}
+              disabled={savingField === "statusOverride"}
+              onClick={() => void updateOverride("available")}
+            />
+            <StatusChoice
+              label="In session"
+              hint="Currently with a client"
+              Icon={EventBusyRoundedIcon}
+              accent="#831843"
+              active={therapist.statusOverride === "bookable"}
+              disabled={savingField === "statusOverride"}
+              onClick={() => void updateOverride("bookable")}
+            />
+            <StatusChoice
+              label="Resting"
+              hint="Hide from results"
+              Icon={HotelRoundedIcon}
+              accent="#B85C3C"
+              active={therapist.statusOverride === "resting"}
+              disabled={savingField === "statusOverride"}
+              onClick={() => void updateOverride("resting")}
+            />
+          </Box>
+
+          {/* Holiday switch */}
+          <Box
+            sx={{
+              marginTop: 1.5,
+              padding: "10px 12px",
+              borderRadius: 2,
+              background: therapist.isHoliday
+                ? "linear-gradient(135deg, rgba(254,9,68,0.08), rgba(254,122,82,0.08))"
+                : "rgba(252,235,220,0.5)",
+              border: therapist.isHoliday
+                ? "1px solid rgba(254,9,68,0.22)"
+                : "1px solid rgba(184,92,60,0.12)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 1,
+            }}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontWeight: 700,
+                  fontSize: "12.5px",
+                  color: "#3c1e14",
+                }}
+              >
+                Holiday mode
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "10.5px",
+                  color: "rgba(60,30,20,0.6)",
+                  lineHeight: 1.4,
+                }}
+              >
+                Force-rest the whole day, override Auto + working hours.
+              </Typography>
+            </Box>
+            <Switch
+              checked={Boolean(therapist.isHoliday)}
+              disabled={savingField === "isHoliday"}
+              onChange={(_, checked) => void updateHoliday(checked)}
+              sx={{
+                "& .MuiSwitch-switchBase.Mui-checked": {
+                  color: "#FE0944",
+                },
+                "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                  backgroundColor: "#FE0944",
+                },
+              }}
+            />
+          </Box>
+        </Box>
+      </Box>
+
       {/* Live stats card */}
-      <Box sx={{ paddingX: 2, marginTop: 3 }}>
+      <Box sx={{ paddingX: 2, marginTop: 2 }}>
         <ProfileSummaryCard
           todayBookings={todayBookings}
           completedJobs={completedJobs}
@@ -454,6 +690,30 @@ const TherapistProfilePage: React.FC = () => {
           onClick={() => navigate("/update-location")}
         />
       </Box>
+
+      {/* Toast for save success / failure */}
+      <Snackbar
+        open={Boolean(toast)}
+        autoHideDuration={2400}
+        onClose={() => setToast(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        {toast ? (
+          <Alert
+            onClose={() => setToast(null)}
+            severity={toast.severity}
+            variant="filled"
+            sx={{
+              fontFamily: SANS,
+              fontSize: "12.5px",
+              fontWeight: 600,
+              borderRadius: 2,
+            }}
+          >
+            {toast.msg}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
     </Box>
   );
 };
@@ -514,6 +774,111 @@ const MenuTile: React.FC<MenuTileProps> = ({ label, Icon, onClick }) => (
     >
       {label}
     </Typography>
+  </Button>
+);
+
+/** ------------------------------------------------------------------
+ *  StatusChoice — single tile in the Working Status grid.
+ *  Shows label, hint, accent-coloured icon, and a strong-active state
+ *  when the therapist's `statusOverride` matches this tile.
+ *  ------------------------------------------------------------------ */
+interface StatusChoiceProps {
+  label: string;
+  hint: string;
+  Icon: typeof RoomRoundedIcon;
+  accent: string;
+  active: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}
+
+const StatusChoice: React.FC<StatusChoiceProps> = ({
+  label,
+  hint,
+  Icon,
+  accent,
+  active,
+  disabled,
+  onClick,
+}) => (
+  <Button
+    onClick={onClick}
+    disabled={disabled}
+    sx={{
+      display: "flex",
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "flex-start",
+      gap: "8px",
+      padding: "10px 12px",
+      borderRadius: "12px",
+      textTransform: "none",
+      textAlign: "left",
+      background: active
+        ? `linear-gradient(135deg, ${accent}E6 0%, ${accent} 100%)`
+        : "rgba(255,255,255,0.85)",
+      border: active
+        ? `1px solid ${accent}`
+        : "1px solid rgba(184,92,60,0.18)",
+      boxShadow: active
+        ? `0 6px 14px ${accent}33`
+        : "0 2px 6px rgba(126,30,46,0.04)",
+      color: active ? "#fff" : "#3c1e14",
+      transition: "transform 0.15s ease, box-shadow 0.15s ease",
+      "&:hover": !disabled
+        ? {
+            transform: "translateY(-1px)",
+            background: active
+              ? `linear-gradient(135deg, ${accent} 0%, ${accent} 100%)`
+              : "rgba(255,255,255,1)",
+          }
+        : undefined,
+      "&.Mui-disabled": {
+        opacity: 0.55,
+        color: active ? "#fff" : "#3c1e14",
+      },
+    }}
+  >
+    <Box
+      sx={{
+        width: 30,
+        height: 30,
+        borderRadius: "50%",
+        background: active ? "rgba(255,255,255,0.18)" : `${accent}1A`,
+        color: active ? "#fff" : accent,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+      }}
+    >
+      <Icon sx={{ fontSize: 17 }} />
+    </Box>
+    <Box sx={{ minWidth: 0 }}>
+      <Typography
+        sx={{
+          fontFamily: SANS,
+          fontSize: "12px",
+          fontWeight: 700,
+          lineHeight: 1.15,
+          color: "inherit",
+        }}
+      >
+        {label}
+      </Typography>
+      <Typography
+        sx={{
+          fontFamily: SANS,
+          fontSize: "9.5px",
+          fontWeight: 500,
+          opacity: active ? 0.85 : 0.6,
+          color: "inherit",
+          lineHeight: 1.25,
+        }}
+      >
+        {hint}
+      </Typography>
+    </Box>
   </Button>
 );
 

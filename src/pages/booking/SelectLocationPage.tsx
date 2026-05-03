@@ -503,7 +503,7 @@ const SelectLocationPage: React.FC = () => {
         maxWidth: "430px",
         margin: "0 auto",
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
+        background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
         borderRadius: "28px",
         overflow: "hidden",
         boxShadow: "0 20px 60px rgba(126, 30, 46, 0.15)",

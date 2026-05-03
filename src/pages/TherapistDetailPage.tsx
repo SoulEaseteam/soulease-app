@@ -19,7 +19,36 @@ import { useTranslation } from "react-i18next";
 
 import DetailHero from "@/components/therapist/detail/DetailHero";
 import StatsCard from "@/components/therapist/detail/StatsCard";
-import { About } from "@/components/therapist/detail/DetailSections";
+import {
+  About,
+  type AboutFact,
+  type AboutRow,
+} from "@/components/therapist/detail/DetailSections";
+// 🆕 Round 28ak — replace emoji icons with proper Material UI icons.
+import WorkOutlineRoundedIcon from "@mui/icons-material/WorkOutlineRounded";
+import PublicRoundedIcon from "@mui/icons-material/PublicRounded";
+import StraightenRoundedIcon from "@mui/icons-material/StraightenRounded";
+import TranslateRoundedIcon from "@mui/icons-material/TranslateRounded";
+import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
+// 🆕 Round 28b3 — Gender icon for the new About 3-row layout.
+import WcRoundedIcon from "@mui/icons-material/WcRounded";
+// 🆕 Round 28am — selective Specialty icons (Phase 2.5)
+import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
+import FitnessCenterRoundedIcon from "@mui/icons-material/FitnessCenterRounded";
+import WhatshotRoundedIcon from "@mui/icons-material/WhatshotRounded";
+// 🆕 Round 28b3 — emoji → MUI icons across SERVICE_DISPLAY + Credentials
+//   so the no-emoji rule covers the detail page too.
+import SpaRoundedIcon from "@mui/icons-material/SpaRounded";
+import LocalFloristRoundedIcon from "@mui/icons-material/LocalFloristRounded";
+import SelfImprovementRoundedIcon from "@mui/icons-material/SelfImprovementRounded";
+import DirectionsRunRoundedIcon from "@mui/icons-material/DirectionsRunRounded";
+import PregnantWomanRoundedIcon from "@mui/icons-material/PregnantWomanRounded";
+import EmojiNatureRoundedIcon from "@mui/icons-material/EmojiNatureRounded";
+import PsychologyRoundedIcon from "@mui/icons-material/PsychologyRounded";
+import LandscapeRoundedIcon from "@mui/icons-material/LandscapeRounded";
+import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
+import SchoolRoundedIcon from "@mui/icons-material/SchoolRounded";
+import ShieldRoundedIcon from "@mui/icons-material/ShieldRounded";
 import TherapistInfoSheet from "@/components/therapist/detail/TherapistInfoSheet";
 import StatusPill from "@/components/therapist/detail/StatusPill";
 // StickyBookCTA — kept on disk but no longer mounted (Phase 5 auto-nav).
@@ -30,7 +59,7 @@ import StatusPill from "@/components/therapist/detail/StatusPill";
 //   the merged sheet, and Confirm auto-navigates to /booking/:id.
 import StepService from "@/components/booking/StepService";
 import {
-  bayesianRatingFromAggregate,
+  bayesianRating,
   formatRating,
 } from "@/utils/rating";
 // 🆕 Live-bookings (founder 2026-05-01): StatusPill flips to 'busy' with
@@ -39,8 +68,19 @@ import {
 import {
   useTherapistBookings,
   findActiveBooking,
+  findNextBooking,
   nextAvailableHHMM,
 } from "@/utils/useTherapistBookings";
+// 🆕 Round 28b9 — BKK formatter for upcoming booking hint.
+import { fmtBKK } from "@/utils/time";
+// 🆕 Round 28aq — drive StatusPill from the engine instead of the
+//   unset `therapist.online` field on the EMPTY shell.
+import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
+
+// 🆕 Round 28ae — live therapist reviews from bookings collection.
+import { useTherapistReviews } from "@/hooks/useTherapistReviews";
+// 🆕 Round 28af — live booking aggregates for the Loyalty tab.
+import { useTherapistBookingStats } from "@/hooks/useTherapistBookingStats";
 
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 import therapistsData from "@/data/therapists";
@@ -67,10 +107,20 @@ type DemoTherapist = {
   rating: string;
   reviewCount: number;
   yearsExp: number;
+  /** Lifetime completed sessions across all services — drives StatsCard /
+   *  InfoSheet "💆 Sessions" cell. Round 28ad: real value from data, not
+   *  a hacky regex-parsed sum from spec strings. */
+  totalSessions: number;
   rebookRate: string;
   about: string;
-  creds: { icon: string; label: string; meta: string }[];
-  specs: { icon: string; name: string; yrs: string }[];
+  /** Round 28ak — structured facts for the About chip grid. */
+  aboutFacts: AboutFact[];
+  /** Round 28b3 — row-grouped facts (3 rows: work / body / origin). */
+  aboutRows: AboutRow[];
+  /** Round 28b4 — drives gender icon next to the About title. */
+  gender?: string;
+  creds: { icon: React.ReactNode; label: string; meta: string }[];
+  specs: { icon: React.ReactNode; name: string; yrs: string }[];
   langs: { flag: string; name: string; level: string }[];
   pricing: { name: string; duration: string; price: string }[];
   days: { dow: string; num: string; unavailable?: boolean }[];
@@ -85,233 +135,61 @@ type DemoTherapist = {
   }[];
 };
 
-const MAI: DemoTherapist = {
-  id: "mai",
-  name: "Mai",
-  age: 28,
-  area: "Sukhumvit",
-  distance: "1.2 km",
-  online: true,
+// 🆕 Round 28ai — neutral fallback shell. Replaces the old MAI mock
+// that injected fake credentials, sessions, ratings, and reviews into
+// every render path. This shell only carries STRUCTURAL defaults
+// (gradient, working hours placeholder) — zero numerical claims.
+//
+// Fields are deliberately blank/0:
+//   • rating "0.0" + reviewCount 0  → UI shows "New" badge instead
+//   • totalSessions 0, rebookRate "—"
+//   • creds [] / specs [] / reviews [] / reviewBuckets []
+//   • langs [] (real ones come from data.languageSkills)
+//
+// Only used when the URL therapist id matches NEITHER a record in
+// data/therapists.ts NOR an Auth uid in Firestore. In that case the
+// page renders a clean "Therapist not found" experience downstream.
+const EMPTY_THERAPIST: DemoTherapist = {
+  id: "_empty",
+  name: "—",
+  age: 0,
+  area: "",
+  distance: "",
+  online: false,
   photoBg: "linear-gradient(135deg, #d4a574, #8b6f47)",
 
-  rating: "4.9",
-  reviewCount: 203,
-  yearsExp: 8,
-  rebookRate: "98%",
+  rating: "0.0",
+  reviewCount: 0,
+  yearsExp: 0,
+  totalSessions: 0,
+  rebookRate: "—",
 
-  about:
-    "Eight years specializing in traditional Thai and oil massage. Licensed by the Thai Ministry of Public Health, trained at Wat Pho. Speaks Mandarin natively, English fluently. Travels with full equipment to hotels across Bangkok.",
+  about: "",
+  aboutFacts: [],
+  aboutRows: [],
 
-  creds: [
-    {
-      icon: "✓",
-      label: "Thai Ministry of Public Health License",
-      meta: "ผ.พ. 67-12-3456-7890 · Verified",
-    },
-    {
-      icon: "🎓",
-      label: "Wat Pho Traditional Massage Diploma",
-      meta: "2017 · 800 hours certified",
-    },
-    {
-      icon: "🛡",
-      label: "Background-checked",
-      meta: "Last verified: Apr 2026",
-    },
-  ],
+  creds: [],
+  specs: [],
+  langs: [],
+  pricing: [],
 
-  specs: [
-    { icon: "🌿", name: "Thai Traditional", yrs: "8 yrs · 1,400+ sessions" },
-    { icon: "💆", name: "Oil Relaxation", yrs: "6 yrs · 900+ sessions" },
-    { icon: "🌸", name: "Aromatherapy", yrs: "4 yrs · 320+ sessions" },
-    { icon: "🤰", name: "Pre-natal", yrs: "Certified · 2 yrs" },
-  ],
+  days: [],
+  slots: [],
 
-  langs: [
-    { flag: "🇨🇳", name: "Mandarin", level: "Native" },
-    { flag: "🇬🇧", name: "English", level: "Fluent" },
-    { flag: "🇹🇭", name: "Thai", level: "Native" },
-  ],
-
-  pricing: [
-    { name: "Thai Traditional", duration: "60 min", price: "฿1,800" },
-    { name: "Thai Traditional", duration: "90 min", price: "฿2,500" },
-    { name: "Oil Relaxation", duration: "60 min", price: "฿2,000" },
-    { name: "Aromatherapy", duration: "90 min", price: "฿2,500" },
-  ],
-
-  days: [
-    { dow: "Today", num: "30" },
-    { dow: "Fri", num: "01" },
-    { dow: "Sat", num: "02" },
-    { dow: "Sun", num: "03", unavailable: true },
-    { dow: "Mon", num: "04" },
-    { dow: "Tue", num: "05" },
-    { dow: "Wed", num: "06" },
-  ],
-
-  slots: [
-    { time: "14:00", taken: true },
-    { time: "15:00", taken: true },
-    { time: "16:00" },
-    { time: "17:00" },
-    { time: "18:00" },
-    { time: "19:00" },
-    { time: "20:00" },
-    { time: "21:00" },
-  ],
-
-  reviewBuckets: [
-    { num: 5, count: 173, pct: 85 },
-    { num: 4, count: 24, pct: 12 },
-    { num: 3, count: 4, pct: 2 },
-    { num: 2, count: 1, pct: 1 },
-    { num: 1, count: 1, pct: 0.5 },
-  ],
-
-  reviews: [
-    {
-      initial: "L",
-      name: "Li Wen",
-      flag: "🇨🇳",
-      meta: "2 weeks ago · Thai 90min · Anantara",
-      quote:
-        "Mai是非常专业的按摩师。我中文交流毫无障碍，按摩技术非常好。下次来曼谷一定再预约。",
-    },
-    {
-      initial: "D",
-      name: "David R.",
-      flag: "🇬🇧",
-      meta: "1 month ago · Oil 60min · St. Regis",
-      quote:
-        "Punctual, professional, exactly what I needed after a 14-hour flight. Will book again on next trip.",
-    },
-    {
-      initial: "A",
-      name: "Amelia C.",
-      flag: "🇸🇬",
-      meta: "2 months ago · Thai 60min · Park Hyatt",
-      quote:
-        "Absolutely professional. Mai brought all her own equipment and oils. The session was deeply restorative.",
-    },
-  ],
+  reviewBuckets: [],
+  reviews: [],
 };
 
-// Other therapists — overrides on top of MAI's structure so we don't
-// duplicate the whole shape. Matches `TherapistsBrowsePage` DEMO list.
-const DEMO_BY_ID: Record<string, DemoTherapist> = {
-  mai: MAI,
-  ploy: {
-    ...MAI,
-    id: "ploy",
-    name: "Ploy",
-    age: 26,
-    distance: "2.4 km",
-    photoBg: "linear-gradient(135deg, #e8c4a0, #c89968)",
-    rating: "5.0",
-    reviewCount: 167,
-    yearsExp: 6,
-    rebookRate: "96%",
-    about:
-      "Six years specializing in aromatherapy and pre-natal massage. Licensed by the Thai Ministry of Public Health. Speaks Japanese and English. Trained in essential oil therapy at the Bangkok School of Aromatherapy.",
-    specs: [
-      { icon: "🌸", name: "Aromatherapy", yrs: "6 yrs · 1,100+ sessions" },
-      { icon: "🤰", name: "Pre-natal", yrs: "Certified · 3 yrs" },
-      { icon: "💆", name: "Oil Relaxation", yrs: "5 yrs · 700+ sessions" },
-    ],
-    langs: [
-      { flag: "🇯🇵", name: "Japanese", level: "Fluent" },
-      { flag: "🇬🇧", name: "English", level: "Fluent" },
-      { flag: "🇹🇭", name: "Thai", level: "Native" },
-    ],
-  },
-  nan: {
-    ...MAI,
-    id: "nan",
-    name: "Nan",
-    age: 31,
-    distance: "3.1 km",
-    online: false,
-    photoBg: "linear-gradient(135deg, #c89c7a, #6b4a2f)",
-    rating: "4.8",
-    reviewCount: 412,
-    yearsExp: 10,
-    rebookRate: "99%",
-    about:
-      "Ten years specializing in sport recovery and deep-tissue massage. Licensed by the Thai Ministry of Public Health. Speaks Korean and English. Trained in athletic therapy at Mahidol University.",
-    specs: [
-      { icon: "🔥", name: "Sport Recovery", yrs: "10 yrs · 2,400+ sessions" },
-      { icon: "💪", name: "Deep Tissue", yrs: "8 yrs · 1,800+ sessions" },
-      { icon: "🌿", name: "Thai Traditional", yrs: "10 yrs · 1,900+ sessions" },
-    ],
-    langs: [
-      { flag: "🇰🇷", name: "Korean", level: "Fluent" },
-      { flag: "🇬🇧", name: "English", level: "Fluent" },
-      { flag: "🇹🇭", name: "Thai", level: "Native" },
-    ],
-  },
-  fern: {
-    ...MAI,
-    id: "fern",
-    name: "Fern",
-    age: 24,
-    distance: "2.8 km",
-    photoBg: "linear-gradient(135deg, #f4d4b4, #d4a574)",
-    rating: "4.9",
-    reviewCount: 89,
-    yearsExp: 5,
-    rebookRate: "94%",
-    about:
-      "Five years specializing in Thai traditional and aromatherapy. Licensed by the Thai Ministry of Public Health. Speaks Mandarin and English. Trained at Wat Pho.",
-    specs: [
-      { icon: "🌿", name: "Thai Traditional", yrs: "5 yrs · 800+ sessions" },
-      { icon: "🌸", name: "Aromatherapy", yrs: "3 yrs · 320+ sessions" },
-    ],
-  },
-  wan: {
-    ...MAI,
-    id: "wan",
-    name: "Wan",
-    age: 29,
-    distance: "3.8 km",
-    online: false,
-    photoBg: "linear-gradient(135deg, #d8b89c, #a08060)",
-    rating: "4.9",
-    reviewCount: 276,
-    yearsExp: 7,
-    rebookRate: "97%",
-    about:
-      "Seven years specializing in oil relaxation and aromatherapy. Licensed by the Thai Ministry of Public Health. Speaks Japanese, Mandarin, and English.",
-    specs: [
-      { icon: "💆", name: "Oil Relaxation", yrs: "7 yrs · 1,500+ sessions" },
-      { icon: "🌸", name: "Aromatherapy", yrs: "5 yrs · 800+ sessions" },
-    ],
-    langs: [
-      { flag: "🇯🇵", name: "Japanese", level: "Fluent" },
-      { flag: "🇨🇳", name: "Mandarin", level: "Fluent" },
-      { flag: "🇬🇧", name: "English", level: "Fluent" },
-      { flag: "🇹🇭", name: "Thai", level: "Native" },
-    ],
-  },
-  aom: {
-    ...MAI,
-    id: "aom",
-    name: "Aom",
-    age: 27,
-    distance: "1.8 km",
-    photoBg: "linear-gradient(135deg, #e8d0b4, #b89878)",
-    rating: "5.0",
-    reviewCount: 134,
-    yearsExp: 6,
-    rebookRate: "98%",
-    about:
-      "Six years specializing in Thai traditional and sport recovery. Licensed by the Thai Ministry of Public Health. Speaks Mandarin and English.",
-    specs: [
-      { icon: "🌿", name: "Thai Traditional", yrs: "6 yrs · 1,000+ sessions" },
-      { icon: "🔥", name: "Sport Recovery", yrs: "4 yrs · 540+ sessions" },
-    ],
-  },
-};
+// Legacy demo URLs (/therapists/mai etc.) — keep an empty map so the
+// 3-tier lookup chain still type-checks, but tap-throughs from any
+// stale link will resolve to EMPTY_THERAPIST. Real therapists live in
+// data/therapists.ts.
+const DEMO_BY_ID: Record<string, DemoTherapist> = {};
+
+// Backwards-compatible alias — buildFromReal still references "MAI" as
+// the structural fallback. Pointing at the empty shell ensures no fake
+// stats leak through any spread.
+const MAI = EMPTY_THERAPIST;
 
 // stable per-id gradient (mirrors useTherapists.gradientForId)
 function gradientForId(id: string): string {
@@ -331,15 +209,122 @@ function gradientForId(id: string): string {
   return `linear-gradient(135deg, ${a}, ${b})`;
 }
 
-// Build a DemoTherapist shape from a real Therapist record. Mockup-only
-// fields (about / creds / specs / langs / reviews / etc) reuse Mai's
-// content as a placeholder until Task 7 wires real data per therapist.
+// Service id => punchy display label for the Specialties section.
+// Falls back to the static service's `name` when the id isn't mapped.
+//
+// Round 28am — icon mixes warm emoji (cultural / friendly services)
+// with sharp MUI icons for premium offerings:
+//   • Premium hero: ✨ → AutoAwesome (sparkle, gold tone)
+//   • Masculine: 💪 → FitnessCenter (clean, gym-like)
+//   • Deep tissue: 🔥 → Whatshot (avoid clash with "Today 🔥" badge)
+// 🆕 Round 28b3 — every emoji icon replaced with a proper MUI icon
+//   (founder rule: no emoji site-wide). Specialty cards now render
+//   tinted MUI icons rather than mixed emoji/icons.
+const SERVICE_DISPLAY: Record<
+  string,
+  { icon: React.ReactNode; short: string }
+> = {
+  "thai-massage": {
+    icon: <SpaRoundedIcon sx={{ fontSize: 18, color: "#16a34a" }} />,
+    short: "Thai Traditional",
+  },
+  aromatherapy: {
+    icon: <LocalFloristRoundedIcon sx={{ fontSize: 18, color: "#FE7A52" }} />,
+    short: "Aromatherapy",
+  },
+  "oil-massage": {
+    icon: <SelfImprovementRoundedIcon sx={{ fontSize: 18, color: "#0284C7" }} />,
+    short: "Oil Relaxation",
+  },
+  "gentlemans-recovery": {
+    icon: <FitnessCenterRoundedIcon sx={{ fontSize: 18, color: "#3c1e14" }} />,
+    short: "Gentleman's Recovery",
+  },
+  "sunred-signature": {
+    icon: <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#FE0944" }} />,
+    short: "SunRed Signature",
+  },
+  "sport-massage": {
+    icon: <DirectionsRunRoundedIcon sx={{ fontSize: 18, color: "#16a34a" }} />,
+    short: "Sport Recovery",
+  },
+  "deep-tissue": {
+    icon: <WhatshotRoundedIcon sx={{ fontSize: 18, color: "#FE7A52" }} />,
+    short: "Deep Tissue",
+  },
+  "prenatal-massage": {
+    icon: <PregnantWomanRoundedIcon sx={{ fontSize: 18, color: "#FE7A52" }} />,
+    short: "Pre-natal",
+  },
+  "foot-massage": {
+    icon: <EmojiNatureRoundedIcon sx={{ fontSize: 18, color: "#16a34a" }} />,
+    short: "Foot Massage",
+  },
+  "head-massage": {
+    icon: <PsychologyRoundedIcon sx={{ fontSize: 18, color: "#0284C7" }} />,
+    short: "Head Massage",
+  },
+  "hot-stone": {
+    icon: <LandscapeRoundedIcon sx={{ fontSize: 18, color: "#B45309" }} />,
+    short: "Hot Stone",
+  },
+};
+
+// Parse "Thai / English, Mandarin" => language pills.
+// Position-based level: first=Native, second=Fluent, rest=Conversational.
+function parseLanguages(
+  raw: string
+): { flag: string; name: string; level: string }[] {
+  const map: Record<string, { flag: string; name: string }> = {
+    english: { flag: "🇬🇧", name: "English" },
+    en: { flag: "🇬🇧", name: "English" },
+    thai: { flag: "🇹🇭", name: "Thai" },
+    th: { flag: "🇹🇭", name: "Thai" },
+    chinese: { flag: "🇨🇳", name: "Mandarin" },
+    mandarin: { flag: "🇨🇳", name: "Mandarin" },
+    cantonese: { flag: "🇨🇳", name: "Cantonese" },
+    zh: { flag: "🇨🇳", name: "Mandarin" },
+    japanese: { flag: "🇯🇵", name: "Japanese" },
+    ja: { flag: "🇯🇵", name: "Japanese" },
+    korean: { flag: "🇰🇷", name: "Korean" },
+    ko: { flag: "🇰🇷", name: "Korean" },
+  };
+  const tokens = raw
+    .split(/[,/\n]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const seen = new Set<string>();
+  const out: { flag: string; name: string; level: string }[] = [];
+  tokens.forEach((tok, idx) => {
+    const k = tok.toLowerCase();
+    const hit = map[k] ?? { flag: "🌐", name: tok };
+    if (seen.has(hit.name)) return;
+    seen.add(hit.name);
+    const level =
+      idx === 0 ? "Native" : idx === 1 ? "Fluent" : "Conversational";
+    out.push({ ...hit, level });
+  });
+  return out.slice(0, 5);
+}
+
+// Helper: ISO 639-1 code -> display flag + name.
+const LANG_DISPLAY: Record<string, { flag: string; name: string }> = {
+  en: { flag: "🇬🇧", name: "English" },
+  th: { flag: "🇹🇭", name: "Thai" },
+  zh: { flag: "🇨🇳", name: "Mandarin" },
+  ja: { flag: "🇯🇵", name: "Japanese" },
+  ko: { flag: "🇰🇷", name: "Korean" },
+};
+
+// Build a DemoTherapist shape from a real Therapist record.
+// Round 28z: prefers the new structured fields (credentials, serviceExperience,
+// languageSkills, area, rebookRate, totalSessions) added to data/therapists.ts.
+// Falls back to derivation from features.* for older records.
 function buildFromReal(real: Therapist): DemoTherapist {
   const ageStr = real.features.age ?? "";
   const ageNum = ageStr ? parseInt(ageStr, 10) || 28 : 28;
 
-  // 🖼 Cloudinary-enhanced gallery — cover (`real.image`) first, then
-  //    `real.gallery` deduped. Falls back to gradient if no images.
+  // Cloudinary-enhanced gallery: cover first, then dedup gallery.
   const rawImages: string[] = [];
   if (real.image) rawImages.push(real.image);
   if (real.gallery.length > 0) {
@@ -354,16 +339,191 @@ function buildFromReal(real: Therapist): DemoTherapist {
     ? `center / cover no-repeat url("${images[0]}")`
     : gradientForId(real.id);
 
+  // 🆕 Round 28ai — Specialties: list service icons + names ONLY.
+  //    No "X yrs · Y+ sessions" subtext (those were fake hardcoded
+  //    counts removed in Strategy B). When `serviceExperience` is set
+  //    by admin in the future (with verified counts), we'll opt back
+  //    in. For now, just render the service catalog.
+  const serviceIds =
+    ((real.servicesAvailable ?? real.services ?? []) as string[]) || [];
+  const realSpecs: DemoTherapist["specs"] = serviceIds
+    .map((sid) => {
+      const display = SERVICE_DISPLAY[sid];
+      return {
+        icon: display?.icon ?? (
+          <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#FE0944" }} />
+        ),
+        name: display?.short ?? sid,
+        yrs: "", // empty → UI hides subtext line
+      };
+    })
+    .filter((s, i, arr) => arr.findIndex((x) => x.name === s.name) === i);
+
+  // Languages — prefer structured `languageSkills`; fall back to parsing
+  // the free-form `features.language` string for legacy records.
+  let realLangs: DemoTherapist["langs"];
+  if (real.languageSkills && real.languageSkills.length > 0) {
+    realLangs = real.languageSkills.map((l) => {
+      const d = LANG_DISPLAY[l.code.toLowerCase()];
+      return {
+        flag: d?.flag ?? "🌐",
+        name: d?.name ?? l.code.toUpperCase(),
+        level: l.level,
+      };
+    });
+  } else {
+    realLangs = parseLanguages(real.features.language ?? "");
+  }
+
+  // 🆕 Round 28ai — Credentials: ONLY render when admin has verified
+  //    them (structured `credentials` array on the therapist record).
+  //    No MAI mock fallback — empty array → UI hides the section.
+  //    Strategy B: trust badges only when real.
+  // 🆕 Round 28b3 — emoji glyphs replaced with proper MUI icons.
+  const realCreds: DemoTherapist["creds"] =
+    real.credentials && real.credentials.length > 0
+      ? real.credentials.map((c) => ({
+          icon:
+            c.type === "license" ? (
+              <VerifiedRoundedIcon />
+            ) : c.type === "diploma" ? (
+              <SchoolRoundedIcon />
+            ) : c.type === "background" ? (
+              <ShieldRoundedIcon />
+            ) : (
+              <AutoAwesomeRoundedIcon />
+            ),
+          label: c.label,
+          meta: c.meta,
+        }))
+      : [];
+
+  // 🆕 Round 28b3 (founder 2026-05-03) — About card moved from
+  //   chip-per-fact to ROW-PER-CATEGORY. Three semantic rows:
+  //     1. Work — employment type · working hours
+  //     2. Body — gender · height · body type · bust · skin tone
+  //     3. Origin — ethnicity · languages
+  //   `aboutFacts` (legacy) kept in sync for the InfoSheet/Tabs tab
+  //   that still consumes the chip API; can be removed after that
+  //   surface migrates too.
+  const aboutBits: string[] = [];
+  const aboutFacts: AboutFact[] = [];
+  const f = real.features;
+
+  // Languages text — prefer structured codes, fall back to free-form
+  const langText =
+    real.languageSkills && real.languageSkills.length > 0
+      ? real.languageSkills
+          .map(
+            (l) => LANG_DISPLAY[l.code.toLowerCase()]?.name ?? l.code.toUpperCase()
+          )
+          .join(" · ")
+      : (f.language ?? "");
+
+  const hoursText =
+    real.startTime && real.endTime ? `${real.startTime} – ${real.endTime}` : "";
+
+  // Build new row structure
+  const aboutRows: AboutRow[] = [
+    {
+      icon: <WorkOutlineRoundedIcon />,
+      tone: "work",
+      parts: [f.employmentType ?? null, hoursText || null],
+    },
+    {
+      icon: <WcRoundedIcon />,
+      tone: "body",
+      parts: [
+        f.gender ?? null,
+        f.height ?? null,
+        f.bodyType ? `${f.bodyType} build` : null,
+        f.bustSize ? `Bust ${f.bustSize}` : null,
+        f.skintone ?? null,
+      ],
+    },
+    {
+      icon: <PublicRoundedIcon />,
+      tone: "ethnicity",
+      parts: [f.ethnicity ? `${f.ethnicity} therapist` : null, langText || null],
+    },
+  ];
+
+  // Legacy chip + bits sync — keeps InfoSheet/Tabs working unchanged.
+  if (f.employmentType) {
+    aboutBits.push(f.employmentType);
+    aboutFacts.push({
+      icon: <WorkOutlineRoundedIcon />,
+      text: f.employmentType,
+      tone: "work",
+    });
+  }
+  if (f.ethnicity) {
+    aboutBits.push(`${f.ethnicity} therapist`);
+    aboutFacts.push({
+      icon: <PublicRoundedIcon />,
+      text: `${f.ethnicity} therapist`,
+      tone: "ethnicity",
+    });
+  }
+  const bodyChipParts: string[] = [];
+  if (f.height) bodyChipParts.push(f.height);
+  if (f.bodyType) bodyChipParts.push(`${f.bodyType} build`);
+  if (bodyChipParts.length > 0) {
+    aboutBits.push(...bodyChipParts);
+    aboutFacts.push({
+      icon: <StraightenRoundedIcon />,
+      text: bodyChipParts.join(" · "),
+      tone: "body",
+    });
+  }
+  if (langText) {
+    aboutBits.push(`Speaks ${langText}`);
+    aboutFacts.push({
+      icon: <TranslateRoundedIcon />,
+      text: langText,
+      tone: "language",
+    });
+  }
+  if (hoursText) {
+    aboutBits.push(`Working hours ${hoursText}`);
+    aboutFacts.push({
+      icon: <ScheduleRoundedIcon />,
+      text: hoursText,
+      tone: "hours",
+    });
+  }
+  const aboutDerived = aboutBits.join(" · ");
+
+  // 🆕 Round 28ai — review aggregates start at 0/[]; live data layer
+  //    (useTherapistReviews) overlays real values on top of this shape.
+  const realReviewCount = real.reviews ?? 0;
+
   return {
-    ...MAI, // mockup placeholder content for sections we don't have data for
+    ...MAI, // pure structural shell — no fake numbers leak through
     id: real.id,
     name: real.name,
     age: ageNum,
     photoBg,
     images,
+    // Rating: 0 by default; StatsCard will Bayesian-recompute from
+    // live reviews when present, else show "New" badge.
     rating: (Number(real.rating) || 0).toFixed(1),
-    reviewCount: real.reviews ?? 0,
-    yearsExp: typeof real.experience === "number" ? real.experience : MAI.yearsExp,
+    reviewCount: realReviewCount,
+    yearsExp: typeof real.experience === "number" ? real.experience : 0,
+    area: real.area ?? "",
+    rebookRate:
+      typeof real.rebookRate === "number" ? `${real.rebookRate}%` : "—",
+    totalSessions:
+      typeof real.totalSessions === "number" ? real.totalSessions : 0,
+    specs: realSpecs,
+    langs: realLangs,
+    creds: realCreds,
+    reviewBuckets: [],
+    reviews: [],
+    about: aboutDerived,
+    aboutFacts,
+    aboutRows,
+    gender: real.features.gender,
   };
 }
 
@@ -372,20 +532,67 @@ const TherapistDetailPage: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  // 🆕 Round 28ae — live reviews from bookings/{id} where reviewText != "".
+  //   Same source as ReviewListPage — keeps detail-page sheet and the
+  //   full review list in lock-step. Subscribes when id is present.
+  const liveReviews = useTherapistReviews(id ?? null);
+
+  // 🆕 Round 28af — live booking aggregates for the Loyalty tab.
+  const loyaltyStats = useTherapistBookingStats(id ?? null);
+
   // 🔌 3-tier lookup chain:
-  //   1. `therapistsData[id]` (real Yuri/Jimmy/Hami/...) — wire real name/
-  //      age/rating/photo on top of Mai's mockup content for the sections
-  //      we don't have data for yet (about/creds/specs/langs/reviews).
-  //   2. `DEMO_BY_ID[id]` (mai/ploy/nan/fern/wan/aom from Browse page DEMO).
+  //   1. therapistsData[id] (real Yuri/Jimmy/Hami/...)
+  //   2. DEMO_BY_ID[id] (mai/ploy/nan/fern/wan/aom)
   //   3. MAI as last-resort fallback.
-  const therapist: DemoTherapist = (() => {
-    if (id) {
-      const real = therapistsData.find((t) => t.id === id);
-      if (real) return buildFromReal(real);
-      if (DEMO_BY_ID[id]) return DEMO_BY_ID[id];
+  let therapist: DemoTherapist = MAI;
+  if (id) {
+    const real = therapistsData.find((tt) => tt.id === id);
+    if (real) {
+      therapist = buildFromReal(real);
+    } else if (DEMO_BY_ID[id]) {
+      therapist = DEMO_BY_ID[id];
     }
-    return MAI;
-  })();
+  }
+
+  // 🆕 Round 28ae — overlay live Firestore reviews on top of the static
+  //   shape so the InfoSheet always reads the source-of-truth. When zero
+  //   reviews exist live, fall back to whatever buildFromReal produced
+  //   (which is empty arrays for fresh therapists, MAI demo for the
+  //   placeholder demo path).
+  // 🆕 Round 28aj — overlay live loyalty aggregates onto totalSessions
+  //   and rebookRate so StatsCard + TrustHero show real numbers.
+  if (loyaltyStats.totalCompleted > 0) {
+    therapist = {
+      ...therapist,
+      totalSessions: loyaltyStats.totalCompleted,
+      rebookRate:
+        loyaltyStats.uniqueCustomers >= 1
+          ? `${loyaltyStats.repeatPct}%`
+          : therapist.rebookRate,
+    };
+  }
+
+  if (liveReviews.reviewCount > 0) {
+    therapist = {
+      ...therapist,
+      reviewCount: liveReviews.reviewCount,
+      reviewBuckets: liveReviews.buckets.map((b) => ({
+        num: b.stars,
+        count: b.count,
+        pct: b.pct,
+      })),
+      reviews: liveReviews.reviews.map((r) => ({
+        // Keep DemoTherapist shape so existing renderers don't break.
+        // InfoSheet's ReviewsTab gets the privacy-safe shape via the
+        // separate `reviews` prop wired below.
+        initial: "•",
+        name: `Booking #${r.bookingId.slice(0, 8).toUpperCase()}`,
+        flag: "",
+        meta: `${r.ago} · ${r.service}`,
+        quote: r.body,
+      })),
+    };
+  }
 
   useDocumentMeta({
     title: t("meta.detail.title", "{{name}} · SUNRED Bangkok", {
@@ -424,17 +631,50 @@ const TherapistDetailPage: React.FC = () => {
     "profile" | "reviews" | "loyalty" | null
   >(null);
 
-  // 🆕 Phase 5 — Live bookings → drives the StatusPill.
+  // 🆕 Round 28aq — drive StatusPill from the REAL availability engine
+  //   (calculateTherapistStatus) instead of the unset `therapist.online`
+  //   field. The previous logic always read `online: false` from the
+  //   EMPTY_THERAPIST shell, so every therapist appeared "Off duty"
+  //   regardless of their actual shift / live booking state.
   const liveBookings = useTherapistBookings(therapist.id);
   const activeBooking = findActiveBooking(liveBookings);
-  const livePillStatus: "online" | "busy" | "offline" = !therapist.online
-    ? "offline"
-    : activeBooking
-      ? "busy"
-      : "online";
-  const liveNextAvailable = activeBooking
-    ? nextAvailableHHMM(liveBookings)
+  // 🆕 Round 28b9 — when therapist is currently free but has a future
+  //   session on the schedule, surface the next start time so the
+  //   StatusPill / DetailHero / cards all read consistently with the
+  //   booking time picker (which already shows "TAKEN" slots).
+  const upcomingBooking = findNextBooking(liveBookings);
+  const nextBookingAt = upcomingBooking
+    ? fmtBKK(upcomingBooking.startAt, "HH:mm", "")
     : null;
+
+  // Resolve the underlying real Therapist record so the engine can
+  // read shift / override / busy fields straight from data file.
+  const realRecord = therapistsData.find((tt) => tt.id === therapist.id);
+  const engineStatus = realRecord
+    ? calculateTherapistStatus(realRecord).status
+    : "resting";
+
+  const livePillStatus: "online" | "busy" | "offline" =
+    engineStatus === "resting"
+      ? "offline"
+      : engineStatus === "bookable" || activeBooking
+        ? "busy"
+        : "online";
+
+  // 🆕 Round 28ap — surface the next-available HH:mm for ALL states:
+  //   • busy   → end of current booking (from live data)
+  //              fallback to engine's nextAvailable (e.g. busyUntil)
+  //   • offline→ start of therapist's next shift
+  //   • online → null (already available)
+  const engineNext = realRecord
+    ? calculateTherapistStatus(realRecord).nextAvailable
+    : null;
+  const liveNextAvailable =
+    livePillStatus === "busy"
+      ? (activeBooking ? nextAvailableHHMM(liveBookings) : engineNext)
+      : livePillStatus === "offline"
+        ? (engineNext ?? realRecord?.startTime ?? null)
+        : null;
 
   // 🆕 Phase 5 — Auto-navigate to /booking/:id once all four prerequisites
   //    (service, duration, date, time) are confirmed. Founder request
@@ -458,13 +698,13 @@ const TherapistDetailPage: React.FC = () => {
   return (
     <Box
       sx={{
-        // .phone — verbatim
+        // .phone — Round 28b1 Clean v3 cool-neutral
         maxWidth: "430px",
         margin: "0 auto",
-        background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
+        background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
         borderRadius: "28px",
         overflow: "hidden",
-        boxShadow: "0 20px 60px rgba(126, 30, 46, 0.15)",
+        boxShadow: "0 20px 60px rgba(15, 23, 42, 0.08)",
         position: "relative",
         minHeight: "100vh",
       }}
@@ -474,25 +714,30 @@ const TherapistDetailPage: React.FC = () => {
         age={therapist.age}
         area={therapist.area}
         distance={therapist.distance}
-        online={therapist.online}
+        // 🆕 Round 28aq — pass full 3-state status from the real engine
+        //   so the hero dot/label reads "Online" (green) / "Busy" (orange)
+        //   / "Offline" (gray) consistently with the StatusPill below.
+        online={livePillStatus}
         photoBg={therapist.photoBg}
         images={therapist.images}
       />
 
       <StatsCard
-        // ⭐ Bayesian rating — same algorithm used in the Reviews tab so
-        //    the headline + tab agree. Uses the demo aggregate fields
-        //    (sumOfRatings ≈ rating × reviewCount when reviews stored
-        //    only as count + average — Firestore wiring in Task 7 will
-        //    pass the actual review list for exact computation).
-        rating={formatRating(
-          bayesianRatingFromAggregate(
-            parseFloat(therapist.rating) * therapist.reviewCount,
-            therapist.reviewCount
-          )
-        )}
+        // ⭐ Round 28ak — Bayesian-adjusted rating from REAL review list.
+        //    Previous implementation used `therapist.rating × count` as
+        //    "sum" — but therapist.rating is the SEED (0 for fresh
+        //    records), so a therapist with 30 real reviews would show
+        //    1.1★ instead of their actual average. Now we feed the live
+        //    review list straight into bayesianRating() which sums the
+        //    real per-review ratings.
+        rating={
+          liveReviews.reviewCount > 0
+            ? formatRating(bayesianRating(liveReviews.reviews))
+            : therapist.rating
+        }
         reviewCount={therapist.reviewCount}
         yearsExp={therapist.yearsExp}
+        totalSessions={therapist.totalSessions}
         rebookRate={therapist.rebookRate}
         // Tap-to-open info sheet — saves vertical space on the detail page
         onTapRating={() => setInfoSheet("reviews")}
@@ -500,33 +745,41 @@ const TherapistDetailPage: React.FC = () => {
         onTapLoyalty={() => setInfoSheet("loyalty")}
       />
 
-      <About name={therapist.name} body={therapist.about} />
+      {/* 🆕 Round 28b5 — Gallery is now embedded INSIDE the About
+          card (founder spec: "เอา Gallery ไปไว้ใน sheet เดียวกันกับ
+          About card collapsible"). Tapping About expands Row 2 +
+          Row 3 + 3-col gallery grid all at once. The standalone
+          GalleryTile section is no longer rendered. */}
+      <About
+        name={therapist.name}
+        rows={therapist.aboutRows}
+        facts={therapist.aboutFacts}
+        body={therapist.about}
+        gender={therapist.gender}
+        images={therapist.images}
+        galleryAltBase={`${therapist.name} photo`}
+        enhance={(url, mode) =>
+          enhanceImage(url, { variant: mode === "thumb" ? "card" : "hero" })
+        }
+      />
 
-      {/* 🆕 Phase 5 — Live availability pill driven by Firestore bookings.
-          • offline   = therapist marked off-shift in profile data
-          • busy      = there's a booking covering 'now' → show end time
-          • online    = otherwise (free right now)
+      {/* Phase 5 — Live availability pill driven by Firestore bookings.
+          offline = therapist marked off-shift in profile data
+          busy    = there's a booking covering 'now' (show end time)
+          online  = otherwise (free right now)
           The 'Next available' time is the active booking's endAt, so as
           soon as someone confirms a booking the label updates everywhere
           via the onSnapshot subscription. */}
       <Box sx={{ marginTop: "4px" }}>
         <StatusPill
+          nextBookingAt={
+            livePillStatus === "online" ? nextBookingAt : null
+          }
           status={livePillStatus}
           nextAvailable={liveNextAvailable}
         />
       </Box>
 
-      {/* 🆕 Phase 4 — TherapistProfileTabs lives inside <TherapistInfoSheet/>
-          now (rendered at the bottom of the page). It opens when the user
-          taps a stat-card cell. Removes ~600px of always-visible vertical
-          space so the booking picker lands one screen earlier. */}
-
-      {/* 🆕 Phase 5 — One merged bottom sheet (service + duration + date +
-          time). Tapping a service card opens the sheet pre-loaded with that
-          service; user picks duration/date/time inside the sheet and the
-          single Confirm tap auto-navigates to /booking/:id. The previously-
-          separate "When works for you?" PickerSection + DateTimePickerCell +
-          DateTimeSheet are gone — everything lives ในsheet เดียวกัน. */}
       <PickerSection
         title={
           <>
@@ -538,7 +791,6 @@ const TherapistDetailPage: React.FC = () => {
           "Select your service, duration, date and time — all in one step."
         )}
       >
-        {/* Sub-header above the cards (mockup: 'Service') */}
         <Typography
           sx={{
             fontFamily: SERIF,
@@ -565,7 +817,6 @@ const TherapistDetailPage: React.FC = () => {
           }}
         />
 
-        {/* Helper copy under the cards — chat fallback for edge requests */}
         <Typography
           sx={{
             fontFamily: SANS,
@@ -585,30 +836,34 @@ const TherapistDetailPage: React.FC = () => {
 
       {/* (Reviews moved into TherapistProfileTabs as Tab 2.) */}
 
-      {/* 🆕 Phase 5 — StickyBookCTA removed (founder feedback 2026-05-01).
+      {/* Phase 5 — StickyBookCTA removed (founder feedback 2026-05-01).
           Auto-navigate in goConfirmOrder() forwards the user to
           /booking/:id as soon as the merged sheet's Confirm fires, so the
-          manual sticky 'Continue with X →' bar was redundant. The
+          manual sticky 'Continue with X' bar was redundant. The
           component file is kept around in case we need a manual confirm
           fallback later. */}
 
-      {/* 🆕 Phase 4 — Therapist info sheet (Verified Profile / Reviews).
+      {/* Phase 4 — Therapist info sheet (Verified Profile / Reviews).
           Opened from StatsCard's tappable cells; closed by backdrop tap,
-          drag, or the × button in the sheet header. */}
+          drag, or the close button in the sheet header. */}
       <TherapistInfoSheet
         open={infoSheet !== null}
         onClose={() => setInfoSheet(null)}
-        // 'loyalty' isn't a tab in TherapistInfoSheet yet — fall back to
-        // 'profile' so tapping the loyalty cell still opens something useful.
+        // Round 28ah — 'loyalty' is now a real tab. Forward whichever
+        // cell the user tapped on; default to 'profile' on null/unknown.
         initialTab={
-          infoSheet === "reviews" ? "reviews" : "profile"
+          infoSheet === "reviews"
+            ? "reviews"
+            : infoSheet === "loyalty"
+            ? "loyalty"
+            : "profile"
         }
         data={{
           yearsExp: therapist.yearsExp,
-          totalSessions: therapist.specs.reduce((sum, s) => {
-            const m = /(\d[\d,]*)/.exec(s.yrs);
-            return sum + (m ? parseInt(m[1].replace(/,/g, ""), 10) : 0);
-          }, 0),
+          totalSessions: therapist.totalSessions,
+          // 🆕 Round 28aj — live "today" count surfaces as a momentum
+          //   signal in the InfoSheet TrustHero strip.
+          todayBookings: loyaltyStats.todayBookings,
           rebookRate: therapist.rebookRate,
           hasLicense: therapist.creds.some((c) =>
             /licen[cs]e|ผ\.พ\./i.test(c.label)
@@ -626,24 +881,39 @@ const TherapistDetailPage: React.FC = () => {
           langs: therapist.langs,
           rating: therapist.rating,
           reviewCount: therapist.reviewCount,
-          reviewBuckets: therapist.reviewBuckets.map((b) => ({
-            stars: b.num,
-            pct: b.pct,
-            count: b.count,
-          })),
-          reviews: therapist.reviews.map((r, i) => ({
-            bookingId: `DEMO${String(i + 1).padStart(4, "0")}${(
-              r.initial + therapist.id
-            )
-              .replace(/[^A-Z0-9]/gi, "")
-              .slice(0, 4)
-              .toUpperCase()}`,
-            rating: 5,
-            service: r.meta.split("·")[1]?.trim() ?? "Service",
-            body: r.quote,
-            ago: r.meta.split("·")[0]?.trim() ?? "",
-            verified: true,
-          })),
+          // 🆕 Round 28ae — when live reviews exist, ship those directly
+          //   so we never invent a fake rating/booking id. Otherwise pass
+          //   empty arrays — InfoSheet renders the "No reviews yet" state.
+          reviewBuckets:
+            liveReviews.reviewCount > 0
+              ? liveReviews.buckets.map((b) => ({
+                  stars: b.stars,
+                  pct: b.pct,
+                  count: b.count,
+                }))
+              : [],
+          reviews:
+            liveReviews.reviewCount > 0
+              ? liveReviews.reviews.map((r) => ({
+                  bookingId: r.bookingId,
+                  rating: r.rating,
+                  service: r.service,
+                  body: r.body,
+                  ago: r.ago,
+                  verified: r.verified,
+                }))
+              : [],
+          // 🆕 Round 28af — pipe live booking aggregates through. The
+          //   Loyalty tab uses real values when uniqueCustomers ≥ 3,
+          //   otherwise falls back to synthetic estimates from rebookRate.
+          loyaltyStats: {
+            totalCompleted: loyaltyStats.totalCompleted,
+            uniqueCustomers: loyaltyStats.uniqueCustomers,
+            repeatCustomers: loyaltyStats.repeatCustomers,
+            repeatPct: loyaltyStats.repeatPct,
+            avgSessions: loyaltyStats.avgSessions,
+            timingBuckets: loyaltyStats.timingBuckets,
+          },
         }}
       />
     </Box>

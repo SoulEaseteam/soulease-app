@@ -1,97 +1,106 @@
-// src/components/home/HomeTherapistGrid.tsx
-//
-// 🆕 Round 25b (founder 2026-05-02): bring /therapists list onto HomePage
-//    as a compact 2-col grid. Founder asked: "เอา /therapists มาไว้น่าโฮม
-//    แบบเรียง2การ์ด".
-//
-// Hard rules:
-//   • Real Firestore via onSnapshot — NO demo fallback (Round 21 rationale).
-//   • Same enrich + sort logic as TherapistListPage so the home preview is
-//     a faithful slice of the canonical list (no divergent ranking).
-//   • rating coerced via Number() to dodge the toFixed-on-string crash
-//     fixed earlier this session.
-//   • Privacy mask on in-session therapists (matches TherapistProfileCard).
-//   • Phone-shell-aware: 2-col grid sized for the 430px container.
 
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect, useMemo, useState } from "react";
 import { Box, Typography, CircularProgress } from "@mui/material";
-import { useNavigate } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
-import StarRoundedIcon from "@mui/icons-material/StarRounded";
 
 import { db } from "@/lib/firebase";
 import type { Therapist as TherapistType, Avail } from "@/types/therapist";
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
 import { getBadgeForTherapist } from "@/utils/getTherapistBadge";
-import { enhanceImage } from "@/utils/cloudinary";
+import { haversineKm } from "@/utils/taxiFare";
+
+import TherapistProfileCard from "@/components/TherapistProfileCard";
+import TherapistSearchBar from "@/components/TherapistSearchBar";
+import HomeMapBrowse from "@/components/home/HomeMapBrowse";
+import { matchesQuery } from "@/utils/therapistSearch";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import { priceForDuration } from "@/utils/servicePricing";
+import staticServices from "@/data/services";
+import { brand, fonts, glass, gradients } from "@/theme";
+import type { MassageService } from "@/data/services";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
-interface Therapist {
-  id: string;
-  name: string;
-  image: string;
-  rating: number;
-  reviews: number;
-  todayBookings?: number;
-  totalBookings?: number;
-  badgeKey?: "VIP" | "HOT" | "NEW" | null;
-  badgeUpdatedAt?: number | null;
+interface Therapist extends TherapistType {
   computedStatus?: Avail;
-  hideProfile?: boolean;
-  startTime?: string;
-  endTime?: string;
-  [key: string]: unknown;
+  computedNext?: string | null;
 }
 
-const PRIVACY_PLACEHOLDER = "/images/icon/sunred-logo.png";
-
-/** Status pill color per Avail state — mirrors TherapistProfileCard CTA gradient. */
-const STATUS_STYLES: Record<Avail, { bg: string; color: string; label: string }> = {
-  available: {
-    bg: "linear-gradient(135deg, #FE0944 0%, #FEAE96 100%)",
-    color: "#fff",
-    label: "BOOK NOW",
-  },
-  bookable: {
-    bg: "linear-gradient(135deg, #FFB088 0%, #FE7A52 100%)",
-    color: "#fff",
-    label: "IN SESSION",
-  },
-  resting: {
-    bg: "linear-gradient(135deg, #FFD6E8 0%, #E5D0FF 100%)",
-    color: "#7E1F4D",
-    label: "PRE-BOOK",
-  },
-};
-
 const HomeTherapistGrid: React.FC = () => {
-  const navigate = useNavigate();
   const [therapists, setTherapists] = useState<Therapist[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQ, setSearchQ] = useState("");
 
-  // ── Firestore live subscription — same shape as TherapistListPage ──
+  // ── Single GPS watcher — feeds every card with a fresh userLocation.
+  //    Auto-starts so distance shows immediately when permission is granted.
+  const { location: userLocation, request: requestLocation } = useUserLocation({
+    autoStart: true,
+  });
+  // Keep an explicit start in case autoStart was suppressed by SSR/hydration.
+  useEffect(() => {
+    requestLocation();
+  }, [requestLocation]);
+
+  // ── Single `services` collection subscription — every card reads from
+  //    the same Map. Falls back to static services when Firestore is empty
+  //    (e.g., before admin has populated the collection).
+  const [liveServices, setLiveServices] = useState<MassageService[] | null>(
+    null
+  );
+  useEffect(() => {
+    const unsub = onSnapshot(
+      collection(db, "services"),
+      (snap) => {
+        const arr: MassageService[] = [];
+        snap.forEach((d) => {
+          const data = d.data() as Partial<MassageService> & { id?: string };
+          if (typeof data.price === "number") {
+            arr.push({
+              id: data.id ?? d.id,
+              name: data.name ?? d.id,
+              desc: data.desc ?? "",
+              price: data.price,
+              duration: data.duration ?? 60,
+              availableDurations: data.availableDurations,
+              count: data.count ?? 0,
+              image: data.image ?? "",
+              detail: data.detail ?? "",
+              benefit: data.benefit ?? [],
+              badge: data.badge ?? "RECOMMEND",
+            });
+          }
+        });
+        setLiveServices(arr.length > 0 ? arr : null);
+      },
+      () => setLiveServices(null)
+    );
+    return () => unsub();
+  }, []);
+
+  const servicesById = useMemo(() => {
+    const m = new Map<string, MassageService>();
+    const source = liveServices ?? staticServices;
+    for (const s of source) m.set(s.id, s);
+    return m;
+  }, [liveServices]);
+
+  // ── Therapists collection — live subscription with enrich (NO sort here)
+  // 🆕 Round 26d — sort moved to a useMemo below so it can re-run when
+  // userLocation changes (distance is part of the sort key).
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "therapists"), (snap) => {
       const raw: Therapist[] = [];
-
       snap.forEach((docSnap) => {
         const data = docSnap.data() as Therapist;
-        raw.push({
-          ...data,
-          id: data.id || docSnap.id,
-        });
+        raw.push({ ...data, id: data.id || docSnap.id });
       });
 
-      // Enrich with computed status + badge.
-      // Defensive: clamp engine output to a known Avail union — Firestore
-      // statusOverride is type-as-cast inside the engine, so unexpected
-      // strings can leak through and break downstream sort + STATUS_STYLES.
       const enriched = raw.map((t) => {
-        const { status } = calculateTherapistStatus(t as unknown as TherapistType);
-        // TS sees status as Avail, but engine casts statusOverride to Avail —
-        // an admin typo in Firestore can leak a non-Avail string at runtime.
+        const { status, nextAvailable } = calculateTherapistStatus(t);
+        // Defensive: clamp engine output to known Avail union — admin
+        // typo on statusOverride can leak a non-Avail string at runtime.
         /* eslint-disable @typescript-eslint/no-unnecessary-condition */
         const safeStatus: Avail =
           status === "available" || status === "bookable" || status === "resting"
@@ -104,64 +113,115 @@ const HomeTherapistGrid: React.FC = () => {
           badgeKey: t.badgeKey,
           badgeUpdatedAt: t.badgeUpdatedAt,
         });
-        return { ...t, computedStatus: safeStatus, badgeKey: badge.key };
-      });
-
-      // Sort: badge priority → status → rating
-      enriched.sort((a, b) => {
-        const badgeOrder: Array<"VIP" | "HOT" | "NEW" | null> = [
-          "VIP",
-          "HOT",
-          "NEW",
-          null,
-        ];
-        const statusOrder: Record<Avail, number> = {
-          available: 1,
-          bookable: 2,
-          resting: 3,
+        return {
+          ...t,
+          computedStatus: safeStatus,
+          computedNext: nextAvailable ?? null,
+          badgeKey: badge.key,
         };
-        const aBadge = badgeOrder.indexOf(a.badgeKey ?? null);
-        const bBadge = badgeOrder.indexOf(b.badgeKey ?? null);
-        if (aBadge !== bBadge) return aBadge - bBadge;
-        const stA = statusOrder[a.computedStatus];
-        const stB = statusOrder[b.computedStatus];
-        if (stA !== stB) return stA - stB;
-        // Number() can return NaN — `||` is correct fallback (NaN ?? 0 → NaN)
-        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-        return (Number(b.rating) || 0) - (Number(a.rating) || 0);
       });
 
       setTherapists(enriched);
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 
-  // Live "available now" count for header social proof
-  const availableNow = therapists.filter(
+  // ── Sort: status (available > bookable > resting), distance ASC, rating DESC.
+  //    🆕 Round 26d (founder 2026-05-02): "พนักงานที่ใกล้ user และกำลัง
+  //    available / bookable / resting ขึ้นก่อน". Status is the primary
+  //    bucket; within each bucket, closer therapists rank higher; rating
+  //    breaks ties when distance is unknown / equal.
+  const sorted = useMemo(() => {
+    const statusOrder: Record<Avail, number> = {
+      available: 1,
+      bookable: 2,
+      resting: 3,
+    };
+
+    const distanceFor = (t: Therapist): number => {
+      // Prefer live Haversine from userLocation. Fall back to denormalized
+      // distanceKm. Unknown → +Infinity so it sinks to the bottom of its
+      // status bucket (rating still breaks the tie).
+      if (userLocation) {
+        const target =
+          t.currentLocation ??
+          t.homeLocation ??
+          (typeof t.lat === "number" && typeof t.lng === "number"
+            ? { lat: t.lat, lng: t.lng }
+            : null);
+        if (target) {
+          return haversineKm(
+            userLocation.lat,
+            userLocation.lng,
+            target.lat,
+            target.lng
+          );
+        }
+      }
+      return typeof t.distanceKm === "number"
+        ? t.distanceKm
+        : Number.POSITIVE_INFINITY;
+    };
+
+    return [...therapists].sort((a, b) => {
+      const stA = statusOrder[a.computedStatus ?? "resting"];
+      const stB = statusOrder[b.computedStatus ?? "resting"];
+      if (stA !== stB) return stA - stB;
+
+      const dA = distanceFor(a);
+      const dB = distanceFor(b);
+      if (dA !== dB) return dA - dB;
+
+      // Tie-breaker — higher rating wins. NaN-safe via `||`.
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+      return (Number(b.rating) || 0) - (Number(a.rating) || 0);
+    });
+  }, [therapists, userLocation]);
+
+  // ── Apply search filter (case-insensitive across name/lang/specialty)
+  const visible = useMemo(
+    () => sorted.filter((t) => matchesQuery(t, searchQ)),
+    [sorted, searchQ]
+  );
+
+  const availableNow = visible.filter(
     (t) => t.computedStatus === "available"
   ).length;
+
+  // ── Starting-price-per-therapist map for the map preview card.
+  //    Same logic the card uses internally — lift it here so the map
+  //    section can show ฿ without a second Firestore subscription.
+  const priceById = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const t of visible) {
+      const ids = ((t.servicesAvailable ?? t.services ?? []) as string[]) || [];
+      let min: number | null = null;
+      for (const id of ids) {
+        const svc = servicesById.get(id);
+        if (!svc) continue;
+        const p = priceForDuration(svc, 60);
+        if (min == null || p < min) min = p;
+      }
+      if (min != null) m.set(t.id, min);
+    }
+    return m;
+  }, [visible, servicesById]);
 
   return (
     <Box
       component="section"
       id="therapist-grid"
       aria-label="available therapists"
-      sx={{ margin: "20px 14px 4px", scrollMarginTop: "12px" }}
+      sx={{ margin: "20px 0 4px", scrollMarginTop: "12px" }}
     >
       {/* Header: serif title + live count.
-          🆕 Round 25c — "See all →" link removed. There's no separate
-          /therapists page anymore; the grid below IS the canonical list. */}
-      <Box
-        sx={{
-          marginBottom: "10px",
-          paddingX: "2px",
-        }}
-      >
+          🆕 Round 28c — bumped horizontal padding 16 → 14 to match
+          Hero margin and search bar inset (cohesive home rhythm). */}
+      <Box sx={{ marginBottom: "10px", padding: "0 14px" }}>
         <Typography
           sx={{
-            fontFamily: SERIF,
+            fontFamily: fonts.heading,
             fontSize: "22px",
             fontWeight: 600,
             color: "#3c1e14",
@@ -169,12 +229,15 @@ const HomeTherapistGrid: React.FC = () => {
             lineHeight: 1.05,
           }}
         >
-          Our <em style={{ color: "#FE0944", fontStyle: "italic" }}>therapists</em>
+          Our{" "}
+          <Box component="span" sx={{ color: "#FE0944" }}>
+            Therapists
+          </Box>
         </Typography>
         {!loading && therapists.length > 0 && (
           <Typography
             sx={{
-              fontFamily: SANS,
+              fontFamily: fonts.body,
               fontSize: "11px",
               color: "rgba(60, 30, 20, 0.6)",
               marginTop: "3px",
@@ -203,13 +266,18 @@ const HomeTherapistGrid: React.FC = () => {
                 <Box component="span" sx={{ color: "#16a34a", fontWeight: 700 }}>
                   {availableNow} online now
                 </Box>
-                <Box component="span" sx={{ opacity: 0.4 }}>·</Box>
+                <Box component="span" sx={{ opacity: 0.4 }}>
+                  ·
+                </Box>
               </>
             )}
-            <Box component="span">{therapists.length} verified</Box>
+            <Box component="span">{visible.length} verified</Box>
           </Typography>
         )}
       </Box>
+
+      {/* Search bar — glass pill matching mockup */}
+      <TherapistSearchBar value={searchQ} onChange={setSearchQ} m="0 14px 12px" />
 
       {/* Body */}
       {loading ? (
@@ -223,11 +291,12 @@ const HomeTherapistGrid: React.FC = () => {
         >
           <CircularProgress size={28} sx={{ color: "#FE0944" }} />
         </Box>
-      ) : therapists.length === 0 ? (
+      ) : visible.length === 0 ? (
         <Box
           sx={{
+            margin: "0 14px",
             textAlign: "center",
-            padding: "40px 16px",
+            padding: "40px 14px",
             borderRadius: "16px",
             background: "rgba(255,255,255,0.5)",
             border: "1px solid rgba(255,255,255,0.6)",
@@ -235,13 +304,13 @@ const HomeTherapistGrid: React.FC = () => {
         >
           <Typography
             sx={{
-              fontFamily: SERIF,
+              fontFamily: fonts.heading,
               fontSize: "15px",
               color: "#3c1e14",
               fontWeight: 600,
             }}
           >
-            No therapists right now
+            {searchQ ? "No matches" : "No therapists right now"}
           </Typography>
           <Typography
             sx={{
@@ -251,7 +320,9 @@ const HomeTherapistGrid: React.FC = () => {
               marginTop: "4px",
             }}
           >
-            Check back in a moment.
+            {searchQ
+              ? `Nothing matches "${searchQ}". Try a different keyword.`
+              : "Check back in a moment."}
           </Typography>
         </Box>
       ) : (
@@ -260,221 +331,35 @@ const HomeTherapistGrid: React.FC = () => {
             display: "grid",
             gridTemplateColumns: "repeat(2, 1fr)",
             gap: "10px",
+            padding: "0 14px 16px",
           }}
         >
-          {therapists.map((t) => (
-            <CompactCard
+          {visible.map((t, i) => (
+            <TherapistProfileCard
               key={t.id}
-              t={t}
-              onClick={() => navigate(`/therapists/${t.id}`)}
+              therapist={t}
+              priority={i < 2 /* eager-load top row for LCP */}
+              userLocation={userLocation}
+              services={servicesById}
+              // Round 28aw — pass requestLocation so the "Allow location"
+              // chip can trigger the browser permission prompt directly.
+              onRequestLocation={requestLocation}
             />
           ))}
         </Box>
       )}
-    </Box>
-  );
-};
 
-/** ---------------- Compact Card ---------------- */
-interface CompactCardProps {
-  t: Therapist;
-  onClick: () => void;
-}
-
-const CompactCard: React.FC<CompactCardProps> = ({ t, onClick }) => {
-  // Defensive: any statusOverride can leak from Firestore (admin typo etc.)
-  // and break STATUS_STYLES lookup. Coerce anything non-Avail back to "resting".
-  const raw = t.computedStatus;
-  const status: Avail =
-    raw === "available" || raw === "bookable" || raw === "resting"
-      ? raw
-      : "resting";
-  const inSession = status === "bookable" || !!t.hideProfile;
-  const styles = STATUS_STYLES[status];
-
-  const img = t.image || "placeholder.jpg";
-  const resolvedImage =
-    img.startsWith("http") || img.startsWith("/") ? img : `/images/${img}`;
-
-  // Number() can return NaN — `||` is correct fallback (NaN ?? 0 → NaN)
-  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-  const ratingNum = (Number(t.rating) || 0).toFixed(1);
-  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-  const reviewsNum = Number(t.reviews) || 0;
-
-  return (
-    <Box
-      onClick={onClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onClick();
-        }
-      }}
-      sx={{
-        position: "relative",
-        cursor: "pointer",
-        borderRadius: "16px",
-        overflow: "hidden",
-        background: "rgba(255, 255, 255, 0.55)",
-        backdropFilter: "blur(14px)",
-        WebkitBackdropFilter: "blur(14px)",
-        border: "1px solid rgba(255, 255, 255, 0.65)",
-        boxShadow:
-          "0 6px 18px rgba(126, 30, 46, 0.08), inset 0 1px 0 rgba(255,255,255,0.6)",
-        padding: "6px 6px 10px",
-        transition: "transform 0.22s ease, box-shadow 0.22s ease",
-        "&:hover": {
-          transform: "translateY(-3px)",
-          boxShadow: "0 12px 28px rgba(254, 9, 68, 0.16)",
-        },
-      }}
-    >
-      {/* Image — 1:1 square */}
-      <Box sx={{ position: "relative" }}>
-        <Box
-          component="img"
-          src={
-            inSession
-              ? PRIVACY_PLACEHOLDER
-              : enhanceImage(resolvedImage, { variant: "card" })
-          }
-          alt={inSession ? "Therapist in session" : t.name}
-          loading="lazy"
-          decoding="async"
-          sx={{
-            width: "100%",
-            aspectRatio: "1 / 1",
-            objectFit: inSession ? "contain" : "cover",
-            borderRadius: "12px",
-            background: inSession
-              ? "linear-gradient(135deg, #FFE5D9 0%, #E5D0FF 100%)"
-              : "transparent",
-            padding: inSession ? 3 : 0,
-            display: "block",
-          }}
+      {/* 🆕 Round 26d — "Or browse by location ↓" map preview.
+          Shown only when there are therapists in the visible list and
+          we're not in a no-match search state. Pass the live user
+          position so pins can be projected at real lat/lng offsets. */}
+      {!loading && visible.length > 0 && (
+        <HomeMapBrowse
+          therapists={visible}
+          priceById={priceById}
+          userLocation={userLocation}
         />
-
-        {/* Badge corner overlay */}
-        {t.badgeKey && (
-          <Box
-            sx={{
-              position: "absolute",
-              top: 6,
-              left: 6,
-              padding: "2px 7px",
-              borderRadius: "99px",
-              background:
-                t.badgeKey === "VIP"
-                  ? "linear-gradient(135deg, #FE0944, #831843)"
-                  : t.badgeKey === "HOT"
-                  ? "linear-gradient(135deg, #FE7A52, #FE0944)"
-                  : "linear-gradient(135deg, #14b8a6, #0d9488)",
-              color: "#fff",
-              fontFamily: SANS,
-              fontSize: "9px",
-              fontWeight: 800,
-              letterSpacing: "0.06em",
-              boxShadow: "0 3px 8px rgba(0,0,0,0.18)",
-            }}
-          >
-            {t.badgeKey}
-          </Box>
-        )}
-
-        {/* Status pulse dot — top right */}
-        {status === "available" && (
-          <Box
-            sx={{
-              position: "absolute",
-              top: 8,
-              right: 8,
-              width: 9,
-              height: 9,
-              borderRadius: "50%",
-              background: "#16a34a",
-              boxShadow: "0 0 0 3px rgba(22,163,74,0.25)",
-              animation: "compactBlink 1.4s ease-in-out infinite",
-              "@keyframes compactBlink": {
-                "0%, 100%": { opacity: 1 },
-                "50%": { opacity: 0.4 },
-              },
-            }}
-          />
-        )}
-      </Box>
-
-      {/* Name */}
-      <Typography
-        sx={{
-          fontFamily: SERIF,
-          fontSize: "14px",
-          fontWeight: 600,
-          color: "#2a1a14",
-          marginTop: "6px",
-          paddingX: "4px",
-          lineHeight: 1.15,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-      >
-        {t.name}
-      </Typography>
-
-      {/* Rating row */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: "3px",
-          paddingX: "4px",
-          marginTop: "1px",
-        }}
-      >
-        <StarRoundedIcon sx={{ fontSize: 12, color: "#F59E0B" }} />
-        <Typography
-          sx={{
-            fontFamily: SANS,
-            fontSize: "11px",
-            color: "rgba(60, 30, 20, 0.7)",
-            fontWeight: 600,
-          }}
-        >
-          {ratingNum}
-        </Typography>
-        <Typography
-          sx={{
-            fontFamily: SANS,
-            fontSize: "10px",
-            color: "rgba(60, 30, 20, 0.45)",
-          }}
-        >
-          · {reviewsNum}
-        </Typography>
-      </Box>
-
-      {/* Status pill */}
-      <Box
-        sx={{
-          marginTop: "6px",
-          marginX: "4px",
-          padding: "5px 8px",
-          borderRadius: "99px",
-          background: styles.bg,
-          color: styles.color,
-          fontFamily: SANS,
-          fontSize: "10px",
-          fontWeight: 800,
-          textAlign: "center",
-          letterSpacing: "0.05em",
-          boxShadow: "0 4px 10px rgba(254, 9, 68, 0.15)",
-        }}
-      >
-        {styles.label}
-      </Box>
+      )}
     </Box>
   );
 };

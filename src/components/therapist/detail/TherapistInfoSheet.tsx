@@ -8,7 +8,7 @@
 //
 //   ★ 4.5 (0 reviews)  →  opens this sheet on the "Reviews" tab
 //   8 yrs / Experience →  opens this sheet on the "Profile" tab
-//   98% Rebook         →  opens this sheet on the "Profile" tab
+//   98% Rebook         →  opens this she et on the "loyalty" tab
 //
 // The sheet content is just <TherapistProfileTabs/> — no design dup.
 // The sheet itself reuses the same scroll + drag-handle layout as
@@ -19,7 +19,7 @@ import { Drawer, Box, IconButton } from "@mui/material";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import TherapistProfileTabs from "@/components/therapist/detail/TherapistProfileTabs";
 
-type TabId = "profile" | "reviews";
+type TabId = "profile" | "reviews" | "loyalty";
 
 interface Props {
   open: boolean;
@@ -51,7 +51,7 @@ const TherapistInfoSheet: React.FC<Props> = ({
       onClose={onClose}
       PaperProps={{
         sx: {
-          background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
+          background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
           borderRadius: "24px 24px 0 0",
           paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))",
           maxWidth: "430px",

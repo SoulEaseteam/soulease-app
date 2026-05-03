@@ -1,44 +1,62 @@
 // src/utils/taxiFare.ts
 //
-// 🚖 Taxi fare — Grab-aligned tiered model + rain surcharge.
+// 🚖 Taxi fare — GrabCar Bangkok rate card · round-trip with
+//                half-price return.
 //
-// Confirmed strategy 2026-05-01 (founder): "Grab-aligned tiers with
-// free zone subsidy + rain surcharge from real weather":
+// Founder-confirmed rate model (2026-05-03):
 //
-//   0–4 km    →  FREE (acquisition subsidy)
-//   4–8 km    →  ฿200 flat        (≈ Grab round-trip)
-//   8–12 km   →  ฿350 flat        (≈ Grab round-trip)
-//   12–20 km  →  ฿350 + ฿20/km × (km - 12)
-//   > 20 km   →  Admin quote required (deposit policy)
+//   GrabCar Bangkok tiers (per official Grab rate card):
+//     • First km   (≤ 1 km) :  ฿45 base flag-fall
+//     • km 1 → 6           :  +฿8/km
+//     • km 6 → 40          :  +฿7/km
+//     • km 40+             :  +฿10/km
 //
-// Rain surcharge stacks on top:
-//   Light rain  +15%
-//   Heavy rain  +30%
+//   Round-trip pricing for SunRed outcall:
+//     • Outbound (therapist → customer):  full GrabCar fare
+//     • Return   (customer → therapist):  HALF GrabCar fare  ← founder spec
+//     • Total = oneWay × 1.5
 //
-// Customer is always charged LESS than what they'd pay calling Grab
-// themselves — savings are surfaced in the pricing UI as "You save ฿X
-// vs Grab" so the value prop reads instantly.
+//   Rain surcharge stacks on top of the round-trip total:
+//     Light rain  +15%
+//     Heavy rain  +30%
 //
-// 🔁 Cost model documented in code comments here so any future
-//    rate-card change is one edit + a push.
+//   Beyond ADMIN_QUOTE_KM (40 km) → admin quote required (deposit policy).
+//
+//   Customer savings vs. calling Grab themselves both ways:
+//     If the customer used Grab for outbound AND therapist used Grab
+//     for the return, they'd pay oneWay × 2. SunRed charges oneWay × 1.5,
+//     so the customer saves oneWay × 0.5 (≈ 25% of the full round-trip).
+//     This is what the "Save ฿X vs Grab" chip surfaces.
+//
+// Reference: https://www.grab.com/th/blog/pha-pi-du-withi-kar-reiyk-grab/
+//
+// Round 28b8 (founder 2026-05-03) — replaces the previous flat-tier
+// subsidy model (free 0-4km / ฿200 4-8km / ฿350 8-12km / ฿20/km
+// thereafter) with continuous GrabCar tiered pricing × 1.5. The
+// `free` tier label is retired; nearby trips now have a small but
+// non-zero fare equal to GrabCar's first-km flag-fall × 1.5.
 
 import { getCachedRainStatus, type RainStatus } from "@/utils/weather";
 
-/** Free travel within this distance from the therapist's standby. */
-export const FREE_DISTANCE_KM = 4;
 /** Beyond this requires admin quote + deposit confirm. */
-export const ADMIN_QUOTE_KM = 20;
+export const ADMIN_QUOTE_KM = 40;
 
-const TIER_1_MAX_KM = 8;
-const TIER_1_FARE = 200;
-const TIER_2_MAX_KM = 12;
-const TIER_2_FARE = 350;
-const PER_KM_BEYOND_TIER_2 = 20;
+/** Legacy alias — kept at 0 so existing chips/logic that gate on
+ *  "within free distance" never trigger after the migration. Old
+ *  callers that imported this constant won't crash; the UI just
+ *  treats every distance as a paid trip now. */
+export const FREE_DISTANCE_KM = 0;
 
-/** Grab estimate constants (used to compute "you save vs Grab" chip). */
-const GRAB_BASE = 35;
-const GRAB_PER_KM = 10;
-const GRAB_WAIT_FEE = 25; // ~10 min × ฿2.5 typical street wait
+// ─── GrabCar Bangkok rate card ───────────────────────────────────────
+const BASE_FARE = 45;        // first km (≤ 1 km flag-fall)
+const TIER_2_PER_KM = 8;     // applies to km 1 → 6
+const TIER_2_END_KM = 6;
+const TIER_3_PER_KM = 7;     // applies to km 6 → 40
+const TIER_3_END_KM = 40;
+const TIER_4_PER_KM = 10;    // applies to km 40+
+
+/** Outbound full + return half = 1.5× one-way. */
+const ROUND_TRIP_MULTIPLIER = 1.5;
 
 // ─────────────────────────────────────────────────────────────────────
 // Distance utility — Haversine fallback when Directions API not wired.
@@ -62,80 +80,116 @@ export function haversineKm(
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Fare calculation
+// GrabCar fare calculation
 // ─────────────────────────────────────────────────────────────────────
 
-export type TaxiTier = "free" | "tier1" | "tier2" | "tier3" | "admin";
+/**
+ * Compute the GrabCar one-way fare for any distance (km), using the
+ * official Bangkok rate card tiers above. Rounded to the nearest baht.
+ * Returns the BASE_FARE (฿45) for any distance ≤ 1 km.
+ */
+export function grabCarOneWayFare(distanceKm: number): number {
+  if (!Number.isFinite(distanceKm) || distanceKm <= 0) return BASE_FARE;
+  let fare = BASE_FARE;
+  if (distanceKm <= 1) return Math.round(fare);
+
+  let remaining = distanceKm - 1;
+
+  // Tier 2 — km 1 → 6 (max 5 paid km in this band)
+  const tier2Km = Math.min(remaining, TIER_2_END_KM - 1);
+  fare += tier2Km * TIER_2_PER_KM;
+  remaining -= tier2Km;
+  if (remaining <= 0) return Math.round(fare);
+
+  // Tier 3 — km 6 → 40 (max 34 paid km in this band)
+  const tier3Km = Math.min(remaining, TIER_3_END_KM - TIER_2_END_KM);
+  fare += tier3Km * TIER_3_PER_KM;
+  remaining -= tier3Km;
+  if (remaining <= 0) return Math.round(fare);
+
+  // Tier 4 — km 40+ (open-ended)
+  fare += remaining * TIER_4_PER_KM;
+  return Math.round(fare);
+}
+
+/**
+ * Round-trip fare (outbound full + return half) per founder spec.
+ * Equals `grabCarOneWayFare(distanceKm) × 1.5`, rounded.
+ */
+export function grabCarRoundTripFare(distanceKm: number): number {
+  return Math.round(grabCarOneWayFare(distanceKm) * ROUND_TRIP_MULTIPLIER);
+}
+
+/**
+ * Reference Grab round-trip estimate — what the customer would pay
+ * calling Grab themselves both ways (outbound + return at full price).
+ * Used purely for the "you save ฿X vs Grab" comparison chip.
+ */
+export function grabRoundTripEstimate(distanceKm: number): number {
+  return grabCarOneWayFare(distanceKm) * 2;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// TaxiFareResult — UI-facing shape
+// ─────────────────────────────────────────────────────────────────────
+
+/** Tier label kept stable across the codebase even though the
+ *  underlying calculation no longer uses flat tiers. Drives chip
+ *  styling in BookingFlowPage / DistanceDepositDialog. */
+export type TaxiTier = "free" | "base" | "short" | "standard" | "long" | "admin";
 
 export interface TaxiFareResult {
   /** Customer-facing fare. `null` means the booking needs an admin quote. */
   fare: number | null;
   /** Tier id for analytics + UI styling. */
   tier: TaxiTier;
-  /** Human label shown next to the price ("Tier 2 · 8-12 km"). */
+  /** Human label shown next to the price. */
   label: string;
   /** Distance used for the calculation (km, after Haversine). */
   distanceKm: number;
-  /** Fare BEFORE rain surcharge — surfaces in the breakdown when rain. */
+  /** Fare BEFORE rain surcharge (= round-trip GrabCar × 1.5). */
   baseFareBeforeRain: number;
   /** Active rain status pulled from `weather.ts` cache. */
   rain: RainStatus;
-  /** Estimated round-trip Grab fare for this distance — drives savings chip. */
+  /** GrabCar one-way fare (for breakdown / analytics). */
+  oneWayFare: number;
+  /** Reference Grab round-trip — drives savings chip. */
   grabEstimate: number;
-  /** `grabEstimate - fare` (clamped 0). 0 when in Free zone or admin quote. */
+  /** `grabEstimate - fare` (clamped 0). 0 when admin quote. */
   savingsVsGrab: number;
 }
 
-/**
- * Compute the round-trip Grab estimate (passenger ride only — no driver
- * wait). Used for the "you save vs Grab" comparison only; never billed.
- */
-export function grabRoundTripEstimate(distanceKm: number): number {
-  return Math.round((GRAB_BASE + distanceKm * GRAB_PER_KM) * 2 + GRAB_WAIT_FEE);
-}
-
-/**
- * Resolve the tier + base fare (pre-rain) for a given distance.
- */
-function tierAndBase(distanceKm: number): {
-  tier: TaxiTier;
-  base: number | null;
-  label: string;
-} {
-  if (distanceKm <= FREE_DISTANCE_KM) {
-    return { tier: "free", base: 0, label: "Free zone (≤ 4 km)" };
-  }
-  if (distanceKm <= TIER_1_MAX_KM) {
-    return { tier: "tier1", base: TIER_1_FARE, label: "Tier 1 · 4-8 km" };
-  }
-  if (distanceKm <= TIER_2_MAX_KM) {
-    return { tier: "tier2", base: TIER_2_FARE, label: "Tier 2 · 8-12 km" };
-  }
-  if (distanceKm <= ADMIN_QUOTE_KM) {
-    const extra = Math.ceil((distanceKm - TIER_2_MAX_KM) * PER_KM_BEYOND_TIER_2);
+/** Resolve tier label band from distance (UI-only, doesn't affect price). */
+function resolveTier(distanceKm: number): { tier: TaxiTier; label: string } {
+  if (distanceKm > ADMIN_QUOTE_KM) {
     return {
-      tier: "tier3",
-      base: TIER_2_FARE + extra,
-      label: `Tier 3 · ${distanceKm.toFixed(1)} km`,
+      tier: "admin",
+      label: `Long distance · admin quote (${distanceKm.toFixed(1)} km)`,
     };
   }
-  return { tier: "admin", base: null, label: "Long-distance · admin quote" };
+  if (distanceKm <= 1) {
+    return { tier: "base", label: `Base fare · ${distanceKm.toFixed(1)} km` };
+  }
+  if (distanceKm <= TIER_2_END_KM) {
+    return { tier: "short", label: `Short trip · ${distanceKm.toFixed(1)} km` };
+  }
+  return { tier: "standard", label: `Standard · ${distanceKm.toFixed(1)} km` };
 }
 
 /**
  * Compute the customer-facing taxi fare for a distance.
- * Pulls rain status synchronously from the cache (populated on app boot).
+ * GrabCar one-way × 1.5 (return at half price), then rain surcharge.
  */
 export function calcTaxiFare(
   distanceKm: number,
   rainOverride?: RainStatus
 ): TaxiFareResult {
-  const { tier, base, label } = tierAndBase(distanceKm);
+  const { tier, label } = resolveTier(distanceKm);
   const rain = rainOverride ?? getCachedRainStatus();
-  const grabEstimate = grabRoundTripEstimate(distanceKm);
+  const oneWayFare = grabCarOneWayFare(distanceKm);
+  const grabEstimate = grabRoundTripEstimate(distanceKm); // oneWay × 2
 
-  if (base == null) {
-    // Admin-quote case
+  if (tier === "admin") {
     return {
       fare: null,
       tier,
@@ -143,12 +197,14 @@ export function calcTaxiFare(
       distanceKm,
       baseFareBeforeRain: 0,
       rain,
+      oneWayFare,
       grabEstimate,
       savingsVsGrab: 0,
     };
   }
 
-  const withRain = Math.round(base * (1 + rain.surchargePct));
+  const roundTripBase = grabCarRoundTripFare(distanceKm); // oneWay × 1.5
+  const withRain = Math.round(roundTripBase * (1 + rain.surchargePct));
   const savings = Math.max(0, grabEstimate - withRain);
 
   return {
@@ -156,8 +212,9 @@ export function calcTaxiFare(
     tier,
     label,
     distanceKm,
-    baseFareBeforeRain: base,
+    baseFareBeforeRain: roundTripBase,
     rain,
+    oneWayFare,
     grabEstimate,
     savingsVsGrab: savings,
   };

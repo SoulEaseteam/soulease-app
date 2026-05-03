@@ -33,7 +33,7 @@ const PROMISES: Promise[] = [
   {
     Icon: VerifiedRoundedIcon,
     titleKey: "promise.licensed.title",
-    titleFallback: "ผ.พ. Licensed",
+    titleFallback: "Licensed",
     subKey: "promise.licensed.sub",
     subFallback: "Ministry-verified",
   },

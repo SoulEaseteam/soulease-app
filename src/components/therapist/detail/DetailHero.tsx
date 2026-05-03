@@ -28,8 +28,10 @@ import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
-import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
+// 🆕 Round 28az — replace 📍 emoji with MUI icon (founder rule: icons only).
+import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
+import NearMeRoundedIcon from "@mui/icons-material/NearMeRounded";
+import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -89,13 +91,47 @@ const DetailHero: React.FC<Props> = ({
   const photoCount = Math.max(images.length, 1);
   const currentImage = images[activeIdx];
 
-  const goPrev = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    setActiveIdx((i) => (i - 1 + photoCount) % photoCount);
+  // 🆕 Round 28b6 — fullscreen viewer gestures.
+  //   • horizontal scroll-snap pager → swipe to change photo
+  //   • vertical drag > 80px → dismiss
+  //   • tap dark backdrop → dismiss
+  const fullscreenScrollRef = useRef<HTMLDivElement | null>(null);
+  const heroTouchStartY = useRef<number | null>(null);
+  const heroTouchStartX = useRef<number | null>(null);
+
+  // When the fullscreen viewer opens, scroll to the currently active
+  // photo so we land on what the user tapped (not always slide #0).
+  React.useEffect(() => {
+    if (!fullscreen) return;
+    const id = window.requestAnimationFrame(() => {
+      const el = fullscreenScrollRef.current;
+      if (el) el.scrollLeft = activeIdx * el.clientWidth;
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [fullscreen, activeIdx]);
+
+  const handleFullscreenScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    if (!el.clientWidth) return;
+    const idx = Math.round(el.scrollLeft / el.clientWidth);
+    if (idx !== activeIdx && idx >= 0 && idx < photoCount) {
+      setActiveIdx(idx);
+    }
   };
-  const goNext = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    setActiveIdx((i) => (i + 1) % photoCount);
+
+  const handleHeroTouchStart = (e: React.TouchEvent) => {
+    heroTouchStartY.current = e.touches[0].clientY;
+    heroTouchStartX.current = e.touches[0].clientX;
+  };
+  const handleHeroTouchEnd = (e: React.TouchEvent) => {
+    const startY = heroTouchStartY.current;
+    const startX = heroTouchStartX.current;
+    heroTouchStartY.current = null;
+    heroTouchStartX.current = null;
+    if (startY === null || startX === null) return;
+    const dy = e.changedTouches[0].clientY - startY;
+    const dx = Math.abs(e.changedTouches[0].clientX - startX);
+    if (dy > 80 && dx < 60) setFullscreen(false);
   };
 
   const handleShare = async () => {
@@ -161,51 +197,10 @@ const DetailHero: React.FC<Props> = ({
           }}
         />
 
-        {/* Prev/Next chevrons — only show when there's > 1 image */}
-        {images.length > 1 && (
-          <>
-            <IconButton
-              aria-label="previous photo"
-              onClick={goPrev}
-              sx={{
-                position: "absolute",
-                top: "50%",
-                left: 8,
-                transform: "translateY(-50%)",
-                zIndex: 4,
-                color: "#fff",
-                background: "rgba(0, 0, 0, 0.25)",
-                backdropFilter: "blur(8px)",
-                WebkitBackdropFilter: "blur(8px)",
-                width: 36,
-                height: 36,
-                "&:hover": { background: "rgba(0, 0, 0, 0.4)" },
-              }}
-            >
-              <ChevronLeftRoundedIcon sx={{ fontSize: 22 }} />
-            </IconButton>
-            <IconButton
-              aria-label="next photo"
-              onClick={goNext}
-              sx={{
-                position: "absolute",
-                top: "50%",
-                right: 8,
-                transform: "translateY(-50%)",
-                zIndex: 4,
-                color: "#fff",
-                background: "rgba(0, 0, 0, 0.25)",
-                backdropFilter: "blur(8px)",
-                WebkitBackdropFilter: "blur(8px)",
-                width: 36,
-                height: 36,
-                "&:hover": { background: "rgba(0, 0, 0, 0.4)" },
-              }}
-            >
-              <ChevronRightRoundedIcon sx={{ fontSize: 22 }} />
-            </IconButton>
-          </>
-        )}
+        {/* 🆕 Round 28b3 — Prev/Next chevrons removed from hero photo
+            (founder feedback). Tap photo to open fullscreen viewer
+            with thumbnail navigation; dot pager below indicates
+            multiple photos. */}
 
         {/* .top-overlay */}
         <Box
@@ -313,24 +308,18 @@ const DetailHero: React.FC<Props> = ({
             >
               {name} <em>{age}</em>
             </Typography>
-            {/* .verified-large */}
-            <Box
+            {/* 🆕 Round 28b3 — verified badge: white circle frame
+                + Unicode tick → bare Twitter-blue checkmark icon
+                with drop-shadow for separation from the photo. */}
+            <VerifiedRoundedIcon
+              aria-label="verified"
+              titleAccess="Verified by SunRed"
               sx={{
-                width: "22px",
-                height: "22px",
-                borderRadius: "50%",
-                background: "rgba(255, 255, 255, 0.95)",
+                fontSize: 26,
                 color: "#1d9bf0",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "11px",
-                fontWeight: 700,
-                fontFamily: SANS,
+                filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.45))",
               }}
-            >
-              ✓
-            </Box>
+            />
           </Box>
           {/* .quick-meta */}
           <Box
@@ -343,8 +332,26 @@ const DetailHero: React.FC<Props> = ({
               fontFamily: SANS,
             }}
           >
+            {/* Round 28au — privacy: show only distance, never the area
+                name. Exposing standby area indirectly leaks therapist
+                home info. Distance ("1.2 km") gives the customer enough
+                signal without the safety risk. */}
+            {/* Round 28aw — always render the distance row. Falls back
+                to "Allow location" prompt when GPS hasn't resolved yet
+                so the customer knows the field exists + how to enable
+                it. Privacy: still no area name, distance only. */}
             <Box sx={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              📍 {area} · {distance}
+              {distance?.trim() ? (
+                <>
+                  <LocationOnRoundedIcon sx={{ fontSize: 14 }} />
+                  {distance}
+                </>
+              ) : (
+                <>
+                  <NearMeRoundedIcon sx={{ fontSize: 14 }} />
+                  Allow location
+                </>
+              )}
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
               {(() => {
@@ -380,7 +387,12 @@ const DetailHero: React.FC<Props> = ({
         </Box>
       </Box>
 
-      {/* 🔍 Fullscreen image viewer (Dialog) — restored from old TherapistDetailPage */}
+      {/* 🆕 Round 28b6 — Fullscreen viewer redesigned for native
+          gestures (founder spec, matches About-card lightbox):
+            • Horizontal scroll-snap pager — swipe left/right between photos
+            • Swipe DOWN > 80px → dismiss
+            • Tap dark area around the photo → dismiss
+            • Counter "3 / 9" + dot pager update live with scroll */}
       <Dialog
         open={fullscreen}
         onClose={() => setFullscreen(false)}
@@ -388,101 +400,127 @@ const DetailHero: React.FC<Props> = ({
         PaperProps={{
           sx: {
             background: "#000",
+            display: "flex",
+            flexDirection: "column",
             position: "relative",
           },
         }}
       >
-        <IconButton
-          aria-label="close"
-          onClick={() => setFullscreen(false)}
+        {/* Top bar — counter + close (pinned, doesn't scroll) */}
+        <Box
           sx={{
-            position: "absolute",
-            top: 16,
-            right: 16,
-            zIndex: 10,
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px",
             color: "#fff",
-            background: "rgba(255, 255, 255, 0.15)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-            "&:hover": { background: "rgba(255, 255, 255, 0.25)" },
+            fontFamily: SANS,
+            zIndex: 2,
           }}
         >
-          <CloseRoundedIcon />
-        </IconButton>
+          <Box sx={{ fontSize: 13, fontWeight: 600, opacity: 0.85 }}>
+            {activeIdx + 1} / {Math.max(images.length, 1)}
+          </Box>
+          <IconButton
+            aria-label="close"
+            onClick={() => setFullscreen(false)}
+            size="small"
+            sx={{
+              color: "#fff",
+              background: "rgba(255, 255, 255, 0.15)",
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+              "&:hover": { background: "rgba(255, 255, 255, 0.25)" },
+            }}
+          >
+            <CloseRoundedIcon />
+          </IconButton>
+        </Box>
 
-        {currentImage && (
+        {/* Horizontal scroll pager — each slide = one full-screen
+            photo. onScroll keeps `activeIdx` synced. Touch handlers
+            detect downward swipe to dismiss. */}
+        <Box
+          ref={fullscreenScrollRef}
+          onScroll={handleFullscreenScroll}
+          onTouchStart={handleHeroTouchStart}
+          onTouchEnd={handleHeroTouchEnd}
+          sx={{
+            flex: 1,
+            display: "flex",
+            overflowX: "auto",
+            overflowY: "hidden",
+            scrollSnapType: "x mandatory",
+            WebkitOverflowScrolling: "touch",
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
+          }}
+        >
+          {(images.length > 0 ? images : [photoBg]).map((src, i) => (
+            <Box
+              key={`fs-${src}-${i}`}
+              onClick={() => setFullscreen(false)}
+              sx={{
+                flexShrink: 0,
+                width: "100%",
+                height: "100%",
+                scrollSnapAlign: "center",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "16px",
+                boxSizing: "border-box",
+                cursor: "pointer",
+              }}
+            >
+              <Box
+                component="img"
+                src={src}
+                alt=""
+                draggable={false}
+                onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                sx={{
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                  borderRadius: "12px",
+                  boxShadow: "0 12px 36px rgba(0,0,0,0.5)",
+                  cursor: "default",
+                }}
+              />
+            </Box>
+          ))}
+        </Box>
+
+        {/* Dot pager — updates live via activeIdx that handleFullscreenScroll bumps */}
+        {images.length > 1 && (
           <Box
             sx={{
-              width: "100%",
-              height: "100%",
+              position: "absolute",
+              bottom: "calc(env(safe-area-inset-bottom, 0px) + 18px)",
+              left: 0,
+              right: 0,
               display: "flex",
-              alignItems: "center",
               justifyContent: "center",
-              background: `center / contain no-repeat url("${currentImage}")`,
+              gap: "6px",
+              pointerEvents: "none",
             }}
-          />
-        )}
-
-        {/* Prev/Next inside fullscreen */}
-        {images.length > 1 && (
-          <>
-            <IconButton
-              aria-label="previous photo"
-              onClick={goPrev}
-              sx={{
-                position: "absolute",
-                top: "50%",
-                left: 16,
-                transform: "translateY(-50%)",
-                color: "#fff",
-                background: "rgba(255, 255, 255, 0.15)",
-                "&:hover": { background: "rgba(255, 255, 255, 0.25)" },
-              }}
-            >
-              <ChevronLeftRoundedIcon />
-            </IconButton>
-            <IconButton
-              aria-label="next photo"
-              onClick={goNext}
-              sx={{
-                position: "absolute",
-                top: "50%",
-                right: 16,
-                transform: "translateY(-50%)",
-                color: "#fff",
-                background: "rgba(255, 255, 255, 0.15)",
-                "&:hover": { background: "rgba(255, 255, 255, 0.25)" },
-              }}
-            >
-              <ChevronRightRoundedIcon />
-            </IconButton>
-
-            {/* Dot pager inside fullscreen */}
-            <Box
-              sx={{
-                position: "absolute",
-                bottom: 24,
-                left: 0,
-                right: 0,
-                display: "flex",
-                justifyContent: "center",
-                gap: "6px",
-              }}
-            >
-              {images.map((_, i) => (
-                <Box
-                  key={i}
-                  sx={{
-                    width: i === activeIdx ? 12 : 6,
-                    height: 6,
-                    borderRadius: 3,
-                    background: i === activeIdx ? "#fff" : "rgba(255, 255, 255, 0.4)",
-                    transition: "all 0.2s ease",
-                  }}
-                />
-              ))}
-            </Box>
-          </>
+          >
+            {images.map((_, i) => (
+              <Box
+                key={i}
+                sx={{
+                  width: i === activeIdx ? 12 : 6,
+                  height: 6,
+                  borderRadius: 3,
+                  background:
+                    i === activeIdx ? "#fff" : "rgba(255, 255, 255, 0.4)",
+                  transition: "all 0.2s ease",
+                }}
+              />
+            ))}
+          </Box>
         )}
       </Dialog>
 

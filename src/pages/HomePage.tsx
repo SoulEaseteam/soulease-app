@@ -27,7 +27,6 @@ import React from "react";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
-import TopNav from "@/components/home/TopNav";
 import HeroSection from "@/components/home/HeroSection";
 // 🆕 Round 21 (founder 2026-05-01): ultra-lean. Removed:
 //    • FeaturedTherapists — used DEMO fallback data, not authoritative
@@ -71,17 +70,18 @@ const HomePage: React.FC = () => {
   return (
     <Box
       sx={{
-        // .phone — verbatim from mockup `sunred-home1.html`
+        // .phone — Round 28b0 cleaner palette
         maxWidth: "430px",
         margin: "0 auto",
-        background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
+        background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
         borderRadius: "28px",
         overflow: "hidden",
-        boxShadow: "0 20px 60px rgba(126, 30, 46, 0.15)",
+        boxShadow: "0 20px 60px rgba(126, 30, 46, 0.10)",
         position: "relative",
       }}
     >
-      <TopNav />
+      {/* 🆕 Round 28r — TopNav moved to MainLayout (site-wide). HomePage
+          no longer renders it locally to avoid a duplicate top bar. */}
       <HeroSection />
       <HomeTherapistGrid />
       <PromiseStrip />

@@ -25,8 +25,9 @@ import {
   type DocumentData,
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
-import dayjs from "dayjs";
 import { db } from "@/lib/firebase";
+// 🆕 Round 28an — BKK-anchored display formatting.
+import { fmtBKK } from "@/utils/time";
 
 export interface TherapistBooking {
   id: string;
@@ -155,24 +156,33 @@ export function nextAvailableHHMM(
 ): string | null {
   const active = findActiveBooking(bookings, now);
   if (!active) return null;
-  return dayjs(active.endAt).format("HH:mm");
+  // 🆕 Round 28an — always format in BKK so travelers / wrong-TZ
+  //    devices see the correct local Bangkok wall-clock time.
+  return fmtBKK(active.endAt, "HH:mm", "");
 }
 
 /**
  * Does a candidate slot [slotStart, slotStart + durationMin) overlap
- * ANY existing booking? Used to grey-out time-slot pills.
+ * ANY existing booking (extended by `bufferMin` so the therapist has
+ * time to wrap up + travel between sessions)?
  *
  * Two intervals [a, b) and [c, d) overlap iff a < d AND c < b.
+ *
+ * Round 28ao — `bufferMin` defaults to 0 for callers that don't care
+ * about the gap; StepDateTime passes 10 to enforce the founder rule
+ * "พนักงานต้องมีเวลาเตรียมตัวระหว่างงาน".
  */
 export function isSlotTaken(
   bookings: TherapistBooking[],
   slotStartMs: number,
-  durationMin: number
+  durationMin: number,
+  bufferMin = 0
 ): boolean {
   const slotEndMs = slotStartMs + durationMin * 60_000;
+  const bufferMs = bufferMin * 60_000;
   for (const b of bookings) {
     const bStart = b.startAt.getTime();
-    const bEnd = b.endAt.getTime();
+    const bEnd = b.endAt.getTime() + bufferMs; // extend with buffer
     if (slotStartMs < bEnd && bStart < slotEndMs) return true;
   }
   return false;

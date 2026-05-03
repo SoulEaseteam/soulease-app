@@ -176,7 +176,7 @@ const HowItWorks: React.FC = () => {
                   n === 1
                     ? "Browse licensed therapists by specialty, language, and availability nearby."
                     : n === 2
-                    ? "Hotel, residence, or villa — anywhere in central Bangkok. 60 to 120-minute sessions."
+                    ? "Hotel, residence, or villa anywhere in central Bangkok. 60 to 120-minute sessions."
                     : "Therapist arrives with full equipment. Pay securely. Rate & rebook your favorite."
                 )}
               </Box>

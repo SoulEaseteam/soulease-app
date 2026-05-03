@@ -1,43 +1,180 @@
-import React from 'react';
+// src/pages/ServicesPage.tsx
+//
+// 🆕 Round 28b10 (founder 2026-05-03) — full Clean v3 refresh:
+//   • Phone shell + tabs use cool-neutral palette (#FAFBFC → #F1F3F5)
+//   • White cards with slate borders, soft slate shadows
+//   • All emoji replaced with MUI icons (founder no-emoji rule)
+//   • ABOUT US rewritten — concise pillars + service area + contacts
+//   • HOW TO BOOK reorganised — keeps HowItWorks visual, FAQ in
+//     cool-palette accordions, "Contact" + "Additional Links" tightened
+//   • Service tiles: brand red accents kept; tile shadow → cool slate
+
+import React from "react";
 import {
   Box,
   Typography,
-  Avatar,
   Button,
   IconButton,
   Tabs,
   Tab,
   Accordion,
   AccordionSummary,
-  AccordionDetails } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
-import { FaTelegramPlane, FaWhatsapp } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import services from '../data/services';
-// 🆕 Round 19 (founder 2026-05-01): use real prices/durations from
-//    services.ts via servicePricing helpers — old hardcoded svc.price
-//    string was untyped + brittle.
-import { startingPrice, formatTHB } from '../utils/servicePricing';
-// 🆕 Round 20: HowItWorks moved out of HomePage (founder: 'ลูกค้าไม่
-//    อ่านเกิน 8 บรรทัด'). Lives here at the top of the HOW TO BOOK tab
-//    as a quick 3-step visual before the detailed FAQ. Curious users
-//    opt-in by tapping the tab — never blocks the booking funnel.
-import HowItWorks from '@/components/home/HowItWorks';
+  AccordionDetails,
+} from "@mui/material";
+import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
+import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
+import VisibilityOffRoundedIcon from "@mui/icons-material/VisibilityOffRounded";
+import LocalHotelRoundedIcon from "@mui/icons-material/LocalHotelRounded";
+import SupportAgentRoundedIcon from "@mui/icons-material/SupportAgentRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import StarRoundedIcon from "@mui/icons-material/StarRounded";
+import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
+import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
+import { FaTelegramPlane, FaWhatsapp } from "react-icons/fa";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { motion } from "framer-motion";
+import services from "../data/services";
+import { startingPrice, formatTHB } from "../utils/servicePricing";
+import HowItWorks from "@/components/home/HowItWorks";
+// 🆕 Round 28b11 — live booking counts so the "Used by N customers"
+//   badge on each service tile reflects actual orders, not the
+//   hardcoded `svc.count` value in the data file.
+import { useServiceUsageStats } from "@/hooks/useServiceUsageStats";
 
+const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SANS = '"Inter", system-ui, -apple-system, sans-serif';
+
+// ─── About pillars — factual only, no fake metrics ────────────────────
+const ABOUT_PILLARS: Array<{
+  Icon: typeof VerifiedRoundedIcon;
+  title: string;
+  body: string;
+  tone: { bg: string; fg: string };
+}> = [
+  {
+    Icon: VerifiedRoundedIcon,
+    title: "Verified therapists",
+    body:
+      "Every profile is screened by our team before publishing  photos, ID, and license checks.",
+    tone: { bg: "rgba(22, 163, 74, 0.10)", fg: "#16a34a" },
+  },
+  {
+    Icon: VisibilityOffRoundedIcon,
+    title: "Discreet & private",
+    body:
+      "Plain-card payments, encrypted booking flow, no signage on arrival. Your stay stays yours.",
+    tone: { bg: "rgba(15, 23, 42, 0.08)", fg: "#475569" },
+  },
+  {
+    Icon: LocalHotelRoundedIcon,
+    title: "Hotel & condo outcall",
+    body:
+      "Therapist comes to you anywhere in central Bangkok  Sukhumvit, Silom, Asok, Thonglor, Sathorn.",
+    tone: { bg: "rgba(254, 9, 68, 0.08)", fg: "#FE0944" },
+  },
+  {
+    Icon: SupportAgentRoundedIcon,
+    title: "24/7 admin support",
+    body:
+      "Real humans on WhatsApp, LINE, and Telegram around the clock pre, during, and after the session.",
+    tone: { bg: "rgba(14, 165, 233, 0.10)", fg: "#0284C7" },
+  },
+];
+
+// ─── FAQ rebuilt — cool palette ───────────────────────────────────────
+type FaqItem = { q: string; a: React.ReactNode };
+
+const FAQ_BASICS: FaqItem[] = [
+  {
+    q: "How do I book a therapist?",
+    a: "Pick a therapist from the home page, choose your service, fill in the booking form, and tap confirm. The order is sent to our admin who confirms within minutes via WhatsApp or Telegram.",
+  },
+  {
+    q: "What's on a therapist's profile?",
+    a: "Verified photos, service specialties, today's availability, real reviews from completed bookings, and structured personal info (height, body type, languages, working hours).",
+  },
+  {
+    q: "How can I contact a therapist directly?",
+    a: "All contact runs through our admin that's how we keep both sides safe. Once your booking is confirmed, you'll be connected for arrival coordination.",
+  },
+  {
+    q: "Are the profile photos real?",
+    a: "Yes. We run a verification check on every photo before publishing and re-verify periodically. Reviews from past customers add a second layer of confidence read them on each profile.",
+  },
+  {
+    q: "How fast can a therapist reach me?",
+    a: "In central Bangkok, typical arrival is 30–60 minutes. Outside the centre or in peak hours, expect 60–90 minutes. The booking screen shows a live arrival window before you confirm.",
+  },
+];
+
+const FAQ_PAYMENT: FaqItem[] = [
+  {
+    q: "How much does a session cost?",
+    a: "Each therapist sets their own rates — see their profile for the exact starting price. The total includes service fee + a transparent travel fee (GrabCar-aligned, ฿45 base + tiered per-km, return at half price).",
+  },
+  {
+    q: "What payment methods are supported?",
+    a: (
+      <Box>
+        <Typography
+          sx={{ fontWeight: 700, fontSize: 13, color: "#3c1e14", mb: 0.5 }}
+        >
+          Online (recommended):
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, my: 0, color: "rgba(60,30,20,0.78)" }}>
+          <li>PromptPay QR (default)</li>
+          <li>Bank transfer (account details after confirm)</li>
+        </Box>
+        <Typography
+          sx={{
+            fontWeight: 700,
+            fontSize: 13,
+            color: "#3c1e14",
+            mt: 1.5,
+            mb: 0.5,
+          }}
+        >
+          On arrival:
+        </Typography>
+        <Box component="ul" sx={{ pl: 2.5, my: 0, color: "rgba(60,30,20,0.78)" }}>
+          <li>Cash (THB)</li>
+          <li>Therapist&apos;s PromptPay QR</li>
+          <li>Bank transfer with slip confirmation</li>
+        </Box>
+      </Box>
+    ),
+  },
+  {
+    q: "Why is a deposit sometimes needed?",
+    a: "For long-distance bookings (over ~25 km from central Sukhumvit) we ask for a small deposit so the therapist's travel commitment is covered. You'll be informed in advance — never a surprise.",
+  },
+  {
+    q: "Cancellation & reschedule policy",
+    a: "Free cancellation or reschedule up to 30 minutes before booking time. After that — or once the therapist is en route — a 50% service-fee charge applies to cover their committed time and travel.",
+  },
+];
 
 const ServicesPage: React.FC = () => {
   const navigate = useNavigate();
-  const [section, setSection] = React.useState<'services' | 'about' | 'how'>('services');
+  const [searchParams] = useSearchParams();
+  const initialTab =
+    searchParams.get("tab") === "how"
+      ? "how"
+      : searchParams.get("tab") === "about"
+        ? "about"
+        : "services";
+  const [section, setSection] = React.useState<"services" | "about" | "how">(
+    initialTab
+  );
+
+  // 🆕 Round 28b12 — public chip uses `servedCount` (sessions
+  //   actually delivered), not `bookedCount`. Pending/future bookings
+  //   are excluded so the chip is trustworthy social proof.
+  const { servedById: servedCounts } = useServiceUsageStats();
 
   const handleSelectService = (id: string) => {
     void navigate(`/services/${encodeURIComponent(id)}`);
   };
-
-  // 🆕 Round 19: 'Book now' on each service tile → direct to /therapists
-  //    pre-filtered by service. Saves a click vs going to /services/:id detail.
   const handleBookService = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     void navigate(`/therapists?service=${encodeURIComponent(id)}`);
@@ -46,217 +183,270 @@ const ServicesPage: React.FC = () => {
   return (
     <Box
       sx={{
-        // 🆕 Round 19: phone-shell wrapper (founder 2026-05-01: 'หน้าเว็บ
-        //    ขนาดเดียวกันทั้งเว็บ') — match BookingFlowPage / HomePage rhythm.
+        // Round 28b10 — Clean v3 cool-neutral phone shell
         maxWidth: 430,
-        margin: '0 auto',
-        minHeight: '100vh',
-        background: 'linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)',
-        borderRadius: '28px',
-        overflow: 'hidden',
-        boxShadow: '0 20px 60px rgba(126, 30, 46, 0.15)',
-        position: 'relative',
+        margin: "0 auto",
+        minHeight: "100vh",
+        background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
+        borderRadius: "28px",
+        overflow: "hidden",
+        boxShadow: "0 20px 60px rgba(15, 23, 42, 0.08)",
+        position: "relative",
         pb: 10,
+        fontFamily: SANS,
       }}
     >
-      <Box sx={{ width: '100%', maxWidth: 430, pb: 20 }}>
-        <Box sx={{ width: '100%', height: 50, display: 'flex', alignItems: 'center', 
-          justifyContent: 'center' }}>
-          
+      <Box sx={{ width: "100%", pb: 12 }}>
+        {/* ─── Header — logo + verified + tagline ─── */}
+        <Box sx={{ height: 50 }} />
+
+        <Box sx={{ px: 2, mt: 1, display: "flex", alignItems: "flex-end" }}>
+          <Box
+            component="img"
+            src="/images/icon/sunred-logo.png"
+            alt="SunRed"
+            sx={{
+              width: 130,
+              height: 130,
+              borderRadius: "50%",
+              border: "3px solid #FFFFFF",
+              boxShadow:
+                "0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.10)",
+              objectFit: "cover",
+              background: "#fff",
+            }}
+          />
+          <Box sx={{ ml: "auto", display: "flex", gap: 0.25 }}>
+            <IconButton component="a" href="https://lin.ee/uqvdwWt" target="_blank">
+              <Box
+                component="img"
+                src="/images/profli/line.png"
+                alt="Line"
+                sx={{ width: 28, height: 28 }}
+              />
+            </IconButton>
+            <IconButton component="a" href="/wechat-scan" target="_blank">
+              <Box
+                component="img"
+                src="/images/profli/wechat_2626283.png"
+                alt="WeChat"
+                sx={{ width: 28, height: 28 }}
+              />
+            </IconButton>
+            <IconButton component="a" href="https://t.me/SunRedvip_bkk" target="_blank">
+              <Box
+                component="img"
+                src="/images/profli/telegram.png"
+                alt="Telegram"
+                sx={{ width: 28, height: 28 }}
+              />
+            </IconButton>
+            <IconButton component="a" href="https://wa.me/66634350987" target="_blank">
+              <Box
+                component="img"
+                src="/images/profli/whatsapp.png"
+                alt="WhatsApp"
+                sx={{ width: 28, height: 28 }}
+              />
+            </IconButton>
+            <IconButton component="a" href="https://x.com/SunredBangkok" target="_blank">
+              <Box
+                component="img"
+                src="/images/profli/twitter.png"
+                alt="X (Twitter)"
+                sx={{ width: 28, height: 28 }}
+              />
+            </IconButton>
+          </Box>
         </Box>
 
-      <Box sx={{ px: 2, mt: 2, display: 'flex', alignItems: 'flex-end' }}>
-  <Avatar
-    src="/images/icon/sunred-logo.png"
-    sx={{
-      width: 150,
-      height: 150,
-      border: '4px solid rgba(255,255,255,0.5)' }}
-  />
-  <Box sx={{ ml: 'auto', display: 'flex', gap: -1 }}>
-    <IconButton component="a" href="https://lin.ee/uqvdwWt" target="_blank">
-      <Box
-        component="img"
-        src="/images/profli/line.png"
-        alt="Line"
-        sx={{ width: 30, height: 30 }}
-      />
-    </IconButton>
-
-    <IconButton component="a" href="/wechat-scan" target="_blank">
-      <Box
-        component="img"
-        src="/images/profli/wechat_2626283.png"
-        alt="WeChat"
-        sx={{ width: 31, height: 31 }}
-      />
-    </IconButton>
-
-    <IconButton component="a" href="https://t.me/SunRedvip_bkk" target="_blank">
-      <Box
-        component="img"
-        src="/images/profli/telegram.png"
-        alt="Telegram"
-        sx={{ width: 30, height: 30 }}
-      />
-    </IconButton>
-
-    <IconButton component="a" href="https://wa.me/66634350987" target="_blank">
-      <Box
-        component="img"
-        src="/images/profli/whatsapp.png"
-        alt="WhatsApp"
-        sx={{ width: 30, height: 30 }}
-      />
-    </IconButton>
-
-     <IconButton component="a" href="https://x.com/SunredBangkok" target="_blank">
-      <Box
-        component="img"
-        src="/images/profli/twitter.png"
-        alt="X (Twitter)"
-        sx={{ width: 30, height: 30 }}
-      />
-    </IconButton>
-
-
-  </Box>
-</Box>
-
-        <Box sx={{ px: 2, mt: 4 }}>
-          <Typography variant="h6" fontWeight="bold" sx={{  }}>SunRed.vip <CheckCircleIcon fontSize="small" sx={{ color: '#1DA1F2', ml: 0 }} /></Typography>
-          <Typography variant="body2" sx={{ color: '#567C8D', mt: 0.5 }}>@sunred.vip</Typography>
-         <Typography variant="h6" fontWeight="bold"fontSize={16} sx={{ mt: 1, color: '#3a3420' }}>
-           Pretty Outcall Massage in Bangkok.</Typography>
-            <Typography fontSize={14} variant="body1" sx={{ textIndent: '1.5em', mt: 0.5, color: '#3a3420' }}>
-            Verified therapists. Discreet. Reliable.<br />
-            Every profile is screened before publishing.<br />
-            Unmatched support, 24/7. Your relaxation begins here.
+        <Box sx={{ px: 2, mt: 3 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Typography
+              sx={{
+                fontFamily: SERIF,
+                fontSize: 22,
+                fontWeight: 600,
+                color: "#3c1e14",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              SunRed.vip
+            </Typography>
+            <VerifiedRoundedIcon
+              sx={{
+                fontSize: 20,
+                color: "#1d9bf0",
+                filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.10))",
+              }}
+            />
+          </Box>
+          <Typography
+            sx={{
+              fontSize: 13,
+              color: "rgba(60,30,20,0.55)",
+              mt: 0.25,
+            }}
+          >
+            @sunred.vip
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: SERIF,
+              fontSize: 16,
+              fontWeight: 600,
+              color: "#3c1e14",
+              mt: 1.5,
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Pretty Outcall Massage in Bangkok
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: 13.5,
+              lineHeight: 1.6,
+              color: "rgba(60,30,20,0.72)",
+              mt: 0.5,
+            }}
+          >
+            Verified therapists. Discreet. Reliable. Every profile screened
+            before publishing. Unmatched 24/7 support.
           </Typography>
         </Box>
 
-        {/* 🆕 Round 19: brand-red tabs (was purple/pink). Match
-            ServiceDurationSheet & detail page accent palette. */}
+        {/* ─── Tabs — cool palette ─── */}
         <Box
           sx={{
-            mt: 2,
+            mt: 2.5,
             mx: 2,
-            px: 1,
-            py: 0.5,
+            p: 0.5,
             borderRadius: 999,
-            background:
-              'linear-gradient(135deg, rgba(254, 9, 68, 0.85) 0%, rgba(254, 122, 82, 0.85) 100%)',
-            boxShadow: '0 8px 22px rgba(254, 9, 68, 0.18)',
+            background: "#FFFFFF",
+            border: "1px solid rgba(15, 23, 42, 0.06)",
+            boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
           }}
         >
           <Tabs
             value={section}
             onChange={(_, value) => setSection(value)}
             textColor="inherit"
-            indicatorColor="primary"
             variant="fullWidth"
             sx={{
-              minHeight: 40,
-              '& .MuiTab-root': {
-                color: 'rgba(255, 255, 255, 0.75)',
+              minHeight: 38,
+              "& .MuiTab-root": {
+                color: "rgba(60, 30, 20, 0.55)",
                 fontWeight: 600,
-                fontSize: 12,
-                letterSpacing: '0.05em',
-                minHeight: 40,
+                fontSize: 11.5,
+                letterSpacing: "0.06em",
+                minHeight: 38,
+                textTransform: "uppercase",
+                fontFamily: SANS,
               },
-              '& .Mui-selected': {
-                color: '#fff',
-                background: 'rgba(255, 255, 255, 0.18)',
+              "& .Mui-selected": {
+                color: "#fff",
+                background: "linear-gradient(135deg, #FE0944, #FE7A52)",
                 borderRadius: 999,
                 fontWeight: 700,
+                boxShadow: "0 4px 12px rgba(254, 9, 68, 0.25)",
               },
-              '& .MuiTabs-indicator': {
-                background: '#fff',
-                height: 2,
-                borderRadius: 2,
-              },
+              "& .MuiTabs-indicator": { display: "none" },
             }}
           >
-            <Tab label="SERVICES" value="services" />
-            <Tab label="ABOUT US" value="about" />
-            <Tab label="HOW TO BOOK" value="how" />
+            <Tab label="Services" value="services" />
+            <Tab label="About us" value="about" />
+            <Tab label="How to book" value="how" />
           </Tabs>
         </Box>
 
-        {section === 'services' && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 3, px: 2 }}>
+        {/* ─── Services tab ─── */}
+        {section === "services" && (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              mt: 3,
+              px: 2,
+            }}
+          >
             {services.map((svc, index) => (
-              <motion.div 
+              <motion.div
                 key={svc.name}
-                initial={{ opacity: 0, y: 20, scale: 0.97 }}
+                initial={{ opacity: 0, y: 16, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ delay: index * 0.1, duration: 0.5, ease: 'easeOut' }}
-                whileHover={{ scale: 1.015 }}
+                transition={{
+                  delay: index * 0.06,
+                  duration: 0.4,
+                  ease: "easeOut",
+                }}
+                whileHover={{ scale: 1.01 }}
               >
                 <Box
+                  onClick={() => handleSelectService(svc.id)}
                   sx={{
-                    position: 'relative',
+                    position: "relative",
                     height: 240,
-                    borderRadius: 3,
-                    overflow: 'hidden',
+                    borderRadius: "18px",
+                    overflow: "hidden",
                     backgroundImage: `url(${svc.image})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'flex-end',
-                    cursor: 'pointer',
-                    boxShadow: '0 10px 30px rgba(175, 59, 59, 0.12)',
-                    // Dark overlay for legible text on any photo
-                    '&::before': {
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "flex-end",
+                    cursor: "pointer",
+                    border: "1px solid rgba(15, 23, 42, 0.06)",
+                    boxShadow:
+                      "0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px rgba(15, 23, 42, 0.10)",
+                    "&::before": {
                       content: '""',
-                      position: 'absolute',
+                      position: "absolute",
                       inset: 0,
                       background:
-                        'linear-gradient(180deg, rgba(0,0,0,0) 35%, rgba(0,0,0,0.7) 100%)',
-                      pointerEvents: 'none',
+                        "linear-gradient(180deg, rgba(0,0,0,0) 35%, rgba(0,0,0,0.72) 100%)",
+                      pointerEvents: "none",
                     },
                   }}
-                  onClick={() => handleSelectService(svc.id)}
                 >
-                  {/* Badge — brand red (was purple gradient) */}
                   <Box
                     sx={{
-                      position: 'absolute',
-                      top: 14,
-                      left: 14,
-                      px: 1.3,
-                      py: 0.5,
-                      fontSize: 11,
-                      fontWeight: 'bold',
-                      color: '#fff',
+                      position: "absolute",
+                      top: 12,
+                      left: 12,
+                      px: 1.2,
+                      py: 0.4,
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      color: "#fff",
                       background:
-                        'linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)',
-                      borderRadius: 1.5,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      boxShadow: '0 4px 10px rgba(254, 9, 68, 0.35)',
+                        "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+                      borderRadius: 1.2,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      boxShadow: "0 4px 10px rgba(254, 9, 68, 0.35)",
                       zIndex: 1,
                     }}
                   >
                     {svc.badge}
                   </Box>
 
-                  {/* Body — uses servicePricing.startingPrice() to show real
-                      starting price (e.g. 60-min) + duration tier list */}
-                  <Box sx={{ position: 'relative', px: 2, py: 2, zIndex: 1 }}>
+                  <Box sx={{ position: "relative", px: 2, py: 2, zIndex: 1 }}>
                     <Typography
-                      fontSize={20}
-                      fontWeight={700}
-                      fontFamily="Fraunces, Georgia, serif"
-                      sx={{ color: '#fff', letterSpacing: '-0.01em' }}
+                      sx={{
+                        fontFamily: SERIF,
+                        fontSize: 20,
+                        fontWeight: 700,
+                        color: "#fff",
+                        letterSpacing: "-0.01em",
+                      }}
                     >
                       {svc.name}
                     </Typography>
                     <Typography
-                      fontSize={12.5}
                       sx={{
-                        color: 'rgba(255, 255, 255, 0.85)',
+                        fontSize: 12,
+                        color: "rgba(255,255,255,0.85)",
                         mt: 0.25,
                         mb: 1.25,
                         lineHeight: 1.4,
@@ -267,20 +457,20 @@ const ServicesPage: React.FC = () => {
 
                     <Box
                       sx={{
-                        display: 'flex',
-                        alignItems: 'center',
+                        display: "flex",
+                        alignItems: "center",
                         gap: 1,
-                        flexWrap: 'wrap',
+                        flexWrap: "wrap",
                       }}
                     >
                       <Box
                         component="span"
                         sx={{
-                          fontFamily: 'Fraunces, Georgia, serif',
-                          fontSize: 19,
+                          fontFamily: SERIF,
+                          fontSize: 18,
                           fontWeight: 700,
-                          color: '#fff',
-                          letterSpacing: '-0.02em',
+                          color: "#fff",
+                          letterSpacing: "-0.02em",
                         }}
                       >
                         From {formatTHB(startingPrice(svc))}
@@ -289,33 +479,46 @@ const ServicesPage: React.FC = () => {
                         component="span"
                         sx={{
                           fontSize: 11,
-                          color: 'rgba(255, 255, 255, 0.7)',
+                          color: "rgba(255,255,255,0.7)",
                         }}
                       >
                         · {svc.duration} min
                       </Box>
-                      {svc.count > 0 && (
-                        <Box
-                          component="span"
-                          sx={{
-                            ml: 'auto',
-                            fontSize: 10.5,
-                            fontWeight: 600,
-                            color: 'rgba(255, 255, 255, 0.85)',
-                            background: 'rgba(0, 0, 0, 0.3)',
-                            px: 0.8,
-                            py: 0.25,
-                            borderRadius: 1,
-                            backdropFilter: 'blur(6px)',
-                          }}
-                        >
-                          ⭐ {svc.count.toLocaleString()} used
-                        </Box>
-                      )}
+                      {/* 🆕 Round 28b12 — chip shows `servedCount` only:
+                          sessions ACTUALLY DELIVERED (status completed
+                          or done). Future / draft / cancelled bookings
+                          never inflate the figure → real social proof. */}
+                      {(() => {
+                        const servedCount = servedCounts.get(svc.id) ?? 0;
+                        if (servedCount <= 0) return null;
+                        return (
+                          <Box
+                            component="span"
+                            sx={{
+                              ml: "auto",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                              fontSize: 10.5,
+                              fontWeight: 600,
+                              color: "rgba(255,255,255,0.9)",
+                              background: "rgba(0,0,0,0.35)",
+                              px: 0.8,
+                              py: 0.3,
+                              borderRadius: 1,
+                              backdropFilter: "blur(6px)",
+                            }}
+                          >
+                            <StarRoundedIcon
+                              sx={{ fontSize: 12, color: "#FBBF24" }}
+                            />
+                            Used by {servedCount.toLocaleString()}{" "}
+                            {servedCount === 1 ? "customer" : "customers"}
+                          </Box>
+                        );
+                      })()}
                     </Box>
 
-                    {/* 🆕 Round 19: 'Book now' fast-path — direct to
-                        /therapists?service=… without pause on detail page */}
                     <Button
                       variant="contained"
                       onClick={(e) => handleBookService(svc.id, e)}
@@ -325,17 +528,17 @@ const ServicesPage: React.FC = () => {
                         height: 38,
                         borderRadius: 999,
                         background:
-                          'linear-gradient(135deg, #FE0944, #FE7A52)',
-                        color: '#fff',
-                        fontFamily: 'Inter, system-ui, sans-serif',
+                          "linear-gradient(135deg, #FE0944, #FE7A52)",
+                        color: "#fff",
+                        fontFamily: SANS,
                         fontSize: 13,
                         fontWeight: 700,
-                        textTransform: 'none',
-                        boxShadow: '0 6px 18px rgba(254, 9, 68, 0.35)',
+                        textTransform: "none",
+                        boxShadow: "0 6px 18px rgba(254, 9, 68, 0.35)",
                         px: 2.5,
-                        '&:hover': {
+                        "&:hover": {
                           background:
-                            'linear-gradient(135deg, #E50840, #E56A47)',
+                            "linear-gradient(135deg, #E50840, #E56A47)",
                         },
                       }}
                     >
@@ -345,281 +548,463 @@ const ServicesPage: React.FC = () => {
                 </Box>
               </motion.div>
             ))}
-            <Typography textAlign="center" mt={4} fontSize={13} sx={{ color: '#aaa' }}> 
-              “Can’t find what you’re looking for? Chat with us for more options!” </Typography>
+            <Typography
+              sx={{
+                textAlign: "center",
+                mt: 3,
+                fontSize: 12.5,
+                color: "rgba(60,30,20,0.55)",
+              }}
+            >
+              Can&apos;t find what you&apos;re looking for? Chat with us for more options.
+            </Typography>
           </Box>
         )}
 
-        {section === 'about' && (
-          <Box sx={{ px: 4, py: 6 }}>
-          <Typography fontWeight="bold" textAlign="center" mb={4} sx={{ color: '#3a3420', fontSize: 20 }}>
-          • ABOUT US •
-        </Typography>
+        {/* ─── About Us tab ─── */}
+        {section === "about" && (
+          <Box sx={{ px: 2, mt: 3, display: "flex", flexDirection: "column", gap: 2 }}>
+            {/* Hero card — single sentence promise */}
+            <Box
+              sx={{
+                p: 2.5,
+                borderRadius: "18px",
+                background: "#FFFFFF",
+                border: "1px solid rgba(15, 23, 42, 0.06)",
+                boxShadow:
+                  "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.05)",
+              }}
+            >
+              <Typography
+                sx={{
+                  fontFamily: SERIF,
+                  fontSize: 18,
+                  fontWeight: 600,
+                  color: "#3c1e14",
+                  letterSpacing: "-0.01em",
+                  mb: 1,
+                }}
+              >
+                Bangkok&apos;s most discreet outcall massage,{" "}
+                <Box
+                  component="em"
+                  sx={{ color: "#FE0944", fontStyle: "italic" }}
+                >
+                  delivered to you.
+                </Box>
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: 13.5,
+                  lineHeight: 1.65,
+                  color: "rgba(60,30,20,0.78)",
+                }}
+              >
+                SunRed connects you with vetted independent therapists across
+                central Bangkok. Every profile is verified, every booking is
+                handled by a real human, and every detail from arrival to
+                payment stays between you and us.
+              </Typography>
+            </Box>
 
-        <Typography fontSize={14} lineHeight={2} mb={4} sx={{ textAlign: 'justify', textIndent: '1em', color: '#3a3420' }}>
-          Welcome to SunRed’s Massage Service Experience.  
-          Step into a world where relaxation meets indulgence and every touch is designed to awaken your senses. 
-          Discover a curated list of independent therapists, each specializing in diverse massage techniques tailored to your unique preferences.
-        </Typography>
+            {/* 4-pillar grid */}
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 1.25,
+              }}
+            >
+              {ABOUT_PILLARS.map(({ Icon, title, body, tone }) => (
+                <Box
+                  key={title}
+                  sx={{
+                    p: 1.5,
+                    borderRadius: "14px",
+                    background: "#FFFFFF",
+                    border: "1px solid rgba(15, 23, 42, 0.06)",
+                    boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 0.75,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: "10px",
+                      background: tone.bg,
+                      color: tone.fg,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      "& svg": { fontSize: 18 },
+                    }}
+                  >
+                    <Icon />
+                  </Box>
+                  <Typography
+                    sx={{
+                      fontFamily: SERIF,
+                      fontSize: 13.5,
+                      fontWeight: 600,
+                      color: "#3c1e14",
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {title}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: 11.5,
+                      lineHeight: 1.45,
+                      color: "rgba(60,30,20,0.7)",
+                    }}
+                  >
+                    {body}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
 
-<Typography fontSize={14} lineHeight={2} mb={2} sx={{ textAlign: 'justify', textIndent: '1em', color: '#3a3420' }}>
-          Whether you’re seeking deep relaxation or an elevated experience with a sensual finale, 
-          SunRed is here to create the perfect journey. Every therapist’s profile is verified 
-          and thoughtfully crafted to help you find the ideal match.
-        </Typography>
-       </Box>
-            )}
-            {section === 'how' && (
-              <Box sx={{ py: 4 }}>
-              {/* 🆕 Round 20: 3-step visual relocated from HomePage to here.
-                  Quick scan above the detailed FAQ — keeps HomePage lean
-                  while preserving the explainer for curious users. */}
-              <HowItWorks />
+            {/* Service area card */}
+            <Box
+              sx={{
+                p: 2,
+                borderRadius: "16px",
+                background: "#FFFFFF",
+                border: "1px solid rgba(15, 23, 42, 0.06)",
+                boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <LocationOnRoundedIcon sx={{ color: "#FE0944", fontSize: 18 }} />
+                <Typography
+                  sx={{
+                    fontFamily: SERIF,
+                    fontSize: 14.5,
+                    fontWeight: 600,
+                    color: "#3c1e14",
+                  }}
+                >
+                  Service area
+                </Typography>
+              </Box>
+              <Typography
+                sx={{
+                  fontSize: 12.5,
+                  lineHeight: 1.55,
+                  color: "rgba(60,30,20,0.72)",
+                }}
+              >
+                Sukhumvit · Silom · Asok · Thonglor · Sathorn · Phrom Phong ·
+                Ari · Chidlom · Ploenchit. Outside the central zone? Message
+                admin we&apos;ll quote travel.
+              </Typography>
+            </Box>
 
-              <Box sx={{ px: 4, pt: 2 }}>
-              <Typography fontWeight="bold" textAlign="center" mb={4} sx={{ color: '#3a3420', fontSize: 20 }}>
-              • Frequently Asked Questions •
-            </Typography>
-
-          
-<Typography fontWeight="bold" fontSize={20} mt={5} mb={3} sx={{ color: '#3a3420'  }}>
-  BASICS
-</Typography>
-
-{[
-  {
-    q: 'How do I book a therapist?',
-    a: `Simply choose your preferred therapist from the Home page, select your desired service, fill in the booking form, and press confirm. The details will be sent directly to our admin for confirmation.` },
-  {
-    q: "What details are shown on a therapist's profile?",
-    a: `Each profile includes verified photos, service specialties, availability, reviews, and personal features/preferences.` },
-  {
-    q: 'How can I contact a therapist?',
-    a: `All communication is handled through our admin to ensure privacy and safety. You will be connected once your booking is confirmed.` },
-  {
-  q: 'Are the profile photos real?',
-  a: `Ensuring the authenticity of each therapist’s profile on SunRed is one of our top priorities. We have implemented clear measures to enhance transparency, including a dedicated photo verification process. Therapists are encouraged to update their verification regularly to maintain credibility.
-
-While we strive to ensure honest and accurate representation, like any platform, we cannot guarantee absolute accuracy. For added assurance, we recommend checking client reviews, which often provide valuable insights into each therapist’s service quality.` },
-{
-  q: 'How fast can a therapist reach me?',
-  a: `Depending on your location and therapist availability, we can usually arrange for someone to reach you within 30–60 minutes in central Bangkok areas.\n\nIn peak hours or for locations outside the city center, estimated arrival time may vary between 60–90 minutes.\n\nYou’ll be able to view the therapist’s location and estimated travel time before confirming your booking.`
-},
-].map((item) => (
-  <Accordion
-    key={item.q}
-    disableGutters
-    elevation={0}
-    sx={{
-      mb: 1.5,
-      
-      border: '#567C8D',
-      background: 'linear-gradient(135deg, rgba(255, 214, 232, 0.85) 0%, rgba(229, 208, 255, 0.85) 100%)',
-      borderRadius: 3,
-      '&::before': { display: 'none' } }}
-  >
-<AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#7E1F4D' }} />}>
-  <Typography fontWeight="bold" fontSize={14} sx={{ color: '#7E1F4D' }}>
-    {item.q}
-  </Typography>
-</AccordionSummary>
-
-    <AccordionDetails>
-      {item.a.split('\n\n').map((para, i) => (
-        <Typography
-          key={`${item.q}-p-${i}`}
-        fontSize={14}
-        lineHeight={1.8}
-        color="#7E1F4D"
-        paragraph
-        sx={{
-          textIndent: '1.5em' }}
-        >
-          {para}
-        </Typography>
-      ))}
-    </AccordionDetails>
-  </Accordion>
-))}
-
-<Typography fontWeight="bold" fontSize={20} mt={5} mb={3} sx={{ color: '#3a3420'  }}>
-  PAYMENT
-</Typography>
-{[
-  {
-    q: 'How much does it cost to book a therapist?',
-    a: 'At SunRed, we understand the importance of pricing transparency.\n\nEach therapist on our platform is an independent professional who sets their own rates. For the most accurate and up-to-date pricing, we recommend visiting the individual therapist’s profile.\n\nThe cost is typically based on the duration of the booking, the chosen service, and the travel distance — empowering you to make informed decisions tailored to your unique needs.' },
-  {
-    q: 'What forms of payment do you accept?',
-    a: (
-      <>
-       <strong style={{ color: "#ffff", fontWeight: "bold"  }}>Online Booking:</strong>
-      <ul style={{ marginTop: 4, marginBottom: 8, color: "#ffff" }}>
-        <li> QRcode Scan (PromptPay, PayNow, WeChat Pay)</li>
-        <li>Bank Transfer (Account details will be provided after booking)</li>
-      </ul>
-
-       <strong style={{ color: "#ffff", fontWeight: "bold"  }}>In-Person at Condo/Hotel:</strong>
-      <ul style={{ marginTop: 4, marginBottom: 8, color: "#ffff" }}>
-        <li>Cash payment after the service</li>
-        <li>QR code scanning directly from the therapist’s device</li>
-        <li>Bank transfer with confirmation via payment slip</li>
-      </ul>
-      </>
-    ) },
-  {
-    q: 'Is leaving a deposit normal?',
-    a: `In some cases, a deposit may be required to secure your booking — especially for locations outside our standard service zones.\n\nYou will always be informed in advance if a deposit is necessary.\n\nFor example, if your location is more than 25km from central Sukhumvit, a deposit will be requested to ensure therapist availability and travel commitment.`
-  },
-  {
-  q: 'What’s the cancellation or reschedule policy?',
-  a: `We understand that plans can change. You may cancel or reschedule your appointment with at least 1 hour notice before the scheduled time.\n\nIf the therapist has not yet begun traveling, a full refund or reschedule will be provided.\n\nHowever, cancellations made with less than 1 hour notice or after the therapist is en route may not be eligible for a refund, as the therapist's time and travel have already been committed.`
-},
-].map((item, idx) => (
-  <Accordion
-    key={`payment-${idx}`}
-    
-    disableGutters
-    elevation={0}
-    sx={{
-      mb: 2,
-      
-      background: 'linear-gradient(135deg, rgba(255, 214, 232, 0.85) 0%, rgba(229, 208, 255, 0.85) 100%)',
-      
-      border: '1px solid #ccc',
-      borderRadius: 3,
-            '&::before': { display: 'none' } }}
-  >
-<AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#7E1F4D' }} />}>
-  <Typography fontWeight="bold" fontSize={14} sx={{ color: '#7E1F4D' }}>
-    {item.q}
-  </Typography>
-</AccordionSummary>
-
-   <AccordionDetails>
-  {typeof item.a === 'string' ? (
-    item.a.split('\n\n').map((para, i) => (
-      <Typography
-        key={`${item.q}-fa-${i}`}
-        fontSize={14}
-        lineHeight={1.7}
-        color="#7E1F4D" // ✅ สีเทาอ่อนแบบเดียวกับพารากราฟด้านบน
-        paragraph
-        sx={{
-         textIndent: '1.5em' }}
-      >
-        {para}
-      </Typography>
-    ))
-  ) : (
-    <Box sx={{ color: 'text.secondary', fontSize: 14 }}>
-      {item.a}
-    </Box>
-  )}
-</AccordionDetails>
-  </Accordion>
-))}
-
-
-    <Box
-      sx={{
-        mt: 5,
-        p: 3,
-        borderRadius: 5,
-        boxShadow: '0 6px 18px rgba(59, 57, 57, 0.6)' }}
-    >
-      <Typography fontWeight="bold" fontSize={16} mb={2} sx={{ color: '#3a3420'  }}>
-        Contact Information
-      </Typography>
-      <Box display="flex" alignItems="center" gap={1.5} mb={1}>
-        <FaWhatsapp size={20} style={{ color: '#25D366' }} />
-        <Typography fontSize={16} sx={{ color: '#3a3420' }}>
-                WhatsApp: <b>+66 63 435 0987</b>
-        </Typography>
-      </Box>
-      <Box display="flex" alignItems="center" gap={1.5}>
-        <FaTelegramPlane size={20} style={{ color: '#229ED9' }} />
-        <Typography fontSize={16} sx={{ color: '#3a3420' }}>
-          Telegram:{' '}
-          <Box
-            component="a"
-            href="https://t.me/SunRed_BKK"
-            target="_blank"
-            rel="noopener noreferrer"
-            sx={{
-              color: '#1a73e8',
-                            fontWeight: 'bold',
-              textDecoration: 'none',
-              '&:hover': {
-                color: '#F8EFE5',
-                textDecoration: 'underline' } }}
-          >
-            @SunRedvip_bkk
+            {/* Languages card */}
+            <Box
+              sx={{
+                p: 2,
+                borderRadius: "16px",
+                background: "#FFFFFF",
+                border: "1px solid rgba(15, 23, 42, 0.06)",
+                boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <LanguageRoundedIcon sx={{ color: "#0284C7", fontSize: 18 }} />
+                <Typography
+                  sx={{
+                    fontFamily: SERIF,
+                    fontSize: 14.5,
+                    fontWeight: 600,
+                    color: "#3c1e14",
+                  }}
+                >
+                  Languages supported
+                </Typography>
+              </Box>
+              <Typography
+                sx={{
+                  fontSize: 12.5,
+                  lineHeight: 1.55,
+                  color: "rgba(60,30,20,0.72)",
+                }}
+              >
+                English · ไทย · 中文 · 日本語 · 한국어 — admin replies in your
+                language; many therapists speak two or more.
+              </Typography>
+            </Box>
           </Box>
-        </Typography>
-      </Box>
-    </Box>
- {/* 🔗 ลิงก์อื่นๆ แยกออกมา */}
- <Box mt={3}>
-      <Typography fontWeight="bold" fontSize={16} mb={2} sx={{ color: '#3a3420' }}>
-        Additional Links
-      </Typography>
-      <Box display="flex" gap={2}>
-        <Button
-          component="a"
-          href="https://t.me/SunRedvip_bkk"
-          target="_blank"
-          rel="noopener noreferrer"
-          variant="outlined"
-          sx={{
-                        borderRadius: 4,
-            borderColor: '#3a3420',
-            color: '#3a3420',
-            fontSize: 14,
-            fontWeight: 'bold',
-            textTransform: 'none',
-            px: 3 }}
-        >
-          SunRed Support 
-        </Button>
-        <Button
-          component="a"
-          href="https://t.me/SunRed_BKK"
-          target="_blank"
-          rel="noopener noreferrer"
-          variant="outlined"
-          sx={{
-                        borderRadius: 4,
-            borderColor: '#3a3420',
-            color: '#3a3420',
-            fontSize: 14,
-            fontWeight: 'bold',
-            textTransform: 'none',
-            px: 3 }}
-        >
-          Telegram channel
-        </Button>
-      </Box>
-      <Box
-  sx={{
-    mt: 3,
-    mx: 2,
-    p: 2,
-    borderRadius: 3,
-    
-    textAlign: 'center' }}
->
-  <Typography textAlign="center" mt={2} fontSize={14} sx={{ color: '#3a3420aa' }}> 
-    Should you require any assistance, please do not hesitate to contact us. </Typography>
+        )}
 
-</Box>
-    </Box>
-  </Box>
-  </Box>
-)}
+        {/* ─── How to book tab ─── */}
+        {section === "how" && (
+          <Box sx={{ mt: 3 }}>
+            {/* 3-step visual */}
+            <HowItWorks />
+
+            <Box sx={{ px: 2, mt: 2 }}>
+              <Typography
+                sx={{
+                  fontFamily: SERIF,
+                  fontSize: 17,
+                  fontWeight: 600,
+                  color: "#3c1e14",
+                  mb: 1,
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                Frequently asked
+              </Typography>
+
+              {/* Basics */}
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "rgba(60,30,20,0.55)",
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  mt: 1,
+                  mb: 1,
+                }}
+              >
+                Basics
+              </Typography>
+              {FAQ_BASICS.map((item) => (
+                <FaqRow key={item.q} item={item} />
+              ))}
+
+              {/* Payment */}
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "rgba(60,30,20,0.55)",
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  mt: 3,
+                  mb: 1,
+                }}
+              >
+                Payment & policy
+              </Typography>
+              {FAQ_PAYMENT.map((item) => (
+                <FaqRow key={item.q} item={item} />
+              ))}
+
+              {/* Contact */}
+              <Box
+                sx={{
+                  mt: 3,
+                  p: 2,
+                  borderRadius: "16px",
+                  background: "#FFFFFF",
+                  border: "1px solid rgba(15, 23, 42, 0.06)",
+                  boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontFamily: SERIF,
+                    fontSize: 14.5,
+                    fontWeight: 600,
+                    color: "#3c1e14",
+                    mb: 1.25,
+                  }}
+                >
+                  Contact us
+                </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.5,
+                    mb: 1,
+                  }}
+                >
+                  <FaWhatsapp size={18} style={{ color: "#25D366" }} />
+                  <Typography
+                    sx={{ fontSize: 13, color: "rgba(60,30,20,0.85)" }}
+                  >
+                    WhatsApp:{" "}
+                    <Box
+                      component="a"
+                      href="https://wa.me/66634350987"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{
+                        color: "#FE0944",
+                        fontWeight: 700,
+                        textDecoration: "none",
+                        "&:hover": { textDecoration: "underline" },
+                      }}
+                    >
+                      +66 63 435 0987
+                    </Box>
+                  </Typography>
+                </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <FaTelegramPlane size={18} style={{ color: "#229ED9" }} />
+                  <Typography
+                    sx={{ fontSize: 13, color: "rgba(60,30,20,0.85)" }}
+                  >
+                    Telegram:{" "}
+                    <Box
+                      component="a"
+                      href="https://t.me/SunRedvip_bkk"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{
+                        color: "#FE0944",
+                        fontWeight: 700,
+                        textDecoration: "none",
+                        "&:hover": { textDecoration: "underline" },
+                      }}
+                    >
+                      @SunRedvip_bkk
+                    </Box>
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Additional links */}
+              <Box sx={{ mt: 2, display: "flex", gap: 1.25 }}>
+                <Button
+                  component="a"
+                  href="https://t.me/SunRedvip_bkk"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="outlined"
+                  sx={{
+                    flex: 1,
+                    borderRadius: 999,
+                    borderColor: "rgba(15, 23, 42, 0.12)",
+                    color: "#3c1e14",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    textTransform: "none",
+                    py: 1,
+                    "&:hover": {
+                      borderColor: "rgba(15, 23, 42, 0.24)",
+                      background: "rgba(15, 23, 42, 0.04)",
+                    },
+                  }}
+                >
+                  SunRed Support
+                </Button>
+                <Button
+                  component="a"
+                  href="https://t.me/SunRed_BKK"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="outlined"
+                  sx={{
+                    flex: 1,
+                    borderRadius: 999,
+                    borderColor: "rgba(15, 23, 42, 0.12)",
+                    color: "#3c1e14",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    textTransform: "none",
+                    py: 1,
+                    "&:hover": {
+                      borderColor: "rgba(15, 23, 42, 0.24)",
+                      background: "rgba(15, 23, 42, 0.04)",
+                    },
+                  }}
+                >
+                  Telegram channel
+                </Button>
+              </Box>
+              <Typography
+                sx={{
+                  textAlign: "center",
+                  mt: 2.5,
+                  fontSize: 12,
+                  color: "rgba(60,30,20,0.55)",
+                  lineHeight: 1.5,
+                }}
+              >
+                Need help with anything else? Reach out anytime — admin is on
+                24/7.
+              </Typography>
+            </Box>
+          </Box>
+        )}
       </Box>
     </Box>
   );
 };
+
+// ─── Reusable FAQ row — Clean v3 cool palette ──────────────────────────
+const FaqRow: React.FC<{ item: FaqItem }> = ({ item }) => (
+  <Accordion
+    disableGutters
+    elevation={0}
+    sx={{
+      mb: 1,
+      borderRadius: "12px !important",
+      background: "#FFFFFF",
+      border: "1px solid rgba(15, 23, 42, 0.06)",
+      boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
+      overflow: "hidden",
+      "&::before": { display: "none" },
+    }}
+  >
+    <AccordionSummary
+      expandIcon={
+        <ExpandMoreRoundedIcon sx={{ color: "rgba(60,30,20,0.55)" }} />
+      }
+      sx={{
+        minHeight: 48,
+        "& .MuiAccordionSummary-content": { my: 1 },
+      }}
+    >
+      <Typography
+        sx={{
+          fontFamily: SANS,
+          fontWeight: 600,
+          fontSize: 13.5,
+          color: "#3c1e14",
+          letterSpacing: "-0.005em",
+        }}
+      >
+        {item.q}
+      </Typography>
+    </AccordionSummary>
+    <AccordionDetails sx={{ pt: 0 }}>
+      {typeof item.a === "string" ? (
+        item.a
+          .split("\n\n")
+          .map((para, i) => (
+            <Typography
+              key={i}
+              sx={{
+                fontFamily: SANS,
+                fontSize: 13,
+                lineHeight: 1.65,
+                color: "rgba(60,30,20,0.78)",
+                mb: 1,
+                "&:last-child": { mb: 0 },
+              }}
+            >
+              {para}
+            </Typography>
+          ))
+      ) : (
+        <Box sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(60,30,20,0.78)" }}>
+          {item.a}
+        </Box>
+      )}
+    </AccordionDetails>
+  </Accordion>
+);
 
 export default ServicesPage;

@@ -1,41 +1,3 @@
-// src/pages/booking/BookingFlowPage.tsx
-//
-// 🎨 Phase 4 — Single-page Confirm Order.
-//
-// Page title: "Confirm Order" (centered) + ← back. Below, a stacked
-// card layout per founder-approved pattern combo (1A·4A·5A·7A from
-// Aine reference + 2B·3B·6B·8B keeping our patterns):
-//
-//   ┌─ Confirm Order ─────────────────────────────┐
-//   │                                              │
-//   │  📍 Address tile  (tap → Location sheet)     │
-//   │                                              │
-//   │  📑 Order Details                            │
-//   │  [avatar] Mai · ★4.7 (29 reviews)  EDIT      │
-//   │           Today · 17:00                      │
-//   │  ─────────                                   │
-//   │  Thai Massage              90 min · ฿1,800   │
-//   │                                              │
-//   │  📞 Phone Number  (inline input)             │
-//   │                                              │
-//   │  🌐 Preferred language   ›   (sheet cell)    │
-//   │  ➕ Add-ons              ›   (sheet cell)    │
-//   │  💳 Payment method       ›   (sheet cell)    │
-//   │                                              │
-//   │  📝 Notes for {name}  (inline textarea)      │
-//   │                                              │
-//   │  💵 Pricing                                  │
-//   │  Service fee                       ฿1,800    │
-//   │  Travel fee ⓘ                      ฿0        │
-//   │     ✓ Within free distance (4km)             │
-//   │  Total                             ฿1,800    │
-//   │                                              │
-//   │  Cancellation: free up to 30 min …           │
-//   └──────────────────────────────────────────────┘
-//   ┌─ Sticky bottom: TOTAL ฿1,800   [Confirm] ─┐
-//
-// Booking submission writes the same Firestore booking schema as before;
-// only the visual layout changes.
 
 import React, { useState, useMemo, useEffect } from "react";
 import {
@@ -63,6 +25,8 @@ import {
 } from "firebase/firestore";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
+// 🆕 Round 28an — BKK-anchored time helpers.
+import { fmtBKK, sameDayBKK, nowBKK } from "@/utils/time";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
@@ -74,7 +38,9 @@ import PaidRoundedIcon from "@mui/icons-material/PaidRounded";
 import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import LocalTaxiRoundedIcon from "@mui/icons-material/LocalTaxiRounded";
-import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+// 🆕 Round 28b8 — CheckCircleRoundedIcon retired with the
+//   "Within free distance" chip when GrabCar pricing replaced the
+//   0-4km subsidy.
 import SavingsRoundedIcon from "@mui/icons-material/SavingsRounded";
 import UmbrellaRoundedIcon from "@mui/icons-material/UmbrellaRounded";
 import SupportAgentRoundedIcon from "@mui/icons-material/SupportAgentRounded";
@@ -100,7 +66,6 @@ import { isInappropriate } from "@/utils/moderate";
 import { sendBookingNotification } from "@/utils/telegram";
 import {
   estimateTaxiFare,
-  FREE_DISTANCE_KM,
   ADMIN_QUOTE_KM,
 } from "@/utils/taxiFare";
 import { getRainStatus } from "@/utils/weather";
@@ -108,6 +73,8 @@ import { priceForDuration, formatTHB } from "@/utils/servicePricing";
 import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
 import services from "@/data/services";
 import therapistsData from "@/data/therapists";
+// 🆕 Round 28b7 — Cloudinary helper for the rounded therapist photo.
+import { enhanceImage } from "@/utils/cloudinary";
 import { ADDONS, type AddOn } from "@/data/bookingExtras";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
@@ -166,6 +133,60 @@ const initialFormState: BookingFormState = {
   therapistId: null,
 };
 
+// 🆕 Round 28b7 (founder bug-fix 2026-05-03) — When the user navigates
+//   from Confirm Order → Payment Methods → back, this page unmounts
+//   and remounts. Without persistence, the form state (location pin,
+//   address, contact name, etc.) is wiped because it lived in
+//   `useState`. Solution: mirror the form to sessionStorage keyed by
+//   therapistId so a single therapist's WIP booking survives a side-
+//   trip but a fresh booking for a different therapist starts clean.
+//
+//   sessionStorage > localStorage so the form auto-clears when the
+//   tab closes (privacy-friendly + no stale state on next visit).
+const FORM_STORAGE_PREFIX = "sunred.booking.form.";
+function formStorageKey(therapistId: string | null | undefined): string | null {
+  if (!therapistId) return null;
+  return `${FORM_STORAGE_PREFIX}${therapistId}`;
+}
+function readPersistedForm(
+  therapistId: string | null | undefined
+): Partial<BookingFormState> | null {
+  if (typeof window === "undefined") return null;
+  const key = formStorageKey(therapistId);
+  if (!key) return null;
+  try {
+    const raw = window.sessionStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<BookingFormState>;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+function writePersistedForm(
+  therapistId: string | null | undefined,
+  form: BookingFormState
+): void {
+  if (typeof window === "undefined") return;
+  const key = formStorageKey(therapistId);
+  if (!key) return;
+  try {
+    window.sessionStorage.setItem(key, JSON.stringify(form));
+  } catch {
+    /* ignore quota / privacy mode failures */
+  }
+}
+function clearPersistedForm(therapistId: string | null | undefined): void {
+  if (typeof window === "undefined") return;
+  const key = formStorageKey(therapistId);
+  if (!key) return;
+  try {
+    window.sessionStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
+
 const BookingFlowPage: React.FC = () => {
   const { id: therapistId } = useParams<{ id?: string }>();
   const [searchParams] = useSearchParams();
@@ -200,14 +221,32 @@ const BookingFlowPage: React.FC = () => {
     };
   }, []);
 
-  const [form, setForm] = useState<BookingFormState>({
-    ...initialFormState,
-    therapistId: therapistId ?? null,
-    serviceId: preService ?? null,
-    duration: preDuration ? parseInt(preDuration, 10) : null,
-    date: preDate ?? null,
-    time: preTime ?? null,
+  // 🆕 Round 28b7 — initialise form from persisted sessionStorage
+  //   first, then layer URL params on top (so a fresh navigation with
+  //   ?service=... still wins over stale persisted serviceId). This
+  //   means navigating to /payment-methods → back keeps the address,
+  //   pin, contact name, and notes the user already entered.
+  const [form, setForm] = useState<BookingFormState>(() => {
+    const persisted = readPersistedForm(therapistId);
+    return {
+      ...initialFormState,
+      ...(persisted ?? {}),
+      therapistId: therapistId ?? null,
+      serviceId: preService ?? persisted?.serviceId ?? null,
+      duration:
+        preDuration != null
+          ? parseInt(preDuration, 10)
+          : persisted?.duration ?? null,
+      date: preDate ?? persisted?.date ?? null,
+      time: preTime ?? persisted?.time ?? null,
+    };
   });
+
+  // Persist on every form change so a back-nav from /payment-methods
+  // survives. Skipped during SSR (typeof window check inside helper).
+  useEffect(() => {
+    writePersistedForm(therapistId, form);
+  }, [form, therapistId]);
 
   // 🌧 Warm the rain-status cache on mount — surcharge surfaces in the
   //    pricing card without an extra round-trip when location is set.
@@ -330,12 +369,12 @@ const BookingFlowPage: React.FC = () => {
   const adminQuoteRequired = taxiResult?.tier === "admin";
 
   // 🆕 Round 10 (founder 2026-05-01): Distance + ETA line on Confirm
-  //    Order. ETA = travel time from distance + a 10-min prep buffer
+  //    Order. ETA = travel time from distance + a 15-min prep buffer
   //    (staff getting ready + calling taxi). Average urban Bangkok /
   //    Grab speed: 35 km/h (mix of city + sois). Tune AVG_SPEED_KMH /
   //    STAFF_PREP_MIN if real-world ETAs drift from observed values.
   const AVG_SPEED_KMH = 35;
-  const STAFF_PREP_MIN = 10;
+  const STAFF_PREP_MIN = 15;
   const etaMinutes =
     distanceKm > 0
       ? Math.round((distanceKm * 60) / AVG_SPEED_KMH + STAFF_PREP_MIN)
@@ -360,11 +399,11 @@ const BookingFlowPage: React.FC = () => {
 
   // ── Header summary line
   const dateLabel = form.date
-    ? dayjs(form.date).isSame(dayjs(), "day")
+    ? sameDayBKK(form.date, nowBKK())
       ? "Today"
-      : dayjs(form.date).isSame(dayjs().add(1, "day"), "day")
+      : sameDayBKK(form.date, nowBKK().add(1, "day"))
       ? "Tomorrow"
-      : dayjs(form.date).format("MMM D")
+      : fmtBKK(form.date, "MMM D")
     : null;
 
   // ── Submit
@@ -509,6 +548,9 @@ const BookingFlowPage: React.FC = () => {
         payment: PAYMENT_LABELS[paymentMethod],
       });
 
+      // 🆕 Round 28b7 — booking confirmed → clear the persisted WIP
+      //   form so the next visit to this therapist starts clean.
+      clearPersistedForm(therapistId);
       void navigate(`/booking/success/${ref.id}`);
     } catch (err) {
       console.error("[booking] submit failed", err);
@@ -529,7 +571,7 @@ const BookingFlowPage: React.FC = () => {
         maxWidth: "430px",
         margin: "0 auto",
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
+        background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
         paddingBottom: "210px",
         fontFamily: SANS,
         position: "relative",
@@ -613,17 +655,26 @@ const BookingFlowPage: React.FC = () => {
               marginBottom: "12px",
             }}
           >
+            {/* 🆕 Round 28b7 — Confirm Order therapist photo:
+                circular brown disc → rounded-square thumbnail with
+                actual photo. enhanceImage(card) sized for 56px.
+                Falls back to brand red→coral gradient when image
+                missing (matches HomeMapBrowse fallback). */}
             <Box
               sx={{
                 width: 56,
                 height: 56,
                 flexShrink: 0,
-                borderRadius: "50%",
+                borderRadius: "12px",
                 background: therapist?.image
-                  ? `center / cover no-repeat url("${therapist.image}"), linear-gradient(135deg, #d4a574, #8b6f47)`
-                  : "linear-gradient(135deg, #d4a574, #8b6f47)",
-                border: "2px solid #fff",
-                boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
+                  ? `center / cover no-repeat url("${enhanceImage(
+                      therapist.image,
+                      { variant: "card" }
+                    )}"), linear-gradient(135deg, #FE0944, #FE7A52)`
+                  : "linear-gradient(135deg, #FE0944, #FE7A52)",
+                border: "1px solid rgba(15, 23, 42, 0.06)",
+                boxShadow:
+                  "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 10px rgba(15, 23, 42, 0.06)",
               }}
             />
             <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -939,11 +990,10 @@ const BookingFlowPage: React.FC = () => {
               marginBottom: "8px",
             }}
           >
-            {locationSet && distanceKm <= FREE_DISTANCE_KM && (
-              <FareChip color="green" icon={<CheckCircleRoundedIcon />}>
-                Within free distance ({FREE_DISTANCE_KM} km)
-              </FareChip>
-            )}
+            {/* 🆕 Round 28b8 — "Within free distance" chip retired
+                with the GrabCar pricing migration (no more 0-4km
+                subsidy). Savings chip still surfaces — it now reads
+                the half-price-return savings vs full Grab round-trip. */}
             {locationSet &&
               taxiResult &&
               taxiResult.savingsVsGrab > 0 &&

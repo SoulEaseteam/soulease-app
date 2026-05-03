@@ -1,38 +1,5 @@
-// src/pages/booking/PaymentMethodsPage.tsx
-//
-// 🎨 Phase 5 round 14 (founder 2026-05-01): Payment Methods page.
-// Mockup of Grab's Payment Methods screen, adapted to SunRed brand
-// (red gradient + mint accents, phone-shell wrapper).
-//
-// Layout:
-//   ┌──────────────────────────────────────────┐
-//   │  ← Payment Methods                        │  sticky header
-//   ├──────────────────────────────────────────┤
-//   │  [Personal] [Work]                        │  segmented (Personal active)
-//   │                                           │
-//   │  Enjoy easier, cashless payments          │  cream banner card
-//   │  ┌─────────────────────────────────────┐ │
-//   │  │ [icon] PromptPay              ○      │ │  recommended row
-//   │  │        Scan the driver's QR to pay   │ │
-//   │  └─────────────────────────────────────┘ │
-//   │                                           │
-//   │  LINKED METHODS                           │
-//   │  Swipe left to set your default           │
-//   │   ┌──┐ Cash (default)              ●      │  active radio
-//   │                                           │
-//   │  ADD METHODS                              │
-//   │   ┌──┐ Cards                       ›      │
-//   │   ┌──┐ TrueMoney                   ›      │
-//   │   ┌──┐ AliPay              [Alipay+]      │
-//   │   ┌──┐ WeChat Pay                  ›      │
-//   └──────────────────────────────────────────┘
-//
-// Storage: persists the user's selected method to localStorage under
-// `sunred.paymentMethod`. Read by BookingFlowPage to show "Pay with: X"
-// in the Confirm Order Payment cell. Admin still confirms payment via
-// Telegram chat — this page is presentation only for now.
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Typography, IconButton } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
@@ -43,6 +10,9 @@ import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
 import CreditCardRoundedIcon from "@mui/icons-material/CreditCardRounded";
 import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
 import LocalAtmRoundedIcon from "@mui/icons-material/LocalAtmRounded";
+// 🆕 Round 28b7 — `fonts` import was unused (default-import shape was
+//   also wrong: the theme module exports `fonts` as a named export,
+//   not default). Removed to silence the warning.
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -65,17 +35,29 @@ interface PaymentOption {
   iconBg: string;
   iconFg: string;
   badge?: string; // e.g. "Alipay+ Partner"
+  /**
+   * 🆕 Round 28o (founder 2026-05-02) — when true, the row renders a
+   * "Coming soon" pill, dims the icon, and disables the click handler.
+   * For payment methods that aren't wired to a real processor yet —
+   * we show them as upcoming so customers know what to expect.
+   */
+  comingSoon?: boolean;
 }
 
 const RECOMMENDED: PaymentOption = {
   id: "promptpay",
   label: "PromptPay",
-  sub: "Scan the QR to pay on arrival",
+  sub: "Scan the QR to pay on arrival (details provided after booking)",
   icon: <QrCodeScannerRoundedIcon />,
   iconBg: "rgba(20, 184, 166, 0.12)",
   iconFg: "#14b8a6",
 };
 
+// 🆕 Round 28t (founder 2026-05-02, corrected) — Cards (Visa/Mastercard/
+// JCB) is the only method that's NOT wired to a real processor yet, so
+// only that row shows the "Coming soon" state. Cash, TrueMoney, Alipay,
+// WeChat — all available. PromptPay (RECOMMENDED) stays available as
+// the cashless default.
 const LINKED_DEFAULTS: PaymentOption[] = [
   {
     id: "cash",
@@ -95,6 +77,8 @@ const ADD_METHODS: PaymentOption[] = [
     icon: <CreditCardRoundedIcon />,
     iconBg: "rgba(254, 9, 68, 0.10)",
     iconFg: "#FE0944",
+    badge: "not available",
+    comingSoon: true,
   },
   {
     id: "truemoney",
@@ -119,19 +103,62 @@ const ADD_METHODS: PaymentOption[] = [
     icon: <PaymentsRoundedIcon />,
     iconBg: "rgba(34, 197, 94, 0.12)",
     iconFg: "#16a34a",
+    
   },
 ];
+
+// 🆕 Round 28u (founder 2026-05-02) — bug-fix layer.
+// Builds a single source of truth for which payment IDs are actually
+// usable (not coming-soon, not unknown). Used by both the page state
+// and the exported `readSelectedPaymentMethod()` so a stale localStorage
+// value (e.g., user picked "card" before it was disabled) can't crash
+// the booking flow downstream.
+const ALL_OPTIONS: PaymentOption[] = [RECOMMENDED, ...LINKED_DEFAULTS, ...ADD_METHODS];
+
+const AVAILABLE_IDS: ReadonlySet<PaymentMethodId> = new Set(
+  ALL_OPTIONS.filter((o) => !o.comingSoon).map((o) => o.id)
+);
+
+const DEFAULT_PAYMENT_ID: PaymentMethodId = "promptpay";
+
+/** Resolve any incoming string into a guaranteed-usable PaymentMethodId. */
+function safePaymentId(raw: string | null | undefined): PaymentMethodId {
+  if (raw && AVAILABLE_IDS.has(raw as PaymentMethodId)) {
+    return raw as PaymentMethodId;
+  }
+  return DEFAULT_PAYMENT_ID;
+}
 
 const PaymentMethodsPage: React.FC = () => {
   const navigate = useNavigate();
   const [selected, setSelected] = useState<PaymentMethodId>(() => {
-    if (typeof window === "undefined") return "cash";
-    return (
-      (window.localStorage.getItem(STORAGE_KEY) as PaymentMethodId) || "cash"
-    );
+    if (typeof window === "undefined") return DEFAULT_PAYMENT_ID;
+    return safePaymentId(window.localStorage.getItem(STORAGE_KEY));
   });
 
+  // 🆕 Round 28u — heal stale persistence on first mount.
+  // If the user landed here with localStorage holding a now-disabled or
+  // unknown method (e.g., "card" after we flagged it coming-soon), write
+  // the resolved safe id back so downstream readers don't see the stale
+  // value either.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (stored !== selected) {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, selected);
+      } catch {
+        /* ignore */
+      }
+    }
+    // run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const persist = (id: PaymentMethodId) => {
+    // 🆕 Round 28u — guard against accidental persist of a coming-soon
+    // method (e.g., if PaymentRow ever accepts a flagged option).
+    if (!AVAILABLE_IDS.has(id)) return;
     setSelected(id);
     try {
       window.localStorage.setItem(STORAGE_KEY, id);
@@ -143,14 +170,14 @@ const PaymentMethodsPage: React.FC = () => {
   return (
     <Box
       sx={{
-        // Phone-shell wrapper — match BookingFlowPage / SelectLocation rhythm
+        // Phone-shell wrapper — Round 28b1 Clean v3 cool-neutral palette
         maxWidth: "430px",
         margin: "0 auto",
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
+        background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
         borderRadius: "28px",
         overflow: "hidden",
-        boxShadow: "0 20px 60px rgba(126, 30, 46, 0.15)",
+        boxShadow: "0 20px 60px rgba(15, 23, 42, 0.08)",
         position: "relative",
         paddingBottom: "calc(40px + env(safe-area-inset-bottom, 0px))",
         fontFamily: SANS,
@@ -162,10 +189,10 @@ const PaymentMethodsPage: React.FC = () => {
           position: "sticky",
           top: 0,
           zIndex: 10,
-          background: "rgba(255, 248, 240, 0.92)",
+          background: "rgba(250, 251, 252, 0.92)",
           backdropFilter: "blur(20px) saturate(180%)",
           WebkitBackdropFilter: "blur(20px) saturate(180%)",
-          borderBottom: "1px solid rgba(0, 0, 0, 0.04)",
+          borderBottom: "1px solid rgba(15, 23, 42, 0.06)",
           display: "flex",
           alignItems: "center",
           padding: "14px 16px",
@@ -252,7 +279,7 @@ const PaymentMethodsPage: React.FC = () => {
               paddingLeft: "2px",
             }}
           >
-            Linked Methods
+            We accept all cash currencies
           </Typography>
           <Typography
             sx={{
@@ -263,7 +290,7 @@ const PaymentMethodsPage: React.FC = () => {
               paddingLeft: "2px",
             }}
           >
-            Tap to set as your default payment.
+            Payment system that allows foreign tourists.
           </Typography>
           <Box
             sx={{
@@ -286,7 +313,7 @@ const PaymentMethodsPage: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Add methods */}
+        {/* Online Booking | Payment Options */}
         <Box>
           <Typography
             sx={{
@@ -298,7 +325,7 @@ const PaymentMethodsPage: React.FC = () => {
               paddingLeft: "2px",
             }}
           >
-            Add Methods
+            Bank Transfer
           </Typography>
           <Box
             sx={{
@@ -340,16 +367,27 @@ const PaymentRow: React.FC<{
   showDefaultBadge?: boolean;
   divider?: boolean;
   elevated?: boolean;
-}> = ({ option, isActive, onSelect, showDefaultBadge, divider, elevated }) => (
+}> = ({ option, isActive, onSelect, showDefaultBadge, divider, elevated }) => {
+  // 🆕 Round 28u — symmetric coming-soon guard with AddMethodRow so a
+  // future Linked-method flag (e.g., Cash temporarily off) renders
+  // disabled instead of silently letting the user pick it.
+  const isDisabled = option.comingSoon === true;
+  const handleSelect = () => {
+    if (isDisabled) return;
+    onSelect(option.id);
+  };
+  return (
   <Box
     role="radio"
     aria-checked={isActive}
-    tabIndex={0}
-    onClick={() => onSelect(option.id)}
+    aria-disabled={isDisabled || undefined}
+    tabIndex={isDisabled ? -1 : 0}
+    onClick={handleSelect}
     onKeyDown={(e) => {
+      if (isDisabled) return;
       if (e.key === " " || e.key === "Enter") {
         e.preventDefault();
-        onSelect(option.id);
+        handleSelect();
       }
     }}
     sx={{
@@ -357,16 +395,17 @@ const PaymentRow: React.FC<{
       alignItems: "center",
       gap: "14px",
       padding: elevated ? "14px 12px" : "14px 16px",
-      cursor: "pointer",
+      cursor: isDisabled ? "not-allowed" : "pointer",
       userSelect: "none",
       borderTop: divider ? "1px solid rgba(0, 0, 0, 0.06)" : "none",
       borderRadius: elevated ? "14px" : 0,
       background: elevated ? "#fff" : "transparent",
       border: elevated ? "1px solid rgba(0, 0, 0, 0.06)" : undefined,
+      opacity: isDisabled ? 0.62 : 1,
       transition: "background 0.15s ease",
-      "&:hover": {
-        background: elevated ? "#fff" : "rgba(0, 0, 0, 0.02)",
-      },
+      "&:hover": isDisabled
+        ? {}
+        : { background: elevated ? "#fff" : "rgba(0, 0, 0, 0.02)" },
       "&:focus-visible": {
         outline: "2px solid #FE0944",
         outlineOffset: "-2px",
@@ -459,108 +498,157 @@ const PaymentRow: React.FC<{
       {isActive && <CheckRoundedIcon />}
     </Box>
   </Box>
-);
+  );
+};
 
 // ─── "Add" row (chevron, no radio) ──────────────────────────────────────
 const AddMethodRow: React.FC<{
   option: PaymentOption;
   divider?: boolean;
-}> = ({ option, divider }) => (
-  <Box
-    role="button"
-    tabIndex={0}
-    sx={{
-      display: "flex",
-      alignItems: "center",
-      gap: "14px",
-      padding: "14px 16px",
-      cursor: "pointer",
-      userSelect: "none",
-      borderTop: divider ? "1px solid rgba(0, 0, 0, 0.06)" : "none",
-      transition: "background 0.15s ease",
-      "&:hover": { background: "rgba(0, 0, 0, 0.02)" },
-      "&:focus-visible": {
-        outline: "2px solid #FE0944",
-        outlineOffset: "-2px",
-      },
-    }}
-    onClick={() => {
-      // Hook for future linking flows — for now no-op (admin-handled).
-    }}
-  >
+}> = ({ option, divider }) => {
+  const isDisabled = option.comingSoon === true;
+  return (
     <Box
-      aria-hidden
+      role="button"
+      tabIndex={isDisabled ? -1 : 0}
+      aria-disabled={isDisabled || undefined}
       sx={{
-        width: 40,
-        height: 40,
-        flexShrink: 0,
-        borderRadius: "12px",
-        background: option.iconBg,
-        color: option.iconFg,
         display: "flex",
         alignItems: "center",
-        justifyContent: "center",
-        "& svg": { fontSize: 22 },
+        gap: "14px",
+        padding: "14px 16px",
+        cursor: isDisabled ? "not-allowed" : "pointer",
+        userSelect: "none",
+        borderTop: divider ? "1px solid rgba(0, 0, 0, 0.06)" : "none",
+        transition: "background 0.15s ease",
+        opacity: isDisabled ? 0.62 : 1,
+        // Faint stripe pattern in the background tells the eye "not
+        // active" without using a hard "DISABLED" stamp.
+        ...(isDisabled && {
+          background:
+            "repeating-linear-gradient(135deg, transparent 0 8px, rgba(184, 92, 60, 0.04) 8px 16px)",
+        }),
+        "&:hover": isDisabled
+          ? {}
+          : { background: "rgba(0, 0, 0, 0.02)" },
+        "&:focus-visible": {
+          outline: "2px solid #FE0944",
+          outlineOffset: "-2px",
+        },
+      }}
+      onClick={() => {
+        if (isDisabled) return;
+        // Hook for future linking flows — for now no-op (admin-handled).
       }}
     >
-      {option.icon}
-    </Box>
-    <Box sx={{ flex: 1, minWidth: 0 }}>
-      <Typography
+      <Box
+        aria-hidden
         sx={{
-          fontFamily: SANS,
-          fontSize: "15px",
-          fontWeight: 600,
-          color: "#1a1a1a",
+          width: 40,
+          height: 40,
+          flexShrink: 0,
+          borderRadius: "12px",
+          background: option.iconBg,
+          color: option.iconFg,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          "& svg": { fontSize: 22 },
+          // Slightly desaturate the icon when coming-soon to match
+          // the dim row.
+          filter: isDisabled ? "saturate(0.7)" : "none",
         }}
       >
-        {option.label}
-      </Typography>
-      {option.sub && (
+        {option.icon}
+      </Box>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography
           sx={{
             fontFamily: SANS,
-            fontSize: "12px",
-            color: "rgba(60, 30, 20, 0.6)",
-            marginTop: "2px",
+            fontSize: "15px",
+            fontWeight: 600,
+            color: "#1a1a1a",
           }}
         >
-          {option.sub}
+          {option.label}
         </Typography>
-      )}
-    </Box>
-    {option.badge && (
-      <Box
-        component="span"
-        sx={{
-          fontFamily: SANS,
-          fontSize: "10px",
-          fontWeight: 700,
-          color: "#2563eb",
-          background: "rgba(59, 130, 246, 0.10)",
-          borderRadius: "6px",
-          padding: "2px 6px",
-          letterSpacing: "0.04em",
-          marginRight: "4px",
-        }}
-      >
-        {option.badge}
+        {option.sub && (
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: "12px",
+              color: "rgba(60, 30, 20, 0.6)",
+              marginTop: "2px",
+            }}
+          >
+            {option.sub}
+          </Typography>
+        )}
       </Box>
-    )}
-    <ChevronRightRoundedIcon
-      sx={{ color: "rgba(60, 30, 20, 0.35)", fontSize: 22 }}
-    />
-  </Box>
-);
+
+      {/* 🆕 Round 28o — Coming-soon pill (takes precedence over partner badge) */}
+      {isDisabled ? (
+        <Box
+          component="span"
+          aria-label="Coming soon"
+          sx={{
+            fontFamily: SANS,
+            fontSize: "9.5px",
+            fontWeight: 800,
+            color: "#fff",
+            background: "#a39f9e",
+            borderRadius: "99px",
+            padding: "3px 9px",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            boxShadow: "0 2px 6px rgba(113, 113, 113, 0.32)",
+            marginRight: "4px",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Not available.
+        </Box>
+      ) : (
+        option.badge && (
+          <Box
+            component="span"
+            sx={{
+              fontFamily: SANS,
+              fontSize: "10px",
+              fontWeight: 700,
+              color: "#2563eb",
+              background: "rgba(59, 130, 246, 0.10)",
+              borderRadius: "6px",
+              padding: "2px 6px",
+              letterSpacing: "0.04em",
+              marginRight: "4px",
+            }}
+          >
+            {option.badge}
+          </Box>
+        )
+      )}
+      <ChevronRightRoundedIcon
+        sx={{
+          color: "rgba(60, 30, 20, 0.35)",
+          fontSize: 22,
+          opacity: isDisabled ? 0.45 : 1,
+        }}
+      />
+    </Box>
+  );
+};
 
 export default PaymentMethodsPage;
 
-/** Public helper for BookingFlowPage to read the user's chosen method. */
+/** Public helper for BookingFlowPage to read the user's chosen method.
+ *  🆕 Round 28u — runs the same `safePaymentId` validation as the page
+ *  itself so a stale or coming-soon method id can never leak into the
+ *  Confirm Order summary or the Telegram booking payload.
+ */
 export function readSelectedPaymentMethod(): PaymentMethodId {
-  if (typeof window === "undefined") return "cash";
-  return (
-    (window.localStorage.getItem(STORAGE_KEY) as PaymentMethodId) || "cash"
-  );
+  if (typeof window === "undefined") return DEFAULT_PAYMENT_ID;
+  return safePaymentId(window.localStorage.getItem(STORAGE_KEY));
 }
 
 /** Map id → display label. Used by Confirm Order Payment cell. */

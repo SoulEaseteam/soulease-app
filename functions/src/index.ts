@@ -9,10 +9,16 @@
 //   3) firebase deploy --only functions
 
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import {
+  onDocumentCreated,
+  onDocumentUpdated,
+} from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions/v2";
 import { defineSecret } from "firebase-functions/params";
+import * as functionsV1 from "firebase-functions/v1";
 import { initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 
 initializeApp();
 
@@ -257,6 +263,188 @@ export const moderateText = onCall(
       logger.error("[moderateText] error", err);
       // fail-open
       return { flagged: false, reason: "moderation-error" };
+    }
+  }
+);
+
+// ═════════════════════════════════════════════════════════════
+// 4️⃣  setRoleOnSignup — v1 auth.user().onCreate
+//      เมื่อมีคนสมัคร Firebase Auth ใหม่ → ตั้ง custom claim
+//      `role: "admin" | "therapist" | "customer"` อัตโนมัติ
+//
+//      Logic:
+//        1. ถ้าใน /admins/{uid} มี doc → role = "admin"
+//        2. ถ้า email ตรงกับ therapist doc field → role = "therapist"
+//           + เขียน `uid` กลับเข้า therapist doc เพื่อให้ rules
+//             match owner ทันที
+//        3. นอกนั้น → role = "customer"
+//
+//      Custom claim พร้อมใช้ทันทีใน Firestore rules ผ่าน
+//      request.auth.token.role (อาจต้อง refresh ID token รอบนึง
+//      ฝั่ง client หลังสมัคร)
+//
+//      ใช้ v1 trigger เพราะ v2 ต้องการ Identity Platform
+// ═════════════════════════════════════════════════════════════
+
+export const setRoleOnSignup = functionsV1
+  .region("asia-southeast1")
+  .auth.user()
+  .onCreate(async (user) => {
+    const db = getFirestore();
+    const auth = getAuth();
+    const uid = user.uid;
+    const email = (user.email ?? "").toLowerCase().trim();
+
+    let role: "admin" | "therapist" | "customer" = "customer";
+    let linkedTherapistId: string | null = null;
+
+    try {
+      // 1) admin?
+      const adminSnap = await db.collection("admins").doc(uid).get();
+      if (adminSnap.exists) {
+        role = "admin";
+      } else if (email) {
+        // 2) therapist by email?
+        const therapistSnap = await db
+          .collection("therapists")
+          .where("email", "==", email)
+          .limit(1)
+          .get();
+        if (!therapistSnap.empty) {
+          role = "therapist";
+          linkedTherapistId = therapistSnap.docs[0].id;
+          // Link therapist doc → uid so rules can match by docId / uid field
+          await therapistSnap.docs[0].ref.update({
+            uid,
+            updatedAt: FieldValue.serverTimestamp(),
+          });
+        }
+      }
+
+      await auth.setCustomUserClaims(uid, { role });
+
+      // Mirror role into /users/{uid} so the client UI can read it
+      // without forcing an ID-token refresh.
+      await db.collection("users").doc(uid).set(
+        {
+          uid,
+          email,
+          role,
+          therapistId: linkedTherapistId,
+          createdAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      logger.info("[setRoleOnSignup] OK", { uid, email, role, linkedTherapistId });
+    } catch (err) {
+      logger.error("[setRoleOnSignup] failed", { uid, email, err });
+      // fail-open: don't block sign-up if claim assignment fails
+    }
+  });
+
+// ═════════════════════════════════════════════════════════════
+// 5️⃣  onTherapistUpdate — Firestore trigger
+//      เมื่อ therapist doc ถูก update → เขียน auditLogs entry
+//
+//      Captures:
+//        • therapistId
+//        • changed keys + before/after values (เฉพาะ scalar)
+//        • updatedBy (ถ้า client ส่งมาใน payload)
+//        • timestamp
+//
+//      เก็บใน /auditLogs/{auto} — admin อ่านได้, ห้ามใครเขียน
+//      จาก client (rules บล็อกแล้ว — มีแต่ Functions เขียน)
+// ═════════════════════════════════════════════════════════════
+
+/** Fields ที่ไม่ต้อง log (noise — system-managed timestamps). */
+const AUDIT_IGNORE_KEYS = new Set([
+  "updatedAt",
+  "createdAt",
+  "bioGeneratedAt",
+  "badgeUpdatedAt",
+]);
+
+/** Truncate large values so audit log row stays small. */
+function truncateValue(v: unknown): unknown {
+  if (v === null || v === undefined) return v;
+  if (typeof v === "string") {
+    return v.length > 200 ? v.slice(0, 200) + "…" : v;
+  }
+  if (Array.isArray(v)) {
+    return v.length > 20 ? `[array len ${v.length}]` : v;
+  }
+  if (typeof v === "object") {
+    try {
+      const json = JSON.stringify(v);
+      return json.length > 400 ? `[object ${json.length} chars]` : v;
+    } catch {
+      return "[unserializable]";
+    }
+  }
+  return v;
+}
+
+interface TherapistDocLite {
+  [key: string]: unknown;
+  updatedBy?: string;
+}
+
+export const onTherapistUpdate = onDocumentUpdated(
+  {
+    document: "therapists/{therapistId}",
+    region: "asia-southeast1",
+  },
+  async (event) => {
+    const before = (event.data?.before.data() ?? {}) as TherapistDocLite;
+    const after = (event.data?.after.data() ?? {}) as TherapistDocLite;
+    const therapistId = event.params.therapistId;
+
+    // Compute changed keys (skip ignored)
+    const allKeys = new Set([
+      ...Object.keys(before),
+      ...Object.keys(after),
+    ]);
+    const changes: Record<string, { before: unknown; after: unknown }> = {};
+    for (const key of allKeys) {
+      if (AUDIT_IGNORE_KEYS.has(key)) continue;
+      const b = before[key];
+      const a = after[key];
+      if (JSON.stringify(b) === JSON.stringify(a)) continue;
+      changes[key] = {
+        before: truncateValue(b),
+        after: truncateValue(a),
+      };
+    }
+
+    if (Object.keys(changes).length === 0) {
+      logger.info("[onTherapistUpdate] no meaningful change, skip", {
+        therapistId,
+      });
+      return;
+    }
+
+    // updatedBy is best-effort — client should write it on self-edits.
+    const updatedBy =
+      typeof after.updatedBy === "string" ? after.updatedBy : null;
+
+    try {
+      await getFirestore()
+        .collection("auditLogs")
+        .add({
+          collection: "therapists",
+          docId: therapistId,
+          updatedBy,
+          changedKeys: Object.keys(changes),
+          changes,
+          at: FieldValue.serverTimestamp(),
+        });
+      logger.info("[onTherapistUpdate] logged", {
+        therapistId,
+        keys: Object.keys(changes),
+      });
+    } catch (err) {
+      logger.error("[onTherapistUpdate] write failed", { therapistId, err });
     }
   }
 );

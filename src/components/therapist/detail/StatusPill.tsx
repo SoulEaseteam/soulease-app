@@ -19,10 +19,29 @@
 
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import dayjs from "dayjs";
+// 🆕 Round 28ap — BKK-anchored time, used to compute relative
+//   "in 2 hours" hint on the next-available subtitle.
+import { nowBKK, parseHHMMatBKK } from "@/utils/time";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
+
+/** Build a "in 2 hours" / "in 35 min" / "tomorrow" hint relative to now-BKK. */
+function relativeUntilHHMM(hhmm: string | null | undefined): string | null {
+  if (!hhmm) return null;
+  const target = parseHHMMatBKK(hhmm);
+  if (!target) return null;
+  const now = nowBKK();
+  // If the target HH:mm has already passed today, assume tomorrow.
+  let diffMin = target.diff(now, "minute");
+  if (diffMin < 0) {
+    diffMin = target.add(1, "day").diff(now, "minute");
+  }
+  if (diffMin < 60) return `in ${diffMin} min`;
+  const hours = Math.round(diffMin / 60);
+  if (hours < 24) return `in ${hours} hour${hours === 1 ? "" : "s"}`;
+  return "tomorrow";
+}
 
 export type AvailabilityStatus = "online" | "busy" | "offline";
 
@@ -30,6 +49,12 @@ interface Props {
   status: AvailabilityStatus;
   /** Optional therapist next-available HH:mm — used for busy/offline copy */
   nextAvailable?: string | null;
+  /** 🆕 Round 28b9 — when status === "online" but the therapist has
+   *  a future booking on the schedule (within today's shift), pass
+   *  the next booking start time HH:mm here. The pill will append
+   *  "Next booked at HH:mm" to the subtitle so customers see
+   *  upcoming sessions without opening the time picker. */
+  nextBookingAt?: string | null;
   /** "Apartment" / "Hotel" — used for arrival hint copy */
   arriveLowerBoundMin?: number; // default 25
   arriveUpperBoundMin?: number; // default 45
@@ -75,25 +100,43 @@ const VARIANTS: Record<
 const StatusPill: React.FC<Props> = ({
   status,
   nextAvailable,
+  nextBookingAt,
   arriveLowerBoundMin = 25,
   arriveUpperBoundMin = 45,
 }) => {
   const v = VARIANTS[status];
 
-  // Compose subtitle copy per status
-  const now = dayjs();
+  // 🆕 Round 28ap — richer subtitle with relative time hints so the
+  //   customer sees BOTH the wall-clock and "how long from now". All
+  //   anchored to BKK via /utils/time.
+  const now = nowBKK();
+  const relHint = relativeUntilHHMM(nextAvailable ?? null);
+
   let subtitle = "";
   if (status === "online") {
     const lo = now.add(arriveLowerBoundMin, "minute").format("HH:mm");
     const hi = now.add(arriveUpperBoundMin, "minute").format("HH:mm");
-    subtitle = `Estimated arrival: ${lo}–${hi}. Can depart right away!`;
+    subtitle = `Estimated arrival: ${lo}–${hi}.`;
+    // 🆕 Round 28b9 — when there's an upcoming booking in the schedule,
+    //   surface it on the available pill so customers know "free now,
+    //   but next session locks in at HH:mm".
+    if (nextBookingAt) {
+      const bookHint = relativeUntilHHMM(nextBookingAt);
+      subtitle += ` Next booked at ${nextBookingAt}${
+        bookHint ? ` · ${bookHint}` : ""
+      }.`;
+    } else {
+      subtitle += " Can depart right away!";
+    }
   } else if (status === "busy") {
     subtitle = nextAvailable
-      ? `Available from ${nextAvailable}. Wait or switch?`
+      ? `Available from ${nextAvailable}${
+          relHint ? ` · ${relHint}` : ""
+        }. Wait or switch?`
       : "On a session right now. Wait or switch?";
   } else {
     subtitle = nextAvailable
-      ? `Returns at ${nextAvailable}.`
+      ? `Returns at ${nextAvailable}${relHint ? ` · ${relHint}` : ""}`
       : "Returns next shift.";
   }
 

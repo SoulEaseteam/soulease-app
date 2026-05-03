@@ -36,6 +36,8 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import dayjs from "dayjs";
+// 🆕 Round 28an — BKK-anchored display.
+import { fmtBKK } from "@/utils/time";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 
@@ -340,10 +342,11 @@ const BookingCard: React.FC<{
   const therapist = therapistsData.find((tt) => tt.id === booking.therapistId);
   const total = booking.totalPrice ?? booking.total ?? 0;
 
+  // 🆕 Round 28an — BKK-anchored display.
   const dateLabel = booking.startAt?.toDate
-    ? dayjs(booking.startAt.toDate()).format("ddd MMM D")
+    ? fmtBKK(booking.startAt.toDate(), "ddd MMM D")
     : booking.date
-    ? dayjs(booking.date).format("ddd MMM D")
+    ? fmtBKK(booking.date, "ddd MMM D")
     : "—";
   const timeLabel = booking.time ?? "—";
 
