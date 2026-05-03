@@ -8,18 +8,23 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * ⚠️ EMERGENCY MODE: ปิด manualChunks ทั้งหมด
+ * 🆕 Round 28b13 (perf) — Safe manualChunks for HTTP-cache reuse.
  *
- * เคสที่เคยเจอ:
- *   - manualChunks ที่แยกแม้แต่ heavy admin libs ก็เกิด TDZ crash
- *   - "Cannot access 'X' before initialization"
- *   - หน้าจอขาวบน production ทุก browser
+ * Previous attempts crashed with TDZ ("Cannot access X before
+ * initialization") because they tried to split too aggressively.
+ * Safe boundaries this time:
+ *   • react / react-dom / react-router  → `vendor-react`
+ *   • firebase                           → `vendor-firebase`
+ *   • @mui/material + @emotion           → `vendor-mui`
+ *   • @mui/icons-material                → `vendor-mui-icons`
  *
- * ไม่ระบุ manualChunks เลย → rollup auto-split ตาม dynamic import boundaries
- * → safest possible config
+ * Each is self-contained (no circular deps with app code) and the
+ * standard pattern Vite docs recommend. The remaining app code +
+ * smaller libs stay in the main entry chunk per Rollup defaults.
  *
- * Trade-off: chunk แต่ละตัวอาจใหญ่ขึ้น แต่ stable 100%
- * ค่อย optimize ทีหลังเมื่อหา root cause ของ TDZ ได้
+ * Wins on PSI:
+ *   - Initial main shrinks (fewer bytes to parse)
+ *   - Shared chunks cached across deploys (only changed code re-fetches)
  */
 export default defineConfig({
   plugins: [react()],
@@ -42,6 +47,30 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 2000,
-    // ⚠️ ไม่ใช้ manualChunks — ปล่อย rollup auto-split (safe)
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (!id.includes("node_modules")) return undefined;
+          if (
+            id.includes("/react/") ||
+            id.includes("/react-dom/") ||
+            id.includes("/react-router") ||
+            id.includes("/scheduler/")
+          ) {
+            return "vendor-react";
+          }
+          if (id.includes("/firebase/") || id.includes("/@firebase/")) {
+            return "vendor-firebase";
+          }
+          if (id.includes("/@mui/icons-material/")) {
+            return "vendor-mui-icons";
+          }
+          if (id.includes("/@mui/") || id.includes("/@emotion/")) {
+            return "vendor-mui";
+          }
+          return undefined;
+        },
+      },
+    },
   },
 });

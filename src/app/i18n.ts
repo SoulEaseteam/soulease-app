@@ -3,15 +3,30 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 
-// 🌐 Phase-1 (redesign/foundation) hero locales — source of truth for hero
-//    keys. Loaded after init via addResourceBundle so they OVERRIDE the
-//    older inline keys below. Other (non-hero) keys keep their existing
-//    inline values until they're migrated to JSON in Task 7 (i18n sweep).
-import heroEn from "@/locales/en/translation.json";
-import heroTh from "@/locales/th/translation.json";
-import heroZh from "@/locales/zh/translation.json";
-import heroJa from "@/locales/ja/translation.json";
-import heroKo from "@/locales/ko/translation.json";
+// 🆕 Round 28b13 (perf) — locales are now lazy-imported per language.
+//   Previous: all 5 JSON files were eagerly bundled into main chunk
+//   (~25 kB shipped to every visitor regardless of locale). Now: only
+//   the active language's JSON loads on init; others fetch lazily on
+//   `languageChanged` so the user pays only for what they use.
+//
+// Vite parses these dynamic-import expressions and creates one chunk
+// per locale automatically, with HTTP cache hashes.
+type SupportedLocale = "en" | "th" | "zh" | "ja" | "ko";
+
+async function loadLocaleBundle(lng: SupportedLocale) {
+  switch (lng) {
+    case "en":
+      return (await import("@/locales/en/translation.json")).default;
+    case "th":
+      return (await import("@/locales/th/translation.json")).default;
+    case "zh":
+      return (await import("@/locales/zh/translation.json")).default;
+    case "ja":
+      return (await import("@/locales/ja/translation.json")).default;
+    case "ko":
+      return (await import("@/locales/ko/translation.json")).default;
+  }
+}
 
 // i18n.init() return Promise — prefix `void` กัน floating promise warning
 // (ไม่ต้อง await เพราะ resources โหลด sync จาก code อยู่แล้ว)
@@ -232,16 +247,46 @@ void i18n
   });
 
 // ─────────────────────────────────────────────────────────────────────
-// 🌐 Override hero keys with the canonical JSON locales (Phase 1).
-//    This MUST come after init — `addResourceBundle(deep=true, overwrite=true)`
-//    deep-merges and lets the JSON values win for matching keys (hero.*),
-//    while every other inline key (services, filter, home.*, meta.*) is
-//    untouched.
+// 🆕 Round 28b13 (perf) — locales load lazily.
+//   On init: load ONLY the active language. Others fetch on the first
+//   `languageChanged` event the user triggers. The inline `resources`
+//   block above provides safe fallback strings for every key, so the
+//   UI never shows raw key codes during the brief locale-fetch window.
 // ─────────────────────────────────────────────────────────────────────
-i18n.addResourceBundle("en", "translation", heroEn, /*deep*/ true, /*overwrite*/ true);
-i18n.addResourceBundle("th", "translation", heroTh, /*deep*/ true, /*overwrite*/ true);
-i18n.addResourceBundle("zh", "translation", heroZh, /*deep*/ true, /*overwrite*/ true);
-i18n.addResourceBundle("ja", "translation", heroJa, /*deep*/ true, /*overwrite*/ true);
-i18n.addResourceBundle("ko", "translation", heroKo, /*deep*/ true, /*overwrite*/ true);
+const SUPPORTED: ReadonlySet<SupportedLocale> = new Set([
+  "en",
+  "th",
+  "zh",
+  "ja",
+  "ko",
+]);
+const loaded = new Set<SupportedLocale>();
+
+async function ensureLocale(lng: string) {
+  const norm = (lng || "en").split("-")[0] as SupportedLocale;
+  if (!SUPPORTED.has(norm)) return;
+  if (loaded.has(norm)) return;
+  try {
+    const bundle = await loadLocaleBundle(norm);
+    i18n.addResourceBundle(
+      norm,
+      "translation",
+      bundle,
+      /*deep*/ true,
+      /*overwrite*/ true
+    );
+    loaded.add(norm);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn("[i18n] failed to load locale", norm, e);
+  }
+}
+
+// Kick off active locale load (after init has resolved the language)
+void ensureLocale(i18n.language);
+// Fetch additional locales on user switch
+i18n.on("languageChanged", (lng) => {
+  void ensureLocale(lng);
+});
 
 export default i18n;

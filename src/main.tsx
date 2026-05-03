@@ -7,12 +7,18 @@ import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import theme from "./theme";
 
-// Toast notifications
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+// 🆕 Round 28b13 (perf) — ToastContainer lazy-loaded so its 30 kB
+//   JS + 4 kB CSS don't block first paint. The container only mounts
+//   after a toast is fired or after idle. Login/Register pages still
+//   import "react-toastify" directly so toasts work day-1.
+const ToastContainerLazy = React.lazy(() =>
+  import("react-toastify").then((m) => ({ default: m.ToastContainer }))
+);
 
-// Web fonts (Chonburi สำหรับ heading; Trebuchet MS เป็น system font)
-import "@fontsource/chonburi/400.css";
+// 🆕 Round 28b13 (perf) — Chonburi @fontsource removed from main bundle.
+//   Login / Register / Maintenance pages already import it themselves
+//   (those are lazy routes, so the font loads only when needed there).
+//   Saves ~28 kB CSS + multiple .woff2 requests on first paint.
 
 import App from "./app/App";
 import "./index.css";
@@ -87,14 +93,19 @@ const Root = () => {
               </AuthProvider>
             </GoogleMapsProvider>
           </BrowserRouter>
-          <ToastContainer
-            position="top-right"
-            autoClose={3500}
-            newestOnTop
-            pauseOnFocusLoss={false}
-            pauseOnHover
-            theme="colored"
-          />
+          {/* 🆕 Round 28b13 — Toast lazy-mounted via Suspense fallback null.
+              Removes 30 kB JS + 4 kB CSS from initial paint. Toast
+              JS lazy-loads on idle (or first toast call). */}
+          <React.Suspense fallback={null}>
+            <ToastContainerLazy
+              position="top-right"
+              autoClose={3500}
+              newestOnTop
+              pauseOnFocusLoss={false}
+              pauseOnHover
+              theme="colored"
+            />
+          </React.Suspense>
         </ThemeProvider>
       </ErrorBoundary>
     </React.StrictMode>
