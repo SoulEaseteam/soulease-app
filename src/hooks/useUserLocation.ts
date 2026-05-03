@@ -108,6 +108,36 @@ export function useUserLocation(
 
   useEffect(() => {
     if (autoStart) request();
+
+    // 🆕 Round 28b14 — Permissions API auto-resume.
+    //   If the browser ALREADY remembers `granted` permission for this
+    //   origin (user allowed before), fetch coords immediately on mount
+    //   without waiting for a user gesture. Distance shows instantly
+    //   on returning visits — no banner, no tap.
+    //
+    //   For `prompt` (first visit) and `denied` (user blocked), we do
+    //   NOT call request — the in-app banner handles those flows.
+    if (
+      typeof navigator !== "undefined" &&
+      "permissions" in navigator &&
+      "geolocation" in navigator
+    ) {
+      void navigator.permissions
+        .query({ name: "geolocation" as PermissionName })
+        .then((p) => {
+          if (p.state === "granted") {
+            request();
+          }
+          // Re-check on permission change (user toggles in browser settings)
+          p.addEventListener("change", () => {
+            if (p.state === "granted") request();
+          });
+        })
+        .catch(() => {
+          /* Permissions API unsupported — banner CTA is the fallback. */
+        });
+    }
+
     return () => stop();
     // request/stop are stable refs (useCallback) — safe to include
   }, [autoStart, request, stop]);

@@ -15,6 +15,8 @@ import TherapistSearchBar from "@/components/TherapistSearchBar";
 import HomeMapBrowse from "@/components/home/HomeMapBrowse";
 import { matchesQuery } from "@/utils/therapistSearch";
 import { useUserLocation } from "@/hooks/useUserLocation";
+import NearMeRoundedIcon from "@mui/icons-material/NearMeRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import { priceForDuration } from "@/utils/servicePricing";
 import staticServices from "@/data/services";
 import { brand, fonts, glass, gradients } from "@/theme";
@@ -34,14 +36,16 @@ const HomeTherapistGrid: React.FC = () => {
   const [searchQ, setSearchQ] = useState("");
 
   // ── Single GPS watcher — feeds every card with a fresh userLocation.
-  //    Auto-starts so distance shows immediately when permission is granted.
-  const { location: userLocation, request: requestLocation } = useUserLocation({
-    autoStart: true,
-  });
-  // Keep an explicit start in case autoStart was suppressed by SSR/hydration.
-  useEffect(() => {
-    requestLocation();
-  }, [requestLocation]);
+  //    🆕 Round 28b14 — autoStart removed. Modern browsers silently block
+  //    geolocation requests not tied to a user gesture (Chrome 122+ esp.
+  //    on first-party-set sites). We render an explicit in-app banner
+  //    below; tapping its CTA calls request() in a user gesture context
+  //    so the native permission popup reliably fires.
+  const {
+    location: userLocation,
+    request: requestLocation,
+    status: locationStatus,
+  } = useUserLocation({ autoStart: false });
 
   // ── Single `services` collection subscription — every card reads from
   //    the same Map. Falls back to static services when Firestore is empty
@@ -277,6 +281,100 @@ const HomeTherapistGrid: React.FC = () => {
       </Box>
 
       {/* Search bar — glass pill matching mockup */}
+      {/* 🆕 Round 28b14 — Location pre-prompt banner. Shows ONLY when
+          GPS hasn't been requested yet (idle) or was previously denied.
+          Tapping triggers request() in user gesture context → reliable
+          native permission popup. Banner hides as soon as `userLocation`
+          resolves so the grid never has duplicate "enable" CTAs. */}
+      {!userLocation &&
+        locationStatus !== "ready" &&
+        locationStatus !== "unsupported" && (
+          <Box
+            role="button"
+            tabIndex={0}
+            onClick={() => requestLocation()}
+            onKeyDown={(e: React.KeyboardEvent) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                requestLocation();
+              }
+            }}
+            sx={{
+              margin: "0 14px 10px",
+              padding: "12px 14px",
+              borderRadius: "16px",
+              background:
+                "linear-gradient(135deg, rgba(22, 163, 74, 0.10), rgba(22, 163, 74, 0.04))",
+              border: "1px solid rgba(22, 163, 74, 0.25)",
+              boxShadow:
+                "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(22, 163, 74, 0.08)",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              cursor: "pointer",
+              userSelect: "none",
+              transition: "transform 0.15s ease, box-shadow 0.15s ease",
+              "&:hover": {
+                transform: "translateY(-1px)",
+                boxShadow:
+                  "0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 18px rgba(22, 163, 74, 0.14)",
+              },
+              "&:focus-visible": {
+                outline: "2px solid #16a34a",
+                outlineOffset: 2,
+              },
+            }}
+          >
+            <Box
+              sx={{
+                width: 38,
+                height: 38,
+                flexShrink: 0,
+                borderRadius: "50%",
+                background: "#16a34a",
+                color: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 4px 10px rgba(22, 163, 74, 0.30)",
+              }}
+            >
+              <NearMeRoundedIcon sx={{ fontSize: 20 }} />
+            </Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography
+                sx={{
+                  fontFamily: fonts.heading,
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  color: "#3c1e14",
+                  lineHeight: 1.2,
+                }}
+              >
+                {locationStatus === "denied"
+                  ? "Location blocked"
+                  : "Find therapists nearest you"}
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "11.5px",
+                  color: "rgba(60, 30, 20, 0.7)",
+                  marginTop: "2px",
+                  lineHeight: 1.35,
+                }}
+              >
+                {locationStatus === "denied"
+                  ? "Re-enable in browser settings to see distance."
+                  : "Tap to enable location · See live distance to each therapist"}
+              </Typography>
+            </Box>
+            <ArrowForwardRoundedIcon
+              sx={{ color: "#16a34a", fontSize: 22, flexShrink: 0 }}
+            />
+          </Box>
+        )}
+
       <TherapistSearchBar value={searchQ} onChange={setSearchQ} m="0 14px 12px" />
 
       {/* Body */}
