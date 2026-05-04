@@ -78,6 +78,9 @@ import {
   calcTaxiFare,
   ADMIN_QUOTE_KM,
 } from "@/utils/taxiFare";
+// 🆕 Round 28b35 — Live therapist Holiday/override gate.
+import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
+import { useTherapistLiveStatus } from "@/hooks/useTherapistLiveStatus";
 // 🆕 Round 28b25/28b32 — Google Distance Matrix API for real road
 //   distance + traffic-aware ETA. Falls back to time-of-day speed
 //   estimates (BKK rush vs off-peak) when API is offline.
@@ -355,6 +358,31 @@ const BookingFlowPage: React.FC = () => {
     () => therapistsData.find((tt) => tt.id === form.therapistId) ?? null,
     [form.therapistId]
   );
+  // 🆕 Round 28b35 — Live Firestore status overlay. Without this, the
+  //   submit guard below would let a customer book a therapist whom
+  //   admin had marked Holiday (since static data has no isHoliday).
+  const therapistLive = useTherapistLiveStatus(form.therapistId);
+  const therapistMerged = therapist
+    ? {
+        ...therapist,
+        ...(therapistLive.exists
+          ? {
+              isHoliday: therapistLive.isHoliday ?? therapist.isHoliday,
+              statusOverride:
+                therapistLive.statusOverride ?? therapist.statusOverride,
+              activeBooking:
+                therapistLive.activeBooking ?? therapist.activeBooking,
+              busyUntil: therapistLive.busyUntil ?? therapist.busyUntil,
+              startTime: therapistLive.startTime ?? therapist.startTime,
+              endTime: therapistLive.endTime ?? therapist.endTime,
+            }
+          : {}),
+      }
+    : null;
+  const therapistEngineStatus = therapistMerged
+    ? calculateTherapistStatus(therapistMerged).status
+    : "resting";
+  const therapistIsBookable = therapistEngineStatus !== "resting";
   const service = useMemo(
     () => services.find((s) => s.id === form.serviceId) ?? null,
     [form.serviceId]
@@ -599,6 +627,33 @@ const BookingFlowPage: React.FC = () => {
     if (submitting || !canPlaceOrder) return;
     setSubmitting(true);
     try {
+      // 🆕 Round 28b35 (founder 2026-05-04) — Holiday / off-shift /
+      //   override-resting gate. The static-data engine call earlier
+      //   only knew build-time data; admin's Holiday toggle in
+      //   Firestore wasn't visible. Without this guard, customers
+      //   could (and did, per founder bug report) book a therapist
+      //   marked Holiday, get a "Confirmed" Telegram, and the
+      //   therapist had no idea.
+      //   We re-check at submit time using the LIVE-overlaid record
+      //   so the gate respects whatever admin just toggled. Failing
+      //   the check sends the customer back to the therapist detail
+      //   page where they'll see the correct "Off duty" pill.
+      if (!therapistIsBookable) {
+        toast.error(
+          t(
+            "booking.error.therapistUnavailable",
+            "This therapist is no longer available. Please choose another."
+          )
+        );
+        setSubmitting(false);
+        if (form.therapistId) {
+          void navigate(`/therapists/${form.therapistId}`);
+        } else {
+          void navigate("/");
+        }
+        return;
+      }
+
       if (form.notes && (await isInappropriate(form.notes))) {
         toast.error(
           t(

@@ -76,6 +76,10 @@ import { fmtBKK } from "@/utils/time";
 // 🆕 Round 28aq — drive StatusPill from the engine instead of the
 //   unset `therapist.online` field on the EMPTY shell.
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
+// 🆕 Round 28b35 (founder 2026-05-04) — Live Firestore overlay so the
+//   status engine sees admin's Holiday toggle / busyUntil edits in
+//   real time, not just whatever was baked into data/therapists.ts.
+import { useTherapistLiveStatus } from "@/hooks/useTherapistLiveStatus";
 
 // 🆕 Round 28ae — live therapist reviews from bookings collection.
 import { useTherapistReviews } from "@/hooks/useTherapistReviews";
@@ -669,11 +673,37 @@ const TherapistDetailPage: React.FC = () => {
     ? fmtBKK(upcomingBooking.startAt, "HH:mm A", "")
     : null;
 
+  // 🆕 Round 28b35 — Live Firestore overlay. Admin's Holiday toggle +
+  //   manual override + busyUntil edits stream in real-time and merge
+  //   on top of the static record. Without this overlay, the engine
+  //   was reading ONLY data/therapists.ts which is build-time and
+  //   never reflects admin actions → customers booked therapists who
+  //   were marked Holiday in the admin panel.
+  const liveStatus = useTherapistLiveStatus(therapist.id);
   // Resolve the underlying real Therapist record so the engine can
   // read shift / override / busy fields straight from data file.
   const realRecord = therapistsData.find((tt) => tt.id === therapist.id);
-  const engineStatus = realRecord
-    ? calculateTherapistStatus(realRecord).status
+  const mergedRecord = realRecord
+    ? {
+        ...realRecord,
+        // Overlay live status fields. Spread `liveStatus` LAST so live
+        // values win over stale static defaults.
+        ...(liveStatus.exists
+          ? {
+              isHoliday: liveStatus.isHoliday ?? realRecord.isHoliday,
+              statusOverride:
+                liveStatus.statusOverride ?? realRecord.statusOverride,
+              activeBooking:
+                liveStatus.activeBooking ?? realRecord.activeBooking,
+              busyUntil: liveStatus.busyUntil ?? realRecord.busyUntil,
+              startTime: liveStatus.startTime ?? realRecord.startTime,
+              endTime: liveStatus.endTime ?? realRecord.endTime,
+            }
+          : {}),
+      }
+    : null;
+  const engineStatus = mergedRecord
+    ? calculateTherapistStatus(mergedRecord).status
     : "resting";
 
   const livePillStatus: "online" | "busy" | "offline" =
@@ -688,8 +718,8 @@ const TherapistDetailPage: React.FC = () => {
   //              fallback to engine's nextAvailable (e.g. busyUntil)
   //   • offline→ start of therapist's next shift
   //   • online → null (already available)
-  const engineNext = realRecord
-    ? calculateTherapistStatus(realRecord).nextAvailable
+  const engineNext = mergedRecord
+    ? calculateTherapistStatus(mergedRecord).nextAvailable
     : null;
   const liveNextAvailable =
     livePillStatus === "busy"

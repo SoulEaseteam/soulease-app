@@ -178,14 +178,7 @@ function gradientForId(id: string): string {
   return `linear-gradient(135deg, ${a}, ${b})`;
 }
 
-/**
- * Compact spec chips — physical attributes from `features`.
- * 🆕 Round 26d (founder 2026-05-02): swapped from service-type tags
- * (THAI/OIL/AROMA) to personal stats. Customers care more about who
- * the therapist is than what the menu lists.
- *
- * Example output: ["165 CM", "SLIM", "8 YR"]
- */
+
 function parseSpecChips(t: Therapist): string[] {
   const f = t.features ?? null;
   const chips: string[] = [];
@@ -296,11 +289,11 @@ export interface TherapistProfileCardProps {
    */
   onRequestLocation?: () => void;
   /**
-   * 🆕 Round 28b33 (founder 2026-05-04) — Pre-formatted "1.2 km • 4 min"
+   * 🆕 Round 28b33 (founder 2026-05-04) — Pre-formatted "X min • X.X km"
    * label produced upstream by `formatDistanceEta(km, etaMin)`. When
    * passed, the card renders this verbatim instead of computing its
-   * own "1.2 km" string. Lets the parent inject ETA from a single
-   * Distance Matrix call shared across the whole grid.
+   * own string. Lets the parent inject ETA from a single Distance
+   * Matrix call shared across the whole grid.
    */
   distanceLabel?: string | null;
 }

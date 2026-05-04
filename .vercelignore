@@ -1,0 +1,39 @@
+# 🆕 Round 28b36 (founder 2026-05-04, perf #64) — Vercel deploy size fix.
+#
+# Background: `public/` was 333 MB because `public/images/icon/` had
+# 80+ unused animated GIFs (Rocket.gif 24 MB, Cupid 15 MB, Premium 13 MB
+# etc). Only 4 files in that folder are referenced by source code:
+#
+#   images/icon/User.gif
+#   images/icon/admin.png
+#   images/icon/star.png
+#   images/icon/sunred-logo.png
+#
+# Everything else in `images/icon/` is mockup junk that bloated every
+# Vercel deploy. This ignore file shrinks the upload to <100 MB so
+# deploys complete inside Vercel's free-tier window.
+#
+# .vercelignore uses gitignore-style globs.
+
+# Editor / OS junk
+.DS_Store
+**/.DS_Store
+
+# Server-side function code (deployed via firebase, not vercel)
+functions/
+
+# One-shot scripts (not part of the SPA)
+scripts/
+
+# Local-only env templates
+.env.local
+.env.development.local
+
+# Source maps from production builds (Vercel re-builds anyway)
+**/*.js.map
+**/*.css.map
+
+# Big animated mockup icons that aren't referenced in src/.
+# Whitelist the 4 files we DO use via the negation rules below.
+public/images/icon/*.gif
+!public/images/icon/User.gif
