@@ -54,12 +54,6 @@ const db = getFirestore();
 // When adding a new area: keep the canonical name lowercase + sorted
 // alphabetically. Use the `·` separator from the source data so the
 // matcher can split on it.
-const BKK_AREA_CENTROIDS: Record<string, { lat: number; lng: number }> = {
-  "huai khwang": { lat: 13.7780, 100.5739 } as unknown as { lat: number; lng: number },
-  // Note: TS object-literal syntax doesn't allow comma-as-key — re-declared below for clarity.
-};
-
-// Re-declare cleanly (the line above is a TS quirk demo only — ignore the unused entry).
 const AREA_PINS: Record<string, { lat: number; lng: number }> = {
   // Huai Khwang core (around the MRT station)
   "huai khwang": { lat: 13.7780, lng: 100.5739 },
@@ -200,9 +194,6 @@ async function main() {
   } else if (!apply && seedable.length > 0) {
     console.log("\n💡 Re-run with --apply to write these values.");
   }
-
-  // Suppress the placeholder used to satisfy the TS lint demo above.
-  void BKK_AREA_CENTROIDS;
 }
 
 main()

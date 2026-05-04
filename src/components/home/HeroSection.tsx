@@ -480,7 +480,7 @@ const HeroSection: React.FC = () => {
             keeps it legible without a backing plate. */}
         <Box
           component="img"
-          src="public/badges/boost_5129689.png"
+          src="/badges/boost_5129689.png"
           alt=""
           role="img"
           aria-label={t("hero.promo.aria", "Tonight Special — coming soon")}
