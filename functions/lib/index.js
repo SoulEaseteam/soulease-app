@@ -1,13 +1,6 @@
 "use strict";
 // functions/src/index.ts
 //
-// Cloud Functions สำหรับ SunRed
-//
-// Deploy:
-//   1) cd ~/sunred-vite/functions && npm install
-//   2) firebase functions:secrets:set TELEGRAM_BOT_TOKEN
-//      firebase functions:secrets:set OPENAI_API_KEY     (สำหรับ moderation)
-//   3) firebase deploy --only functions
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -71,6 +64,10 @@ async function sendTelegram(token, chatId, text) {
             body: JSON.stringify({
                 chat_id: chatId,
                 text: text.slice(0, 4000),
+                // 🆕 Round 28b56 (founder 2026-05-05) — Reverted Round 28b55.
+                //   Founder feedback: "ไม่เอา" preview card. Keep message
+                //   compact — URL stays clickable as plain blue link in
+                //   Telegram, but no big unfurled photo+address card under it.
                 disable_web_page_preview: true,
             }),
         });
@@ -215,24 +212,6 @@ exports.moderateText = (0, https_1.onCall)({
         return { flagged: false, reason: "moderation-error" };
     }
 });
-// ═════════════════════════════════════════════════════════════
-// 4️⃣  setRoleOnSignup — v1 auth.user().onCreate
-//      เมื่อมีคนสมัคร Firebase Auth ใหม่ → ตั้ง custom claim
-//      `role: "admin" | "therapist" | "customer"` อัตโนมัติ
-//
-//      Logic:
-//        1. ถ้าใน /admins/{uid} มี doc → role = "admin"
-//        2. ถ้า email ตรงกับ therapist doc field → role = "therapist"
-//           + เขียน `uid` กลับเข้า therapist doc เพื่อให้ rules
-//             match owner ทันที
-//        3. นอกนั้น → role = "customer"
-//
-//      Custom claim พร้อมใช้ทันทีใน Firestore rules ผ่าน
-//      request.auth.token.role (อาจต้อง refresh ID token รอบนึง
-//      ฝั่ง client หลังสมัคร)
-//
-//      ใช้ v1 trigger เพราะ v2 ต้องการ Identity Platform
-// ═════════════════════════════════════════════════════════════
 exports.setRoleOnSignup = functionsV1
     .region("asia-southeast1")
     .auth.user()
@@ -283,20 +262,6 @@ exports.setRoleOnSignup = functionsV1
         // fail-open: don't block sign-up if claim assignment fails
     }
 });
-// ═════════════════════════════════════════════════════════════
-// 5️⃣  onTherapistUpdate — Firestore trigger
-//      เมื่อ therapist doc ถูก update → เขียน auditLogs entry
-//
-//      Captures:
-//        • therapistId
-//        • changed keys + before/after values (เฉพาะ scalar)
-//        • updatedBy (ถ้า client ส่งมาใน payload)
-//        • timestamp
-//
-//      เก็บใน /auditLogs/{auto} — admin อ่านได้, ห้ามใครเขียน
-//      จาก client (rules บล็อกแล้ว — มีแต่ Functions เขียน)
-// ═════════════════════════════════════════════════════════════
-/** Fields ที่ไม่ต้อง log (noise — system-managed timestamps). */
 const AUDIT_IGNORE_KEYS = new Set([
     "updatedAt",
     "createdAt",
@@ -393,18 +358,6 @@ const formatBookingForAdmin = (bookingId, b) => {
     ];
     return lines.join("\n");
 };
-/**
- * 🆕 Round 28b27 (founder 2026-05-04) — Therapist-facing booking
- * notification. Sent to therapist's PERSONAL Telegram chat (not the
- * admin group) when a new booking is assigned to them. Differences
- * from admin format:
- *   • SHORTER — therapist doesn't need price/payment breakdown.
- *   • Includes the customer's phone (so therapist can call if needed)
- *     but NOT the customer's name (privacy — name is admin-only until
- *     therapist accepts).
- *   • Map link prepended for one-tap navigation.
- *   • Action prompt: "Reply ACCEPT or DECLINE within 5 min".
- */
 const formatBookingForTherapist = (bookingId, b) => {
     const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
     const mapLink = b.mapUrl
@@ -443,14 +396,6 @@ exports.onBookingCreate = (0, firestore_1.onDocumentCreated)({
         v2_1.logger.error("[onBookingCreate] TELEGRAM_BOT_TOKEN missing");
         return;
     }
-    // 🆕 Round 28b36 (founder 2026-05-04) — SERVER-SIDE Holiday gate.
-    //   Even with the client-side guard from Round 28b35, a malicious
-    //   user can hit Firestore directly via DevTools and bypass the UI.
-    //   This trigger is the last line of defense: read therapist doc,
-    //   check isHoliday / statusOverride, and if the therapist isn't
-    //   bookable → flip the booking to status="rejected" + alert
-    //   admin. Therapist DM is SKIPPED so the wrong therapist doesn't
-    //   get a job they can't take.
     let therapistBookable = true;
     let rejectReason = "";
     if (data.therapistId) {
@@ -477,22 +422,6 @@ exports.onBookingCreate = (0, firestore_1.onDocumentCreated)({
         }
     }
     if (!therapistBookable) {
-        // 🆕 Round 28b36 (founder 2026-05-04, follow-up) — Don't auto-
-        //   reject. Founder direction: "ส่งออเดอให้แอดมินยืนยันก่อน
-        //   เพราะเรายังต้องคอนเฟิมกับลูกค้าเอง". Admin needs to phone
-        //   the customer, decide whether to (a) re-assign to another
-        //   therapist, (b) reschedule, or (c) cancel — automated reject
-        //   removes that human touch and may surprise customers who
-        //   already paid.
-        //   Behavior:
-        //     • Booking stays in `status: "confirmed"` (the customer's
-        //       Success page still shows the hold countdown).
-        //     • Add `needsAdminReview: true` + `reviewReason` for admin
-        //       UI filtering.
-        //     • Send a HIGH-VISIBILITY admin alert with the reason so
-        //       admin sees it immediately and can call the customer.
-        //     • Therapist DM is STILL skipped (don't dispatch the wrong
-        //       therapist).
         v2_1.logger.warn("[onBookingCreate] flagging booking for review", {
             bookingId,
             therapistId: data.therapistId,
@@ -586,15 +515,6 @@ exports.onBookingCreate = (0, firestore_1.onDocumentCreated)({
         }
     }
 });
-// ═════════════════════════════════════════════════════════════
-// 🆕 Round 28b21 — Phase 2 of conversion plan.
-// releaseExpiredHolds — scheduled every 5 minutes. Finds bookings
-//    where holdState === "active" AND holdExpiresAt < now, flips
-//    holdState to "expired" so the slot is implicitly back on the
-//    market. We don't delete the booking — admin still sees it in
-//    the queue marked as expired so they can follow up if a customer
-//    contacts them late.
-// ═════════════════════════════════════════════════════════════
 exports.releaseExpiredHolds = (0, scheduler_1.onSchedule)({
     schedule: "every 5 minutes",
     region: "asia-southeast1",
