@@ -87,6 +87,14 @@ function fromMinutes(mins: number): string {
   return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
 }
 
+// 🆕 Round 28b42 (founder 2026-05-05) — Slot kind tag.
+//   "tail" = overnight shift carrying over from YESTERDAY (today's
+//            morning slots inside the still-active shift).
+//   "main" = the regular shift starting today.
+//   Used downstream to split the NIGHT bucket into 3 visually
+//   distinct sub-sections so the sort doesn't look "jumbled".
+type Slot = { time: string; nextDay: boolean; kind: "tail" | "main" };
+
 // Build the list of valid slot start-times for a given day, given the
 // therapist's shift and the service duration.
 function buildSlots(
@@ -94,7 +102,7 @@ function buildSlots(
   startTime: string,
   endTime: string,
   durationMin: number
-): { time: string; nextDay: boolean }[] {
+): Slot[] {
   const start = toMinutes(startTime);
   const end = toMinutes(endTime);
   const isOvernight = end <= start; // 19:00 → 05:00
@@ -107,7 +115,7 @@ function buildSlots(
   const lastSlotOffset = shiftLen - durationMin - SHIFT_END_BUFFER_MIN;
   if (lastSlotOffset < 0) return [];
 
-  const slots: { time: string; nextDay: boolean }[] = [];
+  const slots: Slot[] = [];
 
   // 🆕 Round 28an — "today" is the BKK calendar day (not user's local).
   //    Past slots are filtered out + a small lead-time so the customer
@@ -134,26 +142,68 @@ function buildSlots(
     // 🆕 Round 28b41 — last tail slot must also leave 20-min buffer
     //   before shift end so therapist can wrap up.
     const tailLastSlot = end - durationMin - SHIFT_END_BUFFER_MIN;
-    for (
-      let m = tailStart;
-      m <= tailLastSlot;
-      m += SLOT_INCREMENT_MIN
+
+    // 🆕 Round 28b45 (founder 2026-05-05) — Instant slot.
+    //   Previously the FIRST tail slot was rounded UP to the next
+    //   30-min boundary, so a customer arriving at 2:00 AM saw
+    //   "earliest 2:30" — a 30-min wait even though the therapist
+    //   is available right now. New rule: emit ONE slot at exactly
+    //   now+10min rounded to the next 5-min boundary, then continue
+    //   on the regular 30-min grid. Skip the instant slot if the
+    //   30-min boundary is < 15 min away (would otherwise show two
+    //   slots only minutes apart).
+    const next30 = Math.ceil(tailStart / SLOT_INCREMENT_MIN) * SLOT_INCREMENT_MIN;
+    const instantMin5 = Math.ceil(tailStart / 5) * 5;
+    if (
+      instantMin5 <= tailLastSlot &&
+      next30 - instantMin5 >= 15
     ) {
-      // Round up to the next 30-min boundary so slots are aligned
-      const aligned =
-        m === tailStart
-          ? Math.ceil(m / SLOT_INCREMENT_MIN) * SLOT_INCREMENT_MIN
-          : m;
-      if (aligned > tailLastSlot) break;
-      if (aligned > end - durationMin) break;
       slots.push({
-        time: fromMinutes(aligned),
-        nextDay: false, // these slots belong to today's calendar
+        time: fromMinutes(instantMin5),
+        nextDay: false,
+        kind: "tail",
       });
-      if (m === tailStart && aligned !== tailStart) {
-        // After alignment, jump to the aligned position so the loop
-        // continues from there.
-        m = aligned;
+    }
+
+    // Regular 30-min grid for the rest of the tail
+    for (let m = next30; m <= tailLastSlot; m += SLOT_INCREMENT_MIN) {
+      if (m > end - durationMin) break;
+      slots.push({
+        time: fromMinutes(m),
+        nextDay: false,
+        kind: "tail",
+      });
+    }
+  }
+
+  // 🆕 Round 28b45 (founder 2026-05-05) — Instant slot for non-overnight
+  //   active shifts AND for overnight shifts when we're already in the
+  //   PRE-midnight portion (nowMin >= start). Same rule: now+10 rounded
+  //   to 5-min, only if the next 30-min grid boundary is ≥ 15 min away.
+  const inDaytimeOrPreMidnight =
+    isToday &&
+    ((isOvernight && nowMin >= start) ||
+      (!isOvernight && nowMin >= start && nowMin < end));
+  if (inDaytimeOrPreMidnight) {
+    const targetMin = nowMin + TODAY_MIN_LEAD_MIN;
+    const instantMin5 = Math.ceil(targetMin / 5) * 5;
+    const next30 = Math.ceil(targetMin / SLOT_INCREMENT_MIN) * SLOT_INCREMENT_MIN;
+    if (next30 - instantMin5 >= 15) {
+      // Validate the slot fits within the shift end (with buffer)
+      let withinShift = false;
+      if (isOvernight) {
+        // pre-midnight: slot stays today, must end before midnight + end
+        const offset = instantMin5 - start;
+        withinShift = offset >= 0 && offset <= shiftLen - durationMin - SHIFT_END_BUFFER_MIN;
+      } else {
+        withinShift = instantMin5 <= end - durationMin - SHIFT_END_BUFFER_MIN;
+      }
+      if (withinShift) {
+        slots.push({
+          time: fromMinutes(instantMin5),
+          nextDay: false,
+          kind: "tail", // surface in the green RIGHT NOW section
+        });
       }
     }
   }
@@ -184,20 +234,42 @@ function buildSlots(
     slots.push({
       time: fromMinutes(slotMin),
       nextDay,
+      kind: "main",
     });
   }
   return slots;
 }
 
-// Group slots into dayparts for visual sectioning.
-function groupSlots(slots: { time: string; nextDay: boolean }[]) {
-  const groups: Record<string, { time: string; nextDay: boolean }[]> = {
+// 🆕 Round 28b42 — Six visual sub-sections so overnight shifts read
+//   chronologically without jumbling 01:30 AM (tail) before 9:00 PM:
+//
+//     RIGHT NOW (kind=tail)        e.g. 1:30 AM, 2:00 AM, 2:30 AM
+//     MORNING   (main, !nextDay, 6–12)
+//     AFTERNOON (main, !nextDay, 12–17)
+//     EVENING   (main, !nextDay, 17–21)
+//     NIGHT     (main, !nextDay, 21–24)
+//     AFTER MIDNIGHT (main, nextDay)   shift's post-midnight tail
+//
+//   Each section renders only when it has slots, so a same-day shift
+//   never shows the empty RIGHT NOW or AFTER MIDNIGHT headings.
+function groupSlots(slots: Slot[]) {
+  const groups: Record<string, Slot[]> = {
+    rightNow: [],
     morning: [],
     afternoon: [],
     evening: [],
     night: [],
+    afterMidnight: [],
   };
   for (const s of slots) {
+    if (s.kind === "tail") {
+      groups.rightNow.push(s);
+      continue;
+    }
+    if (s.nextDay) {
+      groups.afterMidnight.push(s);
+      continue;
+    }
     const h = parseInt(s.time.split(":")[0], 10);
     if (h >= 6 && h < 12) groups.morning.push(s);
     else if (h >= 12 && h < 17) groups.afternoon.push(s);
@@ -268,12 +340,14 @@ const StepDateTime: React.FC<Props> = ({
   //   19:00 PM as "earliest" even when 01:30 AM was 18 hours sooner.
   const earliestSlot = useMemo(() => {
     if (!slotGroups || !durationMin) return null;
-    const allSlots: { time: string; nextDay: boolean; ts: number }[] = [];
+    const allSlots: (Slot & { ts: number })[] = [];
     for (const group of [
+      slotGroups.rightNow,
       slotGroups.morning,
       slotGroups.afternoon,
       slotGroups.evening,
       slotGroups.night,
+      slotGroups.afterMidnight,
     ]) {
       for (const s of group) {
         const [h, m] = s.time.split(":").map(Number);
@@ -295,7 +369,7 @@ const StepDateTime: React.FC<Props> = ({
         durationMin,
         BOOKING_BUFFER_MIN
       );
-      if (!taken) return { time: s.time, nextDay: s.nextDay };
+      if (!taken) return s;
     }
     return null;
   }, [slotGroups, liveBookings, internalDate, durationMin]);
@@ -304,8 +378,14 @@ const StepDateTime: React.FC<Props> = ({
     setInternalDate(d);
     onChange({ date: d.format("YYYY-MM-DD"), time: null });
   };
-  const selectTime = (t: string) => {
-    onChange({ date: internalDate.format("YYYY-MM-DD"), time: t });
+
+  // 🆕 Round 28b42 (founder 2026-05-05) — Pass the slot object so we
+  //   can shift the date forward for `nextDay` slots. Previously
+  //   "01:30 +1d" picked while viewing TODAY would book on TODAY at
+  //   01:30 AM (in the past!) instead of TOMORROW 01:30 AM.
+  const selectTime = (s: Slot) => {
+    const targetDate = s.nextDay ? internalDate.add(1, "day") : internalDate;
+    onChange({ date: targetDate.format("YYYY-MM-DD"), time: s.time });
   };
 
   return (
@@ -454,7 +534,7 @@ const StepDateTime: React.FC<Props> = ({
       {earliestSlot && durationMin && (
         <Box
           role="button"
-          onClick={() => selectTime(earliestSlot.time)}
+          onClick={() => selectTime(earliestSlot)}
           sx={{
             margin: "0 14px",
             padding: "12px 14px",
@@ -592,32 +672,141 @@ const StepDateTime: React.FC<Props> = ({
         </Box>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          {(["morning", "afternoon", "evening", "night"] as const).map(
-            (key) => {
+          {(() => {
+            // 🆕 Round 28b44 (founder 2026-05-05) — Visual day-boundary
+            //   dividers between sub-sections so customers immediately
+            //   see what's "tonight" vs "tomorrow morning". Without
+            //   these, an overnight shift's tail (1:30 AM) and main
+            //   evening (7:00 PM) and tomorrow's tail (1:30 AM +1d)
+            //   all blur into one wall of slots.
+            const orderedKeys = [
+              "rightNow",
+              "morning",
+              "afternoon",
+              "evening",
+              "night",
+              "afterMidnight",
+            ] as const;
+            type SectionKey = (typeof orderedKeys)[number];
+
+            // Find previous visible section so we can decide if a
+            // divider should appear AT this section's top edge.
+            const visibleKeys = orderedKeys.filter(
+              (k) => slotGroups[k].length > 0
+            );
+
+            const labels: Record<SectionKey, string> = {
+              rightNow: "Right Now",
+              morning: "Morning",
+              afternoon: "Afternoon",
+              evening: "Evening",
+              night: "Late Evening",
+              afterMidnight: "After Midnight",
+            };
+            const sublabels: Record<SectionKey, string | null> = {
+              rightNow: "Available immediately in current shift",
+              morning: null,
+              afternoon: null,
+              evening: null,
+              night: null,
+              afterMidnight: "Tomorrow morning (overnight shift)",
+            };
+
+            const tomorrowLabel = `Tomorrow · ${internalDate
+              .add(1, "day")
+              .format("ddd MMM D")}`;
+
+            return visibleKeys.map((key, visIdx) => {
               const group = slotGroups[key];
-              if (group.length === 0) return null;
-              const labels: Record<typeof key, string> = {
-                morning: "Morning",
-                afternoon: "Afternoon",
-                evening: "Evening",
-                night: "Night",
-              };
+              const prevKey = visIdx > 0 ? visibleKeys[visIdx - 1] : null;
+              // Decide divider above this section.
+              let divider: { label: string; emphasized: boolean } | null = null;
+              if (key === "afterMidnight") {
+                divider = { label: tomorrowLabel, emphasized: true };
+              } else if (key !== "rightNow" && prevKey === "rightNow") {
+                divider = {
+                  label: "Tonight · Tonight's main shift",
+                  emphasized: false,
+                };
+              }
               return (
-                <Box key={key}>
+                <React.Fragment key={key}>
+                  {divider && (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        margin: visIdx === 0 ? "0 4px" : "4px 4px 0",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          flex: 1,
+                          height: "1px",
+                          background: divider.emphasized
+                            ? "rgba(254, 9, 68, 0.22)"
+                            : "rgba(60, 30, 20, 0.12)",
+                        }}
+                      />
+                      <Typography
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: "10.5px",
+                          fontWeight: 700,
+                          color: divider.emphasized
+                            ? "#FE0944"
+                            : "rgba(60, 30, 20, 0.55)",
+                          letterSpacing: "0.06em",
+                          textTransform: "uppercase",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {divider.label}
+                      </Typography>
+                      <Box
+                        sx={{
+                          flex: 1,
+                          height: "1px",
+                          background: divider.emphasized
+                            ? "rgba(254, 9, 68, 0.22)"
+                            : "rgba(60, 30, 20, 0.12)",
+                        }}
+                      />
+                    </Box>
+                  )}
+                  <Box>
                   <Typography
                     sx={{
                       fontFamily: SANS,
                       fontSize: "11px",
                       fontWeight: 700,
-                      color: "rgba(60, 30, 20, 0.55)",
+                      color:
+                        key === "rightNow"
+                          ? "#16a34a"
+                          : "rgba(60, 30, 20, 0.55)",
                       textTransform: "uppercase",
                       letterSpacing: "0.08em",
-                      marginBottom: "8px",
+                      marginBottom: sublabels[key] ? "2px" : "8px",
                       paddingLeft: "4px",
                     }}
                   >
                     {labels[key]}
                   </Typography>
+                  {sublabels[key] && (
+                    <Typography
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: "10.5px",
+                        color: "rgba(60, 30, 20, 0.5)",
+                        fontStyle: "italic",
+                        marginBottom: "8px",
+                        paddingLeft: "4px",
+                      }}
+                    >
+                      {sublabels[key]}
+                    </Typography>
+                  )}
                   <Box
                     sx={{
                       display: "grid",
@@ -626,12 +815,17 @@ const StepDateTime: React.FC<Props> = ({
                     }}
                   >
                     {group.map((s) => {
-                      const isActive = time === s.time;
-                      // Build the absolute Date for this slot start so we
-                      // can check overlap with live bookings (B-feature).
+                      // 🆕 Round 28b42 — Slot's resolved calendar date
+                      //   (nextDay slots resolve to internalDate + 1d).
+                      //   Active state must compare BOTH date AND time so
+                      //   "1:30 AM today" and "1:30 AM +1d" don't both
+                      //   highlight when the user picks one of them.
                       const slotDate = s.nextDay
                         ? internalDate.add(1, "day")
                         : internalDate;
+                      const isActive =
+                        time === s.time &&
+                        date === slotDate.format("YYYY-MM-DD");
                       const [sh, sm] = s.time.split(":").map(Number);
                       const slotStartMs = slotDate
                         .hour(sh)
@@ -652,19 +846,19 @@ const StepDateTime: React.FC<Props> = ({
                       );
                       return (
                         <Box
-                          key={`${s.time}-${s.nextDay ? "nd" : "sd"}`}
+                          key={`${s.time}-${s.nextDay ? "nd" : "sd"}-${s.kind}`}
                           role="button"
                           tabIndex={taken ? -1 : 0}
                           aria-pressed={isActive}
                           aria-disabled={taken}
                           onClick={() => {
-                            if (!taken) selectTime(s.time);
+                            if (!taken) selectTime(s);
                           }}
                           onKeyDown={(e) => {
                             if (taken) return;
                             if (e.key === " " || e.key === "Enter") {
                               e.preventDefault();
-                              selectTime(s.time);
+                              selectTime(s);
                             }
                           }}
                           sx={{
@@ -737,10 +931,11 @@ const StepDateTime: React.FC<Props> = ({
                       );
                     })}
                   </Box>
-                </Box>
+                  </Box>
+                </React.Fragment>
               );
-            }
-          )}
+            });
+          })()}
         </Box>
       )}
     </Box>

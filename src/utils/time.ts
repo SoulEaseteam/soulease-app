@@ -111,14 +111,15 @@ export function fmtBKK(
   return d ? d.format(format) : fallback;
 }
 
-/** 🆕 Round 28b15 (founder spec) — pretty time format showing both
- *  Single canonical format `HH:mm A` (e.g. `20:30 PM`, `09:00 AM`).
- *  Round 28b28 (founder 2026-05-04) — collapsed previous parens form
- *  `21:00 (9:00 PM)` to `21:00 PM` for consistency across the app. */
+/** 🆕 Round 28b42 (founder 2026-05-05) — switched from `HH:mm A`
+ *  ("13:00 PM" was visually broken — 24h hour with PM tag confused
+ *  tourists) to standard 12-hour `h:mm A` format ("1:00 PM").
+ *  This is the canonical user-facing time format across SunRed.
+ *  Examples: 11:00 AM, 1:00 PM, 4:30 PM, 12:00 AM, 12:30 AM. */
 export function fmtBKKTime(v: TimeLike, fallback = "—"): string {
   const d = toBKK(v);
   if (!d) return fallback;
-  return d.format("HH:mm A");
+  return d.format("h:mm A");
 }
 
 /** Compact pretty time — single hour with AM/PM, no parentheses.
@@ -132,21 +133,20 @@ export function fmtBKKTimeShort(v: TimeLike, fallback = "—"): string {
 }
 
 /**
- * 🆕 Round 28b28 (founder 2026-05-04) — Single canonical user-facing
- * time format: `HH:mm A` → "20:30 PM" / "09:00 AM".
+ * 🆕 Round 28b42 (founder 2026-05-05) — Single canonical user-facing
+ * time format: `h:mm A` → "9:30 PM" / "11:00 AM" / "12:30 AM".
  *
- * Why the unusual mix of 24h hour + AM/PM tag?
- *   • 24h `HH:mm` removes 12h ambiguity for Thai customers reading
- *     receipts late at night.
- *   • The trailing AM/PM tag matches Western expectations on
- *     iOS/Android lock-screen notifications (where bookings preview).
+ * Previous Round 28b28 used `HH:mm A` ("21:00 PM") which mixed 24h
+ * hour with PM tag — visually broken for tourists ("13:00 PM" looked
+ * like a typo). Switched to standard 12-hour clock with AM/PM:
  *
- * Format an "HH:mm" string (e.g. "21:00") into "21:00 PM" form.
- * Used by status pills that already hold HH:mm and don't need a
- * full date. Falls back to the input if it can't parse.
+ *   00:00 → "12:00 AM"      12:00 → "12:00 PM"
+ *   01:30 → "1:30 AM"       13:00 → "1:00 PM"
+ *   11:59 → "11:59 AM"      21:00 → "9:00 PM"
  *
- * Previous form was "21:00 (9 PM)" with parens — founder dropped
- * the parens 2026-05-04 ("กระชับขึ้น เปลี่ยนตัวรายงานให้สม่ำเสมอ").
+ * Format an "HH:mm" string (e.g. "21:00") into "9:00 PM" form.
+ * Used by status pills + time pickers that already hold HH:mm and
+ * don't need a full date. Falls back to the input if it can't parse.
  */
 export function prettyHHMM(hhmm: string | null | undefined): string {
   if (!hhmm) return "";
@@ -156,9 +156,10 @@ export function prettyHHMM(hhmm: string | null | undefined): string {
   const mm = parseInt(m[2]!, 10);
   if (Number.isNaN(hh) || Number.isNaN(mm)) return hhmm;
   const period = hh >= 12 ? "PM" : "AM";
-  const hhStr = hh.toString().padStart(2, "0");
+  // 12-hour conversion: 0 → 12 AM, 12 → 12 PM, 13 → 1 PM, etc.
+  const h12 = hh === 0 ? 12 : hh > 12 ? hh - 12 : hh;
   const mmStr = mm.toString().padStart(2, "0");
-  return `${hhStr}:${mmStr} ${period}`;
+  return `${h12}:${mmStr} ${period}`;
 }
 
 /** True when both moments fall on the same Bangkok calendar day. */

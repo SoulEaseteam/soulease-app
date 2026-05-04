@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   Box,
   Typography,
@@ -101,6 +101,56 @@ import { ADDONS, type AddOn } from "@/data/bookingExtras";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
+
+/**
+ * 🆕 Round 28b46 (founder 2026-05-05) — Smoothly tween a numeric value
+ * over `durationMs` so the Total field doesn't snap when distance, rain
+ * surcharge, or service duration changes. Uses requestAnimationFrame +
+ * ease-out cubic. Honors `prefers-reduced-motion` by snapping instantly.
+ *
+ * Usage:
+ *   const animatedTotal = useTweenedNumber(total);
+ *   <Typography>{formatTHB(Math.round(animatedTotal))}</Typography>
+ */
+function useTweenedNumber(target: number, durationMs = 380): number {
+  const [display, setDisplay] = useState(target);
+  const displayRef = useRef(target);
+  // Keep displayRef in sync with the latest rendered display value so
+  // each new tween starts from where the previous one stopped.
+  displayRef.current = display;
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const from = displayRef.current;
+    if (target === from || !Number.isFinite(target) || !Number.isFinite(from)) {
+      setDisplay(target);
+      return;
+    }
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      setDisplay(target);
+      return;
+    }
+    const startTime = performance.now();
+    const tick = () => {
+      const elapsed = performance.now() - startTime;
+      const t = Math.min(1, elapsed / durationMs);
+      // ease-out cubic: 1 - (1-t)^3 — fast start, gentle landing
+      const eased = 1 - Math.pow(1 - t, 3);
+      setDisplay(from + (target - from) * eased);
+      if (t < 1) rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
+  }, [target, durationMs]);
+
+  return display;
+}
 
 export interface BookingFormState {
   serviceId: string | null;
@@ -597,6 +647,31 @@ const BookingFlowPage: React.FC = () => {
   const etaMinutes = drivingMin > 0 ? Math.round(drivingMin + staffPrepMin) : 0;
 
   const total = servicePrice + addonsTotal + taxiFare;
+
+  // 🆕 Round 28b46 (founder 2026-05-05) — Pre-surcharge baseline so we
+  //   can render "~~฿1,800~~ ฿2,018" when rain or admin-quote bumps the
+  //   total. baseFareBeforeRain comes back from estimateTaxiFare even
+  //   when rain.tier === "none" (in which case it equals taxiFare and
+  //   the strikethrough silently no-ops).
+  const baseTotal =
+    servicePrice +
+    addonsTotal +
+    (taxiResult?.baseFareBeforeRain ?? taxiFare);
+  const hasSurcharge = total > baseTotal + 0.5; // guard against rounding noise
+
+  // 🆕 Round 28b46 — Tweened total digits. Smoothly count from previous
+  //   total → new total over 380ms with ease-out so the number doesn't
+  //   "snap" when distance/rain recomputes. Honors prefers-reduced-motion.
+  const animatedTotal = useTweenedNumber(total);
+  const animatedBaseTotal = useTweenedNumber(baseTotal);
+
+  // Brief glow when the total changes (CSS class flip).
+  const totalChangedKey = useRef(0);
+  const lastSeenTotalRef = useRef(total);
+  if (lastSeenTotalRef.current !== total) {
+    lastSeenTotalRef.current = total;
+    totalChangedKey.current += 1;
+  }
 
   // ── Validation. Phone + contact name are captured on the dedicated
   //    SelectLocationPage; if they've been filled there, they come back
@@ -1465,6 +1540,7 @@ const BookingFlowPage: React.FC = () => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "baseline",
+              gap: "12px",
             }}
           >
             <Typography
@@ -1472,18 +1548,76 @@ const BookingFlowPage: React.FC = () => {
             >
               Total
             </Typography>
-            <Typography
+            {/* 🆕 Round 28b46 — Animated total + before/after strikethrough.
+                When a surcharge applies (rain / admin quote), we render the
+                pre-surcharge price ghosted with a line-through, then the
+                live total in brand red. The numbers themselves smoothly
+                tween via useTweenedNumber so they don't snap on changes. */}
+            <Box
               sx={{
-                fontFamily: SERIF,
-                fontSize: "24px",
-                fontWeight: 700,
-                color: "#FE0944",
-                letterSpacing: "-0.02em",
-                lineHeight: 1,
+                display: "flex",
+                alignItems: "baseline",
+                gap: "8px",
+                flexWrap: "wrap",
+                justifyContent: "flex-end",
               }}
             >
-              {formatTHB(total)}
-            </Typography>
+              {hasSurcharge && (
+                <Typography
+                  aria-hidden
+                  sx={{
+                    fontFamily: SERIF,
+                    fontSize: "16px",
+                    fontWeight: 500,
+                    color: "rgba(60, 30, 20, 0.42)",
+                    textDecoration: "line-through",
+                    letterSpacing: "-0.01em",
+                    lineHeight: 1,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {formatTHB(Math.round(animatedBaseTotal))}
+                </Typography>
+              )}
+              <Typography
+                key={totalChangedKey.current}
+                sx={{
+                  fontFamily: SERIF,
+                  fontSize: "24px",
+                  fontWeight: 700,
+                  color: "#FE0944",
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1,
+                  fontVariantNumeric: "tabular-nums",
+                  // Pulse glow when the value changes — only when motion
+                  //   is allowed. Brief opacity dip + scale for a soft
+                  //   "ka-ching" feedback. The `key` bump above forces
+                  //   re-mount so the keyframes restart on each change.
+                  "@media (prefers-reduced-motion: no-preference)": {
+                    animation: "totalPulse 0.42s ease-out",
+                  },
+                  "@keyframes totalPulse": {
+                    "0%": {
+                      transform: "scale(0.96)",
+                      filter:
+                        "drop-shadow(0 0 0 rgba(254, 9, 68, 0))",
+                    },
+                    "40%": {
+                      transform: "scale(1.04)",
+                      filter:
+                        "drop-shadow(0 0 8px rgba(254, 9, 68, 0.45))",
+                    },
+                    "100%": {
+                      transform: "scale(1)",
+                      filter:
+                        "drop-shadow(0 0 0 rgba(254, 9, 68, 0))",
+                    },
+                  },
+                }}
+              >
+                {formatTHB(Math.round(animatedTotal))}
+              </Typography>
+            </Box>
           </Box>
           {!locationSet && (
             <Typography
@@ -1899,11 +2033,26 @@ const ConfirmBar: React.FC<{
   canPlace: boolean;
   submitting: boolean;
   onConfirm: () => void;
-}> = ({ total, canPlace, submitting, onConfirm }) => (
+}> = ({ total, canPlace, submitting, onConfirm }) => {
+  // 🆕 Round 28b46 — Tween the sticky-bar Total too so price changes
+  //   feel cohesive between the Pricing card and the bar.
+  const animatedTotal = useTweenedNumber(total);
+  const pulseKey = useRef(0);
+  const lastTotalRef = useRef(total);
+  if (lastTotalRef.current !== total) {
+    lastTotalRef.current = total;
+    pulseKey.current += 1;
+  }
+  return (
   <Box
     sx={{
       position: "fixed",
-      bottom: "calc(100px + env(safe-area-inset-bottom, 0px))",
+      // 🆕 Round 28b43 (founder 2026-05-05) — Switched from hardcoded
+      //   100px to global --cta-bottom-offset (defined in index.css)
+      //   so EVERY confirm CTA across the app sits at the same height
+      //   above the bottom nav. Was 100px to clear the nav (~64px) +
+      //   small gap; now centralized via CSS variable.
+      bottom: "var(--cta-bottom-offset)",
       left: "50%",
       transform: "translateX(-50%)",
       width: "100%",
@@ -1935,6 +2084,7 @@ const ConfirmBar: React.FC<{
         Total
       </Typography>
       <Typography
+        key={pulseKey.current}
         sx={{
           fontFamily: SERIF,
           fontSize: "22px",
@@ -1943,9 +2093,18 @@ const ConfirmBar: React.FC<{
           letterSpacing: "-0.02em",
           lineHeight: 1,
           marginTop: "2px",
+          fontVariantNumeric: "tabular-nums",
+          "@media (prefers-reduced-motion: no-preference)": {
+            animation: "totalPulse 0.42s ease-out",
+          },
+          "@keyframes totalPulse": {
+            "0%": { transform: "scale(0.96)" },
+            "40%": { transform: "scale(1.04)" },
+            "100%": { transform: "scale(1)" },
+          },
         }}
       >
-        {formatTHB(total)}
+        {formatTHB(Math.round(animatedTotal))}
       </Typography>
     </Box>
     <Button
@@ -1976,6 +2135,7 @@ const ConfirmBar: React.FC<{
       {submitting ? "..." : "Place Order"}
     </Button>
   </Box>
-);
+  );
+};
 
 export default BookingFlowPage;

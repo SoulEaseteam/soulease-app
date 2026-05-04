@@ -70,7 +70,7 @@ const services: MassageService[] = [
     // Founder confirmed prices 2026-05-01:
     //   60: ฿1,200 · 90: ฿1,800 · 120: ฿2,400
     // (= base × 1.0/1.5/2.0 multiplier — see src/utils/servicePricing.ts)
-    // The ATTRACTIVE prices proposal (1,500/1,900) is reserved as a
+    //
     // future promotional campaign — wired in via DURATION_PRICE_OVERRIDES
     // when the promo launches.
     availableDurations: [60, 90, 120],

@@ -288,7 +288,11 @@ const SelectLocationPage: React.FC = () => {
     //   reverseGeocode runs, so the new lat/lng's formatted_address
     //   wins. Toast feedback so customer sees the address refresh.
     map.addListener("click", (e: unknown) => {
-      const ev = e as { latLng?: { lat: () => number; lng: () => number } };
+      const ev = e as {
+        latLng?: { lat: () => number; lng: () => number };
+        placeId?: string;
+        stop?: () => void;
+      };
       const ll = ev.latLng;
       if (!ll) return;
       const lat = ll.lat();
@@ -302,7 +306,23 @@ const SelectLocationPage: React.FC = () => {
         lng,
       }));
       setPinJustMoved(true);
-      reverseGeocode(lat, lng);
+      // 🆕 Round 28b47 (founder 2026-05-05) — Pin ↔ address sync.
+      //   When the user taps a POI label on the map (Supalai City
+      //   Resort, etc.), Google fires `click` with `placeId` set AND
+      //   pops its own InfoWindow showing the place name. Previously
+      //   we ignored placeId, so the address card below ended up with
+      //   reverseGeocode's street address ("300 Pracha Uthit Rd")
+      //   while the pin's InfoWindow showed the POI name — they didn't
+      //   match. Now: suppress Google's InfoWindow with `e.stop()`,
+      //   pull the Place's full details, and write `locationName` =
+      //   place.name + `locationAddress` = formatted_address so the
+      //   card mirrors the pin.
+      if (ev.placeId) {
+        ev.stop?.();
+        fetchPlaceDetails(ev.placeId, lat, lng);
+      } else {
+        reverseGeocode(lat, lng);
+      }
     });
 
     // Autocomplete on the search input
@@ -359,6 +379,60 @@ const SelectLocationPage: React.FC = () => {
       position: { lat, lng },
       map: mapRef.current,
     });
+  }
+
+  // 🆕 Round 28b47 (founder 2026-05-05) — POI click → Places API
+  //   getDetails. Returns the place's display name (e.g. "Supalai City
+  //   Resort Ratchada-Huai Khwang") + its full formatted_address. We
+  //   store these as locationName / locationAddress so the address card
+  //   below the map matches the pin's InfoWindow exactly. Falls back
+  //   to reverseGeocode if Places API isn't loaded or returns NOT_OK.
+  function fetchPlaceDetails(placeId: string, lat: number, lng: number) {
+    const w = window as unknown as {
+      google?: {
+        maps?: {
+          places?: {
+            PlacesService: new (map: unknown) => {
+              getDetails: (
+                req: { placeId: string; fields: string[] },
+                cb: (
+                  place:
+                    | { name?: string; formatted_address?: string }
+                    | null,
+                  status: string
+                ) => void
+              ) => void;
+            };
+          };
+        };
+      };
+    };
+    const Places = w.google?.maps?.places;
+    if (!Places || !mapRef.current) {
+      reverseGeocode(lat, lng);
+      return;
+    }
+    const service = new Places.PlacesService(mapRef.current);
+    service.getDetails(
+      {
+        placeId,
+        fields: ["name", "formatted_address"],
+      },
+      (place, status) => {
+        if (status === "OK" && place && (place.name || place.formatted_address)) {
+          setForm((p) => ({
+            ...p,
+            locationName: place.name ?? place.formatted_address ?? null,
+            locationAddress: place.formatted_address ?? null,
+            lat,
+            lng,
+            mapUrl: buildMapUrl(lat, lng),
+          }));
+        } else {
+          reverseGeocode(lat, lng);
+        }
+      }
+    );
   }
 
   function reverseGeocode(lat: number, lng: number) {
@@ -467,11 +541,19 @@ const SelectLocationPage: React.FC = () => {
   // ── Validation
   const phoneDigits = form.customerPhone.replace(/\D/g, "");
   const phoneOk = phoneDigits.length >= 10; // +66 + 9 digits = 11
+  // 🆕 Round 28b48 (founder 2026-05-05) — Direct-room arrivals must
+  //   include a note (booking name + room number). Without it the
+  //   therapist arrives blind: front desk / security has no way to
+  //   route them. We require ≥ 4 chars in the note when meetingPoint
+  //   is "direct"; for all other arrival modes the note stays optional.
+  const directRoomNeedsNote =
+    form.meetingPoint === "direct" && form.addressNote.trim().length < 4;
   const canConfirm =
     form.lat != null &&
     form.lng != null &&
     form.contactName.trim().length >= 2 &&
-    phoneOk;
+    phoneOk &&
+    !directRoomNeedsNote;
 
   const onConfirm = () => {
     if (!canConfirm) return;
@@ -543,7 +625,9 @@ const SelectLocationPage: React.FC = () => {
         overflow: "hidden",
         boxShadow: "0 20px 60px rgba(126, 30, 46, 0.15)",
         position: "relative",
-        paddingBottom: "calc(120px + env(safe-area-inset-bottom, 0px))",
+        // 🆕 Round 28b43 — bumped from 120px to 180px so the form bottom
+        //   isn't covered by the lifted CTA + bottom nav stack.
+        paddingBottom: "calc(180px + env(safe-area-inset-bottom, 0px))",
         fontFamily: SANS,
       }}
     >
@@ -988,26 +1072,54 @@ const SelectLocationPage: React.FC = () => {
             • The 3-chip Meeting Point row inside Note has been removed —
               moved into a dedicated 'Delivery instructions' radio list
               section below. */}
-        <FieldLabel label="Note" icon="📝" optional>
+        {/* 🆕 Round 28b48 (founder 2026-05-05) — Note becomes REQUIRED
+            when arrival = "Come to my room". Without booking name +
+            room number the therapist arrives blind at the front desk.
+            We swap the FieldLabel `optional` flag and surface a red
+            helper sentence + error-bordered TextField until ≥ 4 chars
+            are entered. For all other arrival modes the field stays
+            optional (no UX change). */}
+        <FieldLabel
+          label="Note"
+          icon="📝"
+          required={form.meetingPoint === "direct"}
+          optional={form.meetingPoint !== "direct"}
+        >
           <Typography
             sx={{
               fontFamily: SANS,
               fontSize: "12px",
-              color: "rgba(60, 30, 20, 0.6)",
+              color:
+                form.meetingPoint === "direct"
+                  ? "#FE0944"
+                  : "rgba(60, 30, 20, 0.6)",
               marginTop: "-4px",
               marginBottom: "8px",
               paddingLeft: "2px",
+              fontWeight: form.meetingPoint === "direct" ? 600 : 400,
             }}
           >
-            Add instructions for therapist arrival
+            {form.meetingPoint === "direct"
+              ? "Required — please include booking name + room number"
+              : "Add instructions for therapist arrival"}
           </Typography>
           <TextField
             fullWidth
             multiline
             minRows={3}
             maxRows={6}
-            placeholder="Add room number / villa"
+            placeholder={
+              form.meetingPoint === "direct"
+                ? "e.g. Booking under John Smith · Room 1207"
+                : "Add room number / villa"
+            }
             value={form.addressNote}
+            error={directRoomNeedsNote}
+            helperText={
+              directRoomNeedsNote
+                ? "Required for Direct Room Access (at least 4 characters)"
+                : undefined
+            }
             onChange={(e) =>
               setForm((p) => ({ ...p, addressNote: e.target.value }))
             }
@@ -1159,10 +1271,13 @@ const SelectLocationPage: React.FC = () => {
       </Box>
 
       {/* Sticky bottom CTA */}
+      {/* 🆕 Round 28b43 (founder 2026-05-05) — Lifted above the bottom
+          nav so "Confirm Address" never sits behind the BottomNavGlass.
+          Uses --cta-bottom-offset = nav height + 16px + safe-area. */}
       <Box
         sx={{
           position: "fixed",
-          bottom: "calc(20px + env(safe-area-inset-bottom, 0px))",
+          bottom: "var(--cta-bottom-offset)",
           left: "50%",
           transform: "translateX(-50%)",
           width: "92%",
@@ -1200,7 +1315,16 @@ const SelectLocationPage: React.FC = () => {
             },
           }}
         >
-          {canConfirm ? "Confirm Location" : "Pin a location to continue"}
+          {/* 🆕 Round 28b48 — surface the most-actionable blocker so
+              the customer knows exactly what to fix. Direct-room
+              missing-note wins over the generic "Pin a location" copy. */}
+          {canConfirm
+            ? "Confirm Location"
+            : directRoomNeedsNote
+              ? "Add room number to continue"
+              : form.lat == null || form.lng == null
+                ? "Pin a location to continue"
+                : "Fill contact details to continue"}
         </Button>
       </Box>
     </Box>
