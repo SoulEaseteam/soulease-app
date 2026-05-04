@@ -41,11 +41,46 @@ const HomeTherapistGrid: React.FC = () => {
   //    on first-party-set sites). We render an explicit in-app banner
   //    below; tapping its CTA calls request() in a user gesture context
   //    so the native permission popup reliably fires.
+  //    🆕 Round 28b34 (founder 2026-05-04) — Auto-trigger on FIRST USER
+  //    INTERACTION (scroll/touchstart/click ANYWHERE on the page).
+  //    Browser-compliant (gesture context), but the customer never
+  //    needs to find/tap an in-app "Allow location" link — they
+  //    just glance at the page → scroll → native popup fires → grant
+  //    → every card lights up with "6 min • 2.4 km" instantly.
+  //    The Permissions API auto-resume in useUserLocation already
+  //    handles repeat visitors who've previously granted.
   const {
     location: userLocation,
     request: requestLocation,
     status: locationStatus,
   } = useUserLocation({ autoStart: false });
+
+  // 🆕 Round 28b34 — first-interaction auto-trigger.
+  useEffect(() => {
+    if (locationStatus === "ready" || locationStatus === "denied") return;
+    if (typeof window === "undefined") return;
+    let triggered = false;
+    const onFirstInteraction = () => {
+      if (triggered) return;
+      triggered = true;
+      requestLocation();
+      window.removeEventListener("touchstart", onFirstInteraction);
+      window.removeEventListener("click", onFirstInteraction);
+      window.removeEventListener("scroll", onFirstInteraction);
+      window.removeEventListener("keydown", onFirstInteraction);
+    };
+    // `passive: true` so the listener can't accidentally block scroll perf.
+    window.addEventListener("touchstart", onFirstInteraction, { passive: true });
+    window.addEventListener("click", onFirstInteraction, { passive: true });
+    window.addEventListener("scroll", onFirstInteraction, { passive: true });
+    window.addEventListener("keydown", onFirstInteraction);
+    return () => {
+      window.removeEventListener("touchstart", onFirstInteraction);
+      window.removeEventListener("click", onFirstInteraction);
+      window.removeEventListener("scroll", onFirstInteraction);
+      window.removeEventListener("keydown", onFirstInteraction);
+    };
+  }, [locationStatus, requestLocation]);
 
   // ── Single `services` collection subscription — every card reads from
   //    the same Map. Falls back to static services when Firestore is empty
