@@ -81,6 +81,12 @@ import {
 // 🆕 Round 28b35 — Live therapist Holiday/override gate.
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
 import { useTherapistLiveStatus } from "@/hooks/useTherapistLiveStatus";
+// 🆕 Round 28b49 — derive activeBooking + busyUntil from live bookings
+//   collection so cancelled bookings auto-clear without a Cloud Function.
+import {
+  useTherapistBookings,
+  findActiveBooking,
+} from "@/utils/useTherapistBookings";
 // 🆕 Round 28b25/28b32 — Google Distance Matrix API for real road
 //   distance + traffic-aware ETA. Falls back to time-of-day speed
 //   estimates (BKK rush vs off-peak) when API is offline.
@@ -412,6 +418,13 @@ const BookingFlowPage: React.FC = () => {
   //   submit guard below would let a customer book a therapist whom
   //   admin had marked Holiday (since static data has no isHoliday).
   const therapistLive = useTherapistLiveStatus(form.therapistId);
+  // 🆕 Round 28b49 (founder 2026-05-05) — Live bookings collection.
+  //   Used to derive activeBooking + busyUntil so admin's cancellation
+  //   self-heals without needing a Cloud Function. See TherapistDetailPage
+  //   for the same logic; both pages must agree to avoid the engine
+  //   reporting "Currently Busy" when bookings/{id}.status === "cancelled".
+  const therapistLiveBookings = useTherapistBookings(form.therapistId);
+  const therapistActiveBooking = findActiveBooking(therapistLiveBookings);
   const therapistMerged = therapist
     ? {
         ...therapist,
@@ -420,13 +433,14 @@ const BookingFlowPage: React.FC = () => {
               isHoliday: therapistLive.isHoliday ?? therapist.isHoliday,
               statusOverride:
                 therapistLive.statusOverride ?? therapist.statusOverride,
-              activeBooking:
-                therapistLive.activeBooking ?? therapist.activeBooking,
-              busyUntil: therapistLive.busyUntil ?? therapist.busyUntil,
               startTime: therapistLive.startTime ?? therapist.startTime,
               endTime: therapistLive.endTime ?? therapist.endTime,
             }
           : {}),
+        // Always derived from live bookings — ignores any stale persisted
+        // value on therapists/{id} that admin's cancel button never clears.
+        activeBooking: !!therapistActiveBooking,
+        busyUntil: therapistActiveBooking?.endAt ?? null,
       }
     : null;
   const therapistEngineStatus = therapistMerged

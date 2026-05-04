@@ -54,13 +54,17 @@ const TODAY_MIN_LEAD_MIN = 10;
 //   can wrap up + travel to the next location. Used by isSlotTaken
 //   below via the `bufferMin` argument.
 const BOOKING_BUFFER_MIN = 10;
-// 🆕 Round 28b41 (founder 2026-05-04) — Last bookable slot must END at
-//   least 20 minutes before therapist's shift end so they have time to
-//   wrap up the session and clock out. "รับงานรอบสุดท้ายก่อนถึงเวลา
-//   เลิกงาน 20 นาที". For a 90-min service with shift ending 05:00, the
-//   last allowed slot starts at 03:10 → rounds DOWN to 03:00 on the
-//   30-min grid (so it ends 04:30, leaving 30 min before clock-out).
-const SHIFT_END_BUFFER_MIN = 20;
+// 🆕 Round 28b50 (founder 2026-05-05) — Reverted Round 28b41's
+//   "20-min before shift end" rule. Founder direction:
+//   "ทุกออเดอสามารถจองได้หมดหากอยู่ในเวลางาน" — every booking is
+//   allowed as long as the slot's START time is within the working
+//   window. The session can extend past shift end (= overtime); the
+//   therapist accepts. Set buffer to 0 + the loops below also stop
+//   subtracting `durationMin` from the last bookable offset so a
+//   90-min booking starting at 4:30 AM (ending 6:00 AM) is allowed
+//   even when shift ends 5:00 AM. Constant kept for clarity in case
+//   we want to re-introduce a small wrap-up gap later.
+const SHIFT_END_BUFFER_MIN = 0;
 
 interface Props {
   /** Currently selected YYYY-MM-DD (null = nothing picked) */
@@ -110,9 +114,14 @@ function buildSlots(
   // Effective end: in overnight mode the shift extends past midnight.
   // Slots are placed in absolute minutes from `start` (0..shiftLen).
   const shiftLen = isOvernight ? 1440 - start + end : end - start;
-  // 🆕 Round 28b41 — subtract SHIFT_END_BUFFER_MIN so the LAST slot
-  //   ends at least 20 min before clock-out.
-  const lastSlotOffset = shiftLen - durationMin - SHIFT_END_BUFFER_MIN;
+  // 🆕 Round 28b50 (founder 2026-05-05) — Slot START must be within
+  //   working window — the session may extend past shift end (OT).
+  //   `lastSlotOffset = shiftLen - 1` lets the last slot start at the
+  //   last minute of the shift (rounded onto the 30-min grid by the
+  //   loop below). Was `shiftLen - durationMin - SHIFT_END_BUFFER_MIN`
+  //   which was the strict "session must finish before shift end -
+  //   20 min" rule.
+  const lastSlotOffset = shiftLen - 1;
   if (lastSlotOffset < 0) return [];
 
   const slots: Slot[] = [];
@@ -139,9 +148,11 @@ function buildSlots(
   //   immediately within the next 4h without flipping to "yesterday".
   if (isToday && isOvernight && nowMin < end) {
     const tailStart = Math.max(earliestNowMin, 0);
-    // 🆕 Round 28b41 — last tail slot must also leave 20-min buffer
-    //   before shift end so therapist can wrap up.
-    const tailLastSlot = end - durationMin - SHIFT_END_BUFFER_MIN;
+    // 🆕 Round 28b50 — Slot start can extend right up to shift end
+    //   (session goes into OT). `tailLastSlot = end - 1` so the last
+    //   30-min grid slot before midnight lands fairly. Was
+    //   `end - durationMin - SHIFT_END_BUFFER_MIN`.
+    const tailLastSlot = end - 1;
 
     // 🆕 Round 28b45 (founder 2026-05-05) — Instant slot.
     //   Previously the FIRST tail slot was rounded UP to the next
@@ -154,9 +165,19 @@ function buildSlots(
     //   slots only minutes apart).
     const next30 = Math.ceil(tailStart / SLOT_INCREMENT_MIN) * SLOT_INCREMENT_MIN;
     const instantMin5 = Math.ceil(tailStart / 5) * 5;
+    // 🆕 Round 28b52 (founder 2026-05-05) — Force-show instant slot
+    //   when the next 30-min grid boundary lies BEYOND the tail's last
+    //   bookable slot (i.e., the main loop will produce zero slots
+    //   anyway). Previously the 15-min gap rule could skip the instant
+    //   slot AND the main loop, leaving the customer with no tail
+    //   slots at all even though the therapist is still in shift.
+    //   Example: now=04:36 with shift end 05:00 → instant=04:50 (10 min
+    //   from next30=05:00 — below 15-min threshold) AND next30 > 299
+    //   (last bookable) → 0 slots before this fix.
+    const noMainSlotsWillRender = next30 > tailLastSlot;
     if (
       instantMin5 <= tailLastSlot &&
-      next30 - instantMin5 >= 15
+      (noMainSlotsWillRender || next30 - instantMin5 >= 15)
     ) {
       slots.push({
         time: fromMinutes(instantMin5),
@@ -167,7 +188,6 @@ function buildSlots(
 
     // Regular 30-min grid for the rest of the tail
     for (let m = next30; m <= tailLastSlot; m += SLOT_INCREMENT_MIN) {
-      if (m > end - durationMin) break;
       slots.push({
         time: fromMinutes(m),
         nextDay: false,
@@ -188,15 +208,23 @@ function buildSlots(
     const targetMin = nowMin + TODAY_MIN_LEAD_MIN;
     const instantMin5 = Math.ceil(targetMin / 5) * 5;
     const next30 = Math.ceil(targetMin / SLOT_INCREMENT_MIN) * SLOT_INCREMENT_MIN;
-    if (next30 - instantMin5 >= 15) {
-      // Validate the slot fits within the shift end (with buffer)
+    // 🆕 Round 28b52 — Force-show instant when the next 30-min grid
+    //   tick is past the shift's last bookable offset (no main slot
+    //   would render there). Same rationale as the tail branch above.
+    const mainBoundForCompare = isOvernight ? shiftLen : end;
+    const noMainSlotsWillRender =
+      next30 > (isOvernight ? start + shiftLen - 1 : mainBoundForCompare - 1);
+    if (noMainSlotsWillRender || next30 - instantMin5 >= 15) {
+      // 🆕 Round 28b50 — Slot start just needs to be within the
+      //   working window. Session may run past shift end. Was strict
+      //   "session must end ≤ shiftEnd - 20 min".
       let withinShift = false;
       if (isOvernight) {
-        // pre-midnight: slot stays today, must end before midnight + end
+        // pre-midnight: slot stays today, must start before midnight
         const offset = instantMin5 - start;
-        withinShift = offset >= 0 && offset <= shiftLen - durationMin - SHIFT_END_BUFFER_MIN;
+        withinShift = offset >= 0 && offset < shiftLen;
       } else {
-        withinShift = instantMin5 <= end - durationMin - SHIFT_END_BUFFER_MIN;
+        withinShift = instantMin5 < end;
       }
       if (withinShift) {
         slots.push({

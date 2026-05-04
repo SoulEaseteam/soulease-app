@@ -671,13 +671,23 @@ const TherapistDetailPage: React.FC = () => {
               isHoliday: liveStatus.isHoliday ?? realRecord.isHoliday,
               statusOverride:
                 liveStatus.statusOverride ?? realRecord.statusOverride,
-              activeBooking:
-                liveStatus.activeBooking ?? realRecord.activeBooking,
-              busyUntil: liveStatus.busyUntil ?? realRecord.busyUntil,
               startTime: liveStatus.startTime ?? realRecord.startTime,
               endTime: liveStatus.endTime ?? realRecord.endTime,
             }
           : {}),
+        // 🆕 Round 28b49 (founder 2026-05-05) — Derive activeBooking +
+        //   busyUntil from the LIVE bookings collection, NOT the
+        //   persisted therapist doc fields. Admin's "Cancel" button
+        //   only flips bookings/{id}.status to "cancelled" — it does
+        //   NOT clear therapists/{id}.busyUntil or .activeBooking, so
+        //   the doc's fields go stale and the engine kept reporting
+        //   "Currently Busy" even after the only booking was cancelled.
+        //   `useTherapistBookings` already filters out cancelled +
+        //   completed bookings, so deriving from `liveBookings` here
+        //   means the engine self-heals on cancel without a Cloud
+        //   Function. Persisted fields ignored.
+        activeBooking: !!activeBooking,
+        busyUntil: activeBooking?.endAt ?? null,
       }
     : null;
   const engineStatus = mergedRecord

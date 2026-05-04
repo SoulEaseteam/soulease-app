@@ -69,6 +69,12 @@ import { db } from "@/lib/firebase";
 
 import type { Therapist, Avail } from "@/types/therapist";
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
+// 🆕 Round 28b51 — BKK-anchored 12-hour format so the home-grid card
+//   pills read "Avail 2:00 AM" instead of "Avail 02:00".
+// 🆕 Round 28b52 — `sameDayBKK` + `nowBKK` to append "+1d" when the
+//   next booking is on a different calendar day (otherwise the pill
+//   was misleading: "→ 2:00 AM" looked like today's past time).
+import { fmtBKK, prettyHHMM, sameDayBKK, nowBKK } from "@/utils/time";
 import { enhanceImage } from "@/utils/cloudinary";
 import { haversineKm } from "@/utils/taxiFare";
 // 🆕 Round 28b33 — canonical "Xm • X.X km" formatter + Bangkok 25 km/h ETA.
@@ -116,11 +122,23 @@ function toDateSafe(v: unknown): Date | null {
   }
 }
 
+// 🆕 Round 28b51 (founder 2026-05-05) — Switched from device-TZ
+//   `getHours/getMinutes` to BKK-anchored `fmtBKK(d, "h:mm A")` so
+//   the home-grid card reads "Avail 2:00 AM" instead of "Avail 02:00".
+//   Local time was wrong for travelers and inconsistent with the
+//   site-wide prettyHHMM/fmtBKKTime standard set in Round 28b42.
+// 🆕 Round 28b52 (founder 2026-05-05) — Day-aware. When the booking
+//   start lands on a different BKK calendar day, append a ` +1d`
+//   suffix (today+1) or fall back to "MMM D · h:mm A" so customers
+//   never see an isolated "2:00 AM" that's actually tomorrow.
 function fmtHHMM(d: Date | null): string | null {
   if (!d) return null;
-  return `${String(d.getHours()).padStart(2, "0")}:${String(
-    d.getMinutes()
-  ).padStart(2, "0")}`;
+  const now = nowBKK();
+  const time = fmtBKK(d, "h:mm A", "");
+  if (!time) return null;
+  if (sameDayBKK(d, now)) return time;
+  if (sameDayBKK(d, now.add(1, "day"))) return `${time} +1d`;
+  return fmtBKK(d, "MMM D · h:mm A", time);
 }
 
 function nowThai(): Date {
@@ -402,7 +420,25 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
         }
 
         // Future booking — track earliest upcoming start
-        if (start && start > now && (!nextStart || start < nextStart)) {
+        // 🆕 Round 28b53 (founder 2026-05-05) — Filter by status so
+        //   cancelled / expired / completed bookings DON'T leak into
+        //   the home-card "→ HH:MM" pill. Without this guard, an
+        //   admin-cancelled booking at 2:00 AM tomorrow kept showing
+        //   on Yuri's card as `Avail · → 2:00 AM +1d` even though it
+        //   was no longer on the schedule. Only confirmed/pending/
+        //   paid/in_progress count as a real future commitment.
+        const ACTIVE_FUTURE = new Set([
+          "confirmed",
+          "pending",
+          "paid",
+          "in_progress",
+        ]);
+        if (
+          ACTIVE_FUTURE.has(status) &&
+          start &&
+          start > now &&
+          (!nextStart || start < nextStart)
+        ) {
           nextStart = start;
         }
       });
@@ -1028,7 +1064,10 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
                     "0 2px 8px rgba(254, 122, 82, 0.30), 0 1px 2px rgba(0,0,0,0.08)",
                 }}
               >
-                {finalNext ? `Avail ${finalNext}` : "In session"}
+                {/* 🆕 Round 28b51 — wrap with prettyHHMM so the
+                    pill reads "Avail 11:00 AM" not "Avail 11:00".
+                    finalNext arrives as 24h "HH:mm" from the engine. */}
+                {finalNext ? `Avail ${prettyHHMM(finalNext)}` : "In session"}
               </Box>
             ) : finalNext ? (
               <Box
@@ -1047,7 +1086,7 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
                   border: "1px solid rgba(15, 23, 42, 0.08)",
                 }}
               >
-                Avail {finalNext}
+                Avail {prettyHHMM(finalNext)}
               </Box>
             ) : null}
           </Stack>

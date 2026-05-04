@@ -12,6 +12,21 @@ export function escapeMd(s = ""): string {
 
 /**
  * Build Google Maps URL (priority logic)
+ *
+ * 🆕 Round 28b54 (founder 2026-05-05) — Prioritise the Places-search
+ *   format whenever a POI name is available, because Telegram's link
+ *   preview unfurls the search URL into a clean card with the place's
+ *   photo + address, whereas the older `?q=lat,lng(label)` form gives
+ *   a generic "Google Maps" card with no thumbnail.
+ *
+ *   Order:
+ *     1. Explicit `mapUrl` (e.g. a real Place link from the search box).
+ *     2. `locationName` is a real POI (different from `address`)
+ *        → search URL by place name (best Telegram preview).
+ *     3. `lat/lng` available → coords + label fallback (always opens
+ *        the exact pin even if the name is generic).
+ *     4. `locationName` (even if same as address) → search URL.
+ *     5. `address` → search URL.
  */
 function buildMapUrl(p: NotifyPayload): string {
   // 1. ใช้ mapUrl ถ้ามี (ดีที่สุด เช่น place link / short link)
@@ -19,7 +34,21 @@ function buildMapUrl(p: NotifyPayload): string {
     return p.mapUrl;
   }
 
-  // 2. ใช้ lat/lng + label (ช่วยให้ preview สวยขึ้น)
+  const norm = (s: string | null | undefined) =>
+    (s ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+  const isPoiName =
+    !!p.locationName?.trim() &&
+    norm(p.locationName) !== norm(p.address);
+
+  // 2. POI name → search URL (Telegram unfurls into a rich card)
+  //    e.g. "Mercure Bangkok Sukhumvit 11" → maps/search/?api=1&query=...
+  if (isPoiName) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      p.locationName!
+    )}`;
+  }
+
+  // 3. lat/lng + label — pin-accurate fallback for plain addresses
   if (p.lat && p.lng) {
     const label = p.locationName || p.address || "Location";
     return `https://www.google.com/maps?q=${p.lat},${p.lng}(${encodeURIComponent(
@@ -27,14 +56,14 @@ function buildMapUrl(p: NotifyPayload): string {
     )})`;
   }
 
-  // 3. fallback → search จากชื่อ
+  // 4. locationName (same as address) → search URL
   if (p.locationName?.trim()) {
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
       p.locationName
     )}`;
   }
 
-  // 4. fallback → address
+  // 5. address → search URL
   if (p.address?.trim()) {
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
       p.address
@@ -103,9 +132,22 @@ export async function sendBookingNotification(
  * Format Telegram message
  */
 function formatMessage(p: NotifyPayload): string {
-  // เวลา
-  const when = fmtBKK(p.startAt, "DD/MM/YYYY HH:mm A");
-  const bookingTime = fmtBKK(p.startAt, "YYYY-MM-DD HH:mm A");
+  // 🆕 Round 28b57 (founder 2026-05-05) — Dual time format.
+  //   Therapists in Thailand read 24h ("21:30 น.") but Western
+  //   customers / OTAs read 12h ("9:30 PM"). Showing both inline
+  //   removes the AM/PM ambiguity that was making the night-shift
+  //   staff misread booking start times. Pattern:
+  //
+  //     05/05/2026 · 9:30 PM (เวลาไทย 21:30 น.)
+  //
+  //   Note: previous format used `HH:mm A` which produced the
+  //   awkward "21:30 PM" — we now compose `h:mm A` (12h) plus
+  //   `HH:mm` (24h) separately and join them so each is correct.
+  const datePart = fmtBKK(p.startAt, "DD/MM/YYYY");
+  const time12 = fmtBKK(p.startAt, "h:mm A");
+  const time24 = fmtBKK(p.startAt, "HH:mm");
+  const when = `${datePart} · ${time12} (เวลาไทย ${time24} น.)`;
+  const bookingTime = `${time12} (เวลาไทย ${time24} น.)`;
 
   // map
   const finalMapUrl = buildMapUrl(p);
@@ -160,11 +202,27 @@ function formatMessage(p: NotifyPayload): string {
       : null;
 
   /**
-   * Map line (clickable)
+   * 🆕 Round 28b55 (founder 2026-05-05) — Two-line map block:
+   *
+   *   📍 Mercure Bangkok Sukhumvit 11
+   *   https://www.google.com/maps/search/?api=1&query=Mercure+Bangkok+...
+   *
+   * Why two lines + raw URL?
+   *   • Telegram only generates a rich link preview (photo + place
+   *     name + address card) when the URL appears RAW in the message,
+   *     not when it's wrapped in MarkdownV2 `[label](url)` syntax.
+   *   • Bot must call sendMessage with `disable_web_page_preview: false`
+   *     for the unfurl to render — see functions/src/index.ts.
+   *
+   * The first line uses the locationName (POI), falling back to the
+   * address. The URL must NOT be MarkdownV2-escaped (raw HTTP URL),
+   * so we write it AFTER all other escaped text and don't pass it
+   * through escapeMd.
    */
-  const mapLine = finalMapUrl
-    ? `🗺 Map: [Open Location](${finalMapUrl})`
-    : "🗺 Map: —";
+  const mapLabel = p.locationName || p.address || "Location";
+  const mapBlock = finalMapUrl
+    ? `📍 ${escapeMd(mapLabel)}\n${finalMapUrl}`
+    : "📍 —";
 
   /**
    * Message lines
@@ -215,7 +273,7 @@ function formatMessage(p: NotifyPayload): string {
     divider,
     "",
 
-    mapLine,
+    mapBlock,
   ];
 
   return lines.filter((l) => l !== null).join("\n");
