@@ -16,15 +16,25 @@ const AccountLegacyRedirect: React.FC = () => {
 import ScrollToTop from "@/components/common/ScrollToTop";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 
-import AdminFloatingChat from "@/components/AdminFloatingChat";
+// 🆕 Round 28b29 (founder 2026-05-04, perf #66) — AdminFloatingChat
+//   imports framer-motion (~100 kB) and was eagerly loaded on every
+//   page. Now lazy-loaded so the homepage paint doesn't pull motion in.
+const AdminFloatingChat = React.lazy(
+  () => import("@/components/AdminFloatingChat")
+);
 
 // Route Guard
 import PrivateRoute from "@/routes/PrivateRoute";
 
 // Layouts
 import MainLayout from "@/components/layouts/MainLayout";
-import AdminLayout from "@/components/layouts/AdminLayout";
-import WeChatScanPage from "@/pages/WeChatScanPage";
+// 🆕 Round 28b29 (perf) — AdminLayout is only needed under /admin/*.
+//   Lazy import shaves the admin-side MUI icons + nav widgets out of
+//   the customer's first-paint chunk.
+const AdminLayout = React.lazy(() => import("@/components/layouts/AdminLayout"));
+// 🆕 Round 28b29 (perf) — WeChatScanPage is only hit by Chinese
+//   visitors scanning a QR. Lazy.
+const WeChatScanPage = React.lazy(() => import("@/pages/WeChatScanPage"));
 
 // =====================
 // Lazy-loaded pages
@@ -168,8 +178,12 @@ export default function App() {
     >
       <ScrollToTop />
 
-      {/* ⭐ Floating Chat – แสดงทุกหน้า */}
-      <AdminFloatingChat />
+      {/* 🆕 Round 28b29 — AdminFloatingChat lazy + null Suspense fallback
+          (so the chat bubble appears AFTER the rest of the page paints
+          rather than blocking it). framer-motion no longer in main bundle. */}
+      <Suspense fallback={null}>
+        <AdminFloatingChat />
+      </Suspense>
 
       <Routes>
         {/* ================= PUBLIC ================= */}

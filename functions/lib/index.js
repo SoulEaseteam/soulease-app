@@ -42,7 +42,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.recoverAbandonedBookings = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.telegramWebhook = exports.recoverAbandonedBookings = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -377,7 +377,7 @@ exports.onTherapistUpdate = (0, firestore_1.onDocumentUpdated)({
         v2_1.logger.error("[onTherapistUpdate] write failed", { therapistId, err });
     }
 });
-const formatBookingForTelegram = (bookingId, b) => {
+const formatBookingForAdmin = (bookingId, b) => {
     const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
     const lines = [
         `🆕 NEW BOOKING · ${refCode}`,
@@ -393,6 +393,40 @@ const formatBookingForTelegram = (bookingId, b) => {
     ];
     return lines.join("\n");
 };
+/**
+ * 🆕 Round 28b27 (founder 2026-05-04) — Therapist-facing booking
+ * notification. Sent to therapist's PERSONAL Telegram chat (not the
+ * admin group) when a new booking is assigned to them. Differences
+ * from admin format:
+ *   • SHORTER — therapist doesn't need price/payment breakdown.
+ *   • Includes the customer's phone (so therapist can call if needed)
+ *     but NOT the customer's name (privacy — name is admin-only until
+ *     therapist accepts).
+ *   • Map link prepended for one-tap navigation.
+ *   • Action prompt: "Reply ACCEPT or DECLINE within 5 min".
+ */
+const formatBookingForTherapist = (bookingId, b) => {
+    const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
+    const mapLink = b.mapUrl
+        ? `🗺 Map: ${b.mapUrl}`
+        : b.address
+            ? `🗺 Map: https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.address)}`
+            : "";
+    const lines = [
+        `🔔 NEW JOB · ${refCode}`,
+        "",
+        `🧖 ${b.serviceName ?? "—"} · ${b.duration ?? "?"} min`,
+        `📅 ${b.date ?? "—"}  🕐 ${b.time ?? "—"}`,
+        `📍 ${b.address ?? "—"}`,
+        mapLink,
+        `📞 Customer: ${b.phone ?? "—"}`,
+        `🌐 Lang: ${b.language ?? "—"}`,
+        "",
+        `Reply ACCEPT or DECLINE within 5 min.`,
+        `Or call admin if you can't read this message.`,
+    ].filter((l) => l.length > 0);
+    return lines.join("\n");
+};
 exports.onBookingCreate = (0, firestore_1.onDocumentCreated)({
     document: "bookings/{bookingId}",
     region: "asia-southeast1",
@@ -404,27 +438,66 @@ exports.onBookingCreate = (0, firestore_1.onDocumentCreated)({
         v2_1.logger.warn("[onBookingCreate] no data", { bookingId });
         return;
     }
-    const text = formatBookingForTelegram(bookingId, data);
     const token = TELEGRAM_BOT_TOKEN.value();
     if (!token) {
         v2_1.logger.error("[onBookingCreate] TELEGRAM_BOT_TOKEN missing");
         return;
     }
-    const result = await sendTelegram(token, TELEGRAM_CHAT_ID, text);
-    // Persist a delivery log so admin can audit later.
+    // ── 1. Send to ADMIN group (existing behavior) ────────────────
+    const adminText = formatBookingForAdmin(bookingId, data);
+    const adminResult = await sendTelegram(token, TELEGRAM_CHAT_ID, adminText);
     try {
         await (0, firestore_2.getFirestore)()
             .collection("telegramLogs")
             .add({
             bookingId,
-            ok: result.ok,
-            response: result.body.slice(0, 500),
-            source: "onBookingCreate",
+            ok: adminResult.ok,
+            response: adminResult.body.slice(0, 500),
+            source: "onBookingCreate.admin",
             at: firestore_2.FieldValue.serverTimestamp(),
         });
     }
     catch (err) {
-        v2_1.logger.error("[onBookingCreate] log write failed", err);
+        v2_1.logger.error("[onBookingCreate] admin log write failed", err);
+    }
+    // ── 2. Send to THERAPIST personal chat (Round 28b27) ──────────
+    //   Each therapist may have a `telegramChatId` field set on their
+    //   doc. If present, we DM them the job notification too. The
+    //   admin group still receives the master copy — therapist DM is
+    //   purely a convenience channel ("Hey, you got a job").
+    if (data.therapistId) {
+        try {
+            const therapistSnap = await (0, firestore_2.getFirestore)()
+                .collection("therapists")
+                .doc(data.therapistId)
+                .get();
+            const therapist = therapistSnap.data();
+            const chatId = therapist?.telegramChatId;
+            if (chatId) {
+                const therapistText = formatBookingForTherapist(bookingId, data);
+                const therapistResult = await sendTelegram(token, String(chatId), therapistText);
+                await (0, firestore_2.getFirestore)()
+                    .collection("telegramLogs")
+                    .add({
+                    bookingId,
+                    therapistId: data.therapistId,
+                    ok: therapistResult.ok,
+                    response: therapistResult.body.slice(0, 500),
+                    source: "onBookingCreate.therapist",
+                    at: firestore_2.FieldValue.serverTimestamp(),
+                });
+            }
+            else {
+                v2_1.logger.info("[onBookingCreate] therapist has no telegramChatId", {
+                    therapistId: data.therapistId,
+                });
+            }
+        }
+        catch (err) {
+            // Fail-open — therapist notification is optional. Admin group
+            // already got the master copy.
+            v2_1.logger.error("[onBookingCreate] therapist notify failed", err);
+        }
     }
 });
 // ═════════════════════════════════════════════════════════════
@@ -515,5 +588,63 @@ exports.recoverAbandonedBookings = (0, scheduler_1.onSchedule)({
         alerted += 1;
     }
     v2_1.logger.info("[recoverAbandonedBookings] alerted", { alerted });
+});
+exports.telegramWebhook = (0, https_1.onRequest)({
+    region: "asia-southeast1",
+    secrets: [TELEGRAM_BOT_TOKEN],
+    cors: false,
+}, async (req, res) => {
+    if (req.method !== "POST") {
+        res.status(405).send("POST only");
+        return;
+    }
+    const token = TELEGRAM_BOT_TOKEN.value();
+    if (!token) {
+        v2_1.logger.error("[telegramWebhook] TELEGRAM_BOT_TOKEN missing");
+        res.status(500).send("server-misconfigured");
+        return;
+    }
+    const update = req.body;
+    const chatId = update?.message?.chat?.id;
+    const text = (update?.message?.text ?? "").trim();
+    const fromName = update?.message?.from?.first_name ??
+        update?.message?.from?.username ??
+        "there";
+    if (!chatId) {
+        res.status(200).send("ok"); // ack but ignore
+        return;
+    }
+    let reply;
+    if (text === "/start") {
+        reply = [
+            `Hi ${fromName}! 👋`,
+            "",
+            "I'm the SunRed booking bot.",
+            "Send /myid to get your chat ID — you'll need to give it",
+            "to the admin so they can route bookings to you.",
+        ].join("\n");
+    }
+    else if (text === "/myid" || text === "/id") {
+        reply = [
+            `Your chat ID is:`,
+            ``,
+            `${chatId}`,
+            ``,
+            `Copy this number and send it to the SunRed admin.`,
+            `Once linked, you'll get a DM from this bot every time`,
+            `a customer books your service.`,
+        ].join("\n");
+    }
+    else if (text.startsWith("/")) {
+        reply = "Unknown command. Try /myid to get your chat ID.";
+    }
+    else {
+        // Free-form messages — ignore silently to avoid being a chatty
+        // bot. Therapist might be replying ACCEPT/DECLINE in future.
+        res.status(200).send("ok");
+        return;
+    }
+    await sendTelegram(token, String(chatId), reply);
+    res.status(200).send("ok");
 });
 //# sourceMappingURL=index.js.map

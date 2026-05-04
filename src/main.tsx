@@ -59,7 +59,17 @@ function ensureGaLoaded() {
 
 const Root = () => {
   useEffect(() => {
-    ensureGaLoaded();
+    // 🆕 Round 28b29 (perf #66) — GA defers itself to idle so it doesn't
+    //   compete with first paint. requestIdleCallback fallback for Safari.
+    const start = () => ensureGaLoaded();
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+    };
+    if (w.requestIdleCallback) {
+      w.requestIdleCallback(start, { timeout: 4000 });
+    } else {
+      window.setTimeout(start, 2000);
+    }
   }, []);
 
   // sync <html lang="">
