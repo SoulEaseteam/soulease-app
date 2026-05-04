@@ -47,7 +47,7 @@ interface PaymentOption {
 const RECOMMENDED: PaymentOption = {
   id: "promptpay",
   label: "PromptPay",
-  sub: "Scan the QR to pay on arrival (details provided after booking)",
+  sub: "Scan QR on arrival (Details after booking)",
   icon: <QrCodeScannerRoundedIcon />,
   iconBg: "rgba(20, 184, 166, 0.12)",
   iconFg: "#14b8a6",
@@ -62,7 +62,7 @@ const LINKED_DEFAULTS: PaymentOption[] = [
   {
     id: "cash",
     label: "Cash",
-    sub: "Pay in cash on arrival",
+    sub: "Pay with cash on arrival",
     icon: <LocalAtmRoundedIcon />,
     iconBg: "rgba(20, 184, 166, 0.10)",
     iconFg: "#14b8a6",
@@ -90,7 +90,7 @@ const ADD_METHODS: PaymentOption[] = [
   {
     id: "alipay",
     label: "Alipay",
-    sub: "Scan QR after confirm",
+    sub: "Scan QR once confirmed",
     icon: <PaymentsRoundedIcon />,
     iconBg: "rgba(59, 130, 246, 0.12)",
     iconFg: "#2563eb",
@@ -99,7 +99,7 @@ const ADD_METHODS: PaymentOption[] = [
   {
     id: "wechat",
     label: "WeChat Pay",
-    sub: "Scan QR after confirm",
+    sub: "Scan QR once confirmed",
     icon: <PaymentsRoundedIcon />,
     iconBg: "rgba(34, 197, 94, 0.12)",
     iconFg: "#16a34a",
@@ -119,7 +119,12 @@ const AVAILABLE_IDS: ReadonlySet<PaymentMethodId> = new Set(
   ALL_OPTIONS.filter((o) => !o.comingSoon).map((o) => o.id)
 );
 
-const DEFAULT_PAYMENT_ID: PaymentMethodId = "promptpay";
+// 🆕 Round 28b15 (founder 2026-05-04) — default flipped from
+//   "promptpay" to "cash". Founder spec: most customers prefer
+//   pay-on-arrival (cash) for outcall in Bangkok. Confirm Order
+//   pre-selects Cash, customers can switch to PromptPay/etc. if
+//   they want cashless.
+const DEFAULT_PAYMENT_ID: PaymentMethodId = "cash";
 
 /** Resolve any incoming string into a guaranteed-usable PaymentMethodId. */
 function safePaymentId(raw: string | null | undefined): PaymentMethodId {
@@ -279,7 +284,7 @@ const PaymentMethodsPage: React.FC = () => {
               paddingLeft: "2px",
             }}
           >
-            We accept all cash currencies
+            We accept all major currencies.
           </Typography>
           <Typography
             sx={{
@@ -290,7 +295,7 @@ const PaymentMethodsPage: React.FC = () => {
               paddingLeft: "2px",
             }}
           >
-            Payment system that allows foreign tourists.
+            Flexible payment options for international guests.
           </Typography>
           <Box
             sx={{
@@ -342,18 +347,29 @@ const PaymentMethodsPage: React.FC = () => {
         </Box>
 
         <Typography
-          sx={{
-            fontFamily: SANS,
-            fontSize: "11px",
-            color: "rgba(60, 30, 20, 0.5)",
-            textAlign: "center",
-            marginTop: "8px",
-            lineHeight: 1.5,
-          }}
-        >
-          Our admin verifies and processes your payment after the booking
-          is confirmed via Telegram.
-        </Typography>
+  sx={{
+    fontFamily: SANS,
+    fontSize: "11px",
+    color: "rgba(60, 30, 20, 0.5)",
+    textAlign: "center",
+    marginTop: "8px",
+    lineHeight: 1.5,
+    whiteSpace: "pre-line",
+  }}
+>
+  Our team will verify and process your payment{"\n"}
+  once confirmed via our {""}
+  <Box
+    component="span"
+    sx={{
+      fontWeight: 700, // เน้นตัวหนา
+      color: "rgba(60, 30, 20, 0.8)", // ปรับสีให้เข้มขึ้นเพื่อให้ดูเด่นกว่าส่วนอื่น
+    }}
+  >
+    official contact channels
+  </Box>
+  .
+</Typography>
       </Box>
     </Box>
   );
@@ -590,23 +606,23 @@ const AddMethodRow: React.FC<{
       {isDisabled ? (
         <Box
           component="span"
-          aria-label="Coming soon"
+          aria-label="Currently unavailable."
           sx={{
             fontFamily: SANS,
-            fontSize: "9.5px",
+            fontSize: "7px",
             fontWeight: 800,
             color: "#fff",
             background: "#a39f9e",
             borderRadius: "99px",
-            padding: "3px 9px",
-            letterSpacing: "0.08em",
+            padding: "5px 6px",
+            letterSpacing: "0.07em",
             textTransform: "uppercase",
             boxShadow: "0 2px 6px rgba(113, 113, 113, 0.32)",
             marginRight: "4px",
             whiteSpace: "nowrap",
           }}
         >
-          Not available.
+          Currently unavailable.
         </Box>
       ) : (
         option.badge && (

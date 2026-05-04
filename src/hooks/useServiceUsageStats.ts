@@ -51,8 +51,14 @@ const BOOKED_STATUSES = new Set([
 ]);
 
 export interface ServiceUsageStats {
-  /** Sessions actually delivered (completed/done). Public chip metric. */
+  /** Sessions actually delivered (completed/done). Counts every booking. */
   servedById: ReadonlyMap<string, number>;
+  /** 🆕 Round 28b17 — UNIQUE customers served per service.
+   *  Counts unique `userId` values among completed bookings. The chip
+   *  on ServicesPage uses this so "Used by N customers" reflects real
+   *  human count (not session count — same customer booking 3 times
+   *  doesn't inflate the figure). */
+  customersById: ReadonlyMap<string, number>;
   /** Live reservations (confirmed/paid/in_progress + served). Admin metric. */
   bookedById: ReadonlyMap<string, number>;
   /** Legacy alias for callers using `.countsById` — equals `servedById`. */
@@ -63,6 +69,9 @@ export interface ServiceUsageStats {
 
 export function useServiceUsageStats(): ServiceUsageStats {
   const [served, setServed] = useState<ReadonlyMap<string, number>>(new Map());
+  const [customers, setCustomers] = useState<ReadonlyMap<string, number>>(
+    new Map()
+  );
   const [booked, setBooked] = useState<ReadonlyMap<string, number>>(new Map());
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -73,6 +82,10 @@ export function useServiceUsageStats(): ServiceUsageStats {
       (snap) => {
         const nextServed = new Map<string, number>();
         const nextBooked = new Map<string, number>();
+        // Per-service Set of identity keys (userId, falling back to phone)
+        // so we can count unique humans rather than sessions.
+        const customerSets = new Map<string, Set<string>>();
+
         snap.docs.forEach((d: QueryDocumentSnapshot<DocumentData>) => {
           const data = d.data();
           const status = (data.status ?? "").toString().toLowerCase();
@@ -84,9 +97,32 @@ export function useServiceUsageStats(): ServiceUsageStats {
           }
           if (SERVED_STATUSES.has(status)) {
             nextServed.set(sid, (nextServed.get(sid) ?? 0) + 1);
+
+            // Identity fallback chain: userId → normalized phone → docId
+            //   docId is the last-resort fallback so a booking from a
+            //   guest who didn't sign in still contributes ONCE per
+            //   booking (not duplicated across services).
+            const phone = ((data.phone as string) ?? "").replace(/\D/g, "");
+            const identity =
+              (data.userId as string) ||
+              (phone ? `phone:${phone}` : "") ||
+              `doc:${d.id}`;
+            let set = customerSets.get(sid);
+            if (!set) {
+              set = new Set<string>();
+              customerSets.set(sid, set);
+            }
+            set.add(identity);
           }
         });
+
+        const nextCustomers = new Map<string, number>();
+        for (const [sid, set] of customerSets) {
+          nextCustomers.set(sid, set.size);
+        }
+
         setServed(nextServed);
+        setCustomers(nextCustomers);
         setBooked(nextBooked);
         setLoading(false);
       },
@@ -102,10 +138,11 @@ export function useServiceUsageStats(): ServiceUsageStats {
   return useMemo(
     () => ({
       servedById: served,
+      customersById: customers,
       bookedById: booked,
       countsById: served, // legacy alias
       loading,
     }),
-    [served, booked, loading]
+    [served, customers, booked, loading]
   );
 }

@@ -39,10 +39,22 @@ const BottomNavGlass: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
-  // Show BottomNavGlass on every public route (founder request 2026-05-01:
-  // "ทุกที่ทั้งเว็บ"). Pages with their own sticky CTAs (booking flow's
-  // BookingNavBar) are responsible for offsetting their CTA upward by the
-  // BOTTOM_NAV_HEIGHT so the two stack cleanly instead of overlapping.
+  // 🆕 Round 28b15 (founder bug-fix 2026-05-04) — hide bottom nav on
+  //   booking-flow routes since they have their own sticky Confirm
+  //   CTA at the bottom. Showing both stacked the floating nav over
+  //   the Confirm button → user couldn't submit the booking.
+  //
+  // Hidden on:
+  //   /booking/:id           — Confirm Order page (sticky Place Order)
+  //   /booking/:id/address   — Select Location (sticky Save & Continue)
+  //   /booking/:id/payment*  — Payment Methods page (no sticky but fewer
+  //                             options — keep the focus on selection)
+  //   /booking/success/:id   — Success page (CTAs already prominent)
+  const HIDDEN_PREFIXES = ["/booking/"];
+  const navHidden = HIDDEN_PREFIXES.some((p) =>
+    location.pathname.startsWith(p)
+  );
+  if (navHidden) return null;
 
   const handleChange = (_event: React.SyntheticEvent, next: string) => {
     // navigate() ใน react-router v7 return Promise<void> — prefix `void` กัน floating

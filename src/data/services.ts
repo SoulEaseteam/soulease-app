@@ -46,9 +46,23 @@ export function calculateNextAvailable(
   return proposed.format('HH:mm');
 }
 
+// 🆕 Round 28b18 (founder 2026-05-04) — SKU-style serviceId codes
+//   so analytics/counting groups by an immutable order code, while
+//   display names can be renamed freely without breaking aggregation.
+//
+//   Current SKU map:
+//     xSR-Thai      → Thai Massage
+//     SR-Aroma      → Aromatherapy Massage
+//     SR-HJ2200     → Gentleman's Signature Therapy
+//     SR-B2B3200    → SunRed Therapeutic Experience
+//
+//   Legacy ids ("thai-massage", "aromatherapy", "gentlemans-recovery",
+//   "sunred-signature") are aliased in serviceCatalog so old bookings
+//   still resolve. Backfill script (scripts/backfillServiceIdInBookings)
+//   migrates Firestore documents to the new SKU codes when run.
 const services: MassageService[] = [
   {
-    id: 'thai-massage',
+    id: 'xSR-Thai',
     name: 'Thai Massage',
     desc: 'Relieve deep muscle tension and restore body balance.',
     price: 1200,
@@ -73,7 +87,7 @@ const services: MassageService[] = [
     badge: 'SIGNATURE',
   },
   {
-    id: 'aromatherapy',
+    id: 'SR-Aroma',
     name: 'Aromatherapy Massage',
     desc: 'Aromatic oil massage for deep body and mind relaxation.',
     price: 1600,
@@ -92,8 +106,8 @@ const services: MassageService[] = [
     badge: 'BEST SELLER',
   },
   {
-    id: 'gentlemans-recovery',
-    name: "Gentleman's Recovery Massage",
+    id: 'SR-HJ2200',
+    name: "Gentleman's Signature Therapy",
     desc: 'Deep-tissue therapy tailored for active men.',
     price: 2200,
     duration: 60,
@@ -114,8 +128,8 @@ const services: MassageService[] = [
 
   // ⭐⭐⭐ EXCLUSIVE — Senior licensed practitioners only ⭐⭐⭐
   {
-    id: 'sunred-signature',
-    name: 'SunRed Signature Ritual',
+    id: 'SR-B2B3200',
+    name: 'SunRed Therapeutic Experience',
     desc: 'Premium ritual by senior licensed therapists.',
     price: 3200,
     duration: 60,

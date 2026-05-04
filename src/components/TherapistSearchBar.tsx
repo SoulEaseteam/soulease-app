@@ -83,7 +83,12 @@ const TherapistSearchBar: React.FC<TherapistSearchBarProps> = ({
           border: "none",
           outline: "none",
           fontFamily: fonts.body,
-          fontSize: 14,
+          // 🆕 Round 28b15 (founder bug-fix) — Mobile Safari/Chrome iOS
+          //   auto-zoom when an input has font-size < 16px. That zoom
+          //   blocks users from completing booking. Bumping to 16px
+          //   keeps the visual identical (CSS pixels) but prevents
+          //   the zoom-on-focus.
+          fontSize: 16,
           fontWeight: 500,
           color: brand.text,
           minWidth: 0, // allows shrink in flex container

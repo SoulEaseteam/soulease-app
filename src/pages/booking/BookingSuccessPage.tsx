@@ -58,6 +58,12 @@ import { doc, getDoc, type DocumentData } from "firebase/firestore";
 import dayjs from "dayjs";
 // 🆕 Round 28an — BKK-anchored time helpers.
 import { fmtBKK, sameDayBKK, nowBKK, toBKK } from "@/utils/time";
+// 🆕 Round 28b16 — centralized service/payment label catalog
+import { getServiceLabel } from "@/utils/serviceCatalog";
+// 🆕 Round 28b21 — Phase 2: 10-min hold countdown.
+import HoldCountdown from "@/components/booking/HoldCountdown";
+// 🆕 Round 28b21 — Phase 3: admin online presence badge.
+import AdminPresenceBadge from "@/components/common/AdminPresenceBadge";
 
 import { db } from "@/lib/firebase";
 
@@ -126,6 +132,15 @@ const BookingSuccessPage: React.FC = () => {
   // Booking ref code: SR + first 8 chars of doc id, uppercased.
   const refCode = id ? `SR-${id.slice(0, 8).toUpperCase()}` : "SR-—";
 
+  // 🆕 Round 28b21 — Phase 2: 10-min hold window. Field present only on
+  //   bookings created after this round; older docs render no countdown.
+  const holdExpiresAt: Date | null = booking?.holdExpiresAt?.toDate
+    ? (booking.holdExpiresAt.toDate() as Date)
+    : null;
+  const holdState = (booking?.holdState as string | undefined) ?? undefined;
+  const therapistIdForRebook =
+    (booking?.therapistId as string | undefined) ?? undefined;
+
   // ── Action handlers ──────────────────────────────────────────────────
   const onChat = () => {
     // Telegram admin chat (live booking notification channel). When LINE is
@@ -152,14 +167,20 @@ const BookingSuccessPage: React.FC = () => {
       dayjs(d).format("YYYYMMDDTHHmmss"); // local time, no Z
     const escape = (s: string) =>
       s.replace(/\\/g, "\\\\").replace(/,/g, "\\,").replace(/;/g, "\\;");
-    const summary = `SunRed · ${
-      (booking?.serviceName as string | undefined) ?? "Massage"
-    } with ${therapistName}`;
+    // 🆕 Round 28b16 — service label resolved from immutable serviceId
+    //   via catalog so renames in data/services.ts propagate everywhere
+    //   (calendar export included). Falls back to legacy serviceName
+    //   field if catalog can't resolve (deleted service).
+    const svcLabel = getServiceLabel(
+      booking?.serviceId as string | undefined,
+      booking?.serviceName as string | undefined
+    );
+    const summary = `SunRed · ${svcLabel} with ${therapistName}`;
     const description =
       [
         `Booking ref: ${refCode}`,
         `Therapist: ${therapistName}`,
-        `Service: ${(booking?.serviceName as string) ?? "—"} · ${
+        `Service: ${svcLabel} · ${
           (booking?.duration as number) ?? "?"
         } min`,
         `Total: ฿${(
@@ -343,6 +364,24 @@ const BookingSuccessPage: React.FC = () => {
               will arrive at {timeLabel}.
             </Typography>
 
+            {/* 🆕 Round 28b21 — Phase 2: 10-minute hold countdown sits
+                directly under the subtitle so it's the FIRST thing the
+                customer sees. Self-hides if the booking is old (no
+                holdExpiresAt) or admin already confirmed. */}
+            <HoldCountdown
+              holdExpiresAt={holdExpiresAt}
+              holdState={holdState}
+              therapistId={therapistIdForRebook}
+            />
+
+            {/* 🆕 Round 28b21 — Phase 3: shows live "Admin online" green
+                pill when adminPresence/online doc is fresh. Reassures
+                customer that someone is on the other end of the LINE
+                button. */}
+            <Box sx={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
+              <AdminPresenceBadge />
+            </Box>
+
             {/* Live status banner */}
             <Box
               sx={{
@@ -401,43 +440,46 @@ const BookingSuccessPage: React.FC = () => {
               </Box>
             </Box>
 
-            {/* 2×2 quick-action grid */}
+            {/* 🆕 Round 28b19 (founder 2026-05-04) — 2×2 quick-action
+                grid is LOCKED until admin confirmation flow is wired.
+                Reason: customers were tapping "Chat / Track / Calendar /
+                Reschedule" before admin had even seen the booking,
+                creating support churn. Until backend confirmation and
+                live tracking ship, these tiles render dim + non-clickable
+                with a "After confirmation" hint so customers know they'll
+                unlock automatically once admin accepts the booking. */}
             <Box
               sx={{
                 marginTop: "16px",
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
                 gap: "10px",
+                position: "relative",
               }}
             >
               <ActionCard
                 label={`Chat with ${therapistName.split(" ")[0]}`}
-                sub={
-                  (booking.language as string | undefined) === "en"
-                    ? "EN"
-                    : (booking.language as string | undefined)?.toUpperCase() ??
-                      "EN"
-                }
+                sub="After confirmation"
                 icon={<ChatRoundedIcon />}
-                onClick={onChat}
+                disabled
               />
               <ActionCard
                 label="Track arrival"
-                sub="Live map"
+                sub="After confirmation"
                 icon={<PinDropRoundedIcon />}
-                onClick={onTrack}
+                disabled
               />
               <ActionCard
                 label="Add to calendar"
-                sub=".ics file"
+                sub="After confirmation"
                 icon={<CalendarMonthRoundedIcon />}
-                onClick={onAddToCalendar}
+                disabled
               />
               <ActionCard
                 label="Reschedule"
-                sub="Free"
+                sub="After confirmation"
                 icon={<AutorenewRoundedIcon />}
-                onClick={onReschedule}
+                disabled
               />
             </Box>
 
@@ -483,7 +525,10 @@ const BookingSuccessPage: React.FC = () => {
               />
               <SummaryLine
                 label="Service"
-                value={`${(booking.serviceName as string) ?? "—"}${
+                value={`${getServiceLabel(
+                  booking.serviceId as string | undefined,
+                  booking.serviceName as string | undefined
+                )}${
                   booking.duration ? ` · ${booking.duration as number} min` : ""
                 }`}
               />
@@ -579,29 +624,105 @@ const BookingSuccessPage: React.FC = () => {
               />
             </Box>
 
-            {/* Done CTA */}
-            <Box sx={{ marginTop: "22px" }}>
+            {/* 🆕 Round 28b19 — Primary CTA changed from passive
+                "Back to home" to ACTIVE "Contact Admin" with the
+                booking refCode pre-filled. Reason: customers were
+                booking and walking away without confirming, leaving
+                admin unable to find their order. The new button
+                deep-links to LINE/WhatsApp/Telegram with a ready-
+                to-send message ("Hi, I just booked SR-XXXX, please
+                confirm"). One-tap = booking gets seen.
+                Bridge ribbon below the button shows the refCode +
+                copy-to-clipboard for users who prefer their own
+                channel. */}
+            <Box
+              sx={{
+                marginTop: "22px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+              }}
+            >
               <Button
                 fullWidth
-                onClick={() => void navigate("/")}
+                onClick={() => {
+                  const message = encodeURIComponent(
+                    `Hi SunRed admin, I just placed booking ${refCode}. Please confirm my order. Thanks!`
+                  );
+                  // Prefer LINE on mobile, fall back to WhatsApp.
+                  // Both deep-links auto-open the right app on iOS/Android.
+                  const lineUrl = `https://line.me/R/oaMessage/@sunredbkk/?${message}`;
+                  const waUrl = `https://wa.me/66634350987?text=${message}`;
+                  // Open LINE first; if user has no LINE installed, browser
+                  // will fall back to the web LINE which still works.
+                  window.open(lineUrl, "_blank", "noopener,noreferrer");
+                  // Also keep WhatsApp ready to copy/share — log so admin
+                  // can debug if a customer reports the link didn't open.
+                  // eslint-disable-next-line no-console
+                  console.info("[contact-admin] WA fallback:", waUrl);
+                }}
                 sx={{
-                  height: 50,
+                  height: 52,
                   borderRadius: "999px",
-                  background: "rgba(255, 255, 255, 0.85)",
-                  color: "#FE0944",
+                  background:
+                    "linear-gradient(135deg, #06C755 0%, #00B900 100%)",
+                  color: "#fff",
                   fontFamily: SANS,
                   fontWeight: 700,
                   fontSize: "15px",
                   textTransform: "none",
-                  border: "1.5px solid rgba(254, 9, 68, 0.3)",
-                  boxShadow: "0 4px 14px rgba(254, 9, 68, 0.08)",
+                  boxShadow:
+                    "0 6px 18px rgba(6, 199, 85, 0.35), 0 1px 2px rgba(0,0,0,0.08)",
                   "&:hover": {
-                    background: "rgba(255, 255, 255, 1)",
-                    borderColor: "#FE0944",
+                    background:
+                      "linear-gradient(135deg, #05B84D 0%, #009900 100%)",
                   },
                 }}
               >
-                Done back to home 
+                ติดต่อแอดมินเพื่อยืนยันการจอง · {refCode}
+              </Button>
+              <Button
+                fullWidth
+                onClick={() => {
+                  if (typeof navigator !== "undefined" && navigator.clipboard) {
+                    void navigator.clipboard
+                      .writeText(refCode)
+                      .catch(() => {});
+                  }
+                }}
+                sx={{
+                  height: 38,
+                  borderRadius: "999px",
+                  background: "rgba(255, 255, 255, 0.85)",
+                  color: "rgba(60, 30, 20, 0.78)",
+                  fontFamily: SANS,
+                  fontWeight: 600,
+                  fontSize: "13px",
+                  textTransform: "none",
+                  border: "1px solid rgba(15, 23, 42, 0.10)",
+                  "&:hover": {
+                    background: "#fff",
+                    borderColor: "rgba(15, 23, 42, 0.20)",
+                  },
+                }}
+              >
+                Copy booking code · {refCode}
+              </Button>
+              <Button
+                fullWidth
+                onClick={() => void navigate("/")}
+                sx={{
+                  height: 38,
+                  borderRadius: "999px",
+                  color: "rgba(60, 30, 20, 0.55)",
+                  fontFamily: SANS,
+                  fontWeight: 600,
+                  fontSize: "12.5px",
+                  textTransform: "none",
+                  "&:hover": { background: "rgba(15, 23, 42, 0.04)" },
+                }}
+              >
+                Back to home
               </Button>
             </Box>
           </>
@@ -612,44 +733,58 @@ const BookingSuccessPage: React.FC = () => {
 };
 
 // ─── Action card (2×2 grid item) ───────────────────────────────────────
+// 🆕 Round 28b19 — `disabled` prop locks tile (no hover, no click,
+//   "After confirmation" sub-text). Used until admin confirmation +
+//   live tracking pipelines are wired. onClick is optional now.
 const ActionCard: React.FC<{
   label: string;
   sub?: string;
   icon: React.ReactNode;
-  onClick: () => void;
-}> = ({ label, sub, icon, onClick }) => (
+  onClick?: () => void;
+  disabled?: boolean;
+}> = ({ label, sub, icon, onClick, disabled = false }) => (
   <Box
-    role="button"
-    tabIndex={0}
-    onClick={onClick}
+    role={disabled ? undefined : "button"}
+    tabIndex={disabled ? -1 : 0}
+    aria-disabled={disabled || undefined}
+    onClick={disabled ? undefined : onClick}
     onKeyDown={(e) => {
+      if (disabled) return;
       if (e.key === " " || e.key === "Enter") {
         e.preventDefault();
-        onClick();
+        onClick?.();
       }
     }}
     sx={{
       padding: "16px 12px",
       borderRadius: "18px",
-      background: "rgba(255, 255, 255, 0.85)",
+      background: "rgba(255, 255, 255, 0.55)",
       backdropFilter: "blur(20px) saturate(180%)",
       WebkitBackdropFilter: "blur(20px) saturate(180%)",
       border: "1px solid rgba(255, 255, 255, 0.6)",
-      boxShadow: "0 4px 14px rgba(126, 30, 46, 0.05)",
+      boxShadow: disabled
+        ? "0 1px 2px rgba(15, 23, 42, 0.03)"
+        : "0 4px 14px rgba(126, 30, 46, 0.05)",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
       gap: "8px",
-      cursor: "pointer",
+      cursor: disabled ? "not-allowed" : "pointer",
+      opacity: disabled ? 0.55 : 1,
+      filter: disabled ? "grayscale(0.4)" : "none",
       transition: "transform 0.15s ease, box-shadow 0.15s ease",
-      "&:hover": {
-        transform: "translateY(-1px)",
-        boxShadow: "0 8px 22px rgba(126, 30, 46, 0.10)",
-      },
-      "&:focus-visible": {
-        outline: "2px solid #FE0944",
-        outlineOffset: "2px",
-      },
+      ...(disabled
+        ? {}
+        : {
+            "&:hover": {
+              transform: "translateY(-1px)",
+              boxShadow: "0 8px 22px rgba(126, 30, 46, 0.10)",
+            },
+            "&:focus-visible": {
+              outline: "2px solid #FE0944",
+              outlineOffset: "2px",
+            },
+          }),
     }}
   >
     <Box
@@ -658,12 +793,16 @@ const ActionCard: React.FC<{
         width: 42,
         height: 42,
         borderRadius: "50%",
-        background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+        background: disabled
+          ? "linear-gradient(135deg, #94a3b8, #64748b)"
+          : "linear-gradient(135deg, #FE0944, #FE7A52)",
         color: "#fff",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        boxShadow: "0 6px 14px rgba(254, 9, 68, 0.25)",
+        boxShadow: disabled
+          ? "0 2px 6px rgba(15, 23, 42, 0.08)"
+          : "0 6px 14px rgba(254, 9, 68, 0.25)",
         "& svg": { fontSize: 22 },
       }}
     >

@@ -167,10 +167,12 @@ const ServicesPage: React.FC = () => {
     initialTab
   );
 
-  // 🆕 Round 28b12 — public chip uses `servedCount` (sessions
-  //   actually delivered), not `bookedCount`. Pending/future bookings
-  //   are excluded so the chip is trustworthy social proof.
-  const { servedById: servedCounts } = useServiceUsageStats();
+  // 🆕 Round 28b17 — public chip now reflects UNIQUE customers (humans),
+  //   not raw session count. One person booking 3 times = 1 customer,
+  //   not 3 — so "Used by 64 customers" actually means 64 different
+  //   people. Pending/cancelled bookings still excluded.
+  const { customersById: customerCounts, servedById: servedCounts } =
+    useServiceUsageStats();
 
   const handleSelectService = (id: string) => {
     void navigate(`/services/${encodeURIComponent(id)}`);
@@ -303,16 +305,22 @@ const ServicesPage: React.FC = () => {
             Pretty Outcall Massage in Bangkok
           </Typography>
           <Typography
-            sx={{
-              fontSize: 13.5,
-              lineHeight: 1.6,
-              color: "rgba(60,30,20,0.72)",
-              mt: 0.5,
-            }}
-          >
-            Verified therapists. Discreet. Reliable. Every profile screened
-            before publishing. Unmatched 24/7 support.
-          </Typography>
+  sx={{
+    fontSize: 13.5,
+    lineHeight: 1.6,
+    color: "rgba(60, 30, 20, 0.72)",
+    mt: 0.5,
+    whiteSpace: "pre-line", // เพิ่มเพื่อให้รองรับการขึ้นบรรทัดใหม่จาก {"\n"}
+    fontFamily: SANS,
+  }}
+>
+  <Box component="span" sx={{ fontWeight: 600 }}>Verified therapists</Box>
+  {" • "}Discreet{" • "}Reliable{"\n"}
+  Every profile is strictly screened before publishing.{"\n"}
+  <Box component="span" sx={{ color: "rgba(60, 30, 20, 0.9)", fontWeight: 500 }}>
+    Professional 24/7 support.
+  </Box>
+</Typography>
         </Box>
 
         {/* ─── Tabs — cool palette ─── */}
@@ -484,13 +492,26 @@ const ServicesPage: React.FC = () => {
                       >
                         · {svc.duration} min
                       </Box>
-                      {/* 🆕 Round 28b12 — chip shows `servedCount` only:
-                          sessions ACTUALLY DELIVERED (status completed
-                          or done). Future / draft / cancelled bookings
-                          never inflate the figure → real social proof. */}
+                      {/* 🆕 Round 28b17 — chip shows UNIQUE customers
+                          (`customersById`), not session count. Same
+                          person booking N times = 1 customer. Falls
+                          back to session count if no identity field
+                          could be resolved (legacy data). */}
                       {(() => {
-                        const servedCount = servedCounts.get(svc.id) ?? 0;
-                        if (servedCount <= 0) return null;
+                        const customerCount =
+                          customerCounts.get(svc.id) ?? 0;
+                        const sessionCount = servedCounts.get(svc.id) ?? 0;
+                        // Show whichever metric is available; prefer
+                        // unique customer count for honesty.
+                        const display = customerCount || sessionCount;
+                        if (display <= 0) return null;
+                        const label = customerCount
+                          ? customerCount === 1
+                            ? "customer"
+                            : "customers"
+                          : sessionCount === 1
+                            ? "session"
+                            : "sessions";
                         return (
                           <Box
                             component="span"
@@ -512,8 +533,9 @@ const ServicesPage: React.FC = () => {
                             <StarRoundedIcon
                               sx={{ fontSize: 12, color: "#FBBF24" }}
                             />
-                            Used by {servedCount.toLocaleString()}{" "}
-                            {servedCount === 1 ? "customer" : "customers"}
+                            {customerCount > 0
+                              ? `Used by ${customerCount.toLocaleString()} ${label}`
+                              : `${display.toLocaleString()} ${label}`}
                           </Box>
                         );
                       })()}
@@ -549,15 +571,21 @@ const ServicesPage: React.FC = () => {
               </motion.div>
             ))}
             <Typography
-              sx={{
-                textAlign: "center",
-                mt: 3,
-                fontSize: 12.5,
-                color: "rgba(60,30,20,0.55)",
-              }}
-            >
-              Can&apos;t find what you&apos;re looking for? Chat with us for more options.
-            </Typography>
+  sx={{
+    textAlign: "center",
+    mt: 3,
+    fontSize: 12.5,
+    color: "rgba(60, 30, 20, 0.55)",
+    lineHeight: 1.6,
+    whiteSpace: "pre-line", // สำคัญเพื่อให้รองรับการขึ้นบรรทัดใหม่
+    fontFamily: SANS, // ใช้ฟอนต์เดียวกับส่วนอื่นในแอป
+  }}
+>
+  Looking for something specific?{"\n"}
+  <Box component="span" sx={{ color: "rgba(60, 30, 20, 0.8)", fontWeight: 500 }}>
+    Chat with our team
+  </Box> for more options.
+</Typography>
           </Box>
         )}
 
@@ -932,7 +960,7 @@ const ServicesPage: React.FC = () => {
                   lineHeight: 1.5,
                 }}
               >
-                Need help with anything else? Reach out anytime — admin is on
+                Need help with anything else? Reach out anytime admin is on
                 24/7.
               </Typography>
             </Box>

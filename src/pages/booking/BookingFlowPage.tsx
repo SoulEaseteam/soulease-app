@@ -8,6 +8,7 @@ import {
   Button,
   TextField,
   InputAdornment,
+  Fade,
 } from "@mui/material";
 import LocalOfferRoundedIcon from "@mui/icons-material/LocalOfferRounded";
 import {
@@ -26,7 +27,8 @@ import {
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 // 🆕 Round 28an — BKK-anchored time helpers.
-import { fmtBKK, sameDayBKK, nowBKK } from "@/utils/time";
+// 🆕 Round 28b15 — `prettyHHMM` for 24h + AM/PM display.
+import { fmtBKK, sameDayBKK, nowBKK, prettyHHMM } from "@/utils/time";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
@@ -64,10 +66,24 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import { isInappropriate } from "@/utils/moderate";
 import { sendBookingNotification } from "@/utils/telegram";
+// 🆕 Round 28b21 — Phase 4 of conversion plan: cart abandonment tracker.
+//   Records partial bookings to Firestore the moment the customer has
+//   given us a phone number, so we can chase the lead if they bail.
+import {
+  useAbandonedCartTracker,
+  markCartConfirmed,
+} from "@/hooks/useAbandonedCartTracker";
 import {
   estimateTaxiFare,
+  calcTaxiFare,
   ADMIN_QUOTE_KM,
 } from "@/utils/taxiFare";
+// 🆕 Round 28b25 — Google Directions API for real road distance.
+import {
+  fetchDrivingDistance,
+  type RouteResult,
+} from "@/utils/directionsApi";
+import { useGoogleMaps } from "@/context/GoogleMapsContext";
 import { getRainStatus } from "@/utils/weather";
 import { priceForDuration, formatTHB } from "@/utils/servicePricing";
 import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
@@ -346,6 +362,44 @@ const BookingFlowPage: React.FC = () => {
   );
   // selectedLanguage removed — Preferences cell was dropped 2026-05-01.
 
+  // 🆕 Round 28b21 — Phase 4 of conversion plan. Track abandoned carts:
+  //   the moment we have a phone number, persist a partial booking to
+  //   `abandoned_bookings/{cartId}` (debounced 1.2s). The recovery
+  //   scheduled function pings admin if the customer doesn't confirm
+  //   within 15 minutes.
+  const cartSnapshot = useMemo(
+    () =>
+      form.therapistId
+        ? {
+            therapistId: form.therapistId,
+            therapistName: therapist?.name ?? null,
+            serviceName: service?.name ?? null,
+            serviceId: service?.id ?? null,
+            duration: form.duration,
+            date: form.date,
+            time: form.time,
+            contactName: form.contactName,
+            phone: form.customerPhone,
+            language: form.language,
+            locationName: form.locationName,
+          }
+        : null,
+    [
+      form.therapistId,
+      therapist?.name,
+      service?.name,
+      service?.id,
+      form.duration,
+      form.date,
+      form.time,
+      form.contactName,
+      form.customerPhone,
+      form.language,
+      form.locationName,
+    ]
+  );
+  useAbandonedCartTracker(cartSnapshot);
+
   // ── Pricing
   const servicePrice =
     service && form.duration
@@ -353,32 +407,157 @@ const BookingFlowPage: React.FC = () => {
       : service?.price ?? 0;
   const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.price, 0);
 
+  // 🆕 Round 28b22 (founder 2026-05-04) — auto-pop the Travel Fee
+  //   tooltip on first mount so customers see how the fare is computed
+  //   without having to discover the (i) icon. Sequence:
+  //     • 600ms after mount → fade IN (350ms)
+  //     • Hold visible for 3.5s
+  //     • Fade OUT (700ms ease)
+  //   Hover/focus still works normally afterwards (controlled via
+  //   onOpen/onClose handlers below).
+  //   Shows once per browser session — sessionStorage flag prevents
+  //   re-popping every time the user navigates back to Confirm Order.
+  const [travelTipOpen, setTravelTipOpen] = useState<boolean>(false);
+  const [travelTipShown, setTravelTipShown] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    return window.sessionStorage.getItem("sunred_travelTipShown") === "1";
+  });
+  useEffect(() => {
+    if (travelTipShown) return;
+    // Don't auto-pop on reduced-motion devices — feels jarring without fade.
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches
+    ) {
+      window.sessionStorage.setItem("sunred_travelTipShown", "1");
+      setTravelTipShown(true);
+      return;
+    }
+    const showTimer = window.setTimeout(() => setTravelTipOpen(true), 600);
+    const hideTimer = window.setTimeout(() => {
+      setTravelTipOpen(false);
+      window.sessionStorage.setItem("sunred_travelTipShown", "1");
+      setTravelTipShown(true);
+    }, 4100); // 600ms delay + ~3.5s visible
+    return () => {
+      window.clearTimeout(showTimer);
+      window.clearTimeout(hideTimer);
+    };
+  }, [travelTipShown]);
+
   const locationSet = form.lat != null && form.lng != null;
-  const taxi = locationSet
-    ? estimateTaxiFare({
-        therapistLat: therapist?.lat,
-        therapistLng: therapist?.lng,
-        customerLat: form.lat,
-        customerLng: form.lng,
-        durationMin: form.duration ?? service?.duration ?? 60,
-      })
-    : { distanceKm: 0, fare: 0, result: undefined };
+
+  // 🆕 Round 28b25 (founder 2026-05-04) — Real road distance via
+  //   Google Directions API. Founder enabled Maps Platform (61 APIs)
+  //   on cloud.google with billing on, so we now resolve actual
+  //   driving distance + duration instead of haversine straight-line.
+  //
+  //   Flow:
+  //     1. Render with haversine fallback immediately (no UI flash).
+  //     2. Kick off fetchDrivingDistance(); resolves in ~200ms.
+  //     3. When the route resolves, recompute fare with the real km
+  //        and replace the in-memory result.
+  //     4. Cache in sessionStorage (key = quantized lat/lng pair).
+  //
+  //   This double-render is fine — keeps initial paint fast and the
+  //   "real" number lands a beat later, like Grab's "calculating fare".
+  const { ready: mapsReady, loadIfNeeded: loadMaps } = useGoogleMaps();
+  useEffect(() => {
+    // Trigger Maps SDK load when we have coords + need a route. The
+    // GoogleMapsContext is idempotent (loads exactly once per session).
+    if (locationSet && therapist?.lat && therapist?.lng && !mapsReady) {
+      loadMaps();
+    }
+  }, [locationSet, therapist?.lat, therapist?.lng, mapsReady, loadMaps]);
+
+  const [route, setRoute] = useState<RouteResult | null>(null);
+  useEffect(() => {
+    if (!locationSet) {
+      setRoute(null);
+      return;
+    }
+    if (!therapist?.lat || !therapist?.lng) return;
+    if (!mapsReady) return; // wait for SDK
+    let cancelled = false;
+    void (async () => {
+      try {
+        const r = await fetchDrivingDistance(
+          { lat: therapist.lat as number, lng: therapist.lng as number },
+          { lat: form.lat as number, lng: form.lng as number }
+        );
+        if (!cancelled) setRoute(r);
+      } catch {
+        // fetchDrivingDistance already falls back to haversine internally
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [locationSet, mapsReady, therapist?.lat, therapist?.lng, form.lat, form.lng]);
+
+  // Build the taxi result. If the real route has resolved, use that
+  // distance. Otherwise we render with the haversine quick estimate
+  // so the page never flickers an empty fare line.
+  const taxi = useMemo(() => {
+    if (!locationSet) return { distanceKm: 0, fare: 0, result: undefined };
+    if (route) {
+      const result = calcTaxiFare(route.kmRoad);
+      return {
+        distanceKm: route.kmRoad,
+        fare: result.fare ?? 0,
+        result,
+      };
+    }
+    return estimateTaxiFare({
+      therapistLat: therapist?.lat,
+      therapistLng: therapist?.lng,
+      customerLat: form.lat,
+      customerLng: form.lng,
+      durationMin: form.duration ?? service?.duration ?? 60,
+    });
+  }, [
+    locationSet,
+    route,
+    therapist?.lat,
+    therapist?.lng,
+    form.lat,
+    form.lng,
+    form.duration,
+    service?.duration,
+  ]);
   const distanceKm = taxi.distanceKm;
   const taxiFare = taxi.fare;
   const taxiResult = taxi.result;
   const adminQuoteRequired = taxiResult?.tier === "admin";
+  /** True while Directions API hasn't resolved yet — shows "≈" + spinner hint. */
+  const distanceIsEstimate = !route && locationSet;
 
   // 🆕 Round 10 (founder 2026-05-01): Distance + ETA line on Confirm
-  //    Order. ETA = travel time from distance + a 15-min prep buffer
+  //    Order. ETA = travel time from distance + a prep buffer
   //    (staff getting ready + calling taxi). Average urban Bangkok /
   //    Grab speed: 35 km/h (mix of city + sois). Tune AVG_SPEED_KMH /
   //    STAFF_PREP_MIN if real-world ETAs drift from observed values.
+  // 🆕 Round 28b24 (founder 2026-05-04) — Rainy weather pushes the
+  //    prep buffer from 15 → 20 min because (a) drivers take longer
+  //    to accept rides in rain, (b) traffic slows. We read the same
+  //    cached rain status the fare surcharge uses, so the two
+  //    surcharges (price + ETA) are always in sync.
   const AVG_SPEED_KMH = 35;
-  const STAFF_PREP_MIN = 15;
-  const etaMinutes =
-    distanceKm > 0
-      ? Math.round((distanceKm * 60) / AVG_SPEED_KMH + STAFF_PREP_MIN)
-      : 0;
+  const STAFF_PREP_MIN_DRY = 15;
+  const STAFF_PREP_MIN_RAIN = 20;
+  const isRaining =
+    taxiResult?.rain && taxiResult.rain.tier !== "none";
+  const staffPrepMin = isRaining ? STAFF_PREP_MIN_RAIN : STAFF_PREP_MIN_DRY;
+  // 🆕 Round 28b25 — when Google Directions returned a duration, use
+  //   that (real traffic-aware ETA) instead of the constant-speed
+  //   approximation. Fall back to distance/AVG_SPEED_KMH when no
+  //   route info is available.
+  const drivingMin = route?.durationMin
+    ? route.durationMin
+    : distanceKm > 0
+    ? (distanceKm * 60) / AVG_SPEED_KMH
+    : 0;
+  const etaMinutes = drivingMin > 0 ? Math.round(drivingMin + staffPrepMin) : 0;
 
   const total = servicePrice + addonsTotal + taxiFare;
 
@@ -488,6 +667,22 @@ const BookingFlowPage: React.FC = () => {
         status: "confirmed",
         // 🆕 Round 16: align with Firestore architecture spec.
         paymentStatus: "unpaid", // → "paid" once admin confirms via Telegram
+        // 🆕 Round 28b21 (founder 2026-05-04) — Phase 2: TIME-LIMITED
+        //   HOLD. Customer has 10 minutes to contact admin and confirm
+        //   their booking before the slot is released back to availability.
+        //   `holdExpiresAt` is read by:
+        //     • Booking Success page → countdown component
+        //     • releaseExpiredHolds Cloud Function (runs every 5 min,
+        //       sets holdState="expired" on stale active holds)
+        //   `holdState` lifecycle: "active" → "confirmed" (admin) | "expired"
+        //   We use server-side dayjs so device clock skew can't extend
+        //   the hold artificially. The 10-minute window is configurable
+        //   by changing the constant below.
+        holdState: "active",
+        holdExpiresAt: Timestamp.fromDate(
+          dayjs().add(10, "minute").toDate()
+        ),
+        holdDurationMin: 10,
         yearMonth: dayjs(startDate.toDate()).format("YYYY-MM"), // analytics
         createdAt: serverTimestamp(), // server clock — gracefully handles user device clock skew
       });
@@ -551,6 +746,11 @@ const BookingFlowPage: React.FC = () => {
       // 🆕 Round 28b7 — booking confirmed → clear the persisted WIP
       //   form so the next visit to this therapist starts clean.
       clearPersistedForm(therapistId);
+      // 🆕 Round 28b21 — Phase 4: silence the abandoned-cart recovery
+      //   scheduler for this customer. Fail-open if the write errors.
+      if (form.therapistId) {
+        void markCartConfirmed(form.therapistId).catch(() => {});
+      }
       void navigate(`/booking/success/${ref.id}`);
     } catch (err) {
       console.error("[booking] submit failed", err);
@@ -736,7 +936,7 @@ const BookingFlowPage: React.FC = () => {
                 }}
               >
                 {dateLabel && form.time
-                  ? `${dateLabel} · ${form.time}`
+                  ? `${dateLabel} · ${prettyHHMM(form.time)}`
                   : "Pick date & time on the detail page"}
               </Typography>
             </Box>
@@ -858,8 +1058,32 @@ const BookingFlowPage: React.FC = () => {
                 <PlaceRoundedIcon />
                 Distance:&nbsp;
                 <Box component="strong" sx={{ color: "#3c1e14" }}>
+                  {distanceIsEstimate ? "≈ " : ""}
                   {distanceKm.toFixed(1)} km
                 </Box>
+                {/* 🆕 Round 28b25 — small "Live route" pill once Google
+                    Directions has resolved, so the customer knows the
+                    distance is real road km not a straight-line guess. */}
+                {route && route.source !== "haversine" && (
+                  <Box
+                    component="span"
+                    sx={{
+                      marginLeft: "4px",
+                      paddingX: "5px",
+                      paddingY: "1px",
+                      borderRadius: "999px",
+                      background: "rgba(22, 163, 74, 0.10)",
+                      color: "#15803d",
+                      fontFamily: SANS,
+                      fontSize: "9.5px",
+                      fontWeight: 700,
+                      letterSpacing: "0.04em",
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    Live route
+                  </Box>
+                )}
               </Box>
               <Box component="span" sx={{ opacity: 0.5 }}>
                 •
@@ -873,6 +1097,30 @@ const BookingFlowPage: React.FC = () => {
                 <Box component="strong" sx={{ color: "#3c1e14" }}>
                   {etaMinutes} min
                 </Box>
+                {/* 🆕 Round 28b24 — small "+5 min rain" hint when the
+                    rain surcharge bumped the prep buffer from 15→20 min.
+                    Lets the customer know the longer ETA is weather-
+                    related, not us being slow. */}
+                {isRaining && (
+                  <Box
+                    component="span"
+                    sx={{
+                      marginLeft: "4px",
+                      paddingX: "5px",
+                      paddingY: "1px",
+                      borderRadius: "999px",
+                      background: "rgba(245, 158, 11, 0.14)",
+                      color: "#b45309",
+                      fontFamily: SANS,
+                      fontSize: "9.5px",
+                      fontWeight: 700,
+                      letterSpacing: "0.04em",
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    +5 min · rain
+                  </Box>
+                )}
               </Box>
             </Box>
           )}
@@ -914,7 +1162,20 @@ const BookingFlowPage: React.FC = () => {
                   </Box>
                 )}
               </Typography>
+              {/* 🆕 Round 28b22 — Travel-fee tooltip is now CONTROLLED so
+                  it can auto-pop on first mount (see travelTipOpen state).
+                  • `open={travelTipOpen}` is the source of truth.
+                  • onOpen/onClose still let the user hover/focus the (i)
+                    icon to manually toggle it after the auto-pop has
+                    finished.
+                  • Fade transition is slowed to 700ms exit so the
+                    auto-dismiss feels intentional, not abrupt. */}
               <Tooltip
+                open={travelTipOpen}
+                onOpen={() => setTravelTipOpen(true)}
+                onClose={() => setTravelTipOpen(false)}
+                TransitionComponent={Fade}
+                TransitionProps={{ timeout: { enter: 350, exit: 700 } }}
                 title={
                   <Box sx={{ padding: "2px 0" }}>
                     <Typography
@@ -925,21 +1186,36 @@ const BookingFlowPage: React.FC = () => {
                         marginBottom: "4px",
                       }}
                     >
-                      Travel Fee — Tiered
+                      Travel Fee · SunRed Smart Routing
                     </Typography>
                     <Typography sx={{ fontFamily: SANS, fontSize: "11.5px", lineHeight: 1.6 }}>
-                      0–4 km · <strong>FREE</strong> (free zone)
+                      ≤ 1 km · <strong>฿45</strong> base fare
                       <br />
-                      4–8 km · ฿200 flat
+                      1–6 km · +฿8/km
                       <br />
-                      8–12 km · ฿350 flat
+                      6–40 km · +฿7/km
                       <br />
-                      12–{ADMIN_QUOTE_KM} km · ฿350 + ฿20/km beyond 12
+                      &gt; {ADMIN_QUOTE_KM} km · +฿10/km · admin quote
                       <br />
-                      &gt; {ADMIN_QUOTE_KM} km · admin quote + deposit
-                      <br />
-                      <Box component="span" sx={{ opacity: 0.85, display: "block", marginTop: "6px" }}>
-                        Rain may add 15-30% surcharge.
+                      <Box
+                        component="span"
+                        sx={{
+                          display: "block",
+                          marginTop: "6px",
+                          fontWeight: 700,
+                          color: "#16a34a",
+                        }}
+                      >
+                        Return leg · 40 % off the meter
+                      </Box>
+                      <Box component="span" sx={{ opacity: 0.85, display: "block" }}>
+                        (outbound full + return 60 % · auto-applied)
+                      </Box>
+                      <Box
+                        component="span"
+                        sx={{ opacity: 0.85, display: "block", marginTop: "6px" }}
+                      >
+                        Rain may add 15-30 % surcharge · ETA +5 min.
                       </Box>
                     </Typography>
                   </Box>
@@ -947,38 +1223,73 @@ const BookingFlowPage: React.FC = () => {
                 placement="top"
                 arrow
               >
+                {/* 🆕 Round 28b22 — subtle attention pulse on the (i) icon
+                    while the auto-popped tooltip is up. Tells the user
+                    "this is the trigger if you want to see it again". */}
                 <InfoOutlinedIcon
                   sx={{
                     fontSize: 14,
-                    color: "rgba(60, 30, 20, 0.5)",
+                    color: travelTipOpen
+                      ? "#FE0944"
+                      : "rgba(60, 30, 20, 0.5)",
                     cursor: "help",
+                    transition: "color 0.3s ease, transform 0.3s ease",
+                    transform: travelTipOpen ? "scale(1.15)" : "scale(1)",
                   }}
                 />
               </Tooltip>
             </Box>
-            <Typography
-              sx={{
-                fontFamily: SANS,
-                fontSize: "13px",
-                fontWeight: 600,
-                color: locationSet
-                  ? adminQuoteRequired
-                    ? "#f97316"
-                    : taxiFare === 0
-                    ? "#16a34a"
-                    : "#3c1e14"
-                  : "rgba(60, 30, 20, 0.5)",
-                fontStyle: locationSet ? "normal" : "italic",
-              }}
-            >
-              {!locationSet
-                ? "Set address"
-                : adminQuoteRequired
-                ? "Admin quote"
-                : taxiFare === 0
-                ? "FREE"
-                : formatTHB(taxiFare)}
-            </Typography>
+            {/* 🆕 Round 28b24 (founder 2026-05-04) — Strike-through
+                "list price" + actual fare, in the same UX pattern Grab
+                uses with their internal promos (struck-out original on
+                the right, real price on the left). The list price is
+                a SunRed-owned reference (= one-way × 2, the
+                "standard rate"), and the chip below explains the
+                discount as "SunRed Smart Routing". We no longer compare
+                to Grab anywhere — it's all our brand. */}
+            <Box sx={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+              {locationSet &&
+                !adminQuoteRequired &&
+                taxiResult &&
+                taxiResult.sunredPromoDiscount > 0 && (
+                  <Typography
+                    component="span"
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: "11.5px",
+                      fontWeight: 500,
+                      color: "rgba(60, 30, 20, 0.42)",
+                      textDecoration: "line-through",
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
+                    {formatTHB(taxiResult.listPriceTravel)}
+                  </Typography>
+                )}
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: locationSet
+                    ? adminQuoteRequired
+                      ? "#f97316"
+                      : taxiFare === 0
+                      ? "#16a34a"
+                      : "#3c1e14"
+                    : "rgba(60, 30, 20, 0.5)",
+                  fontStyle: locationSet ? "normal" : "italic",
+                }}
+              >
+                {!locationSet
+                  ? "Set address"
+                  : adminQuoteRequired
+                  ? "Admin quote"
+                  : taxiFare === 0
+                  ? "FREE"
+                  : formatTHB(taxiFare)}
+              </Typography>
+            </Box>
           </Box>
 
           {/* Tier chips — shown below the row depending on state */}
@@ -990,16 +1301,19 @@ const BookingFlowPage: React.FC = () => {
               marginBottom: "8px",
             }}
           >
-            {/* 🆕 Round 28b8 — "Within free distance" chip retired
-                with the GrabCar pricing migration (no more 0-4km
-                subsidy). Savings chip still surfaces — it now reads
-                the half-price-return savings vs full Grab round-trip. */}
+            {/* 🆕 Round 28b24 (founder 2026-05-04) — Pivoted from
+                "Save ฿X vs Grab" → SunRed-OWNED promo branding.
+                The dollar amount is identical (still listPrice − fare),
+                but the framing is now our own product feature
+                ("Smart Routing 20 % off") rather than a competitor
+                comparison. Founder's call: "เราไม่เอาโปรแกรป
+                เราเอาโปรตัวเอง" — keep the brand on us, not Grab. */}
             {locationSet &&
               taxiResult &&
-              taxiResult.savingsVsGrab > 0 &&
+              taxiResult.sunredPromoDiscount > 0 &&
               !adminQuoteRequired && (
                 <FareChip color="green" icon={<SavingsRoundedIcon />}>
-                  Save {formatTHB(taxiResult.savingsVsGrab)} vs Grab
+                  Smart Routing · {formatTHB(taxiResult.sunredPromoDiscount)} off
                 </FareChip>
               )}
             {locationSet &&

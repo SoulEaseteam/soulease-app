@@ -46,6 +46,9 @@ import { useAuth } from "@/providers/AuthProvider";
 import { formatTHB } from "@/utils/servicePricing";
 import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
 import therapistsData from "@/data/therapists";
+// 🆕 Round 28b16 — central catalog lookup so renaming a service in
+//   data/services.ts auto-updates every booking-history row.
+import { getServiceLabel } from "@/utils/serviceCatalog";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -445,7 +448,10 @@ const BookingCard: React.FC<{
             color: "#3c1e14",
           }}
         >
-          {booking.serviceName ?? "—"}
+          {getServiceLabel(
+            (booking as { serviceId?: string }).serviceId,
+            booking.serviceName
+          )}
           {booking.duration && (
             <Box
               component="span"

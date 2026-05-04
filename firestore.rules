@@ -155,6 +155,38 @@ service cloud.firestore {
       allow write: if false; // populated by Cloud Functions only
     }
 
+    // 🆕 Round 28b21 (founder 2026-05-04) — Phase 3 of conversion plan.
+    // ── adminPresence (heartbeat doc for "Admin online" badge) ────
+    // Single doc `adminPresence/global` written by AdminLayout every
+    // 30 seconds. Public read so customer surfaces (BookingSuccess,
+    // HeroSection) can light up the green pill. Only signed-in admins
+    // may write; rules enforce server-side accuracy.
+    match /adminPresence/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 🆕 Round 28b21 — Phase 4 of conversion plan.
+    // ── abandoned_bookings (cart abandonment recovery) ────────────
+    // Customer browser writes a partial booking when they fill the
+    // contact form but haven't submitted. The recoverAbandonedBookings
+    // scheduled function reads docs >15 min stale and pings admin.
+    // Public create + self-update so guest carts work (no auth at
+    // checkout-fill stage). Admin reads/lists for follow-up.
+    match /abandoned_bookings/{cartId} {
+      allow read: if isAdmin();
+      allow create: if true;
+      allow update: if true; // browser bumps lastActivityAt as user types
+      allow delete: if isAdmin();
+    }
+
+    // 🆕 Round 28b21 — Phase 3.
+    // ── telegramLogs (server-only audit trail) ────────────────────
+    match /telegramLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // populated by Cloud Functions only
+    }
+
     // ── default deny ───────────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;

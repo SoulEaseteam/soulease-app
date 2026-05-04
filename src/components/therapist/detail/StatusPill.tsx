@@ -21,7 +21,9 @@ import React from "react";
 import { Box, Typography } from "@mui/material";
 // 🆕 Round 28ap — BKK-anchored time, used to compute relative
 //   "in 2 hours" hint on the next-available subtitle.
-import { nowBKK, parseHHMMatBKK } from "@/utils/time";
+// 🆕 Round 28b15 — `prettyHHMM` adds the 12h reading "(7:30 PM)"
+//   alongside 24h to remove ambiguity for tourist visitors.
+import { nowBKK, parseHHMMatBKK, prettyHHMM } from "@/utils/time";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -112,17 +114,17 @@ const StatusPill: React.FC<Props> = ({
   const now = nowBKK();
   const relHint = relativeUntilHHMM(nextAvailable ?? null);
 
+  // 🆕 Round 28b15 — wrap every wall-clock time in `prettyHHMM()` so
+  //   subtitles read e.g. "Available from 21:00 (9:00 PM)" rather than
+  //   ambiguous "21:00". Tourist-friendly without losing 24h precision.
   let subtitle = "";
   if (status === "online") {
     const lo = now.add(arriveLowerBoundMin, "minute").format("HH:mm");
     const hi = now.add(arriveUpperBoundMin, "minute").format("HH:mm");
     subtitle = `Estimated arrival: ${lo}–${hi}.`;
-    // 🆕 Round 28b9 — when there's an upcoming booking in the schedule,
-    //   surface it on the available pill so customers know "free now,
-    //   but next session locks in at HH:mm".
     if (nextBookingAt) {
       const bookHint = relativeUntilHHMM(nextBookingAt);
-      subtitle += ` Next booked at ${nextBookingAt}${
+      subtitle += ` Next booked at ${prettyHHMM(nextBookingAt)}${
         bookHint ? ` · ${bookHint}` : ""
       }.`;
     } else {
@@ -130,13 +132,13 @@ const StatusPill: React.FC<Props> = ({
     }
   } else if (status === "busy") {
     subtitle = nextAvailable
-      ? `Available from ${nextAvailable}${
+      ? `Available from ${prettyHHMM(nextAvailable)}${
           relHint ? ` · ${relHint}` : ""
         }. Wait or switch?`
       : "On a session right now. Wait or switch?";
   } else {
     subtitle = nextAvailable
-      ? `Returns at ${nextAvailable}${relHint ? ` · ${relHint}` : ""}`
+      ? `Returns at ${prettyHHMM(nextAvailable)}${relHint ? ` · ${relHint}` : ""}`
       : "Returns next shift.";
   }
 

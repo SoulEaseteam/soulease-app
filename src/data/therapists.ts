@@ -32,7 +32,7 @@ export const therapists: Therapist[] = [
 
     distanceKm: null,
 
-    servicesAvailable: ["thai-massage", "aromatherapy", "gentlemans-recovery"],
+    servicesAvailable: ["xSR-Thai", "SR-Aroma", "SR-HJ2200"],
 
     gallery: [
       "/images/yuri/y88.jpeg",
@@ -114,10 +114,10 @@ export const therapists: Therapist[] = [
     distanceKm: null,
 
     servicesAvailable: [
-      "thai-massage",
-      "aromatherapy",
-      "gentlemans-recovery",
-      "sunred-signature"
+      "xSR-Thai",
+      "SR-Aroma",
+      "SR-HJ2200",
+      "SR-B2B3200"
     ],
 
     gallery: [
@@ -200,9 +200,9 @@ export const therapists: Therapist[] = [
     distanceKm: null,
 
     servicesAvailable: [
-      "thai-massage",
-      "aromatherapy",
-      "gentlemans-recovery"
+      "xSR-Thai",
+      "SR-Aroma",
+      "SR-HJ2200"
     ],
 
     gallery: [
@@ -281,9 +281,9 @@ export const therapists: Therapist[] = [
     distanceKm: null,
 
     servicesAvailable: [
-      "thai-massage",
-      "aromatherapy",
-      "gentlemans-recovery"
+      "xSR-Thai",
+      "SR-Aroma",
+      "SR-HJ2200"
     ],
 
     gallery: [
@@ -367,9 +367,9 @@ export const therapists: Therapist[] = [
     distanceKm: null,
 
     servicesAvailable: [
-      "thai-massage",
-      "aromatherapy",
-      "gentlemans-recovery"
+      "xSR-Thai",
+      "SR-Aroma",
+      "SR-HJ2200"
     ],
 
     gallery: [
@@ -451,10 +451,10 @@ export const therapists: Therapist[] = [
     distanceKm: null,
 
     servicesAvailable: [
-      "thai-massage",
-      "aromatherapy",
-      "gentlemans-recovery",
-      "sunred-signature"
+      "xSR-Thai",
+      "SR-Aroma",
+      "SR-HJ2200",
+      "SR-B2B3200"
     ],
 
     gallery: [
@@ -531,10 +531,10 @@ export const therapists: Therapist[] = [
     distanceKm: null,
 
     servicesAvailable: [
-      "thai-massage",
-      "aromatherapy",
-      "gentlemans-recovery",
-      "sunred-signature"
+      "xSR-Thai",
+      "SR-Aroma",
+      "SR-HJ2200",
+      "SR-B2B3200"
     ],
 
     gallery: [
@@ -610,10 +610,10 @@ export const therapists: Therapist[] = [
     distanceKm: null,
 
     servicesAvailable: [
-      "thai-massage",
-      "aromatherapy",
-      "gentlemans-recovery",
-      "sunred-signature"
+      "xSR-Thai",
+      "SR-Aroma",
+      "SR-HJ2200",
+      "SR-B2B3200"
     ],
 
     gallery: [
@@ -692,10 +692,10 @@ export const therapists: Therapist[] = [
     distanceKm: null,
 
     servicesAvailable: [
-      "thai-massage",
-      "aromatherapy",
-      "gentlemans-recovery",
-      "sunred-signature"
+      "xSR-Thai",
+      "SR-Aroma",
+      "SR-HJ2200",
+      "SR-B2B3200"
     ],
     gallery: [
       "/images/nanny/2568-11-23 11.58.03.jpg",
@@ -772,10 +772,10 @@ export const therapists: Therapist[] = [
     distanceKm: null,
 
     servicesAvailable: [
-      "thai-massage",
-      "aromatherapy",
-      "gentlemans-recovery",
-      "sunred-signature",
+      "xSR-Thai",
+      "SR-Aroma",
+      "SR-HJ2200",
+      "SR-B2B3200",
     ],
 
     gallery: [
@@ -855,10 +855,10 @@ export const therapists: Therapist[] = [
     distanceKm: null,
 
     servicesAvailable: [
-      "thai-massage",
-      "aromatherapy",
-      "gentlemans-recovery",
-      "sunred-signature",
+      "xSR-Thai",
+      "SR-Aroma",
+      "SR-HJ2200",
+      "SR-B2B3200",
     ],
 
     gallery: [
@@ -934,10 +934,10 @@ export const therapists: Therapist[] = [
     distanceKm: null,
 
     servicesAvailable: [
-      "thai-massage",
-      "aromatherapy",
-      "gentlemans-recovery",
-      "sunred-signature",
+      "xSR-Thai",
+      "SR-Aroma",
+      "SR-HJ2200",
+      "SR-B2B3200",
     ],
 
     gallery: [

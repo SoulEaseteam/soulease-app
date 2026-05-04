@@ -13,12 +13,19 @@ import {
   onDocumentCreated,
   onDocumentUpdated,
 } from "firebase-functions/v2/firestore";
+// 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
+//   recoverAbandonedBookings).
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import { logger } from "firebase-functions/v2";
 import { defineSecret } from "firebase-functions/params";
 import * as functionsV1 from "firebase-functions/v1";
 import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import {
+  getFirestore,
+  FieldValue,
+  Timestamp,
+} from "firebase-admin/firestore";
 
 initializeApp();
 
@@ -446,5 +453,213 @@ export const onTherapistUpdate = onDocumentUpdated(
     } catch (err) {
       logger.error("[onTherapistUpdate] write failed", { therapistId, err });
     }
+  }
+);
+
+// ═════════════════════════════════════════════════════════════
+// 🆕 Round 28b21 (founder 2026-05-04) — Phase 3 of conversion plan.
+// onBookingCreate — Firestore trigger that pushes a fresh booking
+//    notification into Telegram from the SERVER side. The legacy
+//    client-side `sendBookingNotification` call still fires (best-
+//    effort, fire-and-forget), but this trigger is the source of
+//    truth: it can't be killed by the customer closing the tab and
+//    it has admin SDK access for the full booking doc.
+// ═════════════════════════════════════════════════════════════
+
+interface BookingDocLite {
+  therapistName?: string;
+  serviceName?: string;
+  duration?: number;
+  date?: string;
+  time?: string;
+  contactName?: string;
+  phone?: string;
+  address?: string;
+  totalPrice?: number;
+  language?: string;
+  payment?: string;
+  holdState?: string;
+  holdExpiresAt?: Timestamp;
+}
+
+const formatBookingForTelegram = (
+  bookingId: string,
+  b: BookingDocLite
+): string => {
+  const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
+  const lines = [
+    `🆕 NEW BOOKING · ${refCode}`,
+    "",
+    `👤 ${b.contactName ?? "—"}  📞 ${b.phone ?? "—"}`,
+    `🧖 ${b.therapistName ?? "—"} · ${b.serviceName ?? "—"} · ${b.duration ?? "?"} min`,
+    `📅 ${b.date ?? "—"}  🕐 ${b.time ?? "—"}`,
+    `📍 ${b.address ?? "—"}`,
+    `💴 ฿${(b.totalPrice ?? 0).toLocaleString()}  💳 ${b.payment ?? "Cash"}`,
+    `🌐 lang: ${b.language ?? "—"}`,
+    "",
+    `⏳ Customer hold: 10 min — confirm before it expires.`,
+  ];
+  return lines.join("\n");
+};
+
+export const onBookingCreate = onDocumentCreated(
+  {
+    document: "bookings/{bookingId}",
+    region: "asia-southeast1",
+    secrets: [TELEGRAM_BOT_TOKEN],
+  },
+  async (event) => {
+    const bookingId = event.params.bookingId;
+    const data = event.data?.data() as BookingDocLite | undefined;
+    if (!data) {
+      logger.warn("[onBookingCreate] no data", { bookingId });
+      return;
+    }
+    const text = formatBookingForTelegram(bookingId, data);
+    const token = TELEGRAM_BOT_TOKEN.value();
+    if (!token) {
+      logger.error("[onBookingCreate] TELEGRAM_BOT_TOKEN missing");
+      return;
+    }
+    const result = await sendTelegram(token, TELEGRAM_CHAT_ID, text);
+    // Persist a delivery log so admin can audit later.
+    try {
+      await getFirestore()
+        .collection("telegramLogs")
+        .add({
+          bookingId,
+          ok: result.ok,
+          response: result.body.slice(0, 500),
+          source: "onBookingCreate",
+          at: FieldValue.serverTimestamp(),
+        });
+    } catch (err) {
+      logger.error("[onBookingCreate] log write failed", err);
+    }
+  }
+);
+
+// ═════════════════════════════════════════════════════════════
+// 🆕 Round 28b21 — Phase 2 of conversion plan.
+// releaseExpiredHolds — scheduled every 5 minutes. Finds bookings
+//    where holdState === "active" AND holdExpiresAt < now, flips
+//    holdState to "expired" so the slot is implicitly back on the
+//    market. We don't delete the booking — admin still sees it in
+//    the queue marked as expired so they can follow up if a customer
+//    contacts them late.
+// ═════════════════════════════════════════════════════════════
+
+export const releaseExpiredHolds = onSchedule(
+  {
+    schedule: "every 5 minutes",
+    region: "asia-southeast1",
+    timeZone: "Asia/Bangkok",
+  },
+  async () => {
+    const db = getFirestore();
+    const now = Timestamp.now();
+    const snap = await db
+      .collection("bookings")
+      .where("holdState", "==", "active")
+      .where("holdExpiresAt", "<", now)
+      .limit(500) // safety cap
+      .get();
+
+    if (snap.empty) {
+      logger.info("[releaseExpiredHolds] no expired holds");
+      return;
+    }
+
+    const batch = db.batch();
+    let count = 0;
+    snap.forEach((d) => {
+      batch.update(d.ref, {
+        holdState: "expired",
+        holdExpiredAt: FieldValue.serverTimestamp(),
+      });
+      count += 1;
+    });
+    await batch.commit();
+    logger.info("[releaseExpiredHolds] released", { count });
+  }
+);
+
+// ═════════════════════════════════════════════════════════════
+// 🆕 Round 28b21 — Phase 4 of conversion plan.
+// recoverAbandonedBookings — scheduled every 5 minutes. Finds docs
+//    in `abandoned_bookings` with status="open", lastActivityAt
+//    older than 15 min and a phone number captured, and pushes a
+//    one-time recovery alert to Telegram so admin can chase the
+//    lead manually. After alerting, status flips to "alerted" so
+//    we don't spam.
+// ═════════════════════════════════════════════════════════════
+
+interface AbandonedBookingLite {
+  status?: string;
+  contactName?: string;
+  phone?: string;
+  therapistName?: string;
+  serviceName?: string;
+  date?: string;
+  time?: string;
+  lastActivityAt?: Timestamp;
+}
+
+export const recoverAbandonedBookings = onSchedule(
+  {
+    schedule: "every 5 minutes",
+    region: "asia-southeast1",
+    timeZone: "Asia/Bangkok",
+    secrets: [TELEGRAM_BOT_TOKEN],
+  },
+  async () => {
+    const db = getFirestore();
+    const now = Date.now();
+    const cutoff = Timestamp.fromMillis(now - 15 * 60_000);
+
+    const snap = await db
+      .collection("abandoned_bookings")
+      .where("status", "==", "open")
+      .where("lastActivityAt", "<", cutoff)
+      .limit(50)
+      .get();
+
+    if (snap.empty) {
+      logger.info("[recoverAbandonedBookings] no carts to recover");
+      return;
+    }
+
+    const token = TELEGRAM_BOT_TOKEN.value();
+    if (!token) {
+      logger.error("[recoverAbandonedBookings] missing token");
+      return;
+    }
+
+    let alerted = 0;
+    for (const d of snap.docs) {
+      const data = d.data() as AbandonedBookingLite;
+      if (!data.phone) {
+        // No way to chase, just close it.
+        await d.ref.update({ status: "abandoned-no-contact" });
+        continue;
+      }
+      const text = [
+        `🛒 CART ABANDONED`,
+        ``,
+        `👤 ${data.contactName ?? "—"}  📞 ${data.phone}`,
+        `🧖 ${data.therapistName ?? "—"} · ${data.serviceName ?? "—"}`,
+        `📅 ${data.date ?? "—"}  🕐 ${data.time ?? "—"}`,
+        ``,
+        `Customer started checkout 15+ min ago and never confirmed.`,
+        `Consider sending a gentle LINE/WhatsApp follow-up.`,
+      ].join("\n");
+      const r = await sendTelegram(token, TELEGRAM_CHAT_ID, text);
+      await d.ref.update({
+        status: r.ok ? "alerted" : "alert-failed",
+        alertedAt: FieldValue.serverTimestamp(),
+      });
+      alerted += 1;
+    }
+    logger.info("[recoverAbandonedBookings] alerted", { alerted });
   }
 );

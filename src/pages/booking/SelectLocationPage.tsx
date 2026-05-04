@@ -24,7 +24,7 @@
 //   │                                              │
 //   │  [picked place name + address card]          │
 //   │                                              │
-//   │  Contact Person (Required) — name input      │
+//   │ Customer Name (Required) — name input      │
 //   │  Phone Number (Required) — 🇹🇭 +66 + digits  │
 //   │  Note (Optional)                             │
 //   │                                              │
@@ -109,15 +109,15 @@ const EMPTY: AddressNavState = {
 
 // 🆕 Founder 2026-05-01 round 13: rename 'Meet at Lift' → 'Wait for me at
 //    the lift' + add 'Other' option. Now rendered as a radio list inside
-//    the new 'Delivery instructions' card (no longer inline chips).
+//    the new 'Arrival Instructions' card (no longer inline chips).
 const MEETING_POINTS: {
   id: MeetingPoint;
   label: string;
   icon: string;
 }[] = [
   { id: "lobby", label: "Meet at Lobby", icon: "🏨" },
-  { id: "lift", label: "Wait for me at the lift", icon: "🛗" },
-  { id: "direct", label: "Come Directly", icon: "🚪" },
+  { id: "lift", label: "Meet at the Elevator", icon: "🛗" },
+  { id: "direct", label: "Come to my room", icon: "🚪" },
   { id: "other", label: "Other", icon: "📍" },
 ];
 
@@ -756,11 +756,11 @@ const SelectLocationPage: React.FC = () => {
               marginBottom: "-4px",
             }}
           >
-            Your details
+            Contact Details
           </Typography>
 
-        {/* Contact Person */}
-        <FieldLabel label="Contact Person" icon="👤" required>
+        {/* Customer Name */}
+        <FieldLabel label="Customer Name" icon="👤" required>
           <TextField
             fullWidth
             placeholder="Name on the booking"
@@ -945,15 +945,15 @@ const SelectLocationPage: React.FC = () => {
           />
         </FieldLabel>
 
-        {/* 🆕 Founder 2026-05-01 round 13: 'Delivery instructions' radio
+        {/* 🆕 Founder 2026-05-01 round 13: 'Arrival Instructions' radio
             list — replaces the 3-chip Meeting Point row, adds 'Wait for
             me at the lift' (renamed from 'Meet at Lift') and a 4th
             'Other' option. Vertical, full-width tappable rows with the
             radio dot on the right (matches Grab/Lalamove pattern). */}
-        <FieldLabel label="Delivery instructions" icon="🚪" optional>
+        <FieldLabel label="Arrival Instructions" icon="🚪" optional>
           <Box
             role="radiogroup"
-            aria-label="Delivery instructions"
+            aria-label="Arrival instructions"
             sx={{
               display: "flex",
               flexDirection: "column",
@@ -1050,7 +1050,7 @@ const SelectLocationPage: React.FC = () => {
         </FieldLabel>
 
         {/* 🆕 Founder 2026-05-01 round 13: helper info card explaining
-            the 'Go up to your room' policy. Soft cream tile, no
+            the 'Direct Room Access' policy. Soft cream tile, no
             interaction — pure communication. */}
         <Box
           sx={{
@@ -1070,7 +1070,7 @@ const SelectLocationPage: React.FC = () => {
               marginBottom: "4px",
             }}
           >
-            Go up to your room
+            Direct Room Access
           </Typography>
           <Typography
             sx={{
@@ -1080,8 +1080,8 @@ const SelectLocationPage: React.FC = () => {
               lineHeight: 1.55,
             }}
           >
-            Just let me know the name on your booking and the room
-            number, and I&rsquo;ll ask her to contact the front desk.
+            Please provide your booking name and room number. 
+            Our therapist will coordinate with the front desk or security upon arrival.
           </Typography>
         </Box>
         </Box>
@@ -1146,7 +1146,11 @@ const inputSx = {
     background: "#fff",
     borderRadius: "14px",
     fontFamily: '"Inter", sans-serif',
-    fontSize: "14px",
+    // 🆕 Round 28b15 — bumped 14 → 16px so iOS Safari/Chrome doesn't
+    //   auto-zoom the viewport when the input is focused. Visual
+    //   sizing identical to user (CSS pixel space), just disables
+    //   the zoom-on-focus heuristic that breaks booking UX.
+    fontSize: "16px",
     color: "#1a1a1a",
     "& fieldset": { borderColor: "rgba(0, 0, 0, 0.08)" },
     "&:hover fieldset": { borderColor: "rgba(20, 184, 166, 0.45)" },

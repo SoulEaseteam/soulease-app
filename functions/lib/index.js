@@ -42,9 +42,12 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.recoverAbandonedBookings = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
+// 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
+//   recoverAbandonedBookings).
+const scheduler_1 = require("firebase-functions/v2/scheduler");
 const v2_1 = require("firebase-functions/v2");
 const params_1 = require("firebase-functions/params");
 const functionsV1 = __importStar(require("firebase-functions/v1"));
@@ -373,5 +376,144 @@ exports.onTherapistUpdate = (0, firestore_1.onDocumentUpdated)({
     catch (err) {
         v2_1.logger.error("[onTherapistUpdate] write failed", { therapistId, err });
     }
+});
+const formatBookingForTelegram = (bookingId, b) => {
+    const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
+    const lines = [
+        `🆕 NEW BOOKING · ${refCode}`,
+        "",
+        `👤 ${b.contactName ?? "—"}  📞 ${b.phone ?? "—"}`,
+        `🧖 ${b.therapistName ?? "—"} · ${b.serviceName ?? "—"} · ${b.duration ?? "?"} min`,
+        `📅 ${b.date ?? "—"}  🕐 ${b.time ?? "—"}`,
+        `📍 ${b.address ?? "—"}`,
+        `💴 ฿${(b.totalPrice ?? 0).toLocaleString()}  💳 ${b.payment ?? "Cash"}`,
+        `🌐 lang: ${b.language ?? "—"}`,
+        "",
+        `⏳ Customer hold: 10 min — confirm before it expires.`,
+    ];
+    return lines.join("\n");
+};
+exports.onBookingCreate = (0, firestore_1.onDocumentCreated)({
+    document: "bookings/{bookingId}",
+    region: "asia-southeast1",
+    secrets: [TELEGRAM_BOT_TOKEN],
+}, async (event) => {
+    const bookingId = event.params.bookingId;
+    const data = event.data?.data();
+    if (!data) {
+        v2_1.logger.warn("[onBookingCreate] no data", { bookingId });
+        return;
+    }
+    const text = formatBookingForTelegram(bookingId, data);
+    const token = TELEGRAM_BOT_TOKEN.value();
+    if (!token) {
+        v2_1.logger.error("[onBookingCreate] TELEGRAM_BOT_TOKEN missing");
+        return;
+    }
+    const result = await sendTelegram(token, TELEGRAM_CHAT_ID, text);
+    // Persist a delivery log so admin can audit later.
+    try {
+        await (0, firestore_2.getFirestore)()
+            .collection("telegramLogs")
+            .add({
+            bookingId,
+            ok: result.ok,
+            response: result.body.slice(0, 500),
+            source: "onBookingCreate",
+            at: firestore_2.FieldValue.serverTimestamp(),
+        });
+    }
+    catch (err) {
+        v2_1.logger.error("[onBookingCreate] log write failed", err);
+    }
+});
+// ═════════════════════════════════════════════════════════════
+// 🆕 Round 28b21 — Phase 2 of conversion plan.
+// releaseExpiredHolds — scheduled every 5 minutes. Finds bookings
+//    where holdState === "active" AND holdExpiresAt < now, flips
+//    holdState to "expired" so the slot is implicitly back on the
+//    market. We don't delete the booking — admin still sees it in
+//    the queue marked as expired so they can follow up if a customer
+//    contacts them late.
+// ═════════════════════════════════════════════════════════════
+exports.releaseExpiredHolds = (0, scheduler_1.onSchedule)({
+    schedule: "every 5 minutes",
+    region: "asia-southeast1",
+    timeZone: "Asia/Bangkok",
+}, async () => {
+    const db = (0, firestore_2.getFirestore)();
+    const now = firestore_2.Timestamp.now();
+    const snap = await db
+        .collection("bookings")
+        .where("holdState", "==", "active")
+        .where("holdExpiresAt", "<", now)
+        .limit(500) // safety cap
+        .get();
+    if (snap.empty) {
+        v2_1.logger.info("[releaseExpiredHolds] no expired holds");
+        return;
+    }
+    const batch = db.batch();
+    let count = 0;
+    snap.forEach((d) => {
+        batch.update(d.ref, {
+            holdState: "expired",
+            holdExpiredAt: firestore_2.FieldValue.serverTimestamp(),
+        });
+        count += 1;
+    });
+    await batch.commit();
+    v2_1.logger.info("[releaseExpiredHolds] released", { count });
+});
+exports.recoverAbandonedBookings = (0, scheduler_1.onSchedule)({
+    schedule: "every 5 minutes",
+    region: "asia-southeast1",
+    timeZone: "Asia/Bangkok",
+    secrets: [TELEGRAM_BOT_TOKEN],
+}, async () => {
+    const db = (0, firestore_2.getFirestore)();
+    const now = Date.now();
+    const cutoff = firestore_2.Timestamp.fromMillis(now - 15 * 60000);
+    const snap = await db
+        .collection("abandoned_bookings")
+        .where("status", "==", "open")
+        .where("lastActivityAt", "<", cutoff)
+        .limit(50)
+        .get();
+    if (snap.empty) {
+        v2_1.logger.info("[recoverAbandonedBookings] no carts to recover");
+        return;
+    }
+    const token = TELEGRAM_BOT_TOKEN.value();
+    if (!token) {
+        v2_1.logger.error("[recoverAbandonedBookings] missing token");
+        return;
+    }
+    let alerted = 0;
+    for (const d of snap.docs) {
+        const data = d.data();
+        if (!data.phone) {
+            // No way to chase, just close it.
+            await d.ref.update({ status: "abandoned-no-contact" });
+            continue;
+        }
+        const text = [
+            `🛒 CART ABANDONED`,
+            ``,
+            `👤 ${data.contactName ?? "—"}  📞 ${data.phone}`,
+            `🧖 ${data.therapistName ?? "—"} · ${data.serviceName ?? "—"}`,
+            `📅 ${data.date ?? "—"}  🕐 ${data.time ?? "—"}`,
+            ``,
+            `Customer started checkout 15+ min ago and never confirmed.`,
+            `Consider sending a gentle LINE/WhatsApp follow-up.`,
+        ].join("\n");
+        const r = await sendTelegram(token, TELEGRAM_CHAT_ID, text);
+        await d.ref.update({
+            status: r.ok ? "alerted" : "alert-failed",
+            alertedAt: firestore_2.FieldValue.serverTimestamp(),
+        });
+        alerted += 1;
+    }
+    v2_1.logger.info("[recoverAbandonedBookings] alerted", { alerted });
 });
 //# sourceMappingURL=index.js.map

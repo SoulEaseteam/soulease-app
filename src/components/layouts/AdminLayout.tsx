@@ -44,6 +44,9 @@ import { useAuth } from "@/providers/AuthProvider";
 
 // ⭐ Bottom Navigation (Admin only)
 import BottomNavGlass from "@/components/layouts/BottomNavGlass";
+// 🆕 Round 28b21 — Phase 3: heartbeat to adminPresence/global so the
+//   customer-side "Admin online" badge can light up.
+import useAdminPresenceHeartbeat from "@/hooks/useAdminPresenceHeartbeat";
 
 const drawerWidth = 240;
 
@@ -78,6 +81,12 @@ const AdminLayout: React.FC = () => {
 
   const [notifications, setNotifications] = useState<number>(0);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  // 🆕 Round 28b21 — Phase 3: while AdminLayout is mounted AND admin is
+  //   authenticated, heartbeat to adminPresence/global every 30s. The
+  //   customer-side useAdminPresence hook lights up the "Admin online"
+  //   green pill. Hook is a no-op when `active` is false.
+  useAdminPresenceHeartbeat(Boolean(user) && role === "admin");
 
   // 🔔 load notifications
   useEffect(() => {

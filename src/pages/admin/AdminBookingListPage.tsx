@@ -35,6 +35,9 @@ import DoneAllIcon from "@mui/icons-material/DoneAll";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { format } from "date-fns";
 import { ExportToExcel } from "@/utils/exportTools";
+// 🆕 Round 28b16 — central catalog lookup so renaming a service in
+//   data/services.ts auto-updates the admin booking table too.
+import { getServiceLabel } from "@/utils/serviceCatalog";
 
 interface Booking {
   id: string;
@@ -240,7 +243,12 @@ const AdminBookingListPage: React.FC = () => {
                     <TableCell>{b.id.slice(0, 6)}...</TableCell>
                     <TableCell>{b.userName || "-"}</TableCell>
                     <TableCell>{b.therapistName}</TableCell>
-                    <TableCell>{b.serviceName}</TableCell>
+                    <TableCell>
+                      {getServiceLabel(
+                        (b as unknown as { serviceId?: string }).serviceId,
+                        b.serviceName
+                      )}
+                    </TableCell>
 
                     <TableCell>
                       {format(b.createdAt.toDate(), "yyyy-MM-dd HH:mm")}

@@ -55,16 +55,18 @@ interface TherapistFormData {
 // ------------------------
 // SERVICE NORMALIZATION MAP
 // ------------------------
+// 🆕 Round 28b18 — keywords map to current SKU codes
 const SERVICE_MAP: Record<string, string> = {
-  thai: "Thai Massage",
-  "thai massage": "Thai Massage",
-  aromatherapy: "Aromatherapy",
-  aroma: "Aromatherapy",
-  gentleman: "gentlemans-recovery",
-  gentlemen: "gentlemans-recovery",
-  recovery: "gentlemans-recovery",
-  signature: "sunred-signature",
-  exclusive: "sunred-signature",
+  thai: "xSR-Thai",
+  "thai massage": "xSR-Thai",
+  aromatherapy: "SR-Aroma",
+  aroma: "SR-Aroma",
+  gentleman: "SR-HJ2200",
+  gentlemen: "SR-HJ2200",
+  recovery: "SR-HJ2200",
+  signature: "SR-B2B3200",
+  exclusive: "SR-B2B3200",
+  therapeutic: "SR-B2B3200",
 };
 
 const normalizeService = (s: string) => {

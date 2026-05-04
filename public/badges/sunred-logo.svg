@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SunRed wordmark — sun glyph + italic Fraunces "SunRed"
+  Brand: Aman / Aesop / Diptyque hospitality feel
+  Spec: brand.red #FE0944 core · brand.coral #FE7A52 rays · #2a1a14 text
+  Designed at 24px height. ViewBox is unitless so it scales cleanly.
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 96 24"
+     width="96"
+     height="24"
+     role="img"
+     aria-label="SunRed">
+  <!-- ─── Sun glyph (78% of text height ≈ 18.7px) ─────────────────── -->
+  <g transform="translate(0, 2.6)">
+    <!-- Sun core -->
+    <circle cx="9.4" cy="9.4" r="3.3" fill="#FE0944"/>
+    <!-- 8 rays, 45° apart -->
+    <g stroke="#FE7A52" stroke-width="1.6" stroke-linecap="round">
+      <line x1="9.4" y1="2.0" x2="9.4" y2="4.2"/>
+      <line x1="9.4" y1="2.0" x2="9.4" y2="4.2" transform="rotate(45 9.4 9.4)"/>
+      <line x1="9.4" y1="2.0" x2="9.4" y2="4.2" transform="rotate(90 9.4 9.4)"/>
+      <line x1="9.4" y1="2.0" x2="9.4" y2="4.2" transform="rotate(135 9.4 9.4)"/>
+      <line x1="9.4" y1="2.0" x2="9.4" y2="4.2" transform="rotate(180 9.4 9.4)"/>
+      <line x1="9.4" y1="2.0" x2="9.4" y2="4.2" transform="rotate(225 9.4 9.4)"/>
+      <line x1="9.4" y1="2.0" x2="9.4" y2="4.2" transform="rotate(270 9.4 9.4)"/>
+      <line x1="9.4" y1="2.0" x2="9.4" y2="4.2" transform="rotate(315 9.4 9.4)"/>
+    </g>
+  </g>
+
+  <!-- ─── Wordmark "SunRed" — Fraunces italic 500 ──────────────────── -->
+  <text x="25"
+        y="18.5"
+        fill="#2a1a14"
+        font-family="'Fraunces', 'Times New Roman', serif"
+        font-style="italic"
+        font-weight="500"
+        font-size="22"
+        letter-spacing="-0.33"
+        text-rendering="geometricPrecision">SunRed</text>
+</svg>

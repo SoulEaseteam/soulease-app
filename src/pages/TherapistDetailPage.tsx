@@ -220,10 +220,32 @@ function gradientForId(id: string): string {
 // 🆕 Round 28b3 — every emoji icon replaced with a proper MUI icon
 //   (founder rule: no emoji site-wide). Specialty cards now render
 //   tinted MUI icons rather than mixed emoji/icons.
+// 🆕 Round 28b18 — keyed by NEW SKU codes. Legacy slug keys kept as
+//   aliases so any historical booking that still carries the old id
+//   continues to render its specialty icon.
 const SERVICE_DISPLAY: Record<
   string,
   { icon: React.ReactNode; short: string }
 > = {
+  // ── Current SKU codes ──
+  "xSR-Thai": {
+    icon: <SpaRoundedIcon sx={{ fontSize: 18, color: "#16a34a" }} />,
+    short: "Thai Traditional",
+  },
+  "SR-Aroma": {
+    icon: <LocalFloristRoundedIcon sx={{ fontSize: 18, color: "#FE7A52" }} />,
+    short: "Aromatherapy",
+  },
+  "SR-HJ2200": {
+    icon: <FitnessCenterRoundedIcon sx={{ fontSize: 18, color: "#3c1e14" }} />,
+    short: "Gentleman's Signature",
+  },
+  "SR-B2B3200": {
+    icon: <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#FE0944" }} />,
+    short: "SunRed Therapeutic",
+  },
+
+  // ── Legacy slug aliases (for historical bookings) ──
   "thai-massage": {
     icon: <SpaRoundedIcon sx={{ fontSize: 18, color: "#16a34a" }} />,
     short: "Thai Traditional",
@@ -238,11 +260,11 @@ const SERVICE_DISPLAY: Record<
   },
   "gentlemans-recovery": {
     icon: <FitnessCenterRoundedIcon sx={{ fontSize: 18, color: "#3c1e14" }} />,
-    short: "Gentleman's Recovery",
+    short: "Gentleman's Signature",
   },
   "sunred-signature": {
     icon: <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#FE0944" }} />,
-    short: "SunRed Signature",
+    short: "SunRed Therapeutic",
   },
   "sport-massage": {
     icon: <DirectionsRunRoundedIcon sx={{ fontSize: 18, color: "#16a34a" }} />,
@@ -818,20 +840,21 @@ const TherapistDetailPage: React.FC = () => {
         />
 
         <Typography
-          sx={{
-            fontFamily: SANS,
-            fontSize: "12px",
-            color: "rgba(60, 30, 20, 0.5)",
-            textAlign: "center",
-            marginTop: "14px",
-            lineHeight: 1.5,
-          }}
-        >
-          {t(
-            "detail.picker.serviceHint",
-            "Can't find what you're looking for? Chat with us for more options."
-          )}
-        </Typography>
+  sx={{
+    fontFamily: SANS,
+    fontSize: "12px",
+    color: "rgba(60, 30, 20, 0.5)",
+    textAlign: "center",
+    marginTop: "14px",
+    lineHeight: 1.5,
+    whiteSpace: "pre-line", // รองรับการขึ้นบรรทัดใหม่
+  }}
+>
+  {t(
+    "detail.picker.serviceHint",
+    "Didn't find your preferred service? \n Contact us for more personalized options."
+  )}
+</Typography>
       </PickerSection>
 
       {/* (Reviews moved into TherapistProfileTabs as Tab 2.) */}

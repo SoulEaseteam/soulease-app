@@ -111,6 +111,44 @@ export function fmtBKK(
   return d ? d.format(format) : fallback;
 }
 
+/** 🆕 Round 28b15 (founder spec) — pretty time format showing both
+ *  24h and 12h side-by-side: e.g. `21:00 (9:00 PM)` / `09:30 (9:30 AM)`.
+ *  Use for customer-facing displays where unambiguous time matters
+ *  (booking confirmations, status pills, time pickers). */
+export function fmtBKKTime(v: TimeLike, fallback = "—"): string {
+  const d = toBKK(v);
+  if (!d) return fallback;
+  return `${d.format("HH:mm")} (${d.format("h:mm A")})`;
+}
+
+/** Compact pretty time — single hour with AM/PM, no parentheses.
+ *  Use in tight spaces (small chips, table cells): `9 PM`, `2:30 PM`. */
+export function fmtBKKTimeShort(v: TimeLike, fallback = "—"): string {
+  const d = toBKK(v);
+  if (!d) return fallback;
+  // Drop ":00" so a round hour reads "9 PM" not "9:00 PM"
+  const m = d.minute();
+  return m === 0 ? d.format("h A") : d.format("h:mm A");
+}
+
+/** Format an "HH:mm" string (e.g. "21:00") into the same compact pretty
+ *  form. Used by status pills that already hold HH:mm and don't need a
+ *  full date. Falls back to the input if it can't parse. */
+export function prettyHHMM(hhmm: string | null | undefined): string {
+  if (!hhmm) return "";
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm);
+  if (!m) return hhmm;
+  const hh = parseInt(m[1]!, 10);
+  const mm = parseInt(m[2]!, 10);
+  if (Number.isNaN(hh) || Number.isNaN(mm)) return hhmm;
+  const period = hh >= 12 ? "PM" : "AM";
+  const h12 = hh % 12 === 0 ? 12 : hh % 12;
+  const mmStr = mm.toString().padStart(2, "0");
+  return mm === 0
+    ? `${hh.toString().padStart(2, "0")}:00 (${h12} ${period})`
+    : `${hh.toString().padStart(2, "0")}:${mmStr} (${h12}:${mmStr} ${period})`;
+}
+
 /** True when both moments fall on the same Bangkok calendar day. */
 export function sameDayBKK(a: TimeLike, b: TimeLike): boolean {
   const da = toBKK(a);

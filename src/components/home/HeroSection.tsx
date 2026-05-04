@@ -58,6 +58,11 @@ import DiamondRoundedIcon from "@mui/icons-material/DiamondRounded";
 import NightsStayRoundedIcon from "@mui/icons-material/NightsStayRounded";
 import { brand, fonts, glass, gradients } from "@/theme";
 import { useAuth } from "@/providers/AuthProvider";
+// 🆕 Round 28b21 — Phase 5: first-booking discount + social proof.
+import FirstBookingBanner from "@/components/common/FirstBookingBanner";
+import SocialProofTicker from "@/components/common/SocialProofTicker";
+// 🆕 Round 28b21 — Phase 3: admin presence badge.
+import AdminPresenceBadge from "@/components/common/AdminPresenceBadge";
 
 // ─────────────────────────────────────────────────────────────────────
 // 🎯 Competitive Strategy & Sales Boost (Round 28b · founder 2026-05-02)
@@ -312,7 +317,39 @@ const HeroSection: React.FC = () => {
         </Box>
       </Box>
 
-   
+      {/* 🆕 Round 28b21 (founder 2026-05-04) — Phase 5 of conversion plan.
+          Social-proof ticker + first-booking 10% off banner + admin
+          online badge sit ABOVE the Tonight Special promo so they're
+          the first thing the eye catches as the page loads.
+          - SocialProofTicker rotates between 3 messages every 5s.
+          - FirstBookingBanner self-hides for repeat customers.
+          - AdminPresenceBadge confirms a human is on the other end. */}
+      <Box
+        sx={{
+          position: "relative",
+          zIndex: 1,
+          width: "100%",
+          marginBottom: "10px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "8px",
+            flexWrap: "wrap",
+          }}
+        >
+          <SocialProofTicker variant="inline" />
+          <AdminPresenceBadge variant="full" />
+        </Box>
+        <FirstBookingBanner />
+      </Box>
+
       <Box
         role="status"
         aria-live="polite"
@@ -436,48 +473,36 @@ const HeroSection: React.FC = () => {
           </Typography>
         </Box>
 
-        {/* COMING SOON stamp — tilted, glass pill, breathing pulse */}
+        {/* COMING SOON — bare megaphone icon (Round 28b20c · founder
+            2026-05-04). White halo circle removed — the colorful
+            megaphone (yellow speech bubble + pink horn) reads cleanly
+            against the red→coral banner on its own. Soft drop-shadow
+            keeps it legible without a backing plate. */}
         <Box
-          aria-hidden
+          component="img"
+          src="public/badges/boost_5129689.png"
+          alt=""
+          role="img"
+          aria-label={t("hero.promo.aria", "Tonight Special — coming soon")}
+          loading="lazy"
           sx={{
             position: "absolute",
-            top: "34%",
-            right: 14,
-            transform: "translateY(-50%) rotate(-7deg)",
+            top: "10%",
+            right: 10,
             zIndex: 2,
-            padding: "6px 9px",
-            borderRadius: "99px",
-            background: "rgba(4, 28, 245, 0.92)",
-            color: "rgba(254, 254, 254, 0.92)",
-            fontFamily: fonts.body,
-            fontSize: 10,
-            fontWeight: 800,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            whiteSpace: "nowrap",
-            boxShadow:
-              "0 6px 18px rgba(0, 0, 0, 0.25), 0 0 0 2px rgba(255, 255, 255, 0.5)",
-            // Continuous gentle pulse so the eye keeps catching it
-            animation: "comingStampPulse 2.2s ease-in-out infinite",
-            "@keyframes comingStampPulse": {
-              "0%, 100%": {
-                transform: "translateY(-50%) rotate(-7deg) scale(1)",
-                boxShadow:
-                  "0 6px 18px rgba(0,0,0,0.25), 0 0 0 2px rgba(255,255,255,0.5)",
-              },
-              "50%": {
-                transform: "translateY(-50%) rotate(-7deg) scale(1.08)",
-                boxShadow:
-                  "0 10px 26px rgba(0,0,0,0.3), 0 0 0 3px rgba(255,255,255,0.6)",
-              },
-            },
-            "@media (prefers-reduced-motion: reduce)": {
-              animation: "none",
-            },
+            width: 100,
+            height: 100,
+            objectFit: "contain",
+            // Drop-shadow makes the icon pop against the gradient bg
+            // without a circular plate behind it.
+            filter:
+              "drop-shadow(0 6px 14px rgba(0,0,0,0.28)) drop-shadow(0 0 2px rgba(255,255,255,0.7))",
+            transformOrigin: "70% 70%",
+            // Combined pulse + wiggle — single timeline so movement
+            // feels like one motion, not two stacked transforms.
+       
           }}
-        >
-          {t("hero.promo.stamp", "Coming Soon")}
-        </Box>
+        />
       </Box>
 
       {/* Round 28f — trust strip removed (founder direction). */}
