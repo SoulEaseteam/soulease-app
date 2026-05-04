@@ -39,22 +39,12 @@ const BottomNavGlass: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
-  // 🆕 Round 28b15 (founder bug-fix 2026-05-04) — hide bottom nav on
-  //   booking-flow routes since they have their own sticky Confirm
-  //   CTA at the bottom. Showing both stacked the floating nav over
-  //   the Confirm button → user couldn't submit the booking.
-  //
-  // Hidden on:
-  //   /booking/:id           — Confirm Order page (sticky Place Order)
-  //   /booking/:id/address   — Select Location (sticky Save & Continue)
-  //   /booking/:id/payment*  — Payment Methods page (no sticky but fewer
-  //                             options — keep the focus on selection)
-  //   /booking/success/:id   — Success page (CTAs already prominent)
-  const HIDDEN_PREFIXES = ["/booking/"];
-  const navHidden = HIDDEN_PREFIXES.some((p) =>
-    location.pathname.startsWith(p)
-  );
-  if (navHidden) return null;
+  // 🆕 Round 28b37 (founder 2026-05-04) — Show on EVERY page.
+  //   Previously hidden on /booking/* to avoid overlap with sticky
+  //   Confirm CTAs, but with the new edge-anchored auto-hide design
+  //   (slides down on scroll-down) the conflict disappears: customer
+  //   scrolling toward the booking CTA naturally pushes the nav
+  //   off-screen. Founder direction: "มีทุกหน้า ทั้งโปรเจค".
 
   const handleChange = (_event: React.SyntheticEvent, next: string) => {
     // navigate() ใน react-router v7 return Promise<void> — prefix `void` กัน floating
@@ -73,14 +63,19 @@ const BottomNavGlass: React.FC = () => {
   return (
     <Box
       sx={{
+        // 🆕 Round 28b37 — Edge-anchored bottom nav (Tinder / Instagram
+        //   style). Slides down off-screen when user scrolls down,
+        //   slides back up on scroll-up. Respects safe-area-inset for
+        //   iPhones with home-bar gesture area.
         position: "fixed",
-        bottom: 20,
-        left: "50%",
-        transform: "translateX(-50%)",
-        width: "92%",
-        maxWidth: 430,
+        left: 0,
+        right: 0,
+        bottom: 0,
         zIndex: 2000,
-        pointerEvents: "none",
+        transform: showNav ? "translateY(0)" : "translateY(110%)",
+        transition: "transform 0.32s cubic-bezier(0.4, 0, 0.2, 1)",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        pointerEvents: showNav ? "auto" : "none",
       }}
     >
       <Paper
@@ -88,16 +83,15 @@ const BottomNavGlass: React.FC = () => {
         sx={{
           pointerEvents: "auto",
           position: "relative",
-          bottom: showNav ? 0 : "-130px",
-          transition: "all 0.4s ease",
           // 🌅 Aurora glass — soft peach-pink-lavender tint
           background:
             "linear-gradient(135deg, rgba(255, 245, 240, 0.92) 0%, rgba(255, 240, 248, 0.92) 50%, rgba(247, 240, 255, 0.92) 100%)",
           backdropFilter: "blur(16px)",
           border: "1px solid rgba(255, 255, 255, 0.55)",
+          borderBottom: "none",
           boxShadow:
-            "0 12px 32px rgba(225, 29, 72, 0.10), 0 6px 16px rgba(99, 102, 241, 0.08)",
-          borderRadius: "40px",
+            "0 -8px 24px rgba(225, 29, 72, 0.08), 0 -2px 6px rgba(99, 102, 241, 0.06)",
+          borderRadius: "20px 20px 0 0",
           px: 1,
           py: 0.5,
         }}
