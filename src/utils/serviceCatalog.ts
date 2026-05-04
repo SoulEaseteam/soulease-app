@@ -30,10 +30,69 @@ import {
 
 // ─── Service lookup ──────────────────────────────────────────────────
 
-/** Resolve a service catalog entry by id. `null` if not found. */
+/**
+ * 🆕 Round 28b26 (founder 2026-05-04) — Legacy slug → SKU id alias map.
+ *
+ * Background: Round 28b18 migrated service ids from URL-friendly slugs
+ *   ("thai-massage", "aromatherapy", "gentlemans-recovery", "sunred-
+ *   signature") to immutable SKU codes ("xSR-Thai", "SR-Aroma",
+ *   "SR-HJ2200", "SR-B2B3200").
+ *
+ * Side-effect: existing customer URLs / bookmarks / Telegram links /
+ *   external SEO pages still pointed at the legacy slugs, and
+ *   `/services/gentlemans-recovery` started 404'ing with "Service not
+ *   found" because `services.find(s => s.id === slug)` no longer matched.
+ *
+ * Fix: lookup helpers below try the SKU id first, then fall back to
+ *   this alias map. Deletes are permanent — never remove a row here
+ *   without verifying outbound links (Google, LINE OA, printed cards).
+ */
+export const LEGACY_SERVICE_SLUG_MAP: Record<string, string> = {
+  "thai-massage": "xSR-Thai",
+  "aromatherapy": "SR-Aroma",
+  "aromatherapy-massage": "SR-Aroma",
+  "gentlemans-recovery": "SR-HJ2200",
+  "gentlemans-signature": "SR-HJ2200",
+  "gentleman-signature": "SR-HJ2200",
+  "sunred-signature": "SR-B2B3200",
+  "sunred-therapeutic": "SR-B2B3200",
+  "therapeutic-experience": "SR-B2B3200",
+};
+
+/**
+ * Resolve any user-supplied identifier (URL slug, SKU id, even a name)
+ * to a canonical SKU id. Returns `null` if no match.
+ */
+export function resolveServiceId(
+  idOrSlug: string | null | undefined
+): string | null {
+  if (!idOrSlug) return null;
+  const key = idOrSlug.trim().toLowerCase();
+  if (!key) return null;
+
+  // 1. Direct SKU match (case-insensitive — admins sometimes type SR-Aroma vs sr-aroma)
+  const direct = services.find((s) => s.id.toLowerCase() === key);
+  if (direct) return direct.id;
+
+  // 2. Legacy slug alias
+  const aliased = LEGACY_SERVICE_SLUG_MAP[key];
+  if (aliased) return aliased;
+
+  // 3. Name match (last resort — handles old URLs encoded with the
+  //    display name e.g. /services/Thai%20Massage)
+  const byName = services.find(
+    (s) => s.name.toLowerCase().replace(/[^a-z0-9]/g, "") === key.replace(/[^a-z0-9]/g, "")
+  );
+  if (byName) return byName.id;
+
+  return null;
+}
+
+/** Resolve a service catalog entry by id (or any legacy alias). `null` if not found. */
 export function getServiceById(id: string | null | undefined): MassageService | null {
-  if (!id) return null;
-  return services.find((s) => s.id === id) ?? null;
+  const resolved = resolveServiceId(id);
+  if (!resolved) return null;
+  return services.find((s) => s.id === resolved) ?? null;
 }
 
 /** Display label for a service. Prefers live catalog → falls back to

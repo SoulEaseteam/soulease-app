@@ -1,5 +1,17 @@
 import React, { Suspense } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+
+// 🆕 Round 28b26 (founder 2026-05-04) — `/account?tab=membership|rewards`
+//   was 404'ing because no /account route exists. HeroSection still
+//   navigates to /account?tab=… for the membership + rewards tiles.
+//   This redirect bridges legacy URLs to /profile with the query
+//   string preserved so the future ProfilePage can read `?tab=` and
+//   show the right pane. Once ProfilePage adds tab routing, switching
+//   back to a real /account page is a one-line change.
+const AccountLegacyRedirect: React.FC = () => {
+  const location = useLocation();
+  return <Navigate to={`/profile${location.search}${location.hash}`} replace />;
+};
 
 import ScrollToTop from "@/components/common/ScrollToTop";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
@@ -208,6 +220,8 @@ export default function App() {
 
           <Route path="/saved" element={<SavedTherapistsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          {/* 🆕 Round 28b26 — legacy /account?tab=… → /profile redirect */}
+          <Route path="/account" element={<AccountLegacyRedirect />} />
           <Route path="/edit-profile" element={<EditProfilePage />} />
 
           {/* Legacy /select-location route removed — Phase 5A's BookingHistoryPage

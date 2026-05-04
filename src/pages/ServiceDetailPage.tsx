@@ -1,4 +1,10 @@
 // src/pages/ServiceDetailPage.tsx
+//
+// 🆕 Round 28b26 (founder 2026-05-04) — Fixed "Service not found" bug
+//   on legacy slug URLs (/services/gentlemans-recovery,
+//   /services/thai-massage, …) that started 404'ing after the SKU-id
+//   migration in Round 28b18. Lookup now goes through `resolveServiceId`
+//   in serviceCatalog.ts which tries SKU id → legacy slug map → name.
 import React, { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import services from "@/data/services";
@@ -12,10 +18,7 @@ import {
 } from "@mui/material";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
-
-// Normalize
-const normalize = (str: string) =>
-  decodeURIComponent(str).toLowerCase().replace(/\s+/g, "-");
+import { resolveServiceId } from "@/utils/serviceCatalog";
 
 const ServiceDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,12 +26,12 @@ const ServiceDetailPage: React.FC = () => {
 
   const therapistId = searchParams.get("therapistId") || null;
 
-  const normalizedKey = normalize(id || "");
-
-  const service = services.find(
-    (s) =>
-      normalize(s.id) === normalizedKey || normalize(s.name) === normalizedKey
-  );
+  // Resolve any legacy slug or display name to the canonical SKU id.
+  // Returns null when nothing matches → "Service not found" branch.
+  const canonicalId = resolveServiceId(id);
+  const service = canonicalId
+    ? services.find((s) => s.id === canonicalId)
+    : undefined;
 
   const [tab, setTab] = useState(0);
   const [servedCount, setServedCount] = useState<number>(0);
