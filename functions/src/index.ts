@@ -8,7 +8,7 @@
 //      firebase functions:secrets:set OPENAI_API_KEY     (สำหรับ moderation)
 //   3) firebase deploy --only functions
 
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import {
   onDocumentCreated,
   onDocumentUpdated,
@@ -467,6 +467,7 @@ export const onTherapistUpdate = onDocumentUpdated(
 // ═════════════════════════════════════════════════════════════
 
 interface BookingDocLite {
+  therapistId?: string;
   therapistName?: string;
   serviceName?: string;
   duration?: number;
@@ -480,9 +481,10 @@ interface BookingDocLite {
   payment?: string;
   holdState?: string;
   holdExpiresAt?: Timestamp;
+  mapUrl?: string;
 }
 
-const formatBookingForTelegram = (
+const formatBookingForAdmin = (
   bookingId: string,
   b: BookingDocLite
 ): string => {
@@ -502,6 +504,50 @@ const formatBookingForTelegram = (
   return lines.join("\n");
 };
 
+/**
+ * 🆕 Round 28b27 (founder 2026-05-04) — Therapist-facing booking
+ * notification. Sent to therapist's PERSONAL Telegram chat (not the
+ * admin group) when a new booking is assigned to them. Differences
+ * from admin format:
+ *   • SHORTER — therapist doesn't need price/payment breakdown.
+ *   • Includes the customer's phone (so therapist can call if needed)
+ *     but NOT the customer's name (privacy — name is admin-only until
+ *     therapist accepts).
+ *   • Map link prepended for one-tap navigation.
+ *   • Action prompt: "Reply ACCEPT or DECLINE within 5 min".
+ */
+const formatBookingForTherapist = (
+  bookingId: string,
+  b: BookingDocLite
+): string => {
+  const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
+  const mapLink = b.mapUrl
+    ? `🗺 Map: ${b.mapUrl}`
+    : b.address
+      ? `🗺 Map: https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+          b.address
+        )}`
+      : "";
+  const lines = [
+    `🔔 NEW JOB · ${refCode}`,
+    "",
+    `🧖 ${b.serviceName ?? "—"} · ${b.duration ?? "?"} min`,
+    `📅 ${b.date ?? "—"}  🕐 ${b.time ?? "—"}`,
+    `📍 ${b.address ?? "—"}`,
+    mapLink,
+    `📞 Customer: ${b.phone ?? "—"}`,
+    `🌐 Lang: ${b.language ?? "—"}`,
+    "",
+    `Reply ACCEPT or DECLINE within 5 min.`,
+    `Or call admin if you can't read this message.`,
+  ].filter((l) => l.length > 0);
+  return lines.join("\n");
+};
+
+interface TherapistDocLiteForTelegram {
+  telegramChatId?: string | number | null;
+}
+
 export const onBookingCreate = onDocumentCreated(
   {
     document: "bookings/{bookingId}",
@@ -515,26 +561,71 @@ export const onBookingCreate = onDocumentCreated(
       logger.warn("[onBookingCreate] no data", { bookingId });
       return;
     }
-    const text = formatBookingForTelegram(bookingId, data);
     const token = TELEGRAM_BOT_TOKEN.value();
     if (!token) {
       logger.error("[onBookingCreate] TELEGRAM_BOT_TOKEN missing");
       return;
     }
-    const result = await sendTelegram(token, TELEGRAM_CHAT_ID, text);
-    // Persist a delivery log so admin can audit later.
+
+    // ── 1. Send to ADMIN group (existing behavior) ────────────────
+    const adminText = formatBookingForAdmin(bookingId, data);
+    const adminResult = await sendTelegram(token, TELEGRAM_CHAT_ID, adminText);
     try {
       await getFirestore()
         .collection("telegramLogs")
         .add({
           bookingId,
-          ok: result.ok,
-          response: result.body.slice(0, 500),
-          source: "onBookingCreate",
+          ok: adminResult.ok,
+          response: adminResult.body.slice(0, 500),
+          source: "onBookingCreate.admin",
           at: FieldValue.serverTimestamp(),
         });
     } catch (err) {
-      logger.error("[onBookingCreate] log write failed", err);
+      logger.error("[onBookingCreate] admin log write failed", err);
+    }
+
+    // ── 2. Send to THERAPIST personal chat (Round 28b27) ──────────
+    //   Each therapist may have a `telegramChatId` field set on their
+    //   doc. If present, we DM them the job notification too. The
+    //   admin group still receives the master copy — therapist DM is
+    //   purely a convenience channel ("Hey, you got a job").
+    if (data.therapistId) {
+      try {
+        const therapistSnap = await getFirestore()
+          .collection("therapists")
+          .doc(data.therapistId)
+          .get();
+        const therapist = therapistSnap.data() as
+          | TherapistDocLiteForTelegram
+          | undefined;
+        const chatId = therapist?.telegramChatId;
+        if (chatId) {
+          const therapistText = formatBookingForTherapist(bookingId, data);
+          const therapistResult = await sendTelegram(
+            token,
+            String(chatId),
+            therapistText
+          );
+          await getFirestore()
+            .collection("telegramLogs")
+            .add({
+              bookingId,
+              therapistId: data.therapistId,
+              ok: therapistResult.ok,
+              response: therapistResult.body.slice(0, 500),
+              source: "onBookingCreate.therapist",
+              at: FieldValue.serverTimestamp(),
+            });
+        } else {
+          logger.info("[onBookingCreate] therapist has no telegramChatId", {
+            therapistId: data.therapistId,
+          });
+        }
+      } catch (err) {
+        // Fail-open — therapist notification is optional. Admin group
+        // already got the master copy.
+        logger.error("[onBookingCreate] therapist notify failed", err);
+      }
     }
   }
 );
@@ -661,5 +752,96 @@ export const recoverAbandonedBookings = onSchedule(
       alerted += 1;
     }
     logger.info("[recoverAbandonedBookings] alerted", { alerted });
+  }
+);
+
+// ═════════════════════════════════════════════════════════════
+// 🆕 Round 28b27 (founder 2026-05-04) — Telegram webhook handler.
+//
+// Therapist onboarding flow for personal job notifications:
+//   1. Therapist opens Telegram, searches @SunRedBot, hits Start.
+//   2. Sends `/myid` to the bot.
+//   3. This webhook fires, reads message.chat.id, replies with:
+//        "Your chat ID is 123456789 — give this to admin."
+//   4. Admin pastes it into therapist doc → telegramChatId field.
+//   5. Future bookings DM'd directly to therapist.
+//
+// Setup (one-time, after first deploy):
+//   curl -X POST \
+//     "https://api.telegram.org/bot<TOKEN>/setWebhook?\
+//      url=https://asia-southeast1-soulease-spa.cloudfunctions.net/telegramWebhook"
+//
+// Security: we accept any chat by default. The `/myid` command only
+// echoes the sender's own ID, no PII leak. Other commands ignored.
+// ═════════════════════════════════════════════════════════════
+
+interface TelegramUpdate {
+  message?: {
+    chat?: { id?: number };
+    text?: string;
+    from?: { username?: string; first_name?: string };
+  };
+}
+
+export const telegramWebhook = onRequest(
+  {
+    region: "asia-southeast1",
+    secrets: [TELEGRAM_BOT_TOKEN],
+    cors: false,
+  },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      res.status(405).send("POST only");
+      return;
+    }
+    const token = TELEGRAM_BOT_TOKEN.value();
+    if (!token) {
+      logger.error("[telegramWebhook] TELEGRAM_BOT_TOKEN missing");
+      res.status(500).send("server-misconfigured");
+      return;
+    }
+    const update = req.body as TelegramUpdate;
+    const chatId = update?.message?.chat?.id;
+    const text = (update?.message?.text ?? "").trim();
+    const fromName =
+      update?.message?.from?.first_name ??
+      update?.message?.from?.username ??
+      "there";
+
+    if (!chatId) {
+      res.status(200).send("ok"); // ack but ignore
+      return;
+    }
+
+    let reply: string;
+    if (text === "/start") {
+      reply = [
+        `Hi ${fromName}! 👋`,
+        "",
+        "I'm the SunRed booking bot.",
+        "Send /myid to get your chat ID — you'll need to give it",
+        "to the admin so they can route bookings to you.",
+      ].join("\n");
+    } else if (text === "/myid" || text === "/id") {
+      reply = [
+        `Your chat ID is:`,
+        ``,
+        `${chatId}`,
+        ``,
+        `Copy this number and send it to the SunRed admin.`,
+        `Once linked, you'll get a DM from this bot every time`,
+        `a customer books your service.`,
+      ].join("\n");
+    } else if (text.startsWith("/")) {
+      reply = "Unknown command. Try /myid to get your chat ID.";
+    } else {
+      // Free-form messages — ignore silently to avoid being a chatty
+      // bot. Therapist might be replying ACCEPT/DECLINE in future.
+      res.status(200).send("ok");
+      return;
+    }
+
+    await sendTelegram(token, String(chatId), reply);
+    res.status(200).send("ok");
   }
 );

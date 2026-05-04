@@ -113,7 +113,8 @@ const BookingSuccessPage: React.FC = () => {
     ? (booking.endAt.toDate() as Date)
     : null;
   // 🆕 Round 28an — all wall-clock display anchored to BKK.
-  const timeLabel = fmtBKK(startAt, "HH:mm");
+  // 🆕 Round 28b28 — `HH:mm A` (e.g. "20:00 PM") site-wide canonical format.
+  const timeLabel = fmtBKK(startAt, "HH:mm A");
   const dateLabel = startAt
     ? sameDayBKK(startAt, nowBKK())
       ? "Today"
@@ -124,7 +125,7 @@ const BookingSuccessPage: React.FC = () => {
   const leaveLabel = startAt
     ? fmtBKK(
         toBKK(startAt)?.subtract(PREP_BUFFER_MIN, "minute") ?? null,
-        "HH:mm",
+        "HH:mm A",
         ""
       )
     : null;
@@ -364,37 +365,24 @@ const BookingSuccessPage: React.FC = () => {
               will arrive at {timeLabel}.
             </Typography>
 
-            {/* 🆕 Round 28b21 — Phase 2: 10-minute hold countdown sits
-                directly under the subtitle so it's the FIRST thing the
-                customer sees. Self-hides if the booking is old (no
-                holdExpiresAt) or admin already confirmed. */}
+            {/* 🆕 Round 28b28 (founder 2026-05-04) — Order swap:
+                AdminPresenceBadge now sits ABOVE HoldCountdown. Reasoning:
+                if the customer sees "Admin online · usually replies in
+                1 min" FIRST, the urgency of the countdown beneath it
+                feels productive ("admin will confirm me before time
+                runs out"), not anxious ("am I racing a robot?"). */}
+            <Box sx={{ marginTop: "12px", display: "flex", justifyContent: "center" }}>
+              <AdminPresenceBadge />
+            </Box>
+
+            {/* 🆕 Round 28b21 — Phase 2: 10-minute hold countdown.
+                Round 28b28 — moved below the admin presence pill. */}
             <HoldCountdown
               holdExpiresAt={holdExpiresAt}
               holdState={holdState}
               therapistId={therapistIdForRebook}
             />
 
-            {/* 🆕 Round 28b21 — Phase 3: shows live "Admin online" green
-                pill when adminPresence/online doc is fresh. Reassures
-                customer that someone is on the other end of the LINE
-                button. */}
-            <Box sx={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-              <AdminPresenceBadge />
-            </Box>
-
-            {/* Live status banner */}
-            <Box
-              sx={{
-                marginTop: "20px",
-                padding: "14px 14px 14px 16px",
-                borderRadius: "16px",
-                background: "rgba(22, 163, 74, 0.07)",
-                border: "1px solid rgba(22, 163, 74, 0.20)",
-                display: "flex",
-                alignItems: "flex-start",
-                gap: "12px",
-              }}
-            >
               <Box
                 aria-hidden
                 sx={{
@@ -438,6 +426,20 @@ const BookingSuccessPage: React.FC = () => {
                     : "We'll send a tracking link before departure."}
                 </Typography>
               </Box>
+              
+                   {/* Live status banner */}
+            <Box
+              sx={{
+                marginTop: "20px",
+                padding: "14px 14px 14px 16px",
+                borderRadius: "16px",
+                background: "rgba(22, 163, 74, 0.07)",
+                border: "1px solid rgba(22, 163, 74, 0.20)",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "12px",
+              }}
+            >
             </Box>
 
             {/* 🆕 Round 28b19 (founder 2026-05-04) — 2×2 quick-action

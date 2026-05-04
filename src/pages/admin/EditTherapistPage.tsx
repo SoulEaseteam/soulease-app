@@ -29,6 +29,9 @@ interface EditTherapistForm {
   endTime?: string;
   badge?: (typeof badgeOptions)[number];
   statusOverride?: (typeof statusOptions)[number] | "" | null;
+  /** 🆕 Round 28b27 — Telegram chat ID for job DMs. String to avoid
+   *  precision loss on chat IDs > Number.MAX_SAFE_INTEGER. */
+  telegramChatId?: string;
 }
 
 const EditTherapistPage: React.FC = () => {
@@ -189,6 +192,27 @@ const EditTherapistPage: React.FC = () => {
             </MenuItem>
           ))}
         </TextField>
+
+        {/* 🆕 Round 28b27 (founder 2026-05-04) — Therapist Telegram chat
+            ID. When set, the therapist receives a personal DM from
+            @SunRedBot every time a booking is assigned to them.
+            Onboarding flow:
+              1. Therapist opens Telegram, searches @SunRedBot, hits
+                 Start, sends /myid → bot replies with their numeric
+                 chat_id (positive number, e.g. 123456789).
+              2. Admin pastes that number here and saves.
+              3. Cloud Function `onBookingCreate` will then DM the
+                 therapist their job in addition to the admin group. */}
+        <TextField
+          label="Telegram Chat ID (for job DMs)"
+          name="telegramChatId"
+          fullWidth
+          value={therapist.telegramChatId || ""}
+          onChange={handleChange}
+          helperText="Therapist sends /myid to @SunRedBot to get this number. Leave blank if therapist is not on Telegram."
+          placeholder="e.g. 123456789"
+          inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
+        />
       </Stack>
 
       <Box mt={4}>

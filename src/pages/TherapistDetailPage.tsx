@@ -666,7 +666,7 @@ const TherapistDetailPage: React.FC = () => {
   //   booking time picker (which already shows "TAKEN" slots).
   const upcomingBooking = findNextBooking(liveBookings);
   const nextBookingAt = upcomingBooking
-    ? fmtBKK(upcomingBooking.startAt, "HH:mm", "")
+    ? fmtBKK(upcomingBooking.startAt, "HH:mm A", "")
     : null;
 
   // Resolve the underlying real Therapist record so the engine can

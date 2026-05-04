@@ -59,6 +59,9 @@ service cloud.firestore {
         // soft profile
         'features', 'specialty', 'servicesAvailable', 'services',
         'bios', 'bioGeneratedAt',
+        // 🆕 Round 28b27 — Telegram notification opt-in. Therapist
+        //   themselves DM the bot to register and updates this field.
+        'telegramChatId',
         // bookkeeping (audit metadata — read by Functions trigger)
         'updatedAt', 'updatedBy'
       ];

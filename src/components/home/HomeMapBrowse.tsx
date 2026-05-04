@@ -237,7 +237,7 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
     : activeStatusEngine.nextAvailable ?? null;
   const activeNextBookingAt =
     activeStatus === "available" && upcomingBooking
-      ? fmtBKK(upcomingBooking.startAt, "HH:mm", "")
+      ? fmtBKK(upcomingBooking.startAt, "HH:mm A", "")
       : null;
 
   return (

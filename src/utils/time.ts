@@ -112,13 +112,13 @@ export function fmtBKK(
 }
 
 /** 🆕 Round 28b15 (founder spec) — pretty time format showing both
- *  24h and 12h side-by-side: e.g. `21:00 (9:00 PM)` / `09:30 (9:30 AM)`.
- *  Use for customer-facing displays where unambiguous time matters
- *  (booking confirmations, status pills, time pickers). */
+ *  Single canonical format `HH:mm A` (e.g. `20:30 PM`, `09:00 AM`).
+ *  Round 28b28 (founder 2026-05-04) — collapsed previous parens form
+ *  `21:00 (9:00 PM)` to `21:00 PM` for consistency across the app. */
 export function fmtBKKTime(v: TimeLike, fallback = "—"): string {
   const d = toBKK(v);
   if (!d) return fallback;
-  return `${d.format("HH:mm")} (${d.format("h:mm A")})`;
+  return d.format("HH:mm A");
 }
 
 /** Compact pretty time — single hour with AM/PM, no parentheses.
@@ -131,9 +131,23 @@ export function fmtBKKTimeShort(v: TimeLike, fallback = "—"): string {
   return m === 0 ? d.format("h A") : d.format("h:mm A");
 }
 
-/** Format an "HH:mm" string (e.g. "21:00") into the same compact pretty
- *  form. Used by status pills that already hold HH:mm and don't need a
- *  full date. Falls back to the input if it can't parse. */
+/**
+ * 🆕 Round 28b28 (founder 2026-05-04) — Single canonical user-facing
+ * time format: `HH:mm A` → "20:30 PM" / "09:00 AM".
+ *
+ * Why the unusual mix of 24h hour + AM/PM tag?
+ *   • 24h `HH:mm` removes 12h ambiguity for Thai customers reading
+ *     receipts late at night.
+ *   • The trailing AM/PM tag matches Western expectations on
+ *     iOS/Android lock-screen notifications (where bookings preview).
+ *
+ * Format an "HH:mm" string (e.g. "21:00") into "21:00 PM" form.
+ * Used by status pills that already hold HH:mm and don't need a
+ * full date. Falls back to the input if it can't parse.
+ *
+ * Previous form was "21:00 (9 PM)" with parens — founder dropped
+ * the parens 2026-05-04 ("กระชับขึ้น เปลี่ยนตัวรายงานให้สม่ำเสมอ").
+ */
 export function prettyHHMM(hhmm: string | null | undefined): string {
   if (!hhmm) return "";
   const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm);
@@ -142,11 +156,9 @@ export function prettyHHMM(hhmm: string | null | undefined): string {
   const mm = parseInt(m[2]!, 10);
   if (Number.isNaN(hh) || Number.isNaN(mm)) return hhmm;
   const period = hh >= 12 ? "PM" : "AM";
-  const h12 = hh % 12 === 0 ? 12 : hh % 12;
+  const hhStr = hh.toString().padStart(2, "0");
   const mmStr = mm.toString().padStart(2, "0");
-  return mm === 0
-    ? `${hh.toString().padStart(2, "0")}:00 (${h12} ${period})`
-    : `${hh.toString().padStart(2, "0")}:${mmStr} (${h12}:${mmStr} ${period})`;
+  return `${hhStr}:${mmStr} ${period}`;
 }
 
 /** True when both moments fall on the same Bangkok calendar day. */
