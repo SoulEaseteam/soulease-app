@@ -113,13 +113,31 @@ function formatMessage(p: NotifyPayload): string {
   const divider = "___________________________________";
 
   /**
-   * Address block
+   * Address block.
+   * 🆕 Round 28b31 (founder 2026-05-04) — De-duplicate: when the
+   *   customer's selected `locationName` (e.g. "Marriott Sukhumvit")
+   *   is just the same string as the formatted `address`, don't
+   *   print both — admin saw the same line twice in the original bug
+   *   report. We compare normalized (whitespace-stripped, lowercase).
    */
   const addressLines: string[] = [];
+  const normalizeForCmp = (s: string | null | undefined) =>
+    (s ?? "").replace(/\s+/g, " ").trim().toLowerCase();
 
   if (p.locationName) addressLines.push(escapeMd(p.locationName));
-  if (p.address) addressLines.push(escapeMd(p.address));
-  if (p.addressDetails) addressLines.push(escapeMd(p.addressDetails));
+  if (
+    p.address &&
+    normalizeForCmp(p.address) !== normalizeForCmp(p.locationName)
+  ) {
+    addressLines.push(escapeMd(p.address));
+  }
+  if (
+    p.addressDetails &&
+    normalizeForCmp(p.addressDetails) !== normalizeForCmp(p.address) &&
+    normalizeForCmp(p.addressDetails) !== normalizeForCmp(p.locationName)
+  ) {
+    addressLines.push(escapeMd(p.addressDetails));
+  }
 
   let addressBlock =
     addressLines.length > 0 ? addressLines.join("\n") : "—";

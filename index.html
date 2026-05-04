@@ -9,12 +9,16 @@
 
     <title>SUNRED Bangkok • #1 Luxury Outcall Massage • EN/中文/日本語/한국어</title>
 
-    <!-- Performance: เปิด connection ล่วงหน้าให้ origin ที่แอปคุยด้วยจริงๆ -->
+    <!-- Performance: เปิด connection ล่วงหน้าให้ origin ที่แอปคุยด้วยจริงๆ
+         🆕 Round 28b30 (perf #66) — PageSpeed flagged 3 unused preconnects
+         (googleapis, identitytoolkit, maps). Demoted to dns-prefetch so the
+         browser still resolves DNS but doesn't waste a TLS handshake on
+         origins that may never be hit during the first paint. -->
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
-    <link rel="preconnect" href="https://www.googleapis.com" crossorigin />
-    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
-    <link rel="preconnect" href="https://maps.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
+    <link rel="dns-prefetch" href="https://www.googleapis.com" />
+    <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com" />
+    <link rel="dns-prefetch" href="https://maps.googleapis.com" />
     <link rel="dns-prefetch" href="https://www.google-analytics.com" />
     <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
 

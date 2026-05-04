@@ -78,9 +78,12 @@ import {
   calcTaxiFare,
   ADMIN_QUOTE_KM,
 } from "@/utils/taxiFare";
-// 🆕 Round 28b25 — Google Directions API for real road distance.
+// 🆕 Round 28b25/28b32 — Google Distance Matrix API for real road
+//   distance + traffic-aware ETA. Falls back to time-of-day speed
+//   estimates (BKK rush vs off-peak) when API is offline.
 import {
   fetchDrivingDistance,
+  estimateEtaMin,
   type RouteResult,
 } from "@/utils/directionsApi";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
@@ -542,20 +545,26 @@ const BookingFlowPage: React.FC = () => {
   //    to accept rides in rain, (b) traffic slows. We read the same
   //    cached rain status the fare surcharge uses, so the two
   //    surcharges (price + ETA) are always in sync.
-  const AVG_SPEED_KMH = 35;
   const STAFF_PREP_MIN_DRY = 15;
   const STAFF_PREP_MIN_RAIN = 20;
   const isRaining =
     taxiResult?.rain && taxiResult.rain.tier !== "none";
   const staffPrepMin = isRaining ? STAFF_PREP_MIN_RAIN : STAFF_PREP_MIN_DRY;
-  // 🆕 Round 28b25 — when Google Directions returned a duration, use
-  //   that (real traffic-aware ETA) instead of the constant-speed
-  //   approximation. Fall back to distance/AVG_SPEED_KMH when no
-  //   route info is available.
+  // 🆕 Round 28b32 (founder 2026-05-04) — Real-traffic-aware ETA.
+  //   Priority order:
+  //     1. `route.durationMin` from Google Distance Matrix with
+  //        `departureTime: now` → already includes live BKK traffic.
+  //     2. `estimateEtaMin(km)` — time-of-day fallback:
+  //          07:00–10:59 → 18 km/h
+  //          17:00–20:59 → 16 km/h
+  //          else        → 25 km/h
+  //        Floors at 3 min so we never claim sub-minute deliveries.
+  //   Replaces the old constant `AVG_SPEED_KMH = 35` which over-
+  //   estimated speed during Bangkok rush hours.
   const drivingMin = route?.durationMin
     ? route.durationMin
     : distanceKm > 0
-    ? (distanceKm * 60) / AVG_SPEED_KMH
+    ? estimateEtaMin(distanceKm)
     : 0;
   const etaMinutes = drivingMin > 0 ? Math.round(drivingMin + staffPrepMin) : 0;
 

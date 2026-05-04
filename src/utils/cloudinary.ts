@@ -27,9 +27,14 @@ interface EnhanceOptions {
   crop?: "limit" | "fill" | "thumb";
 }
 
+// 🆕 Round 28b30 (founder 2026-05-04, perf #66) — PageSpeed flagged
+//   therapist cards as oversized: native fetched 500w but rendered
+//   at 324–349w. Drop card variant to 400w. `dpr_auto` (retina-
+//   aware Client-Hints) still upscales to 800w on iPhone Pro/etc.
+//   This shaves ~319 KiB off the homepage per audit.
 const widthByVariant: Record<ImageVariant, number> = {
   thumb: 160,
-  card: 500,
+  card: 400,
   hero: 900,
   full: 1600,
 };

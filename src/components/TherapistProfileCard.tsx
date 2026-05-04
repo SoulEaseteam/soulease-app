@@ -71,6 +71,9 @@ import type { Therapist, Avail } from "@/types/therapist";
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
 import { enhanceImage } from "@/utils/cloudinary";
 import { haversineKm } from "@/utils/taxiFare";
+// 🆕 Round 28b33 — canonical "Xm • X.X km" formatter + Bangkok 25 km/h ETA.
+import { formatDistanceEta } from "@/utils/formatDistanceEta";
+import { estimateEtaFromKm } from "@/utils/directionsApi";
 import {
   priceForDuration,
   formatTHB,
@@ -292,6 +295,14 @@ export interface TherapistProfileCardProps {
    * permission popup. Parent owns the GPS state.
    */
   onRequestLocation?: () => void;
+  /**
+   * 🆕 Round 28b33 (founder 2026-05-04) — Pre-formatted "1.2 km • 4 min"
+   * label produced upstream by `formatDistanceEta(km, etaMin)`. When
+   * passed, the card renders this verbatim instead of computing its
+   * own "1.2 km" string. Lets the parent inject ETA from a single
+   * Distance Matrix call shared across the whole grid.
+   */
+  distanceLabel?: string | null;
 }
 
 const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
@@ -300,6 +311,7 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
   userLocation = null,
   services: externalServices,
   onRequestLocation,
+  distanceLabel,
 }) => {
   const navigate = useNavigate();
 
@@ -769,27 +781,43 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
                     footer pill (●NOW + green tint). */}
               </Stack>
               {/* Round 28aw — clickable "Allow location" prompt. When
-                  GPS resolved → render plain text ("X.X km"). When not,
-                  render a button that invokes the parent's geolocation
-                  request, triggering the browser permission popup. */}
-              {liveDistanceKm != null ? (
-                <Box
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "3px",
-                    fontFamily: fonts.body,
-                    fontSize: 10,
-                    fontWeight: 600,
-                    color: "#fff",
-                    opacity: 0.92,
-                    textShadow: "0 1px 4px rgba(0,0,0,0.6)",
-                  }}
-                >
-                  <LocationOnRoundedIcon sx={{ fontSize: 11 }} />
-                  {liveDistanceKm.toFixed(1)} km
-                </Box>
-              ) : (
+                  GPS resolved → render plain text. When not, render a
+                  button that invokes the parent's geolocation request,
+                  triggering the browser permission popup.
+                  🆕 Round 28b33 final (founder 2026-05-04) — Pipeline:
+                    Firestore lat/lng → haversineKm → estimateEta →
+                    formatDistanceEta → "6 min • 2.4 km"
+                  Parent can pre-compute the label (1 Distance Matrix
+                  call shared across the grid) OR let the card derive
+                  from liveDistanceKm + estimateEtaFromKm internally. */}
+              {(() => {
+                const resolved =
+                  distanceLabel ??
+                  (liveDistanceKm != null
+                    ? formatDistanceEta(
+                        liveDistanceKm,
+                        estimateEtaFromKm(liveDistanceKm)
+                      )
+                    : null);
+                const hasUsefulLabel = !!resolved && resolved !== "—";
+                return hasUsefulLabel ? (
+                  <Box
+                    sx={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "3px",
+                      fontFamily: fonts.body,
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: "#fff",
+                      opacity: 0.92,
+                      textShadow: "0 1px 4px rgba(0,0,0,0.6)",
+                    }}
+                  >
+                    <LocationOnRoundedIcon sx={{ fontSize: 11 }} />
+                    {resolved}
+                  </Box>
+                ) : (
                 <Box
                   role={onRequestLocation ? "button" : undefined}
                   onClick={(e) => {
@@ -816,7 +844,8 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
                   <NearMeRoundedIcon sx={{ fontSize: 11 }} />
                   Allow location
                 </Box>
-              )}
+                );
+              })()}
             </Stack>
           </Box>
         </Box>

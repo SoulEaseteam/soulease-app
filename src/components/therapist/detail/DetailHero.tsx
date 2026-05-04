@@ -48,7 +48,18 @@ interface Props {
   name: string;
   age: number;
   area: string;
-  distance: string;
+  /**
+   * @deprecated Round 28b33 — prefer `distanceLabel`. Kept for back-
+   * compat with callers that already pass a pre-formatted string.
+   */
+  distance?: string;
+  /**
+   * 🆕 Round 28b33 (founder 2026-05-04) — Canonical distance + ETA
+   * label produced by `formatDistanceEta(km, etaMin)`. Renders as
+   * "1.2 km • 4 min" or just "1.2 km" / "—" depending on inputs.
+   * When provided, overrides the legacy `distance` string.
+   */
+  distanceLabel?: string | null;
   /**
    * Either the legacy boolean (true → online, false → offline) or a
    * 3-state status string. Existing callers passing `online={t.online}`
@@ -77,10 +88,14 @@ const DetailHero: React.FC<Props> = ({
   age,
   area,
   distance,
+  distanceLabel,
   online,
   images = [],
   photoBg,
 }) => {
+  // 🆕 Round 28b33 — Prefer the new prop. Fall back to the legacy
+  //   string for callers that haven't migrated yet.
+  const resolvedLabel = distanceLabel ?? distance ?? null;
   const navigate = useNavigate();
   const [activeIdx, setActiveIdx] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
@@ -341,10 +356,14 @@ const DetailHero: React.FC<Props> = ({
                 so the customer knows the field exists + how to enable
                 it. Privacy: still no area name, distance only. */}
             <Box sx={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              {distance?.trim() ? (
+              {/* 🆕 Round 28b33 — Single source of truth: prefer the
+                  unified `distanceLabel` (formatted via formatDistanceEta).
+                  Falls back to legacy `distance` string. The "Allow
+                  location" prompt only renders when BOTH are empty. */}
+              {resolvedLabel?.trim() && resolvedLabel !== "—" ? (
                 <>
                   <LocationOnRoundedIcon sx={{ fontSize: 14 }} />
-                  {distance}
+                  {resolvedLabel ?? "—"}
                 </>
               ) : (
                 <>

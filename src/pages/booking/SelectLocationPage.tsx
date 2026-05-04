@@ -199,6 +199,16 @@ const SelectLocationPage: React.FC = () => {
     ...incoming,
   });
   const [geoLoading, setGeoLoading] = useState(false);
+  // 🆕 Round 28b31 — flag set TRUE briefly after a map tap, so we can
+  //   show a "📍 Address updated to match pin" toast and reassure the
+  //   customer that the visible address matches where the therapist
+  //   will actually be sent.
+  const [pinJustMoved, setPinJustMoved] = useState(false);
+  useEffect(() => {
+    if (!pinJustMoved) return;
+    const t = window.setTimeout(() => setPinJustMoved(false), 2400);
+    return () => window.clearTimeout(t);
+  }, [pinJustMoved]);
 
   // ── Lazy-load Google Maps SDK on mount
   useEffect(() => {
@@ -266,7 +276,17 @@ const SelectLocationPage: React.FC = () => {
       placeMarker(initLat, initLng);
     }
 
-    // Tap on the map → drop a pin + reverse-geocode
+    // Tap on the map → drop a pin + reverse-geocode.
+    // 🆕 Round 28b31 (founder 2026-05-04) — Address ↔ pin sync fix.
+    //   Bug: customer types/picks address "A" via search, then taps the
+    //   map at point "B" to nudge the pin. Pin moves to B, but locationName
+    //   stayed as "A" because reverseGeocode preserves it via `?? `.
+    //   Result: Telegram booking text says address A but map link points
+    //   to B — admin sends therapist to wrong place.
+    //   Fix: any deliberate map click is treated as "I want this exact
+    //   spot" — clear both locationName and locationAddress BEFORE
+    //   reverseGeocode runs, so the new lat/lng's formatted_address
+    //   wins. Toast feedback so customer sees the address refresh.
     map.addListener("click", (e: unknown) => {
       const ev = e as { latLng?: { lat: () => number; lng: () => number } };
       const ll = ev.latLng;
@@ -274,6 +294,14 @@ const SelectLocationPage: React.FC = () => {
       const lat = ll.lat();
       const lng = ll.lng();
       placeMarker(lat, lng);
+      setForm((p) => ({
+        ...p,
+        locationName: null,
+        locationAddress: null,
+        lat,
+        lng,
+      }));
+      setPinJustMoved(true);
       reverseGeocode(lat, lng);
     });
 
@@ -384,9 +412,16 @@ const SelectLocationPage: React.FC = () => {
         const nonPlus = results.find((r) => !isPlusCode(r));
         const best = preferred ?? nonPlus ?? results[0];
 
+        // 🆕 Round 28b31 — `??` order swapped: prefer the FRESH
+        //   reverse-geocode result for both name + address. The old
+        //   `p.locationName ??` preserved a stale Places name even
+        //   when the user dragged the pin to a totally different spot.
+        //   Caller can still keep its own name by NOT clearing it
+        //   before calling reverseGeocode (e.g., place_changed handler
+        //   sets locationName explicitly afterward).
         setForm((p) => ({
           ...p,
-          locationName: p.locationName ?? best.formatted_address ?? null,
+          locationName: best.formatted_address ?? p.locationName ?? null,
           locationAddress: best.formatted_address ?? p.locationAddress,
           lat,
           lng,
@@ -721,6 +756,41 @@ const SelectLocationPage: React.FC = () => {
                 {form.locationAddress ??
                   `${form.lat.toFixed(5)}, ${(form.lng ?? 0).toFixed(5)}`}
               </Typography>
+              {/* 🆕 Round 28b31 — Pin-moved confirmation pill. Slides in
+                  for ~2.4 s after a map tap so the customer sees that
+                  the address text just updated to match where they
+                  pinned. Auto-fades. */}
+              {pinJustMoved && (
+                <Box
+                  role="status"
+                  aria-live="polite"
+                  sx={{
+                    marginTop: "6px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    paddingX: "8px",
+                    paddingY: "3px",
+                    borderRadius: "999px",
+                    background: "rgba(22, 163, 74, 0.10)",
+                    color: "#15803d",
+                    fontFamily: SANS,
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    border: "1px solid rgba(22, 163, 74, 0.22)",
+                    animation: "addrSync 0.3s ease-out",
+                    "@keyframes addrSync": {
+                      "0%": { opacity: 0, transform: "translateY(-4px)" },
+                      "100%": { opacity: 1, transform: "translateY(0)" },
+                    },
+                    "@media (prefers-reduced-motion: reduce)": {
+                      animation: "none",
+                    },
+                  }}
+                >
+                  📍 Address updated to match pin
+                </Box>
+              )}
             </Box>
           </Box>
         )}

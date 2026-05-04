@@ -217,7 +217,16 @@ const HomeTherapistGrid: React.FC = () => {
       component="section"
       id="therapist-grid"
       aria-label="available therapists"
-      sx={{ margin: "20px 0 4px", scrollMarginTop: "12px" }}
+      sx={{
+        margin: "20px 0 4px",
+        scrollMarginTop: "12px",
+        // 🆕 Round 28b30 (perf #66) — Reserve vertical space BEFORE
+        //   therapists load. PageSpeed flagged 0.097 CLS from this
+        //   section: cards fly in from below the search bar, pushing
+        //   everything around as Firestore docs arrive. minHeight
+        //   sized for ~6 rows of 2-col cards (typical first-fold).
+        minHeight: { xs: "1200px", sm: "1400px" },
+      }}
     >
       {/* Header: serif title + live count.
           🆕 Round 28c — bumped horizontal padding 16 → 14 to match
