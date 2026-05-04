@@ -54,6 +54,13 @@ const TODAY_MIN_LEAD_MIN = 10;
 //   can wrap up + travel to the next location. Used by isSlotTaken
 //   below via the `bufferMin` argument.
 const BOOKING_BUFFER_MIN = 10;
+// 🆕 Round 28b41 (founder 2026-05-04) — Last bookable slot must END at
+//   least 20 minutes before therapist's shift end so they have time to
+//   wrap up the session and clock out. "รับงานรอบสุดท้ายก่อนถึงเวลา
+//   เลิกงาน 20 นาที". For a 90-min service with shift ending 05:00, the
+//   last allowed slot starts at 03:10 → rounds DOWN to 03:00 on the
+//   30-min grid (so it ends 04:30, leaving 30 min before clock-out).
+const SHIFT_END_BUFFER_MIN = 20;
 
 interface Props {
   /** Currently selected YYYY-MM-DD (null = nothing picked) */
@@ -95,7 +102,9 @@ function buildSlots(
   // Effective end: in overnight mode the shift extends past midnight.
   // Slots are placed in absolute minutes from `start` (0..shiftLen).
   const shiftLen = isOvernight ? 1440 - start + end : end - start;
-  const lastSlotOffset = shiftLen - durationMin; // last slot start
+  // 🆕 Round 28b41 — subtract SHIFT_END_BUFFER_MIN so the LAST slot
+  //   ends at least 20 min before clock-out.
+  const lastSlotOffset = shiftLen - durationMin - SHIFT_END_BUFFER_MIN;
   if (lastSlotOffset < 0) return [];
 
   const slots: { time: string; nextDay: boolean }[] = [];
@@ -122,7 +131,9 @@ function buildSlots(
   //   immediately within the next 4h without flipping to "yesterday".
   if (isToday && isOvernight && nowMin < end) {
     const tailStart = Math.max(earliestNowMin, 0);
-    const tailLastSlot = end - durationMin;
+    // 🆕 Round 28b41 — last tail slot must also leave 20-min buffer
+    //   before shift end so therapist can wrap up.
+    const tailLastSlot = end - durationMin - SHIFT_END_BUFFER_MIN;
     for (
       let m = tailStart;
       m <= tailLastSlot;
@@ -250,8 +261,14 @@ const StepDateTime: React.FC<Props> = ({
   // 🆕 Round 28ap — earliest non-taken slot, used to surface a
   //   "Earliest available: 13:00" hint above the slot grid so users
   //   immediately see the soonest option without scanning the grid.
+  // 🆕 Round 28b41 (founder 2026-05-04) — Sort by actual timestamp
+  //   first so overnight-tail slots (01:30 AM today) win over the
+  //   later 19:00 PM slot. Previous code iterated groups in fixed
+  //   morning→afternoon→evening→night order which always picked
+  //   19:00 PM as "earliest" even when 01:30 AM was 18 hours sooner.
   const earliestSlot = useMemo(() => {
     if (!slotGroups || !durationMin) return null;
+    const allSlots: { time: string; nextDay: boolean; ts: number }[] = [];
     for (const group of [
       slotGroups.morning,
       slotGroups.afternoon,
@@ -260,21 +277,25 @@ const StepDateTime: React.FC<Props> = ({
     ]) {
       for (const s of group) {
         const [h, m] = s.time.split(":").map(Number);
-        const slotStartMs = internalDate
+        const ts = internalDate
           .add(s.nextDay ? 1 : 0, "day")
           .hour(h)
           .minute(m)
           .second(0)
           .millisecond(0)
           .valueOf();
-        const taken = isSlotTaken(
-          liveBookings,
-          slotStartMs,
-          durationMin,
-          BOOKING_BUFFER_MIN
-        );
-        if (!taken) return s;
+        allSlots.push({ ...s, ts });
       }
+    }
+    allSlots.sort((a, b) => a.ts - b.ts);
+    for (const s of allSlots) {
+      const taken = isSlotTaken(
+        liveBookings,
+        s.ts,
+        durationMin,
+        BOOKING_BUFFER_MIN
+      );
+      if (!taken) return { time: s.time, nextDay: s.nextDay };
     }
     return null;
   }, [slotGroups, liveBookings, internalDate, durationMin]);

@@ -12,8 +12,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "19:00PM",
-    endTime: "05:00AM",
+    startTime: "19:00",
+    endTime: "05:00",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -92,8 +92,10 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "13:00PM",
-    endTime: "10:00PM",
+    // 🆕 Round 28b40 — 13:00 → 22:00 (was "10:00PM" — ambiguous;
+    //   stripped of suffix the legacy parser read it as 10 AM).
+    startTime: "13:00",
+    endTime: "22:00",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -176,8 +178,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "18:00PM",
-    endTime: "02:00AM",
+    startTime: "18:00",
+    endTime: "02:00",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -255,8 +257,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "11:00AM",
-    endTime: "03:00AM",
+    startTime: "11:00",
+    endTime: "03:00",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -339,8 +341,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "19:00PM",
-    endTime: "05:00AM",
+    startTime: "19:00",
+    endTime: "05:00",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -421,8 +423,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "14:00PM",
-    endTime: "01:00AM",
+    startTime: "14:00",
+    endTime: "01:00",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -498,8 +500,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "16:00PM",
-    endTime: "03:00AM",
+    startTime: "16:00",
+    endTime: "03:00",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -575,8 +577,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "16:00PM",
-    endTime: "02:00AM",
+    startTime: "16:00",
+    endTime: "02:00",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -649,14 +651,15 @@ export const therapists: Therapist[] = [
   // 9. NANNY
   // =========================================================
   {
+    // 🆕 Round 28b40 — endTime "10:00PM" → "22:00" (24h, was ambiguous).
     id: "NannySunRed",
     name: "Nanny",
     image: "/images/nanny/photo_2568-11-23 21.28.47.jpeg",
     rating: 0,
     reviews: 0,
 
-    startTime: "13:00PM",
-    endTime: "10:00PM",
+    startTime: "13:00",
+    endTime: "22:00",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -732,8 +735,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "17:00PM",
-    endTime: "02:00AM",
+    startTime: "17:00",
+    endTime: "02:00",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -810,8 +813,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "15:00PM",
-    endTime: "03:00AM",
+    startTime: "15:00",
+    endTime: "03:00",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -862,9 +865,7 @@ export const therapists: Therapist[] = [
       { code: "en", level: "Fluent" },
       { code: "ko", level: "Conversational" },
     ],
-    /** SunRed-uniform baseline credentials — TRUE for every onboarded
-     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
-     *  certifications) are added by admin after physical verification. */
+
     credentials: [
       {
         type: "background",
@@ -889,8 +890,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "12:00PM",
-    endTime: "00:00AM",
+    startTime: "12:00",
+    endTime: "00:00",
 
     todayBookings: 0,
     totalBookings: 0,

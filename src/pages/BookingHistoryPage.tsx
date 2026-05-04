@@ -429,7 +429,7 @@ const BookingCard: React.FC<{
                   therapist.reviews ?? 0
                 )
               )}{" "}
-              · Licensed (ผ.พ.)
+              · Licensed ()
             </Typography>
           )}
         </Box>
