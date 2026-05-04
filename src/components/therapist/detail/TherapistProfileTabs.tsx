@@ -15,7 +15,7 @@
 //   │   │   sessions · 98% rebook         │    │
 //   │   └─────────────────────────────────┘    │
 //   │   ┌─ Credentials chips ────────────┐    │
-//   │   │ ✓ ผ.พ. License                 │    │
+//   │   │ ✓ License                 │    │
 //   │   │ 🎓 Wat Pho Diploma              │    │
 //   │   │ 🛡 Background-checked           │    │
 //   │   └─────────────────────────────────┘    │
@@ -34,7 +34,7 @@
 //
 // Engagement hooks for trust:
 //   • Hero strip with 4 quick proof points (license / yrs / sessions / rebook)
-//   • Verified shield icon turns green when ผ.พ. cert present
+//   • Verified shield icon turns green whencert present
 //   • Animated chip hover on credentials
 //   • Languages with native-speaker priority sort
 //   • Reviews show "Verified booking" tag for social proof
@@ -267,7 +267,7 @@ const ProfileTab: React.FC<{
     trustCells.push({
       icon: <VerifiedRoundedIcon sx={{ fontSize: 18 }} />,
       color: "#16a34a",
-      value: "ผ.พ.",
+      value: "",
       label: "Licensed",
     });
   }

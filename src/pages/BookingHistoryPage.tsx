@@ -40,6 +40,11 @@ import dayjs from "dayjs";
 import { fmtBKK } from "@/utils/time";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
+// 🆕 Round 28b38 — emoji → MUI icons in EmptyState (matches Round 24/44).
+import LockRoundedIcon from "@mui/icons-material/LockRounded";
+import EventNoteRoundedIcon from "@mui/icons-material/EventNoteRounded";
+import CelebrationRoundedIcon from "@mui/icons-material/CelebrationRounded";
+import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
 
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
@@ -272,7 +277,7 @@ const BookingHistoryPage: React.FC = () => {
       >
         {!user ? (
           <EmptyState
-            icon="🔒"
+            icon={<LockRoundedIcon sx={{ fontSize: 36 }} />}
             title="Sign in to view your bookings"
             body="Your booking history shows here once you log in."
             ctaLabel="Sign in"
@@ -292,7 +297,15 @@ const BookingHistoryPage: React.FC = () => {
           </Typography>
         ) : visible.length === 0 ? (
           <EmptyState
-            icon={tab === "upcoming" ? "🗓" : tab === "completed" ? "🎉" : "💤"}
+            icon={
+              tab === "upcoming" ? (
+                <EventNoteRoundedIcon sx={{ fontSize: 36 }} />
+              ) : tab === "completed" ? (
+                <CelebrationRoundedIcon sx={{ fontSize: 36 }} />
+              ) : (
+                <HotelRoundedIcon sx={{ fontSize: 36 }} />
+              )
+            }
             title={
               tab === "upcoming"
                 ? "No upcoming bookings"
@@ -593,7 +606,7 @@ const BookingCard: React.FC<{
 // Empty state card
 // ──────────────────────────────────────────────────────────────────
 const EmptyState: React.FC<{
-  icon: string;
+  icon: React.ReactNode;
   title: string;
   body: string;
   ctaLabel?: string;
@@ -603,12 +616,31 @@ const EmptyState: React.FC<{
     sx={{
       padding: "48px 24px",
       textAlign: "center",
-      borderRadius: "16px",
-      background: "rgba(255, 255, 255, 0.5)",
+      borderRadius: "20px",
+      background: "rgba(255, 255, 255, 0.65)",
+      backdropFilter: "blur(20px) saturate(180%)",
+      WebkitBackdropFilter: "blur(20px) saturate(180%)",
       border: "1px solid rgba(255, 255, 255, 0.6)",
+      boxShadow: "0 4px 14px rgba(126, 30, 46, 0.05)",
     }}
   >
-    <Box sx={{ fontSize: "44px", lineHeight: 1, marginBottom: "12px" }}>
+    {/* 🆕 Round 28b38 — circular brand-tinted icon disc, matches the
+        SunRed gradient pattern used elsewhere (Hero quick tiles, etc). */}
+    <Box
+      aria-hidden
+      sx={{
+        width: 64,
+        height: 64,
+        margin: "0 auto 12px",
+        borderRadius: "50%",
+        background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        boxShadow: "0 8px 22px rgba(254, 9, 68, 0.28)",
+      }}
+    >
       {icon}
     </Box>
     <Typography

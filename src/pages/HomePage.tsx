@@ -38,7 +38,7 @@ import HeroSection from "@/components/home/HeroSection";
 //    • Round 18 dropped ServicesGrid / Testimonials / FAQ.
 //    HomePage was: TopNav → Hero → Footer (felt visually empty).
 // 🆕 Round 25 (founder 2026-05-02): added PromiseStrip — factual-only
-//    "Why SunRed" section (ผ.พ. licensed / Outcall / 5 Languages) to
+//    "Why SunRed" section licensed / Outcall / 5 Languages to
 //    bridge the Hero→Footer gap WITHOUT reintroducing fake stats.
 import PromiseStrip from "@/components/home/PromiseStrip";
 // 🆕 Round 25b (founder 2026-05-02): brought /therapists onto HomePage

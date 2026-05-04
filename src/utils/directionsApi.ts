@@ -68,28 +68,38 @@ export const estimateEtaMin = (kmRoad: number, now: Date = new Date()): number =
 };
 
 /**
- * 🆕 Round 28b33 (founder 2026-05-04) — "Bangkok realistic" simple
- * ETA: fixed 25 km/h average. No time-of-day variation. Returns
- * `null` for invalid input so the caller can render "—" cleanly.
+ * 🆕 Round 28b33 (founder 2026-05-04) — "Bangkok realistic" ETA.
  *
- * When to use this vs `estimateEtaMin`:
- *   • THERAPIST CARDS on home grid → use this. The card just says
- *     "1.2 km • 4 min" — a directional signal, not a precise ETA.
- *     Time-of-day is not communicated, so a stable number prevents
- *     the card from "flickering" between rush/off-peak rounds when
- *     the user re-renders.
- *   • BOOKING CONFIRM page → still uses `estimateEtaMin` so rush
- *     hour customers see the longer, accurate ETA before they
- *     commit.
+ * Round 28b38 (founder follow-up) — Now includes a default 15-minute
+ * prep buffer (therapist getting ready + waiting for taxi). Customer
+ * card showing "6 min • 2.4 km" was misleading — pure driving time
+ * 6 min, but therapist actually arrived ~21 min later. The label
+ * should answer "how long until therapist is at my door", not "how
+ * long is the car ride".
  *
- * Returns raw minutes (not rounded) — caller (usually
- * `formatDistanceEta`) does the rounding so the display layer owns
- * the rounding policy.
+ * Formula:
+ *   driving min = km / 25 × 60      (Bangkok 25 km/h average)
+ *   + prep buffer (default 15 min)  (configurable for callers that
+ *                                    add prep elsewhere)
+ *
+ * @param km          Distance in km. null/non-finite → returns null.
+ * @param prepMin     Prep buffer to add (minutes). Default 15.
+ *                    Pass 0 if the caller already adds prep separately
+ *                    (e.g. BookingFlowPage uses estimateEtaMin + its
+ *                    own STAFF_PREP_MIN).
+ *
+ * @returns total minutes (driving + prep), or null on bad input.
+ *          Raw fractional minutes — caller (formatDistanceEta) does
+ *          the rounding so display layer owns rounding policy.
  */
-export function estimateEtaFromKm(km?: number | null): number | null {
+export function estimateEtaFromKm(
+  km?: number | null,
+  prepMin = 15
+): number | null {
   if (km == null || !Number.isFinite(km)) return null;
   const avgSpeed = 25; // km/h — Bangkok realistic, traffic-included
-  return (km / avgSpeed) * 60;
+  const drivingMin = (km / avgSpeed) * 60;
+  return drivingMin + prepMin;
 }
 
 export interface LatLng {

@@ -31,7 +31,7 @@ import therapistsData from "@/data/therapists";
 // 🆕 Round 28an — anchor all "now" / "today" comparisons to BKK so the
 //    time picker filters past slots correctly even if the user's phone
 //    is on a different timezone or has clock drift.
-import { nowBKK } from "@/utils/time";
+import { nowBKK, prettyHHMM } from "@/utils/time";
 // 🆕 Phase 5 — Cross-check candidate slots against live Firestore bookings
 //    so the same therapist can never be double-booked. The hook returns
 //    [] while the therapist id is null (no live data), which means slots
@@ -107,9 +107,45 @@ function buildSlots(
   //    list shrinks live as time passes.
   const nowBkk = nowBKK();
   const isToday = date.format("YYYY-MM-DD") === nowBkk.format("YYYY-MM-DD");
-  const earliestNowMin = isToday
-    ? nowBkk.hour() * 60 + nowBkk.minute() + TODAY_MIN_LEAD_MIN
-    : -Infinity;
+  const nowMin = nowBkk.hour() * 60 + nowBkk.minute();
+  const earliestNowMin = isToday ? nowMin + TODAY_MIN_LEAD_MIN : -Infinity;
+
+  // 🆕 Round 28b40 (founder 2026-05-04) — Overnight tail support.
+  //   Bug: at 00:46 AM with shift 19:00–05:00, the picker showed
+  //   "No slots available" on TODAY tab. Reason: buildSlots only
+  //   considered the shift starting "today at 19:00" (still 18h
+  //   away), and ignored the still-active overnight shift that
+  //   started YESTERDAY 19:00 → ends TODAY 05:00.
+  //   Fix: when we're currently inside an overnight tail (nowMin <
+  //   end on today's calendar with isOvernight=true), prepend slots
+  //   from now → end of that still-active shift. Customer can book
+  //   immediately within the next 4h without flipping to "yesterday".
+  if (isToday && isOvernight && nowMin < end) {
+    const tailStart = Math.max(earliestNowMin, 0);
+    const tailLastSlot = end - durationMin;
+    for (
+      let m = tailStart;
+      m <= tailLastSlot;
+      m += SLOT_INCREMENT_MIN
+    ) {
+      // Round up to the next 30-min boundary so slots are aligned
+      const aligned =
+        m === tailStart
+          ? Math.ceil(m / SLOT_INCREMENT_MIN) * SLOT_INCREMENT_MIN
+          : m;
+      if (aligned > tailLastSlot) break;
+      if (aligned > end - durationMin) break;
+      slots.push({
+        time: fromMinutes(aligned),
+        nextDay: false, // these slots belong to today's calendar
+      });
+      if (m === tailStart && aligned !== tailStart) {
+        // After alignment, jump to the aligned position so the loop
+        // continues from there.
+        m = aligned;
+      }
+    }
+  }
 
   for (let off = 0; off <= lastSlotOffset; off += SLOT_INCREMENT_MIN) {
     const absMin = start + off; // could exceed 1440
@@ -118,6 +154,21 @@ function buildSlots(
 
     // Lead-time check (only meaningful when slot is on `date` itself, not nextDay)
     if (!nextDay && slotMin < earliestNowMin) continue;
+
+    // 🆕 Round 28b40 — avoid duplicating the overnight tail slots we
+    //   already pushed above. If we're in tail mode and this iteration
+    //   falls before midnight (i.e., evening start), still keep it so
+    //   we DON'T double-count tail slots.
+    //   Tail slots = same calendar day, slot < end. Skip those here.
+    if (
+      isToday &&
+      isOvernight &&
+      nowMin < end &&
+      !nextDay &&
+      slotMin < end
+    ) {
+      continue;
+    }
 
     slots.push({
       time: fromMinutes(slotMin),
@@ -330,7 +381,7 @@ const StepDateTime: React.FC<Props> = ({
               paddingLeft: "4px",
             }}
           >
-            {therapist.name}&rsquo;s shift: {startTime}&ndash;{endTime}
+            {therapist.name}&rsquo;s shift: {prettyHHMM(startTime)}&ndash;{prettyHHMM(endTime)}
             {toMinutes(endTime) <= toMinutes(startTime) ? " (overnight)" : ""}
           </Typography>
         )}
@@ -440,7 +491,7 @@ const StepDateTime: React.FC<Props> = ({
                 lineHeight: 1.2,
               }}
             >
-              {earliestSlot.time}
+              {prettyHHMM(earliestSlot.time)}
               {earliestSlot.nextDay && (
                 <Box
                   component="span"
@@ -632,7 +683,7 @@ const StepDateTime: React.FC<Props> = ({
                             },
                           }}
                         >
-                          {s.time}
+                          {prettyHHMM(s.time)}
                           {s.nextDay && (
                             <Typography
                               component="span"

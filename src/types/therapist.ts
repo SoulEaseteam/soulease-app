@@ -150,7 +150,7 @@ export interface Credential {
   type: "license" | "diploma" | "background" | "certification";
   /** Headline label, e.g. "Thai Ministry of Public Health License". */
   label: string;
-  /** Sub-line, e.g. "ผ.พ. 67-12-3456-7890 · Verified". */
+  /** Sub-line, e.g. · Verified". */
   meta: string;
 }
 

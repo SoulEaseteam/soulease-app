@@ -72,7 +72,7 @@ import {
   nextAvailableHHMM,
 } from "@/utils/useTherapistBookings";
 // 🆕 Round 28b9 — BKK formatter for upcoming booking hint.
-import { fmtBKK } from "@/utils/time";
+import { fmtBKK, prettyHHMM } from "@/utils/time";
 // 🆕 Round 28aq — drive StatusPill from the engine instead of the
 //   unset `therapist.online` field on the EMPTY shell.
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
@@ -139,20 +139,7 @@ type DemoTherapist = {
   }[];
 };
 
-// 🆕 Round 28ai — neutral fallback shell. Replaces the old MAI mock
-// that injected fake credentials, sessions, ratings, and reviews into
-// every render path. This shell only carries STRUCTURAL defaults
-// (gradient, working hours placeholder) — zero numerical claims.
-//
-// Fields are deliberately blank/0:
-//   • rating "0.0" + reviewCount 0  → UI shows "New" badge instead
-//   • totalSessions 0, rebookRate "—"
-//   • creds [] / specs [] / reviews [] / reviewBuckets []
-//   • langs [] (real ones come from data.languageSkills)
-//
-// Only used when the URL therapist id matches NEITHER a record in
-// data/therapists.ts NOR an Auth uid in Firestore. In that case the
-// page renders a clean "Therapist not found" experience downstream.
+
 const EMPTY_THERAPIST: DemoTherapist = {
   id: "_empty",
   name: "—",
@@ -213,20 +200,7 @@ function gradientForId(id: string): string {
   return `linear-gradient(135deg, ${a}, ${b})`;
 }
 
-// Service id => punchy display label for the Specialties section.
-// Falls back to the static service's `name` when the id isn't mapped.
-//
-// Round 28am — icon mixes warm emoji (cultural / friendly services)
-// with sharp MUI icons for premium offerings:
-//   • Premium hero: ✨ → AutoAwesome (sparkle, gold tone)
-//   • Masculine: 💪 → FitnessCenter (clean, gym-like)
-//   • Deep tissue: 🔥 → Whatshot (avoid clash with "Today 🔥" badge)
-// 🆕 Round 28b3 — every emoji icon replaced with a proper MUI icon
-//   (founder rule: no emoji site-wide). Specialty cards now render
-//   tinted MUI icons rather than mixed emoji/icons.
-// 🆕 Round 28b18 — keyed by NEW SKU codes. Legacy slug keys kept as
-//   aliases so any historical booking that still carries the old id
-//   continues to render its specialty icon.
+
 const SERVICE_DISPLAY: Record<
   string,
   { icon: React.ReactNode; short: string }
@@ -446,8 +420,12 @@ function buildFromReal(real: Therapist): DemoTherapist {
           .join(" · ")
       : (f.language ?? "");
 
+  // 🆕 Round 28b39 — wrap with prettyHHMM so the About row shows
+  //   "19:00 PM – 05:00 AM" instead of ambiguous "19:00 – 05:00".
   const hoursText =
-    real.startTime && real.endTime ? `${real.startTime} – ${real.endTime}` : "";
+    real.startTime && real.endTime
+      ? `${prettyHHMM(real.startTime)} – ${prettyHHMM(real.endTime)}`
+      : "";
 
   // Build new row structure
   const aboutRows: AboutRow[] = [

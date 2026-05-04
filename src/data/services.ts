@@ -137,7 +137,7 @@ const services: MassageService[] = [
     availableDurations: [60, 90, 120],
     count: 0,
     image: '/images/workphoto/IMG_8368.JPG',
-    detail: `Our most refined therapeutic ritual — a fusion of hot Thai herbal compress, aromatic oil massage, and gentle Thai-style stretching. Reserved for senior practitioners with 8+ years of licensed experience (ผ.พ.).`,
+    detail: `Our most refined therapeutic ritual — a fusion of hot Thai herbal compress, aromatic oil massage, and gentle Thai-style stretching. Reserved for senior practitioners with 8+ years of licensed experience.`,
     benefit: [
       'Hot Thai herbal compress',
       'Premium aromatherapy blend',

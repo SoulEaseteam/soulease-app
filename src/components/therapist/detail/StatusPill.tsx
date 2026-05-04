@@ -121,7 +121,9 @@ const StatusPill: React.FC<Props> = ({
   if (status === "online") {
     const lo = now.add(arriveLowerBoundMin, "minute").format("HH:mm");
     const hi = now.add(arriveUpperBoundMin, "minute").format("HH:mm");
-    subtitle = `Estimated arrival: ${lo}–${hi}.`;
+    // 🆕 Round 28b39 — wrap with prettyHHMM so "00:34–00:54" shows
+    //   "00:34 AM–00:54 AM" — eliminates after-midnight confusion.
+    subtitle = `Estimated arrival: ${prettyHHMM(lo)}–${prettyHHMM(hi)}.`;
     if (nextBookingAt) {
       const bookHint = relativeUntilHHMM(nextBookingAt);
       subtitle += ` Next booked at ${prettyHHMM(nextBookingAt)}${

@@ -12,8 +12,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "19:00",
-    endTime: "05:00",
+    startTime: "19:00PM",
+    endTime: "05:00AM",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -67,9 +67,7 @@ export const therapists: Therapist[] = [
       { code: "ko", level: "Fluent" },
       { code: "en", level: "Fluent" },
     ],
-    /** SunRed-uniform baseline credentials — TRUE for every onboarded
-     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
-     *  certifications) are added by admin after physical verification. */
+
     credentials: [
       {
         type: "background",
@@ -94,8 +92,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "13:00",
-    endTime: "22:00",
+    startTime: "13:00PM",
+    endTime: "10:00PM",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -153,9 +151,7 @@ export const therapists: Therapist[] = [
       { code: "ko", level: "Conversational" },
       { code: "zh", level: "Conversational" },
     ],
-    /** SunRed-uniform baseline credentials — TRUE for every onboarded
-     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
-     *  certifications) are added by admin after physical verification. */
+
     credentials: [
       {
         type: "background",
@@ -180,8 +176,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "18:00",
-    endTime: "02:00",
+    startTime: "18:00PM",
+    endTime: "02:00AM",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -234,9 +230,7 @@ export const therapists: Therapist[] = [
       { code: "en", level: "Fluent" },
       { code: "ko", level: "Conversational" },
     ],
-    /** SunRed-uniform baseline credentials — TRUE for every onboarded
-     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
-     *  certifications) are added by admin after physical verification. */
+
     credentials: [
       {
         type: "background",
@@ -261,8 +255,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "11:00",
-    endTime: "03:00",
+    startTime: "11:00AM",
+    endTime: "03:00AM",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -320,9 +314,7 @@ export const therapists: Therapist[] = [
       { code: "en", level: "Fluent" },
       { code: "zh", level: "Conversational" },
     ],
-    /** SunRed-uniform baseline credentials — TRUE for every onboarded
-     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
-     *  certifications) are added by admin after physical verification. */
+
     credentials: [
       {
         type: "background",
@@ -347,8 +339,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "19:00",
-    endTime: "05:00",
+    startTime: "19:00PM",
+    endTime: "05:00AM",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -405,9 +397,7 @@ export const therapists: Therapist[] = [
       { code: "th", level: "Native" },
       { code: "en", level: "Fluent" },
     ],
-    /** SunRed-uniform baseline credentials — TRUE for every onboarded
-     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
-     *  certifications) are added by admin after physical verification. */
+    
     credentials: [
       {
         type: "background",
@@ -431,8 +421,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "14:00",
-    endTime: "01:00",
+    startTime: "14:00PM",
+    endTime: "01:00AM",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -480,13 +470,10 @@ export const therapists: Therapist[] = [
     },
     area: "Huai Khwang · RCA",
     languageSkills: [
-      { code: "th", level: "Native" },
       { code: "en", level: "Fluent" },
       { code: "ko", level: "Conversational" },
     ],
-    /** SunRed-uniform baseline credentials — TRUE for every onboarded
-     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
-     *  certifications) are added by admin after physical verification. */
+
     credentials: [
       {
         type: "background",
@@ -511,9 +498,9 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "16:00",
-    endTime: "01:30",
-    
+    startTime: "16:00PM",
+    endTime: "03:00AM",
+
     todayBookings: 0,
     totalBookings: 0,
 
@@ -563,9 +550,7 @@ export const therapists: Therapist[] = [
       { code: "en", level: "Fluent" },
       { code: "ko", level: "Conversational" },
     ],
-    /** SunRed-uniform baseline credentials — TRUE for every onboarded
-     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
-     *  certifications) are added by admin after physical verification. */
+
     credentials: [
       {
         type: "background",
@@ -590,8 +575,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "16:00",
-    endTime: "02:00",
+    startTime: "16:00PM",
+    endTime: "02:00AM",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -645,9 +630,7 @@ export const therapists: Therapist[] = [
       { code: "en", level: "Fluent" },
       { code: "ko", level: "Basic" },
     ],
-    /** SunRed-uniform baseline credentials — TRUE for every onboarded
-     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
-     *  certifications) are added by admin after physical verification. */
+
     credentials: [
       {
         type: "background",
@@ -672,8 +655,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "13:00",
-    endTime: "22:00",
+    startTime: "13:00PM",
+    endTime: "10:00PM",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -724,9 +707,7 @@ export const therapists: Therapist[] = [
       { code: "th", level: "Native" },
       { code: "en", level: "Fluent" },
     ],
-    /** SunRed-uniform baseline credentials — TRUE for every onboarded
-     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
-     *  certifications) are added by admin after physical verification. */
+
     credentials: [
       {
         type: "background",
@@ -751,8 +732,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "17:00",
-    endTime: "02:00",
+    startTime: "17:00PM",
+    endTime: "02:00AM",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -799,17 +780,12 @@ export const therapists: Therapist[] = [
       language: "English",
     },
 
-    // Round 28z — new-hire profile. No track record yet, so we omit
-    // rebookRate and seed counts at zero. Specialties show "New therapist"
-    // labels until the first sessions roll in.
     area: "Huai Khwang · RCA",
     languageSkills: [
       { code: "th", level: "Native" },
       { code: "en", level: "Fluent" },
     ],
-    /** SunRed-uniform baseline credentials — TRUE for every onboarded
-     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
-     *  certifications) are added by admin after physical verification. */
+
     credentials: [
       {
         type: "background",
@@ -834,8 +810,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "15:00",
-    endTime: "03:00",
+    startTime: "15:00PM",
+    endTime: "03:00AM",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -913,8 +889,8 @@ export const therapists: Therapist[] = [
     rating: 0,
     reviews: 0,
 
-    startTime: "12:00",
-    endTime: "00:00",
+    startTime: "12:00PM",
+    endTime: "00:00AM",
 
     todayBookings: 0,
     totalBookings: 0,
@@ -962,13 +938,10 @@ export const therapists: Therapist[] = [
 
     area: "Rama 9",
     languageSkills: [
-      { code: "th", level: "Native" },
       { code: "en", level: "Basic" },
       { code: "zh", level: "Basic" },
     ],
-    /** SunRed-uniform baseline credentials — TRUE for every onboarded
-     *  therapist. Per-individual creds (ผ.พ. license, Wat Pho diploma,
-     *  certifications) are added by admin after physical verification. */
+
     credentials: [
       {
         type: "background",

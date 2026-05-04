@@ -113,11 +113,7 @@ interface TrustBadge {
   defaultLabel: string;
 }
 
-// 🆕 Round 28m (founder 2026-05-02) — "Thai Ministry of Public Health
-// licensed (ผ.พ.)" badge removed. SunRed is a neutral marketplace
-// platform, not a licensing body — keeping the ผ.พ. claim implied a
-// direct guarantee that doesn't fit the platform-not-employer legal
-// posture spelled out in the disclaimer below.
+
 const TRUST_BADGES: TrustBadge[] = [
   {
     Icon: RoomRoundedIcon,
@@ -334,12 +330,7 @@ const HomeFooter: React.FC = () => {
         </Stack>
       </Box>
 
-      {/* ── Legal Disclaimer (Round 28m) ──
-          Required language clarifying SunRed's role as a neutral
-          marketplace, not an employer of providers. Replaces the
-          earlier ผ.พ. licensing claim. Both Thai and English copy
-          live in the locale JSONs (footer.legal.disclaimer.*) — the
-          fallback below is the English founder-approved version. */}
+
       <Box
         sx={{
           position: "relative",
