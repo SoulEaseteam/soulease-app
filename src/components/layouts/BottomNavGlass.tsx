@@ -12,6 +12,8 @@ import { UserCircle } from "phosphor-react";
 import { FaRegHeart, FaRegFileAlt } from "react-icons/fa";
 import { SpaOutlined } from "@mui/icons-material";
 import { useAuth } from "@/providers/AuthProvider";
+// 🆕 Round 28b37 — match SunRed brand theme.
+import { brand, fonts } from "@/theme";
 
 const BottomNavGlass: React.FC = () => {
   const navigate = useNavigate();
@@ -83,15 +85,20 @@ const BottomNavGlass: React.FC = () => {
         sx={{
           pointerEvents: "auto",
           position: "relative",
-          // 🌅 Aurora glass — soft peach-pink-lavender tint
+          // 🌅 Round 28b37 — SunRed brand glass: warm cream base with
+          //   subtle red→coral wash so the active tab's red accent
+          //   pops without screaming. Top hairline = brand red glow.
           background:
-            "linear-gradient(135deg, rgba(255, 245, 240, 0.92) 0%, rgba(255, 240, 248, 0.92) 50%, rgba(247, 240, 255, 0.92) 100%)",
-          backdropFilter: "blur(16px)",
-          border: "1px solid rgba(255, 255, 255, 0.55)",
+            "linear-gradient(180deg, rgba(255, 251, 248, 0.94) 0%, rgba(255, 245, 240, 0.94) 100%)",
+          backdropFilter: "blur(20px) saturate(180%)",
+          WebkitBackdropFilter: "blur(20px) saturate(180%)",
+          borderTop: `1px solid ${brand.red}20`,
+          borderLeft: "1px solid rgba(255, 255, 255, 0.6)",
+          borderRight: "1px solid rgba(255, 255, 255, 0.6)",
           borderBottom: "none",
           boxShadow:
-            "0 -8px 24px rgba(225, 29, 72, 0.08), 0 -2px 6px rgba(99, 102, 241, 0.06)",
-          borderRadius: "20px 20px 0 0",
+            "0 -10px 28px rgba(254, 9, 68, 0.10), 0 -2px 6px rgba(60, 30, 20, 0.04)",
+          borderRadius: "22px 22px 0 0",
           px: 1,
           py: 0.5,
         }}
@@ -102,15 +109,28 @@ const BottomNavGlass: React.FC = () => {
           showLabels
           sx={{
             background: "transparent",
-            // 🌸 Aurora-themed active state
+            fontFamily: fonts.body,
+            // 🌸 Round 28b37 — Brand-red active state with coral
+            //   underline accent. Ripple toned down for serif feel.
             "& .Mui-selected": {
-              color: "#B91C9F", // magenta from Aurora gradient
-              fontWeight: 600,
-              transform: "scale(1.10)",
+              color: brand.red,
+              fontWeight: 700,
+              transform: "scale(1.08)",
             },
             "& .MuiBottomNavigationAction-root": {
-              color: "rgba(120, 105, 130, 0.7)",
-              transition: "all 0.2s ease",
+              color: "rgba(60, 30, 20, 0.60)",
+              transition: "color 0.2s ease, transform 0.2s ease",
+              fontFamily: fonts.body,
+              "&:hover": {
+                color: brand.coral,
+              },
+            },
+            "& .MuiBottomNavigationAction-label": {
+              fontFamily: fonts.body,
+              fontSize: "11px !important",
+              fontWeight: 600,
+              letterSpacing: "0.02em",
+              marginTop: "2px",
             },
           }}
         >

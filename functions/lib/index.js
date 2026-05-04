@@ -443,6 +443,92 @@ exports.onBookingCreate = (0, firestore_1.onDocumentCreated)({
         v2_1.logger.error("[onBookingCreate] TELEGRAM_BOT_TOKEN missing");
         return;
     }
+    // 🆕 Round 28b36 (founder 2026-05-04) — SERVER-SIDE Holiday gate.
+    //   Even with the client-side guard from Round 28b35, a malicious
+    //   user can hit Firestore directly via DevTools and bypass the UI.
+    //   This trigger is the last line of defense: read therapist doc,
+    //   check isHoliday / statusOverride, and if the therapist isn't
+    //   bookable → flip the booking to status="rejected" + alert
+    //   admin. Therapist DM is SKIPPED so the wrong therapist doesn't
+    //   get a job they can't take.
+    let therapistBookable = true;
+    let rejectReason = "";
+    if (data.therapistId) {
+        try {
+            const tSnap = await (0, firestore_2.getFirestore)()
+                .collection("therapists")
+                .doc(data.therapistId)
+                .get();
+            const t = tSnap.data();
+            if (t?.isHoliday) {
+                therapistBookable = false;
+                rejectReason = "Holiday";
+            }
+            else if (t?.statusOverride === "resting") {
+                therapistBookable = false;
+                rejectReason = "StatusOverride=resting";
+            }
+        }
+        catch (err) {
+            v2_1.logger.error("[onBookingCreate] therapist lookup failed", err);
+            // Fail-OPEN — if Firestore is down, let the booking go through;
+            // admin can manually reject. We don't want a single bad request
+            // to block legitimate bookings.
+        }
+    }
+    if (!therapistBookable) {
+        // 🆕 Round 28b36 (founder 2026-05-04, follow-up) — Don't auto-
+        //   reject. Founder direction: "ส่งออเดอให้แอดมินยืนยันก่อน
+        //   เพราะเรายังต้องคอนเฟิมกับลูกค้าเอง". Admin needs to phone
+        //   the customer, decide whether to (a) re-assign to another
+        //   therapist, (b) reschedule, or (c) cancel — automated reject
+        //   removes that human touch and may surprise customers who
+        //   already paid.
+        //   Behavior:
+        //     • Booking stays in `status: "confirmed"` (the customer's
+        //       Success page still shows the hold countdown).
+        //     • Add `needsAdminReview: true` + `reviewReason` for admin
+        //       UI filtering.
+        //     • Send a HIGH-VISIBILITY admin alert with the reason so
+        //       admin sees it immediately and can call the customer.
+        //     • Therapist DM is STILL skipped (don't dispatch the wrong
+        //       therapist).
+        v2_1.logger.warn("[onBookingCreate] flagging booking for review", {
+            bookingId,
+            therapistId: data.therapistId,
+            reason: rejectReason,
+        });
+        try {
+            await event.data?.ref.update({
+                needsAdminReview: true,
+                reviewReason: rejectReason,
+                flaggedAt: firestore_2.FieldValue.serverTimestamp(),
+            });
+        }
+        catch (err) {
+            v2_1.logger.error("[onBookingCreate] flag write failed", err);
+        }
+        const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
+        await sendTelegram(token, TELEGRAM_CHAT_ID, [
+            `⚠️ NEEDS REVIEW · ${refCode}`,
+            ``,
+            `Reason: therapist unavailable (${rejectReason})`,
+            `Therapist: ${data.therapistName ?? data.therapistId ?? "—"}`,
+            `Customer: ${data.contactName ?? "—"} · ${data.phone ?? "—"}`,
+            `🧖 ${data.serviceName ?? "—"} · ${data.duration ?? "?"} min`,
+            `📅 ${data.date ?? "—"}  🕐 ${data.time ?? "—"}`,
+            `📍 ${data.address ?? "—"}`,
+            `💴 ฿${(data.totalPrice ?? 0).toLocaleString()}`,
+            ``,
+            `👉 Please CALL the customer to decide:`,
+            `  · Re-assign to another therapist`,
+            `  · Reschedule with this one`,
+            `  · Cancel & refund`,
+            ``,
+            `Therapist DM was skipped to prevent wrong dispatch.`,
+        ].join("\n"));
+        return; // Skip therapist DM — admin handles from here.
+    }
     // ── 1. Send to ADMIN group (existing behavior) ────────────────
     const adminText = formatBookingForAdmin(bookingId, data);
     const adminResult = await sendTelegram(token, TELEGRAM_CHAT_ID, adminText);
