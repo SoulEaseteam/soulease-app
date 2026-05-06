@@ -40,15 +40,49 @@ import {
   nextAvailableHHMM,
 } from "@/utils/useTherapistBookings";
 import { fmtBKK } from "@/utils/time";
+// 🆕 Round 28r3 — resolve service id → display name so the floating
+//   card can show ชื่อเมนูเด่น (e.g. "Aroma · Therapeutic") inline
+//   beside the rating, matching the founder mockup layout.
+import { getServiceById } from "@/utils/serviceCatalog";
+
+// Compact display name for the floating-card service tags.
+// Full catalog names ("SunRed Therapeutic Experience") would clip on
+// the 430px phone shell — these short forms read at a glance.
+const SERVICE_SHORT_NAME: Record<string, string> = {
+  "xSR-Thai": "Thai",
+  "SR-Aroma": "Aroma",
+  "SR-HJ2200": "Gentleman",
+  "SR-B2B3200": "Therapeutic",
+};
+
+/** Pick up to 2 short service names for the floating-card tags row. */
+function pickServiceTags(t: Therapist): string[] {
+  const ids = t.servicesAvailable ?? t.services ?? [];
+  const tags: string[] = [];
+  for (const id of ids) {
+    const short = SERVICE_SHORT_NAME[id];
+    if (short) {
+      tags.push(short);
+    } else {
+      const svc = getServiceById(id);
+      if (svc?.name) tags.push(svc.name.split(" ")[0]);
+    }
+    if (tags.length >= 2) break;
+  }
+  return tags;
+}
 
 // Fallback pin positions when GPS / therapist locations aren't available.
-// Mirrors the mockup `.pin.p1 … .pin.p4` so we still get a sensible
-// scatter on first paint before geolocation kicks in.
+// 🆕 Round 28r2 (founder 2026-05-06) — "ไม่บัง". Repositioned all four
+// fallback pins into the upper-middle zone so none of them tuck under
+// the floating card at the bottom of the map. Also nudged them away
+// from the 48%/55% user-dot anchor so the eye reads four distinct
+// faces + one location anchor, not a cluster.
 const FALLBACK_POSITIONS = [
-  { top: 30, left: 30 }, // values in %
-  { top: 25, left: 65 },
-  { top: 60, left: 70 },
-  { top: 70, left: 25 },
+  { top: 20, left: 26 }, // values in %
+  { top: 16, left: 72 },
+  { top: 46, left: 82 },
+  { top: 50, left: 16 },
 ] as const;
 
 // "You are here" dot position — kept as % so projected pins can be
@@ -85,10 +119,12 @@ function projectPin(
   const top = USER_CENTER.top - dLatKm * scalePctPerKm;
   const left = USER_CENTER.left + dLngKm * scalePctPerKm;
 
-  // Clamp to leave a little breathing room around the edges (10%–90%).
+  // 🆕 Round 28r2 — Clamp `top` so projected pins never tuck under the
+  // floating card area (which sits roughly bottom 24% of the map).
+  // Left clamp stays generous so east/west spread feels natural.
   return {
-    top: Math.max(8, Math.min(92, top)),
-    left: Math.max(8, Math.min(92, left)),
+    top: Math.max(8, Math.min(64, top)),
+    left: Math.max(10, Math.min(90, left)),
   };
 }
 
@@ -117,6 +153,11 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
   const navigate = useNavigate();
   const top = therapists.slice(0, 4);
   const [activeIdx, setActiveIdx] = useState(0);
+  // 🆕 Round 28r2 (founder 2026-05-06) — pause auto-rotation when the
+  //   guest manually taps a pin or hovers the map surface. We only
+  //   resume after they look away for a few seconds; otherwise the
+  //   carousel "fights" their selection.
+  const [paused, setPaused] = useState(false);
   // Round 28az — track image-load failures so we can render an
   // initial-letter placeholder instead of the browser's broken-image
   // icon for therapists whose photo file is missing.
@@ -128,6 +169,31 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
   useEffect(() => {
     if (activeIdx >= top.length) setActiveIdx(0);
   }, [top.length, activeIdx]);
+
+  // 🆕 Round 28r2 (founder 2026-05-06) — "คนในpin วนสวยๆ ไม่บัง".
+  //   Auto-cycle the active pin so the floating card rotates through
+  //   real practitioners. Each cycle the new face gets the brand-red
+  //   ring, Bayesian rating, and price/status chip — feels alive
+  //   without the guest having to tap anything.
+  //   🆕 Round 28r3 — slowed from 3.6s → 6.5s ("ช้ากว่านี้หน่อย อารม
+  //   สปา เบาๆ"). Faster cadence read as a slot machine; spa pacing
+  //   asks the eye to linger before the next face slides in.
+  //   Pauses while `paused` is true (manual tap / hover).
+  useEffect(() => {
+    if (paused || top.length <= 1) return;
+    const id = window.setInterval(() => {
+      setActiveIdx((prev) => (prev + 1) % top.length);
+    }, 6500);
+    return () => window.clearInterval(id);
+  }, [paused, top.length]);
+
+  // After a manual tap/hover, hold the selection for 7s then resume
+  // the rotation so the guest can leave the page on autopilot.
+  useEffect(() => {
+    if (!paused) return;
+    const id = window.setTimeout(() => setPaused(false), 7000);
+    return () => window.clearTimeout(id);
+  }, [paused]);
 
   // 🆕 Round 26e — Project pins to real lat/lng offsets when GPS is
   // available. Pick a per-km scale that sizes the farthest pin to ~38%
@@ -185,7 +251,6 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
 
   const active = top[activeIdx];
   const activePrice = priceById?.get(active.id);
-  const specialty = active.specialty ?? "Therapist";
 
   // Bayesian rating — same formula used by TherapistProfileCard
   // (PRIOR_MEAN 4.5, PRIOR_WEIGHT 10) so card + map agree.
@@ -221,6 +286,10 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
     typeof activeDistanceKm === "number"
       ? `${activeDistanceKm.toFixed(1)} km`
       : null;
+
+  // 🆕 Round 28r3 — top-2 short service names (e.g. ["Aroma", "Therapeutic"])
+  //   for the inline "ชื่อเมนูเด่น" tags in the rating line.
+  const activeServiceTags = pickServiceTags(active);
 
   // 🆕 Round 28b9 — Status now merges the engine output with the live
   //   bookings collection: an active booking covering "now" forces
@@ -262,8 +331,14 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
       {/* Map surface — 🆕 Round 28b1 Clean v3: warm cream/peach base
           → cool neutral slate. Grid lines neutral slate too. Inset
           shadow loses the red tint so the map reads as a "real" cool
-          map, not a coral rug. */}
+          map, not a coral rug.
+          🆕 Round 28r3 (founder 2026-05-06) — kept the cool-slate
+          gradient + straight grid (founder feedback "ของเดิมเป็นกริด
+          เส้นตรงๆ โอเค แล้ว"). The radial halo / dot pattern / SVG
+          contour layers from Round 28r2 were reverted. */}
       <Box
+        onMouseEnter={() => setPaused(true)}
+        onTouchStart={() => setPaused(true)}
         sx={{
           position: "relative",
           height: 380,
@@ -328,7 +403,10 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
               key={t.id}
               component={motion.button}
               type="button"
-              onClick={() => setActiveIdx(i)}
+              onClick={() => {
+                setActiveIdx(i);
+                setPaused(true);
+              }}
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.97 }}
               aria-label={`Show ${t.name} on the map`}
@@ -347,7 +425,13 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
                 //   brand glow because that's the deliberate accent
                 //   that says "this one's selected".
                 backgroundColor: "#CBD5E1",
-                border: "3px solid #fff",
+                // 🆕 Round 28r3 (founder 2026-05-06) — "Pin ไร้ขอบ".
+                //   Removed the 3px white ring. The drop-shadow + red
+                //   active-glow are enough to lift the pin off the
+                //   map surface; the white border was reading as a
+                //   1990s sticker outline. We keep `border: 0` so MUI
+                //   Box doesn't inherit the default button border.
+                border: 0,
                 cursor: "pointer",
                 padding: 0,
                 boxShadow: isActive
@@ -530,7 +614,15 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
             />
           )}
 
-          {/* Info column */}
+          {/* Info column — 🆕 Round 28r3 (founder 2026-05-06).
+              "ป้ายพนักงาน เปลียน · ชื่อเมนูเด่นมาใส่ ตามแบบ":
+              Reverted the specialty chip from Round 28r2; the founder
+              mockup wants a single tight metrics line in the form of
+                ★ 4.8 · 3.1 km · Aroma · Therapeutic
+              where the trailing dotted segments are the practitioner's
+              top-2 service tags (their headline menu items) instead of
+              one specialty word. This reads as "menu highlights" — the
+              fastest signal a guest scanning the map needs. */}
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Stack
               direction="row"
@@ -561,6 +653,7 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
                 sx={{ fontSize: 14, color: "#1d9bf0", flexShrink: 0 }}
               />
             </Stack>
+
             <Typography
               sx={{
                 fontFamily: fonts.body,
@@ -583,7 +676,9 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
                 </Box>
               )}
               {distanceLabel && <> · {distanceLabel}</>}
-              {specialty && <> · {specialty}</>}
+              {activeServiceTags.length > 0 && (
+                <> · {activeServiceTags.join(" · ")}</>
+              )}
             </Typography>
           </Box>
 

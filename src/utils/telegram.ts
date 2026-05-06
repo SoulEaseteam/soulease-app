@@ -102,6 +102,13 @@ interface NotifyPayload {
   locationType: string | null;
   mapUrl: string | null;
   discountCode?: string | null;
+  // 🆕 Round 28r14 — Discount apply logic surfaces these on the
+  //   admin Telegram so the operator sees what was applied without
+  //   needing to recompute. discountAmount stays in THB, label is
+  //   the human-friendly description ("First booking — 10% off").
+  discountAmount?: number | null;
+  discountLabel?: string | null;
+  subtotalPrice?: number | null;
   lat?: number | null;
   lng?: number | null;
 }

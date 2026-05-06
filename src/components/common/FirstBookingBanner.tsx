@@ -38,6 +38,17 @@ export const FirstBookingBanner: React.FC = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       void navigator.clipboard.writeText(code).catch(() => {});
     }
+    // 🆕 Round 28r14 — Also stash the code in sessionStorage so the
+    //   booking form's getInitialDiscountCode() can auto-fill it on
+    //   the next page. Removes the "I copied the code but the form
+    //   doesn't know about it" friction.
+    if (typeof window !== "undefined") {
+      try {
+        window.sessionStorage.setItem("sunred.discount.suggested", code);
+      } catch {
+        /* ignore quota / privacy mode */
+      }
+    }
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
   };

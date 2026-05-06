@@ -104,166 +104,46 @@ import therapistsData from "@/data/therapists";
 // 🆕 Round 28b7 — Cloudinary helper for the rounded therapist photo.
 import { enhanceImage } from "@/utils/cloudinary";
 import { ADDONS, type AddOn } from "@/data/bookingExtras";
+// 🆕 Round 28r10 (founder 2026-05-06) — File-split refactor.
+//   Extracted helpers + subcomponents to keep BookingFlowPage focused
+//   on the booking orchestration logic. Each piece now lives in its
+//   own file so finding/editing them isn't an exercise in scrolling
+//   2,000+ lines.
+import useTweenedNumber from "@/hooks/useTweenedNumber";
+import {
+  type BookingFormState,
+  initialFormState,
+  readPersistedForm,
+  writePersistedForm,
+  clearPersistedForm,
+} from "@/utils/bookingFormStorage";
+import SectionCard from "@/components/booking/SectionCard";
+import FareChip from "@/components/booking/FareChip";
+import PriceRow from "@/components/booking/PriceRow";
+import AddressTile from "@/components/booking/AddressTile";
+import ConfirmBar from "@/components/booking/ConfirmBar";
+// 🆕 Round 28r13 — Funnel analytics: booking_start (page open) +
+//   booking_complete (addDoc success).
+import {
+  trackBookingStart,
+  trackBookingComplete,
+} from "@/utils/analytics";
+// 🆕 Round 28r14 — Discount validator (FIRST10 + SUN-XXXX referral).
+//   Pure function; client-side validation only. Admin still
+//   confirms / overrides via Telegram before payment.
+import { validateDiscount, getInitialDiscountCode } from "@/utils/discount";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
-/**
- * 🆕 Round 28b46 (founder 2026-05-05) — Smoothly tween a numeric value
- * over `durationMs` so the Total field doesn't snap when distance, rain
- * surcharge, or service duration changes. Uses requestAnimationFrame +
- * ease-out cubic. Honors `prefers-reduced-motion` by snapping instantly.
- *
- * Usage:
- *   const animatedTotal = useTweenedNumber(total);
- *   <Typography>{formatTHB(Math.round(animatedTotal))}</Typography>
- */
-function useTweenedNumber(target: number, durationMs = 380): number {
-  const [display, setDisplay] = useState(target);
-  const displayRef = useRef(target);
-  // Keep displayRef in sync with the latest rendered display value so
-  // each new tween starts from where the previous one stopped.
-  displayRef.current = display;
-  const rafRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    const from = displayRef.current;
-    if (target === from || !Number.isFinite(target) || !Number.isFinite(from)) {
-      setDisplay(target);
-      return;
-    }
-    const reduced =
-      typeof window !== "undefined" &&
-      window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) {
-      setDisplay(target);
-      return;
-    }
-    const startTime = performance.now();
-    const tick = () => {
-      const elapsed = performance.now() - startTime;
-      const t = Math.min(1, elapsed / durationMs);
-      // ease-out cubic: 1 - (1-t)^3 — fast start, gentle landing
-      const eased = 1 - Math.pow(1 - t, 3);
-      setDisplay(from + (target - from) * eased);
-      if (t < 1) rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-    };
-  }, [target, durationMs]);
-
-  return display;
-}
-
-export interface BookingFormState {
-  serviceId: string | null;
-  duration: number | null;
-  date: string | null;
-  time: string | null;
-  locationName: string | null;
-  locationAddress: string | null;
-  lat: number | null;
-  lng: number | null;
-  addressDetails: string;
-  /** Customer's contact name — required, captured on Select Location page */
-  contactName: string;
-  customerPhone: string;
-  /** Note attached to the address (Floor/Room/Landmarks) */
-  addressNote: string;
-  /** Optional meeting-point convention (lobby / lift / direct) */
-  meetingPoint: string | null;
-  /** Optional building category (hotel / condo / house / office / other) */
-  locationType: string | null;
-  /** Auto-generated Google Maps deep-link to the pinned location */
-  mapUrl: string | null;
-  language: string;
-  selectedAddons: string[];
-  notes: string;
-  /** Customer-entered discount code (no backend validation yet — admin
-   *  applies it manually after seeing the booking). */
-  discountCode: string;
-  therapistId: string | null;
-}
-
-const initialFormState: BookingFormState = {
-  serviceId: null,
-  duration: null,
-  date: null,
-  time: null,
-  locationName: null,
-  locationAddress: null,
-  lat: null,
-  lng: null,
-  addressDetails: "",
-  contactName: "",
-  customerPhone: "",
-  addressNote: "",
-  meetingPoint: null,
-  locationType: null,
-  mapUrl: null,
-  language: "en",
-  selectedAddons: [],
-  notes: "",
-  discountCode: "",
-  therapistId: null,
-};
-
-// 🆕 Round 28b7 (founder bug-fix 2026-05-03) — When the user navigates
-//   from Confirm Order → Payment Methods → back, this page unmounts
-//   and remounts. Without persistence, the form state (location pin,
-//   address, contact name, etc.) is wiped because it lived in
-//   `useState`. Solution: mirror the form to sessionStorage keyed by
-//   therapistId so a single therapist's WIP booking survives a side-
-//   trip but a fresh booking for a different therapist starts clean.
-//
-//   sessionStorage > localStorage so the form auto-clears when the
-//   tab closes (privacy-friendly + no stale state on next visit).
-const FORM_STORAGE_PREFIX = "sunred.booking.form.";
-function formStorageKey(therapistId: string | null | undefined): string | null {
-  if (!therapistId) return null;
-  return `${FORM_STORAGE_PREFIX}${therapistId}`;
-}
-function readPersistedForm(
-  therapistId: string | null | undefined
-): Partial<BookingFormState> | null {
-  if (typeof window === "undefined") return null;
-  const key = formStorageKey(therapistId);
-  if (!key) return null;
-  try {
-    const raw = window.sessionStorage.getItem(key);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<BookingFormState>;
-    return parsed && typeof parsed === "object" ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-function writePersistedForm(
-  therapistId: string | null | undefined,
-  form: BookingFormState
-): void {
-  if (typeof window === "undefined") return;
-  const key = formStorageKey(therapistId);
-  if (!key) return;
-  try {
-    window.sessionStorage.setItem(key, JSON.stringify(form));
-  } catch {
-    /* ignore quota / privacy mode failures */
-  }
-}
-function clearPersistedForm(therapistId: string | null | undefined): void {
-  if (typeof window === "undefined") return;
-  const key = formStorageKey(therapistId);
-  if (!key) return;
-  try {
-    window.sessionStorage.removeItem(key);
-  } catch {
-    /* ignore */
-  }
-}
+// 🆕 Round 28r10 (founder 2026-05-06) — File-split refactor.
+//   - useTweenedNumber → @/hooks/useTweenedNumber
+//   - BookingFormState + initialFormState + persisted-form helpers
+//     → @/utils/bookingFormStorage
+//   - SectionCard / FareChip / PriceRow / AddressTile / ConfirmBar
+//     → @/components/booking/*
+//   ~480 lines moved out of this file. The orchestration logic
+//   (state, derived prices, submit handler) stays here.
 
 const BookingFlowPage: React.FC = () => {
   const { id: therapistId } = useParams<{ id?: string }>();
@@ -281,12 +161,11 @@ const BookingFlowPage: React.FC = () => {
 
   const [submitting, setSubmitting] = useState(false);
 
-  // Preferences sheet (Language + Add-ons) was removed 2026-05-01 round 8
-  // (founder feedback). Language defaults to 'en'; admin handles requests.
+  // 🆕 Round 28r13 — Fire booking_start once per therapist mount.
+  useEffect(() => {
+    trackBookingStart(therapistId ?? null);
+  }, [therapistId]);
 
-  // 🆕 Round 14: read the user's selected payment method from localStorage.
-  //    Re-read on window focus so navigating to /payment-methods → back
-  //    updates the cell label without a full reload.
   const [paymentMethod, setPaymentMethod] =
     useState<PaymentMethodId>(readSelectedPaymentMethod);
   useEffect(() => {
@@ -299,13 +178,14 @@ const BookingFlowPage: React.FC = () => {
     };
   }, []);
 
-  // 🆕 Round 28b7 — initialise form from persisted sessionStorage
-  //   first, then layer URL params on top (so a fresh navigation with
-  //   ?service=... still wins over stale persisted serviceId). This
-  //   means navigating to /payment-methods → back keeps the address,
-  //   pin, contact name, and notes the user already entered.
+
   const [form, setForm] = useState<BookingFormState>(() => {
     const persisted = readPersistedForm(therapistId);
+    // 🆕 Round 28r14 — Auto-fill discount code from URL referral
+    //   (?ref=SUN-XXXX captured on home-page mount). Only when the
+    //   persisted form doesn't already carry a code — guest's
+    //   manual entry always wins over auto-fill.
+    const autoCode = persisted?.discountCode ?? getInitialDiscountCode() ?? "";
     return {
       ...initialFormState,
       ...(persisted ?? {}),
@@ -317,6 +197,7 @@ const BookingFlowPage: React.FC = () => {
           : persisted?.duration ?? null,
       date: preDate ?? persisted?.date ?? null,
       time: preTime ?? persisted?.time ?? null,
+      discountCode: autoCode,
     };
   });
 
@@ -370,13 +251,7 @@ const BookingFlowPage: React.FC = () => {
   }, []);
 
   const goEditAddress = () => {
-    // 🆕 Round 8 (founder 2026-05-01): 'พอเลือกโลเคชั่นเสร็จ ดึงข้อมูล
-    //    ค้างไว้ Confirm Order'. The /address detour is in a separate
-    //    component (not preserved in memory), and SelectLocationPage
-    //    navigates back with `replace: true` — so without forwarding
-    //    the booking context, service/duration/date/time get reset to
-    //    null on remount. Forward them as URL params; SelectLocationPage
-    //    preserves location.search on its way back.
+
     const params = new URLSearchParams();
     if (form.serviceId) params.set("service", form.serviceId);
     if (form.duration != null) params.set("duration", String(form.duration));
@@ -455,13 +330,7 @@ const BookingFlowPage: React.FC = () => {
     () => ADDONS.filter((a) => form.selectedAddons.includes(a.id)),
     [form.selectedAddons]
   );
-  // selectedLanguage removed — Preferences cell was dropped 2026-05-01.
-
-  // 🆕 Round 28b21 — Phase 4 of conversion plan. Track abandoned carts:
-  //   the moment we have a phone number, persist a partial booking to
-  //   `abandoned_bookings/{cartId}` (debounced 1.2s). The recovery
-  //   scheduled function pings admin if the customer doesn't confirm
-  //   within 15 minutes.
+ 
   const cartSnapshot = useMemo(
     () =>
       form.therapistId
@@ -502,16 +371,7 @@ const BookingFlowPage: React.FC = () => {
       : service?.price ?? 0;
   const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.price, 0);
 
-  // 🆕 Round 28b22 (founder 2026-05-04) — auto-pop the Travel Fee
-  //   tooltip on first mount so customers see how the fare is computed
-  //   without having to discover the (i) icon. Sequence:
-  //     • 600ms after mount → fade IN (350ms)
-  //     • Hold visible for 3.5s
-  //     • Fade OUT (700ms ease)
-  //   Hover/focus still works normally afterwards (controlled via
-  //   onOpen/onClose handlers below).
-  //   Shows once per browser session — sessionStorage flag prevents
-  //   re-popping every time the user navigates back to Confirm Order.
+
   const [travelTipOpen, setTravelTipOpen] = useState<boolean>(false);
   const [travelTipShown, setTravelTipShown] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
@@ -542,20 +402,7 @@ const BookingFlowPage: React.FC = () => {
 
   const locationSet = form.lat != null && form.lng != null;
 
-  // 🆕 Round 28b25 (founder 2026-05-04) — Real road distance via
-  //   Google Directions API. Founder enabled Maps Platform (61 APIs)
-  //   on cloud.google with billing on, so we now resolve actual
-  //   driving distance + duration instead of haversine straight-line.
-  //
-  //   Flow:
-  //     1. Render with haversine fallback immediately (no UI flash).
-  //     2. Kick off fetchDrivingDistance(); resolves in ~200ms.
-  //     3. When the route resolves, recompute fare with the real km
-  //        and replace the in-memory result.
-  //     4. Cache in sessionStorage (key = quantized lat/lng pair).
-  //
-  //   This double-render is fine — keeps initial paint fast and the
-  //   "real" number lands a beat later, like Grab's "calculating fare".
+  
   const { ready: mapsReady, loadIfNeeded: loadMaps } = useGoogleMaps();
   useEffect(() => {
     // Trigger Maps SDK load when we have coords + need a route. The
@@ -660,7 +507,15 @@ const BookingFlowPage: React.FC = () => {
     : 0;
   const etaMinutes = drivingMin > 0 ? Math.round(drivingMin + staffPrepMin) : 0;
 
-  const total = servicePrice + addonsTotal + taxiFare;
+  // 🆕 Round 28r14 — Pre-discount subtotal first; discount validates
+  //   against THIS, then total subtracts it. Order matters because
+  //   FIRST10's 10% cap is computed against the subtotal (not the
+  //   raw service price), so add-ons + travel get included in the
+  //   percentage base — fairer for guests who picked add-ons.
+  const subtotal = servicePrice + addonsTotal + taxiFare;
+  const discount = validateDiscount(form.discountCode, subtotal);
+  const discountAmount = discount.valid ? discount.amount : 0;
+  const total = Math.max(0, subtotal - discountAmount);
 
   // 🆕 Round 28b46 (founder 2026-05-05) — Pre-surcharge baseline so we
   //   can render "~~฿1,800~~ ฿2,018" when rain or admin-quote bumps the
@@ -804,6 +659,14 @@ const BookingFlowPage: React.FC = () => {
         note: form.notes,
         // 🆕 Round 13: discount code (admin verifies + applies after booking)
         discountCode: form.discountCode || null,
+        // 🆕 Round 28r14 — Discount apply logic: store the validated
+        //   amount + label on the booking doc so historical bookings
+        //   stay reconstructable even if the FIRST10 / referral code
+        //   schemas change in the future. Subtotal is the
+        //   pre-discount baseline; total stays AFTER discount.
+        discountAmount: discount.valid ? discountAmount : null,
+        discountLabel: discount.valid ? discount.label : null,
+        subtotalPrice: subtotal,
         // 🆕 Round 14: customer-selected payment method label (admin still
         // confirms via Telegram, but we capture intent here).
         payment: PAYMENT_LABELS[paymentMethod],
@@ -891,6 +754,13 @@ const BookingFlowPage: React.FC = () => {
         mapUrl: form.mapUrl,
         // 🆕 Round 13: extra fields for the new Telegram template
         discountCode: form.discountCode || null,
+        // 🆕 Round 28r14 — Send the validated discount amount alongside
+        //   the code so admin sees exactly what was applied (no
+        //   ambiguity if the code is FIRST10 vs SUN-XXX). Stored as
+        //   integer THB; null when no valid discount.
+        discountAmount: discount.valid ? discountAmount : null,
+        discountLabel: discount.valid ? discount.label : null,
+        subtotalPrice: subtotal,
         // 🆕 Round 14: send chosen payment method label to Telegram so
         //    admin sees what the customer selected (e.g. "PromptPay").
         payment: PAYMENT_LABELS[paymentMethod],
@@ -904,6 +774,16 @@ const BookingFlowPage: React.FC = () => {
       if (form.therapistId) {
         void markCartConfirmed(form.therapistId).catch(() => {});
       }
+      // 🆕 Round 28r13 — Funnel analytics: full-conversion event.
+      //   Captures serviceId + duration + final total so we can
+      //   compute conversion-by-service and average-order-value
+      //   without touching booking docs (analytics_events stays
+      //   PII-clean).
+      trackBookingComplete(
+        service.id,
+        form.duration ?? service.duration,
+        Math.round(total)
+      );
       void navigate(`/booking/success/${ref.id}`);
     } catch (err) {
       console.error("[booking] submit failed", err);
@@ -1584,22 +1464,67 @@ const BookingFlowPage: React.FC = () => {
                 },
               }}
             />
+            {/* 🆕 Round 28r14 — Live validation feedback. Replaces the
+                old "we'll apply at confirmation" placeholder note —
+                FIRST10 + SUN-XXXX codes now subtract immediately so
+                the guest sees the discount at the same time they
+                type. Unknown codes show a quiet hint ("not recognised
+                — concierge may apply manually") without blocking the
+                booking. */}
             {form.discountCode && (
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: "10.5px",
-                  color: "rgba(60, 30, 20, 0.55)",
-                  marginTop: "4px",
-                  paddingLeft: "8px",
-                  fontStyle: "italic",
-                }}
-              >
-                We&rsquo;ll verify and apply your discount when we
-                confirm your booking.
-              </Typography>
+              <Box sx={{ marginTop: "6px", paddingLeft: "8px" }}>
+                {discount.valid ? (
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: "11.5px",
+                      fontWeight: 700,
+                      color: "#16a34a",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                    }}
+                  >
+                    <Box component="span" sx={{ fontWeight: 800 }}>
+                      ✓
+                    </Box>
+                    {discount.label} — saves {formatTHB(discount.amount)}
+                  </Typography>
+                ) : (
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: "10.5px",
+                      color: "rgba(60, 30, 20, 0.55)",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    Code not recognised — the concierge can apply
+                    custom codes manually after seeing your booking.
+                  </Typography>
+                )}
+              </Box>
             )}
           </Box>
+
+          {/* 🆕 Round 28r14 — Discount row in the price breakdown.
+              Only renders when a valid code is applied. Shows the
+              code + green amount struck through the subtotal. */}
+          {discount.valid && discountAmount > 0 && (
+            <Box sx={{ marginTop: "6px" }}>
+              <PriceRow
+                label={`Discount · ${discount.code}`}
+                value={
+                  <Box
+                    component="span"
+                    sx={{ color: "#16a34a", fontWeight: 700 }}
+                  >
+                    −{formatTHB(discountAmount)}
+                  </Box>
+                }
+              />
+            </Box>
+          )}
 
           <Box
             sx={{
@@ -1815,396 +1740,10 @@ const BookingFlowPage: React.FC = () => {
   );
 };
 
-// ─────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────
 
-// Card with eyebrow label + emoji icon (Order Details / Pricing / etc.)
-const SectionCard: React.FC<{
-  label: string;
-  /** MUI icon node (preferred) — rendered inside a soft pink rounded box
-   *  matching the address tile. Plain string emoji is still accepted for
-   *  back-compat. */
-  icon?: React.ReactNode;
-  tight?: boolean;
-  children: React.ReactNode;
-}> = ({ label, icon, tight, children }) => (
-  <Box
-    sx={{
-      padding: tight ? "14px 14px 16px" : "14px 16px 18px",
-      borderRadius: "16px",
-      background: "rgba(255, 255, 255, 0.7)",
-      border: "1px solid rgba(255, 255, 255, 0.6)",
-      boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
-    }}
-  >
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        gap: "10px",
-        marginBottom: "12px",
-      }}
-    >
-      {icon && (
-        <Box
-          aria-hidden
-          sx={{
-            width: 30,
-            height: 30,
-            flexShrink: 0,
-            borderRadius: "9px",
-            background: "rgba(254, 9, 68, 0.10)",
-            color: "#FE0944",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            "& svg": { fontSize: 18 },
-          }}
-        >
-          {icon}
-        </Box>
-      )}
-      <Typography
-        sx={{
-          fontFamily: SERIF,
-          fontSize: "15px",
-          fontWeight: 600,
-          color: "#3c1e14",
-        }}
-      >
-        {label}
-      </Typography>
-    </Box>
-    {children}
-  </Box>
-);
+// 🆕 Round 28r10 — Subcomponents (SectionCard / FareChip / PriceRow /
+//   AddressTile / ConfirmBar) extracted to @/components/booking/*.
+//   ~390 lines moved out — find them via the imports at the top.
 
-// Small inline chip used under the Travel fee row to communicate context
-// (free zone, savings vs Grab, rain surcharge, admin quote requirement).
-const FareChip: React.FC<{
-  color: "green" | "amber";
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}> = ({ color, icon, children }) => {
-  const palette =
-    color === "green"
-      ? { bg: "rgba(22, 163, 74, 0.1)", fg: "#16a34a" }
-      : { bg: "rgba(249, 115, 22, 0.1)", fg: "#d97706" };
-  return (
-    <Box
-      sx={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "5px",
-        padding: "5px 10px",
-        background: palette.bg,
-        color: palette.fg,
-        borderRadius: "999px",
-        fontFamily: SANS,
-        fontSize: "11px",
-        fontWeight: 700,
-        "& svg": { fontSize: 13 },
-      }}
-    >
-      <Box
-        component="span"
-        sx={{ display: "inline-flex", alignItems: "center" }}
-      >
-        {icon}
-      </Box>
-      {children}
-    </Box>
-  );
-};
-
-const PriceRow: React.FC<{ label: string; value: React.ReactNode }> = ({
-  label,
-  value,
-}) => (
-  <Box
-    sx={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "baseline",
-      marginBottom: "6px",
-    }}
-  >
-    <Typography
-      sx={{
-        fontFamily: SANS,
-        fontSize: "13px",
-        color: "rgba(60, 30, 20, 0.7)",
-      }}
-    >
-      {label}
-    </Typography>
-    <Typography
-      sx={{
-        fontFamily: SANS,
-        fontSize: "13px",
-        fontWeight: 600,
-        color: "#3c1e14",
-      }}
-    >
-      {value}
-    </Typography>
-  </Box>
-);
-
-// Address tile — summary only. Tap to open the full Select Location page.
-const AddressTile: React.FC<{
-  location: {
-    name: string | null;
-    address: string | null;
-    addressDetails: string;
-    hasCoords: boolean;
-    contactName: string;
-    phone: string;
-  };
-  onTap: () => void;
-}> = ({ location, onTap }) => {
-  const phoneClean = location.phone.replace(/\D/g, "");
-  const phoneOk = phoneClean.length >= 10;
-  const fullySet = location.hasCoords && location.contactName.trim() && phoneOk;
-
-  return (
-    <Box
-      role="button"
-      tabIndex={0}
-      onClick={onTap}
-      onKeyDown={(e) => {
-        if (e.key === " " || e.key === "Enter") {
-          e.preventDefault();
-          onTap();
-        }
-      }}
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        gap: "12px",
-        padding: "14px",
-        borderRadius: "16px",
-        cursor: "pointer",
-        background: "rgba(255, 255, 255, 0.85)",
-        border: fullySet
-          ? "1.5px solid #FE0944"
-          : "1px solid rgba(0, 0, 0, 0.06)",
-        transition: "all 0.15s ease",
-        "&:hover": { background: "rgba(255, 255, 255, 0.95)" },
-      }}
-    >
-      <Box
-        sx={{
-          width: 40,
-          height: 40,
-          flexShrink: 0,
-          borderRadius: "10px",
-          background: location.hasCoords
-            ? "linear-gradient(135deg, rgba(254, 9, 68, 0.14), rgba(254, 122, 82, 0.14))"
-            : "rgba(254, 201, 167, 0.35)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#FE0944",
-        }}
-      >
-        <LocationOnRoundedIcon fontSize="small" />
-      </Box>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        {location.hasCoords ? (
-          <>
-            <Typography
-              sx={{
-                fontFamily: SERIF,
-                fontSize: "14px",
-                fontWeight: 600,
-                color: "#3c1e14",
-                lineHeight: 1.2,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {location.name ?? "Pinned location"}
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: SANS,
-                fontSize: "11px",
-                color: "rgba(60, 30, 20, 0.6)",
-                marginTop: "2px",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {location.addressDetails || location.address || "—"}
-            </Typography>
-            {fullySet && (
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: "11px",
-                  color: "rgba(60, 30, 20, 0.55)",
-                  marginTop: "3px",
-                }}
-              >
-                👤 {location.contactName} · 📞 {location.phone}
-              </Typography>
-            )}
-            {!fullySet && (
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: "11px",
-                  color: "#FE0944",
-                  fontWeight: 600,
-                  marginTop: "3px",
-                }}
-              >
-                ⚠ Add contact name + phone
-              </Typography>
-            )}
-          </>
-        ) : (
-          <Typography
-            sx={{
-              fontFamily: SERIF,
-              fontSize: "14px",
-              fontWeight: 600,
-              color: "rgba(60, 30, 20, 0.55)",
-              lineHeight: 1.2,
-            }}
-          >
-            Tap to set your location
-          </Typography>
-        )}
-      </Box>
-      <Box
-        aria-hidden
-        sx={{
-          fontSize: "20px",
-          color: fullySet ? "#FE0944" : "rgba(60, 30, 20, 0.35)",
-          flexShrink: 0,
-          fontWeight: 800,
-        }}
-      >
-        ›
-      </Box>
-    </Box>
-  );
-};
-
-// Sticky bottom — Total left + Confirm right (pattern 7A)
-const ConfirmBar: React.FC<{
-  total: number;
-  canPlace: boolean;
-  submitting: boolean;
-  onConfirm: () => void;
-}> = ({ total, canPlace, submitting, onConfirm }) => {
-  // 🆕 Round 28b46 — Tween the sticky-bar Total too so price changes
-  //   feel cohesive between the Pricing card and the bar.
-  const animatedTotal = useTweenedNumber(total);
-  const pulseKey = useRef(0);
-  const lastTotalRef = useRef(total);
-  if (lastTotalRef.current !== total) {
-    lastTotalRef.current = total;
-    pulseKey.current += 1;
-  }
-  return (
-  <Box
-    sx={{
-      position: "fixed",
-      // 🆕 Round 28b43 (founder 2026-05-05) — Switched from hardcoded
-      //   100px to global --cta-bottom-offset (defined in index.css)
-      //   so EVERY confirm CTA across the app sits at the same height
-      //   above the bottom nav. Was 100px to clear the nav (~64px) +
-      //   small gap; now centralized via CSS variable.
-      bottom: "var(--cta-bottom-offset)",
-      left: "50%",
-      transform: "translateX(-50%)",
-      width: "100%",
-      maxWidth: "430px",
-      zIndex: 50,
-      background: "rgba(255, 248, 240, 0.92)",
-      backdropFilter: "blur(30px) saturate(180%)",
-      WebkitBackdropFilter: "blur(30px) saturate(180%)",
-      borderTop: "1px solid rgba(0, 0, 0, 0.06)",
-      borderRadius: "20px 20px 0 0",
-      padding: "12px 16px",
-      display: "flex",
-      alignItems: "center",
-      gap: "12px",
-      boxShadow: "0 -8px 24px rgba(126, 30, 46, 0.08)",
-    }}
-  >
-    <Box>
-      <Typography
-        sx={{
-          fontFamily: SANS,
-          fontSize: "10px",
-          fontWeight: 700,
-          color: "rgba(60, 30, 20, 0.55)",
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-        }}
-      >
-        Total
-      </Typography>
-      <Typography
-        key={pulseKey.current}
-        sx={{
-          fontFamily: SERIF,
-          fontSize: "22px",
-          fontWeight: 700,
-          color: "#FE0944",
-          letterSpacing: "-0.02em",
-          lineHeight: 1,
-          marginTop: "2px",
-          fontVariantNumeric: "tabular-nums",
-          "@media (prefers-reduced-motion: no-preference)": {
-            animation: "totalPulse 0.42s ease-out",
-          },
-          "@keyframes totalPulse": {
-            "0%": { transform: "scale(0.96)" },
-            "40%": { transform: "scale(1.04)" },
-            "100%": { transform: "scale(1)" },
-          },
-        }}
-      >
-        {formatTHB(Math.round(animatedTotal))}
-      </Typography>
-    </Box>
-    <Button
-      onClick={onConfirm}
-      disabled={!canPlace || submitting}
-      sx={{
-        flex: 1,
-        height: 50,
-        borderRadius: "999px",
-        background: "linear-gradient(135deg, #FE0944, #FE7A52)",
-        color: "#fff",
-        fontFamily: SANS,
-        fontSize: "15px",
-        fontWeight: 700,
-        letterSpacing: "0.02em",
-        textTransform: "none",
-        boxShadow: "0 6px 20px rgba(254, 9, 68, 0.35)",
-        "&:hover": {
-          background: "linear-gradient(135deg, #E50840, #E56A47)",
-        },
-        "&.Mui-disabled": {
-          background: "rgba(0, 0, 0, 0.12)",
-          color: "rgba(0, 0, 0, 0.35)",
-          boxShadow: "none",
-        },
-      }}
-    >
-      {submitting ? "..." : "Place Order"}
-    </Button>
-  </Box>
-  );
-};
 
 export default BookingFlowPage;

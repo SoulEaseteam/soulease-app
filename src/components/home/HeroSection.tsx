@@ -44,8 +44,9 @@
 // "Limited slots") to avoid fabricating offers — founder/marketing
 // can swap in concrete deals via i18n keys.
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Typography } from "@mui/material";
+import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import RedeemRoundedIcon from "@mui/icons-material/RedeemRounded";
@@ -55,14 +56,42 @@ import FlightRoundedIcon from "@mui/icons-material/FlightRounded";
 import FavoriteRoundedIcon from "@mui/icons-material/FavoriteRounded";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import DiamondRoundedIcon from "@mui/icons-material/DiamondRounded";
-import NightsStayRoundedIcon from "@mui/icons-material/NightsStayRounded";
+// 🆕 Round 28r4 — outbound arrow on the Couples tile to telegraph that
+//   tapping opens an external concierge chat (LINE) instead of an
+//   in-app route. The other two tiles route internally.
+import NorthEastRoundedIcon from "@mui/icons-material/NorthEastRounded";
 import { brand, fonts, glass, gradients } from "@/theme";
-import { useAuth } from "@/providers/AuthProvider";
+// 🆕 Round 28r4 — single source of truth for the four operational
+//   windows (prime / evening / day / off). Live pill, Tonight Special
+//   eyebrow + copy all read from the same payload so the page mood
+//   never disagrees with itself when the hour rolls over.
+import { useConciergeMode } from "@/utils/conciergeMode";
+// 🆕 Round 28r6 — shared mode glyph (☀ / 🌅 / 🌙 / ☕) so Live pill,
+//   Tonight Special banner, TopNav chip, and Concierge FAB all agree.
+import ConciergeModeIcon from "@/components/common/ConciergeModeIcon";
+// 🆕 Round 28r7 — Phase 1 referral surface. Self-hides when no
+//   referral code is captured from URL — safe to mount unconditionally.
+import ReferralActiveBanner from "@/components/common/ReferralActiveBanner";
+// 🆕 Round 28r13 — concierge_chat_open analytics for the Hero CTAs
+//   that route guests directly into LINE (the Tonight Special promo
+//   banner, the Concierge tile, and the Couples niche tile).
+import { trackConciergeOpen } from "@/utils/analytics";
 // 🆕 Round 28b21 — Phase 5: first-booking discount + social proof.
+// 🆕 Round 28r14 (founder 2026-05-07) — FirstBookingBanner re-enabled.
+//   Round 28r8 had hidden it because the FIRST10 code copied to the
+//   clipboard never actually applied a discount in the booking flow
+//   — pure vaporware. With the discount apply logic shipped in this
+//   round, FIRST10 now subtracts 10% (capped at ฿500) at checkout
+//   and surfaces on the booking success page. Banner is honest now.
+//
+//   AdminPresenceBadge stays commented out until an AdminLayout
+//   heartbeat writer to `adminPresence/global` ships.
 import FirstBookingBanner from "@/components/common/FirstBookingBanner";
 import SocialProofTicker from "@/components/common/SocialProofTicker";
-// 🆕 Round 28b21 — Phase 3: admin presence badge.
-import AdminPresenceBadge from "@/components/common/AdminPresenceBadge";
+// import AdminPresenceBadge from "@/components/common/AdminPresenceBadge";
+// 🆕 Round 28r8 — Refer & earn dialog now opens from the bottom-right
+//   tile (replacing the dead SunCoins/Earn route).
+import ReferralDialog from "@/components/home/ReferralDialog";
 
 // ─────────────────────────────────────────────────────────────────────
 // 🎯 Competitive Strategy & Sales Boost (Round 28b · founder 2026-05-02)
@@ -191,15 +220,44 @@ const TINT_BG: Record<NicheTile["tint"], string> = {
 const HeroSection: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  // 🆕 Round 28r4 (founder 2026-05-06) — Time-aware page mood.
+  //   `mode` flips four times a day and the components below pull
+  //   their copy from this payload. Refresh cadence is 60s so we
+  //   transition across boundaries (e.g. 21:59 → 22:00 prime) without
+  //   a hard reload.
+  const concierge = useConciergeMode();
 
-  // 🆕 Round 28q — login-gated rewards instead of live review count.
-  // Anonymous review aggregation removed (saves 2 Firestore listeners);
-  // the Earn tile now drives customers to sign in → review → earn coins.
-  const auth = useAuth() as {
-    user?: { uid?: string } | null;
-    currentUser?: { uid?: string } | null;
-  };
-  const isLoggedIn = Boolean(auth.user ?? auth.currentUser);
+  // 🆕 Round 28r5 (founder 2026-05-06) — Promo banner now cycles through
+  //   2–3 messages per mode every 7.5s. Slow enough to read fully (per
+  //   founder spa-pacing direction), pauses on hover so a reader who
+  //   wants to dwell on one isn't fighting the carousel. Reset to 0
+  //   whenever the mode itself flips (e.g. 21:59 → 22:00 prime).
+  const [promoIdx, setPromoIdx] = useState(0);
+  const [promoPaused, setPromoPaused] = useState(false);
+  const promoMessages = concierge.promoMessages;
+
+  useEffect(() => {
+    setPromoIdx(0);
+  }, [concierge.mode]);
+
+  useEffect(() => {
+    if (promoPaused || promoMessages.length <= 1) return;
+    const id = window.setInterval(() => {
+      setPromoIdx((prev) => (prev + 1) % promoMessages.length);
+    }, 7500);
+    return () => window.clearInterval(id);
+  }, [promoPaused, promoMessages.length]);
+
+  const promo = promoMessages[promoIdx] ?? promoMessages[0];
+
+  // 🆕 Round 28r8 — Local state for the Refer & earn dialog when
+  //   triggered from the bottom-right tile. (TopNav drawer also opens
+  //   the same dialog via its own state instance.)
+  const [referralOpen, setReferralOpen] = useState(false);
+
+  // 🆕 Round 28r8 — useAuth() removed (and the login-gated SunCoins
+  //   tile with it). Bottom-right tile is now Refer & earn → opens
+  //   ReferralDialog directly. Sign-in CTA still lives in TopNav.
 
   // 🆕 Round 28p — promo banner is a non-interactive teaser for now.
   // The clickable scroll-to-grid handler is parked here for when an
@@ -283,7 +341,11 @@ const HeroSection: React.FC = () => {
           </Typography>
         </Box>
 
-        {/* Live · BKK pill */}
+        {/* 🆕 Round 28r4 — Live pill is now time-aware. The dot color +
+            label flip across the four concierge windows so a guest who
+            opens the page at 23:30 sees "Prime hours" with a coral
+            crescent, while a guest at 06:00 sees "Concierge · 09:00"
+            with a muted slate dot (no fake green liveness). */}
         <Box
           sx={{
             display: "flex",
@@ -294,29 +356,65 @@ const HeroSection: React.FC = () => {
             fontFamily: fonts.body,
             fontSize: 10,
             fontWeight: 700,
-            color: brand.burgundy,
+            color: concierge.mode === "off" ? "rgba(60,30,20,0.55)" : brand.burgundy,
             letterSpacing: "0.04em",
             textTransform: "uppercase",
           }}
         >
-          <Box
-            component="span"
-            aria-hidden
-            sx={{
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              background: brand.green,
-              boxShadow: `0 0 8px ${brand.green}`,
-              animation: "heroPulseDot 1.5s ease-in-out infinite",
-              "@keyframes heroPulseDot": {
-                "0%, 100%": { opacity: 1 },
-                "50%": { opacity: 0.4 },
-              },
-            }}
-          />
-          {t("hero.live", "Live · BKK")}
+          {/* 🆕 Round 28r6 — Live pill glyph now always uses the shared
+              ConciergeModeIcon so it cycles ☀ → 🌅 → 🌙 → ☕ across
+              the day. Colour + glow are mode-tinted; the prime moon
+              gets the strongest red drop-shadow because that's our
+              headline window. */}
+          {(() => {
+            const tint =
+              concierge.mode === "prime"
+                ? brand.red
+                : concierge.mode === "evening"
+                ? "#F59E0B"
+                : concierge.mode === "off"
+                ? "rgba(60,30,20,0.55)"
+                : "#FE7A52";
+            return (
+              <ConciergeModeIcon
+                mode={concierge.mode}
+                sx={{
+                  fontSize: 12,
+                  color: tint,
+                  filter:
+                    concierge.mode === "off"
+                      ? "none"
+                      : `drop-shadow(0 0 4px ${tint})`,
+                  animation:
+                    concierge.mode === "off"
+                      ? "none"
+                      : "heroPulseDot 2s ease-in-out infinite",
+                  "@keyframes heroPulseDot": {
+                    "0%, 100%": { opacity: 1 },
+                    "50%": { opacity: 0.55 },
+                  },
+                }}
+              />
+            );
+          })()}
+          {t("hero.live.prefix", "Live · BKK")} ·{" "}
+          {t(`hero.live.${concierge.mode}`, concierge.pillLabel)}
         </Box>
+      </Box>
+
+      {/* 🆕 Round 28r7 (founder 2026-05-06) — Phase 1 referral chip.
+          Renders nothing unless a `?ref=` was captured by HomePage on
+          mount. When visible, sits between the brand row and the
+          social-proof ticker so a referred friend sees the
+          acknowledgement before anything else loads. */}
+      <Box
+        sx={{
+          position: "relative",
+          zIndex: 1,
+          marginBottom: "10px",
+        }}
+      >
+        <ReferralActiveBanner />
       </Box>
 
       {/* 🆕 Round 28b21 (founder 2026-05-04) — Phase 5 of conversion plan.
@@ -326,6 +424,12 @@ const HeroSection: React.FC = () => {
           - SocialProofTicker rotates between 3 messages every 5s.
           - FirstBookingBanner self-hides for repeat customers.
           - AdminPresenceBadge confirms a human is on the other end. */}
+      {/* 🆕 Round 28r14 (founder 2026-05-07) — FirstBookingBanner
+          back, sitting beneath the SocialProofTicker. The FIRST10
+          code now actually subtracts 10% (capped at ฿500) at
+          checkout — apply logic shipped in this round. Tapping the
+          banner copies the code to clipboard; auto-fill in the
+          booking form picks it up via sessionStorage. */}
       <Box
         sx={{
           position: "relative",
@@ -334,31 +438,94 @@ const HeroSection: React.FC = () => {
           marginBottom: "10px",
           display: "flex",
           flexDirection: "column",
-          gap: "8px",
+          gap: "6px",
         }}
       >
+        <SocialProofTicker variant="inline" />
+        <FirstBookingBanner />
+
+        {/* 🆕 Round 28r12 (founder 2026-05-06) — "Female-only · No
+            ladyboys" trust strip. Direct response to the recurring
+            customer FAQ pattern ("Who isn't a Ladyboy?" / "Which
+            lady is the youngest, real age?" — 8% of inbound chat
+            inquiries). BKK has many mixed-roster massage operators;
+            stating cisgender female + Thai nationality up-front
+            removes a dealbreaker question before guests have to ask.
+            Phrasing is positive identification ("verified Thai
+            female") not negative differentiation. */}
         <Box
+          aria-label="Verified roster"
           sx={{
-            display: "flex",
+            display: "inline-flex",
+            alignSelf: "flex-start",
             alignItems: "center",
-            justifyContent: "space-between",
-            gap: "8px",
-            flexWrap: "wrap",
+            gap: "6px",
+            paddingX: "9px",
+            paddingY: "3px",
+            borderRadius: 999,
+            background:
+              "linear-gradient(135deg, rgba(255,231,213,0.85) 0%, rgba(254,201,167,0.4) 100%)",
+            border: "1px solid rgba(184, 92, 60, 0.22)",
           }}
         >
-          <SocialProofTicker variant="inline" />
-          <AdminPresenceBadge variant="full" />
+          <Box
+            component="span"
+            aria-hidden
+            sx={{
+              fontFamily: fonts.body,
+              fontSize: 9.5,
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: brand.accent,
+            }}
+          >
+            ✓ 100% Thai female
+          </Box>
+          <Box
+            component="span"
+            aria-hidden
+            sx={{
+              width: 3,
+              height: 3,
+              borderRadius: "50%",
+              background: "rgba(184, 92, 60, 0.45)",
+            }}
+          />
+          <Box
+            component="span"
+            aria-hidden
+            sx={{
+              fontFamily: fonts.body,
+              fontSize: 9.5,
+              fontWeight: 700,
+              color: "rgba(60, 30, 20, 0.7)",
+            }}
+          >
+            Verified · cisgender
+          </Box>
         </Box>
-        <FirstBookingBanner />
       </Box>
 
+      {/* 🆕 Round 28r4 — Tonight Special is now CLICKABLE and TIME-AWARE.
+          Three concrete improvements over Round 28b21:
+            • cursor: "pointer" — banner was a dead pixel before
+            • onClick → opens LINE concierge in a new tab so guests can
+              chat directly with View; previously had no destination
+            • copy reads from `concierge` mode payload so 11pm shows
+              "Concierge live, slots filling fast" while 7am shows
+              "Concierge resumes at 09:00" — same banner, four moods. */}
       <Box
-        role="status"
-        aria-live="polite"
-        aria-label={t(
-          "hero.promo.aria",
-          "Tonight Special — coming soon"
-        )}
+        component="button"
+        type="button"
+        onClick={() => {
+          trackConciergeOpen("hero_tonight_special");
+          window.open(LINE_CONCIERGE_URL, "_blank", "noopener,noreferrer");
+        }}
+        onMouseEnter={() => setPromoPaused(true)}
+        onMouseLeave={() => setPromoPaused(false)}
+        onTouchStart={() => setPromoPaused(true)}
+        aria-label={`${concierge.promoEyebrow} — ${promo.title}`}
         sx={{
           position: "relative",
           zIndex: 1,
@@ -366,15 +533,22 @@ const HeroSection: React.FC = () => {
           padding: "16px 18px",
           marginBottom: "12px",
           borderRadius: "18px",
-          background: gradients.finalCta, // red → coral → peach sunset
+          // 🆕 Round 28r5 (founder 2026-05-06) — gradient + glow now
+          //   pulled from the concierge mode payload. 23:00 prime burns
+          //   midnight burgundy → coral; 11:00 day shows coral → gold
+          //   peach; 06:00 off shows muted slate dawn. Same banner,
+          //   four moods. The `transition` makes the gradient morph
+          //   smoothly when the page rolls over a boundary.
+          background: concierge.bannerGradient,
           color: "#fff",
-          cursor: "default",
+          cursor: "pointer",
+          border: "none",
           textAlign: "left",
           display: "flex",
           alignItems: "center",
           gap: "14px",
-          boxShadow:
-            "0 10px 28px rgba(254, 9, 68, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.35)",
+          boxShadow: `${concierge.bannerGlow}, inset 0 1px 0 rgba(255, 255, 255, 0.35)`,
+          transition: "background 0.6s ease, box-shadow 0.6s ease",
           overflow: "hidden",
           // Subtle breath — inviting, not insistent
           animation: "promoBreath 3.6s ease-in-out infinite",
@@ -384,6 +558,19 @@ const HeroSection: React.FC = () => {
           },
           "@media (prefers-reduced-motion: reduce)": {
             animation: "none",
+          },
+          "&:hover": {
+            transform: "translateY(-1px)",
+            boxShadow: `0 14px 32px ${concierge.bannerGlow
+              .replace("0 10px 28px ", "")
+              .replace(/0\.\d+\)/, "0.50)")}, inset 0 1px 0 rgba(255, 255, 255, 0.35)`,
+          },
+          "&:active": {
+            transform: "translateY(0) scale(0.99)",
+          },
+          "&:focus-visible": {
+            outline: "2px solid rgba(255,255,255,0.85)",
+            outlineOffset: 2,
           },
         }}
       >
@@ -407,7 +594,11 @@ const HeroSection: React.FC = () => {
           }}
         />
 
-        {/* Glyph badge */}
+        {/* Glyph badge — 🆕 Round 28r6 (founder 2026-05-06):
+            Icon now flips with the concierge window. 🌙 prime, 🌅
+            evening sunset, ☀ daytime, ☕ off-hours. Same circular
+            glass plate keeps the silhouette identical so the banner's
+            visual shape stays consistent while the meaning changes. */}
         <Box
           sx={{
             width: 44,
@@ -424,10 +615,16 @@ const HeroSection: React.FC = () => {
             zIndex: 1,
           }}
         >
-          <NightsStayRoundedIcon sx={{ fontSize: 24, color: "#fff" }} />
+          <ConciergeModeIcon
+            mode={concierge.mode}
+            sx={{ fontSize: 24, color: "#fff" }}
+          />
         </Box>
 
-        {/* Copy — anticipation language */}
+        {/* Copy — 🆕 Round 28r5 (founder 2026-05-06).
+            Eyebrow stays mode-fixed (it's a section label).
+            Title + sub crossfade through 2–3 messages every 7.5s
+            so the banner re-baits the eye without page reload. */}
         <Box sx={{ flex: 1, minWidth: 0, zIndex: 1 }}>
           <Typography
             sx={{
@@ -440,39 +637,97 @@ const HeroSection: React.FC = () => {
               lineHeight: 1,
             }}
           >
-            {t("hero.promo.eyebrow", "Tonight Special ")}
+            {t(
+              `hero.promo.eyebrow.${concierge.mode}`,
+              concierge.promoEyebrow
+            )}
           </Typography>
-          <Typography
+          <Box
             sx={{
-              fontFamily: fonts.heading,
-              fontStyle: "italic",
-              fontSize: 16,
-              fontWeight: 500,
-              letterSpacing: "-0.01em",
-              lineHeight: 1.2,
+              position: "relative",
+              minHeight: 50,
               marginTop: "3px",
             }}
           >
-            {t(
-              "hero.promo.title",
-              "Bangkok Nightlife's"
-            )}
-          </Typography>
-          <Typography
-            sx={{
-              fontFamily: fonts.body,
-              fontSize: 10.5,
-              fontWeight: 500,
-              opacity: 0.85,
-              marginTop: "3px",
-              lineHeight: 1.3,
-            }}
-          >
-            {t(
-              "hero.promo.sub",
-              "best-kept secret, arriving at your door soon."
-            )}
-          </Typography>
+            <AnimatePresence mode="wait" initial={false}>
+              <Box
+                key={`${concierge.mode}-${promoIdx}`}
+                component={motion.div}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+              >
+                <Typography
+                  sx={{
+                    fontFamily: fonts.heading,
+                    fontStyle: "italic",
+                    fontSize: 16,
+                    fontWeight: 500,
+                    letterSpacing: "-0.01em",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {t(
+                    `hero.promo.title.${concierge.mode}.${promoIdx}`,
+                    promo.title
+                  )}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: fonts.body,
+                    fontSize: 10.5,
+                    fontWeight: 500,
+                    opacity: 0.85,
+                    marginTop: "3px",
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {t(
+                    `hero.promo.sub.${concierge.mode}.${promoIdx}`,
+                    promo.sub
+                  )}
+                </Typography>
+              </Box>
+            </AnimatePresence>
+          </Box>
+
+          {/* 🆕 Round 28r5 — tiny pagination dots so the guest sees
+              "this banner has more to say". Lit dot = current message;
+              taps cycle manually. */}
+          {promoMessages.length > 1 && (
+            <Box
+              sx={{
+                display: "flex",
+                gap: "4px",
+                marginTop: "6px",
+              }}
+            >
+              {promoMessages.map((_, i) => (
+                <Box
+                  key={i}
+                  component="span"
+                  onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    setPromoIdx(i);
+                    setPromoPaused(true);
+                  }}
+                  sx={{
+                    width: i === promoIdx ? 16 : 6,
+                    height: 4,
+                    borderRadius: 2,
+                    background:
+                      i === promoIdx
+                        ? "rgba(255, 255, 255, 0.95)"
+                        : "rgba(255, 255, 255, 0.35)",
+                    transition:
+                      "width 0.25s ease, background 0.25s ease",
+                    cursor: "pointer",
+                  }}
+                />
+              ))}
+            </Box>
+          )}
         </Box>
 
         {/* COMING SOON — bare megaphone icon (Round 28b20c · founder
@@ -523,6 +778,7 @@ const HeroSection: React.FC = () => {
         {NICHE_TILES.map((tile) => {
           const handleTileClick = () => {
             if (tile.action === "openLine") {
+              trackConciergeOpen("hero_couples_tile");
               window.open(LINE_CONCIERGE_URL, "_blank", "noopener,noreferrer");
               return;
             }
@@ -568,6 +824,34 @@ const HeroSection: React.FC = () => {
                 },
               }}
             >
+              {/* 🆕 Round 28r4 — outbound arrow (top-right) when the
+                  tile opens an external concierge chat (LINE) instead
+                  of an in-app route. Quiet glyph, no badge framing —
+                  just enough to telegraph "this leaves the app". */}
+              {tile.action === "openLine" && (
+                <Box
+                  aria-hidden="true"
+                  sx={{
+                    position: "absolute",
+                    top: 8,
+                    right: 8,
+                    width: 18,
+                    height: 18,
+                    borderRadius: "50%",
+                    background: "rgba(255,255,255,0.85)",
+                    border: "1px solid rgba(184, 92, 60, 0.18)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 1px 3px rgba(126, 30, 46, 0.10)",
+                  }}
+                >
+                  <NorthEastRoundedIcon
+                    sx={{ fontSize: 11, color: brand.accent }}
+                  />
+                </Box>
+              )}
+
               {/* 🆕 Round 28n — promo ribbon (top-left) */}
               {tile.badge && (
                 <Box
@@ -654,7 +938,19 @@ const HeroSection: React.FC = () => {
         })}
       </Box>
 
-      {/* ═══ Bottom action cards (loyalty + social proof) ═══ */}
+      {/* ═══ Bottom action cards — 🆕 Round 28r8 (founder 2026-05-06)
+          ═══════════════════════════════════════════════════════════
+          Both tiles previously routed to dead destinations:
+            • SunMember → /account?tab=membership → /profile (no
+              membership UI exists)
+            • SunCoins/Earn → /account?tab=rewards → /profile (no
+              rewards UI exists)
+          Replaced with two REAL endpoints that work today:
+            • Concierge → opens LINE chat with View directly
+            • Refer & earn → opens the (just-wired) ReferralDialog
+          When membership / rewards systems ship, we can swap them
+          back. Until then the page never sends a guest to a dead
+          end. */}
       <Box
         sx={{
           position: "relative",
@@ -664,12 +960,18 @@ const HeroSection: React.FC = () => {
           gap: "8px",
         }}
       >
-        {/* SunMember */}
+        {/* Concierge tile — opens LINE chat. Real, always works. */}
         <Box
           component="button"
           type="button"
-          onClick={() => void navigate("/account?tab=membership")}
-          aria-label={t("hero.cta.member.aria", "SunMember benefits")}
+          onClick={() => {
+            trackConciergeOpen("hero_concierge_tile");
+            window.open(LINE_CONCIERGE_URL, "_blank", "noopener,noreferrer");
+          }}
+          aria-label={t(
+            "hero.cta.concierge.aria",
+            "Chat with the SunRed concierge on LINE"
+          )}
           sx={{
             display: "flex",
             alignItems: "center",
@@ -703,7 +1005,7 @@ const HeroSection: React.FC = () => {
                 textTransform: "uppercase",
               }}
             >
-              {t("hero.cta.activate", "Activate")}
+              {t("hero.cta.concierge.eyebrow", "Talk to")}
             </Typography>
             <Typography
               sx={{
@@ -716,7 +1018,7 @@ const HeroSection: React.FC = () => {
                 lineHeight: 1.1,
               }}
             >
-              {t("hero.cta.member", "SunMember")}
+              {t("hero.cta.concierge.title", "Concierge")}
             </Typography>
             <Typography
               sx={{
@@ -731,40 +1033,21 @@ const HeroSection: React.FC = () => {
                 textOverflow: "ellipsis",
               }}
             >
-              {t("hero.cta.member.sub", "Perks for repeat guests")}
+              {t("hero.cta.concierge.sub", "Chat live · 5 languages")}
             </Typography>
           </Box>
           <DiamondRoundedIcon sx={{ fontSize: 22, color: "#FE0944", flexShrink: 0 }} />
         </Box>
 
-        {/* 🆕 Round 28q — Earn tile (replaces live Reviews aggregate).
-            Login-gated: signed-in users get a quick path to their
-            rewards dashboard, anonymous users get a sign-in CTA framed
-            around the value (Coins · Discount · Repeat).
-
-            Why this trade is worth it:
-              • -2 always-on Firestore listeners on the home page
-              • Reviews are higher quality (no anonymous spam)
-              • Sign-in conversion gets a specific value hook ("review
-                this booking → unlock SunCoins → save next time"). */}
+        {/* Refer & earn tile — opens the ReferralDialog (Phase 1). */}
         <Box
           component="button"
           type="button"
-          onClick={() => {
-            if (isLoggedIn) {
-              void navigate("/account?tab=rewards");
-            } else {
-              void navigate("/login?next=/account?tab=rewards");
-            }
-          }}
-          aria-label={
-            isLoggedIn
-              ? t("hero.cta.rewards.aria.in", "View my SunCoins")
-              : t(
-                  "hero.cta.rewards.aria.out",
-                  "Sign in to earn rewards on every booking"
-                )
-          }
+          onClick={() => setReferralOpen(true)}
+          aria-label={t(
+            "hero.cta.refer.aria",
+            "Open the refer-and-earn dialog"
+          )}
           sx={{
             display: "flex",
             alignItems: "center",
@@ -798,9 +1081,7 @@ const HeroSection: React.FC = () => {
                 textTransform: "uppercase",
               }}
             >
-              {isLoggedIn
-                ? t("hero.cta.earn.eyebrow.in", "Rewards")
-                : t("hero.cta.earn.eyebrow.out", "Earn")}
+              {t("hero.cta.refer.eyebrow", "Refer & earn")}
             </Typography>
             <Box
               sx={{
@@ -826,9 +1107,7 @@ const HeroSection: React.FC = () => {
                   textOverflow: "ellipsis",
                 }}
               >
-                {isLoggedIn
-                  ? t("hero.cta.earn.title.in", "SunCoins")
-                  : t("hero.cta.earn.title.out", "Sign in & earn")}
+                {t("hero.cta.refer.title", "Give 500฿")}
               </Typography>
             </Box>
             <Typography
@@ -844,20 +1123,20 @@ const HeroSection: React.FC = () => {
                 textOverflow: "ellipsis",
               }}
             >
-              {isLoggedIn
-                ? t(
-                    "hero.cta.earn.sub.in",
-                    "Review · Save next booking"
-                  )
-                : t(
-                    "hero.cta.earn.sub.out",
-                    "Coins · Discount · Repeat"
-                  )}
+              {t("hero.cta.refer.sub", "Friends save · You save back")}
             </Typography>
           </Box>
           <RedeemRoundedIcon sx={{ fontSize: 22, color: "#FE7A52", flexShrink: 0 }} />
         </Box>
       </Box>
+
+      {/* 🆕 Round 28r8 — Refer & earn dialog (opened from the bottom-
+          right tile above). TopNav drawer also opens this dialog
+          via its own state instance — both are safe to coexist. */}
+      <ReferralDialog
+        open={referralOpen}
+        onClose={() => setReferralOpen(false)}
+      />
     </Box>
   );
 };

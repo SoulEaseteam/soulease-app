@@ -4,7 +4,7 @@
 > of the context you and View built together. Update anything that
 > changes.
 >
-> Last updated: 2026-05-05 by claude (Opus 4.7)
+> Last updated: 2026-05-07 by claude (Round 28r13)
 
 ---
 
@@ -250,27 +250,91 @@ they prefer.
 
 ## 9. Pending / next steps
 
-### Memory system (this round)
-- `CLAUDE.md` (this file) — master context ✅ done
-- `docs/content-templates.md` — 14-day rotation + multilingual templates
-- `docs/marketing-channels.md` — channel-specific playbook
-- Optional: `docs/auto-availability-bot.md` — spec for Telegram bot
+### 🔔 OPEN REMINDERS FOR VIEW (read first every session)
 
-### Marketing strategy (Co-founder mode)
-- [ ] Cancel Singapore site (View confirmed: no contract lock-in)
-- [ ] Reframe Telegram strategy: post only when therapist real-available
-- [ ] Build content templates that take 5 min each
+**Last updated: 2026-05-07 by Round 28r13 work**
+
+**🚨 BLOCKING — must do before next deploy:**
+- [ ] **Publish updated `firestore.rules`** to Firebase Console
+  - Round 28r13 added rules for `analytics_events` collection
+  - Without this, every analytics event will be silently denied
+  - Path: Firebase Console → Firestore → Rules → Publish
+
+**📋 Decisions needed from View (for auto-bot Round next):**
+- [ ] Confirm Telegram channel ID — `@SunRed_BKK`?
+- [ ] Confirm bot token — same one that sends booking notifications, or new?
+- [ ] Pick posting cadence — A) every 30min in prime, B) real-time on
+      status change, C) hybrid (recommended: C)
+- [ ] Pick edit-old vs new-post strategy (recommended: edit + auto-delete >24h)
+
+**📅 Marketing channel actions (View only):**
+- [ ] Cancel Singapore site (founder confirmed: no contract lock-in)
 - [ ] List 5-10 Bangkok Telegram channels for cross-promotion
 - [ ] Set up WeChat Official Account (Chinese market)
 - [ ] Set up LINE OA (TH/JP/KR)
-- [ ] Auto availability post system (Telegram bot)
+- [ ] Decide: keep "Sammyboy 200฿ off" promo or drop?
 
-### Code (lower priority right now)
+### Round 28r4–r16 deliveries (already shipped this session)
+
+- ✅ Round 28r14: Discount apply logic — FIRST10 (10% capped at ฿500)
+  + SUN-XXXX referrals (฿500 off). Auto-fill from `?ref=` URL +
+  FirstBookingBanner sessionStorage. Re-enabled FirstBookingBanner.
+  Discount line on BookingFlow + BookingSuccess + Telegram payload
+  + Firestore booking doc.
+- ✅ Round 28r15: Admin analytics dashboard (`/admin/analytics`).
+  5 cards (funnel, by-mode conversion, top services, channels,
+  daily trend). Reads `analytics_events` live.
+- ✅ Round 28r16: Tonight's roster filter (All / Available now /
+  Express ≤5km, default `available_now` in prime hours) + Chinese
+  i18n for FAQ + ServiceDetail callout (~95 ZH strings).
+
+- ✅ Round 28r4: Time-aware concierge mode (4 windows)
+  - Live pill, Tonight Special, niche tiles, Therapist grid header,
+    Areas chip strip — all flip mood across day
+- ✅ Round 28r5: Tonight Special gradient + 2-3 rotating messages per mode
+- ✅ Round 28r6: Mode glyphs (☀ 🌅 🌙 ☕) on Hero + TopNav + AdminFloatingChat
+- ✅ Round 28r7: ReferralDialog wired (Phase 1 manual flow)
+  - URL `?ref=` capture, Hero banner, drawer entry
+- ✅ Round 28r8: Hide-button-until-real pass — removed 4 vaporware tiles
+- ✅ Round 28r9: BookingSuccessPage cleanup + concierge mode chip
+- ✅ Round 28r10: Telegram map URL uses placeName (was lat,lng)
+  - 4 action cards on success page un-locked + sized down
+- ✅ Round 28r11: BookingFlowPage split — 7 new files, -516 lines
+  - useTweenedNumber, bookingFormStorage, SectionCard, FareChip,
+    PriceRow, AddressTile, ConfirmBar
+- ✅ Round 28r12: Trust badge + ServiceDetail "What's included · Best for"
+  - 28-Q FAQ in How-to-Book tab covering 6 categories
+- ✅ Round 28r13: Self-hosted funnel analytics (5 events)
+
+### Code follow-ups (priority order)
+
+**Highest ROI:**
+- [ ] Auto-availability Telegram bot (6-9 ชม., needs decisions above)
+  - Will fix the "TG channel says X but website says Y" customer-
+    reported bug AND cut admin chat ~50%
+- [ ] BookingFlowPage Phase 2 split — main component body into
+      useBookingFlowState hook + section components
+- [ ] Wire add-ons into BookingFlowPage (Phase 3) — premium oil,
+      extend, beyond-central travel, duo
+- [ ] Discount apply logic — FIRST10 + ref code → real `discountAmount`
+      on booking (currently banner copies code but flow ignores it)
+
+**Medium:**
+- [ ] i18n for FAQ + ServiceDetail callout (TH/JA/KO — ZH done r16)
+- [ ] "Tonight's roster" filter in Therapists tab — default to
+      `available now` during prime hours
+- [ ] Bundle pricing model (3-session package)
+- [ ] AdminLayout heartbeat writer → `adminPresence/global` so the
+      AdminPresenceBadge can be re-enabled (currently hidden)
+- [ ] Admin analytics dashboard reading `analytics_events` collection
+
+**Low:**
+- [ ] FirstBookingBanner → wire actual discount apply (currently hidden)
+- [ ] PWA installable manifest
+
+### One-line history
 - [x] Rebrand "BEST SELLER" badge on Aromatherapy → 'POPULAR'
       (Round 28c25 · falsifiable claim removed)
-- [ ] Wire add-ons into BookingFlowPage (Phase 3)
-- [ ] Bundle pricing model (Phase 3)
-- [ ] Multi-language landing page versions
 
 ---
 
@@ -281,10 +345,22 @@ When View opens a new chat with you, say:
 
 You will then:
 1. Read this file (~30 seconds)
-2. Confirm you're up to speed: "อ่านแล้ว — สรุปคืน View ใน 3 บรรทัด"
-3. Ask: "วันนี้เริ่มจากอะไรคะ?"
+2. **READ Section 9 "OPEN REMINDERS FOR VIEW" FIRST** — surface
+   any blocking items + pending decisions before doing other work
+3. Confirm you're up to speed: "อ่านแล้ว — สรุปคืน View ใน 3 บรรทัด"
+4. Surface reminders: "ตอนนี้มี X blocking items + Y pending
+   decisions รอ View — อยากเคลียร์ก่อนไหมคะ?"
+5. Ask: "วันนี้เริ่มจากอะไรคะ?"
 
 You'll have ALL context. No re-explanation needed.
+
+**⚠️ Reminder discipline:**
+- NEVER complete a session that introduces a blocking item without
+  adding it to Section 9
+- When View asks "เตือนฉันด้วย" → it goes in Section 9
+- When a feature ships that needs follow-up (env var, console action,
+  manual config) → it goes in Section 9
+- Section 9 is the single source of truth for "what's still owed"
 
 ---
 

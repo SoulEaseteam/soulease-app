@@ -47,6 +47,11 @@ import {
 
 import services from "@/data/services";
 import { resolveServiceId } from "@/utils/serviceCatalog";
+// 🆕 Round 28r13 — Funnel analytics: which services get the most opens.
+import { trackServiceView } from "@/utils/analytics";
+// 🆕 Round 28r16 — i18n for the SERVICE_CALLOUT block (Chinese first;
+//   other locales fall back to the English defaults).
+import { useTranslation } from "react-i18next";
 import {
   priceForDuration,
   durationsFor,
@@ -142,7 +147,83 @@ function formatAgo(ms: number): string {
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
+// 🆕 Round 28r12 (founder 2026-05-06) — "What's included · Best for".
+//   Direct response to recurring inbound chat patterns:
+//     • "What's the difference between gentleman signature and the others?"
+//     • "what does Gentleman's Signature include?"
+//     • "Can I upgrade to SunRed Therapeutic Experience?"
+//   The existing `service.detail` paragraph reads beautifully but
+//   buries the operational specifics. This config exposes "what's
+//   actually delivered" + "who this is for" as scannable two-column
+//   bullets, so a guest doesn't have to chat the concierge before
+//   committing.
+//
+//   Phrasing follows CLAUDE.md euphemism table:
+//     • HJ → personalised finishing ritual
+//     • B2B / nuru → continuous-contact technique
+//     • skin-to-skin → whole-body oil ritual
+//   No explicit terms; lawful gray-area framing only.
+type ServiceCallout = {
+  includes: string[];
+  bestFor: string[];
+};
+const SERVICE_CALLOUT: Record<string, ServiceCallout> = {
+  "xSR-Thai": {
+    includes: [
+      "Traditional dry-compression technique",
+      "Stretches & joint mobilisation",
+      "Acupressure point work",
+      "Performed in loose clothing — no oil",
+    ],
+    bestFor: [
+      "First-time guests · daytime restoration",
+      "Travellers with stiff backs / shoulders",
+      "Wellness-only preference",
+    ],
+  },
+  "SR-Aroma": {
+    includes: [
+      "Premium aromatic oil (lavender, neroli, sandalwood)",
+      "Long, flowing strokes paced to your breath",
+      "Whole-body relaxation & nervous-system reset",
+      "Pressure tuned on request",
+    ],
+    bestFor: [
+      "Stress · jet-lag · pre-sleep wellness",
+      "Couples (request via concierge)",
+      "First-time guests new to oil massage",
+    ],
+  },
+  "SR-HJ2200": {
+    includes: [
+      "Full aromatherapy massage (60–120 min)",
+      "Tension-release work tuned to your pressure",
+      "Concluded with a personalised finishing ritual",
+      "Premium oil · undivided attention throughout",
+    ],
+    bestFor: [
+      "Solo male travellers · late-night recovery",
+      "Guests seeking attentive tension release",
+      "Long-haul flight or after-dinner unwinding",
+    ],
+  },
+  "SR-B2B3200": {
+    includes: [
+      "Whole-body oil ritual with continuous-contact technique",
+      "Premium aromatic blends + gentle Thai-style stretch",
+      "Reserved for specialised practitioners only",
+      "Most refined & intimate sensory experience SunRed offers",
+    ],
+    bestFor: [
+      "Connoisseurs of full-body sensory ritual",
+      "VIP / discrete late-night travellers",
+      "Guests upgrading from Gentleman's Signature",
+    ],
+  },
+};
+
 const ServiceDetailPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
@@ -161,6 +242,14 @@ const ServiceDetailPage: React.FC = () => {
   // enough for the public chip.
   const { servedById } = useServiceUsageStats();
   const sessionCount = service ? servedById.get(service.id) ?? 0 : 0;
+
+  // 🆕 Round 28r13 — Fire service_view exactly once per service id
+  //   resolution. Re-fires if the user navigates to a different service
+  //   inside the same SPA session (each service is a separate funnel
+  //   row on our side).
+  useEffect(() => {
+    if (service?.id) trackServiceView(service.id);
+  }, [service?.id]);
 
   // Live service reviews — fetched directly from `bookings/{id}` where
   // serviceId matches and the doc carries a non-empty reviewText.
@@ -616,6 +705,162 @@ const ServiceDetailPage: React.FC = () => {
             {service.detail}
           </Typography>
         </Box>
+
+        {/* 🆕 Round 28r12 — "What's included · Best for".
+            Two-column scannable callout that answers the founder's
+            #3 inbound FAQ pattern ("Service comparison" / "What does
+            Gentleman's Signature include?"). Renders only when the
+            service has a callout entry — falls through cleanly for
+            future services that haven't been mapped yet. */}
+        {(() => {
+          const callout = SERVICE_CALLOUT[service.id];
+          if (!callout) return null;
+          return (
+            <Box
+              sx={{
+                p: 2.25,
+                borderRadius: "18px",
+                background: "#FFFFFF",
+                border: "1px solid rgba(15, 23, 42, 0.06)",
+                boxShadow:
+                  "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.05)",
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                gap: 2.25,
+              }}
+            >
+              {/* Includes column */}
+              <Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    fontSize: 10,
+                    letterSpacing: "0.24em",
+                    textTransform: "uppercase",
+                    color: "#16a34a",
+                    fontWeight: 700,
+                    mb: 1,
+                    fontFamily: SANS,
+                  }}
+                >
+                  <CheckRoundedIcon sx={{ fontSize: 14 }} />
+                  {t("service.callout.includes", "What's included")}
+                </Box>
+                <Box
+                  component="ul"
+                  sx={{
+                    listStyle: "none",
+                    p: 0,
+                    m: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 0.75,
+                  }}
+                >
+                  {callout.includes.map((line, idx) => (
+                    <Box
+                      key={line}
+                      component="li"
+                      sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 0.75,
+                        fontFamily: SANS,
+                        fontSize: 12.5,
+                        lineHeight: 1.5,
+                        color: "rgba(60,30,20,0.82)",
+                      }}
+                    >
+                      <Box
+                        component="span"
+                        aria-hidden
+                        sx={{
+                          color: "#16a34a",
+                          fontWeight: 800,
+                          flexShrink: 0,
+                          mt: "1px",
+                        }}
+                      >
+                        ✓
+                      </Box>
+                      {t(
+                        `service.callout.${service.id}.includes.${idx}`,
+                        line
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+
+              {/* Best for column */}
+              <Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    fontSize: 10,
+                    letterSpacing: "0.24em",
+                    textTransform: "uppercase",
+                    color: "#FE0944",
+                    fontWeight: 700,
+                    mb: 1,
+                    fontFamily: SANS,
+                  }}
+                >
+                  <StarRoundedIcon sx={{ fontSize: 14 }} />
+                  {t("service.callout.bestFor", "Best for")}
+                </Box>
+                <Box
+                  component="ul"
+                  sx={{
+                    listStyle: "none",
+                    p: 0,
+                    m: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 0.75,
+                  }}
+                >
+                  {callout.bestFor.map((line, idx) => (
+                    <Box
+                      key={line}
+                      component="li"
+                      sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 0.75,
+                        fontFamily: SANS,
+                        fontSize: 12.5,
+                        lineHeight: 1.5,
+                        color: "rgba(60,30,20,0.82)",
+                      }}
+                    >
+                      <Box
+                        component="span"
+                        aria-hidden
+                        sx={{
+                          color: "#FE0944",
+                          fontWeight: 800,
+                          flexShrink: 0,
+                          mt: "1px",
+                        }}
+                      >
+                        ★
+                      </Box>
+                      {t(
+                        `service.callout.${service.id}.bestFor.${idx}`,
+                        line
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            </Box>
+          );
+        })()}
 
         {/* 7. Therapeutic benefits */}
         <Box>

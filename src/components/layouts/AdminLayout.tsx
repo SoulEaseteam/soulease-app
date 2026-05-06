@@ -43,6 +43,7 @@ import {
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import AddBoxIcon from "@mui/icons-material/AddBox";
 import BlockIcon from "@mui/icons-material/Block";
+import InsightsIcon from "@mui/icons-material/Insights";
 
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -59,6 +60,9 @@ const DRAWER_COLLAPSED = 60;
 
 const menuItems = [
   { label: "Dashboard",    path: "/admin/dashboard",          icon: <DashboardIcon /> },
+  // 🆕 Round 28r15 — Funnel analytics (self-hosted, reads
+  //   `analytics_events` collection populated by Round 28r13).
+  { label: "Analytics",    path: "/admin/analytics",          icon: <InsightsIcon /> },
   { label: "Reports",      path: "/admin/reports",            icon: <ReportIcon /> },
   { label: "New Booking",  path: "/admin/bookings/add",       icon: <AddBoxIcon /> },
   { label: "Bookings",     path: "/admin/bookings",           icon: <BookingIcon /> },

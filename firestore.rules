@@ -190,6 +190,27 @@ service cloud.firestore {
       allow write: if false; // populated by Cloud Functions only
     }
 
+    // 🆕 Round 28r13 (founder 2026-05-06) — funnel analytics.
+    // ── analytics_events (self-hosted funnel tracking) ────────────
+    // Five-event funnel: home_view / service_view / booking_start /
+    // booking_complete / concierge_chat_open. Public CREATE so guest
+    // sessions can fire events without auth. Validates the event name
+    // against the allow-list to keep the collection clean. Immutable
+    // (no update/delete) so the audit trail can't be tampered with.
+    // Only admins read — funnel queries should aggregate on the
+    // admin side, never expose event timeline to customers.
+    match /analytics_events/{eventId} {
+      allow read: if isAdmin();
+      allow create: if request.resource.data.event in [
+        'home_view',
+        'service_view',
+        'booking_start',
+        'booking_complete',
+        'concierge_chat_open'
+      ];
+      allow update, delete: if false;
+    }
+
     // ── default deny ───────────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;

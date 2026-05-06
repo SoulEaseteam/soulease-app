@@ -21,6 +21,14 @@ import { priceForDuration } from "@/utils/servicePricing";
 import staticServices from "@/data/services";
 import { brand, fonts, glass, gradients } from "@/theme";
 import type { MassageService } from "@/data/services";
+// 🆕 Round 28r4 — same time-aware mode the Hero uses, so the grid
+//   header phrase ("On standby · Bangkok Tonight" / "Concierge resumes
+//   09:00") never disagrees with the Live pill above it.
+import { useConciergeMode } from "@/utils/conciergeMode";
+// 🆕 Round 28r16 — initial roster filter is mode-aware: prime hours
+//   default to "available_now" so late-night guests see actionable
+//   cards first.
+import { nowBKK } from "@/utils/time";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -30,10 +38,28 @@ interface Therapist extends TherapistType {
   computedNext?: string | null;
 }
 
+// 🆕 Round 28r4 (founder 2026-05-06) — Bangkok area chips for the
+//   home-page "browse by neighbourhood" strip. Tapping a chip sets
+//   the search query to the area name and `matchesQuery` filters
+//   therapists whose `area` / `homeAddress` contains it.
+//
+//   Only six dense areas: anything else and a guest at "Phra Khanong"
+//   would feel left out. We let the SearchBar handle the long tail.
+const BANGKOK_AREAS: { label: string; query: string }[] = [
+  { label: "Sukhumvit", query: "Sukhumvit" },
+  { label: "Asok", query: "Asok" },
+  { label: "Thonglor", query: "Thonglor" },
+  { label: "Silom", query: "Silom" },
+  { label: "Sathorn", query: "Sathorn" },
+  { label: "Riverside", query: "Riverside" },
+];
+
 const HomeTherapistGrid: React.FC = () => {
   const [therapists, setTherapists] = useState<Therapist[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQ, setSearchQ] = useState("");
+  // 🆕 Round 28r4 — current concierge mode for the grid header phrase.
+  const concierge = useConciergeMode();
 
   // ── Single GPS watcher — feeds every card with a fresh userLocation.
   //    🆕 Round 28b14 — autoStart removed. Modern browsers silently block
@@ -224,15 +250,54 @@ const HomeTherapistGrid: React.FC = () => {
     });
   }, [therapists, userLocation]);
 
+  // 🆕 Round 28r16 (founder 2026-05-07) — Tonight's roster filter.
+  //   Direct response to FAQ pattern #1 ("Who's available now?" — 21%
+  //   of inbound chat). Lets a guest opening the page at 23:00 jump
+  //   straight to "show me ONLY who's free right now" instead of
+  //   scrolling 12 cards and reading status pills.
+  //
+  //   Default behaviour:
+  //     • Prime hours (22:00–04:00) → "available_now" pre-selected
+  //       so the late-night guest sees actionable cards first.
+  //     • Other hours → "all" pre-selected (browse mode).
+  //
+  //   Filters reset cleanly with "All".
+  type RosterFilter = "all" | "available_now" | "express";
+  const [rosterFilter, setRosterFilter] = useState<RosterFilter>(() => {
+    const hour = nowBKK().hour();
+    return hour >= 22 || hour < 4 ? "available_now" : "all";
+  });
+
   // ── Apply search filter (case-insensitive across name/lang/specialty)
-  const visible = useMemo(
-    () => sorted.filter((t) => matchesQuery(t, searchQ)),
-    [sorted, searchQ]
-  );
+  //   AND roster filter (status-based).
+  const visible = useMemo(() => {
+    let pool = sorted.filter((t) => matchesQuery(t, searchQ));
+    if (rosterFilter === "available_now") {
+      pool = pool.filter((t) => t.computedStatus === "available");
+    } else if (rosterFilter === "express") {
+      // "Express" = available right now AND within ~5km of the guest
+      //   (or no guest location → use distanceKm field if present).
+      pool = pool.filter((t) => {
+        if (t.computedStatus !== "available") return false;
+        const km = typeof t.distanceKm === "number" ? t.distanceKm : null;
+        return km != null ? km <= 5 : true;
+      });
+    }
+    return pool;
+  }, [sorted, searchQ, rosterFilter]);
 
   const availableNow = visible.filter(
     (t) => t.computedStatus === "available"
   ).length;
+  // Total available regardless of filter — for chip badge counts.
+  const totalAvailable = sorted.filter(
+    (t) => t.computedStatus === "available"
+  ).length;
+  const totalExpress = sorted.filter((t) => {
+    if (t.computedStatus !== "available") return false;
+    const km = typeof t.distanceKm === "number" ? t.distanceKm : null;
+    return km != null ? km <= 5 : true;
+  }).length;
 
   // ── Starting-price-per-therapist map for the map preview card.
   //    Same logic the card uses internally — lift it here so the map
@@ -274,7 +339,14 @@ const HomeTherapistGrid: React.FC = () => {
     >
       {/* Header: serif title + live count.
           🆕 Round 28c — bumped horizontal padding 16 → 14 to match
-          Hero margin and search bar inset (cohesive home rhythm). */}
+          Hero margin and search bar inset (cohesive home rhythm).
+          🆕 Round 28r4 (founder 2026-05-06) — sub-line is now in
+          concierge tone. Old "X online now · Y verified" read as a
+          dashboard stat; new "X on standby · Bangkok Tonight" reads
+          as a host saying "we have people waiting for you". The
+          phrase suffix ("Bangkok Tonight" / "Concierge resumes 09:00")
+          comes from the same `useConciergeMode` payload as the Live
+          pill — header + pill always agree. */}
       <Box sx={{ marginBottom: "10px", padding: "0 14px" }}>
         <Typography
           sx={{
@@ -321,16 +393,186 @@ const HomeTherapistGrid: React.FC = () => {
                   }}
                 />
                 <Box component="span" sx={{ color: "#16a34a", fontWeight: 700 }}>
-                  {availableNow} online now
+                  {availableNow} on standby
                 </Box>
                 <Box component="span" sx={{ opacity: 0.4 }}>
                   ·
                 </Box>
               </>
             )}
-            <Box component="span">{visible.length} verified</Box>
+            <Box
+              component="span"
+              sx={{
+                fontFamily: fonts.heading,
+                fontStyle: "italic",
+                fontWeight: 500,
+                color: brand.accent,
+              }}
+            >
+              {concierge.gridHeadline}
+            </Box>
           </Typography>
         )}
+      </Box>
+
+      {/* 🆕 Round 28r16 (founder 2026-05-07) — Roster filter strip.
+          Sits ABOVE the Areas chip strip so the highest-priority
+          filter (status: available now / express) is one tap away.
+          Pre-selected to "available_now" during prime hours so a
+          guest opening at 23:30 lands directly on actionable cards.
+          Each chip carries its own count so the guest knows
+          immediately whether the filter has anything in it. */}
+      <Box
+        role="group"
+        aria-label="Filter therapists by availability"
+        sx={{
+          display: "flex",
+          gap: "6px",
+          padding: "0 14px 8px",
+          overflowX: "auto",
+          scrollbarWidth: "none",
+          "&::-webkit-scrollbar": { display: "none" },
+        }}
+      >
+        {(
+          [
+            { id: "all", label: "All", count: sorted.length },
+            {
+              id: "available_now",
+              label: "● Available now",
+              count: totalAvailable,
+            },
+            { id: "express", label: "Express ≤5km", count: totalExpress },
+          ] as const
+        ).map((opt) => {
+          const isActive = rosterFilter === opt.id;
+          const isAvailableChip = opt.id !== "all";
+          return (
+            <Box
+              key={opt.id}
+              component="button"
+              type="button"
+              onClick={() => setRosterFilter(opt.id)}
+              aria-pressed={isActive}
+              sx={{
+                flexShrink: 0,
+                padding: "6px 12px",
+                borderRadius: 999,
+                fontFamily: fonts.body,
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "-0.005em",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+                border: isActive
+                  ? isAvailableChip
+                    ? "1px solid rgba(22, 163, 74, 0.55)"
+                    : "1px solid rgba(254, 9, 68, 0.55)"
+                  : "1px solid rgba(184, 92, 60, 0.18)",
+                background: isActive
+                  ? isAvailableChip
+                    ? "linear-gradient(135deg, rgba(22, 163, 74, 0.12), rgba(22, 163, 74, 0.06))"
+                    : "linear-gradient(135deg, rgba(254, 9, 68, 0.10), rgba(254, 122, 82, 0.10))"
+                  : "rgba(255,255,255,0.55)",
+                color: isActive
+                  ? isAvailableChip
+                    ? "#15803d"
+                    : brand.red
+                  : brand.text,
+                boxShadow: isActive
+                  ? isAvailableChip
+                    ? "0 2px 6px rgba(22, 163, 74, 0.18)"
+                    : "0 2px 6px rgba(254, 9, 68, 0.15)"
+                  : "inset 0 1px 0 rgba(255,255,255,0.55)",
+                transition:
+                  "background 0.18s ease, border-color 0.18s ease, transform 0.12s ease",
+                "&:hover": { transform: "translateY(-1px)" },
+                "&:focus-visible": {
+                  outline: `2px solid ${brand.red}`,
+                  outlineOffset: 2,
+                },
+              }}
+            >
+              {opt.label}
+              <Box
+                component="span"
+                sx={{
+                  fontSize: 9.5,
+                  fontWeight: 800,
+                  opacity: isActive ? 0.8 : 0.55,
+                }}
+              >
+                {opt.count}
+              </Box>
+            </Box>
+          );
+        })}
+      </Box>
+
+      {/* 🆕 Round 28r4 (founder 2026-05-06) — Areas chip strip.
+          A guest at Anantara Riverside used to have to scroll all the
+          way down to the footer trust line to confirm we cover their
+          neighbourhood. Now: six dense BKK zones as horizontally
+          scrollable pills directly above the search bar. Tapping a
+          chip pre-fills the search input (zero new filtering code —
+          we just feed `matchesQuery` an area string), tapping the
+          active chip again clears it. */}
+      <Box
+        role="group"
+        aria-label="Browse by Bangkok area"
+        sx={{
+          display: "flex",
+          gap: "6px",
+          padding: "0 14px 8px",
+          overflowX: "auto",
+          // Hide the scrollbar so the strip reads as a clean chip row.
+          scrollbarWidth: "none",
+          "&::-webkit-scrollbar": { display: "none" },
+        }}
+      >
+        {BANGKOK_AREAS.map((area) => {
+          const isActive = searchQ === area.query;
+          return (
+            <Box
+              key={area.label}
+              component="button"
+              type="button"
+              onClick={() => setSearchQ(isActive ? "" : area.query)}
+              aria-pressed={isActive}
+              sx={{
+                flexShrink: 0,
+                padding: "6px 12px",
+                borderRadius: 999,
+                fontFamily: fonts.body,
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: "-0.005em",
+                cursor: "pointer",
+                border: isActive
+                  ? "1px solid rgba(254, 9, 68, 0.55)"
+                  : "1px solid rgba(184, 92, 60, 0.18)",
+                background: isActive
+                  ? "linear-gradient(135deg, rgba(254, 9, 68, 0.10), rgba(254, 122, 82, 0.10))"
+                  : "rgba(255,255,255,0.55)",
+                color: isActive ? brand.red : brand.text,
+                boxShadow: isActive
+                  ? "0 2px 6px rgba(254, 9, 68, 0.15)"
+                  : "inset 0 1px 0 rgba(255,255,255,0.55)",
+                transition:
+                  "background 0.18s ease, border-color 0.18s ease, transform 0.12s ease",
+                "&:hover": { transform: "translateY(-1px)" },
+                "&:focus-visible": {
+                  outline: `2px solid ${brand.red}`,
+                  outlineOffset: 2,
+                },
+              }}
+            >
+              {area.label}
+            </Box>
+          );
+        })}
       </Box>
 
       <TherapistSearchBar value={searchQ} onChange={setSearchQ} m="0 14px 12px" />

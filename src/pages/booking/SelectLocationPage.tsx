@@ -1,35 +1,4 @@
-// src/pages/booking/SelectLocationPage.tsx
-//
-// 🎨 Phase 4 — Dedicated route for picking the booking address.
-// Replaces the LocationSheet bottom-sheet pattern with a full-screen
-// experience (search + map + form fields) per founder request.
-//
-// Route: /booking/:therapistId/address
-//
-// Flow:
-//   Confirm Order → tap Address tile → navigate here with current form state
-//   User searches / drops pin / fills contact info → Confirm
-//   → navigate back to /booking/:therapistId, passing the address payload
-//     via react-router `state` (BookingFlowPage reads it in useEffect).
-//
-// Layout:
-//   ┌─ ← Select Location ─────────────────────────┐
-//   │  🔍 Search location                          │
-//   │  ┌─────────────────────────────────────┐    │
-//   │  │              MAP                     │    │
-//   │  │              📍                       │    │
-//   │  │                                       │    │
-//   │  └─────────────────────────────────────┘    │
-//   │  📍 Use my current location                 │
-//   │                                              │
-//   │  [picked place name + address card]          │
-//   │                                              │
-//   │ Customer Name (Required) — name input      │
-//   │  Phone Number (Required) — 🇹🇭 +66 + digits  │
-//   │  Note (Optional)                             │
-//   │                                              │
-//   │  [          Confirm Location          ]      │
-//   └──────────────────────────────────────────────┘
+
 
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -54,8 +23,8 @@ import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 // 🆕 Round 28b60 — MUI icons replacing emoji (founder: "ไม่เอาอ๊โมจิ
 //   เอาไอคอน"). Same icon set used across the booking flow.
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
-import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded";
-import StickyNote2RoundedIcon from "@mui/icons-material/StickyNote2Rounded";
+import PermPhoneMsgRoundedIcon from '@mui/icons-material/PermPhoneMsgRounded';
+import EditNoteRoundedIcon from '@mui/icons-material/EditNoteRounded';
 import AutoAwesomeSharpIcon from '@mui/icons-material/AutoAwesomeSharp';
 import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
 import ElevatorRoundedIcon from "@mui/icons-material/ElevatorRounded";
@@ -93,10 +62,7 @@ export interface AddressNavState {
   locationType: LocationType | null;
   /** Auto-generated Google Maps deep-link */
   mapUrl: string | null;
-  // 🆕 Round 9 (founder 2026-05-01): backup channel for the booking
-  //    context (service / duration / date / time). URL params are the
-  //    primary source of truth, but if a refresh / replace strips them
-  //    these state fields keep BookingFlowPage's Order Details alive.
+
   serviceId?: string | null;
   duration?: number | null;
   date?: string | null;
@@ -117,15 +83,7 @@ const EMPTY: AddressNavState = {
   mapUrl: null,
 };
 
-// 🆕 Founder 2026-05-01 round 13: rename 'Meet at Lift' → 'Wait for me at
-//    the lift' + add 'Other' option. Now rendered as a radio list inside
-//    the new 'Arrival Instructions' card (no longer inline chips).
-// 🆕 Round 28b60 — emoji → MUI icon refactor. `icon` field accepts a
-//   React node (the rendered icon component) instead of a string emoji.
-// 🆕 Round 28b65 (founder 2026-05-05) — Icon disc styling per item
-//   ("ตกแต่ง ไอคอน ให้สวยเหมือน Payment Methods"). Each option gets
-//   a tinted iconBg + solid iconFg so the radio list reads as a tier
-//   of card-style options matching the PaymentMethodsPage pattern.
+
 const MEETING_POINTS: {
   id: MeetingPoint;
   label: string;
@@ -163,14 +121,6 @@ const MEETING_POINTS: {
   },
 ];
 
-// LOCATION_TYPES removed 2026-05-01 (founder: 'Location Type (Optional) ลบ').
-// `LocationType` enum is still exported for back-compat with existing
-// bookings in Firestore; new bookings just leave the field null.
-
-// 🆕 Founder 2026-05-01: 'Phone Number เลือกประเทศได้'.
-//    Curated list of dial codes ordered by likely customer origin in
-//    Bangkok (TH local + Asia tourists + Western tourists). Add more
-//    on request — keep TH first so it's the default.
 interface DialCode {
   code: string; // ISO-3166-1 alpha-2
   flag: string;
@@ -213,7 +163,38 @@ function dialFromPhone(phone: string): DialCode {
   return sorted.find((c) => phone.startsWith(c.dial)) ?? DIAL_CODES[0];
 }
 
-const buildMapUrl = (lat: number | null, lng: number | null) => {
+// 🆕 Round 28r10 (founder 2026-05-06) — "เทเรเกรมยิงแมปไม่ตรง · ถ้า
+//   ตรงคือมาทั้งชื่อ". The previous helper always built a coords-only
+//   URL (`?query=13.76,100.56`), which Google Maps resolves to a
+//   Plus-Code pin (e.g. "QH68+GR9") with no business name attached.
+//   When the guest picked a real place via Autocomplete or POI click
+//   we already KNOW the place name — using it as the search query
+//   makes Google Maps land directly on the named establishment with
+//   its photos / reviews / phone number, exactly like the founder's
+//   reference screenshot.
+//
+// Lookup priority:
+//   1. placeName (e.g. "The Westin Grande Sukhumvit")
+//   2. address    (full formatted_address)
+//   3. lat,lng    (coords-only fallback for free-tap reverse geocodes)
+const buildMapUrl = (
+  lat: number | null,
+  lng: number | null,
+  placeName?: string | null,
+  address?: string | null
+): string | null => {
+  const cleanName = placeName?.trim();
+  const cleanAddr = address?.trim();
+  if (cleanName) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      cleanName
+    )}`;
+  }
+  if (cleanAddr) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      cleanAddr
+    )}`;
+  }
   if (lat == null || lng == null) return null;
   return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 };
@@ -397,7 +378,12 @@ const SelectLocationPage: React.FC = () => {
           locationAddress: place.formatted_address ?? null,
           lat,
           lng,
-          mapUrl: buildMapUrl(lat, lng),
+          mapUrl: buildMapUrl(
+            lat,
+            lng,
+            place.name,
+            place.formatted_address
+          ),
         }));
       });
 
@@ -476,7 +462,12 @@ const SelectLocationPage: React.FC = () => {
             locationAddress: place.formatted_address ?? null,
             lat,
             lng,
-            mapUrl: buildMapUrl(lat, lng),
+            mapUrl: buildMapUrl(
+              lat,
+              lng,
+              place.name,
+              place.formatted_address
+            ),
           }));
         } else {
           reverseGeocode(lat, lng);
@@ -549,14 +540,19 @@ const SelectLocationPage: React.FC = () => {
           locationAddress: best.formatted_address ?? p.locationAddress,
           lat,
           lng,
-          mapUrl: buildMapUrl(lat, lng),
+          mapUrl: buildMapUrl(
+            lat,
+            lng,
+            best.formatted_address ?? p.locationName ?? null,
+            best.formatted_address ?? p.locationAddress
+          ),
         }));
       } else {
         setForm((p) => ({
           ...p,
           lat,
           lng,
-          mapUrl: buildMapUrl(lat, lng),
+          mapUrl: buildMapUrl(lat, lng, p.locationName, p.locationAddress),
         }));
       }
     });
@@ -634,6 +630,8 @@ const SelectLocationPage: React.FC = () => {
           ...p,
           lat,
           lng,
+          // Coords-only is fine here — reverseGeocode will overwrite
+          // mapUrl with a name-based URL as soon as it lands.
           mapUrl: buildMapUrl(lat, lng),
         }));
         reverseGeocode(lat, lng);
@@ -709,7 +707,12 @@ const SelectLocationPage: React.FC = () => {
         replace: true,
         state: {
           ...form,
-          mapUrl: buildMapUrl(form.lat, form.lng),
+          mapUrl: buildMapUrl(
+            form.lat,
+            form.lng,
+            form.locationName,
+            form.locationAddress
+          ),
           ...ctx,
         },
       }
@@ -1043,7 +1046,7 @@ const SelectLocationPage: React.FC = () => {
               >
                "Drag the pin to adjust the location."<br />
                 {" "}
-                (ลากหมุดเพื่อปรับตำแหน่งให้ตรงกับชื่อสถานที่)
+                (แก้ไขหมุดเพื่อปรับตำแหน่งให้ตรงกับชื่อสถานที่)
               
               </Typography>
             </Box>
@@ -1196,7 +1199,7 @@ const SelectLocationPage: React.FC = () => {
         </FieldLabel>
 
         {/* Phone — country selectable, national digits in the right field */}
-        <FieldLabel label="Phone Number" icon={<PhoneRoundedIcon sx={{ fontSize: 18 }} />} required>
+        <FieldLabel label="Phone Number" icon={<PermPhoneMsgRoundedIcon sx={{ fontSize: 18 }} />} required>
           <Box sx={{ display: "flex", gap: "8px" }}>
             <Box
               role="button"
@@ -1335,22 +1338,11 @@ const SelectLocationPage: React.FC = () => {
           </Typography>
         </FieldLabel>
 
-        {/* 🆕 Founder 2026-05-01 round 13:
-            • Note → helper subtitle 'Add instructions for therapist arrival',
-              placeholder 'Add room number / villa'
-            • The 3-chip Meeting Point row inside Note has been removed —
-              moved into a dedicated 'Delivery instructions' radio list
-              section below. */}
-        {/* 🆕 Round 28b48 (founder 2026-05-05) — Note becomes REQUIRED
-            when arrival = "Come to my room". Without booking name +
-            room number the therapist arrives blind at the front desk.
-            We swap the FieldLabel `optional` flag and surface a red
-            helper sentence + error-bordered TextField until ≥ 4 chars
-            are entered. For all other arrival modes the field stays
-            optional (no UX change). */}
+
+            
         <FieldLabel
           label="Note"
-          icon={<StickyNote2RoundedIcon sx={{ fontSize: 18 }} />}
+          icon={<EditNoteRoundedIcon sx={{ fontSize: 26 }} />}
           required={form.meetingPoint === "direct"}
           optional={form.meetingPoint !== "direct"}
         >
@@ -1396,12 +1388,7 @@ const SelectLocationPage: React.FC = () => {
           />
         </FieldLabel>
 
-        {/* 🆕 Founder 2026-05-01 round 13: 'Arrival Instructions' radio
-            list — replaces the 3-chip Meeting Point row, adds 'Wait for
-            me at the lift' (renamed from 'Meet at Lift') and a 4th
-            'Other' option. Vertical, full-width tappable rows with the
-            radio dot on the right (matches Grab/Lalamove pattern). */}
-        <FieldLabel label="Arrival Instructions" icon={<AutoAwesomeSharpIcon sx={{ fontSize: 18 }} />} optional>
+        <FieldLabel label="Arrival Instructions" icon={<AutoAwesomeSharpIcon sx={{ fontSize: 22 }} />} optional>
           <Box
             role="radiogroup"
             aria-label="Arrival instructions"
@@ -1463,11 +1450,7 @@ const SelectLocationPage: React.FC = () => {
                     },
                   }}
                 >
-                  {/* 🆕 Round 28b65 — Icon disc (tinted square ~40px)
-                      to match PaymentMethodsPage. Per-option iconBg
-                      + iconFg gives each arrival mode a distinct
-                      visual identity (lobby blue, elevator mint,
-                      come-to-room brand red, other amber). */}
+
                   <Box
                     aria-hidden
                     sx={{

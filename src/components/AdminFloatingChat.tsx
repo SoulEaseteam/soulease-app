@@ -31,6 +31,14 @@ import ChatBubbleRoundedIcon from "@mui/icons-material/ChatBubbleRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 
 import { brand, fonts, glass } from "@/theme";
+// 🆕 Round 28r6 (founder 2026-05-06) — Concierge FAB now reflects the
+//   four operational windows so the live indicator + header tagline
+//   never disagree with the page-wide page mood.
+import { useConciergeMode } from "@/utils/conciergeMode";
+import ConciergeModeIcon from "@/components/common/ConciergeModeIcon";
+// 🆕 Round 28r13 — concierge_chat_open analytics. Tagged with the
+//   channel name so we can rank LINE vs WA vs WeChat vs TG vs X.
+import { trackConciergeOpen } from "@/utils/analytics";
 
 // 🆕 Round 28o — first-visit greeting persistence key + visibility delay.
 const GREETING_LS_KEY = "sunred.adminChat.greeted";
@@ -87,6 +95,38 @@ const AdminFloatingChat: React.FC = () => {
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const location = useLocation();
   const { t } = useTranslation();
+  // 🆕 Round 28r6 — current concierge mode for FAB + header tinting.
+  const concierge = useConciergeMode();
+  const modeTint =
+    concierge.mode === "prime"
+      ? brand.red
+      : concierge.mode === "evening"
+      ? "#F59E0B"
+      : concierge.mode === "off"
+      ? "rgba(60,30,20,0.55)"
+      : brand.green;
+  // Per-mode greeting copy — friendlier than the static "Hi! Need help"
+  // because each mode answers a different unspoken guest question:
+  // prime → "is anyone there now?"; off → "are you closed?"; etc.
+  const greetingByMode: Record<typeof concierge.mode, { title: string; body: string }> = {
+    prime: {
+      title: "🌙 Concierge live · tonight's roster",
+      body: "Tap to chat — practitioner dispatched in <40 min.",
+    },
+    evening: {
+      title: "🌅 Slots opening for late-night",
+      body: "Tap to lock your 22:00 — 02:00 window.",
+    },
+    day: {
+      title: "☀ Plan tonight's ritual",
+      body: "Tap to chat — 22:00 onward fills fastest.",
+    },
+    off: {
+      title: "☕ Concierge resumes at 09:00",
+      body: "Leave a message — we'll confirm at sunrise.",
+    },
+  };
+  const greet = greetingByMode[concierge.mode];
 
   // 🆕 First-visit greeting bubble — shows once, never again.
   useEffect(() => {
@@ -221,6 +261,11 @@ const AdminFloatingChat: React.FC = () => {
               >
                 Concierge
               </Typography>
+              {/* 🆕 Round 28r6 — header tagline now reflects the
+                  current concierge window. Glyph swaps ☀ → 🌅 → 🌙
+                  → ☕; "Live · 24/7" replaced with the mode-specific
+                  pill label so an off-hours guest doesn't see
+                  "Live" while concierge is sleeping. */}
               <Typography
                 sx={{
                   fontFamily: fonts.heading,
@@ -239,21 +284,32 @@ const AdminFloatingChat: React.FC = () => {
                   component={motion.span}
                   aria-hidden
                   animate={
-                    prefersReducedMotion
+                    prefersReducedMotion || concierge.mode === "off"
                       ? undefined
                       : { opacity: [1, 0.45, 1] }
                   }
                   transition={{ duration: 1.4, repeat: Infinity }}
                   sx={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: "50%",
-                    background: brand.green,
-                    boxShadow: `0 0 8px ${brand.green}`,
+                    display: "inline-flex",
+                    alignItems: "center",
                     flexShrink: 0,
                   }}
-                />
-                Live · 24/7
+                >
+                  <ConciergeModeIcon
+                    mode={concierge.mode}
+                    sx={{
+                      fontSize: 14,
+                      color: modeTint,
+                      filter:
+                        concierge.mode === "off"
+                          ? "none"
+                          : `drop-shadow(0 0 4px ${modeTint})`,
+                    }}
+                  />
+                </Box>
+                {concierge.mode === "off"
+                  ? "Concierge · 09:00"
+                  : `Live · ${concierge.pillLabel}`}
               </Typography>
             </Box>
 
@@ -270,7 +326,10 @@ const AdminFloatingChat: React.FC = () => {
                       ? "noopener noreferrer"
                       : undefined
                   }
-                  onClick={() => setIsExpanded(false)}
+                  onClick={() => {
+                    trackConciergeOpen(opt.title);
+                    setIsExpanded(false);
+                  }}
                   initial={
                     prefersReducedMotion
                       ? { opacity: 1 }
@@ -438,7 +497,7 @@ const AdminFloatingChat: React.FC = () => {
                     letterSpacing: "-0.01em",
                   }}
                 >
-                  {t("chat.greet.title", "👋 Hi! Need help booking?")}
+                  {t(`chat.greet.title.${concierge.mode}`, greet.title)}
                 </Typography>
                 <Typography
                   sx={{
@@ -449,10 +508,7 @@ const AdminFloatingChat: React.FC = () => {
                     lineHeight: 1.4,
                   }}
                 >
-                  {t(
-                    "chat.greet.body",
-                    "Tap any time — we're live 24/7."
-                  )}
+                  {t(`chat.greet.body.${concierge.mode}`, greet.body)}
                 </Typography>
               </Box>
               <IconButton
@@ -535,14 +591,17 @@ const AdminFloatingChat: React.FC = () => {
           <ChatBubbleRoundedIcon sx={{ fontSize: 24 }} />
         )}
 
-        {/* Pulsing live dot — overlaps the FAB top-right.
-            Communicates "we're online 24/7" without overlay text. */}
+        {/* 🆕 Round 28r6 — Mode-aware live dot. Reflects the same four
+            windows as the Hero Live pill so an off-hours guest sees a
+            muted slate dot (not pulsing green) while the concierge is
+            warming up. The pulse animation pauses for "off" so we
+            don't fake liveness when no one is at the desk. */}
         {!isExpanded && (
           <Box
             component={motion.span}
             aria-hidden
             animate={
-              prefersReducedMotion
+              prefersReducedMotion || concierge.mode === "off"
                 ? undefined
                 : { scale: [1, 1.25, 1], opacity: [1, 0.55, 1] }
             }
@@ -554,9 +613,10 @@ const AdminFloatingChat: React.FC = () => {
               width: 12,
               height: 12,
               borderRadius: "50%",
-              background: brand.green,
+              background: modeTint,
               border: "2px solid #fff",
-              boxShadow: `0 0 8px ${brand.green}`,
+              boxShadow:
+                concierge.mode === "off" ? "none" : `0 0 8px ${modeTint}`,
             }}
           />
         )}

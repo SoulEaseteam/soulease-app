@@ -64,8 +64,15 @@ import { fmtBKK, sameDayBKK, nowBKK, toBKK } from "@/utils/time";
 import { getServiceLabel } from "@/utils/serviceCatalog";
 // 🆕 Round 28b21 — Phase 2: 10-min hold countdown.
 import HoldCountdown from "@/components/booking/HoldCountdown";
-// 🆕 Round 28b21 — Phase 3: admin online presence badge.
-import AdminPresenceBadge from "@/components/common/AdminPresenceBadge";
+// 🆕 Round 28r9 (founder 2026-05-06) — AdminPresenceBadge replaced
+//   with the same concierge-mode chip the rest of the site uses.
+//   The badge was reading from `adminPresence/global` which has no
+//   writer in the codebase → it always rendered "Admin offline ·
+//   reply within 1 hour", contradicting our 24/7 concierge promise.
+//   Once an AdminLayout heartbeat writer ships, we can re-introduce
+//   the live badge.
+import { useConciergeMode } from "@/utils/conciergeMode";
+import ConciergeModeIcon from "@/components/common/ConciergeModeIcon";
 
 import { db } from "@/lib/firebase";
 
@@ -81,6 +88,16 @@ const BookingSuccessPage: React.FC = () => {
   const [booking, setBooking] = useState<DocumentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // 🆕 Round 28r9 — same time-aware mode the rest of the site uses.
+  const concierge = useConciergeMode();
+  const modeTint =
+    concierge.mode === "prime"
+      ? "#FE0944"
+      : concierge.mode === "evening"
+      ? "#F59E0B"
+      : concierge.mode === "off"
+      ? "rgba(60,30,20,0.55)"
+      : "#FE7A52";
 
   useEffect(() => {
     if (!id) {
@@ -301,14 +318,63 @@ const BookingSuccessPage: React.FC = () => {
               will arrive at {timeLabel}.
             </Typography>
 
-            {/* 🆕 Round 28b28 (founder 2026-05-04) — Order swap:
-                AdminPresenceBadge now sits ABOVE HoldCountdown. Reasoning:
-                if the customer sees "Admin online · usually replies in
-                1 min" FIRST, the urgency of the countdown beneath it
-                feels productive ("admin will confirm me before time
-                runs out"), not anxious ("am I racing a robot?"). */}
-            <Box sx={{ marginTop: "12px", display: "flex", justifyContent: "center" }}>
-              <AdminPresenceBadge />
+            {/* 🆕 Round 28r9 (founder 2026-05-06) — AdminPresenceBadge
+                replaced with the time-aware concierge chip. Same
+                visual weight + same "we're here for you" reassurance,
+                but the label reflects reality (no fake "Admin online"
+                when the heartbeat writer doesn't exist). */}
+            <Box
+              sx={{
+                marginTop: "12px",
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <Box
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  paddingX: "12px",
+                  paddingY: "5px",
+                  borderRadius: 999,
+                  background:
+                    concierge.mode === "off"
+                      ? "rgba(100, 116, 139, 0.10)"
+                      : "rgba(22, 163, 74, 0.10)",
+                  border:
+                    concierge.mode === "off"
+                      ? "1px solid rgba(100, 116, 139, 0.22)"
+                      : "1px solid rgba(22, 163, 74, 0.28)",
+                }}
+              >
+                <ConciergeModeIcon
+                  mode={concierge.mode}
+                  sx={{
+                    fontSize: 13,
+                    color: modeTint,
+                    filter:
+                      concierge.mode === "off"
+                        ? "none"
+                        : `drop-shadow(0 0 3px ${modeTint})`,
+                  }}
+                />
+                <Typography
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color:
+                      concierge.mode === "off"
+                        ? "rgba(60,30,20,0.7)"
+                        : "#15803d",
+                  }}
+                >
+                  {concierge.mode === "off"
+                    ? `Concierge resumes at 09:00 · ${concierge.pillLabel}`
+                    : `Concierge live · ${concierge.pillLabel}`}
+                </Typography>
+              </Box>
             </Box>
 
             {/* 🆕 Round 28b21 — Phase 2: 10-minute hold countdown.
@@ -319,6 +385,24 @@ const BookingSuccessPage: React.FC = () => {
               therapistId={therapistIdForRebook}
             />
 
+            {/* 🆕 Round 28r9 — Live status banner. Previously a
+                JSX-corruption left this section's outer <Box> empty
+                with the green dot + therapist-name typography
+                floating above it (visible in the founder screenshot
+                as a stray empty pill). Re-wrapped properly so the
+                banner reads as one cohesive card. */}
+            <Box
+              sx={{
+                marginTop: "20px",
+                padding: "14px 14px 14px 16px",
+                borderRadius: "16px",
+                background: "rgba(22, 163, 74, 0.07)",
+                border: "1px solid rgba(22, 163, 74, 0.20)",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "12px",
+              }}
+            >
               <Box
                 aria-hidden
                 sx={{
@@ -362,62 +446,132 @@ const BookingSuccessPage: React.FC = () => {
                     : "We'll send a tracking link before departure."}
                 </Typography>
               </Box>
-              
-                   {/* Live status banner */}
-            <Box
-              sx={{
-                marginTop: "20px",
-                padding: "14px 14px 14px 16px",
-                borderRadius: "16px",
-                background: "rgba(22, 163, 74, 0.07)",
-                border: "1px solid rgba(22, 163, 74, 0.20)",
-                display: "flex",
-                alignItems: "flex-start",
-                gap: "12px",
-              }}
-            >
             </Box>
 
-            {/* 🆕 Round 28b19 (founder 2026-05-04) — 2×2 quick-action
-                grid is LOCKED until admin confirmation flow is wired.
-                Reason: customers were tapping "Chat / Track / Calendar /
-                Reschedule" before admin had even seen the booking,
-                creating support churn. Until backend confirmation and
-                live tracking ship, these tiles render dim + non-clickable
-                with a "After confirmation" hint so customers know they'll
-                unlock automatically once admin accepts the booking. */}
+            {/* 🆕 Round 28r10 (founder 2026-05-06) — Action cards
+                un-locked. All four now do something useful in the
+                Phase-1 manual flow:
+                  • Chat with [Therapist] → opens LINE concierge with
+                    a pre-filled message ("Booking SR-XXX, can you
+                    connect me with [name]?"). View bridges the chat
+                    by hand until 1:1 therapist DMs ship.
+                  • Track arrival → opens Google Maps to the booking's
+                    address (real). Live GPS tracking is Phase 2.
+                  • Add to calendar → generates a .ics file in-browser.
+                    100% client-side, no backend needed.
+                  • Reschedule → opens LINE with a "I'd like to move
+                    SR-XXX" pre-fill so the conversation starts in the
+                    right context.
+                Sizing also tightened (label 12.5px, icon disc 36px,
+                padding 12/10) per founder feedback "ย่อขนาดลง · ดูรก". */}
             <Box
               sx={{
                 marginTop: "16px",
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
-                gap: "10px",
+                gap: "8px",
                 position: "relative",
               }}
             >
               <ActionCard
                 label={`Chat with ${therapistName.split(" ")[0]}`}
-                sub="After confirmation"
+                sub="Via concierge"
                 icon={<ChatRoundedIcon />}
-                disabled
+                onClick={() => {
+                  const msg = encodeURIComponent(
+                    `Hi SunRed concierge, can you connect me with ${therapistName} about booking ${refCode}?`
+                  );
+                  const lineUrl = `https://line.me/R/ti/p/@sunred.bkk?from=page&searchId=sunred.bkk`;
+                  void msg;
+                  window.open(lineUrl, "_blank", "noopener,noreferrer");
+                }}
               />
               <ActionCard
                 label="Track arrival"
-                sub="After confirmation"
+                sub="Open in Maps"
                 icon={<PinDropRoundedIcon />}
-                disabled
+                onClick={() => {
+                  const placeName =
+                    (booking?.locationName as string | undefined) ||
+                    (booking?.address as string | undefined) ||
+                    null;
+                  const lat = booking?.lat as number | undefined;
+                  const lng = booking?.lng as number | undefined;
+                  // Prefer name → address → lat,lng (matches the
+                  // updated buildMapUrl in SelectLocationPage).
+                  const url = placeName
+                    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                        placeName
+                      )}`
+                    : lat != null && lng != null
+                    ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+                    : null;
+                  if (url) window.open(url, "_blank", "noopener,noreferrer");
+                }}
               />
               <ActionCard
                 label="Add to calendar"
-                sub="After confirmation"
+                sub="Save .ics file"
                 icon={<CalendarMonthRoundedIcon />}
-                disabled
+                onClick={() => {
+                  if (!startAt) return;
+                  const durationMin =
+                    typeof booking?.duration === "number"
+                      ? (booking.duration as number)
+                      : 60;
+                  const endAtDate = new Date(
+                    startAt.getTime() + durationMin * 60_000
+                  );
+                  const fmtIcs = (d: Date) =>
+                    d
+                      .toISOString()
+                      .replace(/[-:]/g, "")
+                      .replace(/\.\d{3}/, "");
+                  const summary = `SunRed · ${therapistName} · ${getServiceLabel(
+                    booking?.serviceId as string | undefined,
+                    booking?.serviceName as string | undefined
+                  )}`;
+                  const loc =
+                    (booking?.locationName as string | undefined) ||
+                    (booking?.address as string | undefined) ||
+                    "";
+                  const ics = [
+                    "BEGIN:VCALENDAR",
+                    "VERSION:2.0",
+                    "PRODID:-//SunRed//Booking//EN",
+                    "BEGIN:VEVENT",
+                    `UID:${refCode}@sunred.vip`,
+                    `DTSTAMP:${fmtIcs(new Date())}`,
+                    `DTSTART:${fmtIcs(startAt)}`,
+                    `DTEND:${fmtIcs(endAtDate)}`,
+                    `SUMMARY:${summary}`,
+                    `LOCATION:${loc.replace(/[\r\n,;]/g, " ")}`,
+                    `DESCRIPTION:Booking ref ${refCode}`,
+                    "END:VEVENT",
+                    "END:VCALENDAR",
+                  ].join("\r\n");
+                  const blob = new Blob([ics], {
+                    type: "text/calendar;charset=utf-8",
+                  });
+                  const a = document.createElement("a");
+                  a.href = URL.createObjectURL(blob);
+                  a.download = `${refCode}.ics`;
+                  a.click();
+                  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+                }}
               />
               <ActionCard
                 label="Reschedule"
-                sub="After confirmation"
+                sub="Via concierge"
                 icon={<AutorenewRoundedIcon />}
-                disabled
+                onClick={() => {
+                  const msg = encodeURIComponent(
+                    `Hi SunRed concierge, I'd like to reschedule booking ${refCode}.`
+                  );
+                  const lineUrl = `https://line.me/R/ti/p/@sunred.bkk?from=page&searchId=sunred.bkk`;
+                  void msg;
+                  window.open(lineUrl, "_blank", "noopener,noreferrer");
+                }}
               />
             </Box>
 
@@ -479,6 +633,31 @@ const BookingSuccessPage: React.FC = () => {
                   "—"
                 }
               />
+              {/* 🆕 Round 28r14 — Surface the applied discount on
+                  the success page so guests have a record of what
+                  was credited. Only renders when the booking carries
+                  a non-null `discountAmount` (older bookings + zero-
+                  discount bookings show no extra row). */}
+              {typeof booking.discountAmount === "number" &&
+                booking.discountAmount > 0 && (
+                  <SummaryLine
+                    label={`Discount · ${
+                      (booking.discountCode as string | undefined) ?? ""
+                    }`}
+                    value={
+                      <Box
+                        component="span"
+                        sx={{
+                          color: "#16a34a",
+                          fontWeight: 700,
+                        }}
+                      >
+                        −฿
+                        {(booking.discountAmount as number).toLocaleString()}
+                      </Box>
+                    }
+                  />
+                )}
               <SummaryLine
                 label="Total paid"
                 value={
@@ -581,6 +760,42 @@ const BookingSuccessPage: React.FC = () => {
                 gap: "10px",
               }}
             >
+              {/* 🆕 Round 28r10 (founder 2026-05-06) — Two changes:
+                    • Order swap: Copy booking code now sits ABOVE
+                      Contact admin (per founder direction "ย้าย copy
+                      สลับกับปุ่มติดต่อ"). Reasoning: every guest needs
+                      to keep their booking code first; chatting with
+                      admin is a stronger commitment that comes second.
+                    • Contact button label translated to English
+                      (the rest of the page is English; the lone Thai
+                      sentence read as a copy-paste glitch). */}
+              <Button
+                fullWidth
+                onClick={() => {
+                  if (typeof navigator !== "undefined" && navigator.clipboard) {
+                    void navigator.clipboard
+                      .writeText(refCode)
+                      .catch(() => {});
+                  }
+                }}
+                sx={{
+                  height: 44,
+                  borderRadius: "999px",
+                  background: "rgba(255, 255, 255, 0.95)",
+                  color: "#3c1e14",
+                  fontFamily: SANS,
+                  fontWeight: 700,
+                  fontSize: "13.5px",
+                  textTransform: "none",
+                  border: "1px solid rgba(15, 23, 42, 0.14)",
+                  "&:hover": {
+                    background: "#fff",
+                    borderColor: "rgba(15, 23, 42, 0.22)",
+                  },
+                }}
+              >
+                Copy booking code · {refCode}
+              </Button>
               <Button
                 fullWidth
                 onClick={() => {
@@ -600,51 +815,24 @@ const BookingSuccessPage: React.FC = () => {
                   console.info("[contact-admin] WA fallback:", waUrl);
                 }}
                 sx={{
-                  height: 52,
+                  height: 48,
                   borderRadius: "999px",
                   background:
                     "linear-gradient(135deg, #06C755 0%, #00B900 100%)",
                   color: "#fff",
                   fontFamily: SANS,
                   fontWeight: 700,
-                  fontSize: "15px",
+                  fontSize: "14.5px",
                   textTransform: "none",
                   boxShadow:
-                    "0 6px 18px rgba(6, 199, 85, 0.35), 0 1px 2px rgba(0,0,0,0.08)",
+                    "0 6px 18px rgba(6, 199, 85, 0.32), 0 1px 2px rgba(0,0,0,0.08)",
                   "&:hover": {
                     background:
                       "linear-gradient(135deg, #05B84D 0%, #009900 100%)",
                   },
                 }}
               >
-                ติดต่อแอดมินเพื่อยืนยันการจอง · {refCode}
-              </Button>
-              <Button
-                fullWidth
-                onClick={() => {
-                  if (typeof navigator !== "undefined" && navigator.clipboard) {
-                    void navigator.clipboard
-                      .writeText(refCode)
-                      .catch(() => {});
-                  }
-                }}
-                sx={{
-                  height: 38,
-                  borderRadius: "999px",
-                  background: "rgba(255, 255, 255, 0.85)",
-                  color: "rgba(60, 30, 20, 0.78)",
-                  fontFamily: SANS,
-                  fontWeight: 600,
-                  fontSize: "13px",
-                  textTransform: "none",
-                  border: "1px solid rgba(15, 23, 42, 0.10)",
-                  "&:hover": {
-                    background: "#fff",
-                    borderColor: "rgba(15, 23, 42, 0.20)",
-                  },
-                }}
-              >
-                Copy booking code · {refCode}
+                Confirm with admin · {refCode}
               </Button>
               <Button
                 fullWidth
@@ -694,19 +882,23 @@ const ActionCard: React.FC<{
       }
     }}
     sx={{
-      padding: "16px 12px",
-      borderRadius: "18px",
+      // 🆕 Round 28r10 — Tighter sizing per founder direction:
+      //   "ย่อขนาดลง เพราะมันดูรก". Padding 16/12 → 11/8, icon disc
+      //   42 → 36, label 14 → 12.5, gap 8 → 6. Cards still hit the
+      //   44px tap-target floor.
+      padding: "11px 8px",
+      borderRadius: "14px",
       background: "rgba(255, 255, 255, 0.55)",
       backdropFilter: "blur(20px) saturate(180%)",
       WebkitBackdropFilter: "blur(20px) saturate(180%)",
       border: "1px solid rgba(255, 255, 255, 0.6)",
       boxShadow: disabled
         ? "0 1px 2px rgba(15, 23, 42, 0.03)"
-        : "0 4px 14px rgba(126, 30, 46, 0.05)",
+        : "0 2px 8px rgba(126, 30, 46, 0.04)",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
-      gap: "8px",
+      gap: "6px",
       cursor: disabled ? "not-allowed" : "pointer",
       opacity: disabled ? 0.55 : 1,
       filter: disabled ? "grayscale(0.4)" : "none",
@@ -716,7 +908,7 @@ const ActionCard: React.FC<{
         : {
             "&:hover": {
               transform: "translateY(-1px)",
-              boxShadow: "0 8px 22px rgba(126, 30, 46, 0.10)",
+              boxShadow: "0 6px 16px rgba(126, 30, 46, 0.08)",
             },
             "&:focus-visible": {
               outline: "2px solid #FE0944",
@@ -728,8 +920,8 @@ const ActionCard: React.FC<{
     <Box
       aria-hidden
       sx={{
-        width: 42,
-        height: 42,
+        width: 36,
+        height: 36,
         borderRadius: "50%",
         background: disabled
           ? "linear-gradient(135deg, #94a3b8, #64748b)"
@@ -740,8 +932,8 @@ const ActionCard: React.FC<{
         justifyContent: "center",
         boxShadow: disabled
           ? "0 2px 6px rgba(15, 23, 42, 0.08)"
-          : "0 6px 14px rgba(254, 9, 68, 0.25)",
-        "& svg": { fontSize: 22 },
+          : "0 4px 10px rgba(254, 9, 68, 0.22)",
+        "& svg": { fontSize: 18 },
       }}
     >
       {icon}
@@ -749,11 +941,11 @@ const ActionCard: React.FC<{
     <Typography
       sx={{
         fontFamily: SERIF,
-        fontSize: "14px",
+        fontSize: "12.5px",
         fontWeight: 700,
         color: "#3c1e14",
         textAlign: "center",
-        lineHeight: 1.2,
+        lineHeight: 1.15,
       }}
     >
       {label}
@@ -762,10 +954,11 @@ const ActionCard: React.FC<{
       <Typography
         sx={{
           fontFamily: SANS,
-          fontSize: "11px",
+          fontSize: "10px",
           color: "rgba(60, 30, 20, 0.55)",
           textAlign: "center",
-          marginTop: "-4px",
+          marginTop: "-3px",
+          lineHeight: 1.15,
         }}
       >
         {sub}

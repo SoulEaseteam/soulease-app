@@ -24,6 +24,7 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
+  Typography,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -41,11 +42,19 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import PaymentRoundedIcon from "@mui/icons-material/PaymentRounded";
 import RoomRoundedIcon from "@mui/icons-material/RoomRounded";
-
+import RedeemRoundedIcon from "@mui/icons-material/RedeemRounded";
 import { useAuth } from "@/providers/AuthProvider";
 import DistanceDepositDialog from "@/components/home/DistanceDepositDialog";
+import ReferralDialog from "@/components/home/ReferralDialog";
 import SunRedWordmark from "@/components/common/SunRedWordmark";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
+// 🆕 Round 28r6 (founder 2026-05-06) — TopNav now mirrors the Hero
+//   pill so the page mood stays consistent after the Hero scrolls out
+//   of view. A guest scrolling through the therapist grid still sees
+//   "🌙 Prime hours" pinned to the navbar.
+import { useConciergeMode } from "@/utils/conciergeMode";
+import ConciergeModeIcon from "@/components/common/ConciergeModeIcon";
+import { brand, fonts } from "@/theme";
 
 // Wordmark uses fonts.heading via theme; SANS kept locally for drawer
 // items only.
@@ -63,8 +72,8 @@ interface NavItem {
   defaultHint?: string;
   /** Route to navigate to. Mutually exclusive with `action`. */
   path?: string;
-  /** Inline action — used for Distance dialog */
-  action?: "openDistance";
+  /** Inline action — used for dialogs (Distance / Referral). */
+  action?: "openDistance" | "openReferral";
   /** When true, only show when the user is signed in */
   requiresAuth?: boolean;
 }
@@ -120,6 +129,20 @@ const NAV_ITEMS: NavItem[] = [
 // Info / onboarding items — separate group with a divider above so
 // they don't bury the account links.
 const INFO_ITEMS: NavItem[] = [
+  // 🆕 Round 28r7 (founder 2026-05-06) — Refer & earn (Phase 1).
+  // Wired to the existing ReferralDialog (built in Round 28g but
+  // never imported). Currently a manual flow — guest mentions the
+  // code in concierge chat and View applies the discount by hand.
+  // Watching dialog open-rate + share-completion before we invest
+  // in Firestore + Cloud Function tracking (Phase 2).
+  {
+    icon: <RedeemRoundedIcon />,
+    labelKey: "nav.referral",
+    defaultLabel: "Refer & earn",
+    hintKey: "nav.referral.hint",
+    defaultHint: "Give 500฿ · Get 500฿",
+    action: "openReferral",
+  },
   {
     icon: <HelpOutlineRoundedIcon />,
     labelKey: "nav.howToBook",
@@ -151,6 +174,17 @@ const TopNav: React.FC = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  // 🆕 Round 28r6 — mirror the Hero's Live pill in the navbar so the
+  //   page mood stays visible after the Hero scrolls out of view.
+  const concierge = useConciergeMode();
+  const modeTint =
+    concierge.mode === "prime"
+      ? brand.red
+      : concierge.mode === "evening"
+      ? "#F59E0B"
+      : concierge.mode === "off"
+      ? "rgba(60,30,20,0.55)"
+      : "#FE7A52";
 
   // useAuth shape varies across the codebase; defensively handle either
   // a `user` field or a `currentUser` field. Falsy → unauthenticated.
@@ -164,6 +198,8 @@ const TopNav: React.FC = () => {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [distanceOpen, setDistanceOpen] = useState(false);
+  // 🆕 Round 28r7 — Refer & earn dialog state.
+  const [referralOpen, setReferralOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const prevY = useRef(0);
@@ -191,6 +227,11 @@ const TopNav: React.FC = () => {
     if (item.action === "openDistance") {
       setDrawerOpen(false);
       setDistanceOpen(true);
+      return;
+    }
+    if (item.action === "openReferral") {
+      setDrawerOpen(false);
+      setReferralOpen(true);
       return;
     }
     if (item.path) goto(item.path);
@@ -271,9 +312,84 @@ const TopNav: React.FC = () => {
           <SunRedWordmark size={22} />
         </Box>
 
-        {/* Language pill — shared component, identical UX as the
-            site-wide GlobalLanguagePill on non-home pages. */}
-        <LanguageSwitcher size="md" />
+        {/* Right cluster — 🆕 Round 28r6: Concierge mode chip + lang. */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          {/* Mode chip — compact icon-only pill with mode tint.
+              Tap → scroll the page back to the top so the guest sees
+              the full Hero (Live pill + promo banner) again, in case
+              they scrolled past and want to re-check tonight's mood. */}
+          <Box
+            component="button"
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }
+            }}
+            aria-label={`Concierge mode: ${concierge.pillLabel}`}
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              padding: "5px 9px 5px 7px",
+              border: "1px solid rgba(255,255,255,0.7)",
+              borderRadius: 999,
+              background: "rgba(255, 255, 255, 0.55)",
+              backdropFilter: "blur(20px) saturate(180%)",
+              WebkitBackdropFilter: "blur(20px) saturate(180%)",
+              boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.6)",
+              cursor: "pointer",
+              transition: "transform 0.15s ease, box-shadow 0.2s ease",
+              "&:hover": {
+                transform: "translateY(-1px)",
+                boxShadow:
+                  "inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 4px 12px rgba(254, 9, 68, 0.12)",
+              },
+              "&:focus-visible": {
+                outline: "2px solid #FE0944",
+                outlineOffset: 2,
+              },
+            }}
+          >
+            <ConciergeModeIcon
+              mode={concierge.mode}
+              sx={{
+                fontSize: 13,
+                color: modeTint,
+                filter:
+                  concierge.mode === "off"
+                    ? "none"
+                    : `drop-shadow(0 0 3px ${modeTint})`,
+                animation:
+                  concierge.mode === "off"
+                    ? "none"
+                    : "topNavModePulse 2s ease-in-out infinite",
+                "@keyframes topNavModePulse": {
+                  "0%, 100%": { opacity: 1 },
+                  "50%": { opacity: 0.55 },
+                },
+              }}
+            />
+            <Typography
+              component="span"
+              sx={{
+                fontFamily: fonts.body,
+                fontSize: 9.5,
+                fontWeight: 700,
+                color: brand.burgundy,
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {concierge.pillLabel}
+            </Typography>
+          </Box>
+
+          {/* Language pill — shared component, identical UX as the
+              site-wide GlobalLanguagePill on non-home pages. */}
+          <LanguageSwitcher size="md" />
+        </Box>
       </Box>
 
       {/* ───────── Navigation drawer ───────── */}
@@ -455,6 +571,12 @@ const TopNav: React.FC = () => {
       <DistanceDepositDialog
         open={distanceOpen}
         onClose={() => setDistanceOpen(false)}
+      />
+
+      {/* 🆕 Round 28r7 — Refer & earn dialog (Phase 1, manual flow). */}
+      <ReferralDialog
+        open={referralOpen}
+        onClose={() => setReferralOpen(false)}
       />
     </>
   );

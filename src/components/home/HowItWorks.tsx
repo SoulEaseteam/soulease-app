@@ -34,6 +34,11 @@ import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 
 import { FaLine, FaTelegramPlane, FaWeixin, FaWhatsapp } from "react-icons/fa";
 
+// 🆕 Round 28r12 — FAQ section appended to "How to Book". Lives in a
+//   separate file so the 25+ Q&A entries are easy to maintain without
+//   bloating this component.
+import HowItWorksFAQ from "@/components/home/HowItWorksFAQ";
+
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
@@ -740,6 +745,15 @@ const HowItWorks: React.FC = () => {
           </Box>
         </Box>
 
+        {/* 🆕 Round 28r12 (founder 2026-05-06) — FAQ section.
+            Six categories × 4–5 Q&A each (booking / practitioners /
+            services & pricing / areas / payment & discretion / common
+            questions). Each answer reframes the question through the
+            four strategic battles: discretion as a feature, total-
+            experience pricing, value > price-tag, and supply honesty.
+            Self-contained component — see HowItWorksFAQ.tsx. */}
+        <HowItWorksFAQ />
+
         {/* Closing italic note */}
         <Typography
           sx={{
@@ -749,6 +763,7 @@ const HowItWorks: React.FC = () => {
             color: "rgba(60,30,20,0.55)",
             lineHeight: 1.55,
             fontStyle: "italic",
+            marginTop: "24px",
           }}
         >
           Should you require further assistance, our concierge is at your

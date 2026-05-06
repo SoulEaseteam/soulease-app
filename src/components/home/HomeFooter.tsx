@@ -173,28 +173,11 @@ const HomeFooter: React.FC = () => {
         }}
       />
 
-      {/* ── Book CTA ── */}
-      <Box
-        component="button"
-        onClick={() => void navigate("/")}
-        sx={{
-          position: "relative", zIndex: 1,
-          width: "100%", marginBottom: "16px",
-          padding: "13px 0",
-          borderRadius: "14px",
-          background: "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
-          color: "#fff",
-          fontFamily: fonts.heading,
-          fontSize: "15px",
-          fontWeight: 700,
-          letterSpacing: "-0.01em",
-          border: "none",
-          cursor: "pointer",
-          boxShadow: "0 4px 16px rgba(254, 9, 68, 0.30)",
-        }}
-      >
-        Book a session now
-      </Box>
+      {/* 🆕 Round 28r1 (founder 2026-05-06) — "Book a session now" CTA
+          removed. Footer is the closing chord, not a sales pitch; the
+          full TopNav + sticky Hero + map card all already carry a
+          reservation entry-point. Dropping it tightens the editorial
+          rhythm and lets the brand wordmark read first. */}
 
       {/* ── Brand + tagline + socials ── */}
       <Box sx={{ position: "relative", zIndex: 1, marginBottom: "18px" }}>

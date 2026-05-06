@@ -144,6 +144,10 @@ const AdminBookingAddPage = React.lazy(
 const AdminAdvancedSettingsPage = React.lazy(
   () => import("@/pages/admin/AdminAdvancedSettingsPage")
 );
+// 🆕 Round 28r15 — Funnel analytics dashboard for admin.
+const AdminAnalyticsPage = React.lazy(
+  () => import("@/pages/admin/AdminAnalyticsPage")
+);
 const AdminReportPage = React.lazy(
   () => import("@/pages/admin/AdminReportPage")
 );
@@ -284,6 +288,8 @@ export default function App() {
           <Route path="bookings/add" element={<AdminBookingAddPage />} />
           <Route path="reviews" element={<AdminReviewListPage />} />
           <Route path="reports" element={<AdminReportPage />} />
+          {/* 🆕 Round 28r15 — Funnel analytics dashboard */}
+          <Route path="analytics" element={<AdminAnalyticsPage />} />
           <Route
             path="blocked-devices"
             element={<AdminBlockedDevicesPage />}
