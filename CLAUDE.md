@@ -362,6 +362,17 @@ You'll have ALL context. No re-explanation needed.
   manual config) → it goes in Section 9
 - Section 9 is the single source of truth for "what's still owed"
 
+**📝 Git commit discipline (founder direction 2026-05-07):**
+- After EVERY round/feature ships AND TypeScript passes → run
+  `git commit -am "Round 28rXX: <one-line summary>"` automatically
+- Don't ask "ต้อง commit ไหม" — just do it. View wants every
+  successful work checkpoint backed up.
+- If author config missing, set:
+  `git config user.email "sunredbkk@gmail.com"`
+  `git config user.name "View (via Claude co-founder)"`
+- Format: short subject + bullet list of key changes in body
+- Push to remote is View's call (mention but don't auto-push)
+
 ---
 
 ## 11. Tone of voice when chatting with View
