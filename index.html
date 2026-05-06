@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
 
     <title>SUNRED Bangkok • #1 Luxury Outcall Massage • EN/中文/日本語/한국어</title>
@@ -74,13 +74,21 @@
       property="og:description"
       content="Trusted therapists, live availability, and 5-star reviews. Book your perfect outcall massage in Bangkok with SUNRED."
     />
-    <!-- 🖼️ OG image 1200x630 via Cloudinary fetch (auto-optimized, face-aware crop) -->
+    <!-- 🖼️ OG image 1200x630 — branded share banner (Round 28b58).
+         Was a single therapist's portrait (Yuri's face) which made
+         every shared therapist URL preview the same person regardless
+         of whose page was actually shared.
+         Now points at /images/og/sunred-share.svg — a dedicated
+         brand banner with the SunRed sun glyph, wordmark, tagline,
+         and the sunred.vip domain pill. Cloudinary fetch + f_jpg
+         rasterizes the SVG so Telegram / Line / FB / WhatsApp render
+         it (those clients don't accept raw SVG). -->
     <meta
       property="og:image"
-      content="https://res.cloudinary.com/dhzvzvatb/image/fetch/w_1200,h_630,c_fill,g_auto,f_jpg,q_auto:best/https://sunred.vip/images/yuri/yurie.jpeg"
+      content="https://res.cloudinary.com/dhzvzvatb/image/fetch/w_1200,h_630,c_fit,b_white,f_jpg,q_auto:best/https://sunred.vip/images/og/sunred-share.svg"
     />
     <meta property="og:image:secure_url"
-      content="https://res.cloudinary.com/dhzvzvatb/image/fetch/w_1200,h_630,c_fill,g_auto,f_jpg,q_auto:best/https://sunred.vip/images/yuri/yurie.jpeg"
+      content="https://res.cloudinary.com/dhzvzvatb/image/fetch/w_1200,h_630,c_fit,b_white,f_jpg,q_auto:best/https://sunred.vip/images/og/sunred-share.svg"
     />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
@@ -105,7 +113,7 @@
     />
     <meta
       name="twitter:image"
-      content="https://res.cloudinary.com/dhzvzvatb/image/fetch/w_1200,h_630,c_fill,g_auto,f_jpg,q_auto:best/https://sunred.vip/images/yuri/yurie.jpeg"
+      content="https://res.cloudinary.com/dhzvzvatb/image/fetch/w_1200,h_630,c_fit,b_white,f_jpg,q_auto:best/https://sunred.vip/images/og/sunred-share.svg"
     />
 
     <!-- Hreflang — Asia foreign-customer focus -->

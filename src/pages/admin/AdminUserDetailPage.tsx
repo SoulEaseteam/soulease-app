@@ -117,7 +117,8 @@ const AdminUserDetailPage: React.FC = () => {
             size="small"
             value={user.role}
             onChange={(e) => handleRoleChange(e.target.value)}
-            disabled={isSelf} // ❌ Admin แก้ตัวเองไม่ได้
+            disabled={isSelf}
+            MenuProps={{ PaperProps: { sx: { background: "#fff", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)" } } }}
           >
             <MenuItem value="user">User</MenuItem>
             <MenuItem value="therapist">Therapist</MenuItem>

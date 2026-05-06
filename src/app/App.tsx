@@ -114,9 +114,6 @@ const TherapistProfilePage = React.lazy(
 );
 
 // Admin
-const AdminLoginPage = React.lazy(
-  () => import("@/pages/admin/AdminLoginPage")
-);
 const AdminDashboardPage = React.lazy(
   () => import("@/pages/admin/AdminDashboardPage")
 );
@@ -189,7 +186,7 @@ export default function App() {
         {/* ================= PUBLIC ================= */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/admin/login" element={<Navigate to="/login" replace />} />
         <Route path="/maintenance" element={<MaintenancePage />} />
         <Route path="/wechat-scan" element={<WeChatScanPage />} />
         {/* ================= MAIN LAYOUT ================= */}

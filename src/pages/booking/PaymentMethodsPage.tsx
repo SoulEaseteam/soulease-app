@@ -1,10 +1,18 @@
 
 import React, { useEffect, useState } from "react";
-import { Box, Typography, IconButton } from "@mui/material";
+import {
+  Box,
+  Typography,
+  IconButton,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
+import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import QrCodeScannerRoundedIcon from "@mui/icons-material/QrCodeScannerRounded";
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
 import CreditCardRoundedIcon from "@mui/icons-material/CreditCardRounded";
@@ -18,6 +26,30 @@ const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 const STORAGE_KEY = "sunred.paymentMethod";
+
+// ─── Payment & Policy FAQ — moved from ServicesPage (Round 28c1) ──────
+//   Canonical home for all payment-related questions. ServicesPage no
+//   longer duplicates this content; it links here instead.
+type FaqItem = { q: string; a: React.ReactNode };
+
+const FAQ_POLICY: FaqItem[] = [
+  {
+    q: "What is the cost of a session?",
+    a: "Each practitioner sets their own rates — the exact starting price is shown on their profile. The total reflects the service fee plus a transparent travel fee, aligned with GrabCar pricing (฿45 base, tiered per kilometre, return at half rate).",
+  },
+  {
+    q: "When is a deposit required?",
+    a: "For long-distance reservations — beyond approximately 25 km from central Sukhumvit — we request a modest deposit to secure the practitioner's travel commitment. This is communicated in advance, never as a surprise.",
+  },
+  {
+    q: "Cancellation & rescheduling",
+    a: "Complimentary cancellation or rescheduling up to 30 minutes before the appointment. Beyond that window — or once the practitioner is en route — a 50% service-fee charge applies, in respect of their committed time and travel.",
+  },
+  {
+    q: "Are my payment details secure?",
+    a: "Yes. We use plain-card statements (no service description), tokenised processing for online methods, and never store your card numbers ourselves. Your booking, your privacy.",
+  },
+];
 
 export type PaymentMethodId =
   | "promptpay"
@@ -347,29 +379,87 @@ const PaymentMethodsPage: React.FC = () => {
         </Box>
 
         <Typography
-  sx={{
-    fontFamily: SANS,
-    fontSize: "11px",
-    color: "rgba(60, 30, 20, 0.5)",
-    textAlign: "center",
-    marginTop: "8px",
-    lineHeight: 1.5,
-    whiteSpace: "pre-line",
-  }}
->
-  Our team will verify and process your payment{"\n"}
-  once confirmed via our {""}
-  <Box
-    component="span"
-    sx={{
-      fontWeight: 700, // เน้นตัวหนา
-      color: "rgba(60, 30, 20, 0.8)", // ปรับสีให้เข้มขึ้นเพื่อให้ดูเด่นกว่าส่วนอื่น
-    }}
-  >
-    official contact channels
-  </Box>
-  .
-</Typography>
+          sx={{
+            fontFamily: SANS,
+            fontSize: "11px",
+            color: "rgba(60, 30, 20, 0.5)",
+            textAlign: "center",
+            marginTop: "8px",
+            lineHeight: 1.5,
+            whiteSpace: "pre-line",
+          }}
+        >
+          Our team will verify and process your payment{"\n"}
+          once confirmed via our{" "}
+          <Box
+            component="span"
+            sx={{
+              fontWeight: 700,
+              color: "rgba(60, 30, 20, 0.8)",
+            }}
+          >
+            official contact channels
+          </Box>
+          .
+        </Typography>
+
+        {/* ─── Payment & Policy FAQ — refined editorial accordion ─── */}
+        <Box sx={{ mt: 3 }}>
+          {/* Eyebrow + serif title with italic em accent */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              fontSize: 10,
+              letterSpacing: "0.24em",
+              textTransform: "uppercase",
+              color: "#b85c3c",
+              fontWeight: 700,
+              mb: 0.75,
+              fontFamily: SANS,
+              "&::before": {
+                content: '""',
+                width: "22px",
+                height: "1px",
+                background: "rgba(184, 92, 60, 0.55)",
+              },
+            }}
+          >
+            Payment & Policy
+          </Box>
+          <Typography
+            sx={{
+              fontFamily: SERIF,
+              fontSize: 22,
+              fontWeight: 400,
+              color: "#2a1a14",
+              letterSpacing: "-0.02em",
+              lineHeight: 1.2,
+              "& em": { fontStyle: "italic", color: "#FE0944" },
+            }}
+          >
+            What you should <em>know</em>
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: 13,
+              color: "rgba(60,30,20,0.65)",
+              lineHeight: 1.55,
+              mt: 0.75,
+              mb: 2,
+              maxWidth: "38ch",
+            }}
+          >
+            Pricing, deposits, cancellation, and how we keep your details
+            private.
+          </Typography>
+
+          {FAQ_POLICY.map((item) => (
+            <FaqRow key={item.q} item={item} />
+          ))}
+        </Box>
       </Box>
     </Box>
   );
@@ -654,6 +744,101 @@ const AddMethodRow: React.FC<{
     </Box>
   );
 };
+
+// ─── Reusable FAQ row — refined accordion with red left-edge on expand ─
+const FaqRow: React.FC<{ item: FaqItem }> = ({ item }) => (
+  <Accordion
+    disableGutters
+    elevation={0}
+    sx={{
+      mb: 1,
+      position: "relative",
+      borderRadius: "14px !important",
+      background: "#FFFFFF",
+      border: "1px solid rgba(15, 23, 42, 0.06)",
+      boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
+      overflow: "hidden",
+      transition: "border-color 200ms ease, box-shadow 200ms ease",
+      "&::before": { display: "none" },
+      "&::after": {
+        content: '""',
+        position: "absolute",
+        left: 0,
+        top: "12%",
+        bottom: "12%",
+        width: "2px",
+        background: "linear-gradient(180deg, #FE0944, #FE7A52)",
+        borderRadius: "2px",
+        opacity: 0,
+        transition: "opacity 220ms ease",
+      },
+      "&.Mui-expanded": {
+        borderColor: "rgba(254, 9, 68, 0.18)",
+        boxShadow:
+          "0 1px 2px rgba(254, 9, 68, 0.06), 0 8px 22px rgba(254, 9, 68, 0.06)",
+        "&::after": { opacity: 1 },
+      },
+    }}
+  >
+    <AccordionSummary
+      expandIcon={
+        <ExpandMoreRoundedIcon
+          sx={{ color: "rgba(60,30,20,0.55)", fontSize: 22 }}
+        />
+      }
+      sx={{
+        minHeight: 52,
+        px: 2,
+        "& .MuiAccordionSummary-content": { my: 1.25 },
+      }}
+    >
+      <Typography
+        sx={{
+          fontFamily: SANS,
+          fontWeight: 600,
+          fontSize: 13.5,
+          color: "#2a1a14",
+          letterSpacing: "-0.005em",
+          lineHeight: 1.4,
+        }}
+      >
+        {item.q}
+      </Typography>
+    </AccordionSummary>
+    <AccordionDetails sx={{ pt: 0, px: 2, pb: 2 }}>
+      {typeof item.a === "string" ? (
+        item.a
+          .split("\n\n")
+          .map((para, i) => (
+            <Typography
+              key={i}
+              sx={{
+                fontFamily: SANS,
+                fontSize: 13,
+                lineHeight: 1.7,
+                color: "rgba(60,30,20,0.78)",
+                mb: 1,
+                "&:last-child": { mb: 0 },
+              }}
+            >
+              {para}
+            </Typography>
+          ))
+      ) : (
+        <Box
+          sx={{
+            fontFamily: SANS,
+            fontSize: 13,
+            lineHeight: 1.7,
+            color: "rgba(60,30,20,0.78)",
+          }}
+        >
+          {item.a}
+        </Box>
+      )}
+    </AccordionDetails>
+  </Accordion>
+);
 
 export default PaymentMethodsPage;
 

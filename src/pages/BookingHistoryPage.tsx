@@ -1,31 +1,12 @@
 // src/pages/BookingHistoryPage.tsx
 //
-// 🎨 Phase 5A — My Bookings page (rewrite of legacy 360-line MUI version).
-//
-// Visual language matches Phase 4 Confirm Order: warm cream background,
-// glass cards, red→coral gradient CTAs, Fraunces+Inter typography.
-//
-// Layout:
-//   ┌─ ← My Bookings ─────────────────────────────┐
-//   │  [ Upcoming · Completed · Cancelled ]       │  tab switcher
-//   │                                              │
-//   │  ┌─ Booking card ────────────────────────┐  │
-//   │  │ [avatar] Yuri · ★4.7        [STATUS]  │  │
-//   │  │          Thai Massage · 90 min          │  │
-//   │  │          Today · 17:00                  │  │
-//   │  │          📍 Mandarin Oriental           │  │
-//   │  │  ─────                                  │  │
-//   │  │  Total ฿1,800        [Rebook] [Review] │  │
-//   │  └────────────────────────────────────────┘  │
-//   │  …                                           │
-//   └──────────────────────────────────────────────┘
-//
-// 🚧 Cancel + Review submit flows wired in next sub-commits (5A-2, 5A-3).
-//    Today: read-only list + Rebook navigates to /therapists/:id so the
-//    user can pick a fresh date/time on the detail page.
+// 🆕 Round 28c17 (founder 2026-05-06) — full SunRed theme redesign.
+//   Dark hero header + x-transform sliding pill tabs (3 buckets) +
+//   framer-motion staggered cards. Matches ProfilePage premium feel.
 
-import React, { useEffect, useMemo, useState } from "react";
-import { Box, Typography, IconButton, Tabs, Tab, Button } from "@mui/material";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Box, Avatar, Typography } from "@mui/material";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   collection,
@@ -35,41 +16,30 @@ import {
   orderBy,
   Timestamp,
 } from "firebase/firestore";
-import dayjs from "dayjs";
-// 🆕 Round 28an — BKK-anchored display.
-import { fmtBKK } from "@/utils/time";
-import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
-import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
-// 🆕 Round 28b38 — emoji → MUI icons in EmptyState (matches Round 24/44).
-import LockRoundedIcon from "@mui/icons-material/LockRounded";
-import EventNoteRoundedIcon from "@mui/icons-material/EventNoteRounded";
-import CelebrationRoundedIcon from "@mui/icons-material/CelebrationRounded";
-import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
+import { ArrowLeft, CalendarBlank, CheckCircle, XCircle, Star } from "phosphor-react";
+import { MapPin } from "phosphor-react";
 
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import { formatTHB } from "@/utils/servicePricing";
+import { fmtBKK } from "@/utils/time";
 import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
-import therapistsData from "@/data/therapists";
-// 🆕 Round 28b16 — central catalog lookup so renaming a service in
-//   data/services.ts auto-updates every booking-history row.
 import { getServiceLabel } from "@/utils/serviceCatalog";
+import therapistsData from "@/data/therapists";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
-const SANS = '"Inter", system-ui, -apple-system, sans-serif';
+const SERIF = '"Fraunces", Georgia, serif';
+const SANS  = '"Inter", system-ui, sans-serif';
 
-type BookingStatus =
-  | "pending"
-  | "confirmed"
-  | "completed"
-  | "cancelled"
-  | "upcoming"; // legacy alias
+// ── types ────────────────────────────────────────────────────────────
+type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled" | "upcoming";
+type TabKey = "upcoming" | "completed" | "cancelled";
 
 interface Booking {
   id: string;
   therapistId: string;
   therapistName?: string;
   serviceName?: string;
+  serviceId?: string;
   duration?: number;
   date?: string;
   time?: string;
@@ -82,612 +52,655 @@ interface Booking {
   total?: number;
   status: BookingStatus;
   reviewed?: boolean;
-  rating?: number;
-  reviewText?: string;
   createdAt?: Timestamp;
   userId?: string;
 }
 
-const STATUS_PILL: Record<
-  string,
-  { label: string; bg: string; fg: string; bucket: TabKey }
-> = {
-  upcoming: { label: "Upcoming", bg: "rgba(254, 9, 68, 0.1)", fg: "#FE0944", bucket: "upcoming" },
-  pending: { label: "Pending", bg: "rgba(254, 9, 68, 0.1)", fg: "#FE0944", bucket: "upcoming" },
-  confirmed: { label: "Confirmed", bg: "rgba(22, 163, 74, 0.12)", fg: "#16a34a", bucket: "upcoming" },
-  completed: { label: "Completed", bg: "rgba(60, 30, 20, 0.08)", fg: "rgba(60, 30, 20, 0.7)", bucket: "completed" },
-  cancelled: { label: "Cancelled", bg: "rgba(0, 0, 0, 0.06)", fg: "rgba(60, 30, 20, 0.5)", bucket: "cancelled" },
+const STATUS_META: Record<string, { label: string; bg: string; fg: string; bucket: TabKey }> = {
+  upcoming:  { label: "Upcoming",  bg: "rgba(254,9,68,0.12)",   fg: "#FE0944",             bucket: "upcoming"  },
+  pending:   { label: "Pending",   bg: "rgba(254,9,68,0.12)",   fg: "#FE0944",             bucket: "upcoming"  },
+  confirmed: { label: "Confirmed", bg: "rgba(22,163,74,0.12)",  fg: "#16a34a",             bucket: "upcoming"  },
+  completed: { label: "Completed", bg: "rgba(60,30,20,0.08)",   fg: "rgba(60,30,20,0.65)", bucket: "completed" },
+  cancelled: { label: "Cancelled", bg: "rgba(0,0,0,0.06)",      fg: "rgba(60,30,20,0.45)", bucket: "cancelled" },
 };
 
-type TabKey = "upcoming" | "completed" | "cancelled";
-
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "upcoming", label: "Upcoming" },
+  { key: "upcoming",  label: "Upcoming"  },
   { key: "completed", label: "Completed" },
   { key: "cancelled", label: "Cancelled" },
 ];
 
+const N_TABS   = TABS.length;
+const PILL_GAP = 3; // px gap between pill and track edge
+
+// ── animation helpers ─────────────────────────────────────────────────
+const fadeUp = (delay = 0) => ({
+  initial:    { opacity: 0, y: 16 },
+  animate:    { opacity: 1, y: 0  },
+  transition: { duration: 0.38, ease: "easeOut" as const, delay },
+});
+
+// ──────────────────────────────────────────────────────────────────────
+// Main page
+// ──────────────────────────────────────────────────────────────────────
 const BookingHistoryPage: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const [tab, setTab] = useState<TabKey>("upcoming");
+  const navigate  = useNavigate();
+  const [tab,      setTab]      = useState<TabKey>("upcoming");
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading,  setLoading]  = useState(true);
 
-  // ── Firestore real-time listener for THIS user's bookings
+  // ── sliding pill geometry ────────────────────────────────────────
+  const trackRef  = useRef<HTMLDivElement>(null);
+  const [tabPx, setTabPx] = useState(0);
+
   useEffect(() => {
-    if (!user?.uid) {
-      setLoading(false);
-      return;
-    }
+    const el = trackRef.current;
+    if (!el) return;
+    const measure = () => setTabPx(el.offsetWidth / N_TABS);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const activeIndex = TABS.findIndex((t) => t.key === tab);
+  const pillW = tabPx > PILL_GAP * 2 ? tabPx - PILL_GAP * 2 : 0;
+  const pillX = activeIndex * tabPx + PILL_GAP;
+
+  // ── firestore listener ────────────────────────────────────────────
+  useEffect(() => {
+    if (!user?.uid) { setLoading(false); return; }
     const q = query(
       collection(db, "bookings"),
       where("userId", "==", user.uid),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "desc"),
     );
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const next: Booking[] = [];
-        snap.forEach((d) => {
-          const data = d.data() as Omit<Booking, "id">;
-          next.push({ id: d.id, ...data });
-        });
-        setBookings(next);
-        setLoading(false);
-      },
-      (err) => {
-        console.warn("[bookings] snapshot error:", err);
-        setLoading(false);
-      }
-    );
+    const unsub = onSnapshot(q, (snap) => {
+      const next: Booking[] = [];
+      snap.forEach((d) => next.push({ id: d.id, ...(d.data() as Omit<Booking, "id">) }));
+      setBookings(next);
+      setLoading(false);
+    }, (err) => {
+      console.warn("[bookings] snapshot error:", err);
+      setLoading(false);
+    });
     return () => unsub();
   }, [user?.uid]);
 
-  // ── Bucket by status
   const counts = useMemo(() => {
-    const c: Record<TabKey, number> = {
-      upcoming: 0,
-      completed: 0,
-      cancelled: 0,
-    };
+    const c: Record<TabKey, number> = { upcoming: 0, completed: 0, cancelled: 0 };
     for (const b of bookings) {
-      const meta = STATUS_PILL[b.status];
+      const meta = STATUS_META[b.status];
       if (meta) c[meta.bucket]++;
     }
     return c;
   }, [bookings]);
 
   const visible = useMemo(
-    () =>
-      bookings.filter((b) => {
-        const meta = STATUS_PILL[b.status];
-        return meta?.bucket === tab;
-      }),
-    [bookings, tab]
+    () => bookings.filter((b) => STATUS_META[b.status].bucket === tab),
+    [bookings, tab],
   );
 
   return (
-    <Box
-      sx={{
-        // Phone-shell wrapper — same pattern as Home/Detail/Browse so the
-        // page reads consistently at 430px width on desktop.
-        maxWidth: "430px",
-        margin: "0 auto",
-        minHeight: "100vh",
-        background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
-        paddingBottom: "120px",
-        fontFamily: SANS,
-        position: "relative",
-      }}
-    >
-      {/* ── Page header ── */}
+    <Box sx={{ minHeight: "100vh", background: "linear-gradient(180deg,#F7F3F1 0%,#F0EBE8 100%)", pb: 14, fontFamily: SANS }}>
+
+      {/* ── Dark hero header ─────────────────────────────────────── */}
       <Box
         sx={{
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-          background: "rgba(255, 248, 240, 0.92)",
-          backdropFilter: "blur(20px) saturate(180%)",
-          WebkitBackdropFilter: "blur(20px) saturate(180%)",
-          borderBottom: "1px solid rgba(0, 0, 0, 0.04)",
-          display: "flex",
-          alignItems: "center",
-          padding: "14px 16px",
+          background: "linear-gradient(160deg,#1a0805 0%,#3c1010 55%,#2d0909 100%)",
+          pt: "env(safe-area-inset-top, 16px)",
+          pb: 3.5,
+          px: 2.5,
+          position: "relative",
+          overflow: "hidden",
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            bottom: -32,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 220,
+            height: 64,
+            borderRadius: "50%",
+            background: "rgba(254,9,68,0.12)",
+            filter: "blur(28px)",
+            pointerEvents: "none",
+          },
         }}
       >
-        <IconButton
-          aria-label="back"
+        {/* back button */}
+        <Box
+          component="button"
           onClick={() => void navigate(-1)}
           sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             width: 36,
             height: 36,
-            background: "rgba(255, 255, 255, 0.7)",
-            border: "1px solid rgba(0, 0, 0, 0.06)",
-            color: "#3c1e14",
-            "&:hover": { background: "rgba(255, 255, 255, 0.9)" },
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            color: "#fff",
+            cursor: "pointer",
+            mb: 2.5,
+            p: 0,
           }}
         >
-          <ArrowBackRoundedIcon fontSize="small" />
-        </IconButton>
-        <Typography
-          component="h1"
-          sx={{
-            flex: 1,
-            textAlign: "center",
-            fontFamily: SERIF,
-            fontSize: "18px",
-            fontWeight: 600,
-            color: "#3c1e14",
-            letterSpacing: "-0.01em",
-            marginRight: "36px",
-          }}
-        >
-          My Bookings
-        </Typography>
+          <ArrowLeft size={18} weight="bold" />
+        </Box>
+
+        <motion.div {...fadeUp(0)}>
+          <Typography sx={{ fontFamily: SERIF, fontSize: 26, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+            My Bookings
+          </Typography>
+          <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(255,255,255,0.45)", mt: 0.5 }}>
+            {counts.upcoming > 0
+              ? `${counts.upcoming} upcoming session${counts.upcoming > 1 ? "s" : ""}`
+              : "No upcoming sessions"}
+          </Typography>
+        </motion.div>
+
+        {/* stat strip */}
+        <motion.div {...fadeUp(0.08)}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1,
+              mt: 2.5,
+              p: 1.5,
+              borderRadius: "16px",
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            {[
+              { value: counts.upcoming,  label: "Upcoming"  },
+              { value: counts.completed, label: "Completed" },
+              { value: counts.cancelled, label: "Cancelled" },
+            ].map((s, i) => (
+              <Box
+                key={i}
+                sx={{
+                  flex: 1,
+                  textAlign: "center",
+                  borderRight: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none",
+                }}
+              >
+                <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1 }}>
+                  {s.value}
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "rgba(255,255,255,0.40)", mt: 0.4, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                  {s.label}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </motion.div>
       </Box>
 
-      {/* ── Tabs ── */}
-      <Box sx={{ padding: "8px 16px 0" }}>
-        <Tabs
-          value={tab}
-          onChange={(_, v: TabKey) => setTab(v)}
-          variant="fullWidth"
-          sx={{
-            background: "rgba(255, 255, 255, 0.7)",
-            backdropFilter: "blur(20px) saturate(180%)",
-            WebkitBackdropFilter: "blur(20px) saturate(180%)",
-            borderRadius: "14px",
-            minHeight: 44,
-            border: "1px solid rgba(255, 255, 255, 0.6)",
-            "& .MuiTab-root": {
-              fontFamily: SANS,
-              fontSize: "13px",
-              fontWeight: 700,
-              textTransform: "none",
-              color: "rgba(60, 30, 20, 0.55)",
-              minHeight: 44,
-              "&.Mui-selected": { color: "#FE0944" },
-            },
-            "& .MuiTabs-indicator": {
-              background: "linear-gradient(135deg, #FE0944, #FE7A52)",
-              height: "3px",
-              borderRadius: "2px 2px 0 0",
-            },
-          }}
-        >
-          {TABS.map((t) => (
-            <Tab
-              key={t.key}
-              value={t.key}
-              label={`${t.label}${counts[t.key] > 0 ? ` (${counts[t.key]})` : ""}`}
-            />
-          ))}
-        </Tabs>
+      {/* ── Sliding pill tab switcher ─────────────────────────────── */}
+      <Box sx={{ px: 2, pt: 2.5, pb: 0 }}>
+        <motion.div {...fadeUp(0.12)}>
+          <Box
+            ref={trackRef}
+            sx={{
+              position: "relative",
+              display: "flex",
+              borderRadius: 999,
+              background: "#fff",
+              border: "1px solid rgba(15,23,42,0.07)",
+              boxShadow: "0 1px 4px rgba(15,23,42,0.05)",
+              overflow: "hidden",
+            }}
+          >
+            {/* sliding pill */}
+            {pillW > 0 && (
+              <motion.div
+                initial={false}
+                animate={{ x: pillX }}
+                transition={{ type: "spring", stiffness: 500, damping: 42, mass: 0.9 }}
+                style={{
+                  position: "absolute",
+                  top: PILL_GAP,
+                  bottom: PILL_GAP,
+                  left: 0,
+                  width: pillW,
+                  borderRadius: 999,
+                  background: "linear-gradient(135deg,#FE0944,#FE7A52)",
+                  boxShadow: "0 4px 14px rgba(254,9,68,0.30)",
+                  pointerEvents: "none",
+                  zIndex: 0,
+                }}
+              />
+            )}
+            {TABS.map((t) => {
+              const active = tab === t.key;
+              return (
+                <motion.button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  whileTap={{ scale: 0.97 }}
+                  style={{
+                    flex: 1,
+                    position: "relative",
+                    zIndex: 1,
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "10px 4px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 1,
+                    WebkitTapHighlightColor: "transparent",
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      letterSpacing: "0.03em",
+                      color: active ? "#fff" : "rgba(60,30,20,0.50)",
+                      lineHeight: 1,
+                      transition: "color 0.15s ease",
+                    }}
+                  >
+                    {t.label}
+                  </Typography>
+                  {counts[t.key] > 0 && (
+                    <Typography
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        color: active ? "rgba(255,255,255,0.75)" : "rgba(254,9,68,0.65)",
+                        lineHeight: 1,
+                        transition: "color 0.15s ease",
+                      }}
+                    >
+                      {counts[t.key]}
+                    </Typography>
+                  )}
+                </motion.button>
+              );
+            })}
+          </Box>
+        </motion.div>
       </Box>
 
-      {/* ── List ── */}
-      <Box
-        sx={{
-          padding: "16px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-        }}
-      >
+      {/* ── Card list ────────────────────────────────────────────────── */}
+      <Box sx={{ px: 2, pt: 2, display: "flex", flexDirection: "column", gap: 1.5 }}>
         {!user ? (
-          <EmptyState
-            icon={<LockRoundedIcon sx={{ fontSize: 36 }} />}
-            title="Sign in to view your bookings"
-            body="Your booking history shows here once you log in."
-            ctaLabel="Sign in"
+          <EmptySlate
+            icon={<XCircle size={32} weight="duotone" />}
+            title="Sign in to view bookings"
+            body="Your booking history will appear here after you log in."
+            cta="Sign in"
             onCta={() => void navigate("/login")}
           />
         ) : loading ? (
-          <Typography
-            sx={{
-              fontFamily: SANS,
-              fontSize: "13px",
-              color: "rgba(60, 30, 20, 0.55)",
-              textAlign: "center",
-              padding: "40px 0",
-            }}
-          >
-            Loading your bookings…
-          </Typography>
+          <LoadingShimmer />
         ) : visible.length === 0 ? (
-          <EmptyState
+          <EmptySlate
             icon={
-              tab === "upcoming" ? (
-                <EventNoteRoundedIcon sx={{ fontSize: 36 }} />
-              ) : tab === "completed" ? (
-                <CelebrationRoundedIcon sx={{ fontSize: 36 }} />
-              ) : (
-                <HotelRoundedIcon sx={{ fontSize: 36 }} />
-              )
+              tab === "upcoming"  ? <CalendarBlank size={32} weight="duotone" /> :
+              tab === "completed" ? <CheckCircle   size={32} weight="duotone" /> :
+                                    <XCircle       size={32} weight="duotone" />
             }
             title={
-              tab === "upcoming"
-                ? "No upcoming bookings"
-                : tab === "completed"
-                ? "No completed sessions yet"
-                : "No cancelled bookings"
+              tab === "upcoming"  ? "No upcoming sessions"       :
+              tab === "completed" ? "No completed sessions yet"   :
+                                    "No cancelled bookings"
             }
             body={
-              tab === "upcoming"
-                ? "Browse therapists and book your next session."
-                : tab === "completed"
-                ? "Your completed sessions will land here once you book."
-                : "Cancelled bookings would show here."
+              tab === "upcoming"  ? "Browse therapists and book your next session." :
+              tab === "completed" ? "Your completed sessions will land here."       :
+                                    "Cancelled bookings will appear here."
             }
-            ctaLabel={tab === "upcoming" ? "Browse therapists" : undefined}
-            onCta={
-              tab === "upcoming"
-                ? () => void navigate("/")
-                : undefined
-            }
+            cta={tab === "upcoming" ? "Browse therapists" : undefined}
+            onCta={tab === "upcoming" ? () => void navigate("/") : undefined}
           />
         ) : (
-          visible.map((b) => (
-            <BookingCard
-              key={b.id}
-              booking={b}
-              onRebook={() =>
-                void navigate(`/therapists/${b.therapistId}`)
-              }
-              onReview={() =>
-                void navigate(`/review/${b.id}`)
-              }
-            />
-          ))
+          <AnimatePresence mode="popLayout">
+            {visible.map((b, i) => (
+              <motion.div
+                key={b.id}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0  }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.3, ease: "easeOut", delay: i * 0.05 }}
+              >
+                <BookingCard
+                  booking={b}
+                  onRebook={() => void navigate(`/therapists/${b.therapistId}`)}
+                  onReview={() => void navigate(`/review/${b.id}`)}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         )}
       </Box>
     </Box>
   );
 };
 
-// ──────────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────────────
 // Booking card
-// ──────────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────────────
 const BookingCard: React.FC<{
   booking: Booking;
   onRebook: () => void;
   onReview: () => void;
 }> = ({ booking, onRebook, onReview }) => {
-  const status = STATUS_PILL[booking.status] ?? STATUS_PILL.pending;
-  const therapist = therapistsData.find((tt) => tt.id === booking.therapistId);
-  const total = booking.totalPrice ?? booking.total ?? 0;
-
-  // 🆕 Round 28an — BKK-anchored display.
-  const dateLabel = booking.startAt?.toDate
-    ? fmtBKK(booking.startAt.toDate(), "ddd MMM D")
-    : booking.date
-    ? fmtBKK(booking.date, "ddd MMM D")
-    : "—";
-  const timeLabel = booking.time ?? "—";
-
+  const status     = STATUS_META[booking.status] ?? STATUS_META.pending;
+  const therapist  = therapistsData.find((t) => t.id === booking.therapistId);
+  const total      = booking.totalPrice ?? booking.total ?? 0;
   const isUpcoming = status.bucket === "upcoming";
   const isCompleted = status.bucket === "completed";
+
+  const dateLabel = booking.startAt?.toDate
+    ? fmtBKK(booking.startAt.toDate(), "ddd D MMM")
+    : booking.date
+    ? fmtBKK(booking.date, "ddd D MMM")
+    : "—";
+  const timeLabel = booking.time ?? "—";
 
   return (
     <Box
       sx={{
-        padding: "14px",
-        borderRadius: "16px",
-        background: "rgba(255, 255, 255, 0.7)",
-        border: "1px solid rgba(255, 255, 255, 0.6)",
-        boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
+        borderRadius: "20px",
+        background: "#fff",
+        border: "1px solid rgba(15,23,42,0.06)",
+        boxShadow: "0 2px 8px rgba(15,23,42,0.05), 0 8px 24px rgba(15,23,42,0.04)",
+        overflow: "hidden",
       }}
     >
-      {/* Top row — avatar + name + status */}
+      {/* status accent stripe */}
       <Box
         sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          marginBottom: "10px",
+          height: 3,
+          background: status.bucket === "upcoming"
+            ? "linear-gradient(90deg,#FE0944,#FE7A52)"
+            : status.bucket === "completed"
+            ? "linear-gradient(90deg,#16a34a,#4ade80)"
+            : "rgba(60,30,20,0.12)",
         }}
-      >
-        <Box
-          sx={{
-            width: 44,
-            height: 44,
-            flexShrink: 0,
-            borderRadius: "50%",
-            background: therapist?.image
-              ? `center / cover no-repeat url("${therapist.image}"), linear-gradient(135deg, #d4a574, #8b6f47)`
-              : "linear-gradient(135deg, #d4a574, #8b6f47)",
-            border: "2px solid #fff",
-            boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
-          }}
-        />
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography
-            sx={{
-              fontFamily: SERIF,
-              fontSize: "15px",
-              fontWeight: 600,
-              color: "#3c1e14",
-              lineHeight: 1.2,
-            }}
-          >
-            {booking.therapistName ?? therapist?.name ?? "Therapist"}
-          </Typography>
-          {therapist && (
-            <Typography
-              sx={{
-                fontFamily: SANS,
-                fontSize: "11.5px",
-                color: "rgba(60, 30, 20, 0.6)",
-                marginTop: "2px",
-              }}
-            >
-              ★{" "}
-              {formatRating(
-                bayesianRatingFromAggregate(
-                  therapist.rating * (therapist.reviews ?? 0),
-                  therapist.reviews ?? 0
-                )
-              )}{" "}
-              · Licensed ()
-            </Typography>
-          )}
-        </Box>
-        <Box
-          sx={{
-            fontFamily: SANS,
-            fontSize: "10px",
-            fontWeight: 800,
-            letterSpacing: "0.06em",
-            background: status.bg,
-            color: status.fg,
-            padding: "4px 10px",
-            borderRadius: "999px",
-            textTransform: "uppercase",
-            flexShrink: 0,
-          }}
-        >
-          {status.label}
-        </Box>
-      </Box>
+      />
 
-      {/* Middle — service + when + where */}
-      <Box sx={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-        <Typography
-          sx={{
-            fontFamily: SERIF,
-            fontSize: "14px",
-            fontWeight: 600,
-            color: "#3c1e14",
-          }}
-        >
-          {getServiceLabel(
-            (booking as { serviceId?: string }).serviceId,
-            booking.serviceName
-          )}
-          {booking.duration && (
-            <Box
-              component="span"
-              sx={{
-                fontFamily: SANS,
-                fontSize: "12px",
-                fontWeight: 500,
-                color: "rgba(60, 30, 20, 0.6)",
-                marginLeft: "8px",
-              }}
-            >
-              · {booking.duration} min
-            </Box>
-          )}
-        </Typography>
-        <Typography
-          sx={{
-            fontFamily: SANS,
-            fontSize: "12px",
-            color: "rgba(60, 30, 20, 0.7)",
-          }}
-        >
-          {dateLabel} · {timeLabel}
-        </Typography>
-        {(booking.locationName || booking.address) && (
+      <Box sx={{ p: "14px 16px" }}>
+        {/* top row: avatar + name + status pill */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
+          {/* avatar with gradient ring */}
           <Box
             sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-              color: "rgba(60, 30, 20, 0.55)",
+              width: 46,
+              height: 46,
+              borderRadius: "50%",
+              background: "linear-gradient(135deg,#FE0944,#FE7A52)",
+              p: "2px",
+              flexShrink: 0,
+              boxShadow: "0 4px 12px rgba(254,9,68,0.20)",
             }}
           >
-            <LocationOnRoundedIcon sx={{ fontSize: 14 }} />
-            <Typography
+            <Avatar
+              src={therapist?.image || undefined}
               sx={{
-                fontFamily: SANS,
-                fontSize: "12px",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
+                width: "100%",
+                height: "100%",
+                background: "linear-gradient(135deg,#2d0909,#5c1c1c)",
+                fontSize: 16,
+                fontWeight: 700,
+                fontFamily: SERIF,
+                color: "#fff",
               }}
             >
-              {booking.locationName ?? booking.address}
+              {!therapist?.image && (booking.therapistName?.[0] ?? "T")}
+            </Avatar>
+          </Box>
+
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: "#1a0805", lineHeight: 1.2, mb: 0.25 }}>
+              {booking.therapistName ?? therapist?.name ?? "Therapist"}
+            </Typography>
+            {therapist && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.4 }}>
+                <Star size={11} color="#FE7A52" weight="fill" />
+                <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "rgba(60,30,20,0.55)" }}>
+                  {formatRating(bayesianRatingFromAggregate(
+                    therapist.rating * (therapist.reviews ?? 0),
+                    therapist.reviews ?? 0,
+                  ))}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+
+          {/* status pill */}
+          <Box
+            sx={{
+              px: "10px",
+              py: "4px",
+              borderRadius: 999,
+              background: status.bg,
+              flexShrink: 0,
+            }}
+          >
+            <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase", color: status.fg }}>
+              {status.label}
             </Typography>
           </Box>
-        )}
-      </Box>
-
-      {/* Bottom — total + actions */}
-      <Box
-        sx={{
-          marginTop: "12px",
-          paddingTop: "12px",
-          borderTop: "1px solid rgba(0, 0, 0, 0.06)",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "10px",
-        }}
-      >
-        <Box>
-          <Typography
-            sx={{
-              fontFamily: SANS,
-              fontSize: "10px",
-              fontWeight: 700,
-              color: "rgba(60, 30, 20, 0.55)",
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-            }}
-          >
-            Total
-          </Typography>
-          <Typography
-            sx={{
-              fontFamily: SERIF,
-              fontSize: "18px",
-              fontWeight: 700,
-              color: "#FE0944",
-              letterSpacing: "-0.02em",
-              lineHeight: 1.1,
-            }}
-          >
-            {formatTHB(total)}
-          </Typography>
         </Box>
-        <Box sx={{ display: "flex", gap: "8px" }}>
-          {isCompleted && !booking.reviewed && (
-            <Button
-              size="small"
-              onClick={onReview}
-              sx={{
-                height: 36,
-                paddingX: "14px",
-                borderRadius: "999px",
-                background: "rgba(254, 9, 68, 0.08)",
-                color: "#FE0944",
-                fontFamily: SANS,
-                fontSize: "12px",
-                fontWeight: 700,
-                textTransform: "none",
-                "&:hover": { background: "rgba(254, 9, 68, 0.14)" },
-              }}
-            >
-              ★ Review
-            </Button>
+
+        {/* service + datetime + location */}
+        <Box
+          sx={{
+            p: "10px 12px",
+            borderRadius: "12px",
+            background: "#EDE8E4",
+            display: "flex",
+            flexDirection: "column",
+            gap: 0.6,
+            mb: 1.5,
+          }}
+        >
+          <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 600, color: "#1a0805", lineHeight: 1.3 }}>
+            {getServiceLabel(booking.serviceId, booking.serviceName)}
+            {booking.duration && (
+              <Box component="span" sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 500, color: "rgba(60,30,20,0.55)", ml: 1 }}>
+                · {booking.duration} min
+              </Box>
+            )}
+          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <CalendarBlank size={12} color="rgba(60,30,20,0.50)" />
+            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(60,30,20,0.60)" }}>
+              {dateLabel} · {timeLabel}
+            </Typography>
+          </Box>
+          {(booking.locationName || booking.address) && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <MapPin size={12} color="rgba(60,30,20,0.50)" />
+              <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(60,30,20,0.60)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {booking.locationName ?? booking.address}
+              </Typography>
+            </Box>
           )}
-          {!isUpcoming && (
-            <Button
-              size="small"
-              onClick={onRebook}
-              sx={{
-                height: 36,
-                paddingX: "14px",
-                borderRadius: "999px",
-                background: "linear-gradient(135deg, #FE0944, #FE7A52)",
-                color: "#fff",
-                fontFamily: SANS,
-                fontSize: "12px",
-                fontWeight: 700,
-                textTransform: "none",
-                boxShadow: "0 4px 12px rgba(254, 9, 68, 0.25)",
-                "&:hover": {
-                  background: "linear-gradient(135deg, #E50840, #E56A47)",
-                },
-              }}
-            >
-              Rebook
-            </Button>
-          )}
+        </Box>
+
+        {/* bottom row: total + actions */}
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+          <Box>
+            <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              Total
+            </Typography>
+            <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: "#FE0944", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+              {formatTHB(total)}
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: "flex", gap: 1 }}>
+            {isCompleted && !booking.reviewed && (
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={onReview}
+                style={{
+                  height: 38,
+                  padding: "0 16px",
+                  borderRadius: 999,
+                  background: "rgba(254,9,68,0.08)",
+                  color: "#FE0944",
+                  fontFamily: SANS,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <Star size={13} weight="fill" />
+                Review
+              </motion.button>
+            )}
+            {!isUpcoming && (
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={onRebook}
+                style={{
+                  height: 38,
+                  padding: "0 16px",
+                  borderRadius: 999,
+                  background: "linear-gradient(135deg,#FE0944,#FE7A52)",
+                  color: "#fff",
+                  fontFamily: SANS,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  border: "none",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 12px rgba(254,9,68,0.28)",
+                }}
+              >
+                Rebook
+              </motion.button>
+            )}
+          </Box>
         </Box>
       </Box>
     </Box>
   );
 };
 
-// ──────────────────────────────────────────────────────────────────
-// Empty state card
-// ──────────────────────────────────────────────────────────────────
-const EmptyState: React.FC<{
+// ──────────────────────────────────────────────────────────────────────
+// Empty state
+// ──────────────────────────────────────────────────────────────────────
+const EmptySlate: React.FC<{
   icon: React.ReactNode;
   title: string;
   body: string;
-  ctaLabel?: string;
+  cta?: string;
   onCta?: () => void;
-}> = ({ icon, title, body, ctaLabel, onCta }) => (
+}> = ({ icon, title, body, cta, onCta }) => (
   <Box
     sx={{
-      padding: "48px 24px",
+      mt: 4,
+      px: 2,
+      py: 6,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
       textAlign: "center",
-      borderRadius: "20px",
-      background: "rgba(255, 255, 255, 0.65)",
-      backdropFilter: "blur(20px) saturate(180%)",
-      WebkitBackdropFilter: "blur(20px) saturate(180%)",
-      border: "1px solid rgba(255, 255, 255, 0.6)",
-      boxShadow: "0 4px 14px rgba(126, 30, 46, 0.05)",
+      gap: 1.5,
     }}
   >
-    {/* 🆕 Round 28b38 — circular brand-tinted icon disc, matches the
-        SunRed gradient pattern used elsewhere (Hero quick tiles, etc). */}
     <Box
-      aria-hidden
       sx={{
         width: 64,
         height: 64,
-        margin: "0 auto 12px",
         borderRadius: "50%",
-        background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+        background: "linear-gradient(135deg,#FE0944,#FE7A52)",
         color: "#fff",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        boxShadow: "0 8px 22px rgba(254, 9, 68, 0.28)",
+        boxShadow: "0 8px 24px rgba(254,9,68,0.28)",
+        mb: 0.5,
       }}
     >
       {icon}
     </Box>
-    <Typography
-      sx={{
-        fontFamily: SERIF,
-        fontSize: "18px",
-        fontWeight: 600,
-        color: "#3c1e14",
-        marginBottom: "6px",
-      }}
-    >
+    <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: "#1a0805", letterSpacing: "-0.01em" }}>
       {title}
     </Typography>
-    <Typography
-      sx={{
-        fontFamily: SANS,
-        fontSize: "13px",
-        color: "rgba(60, 30, 20, 0.6)",
-        marginBottom: "18px",
-        lineHeight: 1.5,
-      }}
-    >
+    <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(60,30,20,0.55)", lineHeight: 1.6, maxWidth: 260 }}>
       {body}
     </Typography>
-    {ctaLabel && onCta && (
-      <Button
+    {cta && onCta && (
+      <motion.button
+        whileTap={{ scale: 0.97 }}
         onClick={onCta}
-        sx={{
+        style={{
+          marginTop: 8,
           height: 44,
-          paddingX: "24px",
-          borderRadius: "999px",
-          background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+          padding: "0 28px",
+          borderRadius: 999,
+          background: "linear-gradient(135deg,#FE0944,#FE7A52)",
           color: "#fff",
           fontFamily: SANS,
-          fontSize: "14px",
+          fontSize: 14,
           fontWeight: 700,
-          textTransform: "none",
-          boxShadow: "0 6px 18px rgba(254, 9, 68, 0.3)",
-          "&:hover": {
-            background: "linear-gradient(135deg, #E50840, #E56A47)",
-          },
+          border: "none",
+          cursor: "pointer",
+          boxShadow: "0 6px 20px rgba(254,9,68,0.30)",
         }}
       >
-        {ctaLabel}
-      </Button>
+        {cta}
+      </motion.button>
     )}
   </Box>
+);
+
+// ──────────────────────────────────────────────────────────────────────
+// Loading shimmer (3 skeleton cards)
+// ──────────────────────────────────────────────────────────────────────
+const LoadingShimmer: React.FC = () => (
+  <>
+    {[0, 1, 2].map((i) => (
+      <Box
+        key={i}
+        sx={{
+          borderRadius: "20px",
+          background: "#fff",
+          border: "1px solid rgba(15,23,42,0.05)",
+          overflow: "hidden",
+          opacity: 1 - i * 0.2,
+        }}
+      >
+        <Box sx={{ height: 3, background: "rgba(254,9,68,0.08)" }} />
+        <Box sx={{ p: "14px 16px", display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: "rgba(60,30,20,0.06)" }} />
+            <Box sx={{ flex: 1 }}>
+              <Box sx={{ height: 14, width: "55%", borderRadius: 6, background: "rgba(60,30,20,0.07)", mb: 0.8 }} />
+              <Box sx={{ height: 10, width: "30%", borderRadius: 6, background: "rgba(60,30,20,0.05)" }} />
+            </Box>
+            <Box sx={{ height: 22, width: 72, borderRadius: 999, background: "rgba(60,30,20,0.05)" }} />
+          </Box>
+          <Box sx={{ height: 68, borderRadius: 12, background: "rgba(60,30,20,0.04)" }} />
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Box>
+              <Box sx={{ height: 9, width: 32, borderRadius: 4, background: "rgba(60,30,20,0.05)", mb: 0.6 }} />
+              <Box sx={{ height: 20, width: 64, borderRadius: 6, background: "rgba(254,9,68,0.08)" }} />
+            </Box>
+            <Box sx={{ height: 38, width: 80, borderRadius: 999, background: "rgba(60,30,20,0.06)" }} />
+          </Box>
+        </Box>
+      </Box>
+    ))}
+  </>
 );
 
 export default BookingHistoryPage;

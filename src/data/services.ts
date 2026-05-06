@@ -27,7 +27,11 @@ export interface MassageService {
   image: string;
   detail: string;
   benefit: string[];
-  badge: 'SIGNATURE' | 'BEST SELLER' | 'RECOMMEND' | 'EXCLUSIVE';
+  // Round 28c25 — replaced 'BEST SELLER' with 'POPULAR'.
+  // 'BEST SELLER' was a falsifiable claim (Thai actually leads in
+  // session count); 'POPULAR' is a softer positioning label that
+  // stays defensible regardless of who's currently top by data.
+  badge: 'SIGNATURE' | 'POPULAR' | 'RECOMMEND' | 'EXCLUSIVE';
 }
 
 export function calculateNextAvailable(
@@ -76,13 +80,13 @@ const services: MassageService[] = [
     availableDurations: [60, 90, 120],
     count: 62,
     image: '/images/workphoto/IMG_5092.JPG',
-    detail: `A timeless healing ritual rooted in Thai tradition. This massage integrates acupressure, deep stretches, and rhythmic techniques to enhance flexibility, energy flow, and holistic balance.`,
+    detail: `A timeless Thai healing ritual delivered to your hotel suite or residence. Your female practitioner integrates acupressure, deep stretches, and rhythmic techniques — all paced to your preference, in the privacy of your own space.`,
     benefit: [
-      'Eases chronic tension and soreness',
-      'Improves posture and circulation',
-      'Boosts natural energy flow',
-      'Enhances joint mobility',
-      'Induces deep calm and clarity',
+      'Authentic Thai techniques performed at your hotel or residence',
+      'Personal attention from a licensed female practitioner',
+      'Eases muscular tension from travel, work, or long flights',
+      'Improves flexibility, circulation, and joint mobility',
+      'No commute — your therapist arrives fully equipped',
     ],
     badge: 'SIGNATURE',
   },
@@ -96,14 +100,15 @@ const services: MassageService[] = [
     availableDurations: [60, 90, 120],
     count: 0,
     image: '/images/workphoto/IMG_5096.JPG',
-    detail: `Immerse yourself in serenity with an oil-based massage using premium-grade essential oils.`,
+    detail: `A gentle oil-based massage performed in the privacy of your own room. Premium aromatic blends — lavender, neroli, or sandalwood — paired with steady, calming strokes that ease the nervous system and prepare you for deep, restorative sleep.`,
     benefit: [
-      'Relieves emotional stress',
-      'Enhances sleep quality',
-      'Stimulates detox and lymphatic flow',
-      'Improves blood circulation',
+      'Calming oil massage in the privacy of your room',
+      'Premium aromatic blends — lavender, neroli, sandalwood',
+      'Skilled female therapist tunes pressure to your preference',
+      'Eases stress and prepares the body for deeper sleep',
+      'Discreet door-to-door arrival — no need to leave your hotel',
     ],
-    badge: 'BEST SELLER',
+    badge: 'POPULAR',
   },
   {
     id: 'SR-HJ2200',
@@ -115,13 +120,13 @@ const services: MassageService[] = [
     availableDurations: [60, 90, 120],
     count: 0,
     image: '/images/workphoto/IMG_5289.JPG',
-    detail: `A focused therapy combining deep-tissue techniques with warming aromatic oils. Designed to release muscle tension built up from work, training, or travel — performed by licensed therapists trained in sports recovery techniques.`,
+    detail: `A focused aromatic-oil session crafted for men, blending warming aromatherapy with attentive tension-release work and a personalised finishing ritual. Performed by a trained female practitioner in your residence unhurried, attentive, and entirely paced to your preference.`,
     benefit: [
-      'Deep-tissue muscle release',
-      'Eases shoulder, back, and neck strain',
-      'Reduces post-training inflammation',
-      'Improves circulation and recovery',
-      'Restores mental focus and calm',
+      'Warming aromatic oil massage delivered to your residence',
+      'Trained female practitioner attentive to your preferences',
+      'Tension-release work tuned to your pressure',
+      'Concluded with a personalised finishing ritual',
+      'Private, unrushed session undivided attention throughout',
     ],
     badge: 'RECOMMEND',
   },
@@ -137,13 +142,13 @@ const services: MassageService[] = [
     availableDurations: [60, 90, 120],
     count: 0,
     image: '/images/workphoto/IMG_8368.JPG',
-    detail: `Our most refined therapeutic ritual — a fusion of hot Thai herbal compress, aromatic oil massage, and gentle Thai-style stretching. Reserved for senior practitioners with 8+ years of licensed experience.`,
+    detail: `Our most refined ritual — a flowing whole-body oil ceremony of continuous-contact technique, premium aromatic blends, and gentle Thai-style stretching. Reserved for specialised practitioners trained in this discipline, who arrive at your residence with the full repertoire and undivided attention.`,
     benefit: [
-      'Hot Thai herbal compress',
-      'Premium aromatherapy blend',
-      'Deep-tissue + Thai stretch fusion',
-      'Senior-therapist exclusive (8+ yr)',
-      'Full-body therapeutic ritual',
+      'Reserved for specialised practitioners (not every therapist)',
+      'Whole-body oil ritual with continuous-contact technique',
+      'Premium aromatic blends with gentle Thai-style stretch',
+      'Performed in your private space unhurried, undivided',
+      'The most refined and personal experience SunRed offers',
     ],
     badge: 'EXCLUSIVE',
   }

@@ -176,10 +176,10 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
   // gracefully no-op while top is empty / activeIdx is being clamped.
   const activeForHook = top[activeIdx] ?? null;
   const { reviews: activeReviews, reviewCount: activeReviewCount } =
-    useTherapistReviews(activeForHook?.id);
+    useTherapistReviews(activeForHook.id);
   // 🆕 Round 28b9 — same booking subscription the time picker uses,
   //   so the floating map card pill matches "TAKEN" slots in real time.
-  const liveBookings = useTherapistBookings(activeForHook?.id ?? null);
+  const liveBookings = useTherapistBookings(activeForHook.id ?? null);
 
   if (top.length === 0) return null;
 
@@ -330,7 +330,7 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
               type="button"
               onClick={() => setActiveIdx(i)}
               whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.97 }}
               aria-label={`Show ${t.name} on the map`}
               aria-pressed={isActive}
               sx={{
@@ -551,7 +551,7 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
                 }}
               >
                 {active.name}
-                {active.features?.age && (
+                {active.features.age && (
                   <Box component="span" sx={{ opacity: 0.85, fontWeight: 400 }}>
                     , {active.features.age}
                   </Box>

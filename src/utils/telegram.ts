@@ -30,7 +30,7 @@ export function escapeMd(s = ""): string {
  */
 function buildMapUrl(p: NotifyPayload): string {
   // 1. ใช้ mapUrl ถ้ามี (ดีที่สุด เช่น place link / short link)
-  if (p.mapUrl && p.mapUrl.trim()) {
+  if (p.mapUrl?.trim()) {
     return p.mapUrl;
   }
 
@@ -130,149 +130,73 @@ export async function sendBookingNotification(
 
 /**
  * Format Telegram message
+ *
+ * Target layout (Round 28c22):
+ *
+ *   19/04/2026 03:00
+ *   🧾 Booking ID: abc123
+ *
+ *   Therapist: Yuri
+ *   Time: 03:00
+ *   ────────────────────
+ *   📍 Address: Mercure Bangkok Sukhumvit 11
+ *
+ *   Service: Gentleman's Signature Therapy
+ *   Duration: 80 min
+ *   Price: 2,200 ฿
+ *
+ *   🚖 Taxi: 193 ฿
+ *   💰 Total: 2,393 ฿
+ *
+ *   📞 Phone: 0994037987
+ *   Note: -
+ *   ────────────────────
+ *   🗺️ Map:
+ *   https://www.google.com/maps/search/?api=1&query=...
  */
 function formatMessage(p: NotifyPayload): string {
-  // 🆕 Round 28b57 (founder 2026-05-05) — Dual time format.
-  //   Therapists in Thailand read 24h ("21:30 น.") but Western
-  //   customers / OTAs read 12h ("9:30 PM"). Showing both inline
-  //   removes the AM/PM ambiguity that was making the night-shift
-  //   staff misread booking start times. Pattern:
-  //
-  //     05/05/2026 · 9:30 PM (เวลาไทย 21:30 น.)
-  //
-  //   Note: previous format used `HH:mm A` which produced the
-  //   awkward "21:30 PM" — we now compose `h:mm A` (12h) plus
-  //   `HH:mm` (24h) separately and join them so each is correct.
-  const datePart = fmtBKK(p.startAt, "DD/MM/YYYY");
-  const time12 = fmtBKK(p.startAt, "h:mm A");
+  const date24 = fmtBKK(p.startAt, "DD/MM/YYYY");
   const time24 = fmtBKK(p.startAt, "HH:mm");
-  const when = `${datePart} · ${time12} (เวลาไทย ${time24} น.)`;
-  const bookingTime = `${time12} (เวลาไทย ${time24} น.)`;
 
-  // map
+  const divider = "────────────────────";
+
+  // Address: prefer placeName (POI), fall back to address
+  const norm  = (s: string | null | undefined) => (s ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+  const place = p.locationName?.trim() || p.address?.trim() || "";
+  const extra = p.address?.trim() && norm(p.address) !== norm(p.locationName) ? p.address.trim() : "";
+  const addressLine = [place, extra].filter(Boolean).join(", ") || "—";
+  const meetingLine = p.meetingPoint ? `\nMeeting: 👉🏻 ${escapeMd(p.meetingPoint)}` : "";
+
+  // Map URL (raw — Telegram previews raw URLs only)
   const finalMapUrl = buildMapUrl(p);
+  const mapBlock = finalMapUrl ? `🗺️ Map:\n${finalMapUrl}` : "🗺️ Map: —";
 
-  const divider = "___________________________________";
-
-  /**
-   * Address block.
-   * 🆕 Round 28b31 (founder 2026-05-04) — De-duplicate: when the
-   *   customer's selected `locationName` (e.g. "Marriott Sukhumvit")
-   *   is just the same string as the formatted `address`, don't
-   *   print both — admin saw the same line twice in the original bug
-   *   report. We compare normalized (whitespace-stripped, lowercase).
-   */
-  const addressLines: string[] = [];
-  const normalizeForCmp = (s: string | null | undefined) =>
-    (s ?? "").replace(/\s+/g, " ").trim().toLowerCase();
-
-  if (p.locationName) addressLines.push(escapeMd(p.locationName));
-  if (
-    p.address &&
-    normalizeForCmp(p.address) !== normalizeForCmp(p.locationName)
-  ) {
-    addressLines.push(escapeMd(p.address));
-  }
-  if (
-    p.addressDetails &&
-    normalizeForCmp(p.addressDetails) !== normalizeForCmp(p.address) &&
-    normalizeForCmp(p.addressDetails) !== normalizeForCmp(p.locationName)
-  ) {
-    addressLines.push(escapeMd(p.addressDetails));
-  }
-
-  let addressBlock =
-    addressLines.length > 0 ? addressLines.join("\n") : "—";
-
-  if (p.meetingPoint) {
-    addressBlock += `\n\nMeeting: 👉🏻 ${escapeMd(p.meetingPoint)}`;
-  }
-
-  /**
-   * Add-ons
-   */
-  const addonsLine =
-    p.addons.length > 0
-      ? p.addons
-          .map(
-            (a) =>
-              `${escapeMd(a.name)} (+${a.price.toLocaleString()}฿)`
-          )
-          .join(", ")
-      : null;
-
-  /**
-   * 🆕 Round 28b55 (founder 2026-05-05) — Two-line map block:
-   *
-   *   📍 Mercure Bangkok Sukhumvit 11
-   *   https://www.google.com/maps/search/?api=1&query=Mercure+Bangkok+...
-   *
-   * Why two lines + raw URL?
-   *   • Telegram only generates a rich link preview (photo + place
-   *     name + address card) when the URL appears RAW in the message,
-   *     not when it's wrapped in MarkdownV2 `[label](url)` syntax.
-   *   • Bot must call sendMessage with `disable_web_page_preview: false`
-   *     for the unfurl to render — see functions/src/index.ts.
-   *
-   * The first line uses the locationName (POI), falling back to the
-   * address. The URL must NOT be MarkdownV2-escaped (raw HTTP URL),
-   * so we write it AFTER all other escaped text and don't pass it
-   * through escapeMd.
-   */
-  const mapLabel = p.locationName || p.address || "Location";
-  const mapBlock = finalMapUrl
-    ? `📍 ${escapeMd(mapLabel)}\n${finalMapUrl}`
-    : "📍 —";
-
-  /**
-   * Message lines
-   */
   const lines: (string | null)[] = [
-    `${escapeMd(when)} (เวลาจอง)`,
-    `🧾 Booking ID: \`${escapeMd(p.bookingId)}\``,
+    `${escapeMd(date24)} ${escapeMd(time24)}`,
+    `🧾 Booking ID: ${escapeMd(`SR-${p.bookingId.slice(0, 8).toUpperCase()}`)}`,
     "",
 
     `Therapist: ${escapeMd(p.therapistName ?? "—")}`,
-    `Booking Time: ${escapeMd(bookingTime)}`,
+    `Time: ${escapeMd(time24)}`,
 
     divider,
-    "",
-
-    `📍 Address:`,
-    addressBlock,
+    `📍 Address: ${escapeMd(addressLine)}${meetingLine}`,
     "",
 
     `Service: ${escapeMd(p.serviceName)}`,
-    `Duration: ${p.duration} minute`,
-    `Payment: ${escapeMd(p.payment ?? "Cash")}`,
-    `Price: ${p.servicePrice.toLocaleString()}฿`,
-
-    addonsLine ? `Add-ons: ${addonsLine}` : null,
+    `Duration: ${p.duration} min`,
+    `Price: ${p.servicePrice.toLocaleString()} ฿`,
     "",
 
-    `🚖 Taxi: ${p.taxiFee.toLocaleString()}฿`,
-    `💰 Total: ${p.total.toLocaleString()}฿`,
-
-    p.discountCode
-      ? `💸 Discount: \`${escapeMd(p.discountCode)}\``
-      : null,
-
-    p.rainTier !== "none"
-      ? `🌧 Weather: ${escapeMd(
-          p.rainTier
-        )} (surcharge applied)`
-      : null,
-
-    divider,
+    `🚖 Taxi: ${p.taxiFee.toLocaleString()} ฿`,
+    `💰 Total: ${p.total.toLocaleString()} ฿`,
     "",
 
-    `👤 Customer Name: ${escapeMd(p.contactName)}`,
     `📞 Phone: ${escapeMd(p.phone)}`,
-    `Note: ${p.note ? escapeMd(p.note) : "—"}`,
+    `👤 Name: ${escapeMd(p.contactName)}`,
+    `Note: ${p.note ? escapeMd(p.note) : "\\-"}`,
 
     divider,
-    "",
-
     mapBlock,
   ];
 

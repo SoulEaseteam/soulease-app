@@ -81,7 +81,7 @@ export const SocialProofTicker: React.FC<Props> = ({ variant = "inline" }) => {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches)
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
       return;
     const id = window.setInterval(
       () => setIdx((i) => (i + 1) % messages.length),

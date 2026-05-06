@@ -345,15 +345,15 @@ function buildFromReal(real: Therapist): DemoTherapist {
   //    by admin in the future (with verified counts), we'll opt back
   //    in. For now, just render the service catalog.
   const serviceIds =
-    ((real.servicesAvailable ?? real.services ?? []) as string[]) || [];
+    ((real.servicesAvailable ?? real.services ?? [])) || [];
   const realSpecs: DemoTherapist["specs"] = serviceIds
     .map((sid) => {
       const display = SERVICE_DISPLAY[sid];
       return {
-        icon: display?.icon ?? (
+        icon: display.icon ?? (
           <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#FE0944" }} />
         ),
-        name: display?.short ?? sid,
+        name: display.short ?? sid,
         yrs: "", // empty → UI hides subtext line
       };
     })
@@ -366,8 +366,8 @@ function buildFromReal(real: Therapist): DemoTherapist {
     realLangs = real.languageSkills.map((l) => {
       const d = LANG_DISPLAY[l.code.toLowerCase()];
       return {
-        flag: d?.flag ?? "🌐",
-        name: d?.name ?? l.code.toUpperCase(),
+        flag: d.flag ?? "🌐",
+        name: d.name ?? l.code.toUpperCase(),
         level: l.level,
       };
     });
@@ -415,7 +415,7 @@ function buildFromReal(real: Therapist): DemoTherapist {
     real.languageSkills && real.languageSkills.length > 0
       ? real.languageSkills
           .map(
-            (l) => LANG_DISPLAY[l.code.toLowerCase()]?.name ?? l.code.toUpperCase()
+            (l) => LANG_DISPLAY[l.code.toLowerCase()].name ?? l.code.toUpperCase()
           )
           .join(" · ")
       : (f.language ?? "");

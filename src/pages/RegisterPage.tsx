@@ -68,8 +68,7 @@ const RegisterPage: React.FC = () => {
           textAlign: 'center',
           p: 4,
           borderRadius: 6,
-          background: 'rgba(255,255,255,0.95)',
-          backdropFilter: "blur(12px)",
+          background: "#fff",
           color: '#3a3420',
           position: 'relative',
           boxShadow: '0 6px 20px rgba(0,0,0,0.15)'

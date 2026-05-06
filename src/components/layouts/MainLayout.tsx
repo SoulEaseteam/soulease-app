@@ -37,7 +37,15 @@ const MainLayout: React.FC = () => {
       {/* 🆕 Site-wide TopNav — wrapped in the same 430px phone-shell
           column the page content uses, so menu/brand/language stay
           aligned with whatever route renders below. */}
-      <Box sx={{ maxWidth: 430, margin: "0 auto" }}>
+      <Box
+        sx={{
+          maxWidth: 430,
+          margin: "0 auto",
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+        }}
+      >
         <TopNav />
       </Box>
 

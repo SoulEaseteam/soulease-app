@@ -223,7 +223,7 @@ export async function fetchDrivingDistance(
           };
         };
       };
-      if (!w.google?.maps?.DistanceMatrixService) {
+      if (!w.google?.maps.DistanceMatrixService) {
         // Maps SDK not loaded yet — caller should ensure
         // GoogleMapsContext.loadIfNeeded() ran first.
         return haversineFallback(origin, destination);
@@ -236,20 +236,20 @@ export async function fetchDrivingDistance(
       const result = await service.getDistanceMatrix({
         origins: [{ lat: origin.lat, lng: origin.lng }],
         destinations: [{ lat: destination.lat, lng: destination.lng }],
-        travelMode: w.google.maps.TravelMode!.DRIVING,
+        travelMode: w.google.maps.TravelMode.DRIVING,
         drivingOptions: {
           departureTime: new Date(),
-          trafficModel: w.google.maps.TrafficModel?.BEST_GUESS,
+          trafficModel: w.google.maps.TrafficModel.BEST_GUESS,
         },
       });
-      const row = result?.rows?.[0]?.elements?.[0];
+      const row = result.rows[0]?.elements?.[0];
       if (!row || row.status !== "OK") {
         return haversineFallback(origin, destination);
       }
-      const meters = row.distance?.value;
+      const meters = row.distance.value;
       // Prefer traffic-aware duration when available
       const seconds =
-        row.duration_in_traffic?.value ?? row.duration?.value;
+        row.duration_in_traffic.value ?? row.duration.value;
       if (!meters || !seconds) {
         return haversineFallback(origin, destination);
       }

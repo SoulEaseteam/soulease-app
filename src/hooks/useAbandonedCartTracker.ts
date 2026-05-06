@@ -78,7 +78,7 @@ export const useAbandonedCartTracker = (
 
   useEffect(() => {
     if (!enabled) return;
-    if (!snapshot || !snapshot.therapistId) return;
+    if (!snapshot?.therapistId) return;
     // Need phone to be useful (otherwise admin can't follow up)
     if (!snapshot.phone || snapshot.phone.trim().length < 8) return;
 

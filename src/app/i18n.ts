@@ -7,7 +7,7 @@ import LanguageDetector from "i18next-browser-languagedetector";
 //   Previous: all 5 JSON files were eagerly bundled into main chunk
 //   (~25 kB shipped to every visitor regardless of locale). Now: only
 //   the active language's JSON loads on init; others fetch lazily on
-//   `languageChanged` so the user pays only for what they use.
+//   `languageChanged` so t he user pays only for what they use.
 //
 // Vite parses these dynamic-import expressions and creates one chunk
 // per locale automatically, with HTTP cache hashes.

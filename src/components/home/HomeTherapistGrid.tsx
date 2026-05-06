@@ -240,7 +240,7 @@ const HomeTherapistGrid: React.FC = () => {
   const priceById = useMemo(() => {
     const m = new Map<string, number>();
     for (const t of visible) {
-      const ids = ((t.servicesAvailable ?? t.services ?? []) as string[]) || [];
+      const ids = ((t.servicesAvailable ?? t.services ?? [])) || [];
       let min: number | null = null;
       for (const id of ids) {
         const svc = servicesById.get(id);

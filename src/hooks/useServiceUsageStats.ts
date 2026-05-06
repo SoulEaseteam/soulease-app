@@ -98,14 +98,46 @@ export function useServiceUsageStats(): ServiceUsageStats {
           if (SERVED_STATUSES.has(status)) {
             nextServed.set(sid, (nextServed.get(sid) ?? 0) + 1);
 
-            // Identity fallback chain: userId → normalized phone → docId
-            //   docId is the last-resort fallback so a booking from a
-            //   guest who didn't sign in still contributes ONCE per
-            //   booking (not duplicated across services).
-            const phone = ((data.phone as string) ?? "").replace(/\D/g, "");
+            // Identity fallback chain: PHONE → userId → docId.
+            //
+            // Round 28c9 — phone is now the PRIMARY identity (was
+            //   userId before). This is essential because some
+            //   reservations are placed BY THE CONCIERGE on behalf
+            //   of guests who never signed up: in those bookings
+            //   `userId` is either null, the concierge's own id, or
+            //   the literal string "null"/"undefined" — none of
+            //   which represent the actual guest. Phone, by
+            //   contrast, is the real guest's phone in every case.
+            //
+            //   Phone is normalized to canonical Thai form (drop
+            //   leading "0" or "66") so the same guest writing
+            //   "0812..." and "+66 81 2..." dedupes to one person.
+            //
+            //   userId is kept as a tertiary identity for the rare
+            //   booking that lacks a phone but does have a real
+            //   guest userId. docId is the last-resort fallback so
+            //   anonymous bookings still contribute ONCE per record.
+            let phone = ((data.phone as string) ?? "")
+              .toString()
+              .replace(/\D/g, "");
+            if (phone.startsWith("66") && phone.length >= 11) {
+              phone = phone.slice(2);
+            } else if (phone.startsWith("0") && phone.length === 10) {
+              phone = phone.slice(1);
+            }
+
+            const rawUserId = (data.userId ?? "").toString().trim();
+            const userIdLow = rawUserId.toLowerCase();
+            const validUserId =
+              rawUserId &&
+              userIdLow !== "null" &&
+              userIdLow !== "undefined"
+                ? rawUserId
+                : "";
+
             const identity =
-              (data.userId as string) ||
               (phone ? `phone:${phone}` : "") ||
+              validUserId ||
               `doc:${d.id}`;
             let set = customerSets.get(sid);
             if (!set) {

@@ -1,19 +1,21 @@
 // src/pages/admin/AdminDashboardPage.tsx
+//
+// 🆕 Round 28c19 (founder 2026-05-06) — full SunRed redesign.
+//   Dark hero + today strip + period cards + pending quick-confirm +
+//   responsive charts + quick-link tiles. Matches Bookings/Reports style.
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Typography,
-  Paper,
-  Button,
-  Divider,
-  Grid,
-  Stack,
-  MenuItem,
-  Select,
   CircularProgress,
+  Select,
+  MenuItem,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { db } from "@/lib/firebase";
 import {
   collection,
   onSnapshot,
@@ -22,18 +24,14 @@ import {
   Timestamp,
   where,
   getDocs,
+  updateDoc,
+  doc,
 } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import dayjs, { Dayjs } from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-
-import PrintIcon from "@mui/icons-material/Print";
-import DescriptionIcon from "@mui/icons-material/Description";
-import TableViewIcon from "@mui/icons-material/TableView";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-import PublicIcon from "@mui/icons-material/Public";
-
 import {
   ResponsiveContainer,
   BarChart,
@@ -42,390 +40,505 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  Legend,
 } from "recharts";
+import {
+  CalendarBlank,
+  CheckCircle,
+  XCircle,
+  ChartBar,
+  Buildings,
+  Taxi,
+  Users,
+  UserCircle,
+  Sparkle,
+  ArrowRight,
+  PlusCircle,
+  ClipboardText,
+  Eye,
+} from "phosphor-react";
+import { fmtBKK } from "@/utils/time";
+import { formatTHB } from "@/utils/servicePricing";
+import { getServiceLabel } from "@/utils/serviceCatalog";
 
-import { ExportToExcel, ExportToPDF } from "@/utils/exportTools";
+const SANS  = '"Inter", system-ui, sans-serif';
+const SERIF = '"Fraunces", Georgia, serif';
 
-// ---------- helpers ----------
-type FBTS =
-  | Timestamp
-  | { seconds: number; nanoseconds?: number }
-  | Date
-  | string
-  | null
-  | undefined;
-
-function toDateSafe(v: FBTS): Date | null {
-  try {
-    if (!v) return null;
-    // @ts-expect-error — `toDate` exists on Firestore Timestamp but not narrow type
-    if (typeof v.toDate === "function") return (v as any).toDate();
-    if (typeof (v as any)?.seconds === "number") {
-      return new Date((v as any).seconds * 1000);
-    }
-    if (typeof v === "string") return new Date(v);
-    if (v instanceof Date) return v;
-    return null;
-  } catch {
-    return null;
-  }
-}
+// ── types ─────────────────────────────────────────────────────────────
+type FBTS = Timestamp | { seconds: number } | Date | string | null | undefined;
 
 interface BookingRow {
+  id?: string;
   createdAt?: FBTS;
+  startAt?: Timestamp;
+  date?: string;
+  time?: string;
   status?: string;
   therapistId?: string;
   therapistName?: string;
+  serviceId?: string;
+  serviceName?: string;
+  userName?: string;
+  locationName?: string;
+  address?: string;
   servicePrice?: number;
   taxiFee?: number;
   totalPrice?: number;
+  duration?: number;
 }
 
-interface StatCardProps {
-  title: string;
-  value: number | string;
-  subtext?: string;
-  color: string;
+function toDate(v: FBTS): Date | null {
+  try {
+    if (!v) return null;
+    if (typeof (v as any).toDate === "function") return (v as any).toDate();
+    if (typeof (v as any).seconds === "number") return new Date((v as any).seconds * 1000);
+    if (typeof v === "string") return new Date(v);
+    if (v instanceof Date) return v;
+    return null;
+  } catch { return null; }
 }
-const StatCard: React.FC<StatCardProps> = ({ title, value, subtext, color }) => (
-  <Paper
-    elevation={3}
-    sx={{
-      p: 2,
-      borderRadius: 2,
-      background: color,
-      color: "#fff",
-      textAlign: "center",
-      minHeight: 100,
-    }}
-  >
-    <Typography variant="subtitle2">{title}</Typography>
-    <Typography variant="h5" fontWeight="bold">
-      {value}
-    </Typography>
-    {subtext && (
-      <Typography variant="body2" sx={{ opacity: 0.85 }}>
-        {subtext}
-      </Typography>
-    )}
-  </Paper>
-);
 
-// ---------- page ----------
+const money = (n: number) => `฿${Number(n || 0).toLocaleString()}`;
+
+// ── fade animation helper ──────────────────────────────────────────────
+const fadeUp = (delay = 0) => ({
+  initial:    { opacity: 0 },
+  animate:    { opacity: 1 },
+  transition: { duration: 0.22, ease: "easeOut" as const, delay },
+});
+
+// ──────────────────────────────────────────────────────────────────────
+// Page
+// ──────────────────────────────────────────────────────────────────────
 const AdminDashboardPage: React.FC = () => {
-  // Filters
-  const [startDate, setStartDate] = useState<Dayjs>(dayjs().startOf("year"));
-  const [endDate, setEndDate] = useState<Dayjs>(dayjs().endOf("year"));
-  const [statusFilter, setStatusFilter] = useState("__ALL__");
+  const navigate  = useNavigate();
+  const theme     = useTheme();
+  const isMobile  = useMediaQuery(theme.breakpoints.down("sm"));
+
+  // ── filters ─────────────────────────────────────────────────────
+  const [startDate,       setStartDate]       = useState<Dayjs>(dayjs().startOf("month"));
+  const [endDate,         setEndDate]         = useState<Dayjs>(dayjs().endOf("month"));
+  const [statusFilter,    setStatusFilter]    = useState("__ALL__");
   const [therapistFilter, setTherapistFilter] = useState("__ALL__");
 
-  const [therapistOptions, setTherapistOptions] = useState<
-    { key: string; name: string }[]
-  >([{ key: "__ALL__", name: "All employees" }]);
-
-  const [loading, setLoading] = useState(true);
-
-  // Stats
-  const [bookingsToday, setBookingsToday] = useState(0);
-  const [serviceToday, setServiceToday] = useState(0);
-  const [shopShareToday, setShopShareToday] = useState(0);
-  const [cancelledToday, setCancelledToday] = useState(0);
-
-  const [bookingsCount, setBookingsCount] = useState(0);
-  const [serviceTotal, setServiceTotal] = useState(0);
-  const [shopShareTotal, setShopShareTotal] = useState(0);
-  const [cancelledCount, setCancelledCount] = useState(0);
-
-  const [usersCount, setUsersCount] = useState(0);
-  const [therapistsCount, setTherapistsCount] = useState(0);
-  const [adminsCount, setAdminsCount] = useState(0);
-  const [servicesCount, setServicesCount] = useState(0);
-
-  // Chart Data
-  const [monthlyData, setMonthlyData] = useState<
-    { month: string; bookings: number; total: number; revenue: number }[]
-  >([]);
-  const [yearlyData, setYearlyData] = useState<
-    { year: string; bookings: number; total: number; revenue: number }[]
-  >([]);
+  // ── data ─────────────────────────────────────────────────────────
+  const [loading,          setLoading]         = useState(true);
+  const [allRows,          setAllRows]         = useState<BookingRow[]>([]);
+  const [pendingBookings,  setPendingBookings] = useState<BookingRow[]>([]);
+  const [counts,           setCounts]          = useState({ users: 0, therapists: 0, services: 0 });
+  const [therapistOptions, setTherapistOptions] = useState<string[]>([]);
 
   const todayStart = useMemo(() => dayjs().startOf("day").toDate(), []);
-  const reportRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
 
-  // Count collections
+  // ── collection counts ────────────────────────────────────────────
   useEffect(() => {
     (async () => {
-      const [usersSnap, therapistsSnap, adminsSnap, servicesSnap] =
-        await Promise.all([
-          getDocs(collection(db, "users")),
-          getDocs(collection(db, "therapists")),
-          getDocs(collection(db, "admins")),
-          getDocs(collection(db, "services")),
-        ]);
-      setUsersCount(usersSnap.size);
-      setTherapistsCount(therapistsSnap.size);
-      setAdminsCount(adminsSnap.size);
-      setServicesCount(servicesSnap.size);
+      const [u, t, s] = await Promise.all([
+        getDocs(collection(db, "users")),
+        getDocs(collection(db, "therapists")),
+        getDocs(collection(db, "services")),
+      ]);
+      setCounts({ users: u.size, therapists: t.size, services: s.size });
     })();
   }, []);
 
-  // Load bookings realtime
+  // ── pending bookings (always fresh, not date-filtered) ───────────
   useEffect(() => {
-    const col = collection(db, "bookings");
+    const q = query(collection(db, "bookings"), where("status", "==", "pending"), orderBy("createdAt", "desc"));
+    return onSnapshot(q, (snap) => {
+      setPendingBookings(snap.docs.map((d) => ({ id: d.id, ...d.data() } as BookingRow)));
+    });
+  }, []);
+
+  // ── range bookings ───────────────────────────────────────────────
+  useEffect(() => {
     const s = Timestamp.fromDate(startDate.startOf("day").toDate());
     const e = Timestamp.fromDate(endDate.endOf("day").toDate());
-
-    const filters: any[] = [where("createdAt", ">=", s), where("createdAt", "<=", e)];
-    if (statusFilter !== "__ALL__") filters.push(where("status", "==", statusFilter));
+    const filters: Parameters<typeof query>[1][] = [
+      where("createdAt", ">=", s),
+      where("createdAt", "<=", e),
+    ];
+    if (statusFilter    !== "__ALL__") filters.push(where("status",      "==", statusFilter));
     if (therapistFilter !== "__ALL__") filters.push(where("therapistId", "==", therapistFilter));
 
-    const qy = query(col, ...filters, orderBy("createdAt", "asc"));
-
     setLoading(true);
-    const unsub = onSnapshot(qy, (snap) => {
-      const rows = snap.docs.map((d) => d.data() as BookingRow);
-      aggregate(rows);
-      setLoading(false);
-    });
-
-    return () => unsub();
+    return onSnapshot(
+      query(collection(db, "bookings"), ...filters, orderBy("createdAt", "asc")),
+      (snap) => {
+        const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() } as BookingRow));
+        setAllRows(rows);
+        setTherapistOptions([...new Set(rows.map((r) => r.therapistName || "").filter(Boolean))]);
+        setLoading(false);
+      },
+      () => setLoading(false),
+    );
   }, [startDate, endDate, statusFilter, therapistFilter]);
 
-  // Load therapist options
-  useEffect(() => {
-    const col = collection(db, "bookings");
-    const s = Timestamp.fromDate(startDate.startOf("day").toDate());
-    const e = Timestamp.fromDate(endDate.endOf("day").toDate());
-    const qy = query(col, where("createdAt", ">=", s), where("createdAt", "<=", e));
+  // ── derived stats ────────────────────────────────────────────────
+  const stats = useMemo(() => {
+    let todayBookings = 0, todayRevenue = 0, todayCancelled = 0;
+    let periodBookings = 0, periodService = 0, periodCancelled = 0;
+    const monthMap: Record<string, { bookings: number; revenue: number }> = {};
 
-    const unsub = onSnapshot(qy, (snap) => {
-      const map = new Map<string, string>();
-      snap.docs.forEach((d) => {
-        const r = d.data() as BookingRow;
-        const key = r.therapistId || r.therapistName || "";
-        if (!key) return;
-        map.set(
-          String(r.therapistId || r.therapistName),
-          String(r.therapistName || r.therapistId)
-        );
-      });
-      const opts = [
-        { key: "__ALL__", name: "All employees" },
-        ...Array.from(map, ([key, name]) => ({ key, name })),
-      ];
-      setTherapistOptions(opts);
-    });
-    return () => unsub();
-  }, [startDate, endDate]);
-
-  // Aggregate
-  function aggregate(rows: BookingRow[]) {
-    let _bookings = 0,
-      _service = 0,
-      _cancelled = 0;
-    let _bookingsToday = 0,
-      _serviceToday = 0,
-      _cancelledToday = 0;
-
-    const monthMap: Record<
-      string,
-      { bookings: number; total: number; revenue: number }
-    > = {};
-    const yearMap: Record<
-      string,
-      { bookings: number; total: number; revenue: number }
-    > = {};
-
-    for (const r of rows) {
-      const created = toDateSafe(r.createdAt);
+    for (const r of allRows) {
+      const created = toDate(r.createdAt);
       if (!created) continue;
+      const service = r.servicePrice || 0;
+      const isCancelled = r.status === "cancelled";
 
-      const service = Number(r.servicePrice || 0);
-      const taxi = Number(r.taxiFee || 0);
-      const total = r.totalPrice ?? service + taxi;
-      const revenue = service * 0.4;
-
-      _bookings += 1;
-      _service += service;
-      if (String(r.status || "").toLowerCase() === "cancelled") _cancelled += 1;
-
-      const mKey = dayjs(created).format("YYYY-MM");
-      if (!monthMap[mKey]) monthMap[mKey] = { bookings: 0, total: 0, revenue: 0 };
-      monthMap[mKey].bookings += 1;
-      monthMap[mKey].total += total;
-      monthMap[mKey].revenue += revenue;
-
-      const yKey = dayjs(created).format("YYYY");
-      if (!yearMap[yKey]) yearMap[yKey] = { bookings: 0, total: 0, revenue: 0 };
-      yearMap[yKey].bookings += 1;
-      yearMap[yKey].total += total;
-      yearMap[yKey].revenue += revenue;
+      periodBookings++;
+      if (!isCancelled) periodService += service;
+      if (isCancelled)  periodCancelled++;
 
       if (created >= todayStart) {
-        _bookingsToday += 1;
-        _serviceToday += service;
-        if (String(r.status || "").toLowerCase() === "cancelled") _cancelledToday += 1;
+        todayBookings++;
+        if (!isCancelled) todayRevenue += service;
+        if (isCancelled)  todayCancelled++;
       }
+
+      const mKey = dayjs(created).format("MMM");
+      if (!monthMap[mKey]) monthMap[mKey] = { bookings: 0, revenue: 0 };
+      monthMap[mKey].bookings++;
+      if (!isCancelled) monthMap[mKey].revenue += service;
     }
 
-    setBookingsCount(_bookings);
-    setServiceTotal(_service);
-    setShopShareTotal(_service * 0.4);
-    setCancelledCount(_cancelled);
+    return {
+      todayBookings, todayRevenue, todayCancelled,
+      periodBookings, periodService,
+      periodShop:   periodService * 0.4,
+      periodWorker: periodService * 0.6,
+      periodCancelled,
+      monthlyData: Object.entries(monthMap).map(([month, v]) => ({ month, ...v })),
+    };
+  }, [allRows, todayStart]);
 
-    setBookingsToday(_bookingsToday);
-    setServiceToday(_serviceToday);
-    setShopShareToday(_serviceToday * 0.4);
-    setCancelledToday(_cancelledToday);
-
-    setMonthlyData(Object.entries(monthMap).map(([month, v]) => ({ month, ...v })));
-    setYearlyData(Object.entries(yearMap).map(([year, v]) => ({ year, ...v })));
-  }
-
-  const money = (n: number) => `฿${Number(n || 0).toLocaleString()}`;
-
-  const handlePrint = () => {
-    if (!reportRef.current) return;
-    const html = reportRef.current.innerHTML;
-    const win = window.open("", "", "width=1024,height=768");
-    if (!win) return;
-    win.document.write(
-      `<html><head><title>Dashboard Report</title></head><body>${html}</body></html>`
-    );
-    win.document.close();
-    win.focus();
-    win.print();
-    win.close();
+  // ── confirm booking ──────────────────────────────────────────────
+  const confirmBooking = async (id: string) => {
+    await updateDoc(doc(db, "bookings", id), { status: "confirmed" });
   };
 
+  const todayLabel = dayjs().format("ddd D MMM YYYY");
+
   return (
-    <Box p={3}>
-      <Typography variant="h4" gutterBottom fontWeight="bold">
-        📊 Admin Dashboard
-      </Typography>
+    <Box sx={{ fontFamily: SANS, minHeight: "100vh", background: "#F7F3F1", pb: 10 }}>
 
-      {/* Filters */}
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems="center">
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <DatePicker label="Start Date" value={startDate} onChange={(v) => v && setStartDate(v)} />
-          </LocalizationProvider>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <DatePicker label="End Date" value={endDate} onChange={(v) => v && setEndDate(v)} />
-          </LocalizationProvider>
+      {/* ── dark hero ───────────────────────────────────────────────── */}
+      <Box
+        sx={{
+          background: "linear-gradient(160deg,#1a0805 0%,#3c1010 55%,#2d0909 100%)",
+          px: { xs: 2, md: 3 },
+          pt: 3, pb: 2.5,
+          position: "relative",
+          overflow: "hidden",
+          "&::after": {
+            content: '""', position: "absolute",
+            bottom: -32, left: "50%", transform: "translateX(-50%)",
+            width: 300, height: 80, borderRadius: "50%",
+            background: "rgba(254,9,68,0.10)", filter: "blur(32px)",
+            pointerEvents: "none",
+          },
+        }}
+      >
+        <motion.div {...fadeUp(0)}>
+          <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, mb: 0.4 }}>
+            <Typography sx={{ fontFamily: SERIF, fontSize: { xs: 24, md: 28 }, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
+              Dashboard
+            </Typography>
+            {loading && <CircularProgress size={18} sx={{ color: "rgba(255,255,255,0.40)", mt: 0.5 }} />}
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+            <CalendarBlank size={13} color="rgba(255,255,255,0.40)" />
+            <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(255,255,255,0.40)" }}>
+              {todayLabel}
+            </Typography>
+          </Box>
+        </motion.div>
 
-          <Select size="small" value={statusFilter} onChange={(e) => setStatusFilter(String(e.target.value))} sx={{ minWidth: 160 }}>
-            <MenuItem value="__ALL__">All status</MenuItem>
-            <MenuItem value="pending">Pending</MenuItem>
-            <MenuItem value="confirmed">Confirmed</MenuItem>
-            <MenuItem value="completed">Completed</MenuItem>
-            <MenuItem value="cancelled">Cancelled</MenuItem>
-          </Select>
-
-          <Select size="small" value={therapistFilter} onChange={(e) => setTherapistFilter(String(e.target.value))} sx={{ minWidth: 220 }}>
-            {therapistOptions.map((o) => (
-              <MenuItem key={o.key} value={o.key}>{o.name}</MenuItem>
+        {/* today strip */}
+        <motion.div {...fadeUp(0.07)}>
+          <Box sx={{ display: "flex", gap: 1, mt: 2.5, p: 1.5, borderRadius: "16px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            {[
+              { label: "Today",   value: stats.todayBookings,            unit: "bookings" },
+              { label: "Revenue", value: money(stats.todayRevenue),      unit: "service"  },
+              { label: "Pending", value: pendingBookings.length,         unit: "need action", accent: pendingBookings.length > 0 },
+            ].map((s, i) => (
+              <Box key={i} sx={{ flex: 1, textAlign: "center", borderRight: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
+                <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: s.accent ? "#FE7A52" : "#fff", lineHeight: 1 }}>
+                  {s.value}
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 10, color: "rgba(255,255,255,0.40)", mt: 0.4, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  {s.label}
+                </Typography>
+              </Box>
             ))}
-          </Select>
-
-          {loading && <CircularProgress size={20} />}
-        </Stack>
-      </Paper>
-
-      <Box ref={reportRef}>
-        {/* Stats */}
-        <Grid container spacing={2}>
-          {[
-            { title: "📅 Bookings Today", value: bookingsToday, subtext: money(shopShareToday), color: "linear-gradient(135deg,#6a11cb,#2575fc)" },
-            { title: "💈 Service Today", value: money(serviceToday), subtext: "Service only", color: "linear-gradient(135deg,#5C6BC0,#3949AB)" },
-            { title: "🏪 Shop 40% (Today)", value: money(shopShareToday), subtext: money(serviceToday), color: "linear-gradient(135deg,#26A69A,#00796B)" },
-            { title: "❌ Cancelled Today", value: cancelledToday, color: "linear-gradient(135deg,#e53935,#e35d5b)" },
-
-            { title: "📦 Bookings (Filtered)", value: bookingsCount, subtext: money(shopShareTotal), color: "linear-gradient(135deg,#ff416c,#ff4b2b)" },
-            { title: "💈 Service (Filtered)", value: money(serviceTotal), subtext: "Service only", color: "linear-gradient(135deg,#8e44ad,#4a00e0)" },
-            { title: "🏪 Shop 40% (Filtered)", value: money(shopShareTotal), subtext: money(serviceTotal), color: "linear-gradient(135deg,#1abc9c,#16a085)" },
-            { title: "❌ Cancelled (Filtered)", value: cancelledCount, color: "linear-gradient(135deg,#c62828,#ef5350)" },
-
-            { title: "👥 Users", value: usersCount, color: "linear-gradient(135deg,#11998e,#38ef7d)" },
-            { title: "🧖 Therapists", value: therapistsCount, color: "linear-gradient(135deg,#f7971e,#ffd200)" },
-            { title: "👑 Admins", value: adminsCount, color: "linear-gradient(135deg,#2980b9,#6dd5fa)" },
-            { title: "🛎️ Services", value: servicesCount, color: "linear-gradient(135deg,#8e2de2,#4a00e0)" },
-          ].map((card) => (
-            <Grid key={card.title} size={{ xs: 6, sm: 4, md: 3 }}>
-              <StatCard {...card} />
-            </Grid>
-          ))}
-        </Grid>
-
-        {/* Monthly Chart */}
-        <Paper sx={{ p: 3, borderRadius: 2, mt: 3 }}>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            📊 Monthly Revenue & Bookings
-          </Typography>
-          <ResponsiveContainer width="80%" height={300}>
-            <BarChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="bookings" fill="#82ca9d" name="Bookings" />
-              <Bar dataKey="total" fill="#8884d8" name="Total Amount" />
-              <Bar dataKey="revenue" fill="#ff9800" name="Revenue (Shop)" />
-            </BarChart>
-          </ResponsiveContainer>
-        </Paper>
-
-        {/* Yearly Chart */}
-        <Paper sx={{ p: 3, borderRadius: 2, mt: 3 }}>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            📆 Yearly Revenue & Bookings
-          </Typography>
-          <ResponsiveContainer width="80%" height={300}>
-            <BarChart data={yearlyData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="year" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="bookings" fill="#4caf50" name="Bookings" />
-              <Bar dataKey="total" fill="#2196f3" name="Total Amount" />
-              <Bar dataKey="revenue" fill="#f44336" name="Revenue (Shop)" />
-            </BarChart>
-          </ResponsiveContainer>
-        </Paper>
-        
+          </Box>
+        </motion.div>
       </Box>
 
-      <Divider sx={{ my: 3 }}>
-        <Typography variant="subtitle1" color="text.secondary">
-          🛠 Admin Tools
-        </Typography>
-      </Divider>
+      <Box sx={{ px: { xs: 2, md: 3 }, pt: 2.5, display: "flex", flexDirection: "column", gap: 2.5 }}>
 
-      <Box display="flex" flexWrap="wrap" gap={1.5} justifyContent="center">
-        <Button variant="contained" size="small" startIcon={<PrintIcon />} onClick={handlePrint}>
-          Print
-        </Button>
-        <Button variant="outlined" size="small" startIcon={<DescriptionIcon />} onClick={() => navigate("/admin/reports")}>
-          Full Reports
-        </Button>
-        <Button variant="outlined" size="small" startIcon={<TableViewIcon />} onClick={() => ExportToExcel(monthlyData, "dashboard_monthly.xlsx")}>
-          Excel
-        </Button>
-        <Button variant="outlined" size="small" startIcon={<PictureAsPdfIcon />} onClick={() => reportRef.current && ExportToPDF(reportRef.current)}>
-          PDF
-        </Button>
-        <Button variant="outlined" size="small" startIcon={<PublicIcon />} onClick={() => window.open("/", "_blank")}>
-          View Public
-        </Button>
-        
+        {/* ── pending quick actions ────────────────────────────────────── */}
+        {pendingBookings.length > 0 && (
+          <motion.div {...fadeUp(0.05)}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.25 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: "50%", background: "#FE0944", boxShadow: "0 0 0 3px rgba(254,9,68,0.20)" }} />
+                <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "#FE0944", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                  Needs Confirmation — {pendingBookings.length}
+                </Typography>
+              </Box>
+              <Box
+                onClick={() => navigate("/admin/bookings")}
+                sx={{ display: "flex", alignItems: "center", gap: 0.4, cursor: "pointer" }}
+              >
+                <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, color: "rgba(60,30,20,0.45)" }}>View all</Typography>
+                <ArrowRight size={13} color="rgba(60,30,20,0.40)" />
+              </Box>
+            </Box>
+
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              {pendingBookings.slice(0, 5).map((b, i) => {
+                const dateLabel = b.startAt?.toDate
+                  ? fmtBKK(b.startAt.toDate(), "ddd D MMM · HH:mm")
+                  : b.date && b.time ? `${fmtBKK(b.date, "ddd D MMM")} · ${b.time}`
+                  : b.date ? fmtBKK(b.date, "ddd D MMM") : "—";
+
+                return (
+                  <motion.div key={b.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.06 }}>
+                    <Box
+                      sx={{
+                        display: "flex", alignItems: "center", gap: 1.5,
+                        p: "12px 14px",
+                        borderRadius: "14px",
+                        background: "#fff",
+                        border: "1px solid rgba(254,9,68,0.12)",
+                        boxShadow: "0 2px 8px rgba(254,9,68,0.06)",
+                      }}
+                    >
+                      {/* red dot */}
+                      <Box sx={{ width: 8, height: 8, borderRadius: "50%", background: "#FE0944", flexShrink: 0 }} />
+
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 700, color: "#1a0805", lineHeight: 1.2, mb: 0.2 }}>
+                          {b.therapistName}
+                        </Typography>
+                        <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(60,30,20,0.55)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {getServiceLabel(b.serviceId, b.serviceName)} · {dateLabel}
+                        </Typography>
+                        {b.userName && (
+                          <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "rgba(60,30,20,0.40)", mt: 0.1 }}>
+                            👤 {b.userName}
+                          </Typography>
+                        )}
+                      </Box>
+
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexShrink: 0 }}>
+                        {(b.totalPrice || b.servicePrice) && (
+                          <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 700, color: "#FE0944" }}>
+                            {formatTHB(b.totalPrice ?? b.servicePrice ?? 0)}
+                          </Typography>
+                        )}
+                        <motion.button
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => b.id && void confirmBooking(b.id)}
+                          style={{
+                            height: 34, padding: "0 14px", borderRadius: 999,
+                            background: "linear-gradient(135deg,#FE0944,#FE7A52)",
+                            color: "#fff", fontFamily: SANS, fontSize: 12, fontWeight: 700,
+                            border: "none", cursor: "pointer",
+                            boxShadow: "0 3px 10px rgba(254,9,68,0.28)",
+                            display: "flex", alignItems: "center", gap: 4,
+                          }}
+                        >
+                          <CheckCircle size={13} weight="fill" /> Confirm
+                        </motion.button>
+                      </Box>
+                    </Box>
+                  </motion.div>
+                );
+              })}
+            </Box>
+          </motion.div>
+        )}
+
+        {/* ── filter bar ───────────────────────────────────────────────── */}
+        <motion.div {...fadeUp(0.08)}>
+          <Box
+            sx={{
+              borderRadius: "16px",
+              background: "#fff",
+              border: "1px solid rgba(15,23,42,0.06)",
+              p: "14px 16px",
+              display: "flex",
+              gap: 1.5,
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.08em", textTransform: "uppercase", mr: 0.5 }}>
+              Period
+            </Typography>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                label="From"
+                value={startDate}
+                onChange={(v) => v && setStartDate(v)}
+                slotProps={{ textField: { size: "small", sx: { width: 130 } } }}
+              />
+              <DatePicker
+                label="To"
+                value={endDate}
+                onChange={(v) => v && setEndDate(v)}
+                slotProps={{ textField: { size: "small", sx: { width: 130 } } }}
+              />
+            </LocalizationProvider>
+
+            <Select size="small" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} sx={{ minWidth: 130, fontSize: 13 }} MenuProps={{ PaperProps: { sx: { background: "#fff", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)" } } }}>
+              <MenuItem value="__ALL__">All status</MenuItem>
+              <MenuItem value="pending">Pending</MenuItem>
+              <MenuItem value="confirmed">Confirmed</MenuItem>
+              <MenuItem value="completed">Completed</MenuItem>
+              <MenuItem value="cancelled">Cancelled</MenuItem>
+            </Select>
+
+            {therapistOptions.length > 0 && (
+              <Select size="small" value={therapistFilter} onChange={(e) => setTherapistFilter(e.target.value)} sx={{ minWidth: 150, fontSize: 13 }} MenuProps={{ PaperProps: { sx: { background: "#fff", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)" } } }}>
+                <MenuItem value="__ALL__">All therapists</MenuItem>
+                {therapistOptions.map((n) => <MenuItem key={n} value={n}>{n}</MenuItem>)}
+              </Select>
+            )}
+          </Box>
+        </motion.div>
+
+        {/* ── period stat cards ────────────────────────────────────────── */}
+        <motion.div {...fadeUp(0.10)}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.25 }}>
+            Period Summary — {startDate.format("D MMM")} to {endDate.format("D MMM YYYY")}
+          </Typography>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4,1fr)" }, gap: 1.5 }}>
+            {[
+              { icon: <CalendarBlank size={18} weight="duotone" />, label: "Bookings",    value: String(stats.periodBookings),       color: "#FE0944" },
+              { icon: <ChartBar      size={18} weight="duotone" />, label: "Service Rev", value: money(stats.periodService),        color: "#16a34a" },
+              { icon: <Buildings     size={18} weight="duotone" />, label: "Shop 40%",    value: money(stats.periodShop),          color: "#7c3aed" },
+              { icon: <XCircle       size={18} weight="duotone" />, label: "Cancelled",   value: String(stats.periodCancelled),     color: "rgba(60,30,20,0.40)" },
+            ].map((c) => (
+              <Box
+                key={c.label}
+                sx={{
+                  borderRadius: "16px", background: "#fff",
+                  border: "1px solid rgba(15,23,42,0.06)",
+                  boxShadow: "0 1px 4px rgba(15,23,42,0.04)",
+                  p: "14px 16px",
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.75, color: c.color }}>
+                  {c.icon}
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                    {c.label}
+                  </Typography>
+                </Box>
+                <Typography sx={{ fontFamily: SERIF, fontSize: 22, fontWeight: 700, color: c.color, letterSpacing: "-0.02em", lineHeight: 1 }}>
+                  {c.value}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </motion.div>
+
+        {/* ── platform counts ─────────────────────────────────────────── */}
+        <motion.div {...fadeUp(0.12)}>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 1.5 }}>
+            {[
+              { icon: <Users       size={16} weight="duotone" />, label: "Customers",   value: counts.users,      onClick: () => navigate("/admin/users") },
+              { icon: <UserCircle  size={16} weight="duotone" />, label: "Therapists",  value: counts.therapists, onClick: () => navigate("/admin/therapists") },
+              { icon: <Sparkle     size={16} weight="duotone" />, label: "Services",    value: counts.services,   onClick: () => navigate("/admin/pages-list") },
+            ].map((c) => (
+              <Box
+                key={c.label}
+                onClick={c.onClick}
+                sx={{
+                  borderRadius: "14px", background: "#fff",
+                  border: "1px solid rgba(15,23,42,0.06)",
+                  p: "12px 14px",
+                  cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 1,
+                  "&:active": { background: "rgba(254,9,68,0.04)" },
+                }}
+              >
+                <Box sx={{ color: "#FE0944" }}>{c.icon}</Box>
+                <Box>
+                  <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: "#1a0805", lineHeight: 1 }}>{c.value}</Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "rgba(60,30,20,0.45)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{c.label}</Typography>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </motion.div>
+
+        {/* ── monthly chart ────────────────────────────────────────────── */}
+        {stats.monthlyData.length > 0 && (
+          <motion.div {...fadeUp(0.14)}>
+            <Box
+              sx={{
+                borderRadius: "18px", background: "#fff",
+                border: "1px solid rgba(15,23,42,0.06)",
+                p: "16px 16px 12px",
+              }}
+            >
+              <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.5 }}>
+                Monthly Revenue
+              </Typography>
+              <ResponsiveContainer width="100%" height={isMobile ? 180 : 240}>
+                <BarChart data={stats.monthlyData} margin={{ top: 0, right: 4, left: -18, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,23,42,0.05)" />
+                  <XAxis dataKey="month" tick={{ fontFamily: SANS, fontSize: 11, fill: "rgba(60,30,20,0.50)" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontFamily: SANS, fontSize: 10, fill: "rgba(60,30,20,0.40)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `฿${(v/1000).toFixed(0)}k`} />
+                  <Tooltip
+                    contentStyle={{ fontFamily: SANS, fontSize: 12, borderRadius: 10, border: "1px solid rgba(15,23,42,0.08)", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
+                    formatter={(value, name) => [name === "revenue" ? money(Number(value)) : value, name === "revenue" ? "Revenue" : "Bookings"]}
+                  />
+                  <Bar dataKey="bookings" fill="rgba(254,9,68,0.15)" radius={[4,4,0,0]} name="bookings" />
+                  <Bar dataKey="revenue"  fill="#FE0944"              radius={[4,4,0,0]} name="revenue" />
+                </BarChart>
+              </ResponsiveContainer>
+            </Box>
+          </motion.div>
+        )}
+
+        {/* ── quick action tiles ───────────────────────────────────────── */}
+        <motion.div {...fadeUp(0.16)}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.25 }}>
+            Quick Actions
+          </Typography>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(4,1fr)" }, gap: 1.25 }}>
+            {[
+              { icon: <PlusCircle   size={22} weight="duotone" />, label: "New Booking",   path: "/admin/bookings/add",  accent: true  },
+              { icon: <ClipboardText size={22} weight="duotone" />, label: "Bookings",     path: "/admin/bookings",      accent: false },
+              { icon: <ChartBar     size={22} weight="duotone" />, label: "Reports",       path: "/admin/reports",       accent: false },
+              { icon: <Eye          size={22} weight="duotone" />, label: "View Website",  path: "/",                    accent: false, blank: true },
+            ].map((t) => (
+              <motion.button
+                key={t.label}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => t.blank ? window.open(t.path, "_blank") : navigate(t.path)}
+                style={{
+                  borderRadius: 16, padding: "16px 12px",
+                  background: t.accent ? "linear-gradient(135deg,#FE0944,#FE7A52)" : "#fff",
+                  border: t.accent ? "none" : "1px solid rgba(15,23,42,0.07)",
+                  cursor: "pointer",
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+                  boxShadow: t.accent ? "0 4px 14px rgba(254,9,68,0.28)" : "0 1px 4px rgba(15,23,42,0.05)",
+                }}
+              >
+                <Box sx={{ color: t.accent ? "#fff" : "#FE0944" }}>{t.icon}</Box>
+                <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: t.accent ? "#fff" : "#1a0805" }}>
+                  {t.label}
+                </Typography>
+              </motion.button>
+            ))}
+          </Box>
+        </motion.div>
       </Box>
-      
     </Box>
-    
   );
 };
 

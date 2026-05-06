@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SunRed Open Graph share banner — 1200×630.
+  Used by index.html og:image for Telegram / Line / Facebook /
+  WhatsApp link previews so every shared SunRed URL renders the
+  brand mark instead of a single therapist's photo.
+
+  Cloudinary fetches this URL and rasterizes to JPG via f_jpg —
+  see <meta property="og:image" content="…f_jpg…/sunred-share.svg">.
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 1200 630"
+     width="1200"
+     height="630"
+     role="img"
+     aria-label="SunRed Bangkok — Luxury Outcall Massage">
+  <!-- ─── Cream-to-peach gradient background ─────────────────────── -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF5F0"/>
+      <stop offset="55%" stop-color="#FFEDE0"/>
+      <stop offset="100%" stop-color="#FFD6C2"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#FE0944" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#FE0944" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <ellipse cx="600" cy="315" rx="500" ry="280" fill="url(#glow)"/>
+
+  <!-- ─── Sun glyph ───────────────────────────────────────────────── -->
+  <g transform="translate(330, 140)">
+    <circle cx="100" cy="100" r="42" fill="#FE0944"/>
+    <g stroke="#FE7A52" stroke-width="18" stroke-linecap="round">
+      <line x1="100" y1="20"  x2="100" y2="48"/>
+      <line x1="100" y1="20"  x2="100" y2="48" transform="rotate(45  100 100)"/>
+      <line x1="100" y1="20"  x2="100" y2="48" transform="rotate(90  100 100)"/>
+      <line x1="100" y1="20"  x2="100" y2="48" transform="rotate(135 100 100)"/>
+      <line x1="100" y1="20"  x2="100" y2="48" transform="rotate(180 100 100)"/>
+      <line x1="100" y1="20"  x2="100" y2="48" transform="rotate(225 100 100)"/>
+      <line x1="100" y1="20"  x2="100" y2="48" transform="rotate(270 100 100)"/>
+      <line x1="100" y1="20"  x2="100" y2="48" transform="rotate(315 100 100)"/>
+    </g>
+  </g>
+
+  <!-- ─── Wordmark "SunRed" ───────────────────────────────────────── -->
+  <text x="555"
+        y="320"
+        fill="#2a1a14"
+        font-family="'Fraunces', 'Times New Roman', serif"
+        font-style="italic"
+        font-weight="500"
+        font-size="200"
+        letter-spacing="-3"
+        text-rendering="geometricPrecision">SunRed</text>
+
+  <!-- ─── Tagline ─────────────────────────────────────────────────── -->
+  <text x="600"
+        y="430"
+        fill="#7E1E2E"
+        font-family="'Inter', system-ui, sans-serif"
+        font-weight="600"
+        font-size="34"
+        letter-spacing="2"
+        text-anchor="middle">LUXURY OUTCALL MASSAGE · BANGKOK</text>
+
+  <text x="600"
+        y="490"
+        fill="rgba(60, 30, 20, 0.7)"
+        font-family="'Inter', system-ui, sans-serif"
+        font-weight="400"
+        font-size="26"
+        letter-spacing="0.8"
+        text-anchor="middle">Professional therapists  ·  Live booking  ·  Foreigner-friendly</text>
+
+  <!-- ─── Bottom domain pill ──────────────────────────────────────── -->
+  <g transform="translate(450, 540)">
+    <rect width="300" height="48" rx="24" fill="#FE0944" opacity="0.92"/>
+    <text x="150"
+          y="32"
+          fill="#FFFFFF"
+          font-family="'Inter', system-ui, sans-serif"
+          font-weight="700"
+          font-size="22"
+          letter-spacing="2.5"
+          text-anchor="middle">SUNRED.VIP</text>
+  </g>
+</svg>

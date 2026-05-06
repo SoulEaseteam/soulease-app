@@ -3,8 +3,28 @@ html, body, #root {
   padding: 0;
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden !important; /* บังคับปิด scrollbar แนวนอน */
-  touch-action: pan-y; /* เลื่อนเฉพาะแนวตั้ง */
+  overflow-x: hidden !important;
+  overscroll-behavior-x: none; /* block horizontal drift only */
+  touch-action: pan-y;
+}
+
+/* ป้องกัน iOS zoom เวลา focus input/select/textarea
+   font-size ต้องไม่ต่ำกว่า 16px — ถ้าต่ำกว่า Safari จะ zoom อัตโนมัติ */
+input,
+select,
+textarea,
+[contenteditable] {
+  font-size: max(16px, 1em) !important;
+  touch-action: manipulation; /* ป้องกัน double-tap zoom */
+}
+
+/* ป้องกัน text selection / highlight บน interactive elements */
+button,
+[role="button"],
+[role="tab"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 /* 🆕 Round 28b43 (founder 2026-05-05) — Single source of truth for

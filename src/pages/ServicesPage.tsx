@@ -4,10 +4,18 @@
 //   • Phone shell + tabs use cool-neutral palette (#FAFBFC → #F1F3F5)
 //   • White cards with slate borders, soft slate shadows
 //   • All emoji replaced with MUI icons (founder no-emoji rule)
-//   • ABOUT US rewritten — concise pillars + service area + contacts
-//   • HOW TO BOOK reorganised — keeps HowItWorks visual, FAQ in
-//     cool-palette accordions, "Contact" + "Additional Links" tightened
+//   • ABOUT US — concise pillars + service area + contacts
+//   • HOW TO BOOK — keeps HowItWorks visual, FAQ in cool-palette
+//     accordions, "Concierge" + "Additional Links" tightened
 //   • Service tiles: brand red accents kept; tile shadow → cool slate
+//
+// 🆕 Round 28c0 follow-up — premium polish (kept):
+//   • Refined FAQ copy (formal register, "concierge" instead of "admin")
+//   • SectionDivider (small caps · hairlines) replaces plain section labels
+//   • FaqRow gains a subtle red left-edge accent on expand
+//   • "Which payment methods are accepted?" trimmed to a one-line summary
+//     plus a CTA link to /payment-methods (canonical source — single
+//     point of truth, used together with BookingFlowPage).
 
 import React from "react";
 import {
@@ -15,13 +23,8 @@ import {
   Typography,
   Button,
   IconButton,
-  Tabs,
-  Tab,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
+  Dialog,
 } from "@mui/material";
-import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import VisibilityOffRoundedIcon from "@mui/icons-material/VisibilityOffRounded";
 import LocalHotelRoundedIcon from "@mui/icons-material/LocalHotelRounded";
@@ -30,15 +33,16 @@ import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
-import { FaTelegramPlane, FaWhatsapp } from "react-icons/fa";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
+import CompareArrowsRoundedIcon from "@mui/icons-material/CompareArrowsRounded";
+import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import services from "../data/services";
+import { therapists } from "../data/therapists";
 import { startingPrice, formatTHB } from "../utils/servicePricing";
 import HowItWorks from "@/components/home/HowItWorks";
-// 🆕 Round 28b11 — live booking counts so the "Used by N customers"
-//   badge on each service tile reflects actual orders, not the
-//   hardcoded `svc.count` value in the data file.
 import { useServiceUsageStats } from "@/hooks/useServiceUsageStats";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
@@ -53,106 +57,39 @@ const ABOUT_PILLARS: Array<{
 }> = [
   {
     Icon: VerifiedRoundedIcon,
-    title: "Verified therapists",
+    title: "Verified practitioners",
     body:
-      "Every profile is screened by our team before publishing  photos, ID, and license checks.",
+      "Each profile is personally vetted before publication — photographs, identification, and licence checks.",
     tone: { bg: "rgba(22, 163, 74, 0.10)", fg: "#16a34a" },
   },
   {
     Icon: VisibilityOffRoundedIcon,
     title: "Discreet & private",
     body:
-      "Plain-card payments, encrypted booking flow, no signage on arrival. Your stay stays yours.",
+      "Plain-card statements, encrypted reservations, no signage upon arrival. Your stay remains yours.",
     tone: { bg: "rgba(15, 23, 42, 0.08)", fg: "#475569" },
   },
   {
     Icon: LocalHotelRoundedIcon,
-    title: "Hotel & condo outcall",
+    title: "Hotel & residence outcall",
     body:
-      "Therapist comes to you anywhere in central Bangkok  Sukhumvit, Silom, Asok, Thonglor, Sathorn.",
+      "Your practitioner arrives anywhere in central Bangkok — Sukhumvit, Silom, Asok, Thonglor, Sathorn.",
     tone: { bg: "rgba(254, 9, 68, 0.08)", fg: "#FE0944" },
   },
   {
     Icon: SupportAgentRoundedIcon,
-    title: "24/7 admin support",
+    title: "24/7 concierge",
     body:
-      "Real humans on WhatsApp, LINE, and Telegram around the clock pre, during, and after the session.",
+      "A real concierge on WhatsApp, LINE, and Telegram around the clock — before, during, and after each session.",
     tone: { bg: "rgba(14, 165, 233, 0.10)", fg: "#0284C7" },
   },
 ];
 
-// ─── FAQ rebuilt — cool palette ───────────────────────────────────────
-type FaqItem = { q: string; a: React.ReactNode };
-
-const FAQ_BASICS: FaqItem[] = [
-  {
-    q: "How do I book a therapist?",
-    a: "Pick a therapist from the home page, choose your service, fill in the booking form, and tap confirm. The order is sent to our admin who confirms within minutes via WhatsApp or Telegram.",
-  },
-  {
-    q: "What's on a therapist's profile?",
-    a: "Verified photos, service specialties, today's availability, real reviews from completed bookings, and structured personal info (height, body type, languages, working hours).",
-  },
-  {
-    q: "How can I contact a therapist directly?",
-    a: "All contact runs through our admin that's how we keep both sides safe. Once your booking is confirmed, you'll be connected for arrival coordination.",
-  },
-  {
-    q: "Are the profile photos real?",
-    a: "Yes. We run a verification check on every photo before publishing and re-verify periodically. Reviews from past customers add a second layer of confidence read them on each profile.",
-  },
-  {
-    q: "How fast can a therapist reach me?",
-    a: "In central Bangkok, typical arrival is 30–60 minutes. Outside the centre or in peak hours, expect 60–90 minutes. The booking screen shows a live arrival window before you confirm.",
-  },
-];
-
-const FAQ_PAYMENT: FaqItem[] = [
-  {
-    q: "How much does a session cost?",
-    a: "Each therapist sets their own rates — see their profile for the exact starting price. The total includes service fee + a transparent travel fee (GrabCar-aligned, ฿45 base + tiered per-km, return at half price).",
-  },
-  {
-    q: "What payment methods are supported?",
-    a: (
-      <Box>
-        <Typography
-          sx={{ fontWeight: 700, fontSize: 13, color: "#3c1e14", mb: 0.5 }}
-        >
-          Online (recommended):
-        </Typography>
-        <Box component="ul" sx={{ pl: 2.5, my: 0, color: "rgba(60,30,20,0.78)" }}>
-          <li>PromptPay QR (default)</li>
-          <li>Bank transfer (account details after confirm)</li>
-        </Box>
-        <Typography
-          sx={{
-            fontWeight: 700,
-            fontSize: 13,
-            color: "#3c1e14",
-            mt: 1.5,
-            mb: 0.5,
-          }}
-        >
-          On arrival:
-        </Typography>
-        <Box component="ul" sx={{ pl: 2.5, my: 0, color: "rgba(60,30,20,0.78)" }}>
-          <li>Cash (THB)</li>
-          <li>Therapist&apos;s PromptPay QR</li>
-          <li>Bank transfer with slip confirmation</li>
-        </Box>
-      </Box>
-    ),
-  },
-  {
-    q: "Why is a deposit sometimes needed?",
-    a: "For long-distance bookings (over ~25 km from central Sukhumvit) we ask for a small deposit so the therapist's travel commitment is covered. You'll be informed in advance — never a surprise.",
-  },
-  {
-    q: "Cancellation & reschedule policy",
-    a: "Free cancellation or reschedule up to 30 minutes before booking time. After that — or once the therapist is en route — a 50% service-fee charge applies to cover their committed time and travel.",
-  },
-];
+// Round 28c4 — Reservations pillars, payment CTA, arrival window,
+//   concierge channel grid, and telegram broadcast link have all been
+//   moved into the HowItWorks component (used by the "How to book" tab),
+//   so this file no longer holds them. Single source of truth for the
+//   booking flow lives in `src/components/home/HowItWorks.tsx`.
 
 const ServicesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -167,12 +104,84 @@ const ServicesPage: React.FC = () => {
     initialTab
   );
 
-  // 🆕 Round 28b17 — public chip now reflects UNIQUE customers (humans),
-  //   not raw session count. One person booking 3 times = 1 customer,
-  //   not 3 — so "Used by 64 customers" actually means 64 different
-  //   people. Pending/cancelled bookings still excluded.
+  // Live booking counts — UNIQUE customers (humans), not raw session count.
   const { customersById: customerCounts, servedById: servedCounts } =
     useServiceUsageStats();
+
+  // Round 28c18 — Welcome banner state.
+  //   First-time guests see a complimentary-travel welcome card. We
+  //   detect "first time" via a localStorage flag — costs nothing
+  //   server-side and is dismissible. Margin-friendly: free travel
+  //   only costs the practitioner's transport, not service revenue.
+  const [welcomeDismissed, setWelcomeDismissed] = React.useState<boolean>(
+    () => {
+      if (typeof window === "undefined") return true;
+      return window.localStorage.getItem("sunred.welcomeSeen") === "true";
+    }
+  );
+  const dismissWelcome = () => {
+    try {
+      window.localStorage.setItem("sunred.welcomeSeen", "true");
+    } catch {
+      /* ignore quota / privacy mode */
+    }
+    setWelcomeDismissed(true);
+  };
+
+  // Round 28c18 — "Help me choose" inline quiz state.
+  //   Simple 3-step decision aid that recommends one of the four
+  //   services. No external state — everything lives in this component.
+  const [quizOpen, setQuizOpen] = React.useState(false);
+  const [quizStep, setQuizStep] = React.useState(0);
+  const [quizAnswers, setQuizAnswers] = React.useState<{
+    intent?: string;
+    intensity?: string;
+    budget?: string;
+  }>({});
+
+  const resetQuiz = () => {
+    setQuizStep(0);
+    setQuizAnswers({});
+  };
+
+  // Round 28c18 — Compare panel toggle (expands below action row).
+  const [compareOpen, setCompareOpen] = React.useState(false);
+
+  // Round 28c15 — Services tab uses a MANUAL editorial order.
+  //   Premium-led arrangement: high-margin services at the top so
+  //   they anchor pricing perception and showcase the brand's most
+  //   premium tiers first. The position-1 card gets the most visual
+  //   real estate (top of the scroll). Live session count still
+  //   appears on each card via the "Delivered N sessions" chip;
+  //   only the ORDER is manual.
+  //
+  //   To re-rank, edit this list. Any service not listed falls to
+  //   the end in its original data-array order.
+  const SERVICE_DISPLAY_ORDER = React.useMemo(
+    () =>
+      [
+        "SR-HJ2200", // Gentleman's Signature — ฿2,200
+        "SR-B2B3200", // SunRed Therapeutic — ฿3,200
+        "SR-Aroma", // Aromatherapy — ฿1,600
+        "xSR-Thai", // Thai Massage — ฿1,200
+      ] as const,
+    []
+  );
+
+  const sortedServices = React.useMemo(() => {
+    return [...services].sort((a, b) => {
+      const aIdx = SERVICE_DISPLAY_ORDER.indexOf(
+        a.id as (typeof SERVICE_DISPLAY_ORDER)[number]
+      );
+      const bIdx = SERVICE_DISPLAY_ORDER.indexOf(
+        b.id as (typeof SERVICE_DISPLAY_ORDER)[number]
+      );
+      if (aIdx === -1 && bIdx === -1) return 0;
+      if (aIdx === -1) return 1;
+      if (bIdx === -1) return -1;
+      return aIdx - bIdx;
+    });
+  }, [SERVICE_DISPLAY_ORDER]);
 
   const handleSelectService = (id: string) => {
     void navigate(`/services/${encodeURIComponent(id)}`);
@@ -203,67 +212,191 @@ const ServicesPage: React.FC = () => {
         <Box sx={{ height: 50 }} />
 
         <Box sx={{ px: 2, mt: 1, display: "flex", alignItems: "flex-end" }}>
+          {/* Logo — spring entry + one-time halo flash + warm hover glow.
+              Round 28c12 — three combined effects:
+                • spring: a tiny natural bounce settling into place
+                • halo: a soft red ring radiates outward once on mount
+                • hover: red glow shadow + subtle lift */}
           <Box
-            component="img"
-            src="/images/icon/sunred-logo.png"
-            alt="SunRed"
-            sx={{
-              width: 130,
-              height: 130,
-              borderRadius: "50%",
-              border: "3px solid #FFFFFF",
-              boxShadow:
-                "0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.10)",
-              objectFit: "cover",
-              background: "#fff",
+            component={motion.div}
+            initial={{ opacity: 0, scale: 0.86 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              type: "spring",
+              stiffness: 200,
+              damping: 18,
+              mass: 0.9,
             }}
-          />
+            whileHover={{
+              scale: 1.03,
+              transition: { type: "spring", stiffness: 300, damping: 22 },
+            }}
+            sx={{
+              position: "relative",
+              display: "inline-block",
+              cursor: "default",
+              "& img": {
+                transition: "box-shadow 0.32s ease",
+              },
+              "&:hover img": {
+                boxShadow:
+                  "0 1px 2px rgba(15, 23, 42, 0.04), 0 14px 36px rgba(254, 9, 68, 0.22)",
+              },
+            }}
+          >
+            {/* One-time halo — soft red ring radiates outward on mount */}
+            <Box
+              component={motion.span}
+              aria-hidden
+              initial={{ scale: 0.94, opacity: 0 }}
+              animate={{ scale: [0.94, 1.18, 1.32], opacity: [0, 0.55, 0] }}
+              transition={{
+                duration: 1.1,
+                ease: "easeOut",
+                delay: 0.15,
+                times: [0, 0.45, 1],
+              }}
+              sx={{
+                position: "absolute",
+                inset: -6,
+                borderRadius: "50%",
+                background:
+                  "radial-gradient(circle, rgba(254, 9, 68, 0.32) 0%, rgba(254, 122, 82, 0.18) 55%, rgba(254, 122, 82, 0) 78%)",
+                pointerEvents: "none",
+                zIndex: 0,
+              }}
+            />
+            <Box
+              component="img"
+              src="/images/icon/sunred-logo.png"
+              alt="SunRed"
+              sx={{
+                position: "relative",
+                width: 130,
+                height: 130,
+                borderRadius: "50%",
+                border: "3px solid #FFFFFF",
+                boxShadow:
+                  "0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.10)",
+                objectFit: "cover",
+                background: "#fff",
+                display: "block",
+                zIndex: 1,
+              }}
+            />
+          </Box>
+
+          {/* Social icons — Round 28c13.
+              Five upgrades from the previous version:
+                • Spring entry (subtle bounce as each icon settles)
+                • Stagger raised to 0.07s/icon for a more deliberate cascade
+                • Hover: scale 1.12 + lift -4 + alternating tilt (-5°/+5°)
+                • Brand-color glow under each on hover (LINE green,
+                  Telegram blue, WhatsApp green, X slate, etc.)
+                • Tap: scale 0.88 with rotation snap back to 0 */}
           <Box sx={{ ml: "auto", display: "flex", gap: 0.25 }}>
-            <IconButton component="a" href="https://lin.ee/uqvdwWt" target="_blank">
+            {[
+              {
+                href: "https://lin.ee/uqvdwWt",
+                src: "/images/profli/line.png",
+                alt: "Line",
+                glow: "rgba(6, 199, 85, 0.42)",
+                external: true,
+              },
+              {
+                href: "/wechat-scan",
+                src: "/images/profli/wechat_2626283.png",
+                alt: "WeChat",
+                glow: "rgba(7, 193, 96, 0.42)",
+                external: true,
+              },
+              {
+                href: "https://t.me/SunRedvip_bkk",
+                src: "/images/profli/telegram.png",
+                alt: "Telegram",
+                glow: "rgba(34, 158, 217, 0.45)",
+                external: true,
+              },
+              {
+                href: "https://wa.me/66634350987",
+                src: "/images/profli/whatsapp.png",
+                alt: "WhatsApp",
+                glow: "rgba(37, 211, 102, 0.45)",
+                external: true,
+              },
+              {
+                href: "https://x.com/SunredBangkok",
+                src: "/images/profli/twitter.png",
+                alt: "X (Twitter)",
+                glow: "rgba(15, 23, 42, 0.45)",
+                external: true,
+              },
+            ].map(({ href, src, alt, glow, external }, i) => (
               <Box
-                component="img"
-                src="/images/profli/line.png"
-                alt="Line"
-                sx={{ width: 28, height: 28 }}
-              />
-            </IconButton>
-            <IconButton component="a" href="/wechat-scan" target="_blank">
-              <Box
-                component="img"
-                src="/images/profli/wechat_2626283.png"
-                alt="WeChat"
-                sx={{ width: 28, height: 28 }}
-              />
-            </IconButton>
-            <IconButton component="a" href="https://t.me/SunRedvip_bkk" target="_blank">
-              <Box
-                component="img"
-                src="/images/profli/telegram.png"
-                alt="Telegram"
-                sx={{ width: 28, height: 28 }}
-              />
-            </IconButton>
-            <IconButton component="a" href="https://wa.me/66634350987" target="_blank">
-              <Box
-                component="img"
-                src="/images/profli/whatsapp.png"
-                alt="WhatsApp"
-                sx={{ width: 28, height: 28 }}
-              />
-            </IconButton>
-            <IconButton component="a" href="https://x.com/SunredBangkok" target="_blank">
-              <Box
-                component="img"
-                src="/images/profli/twitter.png"
-                alt="X (Twitter)"
-                sx={{ width: 28, height: 28 }}
-              />
-            </IconButton>
+                key={alt}
+                component={motion.div}
+                initial={{ opacity: 0, y: -10, scale: 0.7 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 240,
+                  damping: 18,
+                  delay: 0.3 + i * 0.07,
+                }}
+                whileHover={{
+                  y: -4,
+                  scale: 1.12,
+                  rotate: i % 2 === 0 ? -5 : 5,
+                  transition: {
+                    type: "spring",
+                    stiffness: 320,
+                    damping: 14,
+                  },
+                }}
+                whileTap={{
+                  scale: 0.88,
+                  rotate: 0,
+                  transition: { type: "spring", stiffness: 500, damping: 16 },
+                }}
+                sx={{
+                  display: "inline-flex",
+                  "& .MuiIconButton-root": {
+                    transition:
+                      "box-shadow 0.32s ease, background 0.32s ease",
+                  },
+                  "&:hover .MuiIconButton-root": {
+                    boxShadow: `0 6px 22px ${glow}`,
+                  },
+                }}
+              >
+                <IconButton
+                  component="a"
+                  href={href}
+                  {...(external
+                    ? { target: "_blank", rel: "noopener noreferrer" }
+                    : {})}
+                >
+                  <Box
+                    component="img"
+                    src={src}
+                    alt={alt}
+                    sx={{ width: 28, height: 28 }}
+                  />
+                </IconButton>
+              </Box>
+            ))}
           </Box>
         </Box>
 
         <Box sx={{ px: 2, mt: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          {/* Username + verified — verified mark pulses gently */}
+          <Box
+            component={motion.div}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
+            sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+          >
             <Typography
               sx={{
                 fontFamily: SERIF,
@@ -275,56 +408,117 @@ const ServicesPage: React.FC = () => {
             >
               SunRed.vip
             </Typography>
-            <VerifiedRoundedIcon
+            {/* Verified ✓ with ripple ring — feels like a live presence
+                indicator. The icon stays still; a faint ring expands
+                outward and fades, looping every ~4s (calmer than the
+                old 2.6s infinite scale-pulse). */}
+            <Box
               sx={{
-                fontSize: 20,
-                color: "#1d9bf0",
-                filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.10))",
+                position: "relative",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 20,
+                height: 20,
               }}
-            />
+            >
+              <Box
+                component={motion.span}
+                aria-hidden
+                initial={{ scale: 0.85, opacity: 0 }}
+                animate={{
+                  scale: [0.85, 1.55, 1.95],
+                  opacity: [0, 0.55, 0],
+                }}
+                transition={{
+                  duration: 2.4,
+                  repeat: Infinity,
+                  repeatDelay: 1.6,
+                  ease: "easeOut",
+                  times: [0, 0.5, 1],
+                  delay: 1.2,
+                }}
+                sx={{
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: "50%",
+                  border: "1.5px solid #1d9bf0",
+                  pointerEvents: "none",
+                }}
+              />
+              <VerifiedRoundedIcon
+                sx={{
+                  position: "relative",
+                  fontSize: 20,
+                  color: "#1d9bf0",
+                  filter: "drop-shadow(0 1px 2px rgba(29, 155, 240, 0.35))",
+                  zIndex: 1,
+                }}
+              />
+            </Box>
           </Box>
-          <Typography
-            sx={{
-              fontSize: 13,
-              color: "rgba(60,30,20,0.55)",
-              mt: 0.25,
-            }}
+
+          {/* Handle */}
+          <Box
+            component={motion.div}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
           >
-            @sunred.vip
-          </Typography>
-          <Typography
-            sx={{
-              fontFamily: SERIF,
-              fontSize: 16,
-              fontWeight: 600,
-              color: "#3c1e14",
-              mt: 1.5,
-              letterSpacing: "-0.01em",
-            }}
+            <Typography
+              sx={{
+                fontSize: 13,
+                color: "rgba(60,30,20,0.55)",
+                mt: 0.25,
+              }}
+            >
+              @sunred.vip
+            </Typography>
+          </Box>
+
+          {/* Editorial italic tagline — fade-up entry, then the em
+              accent blossoms from slate to brand red after a short
+              beat. Round 28c12 — tiny "moment of brand reveal". */}
+          <Box
+            component={motion.div}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}
           >
-            Pretty Outcall Massage in Bangkok
-          </Typography>
-          <Typography
-  sx={{
-    fontSize: 13.5,
-    lineHeight: 1.6,
-    color: "rgba(60, 30, 20, 0.72)",
-    mt: 0.5,
-    whiteSpace: "pre-line", // เพิ่มเพื่อให้รองรับการขึ้นบรรทัดใหม่จาก {"\n"}
-    fontFamily: SANS,
-  }}
->
-  <Box component="span" sx={{ fontWeight: 600 }}>Verified therapists</Box>
-  {" • "}Discreet{" • "}Reliable{"\n"}
-  Every profile is strictly screened before publishing.{"\n"}
-  <Box component="span" sx={{ color: "rgba(60, 30, 20, 0.9)", fontWeight: 500 }}>
-    Professional 24/7 support.
-  </Box>
-</Typography>
+            <Typography
+              sx={{
+                fontFamily: SERIF,
+                fontSize: 17,
+                fontWeight: 500,
+                color: "#3c1e14",
+                mt: 1.75,
+                letterSpacing: "-0.01em",
+                lineHeight: 1.3,
+              }}
+            >
+              Bangkok&apos;s most discreet outcall massage,{" "}
+              <Box
+                component={motion.em}
+                initial={{ color: "#3c1e14" }}
+                animate={{ color: "#FE0944" }}
+                transition={{ duration: 0.9, delay: 1.15, ease: "easeOut" }}
+                sx={{ fontStyle: "italic" }}
+              >
+                delivered to you.
+              </Box>
+            </Typography>
+          </Box>
         </Box>
 
-        {/* ─── Tabs — cool palette ─── */}
+        {/* ─── Tabs — animated pill (Round 28c11) ───
+              Uses framer-motion `layoutId` so the active pill slides
+              smoothly between tabs. Inactive tabs gain a warm hover
+              tint; active tab feels like a glowing red token. */}
         <Box
+          component={motion.div}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.75, ease: "easeOut" }}
           sx={{
             mt: 2.5,
             mx: 2,
@@ -332,39 +526,87 @@ const ServicesPage: React.FC = () => {
             borderRadius: 999,
             background: "#FFFFFF",
             border: "1px solid rgba(15, 23, 42, 0.06)",
-            boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
+            boxShadow:
+              "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.04)",
+            display: "flex",
+            position: "relative",
           }}
+          role="tablist"
         >
-          <Tabs
-            value={section}
-            onChange={(_, value) => setSection(value)}
-            textColor="inherit"
-            variant="fullWidth"
-            sx={{
-              minHeight: 38,
-              "& .MuiTab-root": {
-                color: "rgba(60, 30, 20, 0.55)",
-                fontWeight: 600,
-                fontSize: 11.5,
-                letterSpacing: "0.06em",
-                minHeight: 38,
-                textTransform: "uppercase",
-                fontFamily: SANS,
-              },
-              "& .Mui-selected": {
-                color: "#fff",
-                background: "linear-gradient(135deg, #FE0944, #FE7A52)",
-                borderRadius: 999,
-                fontWeight: 700,
-                boxShadow: "0 4px 12px rgba(254, 9, 68, 0.25)",
-              },
-              "& .MuiTabs-indicator": { display: "none" },
-            }}
-          >
-            <Tab label="Services" value="services" />
-            <Tab label="About us" value="about" />
-            <Tab label="How to book" value="how" />
-          </Tabs>
+          {(
+            [
+              { value: "services", label: "Services" },
+              { value: "about", label: "About us" },
+              { value: "how", label: "How to book" },
+            ] as const
+          ).map((tab) => {
+            const isActive = section === tab.value;
+            return (
+              <Box
+                key={tab.value}
+                component="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setSection(tab.value)}
+                sx={{
+                  flex: 1,
+                  position: "relative",
+                  height: 40,
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontFamily: SERIF,
+                  fontSize: 12.5,
+                  fontWeight: isActive ? 700 : 600,
+                  letterSpacing: "0.01em",
+                  color: isActive ? "#fff" : "rgba(60, 30, 20, 0.55)",
+                  transition:
+                    "color 0.25s ease, transform 0.18s ease",
+                  "&:hover": isActive
+                    ? {}
+                    : { color: "#FE0944", transform: "translateY(-1px)" },
+                  "&:active": { transform: "scale(0.96)" },
+                  "&:focus-visible": {
+                    outline: "2px solid rgba(254, 9, 68, 0.5)",
+                    outlineOffset: -2,
+                    borderRadius: 999,
+                  },
+                }}
+              >
+                {/* Sliding active pill — single shared layoutId */}
+                {isActive && (
+                  <Box
+                    component={motion.span}
+                    layoutId="activeTabPill"
+                    transition={{
+                      type: "spring",
+                      stiffness: 380,
+                      damping: 32,
+                    }}
+                    sx={{
+                      position: "absolute",
+                      inset: 0,
+                      borderRadius: 999,
+                      background:
+                        "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+                      boxShadow:
+                        "0 4px 14px rgba(254, 9, 68, 0.32), inset 0 1px 0 rgba(255,255,255,0.18)",
+                      zIndex: 0,
+                    }}
+                  />
+                )}
+                <Box
+                  component="span"
+                  sx={{ position: "relative", zIndex: 1 }}
+                >
+                  {tab.label}
+                </Box>
+              </Box>
+            );
+          })}
         </Box>
 
         {/* ─── Services tab ─── */}
@@ -378,7 +620,262 @@ const ServicesPage: React.FC = () => {
               px: 2,
             }}
           >
-            {services.map((svc, index) => (
+            {/* Welcome banner — first-time guests only.
+                Margin-friendly: complimentary travel within central
+                Bangkok costs only the practitioner's transport, not
+                service revenue. */}
+            {!welcomeDismissed && (
+              <Box
+                component={motion.div}
+                initial={{ opacity: 0, y: -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                sx={{
+                  position: "relative",
+                  p: 2,
+                  pr: 5,
+                  borderRadius: "16px",
+                  background:
+                    "linear-gradient(135deg, rgba(254, 9, 68, 0.06) 0%, rgba(254, 122, 82, 0.05) 100%)",
+                  border: "1px solid rgba(254, 9, 68, 0.20)",
+                  boxShadow:
+                    "0 1px 2px rgba(254, 9, 68, 0.06), inset 0 1px 0 rgba(255,255,255,0.6)",
+                }}
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    fontSize: 9.5,
+                    letterSpacing: "0.22em",
+                    textTransform: "uppercase",
+                    color: "#b85c3c",
+                    fontWeight: 700,
+                    mb: 0.5,
+                    fontFamily: SANS,
+                    "&::before": {
+                      content: '""',
+                      width: "18px",
+                      height: "1px",
+                      background: "rgba(184, 92, 60, 0.55)",
+                    },
+                  }}
+                >
+                  Welcome to SunRed
+                </Box>
+                <Typography
+                  sx={{
+                    fontFamily: SERIF,
+                    fontSize: 16,
+                    fontWeight: 500,
+                    color: "#3c1e14",
+                    letterSpacing: "-0.01em",
+                    lineHeight: 1.3,
+                    mb: 0.5,
+                    "& em": { fontStyle: "italic", color: "#FE0944" },
+                  }}
+                >
+                  Your first reservation, <em>on us.</em>
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: 12.5,
+                    color: "rgba(60, 30, 20, 0.7)",
+                    lineHeight: 1.55,
+                  }}
+                >
+                  Complimentary travel within central Bangkok for new
+                  guests Sukhumvit, Silom, Asok, Thonglor, Sathorn.
+                </Typography>
+                <IconButton
+                  aria-label="Dismiss welcome"
+                  onClick={dismissWelcome}
+                  size="small"
+                  sx={{
+                    position: "absolute",
+                    top: 6,
+                    right: 6,
+                    color: "rgba(60, 30, 20, 0.4)",
+                    "&:hover": { color: "#FE0944" },
+                  }}
+                >
+                  <CloseRoundedIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </Box>
+            )}
+
+            {/* Action row — Help me choose · Compare all */}
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Box
+                component="button"
+                onClick={() => {
+                  if (quizOpen) resetQuiz();
+                  setQuizOpen(!quizOpen);
+                  setCompareOpen(false);
+                }}
+                sx={{
+                  flex: 1,
+                  border: "1px solid rgba(15, 23, 42, 0.06)",
+                  borderColor: quizOpen
+                    ? "rgba(254, 9, 68, 0.32)"
+                    : "rgba(15, 23, 42, 0.06)",
+                  background: quizOpen
+                    ? "linear-gradient(135deg, rgba(254, 9, 68, 0.08), rgba(254, 122, 82, 0.05))"
+                    : "#FFFFFF",
+                  borderRadius: "12px",
+                  px: 1.5,
+                  py: 1.1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.75,
+                  cursor: "pointer",
+                  fontFamily: SANS,
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  color: quizOpen ? "#FE0944" : "#3c1e14",
+                  letterSpacing: "0.01em",
+                  transition:
+                    "border-color 0.22s ease, background 0.22s ease, color 0.22s ease",
+                }}
+              >
+                <AutoAwesomeRoundedIcon sx={{ fontSize: 16 }} />
+                Help me choose
+              </Box>
+              <Box
+                component="button"
+                onClick={() => {
+                  setCompareOpen(!compareOpen);
+                  setQuizOpen(false);
+                }}
+                sx={{
+                  flex: 1,
+                  border: "1px solid rgba(15, 23, 42, 0.06)",
+                  borderColor: compareOpen
+                    ? "rgba(254, 9, 68, 0.32)"
+                    : "rgba(15, 23, 42, 0.06)",
+                  background: compareOpen
+                    ? "linear-gradient(135deg, rgba(254, 9, 68, 0.08), rgba(254, 122, 82, 0.05))"
+                    : "#FFFFFF",
+                  borderRadius: "12px",
+                  px: 1.5,
+                  py: 1.1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.75,
+                  cursor: "pointer",
+                  fontFamily: SANS,
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  color: compareOpen ? "#FE0944" : "#3c1e14",
+                  letterSpacing: "0.01em",
+                  transition:
+                    "border-color 0.22s ease, background 0.22s ease, color 0.22s ease",
+                }}
+              >
+                <CompareArrowsRoundedIcon sx={{ fontSize: 16 }} />
+                Compare all
+              </Box>
+            </Box>
+
+            {/* Quiz + Compare popups rendered at page level — see below */}
+
+            {/* Daytime Serenity — daily off-peak promo (12:00–18:00).
+                Round 28c26 — drives demand to off-peak hours when
+                practitioner availability is higher. Margin-friendly:
+                a free 15-min upgrade costs ~฿100 in practitioner time
+                vs an empty slot which earns ฿0. */}
+            <Box
+              sx={{
+                position: "relative",
+                p: 1.75,
+                borderRadius: "16px",
+                background:
+                  "linear-gradient(135deg, rgba(254, 196, 159, 0.18) 0%, rgba(254, 226, 200, 0.30) 100%)",
+                border: "1px solid rgba(217, 119, 6, 0.22)",
+                boxShadow:
+                  "0 1px 2px rgba(217, 119, 6, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.6)",
+                overflow: "hidden",
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  top: -36,
+                  right: -36,
+                  width: 120,
+                  height: 120,
+                  borderRadius: "50%",
+                  background:
+                    "radial-gradient(circle, rgba(245, 158, 11, 0.22) 0%, transparent 70%)",
+                  pointerEvents: "none",
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  position: "relative",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  fontSize: 9.5,
+                  letterSpacing: "0.22em",
+                  textTransform: "uppercase",
+                  color: "#B45309",
+                  fontWeight: 700,
+                  mb: 0.5,
+                  fontFamily: SANS,
+                  "&::before": {
+                    content: '""',
+                    width: "18px",
+                    height: "1px",
+                    background: "rgba(217, 119, 6, 0.55)",
+                  },
+                }}
+              >
+                Daytime Serenity · 12:00PM–18:00PM
+              </Box>
+              <Typography
+                sx={{
+                  position: "relative",
+                  fontFamily: SERIF,
+                  fontSize: 16,
+                  fontWeight: 500,
+                  color: "#3c1e14",
+                  letterSpacing: "-0.01em",
+                  lineHeight: 1.3,
+                  mb: 0.5,
+                  "& em": { fontStyle: "italic", color: "#D97706" },
+                }}
+              >
+                A complimentary <em>warm-up,</em> on us.
+              </Typography>
+              <Typography
+                sx={{
+                  position: "relative",
+                  fontFamily: SANS,
+                  fontSize: 12.5,
+                  color: "rgba(60, 30, 20, 0.7)",
+                  lineHeight: 1.5,
+                }}
+              >
+                Reserve any therapy between 12:00–18:00 and receive a
+                15-minute scalp & shoulder warm-up normally{" "}
+                <Box
+                  component="span"
+                  sx={{ fontWeight: 600, color: "#D97706" }}
+                >
+                  +200฿
+                </Box>
+                . Daily.
+              </Typography>
+            </Box>
+
+            {sortedServices.map((svc, index) => {
+              // Round 28c16 — position-1 card gets flagship treatment:
+              //   taller, brand-red ring, warm glow, deeper hover lift.
+              //   Other cards stay neutral so the flagship really pops.
+              const isFlagship = index === 0;
+              return (
               <motion.div
                 key={svc.name}
                 initial={{ opacity: 0, y: 16, scale: 0.98 }}
@@ -388,13 +885,13 @@ const ServicesPage: React.FC = () => {
                   duration: 0.4,
                   ease: "easeOut",
                 }}
-                whileHover={{ scale: 1.01 }}
+                whileHover={{ scale: isFlagship ? 1.015 : 1.01 }}
               >
                 <Box
                   onClick={() => handleSelectService(svc.id)}
                   sx={{
                     position: "relative",
-                    height: 240,
+                    height: isFlagship ? 280 : 240,
                     borderRadius: "18px",
                     overflow: "hidden",
                     backgroundImage: `url(${svc.image})`,
@@ -404,9 +901,12 @@ const ServicesPage: React.FC = () => {
                     flexDirection: "column",
                     justifyContent: "flex-end",
                     cursor: "pointer",
-                    border: "1px solid rgba(15, 23, 42, 0.06)",
-                    boxShadow:
-                      "0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px rgba(15, 23, 42, 0.10)",
+                    border: isFlagship
+                      ? "1.5px solid rgba(254, 9, 68, 0.36)"
+                      : "1px solid rgba(15, 23, 42, 0.06)",
+                    boxShadow: isFlagship
+                      ? "0 1px 2px rgba(254, 9, 68, 0.08), 0 14px 36px rgba(254, 9, 68, 0.20), 0 4px 14px rgba(254, 122, 82, 0.10)"
+                      : "0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px rgba(15, 23, 42, 0.10)",
                     "&::before": {
                       content: '""',
                       position: "absolute",
@@ -440,159 +940,577 @@ const ServicesPage: React.FC = () => {
                   </Box>
 
                   <Box sx={{ position: "relative", px: 2, py: 2, zIndex: 1 }}>
-                    <Typography
-                      sx={{
-                        fontFamily: SERIF,
-                        fontSize: 20,
-                        fontWeight: 700,
-                        color: "#fff",
-                        letterSpacing: "-0.01em",
-                      }}
-                    >
-                      {svc.name}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontSize: 12,
-                        color: "rgba(255,255,255,0.85)",
-                        mt: 0.25,
-                        mb: 1.25,
-                        lineHeight: 1.4,
-                      }}
-                    >
-                      {svc.desc}
-                    </Typography>
-
+                    {/* Title row — name (left) · price/duration (right).
+                        Premium-catalog layout: pricing aligned right
+                        for fast eye-anchor. */}
                     <Box
                       sx={{
                         display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        flexWrap: "wrap",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        gap: 1.25,
+                        mb: 1,
                       }}
                     >
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography
+                          sx={{
+                            fontFamily: SERIF,
+                            fontSize: 20,
+                            fontWeight: 700,
+                            color: "#fff",
+                            letterSpacing: "-0.01em",
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {svc.name}
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontSize: 12,
+                            color: "rgba(255,255,255,0.85)",
+                            mt: 0.25,
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          {svc.desc}
+                        </Typography>
+                      </Box>
+
+                      {/* Price block — right-aligned */}
                       <Box
-                        component="span"
                         sx={{
-                          fontFamily: SERIF,
-                          fontSize: 18,
-                          fontWeight: 700,
-                          color: "#fff",
-                          letterSpacing: "-0.02em",
+                          flexShrink: 0,
+                          textAlign: "right",
+                          pt: "1px",
                         }}
                       >
-                        From {formatTHB(startingPrice(svc))}
+                        <Box
+                          sx={{
+                            fontFamily: SANS,
+                            fontSize: 9.5,
+                            fontWeight: 600,
+                            letterSpacing: "0.16em",
+                            textTransform: "uppercase",
+                            color: "rgba(255,255,255,0.6)",
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          From
+                        </Box>
+                        <Box
+                          sx={{
+                            fontFamily: SERIF,
+                            fontSize: 20,
+                            fontWeight: 700,
+                            color: "#fff",
+                            letterSpacing: "-0.02em",
+                            lineHeight: 1.15,
+                            mt: 0.25,
+                          }}
+                        >
+                          {formatTHB(startingPrice(svc))}
+                        </Box>
+                        <Box
+                          sx={{
+                            fontFamily: SANS,
+                            fontSize: 11,
+                            color: "rgba(255,255,255,0.7)",
+                            lineHeight: 1.2,
+                            mt: 0.25,
+                          }}
+                        >
+                          {svc.duration} min
+                        </Box>
                       </Box>
-                      <Box
-                        component="span"
-                        sx={{
-                          fontSize: 11,
-                          color: "rgba(255,255,255,0.7)",
-                        }}
-                      >
-                        · {svc.duration} min
-                      </Box>
-                      {/* 🆕 Round 28b17 — chip shows UNIQUE customers
-                          (`customersById`), not session count. Same
-                          person booking N times = 1 customer. Falls
-                          back to session count if no identity field
-                          could be resolved (legacy data). */}
-                      {(() => {
-                        const customerCount =
-                          customerCounts.get(svc.id) ?? 0;
-                        const sessionCount = servedCounts.get(svc.id) ?? 0;
-                        // Show whichever metric is available; prefer
-                        // unique customer count for honesty.
-                        const display = customerCount || sessionCount;
-                        if (display <= 0) return null;
-                        const label = customerCount
-                          ? customerCount === 1
-                            ? "customer"
-                            : "customers"
-                          : sessionCount === 1
-                            ? "session"
-                            : "sessions";
-                        return (
+                    </Box>
+
+                    {/* Middle row — DELIVERED chip alone, left-aligned.
+                        Round 28c23: swapped from the bottom action row
+                        with the practitioner avatars so that social-
+                        proof reads first ("X delivered") and the
+                        action row carries the cast (avatars) next to
+                        the Book CTA. */}
+                    {(() => {
+                      const sessionCount = servedCounts.get(svc.id) ?? 0;
+                      if (sessionCount <= 0) return null;
+                      const display = sessionCount;
+                      const label = display === 1 ? "session" : "sessions";
+                      return (
+                        <Box sx={{ mb: 1.25, display: "flex" }}>
                           <Box
                             component="span"
                             sx={{
-                              ml: "auto",
                               display: "inline-flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                              fontSize: 10.5,
-                              fontWeight: 600,
-                              color: "rgba(255,255,255,0.9)",
-                              background: "rgba(0,0,0,0.35)",
-                              px: 0.8,
-                              py: 0.3,
-                              borderRadius: 1,
-                              backdropFilter: "blur(6px)",
+                              alignItems: "baseline",
+                              gap: 0.6,
+                              px: 1.1,
+                              py: 0.5,
+                              borderRadius: 999,
+                              background:
+                                "linear-gradient(135deg, rgba(0, 0, 0, 0.33) 0%, rgba(254, 122, 82, 0.18) 100%)",
+                              border: "1px solid rgba(141, 132, 82, 0.58)",
+                              backdropFilter: "blur(12px)",
+                              WebkitBackdropFilter: "blur(12px)",
+                              boxShadow:
+                                "0 2px 10px rgba(254, 180, 9, 0.18), inset 0 1px 0 rgba(255,255,255,0.10)",
+                              fontFamily: SANS,
+                              whiteSpace: "nowrap",
                             }}
                           >
-                            <StarRoundedIcon
-                              sx={{ fontSize: 12, color: "#FBBF24" }}
-                            />
-                            {customerCount > 0
-                              ? `Used by ${customerCount.toLocaleString()} ${label}`
-                              : `${display.toLocaleString()} ${label}`}
+                            <Box
+                              component="span"
+                              sx={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                transform: "translateY(1px)",
+                              }}
+                            >
+                              <StarRoundedIcon
+                                sx={{
+                                  fontSize: 13,
+                                  color: "#fecd52",
+                                  filter:
+                                    "drop-shadow(0 1px 3px rgba(254, 220, 82, 0.55))",
+                                }}
+                              />
+                            </Box>
+                            <Box
+                              component="span"
+                              sx={{
+                                fontSize: 10,
+                                fontWeight: 600,
+                                letterSpacing: "0.12em",
+                                textTransform: "uppercase",
+                                color: "rgba(255,255,255,0.78)",
+                              }}
+                            >
+                              Delivered
+                            </Box>
+                            <Box
+                              component="span"
+                              sx={{
+                                fontFamily: SERIF,
+                                fontStyle: "italic",
+                                fontSize: 14,
+                                fontWeight: 600,
+                                color: "#fbf2e6",
+                                letterSpacing: "-0.01em",
+                              }}
+                            >
+                              {display.toLocaleString()}
+                            </Box>
+                            <Box
+                              component="span"
+                              sx={{
+                                fontSize: 10.5,
+                                fontWeight: 500,
+                                color: "rgba(255,255,255,0.82)",
+                                letterSpacing: "0.01em",
+                              }}
+                            >
+                              {label}
+                            </Box>
+                          </Box>
+                        </Box>
+                      );
+                    })()}
+
+                    {/* Bottom action row — avatars + availability +
+                        Book now. Avatars (the team) sit beside the
+                        action button so the practitioner-roster cue
+                        reinforces the moment of decision. */}
+                    <Box
+                      sx={{
+                        mt: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 1,
+                        flexWrap: "wrap",
+                        rowGap: 0.75,
+                      }}
+                    >
+                      {(() => {
+                        const offering = therapists.filter((t) =>
+                          t.servicesAvailable?.includes(svc.id)
+                        );
+                        if (offering.length === 0) return <Box />;
+                        const visible = offering.slice(0, 5);
+                        const remaining =
+                          offering.length - visible.length;
+                        const availableNow = offering.filter(
+                          (t) =>
+                            !t.isBooked &&
+                            !t.activeBooking &&
+                            !t.isHoliday &&
+                            t.statusOverride !== "resting"
+                        ).length;
+                        return (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.75,
+                              minWidth: 0,
+                            }}
+                          >
+                            {/* Avatar stack */}
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                flexShrink: 0,
+                              }}
+                            >
+                              {visible.map((t, idx) => (
+                                <Box
+                                  key={t.id}
+                                  component="img"
+                                  src={t.image}
+                                  alt={t.name}
+                                  sx={{
+                                    width: 22,
+                                    height: 22,
+                                    borderRadius: "50%",
+                                    border:
+                                      "1.5px solid rgba(255, 255, 255, 0.92)",
+                                    objectFit: "cover",
+                                    marginLeft: idx > 0 ? "-7px" : 0,
+                                    boxShadow:
+                                      "0 2px 6px rgba(0, 0, 0, 0.32)",
+                                    zIndex: visible.length - idx,
+                                    position: "relative",
+                                  }}
+                                />
+                              ))}
+                              {remaining > 0 && (
+                                <Box
+                                  sx={{
+                                    width: 22,
+                                    height: 22,
+                                    borderRadius: "50%",
+                                    border:
+                                      "1.5px solid rgba(255, 255, 255, 0.92)",
+                                    background: "rgba(0, 0, 0, 0.55)",
+                                    marginLeft: "-7px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontFamily: SANS,
+                                    fontSize: 9,
+                                    fontWeight: 700,
+                                    color: "#fff",
+                                    letterSpacing: "0.02em",
+                                  }}
+                                >
+                                  +{remaining}
+                                </Box>
+                              )}
+                            </Box>
+
+                            {/* Live availability dot + count */}
+                            {availableNow > 0 ? (
+                              <Box
+                                sx={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 0.5,
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    width: 7,
+                                    height: 7,
+                                    borderRadius: "50%",
+                                    background: "#16a34a",
+                                    boxShadow:
+                                      "0 0 0 2px rgba(22, 163, 74, 0.32), 0 0 8px rgba(22, 163, 74, 0.55)",
+                                  }}
+                                />
+                                <Box
+                                  component="span"
+                                  sx={{
+                                    fontFamily: SANS,
+                                    fontSize: 10.5,
+                                    fontWeight: 600,
+                                    color: "rgba(255, 255, 255, 0.92)",
+                                    letterSpacing: "0.02em",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  {availableNow} available
+                                </Box>
+                              </Box>
+                            ) : (
+                              <Box
+                                component="span"
+                                sx={{
+                                  fontFamily: SANS,
+                                  fontSize: 10.5,
+                                  fontWeight: 500,
+                                  color: "rgba(255, 255, 255, 0.7)",
+                                  letterSpacing: "0.02em",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {offering.length} therapists
+                              </Box>
+                            )}
                           </Box>
                         );
                       })()}
-                    </Box>
 
-                    <Button
-                      variant="contained"
-                      onClick={(e) => handleBookService(svc.id, e)}
-                      endIcon={<ArrowForwardRoundedIcon />}
-                      sx={{
-                        mt: 1.25,
-                        height: 38,
-                        borderRadius: 999,
-                        background:
-                          "linear-gradient(135deg, #FE0944, #FE7A52)",
-                        color: "#fff",
-                        fontFamily: SANS,
-                        fontSize: 13,
-                        fontWeight: 700,
-                        textTransform: "none",
-                        boxShadow: "0 6px 18px rgba(254, 9, 68, 0.35)",
-                        px: 2.5,
-                        "&:hover": {
+                      <Button
+                        variant="contained"
+                        onClick={(e) => handleBookService(svc.id, e)}
+                        sx={{
+                          height: 30,
+                          minWidth: 0,
+                          borderRadius: 999,
                           background:
-                            "linear-gradient(135deg, #E50840, #E56A47)",
-                        },
-                      }}
-                    >
-                      Book now
-                    </Button>
+                            "linear-gradient(135deg, #FE0944, #FE7A52)",
+                          color: "#fff",
+                          fontFamily: SANS,
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          letterSpacing: "0.02em",
+                          textTransform: "none",
+                          boxShadow: "0 4px 12px rgba(254, 9, 68, 0.32)",
+                          px: 1.75,
+                          py: 0.25,
+                          "&:hover": {
+                            background:
+                              "linear-gradient(135deg, #E50840, #E56A47)",
+                            boxShadow:
+                              "0 6px 16px rgba(254, 9, 68, 0.42)",
+                          },
+                        }}
+                      >
+                        Book now
+                      </Button>
+                    </Box>
                   </Box>
                 </Box>
               </motion.div>
-            ))}
+              );
+            })}
+
+            {/* Bundle promo card — Round 28c20 (re-themed light/cream).
+                Matches the cool-neutral / brand-red language of the
+                rest of the app. Cream-tinted card with brand-red border
+                + dual radial accents in opposite corners. Pricing is
+                quoted by the concierge, not hardcoded — so margin
+                stays under our control until a proper bundle pricing
+                model is wired into the booking flow. */}
+            <Box
+              component="a"
+              href="https://wa.me/66634350987?text=Hello%20SunRed%2C%20I%27m%20interested%20in%20a%20multi-session%20package."
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{
+                position: "relative",
+                p: 2.5,
+                mt: 1,
+                borderRadius: "18px",
+                background:
+                  "linear-gradient(135deg, #FFFFFF 0%, rgba(254, 234, 217, 0.5) 100%)",
+                border: "1.5px solid rgba(254, 9, 68, 0.22)",
+                boxShadow:
+                  "0 1px 2px rgba(254, 9, 68, 0.04), 0 12px 32px rgba(254, 9, 68, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7)",
+                textDecoration: "none",
+                color: "inherit",
+                display: "block",
+                overflow: "hidden",
+                transition:
+                  "transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease",
+                "&:hover": {
+                  transform: "translateY(-1px)",
+                  borderColor: "rgba(254, 9, 68, 0.34)",
+                  boxShadow:
+                    "0 1px 2px rgba(254, 9, 68, 0.06), 0 16px 38px rgba(254, 9, 68, 0.12)",
+                },
+                // Top-right warm radial — premium brand glow
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  top: -50,
+                  right: -50,
+                  width: 180,
+                  height: 180,
+                  borderRadius: "50%",
+                  background:
+                    "radial-gradient(circle, rgba(254, 9, 68, 0.18) 0%, rgba(254, 122, 82, 0.06) 50%, transparent 75%)",
+                  pointerEvents: "none",
+                },
+                // Bottom-left subtle clay echo
+                "&::after": {
+                  content: '""',
+                  position: "absolute",
+                  bottom: -70,
+                  left: -50,
+                  width: 200,
+                  height: 200,
+                  borderRadius: "50%",
+                  background:
+                    "radial-gradient(circle, rgba(184, 92, 60, 0.10) 0%, transparent 65%)",
+                  pointerEvents: "none",
+                },
+              }}
+            >
+              {/* Eyebrow — same warm clay tracking as everywhere else */}
+              <Box
+                sx={{
+                  position: "relative",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  fontSize: 10,
+                  letterSpacing: "0.24em",
+                  textTransform: "uppercase",
+                  color: "#b85c3c",
+                  fontWeight: 700,
+                  mb: 0.75,
+                  fontFamily: SANS,
+                  "&::before": {
+                    content: '""',
+                    width: "22px",
+                    height: "1px",
+                    background: "rgba(184, 92, 60, 0.55)",
+                  },
+                }}
+              >
+                The Restoration Series
+              </Box>
+
+              {/* Title — Fraunces serif with italic brand-red em */}
+              <Typography
+                sx={{
+                  position: "relative",
+                  fontFamily: SERIF,
+                  fontSize: 22,
+                  fontWeight: 400,
+                  color: "#2a1a14",
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1.2,
+                  mb: 1,
+                  "& em": { fontStyle: "italic", color: "#FE0944" },
+                }}
+              >
+                Three sessions, <em>one ritual.</em>
+              </Typography>
+
+              {/* Body — cool slate, italic touch */}
+              <Typography
+                sx={{
+                  position: "relative",
+                  fontFamily: SANS,
+                  fontSize: 13,
+                  color: "rgba(60, 30, 20, 0.72)",
+                  lineHeight: 1.65,
+                  mb: 1.75,
+                  maxWidth: "40ch",
+                }}
+              >
+                A private package crafted by our concierge — three
+                visits with the practitioner of your choice, scheduled
+                at your rhythm. Pricing tailored on enquiry.
+              </Typography>
+
+              {/* Inclusion bullets — three small ticks */}
+              <Box
+                sx={{
+                  position: "relative",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 0.5,
+                  mb: 2,
+                }}
+              >
+                {[
+                  "Preferred practitioner across visits — one substitution allowed",
+                  "Use within 90 days · ฿1,500 deposit secures your series",
+                  "Concierge follow-up between sessions",
+                ].map((line) => (
+                  <Box
+                    key={line}
+                    sx={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 0.75,
+                      fontFamily: SANS,
+                      fontSize: 12,
+                      color: "rgba(60, 30, 20, 0.78)",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 16,
+                        height: 16,
+                        flexShrink: 0,
+                        borderRadius: "50%",
+                        background: "rgba(254, 9, 68, 0.10)",
+                        color: "#FE0944",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        mt: "1px",
+                        "& svg": { fontSize: 10 },
+                      }}
+                    >
+                      <CheckRoundedIcon />
+                    </Box>
+                    {line}
+                  </Box>
+                ))}
+              </Box>
+
+              {/* CTA pill — brand gradient */}
+              <Box
+                sx={{
+                  position: "relative",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  px: 1.5,
+                  py: 0.7,
+                  borderRadius: 999,
+                  background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+                  color: "#fff",
+                  fontFamily: SANS,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: "0.02em",
+                  boxShadow: "0 4px 14px rgba(254, 9, 68, 0.35)",
+                }}
+              >
+                Speak with concierge →
+              </Box>
+            </Box>
+
             <Typography
-  sx={{
-    textAlign: "center",
-    mt: 3,
-    fontSize: 12.5,
-    color: "rgba(60, 30, 20, 0.55)",
-    lineHeight: 1.6,
-    whiteSpace: "pre-line", // สำคัญเพื่อให้รองรับการขึ้นบรรทัดใหม่
-    fontFamily: SANS, // ใช้ฟอนต์เดียวกับส่วนอื่นในแอป
-  }}
->
-  Looking for something specific?{"\n"}
-  <Box component="span" sx={{ color: "rgba(60, 30, 20, 0.8)", fontWeight: 500 }}>
-    Chat with our team
-  </Box> for more options.
-</Typography>
+              sx={{
+                textAlign: "center",
+                mt: 1.5,
+                fontSize: 12.5,
+                color: "rgba(60, 30, 20, 0.6)",
+                lineHeight: 1.65,
+                fontFamily: SANS,
+                fontStyle: "italic",
+                maxWidth: "32ch",
+                mx: "auto",
+                whiteSpace: "pre-line",
+              }}
+            >
+              {"Seeking something specific?\nOur concierge will tailor an arrangement."}
+            </Typography>
           </Box>
         )}
 
         {/* ─── About Us tab ─── */}
         {section === "about" && (
           <Box sx={{ px: 2, mt: 3, display: "flex", flexDirection: "column", gap: 2 }}>
-            {/* Hero card — single sentence promise */}
             <Box
               sx={{
                 p: 2.5,
@@ -606,36 +1524,34 @@ const ServicesPage: React.FC = () => {
               <Typography
                 sx={{
                   fontFamily: SERIF,
-                  fontSize: 18,
-                  fontWeight: 600,
+                  fontSize: 17,
+                  fontWeight: 500,
                   color: "#3c1e14",
                   letterSpacing: "-0.01em",
+                  lineHeight: 1.35,
                   mb: 1,
+                  "& em": { color: "#FE0944", fontStyle: "italic" },
                 }}
               >
                 Bangkok&apos;s most discreet outcall massage,{" "}
-                <Box
-                  component="em"
-                  sx={{ color: "#FE0944", fontStyle: "italic" }}
-                >
-                  delivered to you.
-                </Box>
+                <em>delivered to you.</em>
               </Typography>
               <Typography
                 sx={{
+                  fontFamily: SANS,
                   fontSize: 13.5,
                   lineHeight: 1.65,
                   color: "rgba(60,30,20,0.78)",
                 }}
               >
-                SunRed connects you with vetted independent therapists across
-                central Bangkok. Every profile is verified, every booking is
-                handled by a real human, and every detail from arrival to
-                payment stays between you and us.
+                SunRed is a private concierge for verified outcall wellness
+                across central Bangkok. Each practitioner is personally
+                screened, every reservation is handled by a real concierge,
+                and every detail from arrival to payment remains entirely
+                between you and us.
               </Typography>
             </Box>
 
-            {/* 4-pillar grid */}
             <Box
               sx={{
                 display: "grid",
@@ -655,6 +1571,14 @@ const ServicesPage: React.FC = () => {
                     display: "flex",
                     flexDirection: "column",
                     gap: 0.75,
+                    transition:
+                      "transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
+                    "&:hover": {
+                      transform: "translateY(-1px)",
+                      borderColor: "rgba(254, 9, 68, 0.14)",
+                      boxShadow:
+                        "0 1px 2px rgba(254, 9, 68, 0.05), 0 8px 22px rgba(254, 9, 68, 0.05)",
+                    },
                   }}
                 >
                   <Box
@@ -678,15 +1602,17 @@ const ServicesPage: React.FC = () => {
                       fontSize: 13.5,
                       fontWeight: 600,
                       color: "#3c1e14",
-                      lineHeight: 1.2,
+                      lineHeight: 1.25,
+                      letterSpacing: "-0.005em",
                     }}
                   >
                     {title}
                   </Typography>
                   <Typography
                     sx={{
+                      fontFamily: SANS,
                       fontSize: 11.5,
-                      lineHeight: 1.45,
+                      lineHeight: 1.5,
                       color: "rgba(60,30,20,0.7)",
                     }}
                   >
@@ -696,7 +1622,6 @@ const ServicesPage: React.FC = () => {
               ))}
             </Box>
 
-            {/* Service area card */}
             <Box
               sx={{
                 p: 2,
@@ -721,18 +1646,19 @@ const ServicesPage: React.FC = () => {
               </Box>
               <Typography
                 sx={{
+                  fontFamily: SANS,
                   fontSize: 12.5,
-                  lineHeight: 1.55,
+                  lineHeight: 1.6,
                   color: "rgba(60,30,20,0.72)",
                 }}
               >
                 Sukhumvit · Silom · Asok · Thonglor · Sathorn · Phrom Phong ·
-                Ari · Chidlom · Ploenchit. Outside the central zone? Message
-                admin we&apos;ll quote travel.
+                Ari · Chidlom · Ploenchit. For destinations beyond the central
+                districts, our concierge is pleased to provide a private
+                quotation.
               </Typography>
             </Box>
 
-            {/* Languages card */}
             <Box
               sx={{
                 p: 2,
@@ -757,282 +1683,799 @@ const ServicesPage: React.FC = () => {
               </Box>
               <Typography
                 sx={{
+                  fontFamily: SANS,
                   fontSize: 12.5,
-                  lineHeight: 1.55,
+                  lineHeight: 1.6,
                   color: "rgba(60,30,20,0.72)",
                 }}
               >
-                English · ไทย · 中文 · 日本語 · 한국어 — admin replies in your
-                language; many therapists speak two or more.
+                English · ไทย · 中文 · 日本語 · 한국어 — our concierge
+                corresponds in your language, and many practitioners are
+                fluent in two or more.
               </Typography>
             </Box>
           </Box>
         )}
 
         {/* ─── How to book tab ─── */}
-        {section === "how" && (
-          <Box sx={{ mt: 3 }}>
-            {/* 3-step visual */}
-            <HowItWorks />
+        {section === "how" && <HowItWorks />}
+      </Box>
 
-            <Box sx={{ px: 2, mt: 2 }}>
-              <Typography
-                sx={{
-                  fontFamily: SERIF,
-                  fontSize: 17,
-                  fontWeight: 600,
-                  color: "#3c1e14",
-                  mb: 1,
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                Frequently asked
-              </Typography>
+      {/* Quiz popup — narrow & tall, portrait-optimized */}
+      <Dialog
+        open={quizOpen}
+        onClose={() => {
+          setQuizOpen(false);
+          resetQuiz();
+        }}
+        PaperProps={{
+          sx: {
+            position: "relative",
+            borderRadius: "22px",
+            background:
+              "linear-gradient(180deg, #FFFFFF 0%, rgba(254, 234, 217, 0.45) 100%)",
+            border: "1.5px solid rgba(254, 9, 68, 0.18)",
+            m: 2.5,
+            width: "calc(100% - 40px)",
+            maxWidth: 340,
+            maxHeight: "calc(100vh - 64px)",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            boxShadow:
+              "0 1px 2px rgba(254, 9, 68, 0.06), 0 24px 56px rgba(60, 30, 20, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.7)",
+            // Top-right warm radial glow — same brand gesture as Bundle card
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              top: -60,
+              right: -60,
+              width: 200,
+              height: 200,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle, rgba(254, 9, 68, 0.16) 0%, rgba(254, 122, 82, 0.05) 55%, transparent 78%)",
+              pointerEvents: "none",
+              zIndex: 0,
+            },
+            // Bottom-left soft clay echo
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              bottom: -80,
+              left: -60,
+              width: 220,
+              height: 220,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle, rgba(184, 92, 60, 0.10) 0%, transparent 65%)",
+              pointerEvents: "none",
+              zIndex: 0,
+            },
+          },
+        }}
+        BackdropProps={{
+          sx: {
+            background: "rgba(15, 23, 42, 0.5)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+          },
+        }}
+      >
+        <Box
+          sx={{
+            position: "relative",
+            p: 0,
+            zIndex: 1,
+            overflowY: "auto",
+            maxHeight: "calc(100vh - 64px)",
+            "&::-webkit-scrollbar": { display: "none" },
+            scrollbarWidth: "none",
+          }}
+        >
+          <IconButton
+            aria-label="Close quiz"
+            onClick={() => {
+              setQuizOpen(false);
+              resetQuiz();
+            }}
+            size="small"
+            sx={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              zIndex: 1,
+              color: "rgba(60, 30, 20, 0.5)",
+              "&:hover": { color: "#FE0944" },
+            }}
+          >
+            <CloseRoundedIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+          <ServiceQuiz
+            step={quizStep}
+            setStep={setQuizStep}
+            answers={quizAnswers}
+            setAnswers={setQuizAnswers}
+            services={sortedServices}
+            onPick={(serviceId) => {
+              setQuizOpen(false);
+              resetQuiz();
+              void navigate(`/services/${encodeURIComponent(serviceId)}`);
+            }}
+            onReset={resetQuiz}
+          />
+        </Box>
+      </Dialog>
 
-              {/* Basics */}
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: "rgba(60,30,20,0.55)",
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  mt: 1,
-                  mb: 1,
-                }}
-              >
-                Basics
-              </Typography>
-              {FAQ_BASICS.map((item) => (
-                <FaqRow key={item.q} item={item} />
-              ))}
+      {/* Compare popup — portrait-friendly vertical card stack */}
+      <Dialog
+        open={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        PaperProps={{
+          sx: {
+            position: "relative",
+            borderRadius: "22px",
+            background:
+              "linear-gradient(180deg, #FFFFFF 0%, rgba(254, 234, 217, 0.42) 100%)",
+            border: "1.5px solid rgba(254, 9, 68, 0.18)",
+            m: 2.5,
+            width: "calc(100% - 40px)",
+            maxWidth: 380,
+            maxHeight: "calc(100vh - 64px)",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            boxShadow:
+              "0 1px 2px rgba(254, 9, 68, 0.06), 0 24px 56px rgba(60, 30, 20, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.7)",
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              top: -60,
+              right: -60,
+              width: 200,
+              height: 200,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle, rgba(254, 9, 68, 0.14) 0%, rgba(254, 122, 82, 0.05) 55%, transparent 78%)",
+              pointerEvents: "none",
+              zIndex: 0,
+            },
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              bottom: -80,
+              left: -60,
+              width: 220,
+              height: 220,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle, rgba(184, 92, 60, 0.10) 0%, transparent 65%)",
+              pointerEvents: "none",
+              zIndex: 0,
+            },
+          },
+        }}
+        BackdropProps={{
+          sx: {
+            background: "rgba(15, 23, 42, 0.5)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+          },
+        }}
+      >
+        <Box
+          sx={{
+            position: "relative",
+            zIndex: 1,
+            overflowY: "auto",
+            maxHeight: "calc(100vh - 64px)",
+            "&::-webkit-scrollbar": { display: "none" },
+            scrollbarWidth: "none",
+          }}
+        >
+          <IconButton
+            aria-label="Close compare"
+            onClick={() => setCompareOpen(false)}
+            size="small"
+            sx={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              zIndex: 1,
+              color: "rgba(60, 30, 20, 0.5)",
+              "&:hover": { color: "#FE0944" },
+            }}
+          >
+            <CloseRoundedIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+          <ServiceCompare
+            services={sortedServices}
+            onPick={(serviceId) => {
+              setCompareOpen(false);
+              void navigate(`/services/${encodeURIComponent(serviceId)}`);
+            }}
+          />
+        </Box>
+      </Dialog>
+    </Box>
+  );
+};
 
-              {/* Payment */}
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: "rgba(60,30,20,0.55)",
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  mt: 3,
-                  mb: 1,
-                }}
-              >
-                Payment & policy
-              </Typography>
-              {FAQ_PAYMENT.map((item) => (
-                <FaqRow key={item.q} item={item} />
-              ))}
+// ─── ServiceQuiz — inline 3-step recommender ─────────────────────────
+//   Three short questions → one recommended service, scored from
+//   mapped tags. No external state, fits inside ServicesPage as a
+//   collapsible panel below the action buttons.
+type QuizAnswers = {
+  intent?: string;
+  intensity?: string;
+  budget?: string;
+};
 
-              {/* Contact */}
-              <Box
-                sx={{
-                  mt: 3,
-                  p: 2,
-                  borderRadius: "16px",
-                  background: "#FFFFFF",
-                  border: "1px solid rgba(15, 23, 42, 0.06)",
-                  boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontFamily: SERIF,
-                    fontSize: 14.5,
-                    fontWeight: 600,
-                    color: "#3c1e14",
-                    mb: 1.25,
-                  }}
-                >
-                  Contact us
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1.5,
-                    mb: 1,
-                  }}
-                >
-                  <FaWhatsapp size={18} style={{ color: "#25D366" }} />
-                  <Typography
-                    sx={{ fontSize: 13, color: "rgba(60,30,20,0.85)" }}
-                  >
-                    WhatsApp:{" "}
-                    <Box
-                      component="a"
-                      href="https://wa.me/66634350987"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={{
-                        color: "#FE0944",
-                        fontWeight: 700,
-                        textDecoration: "none",
-                        "&:hover": { textDecoration: "underline" },
-                      }}
-                    >
-                      +66 63 435 0987
-                    </Box>
-                  </Typography>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                  <FaTelegramPlane size={18} style={{ color: "#229ED9" }} />
-                  <Typography
-                    sx={{ fontSize: 13, color: "rgba(60,30,20,0.85)" }}
-                  >
-                    Telegram:{" "}
-                    <Box
-                      component="a"
-                      href="https://t.me/SunRedvip_bkk"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={{
-                        color: "#FE0944",
-                        fontWeight: 700,
-                        textDecoration: "none",
-                        "&:hover": { textDecoration: "underline" },
-                      }}
-                    >
-                      @SunRedvip_bkk
-                    </Box>
-                  </Typography>
-                </Box>
-              </Box>
+const QUIZ_STEPS: Array<{
+  key: keyof QuizAnswers;
+  question: string;
+  options: Array<{ value: string; label: string }>;
+}> = [
+  {
+    key: "intent",
+    question: "What brings you here today?",
+    options: [
+      { value: "stress", label: "Unwind from stress" },
+      { value: "muscles", label: "Release tight muscles" },
+      { value: "ritual", label: "A premium ritual" },
+      { value: "energy", label: "Restore my energy" },
+    ],
+  },
+  {
+    key: "intensity",
+    question: "Preferred intensity?",
+    options: [
+      { value: "gentle", label: "Gentle & soothing" },
+      { value: "balanced", label: "Balanced" },
+      { value: "deep", label: "Deep & firm" },
+    ],
+  },
+  {
+    key: "budget",
+    question: "Comfortable budget?",
+    options: [
+      { value: "value", label: "Best value" },
+      { value: "mid", label: "Mid-range" },
+      { value: "premium", label: "Top-tier" },
+    ],
+  },
+];
 
-              {/* Additional links */}
-              <Box sx={{ mt: 2, display: "flex", gap: 1.25 }}>
-                <Button
-                  component="a"
-                  href="https://t.me/SunRedvip_bkk"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  variant="outlined"
-                  sx={{
-                    flex: 1,
-                    borderRadius: 999,
-                    borderColor: "rgba(15, 23, 42, 0.12)",
-                    color: "#3c1e14",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    textTransform: "none",
-                    py: 1,
-                    "&:hover": {
-                      borderColor: "rgba(15, 23, 42, 0.24)",
-                      background: "rgba(15, 23, 42, 0.04)",
-                    },
-                  }}
-                >
-                  SunRed Support
-                </Button>
-                <Button
-                  component="a"
-                  href="https://t.me/SunRed_BKK"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  variant="outlined"
-                  sx={{
-                    flex: 1,
-                    borderRadius: 999,
-                    borderColor: "rgba(15, 23, 42, 0.12)",
-                    color: "#3c1e14",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    textTransform: "none",
-                    py: 1,
-                    "&:hover": {
-                      borderColor: "rgba(15, 23, 42, 0.24)",
-                      background: "rgba(15, 23, 42, 0.04)",
-                    },
-                  }}
-                >
-                  Telegram channel
-                </Button>
-              </Box>
-              <Typography
-                sx={{
-                  textAlign: "center",
-                  mt: 2.5,
-                  fontSize: 12,
-                  color: "rgba(60,30,20,0.55)",
-                  lineHeight: 1.5,
-                }}
-              >
-                Need help with anything else? Reach out anytime admin is on
-                24/7.
-              </Typography>
-            </Box>
+function recommendService(
+  answers: QuizAnswers,
+  services: ReadonlyArray<{ id: string; name: string }>
+): string {
+  // Simple scoring: each service gets points for matching tags.
+  const scores: Record<string, number> = {
+    "xSR-Thai": 0,
+    "SR-Aroma": 0,
+    "SR-HJ2200": 0,
+    "SR-B2B3200": 0,
+  };
+
+  if (answers.intent === "stress") scores["SR-Aroma"] += 3;
+  if (answers.intent === "muscles") scores["SR-HJ2200"] += 3;
+  if (answers.intent === "ritual") scores["SR-B2B3200"] += 3;
+  if (answers.intent === "energy") scores["xSR-Thai"] += 3;
+
+  if (answers.intensity === "gentle") scores["SR-Aroma"] += 2;
+  if (answers.intensity === "balanced") scores["xSR-Thai"] += 2;
+  if (answers.intensity === "deep") {
+    scores["SR-HJ2200"] += 2;
+    scores["SR-B2B3200"] += 1;
+  }
+
+  if (answers.budget === "value") scores["xSR-Thai"] += 2;
+  if (answers.budget === "mid") {
+    scores["SR-Aroma"] += 2;
+    scores["SR-HJ2200"] += 1;
+  }
+  if (answers.budget === "premium") scores["SR-B2B3200"] += 3;
+
+  // Pick highest-scoring service that exists in the provided list.
+  const ranked = Object.entries(scores)
+    .sort(([, a], [, b]) => b - a)
+    .map(([id]) => id);
+  for (const id of ranked) {
+    if (services.some((s) => s.id === id)) return id;
+  }
+  return services[0]?.id ?? "";
+}
+
+const ServiceQuiz: React.FC<{
+  step: number;
+  setStep: (n: number) => void;
+  answers: QuizAnswers;
+  setAnswers: React.Dispatch<React.SetStateAction<QuizAnswers>>;
+  services: typeof import("../data/services").default;
+  onPick: (serviceId: string) => void;
+  onReset: () => void;
+}> = ({ step, setStep, answers, setAnswers, services, onPick, onReset }) => {
+  const isComplete = step >= QUIZ_STEPS.length;
+  const recommendedId = isComplete
+    ? recommendService(answers, services)
+    : null;
+  const recommended = recommendedId
+    ? services.find((s) => s.id === recommendedId)
+    : null;
+
+  if (isComplete && recommended) {
+    return (
+      <Box
+        component={motion.div}
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.32, ease: "easeOut" }}
+        sx={{
+          p: 2,
+          borderRadius: "16px",
+          background: "#FFFFFF",
+          border: "1px solid rgba(254, 9, 68, 0.18)",
+          boxShadow:
+            "0 1px 2px rgba(254, 9, 68, 0.05), 0 8px 22px rgba(254, 9, 68, 0.06)",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            fontSize: 9.5,
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            color: "#b85c3c",
+            fontWeight: 700,
+            mb: 0.75,
+            fontFamily: SANS,
+            "&::before": {
+              content: '""',
+              width: "18px",
+              height: "1px",
+              background: "rgba(184, 92, 60, 0.55)",
+            },
+          }}
+        >
+          We recommend
+        </Box>
+        <Typography
+          sx={{
+            fontFamily: SERIF,
+            fontSize: 20,
+            fontWeight: 500,
+            color: "#2a1a14",
+            letterSpacing: "-0.01em",
+            lineHeight: 1.25,
+            mb: 0.5,
+            "& em": { fontStyle: "italic", color: "#FE0944" },
+          }}
+        >
+          {recommended.name}
+        </Typography>
+        <Typography
+          sx={{
+            fontFamily: SANS,
+            fontSize: 12.5,
+            color: "rgba(60, 30, 20, 0.7)",
+            lineHeight: 1.55,
+            mb: 1.5,
+            fontStyle: "italic",
+          }}
+        >
+          {recommended.desc}
+        </Typography>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button
+            variant="contained"
+            onClick={() => onPick(recommended.id)}
+            sx={{
+              flex: 1,
+              height: 36,
+              borderRadius: 999,
+              background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+              color: "#fff",
+              fontFamily: SANS,
+              fontSize: 12.5,
+              fontWeight: 700,
+              textTransform: "none",
+              letterSpacing: "0.01em",
+              boxShadow: "0 4px 12px rgba(254, 9, 68, 0.32)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #E50840, #E56A47)",
+              },
+            }}
+          >
+            View this therapy
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={onReset}
+            sx={{
+              height: 36,
+              borderRadius: 999,
+              borderColor: "rgba(15, 23, 42, 0.12)",
+              color: "#3c1e14",
+              fontFamily: SANS,
+              fontSize: 12.5,
+              fontWeight: 600,
+              textTransform: "none",
+              "&:hover": {
+                borderColor: "rgba(254, 9, 68, 0.3)",
+                background: "rgba(254, 9, 68, 0.03)",
+              },
+            }}
+          >
+            Try again
+          </Button>
+        </Box>
+      </Box>
+    );
+  }
+
+  const current = QUIZ_STEPS[step];
+  if (!current) return null;
+  return (
+    <Box
+      component={motion.div}
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: "easeOut" }}
+      sx={{
+        p: 2,
+        borderRadius: "16px",
+        background: "#FFFFFF",
+        border: "1px solid rgba(15, 23, 42, 0.06)",
+        boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          mb: 1,
+        }}
+      >
+        <Box
+          sx={{
+            fontSize: 9.5,
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            color: "#b85c3c",
+            fontWeight: 700,
+            fontFamily: SANS,
+          }}
+        >
+          Step {step + 1} of {QUIZ_STEPS.length}
+        </Box>
+        <Box sx={{ display: "flex", gap: 0.5 }}>
+          {QUIZ_STEPS.map((_, i) => (
+            <Box
+              key={i}
+              sx={{
+                width: 18,
+                height: 3,
+                borderRadius: 999,
+                background:
+                  i < step
+                    ? "#FE0944"
+                    : i === step
+                      ? "linear-gradient(90deg, #FE0944, rgba(254, 9, 68, 0.2))"
+                      : "rgba(15, 23, 42, 0.08)",
+              }}
+            />
+          ))}
+        </Box>
+      </Box>
+      <Typography
+        sx={{
+          fontFamily: SERIF,
+          fontSize: 17,
+          fontWeight: 500,
+          color: "#2a1a14",
+          letterSpacing: "-0.01em",
+          lineHeight: 1.3,
+          mb: 1.25,
+        }}
+      >
+        {current.question}
+      </Typography>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+        {current.options.map((opt) => (
+          <Box
+            key={opt.value}
+            component="button"
+            onClick={() => {
+              setAnswers((prev) => ({ ...prev, [current.key]: opt.value }));
+              setStep(step + 1);
+            }}
+            sx={{
+              border: "1px solid rgba(15, 23, 42, 0.08)",
+              background: "#FFFFFF",
+              borderRadius: "12px",
+              px: 1.5,
+              py: 1.1,
+              fontFamily: SANS,
+              fontSize: 13,
+              fontWeight: 500,
+              color: "#3c1e14",
+              textAlign: "left",
+              cursor: "pointer",
+              letterSpacing: "0.005em",
+              transition:
+                "border-color 0.2s ease, background 0.2s ease, transform 0.18s ease, color 0.2s ease",
+              "&:hover": {
+                borderColor: "rgba(254, 9, 68, 0.32)",
+                background: "rgba(254, 9, 68, 0.03)",
+                color: "#FE0944",
+                transform: "translateY(-1px)",
+              },
+              "&:active": { transform: "scale(0.985)" },
+            }}
+          >
+            {opt.label}
           </Box>
-        )}
+        ))}
       </Box>
     </Box>
   );
 };
 
-// ─── Reusable FAQ row — Clean v3 cool palette ──────────────────────────
-const FaqRow: React.FC<{ item: FaqItem }> = ({ item }) => (
-  <Accordion
-    disableGutters
-    elevation={0}
-    sx={{
-      mb: 1,
-      borderRadius: "12px !important",
-      background: "#FFFFFF",
-      border: "1px solid rgba(15, 23, 42, 0.06)",
-      boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
-      overflow: "hidden",
-      "&::before": { display: "none" },
-    }}
-  >
-    <AccordionSummary
-      expandIcon={
-        <ExpandMoreRoundedIcon sx={{ color: "rgba(60,30,20,0.55)" }} />
-      }
-      sx={{
-        minHeight: 48,
-        "& .MuiAccordionSummary-content": { my: 1 },
-      }}
+// ─── ServiceCompare — Round 28c22 portrait-friendly vertical stack.
+//   Replaces the horizontal table that required side-scroll on mobile.
+//   Each service is now its own compact card with a name+price header
+//   and a 3-row attribute list. Tap-to-view in one tap — no scrolling
+//   sideways to read.
+const ServiceCompare: React.FC<{
+  services: typeof import("../data/services").default;
+  onPick: (serviceId: string) => void;
+}> = ({ services, onPick }) => {
+  const ATTRIBUTES: Array<{
+    label: string;
+    fn: (s: (typeof services)[number]) => string;
+  }> = [
+    {
+      label: "Best for",
+      fn: (s) => s.desc.split(".")[0].replace(/\.$/, ""),
+    },
+    {
+      label: "Tier",
+      fn: (s) => s.badge.replace(/_/g, " "),
+    },
+    {
+      label: "Duration",
+      fn: (s) =>
+        s.availableDurations && s.availableDurations.length > 0
+          ? `${s.availableDurations[0]}–${
+              s.availableDurations[s.availableDurations.length - 1]
+            } min`
+          : `${s.duration} min`,
+    },
+  ];
+
+  return (
+    <Box
+      component={motion.div}
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: "easeOut" }}
+      sx={{ p: 2, pb: 2.5 }}
     >
+      {/* Header */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+          fontSize: 10,
+          letterSpacing: "0.24em",
+          textTransform: "uppercase",
+          color: "#b85c3c",
+          fontWeight: 700,
+          mb: 0.5,
+          fontFamily: SANS,
+          "&::before": {
+            content: '""',
+            width: "22px",
+            height: "1px",
+            background: "rgba(184, 92, 60, 0.55)",
+          },
+        }}
+      >
+        Compare
+      </Box>
+      <Typography
+        sx={{
+          fontFamily: SERIF,
+          fontSize: 22,
+          fontWeight: 400,
+          color: "#2a1a14",
+          letterSpacing: "-0.02em",
+          lineHeight: 1.2,
+          mb: 0.5,
+          "& em": { fontStyle: "italic", color: "#FE0944" },
+        }}
+      >
+        At a <em>glance</em>
+      </Typography>
       <Typography
         sx={{
           fontFamily: SANS,
-          fontWeight: 600,
-          fontSize: 13.5,
-          color: "#3c1e14",
-          letterSpacing: "-0.005em",
+          fontSize: 12.5,
+          color: "rgba(60, 30, 20, 0.65)",
+          lineHeight: 1.5,
+          mb: 2,
         }}
       >
-        {item.q}
+        Tap any therapy to see full details and reserve.
       </Typography>
-    </AccordionSummary>
-    <AccordionDetails sx={{ pt: 0 }}>
-      {typeof item.a === "string" ? (
-        item.a
-          .split("\n\n")
-          .map((para, i) => (
-            <Typography
-              key={i}
+
+      {/* Vertical service cards */}
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+        {services.map((s) => (
+          <Box
+            key={s.id}
+            component="button"
+            onClick={() => onPick(s.id)}
+            sx={{
+              p: 1.75,
+              borderRadius: "14px",
+              background: "#FFFFFF",
+              border: "1px solid rgba(15, 23, 42, 0.06)",
+              boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
+              cursor: "pointer",
+              textAlign: "left",
+              fontFamily: SANS,
+              transition:
+                "transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease",
+              "&:hover": {
+                transform: "translateY(-1px)",
+                borderColor: "rgba(254, 9, 68, 0.22)",
+                boxShadow:
+                  "0 1px 2px rgba(254, 9, 68, 0.05), 0 8px 22px rgba(254, 9, 68, 0.06)",
+              },
+            }}
+          >
+            {/* Top row — name (left) · price (right) */}
+            <Box
               sx={{
-                fontFamily: SANS,
-                fontSize: 13,
-                lineHeight: 1.65,
-                color: "rgba(60,30,20,0.78)",
-                mb: 1,
-                "&:last-child": { mb: 0 },
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: 1,
+                mb: 1.25,
               }}
             >
-              {para}
-            </Typography>
-          ))
-      ) : (
-        <Box sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(60,30,20,0.78)" }}>
-          {item.a}
-        </Box>
-      )}
-    </AccordionDetails>
-  </Accordion>
-);
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Box
+                  sx={{
+                    fontSize: 9.5,
+                    fontWeight: 700,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    color: "#b85c3c",
+                    lineHeight: 1.2,
+                    mb: 0.25,
+                  }}
+                >
+                  {s.badge.toLowerCase().replace(/_/g, " ")}
+                </Box>
+                <Typography
+                  sx={{
+                    fontFamily: SERIF,
+                    fontSize: 16,
+                    fontWeight: 600,
+                    color: "#2a1a14",
+                    letterSpacing: "-0.01em",
+                    lineHeight: 1.25,
+                  }}
+                >
+                  {s.name}
+                </Typography>
+              </Box>
+              <Box sx={{ textAlign: "right", flexShrink: 0 }}>
+                <Box
+                  sx={{
+                    fontSize: 9.5,
+                    fontWeight: 600,
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
+                    color: "rgba(60, 30, 20, 0.5)",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  From
+                </Box>
+                <Typography
+                  sx={{
+                    fontFamily: SERIF,
+                    fontStyle: "italic",
+                    fontSize: 17,
+                    fontWeight: 600,
+                    color: "#FE0944",
+                    letterSpacing: "-0.01em",
+                    lineHeight: 1.15,
+                  }}
+                >
+                  ฿{s.price.toLocaleString()}
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Attribute rows */}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 0.5,
+                pt: 1,
+                borderTop: "1px solid rgba(15, 23, 42, 0.06)",
+              }}
+            >
+              {ATTRIBUTES.map((attr) => (
+                <Box
+                  key={attr.label}
+                  sx={{
+                    display: "flex",
+                    alignItems: "baseline",
+                    gap: 1,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      fontSize: 9.5,
+                      fontWeight: 700,
+                      letterSpacing: "0.14em",
+                      textTransform: "uppercase",
+                      color: "rgba(60, 30, 20, 0.5)",
+                      width: 70,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {attr.label}
+                  </Box>
+                  <Box
+                    sx={{
+                      fontSize: 12,
+                      color: "rgba(60, 30, 20, 0.82)",
+                      lineHeight: 1.45,
+                      flex: 1,
+                    }}
+                  >
+                    {attr.fn(s)}
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+
+            {/* CTA hint at bottom-right */}
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "flex-end",
+                mt: 1,
+              }}
+            >
+              <Box
+                sx={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.04em",
+                  color: "#FE0944",
+                }}
+              >
+                View →
+              </Box>
+            </Box>
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
+};
 
 export default ServicesPage;

@@ -522,7 +522,7 @@ const BookingFlowPage: React.FC = () => {
     // Don't auto-pop on reduced-motion devices — feels jarring without fade.
     if (
       typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ) {
       window.sessionStorage.setItem("sunred_travelTipShown", "1");
       setTravelTipShown(true);
@@ -560,7 +560,7 @@ const BookingFlowPage: React.FC = () => {
   useEffect(() => {
     // Trigger Maps SDK load when we have coords + need a route. The
     // GoogleMapsContext is idempotent (loads exactly once per session).
-    if (locationSet && therapist?.lat && therapist?.lng && !mapsReady) {
+    if (locationSet && therapist?.lat && therapist.lng && !mapsReady) {
       loadMaps();
     }
   }, [locationSet, therapist?.lat, therapist?.lng, mapsReady, loadMaps]);
@@ -571,14 +571,14 @@ const BookingFlowPage: React.FC = () => {
       setRoute(null);
       return;
     }
-    if (!therapist?.lat || !therapist?.lng) return;
+    if (!therapist?.lat || !therapist.lng) return;
     if (!mapsReady) return; // wait for SDK
     let cancelled = false;
     void (async () => {
       try {
         const r = await fetchDrivingDistance(
-          { lat: therapist.lat as number, lng: therapist.lng as number },
-          { lat: form.lat as number, lng: form.lng as number }
+          { lat: therapist.lat!, lng: therapist.lng! },
+          { lat: form.lat!, lng: form.lng! }
         );
         if (!cancelled) setRoute(r);
       } catch {

@@ -53,7 +53,7 @@ export function priceForDuration(
   service: Pick<MassageService, "id" | "price">,
   durationMin: number
 ): number {
-  const override = DURATION_PRICE_OVERRIDES[service.id]?.[durationMin];
+  const override = DURATION_PRICE_OVERRIDES[service.id][durationMin];
   if (override != null) return override;
 
   const multiplier = DURATION_MULTIPLIERS[durationMin];

@@ -81,7 +81,7 @@ const DURATION_LABELS: Record<number, { tag: string; tagColor?: string }> = {
 
 const BADGE_COLORS: Record<MassageService["badge"], { bg: string; fg: string }> = {
   SIGNATURE: { bg: "rgba(254, 9, 68, 0.95)", fg: "#fff" },
-  "BEST SELLER": { bg: "rgba(254, 122, 82, 0.95)", fg: "#fff" },
+  POPULAR: { bg: "rgba(254, 122, 82, 0.95)", fg: "#fff" },
   RECOMMEND: { bg: "rgba(184, 92, 60, 0.95)", fg: "#fff" },
   EXCLUSIVE: { bg: "rgba(60, 30, 20, 0.95)", fg: "#FEC9A7" },
 };

@@ -265,7 +265,7 @@ const SelectLocationPage: React.FC = () => {
       disableDefaultUI: true,
       zoomControl: true,
       gestureHandling: "greedy",
-    }) as unknown as {
+    }) as {
       addListener: (event: string, cb: (e: unknown) => void) => void;
       panTo: (latlng: { lat: number; lng: number }) => void;
       setZoom: (z: number) => void;

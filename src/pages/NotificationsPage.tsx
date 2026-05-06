@@ -86,7 +86,7 @@ const NotificationsPage: React.FC = () => {
       q,
       (snap) => {
         const list = snap.docs.map((d) => {
-          const data = d.data() as DocumentData;
+          const data = d.data();
           return {
             id: d.id,
             userId: (data.userId as string) ?? "",
@@ -144,9 +144,7 @@ const NotificationsPage: React.FC = () => {
           position: "sticky",
           top: 0,
           zIndex: 10,
-          background: "rgba(255, 248, 240, 0.92)",
-          backdropFilter: "blur(20px) saturate(180%)",
-          WebkitBackdropFilter: "blur(20px) saturate(180%)",
+          background: "#FFF8F0",
           borderBottom: "1px solid rgba(0, 0, 0, 0.04)",
           display: "flex",
           alignItems: "center",

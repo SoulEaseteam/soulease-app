@@ -2,7 +2,7 @@
 
 import type { Timestamp } from "firebase/firestore";
 
-export type Avail = "available" | "bookable" | "resting";
+export type Avail = "available" | "bookable" | "resting" | "holiday";
 export type StatusOverride = Avail | "Auto" | null;
 
 /** ค่าวันที่ที่อาจมาจาก Firestore (Timestamp) หรือ JS หรือ ISO string */

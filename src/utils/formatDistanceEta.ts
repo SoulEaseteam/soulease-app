@@ -46,8 +46,8 @@ export function formatDistanceEta(
   const hasEta = isUsableNumber(etaMin);
   if (!hasKm && !hasEta) return "—";
 
-  const kmText = hasKm ? `${km!.toFixed(1)} km` : "";
-  const etaText = hasEta ? `${Math.round(etaMin!)} min` : "";
+  const kmText = hasKm ? `${km.toFixed(1)} km` : "";
+  const etaText = hasEta ? `${Math.round(etaMin)} min` : "";
 
   // Time-first ordering — see header comment.
   if (kmText && etaText) return `${etaText} • ${kmText}`;

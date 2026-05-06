@@ -75,6 +75,7 @@ const STATUS_PILL: Record<Avail, { bg: string; color: string; label: string }> =
   available: { bg: "#16a34a", color: "#fff", label: "Available" },
   bookable: { bg: "#831843", color: "#FCEBDC", label: "In session" },
   resting: { bg: "rgba(184,92,60,0.18)", color: "#831843", label: "Resting" },
+  holiday: { bg: "rgba(254,9,68,0.10)", color: "#831843", label: "On holiday" },
 };
 
 const TherapistProfilePage: React.FC = () => {

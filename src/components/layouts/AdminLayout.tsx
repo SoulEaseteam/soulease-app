@@ -1,3 +1,9 @@
+// src/components/layouts/AdminLayout.tsx
+//
+// 🆕 Round 28c18 (founder 2026-05-06) — responsive sidebar.
+//   Mobile (< md): temporary drawer opened via hamburger + BottomNavGlass.
+//   Desktop (≥ md): permanent collapsible sidebar as before.
+
 import React, { useState, useEffect } from "react";
 import {
   AppBar,
@@ -17,10 +23,13 @@ import {
   Menu,
   MenuItem,
   Tooltip,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 
 import {
   Menu as MenuIcon,
+  Close as CloseIcon,
   Notifications as NotificationsIcon,
   Dashboard as DashboardIcon,
   People as UserIcon,
@@ -42,72 +51,60 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { collection, getDocs } from "firebase/firestore";
 import { useAuth } from "@/providers/AuthProvider";
 
-// ⭐ Bottom Navigation (Admin only)
 import BottomNavGlass from "@/components/layouts/BottomNavGlass";
-// 🆕 Round 28b21 — Phase 3: heartbeat to adminPresence/global so the
-//   customer-side "Admin online" badge can light up.
 import useAdminPresenceHeartbeat from "@/hooks/useAdminPresenceHeartbeat";
 
-const drawerWidth = 240;
+const DRAWER_FULL      = 240;
+const DRAWER_COLLAPSED = 60;
 
-// ================= MENU =================
 const menuItems = [
-  { label: "Dashboard", path: "/admin/dashboard", icon: <DashboardIcon /> },
-  { label: "Reports", path: "/admin/reports", icon: <ReportIcon /> },
-  { label: "New Booking", path: "/admin/bookings/add", icon: <AddBoxIcon /> },
-  { label: "Therapists", path: "/admin/therapists", icon: <TherapistIcon /> },
-  { label: "Users", path: "/admin/users", icon: <UserIcon /> },
-  { label: "Bookings", path: "/admin/bookings", icon: <BookingIcon /> },
-  { label: "Reviews", path: "/admin/reviews", icon: <ReviewIcon /> },
-  { label: "Blocked Devices", path: "/admin/blocked-devices", icon: <BlockIcon /> },
-  { label: "Pages List", path: "/admin/pages-list", icon: <ListAltIcon /> },
-  {
-    label: "Settings",
-    path: "/admin/advanced-settings",
-    icon: <SettingsIcon />,
-  },
+  { label: "Dashboard",    path: "/admin/dashboard",          icon: <DashboardIcon /> },
+  { label: "Reports",      path: "/admin/reports",            icon: <ReportIcon /> },
+  { label: "New Booking",  path: "/admin/bookings/add",       icon: <AddBoxIcon /> },
+  { label: "Bookings",     path: "/admin/bookings",           icon: <BookingIcon /> },
+  { label: "Therapists",   path: "/admin/therapists",         icon: <TherapistIcon /> },
+  { label: "Users",        path: "/admin/users",              icon: <UserIcon /> },
+  { label: "Reviews",      path: "/admin/reviews",            icon: <ReviewIcon /> },
+  { label: "Blocked",      path: "/admin/blocked-devices",    icon: <BlockIcon /> },
+  { label: "Pages",        path: "/admin/pages-list",         icon: <ListAltIcon /> },
+  { label: "Settings",     path: "/admin/advanced-settings",  icon: <SettingsIcon /> },
 ];
 
 const AdminLayout: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const theme     = useTheme();
+  const isMobile  = useMediaQuery(theme.breakpoints.down("md"));
+
   const { user, role, loading } = useAuth();
 
-  // ⚠️ Rules of Hooks: hooks ทุกตัวต้องเรียกก่อน early return เสมอ
-  // (เดิมประกาศ useState ภายหลัง if-return → React จะ throw บน render ถัดไป)
-  const [collapsed, setCollapsed] = useState<boolean>(() =>
+  const [collapsed,    setCollapsed]    = useState<boolean>(() =>
     localStorage.getItem("admin_sidebar_collapsed") === "true"
   );
+  const [mobileOpen,   setMobileOpen]   = useState(false);
+  const [notifications, setNotifications] = useState(0);
+  const [anchorEl,     setAnchorEl]     = useState<null | HTMLElement>(null);
 
-  const [notifications, setNotifications] = useState<number>(0);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
-  // 🆕 Round 28b21 — Phase 3: while AdminLayout is mounted AND admin is
-  //   authenticated, heartbeat to adminPresence/global every 30s. The
-  //   customer-side useAdminPresence hook lights up the "Admin online"
-  //   green pill. Hook is a no-op when `active` is false.
   useAdminPresenceHeartbeat(Boolean(user) && role === "admin");
 
-  // 🔔 load notifications
   useEffect(() => {
-    const load = async () => {
+    (async () => {
       try {
         const snap = await getDocs(collection(db, "notifications"));
         setNotifications(snap.size);
-      } catch {
-        setNotifications(0);
-      }
-    };
-    void load();
+      } catch { /* ignore */ }
+    })();
   }, []);
 
-  // ⏳ auth loading
-  if (loading) return null;
+  // close mobile drawer on navigation
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
-  // 🔒 admin only
+  if (loading) return null;
   if (!user || role !== "admin") return null;
 
-  const toggleSidebar = () => {
+  const toggleDesktopSidebar = () => {
     setCollapsed((prev) => {
       localStorage.setItem("admin_sidebar_collapsed", (!prev).toString());
       return !prev;
@@ -118,118 +115,227 @@ const AdminLayout: React.FC = () => {
     if (!window.confirm("Logout?")) return;
     try {
       await signOut(auth);
-      void navigate("/admin/login");
+      void navigate("/login");
     } catch (err) {
       console.error("Logout failed:", err);
     }
   };
 
+  // ── shared sidebar content ─────────────────────────────────────────
+  const sidebarContent = (compact: boolean) => (
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", background: "#fff" }}>
+      {/* brand strip */}
+      <Box
+        sx={{
+          height: 64, // matches AppBar
+          display: "flex",
+          alignItems: "center",
+          justifyContent: compact ? "center" : "flex-start",
+          px: compact ? 0 : 2,
+          gap: 1.25,
+          borderBottom: "1px solid rgba(15,23,42,0.07)",
+          flexShrink: 0,
+        }}
+      >
+        <Box
+          sx={{
+            width: 32, height: 32, borderRadius: "50%",
+            background: "linear-gradient(135deg,#FE0944,#FE7A52)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <Typography sx={{ color: "#fff", fontSize: 14, fontWeight: 800 }}>S</Typography>
+        </Box>
+        {!compact && (
+          <Box>
+            <Typography sx={{ fontSize: 13.5, fontWeight: 800, color: "#1a0805", lineHeight: 1.1 }}>SunRed</Typography>
+            <Typography sx={{ fontSize: 10.5, fontWeight: 600, color: "rgba(60,30,20,0.45)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Admin</Typography>
+          </Box>
+        )}
+      </Box>
+
+      {/* nav items */}
+      <List sx={{ pt: 1, px: 0.75, flex: 1, overflowY: "auto" }}>
+        {menuItems.map((item) => {
+          const active = location.pathname === item.path ||
+            (item.path !== "/admin/dashboard" && location.pathname.startsWith(item.path));
+          return (
+            <ListItemButton
+              key={item.path}
+              component={Link}
+              to={item.path}
+              selected={active}
+              sx={{
+                justifyContent: compact ? "center" : "flex-start",
+                py: 1,
+                px: compact ? 1 : 1.5,
+                borderRadius: "10px",
+                mb: 0.25,
+                color: active ? "#FE0944" : "#3c1e14",
+                "&:hover": {
+                  background: "rgba(254,9,68,0.04)",
+                },
+                "&.Mui-selected": {
+                  background: "rgba(254,9,68,0.08)",
+                  color: "#FE0944",
+                  "&:hover": { background: "rgba(254,9,68,0.12)" },
+                  "& .MuiListItemIcon-root": { color: "#FE0944" },
+                },
+                "& .MuiListItemIcon-root": {
+                  color: active ? "#FE0944" : "rgba(60,30,20,0.55)",
+                  minWidth: compact ? "auto" : 38,
+                },
+              }}
+            >
+              <ListItemIcon>
+                {item.icon}
+              </ListItemIcon>
+              {!compact && (
+                <ListItemText
+                  primary={item.label}
+                  primaryTypographyProps={{
+                    fontSize: 13.5,
+                    fontWeight: active ? 700 : 500,
+                    color: "inherit",
+                  }}
+                />
+              )}
+            </ListItemButton>
+          );
+        })}
+      </List>
+
+      {/* bottom: user info */}
+      {!compact && (
+        <Box
+          sx={{
+            px: 2, py: 1.5,
+            borderTop: "1px solid rgba(15,23,42,0.07)",
+            display: "flex", alignItems: "center", gap: 1,
+          }}
+        >
+          <Avatar sx={{ width: 28, height: 28, bgcolor: "rgba(254,9,68,0.10)", color: "#FE0944", fontSize: 13, fontWeight: 700 }}>
+            {user.email?.[0]?.toUpperCase()}
+          </Avatar>
+          <Typography sx={{ fontSize: 12, fontWeight: 600, color: "rgba(60,30,20,0.60)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+            {user.email}
+          </Typography>
+        </Box>
+      )}
+    </Box>
+  );
+
+  const desktopWidth = collapsed ? DRAWER_COLLAPSED : DRAWER_FULL;
+
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#fafafa" }}>
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f7f3f1" }}>
       <CssBaseline />
 
-      {/* ================= TOP BAR ================= */}
+      {/* ── Top AppBar ─────────────────────────────────────────────── */}
       <AppBar
         position="fixed"
         sx={{
           zIndex: (t) => t.zIndex.drawer + 1,
-          background: "linear-gradient(to right, #FE0944, #FE7E6D)",
+          background: "linear-gradient(135deg,#FE0944,#FE7E6D)",
+          boxShadow: "0 2px 12px rgba(254,9,68,0.25)",
         }}
       >
-        <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
+        <Toolbar sx={{ justifyContent: "space-between" }}>
           <Box display="flex" alignItems="center" gap={1}>
-            <IconButton color="inherit" onClick={toggleSidebar}>
-              <MenuIcon />
+            <IconButton
+              color="inherit"
+              onClick={isMobile ? () => setMobileOpen((v) => !v) : toggleDesktopSidebar}
+            >
+              {isMobile && mobileOpen ? <CloseIcon /> : <MenuIcon />}
             </IconButton>
-            <Typography fontWeight="bold">SunRed | Admin</Typography>
+            <Typography fontWeight={700} fontSize={15} letterSpacing="-0.01em">
+              SunRed Admin
+            </Typography>
           </Box>
 
-          <Box display="flex" alignItems="center" gap={2}>
+          <Box display="flex" alignItems="center" gap={1}>
             <Tooltip title="Notifications">
-              <IconButton color="inherit">
+              <IconButton color="inherit" size="small">
                 <Badge badgeContent={notifications} color="error">
-                  <NotificationsIcon />
+                  <NotificationsIcon fontSize="small" />
                 </Badge>
               </IconButton>
             </Tooltip>
 
-            <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
-              <Avatar sx={{ bgcolor: "#fff", color: "#FE0944" }}>
+            <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small">
+              <Avatar sx={{ width: 30, height: 30, bgcolor: "#fff", color: "#FE0944", fontSize: 14, fontWeight: 700 }}>
                 {user.email?.[0]?.toUpperCase()}
               </Avatar>
             </IconButton>
 
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={() => setAnchorEl(null)}
-            >
-              <MenuItem onClick={() => navigate("/admin/advanced-settings")}>
-                Settings
-              </MenuItem>
-              <MenuItem onClick={logout}>Logout</MenuItem>
+            <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
+              <MenuItem onClick={() => { void navigate("/admin/advanced-settings"); setAnchorEl(null); }}>Settings</MenuItem>
+              <MenuItem onClick={() => { void navigate("/profile"); setAnchorEl(null); }}>My Profile</MenuItem>
+              <MenuItem onClick={logout} sx={{ color: "#FE0944" }}>Logout</MenuItem>
             </Menu>
           </Box>
         </Toolbar>
       </AppBar>
 
-      {/* ================= SIDEBAR ================= */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          width: collapsed ? 70 : drawerWidth,
-          flexShrink: 0,
-          "& .MuiDrawer-paper": {
-            width: collapsed ? 70 : drawerWidth,
-            transition: "0.3s",
-            overflowX: "hidden",
-          },
-        }}
-      >
-        <Toolbar />
-        <Divider />
+      {/* ── Mobile: temporary drawer ───────────────────────────────── */}
+      {isMobile && (
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            "& .MuiDrawer-paper": {
+              width: DRAWER_FULL,
+              boxSizing: "border-box",
+              background: "#fff",
+              boxShadow: "4px 0 24px rgba(0,0,0,0.12)",
+            },
+          }}
+        >
+          {sidebarContent(false)}
+        </Drawer>
+      )}
 
-        <List>
-          {menuItems.map((item) => (
-            <ListItemButton
-              key={item.path}
-              component={Link}
-              to={item.path}
-              selected={location.pathname === item.path}
-              sx={{
-                justifyContent: collapsed ? "center" : "flex-start",
-                py: 1.3,
-              }}
-            >
-              <ListItemIcon sx={{ minWidth: collapsed ? "auto" : 40 }}>
-                {item.icon}
-              </ListItemIcon>
+      {/* ── Desktop: permanent collapsible drawer ─────────────────── */}
+      {!isMobile && (
+        <Drawer
+          variant="permanent"
+          sx={{
+            width: desktopWidth,
+            flexShrink: 0,
+            "& .MuiDrawer-paper": {
+              width: desktopWidth,
+              transition: "width 0.25s cubic-bezier(0.4,0,0.2,1)",
+              overflowX: "hidden",
+              boxSizing: "border-box",
+              background: "#fff",
+              borderRight: "1px solid rgba(15,23,42,0.07)",
+            },
+          }}
+        >
+          {sidebarContent(collapsed)}
+        </Drawer>
+      )}
 
-              {!collapsed && (
-                <ListItemText
-                  primary={item.label}
-                  primaryTypographyProps={{ fontSize: 14 }}
-                />
-              )}
-            </ListItemButton>
-          ))}
-        </List>
-      </Drawer>
-
-      {/* ================= CONTENT ================= */}
+      {/* ── Page content ───────────────────────────────────────────── */}
       <Box
+        component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          mt: 8,
-          width: `calc(100% - ${collapsed ? 70 : drawerWidth}px)`,
+          pt: "64px", // AppBar height
+          pb: { xs: "80px", md: 3 }, // room for BottomNavGlass on mobile
+          px: 0,
+          minWidth: 0,
+          overflow: "hidden",
         }}
       >
         <Outlet />
       </Box>
 
-      {/* ================= BOTTOM NAV (ADMIN ONLY) ================= */}
-      <BottomNavGlass />
+      {/* ── BottomNavGlass: visible on mobile only ─────────────────── */}
+      {isMobile && <BottomNavGlass />}
     </Box>
   );
 };

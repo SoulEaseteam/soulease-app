@@ -243,6 +243,7 @@ const AdminTherapistsPage: React.FC = () => {
         <Select
           size="small"
           value={p.row.statusOverride || "Auto"}
+          MenuProps={{ PaperProps: { sx: { background: "#fff", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)" } } }}
           onChange={(e) => {
             const value = e.target.value as TherapistStatusOverride;
 
@@ -410,6 +411,7 @@ const AdminTherapistsPage: React.FC = () => {
                     size="small"
                     fullWidth
                     value={t.statusOverride || "Auto"}
+                    MenuProps={{ PaperProps: { sx: { background: "#fff", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)" } } }}
                     onChange={(e) => {
                       const value = e.target.value as TherapistStatusOverride;
                       updateDebounced(t.id, "statusOverride", value);
@@ -517,6 +519,7 @@ const AdminTherapistsPage: React.FC = () => {
           value={filter}
           onChange={(e) => setFilter(e.target.value as "all" | TherapistStatus)}
           sx={{ minWidth: 140 }}
+          MenuProps={{ PaperProps: { sx: { background: "#fff", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)" } } }}
         >
           <MenuItem value="all">All</MenuItem>
           <MenuItem value="available">Available</MenuItem>

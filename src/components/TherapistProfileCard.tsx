@@ -202,7 +202,7 @@ function parseSpecChips(t: Therapist): string[] {
   const chips: string[] = [];
 
   // Height — append "CM" if not already part of the value.
-  if (f?.height) {
+  if (f.height) {
     const h = String(f.height).trim();
     if (h) {
       const upper = h.toUpperCase();
@@ -211,7 +211,7 @@ function parseSpecChips(t: Therapist): string[] {
   }
 
   // Body type — uppercase, single word
-  if (f?.bodyType) {
+  if (f.bodyType) {
     const b = String(f.bodyType).trim();
     if (b) chips.push(b.toUpperCase());
   }
@@ -272,7 +272,7 @@ function startingPriceForTherapist(
   t: Therapist,
   servicesById: Map<string, MassageService>
 ): number | null {
-  const ids = ((t.servicesAvailable ?? t.services ?? []) as string[]) || [];
+  const ids = ((t.servicesAvailable ?? t.services ?? [])) || [];
   let min: number | null = null;
   for (const id of ids) {
     const svc = servicesById.get(id);
@@ -515,11 +515,11 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
     return adjusted.toFixed(1);
   }, [profile.rating, reviewCount, reviewRatingSum]);
   const languages = useMemo(
-    () => parseLanguagePills(profile.features?.language),
+    () => parseLanguagePills(profile.features.language),
     [profile.features]
   );
   const specChips = useMemo(() => parseSpecChips(profile), [profile]);
-  const age = profile.features?.age?.toString().trim() || null;
+  const age = profile.features.age.toString().trim() || null;
   const fromPrice = useMemo(
     () => startingPriceForTherapist(profile, servicesById),
     [profile, servicesById]
@@ -884,7 +884,7 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
         {/* ===== Footer info ===== */}
         <Box sx={{ p: "8px 10px 10px" }}>
          
-          {(specChips.length > 0 || (profile.gallery?.length ?? 0) > 0) && (
+          {(specChips.length > 0 || (profile.gallery.length ?? 0) > 0) && (
             <Stack
               direction="row"
               spacing={0.4}
@@ -914,10 +914,10 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
               {/* Round 28av — Gallery chip (V1 style). Tap to open the
                   photo viewer dialog. Only shows when there are extra
                   gallery photos beyond the cover. */}
-              {(profile.gallery?.length ?? 0) > 0 && (
+              {(profile.gallery.length ?? 0) > 0 && (
                 <Box
                   role="button"
-                  aria-label={`View ${profile.gallery?.length ?? 0} photos of ${profile.name}`}
+                  aria-label={`View ${profile.gallery.length ?? 0} photos of ${profile.name}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     setGalleryIndex(0);
@@ -943,7 +943,7 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
                   }}
                 >
                   <PhotoLibraryRoundedIcon sx={{ fontSize: 11 }} />
-                  GALLERY ({profile.gallery?.length ?? 0})
+                  GALLERY ({profile.gallery.length ?? 0})
                 </Box>
               )}
             </Stack>
@@ -1189,7 +1189,7 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
                   opacity: 0.7,
                 }}
               >
-                {galleryIndex + 1} / {profile.gallery?.length ?? 0}
+                {galleryIndex + 1} / {profile.gallery.length ?? 0}
               </Typography>
             </Box>
             <IconButton

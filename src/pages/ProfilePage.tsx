@@ -1,146 +1,435 @@
 // src/pages/ProfilePage.tsx
-import React from "react";
-import {
-  Box,
-  Avatar,
-  Typography,
-  Button,
-  Stack,
-  Paper,
-} from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
-import { useAuth } from "@/providers/AuthProvider";
+//
+// 🆕 Round 28c16 (founder 2026-05-06) — full redesign.
+//   Dark hero + avatar ring + booking count + staggered sections.
+//   Feels like Airbnb / Grab premium tier.
 
+import React, { useEffect, useState } from "react";
+import { Box, Avatar, Typography, CircularProgress } from "@mui/material";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import {
+  ClockCounterClockwise,
+  Heart,
+  Bell,
+  Translate,
+  ChatsCircle,
+  SignOut,
+  CaretRight,
+  CheckCircle,
+  Gauge,
+} from "phosphor-react";
+import { collection, query, where, getCountFromServer } from "firebase/firestore";
+import { signOut } from "firebase/auth";
+
+import { auth, db } from "@/lib/firebase";
+import { useAuth } from "@/providers/AuthProvider";
+import { fonts } from "@/theme";
+
+const SERIF = '"Fraunces", Georgia, serif';
+const SANS  = '"Inter", system-ui, sans-serif';
+
+// ── helpers ─────────────────────────────────────────────────────────
+function memberSince(creationTime?: string) {
+  if (!creationTime) return null;
+  const d = new Date(creationTime);
+  return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
+function initials(name?: string | null, email?: string | null) {
+  if (name) return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+  if (email) return email[0].toUpperCase();
+  return "G";
+}
+
+// ── fade-up animation ────────────────────────────────────────────────
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 18 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.4, ease: "easeOut" as const, delay },
+});
+
+// ── row component ─────────────────────────────────────────────────────
+interface RowProps {
+  icon: React.ReactNode;
+  label: string;
+  sub?: string;
+  onClick?: () => void;
+  danger?: boolean;
+}
+const Row: React.FC<RowProps> = ({ icon, label, sub, onClick, danger }) => (
+  <Box
+    onClick={onClick}
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      gap: 1.5,
+      px: 2,
+      py: 1.5,
+      cursor: onClick ? "pointer" : "default",
+      userSelect: "none",
+      WebkitTapHighlightColor: "transparent",
+      "&:active": onClick ? { background: "rgba(0,0,0,0.03)" } : {},
+    }}
+  >
+    <Box
+      sx={{
+        width: 36,
+        height: 36,
+        borderRadius: "12px",
+        background: danger ? "rgba(254,9,68,0.08)" : "rgba(60,30,20,0.06)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        color: danger ? "#FE0944" : "rgba(60,30,20,0.75)",
+      }}
+    >
+      {icon}
+    </Box>
+    <Box sx={{ flex: 1, minWidth: 0 }}>
+      <Typography
+        sx={{
+          fontFamily: SANS,
+          fontSize: 14,
+          fontWeight: 600,
+          color: danger ? "#FE0944" : "#1a0805",
+          lineHeight: 1.2,
+        }}
+      >
+        {label}
+      </Typography>
+      {sub && (
+        <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "rgba(60,30,20,0.5)", mt: 0.2 }}>
+          {sub}
+        </Typography>
+      )}
+    </Box>
+    {onClick && (
+      <CaretRight size={16} color={danger ? "#FE0944" : "rgba(60,30,20,0.35)"} />
+    )}
+  </Box>
+);
+
+// ── section card ─────────────────────────────────────────────────────
+const Section: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Box
+    sx={{
+      mx: 2,
+      borderRadius: "18px",
+      background: "#fff",
+      border: "1px solid rgba(15,23,42,0.06)",
+      boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 4px 16px rgba(15,23,42,0.05)",
+      overflow: "hidden",
+      "& > *:not(:last-child)": {
+        borderBottom: "1px solid rgba(15,23,42,0.05)",
+      },
+    }}
+  >
+    {children}
+  </Box>
+);
+
+// ── main page ─────────────────────────────────────────────────────────
 const ProfilePage: React.FC = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const { user, role } = useAuth();
+  const navigate  = useNavigate();
+  const [bookingCount, setBookingCount] = useState<number | null>(null);
+
+  // pull total booking count for this user
+  useEffect(() => {
+    if (!user) return;
+    const q = query(
+      collection(db, "bookings"),
+      where("userId", "==", user.uid),
+      where("status", "in", ["confirmed", "completed"])
+    );
+    getCountFromServer(q)
+      .then((snap) => setBookingCount(snap.data().count))
+      .catch(() => setBookingCount(null));
+  }, [user]);
 
   const handleLogout = async () => {
     await signOut(auth);
     void navigate("/login");
   };
 
+  // ── Guest state ───────────────────────────────────────────────────
+  if (!user) {
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          background: "linear-gradient(160deg,#1a0805 0%,#3c1010 60%,#2a0808 100%)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 3,
+          px: 3,
+          pb: 10,
+        }}
+      >
+        <motion.div {...fadeUp(0)} style={{ textAlign: "center" }}>
+          <Box
+            component="img"
+            src="/images/icon/sunred-logo.png"
+            sx={{ width: 72, height: 72, borderRadius: "50%", mb: 2, opacity: 0.9 }}
+          />
+          <Typography sx={{ fontFamily: SERIF, fontSize: 26, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
+            Welcome to SunRed
+          </Typography>
+          <Typography sx={{ fontFamily: SANS, fontSize: 14, color: "rgba(255,255,255,0.55)", mt: 1 }}>
+            Sign in to view your bookings and profile
+          </Typography>
+        </motion.div>
+        <motion.div {...fadeUp(0.1)} style={{ width: "100%", maxWidth: 320 }}>
+          <Box
+            onClick={() => navigate("/login")}
+            sx={{
+              background: "linear-gradient(135deg,#FE0944,#FE7A52)",
+              color: "#fff",
+              borderRadius: 999,
+              py: 1.6,
+              textAlign: "center",
+              fontFamily: SANS,
+              fontSize: 15,
+              fontWeight: 700,
+              cursor: "pointer",
+              boxShadow: "0 8px 24px rgba(254,9,68,0.35)",
+              letterSpacing: "0.01em",
+            }}
+          >
+            Sign in
+          </Box>
+        </motion.div>
+      </Box>
+    );
+  }
+
+  const since = memberSince(user.metadata.creationTime);
+
   return (
     <Box
       sx={{
         minHeight: "100vh",
-        background: "linear-gradient(145deg,#ffdddd,#ffe9e2,#ffffff)",
-        display: "flex",
-        justifyContent: "center",
-        py: 4,
+        background: "linear-gradient(180deg,#F7F3F1 0%,#F0EBE8 100%)",
+        pb: 12,
+        fontFamily: SANS,
       }}
     >
-      <Paper
-        elevation={3}
+      {/* ── Hero ── */}
+      <Box
         sx={{
-          maxWidth: 430,
-          width: "100%",
-          borderRadius: 4,
-          p: 3,
-          background: "rgba(255,255,255,0.65)",
-          backdropFilter: "blur(14px)",
-          boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+          background: "linear-gradient(160deg,#1a0805 0%,#3c1010 55%,#2d0909 100%)",
+          pt: 7,
+          pb: 5,
+          px: 3,
+          position: "relative",
+          overflow: "hidden",
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            bottom: -40,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 280,
+            height: 80,
+            borderRadius: "50%",
+            background: "rgba(254,9,68,0.12)",
+            filter: "blur(30px)",
+            pointerEvents: "none",
+          },
         }}
       >
-        <Stack alignItems="center" spacing={2}>
-          {/* Avatar */}
-          <Avatar
-            src={user?.photoURL || "/images/user-default.png"}
-            sx={{
-              width: 100,
-              height: 100,
-              mb: 1,
-              border: "4px solid rgba(255,255,255,0.7)",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-            }}
-          />
-
-          {/* Name */}
-          <Typography variant="h6" fontWeight="bold">
-            {user?.displayName || "User"}
-          </Typography>
-
-          {/* Email */}
-          <Typography variant="body2" color="text.secondary">
-            {user?.email || "No email"}
-          </Typography>
-
-          <Box width="100%" mt={3}>
-            <Stack spacing={1.6}>
-              {/* Booking History */}
-              <Button
-                fullWidth
-                variant="contained"
-                sx={{
-                  py: 1.3,
-                  borderRadius: 3,
-                  background: "#ff6f61",
-                  "&:hover": { background: "#ff543f" },
-                  fontWeight: 600,
-                }}
-                onClick={() => navigate("/booking/history")}
-              >
-                Booking History
-              </Button>
-
-              {/* Settings */}
-              <Button
-                fullWidth
-                variant="outlined"
-                sx={{
-                  py: 1.3,
-                  borderRadius: 3,
-                  fontWeight: 600,
-                  borderColor: "rgba(0,0,0,0.3)",
-                }}
-                onClick={() => navigate("/settings")}
-              >
-                Settings
-              </Button>
-
-              {/* Logout */}
-              <Button
-                fullWidth
-                variant="outlined"
-                color="error"
-                sx={{
-                  py: 1.3,
-                  borderRadius: 3,
-                  fontWeight: 600,
-                  borderColor: "rgba(255,0,0,0.4)",
-                }}
-                onClick={handleLogout}
-              >
-                Logout
-              </Button>
-            </Stack>
-          </Box>
-        </Stack>
-
-        {/* Guest message */}
-        {!user && (
-          <Box mt={4} textAlign="center">
-            <Typography fontSize={13} color="text.secondary">
-              You are not logged in.
-            </Typography>
-            <Button
-              variant="contained"
+        <motion.div {...fadeUp(0)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+          {/* Avatar with gradient ring */}
+          <Box sx={{ position: "relative" }}>
+            <Box
               sx={{
-                mt: 2,
-                borderRadius: 3,
-                py: 1.1,
-                px: 4,
-                fontWeight: 600,
+                width: 90,
+                height: 90,
+                borderRadius: "50%",
+                background: "linear-gradient(135deg,#FE0944,#FE7A52)",
+                p: "2.5px",
+                boxShadow: "0 0 0 3px rgba(254,9,68,0.18), 0 8px 32px rgba(0,0,0,0.35)",
               }}
-              onClick={() => navigate("/login")}
             >
-              Login
-            </Button>
+              <Avatar
+                src={user.photoURL || undefined}
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  background: "linear-gradient(135deg,#2d0909,#5c1c1c)",
+                  fontSize: 30,
+                  fontWeight: 700,
+                  fontFamily: SERIF,
+                  color: "#fff",
+                }}
+              >
+                {!user.photoURL && initials(user.displayName, user.email)}
+              </Avatar>
+            </Box>
           </Box>
+
+          {/* Name + verified */}
+          <Box sx={{ textAlign: "center" }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.75 }}>
+              <Typography sx={{ fontFamily: SERIF, fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
+                {user.displayName || "Guest"}
+              </Typography>
+              <CheckCircle size={18} color="#FE7A52" weight="fill" />
+            </Box>
+            <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(255,255,255,0.50)", mt: 0.4 }}>
+              {user.email}
+            </Typography>
+            {since && (
+              <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "rgba(255,255,255,0.35)", mt: 0.6, letterSpacing: "0.04em" }}>
+                MEMBER SINCE {since.toUpperCase()}
+              </Typography>
+            )}
+          </Box>
+        </motion.div>
+
+        {/* Stat strip */}
+        <motion.div {...fadeUp(0.1)}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1,
+              mt: 3.5,
+              p: 1.75,
+              borderRadius: "18px",
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              backdropFilter: "blur(10px)",
+            }}
+          >
+            {[
+              {
+                value: bookingCount === null
+                  ? <CircularProgress size={14} sx={{ color: "rgba(255,255,255,0.5)" }} />
+                  : <>{bookingCount}</>,
+                label: "Bookings",
+              },
+              { value: "VIP", label: "Status" },
+              { value: "24/7", label: "Support" },
+            ].map((s, i) => (
+              <Box
+                key={i}
+                sx={{
+                  flex: 1,
+                  textAlign: "center",
+                  borderRight: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none",
+                }}
+              >
+                <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1 }}>
+                  {s.value}
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "rgba(255,255,255,0.40)", mt: 0.4, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                  {s.label}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </motion.div>
+      </Box>
+
+      {/* ── Sections ── */}
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 3 }}>
+
+        {/* Admin Panel shortcut — only visible to admins */}
+        {role === "admin" && (
+          <motion.div {...fadeUp(0.12)}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
+              Admin
+            </Typography>
+            <Section>
+              <Row
+                icon={<Gauge size={18} weight="duotone" />}
+                label="Admin Dashboard"
+                sub="Bookings · Therapists · Reports"
+                onClick={() => navigate("/admin/dashboard")}
+              />
+            </Section>
+          </motion.div>
         )}
-      </Paper>
+
+        {/* Bookings */}
+        <motion.div {...fadeUp(0.15)}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
+            Reservations
+          </Typography>
+          <Section>
+            <Row
+              icon={<ClockCounterClockwise size={18} />}
+              label="Booking History"
+              sub="View all past & upcoming sessions"
+              onClick={() => navigate("/booking/history")}
+            />
+            <Row
+              icon={<Heart size={18} />}
+              label="Saved Therapists"
+              sub="Your favourite practitioners"
+              onClick={() => navigate("/user/saved")}
+            />
+          </Section>
+        </motion.div>
+
+        {/* Account */}
+        <motion.div {...fadeUp(0.2)}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
+            Account
+          </Typography>
+          <Section>
+            <Row
+              icon={<Bell size={18} />}
+              label="Notifications"
+              sub="Booking alerts & updates"
+              onClick={() => navigate("/notifications")}
+            />
+            <Row
+              icon={<Translate size={18} />}
+              label="Language"
+              sub="EN · TH · ZH · JA · KO"
+              onClick={() => {}}
+            />
+          </Section>
+        </motion.div>
+
+        {/* Support */}
+        <motion.div {...fadeUp(0.25)}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
+            Support
+          </Typography>
+          <Section>
+            <Row
+              icon={<ChatsCircle size={18} />}
+              label="Contact Concierge"
+              sub="Available 24 hours a day"
+              onClick={() => window.open("https://wa.me/66634350987", "_blank")}
+            />
+          </Section>
+        </motion.div>
+
+        {/* Sign out */}
+        <motion.div {...fadeUp(0.3)}>
+          <Section>
+            <Row
+              icon={<SignOut size={18} />}
+              label="Sign out"
+              onClick={handleLogout}
+              danger
+            />
+          </Section>
+        </motion.div>
+
+        <motion.div {...fadeUp(0.35)}>
+          <Typography sx={{ textAlign: "center", fontFamily: SANS, fontSize: 11, color: "rgba(60,30,20,0.3)", mt: 1 }}>
+            SunRed · Bangkok · sunred.vip
+          </Typography>
+        </motion.div>
+      </Box>
     </Box>
   );
 };

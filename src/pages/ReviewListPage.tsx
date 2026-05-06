@@ -303,10 +303,8 @@ const ReviewListPage: React.FC = () => {
             sx={{
               p: 2.5,
               borderRadius: 4,
-              background: "rgba(255, 255, 255, 0.85)",
-              backdropFilter: "blur(20px) saturate(180%)",
-              WebkitBackdropFilter: "blur(20px) saturate(180%)",
-              border: "1px solid rgba(255, 255, 255, 0.6)",
+              background: "#fff",
+              border: "1px solid rgba(60,30,20,0.08)",
               boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
               display: "flex",
               gap: 2.5,

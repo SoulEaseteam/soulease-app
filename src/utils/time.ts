@@ -39,7 +39,7 @@ dayjs.extend(isSameOrAfter);
 
 /** Canonical SunRed timezone — never read from process.env or user
  *  locale. Bangkok is always UTC+7 with no DST shift. */
-export const SUNRED_TZ = "Asia/Bangkok" as const;
+export const SUNRED_TZ = "Asia/Bangkok";
 
 /** Anything that can stand in for a moment in time. */
 export type TimeLike =
@@ -58,7 +58,7 @@ export function toBKK(v: TimeLike): Dayjs | null {
 
   // Already a Dayjs
   if (dayjs.isDayjs(v)) {
-    return (v as Dayjs).isValid() ? (v as Dayjs).tz(SUNRED_TZ) : null;
+    return (v).isValid() ? (v).tz(SUNRED_TZ) : null;
   }
 
   // Firestore Timestamp → Date
@@ -152,8 +152,8 @@ export function prettyHHMM(hhmm: string | null | undefined): string {
   if (!hhmm) return "";
   const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm);
   if (!m) return hhmm;
-  const hh = parseInt(m[1]!, 10);
-  const mm = parseInt(m[2]!, 10);
+  const hh = parseInt(m[1], 10);
+  const mm = parseInt(m[2], 10);
   if (Number.isNaN(hh) || Number.isNaN(mm)) return hhmm;
   const period = hh >= 12 ? "PM" : "AM";
   // 12-hour conversion: 0 → 12 AM, 12 → 12 PM, 13 → 1 PM, etc.

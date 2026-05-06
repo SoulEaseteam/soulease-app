@@ -21,13 +21,9 @@ const PrivateRoute = ({ children, requiredRoles = [] }: PrivateRouteProps) => {
 
   // ไม่ได้ login → เด้งกลับ Login พร้อมจำหน้าเดิมไว้ redirect กลับ
   if (!user) {
-    // admin path → admin login, อื่นๆ → user login
-    const loginPath = location.pathname.startsWith("/admin")
-      ? "/admin/login"
-      : "/login";
     return (
       <Navigate
-        to={loginPath}
+        to="/login"
         replace
         state={{ from: location.pathname + location.search }}
       />

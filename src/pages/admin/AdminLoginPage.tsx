@@ -109,8 +109,7 @@ const AdminLoginPage: React.FC = () => {
           borderRadius: 4,
           p: 4,
           textAlign: "center",
-          background: "rgba(255,255,255,0.9)",
-          backdropFilter: "blur(12px)",
+          background: "#fff",
         }}
       >
         <Box sx={{ mb: 2 }}>
