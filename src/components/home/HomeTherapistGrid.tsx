@@ -256,7 +256,10 @@ const HomeTherapistGrid: React.FC = () => {
   return (
     <Box
       component="section"
-      id="therapist-grid"
+      // 🆕 Round 28b61 — `id="therapist-grid"` removed (founder
+      //   "ลบ -grid"). All anchor links pointing at it now navigate
+      //   to plain "/" since the home page lands on this section
+      //   below the hero anyway. No more #-suffix in the URL.
       aria-label="available therapists"
       sx={{
         margin: "20px 0 4px",

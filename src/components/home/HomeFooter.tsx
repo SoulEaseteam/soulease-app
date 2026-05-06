@@ -78,7 +78,11 @@ const COLS: FooterCol[] = [
       {
         labelKey: "footer.therapists",
         defaultLabel: "Browse therapists",
-        to: "/#therapist-grid",
+        // 🆕 Round 28b61 — dropped #therapist-grid hash (founder
+        //   feedback "ลบ -grid"). Plain "/" already lands on the
+        //   therapist grid section so the hash anchor was redundant
+        //   AND polluted the URL with #therapist-grid.
+        to: "/",
       },
       { labelKey: "footer.services", defaultLabel: "Our services", to: "/services" },
       {
@@ -172,7 +176,7 @@ const HomeFooter: React.FC = () => {
       {/* ── Book CTA ── */}
       <Box
         component="button"
-        onClick={() => void navigate("/#therapist-grid")}
+        onClick={() => void navigate("/")}
         sx={{
           position: "relative", zIndex: 1,
           width: "100%", marginBottom: "16px",

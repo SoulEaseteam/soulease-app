@@ -212,16 +212,29 @@ const SelectLocationPage: React.FC = () => {
     ...incoming,
   });
   const [geoLoading, setGeoLoading] = useState(false);
-  // 🆕 Round 28b31 — flag set TRUE briefly after a map tap, so we can
-  //   show a "📍 Address updated to match pin" toast and reassure the
-  //   customer that the visible address matches where the therapist
-  //   will actually be sent.
+
   const [pinJustMoved, setPinJustMoved] = useState(false);
   useEffect(() => {
     if (!pinJustMoved) return;
     const t = window.setTimeout(() => setPinJustMoved(false), 2400);
     return () => window.clearTimeout(t);
   }, [pinJustMoved]);
+
+  // 🆕 Round 28b62 (founder 2026-05-05) — GPS-pinned hint.
+  //   When the user taps "Use my current location" we drop the pin
+  //   on raw lat/lng. GPS accuracy is typically 10-50 m in BKK so the
+  //   pin can land in the parking lot / sidewalk instead of at the
+  //   actual building entrance. Founder: "ใส่หมายเหตุเลื่อนหมุดให้ตรง
+  //   ชื่อสถานที่". This banner reminds the customer to drag the pin
+  //   onto the right building so the address card name matches what
+  //   the therapist will see. Auto-dismiss when the user moves the
+  //   pin (treats it as "instruction acted on") or after 9 seconds.
+  const [gpsHint, setGpsHint] = useState(false);
+  useEffect(() => {
+    if (!gpsHint) return;
+    const t = window.setTimeout(() => setGpsHint(false), 9000);
+    return () => window.clearTimeout(t);
+  }, [gpsHint]);
 
   // ── Lazy-load Google Maps SDK on mount
   useEffect(() => {
@@ -289,17 +302,7 @@ const SelectLocationPage: React.FC = () => {
       placeMarker(initLat, initLng);
     }
 
-    // Tap on the map → drop a pin + reverse-geocode.
-    // 🆕 Round 28b31 (founder 2026-05-04) — Address ↔ pin sync fix.
-    //   Bug: customer types/picks address "A" via search, then taps the
-    //   map at point "B" to nudge the pin. Pin moves to B, but locationName
-    //   stayed as "A" because reverseGeocode preserves it via `?? `.
-    //   Result: Telegram booking text says address A but map link points
-    //   to B — admin sends therapist to wrong place.
-    //   Fix: any deliberate map click is treated as "I want this exact
-    //   spot" — clear both locationName and locationAddress BEFORE
-    //   reverseGeocode runs, so the new lat/lng's formatted_address
-    //   wins. Toast feedback so customer sees the address refresh.
+   
     map.addListener("click", (e: unknown) => {
       const ev = e as {
         latLng?: { lat: () => number; lng: () => number };
@@ -319,17 +322,10 @@ const SelectLocationPage: React.FC = () => {
         lng,
       }));
       setPinJustMoved(true);
-      // 🆕 Round 28b47 (founder 2026-05-05) — Pin ↔ address sync.
-      //   When the user taps a POI label on the map (Supalai City
-      //   Resort, etc.), Google fires `click` with `placeId` set AND
-      //   pops its own InfoWindow showing the place name. Previously
-      //   we ignored placeId, so the address card below ended up with
-      //   reverseGeocode's street address ("300 Pracha Uthit Rd")
-      //   while the pin's InfoWindow showed the POI name — they didn't
-      //   match. Now: suppress Google's InfoWindow with `e.stop()`,
-      //   pull the Place's full details, and write `locationName` =
-      //   place.name + `locationAddress` = formatted_address so the
-      //   card mirrors the pin.
+      // 🆕 Round 28b62 — User moved the pin → instructional hint
+      //   dismissed (treats the move as "did the thing the hint asked").
+      setGpsHint(false);
+
       if (ev.placeId) {
         ev.stop?.();
         fetchPlaceDetails(ev.placeId, lat, lng);
@@ -545,6 +541,10 @@ const SelectLocationPage: React.FC = () => {
         }
         reverseGeocode(lat, lng);
         setGeoLoading(false);
+        // 🆕 Round 28b62 — surface the "drag pin to match building"
+        //   hint AFTER reverseGeocode kicks off so the customer sees
+        //   it next to the address card.
+        setGpsHint(true);
       },
       () => setGeoLoading(false),
       { enableHighAccuracy: true, timeout: 10000 }
@@ -840,6 +840,66 @@ const SelectLocationPage: React.FC = () => {
           {geoLoading ? "Locating…" : "Use my current location"}
         </Button>
 
+        {/* 🆕 Round 28b62 (founder 2026-05-05) — GPS hint banner.
+            Founder: "ใส่หมายเหตุเลื่อนหมุดให้ตรงชื่อสถานที่".
+            GPS accuracy in BKK is typically 10-50 m so the pin can
+            land in a parking lot or sidewalk instead of at the actual
+            building entrance. This banner appears for ~9 seconds (or
+            until the customer drags the pin) reminding them to fine-
+            tune the pin so the address-card name matches the building
+            they're actually in. Bilingual TH/EN for tourist + local. */}
+        {gpsHint && (
+          <Box
+            role="status"
+            aria-live="polite"
+            sx={{
+              padding: "12px 14px",
+              borderRadius: "14px",
+              background:
+                "linear-gradient(180deg, rgba(245, 158, 11, 0.10), rgba(245, 158, 11, 0.05))",
+              border: "1px solid rgba(245, 158, 11, 0.35)",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "10px",
+              animation: "fadeSlideIn 0.32s ease-out",
+              "@keyframes fadeSlideIn": {
+                from: { opacity: 0, transform: "translateY(-4px)" },
+                to: { opacity: 1, transform: "translateY(0)" },
+              },
+            }}
+          >
+            <MyLocationRoundedIcon
+              sx={{ fontSize: 20, color: "#b45309", flexShrink: 0, marginTop: "1px" }}
+            />
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  color: "#92400e",
+                  lineHeight: 1.35,
+                  marginBottom: "2px",
+                }}
+              >
+                ตรวจสอบหมุดให้ตรงสถานที่ของคุณ
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "12px",
+                  color: "rgba(60, 30, 20, 0.7)",
+                  lineHeight: 1.45,
+                }}
+              >
+                หมุดอยู่ที่ตำแหน่ง GPS ของคุณ — ลากหมุดบนแผนที่ให้ตรงอาคาร
+                ถ้าชื่อสถานที่ไม่ถูก. <em>(Drag the pin to your exact spot if
+                the place name doesn&rsquo;t match.)</em>
+              </Typography>
+            </Box>
+          </Box>
+        )}
+
         {/* Picked place card — elevated white tile with red accent corner */}
         {form.lat != null && (
           <Box
@@ -911,12 +971,12 @@ const SelectLocationPage: React.FC = () => {
                     paddingX: "8px",
                     paddingY: "3px",
                     borderRadius: "999px",
-                    background: "rgba(22, 163, 74, 0.10)",
-                    color: "#15803d",
+                    background: "1.5px solid rgba(20, 184, 166, 0.35)",
+                    color: "#14b8a6",
                     fontFamily: SANS,
                     fontSize: "11px",
                     fontWeight: 700,
-                    border: "1px solid rgba(22, 163, 74, 0.22)",
+                    border: "1.5px solid rgba(20, 184, 166, 0.35)",
                     animation: "addrSync 0.3s ease-out",
                     "@keyframes addrSync": {
                       "0%": { opacity: 0, transform: "translateY(-4px)" },
@@ -927,7 +987,11 @@ const SelectLocationPage: React.FC = () => {
                     },
                   }}
                 >
-                  📍 Address updated to match pin
+                  <svg xmlns="http://www.w3.org/2000/svg" 
+                  height="26px" viewBox="0 -960 960 960" 
+                  width="26px" fill="#14b8a6">
+                  <path d="M360-440h80v-110h80v110h80v-190l-120-80-120 80v190Zm120 254q122-112 181-203.5T720-552q0-109-69.5-178.5T480-800q-101 0-170.5 69.5T240-552q0 71 59 162.5T480-186Zm0 106Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Zm0-480Z"/>
+                  </svg> Address updated to match pin
                 </Box>
               )}
             </Box>

@@ -155,7 +155,9 @@ const NICHE_TILES: NicheTile[] = [
     defaultTitle: "Express",
     subKey: "hero.niche.express.sub",
     defaultSub: "Within 1 hour",
-    path: "/?available=now#therapist-grid",
+    // 🆕 Round 28b61 — dropped #therapist-grid hash anchor (founder
+    //   "ลบ -grid"). Filter still applies via ?available=now.
+    path: "/?available=now",
     tint: "peach",
     badge: { text: "LIVE", tone: "live" },
   },
