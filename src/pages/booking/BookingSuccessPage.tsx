@@ -55,7 +55,9 @@ import ShowerRoundedIcon from "@mui/icons-material/ShowerRounded";
 import WaterDropRoundedIcon from "@mui/icons-material/WaterDropRounded";
 import { useNavigate, useParams } from "react-router-dom";
 import { doc, getDoc, type DocumentData } from "firebase/firestore";
-import dayjs from "dayjs";
+// 🆕 Round 28b59 — `dayjs` direct import dropped (was only used by
+//   the now-removed onAddToCalendar handler). All time formatting
+//   goes through fmtBKK / nowBKK / toBKK from @/utils/time.
 // 🆕 Round 28an — BKK-anchored time helpers.
 import { fmtBKK, sameDayBKK, nowBKK, toBKK } from "@/utils/time";
 // 🆕 Round 28b16 — centralized service/payment label catalog
@@ -109,12 +111,13 @@ const BookingSuccessPage: React.FC = () => {
   const startAt: Date | null = booking?.startAt?.toDate
     ? (booking.startAt.toDate() as Date)
     : null;
-  const endAt: Date | null = booking?.endAt?.toDate
-    ? (booking.endAt.toDate() as Date)
-    : null;
+  // 🆕 Round 28b59 — `endAt` derivation removed (was only consumed
+  //   by the dead onAddToCalendar handler). If a future feature needs
+  //   the end timestamp, recompute via startAt + duration*60000.
   // 🆕 Round 28an — all wall-clock display anchored to BKK.
-  // 🆕 Round 28b28 — `HH:mm A` (e.g. "20:00 PM") site-wide canonical format.
-  const timeLabel = fmtBKK(startAt, "HH:mm A");
+  // 🆕 Round 28b57 — `h:mm A` (e.g. "8:00 PM") canonical format —
+  //   matches prettyHHMM/fmtBKKTime site-wide.
+  const timeLabel = fmtBKK(startAt, "h:mm A");
   const dateLabel = startAt
     ? sameDayBKK(startAt, nowBKK())
       ? "Today"
@@ -142,79 +145,12 @@ const BookingSuccessPage: React.FC = () => {
   const therapistIdForRebook =
     (booking?.therapistId as string | undefined) ?? undefined;
 
-  // ── Action handlers ──────────────────────────────────────────────────
-  const onChat = () => {
-    // Telegram admin chat (live booking notification channel). When LINE is
-    // wired we'll prefer that over Telegram. Fallback opens the home page
-    // contact tile.
-    const tgUser = "sunredbkk"; // tentative — replace with real handle
-    window.open(`https://t.me/${tgUser}`, "_blank", "noopener,noreferrer");
-  };
-
-  const onTrack = () => {
-    const url =
-      (booking?.mapUrl as string | undefined) ||
-      (booking?.address
-        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-            booking.address as string
-          )}`
-        : null);
-    if (url) window.open(url, "_blank", "noopener,noreferrer");
-  };
-
-  const onAddToCalendar = () => {
-    if (!startAt || !endAt) return;
-    const dt = (d: Date) =>
-      dayjs(d).format("YYYYMMDDTHHmmss"); // local time, no Z
-    const escape = (s: string) =>
-      s.replace(/\\/g, "\\\\").replace(/,/g, "\\,").replace(/;/g, "\\;");
-    // 🆕 Round 28b16 — service label resolved from immutable serviceId
-    //   via catalog so renames in data/services.ts propagate everywhere
-    //   (calendar export included). Falls back to legacy serviceName
-    //   field if catalog can't resolve (deleted service).
-    const svcLabel = getServiceLabel(
-      booking?.serviceId as string | undefined,
-      booking?.serviceName as string | undefined
-    );
-    const summary = `SunRed · ${svcLabel} with ${therapistName}`;
-    const description =
-      [
-        `Booking ref: ${refCode}`,
-        `Therapist: ${therapistName}`,
-        `Service: ${svcLabel} · ${
-          (booking?.duration as number) ?? "?"
-        } min`,
-        `Total: ฿${(
-          (booking?.totalPrice as number) ??
-          (booking?.servicePrice as number) ??
-          0
-        ).toLocaleString()}`,
-      ].join("\\n");
-    const location = (booking?.address as string) ?? "";
-    const ics = [
-      "BEGIN:VCALENDAR",
-      "VERSION:2.0",
-      "PRODID:-//SunRed//Booking//EN",
-      "BEGIN:VEVENT",
-      `UID:${id}@sunred.vip`,
-      `DTSTAMP:${dt(new Date())}`,
-      `DTSTART:${dt(startAt)}`,
-      `DTEND:${dt(endAt)}`,
-      `SUMMARY:${escape(summary)}`,
-      `DESCRIPTION:${escape(description)}`,
-      `LOCATION:${escape(location)}`,
-      "END:VEVENT",
-      "END:VCALENDAR",
-    ].join("\r\n");
-    const blob = new Blob([ics], { type: "text/calendar" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `sunred-${refCode}.ics`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  };
-
-  const onReschedule = () => void navigate("/booking/history");
+  // 🆕 Round 28b59 (founder 2026-05-05) — Stripped 4 dead handlers
+  //   (onChat / onTrack / onAddToCalendar / onReschedule) that were
+  //   left behind from the v1 success page. The current screen uses
+  //   the 2×2 quick-actions grid + Contact Admin CTA (task #77)
+  //   instead — none of those four functions were referenced.
+  //   ~70 lines removed; eslint warnings dropped 4 entries.
 
   // ── Render ───────────────────────────────────────────────────────────
   return (

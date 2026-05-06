@@ -165,13 +165,11 @@ Always end with hospitality:
 
 ---
 
-## 5. Add-ons (Bangkok night reality)
+## 5. Add-ons (Plan A — finalised Round 28c26)
 
-> ⚠️ Late-night surcharge `+฿200` was View's open question — may be
-> removed or reframed as "24/7 standard rates" feature. Pending decision.
-
-### Late-night service `+฿200` (TBD)
-"Arrival from 00:00 onwards — discreet hotel entry"
+Dropped late-night surcharge (no hidden fees). Replaced with a
+margin-friendly daytime promo that drives off-peak demand. Four
+add-ons, all transparent or quoted by concierge.
 
 ### Beyond-central travel `quoted`
 "Reservations outside Sukhumvit · Silom · Asok · Sathorn · Thonglor"
@@ -179,8 +177,19 @@ Always end with hospitality:
 ### Extend session `tier-priced`
 "Add 30 or 60 minutes to your reservation"
 
+### Premium aromatic oil `+฿150`
+"Lavender, neroli, or sandalwood blend"
+
 ### Duo experience `quoted` (VIP)
 "Two practitioners, one session — reserved for VIP"
+
+### Daytime Serenity (daily promo, 12:00–18:00)
+"A complimentary warm-up, on us. Reserve any therapy between
+12:00–18:00 and receive a 15-minute scalp & shoulder warm-up —
+normally +฿200. Daily."
+
+→ Margin-friendly: complimentary upgrade (~฿100 in practitioner
+   time) vs empty slot (฿0). Drives demand to off-peak.
 
 ---
 

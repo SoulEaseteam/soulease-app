@@ -53,7 +53,12 @@ export function priceForDuration(
   service: Pick<MassageService, "id" | "price">,
   durationMin: number
 ): number {
-  const override = DURATION_PRICE_OVERRIDES[service.id][durationMin];
+  // Round 28c27 — optional chain: most services have NO entry in
+  //   DURATION_PRICE_OVERRIDES, so `[service.id]` is undefined and
+  //   accessing `[durationMin]` would throw "Cannot read properties
+  //   of undefined (reading '60')". Optional chaining returns
+  //   undefined cleanly so the multiplier fallback below kicks in.
+  const override = DURATION_PRICE_OVERRIDES[service.id]?.[durationMin];
   if (override != null) return override;
 
   const multiplier = DURATION_MULTIPLIERS[durationMin];
