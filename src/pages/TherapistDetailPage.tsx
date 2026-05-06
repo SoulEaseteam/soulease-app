@@ -695,7 +695,7 @@ const TherapistDetailPage: React.FC = () => {
     : "resting";
 
   const livePillStatus: "online" | "busy" | "offline" =
-    engineStatus === "resting"
+    engineStatus === "resting" || engineStatus === "holiday"
       ? "offline"
       : engineStatus === "bookable" || activeBooking
         ? "busy"
@@ -810,15 +810,17 @@ const TherapistDetailPage: React.FC = () => {
           The 'Next available' time is the active booking's endAt, so as
           soon as someone confirms a booking the label updates everywhere
           via the onSnapshot subscription. */}
-      <Box sx={{ marginTop: "4px" }}>
-        <StatusPill
-          nextBookingAt={
-            livePillStatus === "online" ? nextBookingAt : null
-          }
-          status={livePillStatus}
-          nextAvailable={liveNextAvailable}
-        />
-      </Box>
+      {(livePillStatus === "online" || livePillStatus === "busy") && (
+        <Box sx={{ marginTop: "4px" }}>
+          <StatusPill
+            nextBookingAt={
+              livePillStatus === "online" ? nextBookingAt : null
+            }
+            status={livePillStatus}
+            nextAvailable={liveNextAvailable}
+          />
+        </Box>
+      )}
 
       <PickerSection
         title={

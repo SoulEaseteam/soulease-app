@@ -653,7 +653,7 @@ const BookingSuccessPage: React.FC = () => {
                   );
                   // Prefer LINE on mobile, fall back to WhatsApp.
                   // Both deep-links auto-open the right app on iOS/Android.
-                  const lineUrl = `https://line.me/R/oaMessage/@sunredbkk/?${message}`;
+                  const lineUrl = `https://line.me/R/ti/p/@sunred.bkk?from=page&searchId=sunred.bkk`;
                   const waUrl = `https://wa.me/66634350987?text=${message}`;
                   // Open LINE first; if user has no LINE installed, browser
                   // will fall back to the web LINE which still works.

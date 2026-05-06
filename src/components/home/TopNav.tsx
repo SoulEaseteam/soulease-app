@@ -16,7 +16,7 @@
 // Visual recipe stays verbatim from `.nav` in sunred-home1.html — only
 // behavior was added, no pixel-level changes.
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   IconButton,
@@ -164,6 +164,20 @@ const TopNav: React.FC = () => {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [distanceOpen, setDistanceOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const prevY = useRef(0);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 30);
+      if (y > 80) setHidden(y > prevY.current);
+      prevY.current = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const goto = (path: string) => {
     setDrawerOpen(false);
@@ -194,13 +208,19 @@ const TopNav: React.FC = () => {
       <Box
         component="nav"
         sx={{
-          // verbatim from .nav
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           padding: "8px 18px 14px",
           position: "relative",
           zIndex: 10,
+          transform: hidden ? "translateY(-100%)" : "translateY(0)",
+          transition: "transform 0.28s ease, background 0.2s ease, box-shadow 0.2s ease",
+          background: scrolled ? "rgba(255,248,240,0.92)" : "transparent",
+          backdropFilter: scrolled ? "blur(12px)" : "none",
+          WebkitBackdropFilter: scrolled ? "blur(12px)" : "none",
+          boxShadow: scrolled ? "0 1px 0 rgba(126,30,46,0.08)" : "none",
+          borderBottom: scrolled ? "1px solid rgba(255,255,255,0.6)" : "none",
         }}
       >
         {/* Menu button — opens drawer */}

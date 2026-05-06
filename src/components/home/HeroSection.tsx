@@ -123,7 +123,7 @@ interface NicheTile {
 }
 
 // 🆕 Round 28n — concierge LINE handle (mirrors AdminFloatingChat).
-const LINE_CONCIERGE_URL = "https://lin.ee/uqvdwWt";
+const LINE_CONCIERGE_URL = "https://line.me/R/ti/p/@sunred.bkk?from=page&searchId=sunred.bkk";
 
 // Three niches, three intents. Add a fourth ONLY if it represents a
 // distinct customer journey — never a service synonym.

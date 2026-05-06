@@ -142,7 +142,7 @@ const HomeTherapistGrid: React.FC = () => {
         // typo on statusOverride can leak a non-Avail string at runtime.
         /* eslint-disable @typescript-eslint/no-unnecessary-condition */
         const safeStatus: Avail =
-          status === "available" || status === "bookable" || status === "resting"
+          status === "available" || status === "bookable" || status === "resting" || status === "holiday"
             ? status
             : "resting";
         /* eslint-enable @typescript-eslint/no-unnecessary-condition */
@@ -176,6 +176,7 @@ const HomeTherapistGrid: React.FC = () => {
       available: 1,
       bookable: 2,
       resting: 3,
+      holiday: 4,
     };
 
     const distanceFor = (t: Therapist): number => {
@@ -207,6 +208,11 @@ const HomeTherapistGrid: React.FC = () => {
       const stA = statusOrder[a.computedStatus ?? "resting"];
       const stB = statusOrder[b.computedStatus ?? "resting"];
       if (stA !== stB) return stA - stB;
+
+      // NEW badge floats to the top within its status bucket.
+      const newA = a.badgeKey === "NEW" ? 0 : 1;
+      const newB = b.badgeKey === "NEW" ? 0 : 1;
+      if (newA !== newB) return newA - newB;
 
       const dA = distanceFor(a);
       const dB = distanceFor(b);
@@ -323,101 +329,6 @@ const HomeTherapistGrid: React.FC = () => {
           </Typography>
         )}
       </Box>
-
-      {/* Search bar — glass pill matching mockup */}
-      {/* 🆕 Round 28b14 — Location pre-prompt banner. Shows ONLY when
-          GPS hasn't been requested yet (idle) or was previously denied.
-          Tapping triggers request() in user gesture context → reliable
-          native permission popup. Banner hides as soon as `userLocation`
-          resolves so the grid never has duplicate "enable" CTAs. */}
-      {!userLocation &&
-        locationStatus !== "ready" &&
-        locationStatus !== "unsupported" && (
-          <Box
-            role="button"
-            tabIndex={0}
-            onClick={() => requestLocation()}
-            onKeyDown={(e: React.KeyboardEvent) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                requestLocation();
-              }
-            }}
-            sx={{
-              margin: "0 14px 10px",
-              padding: "12px 14px",
-              borderRadius: "16px",
-              background:
-                "linear-gradient(135deg, rgba(22, 163, 74, 0.10), rgba(22, 163, 74, 0.04))",
-              border: "1px solid rgba(22, 163, 74, 0.25)",
-              boxShadow:
-                "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(22, 163, 74, 0.08)",
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              cursor: "pointer",
-              userSelect: "none",
-              transition: "transform 0.15s ease, box-shadow 0.15s ease",
-              "&:hover": {
-                transform: "translateY(-1px)",
-                boxShadow:
-                  "0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 18px rgba(22, 163, 74, 0.14)",
-              },
-              "&:focus-visible": {
-                outline: "2px solid #16a34a",
-                outlineOffset: 2,
-              },
-            }}
-          >
-            <Box
-              sx={{
-                width: 38,
-                height: 38,
-                flexShrink: 0,
-                borderRadius: "50%",
-                background: "#16a34a",
-                color: "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 4px 10px rgba(22, 163, 74, 0.30)",
-              }}
-            >
-              <NearMeRoundedIcon sx={{ fontSize: 20 }} />
-            </Box>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
-                sx={{
-                  fontFamily: fonts.heading,
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  color: "#3c1e14",
-                  lineHeight: 1.2,
-                }}
-              >
-                {locationStatus === "denied"
-                  ? "Location blocked"
-                  : "Find therapists nearest you"}
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: "11.5px",
-                  color: "rgba(60, 30, 20, 0.7)",
-                  marginTop: "2px",
-                  lineHeight: 1.35,
-                }}
-              >
-                {locationStatus === "denied"
-                  ? "Re-enable in browser settings to see distance."
-                  : "Tap to enable location · See live distance to each therapist"}
-              </Typography>
-            </Box>
-            <ArrowForwardRoundedIcon
-              sx={{ color: "#16a34a", fontSize: 22, flexShrink: 0 }}
-            />
-          </Box>
-        )}
 
       <TherapistSearchBar value={searchQ} onChange={setSearchQ} m="0 14px 12px" />
 

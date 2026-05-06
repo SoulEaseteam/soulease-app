@@ -50,33 +50,33 @@ interface ChatOption {
 const CHAT_OPTIONS: ChatOption[] = [
   {
     title: "LINE",
-    href: "https://lin.ee/uqvdwWt",
+    href: "https://line.me/R/ti/p/@sunred.bkk?from=page&searchId=sunred.bkk",
     src: "/images/profli/line.png",
-    tint: "rgba(6, 199, 85, 0.12)",
+    tint: "#06C755",
   },
   {
     title: "WhatsApp",
     href: "https://wa.me/66634350987",
-    src: "/images/profli/whatsapp.png",
-    tint: "rgba(37, 211, 102, 0.12)",
+    src: "/images/profli/Whatsapp.gif",
+    tint: "#25D366",
   },
   {
     title: "WeChat",
     href: "/wechat-scan",
-    src: "/images/profli/wechat_2626283.png",
-    tint: "rgba(7, 193, 96, 0.12)",
+    src: "/images/profli/Wechat.gif",
+    tint: "#07C160",
   },
   {
     title: "Telegram",
     href: "https://t.me/SunRedvip_bkk",
-    src: "/images/profli/telegram.png",
-    tint: "rgba(38, 161, 224, 0.12)",
+    src: "/images/profli/Telegram.gif",
+    tint: "#26A1E0",
   },
   {
     title: "X (Twitter)",
     href: "https://x.com/SunredBangkok",
     src: "/images/profli/twitter.png",
-    tint: "rgba(0, 0, 0, 0.08)",
+    tint: "#fff",
   },
 ];
 
@@ -190,9 +190,12 @@ const AdminFloatingChat: React.FC = () => {
               bottom: 180,
               right: 18,
               zIndex: 1500,
-              width: 240,
+              width: 220,
               padding: "16px 14px 12px",
-              ...glass.card, // includes borderRadius
+              borderRadius: "20px",
+              background: "#fff",
+              border: "1px solid rgba(126, 30, 46, 0.08)",
+              boxShadow: "0 8px 32px rgba(126, 30, 46, 0.14), 0 2px 8px rgba(0,0,0,0.06)",
               transformOrigin: "bottom right",
               "@media (max-width: 500px)": {
                 bottom: 158,
@@ -290,12 +293,12 @@ const AdminFloatingChat: React.FC = () => {
                     gap: "10px",
                     padding: "8px 10px",
                     borderRadius: "12px",
-                    background: "rgba(255, 255, 255, 0.55)",
-                    border: "1px solid rgba(255, 255, 255, 0.7)",
+                    background: "#F7F3F1",
+                    border: "1px solid rgba(126, 30, 46, 0.06)",
                     textDecoration: "none",
-                    transition: "background 0.2s ease",
+                    transition: "background 0.2s ease, transform 0.2s ease",
                     "&:hover": {
-                      background: "rgba(255, 255, 255, 0.8)",
+                      background: "#F0EBE7",
                     },
                     "&:focus-visible": {
                       outline: `2px solid ${brand.red}`,
@@ -305,14 +308,15 @@ const AdminFloatingChat: React.FC = () => {
                 >
                   <Box
                     sx={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: "50%",
+                      width: 34,
+                      height: 34,
+                      borderRadius: "10px",
                       background: opt.tint,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       flexShrink: 0,
+                      boxShadow: `0 2px 8px ${opt.tint}55`,
                     }}
                   >
                     <Box
@@ -373,7 +377,10 @@ const AdminFloatingChat: React.FC = () => {
               zIndex: 1499,
               maxWidth: 220,
               padding: "10px 14px 10px 12px",
-              ...glass.card, // includes borderRadius
+              borderRadius: "16px",
+              background: "#fff",
+              border: "1px solid rgba(126, 30, 46, 0.08)",
+              boxShadow: "0 8px 28px rgba(126, 30, 46, 0.12), 0 2px 6px rgba(0,0,0,0.05)",
               cursor: "pointer",
               // Decorative tail pointing toward the FAB
               "&::after": {
@@ -383,12 +390,10 @@ const AdminFloatingChat: React.FC = () => {
                 right: -7,
                 width: 14,
                 height: 14,
-                background: "rgba(255, 255, 255, 0.55)",
-                borderRight: "1px solid rgba(255, 255, 255, 0.7)",
-                borderBottom: "1px solid rgba(255, 255, 255, 0.7)",
+                background: "#fff",
+                borderRight: "1px solid rgba(126, 30, 46, 0.08)",
+                borderBottom: "1px solid rgba(126, 30, 46, 0.08)",
                 transform: "rotate(-45deg)",
-                backdropFilter: "blur(30px) saturate(180%)",
-                WebkitBackdropFilter: "blur(30px) saturate(180%)",
               },
               "@media (max-width: 500px)": {
                 bottom: 102,

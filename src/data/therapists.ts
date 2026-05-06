@@ -809,7 +809,7 @@ export const therapists: Therapist[] = [
   {
     id: "NickySunRed",
     name: "Nicky",
-    image: "/images/nicky/nicky.jpeg",
+    image: "/images/nicky/nicky.JPG",
     rating: 0,
     reviews: 0,
 
@@ -841,7 +841,7 @@ export const therapists: Therapist[] = [
     ],
 
     gallery: [
-      "/images/nicky/nicky.jpeg",
+      "/images/nicky/nicky.JPG",
     ],
 
     features: {

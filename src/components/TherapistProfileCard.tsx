@@ -460,10 +460,11 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
   );
   const finalStatus: Avail = useMemo(() => {
     const s = engineResult.status;
-    return s === "available" || s === "bookable" || s === "resting"
+    return s === "available" || s === "bookable" || s === "resting" || s === "holiday"
       ? s
       : "resting";
   }, [engineResult.status]);
+  const isHoliday = finalStatus === "holiday";
   const displayStatus: Avail = activeNow ? "bookable" : finalStatus;
   const isAvailable = displayStatus === "available";
 
@@ -673,7 +674,8 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
                 //   pill (Avail Now / coral In session / gray Avail
                 //   HH:MM), no need to dim the photo too.
                 transition: "opacity 0.3s ease",
-                opacity: imgLoaded ? 1 : 0,
+                opacity: imgLoaded ? (isHoliday ? 0.5 : 1) : 0,
+                filter: isHoliday ? "blur(6px) grayscale(0.6)" : "none",
               }}
             />
           )}
@@ -1004,8 +1006,8 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
               )}
             </Box>
 
-            {/* Avail pill — color by state, hidden when no info to show */}
-            {isAvailable ? (
+            {/* Avail pill — hidden for holiday; color by state otherwise */}
+            {isHoliday ? null : isAvailable ? (
               <Box
                 aria-hidden="true"
                 sx={{

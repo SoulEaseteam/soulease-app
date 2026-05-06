@@ -56,7 +56,7 @@ const HomePage: React.FC = () => {
   useDocumentMeta({
     title: t(
       "meta.home.title",
-      "SUNRED Bangkok • #1 Luxury Outcall Massage • EN/中文/日本語/한국어"
+      "SunRed Bangkok — Luxury Outcall Massage Delivered to Your Hotel"
     ),
     description: t(
       "meta.home.description",

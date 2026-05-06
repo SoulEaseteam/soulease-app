@@ -19,7 +19,7 @@ import {
   workingWindowBKK,
 } from "@/utils/time";
 
-export type Avail = "available" | "bookable" | "resting";
+export type Avail = "available" | "bookable" | "resting" | "holiday";
 
 /** Re-export for backwards compatibility with code that imports from here. */
 export function getWorkingWindow(
@@ -59,7 +59,7 @@ export function calculateTherapistStatus(t: Therapist): {
   // ---------------------------------------------------------
   if (t.isHoliday) {
     return {
-      status: "resting",
+      status: "holiday",
       nextAvailable: null,
     };
   }

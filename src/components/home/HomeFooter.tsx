@@ -35,7 +35,7 @@ import { brand, fonts } from "@/theme";
 /** Real contact handles — same ones the floating chat + ServicesPage use. */
 const CONTACT = {
   email: "mailto:hello@sunred.vip",
-  line: "https://lin.ee/uqvdwWt",
+  line: "https://line.me/R/ti/p/@sunred.bkk?from=page&searchId=sunred.bkk",
   whatsapp: "https://wa.me/66634350987",
 } as const;
 
@@ -168,6 +168,29 @@ const HomeFooter: React.FC = () => {
           pointerEvents: "none",
         }}
       />
+
+      {/* ── Book CTA ── */}
+      <Box
+        component="button"
+        onClick={() => void navigate("/#therapist-grid")}
+        sx={{
+          position: "relative", zIndex: 1,
+          width: "100%", marginBottom: "16px",
+          padding: "13px 0",
+          borderRadius: "14px",
+          background: "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+          color: "#fff",
+          fontFamily: fonts.heading,
+          fontSize: "15px",
+          fontWeight: 700,
+          letterSpacing: "-0.01em",
+          border: "none",
+          cursor: "pointer",
+          boxShadow: "0 4px 16px rgba(254, 9, 68, 0.30)",
+        }}
+      >
+        Book a session now
+      </Box>
 
       {/* ── Brand + tagline + socials ── */}
       <Box sx={{ position: "relative", zIndex: 1, marginBottom: "18px" }}>

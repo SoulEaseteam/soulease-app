@@ -65,13 +65,9 @@ const PromiseStrip: React.FC = () => {
         margin: "20px 14px 8px",
         padding: "20px 14px 18px",
         borderRadius: "22px",
-        background:
-          "linear-gradient(135deg, rgba(255,255,255,0.55) 0%, rgba(255,234,217,0.5) 100%)",
-        backdropFilter: "blur(20px) saturate(180%)",
-        WebkitBackdropFilter: "blur(20px) saturate(180%)",
-        border: "1px solid rgba(255, 255, 255, 0.6)",
-        boxShadow:
-          "0 8px 28px rgba(254, 9, 68, 0.06), inset 0 1px 0 rgba(255,255,255,0.7)",
+        background: "linear-gradient(135deg, #fff 0%, #FFF3ED 100%)",
+        border: "1px solid rgba(126, 30, 46, 0.07)",
+        boxShadow: "0 4px 20px rgba(254, 9, 68, 0.05)",
       }}
     >
       {/* divider-label — same eyebrow rhythm as Hero */}
@@ -123,6 +119,31 @@ const PromiseStrip: React.FC = () => {
         <em>{t("promise.tagline.tail", "on your schedule.")}</em>
       </Typography>
 
+      {/* Pricing pill */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          marginBottom: "14px",
+        }}
+      >
+        <Box
+          sx={{
+            px: 1.5, py: 0.6,
+            borderRadius: "999px",
+            background: "rgba(254, 9, 68, 0.06)",
+            border: "1px solid rgba(254, 9, 68, 0.12)",
+            fontFamily: '"Inter", system-ui, sans-serif',
+            fontSize: "11px",
+            fontWeight: 600,
+            color: "#FE0944",
+            letterSpacing: "0.01em",
+          }}
+        >
+          Starting from ฿1,800 · No hidden fees
+        </Box>
+      </Box>
+
       {/* 3-tile grid */}
       <Box
         sx={{
@@ -140,9 +161,9 @@ const PromiseStrip: React.FC = () => {
               alignItems: "center",
               padding: "12px 6px",
               borderRadius: "16px",
-              background: "rgba(255, 255, 255, 0.55)",
-              border: "1px solid rgba(255, 255, 255, 0.7)",
-              boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.6)",
+              background: "#fff",
+              border: "1px solid rgba(126, 30, 46, 0.07)",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
               transition: "transform 0.25s ease, box-shadow 0.25s ease",
               "&:hover": {
                 transform: "translateY(-2px)",
