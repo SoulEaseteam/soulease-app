@@ -56,7 +56,7 @@ import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded";
 import StickyNote2RoundedIcon from "@mui/icons-material/StickyNote2Rounded";
-import DoorFrontRoundedIcon from "@mui/icons-material/DoorFrontRounded";
+import AutoAwesomeSharpIcon from '@mui/icons-material/AutoAwesomeSharp';
 import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
 import ElevatorRoundedIcon from "@mui/icons-material/ElevatorRounded";
 import MeetingRoomRoundedIcon from "@mui/icons-material/MeetingRoomRounded";
@@ -122,16 +122,45 @@ const EMPTY: AddressNavState = {
 //    the new 'Arrival Instructions' card (no longer inline chips).
 // 🆕 Round 28b60 — emoji → MUI icon refactor. `icon` field accepts a
 //   React node (the rendered icon component) instead of a string emoji.
-//   Mint pill styling lives at the render site below.
+// 🆕 Round 28b65 (founder 2026-05-05) — Icon disc styling per item
+//   ("ตกแต่ง ไอคอน ให้สวยเหมือน Payment Methods"). Each option gets
+//   a tinted iconBg + solid iconFg so the radio list reads as a tier
+//   of card-style options matching the PaymentMethodsPage pattern.
 const MEETING_POINTS: {
   id: MeetingPoint;
   label: string;
   icon: React.ReactNode;
+  iconBg: string;
+  iconFg: string;
 }[] = [
-  { id: "lobby", label: "Meet at Lobby", icon: <HotelRoundedIcon sx={{ fontSize: 20 }} /> },
-  { id: "lift", label: "Meet at the Elevator", icon: <ElevatorRoundedIcon sx={{ fontSize: 20 }} /> },
-  { id: "direct", label: "Come to my room", icon: <MeetingRoomRoundedIcon sx={{ fontSize: 20 }} /> },
-  { id: "other", label: "Other", icon: <PlaceRoundedIcon sx={{ fontSize: 20 }} /> },
+  {
+    id: "lobby",
+    label: "Meet at Lobby",
+    icon: <HotelRoundedIcon sx={{ fontSize: 22 }} />,
+    iconBg: "rgba(59, 130, 246, 0.12)",
+    iconFg: "#2563eb",
+  },
+  {
+    id: "lift",
+    label: "Meet at the Elevator",
+    icon: <ElevatorRoundedIcon sx={{ fontSize: 22 }} />,
+    iconBg: "rgba(20, 184, 166, 0.12)",
+    iconFg: "#14b8a6",
+  },
+  {
+    id: "direct",
+    label: "Come to my room",
+    icon: <MeetingRoomRoundedIcon sx={{ fontSize: 22 }} />,
+    iconBg: "rgba(254, 9, 68, 0.10)",
+    iconFg: "#FE0944",
+  },
+  {
+    id: "other",
+    label: "Other",
+    icon: <PlaceRoundedIcon sx={{ fontSize: 22 }} />,
+    iconBg: "rgba(245, 158, 11, 0.12)",
+    iconFg: "#d97706",
+  },
 ];
 
 // LOCATION_TYPES removed 2026-05-01 (founder: 'Location Type (Optional) ลบ').
@@ -1002,7 +1031,7 @@ const SelectLocationPage: React.FC = () => {
                   marginBottom: "2px",
                 }}
               >
-                ✓ ปักหมุดที่ตำแหน่งของคุณแล้ว
+                 Your location has been pinned
               </Typography>
               <Typography
                 sx={{
@@ -1012,10 +1041,10 @@ const SelectLocationPage: React.FC = () => {
                   lineHeight: 1.45,
                 }}
               >
-                ถ้าชื่อสถานที่หรือตำแหน่งหมุดไม่ตรง ลากหมุดบนแผนที่ปรับได้.
+               "Drag the pin to adjust the location."<br />
                 {" "}
-                <em>(Pinned at your location. Drag the pin if the place
-                name or spot isn&rsquo;t exact.)</em>
+                (ลากหมุดเพื่อปรับตำแหน่งให้ตรงกับชื่อสถานที่)
+              
               </Typography>
             </Box>
           </Box>
@@ -1111,7 +1140,7 @@ const SelectLocationPage: React.FC = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" 
                   height="26px" viewBox="0 -960 960 960" 
                   width="26px" fill="#14b8a6">
-                  <path d="M360-440h80v-110h80v110h80v-190l-120-80-120 80v190Zm120 254q122-112 181-203.5T720-552q0-109-69.5-178.5T480-800q-101 0-170.5 69.5T240-552q0 71 59 162.5T480-186Zm0 106Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Zm0-480Z"/>
+                    <path d="M420-180 220-380l60-60 140 140 260-260 60 60L420-180Z"/>
                   </svg> Address updated to match pin
                 </Box>
               )}
@@ -1340,7 +1369,7 @@ const SelectLocationPage: React.FC = () => {
             }}
           >
             {form.meetingPoint === "direct"
-              ? "Required — please include booking name + room number"
+              ? "Required please include booking name + room number"
               : "Add instructions for therapist arrival"}
           </Typography>
           <TextField
@@ -1372,7 +1401,7 @@ const SelectLocationPage: React.FC = () => {
             me at the lift' (renamed from 'Meet at Lift') and a 4th
             'Other' option. Vertical, full-width tappable rows with the
             radio dot on the right (matches Grab/Lalamove pattern). */}
-        <FieldLabel label="Arrival Instructions" icon={<DoorFrontRoundedIcon sx={{ fontSize: 18 }} />} optional>
+        <FieldLabel label="Arrival Instructions" icon={<AutoAwesomeSharpIcon sx={{ fontSize: 18 }} />} optional>
           <Box
             role="radiogroup"
             aria-label="Arrival instructions"
@@ -1434,9 +1463,24 @@ const SelectLocationPage: React.FC = () => {
                     },
                   }}
                 >
+                  {/* 🆕 Round 28b65 — Icon disc (tinted square ~40px)
+                      to match PaymentMethodsPage. Per-option iconBg
+                      + iconFg gives each arrival mode a distinct
+                      visual identity (lobby blue, elevator mint,
+                      come-to-room brand red, other amber). */}
                   <Box
-                    component="span"
-                    sx={{ fontSize: "18px", flexShrink: 0 }}
+                    aria-hidden
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      flexShrink: 0,
+                      borderRadius: "12px",
+                      background: m.iconBg,
+                      color: m.iconFg,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
                   >
                     {m.icon}
                   </Box>
@@ -1624,10 +1668,21 @@ const FieldLabel: React.FC<{
       }}
     >
       {icon && (
+        // 🆕 Round 28b65 (founder 2026-05-05) — "ตกแต่งไอคอนให้สวย
+        //   เหมือน Payment Methods". Mint-tinted disc 28×28 wrapper
+        //   matching the iconBg/iconFg pattern used across the booking
+        //   flow (PaymentMethodsPage, AddressTile). Was a bare 16px
+        //   inline icon — felt loose against the bolder MEETING_POINTS
+        //   discs below. Same disc here keeps the form section
+        //   visually cohesive top → bottom.
         <Box
           aria-hidden
           sx={{
-            fontSize: "16px",
+            width: 28,
+            height: 28,
+            flexShrink: 0,
+            borderRadius: "8px",
+            background: "rgba(20, 184, 166, 0.12)",
             color: "#14b8a6",
             display: "inline-flex",
             alignItems: "center",

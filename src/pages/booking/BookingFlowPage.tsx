@@ -1191,6 +1191,13 @@ const BookingFlowPage: React.FC = () => {
               the configured average city speed. Only renders once a
               location is set so we have a real distance to show. */}
           {locationSet && distanceKm > 0 && (
+            // 🆕 Round 28b66 (founder 2026-05-05) — Inline icons get
+            //   mini color-tinted discs ("ตกแต่งไอคอนให้สวยเหมือน
+            //   Payment Methods"). Distance = blue (route), ETA =
+            //   mint (time), Travel fee = amber (money). Each disc
+            //   is 22×22 rounded-7 — small enough to live inside the
+            //   text row without dominating, large enough to read
+            //   as a "labelled metric" tile pattern.
             <Box
               sx={{
                 display: "flex",
@@ -1201,14 +1208,29 @@ const BookingFlowPage: React.FC = () => {
                 fontSize: "12px",
                 color: "rgba(60, 30, 20, 0.65)",
                 marginBottom: "8px",
-                "& svg": { fontSize: 14, color: "#FE0944" },
               }}
             >
               <Box
                 component="span"
-                sx={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
+                sx={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
               >
-                <PlaceRoundedIcon />
+                <Box
+                  aria-hidden
+                  sx={{
+                    width: 22,
+                    height: 22,
+                    flexShrink: 0,
+                    borderRadius: "7px",
+                    background: "rgba(59, 130, 246, 0.12)",
+                    color: "#2563eb",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    "& svg": { fontSize: 14 },
+                  }}
+                >
+                  <PlaceRoundedIcon />
+                </Box>
                 Distance:&nbsp;
                 <Box component="strong" sx={{ color: "#3c1e14" }}>
                   {distanceIsEstimate ? "≈ " : ""}
@@ -1243,9 +1265,25 @@ const BookingFlowPage: React.FC = () => {
               </Box>
               <Box
                 component="span"
-                sx={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
+                sx={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
               >
-                <AccessTimeRoundedIcon />
+                <Box
+                  aria-hidden
+                  sx={{
+                    width: 22,
+                    height: 22,
+                    flexShrink: 0,
+                    borderRadius: "7px",
+                    background: "rgba(20, 184, 166, 0.12)",
+                    color: "#14b8a6",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    "& svg": { fontSize: 14 },
+                  }}
+                >
+                  <AccessTimeRoundedIcon />
+                </Box>
                 ETA:&nbsp;
                 <Box component="strong" sx={{ color: "#3c1e14" }}>
                   {etaMinutes} min
@@ -1295,11 +1333,28 @@ const BookingFlowPage: React.FC = () => {
                   color: "rgba(60, 30, 20, 0.7)",
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "5px",
-                  "& > svg": { fontSize: 16, color: "#FE0944" },
+                  gap: "7px",
                 }}
               >
-                <LocalTaxiRoundedIcon />
+                {/* 🆕 Round 28b66 — Travel fee mini-disc (amber for
+                    money/taxi) matching Distance + ETA pattern. */}
+                <Box
+                  aria-hidden
+                  sx={{
+                    width: 24,
+                    height: 24,
+                    flexShrink: 0,
+                    borderRadius: "7px",
+                    background: "rgba(245, 158, 11, 0.12)",
+                    color: "#d97706",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    "& svg": { fontSize: 15 },
+                  }}
+                >
+                  <LocalTaxiRoundedIcon />
+                </Box>
                 Travel fee
                 {locationSet && taxiResult && taxiResult.tier !== "free" && (
                   <Box
