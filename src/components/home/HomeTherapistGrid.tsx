@@ -39,19 +39,71 @@ interface Therapist extends TherapistType {
 }
 
 // 🆕 Round 28r4 (founder 2026-05-06) — Bangkok area chips for the
-//   home-page "browse by neighbourhood" strip. Tapping a chip sets
-//   the search query to the area name and `matchesQuery` filters
-//   therapists whose `area` / `homeAddress` contains it.
+//   home-page "browse by neighbourhood" strip.
 //
-//   Only six dense areas: anything else and a guest at "Phra Khanong"
-//   would feel left out. We let the SearchBar handle the long tail.
-const BANGKOK_AREAS: { label: string; query: string }[] = [
-  { label: "Sukhumvit", query: "Sukhumvit" },
-  { label: "Asok", query: "Asok" },
-  { label: "Thonglor", query: "Thonglor" },
-  { label: "Silom", query: "Silom" },
-  { label: "Sathorn", query: "Sathorn" },
-  { label: "Riverside", query: "Riverside" },
+// 🆕 Round 28r17 (founder 2026-05-07) — Each chip now matches its
+//   own neighbourhood AND nearby districts. The pre-r17 behaviour
+//   was strict substring match against `area` field — clicking
+//   "Silom" only matched a single therapist whose home address
+//   literally contained "Silom". Travel-time-wise an Asok therapist
+//   and a Bangrak therapist both serve a Silom guest comfortably,
+//   so we expand each chip to cover walking-or-short-taxi neighbours.
+//
+//   `match[]` holds substrings — therapist passes the filter if its
+//   `area` or `homeAddress` contains ANY of them (case-insensitive).
+const BANGKOK_AREAS: {
+  label: string;
+  /** Substrings that count as "in this zone" — the chip's own name
+   *  is always included; the rest are nearby districts. */
+  match: string[];
+}[] = [
+  {
+    label: "Sukhumvit",
+    match: [
+      "Sukhumvit",
+      "Asok",
+      "Phrom Phong",
+      "Phloen Chit",
+      "Nana",
+      "Thonglor",
+      "Ekkamai",
+      "Ploenchit",
+    ],
+  },
+  {
+    label: "Asok",
+    match: ["Asok", "Sukhumvit", "Phrom Phong", "Nana", "Phetchaburi"],
+  },
+  {
+    label: "Thonglor",
+    match: ["Thonglor", "Ekkamai", "Phrom Phong", "Sukhumvit"],
+  },
+  {
+    label: "Silom",
+    match: [
+      "Silom",
+      "Sathorn",
+      "Bangrak",
+      "Surasak",
+      "Saladaeng",
+      "Chong Nonsi",
+    ],
+  },
+  {
+    label: "Sathorn",
+    match: ["Sathorn", "Silom", "Lumpini", "Chong Nonsi", "Surasak"],
+  },
+  {
+    label: "Riverside",
+    match: [
+      "Riverside",
+      "Bangrak",
+      "Sathorn",
+      "Charoen Krung",
+      "Saphan Taksin",
+      "Klongsan",
+    ],
+  },
 ];
 
 const HomeTherapistGrid: React.FC = () => {
@@ -268,10 +320,31 @@ const HomeTherapistGrid: React.FC = () => {
     return hour >= 22 || hour < 4 ? "available_now" : "all";
   });
 
-  // ── Apply search filter (case-insensitive across name/lang/specialty)
-  //   AND roster filter (status-based).
+  // 🆕 Round 28r17 — Area chip filter is now its own state (separate
+  //   from search input). Lets us match a chip to MULTIPLE neighbour
+  //   substrings rather than feed one string to matchesQuery.
+  const [activeAreaLabel, setActiveAreaLabel] = useState<string | null>(null);
+  const activeArea = activeAreaLabel
+    ? BANGKOK_AREAS.find((a) => a.label === activeAreaLabel) ?? null
+    : null;
+
+  // Helper — does therapist's area / homeAddress match ANY of the
+  // chip's neighbour substrings? Returns true when no area is active.
+  const matchesArea = (
+    t: Therapist,
+    matchList: string[] | null
+  ): boolean => {
+    if (!matchList || matchList.length === 0) return true;
+    const hay = `${t.area ?? ""} ${t.homeAddress ?? ""}`.toLowerCase();
+    return matchList.some((m) => hay.includes(m.toLowerCase()));
+  };
+
+  // ── Apply search filter (free-text) + area chip + roster filter.
   const visible = useMemo(() => {
     let pool = sorted.filter((t) => matchesQuery(t, searchQ));
+    if (activeArea) {
+      pool = pool.filter((t) => matchesArea(t, activeArea.match));
+    }
     if (rosterFilter === "available_now") {
       pool = pool.filter((t) => t.computedStatus === "available");
     } else if (rosterFilter === "express") {
@@ -533,13 +606,22 @@ const HomeTherapistGrid: React.FC = () => {
         }}
       >
         {BANGKOK_AREAS.map((area) => {
-          const isActive = searchQ === area.query;
+          const isActive = activeAreaLabel === area.label;
+          // 🆕 Round 28r17 — Per-chip count using neighbour-matching
+          //   so "Silom" reports the number of therapists in Silom +
+          //   Sathorn + Bangrak + Surasak combined, not just literal
+          //   Silom matches.
+          const count = sorted.filter((t) =>
+            matchesArea(t, area.match)
+          ).length;
           return (
             <Box
               key={area.label}
               component="button"
               type="button"
-              onClick={() => setSearchQ(isActive ? "" : area.query)}
+              onClick={() =>
+                setActiveAreaLabel(isActive ? null : area.label)
+              }
               aria-pressed={isActive}
               sx={{
                 flexShrink: 0,
@@ -550,6 +632,9 @@ const HomeTherapistGrid: React.FC = () => {
                 fontWeight: 600,
                 letterSpacing: "-0.005em",
                 cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
                 border: isActive
                   ? "1px solid rgba(254, 9, 68, 0.55)"
                   : "1px solid rgba(184, 92, 60, 0.18)",
@@ -570,6 +655,16 @@ const HomeTherapistGrid: React.FC = () => {
               }}
             >
               {area.label}
+              <Box
+                component="span"
+                sx={{
+                  fontSize: 9.5,
+                  fontWeight: 800,
+                  opacity: isActive ? 0.8 : 0.55,
+                }}
+              >
+                {count}
+              </Box>
             </Box>
           );
         })}
