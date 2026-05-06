@@ -220,6 +220,18 @@ const SelectLocationPage: React.FC = () => {
     return () => window.clearTimeout(t);
   }, [pinJustMoved]);
 
+  // 🆕 Round 28b63 (founder 2026-05-05) — Geolocation error surface.
+  //   Prior versions silently swallowed permission-denied / timeout /
+  //   unavailable so the customer thought the button was broken when
+  //   browser had previously rejected location. Auto-dismiss after
+  //   8 seconds — long enough to read, short enough not to linger.
+  const [geoError, setGeoError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!geoError) return;
+    const t = window.setTimeout(() => setGeoError(null), 8000);
+    return () => window.clearTimeout(t);
+  }, [geoError]);
+
   // 🆕 Round 28b62 (founder 2026-05-05) — GPS-pinned hint.
   //   When the user taps "Use my current location" we drop the pin
   //   on raw lat/lng. GPS accuracy is typically 10-50 m in BKK so the
@@ -521,16 +533,66 @@ const SelectLocationPage: React.FC = () => {
     });
   }
 
-  const useCurrentLocation = () => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+  // 🆕 Round 28b63 (founder 2026-05-05) — Hardened "Use my current
+  //   location" flow. Previously the error handler silently flipped
+  //   `geoLoading` back without telling the customer WHY the call
+  //   failed (denied / timed out / position unavailable / blocked
+  //   on plain HTTP). Customer sees the spinner disappear and thinks
+  //   the button is broken. New flow:
+  //     1. Pre-flight check via Permissions API for "denied" state
+  //        so we don't even bother prompting (fast feedback).
+  //     2. Pass the GeolocationPositionError into the error handler
+  //        and route to a human message via `geoError` state.
+  //     3. Bumped timeout 10s → 15s, added maximumAge so a recent
+  //        cached fix returns instantly.
+  //     4. console.warn so we can debug from DevTools when reported.
+  const useCurrentLocation = async () => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setGeoError(
+        "Your browser does not support geolocation. Tap the map to drop a pin manually."
+      );
+      return;
+    }
+    setGeoError(null);
     setGeoLoading(true);
-    // Clear any stale name so reverseGeocode writes the fresh one (Plus
-    // Code → real address) instead of being preserved by the `??` fallback.
+
+    // Pre-flight permission check (skipped silently if Permissions
+    // API isn't available — Safari iOS < 17 doesn't support it).
+    try {
+      if ("permissions" in navigator) {
+        const perm = await navigator.permissions.query({
+          name: "geolocation" as PermissionName,
+        });
+        if (perm.state === "denied") {
+          setGeoLoading(false);
+          setGeoError(
+            "Location is blocked in your browser. Enable it in site settings, or tap the map to drop a pin manually."
+          );
+          return;
+        }
+      }
+    } catch {
+      // Permissions API not available or query rejected — proceed.
+    }
+
+    // Clear any stale name so reverseGeocode writes the fresh one
+    // (Plus Code → real address) instead of being preserved by the
+    // `??` fallback.
     setForm((p) => ({ ...p, locationName: null, locationAddress: null }));
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
+        // 🆕 Round 28b64 (founder 2026-05-05) — Pin first, then enrich.
+        //   Founder: "Use my current location ก็ต้องมาปักที่อยู่เราก่อนสิ
+        //   ถ้าไม่ตรงค่อยเลื่อน". Previously the form's lat/lng only
+        //   updated AFTER reverseGeocode finished — so the address
+        //   card waited ~500-1500ms before appearing. Now we commit
+        //   lat/lng + a synthetic mapUrl to the form FIRST (visual
+        //   pin already moved via placeMarker), then reverseGeocode
+        //   asynchronously fills in the human name/address. Customer
+        //   sees the pin AND a placeholder card immediately.
         placeMarker(lat, lng);
         const map = mapRef.current as
           | { panTo: (l: { lat: number; lng: number }) => void; setZoom: (z: number) => void }
@@ -539,6 +601,12 @@ const SelectLocationPage: React.FC = () => {
           map.panTo({ lat, lng });
           map.setZoom(17);
         }
+        setForm((p) => ({
+          ...p,
+          lat,
+          lng,
+          mapUrl: buildMapUrl(lat, lng),
+        }));
         reverseGeocode(lat, lng);
         setGeoLoading(false);
         // 🆕 Round 28b62 — surface the "drag pin to match building"
@@ -546,8 +614,27 @@ const SelectLocationPage: React.FC = () => {
         //   it next to the address card.
         setGpsHint(true);
       },
-      () => setGeoLoading(false),
-      { enableHighAccuracy: true, timeout: 10000 }
+      (err) => {
+        setGeoLoading(false);
+        console.warn("[SelectLocation] geolocation error:", err);
+        const codeMessages: Record<number, string> = {
+          1: "Location is blocked in your browser. Enable it in site settings, or tap the map to drop a pin manually.",
+          2: "Couldn't get your location right now. Tap the map to drop a pin manually.",
+          3: "Location request timed out. Try again, or tap the map to drop a pin manually.",
+        };
+        setGeoError(
+          codeMessages[err.code] ??
+            "Location not available. Tap the map to drop a pin manually."
+        );
+      },
+      {
+        enableHighAccuracy: true,
+        // 🆕 Round 28b63 — 10s → 15s gives slow / first-fix devices
+        //   more headroom; maximumAge=60s accepts a recent cached
+        //   reading so repeat taps return instantly.
+        timeout: 15000,
+        maximumAge: 60_000,
+      }
     );
   };
 
@@ -840,6 +927,39 @@ const SelectLocationPage: React.FC = () => {
           {geoLoading ? "Locating…" : "Use my current location"}
         </Button>
 
+        {/* 🆕 Round 28b63 — Geolocation error banner. Tells the
+            customer WHY the button didn't pin them on the map. */}
+        {geoError && (
+          <Box
+            role="alert"
+            aria-live="assertive"
+            sx={{
+              padding: "12px 14px",
+              borderRadius: "14px",
+              background: "rgba(254, 9, 68, 0.06)",
+              border: "1px solid rgba(254, 9, 68, 0.28)",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "10px",
+            }}
+          >
+            <MyLocationRoundedIcon
+              sx={{ fontSize: 20, color: "#FE0944", flexShrink: 0, marginTop: "1px" }}
+            />
+            <Typography
+              sx={{
+                flex: 1,
+                fontFamily: SANS,
+                fontSize: "12.5px",
+                color: "rgba(60, 30, 20, 0.82)",
+                lineHeight: 1.5,
+              }}
+            >
+              {geoError}
+            </Typography>
+          </Box>
+        )}
+
         {/* 🆕 Round 28b62 (founder 2026-05-05) — GPS hint banner.
             Founder: "ใส่หมายเหตุเลื่อนหมุดให้ตรงชื่อสถานที่".
             GPS accuracy in BKK is typically 10-50 m so the pin can
@@ -882,7 +1002,7 @@ const SelectLocationPage: React.FC = () => {
                   marginBottom: "2px",
                 }}
               >
-                ตรวจสอบหมุดให้ตรงสถานที่ของคุณ
+                ✓ ปักหมุดที่ตำแหน่งของคุณแล้ว
               </Typography>
               <Typography
                 sx={{
@@ -892,9 +1012,10 @@ const SelectLocationPage: React.FC = () => {
                   lineHeight: 1.45,
                 }}
               >
-                หมุดอยู่ที่ตำแหน่ง GPS ของคุณ — ลากหมุดบนแผนที่ให้ตรงอาคาร
-                ถ้าชื่อสถานที่ไม่ถูก. <em>(Drag the pin to your exact spot if
-                the place name doesn&rsquo;t match.)</em>
+                ถ้าชื่อสถานที่หรือตำแหน่งหมุดไม่ตรง ลากหมุดบนแผนที่ปรับได้.
+                {" "}
+                <em>(Pinned at your location. Drag the pin if the place
+                name or spot isn&rsquo;t exact.)</em>
               </Typography>
             </Box>
           </Box>
