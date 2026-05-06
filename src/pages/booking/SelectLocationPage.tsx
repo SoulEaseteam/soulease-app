@@ -51,6 +51,16 @@ import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import MyLocationRoundedIcon from "@mui/icons-material/MyLocationRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
+// 🆕 Round 28b60 — MUI icons replacing emoji (founder: "ไม่เอาอ๊โมจิ
+//   เอาไอคอน"). Same icon set used across the booking flow.
+import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
+import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded";
+import StickyNote2RoundedIcon from "@mui/icons-material/StickyNote2Rounded";
+import DoorFrontRoundedIcon from "@mui/icons-material/DoorFrontRounded";
+import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
+import ElevatorRoundedIcon from "@mui/icons-material/ElevatorRounded";
+import MeetingRoomRoundedIcon from "@mui/icons-material/MeetingRoomRounded";
+import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
 
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
 
@@ -110,15 +120,18 @@ const EMPTY: AddressNavState = {
 // 🆕 Founder 2026-05-01 round 13: rename 'Meet at Lift' → 'Wait for me at
 //    the lift' + add 'Other' option. Now rendered as a radio list inside
 //    the new 'Arrival Instructions' card (no longer inline chips).
+// 🆕 Round 28b60 — emoji → MUI icon refactor. `icon` field accepts a
+//   React node (the rendered icon component) instead of a string emoji.
+//   Mint pill styling lives at the render site below.
 const MEETING_POINTS: {
   id: MeetingPoint;
   label: string;
-  icon: string;
+  icon: React.ReactNode;
 }[] = [
-  { id: "lobby", label: "Meet at Lobby", icon: "🏨" },
-  { id: "lift", label: "Meet at the Elevator", icon: "🛗" },
-  { id: "direct", label: "Come to my room", icon: "🚪" },
-  { id: "other", label: "Other", icon: "📍" },
+  { id: "lobby", label: "Meet at Lobby", icon: <HotelRoundedIcon sx={{ fontSize: 20 }} /> },
+  { id: "lift", label: "Meet at the Elevator", icon: <ElevatorRoundedIcon sx={{ fontSize: 20 }} /> },
+  { id: "direct", label: "Come to my room", icon: <MeetingRoomRoundedIcon sx={{ fontSize: 20 }} /> },
+  { id: "other", label: "Other", icon: <PlaceRoundedIcon sx={{ fontSize: 20 }} /> },
 ];
 
 // LOCATION_TYPES removed 2026-05-01 (founder: 'Location Type (Optional) ลบ').
@@ -605,8 +618,36 @@ const SelectLocationPage: React.FC = () => {
   };
 
   // National digits typed in the input — combine with the active dial code.
+  // 🆕 Round 28b60 (founder 2026-05-05) — Country auto-detect.
+  //   When the user pastes / types a number that already starts with a
+  //   recognised dial code (e.g. "+447911...", "0085261...", "+8613..."),
+  //   we strip the prefix and switch the country selector to that
+  //   country in one step. Customer doesn't need to find the country
+  //   chip first — paste a full international number and we figure it
+  //   out. Falls back to the currently selected dial code when no
+  //   prefix is detected.
   const onPhoneChange = (raw: string) => {
-    const digits = raw.replace(/\D/g, "");
+    // Normalise: convert "00xx" → "+xx", strip non-digits/+ from the rest.
+    let normalised = raw.replace(/^00/, "+").replace(/[^\d+]/g, "");
+    if (!normalised.startsWith("+") && /^\d/.test(normalised)) {
+      // Plain digits → keep them as national digits under current dial.
+      const digits = normalised.replace(/\D/g, "");
+      setForm((p) => ({ ...p, customerPhone: `${dialCode.dial}${digits}` }));
+      return;
+    }
+    // Try to match a dial prefix from longest to shortest so "+1234"
+    // doesn't false-match "+1" before "+1242" etc.
+    const sorted = [...DIAL_CODES].sort(
+      (a, b) => b.dial.length - a.dial.length
+    );
+    const match = sorted.find((c) => normalised.startsWith(c.dial));
+    if (match) {
+      const nat = normalised.slice(match.dial.length).replace(/\D/g, "");
+      setForm((p) => ({ ...p, customerPhone: `${match.dial}${nat}` }));
+      return;
+    }
+    // Unrecognised prefix — keep the current dial, drop the bad +.
+    const digits = normalised.replace(/\D/g, "");
     setForm((p) => ({ ...p, customerPhone: `${dialCode.dial}${digits}` }));
   };
 
@@ -720,6 +761,15 @@ const SelectLocationPage: React.FC = () => {
           <input
             ref={searchInputRef}
             placeholder={ready ? "Search for a location…" : "Loading…"}
+            // 🆕 Round 28b60 — `inputMode="search"` opens a search-style
+            //   keyboard on mobile and `enterKeyHint="search"` swaps the
+            //   return key to a Search button. autoCapitalize off so
+            //   Thai names aren't title-cased mid-typing.
+            inputMode="search"
+            enterKeyHint="search"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
             style={{
               width: "100%",
               padding: "13px 16px 13px 44px",
@@ -727,7 +777,12 @@ const SelectLocationPage: React.FC = () => {
               border: "1px solid rgba(0, 0, 0, 0.06)",
               background: "#fff",
               fontFamily: "Inter, sans-serif",
-              fontSize: "14px",
+              // 🆕 Round 28b60 — 14 → 16px so iOS Safari/Chrome doesn't
+              //   auto-zoom the viewport on focus. Matches the global
+              //   inputSx and the rest of the form (Round 28b15 fix
+              //   applied to MUI inputs only — this raw <input> for
+              //   Google Places Autocomplete was missed).
+              fontSize: "16px",
               color: "#1a1a1a",
               outline: "none",
               boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
@@ -914,7 +969,7 @@ const SelectLocationPage: React.FC = () => {
           </Typography>
 
         {/* Customer Name */}
-        <FieldLabel label="Customer Name" icon="👤" required>
+        <FieldLabel label="Customer Name" icon={<PersonRoundedIcon sx={{ fontSize: 18 }} />} required>
           <TextField
             fullWidth
             placeholder="Name on the booking"
@@ -927,7 +982,7 @@ const SelectLocationPage: React.FC = () => {
         </FieldLabel>
 
         {/* Phone — country selectable, national digits in the right field */}
-        <FieldLabel label="Phone Number" icon="📞" required>
+        <FieldLabel label="Phone Number" icon={<PhoneRoundedIcon sx={{ fontSize: 18 }} />} required>
           <Box sx={{ display: "flex", gap: "8px" }}>
             <Box
               role="button"
@@ -1081,7 +1136,7 @@ const SelectLocationPage: React.FC = () => {
             optional (no UX change). */}
         <FieldLabel
           label="Note"
-          icon="📝"
+          icon={<StickyNote2RoundedIcon sx={{ fontSize: 18 }} />}
           required={form.meetingPoint === "direct"}
           optional={form.meetingPoint !== "direct"}
         >
@@ -1132,7 +1187,7 @@ const SelectLocationPage: React.FC = () => {
             me at the lift' (renamed from 'Meet at Lift') and a 4th
             'Other' option. Vertical, full-width tappable rows with the
             radio dot on the right (matches Grab/Lalamove pattern). */}
-        <FieldLabel label="Arrival Instructions" icon="🚪" optional>
+        <FieldLabel label="Arrival Instructions" icon={<DoorFrontRoundedIcon sx={{ fontSize: 18 }} />} optional>
           <Box
             role="radiogroup"
             aria-label="Arrival instructions"
@@ -1274,14 +1329,19 @@ const SelectLocationPage: React.FC = () => {
       {/* 🆕 Round 28b43 (founder 2026-05-05) — Lifted above the bottom
           nav so "Confirm Address" never sits behind the BottomNavGlass.
           Uses --cta-bottom-offset = nav height + 16px + safe-area. */}
+      {/* 🆕 Round 28b60 (founder 2026-05-05) — Slimmed CTA per founder
+          feedback: "ปุ่มคอนเฟิม เล็กลงอีกหน่อย". Was width 92% / height
+          54 / fontSize 15.5; now 84% / 46 / 14.5 with softer shadow.
+          Still tappable (>= 44pt min for iOS HIG) but visually less
+          aggressive — gives the form fields more visual weight. */}
       <Box
         sx={{
           position: "fixed",
           bottom: "var(--cta-bottom-offset)",
           left: "50%",
           transform: "translateX(-50%)",
-          width: "92%",
-          maxWidth: "430px",
+          width: "84%",
+          maxWidth: "380px",
           zIndex: 50,
         }}
       >
@@ -1290,23 +1350,23 @@ const SelectLocationPage: React.FC = () => {
           disabled={!canConfirm}
           onClick={onConfirm}
           sx={{
-            height: 54,
+            height: 46,
             borderRadius: "999px",
             background: "linear-gradient(135deg, #FE0944, #FE7A52)",
             color: "#fff",
             fontFamily: SANS,
-            fontSize: "15.5px",
+            fontSize: "14.5px",
             fontWeight: 700,
             letterSpacing: "0.02em",
             textTransform: "none",
             boxShadow:
-              "0 12px 28px rgba(254, 9, 68, 0.38), 0 4px 10px rgba(254, 122, 82, 0.18)",
+              "0 8px 20px rgba(254, 9, 68, 0.32), 0 3px 8px rgba(254, 122, 82, 0.15)",
             transition: "transform 0.15s ease, box-shadow 0.15s ease",
             "&:hover": {
               background: "linear-gradient(135deg, #E50840, #E56A47)",
               transform: "translateY(-1px)",
               boxShadow:
-                "0 16px 32px rgba(254, 9, 68, 0.42), 0 6px 14px rgba(254, 122, 82, 0.22)",
+                "0 12px 24px rgba(254, 9, 68, 0.38), 0 4px 10px rgba(254, 122, 82, 0.20)",
             },
             "&.Mui-disabled": {
               background: "rgba(0, 0, 0, 0.10)",
@@ -1360,7 +1420,10 @@ const inputSx = {
 //    label, normal-case (not uppercase).
 const FieldLabel: React.FC<{
   label: string;
-  icon?: string; // emoji shown in mint pill before the label
+  // 🆕 Round 28b60 — `icon` now accepts a React node (MUI icon
+  //   component). String emoji still works because React renders
+  //   strings inline — but new code should pass a real icon.
+  icon?: React.ReactNode;
   required?: boolean;
   optional?: boolean;
   children: React.ReactNode;
