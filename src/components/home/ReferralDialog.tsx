@@ -63,11 +63,10 @@ function deriveReferralCode(seed: string | null | undefined): string {
 
 const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
   const { t } = useTranslation();
-  const auth = useAuth() as {
-    user?: { uid?: string; email?: string } | null;
-    currentUser?: { uid?: string; email?: string } | null;
-  };
-  const u = auth.user ?? auth.currentUser ?? null;
+  // 🆕 Round 28r21 — use the typed AuthProvider hook directly so
+  //   `user` shape stays consistent with the rest of the app.
+  const { user } = useAuth();
+  const u = user;
 
   const code = useMemo(
     () => deriveReferralCode(u?.uid ?? u?.email ?? null),
