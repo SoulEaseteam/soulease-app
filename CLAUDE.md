@@ -252,13 +252,23 @@ they prefer.
 
 ### 🔔 OPEN REMINDERS FOR VIEW (read first every session)
 
-**Last updated: 2026-05-07 by Round 28r13 work**
+**Last updated: 2026-05-07 after Round 28r32 push (13 commits shipped)**
 
-**🚨 BLOCKING — must do before next deploy:**
+**🚨 BLOCKING — must do before features below work in production:**
 - [ ] **Publish updated `firestore.rules`** to Firebase Console
-  - Round 28r13 added rules for `analytics_events` collection
-  - Without this, every analytics event will be silently denied
+  - Adds `analytics_events` (r13) + `booking_errors` (r18) collections
+  - Without this, every analytics event + diagnostic write is silently denied
   - Path: Firebase Console → Firestore → Rules → Publish
+- [ ] **Deploy Cloud Functions for Telegram notifications**
+  - `firebase deploy --only functions` from repo root
+  - `git push` only deploys frontend via Vercel — Firebase functions need
+    a separate deploy. Without this, customer bookings DON'T trigger TG alert
+    to admin, AND admin doesn't see them in the back-office.
+- [ ] **Composite Firestore index** — `bookings` collection,
+  fields: `status` (asc) + `startAt` (asc). Required for the new
+  `bookingNow` query in `useSocialProofMetrics` (r30). Until built,
+  the SocialProofTicker will show only count24h + topService, never
+  the "X sessions happening right now" line.
 
 **📋 Decisions needed from View (for auto-bot Round next):**
 - [ ] Confirm Telegram channel ID — `@SunRed_BKK`?
@@ -274,19 +284,51 @@ they prefer.
 - [ ] Set up LINE OA (TH/JP/KR)
 - [ ] Decide: keep "Sammyboy 200฿ off" promo or drop?
 
-### Round 28r4–r16 deliveries (already shipped this session)
+### Round 28r4–r32 deliveries (already shipped + pushed)
 
-- ✅ Round 28r14: Discount apply logic — FIRST10 (10% capped at ฿500)
-  + SUN-XXXX referrals (฿500 off). Auto-fill from `?ref=` URL +
-  FirstBookingBanner sessionStorage. Re-enabled FirstBookingBanner.
-  Discount line on BookingFlow + BookingSuccess + Telegram payload
-  + Firestore booking doc.
-- ✅ Round 28r15: Admin analytics dashboard (`/admin/analytics`).
-  5 cards (funnel, by-mode conversion, top services, channels,
-  daily trend). Reads `analytics_events` live.
+- ✅ Round 28r32: Fixed "You saved tonight" pill bug — was missing
+  Smart Routing savings. Used wrong taxi variable (`baseFareBeforeRain`
+  = post-routing) so savingsRouting always = 0. Switched to
+  `listPriceTravel` + `sunredPromoDiscount`. Pill now aggregates
+  routing+promo, headline number bumped 17px → 22px serif heavy.
+- ✅ Round 28r31: Megaphone sticker removed from Hero promo banner
+  (founder direction "เอาสติกเกอออก"). Tonight Special banner now
+  reads cleanly on its red→coral gradient.
+- ✅ Round 28r30: PromiseStrip restored on home (between
+  HomeTherapistGrid + HomeFooter) with editorial design + ฿1,800
+  price anchor. SocialProofTicker switched from pseudo-random to
+  100% real Firestore data via new `useSocialProofMetrics` hook
+  (count24h + bookingNow + topService all live).
+- ✅ Round 28r29: "You saved" pill + originalPrice strikethrough
+  on BookingFlow Total + BookingSuccess.
+- ✅ Round 28r28: Tourist-aware promo caps (FIRST10 ฿500→฿200,
+  WELCOME20 ฿800→฿300, etc.) + premium-tier-only codes VIP100
+  (฿100 fixed) + FREETAXI (waive taxi). Premium menu (Gentleman/
+  B2B) now PROMO_BLOCKED for general codes.
+- ✅ Round 28r27: Tier-aware commission split — discount cost
+  shared proportionally between therapist and shop (was: shop
+  absorbed 100%). Earnings page math updated.
+- ✅ Round 28r26: AdminEarningsPage at `/admin/earnings` — daily
+  revenue chart + per-therapist + per-service breakdown + CSV.
+- ✅ Round 28r25: Owner price override on BookingFlow (admin only).
+- ✅ Round 28r24: Admin override mode on BookingFlow — bypasses
+  therapist availability, hours, hold, notes filter.
+- ✅ Round 28r22: RoleViewBanner sticky (admin/therapist).
+- ✅ Round 28r21: Typed `useAuth()` direct in TopNav — admin/
+  therapist drawer card now visible.
+- ✅ Round 28r18: `booking_errors` collection — diagnostic writes
+  on customer booking failures (full form state + browser info).
+- ✅ Round 28r17: Composite-fee taxi math (Smart Routing pill).
 - ✅ Round 28r16: Tonight's roster filter (All / Available now /
   Express ≤5km, default `available_now` in prime hours) + Chinese
   i18n for FAQ + ServiceDetail callout (~95 ZH strings).
+- ✅ Round 28r15: Admin analytics dashboard (`/admin/analytics`).
+  5 cards (funnel, by-mode conversion, top services, channels,
+  daily trend). Reads `analytics_events` live.
+- ✅ Round 28r14: Discount apply logic — FIRST10 (10% capped) +
+  SUN-XXXX referrals (฿500 off). Auto-fill from `?ref=` URL +
+  FirstBookingBanner sessionStorage. Discount line on BookingFlow
+  + BookingSuccess + Telegram payload + Firestore booking doc.
 
 - ✅ Round 28r4: Time-aware concierge mode (4 windows)
   - Live pill, Tonight Special, niche tiles, Therapist grid header,
