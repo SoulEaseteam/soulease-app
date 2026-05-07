@@ -26,7 +26,7 @@ import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import PermPhoneMsgRoundedIcon from '@mui/icons-material/PermPhoneMsgRounded';
 import EditNoteRoundedIcon from '@mui/icons-material/EditNoteRounded';
 import AutoAwesomeSharpIcon from '@mui/icons-material/AutoAwesomeSharp';
-import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
+import WavingHandTwoToneIcon from '@mui/icons-material/WavingHandTwoTone';
 import ElevatorRoundedIcon from "@mui/icons-material/ElevatorRounded";
 import MeetingRoomRoundedIcon from "@mui/icons-material/MeetingRoomRounded";
 import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
@@ -94,7 +94,7 @@ const MEETING_POINTS: {
   {
     id: "lobby",
     label: "Meet at Lobby",
-    icon: <HotelRoundedIcon sx={{ fontSize: 22 }} />,
+    icon: <WavingHandTwoToneIcon sx={{ fontSize: 22 }} />,
     iconBg: "rgba(59, 130, 246, 0.12)",
     iconFg: "#2563eb",
   },

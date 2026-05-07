@@ -4,6 +4,9 @@ import { Outlet } from "react-router-dom";
 import { Box } from "@mui/material";
 import BottomNavGlass from "@/components/layouts/BottomNavGlass";
 import TopNav from "@/components/home/TopNav";
+// 🆕 Round 28r22 — Sticky role-context banner for admin/therapist
+//   when browsing customer routes. Self-hides for guests + customers.
+import RoleViewBanner from "@/components/common/RoleViewBanner";
 
 /**
  * 🎨 Page surface — Phase 1 redesign defers all styling to the MUI theme's
@@ -36,7 +39,11 @@ const MainLayout: React.FC = () => {
     >
       {/* 🆕 Site-wide TopNav — wrapped in the same 430px phone-shell
           column the page content uses, so menu/brand/language stay
-          aligned with whatever route renders below. */}
+          aligned with whatever route renders below.
+          🆕 Round 28r22 — RoleViewBanner sits ABOVE TopNav inside
+          the same sticky column so an admin previewing customer
+          pages always sees the bridge back to backstage. Banner
+          self-hides for guests + signed-in customers. */}
       <Box
         sx={{
           maxWidth: 430,
@@ -46,6 +53,7 @@ const MainLayout: React.FC = () => {
           zIndex: 100,
         }}
       >
+        <RoleViewBanner />
         <TopNav />
       </Box>
 
