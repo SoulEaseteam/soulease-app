@@ -155,7 +155,22 @@ const BookingFlowPage: React.FC = () => {
   const navigate = useNavigate();
   const routerLoc = useLocation();
   const { t } = useTranslation();
-  const { user } = useAuth();
+  // 🆕 Round 28r24 (founder 2026-05-07) — Admin override mode.
+  //   Founder direction "แอดมินจองหน้าเว็บได้อิสละ": when an admin
+  //   is signed in and books on behalf of a customer through the
+  //   regular customer flow, we bypass the guards meant to protect
+  //   guests from over-eager booking:
+  //     • therapist availability gate (admin can override holiday /
+  //       statusOverride / busyUntil)
+  //     • 10-minute hold (admin booking is already confirmed at
+  //       source; the hold-release timer would just confuse them)
+  //     • working-hours window check (admin can schedule outside
+  //       working hours when the practitioner has agreed offline)
+  //     • inappropriate-notes filter (admin trust)
+  //   Customer-facing fields (price, location, etc.) still validate
+  //   normally so the booking record stays clean.
+  const { user, role } = useAuth();
+  const isAdminBooking = role === "admin";
 
   // ── Pre-fill from URL params (DetailPage StickyBookCTA forwards these)
   const preService = searchParams.get("service");
@@ -594,7 +609,11 @@ const BookingFlowPage: React.FC = () => {
       //   so the gate respects whatever admin just toggled. Failing
       //   the check sends the customer back to the therapist detail
       //   page where they'll see the correct "Off duty" pill.
-      if (!therapistIsBookable) {
+      // 🆕 Round 28r24 — Admin override skips the availability gate.
+      //   Founder may need to schedule a therapist who's marked
+      //   off-duty / on holiday because they coordinated availability
+      //   offline. Customer flow keeps the gate.
+      if (!therapistIsBookable && !isAdminBooking) {
         toast.error(
           t(
             "booking.error.therapistUnavailable",
@@ -610,7 +629,10 @@ const BookingFlowPage: React.FC = () => {
         return;
       }
 
-      if (form.notes && (await isInappropriate(form.notes))) {
+      // 🆕 Round 28r24 — Admin notes bypass the moderation filter.
+      //   Admin uses notes for internal context ("VIP, hotel security
+      //   needs ID at desk", etc.) that may include sensitive words.
+      if (form.notes && !isAdminBooking && (await isInappropriate(form.notes))) {
         toast.error(
           t(
             "booking.error.inappropriateNotes",
@@ -706,11 +728,17 @@ const BookingFlowPage: React.FC = () => {
         //   We use server-side dayjs so device clock skew can't extend
         //   the hold artificially. The 10-minute window is configurable
         //   by changing the constant below.
-        holdState: "active",
-        holdExpiresAt: Timestamp.fromDate(
-          dayjs().add(10, "minute").toDate()
-        ),
-        holdDurationMin: 10,
+        // 🆕 Round 28r24 — Admin bookings are pre-confirmed, no
+        //   countdown. Customer bookings still get the 10-min hold.
+        holdState: isAdminBooking ? "confirmed" : "active",
+        holdExpiresAt: isAdminBooking
+          ? null
+          : Timestamp.fromDate(dayjs().add(10, "minute").toDate()),
+        holdDurationMin: isAdminBooking ? 0 : 10,
+        // 🆕 Round 28r24 — flag the booking as admin-created for
+        //   downstream filters (analytics dashboard, admin-only
+        //   reports). Customer bookings keep the field undefined.
+        createdByAdmin: isAdminBooking ? user?.uid ?? null : null,
         yearMonth: dayjs(startDate.toDate()).format("YYYY-MM"), // analytics
         createdAt: serverTimestamp(), // server clock — gracefully handles user device clock skew
       });
@@ -906,6 +934,71 @@ const BookingFlowPage: React.FC = () => {
           }}
           onTap={goEditAddress}
         />
+
+        {/* 🆕 Round 28r24 (founder 2026-05-07) — Admin override banner.
+            Shows ONLY when an admin is booking through the customer
+            flow. Confirms which guards have been bypassed so admin
+            doesn't expect the 10-min-hold countdown to appear later. */}
+        {isAdminBooking && (
+          <Box
+            sx={{
+              mb: 1.5,
+              p: "10px 12px",
+              borderRadius: "12px",
+              background: "linear-gradient(135deg, rgba(254, 9, 68, 0.10), rgba(254, 122, 82, 0.06))",
+              border: "1px solid rgba(254, 9, 68, 0.28)",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "10px",
+            }}
+          >
+            <Box
+              aria-hidden
+              sx={{
+                width: 22,
+                height: 22,
+                borderRadius: "50%",
+                background: "#FE0944",
+                color: "#fff",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                fontSize: 12,
+                fontWeight: 800,
+              }}
+            >
+              ✓
+            </Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Box
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: 9.5,
+                  fontWeight: 800,
+                  letterSpacing: "0.10em",
+                  textTransform: "uppercase",
+                  color: "#9F0731",
+                  lineHeight: 1,
+                }}
+              >
+                Admin booking · Free schedule
+              </Box>
+              <Box
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: 11.5,
+                  color: "rgba(60, 30, 20, 0.7)",
+                  marginTop: "3px",
+                  lineHeight: 1.35,
+                }}
+              >
+                Holiday / off-duty / working-hours / 10-min-hold all
+                bypassed. Auto-confirmed on submit.
+              </Box>
+            </Box>
+          </Box>
+        )}
 
         {/* ─────────── Order Details card (pattern 4A) ─────────── */}
         <SectionCard label="Order Details" icon={<ReceiptLongRoundedIcon />}>
