@@ -135,32 +135,6 @@ export async function sendBookingNotification(
   }
 }
 
-/**
- * Format Telegram message
- *
- * Target layout (Round 28c22):
- *
- *   19/04/2026 03:00
- *   🧾 Booking ID: abc123
- *
- *   Therapist: Yuri
- *   Time: 03:00
- *   ────────────────────
- *   📍 Address: Mercure Bangkok Sukhumvit 11
- *
- *   Service: Gentleman's Signature Therapy
- *   Duration: 80 min
- *   Price: 2,200 ฿
- *
- *   🚖 Taxi: 193 ฿
- *   💰 Total: 2,393 ฿
- *
- *   📞 Phone: 0994037987
- *   Note: -
- *   ────────────────────
- *   🗺️ Map:
- *   https://www.google.com/maps/search/?api=1&query=...
- */
 function formatMessage(p: NotifyPayload): string {
   const date24 = fmtBKK(p.startAt, "DD/MM/YYYY");
   const time24 = fmtBKK(p.startAt, "HH:mm");

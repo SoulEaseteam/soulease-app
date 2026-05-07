@@ -116,49 +116,6 @@ export function getServiceLabelShort(
   return full.length > 20 ? `${full.slice(0, 18)}…` : full;
 }
 
-// ─── Service price lookup ────────────────────────────────────────────
-//
-// 💰 Three distinct price layers — DO NOT confuse (founder principle
-//    2026-05-04: "ราคาไม่มีทางซ้ำ หากมีส่วนลดในอนาคต ก็นับราคาตั้งต้นก่อน"):
-//
-//   1. BASE PRICE (immutable reference)
-//        `basePrice` field on booking + `service.price` in catalog.
-//        The catalog 60-min standard rate. Discounts NEVER reduce
-//        this — analytics/reports can always reconstruct original
-//        revenue from this number alone.
-//
-//   2. SERVICE PRICE (duration-adjusted, BEFORE discount)
-//        `servicePrice` field on booking. Equals
-//        `priceForDuration(service, duration)` at booking time. This
-//        is the LIST PRICE the customer would pay without any code.
-//        Snapshot — never changes after booking.
-//
-//   3. PAID PRICE (final, AFTER discount + travel fee + addons)
-//        `totalPrice` field on booking. The exact amount transferred.
-//        When a future discount lands, we'll add a `discountAmount`
-//        field and compute `paid = servicePrice - discountAmount +
-//        taxiFee + addonsTotal` — basePrice + servicePrice stay
-//        untouched as historical reference.
-//
-// Catalog lookup helpers (LIVE — for tiles, current list pricing):
-//
-//   getServicePrice(serviceId, duration)   → current per-duration price
-//   getServiceStartingPrice(serviceId)     → cheapest tier ("From ฿X")
-//
-// Booking page lookup (HISTORICAL — never recompute, just read):
-//
-//   booking.basePrice                      → original 60-min reference
-//   booking.servicePrice                   → list price at time of booking
-//   booking.totalPrice                     → what they actually paid
-//
-// Future discount path (no schema migration needed):
-//   • Add `discountAmount: number` to booking write
-//   • UI subtracts: `final = servicePrice - discountAmount`
-//   • Reports still show "list price" via servicePrice column intact
-
-/** Live catalog price (THB) for a service id + duration. Returns
- *  `null` when the id isn't in the catalog or the duration isn't
- *  supported. Use for current/list pricing — NOT historical. */
 export function getServicePrice(
   serviceId: string | null | undefined,
   durationMin: number

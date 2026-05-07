@@ -34,10 +34,23 @@ import { getActiveReferralCode } from "@/utils/referral";
 
 const FIRST10_PERCENT = 10;
 const FIRST10_CAP_THB = 500;
+const WELCOME20_PERCENT = 20;
+const WELCOME20_CAP_THB = 800;
 const REFERRAL_FIXED_THB = 500;
+const TONIGHT500_FIXED_THB = 500;
+const SAMMY200_FIXED_THB = 200;
+
+// 🆕 Round 28r20 — TONIGHT500 only valid for bookings starting in
+//   prime hours (22:00–04:00 BKK). Booked daytime → "code not
+//   recognised" hint, no discount applied.
+const TONIGHT_HOUR_START = 22;
+const TONIGHT_HOUR_END = 4;
 
 const REFERRAL_CODE_RE = /^SUN-[A-Z0-9]{4,8}$/;
 const FIRST_TIME_CODE = "FIRST10";
+const WELCOME_CODE = "WELCOME20";
+const TONIGHT_CODE = "TONIGHT500";
+const SAMMY_CODE = "SAMMY200";
 
 export type DiscountType = "percent" | "fixed" | "none";
 
@@ -62,16 +75,27 @@ const NULL_RESULT: DiscountResult = {
   type: "none",
 };
 
+export interface DiscountValidationContext {
+  /** Bangkok-local hour (0-23) of the booking start time. Used by
+   *  time-restricted codes (TONIGHT500). Pass the actual booking
+   *  start, not "now" — guests can book at 09:00 for tonight 23:00.
+   *  When undefined, time-restricted codes silently fail-validate. */
+  bookingHourBKK?: number;
+}
+
 /**
  * Validate a discount code against the current subtotal.
  * @param raw         User-entered code (any case, may have whitespace)
  * @param subtotalTHB Booking subtotal BEFORE discount (service + addons + travel).
  *                    The cap on percent discounts is computed against this.
+ * @param ctx         Optional context (booking time, etc.) for codes
+ *                    that require it. See DiscountValidationContext.
  * @returns           Always-defined result. Inspect `.valid` to decide.
  */
 export function validateDiscount(
   raw: string | null | undefined,
-  subtotalTHB: number
+  subtotalTHB: number,
+  ctx?: DiscountValidationContext
 ): DiscountResult {
   if (!raw) return NULL_RESULT;
   const code = raw.trim().toUpperCase();
@@ -87,6 +111,55 @@ export function validateDiscount(
       amount,
       label: `First booking — ${FIRST10_PERCENT}% off`,
       type: "percent",
+    };
+  }
+
+  // 🆕 Round 28r20 — WELCOME20: 20% off, capped at ฿800.
+  // Higher-tier launch promo. Customer chooses one (FIRST10 vs
+  // WELCOME20) — no stacking; whichever they type wins.
+  if (code === WELCOME_CODE) {
+    const raw20 = Math.round((subtotalTHB * WELCOME20_PERCENT) / 100);
+    const amount = Math.max(0, Math.min(raw20, WELCOME20_CAP_THB));
+    return {
+      valid: true,
+      code,
+      amount,
+      label: `Welcome — ${WELCOME20_PERCENT}% off`,
+      type: "percent",
+    };
+  }
+
+  // 🆕 Round 28r20 — TONIGHT500: ฿500 off late-night bookings only.
+  // Restricted to booking start time 22:00–04:00 BKK so it actually
+  // drives prime-hour conversions (where SunRed has the supply
+  // advantage). Booked outside that window → invalid.
+  if (code === TONIGHT_CODE) {
+    const hour = ctx?.bookingHourBKK;
+    const isPrime =
+      typeof hour === "number" &&
+      (hour >= TONIGHT_HOUR_START || hour < TONIGHT_HOUR_END);
+    if (!isPrime) {
+      // Quiet invalid — UI shows "code not recognised" hint.
+      return { ...NULL_RESULT, code };
+    }
+    return {
+      valid: true,
+      code,
+      amount: TONIGHT500_FIXED_THB,
+      label: `Late-night · ฿${TONIGHT500_FIXED_THB} off`,
+      type: "fixed",
+    };
+  }
+
+  // 🆕 Round 28r20 — SAMMY200: ฿200 off. Honors the promo founder
+  // ran on Sammyboy Bangkok forum. No conditions; flat applies.
+  if (code === SAMMY_CODE) {
+    return {
+      valid: true,
+      code,
+      amount: SAMMY200_FIXED_THB,
+      label: `Sammyboy — ฿${SAMMY200_FIXED_THB} off`,
+      type: "fixed",
     };
   }
 

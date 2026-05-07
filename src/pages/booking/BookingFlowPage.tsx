@@ -516,8 +516,16 @@ const BookingFlowPage: React.FC = () => {
   //   FIRST10's 10% cap is computed against the subtotal (not the
   //   raw service price), so add-ons + travel get included in the
   //   percentage base — fairer for guests who picked add-ons.
+  // 🆕 Round 28r20 — Pass bookingHourBKK so time-restricted codes
+  //   (TONIGHT500) can validate against the actual booking start
+  //   time (BKK timezone), not the user's current local time.
   const subtotal = servicePrice + addonsTotal + taxiFare;
-  const discount = validateDiscount(form.discountCode, subtotal);
+  const bookingHourBKK = form.time
+    ? parseInt(form.time.split(":")[0], 10)
+    : undefined;
+  const discount = validateDiscount(form.discountCode, subtotal, {
+    bookingHourBKK,
+  });
   const discountAmount = discount.valid ? discount.amount : 0;
   const total = Math.max(0, subtotal - discountAmount);
 

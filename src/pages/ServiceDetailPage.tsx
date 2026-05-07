@@ -1,31 +1,9 @@
-// src/pages/ServiceDetailPage.tsx
-//
-// Round 28c5 (founder 2026-05-05) — full redesign matching the SunRed
-// design system. Replaces the Trebuchet-MS / warm-tan / emoji-heavy
-// layout with the cool-neutral, Fraunces+Inter, no-emoji editorial
-// system used throughout the rest of the app.
-//
-// Section flow (top → bottom):
-//   1. Sticky header — back arrow + small service name
-//   2. Hero image with brand badge
-//   3. Title block — eyebrow (badge as small caps) + serif title +
-//      italic description
-//   4. Duration & price tiles — 60 / 90 / 120 min, three tiles side by
-//      side with the per-duration price (computed via servicePricing)
-//   5. "Reserved by N guests" chip — live Firestore booking count
-//   6. About-this-therapy hero card — uses service.detail
-//   7. Therapeutic benefits — single-column list of check-tick cards
-//      from service.benefit
-//   8. Payment & Policy CTA — links to canonical /payment-methods
-//   9. Sticky bottom CTA — "Reserve this therapy" gradient red button
-//
-// Legacy slug compatibility kept via resolveServiceId.
+
 
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Box, Typography, IconButton, Button } from "@mui/material";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
-import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";

@@ -1,27 +1,5 @@
 // src/utils/time.ts
 //
-// 🕐 Round 28an — single source of truth for time across SunRed.
-//
-// All times in SunRed are anchored to **Asia/Bangkok** (UTC+7, no DST).
-// This file exports thin helpers so every component / hook reads time
-// the same way regardless of:
-//   • the user's device clock (could be wrong / in another TZ)
-//   • the user's locale (their browser may format with weird AM/PM)
-//   • whether the data is a Firestore Timestamp, JS Date, ISO string,
-//     or epoch number
-//
-// Why dayjs?
-//   • Already installed (~3kb gzipped)
-//   • UTC + timezone plugins handle "convert this UTC moment to its
-//     BKK wall-clock representation" without messing with raw setHours
-//
-// Usage:
-//   import { nowBKK, fmtBKK, sameDayBKK, parseHHMMatBKK } from "@/utils/time";
-//   const now = nowBKK();                    // dayjs in Asia/Bangkok
-//   fmtBKK(booking.startAt, "HH:mm");        // "23:05"
-//   fmtBKK(booking.startAt, "DD MMM YYYY");  // "16 Aug 2025"
-//   sameDayBKK(a, b);                        // boolean
-//   parseHHMMatBKK("19:00", new Date());     // dayjs at 19:00 BKK today
 
 import dayjs, { type Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc";
