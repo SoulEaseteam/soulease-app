@@ -64,11 +64,16 @@ const MENU_PROPS = {
 
 type Errors = Partial<Record<string, string>>;
 
-const fadeUp = (delay = 0) => ({
-  initial:    { opacity: 0 },
-  animate:    { opacity: 1 },
-  transition: { duration: 0.22, delay, ease: "easeOut" as const },
-});
+// 🆕 Round 28r23 (founder 2026-05-07) — `fadeUp` neutered.
+//   Founder feedback: "เอฟเฟต เด้งกิน ทำงานลำบาก" — every section
+//   was wrapped in motion.div animating opacity 0→1 with stagger
+//   delays, so opening the page felt like a slot machine. Each
+//   <Section> tap or refresh re-played the animation, which is
+//   especially annoying when admin is doing 5+ bookings in a row.
+//   Returning empty props makes motion.div a no-op (renders the
+//   children inline, no animation, no delay) without ripping the
+//   wrappers out of the JSX.
+const fadeUp = (_delay = 0) => ({});
 
 // ── location state ────────────────────────────────────────────────────
 interface LocationState {
@@ -348,50 +353,121 @@ const AdminBookingAddPage: React.FC = () => {
     },
   });
 
-  const Section = ({ title, delay = 0, children }: { title: string; delay?: number; children: React.ReactNode }) => (
-    <motion.div {...fadeUp(delay)}>
-      <Box sx={{ mb: 3 }}>
-        <Typography sx={{
-          fontFamily: SERIF, fontSize: 15, fontWeight: 700,
-          color: "#1a0805", mb: 1.5,
-          borderLeft: `3px solid ${brand.red}`, pl: 1.25,
-        }}>
-          {title}
-        </Typography>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {children}
-        </Box>
+  // 🆕 Round 28r23 — Section now renders as an editorial card,
+  //   matching SectionCard / Confirm Order page on the customer
+  //   side. Eyebrow style title, soft pink icon disc spot, white
+  //   card surface. No more `borderLeft: red` admin-form vibe.
+  const Section = ({ title, children }: { title: string; delay?: number; children: React.ReactNode }) => (
+    <Box
+      sx={{
+        mb: 2,
+        padding: "16px 18px 18px",
+        borderRadius: "16px",
+        background: "rgba(255, 255, 255, 0.85)",
+        border: "1px solid rgba(255, 255, 255, 0.7)",
+        boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
+      }}
+    >
+      <Typography
+        sx={{
+          fontFamily: SANS,
+          fontSize: 10,
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          color: brand.accent,
+          fontWeight: 700,
+          mb: 1.25,
+        }}
+      >
+        {title}
+      </Typography>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.75 }}>
+        {children}
       </Box>
-    </motion.div>
+    </Box>
   );
 
   return (
-    <Box sx={{ minHeight: "100vh", background: "#F7F3F1", pb: 6 }}>
+    <Box
+      sx={{
+        // 🆕 Round 28r23 — page background swapped from flat #F7F3F1
+        //   to the same warm-cream gradient customer pages use, so
+        //   the editorial hero card sits inside a familiar surface.
+        minHeight: "100vh",
+        background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
+        pb: 6,
+      }}
+    >
 
-      {/* ── Dark hero ── */}
-      <motion.div {...fadeUp(0)}>
-        <Box sx={{
-          background: "linear-gradient(135deg,#1a0805 0%,#3c1010 100%)",
-          px: { xs: 2.5, sm: 4 }, pt: 3.5, pb: 3,
-          display: "flex", alignItems: "flex-start", gap: 1.5,
-        }}>
-          <IconButton
-            size="small"
-            onClick={() => navigate(-1)}
-            sx={{ color: "rgba(255,255,255,0.7)", mt: 0.25, "&:hover": { color: "#fff" } }}
+      {/* 🆕 Round 28r23 — Editorial header replaces the dark
+          burgundy hero. Reads as the white sticky header used by
+          BookingFlowPage / SelectLocationPage so admin shifts
+          between flows without visual whiplash. */}
+      <Box
+        sx={{
+          background: "rgba(255, 255, 255, 0.92)",
+          backdropFilter: "blur(20px) saturate(180%)",
+          WebkitBackdropFilter: "blur(20px) saturate(180%)",
+          borderBottom: "1px solid rgba(184, 92, 60, 0.12)",
+          px: { xs: 2, sm: 3 },
+          pt: 2.5,
+          pb: 2,
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 1.5,
+        }}
+      >
+        <IconButton
+          size="small"
+          onClick={() => navigate(-1)}
+          sx={{
+            color: "rgba(60,30,20,0.55)",
+            mt: 0.25,
+            "&:hover": { color: brand.red },
+          }}
+        >
+          <ArrowLeft size={20} />
+        </IconButton>
+        <Box sx={{ flex: 1 }}>
+          <Typography
+            sx={{
+              fontFamily: SERIF,
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: brand.accent,
+              fontWeight: 700,
+              mb: 0.25,
+            }}
           >
-            <ArrowLeft size={20} />
-          </IconButton>
-          <Box>
-            <Typography sx={{ fontFamily: SERIF, fontSize: 22, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>
-              จองใหม่ (Admin)
-            </Typography>
-            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(255,255,255,0.55)", mt: 0.5 }}>
-              จองได้ทุกเวลา · ล่วงหน้าได้ · ไม่จำกัดวันหยุด
-            </Typography>
-          </Box>
+            Admin · New Booking
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: SERIF,
+              fontSize: 22,
+              fontWeight: 600,
+              color: "#3c1e14",
+              lineHeight: 1.15,
+              letterSpacing: "-0.01em",
+              "& em": { fontStyle: "italic", color: brand.red },
+            }}
+          >
+            จองให้ <em>ลูกค้า</em>
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: 11.5,
+              color: "rgba(60,30,20,0.6)",
+              mt: 0.5,
+              lineHeight: 1.4,
+            }}
+          >
+            ล่วงหน้าได้ทุกเวลา · ไม่จำกัดวันหยุด · ไม่ผ่าน 10-min hold
+          </Typography>
         </Box>
-      </motion.div>
+      </Box>
 
       {/* ── Form body ── */}
       <Box sx={{ maxWidth: 640, mx: "auto", px: { xs: 2, sm: 3 }, pt: 3 }}>
