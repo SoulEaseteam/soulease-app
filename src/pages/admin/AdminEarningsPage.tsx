@@ -1,0 +1,748 @@
+// src/pages/admin/AdminEarningsPage.tsx
+//
+// 🆕 Round 28r26 (founder 2026-05-07) — Earnings calculator.
+//
+// Founder direction: "ขอเมนูคำนวณรายได้ด้วยนะ" — a dedicated
+// admin page that computes income from completed bookings, split
+// across the standard 60/40 therapist-shop share, with period
+// filters + per-therapist + per-service breakdowns + CSV export.
+//
+// Data source: Firestore `bookings` collection. Excludes any doc
+// whose `status` is in {cancelled, canceled, refunded, failed,
+// rejected, no_show}. The computation matches AdminReportPage's
+// existing 60/40 rule so finance numbers stay consistent across
+// the two surfaces.
+//
+// What this page deliberately does NOT do:
+//   • Track payouts (which therapist has been paid which week)
+//   • Compute taxes / VAT — out of scope for v1
+//   • Forecast future revenue
+// Those would live in a separate /admin/finance page if needed.
+
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  ToggleButton,
+  ToggleButtonGroup,
+  Button,
+} from "@mui/material";
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+  Timestamp,
+  type DocumentData,
+} from "firebase/firestore";
+import dayjs, { type Dayjs } from "dayjs";
+
+import { db } from "@/lib/firebase";
+import { formatTHB } from "@/utils/servicePricing";
+import { getServiceLabel } from "@/utils/serviceCatalog";
+
+const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SANS = '"Inter", system-ui, -apple-system, sans-serif';
+
+// 60/40 split — same rule as AdminReportPage
+const THERAPIST_PCT = 0.6;
+const SHOP_PCT = 0.4;
+
+const EXCLUDED_STATUSES = new Set([
+  "cancelled",
+  "canceled",
+  "refunded",
+  "failed",
+  "rejected",
+  "no_show",
+]);
+
+interface BookingRow {
+  id: string;
+  therapistId?: string | null;
+  therapistName?: string | null;
+  serviceId?: string | null;
+  serviceName?: string | null;
+  totalPrice?: number | null;
+  servicePrice?: number | null;
+  taxiFee?: number | null;
+  status?: string;
+  startAt?: Timestamp | null;
+  createdAt?: Timestamp | null;
+}
+
+type Range = "today" | "week" | "month" | "year";
+
+const RANGE_LABEL: Record<Range, string> = {
+  today: "Today",
+  week: "Last 7 days",
+  month: "Last 30 days",
+  year: "Last 12 months",
+};
+
+function rangeStart(range: Range): Dayjs {
+  const now = dayjs();
+  switch (range) {
+    case "today":
+      return now.startOf("day");
+    case "week":
+      return now.subtract(7, "day").startOf("day");
+    case "month":
+      return now.subtract(30, "day").startOf("day");
+    case "year":
+      return now.subtract(12, "month").startOf("day");
+  }
+}
+
+const AdminEarningsPage: React.FC = () => {
+  const [range, setRange] = useState<Range>("month");
+  const [bookings, setBookings] = useState<BookingRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    const cutoff = Timestamp.fromDate(rangeStart(range).toDate());
+    // Filter on createdAt server-side; status filter happens client-side
+    const q = query(
+      collection(db, "bookings"),
+      where("createdAt", ">=", cutoff)
+    );
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const arr: BookingRow[] = [];
+        snap.forEach((doc) => {
+          const d = doc.data() as DocumentData;
+          arr.push({
+            id: doc.id,
+            therapistId: d.therapistId ?? null,
+            therapistName: d.therapistName ?? null,
+            serviceId: d.serviceId ?? null,
+            serviceName: d.serviceName ?? null,
+            totalPrice: d.totalPrice ?? null,
+            servicePrice: d.servicePrice ?? null,
+            taxiFee: d.taxiFee ?? null,
+            status: d.status ?? "",
+            startAt: d.startAt ?? null,
+            createdAt: d.createdAt ?? null,
+          });
+        });
+        setBookings(arr);
+        setLoading(false);
+      },
+      (err) => {
+        console.error("[earnings] snapshot error:", err);
+        setLoading(false);
+      }
+    );
+    return () => unsub();
+  }, [range]);
+
+  // ── Aggregations ──
+  const stats = useMemo(() => {
+    let totalGross = 0;
+    let totalServicePrice = 0;
+    let totalTaxi = 0;
+    let countCompleted = 0;
+    let countCancelled = 0;
+
+    const byTherapist: Record<
+      string,
+      { name: string; jobs: number; gross: number; service: number }
+    > = {};
+    const byService: Record<
+      string,
+      { name: string; jobs: number; gross: number }
+    > = {};
+    const byDay: Record<string, number> = {};
+
+    for (const b of bookings) {
+      if (b.status && EXCLUDED_STATUSES.has(b.status)) {
+        countCancelled += 1;
+        continue;
+      }
+      countCompleted += 1;
+      const gross = b.totalPrice ?? (b.servicePrice ?? 0) + (b.taxiFee ?? 0);
+      const service = b.servicePrice ?? 0;
+      const taxi = b.taxiFee ?? 0;
+
+      totalGross += gross;
+      totalServicePrice += service;
+      totalTaxi += taxi;
+
+      // Per-therapist
+      const tKey = b.therapistId ?? "(no therapist)";
+      const tName = b.therapistName ?? tKey;
+      if (!byTherapist[tKey]) {
+        byTherapist[tKey] = { name: tName, jobs: 0, gross: 0, service: 0 };
+      }
+      byTherapist[tKey].jobs += 1;
+      byTherapist[tKey].gross += gross;
+      byTherapist[tKey].service += service;
+
+      // Per-service
+      const sKey = b.serviceId ?? "(no service)";
+      const sName = getServiceLabel(b.serviceId, b.serviceName);
+      if (!byService[sKey]) {
+        byService[sKey] = { name: sName, jobs: 0, gross: 0 };
+      }
+      byService[sKey].jobs += 1;
+      byService[sKey].gross += gross;
+
+      // Per-day bucket
+      if (b.createdAt?.toDate) {
+        const day = dayjs(b.createdAt.toDate()).format("YYYY-MM-DD");
+        byDay[day] = (byDay[day] ?? 0) + gross;
+      }
+    }
+
+    const therapistPayout = Math.round(totalServicePrice * THERAPIST_PCT);
+    const shopNet = Math.round(totalServicePrice * SHOP_PCT);
+
+    return {
+      totalGross,
+      totalServicePrice,
+      totalTaxi,
+      therapistPayout,
+      shopNet,
+      countCompleted,
+      countCancelled,
+      byTherapist,
+      byService,
+      byDay,
+    };
+  }, [bookings]);
+
+  // Daily trend keys (for chart)
+  const trendDates = useMemo(() => {
+    const days = range === "today" ? 1 : range === "week" ? 7 : range === "month" ? 30 : 365;
+    const cap = Math.min(days, 60); // cap chart at 60 days for readability
+    const out: string[] = [];
+    for (let i = cap - 1; i >= 0; i--) {
+      out.push(dayjs().subtract(i, "day").format("YYYY-MM-DD"));
+    }
+    return out;
+  }, [range]);
+
+  const trendMax = useMemo(
+    () => Math.max(1, ...trendDates.map((d) => stats.byDay[d] ?? 0)),
+    [stats.byDay, trendDates]
+  );
+
+  const handleExportCSV = () => {
+    const headers = [
+      "Date",
+      "BookingID",
+      "Therapist",
+      "Service",
+      "ServicePrice",
+      "Taxi",
+      "Gross",
+      "TherapistShare(60%)",
+      "ShopShare(40%)",
+      "Status",
+    ];
+    const rows = bookings
+      .filter((b) => !EXCLUDED_STATUSES.has(b.status ?? ""))
+      .map((b) => {
+        const gross = b.totalPrice ?? (b.servicePrice ?? 0) + (b.taxiFee ?? 0);
+        const service = b.servicePrice ?? 0;
+        return [
+          b.createdAt?.toDate
+            ? dayjs(b.createdAt.toDate()).format("YYYY-MM-DD HH:mm")
+            : "",
+          `SR-${b.id.slice(0, 8).toUpperCase()}`,
+          b.therapistName ?? "",
+          getServiceLabel(b.serviceId, b.serviceName),
+          service,
+          b.taxiFee ?? 0,
+          gross,
+          Math.round(service * THERAPIST_PCT),
+          Math.round(service * SHOP_PCT),
+          b.status ?? "",
+        ];
+      });
+    const csv = [headers, ...rows]
+      .map((r) =>
+        r
+          .map((cell) => {
+            const s = String(cell ?? "");
+            return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+          })
+          .join(",")
+      )
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `sunred-earnings-${range}-${dayjs().format("YYYY-MM-DD")}.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  };
+
+  return (
+    <Box sx={{ padding: { xs: 2, md: 3 }, maxWidth: 1200, margin: "0 auto" }}>
+      {/* Header */}
+      <Box
+        sx={{
+          mb: 3,
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 2,
+          flexWrap: "wrap",
+        }}
+      >
+        <Box>
+          <Typography
+            sx={{
+              fontFamily: SERIF,
+              fontSize: { xs: 24, md: 30 },
+              fontWeight: 600,
+              color: "#3c1e14",
+              letterSpacing: "-0.02em",
+              "& em": { fontStyle: "italic", color: "#FE0944" },
+            }}
+          >
+            Earnings <em>calculator</em>
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: 13,
+              color: "rgba(60, 30, 20, 0.65)",
+              marginTop: "4px",
+            }}
+          >
+            Live booking revenue · 60/40 therapist-shop split ·
+            excludes cancelled / refunded
+          </Typography>
+        </Box>
+
+        <Button
+          variant="outlined"
+          onClick={handleExportCSV}
+          disabled={loading || bookings.length === 0}
+          sx={{
+            textTransform: "none",
+            borderRadius: "10px",
+            fontFamily: SANS,
+            fontSize: 13,
+            fontWeight: 600,
+            borderColor: "#FE0944",
+            color: "#FE0944",
+            "&:hover": {
+              borderColor: "#FE0944",
+              background: "rgba(254, 9, 68, 0.06)",
+            },
+          }}
+        >
+          ⬇ Export CSV
+        </Button>
+      </Box>
+
+      <ToggleButtonGroup
+        value={range}
+        exclusive
+        size="small"
+        onChange={(_, v) => v && setRange(v as Range)}
+        sx={{ mb: 3 }}
+      >
+        {(Object.keys(RANGE_LABEL) as Range[]).map((r) => (
+          <ToggleButton key={r} value={r}>
+            {RANGE_LABEL[r]}
+          </ToggleButton>
+        ))}
+      </ToggleButtonGroup>
+
+      {loading ? (
+        <Box sx={{ textAlign: "center", py: 6 }}>
+          <CircularProgress size={28} sx={{ color: "#FE0944" }} />
+        </Box>
+      ) : bookings.length === 0 ? (
+        <Card>
+          <Typography sx={{ fontFamily: SANS, fontSize: 14, color: "rgba(60,30,20,0.6)" }}>
+            No bookings in this period.
+          </Typography>
+        </Card>
+      ) : (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* Headline numbers */}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr 1fr", sm: "1fr 1fr 1fr" },
+              gap: 2,
+            }}
+          >
+            <BigStat
+              label="Gross revenue"
+              value={formatTHB(stats.totalGross)}
+              sub={`${stats.countCompleted} bookings`}
+              accent="brand"
+            />
+            <BigStat
+              label="Therapist payout (60%)"
+              value={formatTHB(stats.therapistPayout)}
+              sub={`from service price ${formatTHB(stats.totalServicePrice)}`}
+            />
+            <BigStat
+              label="Shop net (40%)"
+              value={formatTHB(stats.shopNet)}
+              sub={`+ travel fees ${formatTHB(stats.totalTaxi)}`}
+              accent="brand"
+            />
+          </Box>
+
+          {/* Cancelled + average per booking */}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr 1fr", sm: "1fr 1fr" },
+              gap: 2,
+            }}
+          >
+            <Card>
+              <Eyebrow>Cancelled / refunded</Eyebrow>
+              <Typography
+                sx={{
+                  fontFamily: SERIF,
+                  fontSize: 22,
+                  fontWeight: 600,
+                  color: "#3c1e14",
+                  mt: 1,
+                }}
+              >
+                {stats.countCancelled} bookings
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: 11,
+                  color: "rgba(60, 30, 20, 0.55)",
+                  mt: 0.5,
+                }}
+              >
+                Excluded from totals above.
+              </Typography>
+            </Card>
+            <Card>
+              <Eyebrow>Average per booking</Eyebrow>
+              <Typography
+                sx={{
+                  fontFamily: SERIF,
+                  fontSize: 22,
+                  fontWeight: 600,
+                  color: "#3c1e14",
+                  mt: 1,
+                }}
+              >
+                {formatTHB(
+                  stats.countCompleted
+                    ? Math.round(stats.totalGross / stats.countCompleted)
+                    : 0
+                )}
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: 11,
+                  color: "rgba(60, 30, 20, 0.55)",
+                  mt: 0.5,
+                }}
+              >
+                Gross / completed bookings.
+              </Typography>
+            </Card>
+          </Box>
+
+          {/* Daily trend */}
+          <Card>
+            <Eyebrow>Daily revenue</Eyebrow>
+            <Typography
+              sx={{
+                fontFamily: SERIF,
+                fontSize: 18,
+                fontWeight: 600,
+                color: "#3c1e14",
+                mt: 0.5,
+                mb: 2,
+              }}
+            >
+              Gross by day · {trendDates.length} days
+            </Typography>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: `repeat(${trendDates.length}, 1fr)`,
+                gap: "3px",
+                alignItems: "end",
+                height: 110,
+              }}
+            >
+              {trendDates.map((d) => {
+                const v = stats.byDay[d] ?? 0;
+                const pct = (v / trendMax) * 100;
+                return (
+                  <Box
+                    key={d}
+                    title={`${d}: ${formatTHB(v)}`}
+                    sx={{
+                      height: `${pct}%`,
+                      background:
+                        v > 0
+                          ? "linear-gradient(180deg, #FE7A52, #FE0944)"
+                          : "rgba(15, 23, 42, 0.06)",
+                      borderRadius: "3px 3px 0 0",
+                      minHeight: 2,
+                    }}
+                  />
+                );
+              })}
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                mt: 1,
+                fontFamily: SANS,
+                fontSize: 10,
+                color: "rgba(60, 30, 20, 0.55)",
+              }}
+            >
+              <span>{dayjs(trendDates[0]).format("D MMM")}</span>
+              <span>
+                {dayjs(trendDates[trendDates.length - 1]).format("D MMM")}
+              </span>
+            </Box>
+          </Card>
+
+          {/* Per-therapist + per-service breakdown */}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+              gap: 2,
+            }}
+          >
+            <Card>
+              <Eyebrow>By therapist</Eyebrow>
+              <Typography
+                sx={{
+                  fontFamily: SERIF,
+                  fontSize: 18,
+                  fontWeight: 600,
+                  color: "#3c1e14",
+                  mt: 0.5,
+                  mb: 1.5,
+                }}
+              >
+                Top earners
+              </Typography>
+              <RankedRows
+                rows={Object.values(stats.byTherapist)
+                  .sort((a, b) => b.gross - a.gross)
+                  .slice(0, 8)
+                  .map((r) => ({
+                    label: r.name,
+                    sub: `${r.jobs} job${r.jobs === 1 ? "" : "s"} · payout ${formatTHB(
+                      Math.round(r.service * THERAPIST_PCT)
+                    )}`,
+                    value: formatTHB(r.gross),
+                    pct: r.gross / Math.max(1, stats.totalGross),
+                  }))}
+              />
+            </Card>
+
+            <Card>
+              <Eyebrow>By service</Eyebrow>
+              <Typography
+                sx={{
+                  fontFamily: SERIF,
+                  fontSize: 18,
+                  fontWeight: 600,
+                  color: "#3c1e14",
+                  mt: 0.5,
+                  mb: 1.5,
+                }}
+              >
+                Service mix
+              </Typography>
+              <RankedRows
+                rows={Object.values(stats.byService)
+                  .sort((a, b) => b.gross - a.gross)
+                  .map((r) => ({
+                    label: r.name,
+                    sub: `${r.jobs} booking${r.jobs === 1 ? "" : "s"}`,
+                    value: formatTHB(r.gross),
+                    pct: r.gross / Math.max(1, stats.totalGross),
+                  }))}
+              />
+            </Card>
+          </Box>
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+// ─── Subcomponents ─────────────────────────────────────────────────────
+
+const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Box
+    sx={{
+      padding: "20px 22px",
+      borderRadius: "16px",
+      background: "#FFFFFF",
+      border: "1px solid rgba(15, 23, 42, 0.06)",
+      boxShadow:
+        "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.05)",
+    }}
+  >
+    {children}
+  </Box>
+);
+
+const Eyebrow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Box
+    sx={{
+      fontSize: 10,
+      letterSpacing: "0.18em",
+      textTransform: "uppercase",
+      color: "#b85c3c",
+      fontWeight: 700,
+      fontFamily: SANS,
+    }}
+  >
+    {children}
+  </Box>
+);
+
+const BigStat: React.FC<{
+  label: string;
+  value: string;
+  sub: string;
+  accent?: "brand" | "neutral";
+}> = ({ label, value, sub, accent = "neutral" }) => (
+  <Card>
+    <Eyebrow>{label}</Eyebrow>
+    <Typography
+      sx={{
+        fontFamily: SERIF,
+        fontSize: { xs: 24, md: 28 },
+        fontWeight: 700,
+        color: accent === "brand" ? "#FE0944" : "#3c1e14",
+        letterSpacing: "-0.02em",
+        marginTop: "6px",
+        lineHeight: 1.05,
+        fontVariantNumeric: "tabular-nums",
+      }}
+    >
+      {value}
+    </Typography>
+    <Typography
+      sx={{
+        fontFamily: SANS,
+        fontSize: 11.5,
+        color: "rgba(60, 30, 20, 0.55)",
+        marginTop: "4px",
+      }}
+    >
+      {sub}
+    </Typography>
+  </Card>
+);
+
+const RankedRows: React.FC<{
+  rows: { label: string; sub: string; value: string; pct: number }[];
+}> = ({ rows }) => {
+  if (rows.length === 0) {
+    return (
+      <Typography
+        sx={{
+          fontFamily: SANS,
+          fontSize: 12,
+          color: "rgba(60, 30, 20, 0.55)",
+          fontStyle: "italic",
+        }}
+      >
+        No data.
+      </Typography>
+    );
+  }
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+      {rows.map((r) => (
+        <Box key={r.label}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              gap: 1,
+              mb: 0.5,
+            }}
+          >
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#3c1e14",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {r.label}
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: 11,
+                  color: "rgba(60, 30, 20, 0.55)",
+                }}
+              >
+                {r.sub}
+              </Typography>
+            </Box>
+            <Typography
+              sx={{
+                fontFamily: SERIF,
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#FE0944",
+                fontVariantNumeric: "tabular-nums",
+                flexShrink: 0,
+              }}
+            >
+              {r.value}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              height: 4,
+              background: "rgba(15, 23, 42, 0.05)",
+              borderRadius: "999px",
+              overflow: "hidden",
+            }}
+          >
+            <Box
+              sx={{
+                height: "100%",
+                width: `${Math.max(2, r.pct * 100)}%`,
+                background: "rgba(254, 9, 68, 0.55)",
+                borderRadius: "999px",
+              }}
+            />
+          </Box>
+        </Box>
+      ))}
+    </Box>
+  );
+};
+
+export default AdminEarningsPage;
