@@ -542,7 +542,22 @@ const BookingFlowPage: React.FC = () => {
     bookingHourBKK,
   });
   const discountAmount = discount.valid ? discount.amount : 0;
-  const total = Math.max(0, subtotal - discountAmount);
+  const calculatedTotal = Math.max(0, subtotal - discountAmount);
+
+  // 🆕 Round 28r25 (founder 2026-05-07) — Owner price override.
+  //   Founder direction "ทำทุกอย่างได้ เพราะเป็นเจ้าของ" — when
+  //   admin is booking, they can type a custom final total that
+  //   replaces the calculated price entirely. Useful for: VIP
+  //   comp, complaint refund, one-time deals not covered by
+  //   discount codes, partial-pay arrangements. Empty string =
+  //   use the calculated total normally.
+  const [adminOverrideRaw, setAdminOverrideRaw] = useState("");
+  const adminOverrideTotal =
+    isAdminBooking && adminOverrideRaw.trim() !== ""
+      ? Math.max(0, parseInt(adminOverrideRaw.replace(/[^0-9]/g, ""), 10) || 0)
+      : null;
+  const total =
+    adminOverrideTotal != null ? adminOverrideTotal : calculatedTotal;
 
   // 🆕 Round 28b46 (founder 2026-05-05) — Pre-surcharge baseline so we
   //   can render "~~฿1,800~~ ฿2,018" when rain or admin-quote bumps the
@@ -739,6 +754,12 @@ const BookingFlowPage: React.FC = () => {
         //   downstream filters (analytics dashboard, admin-only
         //   reports). Customer bookings keep the field undefined.
         createdByAdmin: isAdminBooking ? user?.uid ?? null : null,
+        // 🆕 Round 28r25 — Owner price override audit trail. When
+        //   admin typed a custom total, store both the calculated
+        //   and the override so the booking history can show
+        //   "Owner-priced ฿X (calc was ฿Y)" forever.
+        adminOverrideTotal: adminOverrideTotal,
+        calculatedTotal: calculatedTotal,
         yearMonth: dayjs(startDate.toDate()).format("YYYY-MM"), // analytics
         createdAt: serverTimestamp(), // server clock — gracefully handles user device clock skew
       });
@@ -1748,6 +1769,91 @@ const BookingFlowPage: React.FC = () => {
             >
               Total updates when address is set.
             </Typography>
+          )}
+
+          {/* 🆕 Round 28r25 (founder 2026-05-07) — Owner price
+              override field. Visible ONLY for admin sessions.
+              When filled, replaces the calculated total entirely
+              (no min/max guard — owner can charge whatever they
+              want, including ฿0 for full comp). */}
+          {isAdminBooking && (
+            <Box
+              sx={{
+                marginTop: "12px",
+                padding: "12px",
+                borderRadius: "12px",
+                background:
+                  "linear-gradient(135deg, rgba(254, 9, 68, 0.06), rgba(254, 122, 82, 0.04))",
+                border: "1px dashed rgba(254, 9, 68, 0.40)",
+              }}
+            >
+              <Box
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: 9.5,
+                  fontWeight: 800,
+                  letterSpacing: "0.10em",
+                  textTransform: "uppercase",
+                  color: "#9F0731",
+                  marginBottom: "6px",
+                }}
+              >
+                Owner override · Final total
+              </Box>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder={`e.g. ${calculatedTotal} (leave blank to use calculated)`}
+                value={adminOverrideRaw}
+                onChange={(e) =>
+                  setAdminOverrideRaw(e.target.value.replace(/[^0-9]/g, ""))
+                }
+                inputProps={{
+                  inputMode: "numeric",
+                  pattern: "[0-9]*",
+                  maxLength: 7,
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">฿</InputAdornment>
+                  ),
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    background: "#fff",
+                    borderRadius: "10px",
+                    fontFamily: SANS,
+                    fontSize: "14px",
+                    fontVariantNumeric: "tabular-nums",
+                  },
+                }}
+              />
+              {adminOverrideTotal != null && (
+                <Box
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: 11,
+                    color: "#9F0731",
+                    marginTop: "6px",
+                    fontWeight: 600,
+                  }}
+                >
+                  ✓ Total locked at {formatTHB(adminOverrideTotal)}
+                  {adminOverrideTotal !== calculatedTotal && (
+                    <Box
+                      component="span"
+                      sx={{
+                        marginLeft: "6px",
+                        color: "rgba(60, 30, 20, 0.55)",
+                        fontWeight: 500,
+                      }}
+                    >
+                      (calculated was {formatTHB(calculatedTotal)})
+                    </Box>
+                  )}
+                </Box>
+              )}
+            </Box>
           )}
         </SectionCard>
 
