@@ -730,36 +730,11 @@ const HeroSection: React.FC = () => {
           )}
         </Box>
 
-        {/* COMING SOON — bare megaphone icon (Round 28b20c · founder
-            2026-05-04). White halo circle removed — the colorful
-            megaphone (yellow speech bubble + pink horn) reads cleanly
-            against the red→coral banner on its own. Soft drop-shadow
-            keeps it legible without a backing plate. */}
-        <Box
-          component="img"
-          src="/badges/boost_5129689.png"
-          alt=""
-          role="img"
-          aria-label={t("hero.promo.aria", "Tonight Special — coming soon")}
-          loading="lazy"
-          sx={{
-            position: "absolute",
-            top: "10%",
-            right: 10,
-            zIndex: 2,
-            width: 100,
-            height: 100,
-            objectFit: "contain",
-            // Drop-shadow makes the icon pop against the gradient bg
-            // without a circular plate behind it.
-            filter:
-              "drop-shadow(0 6px 14px rgba(0,0,0,0.28)) drop-shadow(0 0 2px rgba(255,255,255,0.7))",
-            transformOrigin: "70% 70%",
-            // Combined pulse + wiggle — single timeline so movement
-            // feels like one motion, not two stacked transforms.
-       
-          }}
-        />
+        {/* 🆕 Round 28r31 (founder 2026-05-07) — megaphone sticker
+            removed. Founder direction: "เอาสติกเกอออก". The Tonight
+            Special banner now stands cleanly on its gradient with the
+            rotating headlines + dot indicators alone — less visual
+            clutter, more editorial register. */}
       </Box>
 
       {/* Round 28f — trust strip removed (founder direction). */}
