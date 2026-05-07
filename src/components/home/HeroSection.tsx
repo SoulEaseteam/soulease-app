@@ -1082,7 +1082,7 @@ const HeroSection: React.FC = () => {
                   textOverflow: "ellipsis",
                 }}
               >
-                {t("hero.cta.refer.title", "Give 500฿")}
+                {t("hero.cta.refer.title", "Give 200฿")}
               </Typography>
             </Box>
             <Typography

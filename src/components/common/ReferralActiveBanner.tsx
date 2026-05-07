@@ -111,7 +111,7 @@ const ReferralActiveBanner: React.FC = () => {
             textOverflow: "ellipsis",
           }}
         >
-          {code} · Mention in chat to claim 500฿ off
+          {code} · Mention in chat to claim 200฿ off
         </Typography>
       </Box>
       <NorthEastRoundedIcon

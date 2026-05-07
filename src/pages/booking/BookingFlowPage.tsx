@@ -96,7 +96,11 @@ import {
   type RouteResult,
 } from "@/utils/directionsApi";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
-import { getRainStatus } from "@/utils/weather";
+import {
+  getCachedRainStatus,
+  getRainStatus,
+  type RainStatus,
+} from "@/utils/weather";
 import { priceForDuration, formatTHB } from "@/utils/servicePricing";
 import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
 import services from "@/data/services";
@@ -228,8 +232,29 @@ const BookingFlowPage: React.FC = () => {
 
   // 🌧 Warm the rain-status cache on mount — surcharge surfaces in the
   //    pricing card without an extra round-trip when location is set.
+  //
+  // 🆕 Round 28r33 (founder 2026-05-07) — rain status is now reactive.
+  //    Previously this useEffect did `void getRainStatus()` (fire-and-
+  //    forget) which populated the localStorage cache but didn't
+  //    re-render the pricing card. So even if Bangkok was actively
+  //    raining, the taxi useMemo (which reads `getCachedRainStatus()`
+  //    SYNCHRONOUSLY inside calcTaxiFare) would compute on first paint
+  //    with an empty cache → "Clear" → no surcharge ever shown.
+  //    Founder spotted this on a rainy night with the surcharge
+  //    silently absent. Fix: hold rain in state, await the fetch,
+  //    setState on resolve, and pass the value through to calcTaxiFare
+  //    via the new `rainOverride` parameter.
+  const [rainStatus, setRainStatus] = useState<RainStatus>(() =>
+    getCachedRainStatus()
+  );
   useEffect(() => {
-    void getRainStatus();
+    let cancelled = false;
+    getRainStatus().then((status) => {
+      if (!cancelled) setRainStatus(status);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // 🔁 When SelectLocationPage navigates back with state, merge it in.
@@ -462,20 +487,25 @@ const BookingFlowPage: React.FC = () => {
   const taxi = useMemo(() => {
     if (!locationSet) return { distanceKm: 0, fare: 0, result: undefined };
     if (route) {
-      const result = calcTaxiFare(route.kmRoad);
+      // 🆕 Round 28r33 — pass rainStatus so a fetched-mid-session
+      //   surcharge actually surfaces.
+      const result = calcTaxiFare(route.kmRoad, rainStatus);
       return {
         distanceKm: route.kmRoad,
         fare: result.fare ?? 0,
         result,
       };
     }
-    return estimateTaxiFare({
-      therapistLat: therapist?.lat,
-      therapistLng: therapist?.lng,
-      customerLat: form.lat,
-      customerLng: form.lng,
-      durationMin: form.duration ?? service?.duration ?? 60,
-    });
+    return estimateTaxiFare(
+      {
+        therapistLat: therapist?.lat,
+        therapistLng: therapist?.lng,
+        customerLat: form.lat,
+        customerLng: form.lng,
+        durationMin: form.duration ?? service?.duration ?? 60,
+      },
+      rainStatus
+    );
   }, [
     locationSet,
     route,
@@ -485,6 +515,8 @@ const BookingFlowPage: React.FC = () => {
     form.lng,
     form.duration,
     service?.duration,
+    // 🆕 Round 28r33 — recompute when weather state changes.
+    rainStatus,
   ]);
   const distanceKm = taxi.distanceKm;
   const taxiFare = taxi.fare;

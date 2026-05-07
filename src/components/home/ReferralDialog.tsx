@@ -3,7 +3,7 @@
 // 🎁 Refer-a-friend dialog — opened from the TopNav drawer.
 //
 // What it shows:
-//   • Promo headline ("Give 500฿ · Get 500฿")
+//   • Promo headline ("Give 200฿ · Get 200฿")
 //   • Personal referral code (derived from user email/uid for now —
 //     swap for a real backend code when /referrals API ships)
 //   • Tap-to-copy with success feedback animation
@@ -13,6 +13,13 @@
 // 🆕 Round 28g (founder 2026-05-02) — added per "Drawer Menu เพิ่มอะไร
 // อีกดีเจ๋ง ๆ" direction. Viral growth lever; "give X / get X" is a
 // proven referral pattern (Uber, Dropbox, Wise).
+//
+// 🆕 Round 28r33 (founder 2026-05-07) — Reward bumped DOWN from
+// ฿500 → ฿200 to match the actual cap in `discount.ts` (lowered in
+// r28). Dialog used to promise "Give 500 · Get 500" but the booking
+// flow only credited ฿200 → confused tourist guests. Also added the
+// "entry tier only" caveat in the fine print since r33 closed the
+// referral-on-premium loophole.
 
 import React, { useMemo, useState } from "react";
 import {
@@ -37,7 +44,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/providers/AuthProvider";
 import { brand, fonts } from "@/theme";
 
-const REFERRAL_REWARD_THB = 500;
+const REFERRAL_REWARD_THB = 200;
 const SHARE_HOST = "https://sunred.vip";
 
 interface Props {
@@ -345,7 +352,7 @@ const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
         >
           {t(
             "referral.terms",
-            "Reward credited after their first completed session. One use per friend."
+            "Reward credited after their first completed session. One use per friend. Valid on Thai & Aromatherapy menu."
           )}
         </Typography>
       </DialogContent>

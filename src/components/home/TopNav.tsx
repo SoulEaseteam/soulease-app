@@ -141,7 +141,7 @@ const INFO_ITEMS: NavItem[] = [
     labelKey: "nav.referral",
     defaultLabel: "Refer & earn",
     hintKey: "nav.referral.hint",
-    defaultHint: "Give 500฿ · Get 500฿",
+    defaultHint: "Give 200฿ · Get 200฿",
     action: "openReferral",
   },
   {
