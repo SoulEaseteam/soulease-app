@@ -32,13 +32,22 @@
 
 import { getActiveReferralCode } from "@/utils/referral";
 
+// 🆕 Round 28r28 (founder 2026-05-07) — Caps reduced significantly
+//   after founder audit: "10% ครั้งแรกมันหนักไป และเขามาแค่ 3-7 วัน
+//   โอกาสน้อยมากที่จะกลับมา". Tourists stay 3-7 days = no return
+//   visit to recover the discount. Margin protected by aggressive
+//   caps that work like fixed amounts on small tickets.
 const FIRST10_PERCENT = 10;
-const FIRST10_CAP_THB = 500;
-const WELCOME20_PERCENT = 20;
-const WELCOME20_CAP_THB = 800;
-const REFERRAL_FIXED_THB = 500;
-const TONIGHT500_FIXED_THB = 500;
-const SAMMY200_FIXED_THB = 200;
+const FIRST10_CAP_THB = 200;     // was 500 — heavy on tourist who won't return
+const WELCOME20_PERCENT = 10;    // was 20 — too generous
+const WELCOME20_CAP_THB = 300;   // was 800
+const REFERRAL_FIXED_THB = 200;  // was 500
+const TONIGHT500_FIXED_THB = 200; // was 500 — still valuable on prime
+const SAMMY200_FIXED_THB = 200;  // unchanged (legacy promise)
+// 🆕 Round 28r28 — Premium-tier promos. Designed to be margin-safe
+//   on Gentleman/B2B (฿2,400-3,600 tickets) without giving away
+//   shop-killing 10% style discounts.
+const VIP100_FIXED_THB = 100;    // small flat off for premium
 
 // 🆕 Round 28r20 — TONIGHT500 only valid for bookings starting in
 //   prime hours (22:00–04:00 BKK). Booked daytime → "code not
@@ -76,28 +85,25 @@ const NULL_RESULT: DiscountResult = {
 };
 
 export interface DiscountValidationContext {
-  /** Bangkok-local hour (0-23) of the booking start time. Used by
-   *  time-restricted codes (TONIGHT500). Pass the actual booking
-   *  start, not "now" — guests can book at 09:00 for tonight 23:00.
-   *  When undefined, time-restricted codes silently fail-validate. */
+  /** Bangkok-local hour (0-23) of the booking start time. */
   bookingHourBKK?: number;
-  /** 🆕 Round 28r27 — Service id of the booking being priced. Used
-   *  to enforce founder rule: "ห้ามทำโปรกับเมนูฮิต ให้เอาไปใช้กับ
-   *  อันอื่น" — promo codes (FIRST10/WELCOME20/TONIGHT500/SAMMY200)
-   *  apply only to Entry tier (Thai/Aroma). Mid (Gentleman) and
-   *  Premium (B2B) tiers are protected — admins can still use the
-   *  Owner Override field for one-off comp/discounts on those.
-   *  Referral codes (SUN-XXX) keep working on all tiers (loyalty).
-   */
+  /** 🆕 Round 28r27 — Service id of the booking being priced. */
   serviceId?: string | null;
+  /** 🆕 Round 28r28 — Travel fee in THB (for FREETAXI logic). */
+  taxiFareTHB?: number;
 }
 
 // 🆕 Round 28r27 — Per-tier eligibility. Entry tier accepts all
-// promo codes (Thai/Aroma have margin to spare). Mid/Premium only
-// accept referral codes — discount via the customer-funded referral
-// program rather than shop-funded promos.
-const ENTRY_TIER_SERVICES = new Set(["xSR-Thai", "SR-Aroma"]);
+// promo codes; Mid/Premium need premium-tier-specific codes only.
 const PROMO_BLOCKED_SERVICES = new Set(["SR-HJ2200", "SR-B2B3200"]);
+
+// 🆕 Round 28r28 — Premium-only promo codes that BYPASS the
+// PROMO_BLOCKED gate. Founder direction: "Gentleman/B2B (premium)
+// เอามาทำโปรขั้นต่ำ หรือ ลดค่าแท๊กซี่ หรือ ลด 100 หรือ 10% ครั้งถัดไป".
+// Both are designed to be margin-safe on premium tier (small cap or
+// affordable taxi waiver) so we can still attract VIP guests without
+// the blunt 10% off that would wreck unit economics on ฿3,300 tickets.
+const PREMIUM_OK_CODES = new Set(["VIP100", "FREETAXI"]);
 
 /**
  * Validate a discount code against the current subtotal.
@@ -120,14 +126,59 @@ export function validateDiscount(
   // 🆕 Round 28r27 — Service-tier gate. Promo codes (non-referral)
   //   are blocked on premium-tier services. Referral codes pass
   //   regardless (loyalty perk).
+  // 🆕 Round 28r28 — PREMIUM_OK_CODES (VIP100, FREETAXI) ALSO bypass
+  //   the gate — they're designed margin-safe specifically for
+  //   premium tiers.
   const isReferral = REFERRAL_CODE_RE.test(code);
+  const isPremiumOk = PREMIUM_OK_CODES.has(code);
   if (
     !isReferral &&
+    !isPremiumOk &&
     ctx?.serviceId &&
     PROMO_BLOCKED_SERVICES.has(ctx.serviceId)
   ) {
     // Quietly invalid — UI shows hint that's per-tier-aware.
     return { ...NULL_RESULT, code };
+  }
+
+  // 🆕 Round 28r28 — VIP100: flat ฿100 off, premium tiers only.
+  //   Founder rule: "ลด 100" — small, margin-safe acquisition lever
+  //   for the high-ticket Gentleman/B2B services.
+  if (code === "VIP100") {
+    if (!ctx?.serviceId || !PROMO_BLOCKED_SERVICES.has(ctx.serviceId)) {
+      // Only valid on premium tiers — quiet invalid for entry tier
+      // (those guests should use FIRST10 / WELCOME20 instead).
+      return { ...NULL_RESULT, code };
+    }
+    return {
+      valid: true,
+      code,
+      amount: VIP100_FIXED_THB,
+      label: `VIP — ฿${VIP100_FIXED_THB} off premium`,
+      type: "fixed",
+    };
+  }
+
+  // 🆕 Round 28r28 — FREETAXI: waive the travel fee for premium
+  //   tiers. Founder rule: "ลดค่าแท๊กซี่". Discount amount equals
+  //   the actual taxi fare (passed via ctx). UI label makes it
+  //   crystal-clear that the trip is comped.
+  if (code === "FREETAXI") {
+    if (!ctx?.serviceId || !PROMO_BLOCKED_SERVICES.has(ctx.serviceId)) {
+      return { ...NULL_RESULT, code };
+    }
+    const taxi = Math.max(0, ctx.taxiFareTHB ?? 0);
+    if (taxi <= 0) {
+      // Free zone or address not set → code can't apply yet.
+      return { ...NULL_RESULT, code };
+    }
+    return {
+      valid: true,
+      code,
+      amount: taxi,
+      label: `Travel comped — saves ฿${taxi}`,
+      type: "fixed",
+    };
   }
 
   // ── FIRST10: 10% off, capped at ฿500 ──
