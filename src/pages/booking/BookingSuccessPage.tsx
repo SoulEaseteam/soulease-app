@@ -142,10 +142,14 @@ const BookingSuccessPage: React.FC = () => {
         ? "Tomorrow"
         : fmtBKK(startAt, "ddd, MMM D")
     : "—";
+  // 🆕 Round 28r19 — fixed format string. Was "HH:mm A" which
+  //   produces awkward "20:00 PM" (24-hour clock + AM/PM marker
+  //   together). Use "h:mm A" for proper 12-hour with AM/PM, matching
+  //   the rest of the page (timeLabel uses "h:mm A" too).
   const leaveLabel = startAt
     ? fmtBKK(
         toBKK(startAt)?.subtract(PREP_BUFFER_MIN, "minute") ?? null,
-        "HH:mm A",
+        "h:mm A",
         ""
       )
     : null;
@@ -370,8 +374,15 @@ const BookingSuccessPage: React.FC = () => {
                         : "#15803d",
                   }}
                 >
+                  {/* 🆕 Round 28r19 — fix duplicated label.
+                      For "off" mode, pillLabel is already "Concierge ·
+                      09:00" so prefixing with "Concierge resumes at
+                      09:00" produced "Concierge resumes at 09:00 ·
+                      Concierge · 09:00" double-up. Use pillLabel
+                      directly for off mode (it self-describes); only
+                      prefix "Concierge live ·" for active modes. */}
                   {concierge.mode === "off"
-                    ? `Concierge resumes at 09:00 · ${concierge.pillLabel}`
+                    ? "Concierge resumes at 09:00"
                     : `Concierge live · ${concierge.pillLabel}`}
                 </Typography>
               </Box>
