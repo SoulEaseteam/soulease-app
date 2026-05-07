@@ -534,15 +534,34 @@ const BookingFlowPage: React.FC = () => {
   // 🆕 Round 28r20 — Pass bookingHourBKK so time-restricted codes
   //   (TONIGHT500) can validate against the actual booking start
   //   time (BKK timezone), not the user's current local time.
-  const subtotal = servicePrice + addonsTotal + taxiFare;
+  // 🆕 Round 28r27 (founder 2026-05-07) — Discount no longer applies
+  //   to taxi fare. Founder direction: "ถ้ามีโปร 10% แล้ว ทำยังไง
+  //   ก็ได้ให้คำนวณแท็กซี่ชาร์จกลับมาคืนร้าน". Taxi fare is a real
+  //   cost we pay the driver (or absorb as travel reimbursement);
+  //   if we let the discount eat into it, every promo silently
+  //   subsidises the customer's transport AND wipes out shop margin.
+  //
+  //   New base for discount = service + addons (the part WE control).
+  //   Taxi sits outside the discount and passes through to total
+  //   at full value. Customer sees: "10% off service" not
+  //   "10% off everything including taxi".
+  const discountableBase = servicePrice + addonsTotal;
+  const subtotal = discountableBase + taxiFare;
   const bookingHourBKK = form.time
     ? parseInt(form.time.split(":")[0], 10)
     : undefined;
-  const discount = validateDiscount(form.discountCode, subtotal, {
+  const discount = validateDiscount(form.discountCode, discountableBase, {
     bookingHourBKK,
+    // 🆕 Round 28r27 — pass serviceId so discount validator can
+    //   block promo codes on premium tiers (Gentleman / B2B).
+    serviceId: form.serviceId,
   });
   const discountAmount = discount.valid ? discount.amount : 0;
-  const calculatedTotal = Math.max(0, subtotal - discountAmount);
+  // Total = (service + addons - discount) + taxi  — taxi stays full.
+  const calculatedTotal = Math.max(
+    taxiFare,
+    discountableBase - discountAmount + taxiFare
+  );
 
   // 🆕 Round 28r25 (founder 2026-05-07) — Owner price override.
   //   Founder direction "ทำทุกอย่างได้ เพราะเป็นเจ้าของ" — when
@@ -1618,35 +1637,80 @@ const BookingFlowPage: React.FC = () => {
             {form.discountCode && (
               <Box sx={{ marginTop: "6px", paddingLeft: "8px" }}>
                 {discount.valid ? (
-                  <Typography
-                    sx={{
-                      fontFamily: SANS,
-                      fontSize: "11.5px",
-                      fontWeight: 700,
-                      color: "#16a34a",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                    }}
-                  >
-                    <Box component="span" sx={{ fontWeight: 800 }}>
-                      ✓
-                    </Box>
-                    {discount.label} — saves {formatTHB(discount.amount)}
-                  </Typography>
-                ) : (
-                  <Typography
-                    sx={{
-                      fontFamily: SANS,
-                      fontSize: "10.5px",
-                      color: "rgba(60, 30, 20, 0.55)",
-                      fontStyle: "italic",
-                    }}
-                  >
-                    Code not recognised — the concierge can apply
-                    custom codes manually after seeing your booking.
-                  </Typography>
-                )}
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: "11.5px",
+                        fontWeight: 700,
+                        color: "#16a34a",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "5px",
+                      }}
+                    >
+                      <Box component="span" sx={{ fontWeight: 800 }}>
+                        ✓
+                      </Box>
+                      {discount.label} — saves {formatTHB(discount.amount)}
+                    </Typography>
+                    {/* 🆕 Round 28r27 — Make taxi-pass-through visible
+                        so guests don't expect their travel fee to also
+                        be discounted. */}
+                    {taxiFare > 0 && (
+                      <Typography
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: "10px",
+                          color: "rgba(60, 30, 20, 0.55)",
+                          marginTop: "2px",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        Travel fee ({formatTHB(taxiFare)}) is at cost — not
+                        included in promo.
+                      </Typography>
+                    )}
+                  </Box>
+                ) : (() => {
+                  // 🆕 Round 28r27 — Smart hint: distinguish between
+                  //   "code unknown" vs "code blocked for this tier".
+                  const isPremiumService =
+                    form.serviceId === "SR-HJ2200" ||
+                    form.serviceId === "SR-B2B3200";
+                  const looksLikeRealCode = /^(FIRST|WELCOME|TONIGHT|SAMMY)/i.test(
+                    form.discountCode
+                  );
+                  if (isPremiumService && looksLikeRealCode) {
+                    return (
+                      <Typography
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: "10.5px",
+                          color: "#9F0731",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Promo codes don't apply to this premium ritual.
+                        Use a referral code (SUN-XXXXXX) or chat with
+                        the concierge for a custom arrangement.
+                      </Typography>
+                    );
+                  }
+                  return (
+                    <Typography
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: "10.5px",
+                        color: "rgba(60, 30, 20, 0.55)",
+                        fontStyle: "italic",
+                      }}
+                    >
+                      Code not recognised — the concierge can apply
+                      custom codes manually after seeing your booking.
+                    </Typography>
+                  );
+                })()}
               </Box>
             )}
           </Box>

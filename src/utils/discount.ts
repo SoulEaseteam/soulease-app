@@ -81,7 +81,23 @@ export interface DiscountValidationContext {
    *  start, not "now" — guests can book at 09:00 for tonight 23:00.
    *  When undefined, time-restricted codes silently fail-validate. */
   bookingHourBKK?: number;
+  /** 🆕 Round 28r27 — Service id of the booking being priced. Used
+   *  to enforce founder rule: "ห้ามทำโปรกับเมนูฮิต ให้เอาไปใช้กับ
+   *  อันอื่น" — promo codes (FIRST10/WELCOME20/TONIGHT500/SAMMY200)
+   *  apply only to Entry tier (Thai/Aroma). Mid (Gentleman) and
+   *  Premium (B2B) tiers are protected — admins can still use the
+   *  Owner Override field for one-off comp/discounts on those.
+   *  Referral codes (SUN-XXX) keep working on all tiers (loyalty).
+   */
+  serviceId?: string | null;
 }
+
+// 🆕 Round 28r27 — Per-tier eligibility. Entry tier accepts all
+// promo codes (Thai/Aroma have margin to spare). Mid/Premium only
+// accept referral codes — discount via the customer-funded referral
+// program rather than shop-funded promos.
+const ENTRY_TIER_SERVICES = new Set(["xSR-Thai", "SR-Aroma"]);
+const PROMO_BLOCKED_SERVICES = new Set(["SR-HJ2200", "SR-B2B3200"]);
 
 /**
  * Validate a discount code against the current subtotal.
@@ -100,6 +116,19 @@ export function validateDiscount(
   if (!raw) return NULL_RESULT;
   const code = raw.trim().toUpperCase();
   if (!code) return NULL_RESULT;
+
+  // 🆕 Round 28r27 — Service-tier gate. Promo codes (non-referral)
+  //   are blocked on premium-tier services. Referral codes pass
+  //   regardless (loyalty perk).
+  const isReferral = REFERRAL_CODE_RE.test(code);
+  if (
+    !isReferral &&
+    ctx?.serviceId &&
+    PROMO_BLOCKED_SERVICES.has(ctx.serviceId)
+  ) {
+    // Quietly invalid — UI shows hint that's per-tier-aware.
+    return { ...NULL_RESULT, code };
+  }
 
   // ── FIRST10: 10% off, capped at ฿500 ──
   if (code === FIRST_TIME_CODE) {

@@ -45,9 +45,40 @@ import { getServiceLabel } from "@/utils/serviceCatalog";
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
-// 60/40 split — same rule as AdminReportPage
-const THERAPIST_PCT = 0.6;
-const SHOP_PCT = 0.4;
+// 🆕 Round 28r27 (founder 2026-05-07) — Tier-based commission split.
+// Founder strategy: higher commission on premium tiers attracts
+// better talent + reflects the harder skill required.
+//
+//   Entry (Thai/Aroma)         → 60% therapist · 40% shop
+//   Mid (Gentleman's Signature) → 65% therapist · 35% shop
+//   Premium (B2B Therapeutic)   → 70% therapist · 30% shop
+//
+// Fallback for unmapped services = 60/40 (legacy default).
+const TIER_THERAPIST_PCT: Record<string, number> = {
+  "xSR-Thai": 0.6,
+  "SR-Aroma": 0.6,
+  "SR-HJ2200": 0.65,
+  "SR-B2B3200": 0.7,
+};
+const DEFAULT_THERAPIST_PCT = 0.6;
+
+const therapistPctFor = (serviceId: string | null | undefined): number => {
+  if (!serviceId) return DEFAULT_THERAPIST_PCT;
+  return TIER_THERAPIST_PCT[serviceId] ?? DEFAULT_THERAPIST_PCT;
+};
+
+// Per-booking cost estimates (founder spec image). These are
+// AVERAGES the calculator subtracts to show NET margin — actual
+// shop cost will vary. View can tune the numbers as the business
+// learns its real cost structure.
+const COST_PER_BOOKING_THB = {
+  /** Payment processor fee — assume PromptPay (free) avg with cards. */
+  payment: 0,
+  /** Supplies (oils, towels, condoms if applicable). */
+  supplies: 70,
+  /** Admin / ops overhead per booking. */
+  ops: 150,
+};
 
 const EXCLUDED_STATUSES = new Set([
   "cancelled",
@@ -70,6 +101,10 @@ interface BookingRow {
   status?: string;
   startAt?: Timestamp | null;
   createdAt?: Timestamp | null;
+  // 🆕 Round 28r27 — Round 28r14 booking docs carry these so the
+  //   earnings calc can show how much discount the shop absorbed.
+  discountAmount?: number | null;
+  discountCode?: string | null;
 }
 
 type Range = "today" | "week" | "month" | "year";
@@ -126,6 +161,8 @@ const AdminEarningsPage: React.FC = () => {
             status: d.status ?? "",
             startAt: d.startAt ?? null,
             createdAt: d.createdAt ?? null,
+            discountAmount: d.discountAmount ?? null,
+            discountCode: d.discountCode ?? null,
           });
         });
         setBookings(arr);
@@ -139,21 +176,27 @@ const AdminEarningsPage: React.FC = () => {
     return () => unsub();
   }, [range]);
 
-  // ── Aggregations ──
+  // ── Aggregations (🆕 Round 28r27 — tier-aware split + costs +
+  //   discount-absorbed transparency) ──
   const stats = useMemo(() => {
-    let totalGross = 0;
-    let totalServicePrice = 0;
+    let totalCollected = 0;          // what customers actually paid (sum of totalPrice)
+    let totalServicePrice = 0;       // pre-discount service price
+    let totalDiscountAbsorbed = 0;   // promo discount the shop ate
     let totalTaxi = 0;
+    let totalTherapistPayout = 0;    // weighted by per-service tier (full price base)
+    let totalSupplies = 0;
+    let totalOps = 0;
+    let totalPayment = 0;
     let countCompleted = 0;
     let countCancelled = 0;
 
     const byTherapist: Record<
       string,
-      { name: string; jobs: number; gross: number; service: number }
+      { name: string; jobs: number; gross: number; service: number; payout: number }
     > = {};
     const byService: Record<
       string,
-      { name: string; jobs: number; gross: number }
+      { name: string; jobs: number; gross: number; service: number; therapistPct: number }
     > = {};
     const byDay: Record<string, number> = {};
 
@@ -163,49 +206,86 @@ const AdminEarningsPage: React.FC = () => {
         continue;
       }
       countCompleted += 1;
-      const gross = b.totalPrice ?? (b.servicePrice ?? 0) + (b.taxiFee ?? 0);
+      const collected = b.totalPrice ?? (b.servicePrice ?? 0) + (b.taxiFee ?? 0);
       const service = b.servicePrice ?? 0;
       const taxi = b.taxiFee ?? 0;
+      const discount = b.discountAmount ?? 0;
+      const tPct = therapistPctFor(b.serviceId);
+      // 🆕 Round 28r27 (founder 2026-05-07) — Therapist commission
+      //   now applies on the DISCOUNTED service price, not the full
+      //   list price. Founder said "ไม่คุ่มเสี่ยงเกินไป" — under the
+      //   old rule (full-price commission) the shop absorbed 100% of
+      //   every promo's cost. The new rule splits the promo cost
+      //   proportionally:
+      //     therapist loses: tPct × discount
+      //     shop loses:      (1 − tPct) × discount
+      //   E.g. ฿330 promo on Gentleman tier 65% → therapist −฿215,
+      //   shop −฿115. Same fair share that retail / commission
+      //   businesses use everywhere.
+      const commissionBase = Math.max(0, service - discount);
+      const payout = Math.round(commissionBase * tPct);
 
-      totalGross += gross;
+      totalCollected += collected;
       totalServicePrice += service;
+      totalDiscountAbsorbed += discount;
       totalTaxi += taxi;
+      totalTherapistPayout += payout;
+      totalSupplies += COST_PER_BOOKING_THB.supplies;
+      totalOps += COST_PER_BOOKING_THB.ops;
+      totalPayment += COST_PER_BOOKING_THB.payment;
 
       // Per-therapist
       const tKey = b.therapistId ?? "(no therapist)";
       const tName = b.therapistName ?? tKey;
       if (!byTherapist[tKey]) {
-        byTherapist[tKey] = { name: tName, jobs: 0, gross: 0, service: 0 };
+        byTherapist[tKey] = { name: tName, jobs: 0, gross: 0, service: 0, payout: 0 };
       }
       byTherapist[tKey].jobs += 1;
-      byTherapist[tKey].gross += gross;
+      byTherapist[tKey].gross += collected;
       byTherapist[tKey].service += service;
+      byTherapist[tKey].payout += payout;
 
       // Per-service
       const sKey = b.serviceId ?? "(no service)";
       const sName = getServiceLabel(b.serviceId, b.serviceName);
       if (!byService[sKey]) {
-        byService[sKey] = { name: sName, jobs: 0, gross: 0 };
+        byService[sKey] = { name: sName, jobs: 0, gross: 0, service: 0, therapistPct: tPct };
       }
       byService[sKey].jobs += 1;
-      byService[sKey].gross += gross;
+      byService[sKey].gross += collected;
+      byService[sKey].service += service;
 
       // Per-day bucket
       if (b.createdAt?.toDate) {
         const day = dayjs(b.createdAt.toDate()).format("YYYY-MM-DD");
-        byDay[day] = (byDay[day] ?? 0) + gross;
+        byDay[day] = (byDay[day] ?? 0) + collected;
       }
     }
 
-    const therapistPayout = Math.round(totalServicePrice * THERAPIST_PCT);
-    const shopNet = Math.round(totalServicePrice * SHOP_PCT);
+    // 🆕 Round 28r27 — Shop net using the new fair-share rule.
+    //   Shop revenue = what we collected (after discount applied)
+    //                  minus therapist payout (after discount applied)
+    //                  minus taxi pass-through
+    //                  minus per-booking costs.
+    //   This now reflects the founder's "ไม่คุ่มเสี่ยงเกินไป" rule
+    //   where therapist + shop share the promo cost proportionally.
+    const shopGross = totalCollected - totalTherapistPayout - totalTaxi;
+    const totalCosts = totalSupplies + totalOps + totalPayment;
+    const shopNet = shopGross - totalCosts;
 
     return {
-      totalGross,
+      totalGross: totalCollected,           // alias for older UI refs
+      totalCollected,
       totalServicePrice,
+      totalDiscountAbsorbed,
       totalTaxi,
-      therapistPayout,
+      totalTherapistPayout,
+      shopGross,
       shopNet,
+      totalSupplies,
+      totalOps,
+      totalPayment,
+      totalCosts,
       countCompleted,
       countCancelled,
       byTherapist,
@@ -239,8 +319,9 @@ const AdminEarningsPage: React.FC = () => {
       "ServicePrice",
       "Taxi",
       "Gross",
-      "TherapistShare(60%)",
-      "ShopShare(40%)",
+      "TherapistShare",
+      "ShopShare",
+      "TherapistPct",
       "Status",
     ];
     const rows = bookings
@@ -248,6 +329,10 @@ const AdminEarningsPage: React.FC = () => {
       .map((b) => {
         const gross = b.totalPrice ?? (b.servicePrice ?? 0) + (b.taxiFee ?? 0);
         const service = b.servicePrice ?? 0;
+        // 🆕 Round 28r27 — tier-aware split per row
+        const tPct = therapistPctFor(b.serviceId);
+        const therapistShare = Math.round(service * tPct);
+        const shopShare = service - therapistShare;
         return [
           b.createdAt?.toDate
             ? dayjs(b.createdAt.toDate()).format("YYYY-MM-DD HH:mm")
@@ -258,8 +343,9 @@ const AdminEarningsPage: React.FC = () => {
           service,
           b.taxiFee ?? 0,
           gross,
-          Math.round(service * THERAPIST_PCT),
-          Math.round(service * SHOP_PCT),
+          therapistShare,
+          shopShare,
+          `${Math.round(tPct * 100)}%`,
           b.status ?? "",
         ];
       });
@@ -385,13 +471,21 @@ const AdminEarningsPage: React.FC = () => {
             />
             <BigStat
               label="Therapist payout (60%)"
-              value={formatTHB(stats.therapistPayout)}
-              sub={`from service price ${formatTHB(stats.totalServicePrice)}`}
+              value={formatTHB(stats.totalTherapistPayout)}
+              sub={
+                stats.totalDiscountAbsorbed > 0
+                  ? `tier-aware split · post-discount`
+                  : `from service price ${formatTHB(stats.totalServicePrice)}`
+              }
             />
             <BigStat
-              label="Shop net (40%)"
+              label="Shop net"
               value={formatTHB(stats.shopNet)}
-              sub={`+ travel fees ${formatTHB(stats.totalTaxi)}`}
+              sub={
+                stats.totalDiscountAbsorbed > 0
+                  ? `after promo cost ${formatTHB(stats.totalDiscountAbsorbed)} (shared)`
+                  : `after costs ${formatTHB(stats.totalCosts)}`
+              }
               accent="brand"
             />
           </Box>
@@ -547,9 +641,10 @@ const AdminEarningsPage: React.FC = () => {
                   .slice(0, 8)
                   .map((r) => ({
                     label: r.name,
-                    sub: `${r.jobs} job${r.jobs === 1 ? "" : "s"} · payout ${formatTHB(
-                      Math.round(r.service * THERAPIST_PCT)
-                    )}`,
+                    // 🆕 Round 28r27 — payout uses the per-row tier
+                    //   accumulated payout (already accounts for
+                    //   discount + tier %). Truer than recomputing.
+                    sub: `${r.jobs} job${r.jobs === 1 ? "" : "s"} · payout ${formatTHB(r.payout)}`,
                     value: formatTHB(r.gross),
                     pct: r.gross / Math.max(1, stats.totalGross),
                   }))}
