@@ -669,6 +669,80 @@ const BookingSuccessPage: React.FC = () => {
                     }
                   />
                 )}
+              {/* 🆕 Round 28r29 — "You saved ฿X" line + strikethrough
+                  original price below Total. Founder direction:
+                  "ใส่ราคาต้นมาด้วยจะได้ดูคุ้ม". Renders only when
+                  the booking actually has savings recorded. */}
+              {typeof booking.savingsTotal === "number" &&
+                (booking.savingsTotal as number) > 0 && (
+                  <Box
+                    sx={{
+                      mt: 1,
+                      p: "10px 12px",
+                      borderRadius: "10px",
+                      background:
+                        "linear-gradient(135deg, rgba(22, 163, 74, 0.10), rgba(22, 163, 74, 0.04))",
+                      border: "1px solid rgba(22, 163, 74, 0.25)",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "baseline",
+                      gap: 1,
+                      fontFamily: SANS,
+                    }}
+                  >
+                    <Box
+                      component="span"
+                      sx={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        color: "#15803d",
+                      }}
+                    >
+                      ✨ You saved
+                    </Box>
+                    <Box
+                      component="span"
+                      sx={{
+                        display: "inline-flex",
+                        alignItems: "baseline",
+                        gap: "8px",
+                      }}
+                    >
+                      {typeof booking.originalPrice === "number" &&
+                        (booking.originalPrice as number) >
+                          ((booking.totalPrice as number) ?? 0) && (
+                          <Box
+                            component="span"
+                            sx={{
+                              fontFamily: SERIF,
+                              fontSize: "12.5px",
+                              color: "rgba(60, 30, 20, 0.45)",
+                              textDecoration: "line-through",
+                              fontVariantNumeric: "tabular-nums",
+                            }}
+                          >
+                            ฿
+                            {(booking.originalPrice as number).toLocaleString()}
+                          </Box>
+                        )}
+                      <Box
+                        component="span"
+                        sx={{
+                          fontFamily: SERIF,
+                          fontSize: "16px",
+                          fontWeight: 700,
+                          color: "#16a34a",
+                          fontVariantNumeric: "tabular-nums",
+                        }}
+                      >
+                        −฿
+                        {(booking.savingsTotal as number).toLocaleString()}
+                      </Box>
+                    </Box>
+                  </Box>
+                )}
               <SummaryLine
                 label="Total paid"
                 value={

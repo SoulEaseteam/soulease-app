@@ -587,6 +587,26 @@ const BookingFlowPage: React.FC = () => {
     (taxiResult?.baseFareBeforeRain ?? taxiFare);
   const hasSurcharge = total > baseTotal + 0.5; // guard against rounding noise
 
+  // 🆕 Round 28r29 (founder 2026-05-07) — "Original price" + total
+  //   savings for the receipt-style display. Founder direction:
+  //   "ใส่ราคาต้นมาด้วยจะได้ดูคุ้ม · เอาส่วนลดเอาประโยชน์มาใส่ด้วย
+  //   ให้ลูกค้าเห็นว่ามันคุ้ม". The customer should always see the
+  //   un-discounted reference price (service + full-meter taxi)
+  //   strikethrough next to the total they actually pay, plus a
+  //   summary of every saving they got.
+  //
+  //   originalPrice = service + addons + un-routed taxi (highest
+  //                    price they would have paid without our magic)
+  //   savingsRouting = taxi-meter savings (Smart Routing chip)
+  //   savingsDiscount = promo / VIP / referral amount
+  //   totalSavings = sum (drives the "You saved ฿X" pill)
+  const meterTaxi = taxiResult?.baseFareBeforeRain ?? taxiFare;
+  const originalPrice = servicePrice + addonsTotal + meterTaxi;
+  const savingsRouting = Math.max(0, meterTaxi - taxiFare);
+  const savingsDiscount = discount.valid ? discountAmount : 0;
+  const totalSavings = savingsRouting + savingsDiscount;
+  const hasSavings = totalSavings > 0.5;
+
   // 🆕 Round 28b46 — Tweened total digits. Smoothly count from previous
   //   total → new total over 380ms with ease-out so the number doesn't
   //   "snap" when distance/rain recomputes. Honors prefers-reduced-motion.
@@ -777,6 +797,13 @@ const BookingFlowPage: React.FC = () => {
         //   "Owner-priced ฿X (calc was ฿Y)" forever.
         adminOverrideTotal: adminOverrideTotal,
         calculatedTotal: calculatedTotal,
+        // 🆕 Round 28r29 — Save the "original price" + total savings
+        //   so the receipt-style success page can render the same
+        //   "you saved ฿X" message without recomputing from scratch.
+        originalPrice: Math.round(originalPrice),
+        savingsTotal: Math.round(totalSavings),
+        savingsRouting: Math.round(savingsRouting),
+        savingsDiscount: Math.round(savingsDiscount),
         yearMonth: dayjs(startDate.toDate()).format("YYYY-MM"), // analytics
         createdAt: serverTimestamp(), // server clock — gracefully handles user device clock skew
       });
@@ -1732,6 +1759,91 @@ const BookingFlowPage: React.FC = () => {
             </Box>
           )}
 
+          {/* 🆕 Round 28r29 (founder 2026-05-07) — "You saved" pill.
+              Sits ABOVE the Total row so the customer reads the
+              positive number first. Renders only when there's a real
+              saving (Smart Routing or applied promo). Listing each
+              source one-line keeps it scannable. */}
+          {hasSavings && (
+            <Box
+              sx={{
+                marginTop: "10px",
+                padding: "10px 12px",
+                borderRadius: "12px",
+                background:
+                  "linear-gradient(135deg, rgba(22, 163, 74, 0.10), rgba(22, 163, 74, 0.04))",
+                border: "1px solid rgba(22, 163, 74, 0.28)",
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  fontFamily: SANS,
+                }}
+              >
+                <Box
+                  component="span"
+                  sx={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    color: "#15803d",
+                  }}
+                >
+                  ✨ You saved tonight
+                </Box>
+                <Box
+                  component="span"
+                  sx={{
+                    fontFamily: SERIF,
+                    fontSize: 17,
+                    fontWeight: 700,
+                    color: "#16a34a",
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  −{formatTHB(Math.round(totalSavings))}
+                </Box>
+              </Box>
+              <Box
+                sx={{
+                  marginTop: "4px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "2px",
+                }}
+              >
+                {savingsRouting > 0 && (
+                  <Box
+                    component="span"
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: 11,
+                      color: "rgba(20, 83, 45, 0.85)",
+                    }}
+                  >
+                    🚖 Smart Routing — {formatTHB(Math.round(savingsRouting))}
+                  </Box>
+                )}
+                {savingsDiscount > 0 && (
+                  <Box
+                    component="span"
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: 11,
+                      color: "rgba(20, 83, 45, 0.85)",
+                    }}
+                  >
+                    🏷 {discount.label} — {formatTHB(Math.round(savingsDiscount))}
+                  </Box>
+                )}
+              </Box>
+            </Box>
+          )}
+
           <Box
             sx={{
               borderTop: "1px solid rgba(0, 0, 0, 0.08)",
@@ -1777,6 +1889,29 @@ const BookingFlowPage: React.FC = () => {
                   }}
                 >
                   {formatTHB(Math.round(animatedBaseTotal))}
+                </Typography>
+              )}
+              {/* 🆕 Round 28r29 — Strikethrough "Original price"
+                  next to the Total when there's any saving (Smart
+                  Routing or promo). Only renders if the original is
+                  meaningfully higher than the total — so we don't
+                  show "฿3,433 → ฿3,433" no-op. Hidden when surcharge
+                  strike is already showing (would clash visually). */}
+              {!hasSurcharge && hasSavings && originalPrice > total + 0.5 && (
+                <Typography
+                  aria-hidden
+                  sx={{
+                    fontFamily: SERIF,
+                    fontSize: "16px",
+                    fontWeight: 500,
+                    color: "rgba(60, 30, 20, 0.42)",
+                    textDecoration: "line-through",
+                    letterSpacing: "-0.01em",
+                    lineHeight: 1,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {formatTHB(Math.round(originalPrice))}
                 </Typography>
               )}
               <Typography
