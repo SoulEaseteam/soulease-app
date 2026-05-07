@@ -190,6 +190,19 @@ service cloud.firestore {
       allow write: if false; // populated by Cloud Functions only
     }
 
+    // 🆕 Round 28r18 (founder 2026-05-07) — booking-flow error capture.
+    // ── booking_errors (admin triage of failed reservations) ──────
+    // Customer browser writes one doc per failed booking submit so
+    // admin can see WHY "tried to reserve online but doesn't work"
+    // without needing repro steps. Public CREATE so anonymous guests
+    // can log; admin-only READ; immutable (no update/delete) so the
+    // log can't be tampered with.
+    match /booking_errors/{eventId} {
+      allow read: if isAdmin();
+      allow create: if true;
+      allow update, delete: if false;
+    }
+
     // 🆕 Round 28r13 (founder 2026-05-06) — funnel analytics.
     // ── analytics_events (self-hosted funnel tracking) ────────────
     // Five-event funnel: home_view / service_view / booking_start /

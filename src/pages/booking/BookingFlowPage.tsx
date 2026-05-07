@@ -132,6 +132,10 @@ import {
 //   Pure function; client-side validation only. Admin still
 //   confirms / overrides via Telegram before payment.
 import { validateDiscount, getInitialDiscountCode } from "@/utils/discount";
+// 🆕 Round 28r18 — Persist booking-flow errors so admin can triage
+//   "tried to reserve online but doesn't work" complaints without
+//   needing repro steps from the customer.
+import { logBookingError } from "@/utils/bookingError";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -786,9 +790,27 @@ const BookingFlowPage: React.FC = () => {
       );
       void navigate(`/booking/success/${ref.id}`);
     } catch (err) {
-      console.error("[booking] submit failed", err);
+      // 🆕 Round 28r18 — Persist the error so admin can triage from
+      //   /admin/analytics-style queries instead of asking "what
+      //   happened?" via chat. Includes form context (no PII beyond
+      //   the booking doc fields). Falls through to the existing
+      //   user-facing toast — guests see the same retry message.
+      logBookingError(err, {
+        step: "addDoc_or_notify",
+        therapistId: form.therapistId,
+        serviceId: form.serviceId,
+        duration: form.duration,
+        date: form.date,
+        time: form.time,
+        locationName: form.locationName,
+        address: form.locationAddress,
+        paymentMethod: PAYMENT_LABELS[paymentMethod],
+      });
       toast.error(
-        t("booking.error.submitFailed", "Could not create booking. Try again.")
+        t(
+          "booking.error.submitFailed",
+          "Could not create booking. Tap Concierge button below or try again."
+        )
       );
       setSubmitting(false);
     }
