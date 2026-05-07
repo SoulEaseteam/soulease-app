@@ -600,9 +600,20 @@ const BookingFlowPage: React.FC = () => {
   //   savingsRouting = taxi-meter savings (Smart Routing chip)
   //   savingsDiscount = promo / VIP / referral amount
   //   totalSavings = sum (drives the "You saved ฿X" pill)
-  const meterTaxi = taxiResult?.baseFareBeforeRain ?? taxiFare;
+  //
+  // 🆕 Round 28r32 (founder 2026-05-07) — Bug fix: pill was using
+  //   `baseFareBeforeRain` (= post-routing fare, only adds rain on top)
+  //   so savingsRouting always evaluated to 0 and the pill missed the
+  //   ฿44 Smart Routing savings. View saw "−฿100 saved" pill with a
+  //   "−฿44" Smart Routing chip floating loose → "ลด 100 เหา ทำให้
+  //   จาง ลง". Fix: use `listPriceTravel` (the un-routed standard rate
+  //   anchor) for originalPrice, and `sunredPromoDiscount` (already
+  //   computed in taxiFare.ts as listPriceTravel − fare) for routing
+  //   savings. Now the pill aggregates both savings → "−฿144" with
+  //   ฿44 Smart Routing + ฿100 promo broken down underneath.
+  const meterTaxi = taxiResult?.listPriceTravel ?? taxiFare;
   const originalPrice = servicePrice + addonsTotal + meterTaxi;
-  const savingsRouting = Math.max(0, meterTaxi - taxiFare);
+  const savingsRouting = taxiResult?.sunredPromoDiscount ?? 0;
   const savingsDiscount = discount.valid ? discountAmount : 0;
   const totalSavings = savingsRouting + savingsDiscount;
   const hasSavings = totalSavings > 0.5;
@@ -1768,11 +1779,13 @@ const BookingFlowPage: React.FC = () => {
             <Box
               sx={{
                 marginTop: "10px",
-                padding: "10px 12px",
-                borderRadius: "12px",
+                padding: "12px 14px",
+                borderRadius: "14px",
                 background:
-                  "linear-gradient(135deg, rgba(22, 163, 74, 0.10), rgba(22, 163, 74, 0.04))",
-                border: "1px solid rgba(22, 163, 74, 0.28)",
+                  "linear-gradient(135deg, rgba(22, 163, 74, 0.16), rgba(22, 163, 74, 0.06))",
+                border: "1px solid rgba(22, 163, 74, 0.36)",
+                boxShadow:
+                  "0 1px 0 rgba(22, 163, 74, 0.12), inset 0 0 0 1px rgba(255,255,255,0.4)",
               }}
             >
               <Box
@@ -1787,22 +1800,29 @@ const BookingFlowPage: React.FC = () => {
                   component="span"
                   sx={{
                     fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: "0.06em",
+                    fontWeight: 800,
+                    letterSpacing: "0.08em",
                     textTransform: "uppercase",
                     color: "#15803d",
                   }}
                 >
                   ✨ You saved tonight
                 </Box>
+                {/* 🆕 Round 28r32 — Beefed up the headline number from
+                    17px → 22px serif w/ heavy weight + tabular nums.
+                    Founder feedback: "ลด 100 เหา ทำให้ จาง ลง" — the
+                    saving needs to read as the loudest number on the
+                    receipt now that it aggregates Smart Routing + promo. */}
                 <Box
                   component="span"
                   sx={{
                     fontFamily: SERIF,
-                    fontSize: 17,
-                    fontWeight: 700,
+                    fontSize: 22,
+                    fontWeight: 800,
+                    lineHeight: 1,
                     color: "#16a34a",
                     fontVariantNumeric: "tabular-nums",
+                    letterSpacing: "-0.01em",
                   }}
                 >
                   −{formatTHB(Math.round(totalSavings))}
