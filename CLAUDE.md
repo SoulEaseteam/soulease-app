@@ -4,7 +4,7 @@
 > of the context you and View built together. Update anything that
 > changes.
 >
-> Last updated: 2026-05-07 by claude (Round 28r13)
+> Last updated: 2026-05-09 by claude (Round 28r35 — blocking items cleared)
 
 ---
 
@@ -254,21 +254,19 @@ they prefer.
 
 **Last updated: 2026-05-07 after Round 28r32 push (13 commits shipped)**
 
-**🚨 BLOCKING — must do before features below work in production:**
-- [ ] **Publish updated `firestore.rules`** to Firebase Console
-  - Adds `analytics_events` (r13) + `booking_errors` (r18) collections
-  - Without this, every analytics event + diagnostic write is silently denied
-  - Path: Firebase Console → Firestore → Rules → Publish
-- [ ] **Deploy Cloud Functions for Telegram notifications**
-  - `firebase deploy --only functions` from repo root
-  - `git push` only deploys frontend via Vercel — Firebase functions need
-    a separate deploy. Without this, customer bookings DON'T trigger TG alert
-    to admin, AND admin doesn't see them in the back-office.
-- [ ] **Composite Firestore index** — `bookings` collection,
-  fields: `status` (asc) + `startAt` (asc). Required for the new
-  `bookingNow` query in `useSocialProofMetrics` (r30). Until built,
-  the SocialProofTicker will show only count24h + topService, never
-  the "X sessions happening right now" line.
+**🚨 BLOCKING — ALL CLEARED 2026-05-09 (Round 28r35 maintenance):**
+- [x] **Publish updated `firestore.rules`** — deployed via
+  `firebase deploy --only firestore:rules` to `soulease-spa`.
+  `analytics_events` + `booking_errors` writes now permitted.
+- [x] **Deploy Cloud Functions for Telegram notifications** —
+  all 9 functions redeployed to `asia-southeast1`:
+  notifyBooking, onBookingCreate, onReviewCreate, onTherapistUpdate,
+  setRoleOnSignup, moderateText, releaseExpiredHolds,
+  recoverAbandonedBookings, telegramWebhook.
+- [x] **Composite Firestore index** — `bookings` (status asc +
+  startAt asc) added to `firestore.indexes.json` and deployed.
+  Index build takes ~5-15min; SocialProofTicker will start showing
+  "X sessions happening right now" once READY.
 
 **📋 Decisions needed from View (for auto-bot Round next):**
 - [ ] Confirm Telegram channel ID — `@SunRed_BKK`?
