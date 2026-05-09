@@ -43,6 +43,7 @@ import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import PaymentRoundedIcon from "@mui/icons-material/PaymentRounded";
 import RoomRoundedIcon from "@mui/icons-material/RoomRounded";
 import RedeemRoundedIcon from "@mui/icons-material/RedeemRounded";
+import AdminPanelSettingsRoundedIcon from "@mui/icons-material/AdminPanelSettingsRounded";
 import { useAuth } from "@/providers/AuthProvider";
 import DistanceDepositDialog from "@/components/home/DistanceDepositDialog";
 import ReferralDialog from "@/components/home/ReferralDialog";
@@ -140,7 +141,7 @@ const INFO_ITEMS: NavItem[] = [
     labelKey: "nav.referral",
     defaultLabel: "Refer & earn",
     hintKey: "nav.referral.hint",
-    defaultHint: "Give 500฿ · Get 500฿",
+    defaultHint: "Give 200฿ · Get 200฿",
     action: "openReferral",
   },
   {
@@ -186,15 +187,16 @@ const TopNav: React.FC = () => {
       ? "rgba(60,30,20,0.55)"
       : "#FE7A52";
 
-  // useAuth shape varies across the codebase; defensively handle either
-  // a `user` field or a `currentUser` field. Falsy → unauthenticated.
-  const auth = useAuth() as {
-    user?: { uid?: string } | null;
-    currentUser?: { uid?: string } | null;
-    signOut?: () => Promise<void> | void;
-    logout?: () => Promise<void> | void;
-  };
-  const isLoggedIn = Boolean(auth.user ?? auth.currentUser);
+  // 🆕 Round 28r21 (founder 2026-05-07) — Use the AuthProvider type
+  //   directly instead of the old defensive cast. Founder reported
+  //   that signed-in admins were seeing the customer drawer because
+  //   TopNav never read `role` — only `user`. Now we surface the
+  //   active role + show role-specific shortcuts at the top of the
+  //   drawer (Admin → /admin/dashboard · Therapist → /therapist).
+  const { user, role, logout: providerLogout } = useAuth();
+  const isLoggedIn = Boolean(user);
+  const isAdmin = role === "admin";
+  const isTherapist = role === "therapist";
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [distanceOpen, setDistanceOpen] = useState(false);
@@ -239,8 +241,7 @@ const TopNav: React.FC = () => {
 
   const handleSignOut = async () => {
     setDrawerOpen(false);
-    const fn = auth.signOut ?? auth.logout;
-    if (fn) await fn();
+    if (providerLogout) await providerLogout();
     if (location.pathname !== "/") void navigate("/");
   };
 
@@ -429,6 +430,122 @@ const TopNav: React.FC = () => {
         </Box>
 
         <Divider sx={{ borderColor: "rgba(184, 92, 60, 0.18)" }} />
+
+        {/* 🆕 Round 28r21 (founder 2026-05-07) — Role banner +
+            shortcut. When the signed-in user is admin or therapist,
+            the drawer surfaces their backstage entry as the FIRST
+            item — fixes the "I'm logged in as admin but every page
+            still treats me as a customer" friction founder reported.
+            Tap → goes straight to admin dashboard / therapist panel.
+            Customer / guest sessions skip this row entirely. */}
+        {(isAdmin || isTherapist) && (
+          <Box
+            component="button"
+            type="button"
+            onClick={() => {
+              setDrawerOpen(false);
+              if (isAdmin) {
+                void navigate("/admin/dashboard");
+              } else {
+                // Therapists land on their own profile editor for now
+                // (a dedicated /therapist/dashboard can replace this
+                // once it ships).
+                void navigate("/profile");
+              }
+            }}
+            aria-label={
+              isAdmin
+                ? t("nav.adminShortcut", "Open admin dashboard")
+                : t("nav.therapistShortcut", "Open therapist panel")
+            }
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              width: "calc(100% - 16px)",
+              margin: "10px 8px",
+              padding: "12px 14px",
+              borderRadius: "12px",
+              background: isAdmin
+                ? "linear-gradient(135deg, rgba(254, 9, 68, 0.12), rgba(254, 122, 82, 0.10))"
+                : "linear-gradient(135deg, rgba(22, 163, 74, 0.12), rgba(22, 163, 74, 0.06))",
+              border: isAdmin
+                ? "1px solid rgba(254, 9, 68, 0.28)"
+                : "1px solid rgba(22, 163, 74, 0.28)",
+              cursor: "pointer",
+              fontFamily: SANS,
+              textAlign: "left",
+              "&:hover": { transform: "translateY(-1px)" },
+              transition: "transform 0.15s ease",
+              "&:focus-visible": {
+                outline: "2px solid #FE0944",
+                outlineOffset: 2,
+              },
+            }}
+          >
+            <Box
+              aria-hidden
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                background: isAdmin ? "#FE0944" : "#16a34a",
+                color: "#fff",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              {isAdmin ? (
+                <AdminPanelSettingsRoundedIcon sx={{ fontSize: 20 }} />
+              ) : (
+                <SpaRoundedIcon sx={{ fontSize: 20 }} />
+              )}
+            </Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Box
+                component="span"
+                sx={{
+                  display: "block",
+                  fontSize: 9.5,
+                  fontWeight: 800,
+                  letterSpacing: "0.10em",
+                  textTransform: "uppercase",
+                  color: isAdmin ? "#FE0944" : "#15803d",
+                }}
+              >
+                {t("nav.signedInAs", "Signed in as")}{" "}
+                {isAdmin ? "Admin" : "Therapist"}
+              </Box>
+              <Box
+                component="span"
+                sx={{
+                  display: "block",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: "#3c1e14",
+                  marginTop: "2px",
+                }}
+              >
+                {isAdmin
+                  ? t("nav.openAdmin", "Open admin dashboard")
+                  : t("nav.openTherapist", "Open therapist panel")}
+              </Box>
+            </Box>
+            <Box
+              aria-hidden
+              sx={{
+                fontSize: 18,
+                color: isAdmin ? "#FE0944" : "#15803d",
+                fontWeight: 800,
+                flexShrink: 0,
+              }}
+            >
+              ›
+            </Box>
+          </Box>
+        )}
 
         {/* Account / nav items */}
         <Box

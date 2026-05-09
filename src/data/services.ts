@@ -5,32 +5,17 @@ export interface MassageService {
   id: string;
   name: string;
   desc: string;
-  /**
-   * Base price (THB) for the 60-minute version. Other durations are derived
-   * via DURATION_MULTIPLIERS in src/utils/servicePricing.ts.
-   */
+
   price: number;
-  /**
-   * Default duration for this service (minutes). Used as the initial
-   * popup selection. Always 60 in the canonical pricing model — kept on
-   * the type for back-compat with legacy admin/booking pages still on
-   * the single-duration flow.
-   */
+
   duration: number;
-  /**
-   * Allowed duration tiers for this service (minutes). Defaults to
-   * [60, 90, 120] when undefined. Use to lock specific services to
-   * fewer options (e.g. signature ritual at [80, 120] only).
-   */
+
   availableDurations?: number[];
   count: number;
   image: string;
   detail: string;
   benefit: string[];
-  // Round 28c25 — replaced 'BEST SELLER' with 'POPULAR'.
-  // 'BEST SELLER' was a falsifiable claim (Thai actually leads in
-  // session count); 'POPULAR' is a softer positioning label that
-  // stays defensible regardless of who's currently top by data.
+
   badge: 'SIGNATURE' | 'POPULAR' | 'RECOMMEND' | 'EXCLUSIVE';
 }
 

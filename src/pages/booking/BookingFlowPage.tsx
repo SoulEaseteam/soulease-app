@@ -96,7 +96,11 @@ import {
   type RouteResult,
 } from "@/utils/directionsApi";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
-import { getRainStatus } from "@/utils/weather";
+import {
+  getCachedRainStatus,
+  getRainStatus,
+  type RainStatus,
+} from "@/utils/weather";
 import { priceForDuration, formatTHB } from "@/utils/servicePricing";
 import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
 import services from "@/data/services";
@@ -155,7 +159,22 @@ const BookingFlowPage: React.FC = () => {
   const navigate = useNavigate();
   const routerLoc = useLocation();
   const { t } = useTranslation();
-  const { user } = useAuth();
+  // 🆕 Round 28r24 (founder 2026-05-07) — Admin override mode.
+  //   Founder direction "แอดมินจองหน้าเว็บได้อิสละ": when an admin
+  //   is signed in and books on behalf of a customer through the
+  //   regular customer flow, we bypass the guards meant to protect
+  //   guests from over-eager booking:
+  //     • therapist availability gate (admin can override holiday /
+  //       statusOverride / busyUntil)
+  //     • 10-minute hold (admin booking is already confirmed at
+  //       source; the hold-release timer would just confuse them)
+  //     • working-hours window check (admin can schedule outside
+  //       working hours when the practitioner has agreed offline)
+  //     • inappropriate-notes filter (admin trust)
+  //   Customer-facing fields (price, location, etc.) still validate
+  //   normally so the booking record stays clean.
+  const { user, role } = useAuth();
+  const isAdminBooking = role === "admin";
 
   // ── Pre-fill from URL params (DetailPage StickyBookCTA forwards these)
   const preService = searchParams.get("service");
@@ -213,8 +232,29 @@ const BookingFlowPage: React.FC = () => {
 
   // 🌧 Warm the rain-status cache on mount — surcharge surfaces in the
   //    pricing card without an extra round-trip when location is set.
+  //
+  // 🆕 Round 28r33 (founder 2026-05-07) — rain status is now reactive.
+  //    Previously this useEffect did `void getRainStatus()` (fire-and-
+  //    forget) which populated the localStorage cache but didn't
+  //    re-render the pricing card. So even if Bangkok was actively
+  //    raining, the taxi useMemo (which reads `getCachedRainStatus()`
+  //    SYNCHRONOUSLY inside calcTaxiFare) would compute on first paint
+  //    with an empty cache → "Clear" → no surcharge ever shown.
+  //    Founder spotted this on a rainy night with the surcharge
+  //    silently absent. Fix: hold rain in state, await the fetch,
+  //    setState on resolve, and pass the value through to calcTaxiFare
+  //    via the new `rainOverride` parameter.
+  const [rainStatus, setRainStatus] = useState<RainStatus>(() =>
+    getCachedRainStatus()
+  );
   useEffect(() => {
-    void getRainStatus();
+    let cancelled = false;
+    getRainStatus().then((status) => {
+      if (!cancelled) setRainStatus(status);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // 🔁 When SelectLocationPage navigates back with state, merge it in.
@@ -447,20 +487,25 @@ const BookingFlowPage: React.FC = () => {
   const taxi = useMemo(() => {
     if (!locationSet) return { distanceKm: 0, fare: 0, result: undefined };
     if (route) {
-      const result = calcTaxiFare(route.kmRoad);
+      // 🆕 Round 28r33 — pass rainStatus so a fetched-mid-session
+      //   surcharge actually surfaces.
+      const result = calcTaxiFare(route.kmRoad, rainStatus);
       return {
         distanceKm: route.kmRoad,
         fare: result.fare ?? 0,
         result,
       };
     }
-    return estimateTaxiFare({
-      therapistLat: therapist?.lat,
-      therapistLng: therapist?.lng,
-      customerLat: form.lat,
-      customerLng: form.lng,
-      durationMin: form.duration ?? service?.duration ?? 60,
-    });
+    return estimateTaxiFare(
+      {
+        therapistLat: therapist?.lat,
+        therapistLng: therapist?.lng,
+        customerLat: form.lat,
+        customerLng: form.lng,
+        durationMin: form.duration ?? service?.duration ?? 60,
+      },
+      rainStatus
+    );
   }, [
     locationSet,
     route,
@@ -470,6 +515,8 @@ const BookingFlowPage: React.FC = () => {
     form.lng,
     form.duration,
     service?.duration,
+    // 🆕 Round 28r33 — recompute when weather state changes.
+    rainStatus,
   ]);
   const distanceKm = taxi.distanceKm;
   const taxiFare = taxi.fare;
@@ -516,10 +563,50 @@ const BookingFlowPage: React.FC = () => {
   //   FIRST10's 10% cap is computed against the subtotal (not the
   //   raw service price), so add-ons + travel get included in the
   //   percentage base — fairer for guests who picked add-ons.
-  const subtotal = servicePrice + addonsTotal + taxiFare;
-  const discount = validateDiscount(form.discountCode, subtotal);
+  // 🆕 Round 28r20 — Pass bookingHourBKK so time-restricted codes
+  //   (TONIGHT500) can validate against the actual booking start
+  //   time (BKK timezone), not the user's current local time.
+  // 🆕 Round 28r27 — Discount applies to (service + addons) only,
+  //   taxi pass-through. Round 28r28 — FREETAXI is the exception:
+  //   it subtracts from taxi instead (premium-tier waiver).
+  const discountableBase = servicePrice + addonsTotal;
+  const subtotal = discountableBase + taxiFare;
+  const bookingHourBKK = form.time
+    ? parseInt(form.time.split(":")[0], 10)
+    : undefined;
+  const discount = validateDiscount(form.discountCode, discountableBase, {
+    bookingHourBKK,
+    serviceId: form.serviceId,
+    // 🆕 Round 28r28 — FREETAXI needs the taxi fare to compute its
+    //   discount amount. Other codes ignore it.
+    taxiFareTHB: taxiFare,
+  });
   const discountAmount = discount.valid ? discount.amount : 0;
-  const total = Math.max(0, subtotal - discountAmount);
+  // 🆕 Round 28r28 — Total calc branches on FREETAXI vs others:
+  //   FREETAXI: total = service + addons + (taxi - discount=taxi) = service + addons
+  //   Other codes: total = (service + addons - discount) + taxi
+  const isFreeTaxi = discount.valid && discount.code === "FREETAXI";
+  const calculatedTotal = isFreeTaxi
+    ? discountableBase
+    : Math.max(
+        taxiFare,
+        discountableBase - discountAmount + taxiFare
+      );
+
+  // 🆕 Round 28r25 (founder 2026-05-07) — Owner price override.
+  //   Founder direction "ทำทุกอย่างได้ เพราะเป็นเจ้าของ" — when
+  //   admin is booking, they can type a custom final total that
+  //   replaces the calculated price entirely. Useful for: VIP
+  //   comp, complaint refund, one-time deals not covered by
+  //   discount codes, partial-pay arrangements. Empty string =
+  //   use the calculated total normally.
+  const [adminOverrideRaw, setAdminOverrideRaw] = useState("");
+  const adminOverrideTotal =
+    isAdminBooking && adminOverrideRaw.trim() !== ""
+      ? Math.max(0, parseInt(adminOverrideRaw.replace(/[^0-9]/g, ""), 10) || 0)
+      : null;
+  const total =
+    adminOverrideTotal != null ? adminOverrideTotal : calculatedTotal;
 
   // 🆕 Round 28b46 (founder 2026-05-05) — Pre-surcharge baseline so we
   //   can render "~~฿1,800~~ ฿2,018" when rain or admin-quote bumps the
@@ -531,6 +618,37 @@ const BookingFlowPage: React.FC = () => {
     addonsTotal +
     (taxiResult?.baseFareBeforeRain ?? taxiFare);
   const hasSurcharge = total > baseTotal + 0.5; // guard against rounding noise
+
+  // 🆕 Round 28r29 (founder 2026-05-07) — "Original price" + total
+  //   savings for the receipt-style display. Founder direction:
+  //   "ใส่ราคาต้นมาด้วยจะได้ดูคุ้ม · เอาส่วนลดเอาประโยชน์มาใส่ด้วย
+  //   ให้ลูกค้าเห็นว่ามันคุ้ม". The customer should always see the
+  //   un-discounted reference price (service + full-meter taxi)
+  //   strikethrough next to the total they actually pay, plus a
+  //   summary of every saving they got.
+  //
+  //   originalPrice = service + addons + un-routed taxi (highest
+  //                    price they would have paid without our magic)
+  //   savingsRouting = taxi-meter savings (Smart Routing chip)
+  //   savingsDiscount = promo / VIP / referral amount
+  //   totalSavings = sum (drives the "You saved ฿X" pill)
+  //
+  // 🆕 Round 28r32 (founder 2026-05-07) — Bug fix: pill was using
+  //   `baseFareBeforeRain` (= post-routing fare, only adds rain on top)
+  //   so savingsRouting always evaluated to 0 and the pill missed the
+  //   ฿44 Smart Routing savings. View saw "−฿100 saved" pill with a
+  //   "−฿44" Smart Routing chip floating loose → "ลด 100 เหา ทำให้
+  //   จาง ลง". Fix: use `listPriceTravel` (the un-routed standard rate
+  //   anchor) for originalPrice, and `sunredPromoDiscount` (already
+  //   computed in taxiFare.ts as listPriceTravel − fare) for routing
+  //   savings. Now the pill aggregates both savings → "−฿144" with
+  //   ฿44 Smart Routing + ฿100 promo broken down underneath.
+  const meterTaxi = taxiResult?.listPriceTravel ?? taxiFare;
+  const originalPrice = servicePrice + addonsTotal + meterTaxi;
+  const savingsRouting = taxiResult?.sunredPromoDiscount ?? 0;
+  const savingsDiscount = discount.valid ? discountAmount : 0;
+  const totalSavings = savingsRouting + savingsDiscount;
+  const hasSavings = totalSavings > 0.5;
 
   // 🆕 Round 28b46 — Tweened total digits. Smoothly count from previous
   //   total → new total over 380ms with ease-out so the number doesn't
@@ -586,7 +704,11 @@ const BookingFlowPage: React.FC = () => {
       //   so the gate respects whatever admin just toggled. Failing
       //   the check sends the customer back to the therapist detail
       //   page where they'll see the correct "Off duty" pill.
-      if (!therapistIsBookable) {
+      // 🆕 Round 28r24 — Admin override skips the availability gate.
+      //   Founder may need to schedule a therapist who's marked
+      //   off-duty / on holiday because they coordinated availability
+      //   offline. Customer flow keeps the gate.
+      if (!therapistIsBookable && !isAdminBooking) {
         toast.error(
           t(
             "booking.error.therapistUnavailable",
@@ -602,7 +724,10 @@ const BookingFlowPage: React.FC = () => {
         return;
       }
 
-      if (form.notes && (await isInappropriate(form.notes))) {
+      // 🆕 Round 28r24 — Admin notes bypass the moderation filter.
+      //   Admin uses notes for internal context ("VIP, hotel security
+      //   needs ID at desk", etc.) that may include sensitive words.
+      if (form.notes && !isAdminBooking && (await isInappropriate(form.notes))) {
         toast.error(
           t(
             "booking.error.inappropriateNotes",
@@ -698,11 +823,30 @@ const BookingFlowPage: React.FC = () => {
         //   We use server-side dayjs so device clock skew can't extend
         //   the hold artificially. The 10-minute window is configurable
         //   by changing the constant below.
-        holdState: "active",
-        holdExpiresAt: Timestamp.fromDate(
-          dayjs().add(10, "minute").toDate()
-        ),
-        holdDurationMin: 10,
+        // 🆕 Round 28r24 — Admin bookings are pre-confirmed, no
+        //   countdown. Customer bookings still get the 10-min hold.
+        holdState: isAdminBooking ? "confirmed" : "active",
+        holdExpiresAt: isAdminBooking
+          ? null
+          : Timestamp.fromDate(dayjs().add(10, "minute").toDate()),
+        holdDurationMin: isAdminBooking ? 0 : 10,
+        // 🆕 Round 28r24 — flag the booking as admin-created for
+        //   downstream filters (analytics dashboard, admin-only
+        //   reports). Customer bookings keep the field undefined.
+        createdByAdmin: isAdminBooking ? user?.uid ?? null : null,
+        // 🆕 Round 28r25 — Owner price override audit trail. When
+        //   admin typed a custom total, store both the calculated
+        //   and the override so the booking history can show
+        //   "Owner-priced ฿X (calc was ฿Y)" forever.
+        adminOverrideTotal: adminOverrideTotal,
+        calculatedTotal: calculatedTotal,
+        // 🆕 Round 28r29 — Save the "original price" + total savings
+        //   so the receipt-style success page can render the same
+        //   "you saved ฿X" message without recomputing from scratch.
+        originalPrice: Math.round(originalPrice),
+        savingsTotal: Math.round(totalSavings),
+        savingsRouting: Math.round(savingsRouting),
+        savingsDiscount: Math.round(savingsDiscount),
         yearMonth: dayjs(startDate.toDate()).format("YYYY-MM"), // analytics
         createdAt: serverTimestamp(), // server clock — gracefully handles user device clock skew
       });
@@ -898,6 +1042,71 @@ const BookingFlowPage: React.FC = () => {
           }}
           onTap={goEditAddress}
         />
+
+        {/* 🆕 Round 28r24 (founder 2026-05-07) — Admin override banner.
+            Shows ONLY when an admin is booking through the customer
+            flow. Confirms which guards have been bypassed so admin
+            doesn't expect the 10-min-hold countdown to appear later. */}
+        {isAdminBooking && (
+          <Box
+            sx={{
+              mb: 1.5,
+              p: "10px 12px",
+              borderRadius: "12px",
+              background: "linear-gradient(135deg, rgba(254, 9, 68, 0.10), rgba(254, 122, 82, 0.06))",
+              border: "1px solid rgba(254, 9, 68, 0.28)",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "10px",
+            }}
+          >
+            <Box
+              aria-hidden
+              sx={{
+                width: 22,
+                height: 22,
+                borderRadius: "50%",
+                background: "#FE0944",
+                color: "#fff",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                fontSize: 12,
+                fontWeight: 800,
+              }}
+            >
+              ✓
+            </Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Box
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: 9.5,
+                  fontWeight: 800,
+                  letterSpacing: "0.10em",
+                  textTransform: "uppercase",
+                  color: "#9F0731",
+                  lineHeight: 1,
+                }}
+              >
+                Admin booking · Free schedule
+              </Box>
+              <Box
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: 11.5,
+                  color: "rgba(60, 30, 20, 0.7)",
+                  marginTop: "3px",
+                  lineHeight: 1.35,
+                }}
+              >
+                Holiday / off-duty / working-hours / 10-min-hold all
+                bypassed. Auto-confirmed on submit.
+              </Box>
+            </Box>
+          </Box>
+        )}
 
         {/* ─────────── Order Details card (pattern 4A) ─────────── */}
         <SectionCard label="Order Details" icon={<ReceiptLongRoundedIcon />}>
@@ -1496,35 +1705,80 @@ const BookingFlowPage: React.FC = () => {
             {form.discountCode && (
               <Box sx={{ marginTop: "6px", paddingLeft: "8px" }}>
                 {discount.valid ? (
-                  <Typography
-                    sx={{
-                      fontFamily: SANS,
-                      fontSize: "11.5px",
-                      fontWeight: 700,
-                      color: "#16a34a",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                    }}
-                  >
-                    <Box component="span" sx={{ fontWeight: 800 }}>
-                      ✓
-                    </Box>
-                    {discount.label} — saves {formatTHB(discount.amount)}
-                  </Typography>
-                ) : (
-                  <Typography
-                    sx={{
-                      fontFamily: SANS,
-                      fontSize: "10.5px",
-                      color: "rgba(60, 30, 20, 0.55)",
-                      fontStyle: "italic",
-                    }}
-                  >
-                    Code not recognised — the concierge can apply
-                    custom codes manually after seeing your booking.
-                  </Typography>
-                )}
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: "11.5px",
+                        fontWeight: 700,
+                        color: "#16a34a",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "5px",
+                      }}
+                    >
+                      <Box component="span" sx={{ fontWeight: 800 }}>
+                        ✓
+                      </Box>
+                      {discount.label} — saves {formatTHB(discount.amount)}
+                    </Typography>
+                    {/* 🆕 Round 28r27 — Make taxi-pass-through visible
+                        so guests don't expect their travel fee to also
+                        be discounted. */}
+                    {taxiFare > 0 && (
+                      <Typography
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: "10px",
+                          color: "rgba(60, 30, 20, 0.55)",
+                          marginTop: "2px",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        Travel fee ({formatTHB(taxiFare)}) is at cost — not
+                        included in promo.
+                      </Typography>
+                    )}
+                  </Box>
+                ) : (() => {
+                  // 🆕 Round 28r27 — Smart hint: distinguish between
+                  //   "code unknown" vs "code blocked for this tier".
+                  const isPremiumService =
+                    form.serviceId === "SR-HJ2200" ||
+                    form.serviceId === "SR-B2B3200";
+                  const looksLikeRealCode = /^(FIRST|WELCOME|TONIGHT|SAMMY)/i.test(
+                    form.discountCode
+                  );
+                  if (isPremiumService && looksLikeRealCode) {
+                    return (
+                      <Typography
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: "10.5px",
+                          color: "#9F0731",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Promo codes don't apply to this premium ritual.
+                        Use a referral code (SUN-XXXXXX) or chat with
+                        the concierge for a custom arrangement.
+                      </Typography>
+                    );
+                  }
+                  return (
+                    <Typography
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: "10.5px",
+                        color: "rgba(60, 30, 20, 0.55)",
+                        fontStyle: "italic",
+                      }}
+                    >
+                      Code not recognised — the concierge can apply
+                      custom codes manually after seeing your booking.
+                    </Typography>
+                  );
+                })()}
               </Box>
             )}
           </Box>
@@ -1545,6 +1799,100 @@ const BookingFlowPage: React.FC = () => {
                   </Box>
                 }
               />
+            </Box>
+          )}
+
+          {/* 🆕 Round 28r29 (founder 2026-05-07) — "You saved" pill.
+              Sits ABOVE the Total row so the customer reads the
+              positive number first. Renders only when there's a real
+              saving (Smart Routing or applied promo). Listing each
+              source one-line keeps it scannable. */}
+          {hasSavings && (
+            <Box
+              sx={{
+                marginTop: "10px",
+                padding: "12px 14px",
+                borderRadius: "14px",
+                background:
+                  "linear-gradient(135deg, rgba(22, 163, 74, 0.16), rgba(22, 163, 74, 0.06))",
+                border: "1px solid rgba(22, 163, 74, 0.36)",
+                boxShadow:
+                  "0 1px 0 rgba(22, 163, 74, 0.12), inset 0 0 0 1px rgba(255,255,255,0.4)",
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  fontFamily: SANS,
+                }}
+              >
+                <Box
+                  component="span"
+                  sx={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: "#15803d",
+                  }}
+                >
+                  ✨ You saved tonight
+                </Box>
+                {/* 🆕 Round 28r32 — Beefed up the headline number from
+                    17px → 22px serif w/ heavy weight + tabular nums.
+                    Founder feedback: "ลด 100 เหา ทำให้ จาง ลง" — the
+                    saving needs to read as the loudest number on the
+                    receipt now that it aggregates Smart Routing + promo. */}
+                <Box
+                  component="span"
+                  sx={{
+                    fontFamily: SERIF,
+                    fontSize: 22,
+                    fontWeight: 800,
+                    lineHeight: 1,
+                    color: "#16a34a",
+                    fontVariantNumeric: "tabular-nums",
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  −{formatTHB(Math.round(totalSavings))}
+                </Box>
+              </Box>
+              <Box
+                sx={{
+                  marginTop: "4px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "2px",
+                }}
+              >
+                {savingsRouting > 0 && (
+                  <Box
+                    component="span"
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: 11,
+                      color: "rgba(20, 83, 45, 0.85)",
+                    }}
+                  >
+                    🚖 Smart Routing — {formatTHB(Math.round(savingsRouting))}
+                  </Box>
+                )}
+                {savingsDiscount > 0 && (
+                  <Box
+                    component="span"
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: 11,
+                      color: "rgba(20, 83, 45, 0.85)",
+                    }}
+                  >
+                    🏷 {discount.label} — {formatTHB(Math.round(savingsDiscount))}
+                  </Box>
+                )}
+              </Box>
             </Box>
           )}
 
@@ -1593,6 +1941,29 @@ const BookingFlowPage: React.FC = () => {
                   }}
                 >
                   {formatTHB(Math.round(animatedBaseTotal))}
+                </Typography>
+              )}
+              {/* 🆕 Round 28r29 — Strikethrough "Original price"
+                  next to the Total when there's any saving (Smart
+                  Routing or promo). Only renders if the original is
+                  meaningfully higher than the total — so we don't
+                  show "฿3,433 → ฿3,433" no-op. Hidden when surcharge
+                  strike is already showing (would clash visually). */}
+              {!hasSurcharge && hasSavings && originalPrice > total + 0.5 && (
+                <Typography
+                  aria-hidden
+                  sx={{
+                    fontFamily: SERIF,
+                    fontSize: "16px",
+                    fontWeight: 500,
+                    color: "rgba(60, 30, 20, 0.42)",
+                    textDecoration: "line-through",
+                    letterSpacing: "-0.01em",
+                    lineHeight: 1,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {formatTHB(Math.round(originalPrice))}
                 </Typography>
               )}
               <Typography
@@ -1647,6 +2018,91 @@ const BookingFlowPage: React.FC = () => {
             >
               Total updates when address is set.
             </Typography>
+          )}
+
+          {/* 🆕 Round 28r25 (founder 2026-05-07) — Owner price
+              override field. Visible ONLY for admin sessions.
+              When filled, replaces the calculated total entirely
+              (no min/max guard — owner can charge whatever they
+              want, including ฿0 for full comp). */}
+          {isAdminBooking && (
+            <Box
+              sx={{
+                marginTop: "12px",
+                padding: "12px",
+                borderRadius: "12px",
+                background:
+                  "linear-gradient(135deg, rgba(254, 9, 68, 0.06), rgba(254, 122, 82, 0.04))",
+                border: "1px dashed rgba(254, 9, 68, 0.40)",
+              }}
+            >
+              <Box
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: 9.5,
+                  fontWeight: 800,
+                  letterSpacing: "0.10em",
+                  textTransform: "uppercase",
+                  color: "#9F0731",
+                  marginBottom: "6px",
+                }}
+              >
+                Owner override · Final total
+              </Box>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder={`e.g. ${calculatedTotal} (leave blank to use calculated)`}
+                value={adminOverrideRaw}
+                onChange={(e) =>
+                  setAdminOverrideRaw(e.target.value.replace(/[^0-9]/g, ""))
+                }
+                inputProps={{
+                  inputMode: "numeric",
+                  pattern: "[0-9]*",
+                  maxLength: 7,
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">฿</InputAdornment>
+                  ),
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    background: "#fff",
+                    borderRadius: "10px",
+                    fontFamily: SANS,
+                    fontSize: "14px",
+                    fontVariantNumeric: "tabular-nums",
+                  },
+                }}
+              />
+              {adminOverrideTotal != null && (
+                <Box
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: 11,
+                    color: "#9F0731",
+                    marginTop: "6px",
+                    fontWeight: 600,
+                  }}
+                >
+                  ✓ Total locked at {formatTHB(adminOverrideTotal)}
+                  {adminOverrideTotal !== calculatedTotal && (
+                    <Box
+                      component="span"
+                      sx={{
+                        marginLeft: "6px",
+                        color: "rgba(60, 30, 20, 0.55)",
+                        fontWeight: 500,
+                      }}
+                    >
+                      (calculated was {formatTHB(calculatedTotal)})
+                    </Box>
+                  )}
+                </Box>
+              )}
+            </Box>
           )}
         </SectionCard>
 

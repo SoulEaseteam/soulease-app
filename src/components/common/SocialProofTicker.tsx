@@ -28,7 +28,11 @@ import { Box, Typography } from "@mui/material";
 import LocalFireDepartmentRoundedIcon from "@mui/icons-material/LocalFireDepartmentRounded";
 import GroupRoundedIcon from "@mui/icons-material/GroupRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
-import useRecentBookingsCount from "@/hooks/useRecentBookingsCount";
+// 🆕 Round 28r30 (founder 2026-05-07) — All three messages now real.
+//   Founder direction: "SocialProofTicker วัดได้จริงๆ". Pseudo-random
+//   "X booking right now" + hardcoded "Most popular: Thai 90 min"
+//   are gone — both come from `useSocialProofMetrics` live data.
+import useSocialProofMetrics from "@/hooks/useSocialProofMetrics";
 
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
@@ -46,38 +50,48 @@ interface Message {
 
 const ROTATE_MS = 5000;
 
-const buildMessages = (count: number): Message[] => {
-  // Derive a "X booking now" approximation: count of last 24h / 4
-  // (most bookings happen during the day → 6h block ≈ 1/4 of total),
-  // floored at 2.
-  const nowApprox = Math.max(2, Math.floor(count / 4));
-  return [
+// 🆕 Round 28r30 — All three messages drawn from live Firestore data.
+//   When a metric isn't available yet (no top service in last 7 days,
+//   bookingNow query missing index), the message is filtered out so
+//   the ticker never displays a placeholder.
+const buildMessages = (
+  count24h: number,
+  bookingNow: number,
+  topService: { name: string; durationMin: number } | null
+): Message[] => {
+  const messages: Message[] = [
     {
       icon: <LocalFireDepartmentRoundedIcon sx={{ fontSize: 14 }} />,
-      text: `${count} bookings in last 24 h`,
+      text: `${count24h} bookings in last 24 h`,
       color: "#FE0944",
       bg: "rgba(254, 9, 68, 0.08)",
     },
-    {
+  ];
+  if (bookingNow > 0) {
+    messages.push({
       icon: <GroupRoundedIcon sx={{ fontSize: 14 }} />,
-      text: `${nowApprox} customers booking right now`,
+      text: `${bookingNow} session${bookingNow === 1 ? "" : "s"} happening right now`,
       color: "#0ea5e9",
       bg: "rgba(14, 165, 233, 0.10)",
-    },
-    {
+    });
+  }
+  if (topService) {
+    messages.push({
       icon: <StarRoundedIcon sx={{ fontSize: 14 }} />,
-      text: `Most popular: Thai · 90 min`,
+      text: `Most popular: ${topService.name} · ${topService.durationMin} min`,
       color: "#f59e0b",
       bg: "rgba(245, 158, 11, 0.10)",
-    },
-  ];
+    });
+  }
+  return messages;
 };
 
 export const SocialProofTicker: React.FC<Props> = ({ variant = "inline" }) => {
-  const { count, loading } = useRecentBookingsCount();
+  const { count24h, bookingNow, topService, loading } =
+    useSocialProofMetrics();
   const [idx, setIdx] = useState(0);
 
-  const messages = buildMessages(count);
+  const messages = buildMessages(count24h, bookingNow, topService);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

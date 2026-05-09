@@ -122,7 +122,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "Do you offer discounts or promo codes?",
-        a: "First-time guests have a 10% welcome credit (mention 'first booking' to the concierge). The Refer & earn program gives 500฿ back to both referrer and friend after the friend's first completed session. Outside-source promo codes are honoured on a case-by-case basis — share the code at booking.",
+        a: "First-time guests have a 10% welcome credit (capped at 200฿ — mention 'first booking' to the concierge), valid on Thai & Aromatherapy menu. The Refer & earn program gives 200฿ back to both referrer and friend after the friend's first completed session, also entry-tier. For our Gentleman's Signature and Therapeutic Experience guests, ask about the VIP100 (฿100 off) or FREETAXI (travel comped) tokens. Outside-source promo codes are honoured on a case-by-case basis — share the code at booking.",
       },
     ],
   },

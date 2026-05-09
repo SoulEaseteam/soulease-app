@@ -60,6 +60,21 @@ import DiamondRoundedIcon from "@mui/icons-material/DiamondRounded";
 //   tapping opens an external concierge chat (LINE) instead of an
 //   in-app route. The other two tiles route internally.
 import NorthEastRoundedIcon from "@mui/icons-material/NorthEastRounded";
+// 🆕 Round 28r34 (founder 2026-05-07) — Live weather badge on the
+//   Tonight Special banner. Founder direction: "เอาไปใส่ใน tonight
+//   เหมือน แอปสภาพอากาศ" — make the banner read like a concierge
+//   weather widget. Uses real Bangkok rain status from weather.ts
+//   (same source the taxi surcharge reads), so a rainy night surfaces
+//   here BEFORE the guest hits checkout.
+import WbSunnyRoundedIcon from "@mui/icons-material/WbSunnyRounded";
+import NightsStayRoundedIcon from "@mui/icons-material/NightsStayRounded";
+import GrainRoundedIcon from "@mui/icons-material/GrainRounded";
+import ThunderstormRoundedIcon from "@mui/icons-material/ThunderstormRounded";
+import {
+  getCachedRainStatus,
+  getRainStatus,
+  type RainStatus,
+} from "@/utils/weather";
 import { brand, fonts, glass, gradients } from "@/theme";
 // 🆕 Round 28r4 — single source of truth for the four operational
 //   windows (prime / evening / day / off). Live pill, Tonight Special
@@ -226,6 +241,25 @@ const HeroSection: React.FC = () => {
   //   transition across boundaries (e.g. 21:59 → 22:00 prime) without
   //   a hard reload.
   const concierge = useConciergeMode();
+
+  // 🆕 Round 28r34 (founder 2026-05-07) — Live Bangkok weather state
+  //   for the Tonight Special weather badge. Initial paint reads
+  //   sync-cache (NO_RAIN if empty); useEffect awaits the wttr.in
+  //   fetch and updates state so the badge becomes correct within a
+  //   few seconds of mount. Same shape as the BookingFlowPage hook
+  //   so the two pages can't disagree.
+  const [rainStatus, setRainStatus] = useState<RainStatus>(() =>
+    getCachedRainStatus()
+  );
+  useEffect(() => {
+    let cancelled = false;
+    getRainStatus().then((status) => {
+      if (!cancelled) setRainStatus(status);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // 🆕 Round 28r5 (founder 2026-05-06) — Promo banner now cycles through
   //   2–3 messages per mode every 7.5s. Slow enough to read fully (per
@@ -730,36 +764,88 @@ const HeroSection: React.FC = () => {
           )}
         </Box>
 
-        {/* COMING SOON — bare megaphone icon (Round 28b20c · founder
-            2026-05-04). White halo circle removed — the colorful
-            megaphone (yellow speech bubble + pink horn) reads cleanly
-            against the red→coral banner on its own. Soft drop-shadow
-            keeps it legible without a backing plate. */}
+        {/* 🆕 Round 28r34 (founder 2026-05-07) — Live BKK weather
+            badge. Founder direction: "เอาไปใส่ใน tonight เหมือน
+            แอปสภาพอากาศ". Reads real wttr.in data via
+            `useRainStatus`. Three states:
+              • Clear (mode-aware glyph: ☀ day, 🌙 prime/evening, 🌅 off)
+              • Light rain  → "Light rain · BKK"
+              • Heavy rain  → "Storm tonight" + pulse to flag taxi delay
+            Sits where the megaphone sticker used to be (top-right).
+            Glassmorphism plate so it lifts from the gradient without
+            competing with the headline copy. */}
         <Box
-          component="img"
-          src="/badges/boost_5129689.png"
-          alt=""
+          aria-label={
+            rainStatus.tier === "heavy"
+              ? "Heavy rain in Bangkok"
+              : rainStatus.tier === "light"
+              ? "Light rain in Bangkok"
+              : concierge.mode === "day"
+              ? "Clear daytime"
+              : "Clear night"
+          }
           role="img"
-          aria-label={t("hero.promo.aria", "Tonight Special — coming soon")}
-          loading="lazy"
           sx={{
             position: "absolute",
-            top: "10%",
+            top: 10,
             right: 10,
             zIndex: 2,
-            width: 100,
-            height: 100,
-            objectFit: "contain",
-            // Drop-shadow makes the icon pop against the gradient bg
-            // without a circular plate behind it.
-            filter:
-              "drop-shadow(0 6px 14px rgba(0,0,0,0.28)) drop-shadow(0 0 2px rgba(255,255,255,0.7))",
-            transformOrigin: "70% 70%",
-            // Combined pulse + wiggle — single timeline so movement
-            // feels like one motion, not two stacked transforms.
-       
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            paddingX: "10px",
+            paddingY: "5px",
+            borderRadius: "999px",
+            background: "rgba(255, 255, 255, 0.18)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+            border: "1px solid rgba(255, 255, 255, 0.28)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.4)",
+            color: "#fff",
+            // Heavy rain → gentle pulse so the guest notices "taxi may
+            // be slow tonight" before they hit the booking flow.
+            animation:
+              rainStatus.tier === "heavy"
+                ? "weatherPulse 2.4s ease-in-out infinite"
+                : "none",
+            "@keyframes weatherPulse": {
+              "0%, 100%": { opacity: 0.92 },
+              "50%": { opacity: 1, boxShadow: "0 0 12px rgba(255,255,255,0.45)" },
+            },
+            "@media (prefers-reduced-motion: reduce)": {
+              animation: "none",
+            },
           }}
-        />
+        >
+          {rainStatus.tier === "heavy" ? (
+            <ThunderstormRoundedIcon sx={{ fontSize: 16 }} />
+          ) : rainStatus.tier === "light" ? (
+            <GrainRoundedIcon sx={{ fontSize: 16 }} />
+          ) : concierge.mode === "day" ? (
+            <WbSunnyRoundedIcon sx={{ fontSize: 16 }} />
+          ) : (
+            <NightsStayRoundedIcon sx={{ fontSize: 16 }} />
+          )}
+          <Typography
+            component="span"
+            sx={{
+              fontFamily: fonts.body,
+              fontSize: 10.5,
+              fontWeight: 700,
+              letterSpacing: "0.02em",
+              lineHeight: 1,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {rainStatus.tier === "heavy"
+              ? t("hero.weather.heavy", "Storm tonight")
+              : rainStatus.tier === "light"
+              ? t("hero.weather.light", "Light rain · BKK")
+              : concierge.mode === "day"
+              ? t("hero.weather.clearDay", "Clear · BKK")
+              : t("hero.weather.clearNight", "Clear night · BKK")}
+          </Typography>
+        </Box>
       </Box>
 
       {/* Round 28f — trust strip removed (founder direction). */}
@@ -1107,7 +1193,7 @@ const HeroSection: React.FC = () => {
                   textOverflow: "ellipsis",
                 }}
               >
-                {t("hero.cta.refer.title", "Give 500฿")}
+                {t("hero.cta.refer.title", "Give 200฿")}
               </Typography>
             </Box>
             <Typography

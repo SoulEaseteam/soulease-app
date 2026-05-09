@@ -301,14 +301,24 @@ export function calcTaxiFare(
  * Convenience wrapper for the booking page — computes Haversine
  * distance + fare in one call. Returns 0/free when coordinates are
  * missing (caller's UI usually shows "set address" hint instead).
+ *
+ * 🆕 Round 28r33 (founder 2026-05-07) — `rainOverride` added so the
+ *   booking page can pass its rain state (resolved from the async
+ *   `getRainStatus()` fetch) and trigger a recalc when weather flips
+ *   from cached "Clear" → "Light rain" mid-session. Without this the
+ *   surcharge silently no-oped because `calcTaxiFare` reads the
+ *   sync cache, which was empty on first render.
  */
-export function estimateTaxiFare(args: {
-  therapistLat: number | null | undefined;
-  therapistLng: number | null | undefined;
-  customerLat: number | null | undefined;
-  customerLng: number | null | undefined;
-  durationMin: number | null | undefined; // kept in signature for back-compat
-}): { distanceKm: number; fare: number; result?: TaxiFareResult } {
+export function estimateTaxiFare(
+  args: {
+    therapistLat: number | null | undefined;
+    therapistLng: number | null | undefined;
+    customerLat: number | null | undefined;
+    customerLng: number | null | undefined;
+    durationMin: number | null | undefined; // kept in signature for back-compat
+  },
+  rainOverride?: RainStatus
+): { distanceKm: number; fare: number; result?: TaxiFareResult } {
   const {
     therapistLat,
     therapistLng,
@@ -329,7 +339,7 @@ export function estimateTaxiFare(args: {
     customerLat,
     customerLng
   );
-  const result = calcTaxiFare(distanceKm);
+  const result = calcTaxiFare(distanceKm, rainOverride);
   return {
     distanceKm,
     // Caller treats `null` (admin quote) as 0 for total math; UI separately

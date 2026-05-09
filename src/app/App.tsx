@@ -148,6 +148,10 @@ const AdminAdvancedSettingsPage = React.lazy(
 const AdminAnalyticsPage = React.lazy(
   () => import("@/pages/admin/AdminAnalyticsPage")
 );
+// 🆕 Round 28r26 — Earnings calculator (revenue + 60/40 split + CSV).
+const AdminEarningsPage = React.lazy(
+  () => import("@/pages/admin/AdminEarningsPage")
+);
 const AdminReportPage = React.lazy(
   () => import("@/pages/admin/AdminReportPage")
 );
@@ -290,6 +294,8 @@ export default function App() {
           <Route path="reports" element={<AdminReportPage />} />
           {/* 🆕 Round 28r15 — Funnel analytics dashboard */}
           <Route path="analytics" element={<AdminAnalyticsPage />} />
+          {/* 🆕 Round 28r26 — Earnings calculator */}
+          <Route path="earnings" element={<AdminEarningsPage />} />
           <Route
             path="blocked-devices"
             element={<AdminBlockedDevicesPage />}

@@ -44,6 +44,7 @@ import ListAltIcon from "@mui/icons-material/ListAlt";
 import AddBoxIcon from "@mui/icons-material/AddBox";
 import BlockIcon from "@mui/icons-material/Block";
 import InsightsIcon from "@mui/icons-material/Insights";
+import PaidIcon from "@mui/icons-material/Paid";
 
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -63,6 +64,8 @@ const menuItems = [
   // 🆕 Round 28r15 — Funnel analytics (self-hosted, reads
   //   `analytics_events` collection populated by Round 28r13).
   { label: "Analytics",    path: "/admin/analytics",          icon: <InsightsIcon /> },
+  // 🆕 Round 28r26 — Earnings calculator (revenue · 60/40 split · CSV).
+  { label: "Earnings",     path: "/admin/earnings",           icon: <PaidIcon /> },
   { label: "Reports",      path: "/admin/reports",            icon: <ReportIcon /> },
   { label: "New Booking",  path: "/admin/bookings/add",       icon: <AddBoxIcon /> },
   { label: "Bookings",     path: "/admin/bookings",           icon: <BookingIcon /> },

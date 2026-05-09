@@ -15,6 +15,10 @@ import { captureReferralFromURL } from "@/utils/referral";
 import { trackHomeView } from "@/utils/analytics";
 
 import HomeTherapistGrid from "@/components/home/HomeTherapistGrid";
+// 🆕 Round 28r30 (founder 2026-05-07) — PromiseStrip re-enabled.
+//   Founder direction: "เอากลับมาด้วยในหน้าหลัก". Strip earns its
+//   slot now with a tighter editorial design + ฿1,800 price anchor.
+import PromiseStrip from "@/components/home/PromiseStrip";
 import HomeFooter from "@/components/home/HomeFooter";
 
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
@@ -64,6 +68,7 @@ const HomePage: React.FC = () => {
           no longer renders it locally to avoid a duplicate top bar. */}
       <HeroSection />
       <HomeTherapistGrid />
+      <PromiseStrip />
       <HomeFooter />
     </Box>
   );
