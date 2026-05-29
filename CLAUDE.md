@@ -277,11 +277,14 @@ they prefer.
   - `git push` only deploys frontend via Vercel — Firebase functions need
     a separate deploy. Without this, customer bookings DON'T trigger TG alert
     to admin, AND admin doesn't see them in the back-office.
-- [ ] **Composite Firestore index** — `bookings` collection,
-  fields: `status` (asc) + `startAt` (asc). Required for the new
-  `bookingNow` query in `useSocialProofMetrics` (r30). Until built,
-  the SocialProofTicker will show only count24h + topService, never
-  the "X sessions happening right now" line.
+- [x] ~~**Composite Firestore index** — `bookings` collection,
+  fields: `status` (asc) + `startAt` (asc).~~ Re-added to
+  `firestore.indexes.json` in Round 28s1 hotfix (accidentally deleted
+  during the rules deploy when CLI asked "delete these indexes?" —
+  the two console-built indexes for `(therapistId, startAt)` and
+  `(status, startAt)` were not in JSON yet, so they were removed.
+  Both restored + redeployed. Will take a few minutes to rebuild
+  before SocialProofTicker shows the live "X sessions now" line.
 
 **🔒 Security audit follow-ups (2026-05-30, Round 28s1):**
 - [ ] Rotate unused `VITE_OPENWEATHER_KEY` in `.env` (still live, bundled
