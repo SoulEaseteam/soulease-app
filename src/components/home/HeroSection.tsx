@@ -1,32 +1,36 @@
 // src/components/home/HeroSection.tsx
 //
-// 🎨 Round 28s3 — Quiet-luxury rewrite (founder 2026-05-30).
+// 🎨 Round 28s5 — Aman editorial hero (founder 2026-05-30).
 //
-// Why this exists in its current form:
-//   The previous HeroSection (Round 28) layered 7 surfaces before the
-//   practitioner grid: live pill row, social-proof "12 bookings in
-//   24h", verified row, weather-aware Tonight banner card, three niche
-//   tiles (Jet Lag / Couples / Express), two loyalty cards (Concierge /
-//   Refer), then finally the grid header.
+// Round 28s3 went pure-typographic. Founder feedback: "ออกแบบใหม่
+// หน้าโฮม" — wanted the actual Aman/Six Senses register, which
+// uses big editorial photography, not Bauhaus type. This rewrite:
 //
-//   Founder feedback 2026-05-30: "ไม่ค่อยน่าเข้า". The seven shouting
-//   surfaces read as bazaar energy, not Aman energy. CLAUDE.md §3 brand
-//   goal is quiet luxury (Aman · Six Senses · Mandarin Oriental). This
-//   rewrite strips the hero to:
-//     • brand mark + live mode pill
-//     • one Fraunces serif headline with one italic-red accent word
-//     • one eyebrow + concierge-mode line
-//   Everything else (niche tiles, loyalty cards, social-proof ticker,
-//   weather widget, first-booking banner) has been removed. Discount
-//   capture for `?ref=` URLs still happens at the page level via
-//   `captureReferralFromURL` in HomePage.tsx — losing the visual banner
-//   does not break referral attribution.
+//   ┌────────────────────────────────┐
+//   │  [full-bleed editorial photo]  │
+//   │  SunRed         ● PRIME HOURS  │  ← glassy top row
+//   │                                │
+//   │                                │
+//   │                                │
+//   │  ── dark gradient overlay ──   │
+//   │                                │
+//   │  TONIGHT · PRIME HOURS         │  ← eyebrow, cream
+//   │  The city quiets.              │  ← Fraunces serif
+//   │  We arrive.                    │     "arrive" italic, coral
+//   └────────────────────────────────┘
 //
-//   The therapist grid below the hero is now the second surface a guest
-//   sees instead of the eighth.
+// Hero photo: `/images/xing/xingxing4.jpg` — XingXing back-view at a
+// café. Chosen over face-forward shots because (a) it aligns with the
+// brand's discretion ethos (CLAUDE.md §3), (b) the contemplative
+// mood reads "luxury repose" rather than "look at me", (c) anonymous
+// silhouette means the hero doesn't become invalid if XingXing leaves
+// the roster — the figure could be any guest, any night.
 //
-//   To revert: `git revert <this commit>` — the prior 1230-line version
-//   is fully preserved in git history.
+// Cloudinary `enhanceImage(... variant:"hero")` auto-serves WebP/AVIF
+// at 900w with retina dpr_auto and quality auto. In local dev with no
+// CLOUD_NAME the raw image is returned (graceful fallback).
+//
+// To revert to the pure-typographic 28s3 hero: `git revert <this>`.
 
 import React from "react";
 import { Box, Typography } from "@mui/material";
@@ -35,163 +39,216 @@ import { useTranslation } from "react-i18next";
 
 import { brand, fonts } from "@/theme";
 import { useConciergeMode } from "@/utils/conciergeMode";
-// ReferralActiveBanner self-hides when no ?ref= code is captured — safe
-// to mount unconditionally. Kept because a referred guest landing on
-// the home should still see "Referral active · ฿500 off" before they
-// pick a practitioner.
+import { enhanceImage } from "@/utils/cloudinary";
 import ReferralActiveBanner from "@/components/common/ReferralActiveBanner";
+
+const HERO_SRC = "/images/xing/xingxing4.jpg";
 
 const HeroSection: React.FC = () => {
   const { t } = useTranslation();
   const concierge = useConciergeMode();
 
+  const heroOptimised = enhanceImage(HERO_SRC, {
+    variant: "hero",
+    crop: "fill",
+  });
+
   return (
-    <Box
-      component="section"
-      aria-label={t("home.hero.aria", "SunRed introduction")}
-      sx={{
-        position: "relative",
-        padding: "20px 22px 28px",
-      }}
-    >
-      {/* ── Top row: brand mark + live mode pill ───────────────────── */}
+    <>
       <Box
+        component="section"
+        aria-label={t("home.hero.aria", "SunRed introduction")}
         sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "44px",
+          position: "relative",
+          width: "100%",
+          height: "clamp(480px, 78svh, 620px)",
+          overflow: "hidden",
+          // Cool slate base — visible the instant before the hero image
+          // decodes, prevents a flash of cream gradient peeking through.
+          backgroundColor: "#1a0e0a",
+          color: "#fff",
         }}
       >
-        <Typography
-          component="h1"
-          sx={{
-            fontFamily: fonts.heading,
-            fontWeight: 500,
-            fontSize: "20px",
-            letterSpacing: "0.04em",
-            color: brand.text,
-            lineHeight: 1,
-          }}
-        >
-          Sun
-          <Box component="span" sx={{ color: brand.red }}>
-            Red
-          </Box>
-        </Typography>
-
+        {/* ── Hero image — LCP candidate, prioritised over other fetches ── */}
         <Box
-          role="status"
-          aria-live="polite"
+          component="img"
+          src={heroOptimised}
+          alt=""
+          role="presentation"
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
           sx={{
-            display: "inline-flex",
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            // Composition tuned for the chosen photo — back-of-shoulder
+            // sits in the upper-middle third when cropped to this band.
+            objectPosition: "center 28%",
+            // Subtle scale-in keeps the hero feeling editorial rather than
+            // static. Disabled via prefers-reduced-motion at the OS level.
+            animation: "heroScale 14s ease-out forwards",
+            "@keyframes heroScale": {
+              "0%": { transform: "scale(1.06)" },
+              "100%": { transform: "scale(1.0)" },
+            },
+            "@media (prefers-reduced-motion: reduce)": {
+              animation: "none",
+            },
+          }}
+        />
+
+        {/* ── Gradient overlay — top stays clean for the brand mark,
+            bottom darkens so white serif copy reads without text-shadow
+            doing all the work. */}
+        <Box
+          aria-hidden="true"
+          sx={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(180deg, " +
+              "rgba(20,8,12,0.32) 0%, " +
+              "rgba(20,8,12,0.04) 22%, " +
+              "rgba(20,8,12,0.06) 50%, " +
+              "rgba(20,8,12,0.58) 78%, " +
+              "rgba(20,8,12,0.92) 100%)",
+          }}
+        />
+
+        {/* ── Top row: brand mark + live mode pill ───────────────────── */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 18,
+            left: 22,
+            right: 22,
+            display: "flex",
             alignItems: "center",
-            gap: "6px",
-            padding: "4px 10px",
-            borderRadius: 99,
-            background: "rgba(255,255,255,0.6)",
-            border: "1px solid rgba(184, 92, 60, 0.15)",
-            fontFamily: fonts.body,
-            fontSize: "10.5px",
-            fontWeight: 600,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            color: brand.textMuted,
+            justifyContent: "space-between",
+            zIndex: 2,
           }}
         >
-          <Box
-            component="span"
+          <Typography
+            component="h1"
             sx={{
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              background: brand.green,
-              boxShadow: `0 0 0 3px ${brand.green}22`,
+              fontFamily: fonts.heading,
+              fontWeight: 500,
+              fontSize: "21px",
+              letterSpacing: "0.04em",
+              color: "#fff",
+              lineHeight: 1,
+              textShadow: "0 1px 8px rgba(0,0,0,0.4)",
             }}
-          />
-          {concierge.pillLabel}
+          >
+            Sun
+            <Box component="span" sx={{ color: brand.coral }}>
+              Red
+            </Box>
+          </Typography>
+
+          <Box
+            role="status"
+            aria-live="polite"
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "5px 11px",
+              borderRadius: 99,
+              background: "rgba(255,255,255,0.16)",
+              border: "1px solid rgba(255,255,255,0.30)",
+              backdropFilter: "blur(10px) saturate(180%)",
+              WebkitBackdropFilter: "blur(10px) saturate(180%)",
+              fontFamily: fonts.body,
+              fontSize: "10.5px",
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "#fff",
+            }}
+          >
+            <Box
+              component="span"
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background: brand.green,
+                boxShadow: `0 0 0 3px ${brand.green}55`,
+              }}
+            />
+            {concierge.pillLabel}
+          </Box>
+        </Box>
+
+        {/* ── Bottom block: eyebrow + Fraunces headline ───────────────── */}
+        <Box
+          component={motion.div}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.95, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
+          sx={{
+            position: "absolute",
+            bottom: 34,
+            left: 22,
+            right: 22,
+            zIndex: 2,
+          }}
+        >
+          <Typography
+            component="p"
+            sx={{
+              fontFamily: fonts.body,
+              fontSize: "10.5px",
+              fontWeight: 700,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: brand.cream,
+              opacity: 0.92,
+              marginBottom: "12px",
+            }}
+          >
+            {concierge.promoEyebrow}
+          </Typography>
+
+          {/* Editorial headline — one Fraunces sentence, one italic em
+              accent in coral (coral reads brighter than brand red on
+              dark photography). */}
+          <Typography
+            component="p"
+            sx={{
+              fontFamily: fonts.heading,
+              fontWeight: 400,
+              fontSize: "clamp(34px, 11vw, 46px)",
+              lineHeight: 1.06,
+              letterSpacing: "-0.015em",
+              color: "#fff",
+              textShadow: "0 2px 18px rgba(0,0,0,0.45)",
+            }}
+          >
+            {t("home.hero.lineA", "The city quiets. We ")}
+            <Box
+              component="em"
+              sx={{
+                fontStyle: "italic",
+                color: brand.coral,
+                fontWeight: 400,
+              }}
+            >
+              {t("home.hero.lineEm", "arrive")}
+            </Box>
+            {t("home.hero.lineB", ".")}
+          </Typography>
         </Box>
       </Box>
 
-      {/* ── Referral banner (auto-hides when no ?ref= present) ─────── */}
+      {/* Referral banner sits below the hero on the cream surface —
+          auto-hides when no `?ref=` code is captured from URL. */}
       <ReferralActiveBanner />
-
-      {/* Editorial headline — one Fraunces sentence, one italic em
-          accent in brand red. Localisable via i18n; defaults fall
-          back to the English line until per-locale keys are added. */}
-      <Box
-        component={motion.div}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        sx={{ marginBottom: "40px" }}
-      >
-        <Typography
-          component="p"
-          sx={{
-            fontFamily: fonts.heading,
-            fontWeight: 400,
-            fontSize: "clamp(34px, 11vw, 44px)",
-            lineHeight: 1.08,
-            letterSpacing: "-0.015em",
-            color: brand.text,
-          }}
-        >
-          {t("home.hero.lineA", "We ")}
-          <Box
-            component="em"
-            sx={{
-              fontStyle: "italic",
-              color: brand.red,
-              fontWeight: 400,
-            }}
-          >
-            {t("home.hero.lineEm", "arrive")}
-          </Box>
-          {t(
-            "home.hero.lineB",
-            " at the hour you choose."
-          )}
-        </Typography>
-      </Box>
-
-      {/* ── Concierge mode line ─────────────────────────────────────
-          Replaces the old Tonight Special banner. One eyebrow + one
-          plain status sentence. The eyebrow rotates with the four
-          operational windows (Prime / Evening / Day / Off-hours);
-          the body line stays consistent. */}
-      <Box>
-        <Typography
-          component="p"
-          sx={{
-            fontFamily: fonts.body,
-            fontSize: "10.5px",
-            fontWeight: 700,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: brand.accent,
-            marginBottom: "4px",
-          }}
-        >
-          {t("home.hero.eyebrow", "Tonight")} · {concierge.promoEyebrow}
-        </Typography>
-        <Typography
-          component="p"
-          sx={{
-            fontFamily: fonts.body,
-            fontSize: "13.5px",
-            fontWeight: 500,
-            lineHeight: 1.5,
-            color: brand.textMuted,
-          }}
-        >
-          {t(
-            "home.hero.status",
-            "Concierge online · Practitioner dispatched within the hour."
-          )}
-        </Typography>
-      </Box>
-    </Box>
+    </>
   );
 };
 
