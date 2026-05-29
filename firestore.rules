@@ -171,9 +171,20 @@ service cloud.firestore {
     }
     match /bookings/{bookingId} {
       allow get: if true;
+      // Round 28s6 (founder 2026-05-30) — the 28s1 rule denied public
+      // review listeners. Reviews live on bookings (reviewText / rating
+      // fields on the same doc as the original reservation). Allow
+      // public list ONLY when every returned doc carries a rating —
+      // pair with a `where('rating','>=',1)` filter in the client
+      // listener so un-rated bookings (which still hold PII) stay
+      // private. Long-term: denormalise reviews into a separate
+      // `public_reviews` collection so we don't lean on the rated
+      // bookings still exposing phone/address; tracked as a follow-up.
       allow list: if isAdmin()
                   || (isSignedIn() && resource.data.userId == request.auth.uid)
-                  || (isSignedIn() && resource.data.therapistId == request.auth.uid);
+                  || (isSignedIn() && resource.data.therapistId == request.auth.uid)
+                  || (resource.data.rating is number
+                      && resource.data.rating >= 1);
       allow create: if request.resource.data.status in ['pending', 'confirmed'];
       allow update: if isAdmin()
                     || (isSignedIn()

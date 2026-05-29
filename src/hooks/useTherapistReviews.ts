@@ -119,14 +119,16 @@ export function useTherapistReviews(
       return;
     }
 
-    // Query just by therapistId — uses the existing composite index
-    // (therapistId + createdAt). Filter empty reviewText client-side to
-    // avoid needing a separate `!=` index (which Firestore would silently
-    // reject without one). Bookings per therapist are bounded, so the
-    // overfetch is cheap (and the snapshot is incremental anyway).
+    // Round 28s6 — Firestore rules (28s1 + 28s6) require every doc in
+    // a public list query to carry a rating. Filter server-side so the
+    // listener only subscribes to rated bookings; un-rated reservations
+    // (which still hold PII) stay invisible to anonymous viewers.
+    // Uses the new composite index (therapistId asc, rating asc) added
+    // in firestore.indexes.json this same round.
     const q = query(
       collection(db, "bookings"),
-      where("therapistId", "==", therapistId)
+      where("therapistId", "==", therapistId),
+      where("rating", ">=", 1)
     );
 
     const unsub = onSnapshot(
