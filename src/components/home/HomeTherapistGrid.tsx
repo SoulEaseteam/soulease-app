@@ -38,73 +38,11 @@ interface Therapist extends TherapistType {
   computedNext?: string | null;
 }
 
-// 🆕 Round 28r4 (founder 2026-05-06) — Bangkok area chips for the
-//   home-page "browse by neighbourhood" strip.
-//
-// 🆕 Round 28r17 (founder 2026-05-07) — Each chip now matches its
-//   own neighbourhood AND nearby districts. The pre-r17 behaviour
-//   was strict substring match against `area` field — clicking
-//   "Silom" only matched a single therapist whose home address
-//   literally contained "Silom". Travel-time-wise an Asok therapist
-//   and a Bangrak therapist both serve a Silom guest comfortably,
-//   so we expand each chip to cover walking-or-short-taxi neighbours.
-//
-//   `match[]` holds substrings — therapist passes the filter if its
-//   `area` or `homeAddress` contains ANY of them (case-insensitive).
-const BANGKOK_AREAS: {
-  label: string;
-  /** Substrings that count as "in this zone" — the chip's own name
-   *  is always included; the rest are nearby districts. */
-  match: string[];
-}[] = [
-  {
-    label: "Sukhumvit",
-    match: [
-      "Sukhumvit",
-      "Asok",
-      "Phrom Phong",
-      "Phloen Chit",
-      "Nana",
-      "Thonglor",
-      "Ekkamai",
-      "Ploenchit",
-    ],
-  },
-  {
-    label: "Asok",
-    match: ["Asok", "Sukhumvit", "Phrom Phong", "Nana", "Phetchaburi"],
-  },
-  {
-    label: "Thonglor",
-    match: ["Thonglor", "Ekkamai", "Phrom Phong", "Sukhumvit"],
-  },
-  {
-    label: "Silom",
-    match: [
-      "Silom",
-      "Sathorn",
-      "Bangrak",
-      "Surasak",
-      "Saladaeng",
-      "Chong Nonsi",
-    ],
-  },
-  {
-    label: "Sathorn",
-    match: ["Sathorn", "Silom", "Lumpini", "Chong Nonsi", "Surasak"],
-  },
-  {
-    label: "Riverside",
-    match: [
-      "Riverside",
-      "Bangrak",
-      "Sathorn",
-      "Charoen Krung",
-      "Saphan Taksin",
-      "Klongsan",
-    ],
-  },
-];
+// Round 28s2 — Areas chip strip + BANGKOK_AREAS table removed (founder
+//   2026-05-30). Data showed Sukhumvit/Asok/Thonglor all chronically
+//   read "0 available", which actively drove tourist bounces. Until
+//   supply covers those zones, hide the geographic gap rather than
+//   advertise it. Roster filter (All / Available now / Express) stays.
 
 const HomeTherapistGrid: React.FC = () => {
   const [therapists, setTherapists] = useState<Therapist[]>([]);
@@ -320,31 +258,10 @@ const HomeTherapistGrid: React.FC = () => {
     return hour >= 22 || hour < 4 ? "available_now" : "all";
   });
 
-  // 🆕 Round 28r17 — Area chip filter is now its own state (separate
-  //   from search input). Lets us match a chip to MULTIPLE neighbour
-  //   substrings rather than feed one string to matchesQuery.
-  const [activeAreaLabel, setActiveAreaLabel] = useState<string | null>(null);
-  const activeArea = activeAreaLabel
-    ? BANGKOK_AREAS.find((a) => a.label === activeAreaLabel) ?? null
-    : null;
-
-  // Helper — does therapist's area / homeAddress match ANY of the
-  // chip's neighbour substrings? Returns true when no area is active.
-  const matchesArea = (
-    t: Therapist,
-    matchList: string[] | null
-  ): boolean => {
-    if (!matchList || matchList.length === 0) return true;
-    const hay = `${t.area ?? ""} ${t.homeAddress ?? ""}`.toLowerCase();
-    return matchList.some((m) => hay.includes(m.toLowerCase()));
-  };
-
-  // ── Apply search filter (free-text) + area chip + roster filter.
+  // ── Apply search filter (free-text) + roster filter.
+  //   Round 28s2 — area chip filter dropped (see comment near top of file).
   const visible = useMemo(() => {
     let pool = sorted.filter((t) => matchesQuery(t, searchQ));
-    if (activeArea) {
-      pool = pool.filter((t) => matchesArea(t, activeArea.match));
-    }
     if (rosterFilter === "available_now") {
       pool = pool.filter((t) => t.computedStatus === "available");
     } else if (rosterFilter === "express") {
@@ -584,91 +501,8 @@ const HomeTherapistGrid: React.FC = () => {
         })}
       </Box>
 
-      {/* 🆕 Round 28r4 (founder 2026-05-06) — Areas chip strip.
-          A guest at Anantara Riverside used to have to scroll all the
-          way down to the footer trust line to confirm we cover their
-          neighbourhood. Now: six dense BKK zones as horizontally
-          scrollable pills directly above the search bar. Tapping a
-          chip pre-fills the search input (zero new filtering code —
-          we just feed `matchesQuery` an area string), tapping the
-          active chip again clears it. */}
-      <Box
-        role="group"
-        aria-label="Browse by Bangkok area"
-        sx={{
-          display: "flex",
-          gap: "6px",
-          padding: "0 14px 8px",
-          overflowX: "auto",
-          // Hide the scrollbar so the strip reads as a clean chip row.
-          scrollbarWidth: "none",
-          "&::-webkit-scrollbar": { display: "none" },
-        }}
-      >
-        {BANGKOK_AREAS.map((area) => {
-          const isActive = activeAreaLabel === area.label;
-          // 🆕 Round 28r17 — Per-chip count using neighbour-matching
-          //   so "Silom" reports the number of therapists in Silom +
-          //   Sathorn + Bangrak + Surasak combined, not just literal
-          //   Silom matches.
-          const count = sorted.filter((t) =>
-            matchesArea(t, area.match)
-          ).length;
-          return (
-            <Box
-              key={area.label}
-              component="button"
-              type="button"
-              onClick={() =>
-                setActiveAreaLabel(isActive ? null : area.label)
-              }
-              aria-pressed={isActive}
-              sx={{
-                flexShrink: 0,
-                padding: "6px 12px",
-                borderRadius: 999,
-                fontFamily: fonts.body,
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: "-0.005em",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-                border: isActive
-                  ? "1px solid rgba(254, 9, 68, 0.55)"
-                  : "1px solid rgba(184, 92, 60, 0.18)",
-                background: isActive
-                  ? "linear-gradient(135deg, rgba(254, 9, 68, 0.10), rgba(254, 122, 82, 0.10))"
-                  : "rgba(255,255,255,0.55)",
-                color: isActive ? brand.red : brand.text,
-                boxShadow: isActive
-                  ? "0 2px 6px rgba(254, 9, 68, 0.15)"
-                  : "inset 0 1px 0 rgba(255,255,255,0.55)",
-                transition:
-                  "background 0.18s ease, border-color 0.18s ease, transform 0.12s ease",
-                "&:hover": { transform: "translateY(-1px)" },
-                "&:focus-visible": {
-                  outline: `2px solid ${brand.red}`,
-                  outlineOffset: 2,
-                },
-              }}
-            >
-              {area.label}
-              <Box
-                component="span"
-                sx={{
-                  fontSize: 9.5,
-                  fontWeight: 800,
-                  opacity: isActive ? 0.8 : 0.55,
-                }}
-              >
-                {count}
-              </Box>
-            </Box>
-          );
-        })}
-      </Box>
+      {/* Round 28s2 — area chip strip removed (Sukhumvit/Asok/Thonglor
+          chronically read "0", actively driving bounces). */}
 
       <TherapistSearchBar value={searchQ} onChange={setSearchQ} m="0 14px 12px" />
 
