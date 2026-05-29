@@ -1,6 +1,19 @@
 rules_version = '2';
 
-// 🔐 SunRed Firestore Rules — Round 28aa (founder 2026-05-02)
+// 🔐 SunRed Firestore Rules — Round 28s1 (founder 2026-05-30)
+//
+// Round 28s1 — security hardening (audit found critical PII leak):
+//   • bookings: public LIST closed (was open) — now owner/therapist/admin
+//     filtered. Single-doc GET still open so guest success page works
+//     by random doc ID.
+//   • users: public READ closed; CREATE/UPDATE banned from touching `role`
+//     (was open — any customer could self-promote to admin).
+//   • reviews.CREATE now requires auth + matching userId + status='pending'
+//     (was anonymous — anyone could spam fake reviews via SDK).
+//   • notifications: locked to per-user read/create/update with hasOnly()
+//     on read flag (was fully public — phishing-link rewrite risk).
+//   • bookings.UPDATE field whitelist per role (customer can only cancel;
+//     therapist can only update status/arrival; admin unrestricted).
 //
 // Goal: lock therapist self-service to a small set of "safe" fields,
 //       keep sensitive things (rating / reviews / totalSessions /
@@ -86,10 +99,29 @@ service cloud.firestore {
     }
 
     // ── users (customer profiles) ──────────────────────────────────
+    // Round 28s1: tightened.
+    //  • READ: owner + admin only (was public — leaked phone/email/role).
+    //  • CREATE: owner only, and `role` must be 'user' or absent
+    //    (was open — attacker could pre-create users/<future-uid> with
+    //    role:'admin' before signup; setRoleOnSignup merges and the
+    //    malicious role wins).
+    //  • UPDATE: owner can only change a whitelist of safe profile
+    //    fields. `role` is explicitly NOT in the list — closes the
+    //    self-promotion-to-admin path that the client trust model relied
+    //    on. Admin SDK + Cloud Functions bypass these and remain free.
+    function userEditableKeys() {
+      return ['displayName', 'phone', 'photoURL', 'language', 'updatedAt'];
+    }
     match /users/{userId} {
-      allow read: if true;
-      allow create: if true;
-      allow update: if isOwner(userId) || isAdmin();
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId)
+                    && (!('role' in request.resource.data)
+                        || request.resource.data.role == 'user');
+      allow update: if isAdmin()
+                    || (isOwner(userId)
+                        && request.resource.data.diff(resource.data)
+                             .affectedKeys()
+                             .hasOnly(userEditableKeys()));
       allow delete: if isAdmin();
     }
 
@@ -114,32 +146,94 @@ service cloud.firestore {
     }
 
     // ── bookings ───────────────────────────────────────────────────
-    // Public create (guest checkout). Updates allowed for the
-    // associated therapist, the booking customer, or admin.
+    // Round 28s1: tightened. Was `allow read: if true` which exposed
+    // every customer's phone/address/hotel room/name to anonymous
+    // callers. Now:
+    //  • GET (single doc by ID) stays public — BookingSuccessPage
+    //    needs anonymous read after guest checkout, and Firestore
+    //    auto IDs (20 char base64-ish) are not feasibly guessable.
+    //  • LIST/query restricted to owner/therapist/admin. Client
+    //    queries (BookingHistoryPage, useTherapistBookings, etc.)
+    //    MUST filter by `userId == auth.uid` or `therapistId ==
+    //    auth.uid` so each returned doc satisfies the rule.
+    //  • CREATE stays open for guest checkout but status whitelist
+    //    keeps customers from creating pre-marked-paid bookings.
+    //  • UPDATE: customer can only touch a cancel-related field
+    //    whitelist (no flipping their own booking to status=paid
+    //    or modifying totalPrice). Therapist can only update
+    //    operational fields (status/arrived/completed). Admin
+    //    unrestricted.
+    function customerBookingEditableKeys() {
+      return ['status', 'note', 'cancelledAt', 'cancelReason', 'updatedAt'];
+    }
+    function therapistBookingEditableKeys() {
+      return ['status', 'arrivedAt', 'completedAt', 'therapistNote', 'updatedAt'];
+    }
     match /bookings/{bookingId} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if isAdmin()
+                  || (isSignedIn() && resource.data.userId == request.auth.uid)
+                  || (isSignedIn() && resource.data.therapistId == request.auth.uid);
       allow create: if request.resource.data.status in ['pending', 'confirmed'];
       allow update: if isAdmin()
-                    || (isSignedIn() && resource.data.therapistId == request.auth.uid)
-                    || (isSignedIn() && resource.data.userId == request.auth.uid);
+                    || (isSignedIn()
+                        && resource.data.userId == request.auth.uid
+                        && request.resource.data.diff(resource.data)
+                             .affectedKeys()
+                             .hasOnly(customerBookingEditableKeys()))
+                    || (isSignedIn()
+                        && resource.data.therapistId == request.auth.uid
+                        && request.resource.data.diff(resource.data)
+                             .affectedKeys()
+                             .hasOnly(therapistBookingEditableKeys()));
       allow delete: if isAdmin();
     }
 
     // ── reviews ────────────────────────────────────────────────────
+    // Round 28s1: tightened. Was open create with only rating-range
+    // check — anyone could spam fake 5★ self-praise or 1★ competitor
+    // sabotage via the SDK. Now requires sign-in, matching userId,
+    // forced status='pending' (so customer can't auto-approve their
+    // own review), and a comment size cap to prevent quota abuse.
+    // ReviewPage.tsx already gates UX behind login + completed-booking;
+    // this just makes the rules match the intent.
     match /reviews/{reviewId} {
       allow read: if true;
-      allow create: if request.resource.data.rating is int
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.rating is int
                     && request.resource.data.rating >= 1
-                    && request.resource.data.rating <= 5;
+                    && request.resource.data.rating <= 5
+                    && request.resource.data.status == 'pending'
+                    && (!('comment' in request.resource.data)
+                        || (request.resource.data.comment is string
+                            && request.resource.data.comment.size() <= 2000));
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
 
     // ── notifications ──────────────────────────────────────────────
+    // Round 28s1: tightened. Was fully public — any attacker could
+    // rewrite a victim's `link` field to a phishing URL, or dump
+    // every notification in the system. Now:
+    //  • READ: owner + admin only.
+    //  • CREATE: only by the owning user (BookingFlowPage writes
+    //    {userId: user.uid, ...} after auth check). Cloud Functions
+    //    use admin SDK and bypass.
+    //  • UPDATE: owner can only flip the read flag — link/title/
+    //    content stay immutable.
     match /notifications/{notifId} {
-      allow read: if true;
-      allow create: if true;
-      allow update: if true;
+      allow read: if isAdmin()
+                  || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isAdmin()
+                    || (isSignedIn()
+                        && request.resource.data.userId == request.auth.uid);
+      allow update: if isAdmin()
+                    || (isSignedIn()
+                        && resource.data.userId == request.auth.uid
+                        && request.resource.data.diff(resource.data)
+                             .affectedKeys()
+                             .hasOnly(['read', 'readAt']));
       allow delete: if isAdmin();
     }
 

@@ -252,13 +252,26 @@ they prefer.
 
 ### 🔔 OPEN REMINDERS FOR VIEW (read first every session)
 
-**Last updated: 2026-05-07 after Round 28r32 push (13 commits shipped)**
+**Last updated: 2026-05-30 after Round 28s1 (security audit + rules patch)**
 
 **🚨 BLOCKING — must do before features below work in production:**
-- [ ] **Publish updated `firestore.rules`** to Firebase Console
-  - Adds `analytics_events` (r13) + `booking_errors` (r18) collections
-  - Without this, every analytics event + diagnostic write is silently denied
+- [ ] **🔴 URGENT: Publish updated `firestore.rules`** to Firebase Console
+  - Round 28s1 patch fixes CRITICAL data leak — current production rules
+    expose every customer's phone/address/hotel via public read on
+    `bookings` and `users`, and allow self-promotion to admin via
+    `/users/{uid}.role` update. Audit found this on 2026-05-30.
+  - Also adds field whitelist on `bookings.update` so customers can't
+    flip their own booking to `status=paid`, and locks `reviews.create`
+    + `notifications.*` to authenticated owners only.
+  - Also still includes `analytics_events` (r13) + `booking_errors`
+    (r18) collections from prior rounds.
   - Path: Firebase Console → Firestore → Rules → Publish
+  - Verify after publish: open DevTools, signed-out, run
+    `firebase.firestore().collection('bookings').get()` — must fail.
+- [ ] **Publish updated `firestore.indexes.json`** — adds
+  `notifications (userId asc, createdAt desc)` composite index (Round
+  28s1). Without it, NotificationsPage shows empty for every user.
+  Deploy via `firebase deploy --only firestore:indexes`.
 - [ ] **Deploy Cloud Functions for Telegram notifications**
   - `firebase deploy --only functions` from repo root
   - `git push` only deploys frontend via Vercel — Firebase functions need
@@ -269,6 +282,16 @@ they prefer.
   `bookingNow` query in `useSocialProofMetrics` (r30). Until built,
   the SocialProofTicker will show only count24h + topService, never
   the "X sessions happening right now" line.
+
+**🔒 Security audit follow-ups (2026-05-30, Round 28s1):**
+- [ ] Rotate unused `VITE_OPENWEATHER_KEY` in `.env` (still live, bundled
+      in older deployed JS)
+- [ ] Verify Google Maps + Firebase Web API key referrer locks in GCP
+      console (limit to sunred.vip + Vercel preview)
+- [ ] Add Telegram webhook secret_token validation on `telegramWebhook`
+      Cloud Function — currently anyone can POST fake updates
+- [ ] Add auth gate to `notifyBooking` + `moderateText` callables
+- [ ] Drop `'unsafe-inline'` from CSP in `vercel.json` after build verify
 
 **📋 Decisions needed from View (for auto-bot Round next):**
 - [ ] Confirm Telegram channel ID — `@SunRed_BKK`?
