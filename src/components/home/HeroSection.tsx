@@ -1,152 +1,111 @@
 // src/components/home/HeroSection.tsx
 //
-// 🎨 Round 28s7 — Shanghai night editorial (founder 2026-05-30).
+// 🎯 Round 28s8 — Conversion-first hero (founder 2026-05-30).
 //
-// Round 28s5 went Aman editorial (full-bleed photo). Founder feedback:
-// "ปรับเป็นแนว อื่นๆ สไตล์จีน" — wanted a Chinese register, photo
-// skipped in favour of typographic ornament.
+// Three luxury-aesthetic iterations (28s3 pure-type, 28s5 Aman
+// photo, 28s7 Shanghai 静) did not feel right to the founder. She
+// re-scoped the hero brief tonight to "ปิดดีลไวไว — conversion
+// first". This rewrite drops luxury chatter entirely and optimises
+// for the behaviour the funnel data already proves wins:
 //
-// Direction: Wong Kar-wai "In the Mood for Love" cinematic — deep
-// crimson vertical gradient, contemplative pace, decorative Chinese
-// character watermark, cream/coral accents instead of pure white.
-// CLAUDE.md §6 confirms Chinese tourists are a primary target; the
-// hero now greets that audience in their visual language.
+//   • 13 concierge taps (WhatsApp + Telegram + LINE) outscored
+//     6 booking-flow starts in the last 7 days. Guests prefer to
+//     ASK a human before self-serving the form.
+//   • In-flow conversion is already 67% — when guests commit to
+//     the form they finish; nothing to fix there.
+//   • The blocker is COMMITMENT, not completion. The hero now
+//     leads with one large primary action (chat) and one secondary
+//     (Telegram), with a clear time promise + price anchor so a
+//     guest can decide in one screen.
 //
 // Composition:
 //
-//   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ← thin cream line
+//   ┌────────────────────────────────┐
+//   │  SunRed              ● PRIME   │
+//   │                                │
+//   │  Practitioner at               │  ← Fraunces serif, white
+//   │  your door — tonight.          │
+//   │                                │
+//   │  Concierge live · arrives      │  ← time promise, body white
+//   │  within 40 minutes.            │
+//   │                                │
+//   │  ╔════════════════════════════╗│
+//   │  ║  💬  Chat — WhatsApp       ║│  ← PRIMARY CTA, white on red
+//   │  ║      Reply in 2 min         ║│
+//   │  ╚════════════════════════════╝│
+//   │                                │
+//   │  ┌────────────────────────────┐│
+//   │  │  ✈  Telegram               ││  ← Secondary, outlined
+//   │  └────────────────────────────┘│
+//   │                                │
+//   │  ↓ or browse practitioners ↓   │  ← tiny pointer
+//   │  From ฿1,200 · 60 min · 24/7   │  ← micro trust line
+//   └────────────────────────────────┘
 //
-//   SunRed                  ● PRIME HOURS
+// Background: brand red→coral gradient. No photo, no Chinese
+// characters, no negative-space contemplation. The hero asks the
+// guest to act, not to feel.
 //
-//                       静               ← massive 静 (jìng, "quiet")
-//                                          watermark, ~70% opacity 0.05,
-//                                          right-aligned, decorative
-//
-//   TONIGHT · PRIME HOURS
-//   夜深 · 静候                ← Chinese annotation under eyebrow
-//
-//   The city quiets.
-//   We arrive.                ← Fraunces serif cream, "arrive" coral
-//
-//   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ← thin cream line
-//
-// Why 静 ("quiet"):
-//   The Latin headline "The city quiets. We arrive." centres on a
-//   single emotion — the late-hour pause. 静 names that emotion in
-//   one stroke. It is also a Chinese aesthetic mainstay (Tao silence,
-//   tea ceremony, Wong Kar-wai's negative space) so it reads as
-//   genuine luxury register, not pastiche.
-//
-// To revert to the Aman editorial photo hero: `git revert <this>`.
+// Channels reuse the canonical CONTACT URLs already used by
+// HomeFooter, AdminFloatingChat, HowItWorks, and ProfilePage so
+// updates remain a one-place edit. Both CTAs fire
+// `trackConciergeOpen` so the funnel analytics keep counting.
 
 import React from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, Button } from "@mui/material";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 
-import { brand, fonts } from "@/theme";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+import TelegramIcon from "@mui/icons-material/Telegram";
+import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
+
+import { brand, fonts, gradients } from "@/theme";
 import { useConciergeMode } from "@/utils/conciergeMode";
+import { trackConciergeOpen } from "@/utils/analytics";
 import ReferralActiveBanner from "@/components/common/ReferralActiveBanner";
 
-// System Chinese serif stack — devices that ship Source Han / Noto
-// Serif SC use them; everything else falls back to the platform
-// Chinese system serif (Songti / PingFang on Apple, Microsoft YaHei
-// on Windows). No remote font download.
-const ZH_SERIF =
-  '"Source Han Serif SC", "Noto Serif SC", "Songti SC", "STSong", ' +
-  '"Microsoft YaHei", "PingFang SC", serif';
+// Canonical concierge channel URLs — see HomeFooter.tsx,
+// AdminFloatingChat.tsx, HowItWorks.tsx for the same constants.
+const WHATSAPP_URL = "https://wa.me/66634350987";
+const TELEGRAM_URL = "https://t.me/SunRedvip_bkk";
 
 const HeroSection: React.FC = () => {
   const { t } = useTranslation();
   const concierge = useConciergeMode();
 
+  const handleWhatsApp = () => {
+    trackConciergeOpen("whatsapp");
+    window.open(WHATSAPP_URL, "_blank", "noopener,noreferrer");
+  };
+
+  const handleTelegram = () => {
+    trackConciergeOpen("telegram");
+    window.open(TELEGRAM_URL, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <>
       <Box
         component="section"
-        aria-label={t("home.hero.aria", "SunRed introduction")}
+        aria-label={t("home.hero.aria", "Book a practitioner")}
         sx={{
           position: "relative",
           width: "100%",
-          height: "clamp(520px, 80svh, 640px)",
-          overflow: "hidden",
-          // Deep crimson vertical gradient — top reads as oxblood, bottom
-          // sinks to near-black. Mood pinned to late-night.
-          background:
-            "linear-gradient(180deg, " +
-            "#5C0A18 0%, " +
-            "#7A1024 22%, " +
-            "#561020 58%, " +
-            "#1F060C 100%)",
-          color: brand.cream,
+          padding: "20px 22px 28px",
+          // Brand-red gradient — primary identity, no photo to distract
+          // from the two action buttons below.
+          background: gradients.primary,
+          color: "#fff",
         }}
       >
-        {/* ── Watermark 静 — decorative, screen-reader hidden ─────────
-            Sits behind everything, off-axis right, very faint so the
-            headline retains the page hierarchy. */}
-        <Box
-          aria-hidden="true"
-          sx={{
-            position: "absolute",
-            right: "-6%",
-            top: "8%",
-            fontFamily: ZH_SERIF,
-            fontWeight: 400,
-            fontSize: "clamp(360px, 92vw, 520px)",
-            lineHeight: 1,
-            color: "rgba(254, 201, 167, 0.06)",
-            userSelect: "none",
-            pointerEvents: "none",
-          }}
-        >
-          静
-        </Box>
-
-        {/* ── Cinematic letterbox lines — thin cream, top + bottom ──── */}
-        <Box
-          aria-hidden="true"
-          sx={{
-            position: "absolute",
-            top: 62,
-            left: 22,
-            right: 22,
-            height: 1,
-            background:
-              "linear-gradient(90deg, " +
-              "transparent 0%, " +
-              "rgba(254,201,167,0.32) 20%, " +
-              "rgba(254,201,167,0.32) 80%, " +
-              "transparent 100%)",
-          }}
-        />
-        <Box
-          aria-hidden="true"
-          sx={{
-            position: "absolute",
-            bottom: 26,
-            left: 22,
-            right: 22,
-            height: 1,
-            background:
-              "linear-gradient(90deg, " +
-              "transparent 0%, " +
-              "rgba(254,201,167,0.32) 20%, " +
-              "rgba(254,201,167,0.32) 80%, " +
-              "transparent 100%)",
-          }}
-        />
-
         {/* ── Top row: brand mark + live mode pill ───────────────────── */}
         <Box
           sx={{
-            position: "absolute",
-            top: 20,
-            left: 22,
-            right: 22,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            zIndex: 2,
+            marginBottom: "32px",
           }}
         >
           <Typography
@@ -156,14 +115,11 @@ const HeroSection: React.FC = () => {
               fontWeight: 500,
               fontSize: "21px",
               letterSpacing: "0.04em",
-              color: brand.cream,
+              color: "#fff",
               lineHeight: 1,
             }}
           >
-            Sun
-            <Box component="span" sx={{ color: brand.coral }}>
-              Red
-            </Box>
+            SunRed
           </Typography>
 
           <Box
@@ -175,8 +131,8 @@ const HeroSection: React.FC = () => {
               gap: "6px",
               padding: "5px 11px",
               borderRadius: 99,
-              background: "rgba(254, 201, 167, 0.10)",
-              border: "1px solid rgba(254, 201, 167, 0.26)",
+              background: "rgba(255,255,255,0.18)",
+              border: "1px solid rgba(255,255,255,0.32)",
               backdropFilter: "blur(8px)",
               WebkitBackdropFilter: "blur(8px)",
               fontFamily: fonts.body,
@@ -184,7 +140,7 @@ const HeroSection: React.FC = () => {
               fontWeight: 700,
               letterSpacing: "0.08em",
               textTransform: "uppercase",
-              color: brand.cream,
+              color: "#fff",
             }}
           >
             <Box
@@ -193,91 +149,186 @@ const HeroSection: React.FC = () => {
                 width: 6,
                 height: 6,
                 borderRadius: "50%",
-                background: brand.coral,
-                boxShadow: `0 0 0 3px ${brand.coral}40`,
+                background: "#fff",
+                boxShadow: "0 0 0 3px rgba(255,255,255,0.35)",
               }}
             />
             {concierge.pillLabel}
           </Box>
         </Box>
 
-        {/* ── Bottom block: bilingual eyebrow + Fraunces headline ───── */}
+        {/* ── Headline + time promise ────────────────────────────────── */}
         <Box
           component={motion.div}
-          initial={{ opacity: 0, y: 14 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.05, ease: [0.16, 1, 0.3, 1], delay: 0.18 }}
-          sx={{
-            position: "absolute",
-            bottom: 50,
-            left: 22,
-            right: 22,
-            zIndex: 2,
-          }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          {/* Latin eyebrow (concierge mode → "TONIGHT · PRIME HOURS"
-              etc.) above the Chinese annotation. */}
-          <Typography
-            component="p"
-            sx={{
-              fontFamily: fonts.body,
-              fontSize: "10.5px",
-              fontWeight: 700,
-              letterSpacing: "0.20em",
-              textTransform: "uppercase",
-              color: brand.cream,
-              opacity: 0.78,
-              marginBottom: "4px",
-            }}
-          >
-            {concierge.promoEyebrow}
-          </Typography>
-
-          {/* Chinese annotation — 夜深 (deep night) · 静候 (waiting
-              quietly). Decorative for non-Chinese readers; meaningful
-              for the brand's primary tourist segment. */}
-          <Typography
-            component="p"
-            sx={{
-              fontFamily: ZH_SERIF,
-              fontSize: "12.5px",
-              fontWeight: 400,
-              letterSpacing: "0.3em",
-              color: brand.cream,
-              opacity: 0.62,
-              marginBottom: "18px",
-            }}
-          >
-            夜深 · 静候
-          </Typography>
-
-          {/* Editorial headline — Fraunces serif, italic em on the
-              accent word. Cream over crimson reads warmer than white
-              while keeping the brand red/coral identity intact. */}
           <Typography
             component="p"
             sx={{
               fontFamily: fonts.heading,
               fontWeight: 400,
-              fontSize: "clamp(36px, 12vw, 48px)",
-              lineHeight: 1.05,
+              fontSize: "clamp(30px, 9vw, 36px)",
+              lineHeight: 1.08,
               letterSpacing: "-0.015em",
-              color: brand.cream,
-              textShadow: "0 2px 22px rgba(20,6,12,0.45)",
+              color: "#fff",
+              marginBottom: "12px",
             }}
           >
-            {t("home.hero.lineA", "The city quiets. We ")}
+            {t(
+              "home.hero.title",
+              "Practitioner at your door — tonight."
+            )}
+          </Typography>
+
+          <Typography
+            component="p"
+            sx={{
+              fontFamily: fonts.body,
+              fontSize: "14px",
+              fontWeight: 500,
+              lineHeight: 1.5,
+              color: "rgba(255,255,255,0.92)",
+              marginBottom: "22px",
+            }}
+          >
+            {t(
+              "home.hero.promise",
+              "Concierge live · arrives within 40 minutes."
+            )}
+          </Typography>
+        </Box>
+
+        {/* ── Primary CTA: WhatsApp ──────────────────────────────────── */}
+        <Button
+          fullWidth
+          onClick={handleWhatsApp}
+          aria-label={t("home.hero.ctaWhatsApp", "Chat to book via WhatsApp")}
+          startIcon={<WhatsAppIcon sx={{ fontSize: "22px !important" }} />}
+          sx={{
+            // Default MUI Button row layout — startIcon sits left of
+            // the content. The inner Box stacks title + subtitle.
+            padding: "14px 20px",
+            borderRadius: "16px",
+            background: "#fff",
+            color: brand.red,
+            justifyContent: "flex-start",
+            fontFamily: fonts.body,
+            fontWeight: 700,
+            fontSize: "16px",
+            letterSpacing: "-0.005em",
+            textTransform: "none",
+            boxShadow:
+              "0 12px 32px rgba(20, 5, 10, 0.18), 0 2px 6px rgba(20, 5, 10, 0.10)",
+            marginBottom: "10px",
+            "&:hover": {
+              background: "#fff",
+              boxShadow:
+                "0 14px 38px rgba(20, 5, 10, 0.22), 0 3px 8px rgba(20, 5, 10, 0.14)",
+              transform: "translateY(-1px)",
+            },
+            // startIcon override — keep icon left of stacked text
+            "& .MuiButton-startIcon": {
+              marginRight: "10px",
+              marginLeft: 0,
+            },
+            transition: "transform 0.18s ease, box-shadow 0.18s ease",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              lineHeight: 1.1,
+            }}
+          >
+            <Box component="span" sx={{ fontSize: "16px", fontWeight: 700 }}>
+              {t("home.hero.ctaWhatsAppTitle", "Chat — WhatsApp")}
+            </Box>
             <Box
-              component="em"
+              component="span"
               sx={{
-                fontStyle: "italic",
-                color: brand.coral,
-                fontWeight: 400,
+                fontSize: "11px",
+                fontWeight: 500,
+                color: brand.textMuted,
+                marginTop: "2px",
+                letterSpacing: "0.01em",
               }}
             >
-              {t("home.hero.lineEm", "arrive")}
+              {t("home.hero.ctaWhatsAppSub", "Reply in 2 minutes")}
             </Box>
-            {t("home.hero.lineB", ".")}
+          </Box>
+        </Button>
+
+        {/* ── Secondary CTA: Telegram ───────────────────────────────── */}
+        <Button
+          fullWidth
+          onClick={handleTelegram}
+          aria-label={t("home.hero.ctaTelegram", "Open Telegram channel")}
+          startIcon={<TelegramIcon sx={{ fontSize: "20px !important" }} />}
+          sx={{
+            padding: "11px 20px",
+            borderRadius: "16px",
+            background: "rgba(255,255,255,0.10)",
+            border: "1px solid rgba(255,255,255,0.40)",
+            color: "#fff",
+            fontFamily: fonts.body,
+            fontWeight: 600,
+            fontSize: "14.5px",
+            textTransform: "none",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+            marginBottom: "20px",
+            "&:hover": {
+              background: "rgba(255,255,255,0.18)",
+              border: "1px solid rgba(255,255,255,0.55)",
+            },
+          }}
+        >
+          {t("home.hero.ctaTelegramLabel", "Telegram")}
+        </Button>
+
+        {/* ── Browse hint + micro trust line ─────────────────────────── */}
+        <Box
+          sx={{
+            textAlign: "center",
+            fontFamily: fonts.body,
+          }}
+        >
+          <Typography
+            component="p"
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              fontSize: "12px",
+              fontWeight: 600,
+              color: "rgba(255,255,255,0.85)",
+              letterSpacing: "0.02em",
+              marginBottom: "8px",
+            }}
+          >
+            {t("home.hero.browseHint", "or browse practitioners below")}
+            <KeyboardArrowDownRoundedIcon
+              sx={{ fontSize: 16, opacity: 0.9 }}
+            />
+          </Typography>
+
+          <Typography
+            component="p"
+            sx={{
+              fontSize: "11px",
+              fontWeight: 500,
+              color: "rgba(255,255,255,0.72)",
+              letterSpacing: "0.04em",
+            }}
+          >
+            {t(
+              "home.hero.trustLine",
+              "From ฿1,200 · 60 min · Sukhumvit · Silom · Asok"
+            )}
           </Typography>
         </Box>
       </Box>
