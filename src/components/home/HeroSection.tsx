@@ -1,36 +1,43 @@
 // src/components/home/HeroSection.tsx
 //
-// 🎨 Round 28s5 — Aman editorial hero (founder 2026-05-30).
+// 🎨 Round 28s7 — Shanghai night editorial (founder 2026-05-30).
 //
-// Round 28s3 went pure-typographic. Founder feedback: "ออกแบบใหม่
-// หน้าโฮม" — wanted the actual Aman/Six Senses register, which
-// uses big editorial photography, not Bauhaus type. This rewrite:
+// Round 28s5 went Aman editorial (full-bleed photo). Founder feedback:
+// "ปรับเป็นแนว อื่นๆ สไตล์จีน" — wanted a Chinese register, photo
+// skipped in favour of typographic ornament.
 //
-//   ┌────────────────────────────────┐
-//   │  [full-bleed editorial photo]  │
-//   │  SunRed         ● PRIME HOURS  │  ← glassy top row
-//   │                                │
-//   │                                │
-//   │                                │
-//   │  ── dark gradient overlay ──   │
-//   │                                │
-//   │  TONIGHT · PRIME HOURS         │  ← eyebrow, cream
-//   │  The city quiets.              │  ← Fraunces serif
-//   │  We arrive.                    │     "arrive" italic, coral
-//   └────────────────────────────────┘
+// Direction: Wong Kar-wai "In the Mood for Love" cinematic — deep
+// crimson vertical gradient, contemplative pace, decorative Chinese
+// character watermark, cream/coral accents instead of pure white.
+// CLAUDE.md §6 confirms Chinese tourists are a primary target; the
+// hero now greets that audience in their visual language.
 //
-// Hero photo: `/images/xing/xingxing4.jpg` — XingXing back-view at a
-// café. Chosen over face-forward shots because (a) it aligns with the
-// brand's discretion ethos (CLAUDE.md §3), (b) the contemplative
-// mood reads "luxury repose" rather than "look at me", (c) anonymous
-// silhouette means the hero doesn't become invalid if XingXing leaves
-// the roster — the figure could be any guest, any night.
+// Composition:
 //
-// Cloudinary `enhanceImage(... variant:"hero")` auto-serves WebP/AVIF
-// at 900w with retina dpr_auto and quality auto. In local dev with no
-// CLOUD_NAME the raw image is returned (graceful fallback).
+//   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ← thin cream line
 //
-// To revert to the pure-typographic 28s3 hero: `git revert <this>`.
+//   SunRed                  ● PRIME HOURS
+//
+//                       静               ← massive 静 (jìng, "quiet")
+//                                          watermark, ~70% opacity 0.05,
+//                                          right-aligned, decorative
+//
+//   TONIGHT · PRIME HOURS
+//   夜深 · 静候                ← Chinese annotation under eyebrow
+//
+//   The city quiets.
+//   We arrive.                ← Fraunces serif cream, "arrive" coral
+//
+//   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ← thin cream line
+//
+// Why 静 ("quiet"):
+//   The Latin headline "The city quiets. We arrive." centres on a
+//   single emotion — the late-hour pause. 静 names that emotion in
+//   one stroke. It is also a Chinese aesthetic mainstay (Tao silence,
+//   tea ceremony, Wong Kar-wai's negative space) so it reads as
+//   genuine luxury register, not pastiche.
+//
+// To revert to the Aman editorial photo hero: `git revert <this>`.
 
 import React from "react";
 import { Box, Typography } from "@mui/material";
@@ -39,19 +46,19 @@ import { useTranslation } from "react-i18next";
 
 import { brand, fonts } from "@/theme";
 import { useConciergeMode } from "@/utils/conciergeMode";
-import { enhanceImage } from "@/utils/cloudinary";
 import ReferralActiveBanner from "@/components/common/ReferralActiveBanner";
 
-const HERO_SRC = "/images/xing/xingxing4.jpg";
+// System Chinese serif stack — devices that ship Source Han / Noto
+// Serif SC use them; everything else falls back to the platform
+// Chinese system serif (Songti / PingFang on Apple, Microsoft YaHei
+// on Windows). No remote font download.
+const ZH_SERIF =
+  '"Source Han Serif SC", "Noto Serif SC", "Songti SC", "STSong", ' +
+  '"Microsoft YaHei", "PingFang SC", serif';
 
 const HeroSection: React.FC = () => {
   const { t } = useTranslation();
   const concierge = useConciergeMode();
-
-  const heroOptimised = enhanceImage(HERO_SRC, {
-    variant: "hero",
-    crop: "fill",
-  });
 
   return (
     <>
@@ -61,60 +68,71 @@ const HeroSection: React.FC = () => {
         sx={{
           position: "relative",
           width: "100%",
-          height: "clamp(480px, 78svh, 620px)",
+          height: "clamp(520px, 80svh, 640px)",
           overflow: "hidden",
-          // Cool slate base — visible the instant before the hero image
-          // decodes, prevents a flash of cream gradient peeking through.
-          backgroundColor: "#1a0e0a",
-          color: "#fff",
+          // Deep crimson vertical gradient — top reads as oxblood, bottom
+          // sinks to near-black. Mood pinned to late-night.
+          background:
+            "linear-gradient(180deg, " +
+            "#5C0A18 0%, " +
+            "#7A1024 22%, " +
+            "#561020 58%, " +
+            "#1F060C 100%)",
+          color: brand.cream,
         }}
       >
-        {/* ── Hero image — LCP candidate, prioritised over other fetches ── */}
-        <Box
-          component="img"
-          src={heroOptimised}
-          alt=""
-          role="presentation"
-          loading="eager"
-          decoding="async"
-          fetchPriority="high"
-          sx={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            // Composition tuned for the chosen photo — back-of-shoulder
-            // sits in the upper-middle third when cropped to this band.
-            objectPosition: "center 28%",
-            // Subtle scale-in keeps the hero feeling editorial rather than
-            // static. Disabled via prefers-reduced-motion at the OS level.
-            animation: "heroScale 14s ease-out forwards",
-            "@keyframes heroScale": {
-              "0%": { transform: "scale(1.06)" },
-              "100%": { transform: "scale(1.0)" },
-            },
-            "@media (prefers-reduced-motion: reduce)": {
-              animation: "none",
-            },
-          }}
-        />
-
-        {/* ── Gradient overlay — top stays clean for the brand mark,
-            bottom darkens so white serif copy reads without text-shadow
-            doing all the work. */}
+        {/* ── Watermark 静 — decorative, screen-reader hidden ─────────
+            Sits behind everything, off-axis right, very faint so the
+            headline retains the page hierarchy. */}
         <Box
           aria-hidden="true"
           sx={{
             position: "absolute",
-            inset: 0,
+            right: "-6%",
+            top: "8%",
+            fontFamily: ZH_SERIF,
+            fontWeight: 400,
+            fontSize: "clamp(360px, 92vw, 520px)",
+            lineHeight: 1,
+            color: "rgba(254, 201, 167, 0.06)",
+            userSelect: "none",
+            pointerEvents: "none",
+          }}
+        >
+          静
+        </Box>
+
+        {/* ── Cinematic letterbox lines — thin cream, top + bottom ──── */}
+        <Box
+          aria-hidden="true"
+          sx={{
+            position: "absolute",
+            top: 62,
+            left: 22,
+            right: 22,
+            height: 1,
             background:
-              "linear-gradient(180deg, " +
-              "rgba(20,8,12,0.32) 0%, " +
-              "rgba(20,8,12,0.04) 22%, " +
-              "rgba(20,8,12,0.06) 50%, " +
-              "rgba(20,8,12,0.58) 78%, " +
-              "rgba(20,8,12,0.92) 100%)",
+              "linear-gradient(90deg, " +
+              "transparent 0%, " +
+              "rgba(254,201,167,0.32) 20%, " +
+              "rgba(254,201,167,0.32) 80%, " +
+              "transparent 100%)",
+          }}
+        />
+        <Box
+          aria-hidden="true"
+          sx={{
+            position: "absolute",
+            bottom: 26,
+            left: 22,
+            right: 22,
+            height: 1,
+            background:
+              "linear-gradient(90deg, " +
+              "transparent 0%, " +
+              "rgba(254,201,167,0.32) 20%, " +
+              "rgba(254,201,167,0.32) 80%, " +
+              "transparent 100%)",
           }}
         />
 
@@ -122,7 +140,7 @@ const HeroSection: React.FC = () => {
         <Box
           sx={{
             position: "absolute",
-            top: 18,
+            top: 20,
             left: 22,
             right: 22,
             display: "flex",
@@ -138,9 +156,8 @@ const HeroSection: React.FC = () => {
               fontWeight: 500,
               fontSize: "21px",
               letterSpacing: "0.04em",
-              color: "#fff",
+              color: brand.cream,
               lineHeight: 1,
-              textShadow: "0 1px 8px rgba(0,0,0,0.4)",
             }}
           >
             Sun
@@ -158,16 +175,16 @@ const HeroSection: React.FC = () => {
               gap: "6px",
               padding: "5px 11px",
               borderRadius: 99,
-              background: "rgba(255,255,255,0.16)",
-              border: "1px solid rgba(255,255,255,0.30)",
-              backdropFilter: "blur(10px) saturate(180%)",
-              WebkitBackdropFilter: "blur(10px) saturate(180%)",
+              background: "rgba(254, 201, 167, 0.10)",
+              border: "1px solid rgba(254, 201, 167, 0.26)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
               fontFamily: fonts.body,
               fontSize: "10.5px",
               fontWeight: 700,
               letterSpacing: "0.08em",
               textTransform: "uppercase",
-              color: "#fff",
+              color: brand.cream,
             }}
           >
             <Box
@@ -176,57 +193,77 @@ const HeroSection: React.FC = () => {
                 width: 6,
                 height: 6,
                 borderRadius: "50%",
-                background: brand.green,
-                boxShadow: `0 0 0 3px ${brand.green}55`,
+                background: brand.coral,
+                boxShadow: `0 0 0 3px ${brand.coral}40`,
               }}
             />
             {concierge.pillLabel}
           </Box>
         </Box>
 
-        {/* ── Bottom block: eyebrow + Fraunces headline ───────────────── */}
+        {/* ── Bottom block: bilingual eyebrow + Fraunces headline ───── */}
         <Box
           component={motion.div}
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.95, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
+          transition={{ duration: 1.05, ease: [0.16, 1, 0.3, 1], delay: 0.18 }}
           sx={{
             position: "absolute",
-            bottom: 34,
+            bottom: 50,
             left: 22,
             right: 22,
             zIndex: 2,
           }}
         >
+          {/* Latin eyebrow (concierge mode → "TONIGHT · PRIME HOURS"
+              etc.) above the Chinese annotation. */}
           <Typography
             component="p"
             sx={{
               fontFamily: fonts.body,
               fontSize: "10.5px",
               fontWeight: 700,
-              letterSpacing: "0.18em",
+              letterSpacing: "0.20em",
               textTransform: "uppercase",
               color: brand.cream,
-              opacity: 0.92,
-              marginBottom: "12px",
+              opacity: 0.78,
+              marginBottom: "4px",
             }}
           >
             {concierge.promoEyebrow}
           </Typography>
 
-          {/* Editorial headline — one Fraunces sentence, one italic em
-              accent in coral (coral reads brighter than brand red on
-              dark photography). */}
+          {/* Chinese annotation — 夜深 (deep night) · 静候 (waiting
+              quietly). Decorative for non-Chinese readers; meaningful
+              for the brand's primary tourist segment. */}
+          <Typography
+            component="p"
+            sx={{
+              fontFamily: ZH_SERIF,
+              fontSize: "12.5px",
+              fontWeight: 400,
+              letterSpacing: "0.3em",
+              color: brand.cream,
+              opacity: 0.62,
+              marginBottom: "18px",
+            }}
+          >
+            夜深 · 静候
+          </Typography>
+
+          {/* Editorial headline — Fraunces serif, italic em on the
+              accent word. Cream over crimson reads warmer than white
+              while keeping the brand red/coral identity intact. */}
           <Typography
             component="p"
             sx={{
               fontFamily: fonts.heading,
               fontWeight: 400,
-              fontSize: "clamp(34px, 11vw, 46px)",
-              lineHeight: 1.06,
+              fontSize: "clamp(36px, 12vw, 48px)",
+              lineHeight: 1.05,
               letterSpacing: "-0.015em",
-              color: "#fff",
-              textShadow: "0 2px 18px rgba(0,0,0,0.45)",
+              color: brand.cream,
+              textShadow: "0 2px 22px rgba(20,6,12,0.45)",
             }}
           >
             {t("home.hero.lineA", "The city quiets. We ")}
