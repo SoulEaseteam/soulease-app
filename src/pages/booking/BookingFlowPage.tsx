@@ -25,10 +25,17 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
-import dayjs from "dayjs";
+// Round 28s4 — Direct `dayjs` import removed; all time math now goes
+// through `@/utils/time` helpers anchored at Asia/Bangkok.
 // 🆕 Round 28an — BKK-anchored time helpers.
 // 🆕 Round 28b15 — `prettyHHMM` for 24h + AM/PM display.
-import { fmtBKK, sameDayBKK, nowBKK, prettyHHMM } from "@/utils/time";
+import {
+  fmtBKK,
+  sameDayBKK,
+  nowBKK,
+  prettyHHMM,
+  parseDateTimeBKK,
+} from "@/utils/time";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
@@ -743,7 +750,19 @@ const BookingFlowPage: React.FC = () => {
         return;
       }
 
-      let startDate = dayjs(`${form.date}T${form.time}`);
+      // Round 28s4 — Was `dayjs(\`${form.date}T${form.time}\`)` which
+      // parses in browser-local tz. A JST/CST customer typing "21:00"
+      // wrote the WRONG wall-clock time to Firestore (21:00 JST =
+      // 19:00 BKK; practitioner arrived 2 hours early). `parseDateTimeBKK`
+      // anchors at Asia/Bangkok so the wall-clock the customer typed
+      // is the wall-clock the practitioner reads.
+      const parsedStart = parseDateTimeBKK(form.date, form.time);
+      if (!parsedStart) {
+        toast.error("Invalid booking time");
+        setSubmitting(false);
+        return;
+      }
+      let startDate = parsedStart;
       const startMin =
         parseInt(therapist.startTime.split(":")[0]) * 60 +
         parseInt(therapist.startTime.split(":")[1]);
@@ -828,7 +847,7 @@ const BookingFlowPage: React.FC = () => {
         holdState: isAdminBooking ? "confirmed" : "active",
         holdExpiresAt: isAdminBooking
           ? null
-          : Timestamp.fromDate(dayjs().add(10, "minute").toDate()),
+          : Timestamp.fromDate(nowBKK().add(10, "minute").toDate()),
         holdDurationMin: isAdminBooking ? 0 : 10,
         // 🆕 Round 28r24 — flag the booking as admin-created for
         //   downstream filters (analytics dashboard, admin-only
@@ -847,7 +866,7 @@ const BookingFlowPage: React.FC = () => {
         savingsTotal: Math.round(totalSavings),
         savingsRouting: Math.round(savingsRouting),
         savingsDiscount: Math.round(savingsDiscount),
-        yearMonth: dayjs(startDate.toDate()).format("YYYY-MM"), // analytics
+        yearMonth: startDate.format("YYYY-MM"), // BKK-anchored (Round 28s4)
         createdAt: serverTimestamp(), // server clock — gracefully handles user device clock skew
       });
 

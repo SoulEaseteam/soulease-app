@@ -153,6 +153,28 @@ export function isTodayBKK(v: TimeLike): boolean {
   return sameDayBKK(v, nowBKK());
 }
 
+/** Combine a "YYYY-MM-DD" date string with an "HH:mm" time string into
+ *  a Dayjs anchored at Asia/Bangkok. Returns null on invalid input.
+ *
+ *  🆕 Round 28s4 (founder 2026-05-30) — Booking flow used to call
+ *  `dayjs(\`${date}T${time}\`)` which parses in the BROWSER tz; a JST
+ *  customer (UTC+9) typing "21:00" wrote 21:00 JST = 19:00 BKK to
+ *  Firestore, sending the practitioner 2 hours early. Use this helper
+ *  at every "user picked a date + time" call site so the wall-clock
+ *  the customer typed is the wall-clock the practitioner sees. */
+export function parseDateTimeBKK(
+  dateYYYYMMDD: string | null | undefined,
+  timeHHMM: string | null | undefined,
+): Dayjs | null {
+  if (!dateYYYYMMDD || !timeHHMM) return null;
+  const d = dayjs.tz(
+    `${dateYYYYMMDD} ${timeHHMM}`,
+    "YYYY-MM-DD HH:mm",
+    SUNRED_TZ,
+  );
+  return d.isValid() ? d : null;
+}
+
 /** Parse "HH:mm" into a Dayjs anchored at the same Bangkok calendar
  *  day as `anchor` (default = now BKK). Returns null on invalid input.
  *  Useful for working-hours arithmetic.

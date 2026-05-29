@@ -188,7 +188,11 @@ const ServicesPage: React.FC = () => {
   };
   const handleBookService = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    void navigate(`/therapists?service=${encodeURIComponent(id)}`);
+    // Round 28s4 — was `/therapists?service=...` which redirects to `/`
+    // and drops the query string; the service filter was always lost.
+    // Land on home directly; deep-link the service via state so a future
+    // home-page enhancement can pre-filter the practitioner grid.
+    void navigate("/", { state: { selectedServiceId: id } });
   };
 
   return (

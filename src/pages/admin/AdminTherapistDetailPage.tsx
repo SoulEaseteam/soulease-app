@@ -417,7 +417,7 @@ const AdminTherapistDetailPage: React.FC = () => {
             </Button>
           )}
 
-          <Button variant="text" onClick={() => navigate(`/therapist/${therapist.id}`)}>
+          <Button variant="text" onClick={() => navigate(`/therapists/${therapist.id}`)}>
             🔎 View Public Profile
           </Button>
         </Stack>

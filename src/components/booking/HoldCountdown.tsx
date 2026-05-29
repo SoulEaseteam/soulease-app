@@ -145,7 +145,10 @@ export const HoldCountdown: React.FC<HoldCountdownProps> = ({
 
   const onRebook = () => {
     if (therapistId) {
-      void navigate(`/therapist/${therapistId}`);
+      // Round 28s4 — was `/therapist/${id}` (singular), which is not
+      // a route in App.tsx and landed on NotFoundPage. The public
+      // practitioner detail route is plural.
+      void navigate(`/therapists/${therapistId}`);
     } else {
       void navigate("/");
     }

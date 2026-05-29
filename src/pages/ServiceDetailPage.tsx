@@ -298,9 +298,18 @@ const ServiceDetailPage: React.FC = () => {
   const tiers = durationsFor(service);
 
   const handleReserve = () => {
-    const q = new URLSearchParams({ service: service.id });
-    if (therapistId) q.set("therapistId", therapistId);
-    void navigate(`/therapists?${q.toString()}`);
+    // Round 28s4 — was `/therapists?service=...&therapistId=...` which
+    // hits a `<Navigate to="/" />` redirect that drops the query string,
+    // so the intended service/therapist filter was always silently lost.
+    // For now, deep-link directly to the practitioner detail when one
+    // is in context; otherwise land on home with all practitioners.
+    // TODO: when home page reads `?service=`, restore the query-string
+    //       hand-off so the grid pre-filters on landing.
+    if (therapistId) {
+      void navigate(`/therapists/${therapistId}`);
+    } else {
+      void navigate("/");
+    }
   };
 
   return (
