@@ -32,7 +32,10 @@
 //   └──────────────────────────────────┘
 
 import React, { useEffect, useRef, useState } from "react";
-import { Drawer, Box, Typography, Button } from "@mui/material";
+// Round 28s48 — Drawer → Dialog. Founder "กดแล้ว เป็น ป๊อบอับ
+// เช่นกัน" — mirror the InfoSheet 28s38 swap so service tap
+// opens a centred modal instead of a bottom drawer.
+import { Dialog, Box, Typography, Button } from "@mui/material";
 import type { MassageService } from "@/data/services";
 import {
   priceForDuration,
@@ -151,43 +154,35 @@ const ServiceDurationSheet: React.FC<Props> = ({
   const badgeColor = BADGE_COLORS[service.badge];
 
   return (
-    <Drawer
-      anchor="bottom"
+    <Dialog
       open={open}
       onClose={onClose}
+      fullWidth
+      maxWidth={false}
+      slotProps={{
+        backdrop: {
+          sx: {
+            background: "rgba(20, 8, 12, 0.55)",
+            backdropFilter: "blur(4px)",
+          },
+        },
+      }}
       PaperProps={{
         sx: {
-          background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
-          borderRadius: "24px 24px 0 0",
-          paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))",
+          background:
+            "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
+          borderRadius: "24px",
           maxWidth: "430px",
-          margin: "0 auto",
-          left: 0,
-          right: 0,
-          maxHeight: "92vh",
+          width: "calc(100% - 32px)",
+          margin: "16px auto",
+          maxHeight: "calc(100vh - 32px)",
           display: "flex",
           flexDirection: "column",
+          boxShadow: "0 24px 60px rgba(20, 8, 12, 0.45)",
         },
       }}
     >
-      {/* Drag handle (sticky top) */}
-      <Box
-        sx={{
-          flexShrink: 0,
-          display: "flex",
-          justifyContent: "center",
-          padding: "10px 0 6px",
-        }}
-      >
-        <Box
-          sx={{
-            width: 40,
-            height: 4,
-            background: "rgba(60, 30, 20, 0.18)",
-            borderRadius: "2px",
-          }}
-        />
-      </Box>
+      {/* Round 28s48 — Drag handle removed (no longer a sheet). */}
 
       {/* Scrollable content */}
       <Box
@@ -765,7 +760,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
             : `Confirm · ${formatTHB(totalPrice)}`}
         </Button>
       </Box>
-    </Drawer>
+    </Dialog>
   );
 };
 

@@ -995,20 +995,10 @@ const TherapistDetailPage: React.FC = () => {
         >
           {t("detail.picker.title", "Services")}
         </Typography>
-        <Typography
-          sx={{
-            fontFamily: SANS,
-            fontSize: "12.5px",
-            color: "rgba(60, 30, 20, 0.6)",
-            lineHeight: 1.45,
-            marginBottom: "16px",
-          }}
-        >
-          {t(
-            "detail.picker.serviceSubtitle",
-            "Tap a ritual to pick duration, date, and time — all in one step.",
-          )}
-        </Typography>
+        {/* Round 28s48 — Subtitle "Tap a ritual to pick duration,
+            date, and time — all in one step." removed (founder
+            request). The cards do the explaining; the eyebrow +
+            title already announce the section. */}
 
         <StepService
           value={selection.serviceId}
