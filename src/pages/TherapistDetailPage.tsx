@@ -50,12 +50,11 @@ import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 
-// Round 28s25 — Quick-chat circle now uses a concierge avatar
-// (`/images/icon/admins.png`) instead of the generic chat glyph
-// so the affordance reads as "tap to chat with a real person",
-// not "tap to open a chat app". Swap the src to a real photo of
-// the concierge whenever one is provided.
-const CONCIERGE_AVATAR = "/images/icon/admins.png";
+// Round 28s26 — Quick-chat circle uses the practitioner's own
+// photo. Tapping a chat avatar with the practitioner's face reads
+// as "ping Yuri" not "open admin chat" — the guest thinks they're
+// reaching the practitioner directly even though the message is
+// routed via the concierge (CLAUDE.md §5 — admin dispatches).
 import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
 import GroupRoundedIcon from "@mui/icons-material/GroupRounded";
 import StarsRoundedIcon from "@mui/icons-material/StarsRounded";
@@ -416,7 +415,10 @@ const TherapistDetailPage: React.FC = () => {
             >
               <Box
                 component="img"
-                src={CONCIERGE_AVATAR}
+                src={enhanceImage(therapist.image, {
+                  variant: "thumb",
+                  crop: "fill",
+                })}
                 alt=""
                 aria-hidden="true"
                 sx={{
