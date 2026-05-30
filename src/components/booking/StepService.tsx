@@ -69,6 +69,28 @@ const BADGE_COLORS: Record<MassageService["badge"], { bg: string; fg: string }> 
   EXCLUSIVE: { bg: "rgba(60, 30, 20, 0.95)", fg: "#FEC9A7" },
 };
 
+// Round 28s33 (founder 2026-05-31, "เอา เมนูขายดีขึ้นก่อน") —
+// Manual editorial order: best-selling / highest-margin services
+// at the top so the premium tier anchors pricing perception. Per
+// the 7-day funnel analytics (CLAUDE.md §9, 2026-05-30):
+//   SR-HJ2200 (Gentleman's) — 16 service views, 100% of bookings
+//   SR-B2B3200 (Therapeutic) — 13 views
+//   SR-Aroma — 5 views
+//   xSR-Thai — 2 views
+// Any service not listed falls to the end in its original
+// data-array order, so adding a new SKU never silently disappears.
+const EDITORIAL_ORDER = [
+  "SR-HJ2200", // Gentleman's Signature — ฿2,200 (best seller)
+  "SR-B2B3200", // SunRed Therapeutic — ฿3,200
+  "SR-Aroma", // Aromatherapy — ฿1,600
+  "xSR-Thai", // Thai Massage — ฿1,200
+] as const;
+
+function orderIdx(id: string): number {
+  const i = EDITORIAL_ORDER.indexOf(id as (typeof EDITORIAL_ORDER)[number]);
+  return i === -1 ? 999 : i;
+}
+
 const StepService: React.FC<Props> = ({
   value,
   selectedDuration,
@@ -79,14 +101,23 @@ const StepService: React.FC<Props> = ({
 }) => {
   // Filter to therapist's offered services if a therapist is preselected.
   // Falls back to ALL services if therapist has no `servicesAvailable` set
-  // (legacy data) or therapist not found.
+  // (legacy data) or therapist not found. Then apply the editorial sort
+  // so the best-selling SKU lands at the top of the list (28s33).
   const visibleServices = useMemo<MassageService[]>(() => {
-    if (!therapistId) return services;
-    const therapist = therapistsData.find((t) => t.id === therapistId);
-    const offered = therapist?.servicesAvailable ?? therapist?.services;
-    if (!offered || offered.length === 0) return services;
-    const filtered = services.filter((s) => offered.includes(s.id));
-    return filtered.length > 0 ? filtered : services;
+    let pool: MassageService[];
+    if (!therapistId) {
+      pool = services;
+    } else {
+      const therapist = therapistsData.find((t) => t.id === therapistId);
+      const offered = therapist?.servicesAvailable ?? therapist?.services;
+      if (!offered || offered.length === 0) {
+        pool = services;
+      } else {
+        const filtered = services.filter((s) => offered.includes(s.id));
+        pool = filtered.length > 0 ? filtered : services;
+      }
+    }
+    return [...pool].sort((a, b) => orderIdx(a.id) - orderIdx(b.id));
   }, [therapistId]);
 
   // Bottom-sheet state — opens when a card is tapped, closes on backdrop
@@ -129,27 +160,29 @@ const StepService: React.FC<Props> = ({
               }
             }}
             sx={{
+              // Round 28s33 ("ปรับให้สวยสบายตา") — soften card
+              // chrome to match the cream-surface aesthetic the
+              // rest of the redesign now uses.
               position: "relative",
               display: "flex",
-              gap: "14px",
-              padding: "14px",
-              borderRadius: "18px",
+              gap: "16px",
+              padding: "16px",
+              borderRadius: "20px",
               cursor: "pointer",
               userSelect: "none",
-              background: "rgba(255, 255, 255, 0.65)",
-              backdropFilter: "blur(20px) saturate(180%)",
-              WebkitBackdropFilter: "blur(20px) saturate(180%)",
+              background: "#fff",
               border: isSelected
                 ? "2px solid #FE0944"
-                : "1px solid rgba(0, 0, 0, 0.06)",
+                : "1px solid rgba(184, 92, 60, 0.12)",
               boxShadow: isSelected
-                ? "0 10px 30px rgba(254, 9, 68, 0.18)"
-                : "0 4px 14px rgba(126, 30, 46, 0.06)",
+                ? "0 12px 32px rgba(254, 9, 68, 0.22)"
+                : "0 4px 14px rgba(126, 30, 46, 0.05)",
               transform: isSelected ? "translateY(-1px)" : "none",
               transition:
                 "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
               "&:hover": {
-                background: "rgba(255, 255, 255, 0.8)",
+                transform: "translateY(-1px)",
+                boxShadow: "0 8px 22px rgba(126, 30, 46, 0.08)",
               },
               "&:focus-visible": {
                 outline: "2px solid #FE0944",
@@ -161,29 +194,31 @@ const StepService: React.FC<Props> = ({
             <Box
               sx={{
                 position: "relative",
-                width: 78,
-                height: 78,
+                width: 92,
+                height: 92,
                 flexShrink: 0,
-                borderRadius: "14px",
+                borderRadius: "16px",
                 overflow: "hidden",
                 background: `center / cover no-repeat url("${s.image}"), linear-gradient(135deg, #d4a574, #8b6f47)`,
               }}
             >
-              {/* Badge pill (top-left of thumbnail) */}
+              {/* Badge pill (top-left of thumbnail) — bigger and
+                  legible at a glance now that the thumb is 92px. */}
               <Box
                 sx={{
                   position: "absolute",
-                  top: 4,
-                  left: 4,
+                  top: 6,
+                  left: 6,
                   fontFamily: SANS,
-                  fontSize: "8.5px",
+                  fontSize: "9px",
                   fontWeight: 800,
-                  letterSpacing: "0.06em",
+                  letterSpacing: "0.08em",
                   background: badgeColor.bg,
                   color: badgeColor.fg,
-                  padding: "2px 5px",
-                  borderRadius: "4px",
+                  padding: "3px 7px",
+                  borderRadius: "6px",
                   textTransform: "uppercase",
+                  boxShadow: "0 2px 6px rgba(20, 6, 12, 0.18)",
                 }}
               >
                 {s.badge}
@@ -195,12 +230,12 @@ const StepService: React.FC<Props> = ({
               <Typography
                 sx={{
                   fontFamily: SERIF,
-                  fontSize: "15.5px",
+                  fontSize: "17px",
                   fontWeight: 600,
-                  color: "#3c1e14",
+                  color: "#2a1a14",
                   letterSpacing: "-0.01em",
-                  lineHeight: 1.2,
-                  marginBottom: "3px",
+                  lineHeight: 1.15,
+                  marginBottom: "4px",
                 }}
               >
                 {s.name}
@@ -208,14 +243,14 @@ const StepService: React.FC<Props> = ({
               <Typography
                 sx={{
                   fontFamily: SANS,
-                  fontSize: "11.5px",
-                  color: "rgba(60, 30, 20, 0.65)",
-                  lineHeight: 1.35,
+                  fontSize: "12px",
+                  color: "rgba(60, 30, 20, 0.68)",
+                  lineHeight: 1.45,
                   display: "-webkit-box",
                   WebkitLineClamp: 2,
                   WebkitBoxOrient: "vertical",
                   overflow: "hidden",
-                  marginBottom: "6px",
+                  marginBottom: "8px",
                 }}
               >
                 {s.desc}
