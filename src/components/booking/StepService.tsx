@@ -141,8 +141,14 @@ const StepService: React.FC<Props> = ({
       aria-label="Choose service"
       sx={{ display: "flex", flexDirection: "column", gap: "12px" }}
     >
-      {visibleServices.map((s) => {
+      {visibleServices.map((s, idx) => {
         const isSelected = value === s.id;
+        // Round 28s43 ("ตรงเมนูเด่น ใส่ กรอป มาแรง ด้วย") —
+        // First card in the editorial order is the current
+        // best-seller (Gentleman's Signature per 28s33 analytics).
+        // Highlights it with a brand-red gradient border + a small
+        // "มาแรง" / "TRENDING" pill so the eye lands there first.
+        const isTrending = idx === 0;
         const badgeColor = BADGE_COLORS[s.badge];
         const fromPrice = startingPrice(s);
         const tiers = durationsFor(s);
@@ -163,6 +169,10 @@ const StepService: React.FC<Props> = ({
               // Round 28s33 ("ปรับให้สวยสบายตา") — soften card
               // chrome to match the cream-surface aesthetic the
               // rest of the redesign now uses.
+              // Round 28s43 — trending card gets a brand-red
+              // double-border treatment via a layered box-shadow
+              // ring so the corner pill (overflow: visible) stays
+              // crisp.
               position: "relative",
               display: "flex",
               gap: "16px",
@@ -173,10 +183,21 @@ const StepService: React.FC<Props> = ({
               background: "#fff",
               border: isSelected
                 ? "2px solid #FE0944"
-                : "1px solid rgba(184, 92, 60, 0.12)",
+                : isTrending
+                  ? "2px solid transparent"
+                  : "1px solid rgba(184, 92, 60, 0.12)",
+              backgroundImage: isTrending
+                ? "linear-gradient(#fff, #fff), linear-gradient(135deg, #FE0944, #FE7A52, #FEC9A7)"
+                : undefined,
+              backgroundOrigin: isTrending ? "border-box" : undefined,
+              backgroundClip: isTrending
+                ? "padding-box, border-box"
+                : undefined,
               boxShadow: isSelected
                 ? "0 12px 32px rgba(254, 9, 68, 0.22)"
-                : "0 4px 14px rgba(126, 30, 46, 0.05)",
+                : isTrending
+                  ? "0 10px 26px rgba(254, 9, 68, 0.14), 0 1px 3px rgba(126, 30, 46, 0.05)"
+                  : "0 4px 14px rgba(126, 30, 46, 0.05)",
               transform: isSelected ? "translateY(-1px)" : "none",
               transition:
                 "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
@@ -190,6 +211,57 @@ const StepService: React.FC<Props> = ({
               },
             }}
           >
+            {/* Round 28s43 — Trending pill, top-right corner of the
+                first card. Uses the brand-red gradient register
+                from the rest of the CTAs so it reads as the
+                "this is the one to book" signal. */}
+            {isTrending && (
+              <Box
+                aria-label="Trending"
+                sx={{
+                  position: "absolute",
+                  top: -8,
+                  right: 12,
+                  zIndex: 2,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "3px 9px 3px 7px",
+                  borderRadius: 999,
+                  background:
+                    "linear-gradient(135deg, #FE0944, #FE7A52)",
+                  color: "#fff",
+                  fontFamily: SANS,
+                  fontSize: "9.5px",
+                  fontWeight: 800,
+                  letterSpacing: "0.10em",
+                  textTransform: "uppercase",
+                  boxShadow:
+                    "0 6px 14px rgba(254, 9, 68, 0.32), inset 0 1px 0 rgba(255,255,255,0.30)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <Box
+                  component="span"
+                  aria-hidden
+                  sx={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: "#fff",
+                    boxShadow: "0 0 0 3px rgba(255,255,255,0.30)",
+                    animation:
+                      "sunredTrendingPulse 1.6s ease-in-out infinite",
+                    "@keyframes sunredTrendingPulse": {
+                      "0%, 100%": { opacity: 1 },
+                      "50%": { opacity: 0.45 },
+                    },
+                  }}
+                />
+                Trending
+              </Box>
+            )}
+
             {/* Thumbnail */}
             <Box
               sx={{
