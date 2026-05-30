@@ -63,23 +63,18 @@ import { useNavigate } from "react-router-dom";
 import TelegramIcon from "@mui/icons-material/Telegram";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
-import CardGiftcardRoundedIcon from "@mui/icons-material/CardGiftcardRounded";
 
 import { brand, fonts, gradients } from "@/theme";
 import { useConciergeMode } from "@/utils/conciergeMode";
 import { trackConciergeOpen } from "@/utils/analytics";
 import ConciergeModeIcon from "@/components/common/ConciergeModeIcon";
 import ReferralActiveBanner from "@/components/common/ReferralActiveBanner";
+import { pickHeroPromo } from "@/data/heroPromos";
 
 // Canonical channel URLs (HomeFooter / AdminFloatingChat / HowItWorks /
 // ProfilePage use the same constants).
 const WHATSAPP_URL = "https://wa.me/66634350987";
 const TELEGRAM_URL = "https://t.me/SunRedvip_bkk";
-
-// Pre-filled message so the FIRST10 promo lands on WhatsApp with
-// context — admin doesn't have to ask "which offer?" before quoting.
-const FIRST10_WA_MSG =
-  "Hi, I'd like to book using FIRST10 (10% off first booking). When can I reserve?";
 
 // Service strip — short labels chosen for the hero tile, full names
 // kept in /services/:id detail. Prices and durations match
@@ -119,8 +114,14 @@ const HeroSection: React.FC = () => {
 
   const greeting = greetingFor(concierge.mode);
 
+  // Round 28s11 — rotating promo. Hour-of-day deterministic so the
+  // promo doesn't flicker on refresh, but a returning guest sees a
+  // fresh angle every hour of the day.
+  const promo = pickHeroPromo(concierge.hourBKK, concierge.mode);
+  const PromoIcon = promo.icon;
+
   const handleWhatsApp = (
-    source: "greeting" | "promo",
+    source: string,
     msg?: string,
   ) => {
     trackConciergeOpen(`whatsapp_${source}`);
@@ -397,19 +398,18 @@ const HeroSection: React.FC = () => {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
-          onClick={() => handleWhatsApp("promo", FIRST10_WA_MSG)}
+          onClick={() => handleWhatsApp(`promo_${promo.id}`, promo.waMsg)}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              handleWhatsApp("promo", FIRST10_WA_MSG);
+              handleWhatsApp(`promo_${promo.id}`, promo.waMsg);
             }
           }}
-          aria-label={t(
-            "home.hero.promoAria",
-            "Claim 10% off first booking — chat to redeem"
-          )}
+          aria-label={t("home.hero.promoAria", "Tap to redeem — {{title}}", {
+            title: promo.title,
+          })}
           sx={{
             position: "relative",
             display: "flex",
@@ -439,7 +439,9 @@ const HeroSection: React.FC = () => {
             },
           }}
         >
-          {/* Decorative gift watermark — Plantum-style playful motif */}
+          {/* Decorative icon watermark — varies per promo (gift,
+              taxi, sparkle, flight, etc.) so the rotation reads
+              visually distinct, not just text swap. */}
           <Box
             aria-hidden="true"
             sx={{
@@ -453,7 +455,7 @@ const HeroSection: React.FC = () => {
               pointerEvents: "none",
             }}
           >
-            <CardGiftcardRoundedIcon sx={{ fontSize: "inherit" }} />
+            <PromoIcon sx={{ fontSize: "inherit" }} />
           </Box>
 
           <Box sx={{ flex: 1, minWidth: 0, zIndex: 1 }}>
@@ -469,7 +471,7 @@ const HeroSection: React.FC = () => {
                 marginBottom: "4px",
               }}
             >
-              {t("home.hero.promoEyebrow", "Tonight Special")}
+              {promo.eyebrow}
             </Typography>
             <Typography
               component="p"
@@ -482,10 +484,7 @@ const HeroSection: React.FC = () => {
                 marginBottom: "4px",
               }}
             >
-              {t(
-                "home.hero.promoTitle",
-                "10% off your first booking"
-              )}
+              {promo.title}
             </Typography>
             <Typography
               component="p"
@@ -497,10 +496,7 @@ const HeroSection: React.FC = () => {
                 letterSpacing: "0.005em",
               }}
             >
-              {t(
-                "home.hero.promoSub",
-                "Code FIRST10 · applied at checkout"
-              )}
+              {promo.sub}
             </Typography>
           </Box>
 
