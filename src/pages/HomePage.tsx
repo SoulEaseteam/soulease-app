@@ -15,11 +15,14 @@ import { captureReferralFromURL } from "@/utils/referral";
 import { trackHomeView } from "@/utils/analytics";
 
 import HomeTherapistGrid from "@/components/home/HomeTherapistGrid";
-// 🆕 Round 28r30 (founder 2026-05-07) — PromiseStrip re-enabled.
-//   Founder direction: "เอากลับมาด้วยในหน้าหลัก". Strip earns its
-//   slot now with a tighter editorial design + ฿1,800 price anchor.
-import PromiseStrip from "@/components/home/PromiseStrip";
-import HomeFooter from "@/components/home/HomeFooter";
+
+// Round 28s20 — PromiseStrip + HomeFooter dropped from the home
+// page composition (founder: "ตัดส่วนที่ไม่ต้องมีก็ได้ ทำให้เหมือน
+// เป็น เว็บแอป จริงๆ"). Real web apps (Grab, Klook, Booking) end
+// the home with the main content + bottom nav — no marketing trust
+// strip, no website-style social/links footer. Components live on
+// in src/components/home/ for revert (`git revert <this>`) if a
+// future round decides the trust signal needs to come back.
 
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 
@@ -65,11 +68,13 @@ const HomePage: React.FC = () => {
       }}
     >
       {/* 🆕 Round 28r — TopNav moved to MainLayout (site-wide). HomePage
-          no longer renders it locally to avoid a duplicate top bar. */}
+          no longer renders it locally to avoid a duplicate top bar.
+          🆕 Round 28s20 — Below-fold marketing chrome (PromiseStrip,
+          HomeFooter) removed. Bottom padding gives the last therapist
+          card breathing room above MainLayout's BottomNavGlass. */}
       <HeroSection />
       <HomeTherapistGrid />
-      <PromiseStrip />
-      <HomeFooter />
+      <Box sx={{ height: "32px" }} aria-hidden="true" />
     </Box>
   );
 };
