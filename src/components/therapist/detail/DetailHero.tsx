@@ -32,7 +32,6 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 // 🆕 Round 28az — replace 📍 emoji with MUI icon (founder rule: icons only).
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import NearMeRoundedIcon from "@mui/icons-material/NearMeRounded";
-import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
@@ -625,22 +624,12 @@ const DetailHero: React.FC<Props> = ({
                 );
               })()}
             </Box>
-            {/* Round 28s52 — Working hours inline next to Allow
-                location + status. Founder asked for this signal
-                to live under the name overlay instead of in its
-                own About-tab section. */}
-            {workingHours && (
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
-                }}
-              >
-                <ScheduleRoundedIcon sx={{ fontSize: 14 }} />
-                {workingHours}
-              </Box>
-            )}
+            {/* Round 28s57 — Working hours moved OUT of the photo
+                overlay (founder "ย้ายลงมาข้างล่าง"); it now renders
+                below the StatsCard in TherapistDetailPage so the
+                overlay row stays uncrowded (Allow location · status
+                only). `workingHours` prop kept for back-compat but
+                no longer rendered here. */}
           </Box>
         </Box>
       </Box>

@@ -916,6 +916,49 @@ const TherapistDetailPage: React.FC = () => {
         onTapLoyalty={() => setInfoSheet("loyalty")}
       />
 
+      {/* Round 28s57 — Working hours moved here (founder
+          "ย้ายลงมาข้างล่าง") — below the StatsCard, out of the photo
+          overlay. Single quiet clay-tinted line with a clock icon. */}
+      {realRecord?.startTime && realRecord?.endTime && (
+        <Box
+          sx={{
+            maxWidth: 430,
+            margin: "0 auto",
+            padding: "10px 18px 0",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <ScheduleRoundedIcon
+            sx={{ fontSize: 16, color: "#b85c3c", flexShrink: 0 }}
+          />
+          <Typography
+            component="span"
+            sx={{
+              fontFamily: SANS,
+              fontSize: "13px",
+              fontWeight: 600,
+              color: "#2a1a14",
+            }}
+          >
+            {realRecord.startTime}–{realRecord.endTime}
+            {realRecord.startTime > realRecord.endTime && (
+              <Box
+                component="span"
+                sx={{
+                  fontWeight: 500,
+                  color: "rgba(60, 30, 20, 0.55)",
+                  marginLeft: "6px",
+                }}
+              >
+                (overnight)
+              </Box>
+            )}
+          </Typography>
+        </Box>
+      )}
+
       {/* Round 28s42 — StatusPill rendered ABOVE the tabs so the
           status signal stays visible whichever panel is active.
           About + Services panels themselves move inside the tabs
