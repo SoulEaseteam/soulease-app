@@ -133,6 +133,18 @@ const TherapistDetailPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(dates[0].iso);
   const [selectedTime, setSelectedTime] = useState(slots[0] ?? "20:00");
 
+  // Round 28s28 — Service selection moves into the detail page itself
+  // so a guest can pick service + date + time before tapping Reserve.
+  // The chat message that opens WhatsApp carries the full triplet
+  // and the concierge can confirm/refuse in one reply.
+  const initialServiceId =
+    therapist?.servicesAvailable?.[0] ??
+    therapist?.services?.[0] ??
+    null;
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(
+    initialServiceId,
+  );
+
   // Round 28s27 — Photo viewer state
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerIdx, setViewerIdx] = useState(0);
@@ -156,6 +168,14 @@ const TherapistDetailPage: React.FC = () => {
     availableServices.length > 0
       ? Math.min(...availableServices.map((s) => startingPrice(s)))
       : null;
+
+  const selectedService =
+    selectedServiceId
+      ? availableServices.find((s) => s.id === selectedServiceId) ?? null
+      : null;
+  const selectedPrice = selectedService
+    ? startingPrice(selectedService)
+    : fromPrice;
 
   useDocumentMeta({
     title: therapist
@@ -206,9 +226,9 @@ const TherapistDetailPage: React.FC = () => {
 
   const handleBook = () => {
     const dateLabel = dayjs(selectedDate).format("ddd D MMM");
-    const specialty =
-      availableServices[0]?.name ?? "session";
-    const msg = `Hi, I'd like to reserve ${therapist.name} on ${dateLabel} at ${selectedTime} (${specialty}). Can you confirm?`;
+    const svcName = selectedService?.name ?? "session";
+    const priceLabel = selectedPrice ? ` · ${formatTHB(selectedPrice)}` : "";
+    const msg = `Hi, I'd like to reserve ${therapist.name} for ${svcName} (60 min${priceLabel}) on ${dateLabel} at ${selectedTime}. Can you confirm?`;
     trackConciergeOpen(`whatsapp_therapist_${therapist.id}`);
     window.open(
       `${WHATSAPP_URL}?text=${encodeURIComponent(msg)}`,
@@ -470,98 +490,168 @@ const TherapistDetailPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* ── Stat row — 3 cards ──────────────────────────────────────── */}
+      {/* ── Round 28s28 — Feature chips row replaces the 3-card stat
+            row. Tourists picking an outcall practitioner glance at
+            age / height / body / language / area before anything
+            else; surfacing those as a quiet chip row gives a
+            faster decision read than 3 metric cards. */}
       <Box
         sx={{
           padding: "18px 16px 0",
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          gap: "10px",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "6px",
         }}
       >
         {[
-          {
-            icon: ScheduleRoundedIcon,
-            label: `${experienceYears} yrs`,
-            sub: t("therapist.experience", "Experience"),
-          },
-          {
-            icon: GroupRoundedIcon,
-            label: sessionsLabel,
-            sub: t("therapist.sessions", "Sessions"),
-          },
-          {
-            icon: StarsRoundedIcon,
-            label: `${ratingLabel === "—" ? "—" : ratingLabel}`,
-            sub:
-              reviewsLabel === "—"
-                ? t("therapist.reviewsNoneYet", "Reviews")
-                : `${reviewsLabel} ${t("therapist.reviews", "Reviews")}`,
-          },
-        ].map((s, idx) => {
-          const Icon = s.icon;
-          return (
+          therapist.features.age && `${therapist.features.age} yrs`,
+          therapist.features.height,
+          therapist.features.bodyType,
+          therapist.features.language,
+          therapist.area,
+        ]
+          .filter((v): v is string => Boolean(v && v.trim()))
+          .map((chip, idx) => (
             <Box
-              key={idx}
+              key={`${chip}-${idx}`}
               sx={{
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
-                gap: "8px",
-                padding: "10px 12px",
-                borderRadius: "14px",
+                padding: "6px 12px",
+                borderRadius: 999,
                 background: "#fff",
-                border: "1px solid rgba(184, 92, 60, 0.10)",
-                boxShadow: "0 2px 8px rgba(126, 30, 46, 0.04)",
+                border: "1px solid rgba(184, 92, 60, 0.15)",
+                fontFamily: fonts.body,
+                fontSize: "11.5px",
+                fontWeight: 600,
+                color: brand.text,
+                letterSpacing: "0.005em",
+                boxShadow: "0 1px 2px rgba(126, 30, 46, 0.03)",
               }}
             >
-              <Box
-                sx={{
-                  flexShrink: 0,
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
-                  background: "rgba(254, 9, 68, 0.08)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Icon sx={{ fontSize: 16, color: brand.red }} />
-              </Box>
-              <Box sx={{ display: "flex", flexDirection: "column" }}>
-                <Typography
-                  component="span"
-                  sx={{
-                    fontFamily: fonts.heading,
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    color: brand.text,
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {s.label}
-                </Typography>
-                <Typography
-                  component="span"
-                  sx={{
-                    fontFamily: fonts.body,
-                    fontSize: "10.5px",
-                    fontWeight: 500,
-                    color: brand.textMuted,
-                    marginTop: "1px",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    maxWidth: 90,
-                  }}
-                >
-                  {s.sub}
-                </Typography>
-              </Box>
+              {chip}
             </Box>
-          );
-        })}
+          ))}
       </Box>
+
+      {/* ── Round 28s28 — Select service ────────────────────────────
+          Service picker moves into the detail page so the Reserve
+          CTA's WhatsApp message can carry service + date + time in
+          one shot. Each chip shows tier color + service name + price;
+          tapping flips the active state and updates the sticky CTA. */}
+      {availableServices.length > 0 && (
+        <Box sx={{ padding: "22px 16px 0" }}>
+          <Typography
+            component="p"
+            sx={{
+              fontFamily: fonts.body,
+              fontSize: "11px",
+              fontWeight: 800,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: brand.accent,
+              marginBottom: "10px",
+            }}
+          >
+            {t("therapist.selectService", "Select ritual")}
+          </Typography>
+          <Box
+            role="radiogroup"
+            aria-label={t(
+              "therapist.serviceAria",
+              "Choose which ritual to book"
+            )}
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+            }}
+          >
+            {availableServices.map((svc) => {
+              const isActive = svc.id === selectedServiceId;
+              const price = startingPrice(svc);
+              return (
+                <Box
+                  key={svc.id}
+                  component="button"
+                  type="button"
+                  onClick={() => setSelectedServiceId(svc.id)}
+                  role="radio"
+                  aria-checked={isActive}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "12px 14px",
+                    borderRadius: "14px",
+                    cursor: "pointer",
+                    border: isActive
+                      ? "1px solid transparent"
+                      : "1px solid rgba(184, 92, 60, 0.15)",
+                    background: isActive
+                      ? "linear-gradient(135deg, #FE0944, #FE7A52)"
+                      : "#fff",
+                    color: isActive ? "#fff" : brand.text,
+                    boxShadow: isActive
+                      ? "0 6px 16px rgba(254, 9, 68, 0.28), inset 0 1px 0 rgba(255,255,255,0.18)"
+                      : "0 1px 3px rgba(126, 30, 46, 0.04)",
+                    transition:
+                      "background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease",
+                    "&:hover": { transform: "translateY(-1px)" },
+                    "&:focus-visible": {
+                      outline: `2px solid ${brand.red}`,
+                      outlineOffset: 2,
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      gap: "2px",
+                    }}
+                  >
+                    <Typography
+                      component="span"
+                      sx={{
+                        fontFamily: fonts.heading,
+                        fontSize: "15px",
+                        fontWeight: 600,
+                        lineHeight: 1.15,
+                      }}
+                    >
+                      {svc.name}
+                    </Typography>
+                    <Typography
+                      component="span"
+                      sx={{
+                        fontFamily: fonts.body,
+                        fontSize: "10.5px",
+                        fontWeight: 500,
+                        opacity: isActive ? 0.85 : 0.55,
+                      }}
+                    >
+                      {svc.duration} min
+                    </Typography>
+                  </Box>
+                  <Typography
+                    component="span"
+                    sx={{
+                      fontFamily: fonts.heading,
+                      fontSize: "16px",
+                      fontWeight: 700,
+                      color: isActive ? "#fff" : brand.red,
+                    }}
+                  >
+                    {formatTHB(price)}
+                  </Typography>
+                </Box>
+              );
+            })}
+          </Box>
+        </Box>
+      )}
 
       {/* ── Select Date ─────────────────────────────────────────────── */}
       <Box sx={{ padding: "22px 16px 0" }}>
@@ -740,70 +830,10 @@ const TherapistDetailPage: React.FC = () => {
         </Box>
       )}
 
-      {/* ── Verification / area / languages mini-row ───────────────── */}
-      <Box
-        sx={{
-          padding: "22px 16px 0",
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "6px",
-        }}
-      >
-        <Box
-          sx={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "4px",
-            padding: "5px 10px",
-            borderRadius: 999,
-            background: "rgba(22, 163, 74, 0.10)",
-            border: "1px solid rgba(22, 163, 74, 0.18)",
-            fontFamily: fonts.body,
-            fontSize: "10.5px",
-            fontWeight: 700,
-            color: "#15803d",
-          }}
-        >
-          <VerifiedRoundedIcon sx={{ fontSize: 12 }} />
-          {t("therapist.verified", "Verified")}
-        </Box>
-        {therapist.area && (
-          <Box
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              padding: "5px 10px",
-              borderRadius: 999,
-              background: "#fff",
-              border: "1px solid rgba(184, 92, 60, 0.15)",
-              fontFamily: fonts.body,
-              fontSize: "10.5px",
-              fontWeight: 700,
-              color: brand.text,
-            }}
-          >
-            {therapist.area}
-          </Box>
-        )}
-        {therapist.features.language && (
-          <Box
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              padding: "5px 10px",
-              borderRadius: 999,
-              background: "#fff",
-              border: "1px solid rgba(184, 92, 60, 0.15)",
-              fontFamily: fonts.body,
-              fontSize: "10.5px",
-              fontWeight: 700,
-              color: brand.text,
-            }}
-          >
-            {therapist.features.language}
-          </Box>
-        )}
-      </Box>
+      {/* Round 28s28 — Verification/area/lang mini-row removed. The
+          new feature chip row at the top of the body already shows
+          area + language; a small Verified badge moves to the photo
+          card itself in a later round. */}
 
       {/* ── Sticky bottom CTA ──────────────────────────────────────── */}
       <Box
@@ -865,7 +895,7 @@ const TherapistDetailPage: React.FC = () => {
             {t("therapist.bookCta", "Reserve {{name}}", {
               name: therapist.name,
             })}
-            {fromPrice !== null && (
+            {selectedPrice !== null && selectedPrice !== undefined && (
               <Box
                 component="span"
                 sx={{
@@ -874,7 +904,7 @@ const TherapistDetailPage: React.FC = () => {
                   marginLeft: "6px",
                 }}
               >
-                · {t("therapist.from", "from")} {formatTHB(fromPrice)}
+                · {formatTHB(selectedPrice)}
               </Box>
             )}
           </Button>
