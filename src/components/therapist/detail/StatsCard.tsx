@@ -273,8 +273,17 @@ const StatsCard: React.FC<Props> = ({
               borderLeft: "1px solid rgba(184, 92, 60, 0.18)",
             }),
             ...(s.onTap && {
-              "&:hover": {
-                background: "rgba(254, 9, 68, 0.04)",
+              // Round 28s60 (founder "พริบเลือก เหมือนตอนเลือก
+              // กริ้งไปมา") — gate the pink hover tint behind
+              // @media (hover: hover). On touch screens the :hover
+              // state STICKS after a tap, so each cell stayed
+              // highlighted (looked auto-selected, cycling). Now it
+              // only paints on real mouse-hover devices; touch
+              // relies on the brief :active scale alone.
+              "@media (hover: hover)": {
+                "&:hover": {
+                  background: "rgba(254, 9, 68, 0.04)",
+                },
               },
               "&:active": {
                 transform: "scale(0.97)",
