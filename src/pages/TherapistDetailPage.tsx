@@ -12,7 +12,7 @@
 // to match Phase 2 design. Real data integration via `therapistsData` lookup
 // + Firestore live status in Task 7 (i18n sweep / data wiring).
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Box, Typography } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -35,17 +35,11 @@ import WcRoundedIcon from "@mui/icons-material/WcRounded";
 // 🆕 Round 28am — selective Specialty icons (Phase 2.5)
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import FitnessCenterRoundedIcon from "@mui/icons-material/FitnessCenterRounded";
-import WhatshotRoundedIcon from "@mui/icons-material/WhatshotRounded";
-// 🆕 Round 28b3 — emoji → MUI icons across SERVICE_DISPLAY + Credentials
-//   so the no-emoji rule covers the detail page too.
+// Round 28s34 — Legacy-slug icons (Whatshot / SelfImprovement /
+// DirectionsRun / PregnantWoman / EmojiNature / Psychology /
+// Landscape) dropped along with the legacy entries in SERVICE_DISPLAY.
 import SpaRoundedIcon from "@mui/icons-material/SpaRounded";
 import LocalFloristRoundedIcon from "@mui/icons-material/LocalFloristRounded";
-import SelfImprovementRoundedIcon from "@mui/icons-material/SelfImprovementRounded";
-import DirectionsRunRoundedIcon from "@mui/icons-material/DirectionsRunRounded";
-import PregnantWomanRoundedIcon from "@mui/icons-material/PregnantWomanRounded";
-import EmojiNatureRoundedIcon from "@mui/icons-material/EmojiNatureRounded";
-import PsychologyRoundedIcon from "@mui/icons-material/PsychologyRounded";
-import LandscapeRoundedIcon from "@mui/icons-material/LandscapeRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import SchoolRoundedIcon from "@mui/icons-material/SchoolRounded";
 import ShieldRoundedIcon from "@mui/icons-material/ShieldRounded";
@@ -140,47 +134,10 @@ type DemoTherapist = {
 };
 
 
-const EMPTY_THERAPIST: DemoTherapist = {
-  id: "_empty",
-  name: "—",
-  age: 0,
-  area: "",
-  distance: "",
-  online: false,
-  photoBg: "linear-gradient(135deg, #d4a574, #8b6f47)",
-
-  rating: "0.0",
-  reviewCount: 0,
-  yearsExp: 0,
-  totalSessions: 0,
-  rebookRate: "—",
-
-  about: "",
-  aboutFacts: [],
-  aboutRows: [],
-
-  creds: [],
-  specs: [],
-  langs: [],
-  pricing: [],
-
-  days: [],
-  slots: [],
-
-  reviewBuckets: [],
-  reviews: [],
-};
-
-// Legacy demo URLs (/therapists/mai etc.) — keep an empty map so the
-// 3-tier lookup chain still type-checks, but tap-throughs from any
-// stale link will resolve to EMPTY_THERAPIST. Real therapists live in
-// data/therapists.ts.
-const DEMO_BY_ID: Record<string, DemoTherapist> = {};
-
-// Backwards-compatible alias — buildFromReal still references "MAI" as
-// the structural fallback. Pointing at the empty shell ensures no fake
-// stats leak through any spread.
-const MAI = EMPTY_THERAPIST;
+// Round 28s34 — EMPTY_THERAPIST + DEMO_BY_ID + MAI alias removed.
+// The demo lookup chain hasn't carried real data since Round 28r;
+// unknown :id values now render the explicit 404 below instead of
+// silently masking as a placeholder profile.
 
 // stable per-id gradient (mirrors useTherapists.gradientForId)
 function gradientForId(id: string): string {
@@ -201,11 +158,16 @@ function gradientForId(id: string): string {
 }
 
 
+// Round 28s34 — SERVICE_DISPLAY trimmed to the 4 current SKUs.
+// Legacy slug aliases (`thai-massage`, `aromatherapy`, `oil-massage`,
+// etc.) covered Round-28b18-and-earlier bookings that hadn't been
+// migrated; historical bookings now resolve through
+// `resolveServiceId` in `utils/serviceCatalog`, so this dictionary
+// only needs the live SKUs. Saves ~8 unused icon imports.
 const SERVICE_DISPLAY: Record<
   string,
   { icon: React.ReactNode; short: string }
 > = {
-  // ── Current SKU codes ──
   "xSR-Thai": {
     icon: <SpaRoundedIcon sx={{ fontSize: 18, color: "#16a34a" }} />,
     short: "Thai Traditional",
@@ -221,52 +183,6 @@ const SERVICE_DISPLAY: Record<
   "SR-B2B3200": {
     icon: <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#FE0944" }} />,
     short: "SunRed Therapeutic",
-  },
-
-  // ── Legacy slug aliases (for historical bookings) ──
-  "thai-massage": {
-    icon: <SpaRoundedIcon sx={{ fontSize: 18, color: "#16a34a" }} />,
-    short: "Thai Traditional",
-  },
-  aromatherapy: {
-    icon: <LocalFloristRoundedIcon sx={{ fontSize: 18, color: "#FE7A52" }} />,
-    short: "Aromatherapy",
-  },
-  "oil-massage": {
-    icon: <SelfImprovementRoundedIcon sx={{ fontSize: 18, color: "#0284C7" }} />,
-    short: "Oil Relaxation",
-  },
-  "gentlemans-recovery": {
-    icon: <FitnessCenterRoundedIcon sx={{ fontSize: 18, color: "#3c1e14" }} />,
-    short: "Gentleman's Signature",
-  },
-  "sunred-signature": {
-    icon: <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#FE0944" }} />,
-    short: "SunRed Therapeutic",
-  },
-  "sport-massage": {
-    icon: <DirectionsRunRoundedIcon sx={{ fontSize: 18, color: "#16a34a" }} />,
-    short: "Sport Recovery",
-  },
-  "deep-tissue": {
-    icon: <WhatshotRoundedIcon sx={{ fontSize: 18, color: "#FE7A52" }} />,
-    short: "Deep Tissue",
-  },
-  "prenatal-massage": {
-    icon: <PregnantWomanRoundedIcon sx={{ fontSize: 18, color: "#FE7A52" }} />,
-    short: "Pre-natal",
-  },
-  "foot-massage": {
-    icon: <EmojiNatureRoundedIcon sx={{ fontSize: 18, color: "#16a34a" }} />,
-    short: "Foot Massage",
-  },
-  "head-massage": {
-    icon: <PsychologyRoundedIcon sx={{ fontSize: 18, color: "#0284C7" }} />,
-    short: "Head Massage",
-  },
-  "hot-stone": {
-    icon: <LandscapeRoundedIcon sx={{ fontSize: 18, color: "#B45309" }} />,
-    short: "Hot Stone",
   },
 };
 
@@ -502,8 +418,38 @@ function buildFromReal(real: Therapist): DemoTherapist {
   //    (useTherapistReviews) overlays real values on top of this shape.
   const realReviewCount = real.reviews ?? 0;
 
+  // Round 28s34 — inline empty shell (was `...MAI` referencing the
+  // removed EMPTY_THERAPIST). Same effect: any DemoTherapist field
+  // the `real` source doesn't override defaults to a zero/empty
+  // value so downstream renderers never see `undefined`.
+  const SHELL: DemoTherapist = {
+    id: real.id,
+    name: real.name,
+    age: 0,
+    area: "",
+    distance: "",
+    online: false,
+    photoBg,
+    rating: "0.0",
+    reviewCount: 0,
+    yearsExp: 0,
+    totalSessions: 0,
+    rebookRate: "—",
+    about: "",
+    aboutFacts: [],
+    aboutRows: [],
+    creds: [],
+    specs: [],
+    langs: [],
+    pricing: [],
+    days: [],
+    slots: [],
+    reviewBuckets: [],
+    reviews: [],
+  };
+
   return {
-    ...MAI, // pure structural shell — no fake numbers leak through
+    ...SHELL,
     id: real.id,
     name: real.name,
     age: ageNum,
@@ -544,71 +490,79 @@ const TherapistDetailPage: React.FC = () => {
   // 🆕 Round 28af — live booking aggregates for the Loyalty tab.
   const loyaltyStats = useTherapistBookingStats(id ?? null);
 
-  // 🔌 3-tier lookup chain:
-  //   1. therapistsData[id] (real Yuri/Jimmy/Hami/...)
-  //   2. DEMO_BY_ID[id] (mai/ploy/nan/fern/wan/aom)
-  //   3. MAI as last-resort fallback.
-  let therapist: DemoTherapist = MAI;
-  if (id) {
-    const real = therapistsData.find((tt) => tt.id === id);
-    if (real) {
-      therapist = buildFromReal(real);
-    } else if (DEMO_BY_ID[id]) {
-      therapist = DEMO_BY_ID[id];
+  // Round 28s34 — Single-source lookup. The 3-tier (real / demo /
+  // MAI) chain was a hangover from Round 28r demo data; with the
+  // demo map empty, the only real path was `therapistsData`. An
+  // unknown :id now returns null → explicit 404 below.
+  const realRow = id ? therapistsData.find((tt) => tt.id === id) : null;
+  const therapistFromReal = realRow ? buildFromReal(realRow) : null;
+
+  // Round 28s34 — Memoised overlay so the spread runs only when
+  // loyalty / review payloads change, not on every parent render.
+  // Returns null when the lookup didn't find a real therapist —
+  // the 404 branch in the JSX below short-circuits the render.
+  const therapist = useMemo(() => {
+    if (!therapistFromReal) return null;
+    let t = therapistFromReal;
+    if (loyaltyStats.totalCompleted > 0) {
+      t = {
+        ...t,
+        totalSessions: loyaltyStats.totalCompleted,
+        rebookRate:
+          loyaltyStats.uniqueCustomers >= 1
+            ? `${loyaltyStats.repeatPct}%`
+            : t.rebookRate,
+      };
     }
-  }
+    if (liveReviews.reviewCount > 0) {
+      t = {
+        ...t,
+        reviewCount: liveReviews.reviewCount,
+        reviewBuckets: liveReviews.buckets.map((b) => ({
+          num: b.stars,
+          count: b.count,
+          pct: b.pct,
+        })),
+        reviews: liveReviews.reviews.map((r) => ({
+          initial: "•",
+          name: `Booking #${r.bookingId.slice(0, 8).toUpperCase()}`,
+          flag: "",
+          meta: `${r.ago} · ${r.service}`,
+          quote: r.body,
+        })),
+      };
+    }
+    return t;
+  }, [
+    therapistFromReal,
+    loyaltyStats.totalCompleted,
+    loyaltyStats.uniqueCustomers,
+    loyaltyStats.repeatPct,
+    liveReviews.reviewCount,
+    liveReviews.buckets,
+    liveReviews.reviews,
+  ]);
 
-  // 🆕 Round 28ae — overlay live Firestore reviews on top of the static
-  //   shape so the InfoSheet always reads the source-of-truth. When zero
-  //   reviews exist live, fall back to whatever buildFromReal produced
-  //   (which is empty arrays for fresh therapists, MAI demo for the
-  //   placeholder demo path).
-  // 🆕 Round 28aj — overlay live loyalty aggregates onto totalSessions
-  //   and rebookRate so StatsCard + TrustHero show real numbers.
-  if (loyaltyStats.totalCompleted > 0) {
-    therapist = {
-      ...therapist,
-      totalSessions: loyaltyStats.totalCompleted,
-      rebookRate:
-        loyaltyStats.uniqueCustomers >= 1
-          ? `${loyaltyStats.repeatPct}%`
-          : therapist.rebookRate,
-    };
-  }
-
-  if (liveReviews.reviewCount > 0) {
-    therapist = {
-      ...therapist,
-      reviewCount: liveReviews.reviewCount,
-      reviewBuckets: liveReviews.buckets.map((b) => ({
-        num: b.stars,
-        count: b.count,
-        pct: b.pct,
-      })),
-      reviews: liveReviews.reviews.map((r) => ({
-        // Keep DemoTherapist shape so existing renderers don't break.
-        // InfoSheet's ReviewsTab gets the privacy-safe shape via the
-        // separate `reviews` prop wired below.
-        initial: "•",
-        name: `Booking #${r.bookingId.slice(0, 8).toUpperCase()}`,
-        flag: "",
-        meta: `${r.ago} · ${r.service}`,
-        quote: r.body,
-      })),
-    };
-  }
-
+  // Round 28s34 — null-safe useDocumentMeta. Hook must be called
+  // unconditionally; we fall back to a generic title when the id
+  // didn't resolve to a real therapist (404 branch renders below).
   useDocumentMeta({
     title: t("meta.detail.title", "{{name}} · SUNRED Bangkok", {
-      name: therapist.name,
+      name: therapist?.name ?? "Practitioner",
     }),
-    description: t(
-      "meta.detail.description",
-      "{{name}} — verified massage therapist in Bangkok. {{rating}}★ ({{count}} reviews). Book in seconds.",
-      { name: therapist.name, rating: therapist.rating, count: therapist.reviewCount }
-    ),
+    description: therapist
+      ? t(
+          "meta.detail.description",
+          "{{name}} — verified massage therapist in Bangkok. {{rating}}★ ({{count}} reviews). Book in seconds.",
+          {
+            name: therapist.name,
+            rating: therapist.rating,
+            count: therapist.reviewCount,
+          },
+        )
+      : undefined,
     locale: langToLocale(i18n.language),
-    url: `https://sunred.vip/therapists/${id ?? therapist.id}`,
+    url: `https://sunred.vip/therapists/${id ?? therapist?.id ?? ""}`,
     type: "profile",
   });
 
@@ -635,64 +589,66 @@ const TherapistDetailPage: React.FC = () => {
     "profile" | "reviews" | "loyalty" | null
   >(null);
 
-  // 🆕 Round 28aq — drive StatusPill from the REAL availability engine
-  //   (calculateTherapistStatus) instead of the unset `therapist.online`
-  //   field. The previous logic always read `online: false` from the
-  //   EMPTY_THERAPIST shell, so every therapist appeared "Off duty"
-  //   regardless of their actual shift / live booking state.
-  const liveBookings = useTherapistBookings(therapist.id);
-  const activeBooking = findActiveBooking(liveBookings);
-  // 🆕 Round 28b9 — when therapist is currently free but has a future
-  //   session on the schedule, surface the next start time so the
-  //   StatusPill / DetailHero / cards all read consistently with the
-  //   booking time picker (which already shows "TAKEN" slots).
-  const upcomingBooking = findNextBooking(liveBookings);
-  const nextBookingAt = upcomingBooking
-    ? fmtBKK(upcomingBooking.startAt, "HH:mm A", "")
-    : null;
+  // Round 28s34 — Live status pipeline (bookings + holiday overlay
+  // + engine output) memoised so the spreads + engine call run only
+  // when their dependencies change. Hooks still subscribe via the
+  // `therapist?.id ?? null` arg; the underlying utils accept null.
+  const liveBookings = useTherapistBookings(therapist?.id ?? null);
+  const liveStatus = useTherapistLiveStatus(therapist?.id ?? null);
 
-  // 🆕 Round 28b35 — Live Firestore overlay. Admin's Holiday toggle +
-  //   manual override + busyUntil edits stream in real-time and merge
-  //   on top of the static record. Without this overlay, the engine
-  //   was reading ONLY data/therapists.ts which is build-time and
-  //   never reflects admin actions → customers booked therapists who
-  //   were marked Holiday in the admin panel.
-  const liveStatus = useTherapistLiveStatus(therapist.id);
-  // Resolve the underlying real Therapist record so the engine can
-  // read shift / override / busy fields straight from data file.
-  const realRecord = therapistsData.find((tt) => tt.id === therapist.id);
-  const mergedRecord = realRecord
-    ? {
-        ...realRecord,
-        // Overlay live status fields. Spread `liveStatus` LAST so live
-        // values win over stale static defaults.
-        ...(liveStatus.exists
-          ? {
-              isHoliday: liveStatus.isHoliday ?? realRecord.isHoliday,
-              statusOverride:
-                liveStatus.statusOverride ?? realRecord.statusOverride,
-              startTime: liveStatus.startTime ?? realRecord.startTime,
-              endTime: liveStatus.endTime ?? realRecord.endTime,
-            }
-          : {}),
-        // 🆕 Round 28b49 (founder 2026-05-05) — Derive activeBooking +
-        //   busyUntil from the LIVE bookings collection, NOT the
-        //   persisted therapist doc fields. Admin's "Cancel" button
-        //   only flips bookings/{id}.status to "cancelled" — it does
-        //   NOT clear therapists/{id}.busyUntil or .activeBooking, so
-        //   the doc's fields go stale and the engine kept reporting
-        //   "Currently Busy" even after the only booking was cancelled.
-        //   `useTherapistBookings` already filters out cancelled +
-        //   completed bookings, so deriving from `liveBookings` here
-        //   means the engine self-heals on cancel without a Cloud
-        //   Function. Persisted fields ignored.
-        activeBooking: !!activeBooking,
-        busyUntil: activeBooking?.endAt ?? null,
-      }
-    : null;
-  const engineStatus = mergedRecord
-    ? calculateTherapistStatus(mergedRecord).status
-    : "resting";
+  const activeBooking = useMemo(
+    () => findActiveBooking(liveBookings),
+    [liveBookings],
+  );
+  const upcomingBooking = useMemo(
+    () => findNextBooking(liveBookings),
+    [liveBookings],
+  );
+  const nextBookingAt = useMemo(
+    () =>
+      upcomingBooking
+        ? fmtBKK(upcomingBooking.startAt, "HH:mm A", "")
+        : null,
+    [upcomingBooking],
+  );
+
+  const realRecord = useMemo(
+    () =>
+      therapist?.id
+        ? therapistsData.find((tt) => tt.id === therapist.id) ?? null
+        : null,
+    [therapist?.id],
+  );
+
+  // Merge data file + live status + live-derived activeBooking.
+  // Memoised so calculateTherapistStatus runs once per change.
+  const mergedRecord = useMemo(() => {
+    if (!realRecord) return null;
+    return {
+      ...realRecord,
+      ...(liveStatus.exists
+        ? {
+            isHoliday: liveStatus.isHoliday ?? realRecord.isHoliday,
+            statusOverride:
+              liveStatus.statusOverride ?? realRecord.statusOverride,
+            startTime: liveStatus.startTime ?? realRecord.startTime,
+            endTime: liveStatus.endTime ?? realRecord.endTime,
+          }
+        : {}),
+      // Round 28b49 — derive activeBooking/busyUntil from live
+      // bookings so admin "Cancel" self-heals without a Cloud
+      // Function. The persisted therapist doc fields are ignored.
+      activeBooking: !!activeBooking,
+      busyUntil: activeBooking?.endAt ?? null,
+    };
+  }, [realRecord, liveStatus, activeBooking]);
+
+  const engineResult = useMemo(
+    () =>
+      mergedRecord ? calculateTherapistStatus(mergedRecord) : null,
+    [mergedRecord],
+  );
+  const engineStatus = engineResult?.status ?? "resting";
 
   const livePillStatus: "online" | "busy" | "offline" =
     engineStatus === "resting" || engineStatus === "holiday"
@@ -701,54 +657,238 @@ const TherapistDetailPage: React.FC = () => {
         ? "busy"
         : "online";
 
-  // 🆕 Round 28ap — surface the next-available HH:mm for ALL states:
-  //   • busy   → end of current booking (from live data)
-  //              fallback to engine's nextAvailable (e.g. busyUntil)
-  //   • offline→ start of therapist's next shift
-  //   • online → null (already available)
-  const engineNext = mergedRecord
-    ? calculateTherapistStatus(mergedRecord).nextAvailable
-    : null;
-  const liveNextAvailable =
-    livePillStatus === "busy"
-      ? (activeBooking ? nextAvailableHHMM(liveBookings) : engineNext)
-      : livePillStatus === "offline"
-        ? (engineNext ?? realRecord?.startTime ?? null)
-        : null;
+  const liveNextAvailable = useMemo(() => {
+    const engineNext = engineResult?.nextAvailable ?? null;
+    if (livePillStatus === "busy") {
+      return activeBooking ? nextAvailableHHMM(liveBookings) : engineNext;
+    }
+    if (livePillStatus === "offline") {
+      return engineNext ?? realRecord?.startTime ?? null;
+    }
+    return null;
+  }, [
+    livePillStatus,
+    activeBooking,
+    liveBookings,
+    engineResult,
+    realRecord?.startTime,
+  ]);
 
-  // 🆕 Phase 5 — Auto-navigate to /booking/:id once all four prerequisites
-  //    (service, duration, date, time) are confirmed. Founder request
-  //    'เลือกเสร็จ ก็ไปหน้า Confirm Order' — skips the manual sticky CTA tap.
-  //    Phase 5B: triggered once from the merged ServiceDurationSheet's
-  //    Confirm button (which guarantees all four are set).
+  // Round 28s34 — `goConfirmOrder` now defers navigation; it stores
+  // the selection so a sticky Continue CTA appears, giving the
+  // guest a beat to review reviews/photos before committing money.
+  // Tapping Continue (the sticky button) navigates to /booking/:id.
   const goConfirmOrder = (
     serviceId: string,
     duration: number,
     date: string,
-    time: string
+    time: string,
   ) => {
+    if (!therapist) return;
+    setSelection({ serviceId, duration, date, time });
+  };
+
+  const handleContinueBooking = () => {
+    if (
+      !therapist ||
+      !selection.serviceId ||
+      !selection.duration ||
+      !selection.date ||
+      !selection.time
+    )
+      return;
     const params = new URLSearchParams();
-    params.set("service", serviceId);
-    params.set("duration", String(duration));
-    params.set("date", date);
-    params.set("time", time);
+    params.set("service", selection.serviceId);
+    params.set("duration", String(selection.duration));
+    params.set("date", selection.date);
+    params.set("time", selection.time);
     void navigate(`/booking/${therapist.id}?${params.toString()}`);
   };
+
+  // Round 28s34 — Memoised Bayesian rating. Previously recomputed
+  // on every parent render, even when reviews didn't change.
+  const displayRating = useMemo(
+    () =>
+      liveReviews.reviewCount > 0
+        ? formatRating(bayesianRating(liveReviews.reviews))
+        : therapist?.rating ?? "0.0",
+    [liveReviews.reviewCount, liveReviews.reviews, therapist?.rating],
+  );
+
+  // ── 404 — explicit not-found branch (was previously masked by
+  // the EMPTY_THERAPIST shell, which silently rendered a blank
+  // profile with 0 reviews for any stale /therapists/:id link). */
+  if (!therapist) {
+    return (
+      <Box
+        sx={{
+          maxWidth: 430,
+          margin: "0 auto",
+          minHeight: "100vh",
+          padding: "60px 24px",
+          textAlign: "center",
+          fontFamily: SANS,
+        }}
+      >
+        <Typography
+          sx={{
+            fontFamily: SERIF,
+            fontSize: "22px",
+            fontWeight: 600,
+            color: "#2a1a14",
+            marginBottom: "8px",
+          }}
+        >
+          {t("detail.notFound.title", "Practitioner not found")}
+        </Typography>
+        <Typography
+          sx={{
+            fontSize: "13.5px",
+            color: "rgba(60, 30, 20, 0.65)",
+            marginBottom: "20px",
+          }}
+        >
+          {t(
+            "detail.notFound.body",
+            "The profile you were looking for is unavailable. Browse our current practitioners on the home screen.",
+          )}
+        </Typography>
+        <Box
+          component="button"
+          type="button"
+          onClick={() => navigate("/")}
+          sx={{
+            padding: "10px 22px",
+            border: "1px solid rgba(184, 92, 60, 0.20)",
+            borderRadius: 999,
+            background: "#fff",
+            color: "#2a1a14",
+            fontFamily: SANS,
+            fontSize: "13px",
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          {t("detail.notFound.cta", "Back to home")}
+        </Box>
+      </Box>
+    );
+  }
+
+  const selectionReady = !!(
+    selection.serviceId &&
+    selection.duration &&
+    selection.date &&
+    selection.time
+  );
 
   return (
     <Box
       sx={{
-        // .phone — Round 28b1 Clean v3 cool-neutral
-        maxWidth: "430px",
-        margin: "0 auto",
-        background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
-        borderRadius: "28px",
-        overflow: "hidden",
-        boxShadow: "0 20px 60px rgba(15, 23, 42, 0.08)",
-        position: "relative",
+        // Round 28s34 — Phone-shell wrapper (maxWidth + borderRadius +
+        // boxShadow) dropped on the detail page so it reads as a real
+        // web app rather than a mockup on desktop. The 430px constraint
+        // moves to inner sections; outer page fills the viewport.
         minHeight: "100vh",
+        background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
+        position: "relative",
+        paddingBottom: selectionReady ? "92px" : "0",
       }}
     >
+      {/* Round 28s34 — Sticky top app bar. Shows back + truncated
+          practitioner name once the user scrolls past the photo
+          grid. Always-rendered IconButton-style back stays available
+          even when scrolled, was previously only on DetailHero. */}
+      <Box
+        sx={{
+          position: "sticky",
+          top: 0,
+          zIndex: 9,
+          backdropFilter: "blur(16px) saturate(180%)",
+          WebkitBackdropFilter: "blur(16px) saturate(180%)",
+          background: "rgba(255,255,255,0.72)",
+          borderBottom: "1px solid rgba(184, 92, 60, 0.10)",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          padding: "10px 14px",
+        }}
+      >
+        <Box
+          component="button"
+          type="button"
+          onClick={() => navigate(-1)}
+          aria-label={t("common.back", "Back")}
+          sx={{
+            width: 36,
+            height: 36,
+            borderRadius: "50%",
+            background: "rgba(184, 92, 60, 0.10)",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#2a1a14",
+            fontSize: "18px",
+            fontWeight: 700,
+            flexShrink: 0,
+          }}
+        >
+          ←
+        </Box>
+        <Box
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Typography
+            component="span"
+            sx={{
+              fontFamily: SERIF,
+              fontSize: "15px",
+              fontWeight: 600,
+              color: "#2a1a14",
+              lineHeight: 1.1,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {therapist.name}
+          </Typography>
+          {therapist.area && (
+            <Typography
+              component="span"
+              sx={{
+                fontFamily: SANS,
+                fontSize: "11px",
+                fontWeight: 500,
+                color: "rgba(60, 30, 20, 0.6)",
+                lineHeight: 1.1,
+                marginTop: "2px",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {therapist.area}
+            </Typography>
+          )}
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          maxWidth: 430,
+          margin: "0 auto",
+          background: "transparent",
+          position: "relative",
+        }}
+      >
       <DetailHero
         name={therapist.name}
         age={therapist.age}
@@ -764,17 +904,8 @@ const TherapistDetailPage: React.FC = () => {
 
       <StatsCard
         // ⭐ Round 28ak — Bayesian-adjusted rating from REAL review list.
-        //    Previous implementation used `therapist.rating × count` as
-        //    "sum" — but therapist.rating is the SEED (0 for fresh
-        //    records), so a therapist with 30 real reviews would show
-        //    1.1★ instead of their actual average. Now we feed the live
-        //    review list straight into bayesianRating() which sums the
-        //    real per-review ratings.
-        rating={
-          liveReviews.reviewCount > 0
-            ? formatRating(bayesianRating(liveReviews.reviews))
-            : therapist.rating
-        }
+        //    Round 28s34 — Moved into a `displayRating` useMemo above.
+        rating={displayRating}
         reviewCount={therapist.reviewCount}
         yearsExp={therapist.yearsExp}
         totalSessions={therapist.totalSessions}
@@ -803,24 +934,19 @@ const TherapistDetailPage: React.FC = () => {
         }
       />
 
-      {/* Phase 5 — Live availability pill driven by Firestore bookings.
-          offline = therapist marked off-shift in profile data
-          busy    = there's a booking covering 'now' (show end time)
-          online  = otherwise (free right now)
-          The 'Next available' time is the active booking's endAt, so as
-          soon as someone confirms a booking the label updates everywhere
-          via the onSnapshot subscription. */}
-      {(livePillStatus === "online" || livePillStatus === "busy") && (
-        <Box sx={{ marginTop: "4px" }}>
-          <StatusPill
-            nextBookingAt={
-              livePillStatus === "online" ? nextBookingAt : null
-            }
-            status={livePillStatus}
-            nextAvailable={liveNextAvailable}
-          />
-        </Box>
-      )}
+      {/* Round 28s34 — StatusPill always renders. Previously hidden
+          when offline, leaving guests guessing why the live signal
+          had vanished. StatusPill itself already handles the offline
+          variant (gray dot + next-shift line). */}
+      <Box sx={{ marginTop: "4px" }}>
+        <StatusPill
+          nextBookingAt={
+            livePillStatus === "online" ? nextBookingAt : null
+          }
+          status={livePillStatus}
+          nextAvailable={liveNextAvailable}
+        />
+      </Box>
 
       <PickerSection
         title={
@@ -959,6 +1085,72 @@ const TherapistDetailPage: React.FC = () => {
           },
         }}
       />
+
+      </Box>
+
+      {/* Round 28s34 — Sticky Continue CTA. Replaces the previous
+          auto-navigation from the merged ServiceDurationSheet Confirm.
+          The selection is held on this page so the guest has a beat
+          to read reviews / scroll the photo grid / look at chips
+          before tapping into the money path at /booking/:id. */}
+      {selectionReady && (
+        <Box
+          sx={{
+            position: "fixed",
+            bottom: 70,
+            left: 0,
+            right: 0,
+            display: "flex",
+            justifyContent: "center",
+            padding: "0 16px",
+            pointerEvents: "none",
+            zIndex: 10,
+          }}
+        >
+          <Box
+            sx={{
+              width: "100%",
+              maxWidth: 430,
+              pointerEvents: "auto",
+            }}
+          >
+            <Box
+              component="button"
+              type="button"
+              onClick={handleContinueBooking}
+              aria-label={t(
+                "detail.continueAria",
+                "Continue to booking with {{service}}",
+                { service: selection.serviceId ?? "" }
+              )}
+              sx={{
+                width: "100%",
+                padding: "14px 22px",
+                borderRadius: "16px",
+                border: "none",
+                cursor: "pointer",
+                background:
+                  "linear-gradient(135deg, #FE0944, #FE7A52)",
+                color: "#fff",
+                fontFamily: SANS,
+                fontWeight: 700,
+                fontSize: "15px",
+                letterSpacing: "0.005em",
+                boxShadow:
+                  "0 14px 32px rgba(254, 9, 68, 0.36), inset 0 1px 0 rgba(255,255,255,0.20)",
+                transition:
+                  "transform 0.12s ease, box-shadow 0.18s ease",
+                "&:hover": {
+                  transform: "translateY(-1px)",
+                  boxShadow: "0 18px 40px rgba(254, 9, 68, 0.42)",
+                },
+              }}
+            >
+              {t("detail.continueCta", "Continue to confirm →")}
+            </Box>
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 };
