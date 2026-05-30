@@ -1,58 +1,31 @@
 // src/components/home/HeroSection.tsx
 //
-// 🎯 Round 28s10 — Pro outcall massage hero (founder 2026-05-30).
+// 🎯 Round 28s13 — Karim-style 2-col service grid (founder 2026-05-30).
 //
-// Round 28s9 nailed the Plantum card layout but the founder noted
-// the page still didn't read as a real massage shop — copy was
-// "Chat to book" without saying WHAT you book. This round adds the
-// two missing pro-shop surfaces:
+// Founder sent a Behance "Mid Fidelity Wireframes" reference (Karim
+// agricultural shop): "เอา แบบนี้". The DNA she keyed on this time:
+//   • Plain-text greeting at the very top (no card chrome)
+//   • One promo / consultation card under the greeting
+//   • A section title with a "See all" link
+//   • 2×2 product grid — each card has an icon swatch up top, an
+//     eyebrow, the product name, a price, and an add-to-cart button
+//   • Bottom nav (already provided site-wide by MainLayout)
 //
-//   • Promo banner — "Tonight special · 10% off first booking"
-//     (CLAUDE.md §9 confirms FIRST10 is wired and lives in the
-//     real discount apply logic since Round 28r14). Bright coral
-//     gradient with a decorative gift-tag motif, matching the
-//     Plantum reference's orange promo card.
-//   • Service strip — 4 horizontally scrolling mini-cards naming
-//     the actual services + starting price + duration. Tapping
-//     a card opens that service's detail page (the "professional"
-//     route — guests see what's included before committing).
+// Translated for SunRed outcall:
+//   • Text greeting → time-aware "Good evening · Bangkok's luxury
+//     outcall — tap to chat" (whole block taps WhatsApp)
+//   • Promo card → the rotating promo bank from 28s11 stays
+//   • Section title → "Our services" + "See all →" linking to the
+//     full /services lobby
+//   • 2×2 grid → 4 services (Thai · Aroma · Gentleman's · Therapeutic)
+//     with a brand-tinted icon swatch, eyebrow tier label, service
+//     name in Fraunces, duration, price in brand red, and a [+]
+//     add-button that opens WhatsApp with the service pre-filled
+//     in the message so admin gets the booking context for free
+//   • Tapping the body of a card still routes to /services/:id
+//     for guests who want to read what's included before chatting
 //
-// The dedicated "Chat to book" red-gradient banner from 28s9 is
-// removed — both the greeting card and the promo banner already
-// route to WhatsApp, so a third call-to-chat read as redundant
-// after stacking the service strip in.
-//
-// Layout (top → bottom):
-//
-//   Cream surface
-//
-//   ● OPENING    📍 BANGKOK     🌅 BOOKING       ← status row
-//   Concierge    Sukhumvit ·    WINDOW
-//   live         Silom · Asok   Tonight
-//
-//   ┌──────────────────────────────────┐
-//   │ [SR] Good evening                │       ← greeting → WhatsApp
-//   │      Bangkok's luxury outcall —  │
-//   │      tap to chat with concierge  │
-//   └──────────────────────────────────┘
-//
-//   ┌──────────────────────────────────┐
-//   │  TONIGHT SPECIAL          🎁     │       ← promo → WhatsApp
-//   │  10% off your first booking      │         coral gradient
-//   │  Code FIRST10  applied at        │         decorative gift
-//   │  checkout                    [→] │
-//   └──────────────────────────────────┘
-//
-//   Our services
-//   ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐         ← service strip
-//   │ Thai │ │Aroma │ │Gent. │ │ B2B  │           horizontal scroll
-//   │ 60min│ │ 60min│ │ 60min│ │ 60min│           tap → /services/:id
-//   │ ฿1.2k│ │ ฿1.6k│ │ ฿2.2k│ │ ฿3.2k│
-//   └──────┘ └──────┘ └──────┘ └──────┘
-//
-//   ┌──────────────────────────────────┐
-//   │ ✈ Or message Telegram            │       ← Telegram slim
-//   └──────────────────────────────────┘
+// The 28s12 trim still applies: no status row, no Telegram card.
 
 import React from "react";
 import { Box, Typography } from "@mui/material";
@@ -60,9 +33,16 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import SpaRoundedIcon from "@mui/icons-material/SpaRounded";
+import LocalFloristRoundedIcon from "@mui/icons-material/LocalFloristRounded";
+import DiamondRoundedIcon from "@mui/icons-material/DiamondRounded";
+import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 
-import { brand, fonts, gradients } from "@/theme";
+import type { SvgIconComponent } from "@mui/icons-material";
+
+import { brand, fonts } from "@/theme";
 import { useConciergeMode } from "@/utils/conciergeMode";
 import { trackConciergeOpen } from "@/utils/analytics";
 import ReferralActiveBanner from "@/components/common/ReferralActiveBanner";
@@ -72,20 +52,68 @@ import { pickHeroPromo } from "@/data/heroPromos";
 // HowItWorks / ProfilePage already use.
 const WHATSAPP_URL = "https://wa.me/66634350987";
 
-// Service strip — short labels chosen for the hero tile, full names
-// kept in /services/:id detail. Prices and durations match
-// src/data/services.ts canonical data; if those move, update here too.
+// 4 services in the 2×2 grid. `fullName` flows into the WhatsApp
+// pre-fill so admin gets the canonical SKU name; `short` is what
+// renders inside the card chip.
 interface HeroService {
   id: string;
   short: string;
+  fullName: string;
   duration: string;
   price: string;
+  tier: "SIGNATURE" | "PREMIUM";
+  icon: SvgIconComponent;
+  /** Background colour for the icon swatch — gives each card a
+   *  distinct visual identity without needing a photo. */
+  swatch: string;
+  /** Foreground colour for the icon glyph. */
+  swatchIcon: string;
 }
 const HERO_SERVICES: HeroService[] = [
-  { id: "xSR-Thai", short: "Thai", duration: "60 min", price: "฿1,200" },
-  { id: "SR-Aroma", short: "Aroma", duration: "60 min", price: "฿1,600" },
-  { id: "SR-HJ2200", short: "Gentleman's", duration: "60 min", price: "฿2,200" },
-  { id: "SR-B2B3200", short: "Therapeutic", duration: "60 min", price: "฿3,200" },
+  {
+    id: "xSR-Thai",
+    short: "Thai Massage",
+    fullName: "Thai Massage",
+    duration: "60 min",
+    price: "฿1,200",
+    tier: "SIGNATURE",
+    icon: SpaRoundedIcon,
+    swatch: "#FFF1E5",
+    swatchIcon: "#E07A4F",
+  },
+  {
+    id: "SR-Aroma",
+    short: "Aromatherapy",
+    fullName: "Aromatherapy Massage",
+    duration: "60 min",
+    price: "฿1,600",
+    tier: "PREMIUM",
+    icon: LocalFloristRoundedIcon,
+    swatch: "#FEEDE0",
+    swatchIcon: "#FE7A52",
+  },
+  {
+    id: "SR-HJ2200",
+    short: "Gentleman's",
+    fullName: "Gentleman's Signature Therapy",
+    duration: "60 min",
+    price: "฿2,200",
+    tier: "PREMIUM",
+    icon: DiamondRoundedIcon,
+    swatch: "#FFE3E8",
+    swatchIcon: "#FE0944",
+  },
+  {
+    id: "SR-B2B3200",
+    short: "Therapeutic",
+    fullName: "SunRed Therapeutic Experience",
+    duration: "60 min",
+    price: "฿3,200",
+    tier: "PREMIUM",
+    icon: AutoAwesomeRoundedIcon,
+    swatch: "#F5E5D8",
+    swatchIcon: "#831843",
+  },
 ];
 
 /** Time-aware greeting derived from the concierge operational window. */
@@ -116,10 +144,7 @@ const HeroSection: React.FC = () => {
   const promo = pickHeroPromo(concierge.hourBKK, concierge.mode);
   const PromoIcon = promo.icon;
 
-  const handleWhatsApp = (
-    source: string,
-    msg?: string,
-  ) => {
+  const handleWhatsApp = (source: string, msg?: string) => {
     trackConciergeOpen(`whatsapp_${source}`);
     const url = msg
       ? `${WHATSAPP_URL}?text=${encodeURIComponent(msg)}`
@@ -131,6 +156,22 @@ const HeroSection: React.FC = () => {
     navigate(`/services/${encodeURIComponent(id)}`);
   };
 
+  /** Per-card "+" button: skip the detail page and open WhatsApp
+   *  with the service already named in the message so the concierge
+   *  can quote/confirm in one reply. */
+  const handleServiceBook = (
+    e: React.MouseEvent,
+    svc: HeroService,
+  ) => {
+    e.stopPropagation();
+    const msg = `Hi, I'd like to book ${svc.fullName} (${svc.duration} · ${svc.price}). When can I reserve?`;
+    handleWhatsApp(`service_${svc.id}`, msg);
+  };
+
+  const handleSeeAll = () => {
+    navigate("/services");
+  };
+
   return (
     <>
       <Box
@@ -139,25 +180,13 @@ const HeroSection: React.FC = () => {
         sx={{
           position: "relative",
           width: "100%",
-          padding: "20px 18px 24px",
-          // Soft cream→peach gradient — Plantum-style pastel base in
-          // SunRed's warm palette.
+          padding: "22px 18px 24px",
           background:
             "linear-gradient(180deg, #FFF6EF 0%, #FCEBDC 100%)",
         }}
       >
-        {/* Round 28s12 — Status row dropped (founder "ตัดออก บ้าง อัน").
-            The 3-col TONIGHT OPENING / BANGKOK / BOOKING WINDOW
-            duplicated info already in TopNav (live pill + mode glyph)
-            and the rotating promo eyebrow. Keeping only the action
-            surfaces below. */}
-
-        {/* ── Greeting card — white rounded, → WhatsApp ──────────────── */}
+        {/* ── Greeting — plain text top (Karim-style) ────────────────── */}
         <Box
-          component={motion.div}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           onClick={() => handleWhatsApp("greeting")}
           role="button"
           tabIndex={0}
@@ -172,98 +201,57 @@ const HeroSection: React.FC = () => {
             "Tap to chat with concierge"
           )}
           sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: "14px",
-            padding: "14px 16px",
-            borderRadius: "20px",
-            background: "#fff",
-            border: "1px solid rgba(184, 92, 60, 0.10)",
-            boxShadow:
-              "0 6px 20px rgba(126, 30, 46, 0.06), 0 1px 2px rgba(126, 30, 46, 0.04)",
+            marginBottom: "18px",
             cursor: "pointer",
-            marginBottom: "12px",
-            transition: "transform 0.18s ease, box-shadow 0.18s ease",
-            "&:hover": {
-              transform: "translateY(-1px)",
-              boxShadow:
-                "0 10px 28px rgba(126, 30, 46, 0.10), 0 1px 2px rgba(126, 30, 46, 0.05)",
-            },
             "&:focus-visible": {
               outline: `2px solid ${brand.red}`,
-              outlineOffset: 2,
+              outlineOffset: 4,
+              borderRadius: "8px",
             },
           }}
         >
-          <Box
+          <Typography
+            component="h2"
             sx={{
-              flexShrink: 0,
-              width: 44,
-              height: 44,
-              borderRadius: "50%",
-              background: gradients.primary,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow:
-                "0 4px 12px rgba(254, 9, 68, 0.30), inset 0 1px 0 rgba(255,255,255,0.30)",
+              fontFamily: fonts.heading,
+              fontWeight: 600,
+              fontSize: "22px",
+              color: brand.text,
+              lineHeight: 1.15,
+              marginBottom: "2px",
             }}
           >
+            {t(`home.hero.greeting.${concierge.mode}`, greeting)}
             <Box
-              component="img"
-              src="/images/logo/sunred-mark.svg"
-              alt=""
-              aria-hidden="true"
-              sx={{
-                width: 24,
-                height: 24,
-                filter: "brightness(0) invert(1)",
-              }}
-            />
-          </Box>
-
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography
-              component="p"
-              sx={{
-                fontFamily: fonts.heading,
-                fontWeight: 600,
-                fontSize: "18px",
-                color: brand.text,
-                lineHeight: 1.15,
-              }}
+              component="span"
+              sx={{ color: brand.red, fontStyle: "italic" }}
             >
-              {t(`home.hero.greeting.${concierge.mode}`, greeting)}
-            </Typography>
-            <Typography
-              component="p"
-              sx={{
-                fontFamily: fonts.body,
-                fontSize: "12.5px",
-                fontWeight: 500,
-                color: brand.textMuted,
-                marginTop: "2px",
-                lineHeight: 1.35,
-              }}
-            >
-              {t(
-                "home.hero.greetingSub",
-                "Bangkok's luxury outcall — tap to chat"
-              )}
-            </Typography>
-          </Box>
-
-          <ArrowForwardRoundedIcon
-            sx={{ fontSize: 18, color: brand.red, opacity: 0.55 }}
-          />
+              .
+            </Box>
+          </Typography>
+          <Typography
+            component="p"
+            sx={{
+              fontFamily: fonts.body,
+              fontSize: "13.5px",
+              fontWeight: 500,
+              color: brand.textMuted,
+              lineHeight: 1.4,
+            }}
+          >
+            {t(
+              "home.hero.greetingSub",
+              "Bangkok's luxury outcall — tap to chat with concierge"
+            )}
+          </Typography>
         </Box>
 
-        {/* ── Promo banner — TONIGHT SPECIAL / FIRST10 → WhatsApp ─────── */}
+        {/* ── Rotating promo banner — coral gradient, → WhatsApp ──────── */}
         <Box
           component={motion.div}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           onClick={() => handleWhatsApp(`promo_${promo.id}`, promo.waMsg)}
           role="button"
           tabIndex={0}
@@ -283,8 +271,6 @@ const HeroSection: React.FC = () => {
             gap: "14px",
             padding: "16px 18px",
             borderRadius: "20px",
-            // Coral → peach gradient — warmer than the brand-red primary,
-            // distinct from the greeting card, reads as "special offer".
             background:
               "linear-gradient(135deg, #FE7A52 0%, #FFA976 55%, #FEC9A7 100%)",
             color: "#fff",
@@ -292,7 +278,7 @@ const HeroSection: React.FC = () => {
             overflow: "hidden",
             boxShadow:
               "0 10px 28px rgba(254, 122, 82, 0.30), 0 2px 6px rgba(254, 122, 82, 0.18)",
-            marginBottom: "16px",
+            marginBottom: "22px",
             transition: "transform 0.18s ease, box-shadow 0.18s ease",
             "&:hover": {
               transform: "translateY(-1px)",
@@ -305,9 +291,6 @@ const HeroSection: React.FC = () => {
             },
           }}
         >
-          {/* Decorative icon watermark — varies per promo (gift,
-              taxi, sparkle, flight, etc.) so the rotation reads
-              visually distinct, not just text swap. */}
           <Box
             aria-hidden="true"
             sx={{
@@ -384,76 +367,110 @@ const HeroSection: React.FC = () => {
           </Box>
         </Box>
 
-        {/* ── Service strip — Plantum-style mini cards, scrollable ────── */}
+        {/* ── Section header: "Our services" + See all ──────────────── */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "12px",
+            padding: "0 2px",
+          }}
+        >
+          <Typography
+            component="h3"
+            sx={{
+              fontFamily: fonts.heading,
+              fontWeight: 600,
+              fontSize: "18px",
+              color: brand.text,
+              lineHeight: 1.1,
+            }}
+          >
+            {t("home.hero.servicesTitle", "Our services")}
+          </Typography>
+          <Box
+            component="button"
+            type="button"
+            onClick={handleSeeAll}
+            aria-label={t(
+              "home.hero.servicesSeeAllAria",
+              "See all services"
+            )}
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "2px",
+              padding: "4px 6px",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              fontFamily: fonts.body,
+              fontSize: "12.5px",
+              fontWeight: 600,
+              color: brand.red,
+              "&:hover": { opacity: 0.85 },
+              "&:focus-visible": {
+                outline: `2px solid ${brand.red}`,
+                outlineOffset: 2,
+                borderRadius: "6px",
+              },
+            }}
+          >
+            {t("home.hero.servicesSeeAll", "See all")}
+            <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
+          </Box>
+        </Box>
+
+        {/* ── 2×2 service grid ───────────────────────────────────────── */}
         <Box
           component={motion.div}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
-          sx={{ marginBottom: "14px" }}
+          transition={{ duration: 0.5, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "10px",
+          }}
         >
-          <Typography
-            component="p"
-            sx={{
-              fontFamily: fonts.body,
-              fontSize: "11px",
-              fontWeight: 800,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: brand.accent,
-              marginBottom: "10px",
-              padding: "0 4px",
-            }}
-          >
-            {t("home.hero.servicesEyebrow", "Our services")}
-          </Typography>
-
-          <Box
-            sx={{
-              display: "flex",
-              gap: "10px",
-              overflowX: "auto",
-              padding: "0 4px 4px",
-              scrollbarWidth: "none",
-              "&::-webkit-scrollbar": { display: "none" },
-              // Snap so each card lands cleanly on swipe.
-              scrollSnapType: "x mandatory",
-            }}
-          >
-            {HERO_SERVICES.map((svc, idx) => (
+          {HERO_SERVICES.map((svc) => {
+            const Icon = svc.icon;
+            return (
               <Box
                 key={svc.id}
-                component="button"
-                type="button"
                 onClick={() => handleServiceTap(svc.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleServiceTap(svc.id);
+                  }
+                }}
                 aria-label={t(
-                  "home.hero.serviceAria",
+                  "home.hero.serviceCardAria",
                   "View {{name}} details",
-                  { name: svc.short }
+                  { name: svc.fullName }
                 )}
                 sx={{
-                  flexShrink: 0,
-                  width: 116,
-                  scrollSnapAlign: "start",
+                  position: "relative",
                   display: "flex",
                   flexDirection: "column",
-                  alignItems: "flex-start",
-                  gap: "4px",
-                  padding: "14px 12px",
-                  borderRadius: "16px",
+                  padding: "12px 12px 14px",
+                  borderRadius: "18px",
                   background: "#fff",
                   border: "1px solid rgba(184, 92, 60, 0.10)",
                   boxShadow:
                     "0 4px 14px rgba(126, 30, 46, 0.05), 0 1px 2px rgba(126, 30, 46, 0.03)",
                   cursor: "pointer",
-                  textAlign: "left",
                   fontFamily: fonts.body,
                   transition:
                     "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
                   "&:hover": {
                     transform: "translateY(-2px)",
                     boxShadow:
-                      "0 8px 22px rgba(126, 30, 46, 0.10), 0 1px 2px rgba(126, 30, 46, 0.04)",
+                      "0 10px 24px rgba(126, 30, 46, 0.10), 0 1px 2px rgba(126, 30, 46, 0.04)",
                     borderColor: "rgba(254, 9, 68, 0.30)",
                   },
                   "&:focus-visible": {
@@ -462,9 +479,23 @@ const HeroSection: React.FC = () => {
                   },
                 }}
               >
-                {/* Tiny index chip in coral — matches the Plantum tile
-                    pop without an illustration asset per card. */}
+                {/* Icon swatch — tinted background block at the top */}
                 <Box
+                  sx={{
+                    width: "100%",
+                    height: 76,
+                    borderRadius: "12px",
+                    background: svc.swatch,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: "10px",
+                  }}
+                >
+                  <Icon sx={{ fontSize: 34, color: svc.swatchIcon }} />
+                </Box>
+
+                <Typography
                   component="span"
                   sx={{
                     fontSize: "9.5px",
@@ -475,8 +506,8 @@ const HeroSection: React.FC = () => {
                     marginBottom: "2px",
                   }}
                 >
-                  {idx === 0 ? "Signature" : "Premium"}
-                </Box>
+                  {svc.tier}
+                </Typography>
                 <Typography
                   component="span"
                   sx={{
@@ -485,6 +516,7 @@ const HeroSection: React.FC = () => {
                     fontWeight: 600,
                     color: brand.text,
                     lineHeight: 1.15,
+                    marginBottom: "2px",
                   }}
                 >
                   {svc.short}
@@ -495,33 +527,72 @@ const HeroSection: React.FC = () => {
                     fontSize: "10.5px",
                     fontWeight: 500,
                     color: brand.textMuted,
-                    marginTop: "2px",
+                    marginBottom: "8px",
                   }}
                 >
                   {svc.duration}
                 </Typography>
-                <Typography
-                  component="span"
+
+                {/* Price row + Add (+) button — Karim's card bottom */}
+                <Box
                   sx={{
-                    fontFamily: fonts.heading,
-                    fontSize: "15px",
-                    fontWeight: 600,
-                    color: brand.red,
-                    marginTop: "6px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginTop: "auto",
                   }}
                 >
-                  {svc.price}
-                </Typography>
+                  <Typography
+                    component="span"
+                    sx={{
+                      fontFamily: fonts.heading,
+                      fontSize: "16px",
+                      fontWeight: 700,
+                      color: brand.red,
+                    }}
+                  >
+                    {svc.price}
+                  </Typography>
+                  <Box
+                    component="button"
+                    type="button"
+                    onClick={(e) => handleServiceBook(e, svc)}
+                    aria-label={t(
+                      "home.hero.serviceBookAria",
+                      "Book {{name}} via WhatsApp",
+                      { name: svc.fullName }
+                    )}
+                    sx={{
+                      flexShrink: 0,
+                      width: 30,
+                      height: 30,
+                      borderRadius: "10px",
+                      border: "none",
+                      cursor: "pointer",
+                      background: brand.text,
+                      color: "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition:
+                        "background 0.18s ease, transform 0.12s ease",
+                      "&:hover": {
+                        background: brand.red,
+                        transform: "scale(1.05)",
+                      },
+                      "&:focus-visible": {
+                        outline: `2px solid ${brand.red}`,
+                        outlineOffset: 2,
+                      },
+                    }}
+                  >
+                    <AddRoundedIcon sx={{ fontSize: 18 }} />
+                  </Box>
+                </Box>
               </Box>
-            ))}
-          </Box>
+            );
+          })}
         </Box>
-
-        {/* Round 28s12 — Telegram secondary card dropped. Both the
-            greeting card and the rotating promo banner already route
-            to WhatsApp; a third "or message Telegram" surface read as
-            redundant. Telegram remains discoverable via TopNav menu,
-            the floating concierge chat, and HomeFooter social icons. */}
       </Box>
 
       {/* Referral banner sits below the hero — auto-hides when no
