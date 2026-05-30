@@ -15,7 +15,11 @@
 // ServiceDurationSheet so the patterns stay consistent.
 
 import React, { useEffect, useState } from "react";
-import { Drawer, Box, IconButton } from "@mui/material";
+// Round 28s38 — Swapped Drawer (bottom slide-up) for Dialog
+// (centered modal). Founder: "StatsCard กดเเล้วจะเป็น ป๊อบอับ
+// กลางจอ" — tap should open a focus modal centred on the screen,
+// not a sheet that hugs the bottom edge.
+import { Dialog, Box, IconButton } from "@mui/material";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import TherapistProfileTabs from "@/components/therapist/detail/TherapistProfileTabs";
 
@@ -45,56 +49,54 @@ const TherapistInfoSheet: React.FC<Props> = ({
   }, [open, initialTab]);
 
   return (
-    <Drawer
-      anchor="bottom"
+    <Dialog
       open={open}
       onClose={onClose}
+      fullWidth
+      maxWidth={false}
+      slotProps={{
+        backdrop: {
+          sx: {
+            background: "rgba(20, 8, 12, 0.55)",
+            backdropFilter: "blur(4px)",
+          },
+        },
+      }}
       PaperProps={{
         sx: {
-          background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
-          borderRadius: "24px 24px 0 0",
-          paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))",
+          background:
+            "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
+          borderRadius: "24px",
           maxWidth: "430px",
-          margin: "0 auto",
-          left: 0,
-          right: 0,
-          maxHeight: "92vh",
+          width: "calc(100% - 32px)",
+          margin: "16px auto",
+          maxHeight: "calc(100vh - 32px)",
           display: "flex",
           flexDirection: "column",
+          boxShadow: "0 24px 60px rgba(20, 8, 12, 0.45)",
         },
       }}
     >
-      {/* Drag handle row + close button */}
+      {/* Close button row — no drag handle on a centered dialog. */}
       <Box
         sx={{
           flexShrink: 0,
           position: "relative",
-          padding: "10px 0 6px",
+          padding: "14px 14px 6px",
           display: "flex",
-          justifyContent: "center",
+          justifyContent: "flex-end",
         }}
       >
-        <Box
-          sx={{
-            width: 40,
-            height: 4,
-            background: "rgba(60, 30, 20, 0.18)",
-            borderRadius: "2px",
-          }}
-        />
         <IconButton
           aria-label="close"
           onClick={onClose}
           sx={{
-            position: "absolute",
-            top: 6,
-            right: 12,
             width: 36,
             height: 36,
-            color: "rgba(60, 30, 20, 0.55)",
+            background: "rgba(184, 92, 60, 0.10)",
+            color: "#2a1a14",
             "&:hover": {
-              background: "rgba(60, 30, 20, 0.06)",
-              color: "#3c1e14",
+              background: "rgba(184, 92, 60, 0.18)",
             },
           }}
         >
@@ -106,7 +108,7 @@ const TherapistInfoSheet: React.FC<Props> = ({
       <Box sx={{ flex: 1, overflowY: "auto" }}>
         <TherapistProfileTabs key={tab} initialTab={tab} {...data} />
       </Box>
-    </Drawer>
+    </Dialog>
   );
 };
 
