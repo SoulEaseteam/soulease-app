@@ -182,9 +182,12 @@ export const About: React.FC<{
   galleryAltBase,
 }) => {
   const { t } = useTranslation();
-  // Round 28b4 — collapsed by default: only Row 1 visible inline. Tap
-  // the card (or the chevron) to reveal Row 2 + Row 3 + Gallery.
-  const [expanded, setExpanded] = React.useState(false);
+  // Round 28s31 (founder 2026-05-31, "ตรงเกี่ยวกับ ปรับใหม่") —
+  // Collapse removed. The card now shows ALL rows from first render
+  // so guests don't have to tap to discover height / body / language
+  // / area. The embedded gallery is also dropped here because the
+  // Round 28s30 DetailHero Airbnb grid already exposes every photo.
+  const [expanded, setExpanded] = React.useState(true);
   // Round 28b5 — embedded gallery lightbox state.
   const [openIdx, setOpenIdx] = React.useState<number | null>(null);
   // Round 28b6 — track which page the horizontal scroller is on so
@@ -261,12 +264,10 @@ export const About: React.FC<{
     }))
     .filter((r) => r.parts.length > 0);
 
-  // Round 28b5 — chevron now also indicates hidden gallery photos.
-  // Card is "expandable" when there are extra rows OR a gallery to
-  // reveal; both reveal together so the user has one tap to see
-  // "everything about this therapist".
-  const hasMoreRows = realRows.length > 1 || validImages.length > 0;
-  const visibleRows = expanded ? realRows : realRows.slice(0, 1);
+  // Round 28s31 — Card no longer collapses; all rows render at
+  // once and the embedded gallery is hidden (hero handles photos).
+  const hasMoreRows = false;
+  const visibleRows = realRows;
 
   // 🆕 Gender icon next to the italic name in the title.
   const g = (gender ?? "").toLowerCase();
@@ -426,77 +427,8 @@ export const About: React.FC<{
                 </Box>
               );
             })}
-            {/* 🆕 Round 28b5 — embedded gallery: 3-col grid 4:5
-                portrait, only renders when expanded. Tap any tile
-                to open the fullscreen lightbox below. Hidden when
-                there are no images. */}
-            {expanded && validImages.length > 0 && (
-              <Box
-                onClick={(e) => e.stopPropagation()}
-                sx={{
-                  marginTop: "10px",
-                  paddingTop: "10px",
-                  borderTop: "1px solid rgba(15, 23, 42, 0.05)",
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr",
-                  gap: "6px",
-                }}
-              >
-                {validImages.map((src, i) => (
-                  <Box
-                    key={`${src}-${i}`}
-                    role="button"
-                    aria-label={`Open ${altBase} ${i + 1}`}
-                    tabIndex={0}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpenIdx(i);
-                    }}
-                    onKeyDown={(e: React.KeyboardEvent) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setOpenIdx(i);
-                      }
-                    }}
-                    sx={{
-                      position: "relative",
-                      aspectRatio: "4 / 5",
-                      borderRadius: "10px",
-                      overflow: "hidden",
-                      cursor: "pointer",
-                      background: "#F1F3F5",
-                      border: "1px solid rgba(15, 23, 42, 0.06)",
-                      transition:
-                        "transform 0.15s ease, box-shadow 0.15s ease",
-                      "&:hover": {
-                        transform: "translateY(-1px)",
-                        boxShadow: "0 6px 18px rgba(15, 23, 42, 0.12)",
-                      },
-                      "&:focus-visible": {
-                        outline: "2px solid #FE0944",
-                        outlineOffset: 2,
-                      },
-                    }}
-                  >
-                    <Box
-                      component="img"
-                      src={thumbUrl(src)}
-                      alt={`${altBase} ${i + 1}`}
-                      loading="lazy"
-                      decoding="async"
-                      draggable={false}
-                      sx={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        display: "block",
-                      }}
-                    />
-                  </Box>
-                ))}
-              </Box>
-            )}
+            {/* Round 28s31 — Embedded gallery removed. DetailHero
+                Airbnb grid (28s30) now owns photo browsing. */}
           </>
         ) : facts.length > 0 ? (
           // Legacy chip layout — kept for any caller that hasn't migrated
