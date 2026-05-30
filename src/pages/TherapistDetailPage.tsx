@@ -48,8 +48,14 @@ import dayjs from "dayjs";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
-import ChatRoundedIcon from "@mui/icons-material/ChatRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
+
+// Round 28s25 — Quick-chat circle now uses a concierge avatar
+// (`/images/icon/admins.png`) instead of the generic chat glyph
+// so the affordance reads as "tap to chat with a real person",
+// not "tap to open a chat app". Swap the src to a real photo of
+// the concierge whenever one is provided.
+const CONCIERGE_AVATAR = "/images/icon/admins.png";
 import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
 import GroupRoundedIcon from "@mui/icons-material/GroupRounded";
 import StarsRoundedIcon from "@mui/icons-material/StarsRounded";
@@ -370,8 +376,14 @@ const TherapistDetailPage: React.FC = () => {
               </Box>
             </Box>
 
-            {/* Quick contact: chat (only WhatsApp since brand is chat-first) */}
-            <IconButton
+            {/* Round 28s25 — Quick contact: concierge avatar instead
+                of the chat glyph. Photo-style affordance reads as
+                "ping a real person", which is the brand's chat-
+                first promise. Swap the src for a real concierge
+                photo whenever one is provided. */}
+            <Box
+              component="button"
+              type="button"
               onClick={handleChatNow}
               aria-label={t(
                 "therapist.chatQuick",
@@ -379,21 +391,59 @@ const TherapistDetailPage: React.FC = () => {
                 { name: therapist.name }
               )}
               sx={{
-                background:
-                  "linear-gradient(135deg, #FE0944, #FE7A52)",
-                color: "#fff",
-                width: 46,
-                height: 46,
+                position: "relative",
+                width: 52,
+                height: 52,
+                borderRadius: "50%",
+                padding: 0,
+                border: "2px solid rgba(255,255,255,0.85)",
+                background: "#fff",
+                cursor: "pointer",
                 boxShadow:
                   "0 8px 22px rgba(254, 9, 68, 0.36), inset 0 1px 0 rgba(255,255,255,0.25)",
+                transition:
+                  "transform 0.12s ease, box-shadow 0.18s ease",
                 "&:hover": {
-                  background:
-                    "linear-gradient(135deg, #E00738, #E76E48)",
+                  transform: "scale(1.04)",
+                  boxShadow:
+                    "0 12px 30px rgba(254, 9, 68, 0.42)",
+                },
+                "&:focus-visible": {
+                  outline: `2px solid #fff`,
+                  outlineOffset: 2,
                 },
               }}
             >
-              <ChatRoundedIcon />
-            </IconButton>
+              <Box
+                component="img"
+                src={CONCIERGE_AVATAR}
+                alt=""
+                aria-hidden="true"
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  display: "block",
+                }}
+              />
+              {/* Tiny green online dot to telegraph "concierge is
+                  available right now". Sits bottom-right of the
+                  avatar like Instagram/Messenger. */}
+              <Box
+                aria-hidden="true"
+                sx={{
+                  position: "absolute",
+                  right: -2,
+                  bottom: -2,
+                  width: 14,
+                  height: 14,
+                  borderRadius: "50%",
+                  background: brand.green,
+                  border: "2px solid #fff",
+                }}
+              />
+            </Box>
           </Box>
         </Box>
       </Box>
