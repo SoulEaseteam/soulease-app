@@ -180,5 +180,15 @@
   "booking.cta.continue": "ถัดไป",
   "booking.cta.confirmAndPay": "ยืนยัน & ชำระเงิน",
   "booking.error.inappropriateNotes": "ข้อความหมายเหตุไม่เหมาะสม กรุณาแก้ไข",
-  "booking.error.submitFailed": "ไม่สามารถสร้างการจองได้ กรุณาลองอีกครั้ง"
+  "booking.error.submitFailed": "ไม่สามารถสร้างการจองได้ กรุณาลองอีกครั้ง",
+  "detail.picker.eyebrow": "เลือกบริการของคุณ",
+  "detail.picker.title": "บริการ",
+  "detail.tabs.services": "บริการ",
+  "detail.tabs.about": "เกี่ยวกับ {{name}}",
+  "detail.about.credentials": "ใบรับรอง",
+  "detail.about.specialties": "ความเชี่ยวชาญ",
+  "detail.about.languages": "ภาษา",
+  "detail.status.available": "พร้อมให้บริการ!",
+  "detail.status.busy": "กำลังให้บริการ",
+  "detail.status.offline": "ยังไม่เริ่มงาน"
 }

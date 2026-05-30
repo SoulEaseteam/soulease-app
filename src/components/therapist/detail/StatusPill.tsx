@@ -19,6 +19,7 @@
 
 import React from "react";
 import { Box, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 // 🆕 Round 28ap — BKK-anchored time, used to compute relative
 //   "in 2 hours" hint on the next-available subtitle.
 // 🆕 Round 28b15 — `prettyHHMM` adds the 12h reading "(7:30 PM)"
@@ -67,6 +68,7 @@ const VARIANTS: Record<
   {
     icon: string;
     title: string;
+    titleKey: string;
     bg: string;
     border: string;
     fg: string;
@@ -75,7 +77,11 @@ const VARIANTS: Record<
 > = {
   online: {
     icon: "✓",
+    // Round 28s61 — `title` kept as the English fallback; the
+    // rendered label now goes through t("detail.status.*") so
+    // ZH/JA/KO/TH visitors see their language.
     title: "Currently Available!",
+    titleKey: "detail.status.available",
     bg: "rgba(22, 163, 74, 0.08)",
     border: "rgba(22, 163, 74, 0.25)",
     fg: "#16a34a",
@@ -84,6 +90,7 @@ const VARIANTS: Record<
   busy: {
     icon: "⏱",
     title: "Currently Busy",
+    titleKey: "detail.status.busy",
     bg: "rgba(249, 115, 22, 0.08)",
     border: "rgba(249, 115, 22, 0.25)",
     fg: "#f97316",
@@ -92,6 +99,7 @@ const VARIANTS: Record<
   offline: {
     icon: "💤",
     title: "Off duty",
+    titleKey: "detail.status.offline",
     bg: "rgba(60, 30, 20, 0.05)",
     border: "rgba(60, 30, 20, 0.12)",
     fg: "rgba(60, 30, 20, 0.6)",
@@ -106,7 +114,9 @@ const StatusPill: React.FC<Props> = ({
   arriveLowerBoundMin = 25,
   arriveUpperBoundMin = 45,
 }) => {
+  const { t } = useTranslation();
   const v = VARIANTS[status];
+  const titleText = t(v.titleKey, v.title);
 
   // 🆕 Round 28ap — richer subtitle with relative time hints so the
   //   customer sees BOTH the wall-clock and "how long from now". All
@@ -188,7 +198,7 @@ const StatusPill: React.FC<Props> = ({
             marginBottom: "2px",
           }}
         >
-          {v.title}
+          {titleText}
         </Typography>
         <Typography
           sx={{

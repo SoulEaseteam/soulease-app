@@ -179,10 +179,8 @@
   "booking.cta.confirmAndPay": "确认并支付",
   "booking.error.inappropriateNotes": "备注包含不当内容,请修改。",
   "booking.error.submitFailed": "无法创建预约,请重试。",
-
   "service.callout.includes": "包含项目",
   "service.callout.bestFor": "适合人群",
-
   "service.callout.xSR-Thai.includes.0": "传统干压指压技法",
   "service.callout.xSR-Thai.includes.1": "拉伸与关节舒展",
   "service.callout.xSR-Thai.includes.2": "穴位按压调理",
@@ -190,7 +188,6 @@
   "service.callout.xSR-Thai.bestFor.0": "首次体验 · 日间舒缓",
   "service.callout.xSR-Thai.bestFor.1": "肩颈背部僵硬的旅客",
   "service.callout.xSR-Thai.bestFor.2": "纯养生需求",
-
   "service.callout.SR-Aroma.includes.0": "高端芳香精油(薰衣草、橙花、檀香)",
   "service.callout.SR-Aroma.includes.1": "舒缓流畅的长推手法,呼吸节奏同步",
   "service.callout.SR-Aroma.includes.2": "全身放松 · 神经系统重启",
@@ -198,7 +195,6 @@
   "service.callout.SR-Aroma.bestFor.0": "舒压 · 倒时差 · 助眠",
   "service.callout.SR-Aroma.bestFor.1": "情侣同享(可联系礼宾)",
   "service.callout.SR-Aroma.bestFor.2": "首次体验精油按摩",
-
   "service.callout.SR-HJ2200.includes.0": "完整芳香疗法按摩(60–120 分钟)",
   "service.callout.SR-HJ2200.includes.1": "针对您的紧绷部位精准舒缓",
   "service.callout.SR-HJ2200.includes.2": "以个性化收尾仪式作结",
@@ -206,7 +202,6 @@
   "service.callout.SR-HJ2200.bestFor.0": "单身男士旅客 · 深夜放松",
   "service.callout.SR-HJ2200.bestFor.1": "追求贴心舒压的客人",
   "service.callout.SR-HJ2200.bestFor.2": "长途飞行后或晚餐后舒缓",
-
   "service.callout.SR-B2B3200.includes.0": "全身精油仪式 · 持续接触手法",
   "service.callout.SR-B2B3200.includes.1": "高端芳香配方 + 温和泰式拉伸",
   "service.callout.SR-B2B3200.includes.2": "仅由专门培训的资深理疗师提供",
@@ -214,11 +209,9 @@
   "service.callout.SR-B2B3200.bestFor.0": "追求全方位感官仪式的鉴赏家",
   "service.callout.SR-B2B3200.bestFor.1": "VIP / 私密深夜旅客",
   "service.callout.SR-B2B3200.bestFor.2": "希望从绅士尊享升级的客人",
-
   "home.faq2.eyebrow": "常见问题",
   "home.faq2.titleHtml": "客人通常 <em>会问</em> 的第一件事",
   "home.faq2.lead": "我们的礼宾团队最常被问到的问题。如有未涵盖之处,礼宾全天候在线。",
-
   "home.faq2.booking.title": "预约",
   "home.faq2.booking.0.q": "如何预约?",
   "home.faq2.booking.0.a": "打开「理疗师」页面,选择心仪的理疗师,选择服务与时间后确认。礼宾将在数分钟内通过您偏好的渠道(LINE / WhatsApp / Telegram)与您确认。无需电话联系。",
@@ -230,7 +223,6 @@
   "home.faq2.booking.3.a": "理疗师出发前可免费取消。一旦她已出发,会按行程补偿计费。礼宾在收费前会清楚告知。",
   "home.faq2.booking.4.q": "10 分钟保留期是什么?",
   "home.faq2.booking.4.a": "下单后,理疗师档期会保留 10 分钟,以等待礼宾确认。若期间未收到回复,档期将释放 — 在订单成功页面点击「重新预约」即可。",
-
   "home.faq2.practitioners.title": "理疗师",
   "home.faq2.practitioners.0.q": "所有理疗师都是女性吗?",
   "home.faq2.practitioners.0.a": "是的 — 100% 泰国女性,皆为顺性别。我们仅提供经审核的女性理疗师,不包含跨性别或男性理疗师。如有其他需求,曼谷有许多其他选择。",
@@ -242,7 +234,6 @@
   "home.faq2.practitioners.3.a": "每位理疗师档案都列有语言能力。英文、泰文与基础中文较为普遍。少数能流利使用日语或韩语 — 礼宾可在预约时为您匹配语言偏好。",
   "home.faq2.practitioners.4.q": "为什么不公开年龄?",
   "home.faq2.practitioners.4.a": "我们公开理疗师的资质(进阶 / 持证等),不公开具体年龄。所有理疗师皆为已确认的成年人;不公开精确年龄是为了保护她们在公共平台上的隐私。",
-
   "home.faq2.services.title": "服务与价格",
   "home.faq2.services.0.q": "四种服务的差异是?",
   "home.faq2.services.0.a": "泰式按摩为传统干压、全程穿衣。芳香疗法为全身精油放松。绅士尊享在芳香疗法基础上加入个性化收尾仪式。SunRed 至尊体验是我们最精致的仪式 — 全身精油仪式与持续接触手法,仅由经过专门培训的资深理疗师提供。点击任一服务可查看完整内容清单。",
@@ -254,7 +245,6 @@
   "home.faq2.services.3.a": "可加项包括:高端芳香精油升级、市中心以外的车程补偿、时长延长(60→90→120 分钟)、双人体验。任何超出列示仪式之外的项目均不在我们的服务范围 — 寻求其他服务的客人,我们会礼貌地建议另寻他处。",
   "home.faq2.services.4.q": "有折扣或优惠码吗?",
   "home.faq2.services.4.a": "首次客人可享 10% 欢迎抵扣(上限 200฿,向礼宾告知「first booking」),适用于泰式与芳香按摩档位。「推荐获益」计划:朋友首次完成服务后,推荐人与朋友双方各得 200฿,同样限入门档位。Gentleman's Signature 与 Therapeutic Experience 客人请询问 VIP100(立减 100฿)或 FREETAXI(免车资)。其他渠道的优惠码视情况受理 — 预约时告知即可。",
-
   "home.faq2.areas.title": "服务区域",
   "home.faq2.areas.0.q": "可以送达哪些地区?",
   "home.faq2.areas.0.a": "仅限曼谷市区 — 素坤逸、是隆、阿索、通罗、河滨、沙吞及周边区域。目前不提供普吉、芭提雅、清迈或其他府县的服务。",
@@ -264,7 +254,6 @@
   "home.faq2.areas.2.a": "超过 25 公里需礼宾报价并收取小额可退还订金以确认。礼宾会在您确认前告知准确金额。",
   "home.faq2.areas.3.q": "只提供上门服务,没有店面吗?",
   "home.faq2.areas.3.a": "正确。SunRed 仅提供上门服务 — 您的酒店套房或私人住所。我们不设面向公众的店面,以保护客人的隐私并确保每次预约的体验一致。",
-
   "home.faq2.payment.title": "支付与隐私",
   "home.faq2.payment.0.q": "接受哪些支付方式?",
   "home.faq2.payment.0.a": "PromptPay(泰国银行即时转账)与到付现金为主要方式。信用卡支付可向礼宾申请(适用于熟客)。目前不支持加密货币。",
@@ -274,7 +263,6 @@
   "home.faq2.payment.2.a": "是的。理疗师身着日常服装抵达 — 身上没有任何「按摩服务」的标识。酒店前台只会看到一位访客;仅此而已。我们已在曼谷各大酒店运营无虞。",
   "home.faq2.payment.3.q": "你们会保留我的个人信息吗?",
   "home.faq2.payment.3.a": "我们仅保留提供服务所需的最少信息 — 姓名、联系电话、地址。我们不出售、不分享、不公开客人数据。预约历史仅客人本人与礼宾可见。",
-
   "home.faq2.common.title": "其他常见问题",
   "home.faq2.common.0.q": "服务过程是否需脱衣?",
   "home.faq2.common.0.a": "每项服务都有自己的协议 — 泰式全程穿衣;芳香疗法及以上为精油操作,遵循理疗师的标准披巾礼仪。具体细节因理疗师而异;礼宾可在预约前为您说明。",
@@ -285,5 +273,15 @@
   "home.faq2.common.3.q": "可以由第三方(礼宾、朋友)代为预约吗?",
   "home.faq2.common.3.a": "可以。只要我们能确认实际客人的联系电话,任何人都可以下单。理疗师将与现场电话联系,而非下单人。",
   "home.faq2.common.4.q": "我有未列出的偏好,可以询问吗?",
-  "home.faq2.common.4.a": "请联系礼宾。大多数偏好问题可在私聊中礼貌答复 — 列示服务范围内的内容皆可商讨;超出范围的部分我们不提供,会清楚告知。"
+  "home.faq2.common.4.a": "请联系礼宾。大多数偏好问题可在私聊中礼貌答复 — 列示服务范围内的内容皆可商讨;超出范围的部分我们不提供,会清楚告知。",
+  "detail.picker.eyebrow": "选择您的疗程",
+  "detail.picker.title": "服务",
+  "detail.tabs.services": "服务",
+  "detail.tabs.about": "关于 {{name}}",
+  "detail.about.credentials": "资质认证",
+  "detail.about.specialties": "专长",
+  "detail.about.languages": "语言",
+  "detail.status.available": "现在有空！",
+  "detail.status.busy": "正在服务中",
+  "detail.status.offline": "休息中"
 }

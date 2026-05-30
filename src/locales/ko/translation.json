@@ -178,5 +178,15 @@
   "booking.cta.continue": "다음",
   "booking.cta.confirmAndPay": "확인 및 결제",
   "booking.error.inappropriateNotes": "메모에 부적절한 내용이 포함되어 있습니다. 수정해주세요.",
-  "booking.error.submitFailed": "예약을 생성할 수 없습니다. 다시 시도해주세요."
+  "booking.error.submitFailed": "예약을 생성할 수 없습니다. 다시 시도해주세요.",
+  "detail.picker.eyebrow": "시술 선택",
+  "detail.picker.title": "서비스",
+  "detail.tabs.services": "서비스",
+  "detail.tabs.about": "{{name}} 소개",
+  "detail.about.credentials": "자격",
+  "detail.about.specialties": "전문 분야",
+  "detail.about.languages": "언어",
+  "detail.status.available": "지금 예약 가능!",
+  "detail.status.busy": "서비스 중",
+  "detail.status.offline": "근무 시간 외"
 }

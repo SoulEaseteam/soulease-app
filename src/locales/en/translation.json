@@ -178,5 +178,15 @@
   "booking.cta.continue": "Continue",
   "booking.cta.confirmAndPay": "Confirm & Pay",
   "booking.error.inappropriateNotes": "Notes contain inappropriate content. Please revise.",
-  "booking.error.submitFailed": "Could not create booking. Please try again."
+  "booking.error.submitFailed": "Could not create booking. Please try again.",
+  "detail.picker.eyebrow": "Choose your ritual",
+  "detail.picker.title": "Services",
+  "detail.tabs.services": "Services",
+  "detail.tabs.about": "About {{name}}",
+  "detail.about.credentials": "Credentials",
+  "detail.about.specialties": "Specialties",
+  "detail.about.languages": "Languages",
+  "detail.status.available": "Currently Available!",
+  "detail.status.busy": "Currently Busy",
+  "detail.status.offline": "Off duty"
 }
