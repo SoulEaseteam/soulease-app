@@ -22,6 +22,7 @@ import {
   ListItemIcon,
   ListItemText,
 } from "@mui/material";
+import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
 import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
 import FavoriteBorderRoundedIcon from "@mui/icons-material/FavoriteBorderRounded";
 import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
@@ -328,12 +329,15 @@ const DetailHero: React.FC<Props> = ({
             alignItems: "center",
           }}
         >
-          {/* Round 28s44 (founder "arrow เอา กรอบ ออก เปลี่ยน arrow
-              เป็น <") — Back arrow strips the glass-circle frame and
-              swaps the ← glyph for a chevron <. Plain white character
-              with a soft drop-shadow so it stays legible on light
-              cells of the photo grid without competing with the photo
-              for attention. The "more" menu (⋯) keeps its frame. */}
+          {/* Round 28s45 (founder feedback "ดูไม่ธรรมชาติ" on
+              28s44's frameless chevron) — Photo-viewer back button
+              pattern, Instagram / Airbnb style. Soft dark
+              translucent circle (rgba 0,0,0,0.32) so the chevron
+              reads as a button anchor, not a floating glyph; MUI
+              ArrowBackIosNewRounded icon replaces the ASCII
+              chevron so the stroke weight matches a real arrow.
+              Still no white frame — keeps the discreet, photo-
+              first feel the founder asked for in 28s44. */}
           <Box
             role="button"
             tabIndex={0}
@@ -349,27 +353,35 @@ const DetailHero: React.FC<Props> = ({
               }
             }}
             sx={{
-              width: 40,
-              height: 40,
+              width: 38,
+              height: 38,
+              borderRadius: "50%",
+              background: "rgba(20, 8, 12, 0.32)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
               color: "#fff",
-              fontFamily: SANS,
-              fontSize: "28px",
-              fontWeight: 600,
-              lineHeight: 1,
-              textShadow: "0 2px 8px rgba(0,0,0,0.55)",
               userSelect: "none",
+              transition: "background 0.18s ease",
+              "&:hover": {
+                background: "rgba(20, 8, 12, 0.46)",
+              },
               "&:focus-visible": {
                 outline: "2px solid #fff",
-                outlineOffset: 4,
-                borderRadius: "8px",
+                outlineOffset: 2,
               },
             }}
           >
-            ‹
+            <ArrowBackIosNewRoundedIcon
+              sx={{
+                fontSize: 16,
+                marginLeft: "2px",
+                filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.35))",
+              }}
+            />
           </Box>
           <Box ref={moreBtnRef}>
             <IconBtnGlass
