@@ -291,11 +291,25 @@ function buildFromReal(real: Therapist): DemoTherapist {
     realLangs = parseLanguages(real.features.language ?? "");
   }
 
-  // 🆕 Round 28ai — Credentials: ONLY render when admin has verified
-  //    them (structured `credentials` array on the therapist record).
-  //    No MAI mock fallback — empty array → UI hides the section.
-  //    Strategy B: trust badges only when real.
-  // 🆕 Round 28b3 — emoji glyphs replaced with proper MUI icons.
+  // Round 28s51 (founder "ข้อมูล จริง ของ พนักงานทั้งหมด") —
+  // Every SunRed practitioner passes the same two onboarding
+  // checks before being listed (CLAUDE.md §3: "100% Thai female
+  // practitioners ... verified"). Those two universal credentials
+  // now render by default so every profile shows the same trust
+  // baseline; admin-verified `real.credentials` entries override
+  // the defaults when present.
+  const universalCreds: DemoTherapist["creds"] = [
+    {
+      icon: <ShieldRoundedIcon />,
+      label: "Background-checked by SunRed",
+      meta: "ID + clearance verified at onboarding",
+    },
+    {
+      icon: <AutoAwesomeRoundedIcon />,
+      label: "SunRed onboarded therapist",
+      meta: "Code of conduct + service standards trained",
+    },
+  ];
   const realCreds: DemoTherapist["creds"] =
     real.credentials && real.credentials.length > 0
       ? real.credentials.map((c) => ({
@@ -312,7 +326,7 @@ function buildFromReal(real: Therapist): DemoTherapist {
           label: c.label,
           meta: c.meta,
         }))
-      : [];
+      : universalCreds;
 
   // 🆕 Round 28b3 (founder 2026-05-03) — About card moved from
   //   chip-per-fact to ROW-PER-CATEGORY. Three semantic rows:
