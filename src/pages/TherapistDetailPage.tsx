@@ -674,10 +674,10 @@ const TherapistDetailPage: React.FC = () => {
     realRecord?.startTime,
   ]);
 
-  // Round 28s34 — `goConfirmOrder` now defers navigation; it stores
-  // the selection so a sticky Continue CTA appears, giving the
-  // guest a beat to review reviews/photos before committing money.
-  // Tapping Continue (the sticky button) navigates to /booking/:id.
+  // Round 28s41 — Auto-navigate restored. The 28s34/s39 sticky +
+  // inline Reserve CTAs are gone; the merged ServiceDurationSheet's
+  // Confirm tap now flows straight to /booking/:id (Phase 5
+  // founder behaviour: "เลือกเสร็จ ก็ไปหน้า Confirm Order").
   const goConfirmOrder = (
     serviceId: string,
     duration: number,
@@ -686,22 +686,11 @@ const TherapistDetailPage: React.FC = () => {
   ) => {
     if (!therapist) return;
     setSelection({ serviceId, duration, date, time });
-  };
-
-  const handleContinueBooking = () => {
-    if (
-      !therapist ||
-      !selection.serviceId ||
-      !selection.duration ||
-      !selection.date ||
-      !selection.time
-    )
-      return;
     const params = new URLSearchParams();
-    params.set("service", selection.serviceId);
-    params.set("duration", String(selection.duration));
-    params.set("date", selection.date);
-    params.set("time", selection.time);
+    params.set("service", serviceId);
+    params.set("duration", String(duration));
+    params.set("date", date);
+    params.set("time", time);
     void navigate(`/booking/${therapist.id}?${params.toString()}`);
   };
 
@@ -854,76 +843,10 @@ const TherapistDetailPage: React.FC = () => {
         }
       />
 
-      {/* Round 28s39 — Inline Reserve CTA right after the About card,
-          named with the practitioner. Founder: "Sticky CTA เอา ไปต่อ
-          About card ทั้งชื่อ". Replaces the fixed bottom CTA from
-          28s34. Button is always visible; tapping when no service is
-          picked yet scrolls to the picker; tapping after a full
-          selection navigates to /booking/:id. */}
-      <Box
-        sx={{
-          padding: "8px 18px 4px",
-          maxWidth: 430,
-          margin: "0 auto",
-        }}
-      >
-        <Box
-          component="button"
-          type="button"
-          onClick={() => {
-            if (selectionReady) {
-              handleContinueBooking();
-            } else {
-              const picker = document.getElementById(
-                "tdp-service-picker",
-              );
-              picker?.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-              });
-            }
-          }}
-          aria-label={t(
-            "detail.reserveAria",
-            "Reserve {{name}}",
-            { name: therapist.name }
-          )}
-          sx={{
-            width: "100%",
-            padding: "14px 22px",
-            borderRadius: "16px",
-            border: "none",
-            cursor: "pointer",
-            background:
-              "linear-gradient(135deg, #FE0944, #FE7A52)",
-            color: "#fff",
-            fontFamily: SANS,
-            fontWeight: 700,
-            fontSize: "15px",
-            letterSpacing: "0.005em",
-            boxShadow:
-              "0 14px 32px rgba(254, 9, 68, 0.30), inset 0 1px 0 rgba(255,255,255,0.20)",
-            transition:
-              "transform 0.12s ease, box-shadow 0.18s ease",
-            "&:hover": {
-              transform: "translateY(-1px)",
-              boxShadow: "0 18px 40px rgba(254, 9, 68, 0.38)",
-            },
-            "&:focus-visible": {
-              outline: "2px solid #fff",
-              outlineOffset: 2,
-            },
-          }}
-        >
-          {selectionReady
-            ? t("detail.continueWith", "Continue with {{name}} →", {
-                name: therapist.name,
-              })
-            : t("detail.reserve", "Reserve {{name}} →", {
-                name: therapist.name,
-              })}
-        </Box>
-      </Box>
+      {/* Round 28s41 — Inline Reserve CTA removed (founder request).
+          The merged ServiceDurationSheet's Confirm now navigates
+          straight to /booking/:id via handleContinueBooking on the
+          last `setSelection` callback below. */}
 
       {/* Round 28s34 — StatusPill always renders. Previously hidden
           when offline, leaving guests guessing why the live signal
