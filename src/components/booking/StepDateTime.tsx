@@ -303,9 +303,15 @@ function groupSlots(slots: Slot[]) {
       continue;
     }
     const h = parseInt(s.time.split(":")[0], 10);
+    // Round 28s68 (founder "Late Evening เอาออก") — merged the old
+    //   NIGHT bucket (21:00–24:00) into EVENING so there's no separate
+    //   "Late Evening" header. Evening now spans 17:00 → midnight in
+    //   one swipe-row. The prime-time 9–11:30 PM slots are kept (just
+    //   relabelled), only the extra section heading is gone. The
+    //   `night` bucket survives for the rare pre-6am non-nextDay slot.
     if (h >= 6 && h < 12) groups.morning.push(s);
     else if (h >= 12 && h < 17) groups.afternoon.push(s);
-    else if (h >= 17 && h < 21) groups.evening.push(s);
+    else if (h >= 17) groups.evening.push(s);
     else groups.night.push(s);
   }
   return groups;
