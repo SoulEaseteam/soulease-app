@@ -196,10 +196,16 @@ const DetailHero: React.FC<Props> = ({
     <>
       <Box
         sx={{
-          // .detail-hero — verbatim aspect ratio kept so the rest of
-          // the page rhythm doesn't shift.
+          // Round 28s37 (founder "รูปพนักงานสั้นขึ้น ลดพื้นที่") —
+          // Shortened the hero from a tall 4:5 portrait (537px at
+          // 430w) to 4:3 landscape (~322px). Saves ~215px of
+          // vertical real estate — the first booking surface
+          // (StatsCard) is now visible above the fold on most
+          // phones. Bottom name + verified overlay still has room
+          // because the photo grid's gradient sits on the bigger
+          // left cell only.
           position: "relative",
-          aspectRatio: "4 / 5",
+          aspectRatio: "4 / 3",
           overflow: "hidden",
         }}
       >
