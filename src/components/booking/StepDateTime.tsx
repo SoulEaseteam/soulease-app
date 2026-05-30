@@ -466,18 +466,22 @@ const StepDateTime: React.FC<Props> = ({
                   cursor: "pointer",
                   scrollSnapAlign: "start",
                   textAlign: "center",
+                  // Round 28s65 — flat date pills: solid white +
+                  // hairline clay border at rest, no shadow. Only
+                  // the active pill carries the gradient + glow.
                   background: isActive
                     ? "linear-gradient(135deg, #FE0944, #FE7A52)"
-                    : "rgba(255, 255, 255, 0.65)",
-                  color: isActive ? "#fff" : "#3c1e14",
+                    : "#fff",
+                  color: isActive ? "#fff" : "#2a1a14",
                   border: isActive
-                    ? "none"
-                    : "1px solid rgba(0, 0, 0, 0.06)",
+                    ? "1px solid transparent"
+                    : "1px solid rgba(184, 92, 60, 0.16)",
                   boxShadow: isActive
-                    ? "0 6px 18px rgba(254, 9, 68, 0.25)"
-                    : "0 2px 8px rgba(126, 30, 46, 0.05)",
+                    ? "0 6px 16px rgba(254, 9, 68, 0.26)"
+                    : "none",
                   fontFamily: SANS,
-                  transition: "all 0.2s ease",
+                  transition:
+                    "background 0.2s ease, border-color 0.2s ease",
                   "&:focus-visible": {
                     outline: "2px solid #FE0944",
                     outlineOffset: "2px",
@@ -911,36 +915,50 @@ const StepDateTime: React.FC<Props> = ({
                             }
                           }}
                           sx={{
-                            padding: "10px 0",
-                            borderRadius: "12px",
+                            // Round 28s65 ("สอาดสบายตา เหมือนเว็บแอป")
+                            // — flat outlined chips like Calendly /
+                            // Cal.com: no rest shadow, solid white,
+                            // hairline clay border. Only the SELECTED
+                            // chip carries the brand gradient + glow.
+                            padding: "11px 0",
+                            borderRadius: "10px",
                             cursor: taken ? "not-allowed" : "pointer",
                             textAlign: "center",
                             background: taken
-                              ? "rgba(0, 0, 0, 0.04)"
+                              ? "transparent"
                               : isActive
                                 ? "linear-gradient(135deg, #FE0944, #FE7A52)"
-                                : "rgba(255, 255, 255, 0.65)",
+                                : "#fff",
                             color: taken
-                              ? "rgba(60, 30, 20, 0.32)"
+                              ? "rgba(60, 30, 20, 0.3)"
                               : isActive
                                 ? "#fff"
-                                : "#3c1e14",
+                                : "#2a1a14",
                             border: taken
-                              ? "1px dashed rgba(60, 30, 20, 0.18)"
+                              ? "1px solid rgba(60, 30, 20, 0.10)"
                               : isActive
-                                ? "none"
-                                : "1px solid rgba(0, 0, 0, 0.06)",
+                                ? "1px solid transparent"
+                                : "1px solid rgba(184, 92, 60, 0.16)",
                             fontFamily: SANS,
                             fontSize: "13.5px",
                             fontWeight: 600,
                             letterSpacing: "0.01em",
                             textDecoration: taken ? "line-through" : "none",
-                            boxShadow: taken
-                              ? "none"
-                              : isActive
-                                ? "0 4px 12px rgba(254, 9, 68, 0.25)"
-                                : "0 2px 6px rgba(126, 30, 46, 0.05)",
-                            transition: "all 0.15s ease",
+                            boxShadow: isActive
+                              ? "0 6px 16px rgba(254, 9, 68, 0.28)"
+                              : "none",
+                            transition:
+                              "background 0.15s ease, border-color 0.15s ease, transform 0.12s ease",
+                            "@media (hover: hover)": {
+                              "&:hover": taken
+                                ? {}
+                                : isActive
+                                  ? {}
+                                  : {
+                                      borderColor: "rgba(254, 9, 68, 0.4)",
+                                      background: "rgba(254, 9, 68, 0.03)",
+                                    },
+                            },
                             "&:focus-visible": {
                               outline: "2px solid #FE0944",
                               outlineOffset: "2px",
