@@ -796,91 +796,9 @@ const TherapistDetailPage: React.FC = () => {
         position: "relative",
       }}
     >
-      {/* Round 28s34 — Sticky top app bar. Shows back + truncated
-          practitioner name once the user scrolls past the photo
-          grid. Always-rendered IconButton-style back stays available
-          even when scrolled, was previously only on DetailHero. */}
-      <Box
-        sx={{
-          position: "sticky",
-          top: 0,
-          zIndex: 9,
-          backdropFilter: "blur(16px) saturate(180%)",
-          WebkitBackdropFilter: "blur(16px) saturate(180%)",
-          background: "rgba(255,255,255,0.72)",
-          borderBottom: "1px solid rgba(184, 92, 60, 0.10)",
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          padding: "10px 14px",
-        }}
-      >
-        <Box
-          component="button"
-          type="button"
-          onClick={() => navigate(-1)}
-          aria-label={t("common.back", "Back")}
-          sx={{
-            width: 36,
-            height: 36,
-            borderRadius: "50%",
-            background: "rgba(184, 92, 60, 0.10)",
-            border: "none",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#2a1a14",
-            fontSize: "18px",
-            fontWeight: 700,
-            flexShrink: 0,
-          }}
-        >
-          ←
-        </Box>
-        <Box
-          sx={{
-            flex: 1,
-            minWidth: 0,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <Typography
-            component="span"
-            sx={{
-              fontFamily: SERIF,
-              fontSize: "15px",
-              fontWeight: 600,
-              color: "#2a1a14",
-              lineHeight: 1.1,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
-            {therapist.name}
-          </Typography>
-          {therapist.area && (
-            <Typography
-              component="span"
-              sx={{
-                fontFamily: SANS,
-                fontSize: "11px",
-                fontWeight: 500,
-                color: "rgba(60, 30, 20, 0.6)",
-                lineHeight: 1.1,
-                marginTop: "2px",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {therapist.area}
-            </Typography>
-          )}
-        </Box>
-      </Box>
+      {/* Round 28s40 — Sticky top app bar removed (founder request).
+          DetailHero's own back button (top-left over the photo grid)
+          remains the only back affordance. */}
 
       <Box
         sx={{
