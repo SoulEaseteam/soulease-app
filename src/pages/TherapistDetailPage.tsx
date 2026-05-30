@@ -271,12 +271,16 @@ function buildFromReal(real: Therapist): DemoTherapist {
     ((real.servicesAvailable ?? real.services ?? [])) || [];
   const realSpecs: DemoTherapist["specs"] = serviceIds
     .map((sid) => {
+      // Round 28s54 — SERVICE_DISPLAY was trimmed to 4 SKUs in 28s34;
+      // a therapist carrying a legacy slug or unknown id would have
+      // crashed here (`display.icon` on undefined). Optional-chain +
+      // fallback so unmapped ids render a generic icon + the raw id.
       const display = SERVICE_DISPLAY[sid];
       return {
-        icon: display.icon ?? (
+        icon: display?.icon ?? (
           <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#FE0944" }} />
         ),
-        name: display.short ?? sid,
+        name: display?.short ?? sid,
         yrs: "", // empty → UI hides subtext line
       };
     })
@@ -287,10 +291,12 @@ function buildFromReal(real: Therapist): DemoTherapist {
   let realLangs: DemoTherapist["langs"];
   if (real.languageSkills && real.languageSkills.length > 0) {
     realLangs = real.languageSkills.map((l) => {
+      // Round 28s54 — optional-chain: unmapped language codes
+      // (e.g. a new ISO code) no longer crash on `d.flag`.
       const d = LANG_DISPLAY[l.code.toLowerCase()];
       return {
-        flag: d.flag ?? "🌐",
-        name: d.name ?? l.code.toUpperCase(),
+        flag: d?.flag ?? "🌐",
+        name: d?.name ?? l.code.toUpperCase(),
         level: l.level,
       };
     });
@@ -352,7 +358,11 @@ function buildFromReal(real: Therapist): DemoTherapist {
     real.languageSkills && real.languageSkills.length > 0
       ? real.languageSkills
           .map(
-            (l) => LANG_DISPLAY[l.code.toLowerCase()].name ?? l.code.toUpperCase()
+            // Round 28s54 — optional-chain so an unmapped code can't
+            // crash the whole detail page on render.
+            (l) =>
+              LANG_DISPLAY[l.code.toLowerCase()]?.name ??
+              l.code.toUpperCase(),
           )
           .join(" · ")
       : (f.language ?? "");
@@ -743,7 +753,10 @@ const TherapistDetailPage: React.FC = () => {
     time: string,
   ) => {
     if (!therapist) return;
-    setSelection({ serviceId, duration, date, time });
+    // Round 28s54 — `setSelection` removed here; the StepService
+    // onConfirm callback already sets it before calling this, so
+    // the second write was a redundant render. This fn just
+    // navigates now.
     const params = new URLSearchParams();
     params.set("service", serviceId);
     params.set("duration", String(duration));
@@ -822,12 +835,10 @@ const TherapistDetailPage: React.FC = () => {
     );
   }
 
-  const selectionReady = !!(
-    selection.serviceId &&
-    selection.duration &&
-    selection.date &&
-    selection.time
-  );
+  // Round 28s54 — `selectionReady` removed: its only consumers were
+  // the sticky + inline Reserve CTAs, both deleted in 28s41. The
+  // ServiceDurationSheet now auto-navigates on Confirm so no
+  // page-level "is the selection complete?" gate is needed.
 
   return (
     <Box
