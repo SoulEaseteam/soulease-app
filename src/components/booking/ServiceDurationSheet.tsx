@@ -32,6 +32,10 @@
 //   └──────────────────────────────────┘
 
 import React, { useEffect, useRef, useState } from "react";
+// Round 28s62 — MUI icons replace the 🎯 / 📅 emoji (CLAUDE.md §3
+// no-emoji rule; the ⭐ "Most popular" tag is the chip-star exception).
+import GpsFixedRoundedIcon from "@mui/icons-material/GpsFixedRounded";
+import EventRoundedIcon from "@mui/icons-material/EventRounded";
 // Round 28s48 — Drawer → Dialog. Founder "กดแล้ว เป็น ป๊อบอับ
 // เช่นกัน" — mirror the InfoSheet 28s38 swap so service tap
 // opens a centred modal instead of a bottom drawer.
@@ -493,9 +497,13 @@ const ServiceDurationSheet: React.FC<Props> = ({
             margin: "20px 0 10px",
             paddingLeft: "4px",
             scrollMarginTop: "20px",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "5px",
           }}
         >
-          🎯 Choose duration
+          <GpsFixedRoundedIcon sx={{ fontSize: 13, color: "#FE0944" }} />
+          Choose duration
         </Typography>
         <Box
           role="radiogroup"
@@ -668,14 +676,13 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "14px",
                   background:
                     "linear-gradient(135deg, #FE0944, #FE7A52)",
                   color: "#fff",
                   boxShadow: "0 4px 10px rgba(254, 9, 68, 0.25)",
                 }}
               >
-                📅
+                <EventRoundedIcon sx={{ fontSize: 16 }} />
               </Box>
               <Typography
                 sx={{
