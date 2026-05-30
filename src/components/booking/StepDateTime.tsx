@@ -775,11 +775,22 @@ const StepDateTime: React.FC<Props> = ({
                   >
                     {labels[key]}
                   </Typography>
+                  {/* Round 28s67 (founder "ลองทำเป็น แนวนอน สไลด์") —
+                      each daypart is now ONE horizontal swipe-row instead
+                      of a 3-col wrapping grid. Slashes the picker's
+                      vertical height (an overnight shift had ~7 rows of
+                      chips); the row scroll-snaps so chips land cleanly.
+                      Edge fade hints there's more to swipe. */}
                   <Box
                     sx={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(3, 1fr)",
+                      display: "flex",
                       gap: "8px",
+                      overflowX: "auto",
+                      paddingBottom: "2px",
+                      scrollSnapType: "x proximity",
+                      WebkitOverflowScrolling: "touch",
+                      "&::-webkit-scrollbar": { display: "none" },
+                      scrollbarWidth: "none",
                     }}
                   >
                     {group.map((s) => {
@@ -835,8 +846,15 @@ const StepDateTime: React.FC<Props> = ({
                             // Cal.com: no rest shadow, solid white,
                             // hairline clay border. Only the SELECTED
                             // chip carries the brand gradient + glow.
-                            padding: "11px 0",
-                            borderRadius: "10px",
+                            // Round 28s67 — fixed-width pill in a
+                            // horizontal swipe-row: flexShrink 0 so it
+                            // never squishes, scroll-snap so it lands
+                            // cleanly, minWidth keeps a tidy rhythm.
+                            flexShrink: 0,
+                            scrollSnapAlign: "start",
+                            minWidth: "92px",
+                            padding: "11px 16px",
+                            borderRadius: "12px",
                             cursor: taken ? "not-allowed" : "pointer",
                             textAlign: "center",
                             background: taken
@@ -858,6 +876,7 @@ const StepDateTime: React.FC<Props> = ({
                             fontSize: "13.5px",
                             fontWeight: 600,
                             letterSpacing: "0.01em",
+                            whiteSpace: "nowrap",
                             textDecoration: taken ? "line-through" : "none",
                             boxShadow: isActive
                               ? "0 6px 16px rgba(254, 9, 68, 0.28)"
