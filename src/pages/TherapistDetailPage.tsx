@@ -84,6 +84,13 @@ import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 import therapistsData from "@/data/therapists";
 import type { Therapist } from "@/types/therapist";
 import { enhanceImage } from "@/utils/cloudinary";
+// Round 28s53 — real GPS distance. The DetailHero "Allow location"
+// prompt now triggers an actual geolocation request and the
+// resolved coordinates produce a haversine distance to the
+// practitioner's standby point.
+import { useUserLocation } from "@/hooks/useUserLocation";
+import { haversineKm } from "@/utils/taxiFare";
+import { formatDistanceEta } from "@/utils/formatDistanceEta";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -642,6 +649,35 @@ const TherapistDetailPage: React.FC = () => {
     [therapist?.id],
   );
 
+  // Round 28s53 — Real GPS distance. autoStart:false so we never
+  // prompt without a user gesture; the DetailHero "Allow location"
+  // chip calls `requestLocation()` on tap. Once a position resolves,
+  // haversine to the practitioner's standby coordinates produces the
+  // distance label (privacy: distance only, never the area name).
+  const {
+    location: userLocation,
+    request: requestLocation,
+    status: geoStatus,
+  } = useUserLocation({ autoStart: false });
+
+  const distanceLabel = useMemo(() => {
+    if (!userLocation || !realRecord) return null;
+    const lat =
+      realRecord.lat ?? realRecord.homeLocation?.lat ?? null;
+    const lng =
+      realRecord.lng ?? realRecord.homeLocation?.lng ?? null;
+    if (lat == null || lng == null) return null;
+    const km = haversineKm(
+      userLocation.lat,
+      userLocation.lng,
+      lat,
+      lng,
+    );
+    // ETA estimate: city driving ~1.45× haversine at ~22 km/h.
+    const etaMin = Math.round((km * 1.45) / 22 * 60);
+    return formatDistanceEta(km, etaMin);
+  }, [userLocation, realRecord]);
+
   // Merge data file + live status + live-derived activeBooking.
   // Memoised so calculateTherapistStatus runs once per change.
   const mergedRecord = useMemo(() => {
@@ -823,7 +859,13 @@ const TherapistDetailPage: React.FC = () => {
         name={therapist.name}
         age={therapist.age}
         area={therapist.area}
-        distance={therapist.distance}
+        // Round 28s53 — real GPS distance label (null until the
+        // guest grants location). Tapping the "Allow location"
+        // chip fires requestLocation; geoStatus drives the
+        // pending/denied prompt copy inside DetailHero.
+        distanceLabel={distanceLabel}
+        onRequestLocation={requestLocation}
+        geoStatus={geoStatus}
         // 🆕 Round 28aq — pass full 3-state status from the real engine
         //   so the hero dot/label reads "Online" (green) / "Busy" (orange)
         //   / "Offline" (gray) consistently with the StatusPill below.

@@ -75,6 +75,14 @@ interface Props {
   /** Round 28s52 — Optional working hours shown in the info overlay
    *  next to the distance row. e.g. "19:00 – 05:00 (overnight)". */
   workingHours?: string | null;
+  /** Round 28s53 — Tapping the "Allow location" chip fires this to
+   *  request a real GPS position. Once it resolves, the parent
+   *  recomputes `distanceLabel`. */
+  onRequestLocation?: () => void;
+  /** Round 28s53 — Geolocation status drives the chip copy:
+   *  idle/prompt → "Allow location", "prompt" while pending →
+   *  "Locating…", "denied" → "Location off". */
+  geoStatus?: "idle" | "prompt" | "ready" | "denied" | "unsupported";
 }
 
 const STATUS_COLORS: Record<AvailabilityStatus, { dot: string; label: string }> = {
@@ -98,6 +106,8 @@ const DetailHero: React.FC<Props> = ({
   images = [],
   photoBg,
   workingHours,
+  onRequestLocation,
+  geoStatus = "idle",
 }) => {
   // 🆕 Round 28b33 — Prefer the new prop. Fall back to the legacy
   //   string for callers that haven't migrated yet.
@@ -496,20 +506,60 @@ const DetailHero: React.FC<Props> = ({
                 to "Allow location" prompt when GPS hasn't resolved yet
                 so the customer knows the field exists + how to enable
                 it. Privacy: still no area name, distance only. */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              {/* 🆕 Round 28b33 — Single source of truth: prefer the
-                  unified `distanceLabel` (formatted via formatDistanceEta).
-                  Falls back to legacy `distance` string. The "Allow
-                  location" prompt only renders when BOTH are empty. */}
+            {/* Round 28s53 — Real GPS distance. When resolved, show
+                "4 min • 1.2 km". When not yet granted, the chip is
+                tappable and fires onRequestLocation; copy reflects
+                geoStatus (Allow location / Locating… / Location off). */}
+            <Box
+              role={
+                resolvedLabel?.trim() && resolvedLabel !== "—"
+                  ? undefined
+                  : "button"
+              }
+              tabIndex={
+                resolvedLabel?.trim() && resolvedLabel !== "—"
+                  ? undefined
+                  : 0
+              }
+              onClick={(e) => {
+                if (resolvedLabel?.trim() && resolvedLabel !== "—") return;
+                if (geoStatus === "denied") return;
+                e.stopPropagation();
+                onRequestLocation?.();
+              }}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter" && e.key !== " ") return;
+                if (resolvedLabel?.trim() && resolvedLabel !== "—") return;
+                if (geoStatus === "denied") return;
+                e.preventDefault();
+                e.stopPropagation();
+                onRequestLocation?.();
+              }}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                cursor:
+                  resolvedLabel?.trim() && resolvedLabel !== "—"
+                    ? "default"
+                    : geoStatus === "denied"
+                      ? "default"
+                      : "pointer",
+              }}
+            >
               {resolvedLabel?.trim() && resolvedLabel !== "—" ? (
                 <>
                   <LocationOnRoundedIcon sx={{ fontSize: 14 }} />
-                  {resolvedLabel ?? "—"}
+                  {resolvedLabel}
                 </>
               ) : (
                 <>
                   <NearMeRoundedIcon sx={{ fontSize: 14 }} />
-                  Allow location
+                  {geoStatus === "prompt"
+                    ? "Locating…"
+                    : geoStatus === "denied"
+                      ? "Location off"
+                      : "Allow location"}
                 </>
               )}
             </Box>
