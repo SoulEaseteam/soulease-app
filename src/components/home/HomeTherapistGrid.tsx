@@ -374,68 +374,42 @@ const HomeTherapistGrid: React.FC = () => {
           Our Therapists
         </Typography>
 
-        {!loading && therapists.length > 0 && (
+        {!loading && therapists.length > 0 && availableNow > 0 && (
+          // Round 28s18 — Was a saturated green pill + an italic clay
+          // "On standby · Bangkok Tonight" line that re-stated the same
+          // thing. Founder: "ตรงไหน ดู ขัดตา เอา ออก". Green pill was
+          // the only non-cream/coral/red colour on the home — collapsed
+          // to a plain inline status with a single small dot and a
+          // muted body text. Concierge headline dropped (redundant).
           <Box
             sx={{
-              display: "flex",
+              display: "inline-flex",
               alignItems: "center",
-              gap: "10px",
-              flexWrap: "wrap",
+              gap: "8px",
             }}
           >
-            {availableNow > 0 && (
-              <Box
-                sx={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "3px 10px 3px 8px",
-                  borderRadius: 999,
-                  background: "rgba(22, 163, 74, 0.10)",
-                  border: "1px solid rgba(22, 163, 74, 0.20)",
-                }}
-              >
-                <Box
-                  component="span"
-                  sx={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: "50%",
-                    background: "#16a34a",
-                    boxShadow: "0 0 0 3px rgba(22,163,74,0.18)",
-                    animation: "homeGridBlink 1.4s ease-in-out infinite",
-                    "@keyframes homeGridBlink": {
-                      "0%, 100%": { opacity: 1 },
-                      "50%": { opacity: 0.5 },
-                    },
-                  }}
-                />
-                <Box
-                  component="span"
-                  sx={{
-                    fontFamily: fonts.body,
-                    fontSize: "11.5px",
-                    fontWeight: 700,
-                    color: "#15803d",
-                    letterSpacing: "-0.005em",
-                  }}
-                >
-                  {availableNow} on standby
-                </Box>
-              </Box>
-            )}
+            <Box
+              component="span"
+              sx={{
+                width: 7,
+                height: 7,
+                borderRadius: "50%",
+                background: brand.green,
+                boxShadow: `0 0 0 3px ${brand.green}22`,
+                flexShrink: 0,
+              }}
+            />
             <Typography
               component="span"
               sx={{
-                fontFamily: fonts.heading,
+                fontFamily: fonts.body,
                 fontSize: "12.5px",
-                fontStyle: "italic",
-                fontWeight: 500,
-                color: brand.accent,
-                lineHeight: 1.3,
+                fontWeight: 600,
+                color: brand.textMuted,
+                letterSpacing: "0.005em",
               }}
             >
-              {concierge.gridHeadline}
+              {availableNow} practitioners on standby
             </Typography>
           </Box>
         )}
