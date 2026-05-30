@@ -344,18 +344,12 @@ const ProfileTab: React.FC<{
             <Box
               key={c.title}
               sx={{
+                // Round 28s46 ("เอากรอบ ออก") — Frame removed; row
+                // reads as plain text alongside the icon, not a card.
                 display: "flex",
                 alignItems: "center",
-                gap: "10px",
-                padding: "10px 12px",
-                borderRadius: "12px",
-                background: "rgba(255, 255, 255, 0.7)",
-                border: "1px solid rgba(0, 0, 0, 0.04)",
-                transition: "transform 0.15s ease, box-shadow 0.15s ease",
-                "&:hover": {
-                  transform: "translateY(-1px)",
-                  boxShadow: "0 4px 12px rgba(126, 30, 46, 0.08)",
-                },
+                gap: "12px",
+                padding: "6px 4px",
               }}
             >
               <Box sx={{ fontSize: "18px", flexShrink: 0 }}>{c.icon}</Box>
@@ -402,12 +396,10 @@ const ProfileTab: React.FC<{
             <Box
               key={s.name}
               sx={{
+                // Round 28s46 — Frame removed from Specialties tile.
                 display: "flex",
                 gap: "10px",
-                padding: "10px 12px",
-                borderRadius: "12px",
-                background: "rgba(255, 255, 255, 0.7)",
-                border: "1px solid rgba(0, 0, 0, 0.04)",
+                padding: "6px 4px",
               }}
             >
               <Box sx={{ fontSize: "20px", flexShrink: 0 }}>{s.icon}</Box>
@@ -454,17 +446,14 @@ const ProfileTab: React.FC<{
               <Box
                 key={l.name}
                 sx={{
+                  // Round 28s46 — Frame removed from language pill.
+                  // The flag glyph already anchors the row; "NATIVE"
+                  // is still surfaced via brand-red text colour on
+                  // its level label below.
                   display: "flex",
                   alignItems: "center",
-                  gap: "6px",
-                  padding: "8px 12px",
-                  borderRadius: "999px",
-                  background: isNative
-                    ? "linear-gradient(135deg, rgba(254, 9, 68, 0.12), rgba(254, 122, 82, 0.12))"
-                    : "rgba(255, 255, 255, 0.7)",
-                  border: isNative
-                    ? "1px solid rgba(254, 9, 68, 0.3)"
-                    : "1px solid rgba(0, 0, 0, 0.06)",
+                  gap: "8px",
+                  padding: "4px 0",
                 }}
               >
                 <Box sx={{ fontSize: "14px" }}>{l.flag}</Box>
