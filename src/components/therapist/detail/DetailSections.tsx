@@ -321,17 +321,13 @@ export const About: React.FC<{
           }
         }}
         sx={{
-          // Round 28s32 (founder "ปรับให้สวยสบายตาขึ้น") — softer
-          // card: brand-tinted border, looser padding, lower-key
-          // shadow. Hover/focus styles dropped along with the
-          // collapse (28s31).
+          // Round 28s52 (founder "เปลี่ยน ให้เหมือน Credentials")
+          // — Card chrome removed. Rows live directly on the page
+          // surface like the Credentials / Specialties /
+          // Languages sections below; the divider lines between
+          // rows are enough visual structure.
           marginTop: "14px",
-          padding: "16px 18px",
-          borderRadius: "20px",
-          background: "#FFFFFF",
-          border: "1px solid rgba(184, 92, 60, 0.10)",
-          boxShadow:
-            "0 1px 2px rgba(126, 30, 46, 0.04), 0 6px 18px rgba(126, 30, 46, 0.06)",
+          padding: "0 4px",
           display: "flex",
           flexDirection: "column",
           userSelect: "none",

@@ -32,6 +32,7 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 // 🆕 Round 28az — replace 📍 emoji with MUI icon (founder rule: icons only).
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import NearMeRoundedIcon from "@mui/icons-material/NearMeRounded";
+import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
@@ -71,6 +72,9 @@ interface Props {
   images?: string[];
   /** Fallback CSS background when `images` is empty (gradient placeholder). */
   photoBg: string;
+  /** Round 28s52 — Optional working hours shown in the info overlay
+   *  next to the distance row. e.g. "19:00 – 05:00 (overnight)". */
+  workingHours?: string | null;
 }
 
 const STATUS_COLORS: Record<AvailabilityStatus, { dot: string; label: string }> = {
@@ -93,6 +97,7 @@ const DetailHero: React.FC<Props> = ({
   online,
   images = [],
   photoBg,
+  workingHours,
 }) => {
   // 🆕 Round 28b33 — Prefer the new prop. Fall back to the legacy
   //   string for callers that haven't migrated yet.
@@ -538,6 +543,22 @@ const DetailHero: React.FC<Props> = ({
                 );
               })()}
             </Box>
+            {/* Round 28s52 — Working hours inline next to Allow
+                location + status. Founder asked for this signal
+                to live under the name overlay instead of in its
+                own About-tab section. */}
+            {workingHours && (
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                <ScheduleRoundedIcon sx={{ fontSize: 14 }} />
+                {workingHours}
+              </Box>
+            )}
           </Box>
         </Box>
       </Box>

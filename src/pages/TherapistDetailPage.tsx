@@ -830,6 +830,18 @@ const TherapistDetailPage: React.FC = () => {
         online={livePillStatus}
         photoBg={therapist.photoBg}
         images={therapist.images}
+        // Round 28s52 — Working hours surface in the info overlay
+        // (next to Allow location + status) instead of the About
+        // tab section.
+        workingHours={
+          realRecord?.startTime && realRecord?.endTime
+            ? `${realRecord.startTime}–${realRecord.endTime}${
+                realRecord.startTime > realRecord.endTime
+                  ? " (overnight)"
+                  : ""
+              }`
+            : null
+        }
       />
 
       {/* Round 28s36 — StatsCard restored (founder "StatsCard เอา
@@ -1183,47 +1195,10 @@ const TherapistDetailPage: React.FC = () => {
               </Box>
             )}
 
-            {/* Working hours — derived from real therapist record */}
-            {realRecord?.startTime && realRecord?.endTime && (
-              <Box>
-                <Typography
-                  component="p"
-                  sx={{
-                    fontFamily: SANS,
-                    fontSize: "11px",
-                    fontWeight: 800,
-                    letterSpacing: "0.14em",
-                    textTransform: "uppercase",
-                    color: "#b85c3c",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("detail.about.hours", "Working hours")}
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: SANS,
-                    fontSize: "13.5px",
-                    fontWeight: 600,
-                    color: "#2a1a14",
-                  }}
-                >
-                  {realRecord.startTime} – {realRecord.endTime}
-                  {realRecord.startTime > realRecord.endTime && (
-                    <Box
-                      component="span"
-                      sx={{
-                        fontWeight: 500,
-                        color: "rgba(60, 30, 20, 0.55)",
-                        marginLeft: "6px",
-                      }}
-                    >
-                      (overnight)
-                    </Box>
-                  )}
-                </Typography>
-              </Box>
-            )}
+            {/* Round 28s52 — Working hours moved to the DetailHero
+                info overlay (next to Allow location + status pill)
+                per founder ask. No longer rendered as an About-tab
+                section. */}
           </Box>
         </Box>
       )}
