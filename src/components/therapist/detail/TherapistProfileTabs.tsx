@@ -834,6 +834,71 @@ const LoyaltyTab: React.FC<{
         },
       ];
 
+  // Round 28s49 — Empty state. The synthetic fallback rendered
+  // "0%", "0 in 100 customers", "1.6 avg sessions / customer",
+  // "First-time 100%", "Within 7/30/90 days 0%" — a wall of
+  // demoralising zeros when a fresh therapist has no bookings
+  // yet. Founder sent the screenshot without text; the read is
+  // "this looks like the system is broken". Show a single quiet
+  // placeholder instead until at least one real customer is
+  // measurable.
+  const hasAnyData =
+    useReal || rebookPct > 0 || totalSessions > 0;
+  if (!hasAnyData) {
+    return (
+      <Box
+        sx={{
+          padding: "32px 24px",
+          textAlign: "center",
+          color: "rgba(60, 30, 20, 0.62)",
+          fontFamily: SANS,
+        }}
+      >
+        <Box
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            background:
+              "linear-gradient(135deg, rgba(254, 9, 68, 0.08), rgba(254, 122, 82, 0.08))",
+            marginBottom: "14px",
+            fontSize: "22px",
+            color: "#FE0944",
+          }}
+        >
+          ✦
+        </Box>
+        <Typography
+          sx={{
+            fontFamily: SERIF,
+            fontSize: "17px",
+            fontWeight: 600,
+            color: "#2a1a14",
+            marginBottom: "6px",
+          }}
+        >
+          Loyalty data coming soon
+        </Typography>
+        <Typography
+          sx={{
+            fontFamily: SANS,
+            fontSize: "12.5px",
+            color: "rgba(60, 30, 20, 0.6)",
+            lineHeight: 1.5,
+            maxWidth: 280,
+            margin: "0 auto",
+          }}
+        >
+          Rebook rate, customer mix, and timing breakdowns appear
+          here once this practitioner has completed bookings.
+        </Typography>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       {/* Headline + sub-stat */}
