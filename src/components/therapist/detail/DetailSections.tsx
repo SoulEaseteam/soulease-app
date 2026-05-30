@@ -321,28 +321,20 @@ export const About: React.FC<{
           }
         }}
         sx={{
-          marginTop: "10px",
-          padding: "10px 12px",
-          borderRadius: "16px",
+          // Round 28s32 (founder "ปรับให้สวยสบายตาขึ้น") — softer
+          // card: brand-tinted border, looser padding, lower-key
+          // shadow. Hover/focus styles dropped along with the
+          // collapse (28s31).
+          marginTop: "14px",
+          padding: "16px 18px",
+          borderRadius: "20px",
           background: "#FFFFFF",
-          border: "1px solid rgba(15, 23, 42, 0.06)",
+          border: "1px solid rgba(184, 92, 60, 0.10)",
           boxShadow:
-            "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.05)",
+            "0 1px 2px rgba(126, 30, 46, 0.04), 0 6px 18px rgba(126, 30, 46, 0.06)",
           display: "flex",
           flexDirection: "column",
-          cursor: hasMoreRows ? "pointer" : "default",
           userSelect: "none",
-          transition: "box-shadow 0.2s ease",
-          "&:hover": hasMoreRows
-            ? {
-                boxShadow:
-                  "0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 18px rgba(15, 23, 42, 0.08)",
-              }
-            : {},
-          "&:focus-visible": {
-            outline: "2px solid #FE0944",
-            outlineOffset: 2,
-          },
         }}
       >
         {realRows.length > 0 ? (
@@ -353,18 +345,23 @@ export const About: React.FC<{
                 <Box
                   key={i}
                   sx={{
+                    // Round 28s32 — bigger row breathing room, soft
+                    // clay-tinted divider, slightly larger icon
+                    // chip + name text for easier scan.
                     display: "flex",
                     alignItems: "center",
-                    gap: "10px",
-                    padding: "8px 0",
+                    gap: "12px",
+                    padding: "10px 0",
                     borderTop:
-                      i === 0 ? "none" : "1px solid rgba(15, 23, 42, 0.05)",
+                      i === 0
+                        ? "none"
+                        : "1px solid rgba(184, 92, 60, 0.10)",
                   }}
                 >
                   <Box
                     sx={{
-                      width: 28,
-                      height: 28,
+                      width: 32,
+                      height: 32,
                       borderRadius: "50%",
                       background: tone.iconBg,
                       color: tone.iconColor,
@@ -372,7 +369,7 @@ export const About: React.FC<{
                       alignItems: "center",
                       justifyContent: "center",
                       flexShrink: 0,
-                      "& svg": { fontSize: "16px" },
+                      "& svg": { fontSize: "17px" },
                     }}
                   >
                     {r.icon}
@@ -382,11 +379,11 @@ export const About: React.FC<{
                       flex: 1,
                       minWidth: 0,
                       fontFamily: SANS,
-                      fontSize: "12.5px",
+                      fontSize: "13px",
                       fontWeight: 600,
-                      color: "rgba(60, 30, 20, 0.88)",
-                      letterSpacing: "0.01em",
-                      lineHeight: 1.4,
+                      color: "#2a1a14",
+                      letterSpacing: "0.005em",
+                      lineHeight: 1.45,
                     }}
                   >
                     {r.parts.map((part, idx) => (
@@ -395,8 +392,8 @@ export const About: React.FC<{
                           <Box
                             component="span"
                             sx={{
-                              color: "rgba(60, 30, 20, 0.30)",
-                              margin: "0 6px",
+                              color: "rgba(184, 92, 60, 0.45)",
+                              margin: "0 8px",
                               fontWeight: 400,
                             }}
                           >
@@ -407,23 +404,6 @@ export const About: React.FC<{
                       </React.Fragment>
                     ))}
                   </Box>
-                  {/* Chevron only on the last visible row when there's
-                      more to reveal — keeps the layout single-row when
-                      collapsed. */}
-                  {i === visibleRows.length - 1 && hasMoreRows && (
-                    <KeyboardArrowDownRoundedIcon
-                      aria-hidden
-                      sx={{
-                        fontSize: 20,
-                        color: "rgba(60, 30, 20, 0.45)",
-                        transition: "transform 0.2s ease",
-                        transform: expanded
-                          ? "rotate(180deg)"
-                          : "rotate(0deg)",
-                        flexShrink: 0,
-                      }}
-                    />
-                  )}
                 </Box>
               );
             })}
