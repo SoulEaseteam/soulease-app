@@ -953,6 +953,264 @@ const TherapistDetailPage: React.FC = () => {
               })
             }
           />
+
+          {/* Round 28s50 — Inline profile detail sections under the
+              About card so guests don't have to dig into the
+              centred InfoSheet to see Credentials / Specialties /
+              Languages. Each section is hidden when its source
+              array is empty. */}
+          <Box
+            sx={{
+              maxWidth: 430,
+              margin: "0 auto",
+              padding: "10px 20px 24px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "22px",
+            }}
+          >
+            {therapist.creds.length > 0 && (
+              <Box>
+                <Typography
+                  component="p"
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: "11px",
+                    fontWeight: 800,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: "#b85c3c",
+                    marginBottom: "10px",
+                  }}
+                >
+                  {t("detail.about.credentials", "Credentials")}
+                </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                  }}
+                >
+                  {therapist.creds.map((c) => (
+                    <Box
+                      key={c.label}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                      }}
+                    >
+                      <Box sx={{ fontSize: "20px", color: "#2a1a14" }}>
+                        {c.icon}
+                      </Box>
+                      <Box>
+                        <Typography
+                          sx={{
+                            fontFamily: SANS,
+                            fontSize: "13px",
+                            fontWeight: 700,
+                            color: "#2a1a14",
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {c.label}
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontFamily: SANS,
+                            fontSize: "11.5px",
+                            color: "rgba(60, 30, 20, 0.6)",
+                            marginTop: "2px",
+                          }}
+                        >
+                          {c.meta}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            {therapist.specs.length > 0 && (
+              <Box>
+                <Typography
+                  component="p"
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: "11px",
+                    fontWeight: 800,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: "#b85c3c",
+                    marginBottom: "10px",
+                  }}
+                >
+                  {t("detail.about.specialties", "Specialties")}
+                </Typography>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "10px",
+                  }}
+                >
+                  {therapist.specs.map((s) => (
+                    <Box
+                      key={s.name}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                      }}
+                    >
+                      <Box sx={{ fontSize: "20px", flexShrink: 0 }}>
+                        {s.icon}
+                      </Box>
+                      <Box>
+                        <Typography
+                          sx={{
+                            fontFamily: SERIF,
+                            fontSize: "14px",
+                            fontWeight: 600,
+                            color: "#2a1a14",
+                            lineHeight: 1.15,
+                          }}
+                        >
+                          {s.name}
+                        </Typography>
+                        {s.yrs && (
+                          <Typography
+                            sx={{
+                              fontFamily: SANS,
+                              fontSize: "11px",
+                              color: "rgba(60, 30, 20, 0.55)",
+                              marginTop: "1px",
+                            }}
+                          >
+                            {s.yrs}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            {therapist.langs.length > 0 && (
+              <Box>
+                <Typography
+                  component="p"
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: "11px",
+                    fontWeight: 800,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: "#b85c3c",
+                    marginBottom: "10px",
+                  }}
+                >
+                  {t("detail.about.languages", "Languages")}
+                </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "6px 18px",
+                  }}
+                >
+                  {therapist.langs.map((l) => {
+                    const isNative = l.level
+                      .toUpperCase()
+                      .includes("NATIVE");
+                    return (
+                      <Box
+                        key={l.name}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <Box sx={{ fontSize: "14px" }}>{l.flag}</Box>
+                        <Typography
+                          component="span"
+                          sx={{
+                            fontFamily: SANS,
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            color: "#2a1a14",
+                          }}
+                        >
+                          {l.name}
+                        </Typography>
+                        <Typography
+                          component="span"
+                          sx={{
+                            fontFamily: SANS,
+                            fontSize: "9.5px",
+                            fontWeight: 800,
+                            letterSpacing: "0.08em",
+                            color: isNative
+                              ? "#FE0944"
+                              : "rgba(60, 30, 20, 0.55)",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          {l.level}
+                        </Typography>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </Box>
+            )}
+
+            {/* Working hours — derived from real therapist record */}
+            {realRecord?.startTime && realRecord?.endTime && (
+              <Box>
+                <Typography
+                  component="p"
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: "11px",
+                    fontWeight: 800,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: "#b85c3c",
+                    marginBottom: "8px",
+                  }}
+                >
+                  {t("detail.about.hours", "Working hours")}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: "13.5px",
+                    fontWeight: 600,
+                    color: "#2a1a14",
+                  }}
+                >
+                  {realRecord.startTime} – {realRecord.endTime}
+                  {realRecord.startTime > realRecord.endTime && (
+                    <Box
+                      component="span"
+                      sx={{
+                        fontWeight: 500,
+                        color: "rgba(60, 30, 20, 0.55)",
+                        marginLeft: "6px",
+                      }}
+                    >
+                      (overnight)
+                    </Box>
+                  )}
+                </Typography>
+              </Box>
+            )}
+          </Box>
         </Box>
       )}
 
