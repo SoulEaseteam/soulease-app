@@ -69,6 +69,13 @@ interface HeroService {
   /** Foreground colour for the icon glyph. */
   swatchIcon: string;
 }
+// Round 28s15 — Swatch backgrounds unified to a single warm cream so
+// the four cards read as one set rather than four palettes. Only the
+// icon glyph colour varies — and it ladders by tier from warm tan
+// (Signature Thai) through coral and brand red up to burgundy
+// (top-tier Therapeutic). The palette progression doubles as a
+// price ladder cue.
+const SWATCH_BG = "#FFF1E5";
 const HERO_SERVICES: HeroService[] = [
   {
     id: "xSR-Thai",
@@ -78,7 +85,7 @@ const HERO_SERVICES: HeroService[] = [
     price: "฿1,200",
     tier: "SIGNATURE",
     icon: SpaRoundedIcon,
-    swatch: "#FFF1E5",
+    swatch: SWATCH_BG,
     swatchIcon: "#E07A4F",
   },
   {
@@ -89,7 +96,7 @@ const HERO_SERVICES: HeroService[] = [
     price: "฿1,600",
     tier: "PREMIUM",
     icon: LocalFloristRoundedIcon,
-    swatch: "#FEEDE0",
+    swatch: SWATCH_BG,
     swatchIcon: "#FE7A52",
   },
   {
@@ -100,7 +107,7 @@ const HERO_SERVICES: HeroService[] = [
     price: "฿2,200",
     tier: "PREMIUM",
     icon: DiamondRoundedIcon,
-    swatch: "#FFE3E8",
+    swatch: SWATCH_BG,
     swatchIcon: "#FE0944",
   },
   {
@@ -111,7 +118,7 @@ const HERO_SERVICES: HeroService[] = [
     price: "฿3,200",
     tier: "PREMIUM",
     icon: AutoAwesomeRoundedIcon,
-    swatch: "#F5E5D8",
+    swatch: SWATCH_BG,
     swatchIcon: "#831843",
   },
 ];
@@ -201,7 +208,7 @@ const HeroSection: React.FC = () => {
             "Tap to chat with concierge"
           )}
           sx={{
-            marginBottom: "18px",
+            marginBottom: "20px",
             cursor: "pointer",
             "&:focus-visible": {
               outline: `2px solid ${brand.red}`,
@@ -213,21 +220,20 @@ const HeroSection: React.FC = () => {
           <Typography
             component="h2"
             sx={{
+              // Round 28s15 — Drop the dangling red italic period
+              // (it read like a typo on small screens). Plain serif
+              // headline lets the sub-line tagline carry the
+              // identity cue.
               fontFamily: fonts.heading,
               fontWeight: 600,
-              fontSize: "22px",
+              fontSize: "23px",
               color: brand.text,
               lineHeight: 1.15,
-              marginBottom: "2px",
+              letterSpacing: "-0.01em",
+              marginBottom: "4px",
             }}
           >
             {t(`home.hero.greeting.${concierge.mode}`, greeting)}
-            <Box
-              component="span"
-              sx={{ color: brand.red, fontStyle: "italic" }}
-            >
-              .
-            </Box>
           </Typography>
           <Typography
             component="p"
@@ -278,7 +284,7 @@ const HeroSection: React.FC = () => {
             overflow: "hidden",
             boxShadow:
               "0 10px 28px rgba(254, 122, 82, 0.30), 0 2px 6px rgba(254, 122, 82, 0.18)",
-            marginBottom: "22px",
+            marginBottom: "20px",
             transition: "transform 0.18s ease, box-shadow 0.18s ease",
             "&:hover": {
               transform: "translateY(-1px)",
@@ -373,7 +379,7 @@ const HeroSection: React.FC = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: "12px",
+            marginBottom: "14px",
             padding: "0 2px",
           }}
         >
@@ -517,15 +523,20 @@ const HeroSection: React.FC = () => {
                 >
                   {svc.tier}
                 </Typography>
+                {/* Round 28s15 — Service name promoted to be the
+                    dominant text in the card (was 15px, now 16.5px).
+                    Price stepped down to 15px so the name reads
+                    first, price second — the brand-red colour still
+                    gives it pop. */}
                 <Typography
                   component="span"
                   sx={{
                     fontFamily: fonts.heading,
-                    fontSize: "15px",
+                    fontSize: "16.5px",
                     fontWeight: 600,
                     color: brand.text,
                     lineHeight: 1.15,
-                    marginBottom: "2px",
+                    marginBottom: "3px",
                   }}
                 >
                   {svc.short}
@@ -536,7 +547,7 @@ const HeroSection: React.FC = () => {
                     fontSize: "10.5px",
                     fontWeight: 500,
                     color: brand.textMuted,
-                    marginBottom: "8px",
+                    marginBottom: "10px",
                   }}
                 >
                   {svc.duration}
@@ -555,13 +566,18 @@ const HeroSection: React.FC = () => {
                     component="span"
                     sx={{
                       fontFamily: fonts.heading,
-                      fontSize: "16px",
+                      fontSize: "15px",
                       fontWeight: 700,
                       color: brand.red,
                     }}
                   >
                     {svc.price}
                   </Typography>
+                  {/* Round 28s15 — [+] button switched from dark slate
+                      (#2a1a14) to the brand red gradient. Reads as
+                      THE action button, not just a visual stop, and
+                      tracks with the rest of the brand-red CTAs
+                      (greeting, promo, see-all link). */}
                   <Box
                     component="button"
                     type="button"
@@ -573,21 +589,25 @@ const HeroSection: React.FC = () => {
                     )}
                     sx={{
                       flexShrink: 0,
-                      width: 30,
-                      height: 30,
-                      borderRadius: "10px",
+                      width: 32,
+                      height: 32,
+                      borderRadius: "11px",
                       border: "none",
                       cursor: "pointer",
-                      background: brand.text,
+                      background:
+                        "linear-gradient(135deg, #FE0944, #FE7A52)",
                       color: "#fff",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      boxShadow:
+                        "0 4px 10px rgba(254, 9, 68, 0.28), inset 0 1px 0 rgba(255,255,255,0.25)",
                       transition:
-                        "background 0.18s ease, transform 0.12s ease",
+                        "transform 0.12s ease, box-shadow 0.18s ease",
                       "&:hover": {
-                        background: brand.red,
-                        transform: "scale(1.05)",
+                        transform: "scale(1.06)",
+                        boxShadow:
+                          "0 6px 14px rgba(254, 9, 68, 0.36), inset 0 1px 0 rgba(255,255,255,0.30)",
                       },
                       "&:focus-visible": {
                         outline: `2px solid ${brand.red}`,
