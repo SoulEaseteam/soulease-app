@@ -225,9 +225,12 @@ const DetailHero: React.FC<Props> = ({
             "0 14px 34px rgba(126, 30, 46, 0.16), 0 2px 6px rgba(126, 30, 46, 0.08)",
         }}
       >
-        {/* 🆕 28s30 — Airbnb-style 5-cell grid replaces the single
-            bg image. Each cell tap opens fullscreen at its index.
-            Round 28s56 — gap tightened to 3px (cleaner hairline). */}
+        {/* 🆕 28s30 — Airbnb-style 5-cell grid. Each cell tap opens
+            fullscreen at its index.
+            Round 28s59 — match the founder's resort reference: wider
+            white gaps (7px) + per-cell rounded corners so the grid
+            reads as 5 distinct framed photos, not one sliced image.
+            Inner padding gives the gaps room to show as white. */}
         <Box
           sx={{
             position: "absolute",
@@ -235,8 +238,9 @@ const DetailHero: React.FC<Props> = ({
             display: "grid",
             gridTemplateColumns: "2fr 1fr 1fr",
             gridTemplateRows: "1fr 1fr",
-            gap: "3px",
-            background: photoBg,
+            gap: "7px",
+            padding: "7px",
+            background: "#fff",
           }}
         >
           {previewCells.map((src, idx) => {
@@ -259,9 +263,13 @@ const DetailHero: React.FC<Props> = ({
                     : {}),
                   background: src
                     ? `center / cover no-repeat url("${src}")`
-                    : "rgba(255,255,255,0.06)",
+                    : "rgba(184, 92, 60, 0.08)",
                   cursor: images.length > 0 ? "zoom-in" : "default",
                   overflow: "hidden",
+                  // Round 28s59 — per-cell rounding. Big-left gets a
+                  // larger radius; the small cells a tighter one, like
+                  // the resort reference's framed thumbnails.
+                  borderRadius: isBig ? "14px" : "10px",
                   // Round 28s56 — subtle zoom + brighten on hover so the
                   // grid feels interactive (desktop / hover-capable).
                   transition: "transform 0.4s ease, filter 0.3s ease",
@@ -293,59 +301,47 @@ const DetailHero: React.FC<Props> = ({
                   <Box
                     aria-hidden="true"
                     sx={{
-                      // Round 28s56 — softer crimson gradient scrim
-                      // (was flat 0.62 black) + brand-red ring around
-                      // the "+N" so it reads as an inviting CTA, not a
-                      // dimmed-out dead cell.
+                      // Round 28s59 — matches the founder's resort
+                      // reference: dim scrim, "+N" in plain white
+                      // above a solid brand-red "ดูทั้งหมด" pill.
                       position: "absolute",
                       inset: 0,
-                      background:
-                        "linear-gradient(135deg, rgba(20,8,12,0.55), rgba(94,10,24,0.62))",
+                      background: "rgba(20, 8, 12, 0.58)",
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
                       justifyContent: "center",
+                      gap: "8px",
                       color: "#fff",
                       fontFamily: SANS,
-                      fontWeight: 700,
-                      letterSpacing: "0.01em",
-                      backdropFilter: "blur(3px)",
-                      WebkitBackdropFilter: "blur(3px)",
+                      backdropFilter: "blur(2px)",
+                      WebkitBackdropFilter: "blur(2px)",
                     }}
                   >
                     <Box
+                      component="span"
                       sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: 56,
-                        height: 56,
-                        borderRadius: "50%",
-                        background: "rgba(255,255,255,0.12)",
-                        border: "1.5px solid rgba(255,255,255,0.5)",
+                        fontFamily: SERIF,
+                        fontSize: "30px",
+                        fontWeight: 600,
+                        lineHeight: 1,
+                        textShadow: "0 2px 6px rgba(0,0,0,0.45)",
                       }}
                     >
-                      <Box
-                        component="span"
-                        sx={{
-                          fontFamily: SERIF,
-                          fontSize: "22px",
-                          fontWeight: 600,
-                          lineHeight: 1,
-                        }}
-                      >
-                        +{remaining}
-                      </Box>
+                      +{remaining}
                     </Box>
                     <Box
                       component="span"
                       sx={{
-                        fontSize: "10.5px",
-                        fontWeight: 700,
-                        marginTop: "8px",
-                        letterSpacing: "0.06em",
-                        textShadow: "0 1px 3px rgba(0,0,0,0.4)",
+                        padding: "5px 14px",
+                        borderRadius: "999px",
+                        background:
+                          "linear-gradient(135deg, #FE0944, #FE7A52)",
+                        fontSize: "12px",
+                        fontWeight: 800,
+                        letterSpacing: "0.04em",
+                        boxShadow:
+                          "0 4px 12px rgba(254, 9, 68, 0.40), inset 0 1px 0 rgba(255,255,255,0.25)",
                       }}
                     >
                       ดูทั้งหมด
