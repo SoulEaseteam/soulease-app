@@ -1,78 +1,89 @@
 // src/components/home/HeroSection.tsx
 //
-// 🎯 Round 28s8 — Conversion-first hero (founder 2026-05-30).
+// 🎯 Round 28s9 — Plantum-style card hero (founder 2026-05-30).
 //
-// Three luxury-aesthetic iterations (28s3 pure-type, 28s5 Aman
-// photo, 28s7 Shanghai 静) did not feel right to the founder. She
-// re-scoped the hero brief tonight to "ปิดดีลไวไว — conversion
-// first". This rewrite drops luxury chatter entirely and optimises
-// for the behaviour the funnel data already proves wins:
+// Founder sent a Plantum app screenshot as reference: "เอาแค่ตรง
+// hero". The Plantum DNA she keyed on:
+//   • Soft pastel background — not a hard brand-color gradient
+//   • Three-column status row at the very top (live data, scannable)
+//   • Friendly greeting card with avatar + sub-line
+//   • One bright promo banner — the primary action, gradient, with
+//     a decorative motif so it pops above the calmer cards
 //
-//   • 13 concierge taps (WhatsApp + Telegram + LINE) outscored
-//     6 booking-flow starts in the last 7 days. Guests prefer to
-//     ASK a human before self-serving the form.
-//   • In-flow conversion is already 67% — when guests commit to
-//     the form they finish; nothing to fix there.
-//   • The blocker is COMMITMENT, not completion. The hero now
-//     leads with one large primary action (chat) and one secondary
-//     (Telegram), with a clear time promise + price anchor so a
-//     guest can decide in one screen.
+// Keeps the 28s8 conversion-first intent (chat is the action) but
+// uses the Plantum layout language instead of a single red-gradient
+// monolith. Multiple cards on a cream surface read friendlier and
+// give the eye distinct rest points — useful for tired late-night
+// guests skimming on a phone.
 //
-// Composition:
+// Structure:
 //
-//   ┌────────────────────────────────┐
-//   │  SunRed              ● PRIME   │
-//   │                                │
-//   │  Practitioner at               │  ← Fraunces serif, white
-//   │  your door — tonight.          │
-//   │                                │
-//   │  Concierge live · arrives      │  ← time promise, body white
-//   │  within 40 minutes.            │
-//   │                                │
-//   │  ╔════════════════════════════╗│
-//   │  ║  💬  Chat — WhatsApp       ║│  ← PRIMARY CTA, white on red
-//   │  ║      Reply in 2 min         ║│
-//   │  ╚════════════════════════════╝│
-//   │                                │
-//   │  ┌────────────────────────────┐│
-//   │  │  ✈  Telegram               ││  ← Secondary, outlined
-//   │  └────────────────────────────┘│
-//   │                                │
-//   │  ↓ or browse practitioners ↓   │  ← tiny pointer
-//   │  From ฿1,200 · 60 min · 24/7   │  ← micro trust line
-//   └────────────────────────────────┘
+//   Soft cream gradient bg
 //
-// Background: brand red→coral gradient. No photo, no Chinese
-// characters, no negative-space contemplation. The hero asks the
-// guest to act, not to feel.
+//   ● PRIME HOURS    ▲ Bangkok          🌙       ← status row
+//   Concierge live   Sukhumvit · Silom  Tonight
 //
-// Channels reuse the canonical CONTACT URLs already used by
-// HomeFooter, AdminFloatingChat, HowItWorks, and ProfilePage so
-// updates remain a one-place edit. Both CTAs fire
-// `trackConciergeOpen` so the funnel analytics keep counting.
+//   ┌────────────────────────────────────┐
+//   │ [SR]  Good evening                 │       ← greeting card
+//   │       Concierge online · tap to chat│
+//   └────────────────────────────────────┘
+//
+//   ┌────────────────────────────────────┐
+//   │ Chat to book                  [→]  │       ← promo banner
+//   │ Reply in 2 min · WhatsApp          │       brand red→coral gradient
+//   └────────────────────────────────────┘
+//
+//   ┌────────────────────────────────────┐
+//   │ ✈ Telegram                          │      ← secondary, slim
+//   └────────────────────────────────────┘
+//
+// Both the greeting card and the promo banner tap into WhatsApp —
+// guests reading either as the primary affordance still end up in
+// the same chat, which the funnel data shows wins.
 
 import React from "react";
-import { Box, Typography, Button } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import TelegramIcon from "@mui/icons-material/Telegram";
-import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
 
 import { brand, fonts, gradients } from "@/theme";
 import { useConciergeMode } from "@/utils/conciergeMode";
 import { trackConciergeOpen } from "@/utils/analytics";
+import ConciergeModeIcon from "@/components/common/ConciergeModeIcon";
 import ReferralActiveBanner from "@/components/common/ReferralActiveBanner";
 
-// Canonical concierge channel URLs — see HomeFooter.tsx,
-// AdminFloatingChat.tsx, HowItWorks.tsx for the same constants.
+// Canonical channel URLs (HomeFooter / AdminFloatingChat / HowItWorks /
+// ProfilePage use the same constants).
 const WHATSAPP_URL = "https://wa.me/66634350987";
 const TELEGRAM_URL = "https://t.me/SunRedvip_bkk";
+
+/** Time-aware greeting derived from the concierge operational window.
+ *  Strings are kept short — Plantum-style greeting cards lean on the
+ *  greeting itself being the visual hook. */
+function greetingFor(mode: string): string {
+  switch (mode) {
+    case "prime":
+      return "Good night";
+    case "evening":
+      return "Good evening";
+    case "day":
+      return "Good afternoon";
+    case "off":
+    default:
+      return "Good morning";
+  }
+}
 
 const HeroSection: React.FC = () => {
   const { t } = useTranslation();
   const concierge = useConciergeMode();
+
+  const greeting = greetingFor(concierge.mode);
 
   const handleWhatsApp = () => {
     trackConciergeOpen("whatsapp");
@@ -92,243 +103,415 @@ const HeroSection: React.FC = () => {
         sx={{
           position: "relative",
           width: "100%",
-          padding: "20px 22px 28px",
-          // Brand-red gradient — primary identity, no photo to distract
-          // from the two action buttons below.
-          background: gradients.primary,
-          color: "#fff",
+          padding: "20px 18px 24px",
+          // Soft cream→peach gradient — Plantum's pastel base, swapped
+          // to SunRed's warm palette. Cards read crisp on top of it.
+          background:
+            "linear-gradient(180deg, #FFF6EF 0%, #FCEBDC 100%)",
         }}
       >
-        {/* ── Top row: brand mark + live mode pill ───────────────────── */}
+        {/* ── Status row — three columns, no card chrome ───────────── */}
         <Box
           sx={{
-            display: "flex",
+            display: "grid",
+            gridTemplateColumns: "1fr auto 1fr",
             alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "32px",
+            gap: "10px",
+            marginBottom: "18px",
+            padding: "0 4px",
           }}
         >
-          <Typography
-            component="h1"
-            sx={{
-              fontFamily: fonts.heading,
-              fontWeight: 500,
-              fontSize: "21px",
-              letterSpacing: "0.04em",
-              color: "#fff",
-              lineHeight: 1,
-            }}
-          >
-            SunRed
-          </Typography>
-
-          <Box
-            role="status"
-            aria-live="polite"
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "5px 11px",
-              borderRadius: 99,
-              background: "rgba(255,255,255,0.18)",
-              border: "1px solid rgba(255,255,255,0.32)",
-              backdropFilter: "blur(8px)",
-              WebkitBackdropFilter: "blur(8px)",
-              fontFamily: fonts.body,
-              fontSize: "10.5px",
-              fontWeight: 700,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "#fff",
-            }}
-          >
-            <Box
-              component="span"
+          {/* LEFT — live mode (e.g. "PRIME HOURS / Concierge live") */}
+          <Box>
+            <Typography
+              component="p"
               sx={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: "#fff",
-                boxShadow: "0 0 0 3px rgba(255,255,255,0.35)",
-              }}
-            />
-            {concierge.pillLabel}
-          </Box>
-        </Box>
-
-        {/* ── Headline + time promise ────────────────────────────────── */}
-        <Box
-          component={motion.div}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <Typography
-            component="p"
-            sx={{
-              fontFamily: fonts.heading,
-              fontWeight: 400,
-              fontSize: "clamp(30px, 9vw, 36px)",
-              lineHeight: 1.08,
-              letterSpacing: "-0.015em",
-              color: "#fff",
-              marginBottom: "12px",
-            }}
-          >
-            {t(
-              "home.hero.title",
-              "Practitioner at your door — tonight."
-            )}
-          </Typography>
-
-          <Typography
-            component="p"
-            sx={{
-              fontFamily: fonts.body,
-              fontSize: "14px",
-              fontWeight: 500,
-              lineHeight: 1.5,
-              color: "rgba(255,255,255,0.92)",
-              marginBottom: "22px",
-            }}
-          >
-            {t(
-              "home.hero.promise",
-              "Concierge live · arrives within 40 minutes."
-            )}
-          </Typography>
-        </Box>
-
-        {/* ── Primary CTA: WhatsApp ──────────────────────────────────── */}
-        <Button
-          fullWidth
-          onClick={handleWhatsApp}
-          aria-label={t("home.hero.ctaWhatsApp", "Chat to book via WhatsApp")}
-          startIcon={<WhatsAppIcon sx={{ fontSize: "22px !important" }} />}
-          sx={{
-            // Default MUI Button row layout — startIcon sits left of
-            // the content. The inner Box stacks title + subtitle.
-            padding: "14px 20px",
-            borderRadius: "16px",
-            background: "#fff",
-            color: brand.red,
-            justifyContent: "flex-start",
-            fontFamily: fonts.body,
-            fontWeight: 700,
-            fontSize: "16px",
-            letterSpacing: "-0.005em",
-            textTransform: "none",
-            boxShadow:
-              "0 12px 32px rgba(20, 5, 10, 0.18), 0 2px 6px rgba(20, 5, 10, 0.10)",
-            marginBottom: "10px",
-            "&:hover": {
-              background: "#fff",
-              boxShadow:
-                "0 14px 38px rgba(20, 5, 10, 0.22), 0 3px 8px rgba(20, 5, 10, 0.14)",
-              transform: "translateY(-1px)",
-            },
-            // startIcon override — keep icon left of stacked text
-            "& .MuiButton-startIcon": {
-              marginRight: "10px",
-              marginLeft: 0,
-            },
-            transition: "transform 0.18s ease, box-shadow 0.18s ease",
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-start",
-              lineHeight: 1.1,
-            }}
-          >
-            <Box component="span" sx={{ fontSize: "16px", fontWeight: 700 }}>
-              {t("home.hero.ctaWhatsAppTitle", "Chat — WhatsApp")}
-            </Box>
-            <Box
-              component="span"
-              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                fontFamily: fonts.body,
                 fontSize: "11px",
+                fontWeight: 800,
+                letterSpacing: "0.10em",
+                textTransform: "uppercase",
+                color: brand.text,
+                lineHeight: 1.1,
+              }}
+            >
+              <Box
+                component="span"
+                sx={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: "50%",
+                  background: brand.green,
+                  boxShadow: `0 0 0 3px ${brand.green}33`,
+                }}
+              />
+              {concierge.pillLabel}
+            </Typography>
+            <Typography
+              component="p"
+              sx={{
+                fontFamily: fonts.body,
+                fontSize: "10.5px",
                 fontWeight: 500,
                 color: brand.textMuted,
                 marginTop: "2px",
-                letterSpacing: "0.01em",
               }}
             >
-              {t("home.hero.ctaWhatsAppSub", "Reply in 2 minutes")}
-            </Box>
+              {t("home.hero.statusLive", "Concierge live")}
+            </Typography>
           </Box>
-        </Button>
 
-        {/* ── Secondary CTA: Telegram ───────────────────────────────── */}
-        <Button
-          fullWidth
-          onClick={handleTelegram}
-          aria-label={t("home.hero.ctaTelegram", "Open Telegram channel")}
-          startIcon={<TelegramIcon sx={{ fontSize: "20px !important" }} />}
+          {/* CENTER — service area */}
+          <Box sx={{ textAlign: "center" }}>
+            <Typography
+              component="p"
+              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                fontFamily: fonts.body,
+                fontSize: "11px",
+                fontWeight: 800,
+                letterSpacing: "0.10em",
+                textTransform: "uppercase",
+                color: brand.text,
+                lineHeight: 1.1,
+              }}
+            >
+              <PlaceRoundedIcon
+                sx={{ fontSize: 13, color: brand.red }}
+              />
+              Bangkok
+            </Typography>
+            <Typography
+              component="p"
+              sx={{
+                fontFamily: fonts.body,
+                fontSize: "10.5px",
+                fontWeight: 500,
+                color: brand.textMuted,
+                marginTop: "2px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {t("home.hero.areas", "Sukhumvit · Silom · Asok")}
+            </Typography>
+          </Box>
+
+          {/* RIGHT — time-of-day glyph + window label */}
+          <Box sx={{ textAlign: "right" }}>
+            <Box
+              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: "4px",
+              }}
+            >
+              <ConciergeModeIcon
+                mode={concierge.mode}
+                sx={{ fontSize: 16, color: brand.red }}
+              />
+              <Typography
+                component="span"
+                sx={{
+                  fontFamily: fonts.body,
+                  fontSize: "11px",
+                  fontWeight: 800,
+                  letterSpacing: "0.10em",
+                  textTransform: "uppercase",
+                  color: brand.text,
+                  lineHeight: 1.1,
+                }}
+              >
+                {concierge.promoEyebrow.split("·").pop()?.trim() ??
+                  concierge.promoEyebrow}
+              </Typography>
+            </Box>
+            <Typography
+              component="p"
+              sx={{
+                fontFamily: fonts.body,
+                fontSize: "10.5px",
+                fontWeight: 500,
+                color: brand.textMuted,
+                marginTop: "2px",
+              }}
+            >
+              {t("home.hero.tonightLabel", "Tonight")}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* ── Greeting card — white rounded, soft shadow ─────────────── */}
+        <Box
+          component={motion.div}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          onClick={handleWhatsApp}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              handleWhatsApp();
+            }
+          }}
+          aria-label={t(
+            "home.hero.greetingAria",
+            "Tap to chat with concierge"
+          )}
           sx={{
-            padding: "11px 20px",
-            borderRadius: "16px",
-            background: "rgba(255,255,255,0.10)",
-            border: "1px solid rgba(255,255,255,0.40)",
-            color: "#fff",
-            fontFamily: fonts.body,
-            fontWeight: 600,
-            fontSize: "14.5px",
-            textTransform: "none",
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-            marginBottom: "20px",
+            display: "flex",
+            alignItems: "center",
+            gap: "14px",
+            padding: "14px 16px",
+            borderRadius: "20px",
+            background: "#fff",
+            border: "1px solid rgba(184, 92, 60, 0.10)",
+            boxShadow:
+              "0 6px 20px rgba(126, 30, 46, 0.06), 0 1px 2px rgba(126, 30, 46, 0.04)",
+            cursor: "pointer",
+            marginBottom: "12px",
+            transition: "transform 0.18s ease, box-shadow 0.18s ease",
             "&:hover": {
-              background: "rgba(255,255,255,0.18)",
-              border: "1px solid rgba(255,255,255,0.55)",
+              transform: "translateY(-1px)",
+              boxShadow:
+                "0 10px 28px rgba(126, 30, 46, 0.10), 0 1px 2px rgba(126, 30, 46, 0.05)",
+            },
+            "&:focus-visible": {
+              outline: `2px solid ${brand.red}`,
+              outlineOffset: 2,
             },
           }}
         >
-          {t("home.hero.ctaTelegramLabel", "Telegram")}
-        </Button>
+          {/* Avatar — SunRed brand mark */}
+          <Box
+            sx={{
+              flexShrink: 0,
+              width: 44,
+              height: 44,
+              borderRadius: "50%",
+              background: gradients.primary,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow:
+                "0 4px 12px rgba(254, 9, 68, 0.30), inset 0 1px 0 rgba(255,255,255,0.30)",
+            }}
+          >
+            <Box
+              component="img"
+              src="/images/logo/sunred-mark.svg"
+              alt=""
+              aria-hidden="true"
+              sx={{
+                width: 24,
+                height: 24,
+                filter: "brightness(0) invert(1)",
+              }}
+            />
+          </Box>
 
-        {/* ── Browse hint + micro trust line ─────────────────────────── */}
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography
+              component="p"
+              sx={{
+                fontFamily: fonts.heading,
+                fontWeight: 600,
+                fontSize: "18px",
+                color: brand.text,
+                lineHeight: 1.15,
+              }}
+            >
+              {t(`home.hero.greeting.${concierge.mode}`, greeting)}
+            </Typography>
+            <Typography
+              component="p"
+              sx={{
+                fontFamily: fonts.body,
+                fontSize: "12.5px",
+                fontWeight: 500,
+                color: brand.textMuted,
+                marginTop: "2px",
+              }}
+            >
+              {t("home.hero.greetingSub", "Tap here to chat with concierge")}
+            </Typography>
+          </Box>
+
+          <ArrowForwardRoundedIcon
+            sx={{ fontSize: 18, color: brand.red, opacity: 0.55 }}
+          />
+        </Box>
+
+        {/* ── Promo banner — primary CTA, brand red gradient ─────────── */}
         <Box
+          component={motion.div}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+          onClick={handleWhatsApp}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              handleWhatsApp();
+            }
+          }}
+          aria-label={t(
+            "home.hero.promoAria",
+            "Chat to book via WhatsApp"
+          )}
           sx={{
-            textAlign: "center",
-            fontFamily: fonts.body,
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            gap: "14px",
+            padding: "18px 20px",
+            borderRadius: "20px",
+            background: gradients.primary,
+            color: "#fff",
+            cursor: "pointer",
+            overflow: "hidden",
+            boxShadow:
+              "0 12px 32px rgba(254, 9, 68, 0.28), 0 2px 6px rgba(254, 9, 68, 0.18)",
+            marginBottom: "10px",
+            transition: "transform 0.18s ease, box-shadow 0.18s ease",
+            "&:hover": {
+              transform: "translateY(-1px)",
+              boxShadow:
+                "0 16px 40px rgba(254, 9, 68, 0.34), 0 3px 8px rgba(254, 9, 68, 0.22)",
+            },
+            "&:focus-visible": {
+              outline: `2px solid #fff`,
+              outlineOffset: 2,
+            },
           }}
         >
-          <Typography
-            component="p"
+          {/* Decorative WhatsApp glyph fading in from the right edge —
+              Plantum-style playful motif without illustration files. */}
+          <Box
+            aria-hidden="true"
             sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "4px",
-              fontSize: "12px",
-              fontWeight: 600,
-              color: "rgba(255,255,255,0.85)",
-              letterSpacing: "0.02em",
-              marginBottom: "8px",
+              position: "absolute",
+              right: -12,
+              top: "50%",
+              transform: "translateY(-50%) rotate(-12deg)",
+              fontSize: 132,
+              lineHeight: 1,
+              color: "rgba(255,255,255,0.10)",
+              pointerEvents: "none",
             }}
           >
-            {t("home.hero.browseHint", "or browse practitioners below")}
-            <KeyboardArrowDownRoundedIcon
-              sx={{ fontSize: 16, opacity: 0.9 }}
-            />
-          </Typography>
+            <WhatsAppIcon sx={{ fontSize: "inherit" }} />
+          </Box>
 
-          <Typography
-            component="p"
+          <Box sx={{ flex: 1, minWidth: 0, zIndex: 1 }}>
+            <Typography
+              component="p"
+              sx={{
+                fontFamily: fonts.heading,
+                fontWeight: 600,
+                fontSize: "20px",
+                color: "#fff",
+                lineHeight: 1.1,
+                marginBottom: "4px",
+              }}
+            >
+              {t("home.hero.promoTitle", "Chat to book")}
+            </Typography>
+            <Typography
+              component="p"
+              sx={{
+                fontFamily: fonts.body,
+                fontSize: "12.5px",
+                fontWeight: 500,
+                color: "rgba(255,255,255,0.92)",
+                letterSpacing: "0.005em",
+              }}
+            >
+              {t(
+                "home.hero.promoSub",
+                "Reply in 2 minutes · WhatsApp"
+              )}
+            </Typography>
+          </Box>
+
+          <Box
             sx={{
-              fontSize: "11px",
-              fontWeight: 500,
-              color: "rgba(255,255,255,0.72)",
-              letterSpacing: "0.04em",
+              flexShrink: 0,
+              zIndex: 1,
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.20)",
+              border: "1px solid rgba(255,255,255,0.35)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            {t(
-              "home.hero.trustLine",
-              "From ฿1,200 · 60 min · Sukhumvit · Silom · Asok"
-            )}
+            <ArrowForwardRoundedIcon sx={{ fontSize: 18, color: "#fff" }} />
+          </Box>
+        </Box>
+
+        {/* ── Telegram secondary — slim card ─────────────────────────── */}
+        <Box
+          component={motion.div}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
+          onClick={handleTelegram}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              handleTelegram();
+            }
+          }}
+          aria-label={t(
+            "home.hero.telegramAria",
+            "Open Telegram channel"
+          )}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+            padding: "10px 16px",
+            borderRadius: "14px",
+            background: "rgba(255,255,255,0.6)",
+            border: "1px solid rgba(184, 92, 60, 0.18)",
+            cursor: "pointer",
+            transition: "background 0.18s ease, transform 0.12s ease",
+            "&:hover": {
+              background: "rgba(255,255,255,0.8)",
+              transform: "translateY(-1px)",
+            },
+            "&:focus-visible": {
+              outline: `2px solid ${brand.red}`,
+              outlineOffset: 2,
+            },
+          }}
+        >
+          <TelegramIcon sx={{ fontSize: 18, color: brand.red }} />
+          <Typography
+            component="span"
+            sx={{
+              fontFamily: fonts.body,
+              fontSize: "13.5px",
+              fontWeight: 600,
+              color: brand.text,
+            }}
+          >
+            {t("home.hero.telegramLabel", "Or message Telegram")}
           </Typography>
         </Box>
       </Box>
