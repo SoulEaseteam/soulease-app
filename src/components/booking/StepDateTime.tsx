@@ -715,14 +715,8 @@ const StepDateTime: React.FC<Props> = ({
           </Typography>
         </Box>
       ) : (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           {(() => {
-            // 🆕 Round 28b44 (founder 2026-05-05) — Visual day-boundary
-            //   dividers between sub-sections so customers immediately
-            //   see what's "tonight" vs "tomorrow morning". Without
-            //   these, an overnight shift's tail (1:30 AM) and main
-            //   evening (7:00 PM) and tomorrow's tail (1:30 AM +1d)
-            //   all blur into one wall of slots.
             const orderedKeys = [
               "rightNow",
               "morning",
@@ -750,116 +744,37 @@ const StepDateTime: React.FC<Props> = ({
                 "After Midnight",
               ),
             };
-            const sublabels: Record<SectionKey, string | null> = {
-              rightNow: t(
-                "stepdt.section.rightNowSub",
-                "Available immediately in current shift",
-              ),
-              morning: null,
-              afternoon: null,
-              evening: null,
-              night: null,
-              afterMidnight: t(
-                "stepdt.section.afterMidnightSub",
-                "Tomorrow morning (overnight shift)",
-              ),
-            };
 
-            const tomorrowLabel = `${t("stepdt.tomorrow", "Tomorrow")} · ${internalDate
-              .add(1, "day")
-              .format("ddd MMM D")}`;
-
-            return visibleKeys.map((key, visIdx) => {
+            // Round 28s66 (founder "ลองเปลี่ยน สไตล์ให้ไม่รกมาก") —
+            //   stripped the day-boundary divider rows + the italic
+            //   sublabels. Each overnight section used to carry THREE
+            //   layers of labelling (divider line + header + sublabel),
+            //   which read as clutter. Now: ONE quiet muted header per
+            //   section. The "+1d" badge already on after-midnight
+            //   chips signals the day rollover, so the heavy "Tomorrow"
+            //   divider is redundant. RIGHT NOW keeps a soft green tint
+            //   as the single colour accent in the list.
+            return visibleKeys.map((key) => {
               const group = slotGroups[key];
-              const prevKey = visIdx > 0 ? visibleKeys[visIdx - 1] : null;
-              // Decide divider above this section.
-              let divider: { label: string; emphasized: boolean } | null = null;
-              if (key === "afterMidnight") {
-                divider = { label: tomorrowLabel, emphasized: true };
-              } else if (key !== "rightNow" && prevKey === "rightNow") {
-                divider = {
-                  label: "Tonight · Tonight's main shift",
-                  emphasized: false,
-                };
-              }
               return (
-                <React.Fragment key={key}>
-                  {divider && (
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        margin: visIdx === 0 ? "0 4px" : "4px 4px 0",
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          flex: 1,
-                          height: "1px",
-                          background: divider.emphasized
-                            ? "rgba(254, 9, 68, 0.22)"
-                            : "rgba(60, 30, 20, 0.12)",
-                        }}
-                      />
-                      <Typography
-                        sx={{
-                          fontFamily: SANS,
-                          fontSize: "10.5px",
-                          fontWeight: 700,
-                          color: divider.emphasized
-                            ? "#FE0944"
-                            : "rgba(60, 30, 20, 0.55)",
-                          letterSpacing: "0.06em",
-                          textTransform: "uppercase",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {divider.label}
-                      </Typography>
-                      <Box
-                        sx={{
-                          flex: 1,
-                          height: "1px",
-                          background: divider.emphasized
-                            ? "rgba(254, 9, 68, 0.22)"
-                            : "rgba(60, 30, 20, 0.12)",
-                        }}
-                      />
-                    </Box>
-                  )}
-                  <Box>
+                <Box key={key}>
                   <Typography
                     sx={{
                       fontFamily: SANS,
-                      fontSize: "11px",
+                      fontSize: "10.5px",
                       fontWeight: 700,
                       color:
                         key === "rightNow"
                           ? "#16a34a"
-                          : "rgba(60, 30, 20, 0.55)",
+                          : "rgba(60, 30, 20, 0.4)",
                       textTransform: "uppercase",
-                      letterSpacing: "0.08em",
-                      marginBottom: sublabels[key] ? "2px" : "8px",
-                      paddingLeft: "4px",
+                      letterSpacing: "0.07em",
+                      marginBottom: "10px",
+                      paddingLeft: "2px",
                     }}
                   >
                     {labels[key]}
                   </Typography>
-                  {sublabels[key] && (
-                    <Typography
-                      sx={{
-                        fontFamily: SANS,
-                        fontSize: "10.5px",
-                        color: "rgba(60, 30, 20, 0.5)",
-                        fontStyle: "italic",
-                        marginBottom: "8px",
-                        paddingLeft: "4px",
-                      }}
-                    >
-                      {sublabels[key]}
-                    </Typography>
-                  )}
                   <Box
                     sx={{
                       display: "grid",
@@ -998,8 +913,7 @@ const StepDateTime: React.FC<Props> = ({
                       );
                     })}
                   </Box>
-                  </Box>
-                </React.Fragment>
+                </Box>
               );
             });
           })()}
