@@ -33,7 +33,6 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
-import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import SpaRoundedIcon from "@mui/icons-material/SpaRounded";
 import LocalFloristRoundedIcon from "@mui/icons-material/LocalFloristRounded";
@@ -161,18 +160,6 @@ const HeroSection: React.FC = () => {
 
   const handleServiceTap = (id: string) => {
     navigate(`/services/${encodeURIComponent(id)}`);
-  };
-
-  /** Per-card "+" button: skip the detail page and open WhatsApp
-   *  with the service already named in the message so the concierge
-   *  can quote/confirm in one reply. */
-  const handleServiceBook = (
-    e: React.MouseEvent,
-    svc: HeroService,
-  ) => {
-    e.stopPropagation();
-    const msg = `Hi, I'd like to book ${svc.fullName} (${svc.duration} · ${svc.price}). When can I reserve?`;
-    handleWhatsApp(`service_${svc.id}`, msg);
   };
 
   const handleSeeAll = () => {
@@ -571,71 +558,23 @@ const HeroSection: React.FC = () => {
                   {svc.duration}
                 </Typography>
 
-                {/* Price row + Add (+) button — Karim's card bottom */}
-                <Box
+                {/* Round 28s19 — [+] add-to-book button removed
+                    (founder "เอาปุ่ม บวกออก"). The whole card already
+                    routes to /services/:id on tap; the shortcut chat
+                    button was duplicate affordance + extra visual
+                    weight. Price alone sits at the card bottom. */}
+                <Typography
+                  component="span"
                   sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
+                    fontFamily: fonts.heading,
+                    fontSize: "16px",
+                    fontWeight: 700,
+                    color: brand.red,
                     marginTop: "auto",
                   }}
                 >
-                  <Typography
-                    component="span"
-                    sx={{
-                      fontFamily: fonts.heading,
-                      fontSize: "15px",
-                      fontWeight: 700,
-                      color: brand.red,
-                    }}
-                  >
-                    {svc.price}
-                  </Typography>
-                  {/* Round 28s15 — [+] button switched from dark slate
-                      (#2a1a14) to the brand red gradient. Reads as
-                      THE action button, not just a visual stop, and
-                      tracks with the rest of the brand-red CTAs
-                      (greeting, promo, see-all link). */}
-                  <Box
-                    component="button"
-                    type="button"
-                    onClick={(e) => handleServiceBook(e, svc)}
-                    aria-label={t(
-                      "home.hero.serviceBookAria",
-                      "Book {{name}} via WhatsApp",
-                      { name: svc.fullName }
-                    )}
-                    sx={{
-                      flexShrink: 0,
-                      width: 32,
-                      height: 32,
-                      borderRadius: "11px",
-                      border: "none",
-                      cursor: "pointer",
-                      background:
-                        "linear-gradient(135deg, #FE0944, #FE7A52)",
-                      color: "#fff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow:
-                        "0 4px 10px rgba(254, 9, 68, 0.28), inset 0 1px 0 rgba(255,255,255,0.25)",
-                      transition:
-                        "transform 0.12s ease, box-shadow 0.18s ease",
-                      "&:hover": {
-                        transform: "scale(1.06)",
-                        boxShadow:
-                          "0 6px 14px rgba(254, 9, 68, 0.36), inset 0 1px 0 rgba(255,255,255,0.30)",
-                      },
-                      "&:focus-visible": {
-                        outline: `2px solid ${brand.red}`,
-                        outlineOffset: 2,
-                      },
-                    }}
-                  >
-                    <AddRoundedIcon sx={{ fontSize: 18 }} />
-                  </Box>
-                </Box>
+                  {svc.price}
+                </Typography>
               </Box>
             );
           })}
