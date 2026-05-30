@@ -328,15 +328,49 @@ const DetailHero: React.FC<Props> = ({
             alignItems: "center",
           }}
         >
-          <IconBtnGlass
-            label="back"
+          {/* Round 28s44 (founder "arrow เอา กรอบ ออก เปลี่ยน arrow
+              เป็น <") — Back arrow strips the glass-circle frame and
+              swaps the ← glyph for a chevron <. Plain white character
+              with a soft drop-shadow so it stays legible on light
+              cells of the photo grid without competing with the photo
+              for attention. The "more" menu (⋯) keeps its frame. */}
+          <Box
+            role="button"
+            tabIndex={0}
+            aria-label="back"
             onClick={(e) => {
               e?.stopPropagation();
               void navigate(-1);
             }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                void navigate(-1);
+              }
+            }}
+            sx={{
+              width: 40,
+              height: 40,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              color: "#fff",
+              fontFamily: SANS,
+              fontSize: "28px",
+              fontWeight: 600,
+              lineHeight: 1,
+              textShadow: "0 2px 8px rgba(0,0,0,0.55)",
+              userSelect: "none",
+              "&:focus-visible": {
+                outline: "2px solid #fff",
+                outlineOffset: 4,
+                borderRadius: "8px",
+              },
+            }}
           >
-            ←
-          </IconBtnGlass>
+            ‹
+          </Box>
           <Box ref={moreBtnRef}>
             <IconBtnGlass
               label="more"
