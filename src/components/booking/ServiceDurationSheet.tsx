@@ -40,6 +40,9 @@ import EventRoundedIcon from "@mui/icons-material/EventRounded";
 // เช่นกัน" — mirror the InfoSheet 28s38 swap so service tap
 // opens a centred modal instead of a bottom drawer.
 import { Dialog, Box, Typography, Button } from "@mui/material";
+import { useTranslation } from "react-i18next";
+import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import type { MassageService } from "@/data/services";
 import {
   priceForDuration,
@@ -51,14 +54,14 @@ import StepDateTime from "@/components/booking/StepDateTime";
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
-// Service notes shown under the "Notices" tab. Identical for all services
-// today — when notes need to be per-service, lift these to services.ts.
-const SERVICE_NOTES: string[] = [
-  "Please send your booking ID to customer service after completing the reservation.",
-  "If your location is nearby, you may pay in cash.",
-  "If the travel distance is far (over 25 km), a 500 THB deposit may be required.",
-  "Supported payment: VISA, PromptPay, PayNow, Cash, WeChat.",
-];
+// Round 28s64 — Notes are now i18n keys, translated at render via
+// t(). Identical for all services today.
+const SERVICE_NOTE_KEYS = [
+  "sheet.note.bookingId",
+  "sheet.note.cashNearby",
+  "sheet.note.deposit",
+  "sheet.note.payment",
+] as const;
 
 interface Props {
   service: MassageService | null;
@@ -80,10 +83,15 @@ interface Props {
   onConfirm: (durationMin: number, date: string, time: string) => void;
 }
 
-const DURATION_LABELS: Record<number, { tag: string; tagColor?: string }> = {
-  60: { tag: "Standard" },
-  90: { tag: "⭐ Most popular", tagColor: "#FE0944" },
-  120: { tag: "Best value" },
+// Round 28s64 — tag is now an i18n key + a "popular" flag (drives
+// the StarRounded chip + brand-red colour). Translated at render.
+const DURATION_LABELS: Record<
+  number,
+  { tagKey: string; popular?: boolean }
+> = {
+  60: { tagKey: "sheet.duration.standard" },
+  90: { tagKey: "sheet.duration.popular", popular: true },
+  120: { tagKey: "sheet.duration.bestValue" },
 };
 
 const BADGE_COLORS: Record<MassageService["badge"], { bg: string; fg: string }> = {
@@ -103,6 +111,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
   onClose,
   onConfirm,
 }) => {
+  const { t } = useTranslation();
   const durations = service ? durationsFor(service) : [];
   // Default to the MIDDLE tier (90 min — 'Most popular' label) when the
   // service offers 60/90/120; falls through to first tier for services
@@ -275,7 +284,11 @@ const ServiceDurationSheet: React.FC<Props> = ({
                 color: "rgba(60, 30, 20, 0.6)",
               }}
             >
-              · ⏱ {selected} mins
+              ·{" "}
+              <AccessTimeRoundedIcon
+                sx={{ fontSize: 13, verticalAlign: "-2px" }}
+              />{" "}
+              {t("sheet.mins", "{{n}} mins", { n: selected })}
             </Typography>
             {service.count > 0 && (
               <Typography
@@ -284,9 +297,18 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   fontFamily: SANS,
                   fontSize: "12px",
                   color: "rgba(60, 30, 20, 0.55)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "2px",
                 }}
               >
-                · ⭐ {service.count.toLocaleString()} used
+                ·{" "}
+                <StarRoundedIcon
+                  sx={{ fontSize: 13, color: "#FFA726" }}
+                />
+                {t("sheet.used", "{{count}} used", {
+                  count: service.count,
+                })}
               </Typography>
             )}
           </Box>
@@ -349,7 +371,9 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   },
                 }}
               >
-                {id === "details" ? "Details" : "Notices"}
+                {id === "details"
+                  ? t("sheet.details", "Details")
+                  : t("sheet.notices", "Notices")}
                 <Box
                   component="span"
                   aria-hidden
@@ -459,11 +483,11 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   marginBottom: "12px",
                 }}
               >
-                • Service Notes •
+                • {t("sheet.serviceNotes", "Service Notes")} •
               </Typography>
-              {SERVICE_NOTES.map((note, i) => (
+              {SERVICE_NOTE_KEYS.map((noteKey, i) => (
                 <Typography
-                  key={i}
+                  key={noteKey}
                   sx={{
                     fontFamily: SANS,
                     fontSize: "13px",
@@ -474,7 +498,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                     textIndent: "-16px",
                   }}
                 >
-                  {i + 1}.&nbsp;&nbsp;{note}
+                  {i + 1}.&nbsp;&nbsp;{t(noteKey)}
                 </Typography>
               ))}
             </>
@@ -503,7 +527,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
           }}
         >
           <GpsFixedRoundedIcon sx={{ fontSize: 13, color: "#FE0944" }} />
-          Choose duration
+          {t("sheet.chooseDuration", "Choose duration")}
         </Typography>
         <Box
           role="radiogroup"
@@ -513,12 +537,14 @@ const ServiceDurationSheet: React.FC<Props> = ({
           {durations.map((min) => {
             const isActive = selected === min;
             const price = priceForDuration(service, min);
-            const meta = DURATION_LABELS[min] ?? { tag: `${min} min` };
+            const meta = DURATION_LABELS[min];
+            const tagText = meta
+              ? t(meta.tagKey)
+              : t("sheet.mins", "{{n}} mins", { n: min });
             // 🆕 Founder round 4 (2026-05-01): 'pulse + ขยายใหญ่ขึ้นนิดหน่อย
             //    เหมือนกำลังดิลข้อเสนอ แม้จะเลือกอยู่' — popular tier keeps
-            //    pulsing & scaling even after the user selects it (it's the
-            //    deal we're pushing, so don't stop pitching).
-            const isPopular = !!meta.tagColor;
+            //    pulsing & scaling even after the user selects it.
+            const isPopular = !!meta?.popular;
             const shouldPulse = isPopular;
             return (
               <Box
@@ -617,12 +643,22 @@ const ServiceDurationSheet: React.FC<Props> = ({
                       fontFamily: SANS,
                       fontSize: "11px",
                       fontWeight: 700,
-                      color: meta.tagColor ?? "rgba(60, 30, 20, 0.55)",
+                      color: isPopular
+                        ? "#FE0944"
+                        : "rgba(60, 30, 20, 0.55)",
                       textTransform: "uppercase",
                       letterSpacing: "0.06em",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "3px",
                     }}
                   >
-                    {meta.tag}
+                    {isPopular && (
+                      <StarRoundedIcon
+                        sx={{ fontSize: 12, color: "#FFA726" }}
+                      />
+                    )}
+                    {tagText}
                   </Typography>
                 </Box>
                 <Typography
@@ -693,7 +729,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   letterSpacing: "-0.01em",
                 }}
               >
-                Pick date &amp; time
+                {t("sheet.pickDateTime", "Pick date & time")}
               </Typography>
             </Box>
             {draftDate && draftTime && (
@@ -763,8 +799,8 @@ const ServiceDurationSheet: React.FC<Props> = ({
           }}
         >
           {!draftDate || !draftTime
-            ? "Pick date & time to continue"
-            : `Confirm · ${formatTHB(totalPrice)}`}
+            ? t("sheet.pickToContinue", "Pick date & time to continue")
+            : `${t("sheet.confirm", "Confirm")} · ${formatTHB(totalPrice)}`}
         </Button>
       </Box>
     </Dialog>

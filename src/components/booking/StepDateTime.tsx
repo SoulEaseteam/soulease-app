@@ -26,6 +26,10 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import { Box, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
+// Round 28s64 — MUI bolt replaces the ⚡ emoji on the earliest-slot
+// banner (CLAUDE.md §3 no-emoji rule).
+import FlashOnRoundedIcon from "@mui/icons-material/FlashOnRounded";
 import dayjs from "dayjs";
 import therapistsData from "@/data/therapists";
 // 🆕 Round 28an — anchor all "now" / "today" comparisons to BKK so the
@@ -314,6 +318,7 @@ const StepDateTime: React.FC<Props> = ({
   therapistId,
   onChange,
 }) => {
+  const { t } = useTranslation();
   const [internalDate, setInternalDate] = useState<dayjs.Dayjs>(
     date ? dayjs(date) : dayjs()
   );
@@ -433,7 +438,12 @@ const StepDateTime: React.FC<Props> = ({
         >
           {days.map((d, i) => {
             const isActive = d.isSame(internalDate, "day");
-            const label = i === 0 ? "Today" : i === 1 ? "Tomorrow" : d.format("ddd");
+            const label =
+              i === 0
+                ? t("stepdt.today", "Today")
+                : i === 1
+                  ? t("stepdt.tomorrow", "Tomorrow")
+                  : d.format("ddd");
             const sub = i <= 1 ? d.format("MMM D") : d.format("MMM D");
             return (
               <Box
@@ -510,8 +520,11 @@ const StepDateTime: React.FC<Props> = ({
               paddingLeft: "4px",
             }}
           >
-            {therapist.name}&rsquo;s shift: {prettyHHMM(startTime)}&ndash;{prettyHHMM(endTime)}
-            {toMinutes(endTime) <= toMinutes(startTime) ? " (overnight)" : ""}
+            {t("stepdt.shift", "{{name}}'s shift", { name: therapist.name })}:{" "}
+            {prettyHHMM(startTime)}&ndash;{prettyHHMM(endTime)}
+            {toMinutes(endTime) <= toMinutes(startTime)
+              ? ` ${t("stepdt.overnight", "(overnight)")}`
+              : ""}
           </Typography>
         )}
 
@@ -551,7 +564,7 @@ const StepDateTime: React.FC<Props> = ({
               letterSpacing: "0.01em",
             }}
           >
-            All times shown in Bangkok time (GMT+7)
+            {t("stepdt.bkkTime", "All times shown in Bangkok time (GMT+7)")}
           </Typography>
         </Box>
       </Box>
@@ -592,10 +605,9 @@ const StepDateTime: React.FC<Props> = ({
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
-              fontSize: "16px",
             }}
           >
-            ⚡
+            <FlashOnRoundedIcon sx={{ fontSize: 18 }} />
           </Box>
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
@@ -609,7 +621,7 @@ const StepDateTime: React.FC<Props> = ({
                 lineHeight: 1.2,
               }}
             >
-              Earliest available
+              {t("stepdt.earliest", "Earliest available")}
             </Typography>
             <Typography
               sx={{
@@ -650,7 +662,7 @@ const StepDateTime: React.FC<Props> = ({
               letterSpacing: "0.04em",
             }}
           >
-            TAP TO BOOK 
+            {t("stepdt.tapToBook", "TAP TO BOOK")}
           </Typography>
         </Box>
       )}
@@ -686,7 +698,7 @@ const StepDateTime: React.FC<Props> = ({
               marginBottom: "4px",
             }}
           >
-            No slots available
+            {t("stepdt.noSlots", "No slots available")}
           </Typography>
           <Typography
             sx={{
@@ -695,7 +707,7 @@ const StepDateTime: React.FC<Props> = ({
               color: "rgba(60, 30, 20, 0.6)",
             }}
           >
-            Try another day or another therapist.
+            {t("stepdt.noSlotsHint", "Try another day or another therapist.")}
           </Typography>
         </Box>
       ) : (
@@ -724,23 +736,32 @@ const StepDateTime: React.FC<Props> = ({
             );
 
             const labels: Record<SectionKey, string> = {
-              rightNow: "Right Now",
-              morning: "Morning",
-              afternoon: "Afternoon",
-              evening: "Evening",
-              night: "Late Evening",
-              afterMidnight: "After Midnight",
+              rightNow: t("stepdt.section.rightNow", "Right Now"),
+              morning: t("stepdt.section.morning", "Morning"),
+              afternoon: t("stepdt.section.afternoon", "Afternoon"),
+              evening: t("stepdt.section.evening", "Evening"),
+              night: t("stepdt.section.night", "Late Evening"),
+              afterMidnight: t(
+                "stepdt.section.afterMidnight",
+                "After Midnight",
+              ),
             };
             const sublabels: Record<SectionKey, string | null> = {
-              rightNow: "Available immediately in current shift",
+              rightNow: t(
+                "stepdt.section.rightNowSub",
+                "Available immediately in current shift",
+              ),
               morning: null,
               afternoon: null,
               evening: null,
               night: null,
-              afterMidnight: "Tomorrow morning (overnight shift)",
+              afterMidnight: t(
+                "stepdt.section.afterMidnightSub",
+                "Tomorrow morning (overnight shift)",
+              ),
             };
 
-            const tomorrowLabel = `Tomorrow · ${internalDate
+            const tomorrowLabel = `${t("stepdt.tomorrow", "Tomorrow")} · ${internalDate
               .add(1, "day")
               .format("ddd MMM D")}`;
 
