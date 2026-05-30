@@ -337,36 +337,64 @@ const HomeTherapistGrid: React.FC = () => {
           phrase suffix ("Bangkok Tonight" / "Concierge resumes 09:00")
           comes from the same `useConciergeMode` payload as the Live
           pill — header + pill always agree. */}
-      <Box sx={{ marginBottom: "10px", padding: "0 14px" }}>
+      {/* Round 28s17 — Header restyled to match the hero polish
+          (28s15). Old: 2-tone "Our Therapists" with red half +
+          busy 3-segment subtitle. New: small clay eyebrow above a
+          single-color Fraunces serif title, a clean live-status
+          pill, and the concierge headline as a quiet italic line —
+          all in the same hierarchy register the hero now uses. */}
+      <Box sx={{ marginBottom: "14px", padding: "0 18px" }}>
         <Typography
+          component="p"
           sx={{
-            fontFamily: fonts.heading,
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "#3c1e14",
-            letterSpacing: "-0.02em",
-            lineHeight: 1.05,
+            fontFamily: fonts.body,
+            fontSize: "11px",
+            fontWeight: 800,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: brand.accent,
+            marginBottom: "6px",
           }}
         >
-          Our{" "}
-          <Box component="span" sx={{ color: "#FE0944" }}>
-            Therapists
-          </Box>
+          Tonight · Bangkok
         </Typography>
+
+        <Typography
+          component="h2"
+          sx={{
+            fontFamily: fonts.heading,
+            fontSize: "23px",
+            fontWeight: 600,
+            color: brand.text,
+            letterSpacing: "-0.01em",
+            lineHeight: 1.1,
+            marginBottom: "8px",
+          }}
+        >
+          Our Therapists
+        </Typography>
+
         {!loading && therapists.length > 0 && (
-          <Typography
+          <Box
             sx={{
-              fontFamily: fonts.body,
-              fontSize: "11px",
-              color: "rgba(60, 30, 20, 0.6)",
-              marginTop: "3px",
               display: "flex",
               alignItems: "center",
-              gap: "5px",
+              gap: "10px",
+              flexWrap: "wrap",
             }}
           >
             {availableNow > 0 && (
-              <>
+              <Box
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "3px 10px 3px 8px",
+                  borderRadius: 999,
+                  background: "rgba(22, 163, 74, 0.10)",
+                  border: "1px solid rgba(22, 163, 74, 0.20)",
+                }}
+              >
                 <Box
                   component="span"
                   sx={{
@@ -382,26 +410,34 @@ const HomeTherapistGrid: React.FC = () => {
                     },
                   }}
                 />
-                <Box component="span" sx={{ color: "#16a34a", fontWeight: 700 }}>
+                <Box
+                  component="span"
+                  sx={{
+                    fontFamily: fonts.body,
+                    fontSize: "11.5px",
+                    fontWeight: 700,
+                    color: "#15803d",
+                    letterSpacing: "-0.005em",
+                  }}
+                >
                   {availableNow} on standby
                 </Box>
-                <Box component="span" sx={{ opacity: 0.4 }}>
-                  ·
-                </Box>
-              </>
+              </Box>
             )}
-            <Box
+            <Typography
               component="span"
               sx={{
                 fontFamily: fonts.heading,
+                fontSize: "12.5px",
                 fontStyle: "italic",
                 fontWeight: 500,
                 color: brand.accent,
+                lineHeight: 1.3,
               }}
             >
               {concierge.gridHeadline}
-            </Box>
-          </Typography>
+            </Typography>
+          </Box>
         )}
       </Box>
 
@@ -417,8 +453,8 @@ const HomeTherapistGrid: React.FC = () => {
         aria-label="Filter therapists by availability"
         sx={{
           display: "flex",
-          gap: "6px",
-          padding: "0 14px 8px",
+          gap: "8px",
+          padding: "0 18px 12px",
           overflowX: "auto",
           scrollbarWidth: "none",
           "&::-webkit-scrollbar": { display: "none" },
@@ -445,40 +481,39 @@ const HomeTherapistGrid: React.FC = () => {
               onClick={() => setRosterFilter(opt.id)}
               aria-pressed={isActive}
               sx={{
+                // Round 28s17 — chip refresh. Pill-shaped, soft
+                // fill at rest, brand-red gradient when active.
+                // Same register as hero CTAs so the whole home
+                // reads in one design language.
                 flexShrink: 0,
-                padding: "6px 12px",
+                padding: "7px 14px",
                 borderRadius: 999,
                 fontFamily: fonts.body,
-                fontSize: 11,
+                fontSize: 11.5,
                 fontWeight: 700,
-                letterSpacing: "-0.005em",
+                letterSpacing: "0.005em",
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "5px",
+                gap: "6px",
                 border: isActive
-                  ? isAvailableChip
-                    ? "1px solid rgba(22, 163, 74, 0.55)"
-                    : "1px solid rgba(254, 9, 68, 0.55)"
-                  : "1px solid rgba(184, 92, 60, 0.18)",
+                  ? "1px solid transparent"
+                  : "1px solid rgba(184, 92, 60, 0.15)",
                 background: isActive
-                  ? isAvailableChip
-                    ? "linear-gradient(135deg, rgba(22, 163, 74, 0.12), rgba(22, 163, 74, 0.06))"
-                    : "linear-gradient(135deg, rgba(254, 9, 68, 0.10), rgba(254, 122, 82, 0.10))"
-                  : "rgba(255,255,255,0.55)",
-                color: isActive
-                  ? isAvailableChip
-                    ? "#15803d"
-                    : brand.red
-                  : brand.text,
+                  ? "linear-gradient(135deg, #FE0944, #FE7A52)"
+                  : "#fff",
+                color: isActive ? "#fff" : brand.text,
                 boxShadow: isActive
-                  ? isAvailableChip
-                    ? "0 2px 6px rgba(22, 163, 74, 0.18)"
-                    : "0 2px 6px rgba(254, 9, 68, 0.15)"
-                  : "inset 0 1px 0 rgba(255,255,255,0.55)",
+                  ? "0 4px 12px rgba(254, 9, 68, 0.28), inset 0 1px 0 rgba(255,255,255,0.20)"
+                  : "0 1px 2px rgba(126, 30, 46, 0.04)",
                 transition:
-                  "background 0.18s ease, border-color 0.18s ease, transform 0.12s ease",
-                "&:hover": { transform: "translateY(-1px)" },
+                  "background 0.18s ease, border-color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease",
+                "&:hover": {
+                  transform: "translateY(-1px)",
+                  boxShadow: isActive
+                    ? "0 6px 16px rgba(254, 9, 68, 0.32)"
+                    : "0 4px 10px rgba(126, 30, 46, 0.08)",
+                },
                 "&:focus-visible": {
                   outline: `2px solid ${brand.red}`,
                   outlineOffset: 2,
@@ -489,9 +524,15 @@ const HomeTherapistGrid: React.FC = () => {
               <Box
                 component="span"
                 sx={{
-                  fontSize: 9.5,
+                  fontSize: 10,
                   fontWeight: 800,
-                  opacity: isActive ? 0.8 : 0.55,
+                  padding: "1px 6px",
+                  borderRadius: 999,
+                  background: isActive
+                    ? "rgba(255,255,255,0.22)"
+                    : "rgba(184, 92, 60, 0.10)",
+                  color: isActive ? "#fff" : brand.accent,
+                  opacity: 1,
                 }}
               >
                 {opt.count}
