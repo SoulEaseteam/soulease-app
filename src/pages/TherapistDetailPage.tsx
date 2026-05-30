@@ -789,10 +789,11 @@ const TherapistDetailPage: React.FC = () => {
         // boxShadow) dropped on the detail page so it reads as a real
         // web app rather than a mockup on desktop. The 430px constraint
         // moves to inner sections; outer page fills the viewport.
+        // Round 28s39 — paddingBottom removed; the sticky bottom
+        // CTA moved inline after the About card.
         minHeight: "100vh",
         background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
         position: "relative",
-        paddingBottom: selectionReady ? "92px" : "0",
       }}
     >
       {/* Round 28s34 — Sticky top app bar. Shows back + truncated
@@ -935,6 +936,77 @@ const TherapistDetailPage: React.FC = () => {
         }
       />
 
+      {/* Round 28s39 — Inline Reserve CTA right after the About card,
+          named with the practitioner. Founder: "Sticky CTA เอา ไปต่อ
+          About card ทั้งชื่อ". Replaces the fixed bottom CTA from
+          28s34. Button is always visible; tapping when no service is
+          picked yet scrolls to the picker; tapping after a full
+          selection navigates to /booking/:id. */}
+      <Box
+        sx={{
+          padding: "8px 18px 4px",
+          maxWidth: 430,
+          margin: "0 auto",
+        }}
+      >
+        <Box
+          component="button"
+          type="button"
+          onClick={() => {
+            if (selectionReady) {
+              handleContinueBooking();
+            } else {
+              const picker = document.getElementById(
+                "tdp-service-picker",
+              );
+              picker?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }
+          }}
+          aria-label={t(
+            "detail.reserveAria",
+            "Reserve {{name}}",
+            { name: therapist.name }
+          )}
+          sx={{
+            width: "100%",
+            padding: "14px 22px",
+            borderRadius: "16px",
+            border: "none",
+            cursor: "pointer",
+            background:
+              "linear-gradient(135deg, #FE0944, #FE7A52)",
+            color: "#fff",
+            fontFamily: SANS,
+            fontWeight: 700,
+            fontSize: "15px",
+            letterSpacing: "0.005em",
+            boxShadow:
+              "0 14px 32px rgba(254, 9, 68, 0.30), inset 0 1px 0 rgba(255,255,255,0.20)",
+            transition:
+              "transform 0.12s ease, box-shadow 0.18s ease",
+            "&:hover": {
+              transform: "translateY(-1px)",
+              boxShadow: "0 18px 40px rgba(254, 9, 68, 0.38)",
+            },
+            "&:focus-visible": {
+              outline: "2px solid #fff",
+              outlineOffset: 2,
+            },
+          }}
+        >
+          {selectionReady
+            ? t("detail.continueWith", "Continue with {{name}} →", {
+                name: therapist.name,
+              })
+            : t("detail.reserve", "Reserve {{name}} →", {
+                name: therapist.name,
+              })}
+        </Box>
+      </Box>
+
       {/* Round 28s34 — StatusPill always renders. Previously hidden
           when offline, leaving guests guessing why the live signal
           had vanished. StatusPill itself already handles the offline
@@ -956,11 +1028,13 @@ const TherapistDetailPage: React.FC = () => {
           duplicate "Service" subtitle (was Fraunces 16px) is also
           dropped — the eyebrow already names the section. */}
       <Box
+        id="tdp-service-picker"
         sx={{
           padding: "20px",
           borderTop: "1px solid rgba(184, 92, 60, 0.12)",
           maxWidth: 430,
           margin: "0 auto",
+          scrollMarginTop: "70px",
         }}
       >
         <Typography
@@ -1123,69 +1197,9 @@ const TherapistDetailPage: React.FC = () => {
 
       </Box>
 
-      {/* Round 28s34 — Sticky Continue CTA. Replaces the previous
-          auto-navigation from the merged ServiceDurationSheet Confirm.
-          The selection is held on this page so the guest has a beat
-          to read reviews / scroll the photo grid / look at chips
-          before tapping into the money path at /booking/:id. */}
-      {selectionReady && (
-        <Box
-          sx={{
-            position: "fixed",
-            bottom: 70,
-            left: 0,
-            right: 0,
-            display: "flex",
-            justifyContent: "center",
-            padding: "0 16px",
-            pointerEvents: "none",
-            zIndex: 10,
-          }}
-        >
-          <Box
-            sx={{
-              width: "100%",
-              maxWidth: 430,
-              pointerEvents: "auto",
-            }}
-          >
-            <Box
-              component="button"
-              type="button"
-              onClick={handleContinueBooking}
-              aria-label={t(
-                "detail.continueAria",
-                "Continue to booking with {{service}}",
-                { service: selection.serviceId ?? "" }
-              )}
-              sx={{
-                width: "100%",
-                padding: "14px 22px",
-                borderRadius: "16px",
-                border: "none",
-                cursor: "pointer",
-                background:
-                  "linear-gradient(135deg, #FE0944, #FE7A52)",
-                color: "#fff",
-                fontFamily: SANS,
-                fontWeight: 700,
-                fontSize: "15px",
-                letterSpacing: "0.005em",
-                boxShadow:
-                  "0 14px 32px rgba(254, 9, 68, 0.36), inset 0 1px 0 rgba(255,255,255,0.20)",
-                transition:
-                  "transform 0.12s ease, box-shadow 0.18s ease",
-                "&:hover": {
-                  transform: "translateY(-1px)",
-                  boxShadow: "0 18px 40px rgba(254, 9, 68, 0.42)",
-                },
-              }}
-            >
-              {t("detail.continueCta", "Continue to confirm →")}
-            </Box>
-          </Box>
-        </Box>
-      )}
+      {/* Round 28s39 — Fixed-bottom sticky CTA removed. Now lives
+          inline after the About card so it sits next to the
+          practitioner's identity, with their name on the button. */}
     </Box>
   );
 };

@@ -231,6 +231,46 @@ const StatsCard: React.FC<Props> = ({
           border: "1px solid rgba(255, 255, 255, 0.7)",
           boxShadow:
             "0 12px 32px rgba(126, 30, 46, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.7)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+        }}
+      >
+      {/* Round 28s39 — persistent tap affordance footer. The
+          first-visit popover dismisses after 5s; founder wanted a
+          permanent hint so guests always know the cells open the
+          full profile. */}
+      {hasInteractiveCell && (
+        <Box
+          aria-hidden
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "4px",
+            fontFamily: '"Inter", system-ui, sans-serif',
+            fontSize: "10.5px",
+            fontWeight: 700,
+            letterSpacing: "0.10em",
+            textTransform: "uppercase",
+            color: "#FE0944",
+            order: 99,
+            paddingTop: "8px",
+            borderTop: "1px dashed rgba(254, 9, 68, 0.20)",
+          }}
+        >
+          Tap any stat for full profile
+          <Box
+            component="span"
+            sx={{ fontSize: "13px", marginLeft: "2px" }}
+          >
+            ↗
+          </Box>
+        </Box>
+      )}
+
+      <Box
+        sx={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr 1fr",
           gap: "8px",
@@ -332,6 +372,7 @@ const StatsCard: React.FC<Props> = ({
           </Box>
         </Box>
       ))}
+      </Box>
       </Box>
     </Box>
   );
