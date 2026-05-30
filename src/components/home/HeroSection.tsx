@@ -1,55 +1,69 @@
 // src/components/home/HeroSection.tsx
 //
-// 🎯 Round 28s9 — Plantum-style card hero (founder 2026-05-30).
+// 🎯 Round 28s10 — Pro outcall massage hero (founder 2026-05-30).
 //
-// Founder sent a Plantum app screenshot as reference: "เอาแค่ตรง
-// hero". The Plantum DNA she keyed on:
-//   • Soft pastel background — not a hard brand-color gradient
-//   • Three-column status row at the very top (live data, scannable)
-//   • Friendly greeting card with avatar + sub-line
-//   • One bright promo banner — the primary action, gradient, with
-//     a decorative motif so it pops above the calmer cards
+// Round 28s9 nailed the Plantum card layout but the founder noted
+// the page still didn't read as a real massage shop — copy was
+// "Chat to book" without saying WHAT you book. This round adds the
+// two missing pro-shop surfaces:
 //
-// Keeps the 28s8 conversion-first intent (chat is the action) but
-// uses the Plantum layout language instead of a single red-gradient
-// monolith. Multiple cards on a cream surface read friendlier and
-// give the eye distinct rest points — useful for tired late-night
-// guests skimming on a phone.
+//   • Promo banner — "Tonight special · 10% off first booking"
+//     (CLAUDE.md §9 confirms FIRST10 is wired and lives in the
+//     real discount apply logic since Round 28r14). Bright coral
+//     gradient with a decorative gift-tag motif, matching the
+//     Plantum reference's orange promo card.
+//   • Service strip — 4 horizontally scrolling mini-cards naming
+//     the actual services + starting price + duration. Tapping
+//     a card opens that service's detail page (the "professional"
+//     route — guests see what's included before committing).
 //
-// Structure:
+// The dedicated "Chat to book" red-gradient banner from 28s9 is
+// removed — both the greeting card and the promo banner already
+// route to WhatsApp, so a third call-to-chat read as redundant
+// after stacking the service strip in.
 //
-//   Soft cream gradient bg
+// Layout (top → bottom):
 //
-//   ● PRIME HOURS    ▲ Bangkok          🌙       ← status row
-//   Concierge live   Sukhumvit · Silom  Tonight
+//   Cream surface
 //
-//   ┌────────────────────────────────────┐
-//   │ [SR]  Good evening                 │       ← greeting card
-//   │       Concierge online · tap to chat│
-//   └────────────────────────────────────┘
+//   ● OPENING    📍 BANGKOK     🌅 BOOKING       ← status row
+//   Concierge    Sukhumvit ·    WINDOW
+//   live         Silom · Asok   Tonight
 //
-//   ┌────────────────────────────────────┐
-//   │ Chat to book                  [→]  │       ← promo banner
-//   │ Reply in 2 min · WhatsApp          │       brand red→coral gradient
-//   └────────────────────────────────────┘
+//   ┌──────────────────────────────────┐
+//   │ [SR] Good evening                │       ← greeting → WhatsApp
+//   │      Bangkok's luxury outcall —  │
+//   │      tap to chat with concierge  │
+//   └──────────────────────────────────┘
 //
-//   ┌────────────────────────────────────┐
-//   │ ✈ Telegram                          │      ← secondary, slim
-//   └────────────────────────────────────┘
+//   ┌──────────────────────────────────┐
+//   │  TONIGHT SPECIAL          🎁     │       ← promo → WhatsApp
+//   │  10% off your first booking      │         coral gradient
+//   │  Code FIRST10  applied at        │         decorative gift
+//   │  checkout                    [→] │
+//   └──────────────────────────────────┘
 //
-// Both the greeting card and the promo banner tap into WhatsApp —
-// guests reading either as the primary affordance still end up in
-// the same chat, which the funnel data shows wins.
+//   Our services
+//   ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐         ← service strip
+//   │ Thai │ │Aroma │ │Gent. │ │ B2B  │           horizontal scroll
+//   │ 60min│ │ 60min│ │ 60min│ │ 60min│           tap → /services/:id
+//   │ ฿1.2k│ │ ฿1.6k│ │ ฿2.2k│ │ ฿3.2k│
+//   └──────┘ └──────┘ └──────┘ └──────┘
+//
+//   ┌──────────────────────────────────┐
+//   │ ✈ Or message Telegram            │       ← Telegram slim
+//   └──────────────────────────────────┘
 
 import React from "react";
 import { Box, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
-import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import TelegramIcon from "@mui/icons-material/Telegram";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
+import CardGiftcardRoundedIcon from "@mui/icons-material/CardGiftcardRounded";
 
 import { brand, fonts, gradients } from "@/theme";
 import { useConciergeMode } from "@/utils/conciergeMode";
@@ -62,9 +76,28 @@ import ReferralActiveBanner from "@/components/common/ReferralActiveBanner";
 const WHATSAPP_URL = "https://wa.me/66634350987";
 const TELEGRAM_URL = "https://t.me/SunRedvip_bkk";
 
-/** Time-aware greeting derived from the concierge operational window.
- *  Strings are kept short — Plantum-style greeting cards lean on the
- *  greeting itself being the visual hook. */
+// Pre-filled message so the FIRST10 promo lands on WhatsApp with
+// context — admin doesn't have to ask "which offer?" before quoting.
+const FIRST10_WA_MSG =
+  "Hi, I'd like to book using FIRST10 (10% off first booking). When can I reserve?";
+
+// Service strip — short labels chosen for the hero tile, full names
+// kept in /services/:id detail. Prices and durations match
+// src/data/services.ts canonical data; if those move, update here too.
+interface HeroService {
+  id: string;
+  short: string;
+  duration: string;
+  price: string;
+}
+const HERO_SERVICES: HeroService[] = [
+  { id: "xSR-Thai", short: "Thai", duration: "60 min", price: "฿1,200" },
+  { id: "SR-Aroma", short: "Aroma", duration: "60 min", price: "฿1,600" },
+  { id: "SR-HJ2200", short: "Gentleman's", duration: "60 min", price: "฿2,200" },
+  { id: "SR-B2B3200", short: "Therapeutic", duration: "60 min", price: "฿3,200" },
+];
+
+/** Time-aware greeting derived from the concierge operational window. */
 function greetingFor(mode: string): string {
   switch (mode) {
     case "prime":
@@ -81,18 +114,29 @@ function greetingFor(mode: string): string {
 
 const HeroSection: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const concierge = useConciergeMode();
 
   const greeting = greetingFor(concierge.mode);
 
-  const handleWhatsApp = () => {
-    trackConciergeOpen("whatsapp");
-    window.open(WHATSAPP_URL, "_blank", "noopener,noreferrer");
+  const handleWhatsApp = (
+    source: "greeting" | "promo",
+    msg?: string,
+  ) => {
+    trackConciergeOpen(`whatsapp_${source}`);
+    const url = msg
+      ? `${WHATSAPP_URL}?text=${encodeURIComponent(msg)}`
+      : WHATSAPP_URL;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleTelegram = () => {
     trackConciergeOpen("telegram");
     window.open(TELEGRAM_URL, "_blank", "noopener,noreferrer");
+  };
+
+  const handleServiceTap = (id: string) => {
+    navigate(`/services/${encodeURIComponent(id)}`);
   };
 
   return (
@@ -104,24 +148,23 @@ const HeroSection: React.FC = () => {
           position: "relative",
           width: "100%",
           padding: "20px 18px 24px",
-          // Soft cream→peach gradient — Plantum's pastel base, swapped
-          // to SunRed's warm palette. Cards read crisp on top of it.
+          // Soft cream→peach gradient — Plantum-style pastel base in
+          // SunRed's warm palette.
           background:
             "linear-gradient(180deg, #FFF6EF 0%, #FCEBDC 100%)",
         }}
       >
-        {/* ── Status row — three columns, no card chrome ───────────── */}
+        {/* ── Status row — three columns ──────────────────────────────── */}
         <Box
           sx={{
             display: "grid",
             gridTemplateColumns: "1fr auto 1fr",
             alignItems: "center",
             gap: "10px",
-            marginBottom: "18px",
+            marginBottom: "16px",
             padding: "0 4px",
           }}
         >
-          {/* LEFT — live mode (e.g. "PRIME HOURS / Concierge live") */}
           <Box>
             <Typography
               component="p"
@@ -164,7 +207,6 @@ const HeroSection: React.FC = () => {
             </Typography>
           </Box>
 
-          {/* CENTER — service area */}
           <Box sx={{ textAlign: "center" }}>
             <Typography
               component="p"
@@ -181,9 +223,7 @@ const HeroSection: React.FC = () => {
                 lineHeight: 1.1,
               }}
             >
-              <PlaceRoundedIcon
-                sx={{ fontSize: 13, color: brand.red }}
-              />
+              <PlaceRoundedIcon sx={{ fontSize: 13, color: brand.red }} />
               Bangkok
             </Typography>
             <Typography
@@ -201,7 +241,6 @@ const HeroSection: React.FC = () => {
             </Typography>
           </Box>
 
-          {/* RIGHT — time-of-day glyph + window label */}
           <Box sx={{ textAlign: "right" }}>
             <Box
               sx={{
@@ -246,19 +285,19 @@ const HeroSection: React.FC = () => {
           </Box>
         </Box>
 
-        {/* ── Greeting card — white rounded, soft shadow ─────────────── */}
+        {/* ── Greeting card — white rounded, → WhatsApp ──────────────── */}
         <Box
           component={motion.div}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          onClick={handleWhatsApp}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          onClick={() => handleWhatsApp("greeting")}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              handleWhatsApp();
+              handleWhatsApp("greeting");
             }
           }}
           aria-label={t(
@@ -289,7 +328,6 @@ const HeroSection: React.FC = () => {
             },
           }}
         >
-          {/* Avatar — SunRed brand mark */}
           <Box
             sx={{
               flexShrink: 0,
@@ -338,9 +376,13 @@ const HeroSection: React.FC = () => {
                 fontWeight: 500,
                 color: brand.textMuted,
                 marginTop: "2px",
+                lineHeight: 1.35,
               }}
             >
-              {t("home.hero.greetingSub", "Tap here to chat with concierge")}
+              {t(
+                "home.hero.greetingSub",
+                "Bangkok's luxury outcall — tap to chat"
+              )}
             </Typography>
           </Box>
 
@@ -349,44 +391,47 @@ const HeroSection: React.FC = () => {
           />
         </Box>
 
-        {/* ── Promo banner — primary CTA, brand red gradient ─────────── */}
+        {/* ── Promo banner — TONIGHT SPECIAL / FIRST10 → WhatsApp ─────── */}
         <Box
           component={motion.div}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-          onClick={handleWhatsApp}
+          transition={{ duration: 0.5, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
+          onClick={() => handleWhatsApp("promo", FIRST10_WA_MSG)}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              handleWhatsApp();
+              handleWhatsApp("promo", FIRST10_WA_MSG);
             }
           }}
           aria-label={t(
             "home.hero.promoAria",
-            "Chat to book via WhatsApp"
+            "Claim 10% off first booking — chat to redeem"
           )}
           sx={{
             position: "relative",
             display: "flex",
             alignItems: "center",
             gap: "14px",
-            padding: "18px 20px",
+            padding: "16px 18px",
             borderRadius: "20px",
-            background: gradients.primary,
+            // Coral → peach gradient — warmer than the brand-red primary,
+            // distinct from the greeting card, reads as "special offer".
+            background:
+              "linear-gradient(135deg, #FE7A52 0%, #FFA976 55%, #FEC9A7 100%)",
             color: "#fff",
             cursor: "pointer",
             overflow: "hidden",
             boxShadow:
-              "0 12px 32px rgba(254, 9, 68, 0.28), 0 2px 6px rgba(254, 9, 68, 0.18)",
-            marginBottom: "10px",
+              "0 10px 28px rgba(254, 122, 82, 0.30), 0 2px 6px rgba(254, 122, 82, 0.18)",
+            marginBottom: "16px",
             transition: "transform 0.18s ease, box-shadow 0.18s ease",
             "&:hover": {
               transform: "translateY(-1px)",
               boxShadow:
-                "0 16px 40px rgba(254, 9, 68, 0.34), 0 3px 8px rgba(254, 9, 68, 0.22)",
+                "0 14px 36px rgba(254, 122, 82, 0.38), 0 3px 8px rgba(254, 122, 82, 0.22)",
             },
             "&:focus-visible": {
               outline: `2px solid #fff`,
@@ -394,25 +439,38 @@ const HeroSection: React.FC = () => {
             },
           }}
         >
-          {/* Decorative WhatsApp glyph fading in from the right edge —
-              Plantum-style playful motif without illustration files. */}
+          {/* Decorative gift watermark — Plantum-style playful motif */}
           <Box
             aria-hidden="true"
             sx={{
               position: "absolute",
-              right: -12,
+              right: -6,
               top: "50%",
-              transform: "translateY(-50%) rotate(-12deg)",
-              fontSize: 132,
+              transform: "translateY(-50%) rotate(-8deg)",
+              fontSize: 120,
               lineHeight: 1,
-              color: "rgba(255,255,255,0.10)",
+              color: "rgba(255,255,255,0.16)",
               pointerEvents: "none",
             }}
           >
-            <WhatsAppIcon sx={{ fontSize: "inherit" }} />
+            <CardGiftcardRoundedIcon sx={{ fontSize: "inherit" }} />
           </Box>
 
           <Box sx={{ flex: 1, minWidth: 0, zIndex: 1 }}>
+            <Typography
+              component="p"
+              sx={{
+                fontFamily: fonts.body,
+                fontSize: "10.5px",
+                fontWeight: 800,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+                color: "rgba(255,255,255,0.95)",
+                marginBottom: "4px",
+              }}
+            >
+              {t("home.hero.promoEyebrow", "Tonight Special")}
+            </Typography>
             <Typography
               component="p"
               sx={{
@@ -424,13 +482,16 @@ const HeroSection: React.FC = () => {
                 marginBottom: "4px",
               }}
             >
-              {t("home.hero.promoTitle", "Chat to book")}
+              {t(
+                "home.hero.promoTitle",
+                "10% off your first booking"
+              )}
             </Typography>
             <Typography
               component="p"
               sx={{
                 fontFamily: fonts.body,
-                fontSize: "12.5px",
+                fontSize: "12px",
                 fontWeight: 500,
                 color: "rgba(255,255,255,0.92)",
                 letterSpacing: "0.005em",
@@ -438,7 +499,7 @@ const HeroSection: React.FC = () => {
             >
               {t(
                 "home.hero.promoSub",
-                "Reply in 2 minutes · WhatsApp"
+                "Code FIRST10 · applied at checkout"
               )}
             </Typography>
           </Box>
@@ -450,8 +511,8 @@ const HeroSection: React.FC = () => {
               width: 36,
               height: 36,
               borderRadius: "50%",
-              background: "rgba(255,255,255,0.20)",
-              border: "1px solid rgba(255,255,255,0.35)",
+              background: "rgba(255,255,255,0.22)",
+              border: "1px solid rgba(255,255,255,0.40)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -461,12 +522,145 @@ const HeroSection: React.FC = () => {
           </Box>
         </Box>
 
-        {/* ── Telegram secondary — slim card ─────────────────────────── */}
+        {/* ── Service strip — Plantum-style mini cards, scrollable ────── */}
         <Box
           component={motion.div}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.5, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+          sx={{ marginBottom: "14px" }}
+        >
+          <Typography
+            component="p"
+            sx={{
+              fontFamily: fonts.body,
+              fontSize: "11px",
+              fontWeight: 800,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: brand.accent,
+              marginBottom: "10px",
+              padding: "0 4px",
+            }}
+          >
+            {t("home.hero.servicesEyebrow", "Our services")}
+          </Typography>
+
+          <Box
+            sx={{
+              display: "flex",
+              gap: "10px",
+              overflowX: "auto",
+              padding: "0 4px 4px",
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" },
+              // Snap so each card lands cleanly on swipe.
+              scrollSnapType: "x mandatory",
+            }}
+          >
+            {HERO_SERVICES.map((svc, idx) => (
+              <Box
+                key={svc.id}
+                component="button"
+                type="button"
+                onClick={() => handleServiceTap(svc.id)}
+                aria-label={t(
+                  "home.hero.serviceAria",
+                  "View {{name}} details",
+                  { name: svc.short }
+                )}
+                sx={{
+                  flexShrink: 0,
+                  width: 116,
+                  scrollSnapAlign: "start",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  gap: "4px",
+                  padding: "14px 12px",
+                  borderRadius: "16px",
+                  background: "#fff",
+                  border: "1px solid rgba(184, 92, 60, 0.10)",
+                  boxShadow:
+                    "0 4px 14px rgba(126, 30, 46, 0.05), 0 1px 2px rgba(126, 30, 46, 0.03)",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  fontFamily: fonts.body,
+                  transition:
+                    "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    boxShadow:
+                      "0 8px 22px rgba(126, 30, 46, 0.10), 0 1px 2px rgba(126, 30, 46, 0.04)",
+                    borderColor: "rgba(254, 9, 68, 0.30)",
+                  },
+                  "&:focus-visible": {
+                    outline: `2px solid ${brand.red}`,
+                    outlineOffset: 2,
+                  },
+                }}
+              >
+                {/* Tiny index chip in coral — matches the Plantum tile
+                    pop without an illustration asset per card. */}
+                <Box
+                  component="span"
+                  sx={{
+                    fontSize: "9.5px",
+                    fontWeight: 800,
+                    letterSpacing: "0.10em",
+                    textTransform: "uppercase",
+                    color: brand.accent,
+                    marginBottom: "2px",
+                  }}
+                >
+                  {idx === 0 ? "Signature" : "Premium"}
+                </Box>
+                <Typography
+                  component="span"
+                  sx={{
+                    fontFamily: fonts.heading,
+                    fontSize: "15px",
+                    fontWeight: 600,
+                    color: brand.text,
+                    lineHeight: 1.15,
+                  }}
+                >
+                  {svc.short}
+                </Typography>
+                <Typography
+                  component="span"
+                  sx={{
+                    fontSize: "10.5px",
+                    fontWeight: 500,
+                    color: brand.textMuted,
+                    marginTop: "2px",
+                  }}
+                >
+                  {svc.duration}
+                </Typography>
+                <Typography
+                  component="span"
+                  sx={{
+                    fontFamily: fonts.heading,
+                    fontSize: "15px",
+                    fontWeight: 600,
+                    color: brand.red,
+                    marginTop: "6px",
+                  }}
+                >
+                  {svc.price}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+
+        {/* ── Telegram secondary slim card ────────────────────────────── */}
+        <Box
+          component={motion.div}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
           onClick={handleTelegram}
           role="button"
           tabIndex={0}
@@ -487,12 +681,12 @@ const HeroSection: React.FC = () => {
             gap: "8px",
             padding: "10px 16px",
             borderRadius: "14px",
-            background: "rgba(255,255,255,0.6)",
+            background: "rgba(255,255,255,0.65)",
             border: "1px solid rgba(184, 92, 60, 0.18)",
             cursor: "pointer",
             transition: "background 0.18s ease, transform 0.12s ease",
             "&:hover": {
-              background: "rgba(255,255,255,0.8)",
+              background: "rgba(255,255,255,0.85)",
               transform: "translateY(-1px)",
             },
             "&:focus-visible": {
@@ -516,8 +710,8 @@ const HeroSection: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Referral banner sits below the hero on the cream surface —
-          auto-hides when no `?ref=` code is captured from URL. */}
+      {/* Referral banner sits below the hero — auto-hides when no
+          `?ref=` code is captured from URL. */}
       <ReferralActiveBanner />
     </>
   );
