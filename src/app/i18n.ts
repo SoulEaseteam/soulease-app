@@ -36,6 +36,16 @@ void i18n
   .init({
     fallbackLng: "en",
     supportedLngs: ["en", "th", "zh", "ja", "ko"],
+    // Round 28s63 (founder: auto-switch to the visitor's device
+    // language) — device locales carry a region ("zh-CN", "zh-TW",
+    // "ja-JP", "ko-KR", "en-US", "th-TH"). Our bundles are base
+    // codes only. `load: "languageOnly"` strips the region so a
+    // Chinese tourist on zh-CN/zh-TW lands on the zh bundle instead
+    // of falling through to English; same for ja-JP → ja, ko-KR → ko.
+    // `nonExplicitSupportedLngs` is the belt-and-suspenders: it lets
+    // a region-coded detection resolve via its base language too.
+    load: "languageOnly",
+    nonExplicitSupportedLngs: true,
     debug: false,
 
     // ⚠️ flat keys — keys like "hero.title" / "hero.badge.verified" are stored
