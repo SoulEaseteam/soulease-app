@@ -902,19 +902,104 @@ const TherapistDetailPage: React.FC = () => {
         images={therapist.images}
       />
 
-      <StatsCard
-        // ⭐ Round 28ak — Bayesian-adjusted rating from REAL review list.
-        //    Round 28s34 — Moved into a `displayRating` useMemo above.
-        rating={displayRating}
-        reviewCount={therapist.reviewCount}
-        yearsExp={therapist.yearsExp}
-        totalSessions={therapist.totalSessions}
-        rebookRate={therapist.rebookRate}
-        // Tap-to-open info sheet — saves vertical space on the detail page
-        onTapRating={() => setInfoSheet("reviews")}
-        onTapProfile={() => setInfoSheet("profile")}
-        onTapLoyalty={() => setInfoSheet("loyalty")}
-      />
+      {/* Round 28s35 — StatsCard replaced by a slim inline stat row.
+          The big chunky 4-cell card was the most "mockup-y" surface
+          on the page; real listing apps (Airbnb, Booking) put the
+          same numbers in one quiet body line below the gallery.
+          The tap-to-info-sheet affordance moves into a small
+          "View full profile →" link so guests can still reach
+          Reviews / Loyalty / Profile tabs when they want them. */}
+      <Box
+        sx={{
+          padding: "16px 18px 4px",
+          maxWidth: 430,
+          margin: "0 auto",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "6px 12px",
+            fontFamily: SANS,
+            fontSize: "13px",
+            fontWeight: 600,
+            color: "rgba(60, 30, 20, 0.78)",
+            letterSpacing: "0.005em",
+          }}
+        >
+          <Box
+            component="span"
+            onClick={() => setInfoSheet("reviews")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e: React.KeyboardEvent) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setInfoSheet("reviews");
+              }
+            }}
+            sx={{
+              cursor: "pointer",
+              color: "#2a1a14",
+              fontWeight: 700,
+              "&:hover": { color: "#FE0944" },
+            }}
+          >
+            ★ {displayRating}
+            {therapist.reviewCount > 0 && (
+              <Box
+                component="span"
+                sx={{ fontWeight: 500, opacity: 0.65, marginLeft: "4px" }}
+              >
+                ({therapist.reviewCount})
+              </Box>
+            )}
+          </Box>
+          {therapist.yearsExp > 0 && (
+            <>
+              <Box component="span" sx={{ opacity: 0.30 }}>·</Box>
+              <Box component="span">{therapist.yearsExp} yrs</Box>
+            </>
+          )}
+          {therapist.totalSessions > 0 && (
+            <>
+              <Box component="span" sx={{ opacity: 0.30 }}>·</Box>
+              <Box component="span">
+                {therapist.totalSessions} sessions
+              </Box>
+            </>
+          )}
+          {therapist.rebookRate && therapist.rebookRate !== "—" && (
+            <>
+              <Box component="span" sx={{ opacity: 0.30 }}>·</Box>
+              <Box component="span">{therapist.rebookRate} rebook</Box>
+            </>
+          )}
+        </Box>
+
+        <Box
+          component="button"
+          type="button"
+          onClick={() => setInfoSheet("profile")}
+          sx={{
+            marginTop: "8px",
+            padding: 0,
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            fontFamily: SANS,
+            fontSize: "12px",
+            fontWeight: 700,
+            color: "#FE0944",
+            letterSpacing: "0.01em",
+            "&:hover": { opacity: 0.85 },
+          }}
+        >
+          {t("detail.viewFullProfile", "View full profile →")}
+        </Box>
+      </Box>
 
       {/* 🆕 Round 28b5 — Gallery is now embedded INSIDE the About
           card (founder spec: "เอา Gallery ไปไว้ใน sheet เดียวกันกับ
@@ -948,27 +1033,61 @@ const TherapistDetailPage: React.FC = () => {
         />
       </Box>
 
-      <PickerSection
-        title={
-          <>
-            What kind of <em>session</em>?
-          </>
-        }
-        subtitle={t(
-          "detail.picker.serviceSubtitle",
-          "Select your service, duration, date and time — all in one step."
-        )}
+      {/* Round 28s35 — PickerSection's Fraunces serif italic title
+          ("What kind of session?" with red em accent) was a mockup
+          ornament. Real web apps lead with a small uppercase
+          eyebrow and let the cards do the work. The inner
+          duplicate "Service" subtitle (was Fraunces 16px) is also
+          dropped — the eyebrow already names the section. */}
+      <Box
+        sx={{
+          padding: "20px",
+          borderTop: "1px solid rgba(184, 92, 60, 0.12)",
+          maxWidth: 430,
+          margin: "0 auto",
+        }}
       >
         <Typography
+          component="p"
           sx={{
-            fontFamily: SERIF,
-            fontSize: "16px",
-            fontWeight: 600,
-            color: "#3c1e14",
-            marginBottom: "10px",
+            fontFamily: SANS,
+            fontSize: "11px",
+            fontWeight: 800,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: "#b85c3c",
+            marginBottom: "6px",
           }}
         >
-          {t("detail.picker.serviceLabel", "Service")}
+          {t("detail.picker.eyebrow", "Choose your ritual")}
+        </Typography>
+        <Typography
+          component="h2"
+          sx={{
+            fontFamily: SERIF,
+            fontSize: "22px",
+            fontWeight: 600,
+            color: "#2a1a14",
+            letterSpacing: "-0.015em",
+            lineHeight: 1.1,
+            marginBottom: "6px",
+          }}
+        >
+          {t("detail.picker.title", "Services")}
+        </Typography>
+        <Typography
+          sx={{
+            fontFamily: SANS,
+            fontSize: "12.5px",
+            color: "rgba(60, 30, 20, 0.6)",
+            lineHeight: 1.45,
+            marginBottom: "16px",
+          }}
+        >
+          {t(
+            "detail.picker.serviceSubtitle",
+            "Tap a ritual to pick duration, date, and time — all in one step.",
+          )}
         </Typography>
 
         <StepService
@@ -986,22 +1105,22 @@ const TherapistDetailPage: React.FC = () => {
         />
 
         <Typography
-  sx={{
-    fontFamily: SANS,
-    fontSize: "12px",
-    color: "rgba(60, 30, 20, 0.5)",
-    textAlign: "center",
-    marginTop: "14px",
-    lineHeight: 1.5,
-    whiteSpace: "pre-line", // รองรับการขึ้นบรรทัดใหม่
-  }}
->
-  {t(
-    "detail.picker.serviceHint",
-    "Didn't find your preferred service? \n Contact us for more personalized options."
-  )}
-</Typography>
-      </PickerSection>
+          sx={{
+            fontFamily: SANS,
+            fontSize: "12px",
+            color: "rgba(60, 30, 20, 0.5)",
+            textAlign: "center",
+            marginTop: "14px",
+            lineHeight: 1.5,
+            whiteSpace: "pre-line",
+          }}
+        >
+          {t(
+            "detail.picker.serviceHint",
+            "Didn't find your preferred service? \n Contact us for more personalized options.",
+          )}
+        </Typography>
+      </Box>
 
       {/* (Reviews moved into TherapistProfileTabs as Tab 2.) */}
 
