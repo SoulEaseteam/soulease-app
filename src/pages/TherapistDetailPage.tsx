@@ -902,104 +902,20 @@ const TherapistDetailPage: React.FC = () => {
         images={therapist.images}
       />
 
-      {/* Round 28s35 — StatsCard replaced by a slim inline stat row.
-          The big chunky 4-cell card was the most "mockup-y" surface
-          on the page; real listing apps (Airbnb, Booking) put the
-          same numbers in one quiet body line below the gallery.
-          The tap-to-info-sheet affordance moves into a small
-          "View full profile →" link so guests can still reach
-          Reviews / Loyalty / Profile tabs when they want them. */}
-      <Box
-        sx={{
-          padding: "16px 18px 4px",
-          maxWidth: 430,
-          margin: "0 auto",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "6px 12px",
-            fontFamily: SANS,
-            fontSize: "13px",
-            fontWeight: 600,
-            color: "rgba(60, 30, 20, 0.78)",
-            letterSpacing: "0.005em",
-          }}
-        >
-          <Box
-            component="span"
-            onClick={() => setInfoSheet("reviews")}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e: React.KeyboardEvent) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setInfoSheet("reviews");
-              }
-            }}
-            sx={{
-              cursor: "pointer",
-              color: "#2a1a14",
-              fontWeight: 700,
-              "&:hover": { color: "#FE0944" },
-            }}
-          >
-            ★ {displayRating}
-            {therapist.reviewCount > 0 && (
-              <Box
-                component="span"
-                sx={{ fontWeight: 500, opacity: 0.65, marginLeft: "4px" }}
-              >
-                ({therapist.reviewCount})
-              </Box>
-            )}
-          </Box>
-          {therapist.yearsExp > 0 && (
-            <>
-              <Box component="span" sx={{ opacity: 0.30 }}>·</Box>
-              <Box component="span">{therapist.yearsExp} yrs</Box>
-            </>
-          )}
-          {therapist.totalSessions > 0 && (
-            <>
-              <Box component="span" sx={{ opacity: 0.30 }}>·</Box>
-              <Box component="span">
-                {therapist.totalSessions} sessions
-              </Box>
-            </>
-          )}
-          {therapist.rebookRate && therapist.rebookRate !== "—" && (
-            <>
-              <Box component="span" sx={{ opacity: 0.30 }}>·</Box>
-              <Box component="span">{therapist.rebookRate} rebook</Box>
-            </>
-          )}
-        </Box>
-
-        <Box
-          component="button"
-          type="button"
-          onClick={() => setInfoSheet("profile")}
-          sx={{
-            marginTop: "8px",
-            padding: 0,
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-            fontFamily: SANS,
-            fontSize: "12px",
-            fontWeight: 700,
-            color: "#FE0944",
-            letterSpacing: "0.01em",
-            "&:hover": { opacity: 0.85 },
-          }}
-        >
-          {t("detail.viewFullProfile", "View full profile →")}
-        </Box>
-      </Box>
+      {/* Round 28s36 — StatsCard restored (founder "StatsCard เอา
+          กลับมา"). The inline stat row from 28s35 reverted; the
+          4-cell card carries the tap-to-info-sheet affordance the
+          guests rely on. */}
+      <StatsCard
+        rating={displayRating}
+        reviewCount={therapist.reviewCount}
+        yearsExp={therapist.yearsExp}
+        totalSessions={therapist.totalSessions}
+        rebookRate={therapist.rebookRate}
+        onTapRating={() => setInfoSheet("reviews")}
+        onTapProfile={() => setInfoSheet("profile")}
+        onTapLoyalty={() => setInfoSheet("loyalty")}
+      />
 
       {/* 🆕 Round 28b5 — Gallery is now embedded INSIDE the About
           card (founder spec: "เอา Gallery ไปไว้ใน sheet เดียวกันกับ
