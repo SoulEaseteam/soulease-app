@@ -60,7 +60,7 @@ import {
 //    a 'Available from HH:mm' subtitle whenever there's an ongoing
 //    booking; updates real-time via Firestore onSnapshot.
 import {
-  useTherapistBookings,
+  useTherapistBookingFeed,
   findActiveBooking,
   findNextBooking,
   nextAvailableHHMM,
@@ -77,8 +77,9 @@ import { useTherapistLiveStatus } from "@/hooks/useTherapistLiveStatus";
 
 // 🆕 Round 28ae — live therapist reviews from bookings collection.
 import { useTherapistReviews } from "@/hooks/useTherapistReviews";
-// 🆕 Round 28af — live booking aggregates for the Loyalty tab.
-import { useTherapistBookingStats } from "@/hooks/useTherapistBookingStats";
+// Round 28s55 — loyalty stats now come from useTherapistBookingFeed
+// (shared bookings listener); the standalone useTherapistBookingStats
+// hook is no longer imported here.
 
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 import therapistsData from "@/data/therapists";
@@ -518,8 +519,13 @@ const TherapistDetailPage: React.FC = () => {
   //   full review list in lock-step. Subscribes when id is present.
   const liveReviews = useTherapistReviews(id ?? null);
 
-  // 🆕 Round 28af — live booking aggregates for the Loyalty tab.
-  const loyaltyStats = useTherapistBookingStats(id ?? null);
+  // Round 28s55 — Single shared bookings listener. Returns BOTH the
+  // active-booking list (for the availability engine) and the loyalty
+  // stats (for the Loyalty tab) from one subscription. Was two
+  // identical `bookings where therapistId == X` listeners
+  // (useTherapistBookings + useTherapistBookingStats).
+  const { active: liveBookings, stats: loyaltyStats } =
+    useTherapistBookingFeed(id ?? null);
 
   // Round 28s34 — Single-source lookup. The 3-tier (real / demo /
   // MAI) chain was a hangover from Round 28r demo data; with the
@@ -628,11 +634,9 @@ const TherapistDetailPage: React.FC = () => {
     "services",
   );
 
-  // Round 28s34 — Live status pipeline (bookings + holiday overlay
-  // + engine output) memoised so the spreads + engine call run only
-  // when their dependencies change. Hooks still subscribe via the
-  // `therapist?.id ?? null` arg; the underlying utils accept null.
-  const liveBookings = useTherapistBookings(therapist?.id ?? null);
+  // Round 28s55 — `liveBookings` now comes from the shared
+  // useTherapistBookingFeed above (one listener for bookings + stats).
+  // Only the therapists-doc live-status listener remains separate.
   const liveStatus = useTherapistLiveStatus(therapist?.id ?? null);
 
   const activeBooking = useMemo(

@@ -28,6 +28,14 @@ import {
 import { db } from "@/lib/firebase";
 // 🆕 Round 28an — BKK-anchored display formatting.
 import { fmtBKK } from "@/utils/time";
+// Round 28s55 — shared stats aggregation so the combined feed hook
+// can derive loyalty stats from the same snapshot it uses for the
+// active-booking status engine (one listener instead of two).
+import {
+  computeBookingStats,
+  EMPTY_BOOKING_STATS,
+  type TherapistBookingStats,
+} from "@/hooks/useTherapistBookingStats";
 
 export interface TherapistBooking {
   id: string;
@@ -117,6 +125,64 @@ export function useTherapistBookings(
   }, [therapistId]);
 
   return bookings;
+}
+
+/**
+ * Round 28s55 — Combined feed. One `bookings where therapistId == X`
+ * listener that yields BOTH the active-booking list (for the status
+ * engine) AND the loyalty stats (for the Loyalty tab) from the same
+ * snapshot. Replaces the previous pair of identical listeners
+ * (useTherapistBookings + useTherapistBookingStats) on the detail
+ * page — halving the bookings-collection subscriptions there.
+ *
+ * The standalone `useTherapistBookings` / `useTherapistBookingStats`
+ * hooks remain for their other callers (home grid, booking flow,
+ * etc.) — this feed is detail-page-specific.
+ */
+export function useTherapistBookingFeed(therapistId: string | null): {
+  active: TherapistBooking[];
+  stats: TherapistBookingStats;
+} {
+  const [active, setActive] = useState<TherapistBooking[]>([]);
+  const [stats, setStats] = useState<TherapistBookingStats>(
+    therapistId
+      ? { ...EMPTY_BOOKING_STATS, loading: true }
+      : EMPTY_BOOKING_STATS,
+  );
+
+  useEffect(() => {
+    if (!therapistId) {
+      setActive([]);
+      setStats(EMPTY_BOOKING_STATS);
+      return;
+    }
+    const q = query(
+      collection(db, "bookings"),
+      where("therapistId", "==", therapistId),
+    );
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        // Active list — same filter/shape useTherapistBookings produces.
+        const list = snap.docs
+          .map(fromSnap)
+          .filter((b): b is TherapistBooking => b !== null)
+          .filter((b) => ACTIVE_STATUSES.has(b.status))
+          .sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
+        setActive(list);
+        // Loyalty stats — derived from the SAME snapshot.
+        setStats(computeBookingStats(snap));
+      },
+      (err) => {
+        console.warn("useTherapistBookingFeed: snapshot error", err);
+        setActive([]);
+        setStats({ ...EMPTY_BOOKING_STATS, loading: false });
+      },
+    );
+    return () => unsub();
+  }, [therapistId]);
+
+  return { active, stats };
 }
 
 // ─── Pure helpers (no React, no Firestore) ────────────────────────────

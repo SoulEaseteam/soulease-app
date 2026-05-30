@@ -30,6 +30,8 @@ import {
   where,
   onSnapshot,
   Timestamp,
+  type QuerySnapshot,
+  type DocumentData,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 // 🆕 Round 28an — single source of truth for "today" anchored to BKK.
@@ -99,6 +101,99 @@ const EMPTY: TherapistBookingStats = {
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
+ * Round 28s55 — Pure aggregation extracted from the hook's onSnapshot
+ * body so a shared bookings listener (useTherapistBookingFeed) can
+ * derive stats from the same snapshot it uses for the status engine —
+ * one Firestore subscription instead of two identical ones.
+ */
+export function computeBookingStats(
+  snap: QuerySnapshot<DocumentData>,
+): TherapistBookingStats {
+  const EXCLUDED = new Set([
+    "cancelled",
+    "canceled",
+    "refunded",
+    "failed",
+    "rejected",
+    "no_show",
+    "noshow",
+  ]);
+
+  const todayStartMs = startOfTodayBKK().valueOf();
+  const todayEndMs = endOfTodayBKK().valueOf();
+
+  const byUser = new Map<string, number[]>();
+  let totalCompleted = 0;
+  let todayBookings = 0;
+
+  snap.forEach((d) => {
+    const b = d.data() as BookingStatsDoc;
+    const status = (b.status ?? "").toLowerCase();
+    if (EXCLUDED.has(status)) return;
+    totalCompleted++;
+
+    const tsForToday = toMs(b.startAt ?? b.createdAt ?? null);
+    if (tsForToday >= todayStartMs && tsForToday < todayEndMs) {
+      todayBookings++;
+    }
+
+    const idKey =
+      (b.userId && b.userId.length > 0 ? b.userId : null) ??
+      normalizePhone(b.phone) ??
+      null;
+    if (!idKey) return;
+    const ts = toMs(b.startAt ?? b.createdAt ?? null);
+    if (!ts) return;
+    if (!byUser.has(idKey)) byUser.set(idKey, []);
+    byUser.get(idKey)!.push(ts);
+  });
+
+  const uniqueCustomers = byUser.size;
+  let repeatCustomers = 0;
+  let within7 = 0;
+  let within30 = 0;
+  let within90 = 0;
+
+  byUser.forEach((tsList) => {
+    if (tsList.length < 2) return;
+    repeatCustomers++;
+    tsList.sort((a, b) => a - b);
+    const gapDays = (tsList[1] - tsList[0]) / ONE_DAY_MS;
+    if (gapDays <= 90) within90++;
+    if (gapDays <= 30) within30++;
+    if (gapDays <= 7) within7++;
+  });
+
+  const repeatPct =
+    uniqueCustomers > 0
+      ? Math.round((repeatCustomers / uniqueCustomers) * 100)
+      : 0;
+  const avgSessions =
+    uniqueCustomers > 0
+      ? Math.round((totalCompleted / uniqueCustomers) * 10) / 10
+      : 0;
+  const pct = (n: number) =>
+    repeatCustomers > 0 ? Math.round((n / repeatCustomers) * 100) : 0;
+
+  return {
+    totalCompleted,
+    todayBookings,
+    uniqueCustomers,
+    repeatCustomers,
+    repeatPct,
+    avgSessions,
+    timingBuckets: {
+      within7: pct(within7),
+      within30: pct(within30),
+      within90: pct(within90),
+    },
+    loading: false,
+  };
+}
+
+export { EMPTY as EMPTY_BOOKING_STATS };
+
+/**
  * Live-subscribe to a therapist's booking aggregates. Pass null/empty
  * id to skip subscription.
  */
@@ -114,128 +209,19 @@ export function useTherapistBookingStats(
       setStats(EMPTY);
       return;
     }
-
     const q = query(
       collection(db, "bookings"),
-      where("therapistId", "==", therapistId)
+      where("therapistId", "==", therapistId),
     );
-
-    // 🆕 Round 28ag — count ALL bookings except cancelled/refunded for
-    //    the sales-stimulation display. Pending + confirmed +
-    //    in-progress + completed all roll into "total bookings" so the
-    //    Loyalty tab reflects real demand pressure (not just past
-    //    completed sessions).
-    const EXCLUDED = new Set([
-      "cancelled",
-      "canceled",
-      "refunded",
-      "failed",
-      "rejected",
-      "no_show",
-      "noshow",
-    ]);
-
-    // 🆕 Round 28an — "today" anchored to BKK via shared helpers.
-    //   Replaces the manual UTC-offset hack. Same logic, but the
-    //   helpers handle DST-edge cases (none in BKK, but the API is
-    //   correct anywhere).
-    const todayStartMs = startOfTodayBKK().valueOf();
-    const todayEndMs = endOfTodayBKK().valueOf();
-
     const unsub = onSnapshot(
       q,
-      (snap) => {
-        // Group all valid bookings per identity so we can compute
-        // repeat-customer aggregates + first-rebook timing.
-        const byUser = new Map<string, number[]>();
-        let totalCompleted = 0; // → "valid bookings" total
-        let todayBookings = 0;
-
-        snap.forEach((d) => {
-          const b = d.data() as BookingStatsDoc;
-          const status = (b.status ?? "").toLowerCase();
-          if (EXCLUDED.has(status)) return; // skip cancellations
-          totalCompleted++;
-
-          // Today's bookings — count valid bookings whose START time is
-          // inside today's BKK window. Falls back to createdAt if startAt
-          // missing (rare — guest checkout edge case).
-          const tsForToday = toMs(b.startAt ?? b.createdAt ?? null);
-          if (tsForToday >= todayStartMs && tsForToday < todayEndMs) {
-            todayBookings++;
-          }
-
-          // Identity key: prefer real auth uid (post-login users), fall
-          // back to normalized phone (guest checkout). Anonymous with
-          // neither = skip — can't track them as a "customer".
-          const idKey =
-            (b.userId && b.userId.length > 0 ? b.userId : null) ??
-            normalizePhone(b.phone) ??
-            null;
-          if (!idKey) return;
-          const ts = toMs(b.startAt ?? b.createdAt ?? null);
-          if (!ts) return;
-          if (!byUser.has(idKey)) byUser.set(idKey, []);
-          byUser.get(idKey)!.push(ts);
-        });
-
-        const uniqueCustomers = byUser.size;
-        let repeatCustomers = 0;
-        let within7 = 0;
-        let within30 = 0;
-        let within90 = 0;
-
-        byUser.forEach((tsList) => {
-          if (tsList.length < 2) return;
-          repeatCustomers++;
-
-          // Sort ascending to find first → second booking gap
-          tsList.sort((a, b) => a - b);
-          const gapMs = tsList[1] - tsList[0];
-          const gapDays = gapMs / ONE_DAY_MS;
-          if (gapDays <= 90) within90++;
-          if (gapDays <= 30) within30++;
-          if (gapDays <= 7) within7++;
-        });
-
-        const repeatPct =
-          uniqueCustomers > 0
-            ? Math.round((repeatCustomers / uniqueCustomers) * 100)
-            : 0;
-
-        const avgSessions =
-          uniqueCustomers > 0
-            ? Math.round((totalCompleted / uniqueCustomers) * 10) / 10
-            : 0;
-
-        // Convert timing counts to % of REPEAT customers (cumulative).
-        const pct = (n: number) =>
-          repeatCustomers > 0
-            ? Math.round((n / repeatCustomers) * 100)
-            : 0;
-
-        setStats({
-          totalCompleted,
-          todayBookings,
-          uniqueCustomers,
-          repeatCustomers,
-          repeatPct,
-          avgSessions,
-          timingBuckets: {
-            within7: pct(within7),
-            within30: pct(within30),
-            within90: pct(within90),
-          },
-          loading: false,
-        });
-      },
+      (snap) => setStats(computeBookingStats(snap)),
       (err) => {
         // eslint-disable-next-line no-console
         console.error("[useTherapistBookingStats] snapshot error:", err);
         setStats({ ...EMPTY, loading: false });
-      }
+      },
     );
-
     return () => unsub();
   }, [therapistId]);
 
