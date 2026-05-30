@@ -46,15 +46,17 @@ import { useNavigate, useParams } from "react-router-dom";
 import dayjs from "dayjs";
 
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 
-// Round 28s26 — Quick-chat circle uses the practitioner's own
-// photo. Tapping a chat avatar with the practitioner's face reads
-// as "ping Yuri" not "open admin chat" — the guest thinks they're
-// reaching the practitioner directly even though the message is
-// routed via the concierge (CLAUDE.md §5 — admin dispatches).
+// Round 28s27 — The avatar circle is now a "view more photos"
+// affordance: it shows the practitioner's portrait + a "+N" badge
+// for the remaining gallery photos. Tapping opens a fullscreen
+// swipeable photo viewer. The chat handoff lives on the sticky
+// bottom Reserve CTA (which already pre-fills date/time/service
+// into WhatsApp) so the funnel never loses the chat entry.
 import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
 import GroupRoundedIcon from "@mui/icons-material/GroupRounded";
 import StarsRoundedIcon from "@mui/icons-material/StarsRounded";
@@ -130,6 +132,10 @@ const TherapistDetailPage: React.FC = () => {
 
   const [selectedDate, setSelectedDate] = useState(dates[0].iso);
   const [selectedTime, setSelectedTime] = useState(slots[0] ?? "20:00");
+
+  // Round 28s27 — Photo viewer state
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerIdx, setViewerIdx] = useState(0);
 
   useEffect(() => {
     if (slots.length > 0 && !slots.includes(selectedTime)) {
@@ -211,14 +217,9 @@ const TherapistDetailPage: React.FC = () => {
     );
   };
 
-  const handleChatNow = () => {
-    const msg = `Hi, I'd like to ask about ${therapist.name}.`;
-    trackConciergeOpen(`whatsapp_therapist_${therapist.id}_quick`);
-    window.open(
-      `${WHATSAPP_URL}?text=${encodeURIComponent(msg)}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
+  const handleOpenGallery = () => {
+    setViewerIdx(0);
+    setViewerOpen(true);
   };
 
   // Headline experience number — fall back gracefully if not present.
@@ -375,19 +376,22 @@ const TherapistDetailPage: React.FC = () => {
               </Box>
             </Box>
 
-            {/* Round 28s25 — Quick contact: concierge avatar instead
-                of the chat glyph. Photo-style affordance reads as
-                "ping a real person", which is the brand's chat-
-                first promise. Swap the src for a real concierge
-                photo whenever one is provided. */}
+            {/* Round 28s27 — Avatar circle is now a "view more
+                photos" affordance. Tap → opens fullscreen photo
+                viewer with the full gallery. The +N badge sits on
+                the bottom-right (where the green dot was) so the
+                count is the first thing the eye lands on. */}
             <Box
               component="button"
               type="button"
-              onClick={handleChatNow}
+              onClick={handleOpenGallery}
               aria-label={t(
-                "therapist.chatQuick",
-                "Quick chat about {{name}}",
-                { name: therapist.name }
+                "therapist.viewPhotosAria",
+                "View {{count}} more photos of {{name}}",
+                {
+                  count: therapist.gallery?.length ?? 0,
+                  name: therapist.name,
+                }
               )}
               sx={{
                 position: "relative",
@@ -429,22 +433,38 @@ const TherapistDetailPage: React.FC = () => {
                   display: "block",
                 }}
               />
-              {/* Tiny green online dot to telegraph "concierge is
-                  available right now". Sits bottom-right of the
-                  avatar like Instagram/Messenger. */}
-              <Box
-                aria-hidden="true"
-                sx={{
-                  position: "absolute",
-                  right: -2,
-                  bottom: -2,
-                  width: 14,
-                  height: 14,
-                  borderRadius: "50%",
-                  background: brand.green,
-                  border: "2px solid #fff",
-                }}
-              />
+              {/* +N badge — counts the remaining gallery photos
+                  beyond the hero. Brand-red pill at bottom-right
+                  of the avatar, same position the online dot held
+                  before. Tells the guest there's more to see. */}
+              {therapist.gallery && therapist.gallery.length > 1 && (
+                <Box
+                  aria-hidden="true"
+                  sx={{
+                    position: "absolute",
+                    right: -6,
+                    bottom: -4,
+                    minWidth: 22,
+                    height: 22,
+                    padding: "0 6px",
+                    borderRadius: 999,
+                    background:
+                      "linear-gradient(135deg, #FE0944, #FE7A52)",
+                    color: "#fff",
+                    border: "2px solid #fff",
+                    fontFamily: fonts.body,
+                    fontSize: "10.5px",
+                    fontWeight: 800,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    letterSpacing: "0.01em",
+                    boxShadow: "0 2px 6px rgba(254,9,68,0.30)",
+                  }}
+                >
+                  +{therapist.gallery.length - 1}
+                </Box>
+              )}
             </Box>
           </Box>
         </Box>
@@ -860,6 +880,152 @@ const TherapistDetailPage: React.FC = () => {
           </Button>
         </Box>
       </Box>
+
+      {/* ── Round 28s27 — Fullscreen photo viewer ──────────────────── */}
+      {viewerOpen && therapist.gallery && therapist.gallery.length > 0 && (
+        <Box
+          role="dialog"
+          aria-label={t(
+            "therapist.viewerAria",
+            "Photo gallery of {{name}}",
+            { name: therapist.name }
+          )}
+          sx={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 5, 8, 0.96)",
+            zIndex: 1000,
+            display: "flex",
+            flexDirection: "column",
+            backdropFilter: "blur(8px)",
+          }}
+          onClick={(e) => {
+            // Tap anywhere outside the photo strip → close.
+            if (e.target === e.currentTarget) setViewerOpen(false);
+          }}
+        >
+          {/* Top bar — close + count */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "16px 18px",
+              color: "#fff",
+            }}
+          >
+            <Typography
+              component="span"
+              sx={{
+                fontFamily: fonts.body,
+                fontSize: "13px",
+                fontWeight: 600,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                opacity: 0.78,
+              }}
+            >
+              {viewerIdx + 1} / {therapist.gallery.length}
+            </Typography>
+            <IconButton
+              onClick={() => setViewerOpen(false)}
+              aria-label={t("common.close", "Close")}
+              sx={{
+                background: "rgba(255,255,255,0.12)",
+                color: "#fff",
+                "&:hover": { background: "rgba(255,255,255,0.20)" },
+              }}
+            >
+              <CloseRoundedIcon />
+            </IconButton>
+          </Box>
+
+          {/* Horizontal swipe strip — one photo per snap */}
+          <Box
+            onClick={(e) => e.stopPropagation()}
+            onScroll={(e) => {
+              const target = e.currentTarget;
+              const idx = Math.round(
+                target.scrollLeft / target.clientWidth,
+              );
+              if (idx !== viewerIdx) setViewerIdx(idx);
+            }}
+            sx={{
+              flex: 1,
+              display: "flex",
+              overflowX: "auto",
+              overflowY: "hidden",
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" },
+              scrollSnapType: "x mandatory",
+              alignItems: "center",
+            }}
+          >
+            {therapist.gallery.map((src, idx) => (
+              <Box
+                key={`${src}-${idx}`}
+                sx={{
+                  flexShrink: 0,
+                  width: "100vw",
+                  maxWidth: 430,
+                  margin: "0 auto",
+                  height: "100%",
+                  scrollSnapAlign: "start",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0 12px",
+                }}
+              >
+                <Box
+                  component="img"
+                  src={enhanceImage(src, {
+                    variant: "hero",
+                    crop: "limit",
+                  })}
+                  alt={`${therapist.name} ${idx + 1}`}
+                  loading={idx === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                  sx={{
+                    maxWidth: "100%",
+                    maxHeight: "100%",
+                    borderRadius: "16px",
+                    objectFit: "contain",
+                    boxShadow: "0 16px 40px rgba(0,0,0,0.55)",
+                  }}
+                />
+              </Box>
+            ))}
+          </Box>
+
+          {/* Dot indicator row */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              gap: "6px",
+              padding: "14px 0 22px",
+            }}
+          >
+            {therapist.gallery.map((_, idx) => (
+              <Box
+                key={idx}
+                aria-hidden="true"
+                sx={{
+                  width: idx === viewerIdx ? 18 : 6,
+                  height: 6,
+                  borderRadius: 999,
+                  background:
+                    idx === viewerIdx
+                      ? "linear-gradient(135deg, #FE0944, #FE7A52)"
+                      : "rgba(255,255,255,0.30)",
+                  transition: "width 0.2s ease, background 0.2s ease",
+                }}
+              />
+            ))}
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 };
