@@ -212,21 +212,23 @@ const DetailHero: React.FC<Props> = ({
     <>
       <Box
         sx={{
-          // Round 28s37 (founder "รูปพนักงานสั้นขึ้น ลดพื้นที่") —
-          // Shortened the hero from a tall 4:5 portrait (537px at
-          // 430w) to 4:3 landscape (~322px). Saves ~215px of
-          // vertical real estate — the first booking surface
-          // (StatsCard) is now visible above the fold on most
-          // phones. Bottom name + verified overlay still has room
-          // because the photo grid's gradient sits on the bigger
-          // left cell only.
+          // Round 28s37 — 4:3 landscape hero (shorter than the old 4:5).
+          // Round 28s56 ("ตรงรูป ทำให้สวยขึ้น") — the photo block now
+          // floats as a rounded card: side + top margin, 22px radius,
+          // soft warm shadow. Reads premium (Airbnb listing hero)
+          // instead of edge-to-edge.
           position: "relative",
           aspectRatio: "4 / 3",
           overflow: "hidden",
+          margin: "8px 12px 0",
+          borderRadius: "22px",
+          boxShadow:
+            "0 14px 34px rgba(126, 30, 46, 0.16), 0 2px 6px rgba(126, 30, 46, 0.08)",
         }}
       >
         {/* 🆕 28s30 — Airbnb-style 5-cell grid replaces the single
-            bg image. Each cell tap opens fullscreen at its index. */}
+            bg image. Each cell tap opens fullscreen at its index.
+            Round 28s56 — gap tightened to 3px (cleaner hairline). */}
         <Box
           sx={{
             position: "absolute",
@@ -234,7 +236,7 @@ const DetailHero: React.FC<Props> = ({
             display: "grid",
             gridTemplateColumns: "2fr 1fr 1fr",
             gridTemplateRows: "1fr 1fr",
-            gap: "4px",
+            gap: "3px",
             background: photoBg,
           }}
         >
@@ -261,6 +263,15 @@ const DetailHero: React.FC<Props> = ({
                     : "rgba(255,255,255,0.06)",
                   cursor: images.length > 0 ? "zoom-in" : "default",
                   overflow: "hidden",
+                  // Round 28s56 — subtle zoom + brighten on hover so the
+                  // grid feels interactive (desktop / hover-capable).
+                  transition: "transform 0.4s ease, filter 0.3s ease",
+                  "@media (hover: hover)": {
+                    "&:hover": {
+                      transform: "scale(1.04)",
+                      filter: "brightness(1.04)",
+                    },
+                  },
                   // Only the big cell carries the original ::after
                   // dark gradient so the bottom-of-card name overlay
                   // (rendered later, position absolute on the wrapper)
@@ -283,9 +294,14 @@ const DetailHero: React.FC<Props> = ({
                   <Box
                     aria-hidden="true"
                     sx={{
+                      // Round 28s56 — softer crimson gradient scrim
+                      // (was flat 0.62 black) + brand-red ring around
+                      // the "+N" so it reads as an inviting CTA, not a
+                      // dimmed-out dead cell.
                       position: "absolute",
                       inset: 0,
-                      background: "rgba(20, 8, 12, 0.62)",
+                      background:
+                        "linear-gradient(135deg, rgba(20,8,12,0.55), rgba(94,10,24,0.62))",
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
@@ -294,27 +310,43 @@ const DetailHero: React.FC<Props> = ({
                       fontFamily: SANS,
                       fontWeight: 700,
                       letterSpacing: "0.01em",
-                      backdropFilter: "blur(2px)",
+                      backdropFilter: "blur(3px)",
+                      WebkitBackdropFilter: "blur(3px)",
                     }}
                   >
                     <Box
-                      component="span"
                       sx={{
-                        fontFamily: SERIF,
-                        fontSize: "26px",
-                        fontWeight: 600,
-                        lineHeight: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: 56,
+                        height: 56,
+                        borderRadius: "50%",
+                        background: "rgba(255,255,255,0.12)",
+                        border: "1.5px solid rgba(255,255,255,0.5)",
                       }}
                     >
-                      +{remaining}
+                      <Box
+                        component="span"
+                        sx={{
+                          fontFamily: SERIF,
+                          fontSize: "22px",
+                          fontWeight: 600,
+                          lineHeight: 1,
+                        }}
+                      >
+                        +{remaining}
+                      </Box>
                     </Box>
                     <Box
                       component="span"
                       sx={{
-                        fontSize: "11px",
+                        fontSize: "10.5px",
                         fontWeight: 700,
-                        marginTop: "4px",
-                        letterSpacing: "0.04em",
+                        marginTop: "8px",
+                        letterSpacing: "0.06em",
+                        textShadow: "0 1px 3px rgba(0,0,0,0.4)",
                       }}
                     >
                       ดูทั้งหมด
