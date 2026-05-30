@@ -589,6 +589,14 @@ const TherapistDetailPage: React.FC = () => {
     "profile" | "reviews" | "loyalty" | null
   >(null);
 
+  // Round 28s42 — Underline-tab state (founder ref: a hotel
+  // overview screen with "ภาพรวม / นโยบายและเงื่อนไข" tabs).
+  // Defaults to Services since the page's whole point is converting
+  // browsing → booking; About sits one tap away.
+  const [detailTab, setDetailTab] = useState<"services" | "about">(
+    "services",
+  );
+
   // Round 28s34 — Live status pipeline (bookings + holiday overlay
   // + engine output) memoised so the spreads + engine call run only
   // when their dependencies change. Hooks still subscribe via the
@@ -825,33 +833,10 @@ const TherapistDetailPage: React.FC = () => {
         onTapLoyalty={() => setInfoSheet("loyalty")}
       />
 
-      {/* 🆕 Round 28b5 — Gallery is now embedded INSIDE the About
-          card (founder spec: "เอา Gallery ไปไว้ใน sheet เดียวกันกับ
-          About card collapsible"). Tapping About expands Row 2 +
-          Row 3 + 3-col gallery grid all at once. The standalone
-          GalleryTile section is no longer rendered. */}
-      <About
-        name={therapist.name}
-        rows={therapist.aboutRows}
-        facts={therapist.aboutFacts}
-        body={therapist.about}
-        gender={therapist.gender}
-        images={therapist.images}
-        galleryAltBase={`${therapist.name} photo`}
-        enhance={(url, mode) =>
-          enhanceImage(url, { variant: mode === "thumb" ? "card" : "hero" })
-        }
-      />
-
-      {/* Round 28s41 — Inline Reserve CTA removed (founder request).
-          The merged ServiceDurationSheet's Confirm now navigates
-          straight to /booking/:id via handleContinueBooking on the
-          last `setSelection` callback below. */}
-
-      {/* Round 28s34 — StatusPill always renders. Previously hidden
-          when offline, leaving guests guessing why the live signal
-          had vanished. StatusPill itself already handles the offline
-          variant (gray dot + next-shift line). */}
+      {/* Round 28s42 — StatusPill rendered ABOVE the tabs so the
+          status signal stays visible whichever panel is active.
+          About + Services panels themselves move inside the tabs
+          below. */}
       <Box sx={{ marginTop: "4px" }}>
         <StatusPill
           nextBookingAt={
@@ -862,20 +847,124 @@ const TherapistDetailPage: React.FC = () => {
         />
       </Box>
 
-      {/* Round 28s35 — PickerSection's Fraunces serif italic title
-          ("What kind of session?" with red em accent) was a mockup
-          ornament. Real web apps lead with a small uppercase
-          eyebrow and let the cards do the work. The inner
-          duplicate "Service" subtitle (was Fraunces 16px) is also
-          dropped — the eyebrow already names the section. */}
+      {/* Round 28s42 — Underline tabs (Services / About {name}).
+          Modelled on the founder-supplied hotel "ภาพรวม /
+          นโยบายและเงื่อนไข" reference. Defaults to Services since
+          that's the conversion surface; About is one tap away. */}
+      <Box
+        role="tablist"
+        aria-label={t(
+          "detail.tabsAria",
+          "Practitioner overview tabs",
+        )}
+        sx={{
+          maxWidth: 430,
+          margin: "12px auto 0",
+          padding: "0 18px",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          borderBottom: "1px solid rgba(184, 92, 60, 0.18)",
+        }}
+      >
+        {(
+          [
+            {
+              id: "services" as const,
+              label: t("detail.tabs.services", "Services"),
+            },
+            {
+              id: "about" as const,
+              label: t("detail.tabs.about", "About {{name}}", {
+                name: therapist.name,
+              }),
+            },
+          ]
+        ).map((tab) => {
+          const isActive = detailTab === tab.id;
+          return (
+            <Box
+              key={tab.id}
+              component="button"
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setDetailTab(tab.id)}
+              sx={{
+                position: "relative",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                padding: "14px 8px",
+                fontFamily: SANS,
+                fontSize: "13.5px",
+                fontWeight: 700,
+                letterSpacing: "0.005em",
+                color: isActive
+                  ? "#FE0944"
+                  : "rgba(60, 30, 20, 0.55)",
+                textAlign: "center",
+                transition: "color 0.18s ease",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                "&:hover": {
+                  color: isActive ? "#FE0944" : "#2a1a14",
+                },
+                "&:focus-visible": {
+                  outline: "2px solid #FE0944",
+                  outlineOffset: 2,
+                  borderRadius: "6px",
+                },
+                "&::after": {
+                  content: '""',
+                  position: "absolute",
+                  left: 12,
+                  right: 12,
+                  bottom: -1,
+                  height: 3,
+                  borderRadius: 3,
+                  background: isActive
+                    ? "linear-gradient(135deg, #FE0944, #FE7A52)"
+                    : "transparent",
+                  transition: "background 0.18s ease",
+                },
+              }}
+            >
+              {tab.label}
+            </Box>
+          );
+        })}
+      </Box>
+
+      {/* ── About panel ─────────────────────────────────────────── */}
+      {detailTab === "about" && (
+        <Box role="tabpanel" sx={{ paddingTop: "12px" }}>
+          <About
+            name={therapist.name}
+            rows={therapist.aboutRows}
+            facts={therapist.aboutFacts}
+            body={therapist.about}
+            gender={therapist.gender}
+            images={therapist.images}
+            galleryAltBase={`${therapist.name} photo`}
+            enhance={(url, mode) =>
+              enhanceImage(url, {
+                variant: mode === "thumb" ? "card" : "hero",
+              })
+            }
+          />
+        </Box>
+      )}
+
+      {/* ── Services panel ─────────────────────────────────────── */}
+      {detailTab === "services" && (
       <Box
         id="tdp-service-picker"
+        role="tabpanel"
         sx={{
           padding: "20px",
-          borderTop: "1px solid rgba(184, 92, 60, 0.12)",
           maxWidth: 430,
           margin: "0 auto",
-          scrollMarginTop: "70px",
         }}
       >
         <Typography
@@ -952,6 +1041,7 @@ const TherapistDetailPage: React.FC = () => {
           )}
         </Typography>
       </Box>
+      )}
 
       {/* (Reviews moved into TherapistProfileTabs as Tab 2.) */}
 
