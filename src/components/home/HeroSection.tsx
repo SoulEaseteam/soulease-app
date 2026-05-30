@@ -380,10 +380,18 @@ const HeroSection: React.FC = () => {
           <Typography
             component="h3"
             sx={{
-              fontFamily: fonts.heading,
-              fontWeight: 600,
-              fontSize: "18px",
-              color: brand.text,
+              // Round 28s14 — was 18px Fraunces serif. Founder:
+              // "Our services เล็กลง". Reads as a quiet eyebrow now
+              // (Inter, small caps, warm clay), not a hero element —
+              // matches the "Featured Products" register in the
+              // Karim reference rather than competing with the
+              // greeting headline above.
+              fontFamily: fonts.body,
+              fontWeight: 800,
+              fontSize: "11.5px",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: brand.accent,
               lineHeight: 1.1,
             }}
           >
@@ -406,8 +414,9 @@ const HeroSection: React.FC = () => {
               border: "none",
               cursor: "pointer",
               fontFamily: fonts.body,
-              fontSize: "12.5px",
-              fontWeight: 600,
+              fontSize: "11px",
+              fontWeight: 700,
+              letterSpacing: "0.04em",
               color: brand.red,
               "&:hover": { opacity: 0.85 },
               "&:focus-visible": {
@@ -418,7 +427,7 @@ const HeroSection: React.FC = () => {
             }}
           >
             {t("home.hero.servicesSeeAll", "See all")}
-            <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
+            <ArrowForwardRoundedIcon sx={{ fontSize: 13 }} />
           </Box>
         </Box>
 
