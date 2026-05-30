@@ -182,35 +182,127 @@ const DetailHero: React.FC<Props> = ({
     ? `center / cover no-repeat url("${currentImage}"), ${photoBg}`
     : photoBg;
 
+  // 🆕 Round 28s30 (founder 2026-05-31) — Airbnb-style photo grid.
+  //   Replaces the single full-bleed hero photo with a 1-big-left +
+  //   2×2-small-right gallery preview. Tap any cell → fullscreen
+  //   viewer opens on THAT photo. The bottom-right cell carries a
+  //   "+N ดูทั้งหมด" overlay when more than 5 photos exist.
+  //   Reference: founder-supplied resort booking screenshot
+  //   ("P4 · 4 photos visible · +4 more").
+  const previewCells = [0, 1, 2, 3, 4].map((i) => images[i] ?? null);
+  const remaining = Math.max(0, images.length - 5);
+
   return (
     <>
       <Box
         sx={{
-          // .detail-hero — verbatim
+          // .detail-hero — verbatim aspect ratio kept so the rest of
+          // the page rhythm doesn't shift.
           position: "relative",
           aspectRatio: "4 / 5",
           overflow: "hidden",
-          cursor: images.length > 0 ? "zoom-in" : "default",
         }}
-        onClick={() => images.length > 0 && setFullscreen(true)}
       >
-        {/* .bg + overlay */}
+        {/* 🆕 28s30 — Airbnb-style 5-cell grid replaces the single
+            bg image. Each cell tap opens fullscreen at its index. */}
         <Box
           sx={{
             position: "absolute",
             inset: 0,
-            background: bgValue,
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              inset: 0,
-              background: [
-                "radial-gradient(ellipse at 30% 25%, rgba(255, 255, 255, 0.2) 0%, transparent 50%)",
-                "linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, transparent 30%, transparent 60%, rgba(0, 0, 0, 0.65) 100%)",
-              ].join(", "),
-            },
+            display: "grid",
+            gridTemplateColumns: "2fr 1fr 1fr",
+            gridTemplateRows: "1fr 1fr",
+            gap: "4px",
+            background: photoBg,
           }}
-        />
+        >
+          {previewCells.map((src, idx) => {
+            const isBig = idx === 0;
+            const isLastVisible = idx === 4;
+            const showSeeAll = isLastVisible && remaining > 0;
+            return (
+              <Box
+                key={idx}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (images.length === 0) return;
+                  setActiveIdx(idx);
+                  setFullscreen(true);
+                }}
+                sx={{
+                  position: "relative",
+                  ...(isBig
+                    ? { gridColumn: "1", gridRow: "1 / span 2" }
+                    : {}),
+                  background: src
+                    ? `center / cover no-repeat url("${src}")`
+                    : "rgba(255,255,255,0.06)",
+                  cursor: images.length > 0 ? "zoom-in" : "default",
+                  overflow: "hidden",
+                  // Only the big cell carries the original ::after
+                  // dark gradient so the bottom-of-card name overlay
+                  // (rendered later, position absolute on the wrapper)
+                  // still reads on the LEFT half where it sits.
+                  ...(isBig && {
+                    "&::after": {
+                      content: '""',
+                      position: "absolute",
+                      inset: 0,
+                      background: [
+                        "radial-gradient(ellipse at 30% 25%, rgba(255, 255, 255, 0.18) 0%, transparent 50%)",
+                        "linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, transparent 30%, transparent 55%, rgba(0, 0, 0, 0.70) 100%)",
+                      ].join(", "),
+                      pointerEvents: "none",
+                    },
+                  }),
+                }}
+              >
+                {showSeeAll && (
+                  <Box
+                    aria-hidden="true"
+                    sx={{
+                      position: "absolute",
+                      inset: 0,
+                      background: "rgba(20, 8, 12, 0.62)",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#fff",
+                      fontFamily: SANS,
+                      fontWeight: 700,
+                      letterSpacing: "0.01em",
+                      backdropFilter: "blur(2px)",
+                    }}
+                  >
+                    <Box
+                      component="span"
+                      sx={{
+                        fontFamily: SERIF,
+                        fontSize: "26px",
+                        fontWeight: 600,
+                        lineHeight: 1,
+                      }}
+                    >
+                      +{remaining}
+                    </Box>
+                    <Box
+                      component="span"
+                      sx={{
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        marginTop: "4px",
+                        letterSpacing: "0.04em",
+                      }}
+                    >
+                      ดูทั้งหมด
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            );
+          })}
+        </Box>
 
         {/* 🆕 Round 28b3 — Prev/Next chevrons removed from hero photo
             (founder feedback). Tap photo to open fullscreen viewer
