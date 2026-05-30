@@ -235,8 +235,17 @@ export function nextAvailableHHMM(
  * Two intervals [a, b) and [c, d) overlap iff a < d AND c < b.
  *
  * Round 28ao — `bufferMin` defaults to 0 for callers that don't care
- * about the gap; StepDateTime passes 10 to enforce the founder rule
- * "พนักงานต้องมีเวลาเตรียมตัวระหว่างงาน".
+ * about the gap; StepDateTime passes BOOKING_BUFFER_MIN to enforce the
+ * founder rule "พนักงานต้องมีเวลาเตรียมตัวระหว่างงาน".
+ *
+ * Round 28s69 (founder 2026-05-31: "เวลาอื่นๆ เผื่อเวลา 20นาที") — the
+ * buffer is now applied SYMMETRICALLY, around both the start AND end of
+ * every booking. Previously it only padded the end (endAt + buffer),
+ * which guarded the therapist's travel AWAY from a session but not
+ * travel TO it. For outcall the practitioner must reach the next guest,
+ * so a slot that ends exactly when a booking starts (zero travel gap)
+ * must also be blocked. Now `[bStart - buffer, bEnd + buffer)` is
+ * reserved, giving a full 20-min cushion on each side.
  */
 export function isSlotTaken(
   bookings: TherapistBooking[],
@@ -247,8 +256,8 @@ export function isSlotTaken(
   const slotEndMs = slotStartMs + durationMin * 60_000;
   const bufferMs = bufferMin * 60_000;
   for (const b of bookings) {
-    const bStart = b.startAt.getTime();
-    const bEnd = b.endAt.getTime() + bufferMs; // extend with buffer
+    const bStart = b.startAt.getTime() - bufferMs; // travel-to cushion
+    const bEnd = b.endAt.getTime() + bufferMs; // wrap-up + travel-away
     if (slotStartMs < bEnd && bStart < slotEndMs) return true;
   }
   return false;

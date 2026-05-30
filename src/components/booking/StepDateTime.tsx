@@ -53,11 +53,13 @@ const SLOT_INCREMENT_MIN = 30;
 //   เพื่อให้พนักงานเตรียมตัว (gentle minimum — therapist needs to
 //   acknowledge the booking + start traveling).
 const TODAY_MIN_LEAD_MIN = 10;
-// 🆕 Round 28ao — gap between consecutive bookings of the same therapist.
-//   After a session ends, we block the next 10 minutes so the therapist
-//   can wrap up + travel to the next location. Used by isSlotTaken
-//   below via the `bufferMin` argument.
-const BOOKING_BUFFER_MIN = 10;
+// 🆕 Round 28ao — gap reserved AROUND every existing booking of the same
+//   therapist, so they have time to wrap up + travel between locations.
+//   Round 28s69 (founder "เวลาอื่นๆ เผื่อเวลา 20นาที") — bumped 10 → 20
+//   min, and isSlotTaken now applies it on BOTH sides of a booking
+//   (travel-to + travel-away), so the slots adjacent to a reserved
+//   session are blocked while every other slot stays bookable.
+const BOOKING_BUFFER_MIN = 20;
 // 🆕 Round 28b50 (founder 2026-05-05) — Reverted Round 28b41's
 //   "20-min before shift end" rule. Founder direction:
 //   "ทุกออเดอสามารถจองได้หมดหากอยู่ในเวลางาน" — every booking is
