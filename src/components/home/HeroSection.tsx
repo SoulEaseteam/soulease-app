@@ -60,21 +60,17 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
-import TelegramIcon from "@mui/icons-material/Telegram";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
-import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
 
 import { brand, fonts, gradients } from "@/theme";
 import { useConciergeMode } from "@/utils/conciergeMode";
 import { trackConciergeOpen } from "@/utils/analytics";
-import ConciergeModeIcon from "@/components/common/ConciergeModeIcon";
 import ReferralActiveBanner from "@/components/common/ReferralActiveBanner";
 import { pickHeroPromo } from "@/data/heroPromos";
 
-// Canonical channel URLs (HomeFooter / AdminFloatingChat / HowItWorks /
-// ProfilePage use the same constants).
+// Canonical channel URL — same one HomeFooter / AdminFloatingChat /
+// HowItWorks / ProfilePage already use.
 const WHATSAPP_URL = "https://wa.me/66634350987";
-const TELEGRAM_URL = "https://t.me/SunRedvip_bkk";
 
 // Service strip — short labels chosen for the hero tile, full names
 // kept in /services/:id detail. Prices and durations match
@@ -131,11 +127,6 @@ const HeroSection: React.FC = () => {
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const handleTelegram = () => {
-    trackConciergeOpen("telegram");
-    window.open(TELEGRAM_URL, "_blank", "noopener,noreferrer");
-  };
-
   const handleServiceTap = (id: string) => {
     navigate(`/services/${encodeURIComponent(id)}`);
   };
@@ -155,136 +146,11 @@ const HeroSection: React.FC = () => {
             "linear-gradient(180deg, #FFF6EF 0%, #FCEBDC 100%)",
         }}
       >
-        {/* ── Status row — three columns ──────────────────────────────── */}
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "1fr auto 1fr",
-            alignItems: "center",
-            gap: "10px",
-            marginBottom: "16px",
-            padding: "0 4px",
-          }}
-        >
-          <Box>
-            <Typography
-              component="p"
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                fontFamily: fonts.body,
-                fontSize: "11px",
-                fontWeight: 800,
-                letterSpacing: "0.10em",
-                textTransform: "uppercase",
-                color: brand.text,
-                lineHeight: 1.1,
-              }}
-            >
-              <Box
-                component="span"
-                sx={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: "50%",
-                  background: brand.green,
-                  boxShadow: `0 0 0 3px ${brand.green}33`,
-                }}
-              />
-              {concierge.pillLabel}
-            </Typography>
-            <Typography
-              component="p"
-              sx={{
-                fontFamily: fonts.body,
-                fontSize: "10.5px",
-                fontWeight: 500,
-                color: brand.textMuted,
-                marginTop: "2px",
-              }}
-            >
-              {t("home.hero.statusLive", "Concierge live")}
-            </Typography>
-          </Box>
-
-          <Box sx={{ textAlign: "center" }}>
-            <Typography
-              component="p"
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-                fontFamily: fonts.body,
-                fontSize: "11px",
-                fontWeight: 800,
-                letterSpacing: "0.10em",
-                textTransform: "uppercase",
-                color: brand.text,
-                lineHeight: 1.1,
-              }}
-            >
-              <PlaceRoundedIcon sx={{ fontSize: 13, color: brand.red }} />
-              Bangkok
-            </Typography>
-            <Typography
-              component="p"
-              sx={{
-                fontFamily: fonts.body,
-                fontSize: "10.5px",
-                fontWeight: 500,
-                color: brand.textMuted,
-                marginTop: "2px",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {t("home.hero.areas", "Sukhumvit · Silom · Asok")}
-            </Typography>
-          </Box>
-
-          <Box sx={{ textAlign: "right" }}>
-            <Box
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "flex-end",
-                gap: "4px",
-              }}
-            >
-              <ConciergeModeIcon
-                mode={concierge.mode}
-                sx={{ fontSize: 16, color: brand.red }}
-              />
-              <Typography
-                component="span"
-                sx={{
-                  fontFamily: fonts.body,
-                  fontSize: "11px",
-                  fontWeight: 800,
-                  letterSpacing: "0.10em",
-                  textTransform: "uppercase",
-                  color: brand.text,
-                  lineHeight: 1.1,
-                }}
-              >
-                {concierge.promoEyebrow.split("·").pop()?.trim() ??
-                  concierge.promoEyebrow}
-              </Typography>
-            </Box>
-            <Typography
-              component="p"
-              sx={{
-                fontFamily: fonts.body,
-                fontSize: "10.5px",
-                fontWeight: 500,
-                color: brand.textMuted,
-                marginTop: "2px",
-              }}
-            >
-              {t("home.hero.tonightLabel", "Tonight")}
-            </Typography>
-          </Box>
-        </Box>
+        {/* Round 28s12 — Status row dropped (founder "ตัดออก บ้าง อัน").
+            The 3-col TONIGHT OPENING / BANGKOK / BOOKING WINDOW
+            duplicated info already in TopNav (live pill + mode glyph)
+            and the rotating promo eyebrow. Keeping only the action
+            surfaces below. */}
 
         {/* ── Greeting card — white rounded, → WhatsApp ──────────────── */}
         <Box
@@ -651,59 +517,11 @@ const HeroSection: React.FC = () => {
           </Box>
         </Box>
 
-        {/* ── Telegram secondary slim card ────────────────────────────── */}
-        <Box
-          component={motion.div}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
-          onClick={handleTelegram}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              handleTelegram();
-            }
-          }}
-          aria-label={t(
-            "home.hero.telegramAria",
-            "Open Telegram channel"
-          )}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "8px",
-            padding: "10px 16px",
-            borderRadius: "14px",
-            background: "rgba(255,255,255,0.65)",
-            border: "1px solid rgba(184, 92, 60, 0.18)",
-            cursor: "pointer",
-            transition: "background 0.18s ease, transform 0.12s ease",
-            "&:hover": {
-              background: "rgba(255,255,255,0.85)",
-              transform: "translateY(-1px)",
-            },
-            "&:focus-visible": {
-              outline: `2px solid ${brand.red}`,
-              outlineOffset: 2,
-            },
-          }}
-        >
-          <TelegramIcon sx={{ fontSize: 18, color: brand.red }} />
-          <Typography
-            component="span"
-            sx={{
-              fontFamily: fonts.body,
-              fontSize: "13.5px",
-              fontWeight: 600,
-              color: brand.text,
-            }}
-          >
-            {t("home.hero.telegramLabel", "Or message Telegram")}
-          </Typography>
-        </Box>
+        {/* Round 28s12 — Telegram secondary card dropped. Both the
+            greeting card and the rotating promo banner already route
+            to WhatsApp; a third "or message Telegram" surface read as
+            redundant. Telegram remains discoverable via TopNav menu,
+            the floating concierge chat, and HomeFooter social icons. */}
       </Box>
 
       {/* Referral banner sits below the hero — auto-hides when no
