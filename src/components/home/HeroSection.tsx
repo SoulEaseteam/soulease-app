@@ -437,16 +437,31 @@ const HeroSection: React.FC = () => {
           </Box>
         </Box>
 
-        {/* ── 2×2 service grid ───────────────────────────────────────── */}
+        {/* ── Service strip — horizontal scrollable row ──────────────
+            Round 28s16 — Was a 2×2 grid (28s13). Founder: "Our
+            services เรียงแถว แนวนอน". Single horizontal row with
+            scroll-snap so each card lands cleanly on swipe. Cards
+            keep the polished design from 28s15 (unified cream
+            swatch + tier-laddered icon colour + brand-red [+]
+            CTA) — only the row arrangement changed. */}
         <Box
           component={motion.div}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
           sx={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
+            display: "flex",
             gap: "10px",
+            overflowX: "auto",
+            // Hide scrollbar so the row reads as a clean strip.
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
+            scrollSnapType: "x mandatory",
+            // Negative margin lets the strip bleed to the section
+            // edges so the second card hints "more →"; padding
+            // restores the visual gutter on the snap target.
+            margin: "0 -18px",
+            padding: "4px 18px 4px",
           }}
         >
           {HERO_SERVICES.map((svc) => {
@@ -470,6 +485,9 @@ const HeroSection: React.FC = () => {
                 )}
                 sx={{
                   position: "relative",
+                  flexShrink: 0,
+                  width: 156,
+                  scrollSnapAlign: "start",
                   display: "flex",
                   flexDirection: "column",
                   padding: "12px 12px 14px",
