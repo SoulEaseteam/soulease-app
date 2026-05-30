@@ -151,6 +151,16 @@ import { logBookingError } from "@/utils/bookingError";
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
+// Round 28s71 (audit) — defensive HH:mm → minutes parse. Returns NaN
+//   for missing / malformed values instead of NaN-poisoning the
+//   overnight booking math (therapist.startTime/endTime are static but
+//   may be overlaid by live Firestore values that could be cleared).
+function hhmmToMin(hhmm: string | null | undefined): number {
+  if (!hhmm || typeof hhmm !== "string" || !hhmm.includes(":")) return NaN;
+  const [h, m] = hhmm.split(":").map((x) => parseInt(x, 10));
+  return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : NaN;
+}
+
 // 🆕 Round 28r10 (founder 2026-05-06) — File-split refactor.
 //   - useTweenedNumber → @/hooks/useTweenedNumber
 //   - BookingFormState + initialFormState + persisted-form helpers
@@ -581,13 +591,22 @@ const BookingFlowPage: React.FC = () => {
   const bookingHourBKK = form.time
     ? parseInt(form.time.split(":")[0], 10)
     : undefined;
-  const discount = validateDiscount(form.discountCode, discountableBase, {
-    bookingHourBKK,
-    serviceId: form.serviceId,
-    // 🆕 Round 28r28 — FREETAXI needs the taxi fare to compute its
-    //   discount amount. Other codes ignore it.
-    taxiFareTHB: taxiFare,
-  });
+  // 🆕 Round 28s71 (audit perf) — memoized. validateDiscount used to
+  //   re-run on EVERY render, including all ~30 frames of the total's
+  //   count-up tween (useTweenedNumber below), on every keystroke, and
+  //   on each distance/rain recompute. Now it only recomputes when an
+  //   actual input changes.
+  const discount = useMemo(
+    () =>
+      validateDiscount(form.discountCode, discountableBase, {
+        bookingHourBKK,
+        serviceId: form.serviceId,
+        // 🆕 Round 28r28 — FREETAXI needs the taxi fare to compute its
+        //   discount amount. Other codes ignore it.
+        taxiFareTHB: taxiFare,
+      }),
+    [form.discountCode, discountableBase, bookingHourBKK, form.serviceId, taxiFare]
+  );
   const discountAmount = discount.valid ? discount.amount : 0;
   // 🆕 Round 28r28 — Total calc branches on FREETAXI vs others:
   //   FREETAXI: total = service + addons + (taxi - discount=taxi) = service + addons
@@ -763,15 +782,32 @@ const BookingFlowPage: React.FC = () => {
         return;
       }
       let startDate = parsedStart;
-      const startMin =
-        parseInt(therapist.startTime.split(":")[0]) * 60 +
-        parseInt(therapist.startTime.split(":")[1]);
-      const endMin =
-        parseInt(therapist.endTime.split(":")[0]) * 60 +
-        parseInt(therapist.endTime.split(":")[1]);
-      const slotMin = startDate.hour() * 60 + startDate.minute();
-      if (endMin <= startMin && slotMin < startMin) {
-        startDate = startDate.add(1, "day");
+      // Round 28s71 (audit) — guard the overnight-shift adjustment with
+      //   finite-checked working hours. A malformed startTime/endTime
+      //   used to NaN-poison this math and write a wrong startAt/endAt.
+      const startMin = hhmmToMin(therapist.startTime);
+      const endMin = hhmmToMin(therapist.endTime);
+      if (Number.isFinite(startMin) && Number.isFinite(endMin)) {
+        const slotMin = startDate.hour() * 60 + startDate.minute();
+        if (endMin <= startMin && slotMin < startMin) {
+          startDate = startDate.add(1, "day");
+        }
+      }
+      // Round 28s71 (audit) — reject bookings whose start time has
+      //   already passed. Without this a guest could pick a time gone
+      //   earlier today; the overnight branch above would then silently
+      //   shove it to tomorrow (booking moved 24h with no warning).
+      //   Admin may back-date an offline-coordinated booking, so the
+      //   guard is customer-only.
+      if (!isAdminBooking && startDate.isBefore(nowBKK())) {
+        toast.error(
+          t(
+            "booking.error.pastTime",
+            "That time has already passed. Please pick a later time."
+          )
+        );
+        setSubmitting(false);
+        return;
       }
       const endDate = startDate.add(
         form.duration ?? service.duration,
@@ -839,9 +875,12 @@ const BookingFlowPage: React.FC = () => {
         //     • releaseExpiredHolds Cloud Function (runs every 5 min,
         //       sets holdState="expired" on stale active holds)
         //   `holdState` lifecycle: "active" → "confirmed" (admin) | "expired"
-        //   We use server-side dayjs so device clock skew can't extend
-        //   the hold artificially. The 10-minute window is configurable
-        //   by changing the constant below.
+        //   NOTE (Round 28s71 audit): holdExpiresAt is derived from the
+        //   CLIENT clock (nowBKK() = dayjs on the device), so a skewed
+        //   device clock can shift the hold window. The authoritative
+        //   release is the `releaseExpiredHolds` Cloud Function, which
+        //   compares against the SERVER `createdAt` — that's what
+        //   actually prevents a tampered clock from extending a hold.
         // 🆕 Round 28r24 — Admin bookings are pre-confirmed, no
         //   countdown. Customer bookings still get the 10-min hold.
         holdState: isAdminBooking ? "confirmed" : "active",
@@ -958,6 +997,10 @@ const BookingFlowPage: React.FC = () => {
       //   happened?" via chat. Includes form context (no PII beyond
       //   the booking doc fields). Falls through to the existing
       //   user-facing toast — guests see the same retry message.
+      // Round 28s71 (audit) — no longer pass locationName / address
+      //   to the error log; they revealed where the guest is staying
+      //   and were echoed to the production console. Triage only needs
+      //   the non-PII booking context below.
       logBookingError(err, {
         step: "addDoc_or_notify",
         therapistId: form.therapistId,
@@ -965,8 +1008,6 @@ const BookingFlowPage: React.FC = () => {
         duration: form.duration,
         date: form.date,
         time: form.time,
-        locationName: form.locationName,
-        address: form.locationAddress,
         paymentMethod: PAYMENT_LABELS[paymentMethod],
       });
       toast.error(

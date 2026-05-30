@@ -11,10 +11,9 @@
 //   submit, capturing enough context for View to triage from the
 //   admin panel without bothering the customer for repro steps.
 //
-// What it captures (no PII beyond what booking docs already store):
+// What it captures (no PII):
 //   • errorMessage / errorName / errorStack (truncated to 1KB)
 //   • therapistId / serviceId / duration / date / time
-//   • locationName + address (truncated)
 //   • paymentMethod label
 //   • userAgent + viewport size + locale + concierge mode
 //   • timestamp
@@ -22,8 +21,12 @@
 // What it does NOT capture:
 //   • Customer phone / contact name (PII; admin can pull from
 //     abandoned_bookings instead if they need to reach out)
-//   • Full address details / addressNote (might leak room numbers)
-//   • Discount code (irrelevant to error triage)
+//   • 🆕 Round 28s71 (audit) — locationName + address were REMOVED.
+//     They reveal where the guest is staying (hotel name / street /
+//     room area) and were being written on every failed submit, plus
+//     echoed to the production console. Error triage never needs the
+//     address — the booking doc has it when the submit actually
+//     succeeds. Dropped from the doc, the console echo, and the type.
 
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -37,8 +40,6 @@ interface BookingErrorContext {
   duration?: number | null;
   date?: string | null;
   time?: string | null;
-  locationName?: string | null;
-  address?: string | null;
   paymentMethod?: string | null;
   /** Step where the failure happened — submit / validation / notify. */
   step?: string;
@@ -84,8 +85,6 @@ export function logBookingError(
     duration: ctx.duration ?? null,
     date: ctx.date ?? null,
     time: ctx.time ?? null,
-    locationName: TRUNC(ctx.locationName, 200) || null,
-    address: TRUNC(ctx.address, 200) || null,
     paymentMethod: ctx.paymentMethod ?? null,
     // Non-PII browser context for triage.
     userAgent: TRUNC(navigator.userAgent, 400),
