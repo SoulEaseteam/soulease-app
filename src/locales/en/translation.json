@@ -193,7 +193,7 @@
   "sheet.notices": "Notices",
   "sheet.chooseDuration": "Choose duration",
   "sheet.pickDateTime": "Pick date & time",
-  "sheet.pickToContinue": "Pick date & time to continue",
+  "sheet.pickToContinue": "Select a time",
   "sheet.confirm": "Confirm",
   "sheet.serviceNotes": "Service Notes",
   "sheet.mins": "{{n}} mins",

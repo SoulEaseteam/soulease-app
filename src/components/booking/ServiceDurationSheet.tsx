@@ -760,13 +760,17 @@ const ServiceDurationSheet: React.FC<Props> = ({
         </Box>
       </Box>
 
-      {/* Confirm CTA — pinned to bottom. Disabled until duration AND
-          date AND time are all picked (auto-navigates the parent on tap). */}
+      {/* Confirm CTA — Round 28s70 (founder "ปุ่มลอย"): the button now
+          floats as a detached pill instead of sitting flush at the very
+          bottom edge. Bottom padding + iPhone safe-area gives it cream
+          breathing room beneath, and the stronger shadow lifts it off
+          the sheet. Disabled until date AND time are picked (auto-
+          navigates the parent on tap). */}
       <Box
         sx={{
           flexShrink: 0,
-          padding: "12px 20px 0",
-          background: "linear-gradient(180deg, transparent, #FCEBDC 30%)",
+          padding: "14px 18px calc(18px + env(safe-area-inset-bottom, 0px))",
+          background: "linear-gradient(180deg, transparent, #FCEBDC 38%)",
         }}
       >
         <Button
@@ -787,9 +791,10 @@ const ServiceDurationSheet: React.FC<Props> = ({
             fontWeight: 700,
             letterSpacing: "0.02em",
             textTransform: "none",
-            boxShadow: "0 6px 20px rgba(254, 9, 68, 0.35)",
+            boxShadow: "0 10px 26px rgba(254, 9, 68, 0.4)",
             "&:hover": {
               background: "linear-gradient(135deg, #E50840, #E56A47)",
+              boxShadow: "0 12px 30px rgba(254, 9, 68, 0.45)",
             },
             "&.Mui-disabled": {
               background: "rgba(0, 0, 0, 0.12)",
@@ -799,7 +804,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
           }}
         >
           {!draftDate || !draftTime
-            ? t("sheet.pickToContinue", "Pick date & time to continue")
+            ? t("sheet.pickToContinue", "Select a time")
             : `${t("sheet.confirm", "Confirm")} · ${formatTHB(totalPrice)}`}
         </Button>
       </Box>

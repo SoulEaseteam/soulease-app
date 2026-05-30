@@ -195,7 +195,7 @@
   "sheet.notices": "ข้อควรทราบ",
   "sheet.chooseDuration": "เลือกระยะเวลา",
   "sheet.pickDateTime": "เลือกวันและเวลา",
-  "sheet.pickToContinue": "เลือกวันและเวลาเพื่อดำเนินการต่อ",
+  "sheet.pickToContinue": "เลือกเวลา",
   "sheet.confirm": "ยืนยัน",
   "sheet.serviceNotes": "หมายเหตุบริการ",
   "sheet.mins": "{{n}} นาที",

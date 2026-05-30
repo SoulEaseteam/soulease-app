@@ -193,7 +193,7 @@
   "sheet.notices": "注意事項",
   "sheet.chooseDuration": "時間を選ぶ",
   "sheet.pickDateTime": "日時を選ぶ",
-  "sheet.pickToContinue": "日時を選択して続ける",
+  "sheet.pickToContinue": "時間を選択",
   "sheet.confirm": "確定",
   "sheet.serviceNotes": "サービス注意事項",
   "sheet.mins": "{{n}} 分",

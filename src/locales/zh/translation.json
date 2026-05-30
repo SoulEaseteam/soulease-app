@@ -288,7 +288,7 @@
   "sheet.notices": "须知",
   "sheet.chooseDuration": "选择时长",
   "sheet.pickDateTime": "选择日期和时间",
-  "sheet.pickToContinue": "请选择日期和时间以继续",
+  "sheet.pickToContinue": "选择时间",
   "sheet.confirm": "确认",
   "sheet.serviceNotes": "服务须知",
   "sheet.mins": "{{n}} 分钟",
