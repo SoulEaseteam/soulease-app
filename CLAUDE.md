@@ -355,6 +355,12 @@ they prefer.
   service route now serves its own title + JSON-LD to non-JS crawlers
   (Baidu/Naver/Bing → matters for our CN/JP/KR audience). Home unchanged.
 
+- ✅ **28s108**: extended the prerender to all 12 `/therapists/:id`
+  pages (discreet: name + area + Bangkok only, verified 0 PII leak) →
+  17 static route files total. Also purged the fake "4.8 ★ • 1,200+"
+  `hero.badge.rating` string from i18n.ts + all 5 locale JSONs (dead
+  key, but a fake-rating claim shouldn't ship). Verified LIVE.
+
 - 🛑 **DECISION: full React-tree SSG is NOT being done.** Investigation
   (28s105) found the app is SSR-cleaner than feared (no module-level
   browser access; entry/providers/layouts clean; home components touch
