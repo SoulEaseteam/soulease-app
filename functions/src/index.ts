@@ -79,6 +79,14 @@ export const notifyBooking = onCall(
     enforceAppCheck: false,
   },
   async (request) => {
+    // 🆕 Round 28s81 (audit) — DEPRECATED. The app no longer calls this;
+    //   booking alerts now come from the onBookingCreate trigger (server-
+    //   side, can't be spoofed). This callable used to be open to anyone
+    //   (no auth → spam vector into the admin group). Gated to signed-in
+    //   callers only as a stop-gap; safe to delete on the next deploy.
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign-in required.");
+    }
     const data = request.data as NotifyPayload;
     const message = (data?.message || "").toString().trim();
     if (!message) {
@@ -435,6 +443,8 @@ interface BookingDocLite {
   totalPrice?: number;
   language?: string;
   payment?: string;
+  // 🆕 Round 28s81 — WeChat/Alipay service charge (0 / absent otherwise).
+  paymentFee?: number;
   holdState?: string;
   holdExpiresAt?: Timestamp;
   mapUrl?: string;
@@ -452,7 +462,15 @@ const formatBookingForAdmin = (
     `🧖 ${b.therapistName ?? "—"} · ${b.serviceName ?? "—"} · ${b.duration ?? "?"} min`,
     `📅 ${b.date ?? "—"}  🕐 ${b.time ?? "—"}`,
     `📍 ${b.address ?? "—"}`,
+    // 🆕 Round 28s81 — map deep-link (was only in the old client
+    //   message; the trigger is now the single source so port it here).
+    ...(b.mapUrl ? [`🗺️ ${b.mapUrl}`] : []),
     `💴 ฿${(b.totalPrice ?? 0).toLocaleString()}  💳 ${b.payment ?? "Cash"}`,
+    // 🆕 Round 28s81 — itemize the WeChat/Alipay service charge so the
+    //   total above is explainable at a glance (total already includes it).
+    ...(b.paymentFee && b.paymentFee > 0
+      ? [`   ↳ incl. service charge ฿${b.paymentFee.toLocaleString()}`]
+      : []),
     `🌐 lang: ${b.language ?? "—"}`,
     "",
     `⏳ Customer hold: 10 min — confirm before it expires.`,

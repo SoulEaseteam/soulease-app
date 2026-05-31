@@ -72,7 +72,9 @@ import PaymentRoundedIcon from "@mui/icons-material/PaymentRounded";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import { isInappropriate } from "@/utils/moderate";
-import { sendBookingNotification } from "@/utils/telegram";
+// Round 28s81 — client no longer sends the Telegram notification; the
+//   onBookingCreate Cloud Function trigger is the single source (see
+//   the submit handler). sendBookingNotification import removed.
 // 🆕 Round 28b21 — Phase 4 of conversion plan: cart abandonment tracker.
 //   Records partial bookings to Firestore the moment the customer has
 //   given us a phone number, so we can chase the lead if they bail.
@@ -965,48 +967,14 @@ const BookingFlowPage: React.FC = () => {
         console.warn("[booking] in-app notification write failed:", notifErr);
       }
 
-      // 📱 Notify staff via Telegram bot — fail-open (logged on error).
-      //    Not awaited; the user shouldn't wait for Telegram on success
-      //    redirect. The Cloud Function persists its own delivery log.
-      void sendBookingNotification({
-        bookingId: ref.id,
-        therapistName: therapist.name,
-        serviceName: service.name,
-        duration: form.duration ?? service.duration,
-        date: form.date,
-        time: form.time,
-        startAt: startDate.toDate(),
-        locationName: form.locationName,
-        address: form.locationAddress,
-        addressDetails: form.addressDetails,
-        contactName: form.contactName,
-        phone: form.customerPhone,
-        note: form.addressNote || form.notes, // prefer address note
-        servicePrice,
-        taxiFee: taxiFare,
-        total,
-        distanceKm,
-        language: form.language,
-        addons: selectedAddons.map((a) => ({ name: a.name, price: a.price })),
-        rainTier: taxiResult?.rain.tier ?? "none",
-        meetingPoint: form.meetingPoint,
-        locationType: form.locationType,
-        mapUrl: form.mapUrl,
-        // 🆕 Round 13: extra fields for the new Telegram template
-        discountCode: form.discountCode || null,
-        // 🆕 Round 28r14 — Send the validated discount amount alongside
-        //   the code so admin sees exactly what was applied (no
-        //   ambiguity if the code is FIRST10 vs SUN-XXX). Stored as
-        //   integer THB; null when no valid discount.
-        discountAmount: discount.valid ? discountAmount : null,
-        discountLabel: discount.valid ? discount.label : null,
-        subtotalPrice: subtotal,
-        // 🆕 Round 14: send chosen payment method label to Telegram so
-        //    admin sees what the customer selected (e.g. "PromptPay").
-        payment: PAYMENT_LABELS[paymentMethod],
-        // 🆕 Round 28s77 — transfer surcharge (WeChat/Alipay); 0 otherwise.
-        paymentFee,
-      });
+      // 🆕 Round 28s81 (audit) — the client no longer fires the Telegram
+      //   notification. The `onBookingCreate` Cloud Function trigger
+      //   already sends the admin message (richer: therapist DM +
+      //   Holiday gate + delivery log) the moment this addDoc lands.
+      //   Calling notifyBooking from the client too produced DUPLICATE
+      //   admin messages per booking, and the public callable was a
+      //   spam vector (no auth). Removed — the server trigger is the
+      //   single source of truth now.
 
       // 🆕 Round 28b7 — booking confirmed → clear the persisted WIP
       //   form so the next visit to this therapist starts clean.

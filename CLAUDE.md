@@ -282,6 +282,20 @@ they prefer.
   - `git push` only deploys frontend via Vercel — Firebase functions need
     a separate deploy. Without this, customer bookings DON'T trigger TG alert
     to admin, AND admin doesn't see them in the back-office.
+- [ ] **🔴 Round 28s81: redeploy functions after the Telegram dedup fix.**
+  - Bug found 2026-05-31: BOTH `notifyBooking` (client callable) AND
+    `onBookingCreate` (Firestore trigger) were deployed → admin got
+    **2 Telegram messages per booking**. Also `notifyBooking` had no
+    auth gate (anyone could spam the admin group).
+  - Code fix shipped (frontend auto-deploys via Vercel): client no longer
+    calls `notifyBooking`. The `onBookingCreate` trigger is now the single
+    source. → duplicate stops as soon as the Vercel build is live.
+  - **Still owed (needs `firebase deploy --only functions`):**
+    `onBookingCreate`'s admin message now itemizes the WeChat/Alipay
+    service charge + includes the map link, and `notifyBooking` got an
+    auth gate (deprecated — safe to delete the callable later).
+  - Until functions are redeployed: admin still gets ONE correct message
+    from the already-live trigger (total is right; just not itemized).
 - [x] ~~**Composite Firestore index** — `bookings` collection,
   fields: `status` (asc) + `startAt` (asc).~~ Re-added to
   `firestore.indexes.json` in Round 28s1 hotfix (accidentally deleted
