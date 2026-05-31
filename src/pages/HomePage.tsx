@@ -94,11 +94,11 @@ const HomePage: React.FC = () => {
         SunRed — Luxury outcall massage in Bangkok, delivered to your hotel
       </Box>
       <HeroSection />
-      {/* 🆕 Round 28s98 — trust strip (Licensed · Discreet · 5-Lang …)
-          re-mounted: a discreet gray-area service to nervous first-time
-          tourists needs trust cues above the fold. */}
-      <PromiseStrip />
       <HomeTherapistGrid />
+      {/* 🆕 Round 28s98 — trust strip (Why SunRed · Licensed · Discreet
+          · 5-Lang · 24/7). Round 28s99 (founder "เอาไปไว้ล่างสุด") —
+          moved below the therapist grid as a closing reassurance. */}
+      <PromiseStrip />
       <Box sx={{ height: "32px" }} aria-hidden="true" />
     </Box>
   );
