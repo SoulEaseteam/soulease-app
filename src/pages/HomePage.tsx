@@ -15,6 +15,8 @@ import { captureReferralFromURL } from "@/utils/referral";
 import { trackHomeView } from "@/utils/analytics";
 
 import HomeTherapistGrid from "@/components/home/HomeTherapistGrid";
+// 🆕 Round 28s98 (conversion) — trust strip restored below the hero.
+import PromiseStrip from "@/components/home/PromiseStrip";
 
 // Round 28s20 — PromiseStrip + HomeFooter dropped from the home
 // page composition (founder: "ตัดส่วนที่ไม่ต้องมีก็ได้ ทำให้เหมือน
@@ -92,6 +94,10 @@ const HomePage: React.FC = () => {
         SunRed — Luxury outcall massage in Bangkok, delivered to your hotel
       </Box>
       <HeroSection />
+      {/* 🆕 Round 28s98 — trust strip (Licensed · Discreet · 5-Lang …)
+          re-mounted: a discreet gray-area service to nervous first-time
+          tourists needs trust cues above the fold. */}
+      <PromiseStrip />
       <HomeTherapistGrid />
       <Box sx={{ height: "32px" }} aria-hidden="true" />
     </Box>

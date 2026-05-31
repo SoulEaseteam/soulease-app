@@ -39,6 +39,29 @@ import ConciergeModeIcon from "@/components/common/ConciergeModeIcon";
 // 🆕 Round 28r13 — concierge_chat_open analytics. Tagged with the
 //   channel name so we can rank LINE vs WA vs WeChat vs TG vs X.
 import { trackConciergeOpen } from "@/utils/analytics";
+// 🆕 Round 28s98 (conversion) — resolve the current page into a
+//   prefilled concierge message so the chat doesn't open empty.
+import therapistsData from "@/data/therapists";
+import services from "@/data/services";
+
+/** Build a context-aware concierge opener from the current path. */
+function conciergeContextMessage(pathname: string): string {
+  const tMatch = pathname.match(/\/therapists\/([^/?#]+)/);
+  if (tMatch) {
+    const t = therapistsData.find((x) => x.id === tMatch[1]);
+    if (t?.name) {
+      return `Hi SunRed concierge, I'd like to book ${t.name} tonight. Is she available?`;
+    }
+  }
+  const sMatch = pathname.match(/\/services\/([^/?#]+)/);
+  if (sMatch) {
+    const s = services.find((x) => x.id === sMatch[1]);
+    if (s?.name) {
+      return `Hi SunRed concierge, I'd like to book the ${s.name}. What's available tonight?`;
+    }
+  }
+  return "Hi SunRed concierge, I'd like to book an outcall massage tonight. What's available?";
+}
 
 // 🆕 Round 28o — first-visit greeting persistence key + visibility delay.
 const GREETING_LS_KEY = "sunred.adminChat.greeted";
@@ -127,6 +150,8 @@ const AdminFloatingChat: React.FC = () => {
     },
   };
   const greet = greetingByMode[concierge.mode];
+  // 🆕 Round 28s98 — prefilled opener based on the page the guest is on.
+  const contextMsg = conciergeContextMessage(location.pathname);
 
   // 🆕 First-visit greeting bubble — shows once, never again.
   useEffect(() => {
@@ -315,14 +340,22 @@ const AdminFloatingChat: React.FC = () => {
 
             {/* 5 chat platform pills */}
             <Box sx={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              {CHAT_OPTIONS.map((opt, idx) => (
+              {CHAT_OPTIONS.map((opt, idx) => {
+                // 🆕 Round 28s98 — WhatsApp supports a prefilled body via
+                //   ?text=; append the page-aware opener so the concierge
+                //   gets context instead of an empty "hi".
+                const href =
+                  opt.title === "WhatsApp"
+                    ? `${opt.href}?text=${encodeURIComponent(contextMsg)}`
+                    : opt.href;
+                return (
                 <Box
                   key={opt.title}
                   component={motion.a}
-                  href={opt.href}
-                  target={opt.href.startsWith("http") ? "_blank" : undefined}
+                  href={href}
+                  target={href.startsWith("http") ? "_blank" : undefined}
                   rel={
-                    opt.href.startsWith("http")
+                    href.startsWith("http")
                       ? "noopener noreferrer"
                       : undefined
                   }
@@ -397,7 +430,8 @@ const AdminFloatingChat: React.FC = () => {
                     {opt.title}
                   </Typography>
                 </Box>
-              ))}
+                );
+              })}
             </Box>
           </Box>
         )}
