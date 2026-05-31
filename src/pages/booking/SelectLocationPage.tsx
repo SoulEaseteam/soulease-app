@@ -16,7 +16,9 @@ import {
   useLocation,
   useSearchParams,
 } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import MyLocationRoundedIcon from "@mui/icons-material/MyLocationRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
@@ -207,6 +209,7 @@ const buildMapUrl = (
 };
 
 const SelectLocationPage: React.FC = () => {
+  const { t } = useTranslation();
   const { id: therapistId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const routerLoc = useLocation();
@@ -612,7 +615,10 @@ const SelectLocationPage: React.FC = () => {
   const useCurrentLocation = async () => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       setGeoError(
-        "Your browser does not support geolocation. Tap the map to drop a pin manually."
+        t(
+          "loc.geoErr.unsupported",
+          "Your browser does not support geolocation. Tap the map to drop a pin manually."
+        )
       );
       return;
     }
@@ -629,7 +635,10 @@ const SelectLocationPage: React.FC = () => {
         if (perm.state === "denied") {
           setGeoLoading(false);
           setGeoError(
-            "Location is blocked in your browser. Enable it in site settings, or tap the map to drop a pin manually."
+            t(
+              "loc.geoErr.blocked",
+              "Location is blocked in your browser. Enable it in site settings, or tap the map to drop a pin manually."
+            )
           );
           return;
         }
@@ -688,13 +697,25 @@ const SelectLocationPage: React.FC = () => {
           console.warn("[SelectLocation] geolocation error:", err);
         }
         const codeMessages: Record<number, string> = {
-          1: "Location is blocked in your browser. Enable it in site settings, or tap the map to drop a pin manually.",
-          2: "Couldn't get your location right now. Tap the map to drop a pin manually.",
-          3: "Location request timed out. Try again, or tap the map to drop a pin manually.",
+          1: t(
+            "loc.geoErr.blocked",
+            "Location is blocked in your browser. Enable it in site settings, or tap the map to drop a pin manually."
+          ),
+          2: t(
+            "loc.geoErr.unavailable",
+            "Couldn't get your location right now. Tap the map to drop a pin manually."
+          ),
+          3: t(
+            "loc.geoErr.timeout",
+            "Location request timed out. Try again, or tap the map to drop a pin manually."
+          ),
         };
         setGeoError(
           codeMessages[err.code] ??
-            "Location not available. Tap the map to drop a pin manually."
+            t(
+              "loc.geoErr.generic",
+              "Location not available. Tap the map to drop a pin manually."
+            )
         );
       },
       {
@@ -858,11 +879,11 @@ const SelectLocationPage: React.FC = () => {
         }}
       >
         <IconButton
-          aria-label="back"
+          aria-label={t("common.back", "Back")}
           onClick={() => void navigate(-1)}
           sx={{
-            width: 38,
-            height: 38,
+            width: 44,
+            height: 44,
             background: "rgba(255, 255, 255, 0.85)",
             border: "1px solid rgba(0, 0, 0, 0.06)",
             color: "#3c1e14",
@@ -890,7 +911,7 @@ const SelectLocationPage: React.FC = () => {
               lineHeight: 1.15,
             }}
           >
-            Select Location
+            {t("loc.title", "Select Location")}
           </Typography>
           <Typography
             sx={{
@@ -900,7 +921,7 @@ const SelectLocationPage: React.FC = () => {
               marginTop: "2px",
             }}
           >
-            Where should we send your therapist?
+            {t("loc.subtitle", "Where should we send your practitioner?")}
           </Typography>
         </Box>
       </Box>
@@ -930,7 +951,12 @@ const SelectLocationPage: React.FC = () => {
           />
           <input
             ref={searchInputRef}
-            placeholder={ready ? "Search for a location…" : "Loading…"}
+            aria-label={t("loc.searchAria", "Search for a location")}
+            placeholder={
+              ready
+                ? t("loc.searchPlaceholder", "Search for a location…")
+                : t("common.loading", "Loading…")
+            }
             // 🆕 Round 28b60 — `inputMode="search"` opens a search-style
             //   keyboard on mobile and `enterKeyHint="search"` swaps the
             //   return key to a Search button. autoCapitalize off so
@@ -1007,7 +1033,9 @@ const SelectLocationPage: React.FC = () => {
             },
           }}
         >
-          {geoLoading ? "Locating…" : "Use my current location"}
+          {geoLoading
+            ? t("loc.locating", "Locating…")
+            : t("loc.useMyLocation", "Use my current location")}
         </Button>
 
         {/* 🆕 Round 28b63 — Geolocation error banner. Tells the
@@ -1085,7 +1113,7 @@ const SelectLocationPage: React.FC = () => {
                   marginBottom: "2px",
                 }}
               >
-                 Your location has been pinned
+                {t("loc.gpsHint.title", "Your location has been pinned")}
               </Typography>
               <Typography
                 sx={{
@@ -1095,10 +1123,7 @@ const SelectLocationPage: React.FC = () => {
                   lineHeight: 1.45,
                 }}
               >
-               "Drag the pin to adjust the location."<br />
-                {" "}
-                (แก้ไขหมุดเพื่อปรับตำแหน่งให้ตรงกับชื่อสถานที่)
-              
+                {t("loc.gpsHint.body", "Drag the pin to adjust the location.")}
               </Typography>
             </Box>
           </Box>
@@ -1146,7 +1171,7 @@ const SelectLocationPage: React.FC = () => {
                   marginBottom: "3px",
                 }}
               >
-                {form.locationName ?? "Pinned location"}
+                {form.locationName ?? t("loc.pinnedFallback", "Pinned location")}
               </Typography>
               <Typography
                 sx={{
@@ -1198,7 +1223,7 @@ const SelectLocationPage: React.FC = () => {
                   height="26px" viewBox="0 -960 960 960" 
                   width="26px" fill="#14b8a6">
                     <path d="M420-180 220-380l60-60 140 140 260-260 60 60L420-180Z"/>
-                  </svg> Address updated to match pin
+                  </svg> {t("loc.addrUpdated", "Address updated to match pin")}
                 </Box>
               )}
             </Box>
@@ -1236,14 +1261,14 @@ const SelectLocationPage: React.FC = () => {
               marginBottom: "-4px",
             }}
           >
-            Contact Details
+            {t("loc.contactDetails", "Contact Details")}
           </Typography>
 
         {/* Customer Name */}
-        <FieldLabel label="Customer Name" icon={<PersonRoundedIcon sx={{ fontSize: 18 }} />} required>
+        <FieldLabel label={t("loc.contactName", "Guest name")} icon={<PersonRoundedIcon sx={{ fontSize: 18 }} />} required>
           <TextField
             fullWidth
-            placeholder="Name on the booking"
+            placeholder={t("loc.namePlaceholder", "Name on the reservation")}
             value={form.contactName}
             onChange={(e) =>
               setForm((p) => ({ ...p, contactName: e.target.value }))
@@ -1253,7 +1278,7 @@ const SelectLocationPage: React.FC = () => {
         </FieldLabel>
 
         {/* Phone — country selectable, national digits in the right field */}
-        <FieldLabel label="Phone Number" icon={<PermPhoneMsgRoundedIcon sx={{ fontSize: 18 }} />} required>
+        <FieldLabel label={t("loc.phone", "Phone Number")} icon={<PermPhoneMsgRoundedIcon sx={{ fontSize: 18 }} />} required>
           <Box sx={{ display: "flex", gap: "8px" }}>
             <Box
               role="button"
@@ -1297,17 +1322,14 @@ const SelectLocationPage: React.FC = () => {
                 {dialCode.flag}
               </Box>
               <Box component="span">{dialCode.dial}</Box>
-              <Box
-                component="span"
+              <KeyboardArrowDownRoundedIcon
                 aria-hidden
                 sx={{
-                  fontSize: "9px",
+                  fontSize: 16,
                   color: "rgba(60, 30, 20, 0.5)",
                   marginLeft: "2px",
                 }}
-              >
-                ▼
-              </Box>
+              />
             </Box>
             <Menu
               anchorEl={countryAnchor}
@@ -1370,7 +1392,7 @@ const SelectLocationPage: React.FC = () => {
               fullWidth
               type="tel"
               inputMode="numeric"
-              placeholder="XX XXX XXXX"
+              placeholder={t("loc.phonePlaceholder", "XX XXX XXXX")}
               value={form.customerPhone.replace(
                 new RegExp(`^\\${dialCode.dial}`),
                 ""
@@ -1388,14 +1410,14 @@ const SelectLocationPage: React.FC = () => {
               paddingLeft: "8px",
             }}
           >
-            Used for arrival confirmation only.
+            {t("loc.phoneHelper", "Used for arrival confirmation only.")}
           </Typography>
         </FieldLabel>
 
 
             
         <FieldLabel
-          label="Note"
+          label={t("loc.note", "Note")}
           icon={<EditNoteRoundedIcon sx={{ fontSize: 26 }} />}
           required={form.meetingPoint === "direct"}
           optional={form.meetingPoint !== "direct"}
@@ -1415,8 +1437,14 @@ const SelectLocationPage: React.FC = () => {
             }}
           >
             {form.meetingPoint === "direct"
-              ? "Required please include booking name + room number"
-              : "Add instructions for therapist arrival"}
+              ? t(
+                  "loc.noteHelp.direct",
+                  "Required — please include your reservation name + room number"
+                )
+              : t(
+                  "loc.noteHelp.default",
+                  "Add instructions for the practitioner's arrival"
+                )}
           </Typography>
           <TextField
             fullWidth
@@ -1425,14 +1453,20 @@ const SelectLocationPage: React.FC = () => {
             maxRows={6}
             placeholder={
               form.meetingPoint === "direct"
-                ? "e.g. Booking under John Smith · Room 1207"
-                : "Add room number / villa"
+                ? t(
+                    "loc.notePlaceholder.direct",
+                    "e.g. Reservation under John Smith · Room 1207"
+                  )
+                : t("loc.notePlaceholder.default", "Add room number / villa")
             }
             value={form.addressNote}
             error={directRoomNeedsNote}
             helperText={
               directRoomNeedsNote
-                ? "Required for Direct Room Access (at least 4 characters)"
+                ? t(
+                    "loc.noteError",
+                    "Required for Direct Room Access (at least 4 characters)"
+                  )
                 : undefined
             }
             onChange={(e) =>
@@ -1442,10 +1476,10 @@ const SelectLocationPage: React.FC = () => {
           />
         </FieldLabel>
 
-        <FieldLabel label="Arrival Instructions" icon={<AutoAwesomeSharpIcon sx={{ fontSize: 22 }} />} optional>
+        <FieldLabel label={t("loc.arrivalInstructions", "Arrival Instructions")} icon={<AutoAwesomeSharpIcon sx={{ fontSize: 22 }} />} optional>
           <Box
             role="radiogroup"
-            aria-label="Arrival instructions"
+            aria-label={t("loc.arrivalInstructions", "Arrival Instructions")}
             sx={{
               display: "flex",
               flexDirection: "column",
@@ -1530,7 +1564,7 @@ const SelectLocationPage: React.FC = () => {
                       color: "#1a1a1a",
                     }}
                   >
-                    {m.label}
+                    {t(`loc.meet.${m.id}`, m.label)}
                   </Typography>
                   <Box
                     aria-hidden
@@ -1573,7 +1607,7 @@ const SelectLocationPage: React.FC = () => {
               marginBottom: "4px",
             }}
           >
-            Direct Room Access
+            {t("loc.dra.title", "Direct Room Access")}
           </Typography>
           <Typography
             sx={{
@@ -1583,8 +1617,10 @@ const SelectLocationPage: React.FC = () => {
               lineHeight: 1.55,
             }}
           >
-            Please provide your booking name and room number. 
-            Our therapist will coordinate with the front desk or security upon arrival.
+            {t(
+              "loc.dra.body",
+              "Please provide your reservation name and room number. Your practitioner will coordinate with the front desk or security upon arrival."
+            )}
           </Typography>
         </Box>
         </Box>
@@ -1645,12 +1681,12 @@ const SelectLocationPage: React.FC = () => {
               the customer knows exactly what to fix. Direct-room
               missing-note wins over the generic "Pin a location" copy. */}
           {canConfirm
-            ? "Confirm Location"
+            ? t("loc.cta.confirm", "Confirm Location")
             : directRoomNeedsNote
-              ? "Add room number to continue"
+              ? t("loc.cta.needRoom", "Add room number to continue")
               : form.lat == null || form.lng == null
-                ? "Pin a location to continue"
-                : "Fill contact details to continue"}
+                ? t("loc.cta.needPin", "Pin a location to continue")
+                : t("loc.cta.needContact", "Fill contact details to continue")}
         </Button>
       </Box>
     </Box>
@@ -1693,7 +1729,9 @@ const FieldLabel: React.FC<{
   required?: boolean;
   optional?: boolean;
   children: React.ReactNode;
-}> = ({ label, icon, required, optional, children }) => (
+}> = ({ label, icon, required, optional, children }) => {
+  const { t } = useTranslation();
+  return (
   <Box>
     <Box
       sx={{
@@ -1751,7 +1789,7 @@ const FieldLabel: React.FC<{
             marginLeft: "-2px",
           }}
         >
-          (Required)
+          {t("common.required", "(Required)")}
         </Typography>
       )}
       {optional && (
@@ -1765,12 +1803,13 @@ const FieldLabel: React.FC<{
             marginLeft: "-2px",
           }}
         >
-          (Optional)
+          {t("common.optional", "(Optional)")}
         </Typography>
       )}
     </Box>
     {children}
   </Box>
-);
+  );
+};
 
 export default SelectLocationPage;
