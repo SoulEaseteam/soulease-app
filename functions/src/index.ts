@@ -30,6 +30,13 @@ const OPENAI_API_KEY = defineSecret("OPENAI_API_KEY");
 // 📬 Channel ID ของ Telegram — hardcode (ไม่ใช่ secret)
 const TELEGRAM_CHAT_ID = "-1002962073895";
 
+// 🆕 Round 28s82 (founder 2026-05-31: "เอาแค่ส่งหาฉันคนเดียวก่อน") —
+//   master kill-switch for the therapist DM on a new booking. While
+//   OFF, only the admin group gets the alert and View dispatches
+//   manually. Flip to `true` once practitioners have linked their
+//   Telegram (via /start) and View is ready to auto-DM them.
+const DISPATCH_THERAPIST_DM = false;
+
 // ─────────────────────────────────────────────────────────────
 // Helper: ส่งข้อความเข้า Telegram (reuse ใน multiple functions)
 // ─────────────────────────────────────────────────────────────
@@ -625,7 +632,9 @@ export const onBookingCreate = onDocumentCreated(
     //   doc. If present, we DM them the job notification too. The
     //   admin group still receives the master copy — therapist DM is
     //   purely a convenience channel ("Hey, you got a job").
-    if (data.therapistId) {
+    //   🆕 Round 28s82 — gated OFF (DISPATCH_THERAPIST_DM). For now the
+    //   bot sends to View only; she dispatches manually.
+    if (DISPATCH_THERAPIST_DM && data.therapistId) {
       try {
         const therapistSnap = await getFirestore()
           .collection("therapists")

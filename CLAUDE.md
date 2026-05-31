@@ -296,6 +296,11 @@ they prefer.
     auth gate (deprecated — safe to delete the callable later).
   - Until functions are redeployed: admin still gets ONE correct message
     from the already-live trigger (total is right; just not itemized).
+- [ ] **Round 28s82: therapist DM gated OFF** (founder "เอาแค่ส่งหาฉัน
+  คนเดียวก่อน"). `DISPATCH_THERAPIST_DM = false` in functions/src/index.ts
+  — onBookingCreate now alerts the admin group ONLY, View dispatches
+  manually. Flip the flag to `true` (+ redeploy functions) once
+  practitioners have linked their Telegram via /start.
 - [x] ~~**Composite Firestore index** — `bookings` collection,
   fields: `status` (asc) + `startAt` (asc).~~ Re-added to
   `firestore.indexes.json` in Round 28s1 hotfix (accidentally deleted
