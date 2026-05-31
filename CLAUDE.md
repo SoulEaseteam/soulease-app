@@ -286,9 +286,72 @@ they prefer.
 
 ### 🔔 OPEN REMINDERS FOR VIEW (read first every session)
 
-**Last updated: 2026-06-07 after Round 28s114 (strategy reframe +
-audit fixes + Discovery UI signal + multi-locale bios + acquisition
-content packs)**
+**Last updated: 2026-06-07 after Round 28s116 (Telegram channel-posting
+bot scaffold + admin UI panel + multi-language post templates)**
+
+### 🆕 What Round 28s115-116 shipped (2026-06-07)
+
+**28s115 — @SunRedPostBot scaffold + deploy:**
+- New `functions/src/telegram-post-bot/` codebase (4 files):
+  - `client.ts` — Telegram Bot API wrapper (sendMessage, editMessage)
+  - `rotation.ts` — POST_ROSTER + pickNextSpotlight() · Yuri excluded
+    from auto-rotation by design (concierge-protected · manual only)
+  - `templates.ts` — 5 renderXxx() builders
+  - `index.ts` — 3 Cloud Functions: scheduledChannelSpotlight (Mon
+    20:00 BKK), scheduledChannelWeekend (Fri 18:00 BKK),
+    postToChannelManual (admin-only callable)
+- Bot account: @SunRedPostBot (display name "SunRed Channel Bot"),
+  admin in @SunRed_BKK channel (453 subs)
+- Token in Secret Manager: TELEGRAM_POST_BOT_TOKEN (version 2 is
+  the correct one · version 1 disabled was an OCR-error copy)
+- First successful post: Hami spotlight at 03:48 BKK 2026-06-01
+- Setup doc: `docs/telegram-post-bot-setup.md`
+
+**28s116 — Multi-language + admin UI panel:**
+- TherapistRecord.bios upgraded from single `bioEN` to
+  `Record<Lang, string>` with EN/TH/ZH/JA/KO for all 12 therapists
+- All 5 renderers (Spotlight, TonightSpecial, TonightLineup,
+  WeekendForecast, WelcomeBack) accept a `lang` parameter; fallback
+  chain: requested → en → first available
+- `postToChannelManual` callable now accepts optional `lang` field
+- New admin route `/admin/telegram` (AdminTelegramPanelPage):
+  - Post type picker (5 kinds)
+  - Language toggle (5 langs)
+  - Therapist single-picker for tonight/spotlight
+  - Multi-chip lineup picker for lineup
+  - Posts via httpsCallable to postToChannelManual · audit toast
+- Client utility: `src/utils/telegramPostBot.ts` wraps the callable
+
+### 🆕 What Round 28s111-114 shipped (2026-06-07)
+
+Strategic docs (8 new):
+- `docs/master-strategy.md` — 1-page action plan (open every morning)
+- `docs/customer-acquisition.md` — 9-channel playbook (Stickman,
+  TG cross-promo, WeChat, LINE, Reddit, taxi cards, etc.)
+- `docs/acquisition-content-pack.md` — ready-to-send Stickman email
+  (3 versions), TG cross-promo DMs (4 langs), taxi card design spec
+- `docs/seed-content-by-channel.md` — 5 WeChat OA posts (中文) +
+  3 LINE OA broadcasts (TH/JP/KR) + 5 Reddit reply templates + X rhythm
+- `docs/telegram-templates.md` — 8 post categories × 5 langs
+- `docs/discovery-offer.md` — Discovery Reservation perk policy +
+  concierge scripts in 4 languages
+- `docs/therapist-profiles.md` — 12 profile EN + TH master
+- `docs/therapist-profiles-i18n.md` — 12 × ZH/JA/KO translations
+- `docs/site-audit-2026-06.md` — conversion audit (8/10 issues fixed)
+- (Yuri retention/conversation docs are DEPRIORITIZED per the reframe
+  at top of this file · kept as reference)
+
+Code shipped (5 rounds in main):
+- 28s111: schema prices fix · TikTok removal · filter.couple cleanup ·
+  Hero "from ฿X · 60–120 min" surface
+- 28s112: ReserveCTA component on home (mode-aware Telegram-first CTA
+  with WhatsApp/LINE/WeChat secondary) + SocialProofTicker wired into
+  home (live Firestore data)
+- 28s113: multi-locale bios for all 12 therapists in
+  src/data/therapists.ts + TherapistDetailPage builds About body
+  from real.bios[lang] with EN/auto-derived fallback chain
+- 28s114: Discovery Reservation callout component on
+  TherapistDetailPage for every non-Yuri therapist (audit gap #11)
 
 ### 🆕 What this session shipped (2026-06-07)
 

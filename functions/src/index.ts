@@ -878,3 +878,18 @@ export {
   scheduledChannelWeekend,
   postToChannelManual,
 } from "./telegram-post-bot";
+
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28s117 — Customer-facing Telegram Concierge Bot.
+//   Lives in src/telegram-concierge-bot/. Exposes one webhook receiver
+//   that handles inbound customer DMs and admin reply relays from the
+//   admin group.
+//
+//   Required setup BEFORE first deploy — see
+//   docs/telegram-concierge-bot-setup.md:
+//     1. firebase functions:secrets:set TELEGRAM_CONCIERGE_BOT_TOKEN
+//     2. firebase deploy --only functions:telegramConciergeWebhook
+//     3. Register the deployed URL with Telegram's setWebhook
+//     4. Add the bot to the admin Telegram group
+// ─────────────────────────────────────────────────────────────
+export { telegramConciergeWebhook } from "./telegram-concierge-bot";

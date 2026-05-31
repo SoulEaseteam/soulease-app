@@ -172,6 +172,10 @@ const AdminAnalyticsPage = React.lazy(
 const AdminEarningsPage = React.lazy(
   () => import("@/pages/admin/AdminEarningsPage")
 );
+// 🆕 Round 28s116 — Admin panel for the @SunRedPostBot Telegram channel.
+const AdminTelegramPanelPage = React.lazy(
+  () => import("@/pages/admin/AdminTelegramPanelPage")
+);
 const AdminReportPage = React.lazy(
   () => import("@/pages/admin/AdminReportPage")
 );
@@ -320,6 +324,7 @@ export default function App() {
           <Route path="analytics" element={<AdminAnalyticsPage />} />
           {/* 🆕 Round 28r26 — Earnings calculator */}
           <Route path="earnings" element={<AdminEarningsPage />} />
+          <Route path="telegram" element={<AdminTelegramPanelPage />} />
           <Route
             path="blocked-devices"
             element={<AdminBlockedDevicesPage />}

@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.telegramWebhook = exports.recoverAbandonedBookings = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.postToChannelManual = exports.scheduledChannelWeekend = exports.scheduledChannelSpotlight = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -53,6 +53,12 @@ const TELEGRAM_BOT_TOKEN = (0, params_1.defineSecret)("TELEGRAM_BOT_TOKEN");
 const OPENAI_API_KEY = (0, params_1.defineSecret)("OPENAI_API_KEY");
 // 📬 Channel ID ของ Telegram — hardcode (ไม่ใช่ secret)
 const TELEGRAM_CHAT_ID = "-1002962073895";
+// 🆕 Round 28s82 (founder 2026-05-31: "เอาแค่ส่งหาฉันคนเดียวก่อน") —
+//   master kill-switch for the therapist DM on a new booking. While
+//   OFF, only the admin group gets the alert and View dispatches
+//   manually. Flip to `true` once practitioners have linked their
+//   Telegram (via /start) and View is ready to auto-DM them.
+const DISPATCH_THERAPIST_DM = false;
 // ─────────────────────────────────────────────────────────────
 // Helper: ส่งข้อความเข้า Telegram (reuse ใน multiple functions)
 // ─────────────────────────────────────────────────────────────
@@ -84,6 +90,14 @@ exports.notifyBooking = (0, https_1.onCall)({
     region: "asia-southeast1",
     enforceAppCheck: false,
 }, async (request) => {
+    // 🆕 Round 28s81 (audit) — DEPRECATED. The app no longer calls this;
+    //   booking alerts now come from the onBookingCreate trigger (server-
+    //   side, can't be spoofed). This callable used to be open to anyone
+    //   (no auth → spam vector into the admin group). Gated to signed-in
+    //   callers only as a stop-gap; safe to delete on the next deploy.
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Sign-in required.");
+    }
     const data = request.data;
     const message = (data?.message || "").toString().trim();
     if (!message) {
@@ -351,7 +365,15 @@ const formatBookingForAdmin = (bookingId, b) => {
         `🧖 ${b.therapistName ?? "—"} · ${b.serviceName ?? "—"} · ${b.duration ?? "?"} min`,
         `📅 ${b.date ?? "—"}  🕐 ${b.time ?? "—"}`,
         `📍 ${b.address ?? "—"}`,
+        // 🆕 Round 28s81 — map deep-link (was only in the old client
+        //   message; the trigger is now the single source so port it here).
+        ...(b.mapUrl ? [`🗺️ ${b.mapUrl}`] : []),
         `💴 ฿${(b.totalPrice ?? 0).toLocaleString()}  💳 ${b.payment ?? "Cash"}`,
+        // 🆕 Round 28s81 — itemize the WeChat/Alipay service charge so the
+        //   total above is explainable at a glance (total already includes it).
+        ...(b.paymentFee && b.paymentFee > 0
+            ? [`   ↳ incl. service charge ฿${b.paymentFee.toLocaleString()}`]
+            : []),
         `🌐 lang: ${b.language ?? "—"}`,
         "",
         `⏳ Customer hold: 10 min — confirm before it expires.`,
@@ -480,7 +502,9 @@ exports.onBookingCreate = (0, firestore_1.onDocumentCreated)({
     //   doc. If present, we DM them the job notification too. The
     //   admin group still receives the master copy — therapist DM is
     //   purely a convenience channel ("Hey, you got a job").
-    if (data.therapistId) {
+    //   🆕 Round 28s82 — gated OFF (DISPATCH_THERAPIST_DM). For now the
+    //   bot sends to View only; she dispatches manually.
+    if (DISPATCH_THERAPIST_DM && data.therapistId) {
         try {
             const therapistSnap = await (0, firestore_2.getFirestore)()
                 .collection("therapists")
@@ -653,4 +677,26 @@ exports.telegramWebhook = (0, https_1.onRequest)({
     await sendTelegram(token, String(chatId), reply);
     res.status(200).send("ok");
 });
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28s115 — Telegram channel-posting bot (@SunRedPostBot).
+//   Lives in src/telegram-post-bot/ to keep its surface separate
+//   from the booking-notification bot above. Re-exports 2 scheduled
+//   Functions (Mon spotlight + Fri weekend) and 1 admin-only
+//   callable (postToChannelManual).
+//
+//   Required setup BEFORE first deploy:
+//     1. firebase functions:secrets:set TELEGRAM_POST_BOT_TOKEN
+//        (paste the token directly into the prompt; never commit it).
+//     2. Add @SunRedPostBot as admin in @SunRed_BKK with "Post
+//        Messages" + "Edit Messages of Others" permissions.
+//     3. Verify the channel handle constant in
+//        src/telegram-post-bot/client.ts matches the live channel.
+//
+//   Deploy: firebase deploy --only functions:scheduledChannelSpotlight,
+//   functions:scheduledChannelWeekend,functions:postToChannelManual
+// ─────────────────────────────────────────────────────────────
+var telegram_post_bot_1 = require("./telegram-post-bot");
+Object.defineProperty(exports, "scheduledChannelSpotlight", { enumerable: true, get: function () { return telegram_post_bot_1.scheduledChannelSpotlight; } });
+Object.defineProperty(exports, "scheduledChannelWeekend", { enumerable: true, get: function () { return telegram_post_bot_1.scheduledChannelWeekend; } });
+Object.defineProperty(exports, "postToChannelManual", { enumerable: true, get: function () { return telegram_post_bot_1.postToChannelManual; } });
 //# sourceMappingURL=index.js.map
