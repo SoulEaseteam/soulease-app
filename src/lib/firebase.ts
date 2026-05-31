@@ -2,9 +2,8 @@
 // Hardcoded config — ปลอดภัยพอ เพราะ Firebase web config เป็น public-by-design
 // (ไม่ใช่ secret — security จริงอยู่ที่ Firestore rules + App Check)
 
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
@@ -17,10 +16,14 @@ const firebaseConfig = {
   measurementId: "G-XEMLVVPN4W",
 };
 
-const app = initializeApp(firebaseConfig);
+// Idempotent init — reuse the existing app on HMR / repeat-import / SSR
+// prerender so we never double-initialize Firebase.
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
 export const auth = getAuth(app);
-export const storage = getStorage(app);
+// NOTE: storage export removed (Round 28s105) — it had zero consumers,
+// so dropping it trims firebase/storage out of the customer bundle and
+// shrinks SSR surface. Re-add `getStorage(app)` lazily if uploads land.
 
 export { app };
