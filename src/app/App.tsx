@@ -1,5 +1,25 @@
 import React, { Suspense } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import i18n from "i18next";
+
+// 🆕 Round 28s109 (SEO) — path-based locale entry points for crawlers.
+//   The build emits static localized shells at /zh, /ja, /ko/<route> (see
+//   scripts/prerender-routes.mjs) so Baidu/Naver index Chinese/Korean/
+//   Japanese titles + content. A human landing on one of those URLs boots
+//   the SPA here: we switch i18n to that language and redirect to the
+//   working de-prefixed route. Purely additive — these prefixes 404'd
+//   before, so existing routes are untouched.
+const LocaleEntryRedirect: React.FC<{ lng: "zh" | "ja" | "ko" }> = ({
+  lng,
+}) => {
+  const location = useLocation();
+  React.useEffect(() => {
+    void i18n.changeLanguage(lng);
+  }, [lng]);
+  const stripped = location.pathname.replace(/^\/(zh|ja|ko)(?=\/|$)/, "");
+  const to = `${stripped || "/"}${location.search}${location.hash}`;
+  return <Navigate to={to} replace />;
+};
 
 // 🆕 Round 28b26 (founder 2026-05-04) — `/account?tab=membership|rewards`
 //   was 404'ing because no /account route exists. HeroSection still
@@ -191,6 +211,10 @@ export default function App() {
       </Suspense>
 
       <Routes>
+        {/* ===== Round 28s109: localized crawler entry points ===== */}
+        <Route path="/zh/*" element={<LocaleEntryRedirect lng="zh" />} />
+        <Route path="/ja/*" element={<LocaleEntryRedirect lng="ja" />} />
+        <Route path="/ko/*" element={<LocaleEntryRedirect lng="ko" />} />
         {/* ================= PUBLIC ================= */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />

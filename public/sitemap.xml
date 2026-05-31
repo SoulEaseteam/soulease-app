@@ -16,39 +16,80 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/"/>
   </url>
 
-  <!-- Services menu -->
+  <!-- Services menu + localized variants (en/zh/ja/ko path-based, Round 28s109).
+       Each language version is listed with the full reciprocal hreflang cluster. -->
   <url>
     <loc>https://sunred.vip/services</loc>
     <lastmod>2026-05-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/services"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/services"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/services"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/services"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/services"/>
   </url>
+  <url><loc>https://sunred.vip/zh/services</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.85</priority><xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/services"/><xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/services"/><xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/services"/><xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/services"/><xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/services"/></url>
+  <url><loc>https://sunred.vip/ja/services</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.85</priority><xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/services"/><xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/services"/><xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/services"/><xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/services"/><xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/services"/></url>
+  <url><loc>https://sunred.vip/ko/services</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.85</priority><xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/services"/><xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/services"/><xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/services"/><xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/services"/><xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/services"/></url>
 
-  <!-- Service detail pages (high-intent long-tail) -->
+  <!-- Service detail pages (high-intent long-tail) — en + zh/ja/ko -->
   <url>
     <loc>https://sunred.vip/services/xSR-Thai</loc>
     <lastmod>2026-05-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/services/xSR-Thai"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/services/xSR-Thai"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/services/xSR-Thai"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/services/xSR-Thai"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/services/xSR-Thai"/>
   </url>
+  <url><loc>https://sunred.vip/zh/services/xSR-Thai</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
+  <url><loc>https://sunred.vip/ja/services/xSR-Thai</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
+  <url><loc>https://sunred.vip/ko/services/xSR-Thai</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
   <url>
     <loc>https://sunred.vip/services/SR-Aroma</loc>
     <lastmod>2026-05-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/services/SR-Aroma"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/services/SR-Aroma"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/services/SR-Aroma"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/services/SR-Aroma"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/services/SR-Aroma"/>
   </url>
+  <url><loc>https://sunred.vip/zh/services/SR-Aroma</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
+  <url><loc>https://sunred.vip/ja/services/SR-Aroma</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
+  <url><loc>https://sunred.vip/ko/services/SR-Aroma</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
   <url>
     <loc>https://sunred.vip/services/SR-HJ2200</loc>
     <lastmod>2026-05-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/services/SR-HJ2200"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/services/SR-HJ2200"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/services/SR-HJ2200"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/services/SR-HJ2200"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/services/SR-HJ2200"/>
   </url>
+  <url><loc>https://sunred.vip/zh/services/SR-HJ2200</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
+  <url><loc>https://sunred.vip/ja/services/SR-HJ2200</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
+  <url><loc>https://sunred.vip/ko/services/SR-HJ2200</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
   <url>
     <loc>https://sunred.vip/services/SR-B2B3200</loc>
     <lastmod>2026-05-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/services/SR-B2B3200"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/services/SR-B2B3200"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/services/SR-B2B3200"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/services/SR-B2B3200"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/services/SR-B2B3200"/>
   </url>
+  <url><loc>https://sunred.vip/zh/services/SR-B2B3200</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
+  <url><loc>https://sunred.vip/ja/services/SR-B2B3200</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
+  <url><loc>https://sunred.vip/ko/services/SR-B2B3200</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
 
   <!-- Payment & policy -->
   <url>
