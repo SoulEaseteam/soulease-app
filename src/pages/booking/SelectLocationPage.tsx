@@ -156,11 +156,18 @@ const DIAL_CODES: DialCode[] = [
   { code: "SA", flag: "🇸🇦", name: "Saudi Arabia", dial: "+966" },
 ];
 
+// 🆕 Round 28s73 (audit perf) — hoisted to module scope. The longest-
+//   first sort never changes, so re-sorting a fresh copy on every render
+//   + every keystroke (dialFromPhone was called in render and in
+//   onPhoneChange) was pure waste. Sort once at module load.
+const DIAL_CODES_BY_LEN = [...DIAL_CODES].sort(
+  (a, b) => b.dial.length - a.dial.length
+);
+
 /** Resolve a dial code from an E.164 phone string ("+6680…") → DialCode. */
 function dialFromPhone(phone: string): DialCode {
   // Try longest dial codes first so "+1..." doesn't shadow "+1242".
-  const sorted = [...DIAL_CODES].sort((a, b) => b.dial.length - a.dial.length);
-  return sorted.find((c) => phone.startsWith(c.dial)) ?? DIAL_CODES[0];
+  return DIAL_CODES_BY_LEN.find((c) => phone.startsWith(c.dial)) ?? DIAL_CODES[0];
 }
 
 // 🆕 Round 28r10 (founder 2026-05-06) — "เทเรเกรมยิงแมปไม่ตรง · ถ้า
@@ -397,6 +404,30 @@ const SelectLocationPage: React.FC = () => {
         document.head.appendChild(style);
       }
     }
+
+    // 🆕 Round 28s73 (audit) — tear down on unmount. The map `click`
+    //   listener + Autocomplete `place_changed` listener (and the
+    //   closures they capture) used to leak because this effect
+    //   returned no cleanup. Clear all instance listeners and detach
+    //   the marker, then null the refs so a remount rebuilds cleanly.
+    return () => {
+      const gEvent = (
+        window as unknown as {
+          google?: { maps?: { event?: { clearInstanceListeners: (x: unknown) => void } } };
+        }
+      ).google?.maps?.event;
+      if (gEvent) {
+        if (mapRef.current) gEvent.clearInstanceListeners(mapRef.current);
+        if (autocompleteRef.current)
+          gEvent.clearInstanceListeners(autocompleteRef.current);
+      }
+      if (markerRef.current) {
+        (markerRef.current as { setMap: (m: unknown) => void }).setMap(null);
+      }
+      markerRef.current = null;
+      autocompleteRef.current = null;
+      mapRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
 
@@ -406,9 +437,16 @@ const SelectLocationPage: React.FC = () => {
     };
     const G = w.google?.maps;
     if (!G || !mapRef.current) return;
+    // 🆕 Round 28s73 (audit perf) — reuse the existing marker via
+    //   setPosition instead of destroying + reconstructing it on every
+    //   pin move (no flicker, fewer SDK objects).
     if (markerRef.current) {
-      const old = markerRef.current as { setMap: (m: unknown) => void };
-      old.setMap(null);
+      (
+        markerRef.current as {
+          setPosition: (p: { lat: number; lng: number }) => void;
+        }
+      ).setPosition({ lat, lng });
+      return;
     }
     const Marker = G.Marker;
     markerRef.current = new Marker({
@@ -643,7 +681,12 @@ const SelectLocationPage: React.FC = () => {
       },
       (err) => {
         setGeoLoading(false);
-        console.warn("[SelectLocation] geolocation error:", err);
+        // 🆕 Round 28s73 (audit) — only log in dev. A production
+        //   console.warn of the GeolocationPositionError ran on every
+        //   denied/timeout; keep prod console PII-quiet.
+        if (import.meta.env.DEV) {
+          console.warn("[SelectLocation] geolocation error:", err);
+        }
         const codeMessages: Record<number, string> = {
           1: "Location is blocked in your browser. Enable it in site settings, or tap the map to drop a pin manually.",
           2: "Couldn't get your location right now. Tap the map to drop a pin manually.",
@@ -666,8 +709,18 @@ const SelectLocationPage: React.FC = () => {
   };
 
   // ── Validation
-  const phoneDigits = form.customerPhone.replace(/\D/g, "");
-  const phoneOk = phoneDigits.length >= 10; // +66 + 9 digits = 11
+  // 🆕 Round 28s73 (audit) — validate the NATIONAL significant number
+  //   (strip the dial-code prefix first). The old `digits >= 10` counted
+  //   the dial code too, so the threshold was wrong per country — a
+  //   9-digit junk US number passed, and there was no upper bound.
+  //   National numbers across our supported countries run ~7–12 digits.
+  const phoneDial = dialFromPhone(form.customerPhone || "+66").dial;
+  const nationalDigits = (
+    form.customerPhone.startsWith(phoneDial)
+      ? form.customerPhone.slice(phoneDial.length)
+      : form.customerPhone
+  ).replace(/\D/g, "");
+  const phoneOk = nationalDigits.length >= 7 && nationalDigits.length <= 12;
   // 🆕 Round 28b48 (founder 2026-05-05) — Direct-room arrivals must
   //   include a note (booking name + room number). Without it the
   //   therapist arrives blind: front desk / security has no way to
@@ -755,11 +808,9 @@ const SelectLocationPage: React.FC = () => {
       return;
     }
     // Try to match a dial prefix from longest to shortest so "+1234"
-    // doesn't false-match "+1" before "+1242" etc.
-    const sorted = [...DIAL_CODES].sort(
-      (a, b) => b.dial.length - a.dial.length
-    );
-    const match = sorted.find((c) => normalised.startsWith(c.dial));
+    // doesn't false-match "+1" before "+1242" etc. (uses the module-
+    // level pre-sorted list — Round 28s73.)
+    const match = DIAL_CODES_BY_LEN.find((c) => normalised.startsWith(c.dial));
     if (match) {
       const nat = normalised.slice(match.dial.length).replace(/\D/g, "");
       setForm((p) => ({ ...p, customerPhone: `${match.dial}${nat}` }));
@@ -1124,7 +1175,10 @@ const SelectLocationPage: React.FC = () => {
                     paddingX: "8px",
                     paddingY: "3px",
                     borderRadius: "999px",
-                    background: "1.5px solid rgba(20, 184, 166, 0.35)",
+                    // 🆕 Round 28s73 (audit) — was a copy-pasted border
+                    //   value in `background` (invalid, silently ignored).
+                    //   Now a real light-teal tint behind the pill.
+                    background: "rgba(20, 184, 166, 0.10)",
                     color: "#14b8a6",
                     fontFamily: SANS,
                     fontSize: "11px",

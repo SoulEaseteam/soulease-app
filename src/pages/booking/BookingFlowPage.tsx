@@ -289,7 +289,12 @@ const BookingFlowPage: React.FC = () => {
       locationAddress: incoming.locationAddress ?? p.locationAddress,
       lat: incoming.lat ?? p.lat,
       lng: incoming.lng ?? p.lng,
-      addressDetails: incoming.addressDetails ?? p.addressDetails,
+      // 🆕 Round 28s73 (audit) — `||` not `??`. SelectLocationPage no
+      //   longer has an address-details field and always hands back
+      //   addressDetails: "", which with `??` (only null/undefined)
+      //   wiped any value the guest had entered on every round-trip.
+      //   `||` keeps the existing value when incoming is an empty string.
+      addressDetails: incoming.addressDetails || p.addressDetails,
       contactName: incoming.contactName ?? p.contactName,
       customerPhone: incoming.customerPhone ?? p.customerPhone,
       addressNote: incoming.addressNote ?? p.addressNote,
