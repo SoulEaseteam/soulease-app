@@ -166,44 +166,27 @@ const StepService: React.FC<Props> = ({
               }
             }}
             sx={{
-              // Round 28s33 ("ปรับให้สวยสบายตา") — soften card
-              // chrome to match the cream-surface aesthetic the
-              // rest of the redesign now uses.
-              // Round 28s43 — trending card gets a brand-red
-              // double-border treatment via a layered box-shadow
-              // ring so the corner pill (overflow: visible) stays
-              // crisp.
+              // 🆕 Round 28s86 (founder "ใส่รายละเอียด บนภาพ") —
+              //   full-bleed photo card with all the detail (name,
+              //   description, FROM price + duration range, badge,
+              //   TRENDING) overlaid on the image, matching the new
+              //   Services page. Selected = brand-red ring; trending =
+              //   coral ring.
               position: "relative",
-              display: "flex",
-              gap: "16px",
-              padding: "16px",
               borderRadius: "20px",
+              overflow: "hidden",
+              aspectRatio: "16 / 10",
               cursor: "pointer",
               userSelect: "none",
-              background: "#fff",
-              border: isSelected
-                ? "2px solid #FE0944"
-                : isTrending
-                  ? "2px solid transparent"
-                  : "1px solid rgba(184, 92, 60, 0.12)",
-              backgroundImage: isTrending
-                ? "linear-gradient(#fff, #fff), linear-gradient(135deg, #FE0944, #FE7A52, #FEC9A7)"
-                : undefined,
-              backgroundOrigin: isTrending ? "border-box" : undefined,
-              backgroundClip: isTrending
-                ? "padding-box, border-box"
-                : undefined,
               boxShadow: isSelected
-                ? "0 12px 32px rgba(254, 9, 68, 0.22)"
+                ? "0 0 0 2.5px #FE0944, 0 14px 32px rgba(254, 9, 68, 0.26)"
                 : isTrending
-                  ? "0 10px 26px rgba(254, 9, 68, 0.14), 0 1px 3px rgba(126, 30, 46, 0.05)"
-                  : "0 4px 14px rgba(126, 30, 46, 0.05)",
-              transform: isSelected ? "translateY(-1px)" : "none",
-              transition:
-                "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
-              "&:hover": {
-                transform: "translateY(-1px)",
-                boxShadow: "0 8px 22px rgba(126, 30, 46, 0.08)",
+                  ? "0 0 0 2px #FE7A52, 0 12px 28px rgba(254, 9, 68, 0.16)"
+                  : "0 8px 22px rgba(126, 30, 46, 0.12)",
+              transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              "@media (hover: hover)": {
+                "&:hover": { transform: "translateY(-2px)" },
+                "&:hover .svc-img": { transform: "scale(1.05)" },
               },
               "&:focus-visible": {
                 outline: "2px solid #FE0944",
@@ -211,102 +194,145 @@ const StepService: React.FC<Props> = ({
               },
             }}
           >
-            {/* Round 28s43 — Trending pill, top-right corner of the
-                first card. Uses the brand-red gradient register
-                from the rest of the CTAs so it reads as the
-                "this is the one to book" signal. */}
-            {isTrending && (
-              <Box
-                aria-label="Trending"
-                sx={{
-                  position: "absolute",
-                  top: -8,
-                  right: 12,
-                  zIndex: 2,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  padding: "3px 9px 3px 7px",
-                  borderRadius: 999,
-                  background:
-                    "linear-gradient(135deg, #FE0944, #FE7A52)",
-                  color: "#fff",
-                  fontFamily: SANS,
-                  fontSize: "9.5px",
-                  fontWeight: 800,
-                  letterSpacing: "0.10em",
-                  textTransform: "uppercase",
-                  boxShadow:
-                    "0 6px 14px rgba(254, 9, 68, 0.32), inset 0 1px 0 rgba(255,255,255,0.30)",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                <Box
-                  component="span"
-                  aria-hidden
-                  sx={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: "50%",
-                    background: "#fff",
-                    boxShadow: "0 0 0 3px rgba(255,255,255,0.30)",
-                    animation:
-                      "sunredTrendingPulse 1.6s ease-in-out infinite",
-                    "@keyframes sunredTrendingPulse": {
-                      "0%, 100%": { opacity: 1 },
-                      "50%": { opacity: 0.45 },
-                    },
-                  }}
-                />
-                Trending
-              </Box>
-            )}
+            {/* Photo layer */}
+            <Box
+              className="svc-img"
+              aria-hidden
+              sx={{
+                position: "absolute",
+                inset: 0,
+                background: `center / cover no-repeat url("${s.image}"), linear-gradient(135deg, #d4a574, #8b6f47)`,
+                transition: "transform 0.45s cubic-bezier(0.16,1,0.3,1)",
+              }}
+            />
+            {/* Legibility scrim */}
+            <Box
+              aria-hidden
+              sx={{
+                position: "absolute",
+                inset: 0,
+                background:
+                  "linear-gradient(180deg, rgba(20,8,4,0.30) 0%, rgba(20,8,4,0) 28%, rgba(20,8,4,0.45) 55%, rgba(14,5,3,0.88) 100%)",
+              }}
+            />
 
-            {/* Thumbnail */}
+            {/* Top row — badge (left) + Trending (right) */}
             <Box
               sx={{
-                position: "relative",
-                width: 92,
-                height: 92,
-                flexShrink: 0,
-                borderRadius: "16px",
-                overflow: "hidden",
-                background: `center / cover no-repeat url("${s.image}"), linear-gradient(135deg, #d4a574, #8b6f47)`,
+                position: "absolute",
+                top: 12,
+                left: 12,
+                right: 12,
+                zIndex: 2,
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                gap: "8px",
               }}
             >
-              {/* Badge pill (top-left of thumbnail) — bigger and
-                  legible at a glance now that the thumb is 92px. */}
               <Box
                 sx={{
-                  position: "absolute",
-                  top: 6,
-                  left: 6,
                   fontFamily: SANS,
                   fontSize: "9px",
                   fontWeight: 800,
                   letterSpacing: "0.08em",
                   background: badgeColor.bg,
                   color: badgeColor.fg,
-                  padding: "3px 7px",
+                  padding: "3px 8px",
                   borderRadius: "6px",
                   textTransform: "uppercase",
-                  boxShadow: "0 2px 6px rgba(20, 6, 12, 0.18)",
+                  boxShadow: "0 2px 6px rgba(20, 6, 12, 0.22)",
                 }}
               >
                 {s.badge}
               </Box>
+              {isTrending && (
+                <Box
+                  aria-label="Trending"
+                  sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "3px 9px 3px 7px",
+                    borderRadius: 999,
+                    background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+                    color: "#fff",
+                    fontFamily: SANS,
+                    fontSize: "9.5px",
+                    fontWeight: 800,
+                    letterSpacing: "0.10em",
+                    textTransform: "uppercase",
+                    boxShadow:
+                      "0 6px 14px rgba(254, 9, 68, 0.36), inset 0 1px 0 rgba(255,255,255,0.30)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <Box
+                    component="span"
+                    aria-hidden
+                    sx={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: "50%",
+                      background: "#fff",
+                      boxShadow: "0 0 0 3px rgba(255,255,255,0.30)",
+                      animation:
+                        "sunredTrendingPulse 1.6s ease-in-out infinite",
+                      "@keyframes sunredTrendingPulse": {
+                        "0%, 100%": { opacity: 1 },
+                        "50%": { opacity: 0.45 },
+                      },
+                    }}
+                  />
+                  Trending
+                </Box>
+              )}
             </Box>
 
-            {/* Body */}
-            <Box sx={{ flex: 1, minWidth: 0 }}>
+            {/* Selected-duration chip — bottom-right marker */}
+            {isSelected && selectedDuration && (
+              <Box
+                aria-hidden
+                sx={{
+                  position: "absolute",
+                  top: 12,
+                  right: 12,
+                  zIndex: 3,
+                  marginTop: isTrending ? "26px" : 0,
+                  padding: "3px 9px",
+                  borderRadius: 999,
+                  background: "#FE0944",
+                  color: "#fff",
+                  fontFamily: SANS,
+                  fontSize: "10px",
+                  fontWeight: 800,
+                  boxShadow: "0 4px 12px rgba(254, 9, 68, 0.4)",
+                }}
+              >
+                {selectedDuration}m
+              </Box>
+            )}
+
+            {/* Overlaid detail — bottom */}
+            <Box
+              sx={{
+                position: "absolute",
+                left: 16,
+                right: 16,
+                bottom: 14,
+                zIndex: 1,
+              }}
+            >
               <Typography
+                component="h3"
                 sx={{
                   fontFamily: SERIF,
-                  fontSize: "17px",
+                  fontSize: "19px",
                   fontWeight: 600,
-                  color: "#2a1a14",
+                  color: "#fff",
                   letterSpacing: "-0.01em",
-                  lineHeight: 1.15,
+                  lineHeight: 1.14,
+                  textShadow: "0 1px 8px rgba(0,0,0,0.4)",
                   marginBottom: "4px",
                 }}
               >
@@ -316,12 +342,13 @@ const StepService: React.FC<Props> = ({
                 sx={{
                   fontFamily: SANS,
                   fontSize: "12px",
-                  color: "rgba(60, 30, 20, 0.68)",
-                  lineHeight: 1.45,
+                  color: "rgba(255,255,255,0.86)",
+                  lineHeight: 1.4,
                   display: "-webkit-box",
                   WebkitLineClamp: 2,
                   WebkitBoxOrient: "vertical",
                   overflow: "hidden",
+                  textShadow: "0 1px 6px rgba(0,0,0,0.35)",
                   marginBottom: "8px",
                 }}
               >
@@ -339,10 +366,9 @@ const StepService: React.FC<Props> = ({
                 <Typography
                   component="span"
                   sx={{
-                    fontFamily: SANS,
-                    fontSize: "10px",
+                    fontSize: "9.5px",
                     fontWeight: 700,
-                    color: "rgba(60, 30, 20, 0.5)",
+                    color: "rgba(255,255,255,0.7)",
                     textTransform: "uppercase",
                     letterSpacing: "0.06em",
                   }}
@@ -353,10 +379,11 @@ const StepService: React.FC<Props> = ({
                   component="span"
                   sx={{
                     fontFamily: SERIF,
-                    fontSize: "15px",
+                    fontSize: "17px",
                     fontWeight: 700,
-                    color: "#FE0944",
+                    color: "#fff",
                     letterSpacing: "-0.02em",
+                    textShadow: "0 1px 8px rgba(0,0,0,0.4)",
                   }}
                 >
                   {formatTHB(fromPrice)}
@@ -365,7 +392,7 @@ const StepService: React.FC<Props> = ({
                   component="span"
                   sx={{
                     fontSize: "11px",
-                    color: "rgba(60, 30, 20, 0.55)",
+                    color: "rgba(255,255,255,0.72)",
                     fontWeight: 500,
                   }}
                 >
@@ -373,53 +400,6 @@ const StepService: React.FC<Props> = ({
                 </Typography>
               </Box>
             </Box>
-
-            {/* Chevron / radio (right) — chevron when not selected,
-                filled radio + selected duration when picked */}
-            {isSelected && selectedDuration ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: "2px",
-                  flexShrink: 0,
-                }}
-              >
-                <Box
-                  aria-hidden
-                  sx={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: "50%",
-                    border: "6px solid #FE0944",
-                    background: "#fff",
-                  }}
-                />
-                <Typography
-                  sx={{
-                    fontFamily: SANS,
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    color: "#FE0944",
-                  }}
-                >
-                  {selectedDuration}m
-                </Typography>
-              </Box>
-            ) : (
-              <Box
-                aria-hidden
-                sx={{
-                  fontSize: "20px",
-                  color: "rgba(60, 30, 20, 0.35)",
-                  flexShrink: 0,
-                  alignSelf: "center",
-                }}
-              >
-                ›
-              </Box>
-            )}
           </Box>
         );
       })}
