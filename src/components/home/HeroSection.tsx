@@ -46,6 +46,7 @@ import { useConciergeMode } from "@/utils/conciergeMode";
 import { trackConciergeOpen } from "@/utils/analytics";
 import ReferralActiveBanner from "@/components/common/ReferralActiveBanner";
 import { pickHeroPromo } from "@/data/heroPromos";
+import { PROMOS_ENABLED } from "@/config/featureFlags";
 
 // Canonical channel URL — same one HomeFooter / AdminFloatingChat /
 // HowItWorks / ProfilePage already use.
@@ -239,7 +240,10 @@ const HeroSection: React.FC = () => {
           </Typography>
         </Box>
 
-        {/* ── Rotating promo banner — coral gradient, → WhatsApp ──────── */}
+        {/* ── Rotating promo banner — coral gradient, → WhatsApp ────────
+            🆕 Round 28s84 — hidden while PROMOS_ENABLED is off (founder:
+            promos not designed yet, avoid risk). */}
+        {PROMOS_ENABLED && (
         <Box
           component={motion.div}
           initial={{ opacity: 0, y: 8 }}
@@ -359,6 +363,7 @@ const HeroSection: React.FC = () => {
             <ArrowForwardRoundedIcon sx={{ fontSize: 18, color: "#fff" }} />
           </Box>
         </Box>
+        )}
 
         {/* ── Section header: "Our services" + See all ──────────────── */}
         <Box

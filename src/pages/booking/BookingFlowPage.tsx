@@ -145,6 +145,8 @@ import {
 //   Pure function; client-side validation only. Admin still
 //   confirms / overrides via Telegram before payment.
 import { validateDiscount, getInitialDiscountCode } from "@/utils/discount";
+// 🆕 Round 28s84 — shared promo kill-switch (home banner + discount field).
+import { PROMOS_ENABLED } from "@/config/featureFlags";
 // 🆕 Round 28s77 — WeChat/Alipay transfer surcharge (5% + ฿200).
 import {
   paymentSurcharge,
@@ -158,14 +160,6 @@ import { logBookingError } from "@/utils/bookingError";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
-
-// 🆕 Round 28s83 (founder 2026-05-31: "โปรโมชั่น ยังไม่ต้องโชว์ …
-//   ยังไม่ได้คิด โปร กัน เสี่ยง") — master promo kill-switch. While
-//   OFF: the discount-code field is hidden AND no code can ever apply
-//   a discount (even a ?ref= / persisted code resolves to ฿0 off), so
-//   there's zero money-giveaway risk until promos are designed. Flip
-//   to `true` to re-enable the discount UI + code logic.
-const PROMOS_ENABLED = false;
 
 // Round 28s71 (audit) — defensive HH:mm → minutes parse. Returns NaN
 //   for missing / malformed values instead of NaN-poisoning the
