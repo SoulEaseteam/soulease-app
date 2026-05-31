@@ -173,7 +173,7 @@ function formatMessage(p: NotifyPayload): string {
 
     `🚖 Taxi: ${p.taxiFee.toLocaleString()} ฿`,
     ...(p.paymentFee && p.paymentFee > 0
-      ? [`💳 Transfer fee: ${p.paymentFee.toLocaleString()} ฿`]
+      ? [`💳 Service charge: ${p.paymentFee.toLocaleString()} ฿`]
       : []),
     `💰 Total: ${p.total.toLocaleString()} ฿`,
     "",
