@@ -260,6 +260,15 @@ they prefer.
 **Last updated: 2026-05-30 after Round 28s1 (security audit + rules patch)**
 
 **🚨 BLOCKING — must do before features below work in production:**
+- [ ] **🔴 Vercel GitHub auto-deploy is NOT triggering** (found 2026-05-31).
+  All of Round 28s (the whole overnight session) was pushed to GitHub
+  `main` but Vercel never auto-built — the last GitHub-triggered prod
+  deploy was an old "r32" commit. Had to ship manually with
+  `vercel --prod --yes` (deployed e4cfc39 → live on sunred.vip).
+  ACTION: in Vercel dashboard → Project → Settings → Git, reconnect /
+  re-authorize the GitHub integration (or check "Ignored Build Step" /
+  paused deploys). Until fixed, EVERY push needs a manual
+  `vercel --prod` to go live.
 - [ ] **🔴 URGENT: Publish updated `firestore.rules`** to Firebase Console
   - Round 28s1 patch fixes CRITICAL data leak — current production rules
     expose every customer's phone/address/hotel via public read on
