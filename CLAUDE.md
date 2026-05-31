@@ -361,6 +361,17 @@ they prefer.
   `hero.badge.rating` string from i18n.ts + all 5 locale JSONs (dead
   key, but a fake-rating claim shouldn't ship). Verified LIVE.
 
+- ✅ **28s109**: **Localized prerender (zh/ja/ko)** for the 5 service
+  money-pages → static shells at `/{zh,ja,ko}/services[/<slug>]` with
+  localized title/desc/OG/JSON-LD/noscript + `<html lang>` + self
+  canonical + reciprocal path-based hreflang cluster. Added ADDITIVE
+  SPA routes `/zh|/ja|/ko/*` → `LocaleEntryRedirect` (switch i18n lang +
+  redirect to de-prefixed route; these prefixes 404'd before so existing
+  routes untouched). sitemap.xml += 15 localized URLs (35 total).
+  Euphemisms preserved per-locale. Verified LIVE on Baidu/Naver/JP UAs.
+  Strategic: CN/JP/KR audience + Baidu/Naver render JS poorly → now get
+  native-language titles per route. 32 static route files total.
+
 - 🛑 **DECISION: full React-tree SSG is NOT being done.** Investigation
   (28s105) found the app is SSR-cleaner than feared (no module-level
   browser access; entry/providers/layouts clean; home components touch
