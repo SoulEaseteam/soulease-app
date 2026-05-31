@@ -9,6 +9,7 @@ import {
   AccordionDetails,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
@@ -30,24 +31,28 @@ const STORAGE_KEY = "sunred.paymentMethod";
 // ─── Payment & Policy FAQ — moved from ServicesPage (Round 28c1) ──────
 //   Canonical home for all payment-related questions. ServicesPage no
 //   longer duplicates this content; it links here instead.
-type FaqItem = { q: string; a: React.ReactNode };
+type FaqItem = { id: string; q: string; a: string };
 
 const FAQ_POLICY: FaqItem[] = [
   {
+    id: "cost",
     q: "What is the cost of a session?",
     a: "Each practitioner sets their own rates — the exact starting price is shown on their profile. The total reflects the service fee plus a transparent travel fee, aligned with GrabCar pricing (฿45 base, tiered per kilometre, return at half rate).",
   },
   {
+    id: "deposit",
     q: "When is a deposit required?",
     a: "For long-distance reservations — beyond approximately 25 km from central Sukhumvit — we request a modest deposit to secure the practitioner's travel commitment. This is communicated in advance, never as a surprise.",
   },
   {
+    id: "cancel",
     q: "Cancellation & rescheduling",
     a: "Complimentary cancellation or rescheduling up to 30 minutes before the appointment. Beyond that window — or once the practitioner is en route — a 50% service-fee charge applies, in respect of their committed time and travel.",
   },
   {
+    id: "secure",
     q: "Are my payment details secure?",
-    a: "Yes. We use plain-card statements (no service description), tokenised processing for online methods, and never store your card numbers ourselves. Your booking, your privacy.",
+    a: "Yes. We use plain-card statements (no service description), tokenised processing for online methods, and never store your card numbers ourselves. Your reservation, your privacy.",
   },
 ];
 
@@ -180,8 +185,39 @@ function readStoredPaymentRaw(): string | null {
   }
 }
 
+// ─── i18n display resolvers — option arrays are module-level constants
+//   (evaluated once at import), so their label/sub/badge English text is
+//   resolved at RENDER time via these id-keyed lookups. The English in the
+//   constants stays as the t() fallback.
+type TFn = (key: string, fallback: string) => string;
+
+/** alipay + wechat share the same "Scan QR once confirmed" sub copy. */
+const SHARED_SUB_KEY: Partial<Record<PaymentMethodId, string>> = {
+  alipay: "pay.method.scanWhenConfirmed",
+  wechat: "pay.method.scanWhenConfirmed",
+};
+
+function methodLabel(t: TFn, option: PaymentOption): string {
+  return t(`pay.method.${option.id}.label`, option.label);
+}
+
+function methodSub(t: TFn, option: PaymentOption): string | undefined {
+  if (!option.sub) return undefined;
+  const key = SHARED_SUB_KEY[option.id] ?? `pay.method.${option.id}.sub`;
+  return t(key, option.sub);
+}
+
+/** Resolve a method's partner/status badge to its i18n key. */
+function methodBadge(t: TFn, option: PaymentOption): string | undefined {
+  if (!option.badge) return undefined;
+  if (option.id === "card") return t("pay.badge.notAvailable", option.badge);
+  if (option.id === "alipay") return t("pay.badge.alipayPartner", option.badge);
+  return option.badge;
+}
+
 const PaymentMethodsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<PaymentMethodId>(() =>
     safePaymentId(readStoredPaymentRaw())
   );
@@ -249,7 +285,7 @@ const PaymentMethodsPage: React.FC = () => {
         }}
       >
         <IconButton
-          aria-label="back"
+          aria-label={t("common.back", "Back")}
           onClick={() => void navigate(-1)}
           sx={{
             width: 38,
@@ -276,7 +312,7 @@ const PaymentMethodsPage: React.FC = () => {
             marginRight: "38px",
           }}
         >
-          Payment Methods
+          {t("pay.title", "Payment Methods")}
         </Typography>
       </Box>
 
@@ -307,7 +343,7 @@ const PaymentMethodsPage: React.FC = () => {
               paddingLeft: "2px",
             }}
           >
-            Enjoy easier, cashless payments
+            {t("pay.subtitle", "Enjoy easier, cashless payments")}
           </Typography>
           <PaymentRow
             option={RECOMMENDED}
@@ -329,7 +365,7 @@ const PaymentMethodsPage: React.FC = () => {
               paddingLeft: "2px",
             }}
           >
-            We accept all major currencies.
+            {t("pay.acceptCurrencies", "We accept all major payment methods.")}
           </Typography>
           <Typography
             sx={{
@@ -340,7 +376,7 @@ const PaymentMethodsPage: React.FC = () => {
               paddingLeft: "2px",
             }}
           >
-            Flexible payment options for international guests.
+            {t("pay.flexible", "Flexible payment options for international guests.")}
           </Typography>
           <Box
             sx={{
@@ -375,7 +411,7 @@ const PaymentMethodsPage: React.FC = () => {
               paddingLeft: "2px",
             }}
           >
-            Bank Transfer
+            {t("pay.section.bankTransfer", "Bank Transfer")}
           </Typography>
           <Box
             sx={{
@@ -399,21 +435,12 @@ const PaymentMethodsPage: React.FC = () => {
             textAlign: "center",
             marginTop: "8px",
             lineHeight: 1.5,
-            whiteSpace: "pre-line",
           }}
         >
-          Our team will verify and process your payment{"\n"}
-          once confirmed via our{" "}
-          <Box
-            component="span"
-            sx={{
-              fontWeight: 700,
-              color: "rgba(60, 30, 20, 0.8)",
-            }}
-          >
-            official contact channels
-          </Box>
-          .
+          {t(
+            "pay.verifyNote",
+            "Your concierge will verify and process your payment once confirmed via our official contact channels."
+          )}
         </Typography>
 
         {/* ─── Payment & Policy FAQ — refined editorial accordion ─── */}
@@ -439,7 +466,7 @@ const PaymentMethodsPage: React.FC = () => {
               },
             }}
           >
-            Payment & Policy
+            {t("pay.policy.eyebrow", "Payment & Policy")}
           </Box>
           <Typography
             sx={{
@@ -452,7 +479,7 @@ const PaymentMethodsPage: React.FC = () => {
               "& em": { fontStyle: "italic", color: "#FE0944" },
             }}
           >
-            What you should <em>know</em>
+            {t("pay.policy.title", "What you should know")}
           </Typography>
           <Typography
             sx={{
@@ -465,12 +492,14 @@ const PaymentMethodsPage: React.FC = () => {
               maxWidth: "38ch",
             }}
           >
-            Pricing, deposits, cancellation, and how we keep your details
-            private.
+            {t(
+              "pay.policy.lead",
+              "Pricing, deposits, cancellation, and how we keep your details private."
+            )}
           </Typography>
 
           {FAQ_POLICY.map((item) => (
-            <FaqRow key={item.q} item={item} />
+            <FaqRow key={item.id} item={item} />
           ))}
         </Box>
       </Box>
@@ -487,6 +516,7 @@ const PaymentRow: React.FC<{
   divider?: boolean;
   elevated?: boolean;
 }> = ({ option, isActive, onSelect, showDefaultBadge, divider, elevated }) => {
+  const { t } = useTranslation();
   // 🆕 Round 28u — symmetric coming-soon guard with AddMethodRow so a
   // future Linked-method flag (e.g., Cash temporarily off) renders
   // disabled instead of silently letting the user pick it.
@@ -558,7 +588,7 @@ const PaymentRow: React.FC<{
             color: "#1a1a1a",
           }}
         >
-          {option.label}
+          {methodLabel(t, option)}
         </Typography>
         {showDefaultBadge && isActive && (
           <Box
@@ -574,11 +604,11 @@ const PaymentRow: React.FC<{
               letterSpacing: "0.04em",
             }}
           >
-            Default
+            {t("pay.badge.default", "Default")}
           </Box>
         )}
       </Box>
-      {option.sub && (
+      {methodSub(t, option) && (
         <Typography
           sx={{
             fontFamily: SANS,
@@ -587,7 +617,7 @@ const PaymentRow: React.FC<{
             marginTop: "2px",
           }}
         >
-          {option.sub}
+          {methodSub(t, option)}
         </Typography>
       )}
     </Box>
@@ -625,7 +655,9 @@ const AddMethodRow: React.FC<{
   option: PaymentOption;
   divider?: boolean;
 }> = ({ option, divider }) => {
+  const { t } = useTranslation();
   const isDisabled = option.comingSoon === true;
+  const badge = methodBadge(t, option);
   return (
     <Box
       role="button"
@@ -689,9 +721,9 @@ const AddMethodRow: React.FC<{
             color: "#1a1a1a",
           }}
         >
-          {option.label}
+          {methodLabel(t, option)}
         </Typography>
-        {option.sub && (
+        {methodSub(t, option) && (
           <Typography
             sx={{
               fontFamily: SANS,
@@ -700,7 +732,7 @@ const AddMethodRow: React.FC<{
               marginTop: "2px",
             }}
           >
-            {option.sub}
+            {methodSub(t, option)}
           </Typography>
         )}
       </Box>
@@ -709,7 +741,7 @@ const AddMethodRow: React.FC<{
       {isDisabled ? (
         <Box
           component="span"
-          aria-label="Currently unavailable."
+          aria-label={t("pay.badge.unavailable", "Currently unavailable")}
           sx={{
             fontFamily: SANS,
             fontSize: "7px",
@@ -725,10 +757,10 @@ const AddMethodRow: React.FC<{
             whiteSpace: "nowrap",
           }}
         >
-          Currently unavailable.
+          {t("pay.badge.unavailable", "Currently unavailable")}
         </Box>
       ) : (
-        option.badge && (
+        badge && (
           <Box
             component="span"
             sx={{
@@ -743,7 +775,7 @@ const AddMethodRow: React.FC<{
               marginRight: "4px",
             }}
           >
-            {option.badge}
+            {badge}
           </Box>
         )
       )}
@@ -759,7 +791,11 @@ const AddMethodRow: React.FC<{
 };
 
 // ─── Reusable FAQ row — refined accordion with red left-edge on expand ─
-const FaqRow: React.FC<{ item: FaqItem }> = ({ item }) => (
+const FaqRow: React.FC<{ item: FaqItem }> = ({ item }) => {
+  const { t } = useTranslation();
+  const q = t(`pay.faq.${item.id}.q`, item.q);
+  const a = t(`pay.faq.${item.id}.a`, item.a);
+  return (
   <Accordion
     disableGutters
     elevation={0}
@@ -815,43 +851,29 @@ const FaqRow: React.FC<{ item: FaqItem }> = ({ item }) => (
           lineHeight: 1.4,
         }}
       >
-        {item.q}
+        {q}
       </Typography>
     </AccordionSummary>
     <AccordionDetails sx={{ pt: 0, px: 2, pb: 2 }}>
-      {typeof item.a === "string" ? (
-        item.a
-          .split("\n\n")
-          .map((para, i) => (
-            <Typography
-              key={i}
-              sx={{
-                fontFamily: SANS,
-                fontSize: 13,
-                lineHeight: 1.7,
-                color: "rgba(60,30,20,0.78)",
-                mb: 1,
-                "&:last-child": { mb: 0 },
-              }}
-            >
-              {para}
-            </Typography>
-          ))
-      ) : (
-        <Box
+      {a.split("\n\n").map((para, i) => (
+        <Typography
+          key={i}
           sx={{
             fontFamily: SANS,
             fontSize: 13,
             lineHeight: 1.7,
             color: "rgba(60,30,20,0.78)",
+            mb: 1,
+            "&:last-child": { mb: 0 },
           }}
         >
-          {item.a}
-        </Box>
-      )}
+          {para}
+        </Typography>
+      ))}
     </AccordionDetails>
   </Accordion>
-);
+  );
+};
 
 export default PaymentMethodsPage;
 

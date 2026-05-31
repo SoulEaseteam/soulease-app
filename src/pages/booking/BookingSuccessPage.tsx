@@ -54,6 +54,7 @@ import KeyRoundedIcon from "@mui/icons-material/KeyRounded";
 import ShowerRoundedIcon from "@mui/icons-material/ShowerRounded";
 import WaterDropRoundedIcon from "@mui/icons-material/WaterDropRounded";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { doc, getDoc, type DocumentData } from "firebase/firestore";
 // 🆕 Round 28b59 — `dayjs` direct import dropped (was only used by
 //   the now-removed onAddToCalendar handler). All time formatting
@@ -83,6 +84,7 @@ const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 const PREP_BUFFER_MIN = 30;
 
 const BookingSuccessPage: React.FC = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [booking, setBooking] = useState<DocumentData | null>(null);
@@ -101,7 +103,7 @@ const BookingSuccessPage: React.FC = () => {
 
   useEffect(() => {
     if (!id) {
-      setError("No booking id");
+      setError(t("success.err.noId", "No booking id"));
       setLoading(false);
       return;
     }
@@ -118,13 +120,13 @@ const BookingSuccessPage: React.FC = () => {
         const snap = await getDoc(doc(db, "bookings", id));
         if (!alive) return;
         if (!snap.exists()) {
-          setError("Booking not found");
+          setError(t("success.err.notFound", "Booking not found"));
         } else {
           setBooking(snap.data());
         }
       } catch (e) {
         if (!alive) return;
-        setError(e instanceof Error ? e.message : "Failed to load");
+        setError(e instanceof Error ? e.message : t("success.err.failed", "Failed to load"));
       } finally {
         if (alive) setLoading(false);
       }
@@ -133,11 +135,12 @@ const BookingSuccessPage: React.FC = () => {
     return () => {
       alive = false;
     };
-  }, [id]);
+  }, [id, t]);
 
   // ── Derived display values (booked once, then memoize-safe to recompute) ──
   const therapistName =
-    (booking?.therapistName as string | undefined) ?? "Your therapist";
+    (booking?.therapistName as string | undefined) ??
+    t("success.therapistFallback", "your practitioner");
   // 🆕 Round 28s75 (audit) — normalize startAt from ANY stored shape.
   //   Customer bookings write a Firestore Timestamp, but admin-created
   //   docs may store an ISO string / Date; the old `?.toDate` check
@@ -165,9 +168,9 @@ const BookingSuccessPage: React.FC = () => {
   const timeLabel = fmtBKK(startAt, "h:mm A");
   const dateLabel = startAt
     ? sameDayBKK(startAt, nowBKK())
-      ? "Today"
+      ? t("common.today", "Today")
       : sameDayBKK(startAt, nowBKK().add(1, "day"))
-        ? "Tomorrow"
+        ? t("common.tomorrow", "Tomorrow")
         : fmtBKK(startAt, "ddd, MMM D")
     : "—";
   // 🆕 Round 28r19 — fixed format string. Was "HH:mm A" which
@@ -244,7 +247,7 @@ const BookingSuccessPage: React.FC = () => {
             onClick={() => void navigate("/")}
             sx={{ color: "#FE0944", textTransform: "none" }}
           >
-            Back to home
+            {t("success.backHome", "Back to home")}
           </Button>
         </Box>
       ) : (
@@ -296,14 +299,7 @@ const BookingSuccessPage: React.FC = () => {
                 lineHeight: 1.05,
               }}
             >
-              You&rsquo;re all{" "}
-              <Box
-                component="em"
-                sx={{ fontStyle: "italic", color: "#FE0944", fontWeight: 600 }}
-              >
-                booked
-              </Box>
-              .
+              {t("success.title", "You're all set.")}
             </Typography>
 
             {/* Booking ref pill */}
@@ -346,8 +342,11 @@ const BookingSuccessPage: React.FC = () => {
                 padding: "0 8px",
               }}
             >
-              We&rsquo;ve sent confirmation to your email and {therapistName}{" "}
-              will arrive at {timeLabel}.
+              {t(
+                "success.subtitle",
+                "We've sent confirmation to your email and {{name}} will arrive at {{time}}.",
+                { name: therapistName, time: timeLabel }
+              )}
             </Typography>
 
             {/* 🆕 Round 28r9 (founder 2026-05-06) — AdminPresenceBadge
@@ -410,8 +409,10 @@ const BookingSuccessPage: React.FC = () => {
                       directly for off mode (it self-describes); only
                       prefix "Concierge live ·" for active modes. */}
                   {concierge.mode === "off"
-                    ? "Concierge resumes at 09:00"
-                    : `Concierge live · ${concierge.pillLabel}`}
+                    ? t("success.concierge.resumesAt9", "Concierge resumes at 09:00")
+                    : t("success.concierge.live", "Concierge live · {{label}}", {
+                        label: concierge.pillLabel,
+                      })}
                 </Typography>
               </Box>
             </Box>
@@ -469,7 +470,9 @@ const BookingSuccessPage: React.FC = () => {
                     lineHeight: 1.3,
                   }}
                 >
-                  {therapistName} is preparing your session
+                  {t("success.preparing", "{{name}} is preparing your session", {
+                    name: therapistName,
+                  })}
                 </Typography>
                 <Typography
                   sx={{
@@ -481,8 +484,15 @@ const BookingSuccessPage: React.FC = () => {
                   }}
                 >
                   {leaveLabel
-                    ? `Will leave for your location at ${leaveLabel} · Track in real-time`
-                    : "We'll send a tracking link before departure."}
+                    ? t(
+                        "success.willLeave",
+                        "Will leave for your location at {{time}} · Track in real-time",
+                        { time: leaveLabel }
+                      )
+                    : t(
+                        "success.trackingSoon",
+                        "We'll send a tracking link before departure."
+                      )}
                 </Typography>
               </Box>
             </Box>
@@ -513,8 +523,10 @@ const BookingSuccessPage: React.FC = () => {
               }}
             >
               <ActionCard
-                label={`Chat with ${therapistName.split(" ")[0]}`}
-                sub="Via concierge"
+                label={t("success.action.chat", "Chat with {{name}}", {
+                  name: therapistName.split(" ")[0],
+                })}
+                sub={t("success.action.viaConcierge", "Via concierge")}
                 icon={<ChatRoundedIcon />}
                 onClick={() => {
                   // Round 28s75 (audit) — dropped a dead
@@ -526,8 +538,8 @@ const BookingSuccessPage: React.FC = () => {
                 }}
               />
               <ActionCard
-                label="Track arrival"
-                sub="Open in Maps"
+                label={t("success.action.track", "Track arrival")}
+                sub={t("success.action.maps", "Open in Maps")}
                 icon={<PinDropRoundedIcon />}
                 onClick={() => {
                   const placeName =
@@ -549,8 +561,8 @@ const BookingSuccessPage: React.FC = () => {
                 }}
               />
               <ActionCard
-                label="Add to calendar"
-                sub="Save .ics file"
+                label={t("success.action.calendar", "Add to calendar")}
+                sub={t("success.action.icsSub", "Save .ics file")}
                 icon={<CalendarMonthRoundedIcon />}
                 onClick={() => {
                   if (!startAt) return;
@@ -585,7 +597,7 @@ const BookingSuccessPage: React.FC = () => {
                     `DTEND:${fmtIcs(endAtDate)}`,
                     `SUMMARY:${summary}`,
                     `LOCATION:${loc.replace(/[\r\n,;]/g, " ")}`,
-                    `DESCRIPTION:Booking ref ${refCode}`,
+                    `DESCRIPTION:${t("success.ics.desc", "Reservation ref {{ref}}", { ref: refCode })}`,
                     "END:VEVENT",
                     "END:VCALENDAR",
                   ].join("\r\n");
@@ -600,8 +612,8 @@ const BookingSuccessPage: React.FC = () => {
                 }}
               />
               <ActionCard
-                label="Reschedule"
-                sub="Via concierge"
+                label={t("success.action.reschedule", "Reschedule")}
+                sub={t("success.action.viaConcierge", "Via concierge")}
                 icon={<AutorenewRoundedIcon />}
                 onClick={() => {
                   // Round 28s75 (audit) — dead `void msg` removed (LINE
@@ -636,10 +648,10 @@ const BookingSuccessPage: React.FC = () => {
                   marginBottom: "10px",
                 }}
               >
-                Your booking
+                {t("success.summary.title", "Your reservation")}
               </Typography>
               <SummaryLine
-                label="Therapist"
+                label={t("success.summary.practitioner", "Practitioner")}
                 value={
                   <Box
                     component="span"
@@ -653,17 +665,22 @@ const BookingSuccessPage: React.FC = () => {
                 }
               />
               <SummaryLine
-                label="Service"
+                label={t("success.summary.service", "Service")}
                 value={`${getServiceLabel(
                   booking.serviceId as string | undefined,
                   booking.serviceName as string | undefined
                 )}${
-                  booking.duration ? ` · ${booking.duration as number} min` : ""
+                  booking.duration
+                    ? ` · ${booking.duration as number} ${t("common.min", "min")}`
+                    : ""
                 }`}
               />
-              <SummaryLine label="Time" value={`${dateLabel} · ${timeLabel}`} />
               <SummaryLine
-                label="Location"
+                label={t("success.summary.time", "Time")}
+                value={`${dateLabel} · ${timeLabel}`}
+              />
+              <SummaryLine
+                label={t("success.summary.location", "Location")}
                 value={
                   (booking.locationName as string) ??
                   (booking.address as string) ??
@@ -678,9 +695,9 @@ const BookingSuccessPage: React.FC = () => {
               {typeof booking.discountAmount === "number" &&
                 booking.discountAmount > 0 && (
                   <SummaryLine
-                    label={`Discount · ${
-                      (booking.discountCode as string | undefined) ?? ""
-                    }`}
+                    label={t("success.summary.discount", "Discount · {{code}}", {
+                      code: (booking.discountCode as string | undefined) ?? "",
+                    })}
                     value={
                       <Box
                         component="span"
@@ -726,7 +743,7 @@ const BookingSuccessPage: React.FC = () => {
                         color: "#15803d",
                       }}
                     >
-                      ✨ You saved
+                      {t("success.summary.saved", "You saved")}
                     </Box>
                     <Box
                       component="span"
@@ -770,7 +787,7 @@ const BookingSuccessPage: React.FC = () => {
                   </Box>
                 )}
               <SummaryLine
-                label="Total paid"
+                label={t("success.summary.totalPaid", "Total paid")}
                 value={
                   <Box
                     component="span"
@@ -824,7 +841,7 @@ const BookingSuccessPage: React.FC = () => {
                     fontStyle: "italic",
                   }}
                 >
-                  What to prepare
+                  {t("success.prep.title", "What to prepare")}
                 </Typography>
                 <Typography
                   sx={{
@@ -834,20 +851,30 @@ const BookingSuccessPage: React.FC = () => {
                     fontStyle: "italic",
                   }}
                 >
-                  (optional)
+                  {t("common.optional", "(Optional)")}
                 </Typography>
               </Box>
               <PrepLine
                 icon={<KeyRoundedIcon />}
-                text="Have your room number ready at reception"
+                text={t(
+                  "success.prep.room",
+                  "Have your room number ready at reception"
+                )}
               />
               <PrepLine
                 icon={<ShowerRoundedIcon />}
-                text="Light shower beforehand is recommended"
+                text={t(
+                  "success.prep.shower",
+                  "Light shower beforehand is recommended"
+                )}
               />
               <PrepLine
                 icon={<WaterDropRoundedIcon />}
-                text={`Drink water · ${therapistName.split(" ")[0]} brings everything else`}
+                text={t(
+                  "success.prep.water",
+                  "Drink water · {{name}} brings everything else",
+                  { name: therapistName.split(" ")[0] }
+                )}
                 last
               />
             </Box>
@@ -905,13 +932,19 @@ const BookingSuccessPage: React.FC = () => {
                   },
                 }}
               >
-                Copy booking code · {refCode}
+                {t("success.copyCode", "Copy reservation code · {{ref}}", {
+                  ref: refCode,
+                })}
               </Button>
               <Button
                 fullWidth
                 onClick={() => {
                   const message = encodeURIComponent(
-                    `Hi SunRed admin, I just placed booking ${refCode}. Please confirm my order. Thanks!`
+                    t(
+                      "success.msg.confirm",
+                      "Hi SunRed concierge, I just placed reservation {{ref}}. Please confirm my order. Thanks!",
+                      { ref: refCode }
+                    )
                   );
                   // Prefer LINE on mobile, fall back to WhatsApp.
                   // Both deep-links auto-open the right app on iOS/Android.
@@ -946,7 +979,9 @@ const BookingSuccessPage: React.FC = () => {
                   },
                 }}
               >
-                Confirm with admin · {refCode}
+                {t("success.confirmWith", "Confirm with concierge · {{ref}}", {
+                  ref: refCode,
+                })}
               </Button>
               <Button
                 fullWidth
@@ -962,7 +997,7 @@ const BookingSuccessPage: React.FC = () => {
                   "&:hover": { background: "rgba(15, 23, 42, 0.04)" },
                 }}
               >
-                Back to home
+                {t("success.backHome", "Back to home")}
               </Button>
             </Box>
           </>
