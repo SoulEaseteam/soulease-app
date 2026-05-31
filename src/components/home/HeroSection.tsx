@@ -478,12 +478,12 @@ const HeroSection: React.FC = () => {
                 sx={{
                   position: "relative",
                   flexShrink: 0,
-                  width: 156,
+                  width: 126,
                   scrollSnapAlign: "start",
                   display: "flex",
                   flexDirection: "column",
-                  padding: "12px 12px 14px",
-                  borderRadius: "18px",
+                  padding: "9px 9px 11px",
+                  borderRadius: "15px",
                   background: "#fff",
                   border: "1px solid rgba(184, 92, 60, 0.10)",
                   boxShadow:
@@ -508,16 +508,16 @@ const HeroSection: React.FC = () => {
                 <Box
                   sx={{
                     width: "100%",
-                    height: 76,
-                    borderRadius: "12px",
+                    height: 56,
+                    borderRadius: "10px",
                     background: svc.swatch,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    marginBottom: "10px",
+                    marginBottom: "8px",
                   }}
                 >
-                  <Icon sx={{ fontSize: 34, color: svc.swatchIcon }} />
+                  <Icon sx={{ fontSize: 26, color: svc.swatchIcon }} />
                 </Box>
 
                 <Typography
@@ -542,11 +542,11 @@ const HeroSection: React.FC = () => {
                   component="span"
                   sx={{
                     fontFamily: fonts.heading,
-                    fontSize: "16.5px",
+                    fontSize: "14px",
                     fontWeight: 600,
                     color: brand.text,
                     lineHeight: 1.15,
-                    marginBottom: "3px",
+                    marginBottom: "2px",
                   }}
                 >
                   {svc.short}
@@ -554,10 +554,10 @@ const HeroSection: React.FC = () => {
                 <Typography
                   component="span"
                   sx={{
-                    fontSize: "10.5px",
+                    fontSize: "10px",
                     fontWeight: 500,
                     color: brand.textMuted,
-                    marginBottom: "10px",
+                    marginBottom: "7px",
                   }}
                 >
                   {svc.duration}
@@ -572,7 +572,7 @@ const HeroSection: React.FC = () => {
                   component="span"
                   sx={{
                     fontFamily: fonts.heading,
-                    fontSize: "16px",
+                    fontSize: "14px",
                     fontWeight: 700,
                     color: brand.red,
                     marginTop: "auto",
