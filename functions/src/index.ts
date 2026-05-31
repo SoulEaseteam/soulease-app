@@ -854,3 +854,27 @@ export const telegramWebhook = onRequest(
     res.status(200).send("ok");
   }
 );
+
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28s115 — Telegram channel-posting bot (@SunRedPostBot).
+//   Lives in src/telegram-post-bot/ to keep its surface separate
+//   from the booking-notification bot above. Re-exports 2 scheduled
+//   Functions (Mon spotlight + Fri weekend) and 1 admin-only
+//   callable (postToChannelManual).
+//
+//   Required setup BEFORE first deploy:
+//     1. firebase functions:secrets:set TELEGRAM_POST_BOT_TOKEN
+//        (paste the token directly into the prompt; never commit it).
+//     2. Add @SunRedPostBot as admin in @SunRed_BKK with "Post
+//        Messages" + "Edit Messages of Others" permissions.
+//     3. Verify the channel handle constant in
+//        src/telegram-post-bot/client.ts matches the live channel.
+//
+//   Deploy: firebase deploy --only functions:scheduledChannelSpotlight,
+//   functions:scheduledChannelWeekend,functions:postToChannelManual
+// ─────────────────────────────────────────────────────────────
+export {
+  scheduledChannelSpotlight,
+  scheduledChannelWeekend,
+  postToChannelManual,
+} from "./telegram-post-bot";

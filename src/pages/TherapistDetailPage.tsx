@@ -244,7 +244,16 @@ const LANG_DISPLAY: Record<string, { flag: string; name: string }> = {
 // Round 28z: prefers the new structured fields (credentials, serviceExperience,
 // languageSkills, area, rebookRate, totalSessions) added to data/therapists.ts.
 // Falls back to derivation from features.* for older records.
-function buildFromReal(real: Therapist): DemoTherapist {
+//
+// 🆕 Round 28s113 — `lang` parameter prioritizes the curated multi-locale
+//   `bios` block on the Therapist record over the auto-derived chip-style
+//   `aboutDerived` string. Falls back to EN bio, then auto-derived, in that
+//   order. This is what lets WeChat/LINE/SEO visitors arriving on a
+//   /therapists/:id route see a real prose introduction in their language
+//   instead of a stat list. Source content lives in docs/therapist-profiles.md
+//   + docs/therapist-profiles-i18n.md and is wired into src/data/therapists.ts
+//   `bios` fields.
+function buildFromReal(real: Therapist, lang?: string): DemoTherapist {
   const ageStr = real.features.age ?? "";
   const ageNum = ageStr ? parseInt(ageStr, 10) || 28 : 28;
 
@@ -502,7 +511,12 @@ function buildFromReal(real: Therapist): DemoTherapist {
     creds: realCreds,
     reviewBuckets: [],
     reviews: [],
-    about: aboutDerived,
+    // 🆕 Round 28s113 — prefer curated multi-locale bio; fall back to EN;
+    //   final fallback is the auto-assembled fact-chip string.
+    about:
+      (lang && real.bios?.[lang as keyof typeof real.bios]) ||
+      real.bios?.en ||
+      aboutDerived,
     aboutFacts,
     aboutRows,
     gender: real.features.gender,
@@ -532,7 +546,12 @@ const TherapistDetailPage: React.FC = () => {
   // demo map empty, the only real path was `therapistsData`. An
   // unknown :id now returns null → explicit 404 below.
   const realRow = id ? therapistsData.find((tt) => tt.id === id) : null;
-  const therapistFromReal = realRow ? buildFromReal(realRow) : null;
+  // 🆕 Round 28s113 — pass the active i18n locale so buildFromReal can
+  //   surface the matching `bios[lang]` translation as the About body.
+  //   Slice to 2 chars so "en-US" / "zh-CN" both resolve to "en" / "zh".
+  const therapistFromReal = realRow
+    ? buildFromReal(realRow, i18n.language?.slice(0, 2))
+    : null;
 
   // Round 28s34 — Memoised overlay so the spread runs only when
   // loyalty / review payloads change, not on every parent render.
@@ -1079,6 +1098,77 @@ const TherapistDetailPage: React.FC = () => {
               })
             }
           />
+
+          {/* 🆕 Round 28s114 — Discovery Reservation callout (Phase 2 of
+              docs/discovery-offer.md). Shown for every non-star therapist
+              as a soft signal that trying a new practitioner carries an
+              extra welcome ritual. Concierge confirms eligibility at chat
+              time (lifetime 1× per returning guest × practitioner per the
+              policy doc). Excludes the star therapist by design to
+              protect her premium positioning. */}
+          {therapist.id !== "YuriSunRed" && (
+            <Box
+              sx={{
+                maxWidth: 430,
+                margin: "10px auto 0",
+                padding: "14px 18px",
+                borderRadius: "16px",
+                background:
+                  "linear-gradient(135deg, #FFF6EF 0%, #FCEBDC 100%)",
+                border: "1px solid rgba(184, 92, 60, 0.18)",
+                display: "flex",
+                gap: "12px",
+                alignItems: "flex-start",
+              }}
+            >
+              <Box
+                aria-hidden="true"
+                sx={{
+                  fontSize: 22,
+                  lineHeight: 1,
+                  color: "#FE0944",
+                  marginTop: "1px",
+                }}
+              >
+                ✦
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography
+                  component="p"
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: "10px",
+                    fontWeight: 800,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    color: "#b85c3c",
+                    marginBottom: "4px",
+                  }}
+                >
+                  {t(
+                    "detail.discovery.eyebrow",
+                    "Discovery Reservation"
+                  )}
+                </Typography>
+                <Typography
+                  component="p"
+                  sx={{
+                    fontFamily: SERIF,
+                    fontSize: "13.5px",
+                    fontWeight: 500,
+                    color: "#2a1a14",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {t(
+                    "detail.discovery.body",
+                    "First reservation with {{name}} includes a complimentary 15-minute warm scalp and foot welcome ritual · ask the concierge for details.",
+                    { name: therapist.name }
+                  )}
+                </Typography>
+              </Box>
+            </Box>
+          )}
 
           {/* Round 28s50 — Inline profile detail sections under the
               About card so guests don't have to dig into the

@@ -17,6 +17,14 @@ import { trackHomeView } from "@/utils/analytics";
 import HomeTherapistGrid from "@/components/home/HomeTherapistGrid";
 // 🆕 Round 28s98 (conversion) — trust strip restored below the hero.
 import PromiseStrip from "@/components/home/PromiseStrip";
+// 🆕 Round 28s112 (conversion) — addresses audit gap #9-10 in
+//   docs/site-audit-2026-06.md: first-time visitors from Stickman /
+//   Telegram cross-promo / WeChat OA had no obvious "where to book"
+//   signal above the fold, and no social proof to validate the choice.
+//   SocialProofTicker shows live Firestore-backed reservation activity;
+//   ReserveCTA gives a single mode-aware Telegram-first CTA below.
+import SocialProofTicker from "@/components/common/SocialProofTicker";
+import ReserveCTA from "@/components/home/ReserveCTA";
 
 // Round 28s20 — PromiseStrip + HomeFooter dropped from the home
 // page composition (founder: "ตัดส่วนที่ไม่ต้องมีก็ได้ ทำให้เหมือน
@@ -94,6 +102,18 @@ const HomePage: React.FC = () => {
         SunRed — Luxury outcall massage in Bangkok, delivered to your hotel
       </Box>
       <HeroSection />
+      {/* 🆕 Round 28s112 — trust signal (live Firestore: "X bookings in
+          last 24h", "Y sessions now", "Most popular: Z"). Banner variant
+          fills the home shell edge-to-edge. Sits between Hero and
+          ReserveCTA so the trust register precedes the ask. */}
+      <Box sx={{ padding: "12px 16px 0" }}>
+        <SocialProofTicker variant="banner" />
+      </Box>
+      {/* 🆕 Round 28s112 — Reserve CTA (audit gap #9). Time-aware
+          headline ("Reserve tonight" / "your evening" / etc.) +
+          Telegram-first primary button per CLAUDE.md §5 founder bias,
+          with WhatsApp / LINE / WeChat secondary chips. */}
+      <ReserveCTA />
       <HomeTherapistGrid />
       {/* 🆕 Round 28s98 — trust strip (Why SunRed · Licensed · Discreet
           · 5-Lang · 24/7). Round 28s99 (founder "เอาไปไว้ล่างสุด") —
