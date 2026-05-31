@@ -13,7 +13,11 @@
 
 import React from "react";
 import { Box, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
+import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
+import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded";
+import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -31,6 +35,7 @@ export interface AddressTileProps {
 }
 
 export const AddressTile: React.FC<AddressTileProps> = ({ location, onTap }) => {
+  const { t } = useTranslation();
   const phoneClean = location.phone.replace(/\D/g, "");
   const phoneOk = phoneClean.length >= 10;
   const fullySet = location.hasCoords && location.contactName.trim() && phoneOk;
@@ -93,7 +98,7 @@ export const AddressTile: React.FC<AddressTileProps> = ({ location, onTap }) => 
                 textOverflow: "ellipsis",
               }}
             >
-              {location.name ?? "Pinned location"}
+              {location.name ?? t("booking.address.pinned", "Pinned location")}
             </Typography>
             <Typography
               sx={{
@@ -110,27 +115,42 @@ export const AddressTile: React.FC<AddressTileProps> = ({ location, onTap }) => 
             </Typography>
             {fullySet && (
               <Typography
+                component="div"
                 sx={{
                   fontFamily: SANS,
                   fontSize: "11px",
                   color: "rgba(60, 30, 20, 0.55)",
                   marginTop: "3px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
                 }}
               >
-                👤 {location.contactName} · 📞 {location.phone}
+                <PersonRoundedIcon sx={{ fontSize: 13 }} />
+                {location.contactName}
+                <Box component="span" sx={{ opacity: 0.5 }}>
+                  ·
+                </Box>
+                <PhoneRoundedIcon sx={{ fontSize: 13 }} />
+                {location.phone}
               </Typography>
             )}
             {!fullySet && (
               <Typography
+                component="div"
                 sx={{
                   fontFamily: SANS,
                   fontSize: "11px",
                   color: "#FE0944",
                   fontWeight: 600,
                   marginTop: "3px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
                 }}
               >
-                ⚠ Add contact name + phone
+                <WarningAmberRoundedIcon sx={{ fontSize: 13, color: "#d97706" }} />
+                {t("booking.address.addContact", "Add contact name + phone")}
               </Typography>
             )}
           </>

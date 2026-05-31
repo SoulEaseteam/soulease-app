@@ -16,6 +16,7 @@
 
 import React, { useRef } from "react";
 import { Box, Typography, Button } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { formatTHB } from "@/utils/servicePricing";
 import useTweenedNumber from "@/hooks/useTweenedNumber";
 
@@ -35,6 +36,7 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
   submitting,
   onConfirm,
 }) => {
+  const { t } = useTranslation();
   // 🆕 Round 28b46 — Tween the sticky-bar Total too so price changes
   //   feel cohesive between the Pricing card and the bar.
   const animatedTotal = useTweenedNumber(total);
@@ -82,7 +84,7 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
             letterSpacing: "0.08em",
           }}
         >
-          Total
+          {t("common.total", "Total")}
         </Typography>
         <Typography
           key={pulseKey.current}
@@ -133,7 +135,9 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
           },
         }}
       >
-        {submitting ? "..." : "Place Order"}
+        {submitting
+          ? t("booking.placing", "Placing…")
+          : t("booking.placeOrder", "Confirm Reservation")}
       </Button>
     </Box>
   );

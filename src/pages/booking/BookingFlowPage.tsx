@@ -708,9 +708,9 @@ const BookingFlowPage: React.FC = () => {
   // ── Header summary line
   const dateLabel = form.date
     ? sameDayBKK(form.date, nowBKK())
-      ? "Today"
+      ? t("common.today", "Today")
       : sameDayBKK(form.date, nowBKK().add(1, "day"))
-      ? "Tomorrow"
+      ? t("common.tomorrow", "Tomorrow")
       : fmtBKK(form.date, "MMM D")
     : null;
 
@@ -764,7 +764,7 @@ const BookingFlowPage: React.FC = () => {
         return;
       }
       if (!service || !therapist || !form.date || !form.time) {
-        toast.error("Missing booking details");
+        toast.error(t("booking.error.missingDetails", "Missing reservation details"));
         setSubmitting(false);
         return;
       }
@@ -777,7 +777,7 @@ const BookingFlowPage: React.FC = () => {
       // is the wall-clock the practitioner reads.
       const parsedStart = parseDateTimeBKK(form.date, form.time);
       if (!parsedStart) {
-        toast.error("Invalid booking time");
+        toast.error(t("booking.error.invalidTime", "Invalid reservation time"));
         setSubmitting(false);
         return;
       }
@@ -917,10 +917,16 @@ const BookingFlowPage: React.FC = () => {
           await addDoc(collection(db, "notifications"), {
             userId: user.uid,
             type: "bookingConfirmed",
-            title: "Booking confirmed",
-            content: `Your session with ${therapist.name} is set for ${
-              form.date ?? "—"
-            } at ${form.time ?? "—"}.`,
+            title: t("booking.notif.title", "Reservation confirmed"),
+            content: t(
+              "booking.notif.body",
+              "Your session with {{name}} is set for {{date}} at {{time}}.",
+              {
+                name: therapist.name,
+                date: form.date ?? "—",
+                time: form.time ?? "—",
+              }
+            ),
             link: `/booking/success/${ref.id}`,
             read: false,
             priority: "normal",
@@ -1052,7 +1058,7 @@ const BookingFlowPage: React.FC = () => {
         }}
       >
         <IconButton
-          aria-label="back"
+          aria-label={t("common.back", "Back")}
           onClick={() => void navigate(-1)}
           sx={{
             width: 36,
@@ -1078,7 +1084,7 @@ const BookingFlowPage: React.FC = () => {
             marginRight: "36px", // visual balance for the left icon button
           }}
         >
-          Confirm Order
+          {t("booking.confirm.title", "Confirm Reservation")}
         </Typography>
       </Box>
 
@@ -1169,7 +1175,10 @@ const BookingFlowPage: React.FC = () => {
         )}
 
         {/* ─────────── Order Details card (pattern 4A) ─────────── */}
-        <SectionCard label="Order Details" icon={<ReceiptLongRoundedIcon />}>
+        <SectionCard
+          label={t("booking.section.orderDetails", "Order Details")}
+          icon={<ReceiptLongRoundedIcon />}
+        >
           {/* Therapist row + EDIT */}
           <Box
             sx={{
@@ -1211,7 +1220,7 @@ const BookingFlowPage: React.FC = () => {
                   lineHeight: 1.2,
                 }}
               >
-                {therapist?.name ?? "Therapist"}
+                {therapist?.name ?? t("booking.therapist.fallback", "Practitioner")}
               </Typography>
               <Box
                 sx={{
@@ -1248,7 +1257,9 @@ const BookingFlowPage: React.FC = () => {
                     color: "rgba(60, 30, 20, 0.6)",
                   }}
                 >
-                  ({therapist?.reviews ?? 0} reviews)
+                  {t("booking.reviewsCount", "({{count}} reviews)", {
+                    count: therapist?.reviews ?? 0,
+                  })}
                 </Typography>
               </Box>
               <Typography
@@ -1261,7 +1272,7 @@ const BookingFlowPage: React.FC = () => {
               >
                 {dateLabel && form.time
                   ? `${dateLabel} · ${prettyHHMM(form.time)}`
-                  : "Pick date & time on the detail page"}
+                  : t("booking.pickDateTimeHint", "Pick date & time on the detail page")}
               </Typography>
             </Box>
             <Button
@@ -1283,7 +1294,7 @@ const BookingFlowPage: React.FC = () => {
                 "&:hover": { background: "rgba(254, 9, 68, 0.14)" },
               }}
             >
-              Edit
+              {t("common.edit", "Edit")}
             </Button>
           </Box>
 
@@ -1317,7 +1328,9 @@ const BookingFlowPage: React.FC = () => {
                   marginTop: "2px",
                 }}
               >
-                {form.duration ? `${form.duration} mins` : "—"}
+                {form.duration
+                  ? t("booking.minsShort", "{{n}} min", { n: form.duration })
+                  : "—"}
               </Typography>
             </Box>
             <Typography
@@ -1343,16 +1356,23 @@ const BookingFlowPage: React.FC = () => {
               must-do (location). Special requests go via admin chat. */}
 
         {/* ─────────── Pricing card (pattern 5A) ─────────── */}
-        <SectionCard label="Pricing" icon={<PaidRoundedIcon />}>
+        <SectionCard
+          label={t("booking.section.pricing", "Pricing")}
+          icon={<PaidRoundedIcon />}
+        >
           <PriceRow
-            label={`Service fee${
-              form.duration ? ` · ${form.duration} min` : ""
+            label={`${t("booking.priceRow.serviceFee", "Service fee")}${
+              form.duration
+                ? ` · ${t("booking.minsShort", "{{n}} min", { n: form.duration })}`
+                : ""
             }`}
             value={formatTHB(servicePrice)}
           />
           {selectedAddons.length > 0 && (
             <PriceRow
-              label={`Add-ons (${selectedAddons.length})`}
+              label={t("booking.priceRow.addons", "Add-ons ({{count}})", {
+                count: selectedAddons.length,
+              })}
               value={`+${formatTHB(addonsTotal)}`}
             />
           )}
@@ -1402,10 +1422,10 @@ const BookingFlowPage: React.FC = () => {
                 >
                   <PlaceRoundedIcon />
                 </Box>
-                Distance:&nbsp;
+                {t("booking.distance", "Distance")}:&nbsp;
                 <Box component="strong" sx={{ color: "#3c1e14" }}>
                   {distanceIsEstimate ? "≈ " : ""}
-                  {distanceKm.toFixed(1)} km
+                  {distanceKm.toFixed(1)} {t("common.km", "km")}
                 </Box>
                 {/* 🆕 Round 28b25 — small "Live route" pill once Google
                     Directions has resolved, so the customer knows the
@@ -1427,7 +1447,7 @@ const BookingFlowPage: React.FC = () => {
                       lineHeight: 1.3,
                     }}
                   >
-                    Live route
+                    {t("booking.liveRoute", "Live route")}
                   </Box>
                 )}
               </Box>
@@ -1455,9 +1475,9 @@ const BookingFlowPage: React.FC = () => {
                 >
                   <AccessTimeRoundedIcon />
                 </Box>
-                ETA:&nbsp;
+                {t("booking.eta", "ETA")}:&nbsp;
                 <Box component="strong" sx={{ color: "#3c1e14" }}>
-                  {etaMinutes} min
+                  {etaMinutes} {t("common.min", "min")}
                 </Box>
                 {/* 🆕 Round 28b24 — small "+5 min rain" hint when the
                     rain surcharge bumped the prep buffer from 15→20 min.
@@ -1480,7 +1500,7 @@ const BookingFlowPage: React.FC = () => {
                       lineHeight: 1.3,
                     }}
                   >
-                    +5 min · rain
+                    {t("booking.rainEta", "+5 min · rain")}
                   </Box>
                 )}
               </Box>
@@ -1526,7 +1546,7 @@ const BookingFlowPage: React.FC = () => {
                 >
                   <LocalTaxiRoundedIcon />
                 </Box>
-                Travel fee
+                {t("booking.priceRow.travelFee", "Travel fee")}
                 {locationSet && taxiResult && taxiResult.tier !== "free" && (
                   <Box
                     component="span"
@@ -1565,7 +1585,7 @@ const BookingFlowPage: React.FC = () => {
                         marginBottom: "4px",
                       }}
                     >
-                      Travel Fee · SunRed Smart Routing
+                      {t("booking.travelTip.title", "Travel Fee · SunRed Smart Routing")}
                     </Typography>
                     <Typography sx={{ fontFamily: SANS, fontSize: "11.5px", lineHeight: 1.6 }}>
                       ≤ 1 km · <strong>฿45</strong> base fare
@@ -1574,7 +1594,8 @@ const BookingFlowPage: React.FC = () => {
                       <br />
                       6–40 km · +฿7/km
                       <br />
-                      &gt; {ADMIN_QUOTE_KM} km · +฿10/km · admin quote
+                      &gt; {ADMIN_QUOTE_KM} km · +฿10/km ·{" "}
+                      {t("booking.conciergeQuote", "Concierge quote")}
                       <br />
                       <Box
                         component="span"
@@ -1585,16 +1606,22 @@ const BookingFlowPage: React.FC = () => {
                           color: "#16a34a",
                         }}
                       >
-                        Return leg · 40 % off the meter
+                        {t("booking.travelTip.returnLeg", "Return leg · 40% off the meter")}
                       </Box>
                       <Box component="span" sx={{ opacity: 0.85, display: "block" }}>
-                        (outbound full + return 60 % · auto-applied)
+                        {t(
+                          "booking.travelTip.returnNote",
+                          "(outbound full + return 60% · auto-applied)"
+                        )}
                       </Box>
                       <Box
                         component="span"
                         sx={{ opacity: 0.85, display: "block", marginTop: "6px" }}
                       >
-                        Rain may add 15-30 % surcharge · ETA +5 min.
+                        {t(
+                          "booking.travelTip.rain",
+                          "Rain may add 15–30% surcharge · ETA +5 min."
+                        )}
                       </Box>
                     </Typography>
                   </Box>
@@ -1661,11 +1688,11 @@ const BookingFlowPage: React.FC = () => {
                 }}
               >
                 {!locationSet
-                  ? "Set address"
+                  ? t("booking.setAddress", "Set address")
                   : adminQuoteRequired
-                  ? "Admin quote"
+                  ? t("booking.conciergeQuote", "Concierge quote")
                   : taxiFare === 0
-                  ? "FREE"
+                  ? t("booking.free", "FREE")
                   : formatTHB(taxiFare)}
               </Typography>
             </Box>
@@ -1692,7 +1719,9 @@ const BookingFlowPage: React.FC = () => {
               taxiResult.sunredPromoDiscount > 0 &&
               !adminQuoteRequired && (
                 <FareChip color="green" icon={<SavingsRoundedIcon />}>
-                  Smart Routing · {formatTHB(taxiResult.sunredPromoDiscount)} off
+                  {t("booking.smartRouting", "Smart Routing · {{amount}} off", {
+                    amount: formatTHB(taxiResult.sunredPromoDiscount),
+                  })}
                 </FareChip>
               )}
             {locationSet &&
@@ -1704,7 +1733,10 @@ const BookingFlowPage: React.FC = () => {
               )}
             {adminQuoteRequired && (
               <FareChip color="amber" icon={<SupportAgentRoundedIcon />}>
-                Long-distance · contact admin to confirm
+                {t(
+                  "booking.longDistance",
+                  "Long-distance · contact the concierge to confirm"
+                )}
               </FareChip>
             )}
           </Box>
@@ -1716,7 +1748,7 @@ const BookingFlowPage: React.FC = () => {
             <TextField
               fullWidth
               size="small"
-              placeholder="Discount code (optional)"
+              placeholder={t("booking.discountPlaceholder", "Discount code (optional)")}
               value={form.discountCode}
               onChange={(e) =>
                 setForm((p) => ({
@@ -1780,7 +1812,10 @@ const BookingFlowPage: React.FC = () => {
                       <Box component="span" sx={{ fontWeight: 800 }}>
                         ✓
                       </Box>
-                      {discount.label} — saves {formatTHB(discount.amount)}
+                      {t("booking.discountSaves", "{{label}} — saves {{amount}}", {
+                        label: discount.label,
+                        amount: formatTHB(discount.amount),
+                      })}
                     </Typography>
                     {/* 🆕 Round 28r27 — Make taxi-pass-through visible
                         so guests don't expect their travel fee to also
@@ -1795,8 +1830,11 @@ const BookingFlowPage: React.FC = () => {
                           fontStyle: "italic",
                         }}
                       >
-                        Travel fee ({formatTHB(taxiFare)}) is at cost — not
-                        included in promo.
+                        {t(
+                          "booking.discountTravelNote",
+                          "Travel fee ({{fare}}) is at cost — not included in promo.",
+                          { fare: formatTHB(taxiFare) }
+                        )}
                       </Typography>
                     )}
                   </Box>
@@ -1819,9 +1857,10 @@ const BookingFlowPage: React.FC = () => {
                           fontWeight: 600,
                         }}
                       >
-                        Promo codes don't apply to this premium ritual.
-                        Use a referral code (SUN-XXXXXX) or chat with
-                        the concierge for a custom arrangement.
+                        {t(
+                          "booking.discountPremiumBlocked",
+                          "Promo codes don't apply to this premium ritual. Use a referral code (SUN-XXXXXX) or chat with the concierge for a custom arrangement."
+                        )}
                       </Typography>
                     );
                   }
@@ -1834,8 +1873,10 @@ const BookingFlowPage: React.FC = () => {
                         fontStyle: "italic",
                       }}
                     >
-                      Code not recognised — the concierge can apply
-                      custom codes manually after seeing your booking.
+                      {t(
+                        "booking.discountUnknown",
+                        "Code not recognised — the concierge can apply custom codes manually after seeing your reservation."
+                      )}
                     </Typography>
                   );
                 })()}
@@ -1849,7 +1890,9 @@ const BookingFlowPage: React.FC = () => {
           {discount.valid && discountAmount > 0 && (
             <Box sx={{ marginTop: "6px" }}>
               <PriceRow
-                label={`Discount · ${discount.code}`}
+                label={t("booking.priceRow.discount", "Discount · {{code}}", {
+                  code: discount.code,
+                })}
                 value={
                   <Box
                     component="span"
@@ -1898,7 +1941,7 @@ const BookingFlowPage: React.FC = () => {
                     color: "#15803d",
                   }}
                 >
-                  ✨ You saved tonight
+                  {t("booking.savedTonight", "You saved tonight")}
                 </Box>
                 {/* 🆕 Round 28r32 — Beefed up the headline number from
                     17px → 22px serif w/ heavy weight + tabular nums.
@@ -1935,9 +1978,15 @@ const BookingFlowPage: React.FC = () => {
                       fontFamily: SANS,
                       fontSize: 11,
                       color: "rgba(20, 83, 45, 0.85)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px",
                     }}
                   >
-                    🚖 Smart Routing — {formatTHB(Math.round(savingsRouting))}
+                    <LocalTaxiRoundedIcon sx={{ fontSize: 13 }} />
+                    {t("booking.savedRouting", "Smart Routing — {{amount}}", {
+                      amount: formatTHB(Math.round(savingsRouting)),
+                    })}
                   </Box>
                 )}
                 {savingsDiscount > 0 && (
@@ -1947,9 +1996,16 @@ const BookingFlowPage: React.FC = () => {
                       fontFamily: SANS,
                       fontSize: 11,
                       color: "rgba(20, 83, 45, 0.85)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px",
                     }}
                   >
-                    🏷 {discount.label} — {formatTHB(Math.round(savingsDiscount))}
+                    <LocalOfferRoundedIcon sx={{ fontSize: 13 }} />
+                    {t("booking.savedDiscount", "{{label}} — {{amount}}", {
+                      label: discount.label,
+                      amount: formatTHB(Math.round(savingsDiscount)),
+                    })}
                   </Box>
                 )}
               </Box>
@@ -1970,7 +2026,7 @@ const BookingFlowPage: React.FC = () => {
             <Typography
               sx={{ fontFamily: SERIF, fontSize: "16px", fontWeight: 600 }}
             >
-              Total
+              {t("common.total", "Total")}
             </Typography>
             {/* 🆕 Round 28b46 — Animated total + before/after strikethrough.
                 When a surcharge applies (rain / admin quote), we render the
@@ -2076,7 +2132,7 @@ const BookingFlowPage: React.FC = () => {
                 fontStyle: "italic",
               }}
             >
-              Total updates when address is set.
+              {t("booking.totalPendingAddress", "Total updates when address is set.")}
             </Typography>
           )}
 
@@ -2226,7 +2282,7 @@ const BookingFlowPage: React.FC = () => {
                 marginBottom: "2px",
               }}
             >
-              Payment detail
+              {t("booking.paymentDetail", "Payment detail")}
             </Typography>
             <Typography
               sx={{
@@ -2256,10 +2312,12 @@ const BookingFlowPage: React.FC = () => {
           }}
         >
           <Box component="span" sx={{ fontWeight: 700 }}>
-            Cancellation:
+            {t("booking.cancellation.label", "Cancellation")}:
           </Box>{" "}
-          Free up to 30 minutes before booking time. After that, 50% of the
-          service fee.
+          {t(
+            "booking.cancellation.body",
+            "Free up to 30 minutes before your reservation. After that, 50% of the service fee."
+          )}
         </Typography>
       </Box>
 
