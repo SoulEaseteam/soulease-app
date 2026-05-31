@@ -22,8 +22,12 @@
 # Server-side function code (deployed via firebase, not vercel)
 functions/
 
-# One-shot scripts (not part of the SPA)
-scripts/
+# One-shot scripts (not part of the SPA) — exclude the directory contents
+# but KEEP the build-time prerender step (Round 28s106). Note: we must use
+# `scripts/*` (not `scripts/`) so the negation below can re-include a single
+# file — gitignore can't un-ignore a child if the whole parent dir is excluded.
+scripts/*
+!scripts/prerender-routes.mjs
 
 # Local-only env templates
 .env.local
