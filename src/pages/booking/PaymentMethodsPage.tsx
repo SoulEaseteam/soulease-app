@@ -166,12 +166,25 @@ function safePaymentId(raw: string | null | undefined): PaymentMethodId {
   return DEFAULT_PAYMENT_ID;
 }
 
+// 🆕 Round 28s75 (audit) — guarded localStorage read. `getItem` itself
+//   throws in Safari private mode / when storage is disabled. Three
+//   call sites read this — including the exported helper below that the
+//   Confirm Order page calls — so an unguarded throw could white-screen
+//   a downstream page, not just this one.
+function readStoredPaymentRaw(): string | null {
+  try {
+    if (typeof window === "undefined") return null;
+    return window.localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
 const PaymentMethodsPage: React.FC = () => {
   const navigate = useNavigate();
-  const [selected, setSelected] = useState<PaymentMethodId>(() => {
-    if (typeof window === "undefined") return DEFAULT_PAYMENT_ID;
-    return safePaymentId(window.localStorage.getItem(STORAGE_KEY));
-  });
+  const [selected, setSelected] = useState<PaymentMethodId>(() =>
+    safePaymentId(readStoredPaymentRaw())
+  );
 
   // 🆕 Round 28u — heal stale persistence on first mount.
   // If the user landed here with localStorage holding a now-disabled or
@@ -180,7 +193,7 @@ const PaymentMethodsPage: React.FC = () => {
   // value either.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem(STORAGE_KEY);
+    const stored = readStoredPaymentRaw();
     if (stored !== selected) {
       try {
         window.localStorage.setItem(STORAGE_KEY, selected);
@@ -848,8 +861,7 @@ export default PaymentMethodsPage;
  *  Confirm Order summary or the Telegram booking payload.
  */
 export function readSelectedPaymentMethod(): PaymentMethodId {
-  if (typeof window === "undefined") return DEFAULT_PAYMENT_ID;
-  return safePaymentId(window.localStorage.getItem(STORAGE_KEY));
+  return safePaymentId(readStoredPaymentRaw());
 }
 
 /** Map id → display label. Used by Confirm Order Payment cell. */

@@ -105,29 +105,57 @@ const BookingSuccessPage: React.FC = () => {
       setLoading(false);
       return;
     }
+    // 🆕 Round 28s75 (audit) — reset state when `id` changes (client-
+    //   side nav between two success pages would otherwise flash the
+    //   previous booking), and guard against an out-of-order resolve
+    //   overwriting fresher state after unmount / rapid id change.
+    let alive = true;
+    setLoading(true);
+    setError(null);
+    setBooking(null);
     const fetch = async () => {
       try {
         const snap = await getDoc(doc(db, "bookings", id));
+        if (!alive) return;
         if (!snap.exists()) {
           setError("Booking not found");
         } else {
           setBooking(snap.data());
         }
       } catch (e) {
+        if (!alive) return;
         setError(e instanceof Error ? e.message : "Failed to load");
       } finally {
-        setLoading(false);
+        if (alive) setLoading(false);
       }
     };
     void fetch();
+    return () => {
+      alive = false;
+    };
   }, [id]);
 
   // ── Derived display values (booked once, then memoize-safe to recompute) ──
   const therapistName =
     (booking?.therapistName as string | undefined) ?? "Your therapist";
-  const startAt: Date | null = booking?.startAt?.toDate
-    ? (booking.startAt.toDate() as Date)
-    : null;
+  // 🆕 Round 28s75 (audit) — normalize startAt from ANY stored shape.
+  //   Customer bookings write a Firestore Timestamp, but admin-created
+  //   docs may store an ISO string / Date; the old `?.toDate` check
+  //   silently yielded null for those, blanking the Time row + .ics.
+  const startAt: Date | null = (() => {
+    const raw = booking?.startAt as
+      | { toDate?: () => Date }
+      | string
+      | number
+      | Date
+      | undefined;
+    if (!raw) return null;
+    if (typeof raw === "object" && typeof (raw as { toDate?: () => Date }).toDate === "function") {
+      return (raw as { toDate: () => Date }).toDate();
+    }
+    const d = new Date(raw as string | number | Date);
+    return isNaN(d.getTime()) ? null : d;
+  })();
   // 🆕 Round 28b59 — `endAt` derivation removed (was only consumed
   //   by the dead onAddToCalendar handler). If a future feature needs
   //   the end timestamp, recompute via startAt + duration*60000.
@@ -489,11 +517,11 @@ const BookingSuccessPage: React.FC = () => {
                 sub="Via concierge"
                 icon={<ChatRoundedIcon />}
                 onClick={() => {
-                  const msg = encodeURIComponent(
-                    `Hi SunRed concierge, can you connect me with ${therapistName} about booking ${refCode}?`
-                  );
+                  // Round 28s75 (audit) — dropped a dead
+                  //   `encodeURIComponent(message)` that was computed then
+                  //   discarded (void msg); LINE's deep link can't carry a
+                  //   prefilled body, so opening the chat is all we can do.
                   const lineUrl = `https://line.me/R/ti/p/@sunred.bkk?from=page&searchId=sunred.bkk`;
-                  void msg;
                   window.open(lineUrl, "_blank", "noopener,noreferrer");
                 }}
               />
@@ -576,11 +604,9 @@ const BookingSuccessPage: React.FC = () => {
                 sub="Via concierge"
                 icon={<AutorenewRoundedIcon />}
                 onClick={() => {
-                  const msg = encodeURIComponent(
-                    `Hi SunRed concierge, I'd like to reschedule booking ${refCode}.`
-                  );
+                  // Round 28s75 (audit) — dead `void msg` removed (LINE
+                  //   deep link can't carry a prefilled reschedule note).
                   const lineUrl = `https://line.me/R/ti/p/@sunred.bkk?from=page&searchId=sunred.bkk`;
-                  void msg;
                   window.open(lineUrl, "_blank", "noopener,noreferrer");
                 }}
               />
@@ -894,10 +920,13 @@ const BookingSuccessPage: React.FC = () => {
                   // Open LINE first; if user has no LINE installed, browser
                   // will fall back to the web LINE which still works.
                   window.open(lineUrl, "_blank", "noopener,noreferrer");
-                  // Also keep WhatsApp ready to copy/share — log so admin
-                  // can debug if a customer reports the link didn't open.
-                  // eslint-disable-next-line no-console
-                  console.info("[contact-admin] WA fallback:", waUrl);
+                  // Round 28s75 (audit) — only log the WhatsApp fallback
+                  //   (contains the business number + booking ref) in dev;
+                  //   it was running on every tap in production.
+                  if (import.meta.env.DEV) {
+                    // eslint-disable-next-line no-console
+                    console.info("[contact-admin] WA fallback:", waUrl);
+                  }
                 }}
                 sx={{
                   height: 48,
