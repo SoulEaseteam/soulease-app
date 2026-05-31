@@ -30,13 +30,7 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
-import SpaRoundedIcon from "@mui/icons-material/SpaRounded";
-import LocalFloristRoundedIcon from "@mui/icons-material/LocalFloristRounded";
-import DiamondRoundedIcon from "@mui/icons-material/DiamondRounded";
-import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
-
-import type { SvgIconComponent } from "@mui/icons-material";
 
 import services from "@/data/services";
 import { brand, fonts } from "@/theme";
@@ -52,35 +46,13 @@ const SERVICE_ORDER = [
   "xSR-Thai", // Thai Massage — ฿1,200
 ] as const;
 
-// Icon + swatch colour ladder — matches the home hero so a guest
-// scrolling from home into services sees the same visual treatment.
-const SWATCH_BG = "#FFF1E5";
-interface IconConfig {
-  icon: SvgIconComponent;
-  swatchIcon: string;
-  tier: "SIGNATURE" | "PREMIUM";
-}
-const ICON_BY_ID: Record<string, IconConfig> = {
-  "xSR-Thai": {
-    icon: SpaRoundedIcon,
-    swatchIcon: "#E07A4F",
-    tier: "SIGNATURE",
-  },
-  "SR-Aroma": {
-    icon: LocalFloristRoundedIcon,
-    swatchIcon: "#FE7A52",
-    tier: "PREMIUM",
-  },
-  "SR-HJ2200": {
-    icon: DiamondRoundedIcon,
-    swatchIcon: "#FE0944",
-    tier: "PREMIUM",
-  },
-  "SR-B2B3200": {
-    icon: AutoAwesomeRoundedIcon,
-    swatchIcon: "#831843",
-    tier: "PREMIUM",
-  },
+// 🆕 Round 28s85 — full-bleed photo cards; only the tier label is
+//   overlaid now (the per-service icon/swatch treatment was retired).
+const TIER_BY_ID: Record<string, "SIGNATURE" | "PREMIUM"> = {
+  "xSR-Thai": "SIGNATURE",
+  "SR-Aroma": "PREMIUM",
+  "SR-HJ2200": "PREMIUM",
+  "SR-B2B3200": "PREMIUM",
 };
 
 const ServicesPage: React.FC = () => {
@@ -191,9 +163,8 @@ const ServicesPage: React.FC = () => {
         }}
       >
         {sortedServices.map((svc) => {
-          const config = ICON_BY_ID[svc.id];
-          if (!config) return null;
-          const Icon = config.icon;
+          const tier = TIER_BY_ID[svc.id];
+          if (!tier) return null;
           return (
             <Box
               key={svc.id}
@@ -212,24 +183,24 @@ const ServicesPage: React.FC = () => {
                 { name: svc.name }
               )}
               sx={{
+                // 🆕 Round 28s85 (founder "ปรับใหม่ · รูปเต็มใบ") —
+                //   full-bleed editorial card: real service photo with a
+                //   bottom-up gradient scrim + overlaid title / price.
                 position: "relative",
-                display: "flex",
-                alignItems: "stretch",
-                gap: "14px",
-                padding: "14px",
-                borderRadius: "20px",
-                background: "#fff",
-                border: "1px solid rgba(184, 92, 60, 0.10)",
-                boxShadow:
-                  "0 6px 18px rgba(126, 30, 46, 0.06), 0 1px 2px rgba(126, 30, 46, 0.04)",
+                borderRadius: "22px",
+                overflow: "hidden",
+                aspectRatio: "3 / 2",
                 cursor: "pointer",
-                transition:
-                  "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow:
-                    "0 12px 28px rgba(126, 30, 46, 0.10), 0 1px 2px rgba(126, 30, 46, 0.05)",
-                  borderColor: "rgba(254, 9, 68, 0.25)",
+                boxShadow:
+                  "0 10px 26px rgba(126, 30, 46, 0.12), 0 1px 2px rgba(126, 30, 46, 0.06)",
+                transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                "@media (hover: hover)": {
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    boxShadow:
+                      "0 16px 36px rgba(126, 30, 46, 0.18), 0 2px 4px rgba(126, 30, 46, 0.08)",
+                  },
+                  "&:hover .svc-img": { transform: "scale(1.05)" },
                 },
                 "&:focus-visible": {
                   outline: `2px solid ${brand.red}`,
@@ -237,81 +208,105 @@ const ServicesPage: React.FC = () => {
                 },
               }}
             >
-              {/* Icon swatch */}
+              {/* Photo layer */}
+              <Box
+                className="svc-img"
+                aria-hidden="true"
+                sx={{
+                  position: "absolute",
+                  inset: 0,
+                  backgroundImage: `url("${svc.image}")`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  transition: "transform 0.45s cubic-bezier(0.16,1,0.3,1)",
+                }}
+              />
+              {/* Legibility scrim */}
+              <Box
+                aria-hidden="true"
+                sx={{
+                  position: "absolute",
+                  inset: 0,
+                  background:
+                    "linear-gradient(180deg, rgba(20,8,4,0.20) 0%, rgba(20,8,4,0) 32%, rgba(20,8,4,0.30) 62%, rgba(16,6,3,0.82) 100%)",
+                }}
+              />
+
+              {/* Tier pill — top-left */}
               <Box
                 sx={{
-                  flexShrink: 0,
-                  width: 84,
-                  borderRadius: "14px",
-                  background: SWATCH_BG,
+                  position: "absolute",
+                  top: 12,
+                  left: 12,
+                  padding: "4px 10px",
+                  borderRadius: "999px",
+                  background: "rgba(255, 255, 255, 0.18)",
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
+                  border: "1px solid rgba(255, 255, 255, 0.28)",
+                  fontFamily: fonts.body,
+                  fontSize: "9.5px",
+                  fontWeight: 800,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: "#fff",
+                }}
+              >
+                {tier}
+              </Box>
+
+              {/* Arrow affordance — top-right */}
+              <Box
+                aria-hidden="true"
+                sx={{
+                  position: "absolute",
+                  top: 12,
+                  right: 12,
+                  width: 30,
+                  height: 30,
+                  borderRadius: "50%",
+                  background: "rgba(255, 255, 255, 0.22)",
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
+                  border: "1px solid rgba(255, 255, 255, 0.32)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <Icon sx={{ fontSize: 38, color: config.swatchIcon }} />
+                <ArrowForwardRoundedIcon sx={{ fontSize: 15, color: "#fff" }} />
               </Box>
 
-              {/* Text block */}
+              {/* Overlaid text — bottom */}
               <Box
                 sx={{
-                  flex: 1,
-                  minWidth: 0,
-                  display: "flex",
-                  flexDirection: "column",
+                  position: "absolute",
+                  left: 16,
+                  right: 16,
+                  bottom: 14,
+                  zIndex: 1,
                 }}
               >
                 <Typography
-                  component="span"
-                  sx={{
-                    fontFamily: fonts.body,
-                    fontSize: "9.5px",
-                    fontWeight: 800,
-                    letterSpacing: "0.10em",
-                    textTransform: "uppercase",
-                    color: brand.accent,
-                    marginBottom: "3px",
-                  }}
-                >
-                  {config.tier}
-                </Typography>
-                <Typography
-                  component="span"
+                  component="h2"
                   sx={{
                     fontFamily: fonts.heading,
-                    fontSize: "17px",
+                    fontSize: "21px",
                     fontWeight: 600,
-                    color: brand.text,
-                    lineHeight: 1.15,
-                    marginBottom: "4px",
+                    color: "#fff",
+                    lineHeight: 1.12,
+                    letterSpacing: "-0.01em",
+                    textShadow: "0 1px 8px rgba(0,0,0,0.35)",
+                    marginBottom: "6px",
                   }}
                 >
                   {svc.name}
                 </Typography>
-                <Typography
-                  component="span"
-                  sx={{
-                    fontFamily: fonts.body,
-                    fontSize: "12px",
-                    fontWeight: 500,
-                    color: brand.textMuted,
-                    lineHeight: 1.4,
-                    marginBottom: "10px",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
-                >
-                  {svc.desc}
-                </Typography>
-
                 <Box
                   sx={{
                     display: "flex",
-                    alignItems: "center",
+                    alignItems: "baseline",
                     justifyContent: "space-between",
-                    marginTop: "auto",
                     gap: "8px",
                   }}
                 >
@@ -319,48 +314,28 @@ const ServicesPage: React.FC = () => {
                     component="span"
                     sx={{
                       fontFamily: fonts.body,
-                      fontSize: "11px",
+                      fontSize: "11.5px",
                       fontWeight: 600,
-                      color: brand.textMuted,
-                      letterSpacing: "0.02em",
+                      color: "rgba(255,255,255,0.82)",
+                      letterSpacing: "0.03em",
                     }}
                   >
-                    {svc.duration} min
+                    {svc.duration} {t("common.min", "min")}
                   </Typography>
                   <Typography
                     component="span"
                     sx={{
                       fontFamily: fonts.heading,
-                      fontSize: "17px",
+                      fontSize: "19px",
                       fontWeight: 700,
-                      color: brand.red,
+                      color: "#fff",
                       lineHeight: 1,
+                      textShadow: "0 1px 8px rgba(0,0,0,0.35)",
                     }}
                   >
                     {`฿${svc.price.toLocaleString()}`}
                   </Typography>
                 </Box>
-              </Box>
-
-              {/* Arrow affordance */}
-              <Box
-                aria-hidden="true"
-                sx={{
-                  position: "absolute",
-                  top: 12,
-                  right: 12,
-                  width: 26,
-                  height: 26,
-                  borderRadius: "50%",
-                  background: "rgba(184, 92, 60, 0.10)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <ArrowForwardRoundedIcon
-                  sx={{ fontSize: 14, color: brand.accent }}
-                />
               </Box>
             </Box>
           );
