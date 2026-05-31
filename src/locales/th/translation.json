@@ -204,7 +204,7 @@
   "booking.priceRow.travelFee": "ค่าเดินทาง",
   "booking.priceRow.paymentFee": "ค่าบริการ ({{pct}}% + ฿{{flat}})",
   "pay.feeBadge": "+{{pct}}% + ฿{{flat}}",
-  "pay.feeNote": "WeChat Pay และ Alipay มีค่าบริการ {{pct}}% + ฿{{flat}} (ค่าแปลงสกุลเงิน + ค่าดำเนินการ)",
+  "pay.feeNote": "รวมค่าบริการ {{pct}}% + ฿{{flat}} (ค่าแปลงสกุลเงิน + ค่าดำเนินการ)",
   "booking.travelTip.title": "ค่าเดินทาง · SunRed Smart Routing",
   "booking.travelTip.returnLeg": "เที่ยวกลับ · ลด 40% จากมิเตอร์",
   "booking.travelTip.returnNote": "(ขาไปเต็มราคา + ขากลับ 60% · คิดให้อัตโนมัติ)",

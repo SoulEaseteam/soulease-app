@@ -457,26 +457,6 @@ const PaymentMethodsPage: React.FC = () => {
               />
             ))}
           </Box>
-          {/* 🆕 Round 28s77 — transparent service-charge note for the
-              Chinese e-wallets (founder "เขียนว่า เซอวิส ชาจ ด้วย กัน
-              ดราม่า"). Disclosed up-front so the surcharge is never a
-              surprise on the bill. */}
-          <Typography
-            sx={{
-              fontFamily: SANS,
-              fontSize: "11.5px",
-              color: "rgba(60, 30, 20, 0.55)",
-              marginTop: "8px",
-              paddingLeft: "2px",
-              lineHeight: 1.45,
-            }}
-          >
-            {t(
-              "pay.feeNote",
-              "WeChat Pay & Alipay include a {{pct}}% + ฿{{flat}} service charge (FX & processing).",
-              { pct: SURCHARGE_PCT, flat: SURCHARGE_FLAT }
-            )}
-          </Typography>
         </Box>
 
         <Typography
@@ -692,6 +672,26 @@ const PaymentRow: React.FC<{
           }}
         >
           {methodSub(t, option)}
+        </Typography>
+      )}
+      {/* 🆕 Round 28s79 (founder "ที่การ์ดตัวเอง") — service-charge note
+          on the WeChat / Alipay card itself, so the fee is disclosed
+          right where it's chosen. */}
+      {hasPaymentSurcharge(option.id) && (
+        <Typography
+          sx={{
+            fontFamily: SANS,
+            fontSize: "11px",
+            color: "#d97706",
+            marginTop: "3px",
+            lineHeight: 1.4,
+          }}
+        >
+          {t(
+            "pay.feeNote",
+            "Includes {{pct}}% + ฿{{flat}} service charge (FX & processing)",
+            { pct: SURCHARGE_PCT, flat: SURCHARGE_FLAT }
+          )}
         </Typography>
       )}
     </Box>
