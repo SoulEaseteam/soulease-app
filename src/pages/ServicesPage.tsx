@@ -215,6 +215,28 @@ const ServicesPage: React.FC = () => {
                   outline: `2px solid ${brand.red}`,
                   outlineOffset: 2,
                 },
+                // 🆕 Round 28s88 (founder "ตรง •TRENDING เป็นกรอบ และมี
+                //   อนิเมชั่นเด่นๆ") — pulsing red→coral glow frame on the
+                //   best-seller card (matches the booking picker).
+                ...(isTrending
+                  ? {
+                      animation:
+                        "sunredTrendFrame 1.7s ease-in-out infinite",
+                      "@keyframes sunredTrendFrame": {
+                        "0%, 100%": {
+                          boxShadow:
+                            "0 0 0 2px #FE0944, 0 0 0 4px rgba(254,9,68,0.10), 0 10px 26px rgba(254,9,68,0.22)",
+                        },
+                        "50%": {
+                          boxShadow:
+                            "0 0 0 2px #FE7A52, 0 0 0 9px rgba(254,9,68,0.30), 0 16px 38px rgba(254,9,68,0.40)",
+                        },
+                      },
+                      "@media (prefers-reduced-motion: reduce)": {
+                        animation: "none",
+                      },
+                    }
+                  : {}),
               }}
             >
               {/* Photo layer */}
