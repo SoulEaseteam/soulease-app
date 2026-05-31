@@ -46,6 +46,11 @@
 - `SR-B2B3200` SunRed Therapeutic (B2B/nuru genre) — 3,200
 - 90min = base × 1.5 · 120min = base × 2.0
 - See `src/utils/servicePricing.ts` for canonical pricing
+- **Payment surcharge (Round 28s77):** WeChat Pay + Alipay carry a
+  transfer fee = `round(total × 5%) + ฿200` (FX/processor markup +
+  flat handling). Cash / PromptPay = no fee. Logic in
+  `src/utils/paymentSurcharge.ts`; applied on Confirm Order total +
+  booking doc + Telegram.
 
 ---
 
