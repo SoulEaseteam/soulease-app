@@ -202,7 +202,7 @@
   "booking.priceRow.travelFee": "交通费",
   "booking.priceRow.paymentFee": "服务费 ({{pct}}% + ฿{{flat}})",
   "pay.feeBadge": "+{{pct}}% + ฿{{flat}}",
-  "pay.feeNote": "含 {{pct}}% + ฿{{flat}} 服务费（汇率及手续费）",
+  "pay.feeNote": "服务费 · 汇率及手续费",
   "booking.travelTip.title": "交通费 · SunRed 智能路线",
   "booking.travelTip.returnLeg": "返程 · 按表价 6 折",
   "booking.travelTip.returnNote": "(去程全价 + 返程 60% · 自动计算)",

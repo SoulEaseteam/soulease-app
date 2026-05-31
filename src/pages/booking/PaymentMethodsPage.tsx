@@ -687,11 +687,7 @@ const PaymentRow: React.FC<{
             lineHeight: 1.4,
           }}
         >
-          {t(
-            "pay.feeNote",
-            "Includes {{pct}}% + ฿{{flat}} service charge (FX & processing)",
-            { pct: SURCHARGE_PCT, flat: SURCHARGE_FLAT }
-          )}
+          {t("pay.feeNote", "Service charge · FX & processing")}
         </Typography>
       )}
     </Box>

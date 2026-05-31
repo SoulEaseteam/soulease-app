@@ -202,7 +202,7 @@
   "booking.priceRow.travelFee": "Travel fee",
   "booking.priceRow.paymentFee": "Service charge ({{pct}}% + ฿{{flat}})",
   "pay.feeBadge": "+{{pct}}% + ฿{{flat}}",
-  "pay.feeNote": "Includes {{pct}}% + ฿{{flat}} service charge (FX & processing)",
+  "pay.feeNote": "Service charge · FX & processing",
   "booking.travelTip.title": "Travel Fee · SunRed Smart Routing",
   "booking.travelTip.returnLeg": "Return leg · 40% off the meter",
   "booking.travelTip.returnNote": "(outbound full + return 60% · auto-applied)",
