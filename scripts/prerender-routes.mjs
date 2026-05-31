@@ -74,6 +74,24 @@ const SERVICES = [
 
 const DURATIONS = "60 / 90 / 120 min";
 
+// Practitioner roster — KEEP IN SYNC with src/data/therapists.ts (id/name/area).
+// Discreet on purpose: name + service area only (no age/body/ethnicity), the
+// same register already public on the live profile page + sitemap.
+const THERAPISTS = [
+  { id: "YuriSunRed", name: "Yuri", area: "Din Daeng · Ratchada" },
+  { id: "JimmySunRed", name: "Jimmy", area: "Huai Khwang · RCA" },
+  { id: "HamiSunRed", name: "Hami", area: "Huai Khwang" },
+  { id: "XingXingSunRed", name: "XingXing", area: "Din Daeng · Ratchada" },
+  { id: "BarbieSunRed", name: "Barbie", area: "Lat Phrao · Wang Thonglang" },
+  { id: "MiniSunRed", name: "Mini", area: "Huai Khwang · RCA" },
+  { id: "JiASunRed", name: "Ji A", area: "Huai Khwang · RCA" },
+  { id: "VivianSunRed", name: "Vivian", area: "Huai Khwang · RCA" },
+  { id: "NannySunRed", name: "Nanny", area: "Huai Khwang · RCA" },
+  { id: "YaYaSunRed", name: "YaYa", area: "Huai Khwang · RCA" },
+  { id: "NickySunRed", name: "Nicky", area: "Rama 4 · Silom" },
+  { id: "RichieSunRed", name: "Richie", area: "Rama 9" },
+];
+
 function serviceJsonLd(s) {
   return {
     "@context": "https://schema.org",
@@ -197,6 +215,34 @@ ${SERVICES.map(
         <h2>Reserve or ask the concierge</h2>
         <ul>
           <li><a href="${ORIGIN}/services">All services</a></li>
+          <li><a href="${ORIGIN}/">Home — live availability</a></li>
+          <li><a href="https://lin.ee/uqvdwWt">LINE</a></li>
+          <li><a href="https://t.me/SunRedvip_bkk">Telegram</a></li>
+          <li><a href="https://wa.me/66634350987">WhatsApp</a></li>
+        </ul>`,
+  })),
+  ...THERAPISTS.map((t) => ({
+    path: `/therapists/${t.id}`,
+    title: `${t.name} — Outcall Massage Practitioner in Bangkok | SunRed`,
+    description: `Book ${t.name}, a verified SunRed outcall massage practitioner serving ${t.area} and central Bangkok. Thai, aromatherapy & signature therapies delivered to your hotel or residence — discreet, verified, available 24/7. EN/中文/日本語/한국어.`,
+    ogTitle: `${t.name} — Verified Outcall Massage Practitioner, Bangkok`,
+    ogDescription: `Verified SunRed practitioner serving ${t.area} & central Bangkok. Delivered to your hotel, discreet, 24/7.`,
+    jsonLd: [
+      breadcrumbJsonLd([
+        { name: "Home", url: `${ORIGIN}/` },
+        { name: "Practitioners", url: `${ORIGIN}/` },
+        { name: t.name, url: `${ORIGIN}/therapists/${t.id}` },
+      ]),
+    ],
+    noscript: `
+        <h1>${t.name} — Outcall Massage Practitioner in Bangkok</h1>
+        <p>${t.name} is a verified SunRed outcall massage practitioner serving
+          ${t.area} and central Bangkok. Sessions are delivered to your hotel,
+          residence or villa — discreet arrival, verified identity, multilingual
+          concierge (English, 中文, 日本語, 한국어), available 24/7.</p>
+        <h2>Reserve or ask the concierge</h2>
+        <ul>
+          <li><a href="${ORIGIN}/services">Browse all services &amp; pricing</a></li>
           <li><a href="${ORIGIN}/">Home — live availability</a></li>
           <li><a href="https://lin.ee/uqvdwWt">LINE</a></li>
           <li><a href="https://t.me/SunRedvip_bkk">Telegram</a></li>
