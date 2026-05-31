@@ -4,7 +4,33 @@
 > of the context you and View built together. Update anything that
 > changes.
 >
-> Last updated: 2026-05-07 by claude (Round 28r13)
+> Last updated: 2026-06-07 by claude (post-strategy-reframe)
+
+---
+
+## 🔄 IMPORTANT REFRAME (2026-06-07)
+
+View corrected the strategic framing during this session:
+
+> "ความสัมพันธ์ shop ↔ therapist = ผลประโยชน์ร่วม · ทำได้ก็ทำ ·
+> เน้นเรื่อง หาลูกค้า · ต่างฝ่ายต่าง วินๆ ก็พอ"
+
+**Translation for you, future-Claude:**
+- Don't overthink therapist retention (no emotional conversations
+  with therapists about loyalty/feelings)
+- The shop↔therapist relationship is transactional/mutual benefit
+- Therapists stay when there's enough work · leave when there isn't
+- The ONLY strategic priority is **customer acquisition**
+- When traffic flows → everything else solves itself
+
+**Practical implication:**
+- `docs/yuri-retention.md` and `docs/yuri-conversation.md` from this
+  session = reference only · NOT lead priorities
+- Main strategy docs going forward:
+  - `docs/master-strategy.md` (post-reframe version)
+  - `docs/customer-acquisition.md` (the 9-channel playbook)
+- When in doubt: ask "does this generate more customers?"
+  If no → deprioritize
 
 ---
 
@@ -32,12 +58,15 @@
 - Some services ARE adult-adjacent (HJ release, B2B/nuru) — we use
   euphemisms in copy
 
-**Supply reality (the real bottleneck):**
-- 12 therapists on roster, only **2-3 actually available** any night
-- All part-time, work multiple shops
+**Supply reality (clarified 2026-06-07):**
+- 12 therapists on roster:
+  - **4 full-time** (reliable core)
+  - **8 part-time** (work multiple shops, less predictable)
+- Active connection-based recruitment available — can scale supply
+  if demand picks up
 - Customer expectation: pretty + premium body (gray-area pricing)
-- Marketing more = more inquiries we can't fill = bad reputation
-- **Rule: don't promote volume — promote real availability windows**
+- Marketing more is now reasonable — supply can flex up
+- **Rule: still match marketing to actual nightly availability**
 
 **Pricing (THB, base = 60min):**
 - `xSR-Thai` Thai Massage — 1,200

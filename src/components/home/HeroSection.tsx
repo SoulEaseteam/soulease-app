@@ -76,13 +76,18 @@ interface HeroService {
 // (top-tier Therapeutic). The palette progression doubles as a
 // price ladder cue.
 const SWATCH_BG = "#FFF1E5";
+// Round 28s110 — Hero cards now surface 60–120 min range + "from"
+// price prefix. Was "60 min" + flat price which hid that 90/120-min
+// upgrades cost 1.5x / 2x respectively (servicePricing.ts). Customer
+// audit found the flat display suppressed obvious upsell signals and
+// implied a fixed-price catalog instead of a duration ladder.
 const HERO_SERVICES: HeroService[] = [
   {
     id: "xSR-Thai",
     short: "Thai Massage",
     fullName: "Thai Massage",
-    duration: "60 min",
-    price: "฿1,200",
+    duration: "60–120 min",
+    price: "from ฿1,200",
     tier: "SIGNATURE",
     icon: SpaRoundedIcon,
     swatch: SWATCH_BG,
@@ -92,8 +97,8 @@ const HERO_SERVICES: HeroService[] = [
     id: "SR-Aroma",
     short: "Aromatherapy",
     fullName: "Aromatherapy Massage",
-    duration: "60 min",
-    price: "฿1,600",
+    duration: "60–120 min",
+    price: "from ฿1,600",
     tier: "PREMIUM",
     icon: LocalFloristRoundedIcon,
     swatch: SWATCH_BG,
@@ -103,8 +108,8 @@ const HERO_SERVICES: HeroService[] = [
     id: "SR-HJ2200",
     short: "Gentleman's",
     fullName: "Gentleman's Signature Therapy",
-    duration: "60 min",
-    price: "฿2,200",
+    duration: "60–120 min",
+    price: "from ฿2,200",
     tier: "PREMIUM",
     icon: DiamondRoundedIcon,
     swatch: SWATCH_BG,
@@ -114,8 +119,8 @@ const HERO_SERVICES: HeroService[] = [
     id: "SR-B2B3200",
     short: "Therapeutic",
     fullName: "SunRed Therapeutic Experience",
-    duration: "60 min",
-    price: "฿3,200",
+    duration: "60–120 min",
+    price: "from ฿3,200",
     tier: "PREMIUM",
     icon: AutoAwesomeRoundedIcon,
     swatch: SWATCH_BG,
