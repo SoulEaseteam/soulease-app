@@ -41,7 +41,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import services from "../data/services";
 import { therapists } from "../data/therapists";
-import { startingPrice, formatTHB } from "../utils/servicePricing";
+import { startingPrice, durationsFor, formatTHB } from "../utils/servicePricing";
 import HowItWorks from "@/components/home/HowItWorks";
 import { useServiceUsageStats } from "@/hooks/useServiceUsageStats";
 
@@ -704,6 +704,8 @@ const ServicesPage: React.FC = () => {
               //   taller, brand-red ring, warm glow, deeper hover lift.
               //   Other cards stay neutral so the flagship really pops.
               const isFlagship = index === 0;
+              const fromPrice = startingPrice(svc);
+              const tiers = durationsFor(svc);
               return (
               <motion.div
                 key={svc.name}
@@ -765,359 +767,97 @@ const ServicesPage: React.FC = () => {
                       zIndex: 1,
                     }}
                   >
-                    {svc.badge}
+                    {svc.badge.replace(/_/g, " ")}
                   </Box>
 
-                  <Box sx={{ position: "relative", px: 2, py: 2, zIndex: 1 }}>
-                    {/* Title row — name (left) · price/duration (right).
-                        Premium-catalog layout: pricing aligned right
-                        for fast eye-anchor. */}
-                    <Box
+                  {/* 🆕 Round 28s91 (founder "รายละเอียด เหลือแค่นี้พอ
+                      อันเก่ารกไป") — trimmed to name + description +
+                      From·duration. Dropped the DELIVERED-sessions chip,
+                      avatar stack, "N available", and Book-now button. */}
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      left: 16,
+                      right: 16,
+                      bottom: 14,
+                      zIndex: 1,
+                    }}
+                  >
+                    <Typography
                       sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        gap: 1.25,
+                        fontFamily: SERIF,
+                        fontSize: 20,
+                        fontWeight: 600,
+                        color: "#fff",
+                        lineHeight: 1.13,
+                        letterSpacing: "-0.01em",
+                        textShadow: "0 1px 8px rgba(0,0,0,0.4)",
+                        mb: 0.5,
+                      }}
+                    >
+                      {svc.name}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: 12.5,
+                        color: "rgba(255,255,255,0.88)",
+                        lineHeight: 1.4,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        textShadow: "0 1px 6px rgba(0,0,0,0.35)",
                         mb: 1,
                       }}
                     >
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography
-                          sx={{
-                            fontFamily: SERIF,
-                            fontSize: 20,
-                            fontWeight: 700,
-                            color: "#fff",
-                            letterSpacing: "-0.01em",
-                            lineHeight: 1.2,
-                          }}
-                        >
-                          {svc.name}
-                        </Typography>
-                        <Typography
-                          sx={{
-                            fontSize: 12,
-                            color: "rgba(255,255,255,0.85)",
-                            mt: 0.25,
-                            lineHeight: 1.4,
-                          }}
-                        >
-                          {svc.desc}
-                        </Typography>
-                      </Box>
-
-                      {/* Price block — right-aligned */}
-                      <Box
-                        sx={{
-                          flexShrink: 0,
-                          textAlign: "right",
-                          pt: "1px",
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            fontFamily: SANS,
-                            fontSize: 9.5,
-                            fontWeight: 600,
-                            letterSpacing: "0.16em",
-                            textTransform: "uppercase",
-                            color: "rgba(255,255,255,0.6)",
-                            lineHeight: 1.2,
-                          }}
-                        >
-                          From
-                        </Box>
-                        <Box
-                          sx={{
-                            fontFamily: SERIF,
-                            fontSize: 20,
-                            fontWeight: 700,
-                            color: "#fff",
-                            letterSpacing: "-0.02em",
-                            lineHeight: 1.15,
-                            mt: 0.25,
-                          }}
-                        >
-                          {formatTHB(startingPrice(svc))}
-                        </Box>
-                        <Box
-                          sx={{
-                            fontFamily: SANS,
-                            fontSize: 11,
-                            color: "rgba(255,255,255,0.7)",
-                            lineHeight: 1.2,
-                            mt: 0.25,
-                          }}
-                        >
-                          {svc.duration} min
-                        </Box>
-                      </Box>
-                    </Box>
-
-                    {/* Middle row — DELIVERED chip alone, left-aligned.
-                        Round 28c23: swapped from the bottom action row
-                        with the practitioner avatars so that social-
-                        proof reads first ("X delivered") and the
-                        action row carries the cast (avatars) next to
-                        the Book CTA. */}
-                    {(() => {
-                      const sessionCount = servedCounts.get(svc.id) ?? 0;
-                      if (sessionCount <= 0) return null;
-                      const display = sessionCount;
-                      const label = display === 1 ? "session" : "sessions";
-                      return (
-                        <Box sx={{ mb: 1.25, display: "flex" }}>
-                          <Box
-                            component="span"
-                            sx={{
-                              display: "inline-flex",
-                              alignItems: "baseline",
-                              gap: 0.6,
-                              px: 1.1,
-                              py: 0.5,
-                              borderRadius: 999,
-                              background:
-                                "linear-gradient(135deg, rgba(0, 0, 0, 0.33) 0%, rgba(254, 122, 82, 0.18) 100%)",
-                              border: "1px solid rgba(141, 132, 82, 0.58)",
-                              backdropFilter: "blur(12px)",
-                              WebkitBackdropFilter: "blur(12px)",
-                              boxShadow:
-                                "0 2px 10px rgba(254, 180, 9, 0.18), inset 0 1px 0 rgba(255,255,255,0.10)",
-                              fontFamily: SANS,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            <Box
-                              component="span"
-                              sx={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                transform: "translateY(1px)",
-                              }}
-                            >
-                              <StarRoundedIcon
-                                sx={{
-                                  fontSize: 13,
-                                  color: "#fecd52",
-                                  filter:
-                                    "drop-shadow(0 1px 3px rgba(254, 220, 82, 0.55))",
-                                }}
-                              />
-                            </Box>
-                            <Box
-                              component="span"
-                              sx={{
-                                fontSize: 10,
-                                fontWeight: 600,
-                                letterSpacing: "0.12em",
-                                textTransform: "uppercase",
-                                color: "rgba(255,255,255,0.78)",
-                              }}
-                            >
-                              Delivered
-                            </Box>
-                            <Box
-                              component="span"
-                              sx={{
-                                fontFamily: SERIF,
-                                fontStyle: "italic",
-                                fontSize: 14,
-                                fontWeight: 600,
-                                color: "#fbf2e6",
-                                letterSpacing: "-0.01em",
-                              }}
-                            >
-                              {display.toLocaleString()}
-                            </Box>
-                            <Box
-                              component="span"
-                              sx={{
-                                fontSize: 10.5,
-                                fontWeight: 500,
-                                color: "rgba(255,255,255,0.82)",
-                                letterSpacing: "0.01em",
-                              }}
-                            >
-                              {label}
-                            </Box>
-                          </Box>
-                        </Box>
-                      );
-                    })()}
-
-                    {/* Bottom action row — avatars + availability +
-                        Book now. Avatars (the team) sit beside the
-                        action button so the practitioner-roster cue
-                        reinforces the moment of decision. */}
+                      {svc.desc}
+                    </Typography>
                     <Box
                       sx={{
-                        mt: 1,
                         display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 1,
+                        alignItems: "baseline",
+                        gap: 0.75,
                         flexWrap: "wrap",
-                        rowGap: 0.75,
                       }}
                     >
-                      {(() => {
-                        const offering = therapists.filter((t) =>
-                          t.servicesAvailable?.includes(svc.id)
-                        );
-                        if (offering.length === 0) return <Box />;
-                        const visible = offering.slice(0, 5);
-                        const remaining =
-                          offering.length - visible.length;
-                        const availableNow = offering.filter(
-                          (t) =>
-                            !t.isBooked &&
-                            !t.activeBooking &&
-                            !t.isHoliday &&
-                            t.statusOverride !== "resting"
-                        ).length;
-                        return (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.75,
-                              minWidth: 0,
-                            }}
-                          >
-                            {/* Avatar stack */}
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                flexShrink: 0,
-                              }}
-                            >
-                              {visible.map((t, idx) => (
-                                <Box
-                                  key={t.id}
-                                  component="img"
-                                  src={t.image}
-                                  alt={t.name}
-                                  sx={{
-                                    width: 22,
-                                    height: 22,
-                                    borderRadius: "50%",
-                                    border:
-                                      "1.5px solid rgba(255, 255, 255, 0.92)",
-                                    objectFit: "cover",
-                                    marginLeft: idx > 0 ? "-7px" : 0,
-                                    boxShadow:
-                                      "0 2px 6px rgba(0, 0, 0, 0.32)",
-                                    zIndex: visible.length - idx,
-                                    position: "relative",
-                                  }}
-                                />
-                              ))}
-                              {remaining > 0 && (
-                                <Box
-                                  sx={{
-                                    width: 22,
-                                    height: 22,
-                                    borderRadius: "50%",
-                                    border:
-                                      "1.5px solid rgba(255, 255, 255, 0.92)",
-                                    background: "rgba(0, 0, 0, 0.55)",
-                                    marginLeft: "-7px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    fontFamily: SANS,
-                                    fontSize: 9,
-                                    fontWeight: 700,
-                                    color: "#fff",
-                                    letterSpacing: "0.02em",
-                                  }}
-                                >
-                                  +{remaining}
-                                </Box>
-                              )}
-                            </Box>
-
-                            {/* Live availability dot + count */}
-                            {availableNow > 0 ? (
-                              <Box
-                                sx={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 0.5,
-                                }}
-                              >
-                                <Box
-                                  sx={{
-                                    width: 7,
-                                    height: 7,
-                                    borderRadius: "50%",
-                                    background: "#16a34a",
-                                    boxShadow:
-                                      "0 0 0 2px rgba(22, 163, 74, 0.32), 0 0 8px rgba(22, 163, 74, 0.55)",
-                                  }}
-                                />
-                                <Box
-                                  component="span"
-                                  sx={{
-                                    fontFamily: SANS,
-                                    fontSize: 10.5,
-                                    fontWeight: 600,
-                                    color: "rgba(255, 255, 255, 0.92)",
-                                    letterSpacing: "0.02em",
-                                    whiteSpace: "nowrap",
-                                  }}
-                                >
-                                  {availableNow} available
-                                </Box>
-                              </Box>
-                            ) : (
-                              <Box
-                                component="span"
-                                sx={{
-                                  fontFamily: SANS,
-                                  fontSize: 10.5,
-                                  fontWeight: 500,
-                                  color: "rgba(255, 255, 255, 0.7)",
-                                  letterSpacing: "0.02em",
-                                  whiteSpace: "nowrap",
-                                }}
-                              >
-                                {offering.length} therapists
-                              </Box>
-                            )}
-                          </Box>
-                        );
-                      })()}
-
-                      <Button
-                        variant="contained"
-                        onClick={(e) => handleBookService(svc.id, e)}
+                      <Typography
+                        component="span"
                         sx={{
-                          height: 30,
-                          minWidth: 0,
-                          borderRadius: 999,
-                          background:
-                            "linear-gradient(135deg, #FE0944, #FE7A52)",
-                          color: "#fff",
                           fontFamily: SANS,
-                          fontSize: 11.5,
+                          fontSize: 9.5,
                           fontWeight: 700,
-                          letterSpacing: "0.02em",
-                          textTransform: "none",
-                          boxShadow: "0 4px 12px rgba(254, 9, 68, 0.32)",
-                          px: 1.75,
-                          py: 0.25,
-                          "&:hover": {
-                            background:
-                              "linear-gradient(135deg, #E50840, #E56A47)",
-                            boxShadow:
-                              "0 6px 16px rgba(254, 9, 68, 0.42)",
-                          },
+                          color: "rgba(255,255,255,0.72)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
                         }}
                       >
-                        Book now
-                      </Button>
+                        From
+                      </Typography>
+                      <Typography
+                        component="span"
+                        sx={{
+                          fontFamily: SERIF,
+                          fontSize: 18,
+                          fontWeight: 700,
+                          color: "#fff",
+                          letterSpacing: "-0.02em",
+                          textShadow: "0 1px 8px rgba(0,0,0,0.4)",
+                        }}
+                      >
+                        {formatTHB(fromPrice)}
+                      </Typography>
+                      <Typography
+                        component="span"
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: 11.5,
+                          color: "rgba(255,255,255,0.74)",
+                          fontWeight: 500,
+                        }}
+                      >
+                        · {tiers.join("/")} min
+                      </Typography>
                     </Box>
                   </Box>
                 </Box>
