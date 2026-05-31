@@ -277,30 +277,23 @@ they prefer.
   `notifications (userId asc, createdAt desc)` composite index (Round
   28s1). Without it, NotificationsPage shows empty for every user.
   Deploy via `firebase deploy --only firestore:indexes`.
-- [ ] **Deploy Cloud Functions for Telegram notifications**
-  - `firebase deploy --only functions` from repo root
-  - `git push` only deploys frontend via Vercel — Firebase functions need
-    a separate deploy. Without this, customer bookings DON'T trigger TG alert
-    to admin, AND admin doesn't see them in the back-office.
-- [ ] **🔴 Round 28s81: redeploy functions after the Telegram dedup fix.**
-  - Bug found 2026-05-31: BOTH `notifyBooking` (client callable) AND
-    `onBookingCreate` (Firestore trigger) were deployed → admin got
-    **2 Telegram messages per booking**. Also `notifyBooking` had no
-    auth gate (anyone could spam the admin group).
-  - Code fix shipped (frontend auto-deploys via Vercel): client no longer
-    calls `notifyBooking`. The `onBookingCreate` trigger is now the single
-    source. → duplicate stops as soon as the Vercel build is live.
-  - **Still owed (needs `firebase deploy --only functions`):**
-    `onBookingCreate`'s admin message now itemizes the WeChat/Alipay
-    service charge + includes the map link, and `notifyBooking` got an
-    auth gate (deprecated — safe to delete the callable later).
-  - Until functions are redeployed: admin still gets ONE correct message
-    from the already-live trigger (total is right; just not itemized).
-- [ ] **Round 28s82: therapist DM gated OFF** (founder "เอาแค่ส่งหาฉัน
-  คนเดียวก่อน"). `DISPATCH_THERAPIST_DM = false` in functions/src/index.ts
-  — onBookingCreate now alerts the admin group ONLY, View dispatches
-  manually. Flip the flag to `true` (+ redeploy functions) once
-  practitioners have linked their Telegram via /start.
+- [x] ~~**Deploy Cloud Functions for Telegram notifications**~~ DONE
+  2026-05-31 — `firebase deploy --only functions` ran successfully
+  (project soulease-spa, all 9 functions updated). Telegram booking
+  alerts are live.
+- [x] ~~**Round 28s81: Telegram dedup**~~ DEPLOYED 2026-05-31. Bug was:
+  BOTH `notifyBooking` (client callable) AND `onBookingCreate` (trigger)
+  sent → **2 messages per booking**, and notifyBooking had no auth gate.
+  Fix shipped + deployed: client no longer calls notifyBooking;
+  `onBookingCreate` is the single source (now itemizes the WeChat/Alipay
+  service charge + includes the map link); notifyBooking got an auth gate
+  (deprecated — safe to delete the callable later).
+- [x] ~~**Round 28s82: therapist DM gated OFF**~~ DEPLOYED 2026-05-31
+  (founder "เอาแค่ส่งหาฉันคนเดียวก่อน"). `DISPATCH_THERAPIST_DM = false`
+  in functions/src/index.ts — onBookingCreate alerts the admin group
+  ONLY; View dispatches manually. To auto-DM practitioners later: flip
+  the flag to `true`, redeploy functions, and have them link Telegram
+  via /start.
 - [x] ~~**Composite Firestore index** — `bookings` collection,
   fields: `status` (asc) + `startAt` (asc).~~ Re-added to
   `firestore.indexes.json` in Round 28s1 hotfix (accidentally deleted
