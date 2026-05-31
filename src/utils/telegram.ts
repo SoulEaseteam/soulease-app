@@ -92,6 +92,8 @@ interface NotifyPayload {
   note: string;
   servicePrice: number;
   taxiFee: number;
+  // 🆕 Round 28s77 — WeChat/Alipay transfer surcharge (0 otherwise).
+  paymentFee?: number;
   total: number;
   distanceKm: number;
   payment?: string | null;
@@ -170,6 +172,9 @@ function formatMessage(p: NotifyPayload): string {
     "",
 
     `🚖 Taxi: ${p.taxiFee.toLocaleString()} ฿`,
+    ...(p.paymentFee && p.paymentFee > 0
+      ? [`💳 Transfer fee: ${p.paymentFee.toLocaleString()} ฿`]
+      : []),
     `💰 Total: ${p.total.toLocaleString()} ฿`,
     "",
 

@@ -200,6 +200,8 @@
   "booking.eta": "ETA",
   "booking.rainEta": "+5 min · rain",
   "booking.priceRow.travelFee": "Travel fee",
+  "booking.priceRow.paymentFee": "Transfer fee ({{pct}}% + ฿{{flat}})",
+  "pay.feeBadge": "+{{pct}}% + ฿{{flat}}",
   "booking.travelTip.title": "Travel Fee · SunRed Smart Routing",
   "booking.travelTip.returnLeg": "Return leg · 40% off the meter",
   "booking.travelTip.returnNote": "(outbound full + return 60% · auto-applied)",

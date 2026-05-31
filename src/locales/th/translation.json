@@ -202,6 +202,8 @@
   "booking.eta": "เวลาถึงโดยประมาณ",
   "booking.rainEta": "+5 นาที · ฝนตก",
   "booking.priceRow.travelFee": "ค่าเดินทาง",
+  "booking.priceRow.paymentFee": "ค่าธรรมเนียมโอน ({{pct}}% + ฿{{flat}})",
+  "pay.feeBadge": "+{{pct}}% + ฿{{flat}}",
   "booking.travelTip.title": "ค่าเดินทาง · SunRed Smart Routing",
   "booking.travelTip.returnLeg": "เที่ยวกลับ · ลด 40% จากมิเตอร์",
   "booking.travelTip.returnNote": "(ขาไปเต็มราคา + ขากลับ 60% · คิดให้อัตโนมัติ)",

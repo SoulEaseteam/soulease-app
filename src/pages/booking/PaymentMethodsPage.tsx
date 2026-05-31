@@ -19,6 +19,11 @@ import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
 import CreditCardRoundedIcon from "@mui/icons-material/CreditCardRounded";
 import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
 import LocalAtmRoundedIcon from "@mui/icons-material/LocalAtmRounded";
+import {
+  hasPaymentSurcharge,
+  SURCHARGE_PCT,
+  SURCHARGE_FLAT,
+} from "@/utils/paymentSurcharge";
 // 🆕 Round 28b7 — `fonts` import was unused (default-import shape was
 //   also wrong: the theme module exports `fonts` as a named export,
 //   not default). Removed to silence the warning.
@@ -106,6 +111,30 @@ const LINKED_DEFAULTS: PaymentOption[] = [
   },
 ];
 
+// 🆕 Round 28s77 (founder 2026-05-31) — Alipay + WeChat Pay are now
+//   real, selectable payment methods (were dead chevron rows before).
+//   They carry a transfer surcharge (5% + ฿200) applied on the Confirm
+//   Order total — see @/utils/paymentSurcharge. Rendered with the
+//   selectable PaymentRow; a "+5% + ฿200" badge surfaces the fee.
+const TRANSFER_SELECTABLE: PaymentOption[] = [
+  {
+    id: "alipay",
+    label: "Alipay",
+    sub: "Scan QR once confirmed",
+    icon: <PaymentsRoundedIcon />,
+    iconBg: "rgba(59, 130, 246, 0.12)",
+    iconFg: "#2563eb",
+  },
+  {
+    id: "wechat",
+    label: "WeChat Pay",
+    sub: "Scan QR once confirmed",
+    icon: <PaymentsRoundedIcon />,
+    iconBg: "rgba(34, 197, 94, 0.12)",
+    iconFg: "#16a34a",
+  },
+];
+
 const ADD_METHODS: PaymentOption[] = [
   {
     id: "card",
@@ -124,24 +153,6 @@ const ADD_METHODS: PaymentOption[] = [
     iconBg: "rgba(245, 158, 11, 0.12)",
     iconFg: "#d97706",
   },
-  {
-    id: "alipay",
-    label: "Alipay",
-    sub: "Scan QR once confirmed",
-    icon: <PaymentsRoundedIcon />,
-    iconBg: "rgba(59, 130, 246, 0.12)",
-    iconFg: "#2563eb",
-    badge: "Alipay+ Partner",
-  },
-  {
-    id: "wechat",
-    label: "WeChat Pay",
-    sub: "Scan QR once confirmed",
-    icon: <PaymentsRoundedIcon />,
-    iconBg: "rgba(34, 197, 94, 0.12)",
-    iconFg: "#16a34a",
-    
-  },
 ];
 
 // 🆕 Round 28u (founder 2026-05-02) — bug-fix layer.
@@ -150,7 +161,12 @@ const ADD_METHODS: PaymentOption[] = [
 // and the exported `readSelectedPaymentMethod()` so a stale localStorage
 // value (e.g., user picked "card" before it was disabled) can't crash
 // the booking flow downstream.
-const ALL_OPTIONS: PaymentOption[] = [RECOMMENDED, ...LINKED_DEFAULTS, ...ADD_METHODS];
+const ALL_OPTIONS: PaymentOption[] = [
+  RECOMMENDED,
+  ...LINKED_DEFAULTS,
+  ...TRANSFER_SELECTABLE,
+  ...ADD_METHODS,
+];
 
 const AVAILABLE_IDS: ReadonlySet<PaymentMethodId> = new Set(
   ALL_OPTIONS.filter((o) => !o.comingSoon).map((o) => o.id)
@@ -421,8 +437,24 @@ const PaymentMethodsPage: React.FC = () => {
               overflow: "hidden",
             }}
           >
+            {/* 🆕 Round 28s77 — Alipay + WeChat are selectable (radio)
+                with a transfer-fee badge; Cards + TrueMoney stay as
+                non-selectable chevron rows below them. */}
+            {TRANSFER_SELECTABLE.map((opt, idx) => (
+              <PaymentRow
+                key={opt.id}
+                option={opt}
+                isActive={selected === opt.id}
+                onSelect={persist}
+                divider={idx > 0}
+              />
+            ))}
             {ADD_METHODS.map((opt, idx) => (
-              <AddMethodRow key={opt.id} option={opt} divider={idx > 0} />
+              <AddMethodRow
+                key={opt.id}
+                option={opt}
+                divider={TRANSFER_SELECTABLE.length > 0 || idx > 0}
+              />
             ))}
           </Box>
         </Box>
@@ -605,6 +637,28 @@ const PaymentRow: React.FC<{
             }}
           >
             {t("pay.badge.default", "Default")}
+          </Box>
+        )}
+        {/* 🆕 Round 28s77 — transfer-fee badge on WeChat / Alipay. */}
+        {hasPaymentSurcharge(option.id) && (
+          <Box
+            component="span"
+            sx={{
+              fontFamily: SANS,
+              fontSize: "10.5px",
+              fontWeight: 700,
+              color: "#d97706",
+              background: "rgba(245, 158, 11, 0.14)",
+              borderRadius: "999px",
+              padding: "2px 8px",
+              letterSpacing: "0.02em",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {t("pay.feeBadge", "+{{pct}}% + ฿{{flat}}", {
+              pct: SURCHARGE_PCT,
+              flat: SURCHARGE_FLAT,
+            })}
           </Box>
         )}
       </Box>

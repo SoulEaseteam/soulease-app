@@ -200,6 +200,8 @@
   "booking.eta": "到着予定",
   "booking.rainEta": "+5 分 · 雨天",
   "booking.priceRow.travelFee": "出張料金",
+  "booking.priceRow.paymentFee": "送金手数料 ({{pct}}% + ฿{{flat}})",
+  "pay.feeBadge": "+{{pct}}% + ฿{{flat}}",
   "booking.travelTip.title": "出張料金 · SunRed スマートルーティング",
   "booking.travelTip.returnLeg": "復路 · メーターより 40% オフ",
   "booking.travelTip.returnNote": "(往路は全額 + 復路 60% · 自動適用)",

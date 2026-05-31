@@ -200,6 +200,8 @@
   "booking.eta": "预计到达",
   "booking.rainEta": "+5 分钟 · 雨天",
   "booking.priceRow.travelFee": "交通费",
+  "booking.priceRow.paymentFee": "转账手续费 ({{pct}}% + ฿{{flat}})",
+  "pay.feeBadge": "+{{pct}}% + ฿{{flat}}",
   "booking.travelTip.title": "交通费 · SunRed 智能路线",
   "booking.travelTip.returnLeg": "返程 · 按表价 6 折",
   "booking.travelTip.returnNote": "(去程全价 + 返程 60% · 自动计算)",

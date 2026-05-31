@@ -143,6 +143,12 @@ import {
 //   Pure function; client-side validation only. Admin still
 //   confirms / overrides via Telegram before payment.
 import { validateDiscount, getInitialDiscountCode } from "@/utils/discount";
+// 🆕 Round 28s77 — WeChat/Alipay transfer surcharge (5% + ฿200).
+import {
+  paymentSurcharge,
+  SURCHARGE_PCT,
+  SURCHARGE_FLAT,
+} from "@/utils/paymentSurcharge";
 // 🆕 Round 28r18 — Persist booking-flow errors so admin can triage
 //   "tried to reserve online but doesn't work" complaints without
 //   needing repro steps from the customer.
@@ -636,8 +642,17 @@ const BookingFlowPage: React.FC = () => {
     isAdminBooking && adminOverrideRaw.trim() !== ""
       ? Math.max(0, parseInt(adminOverrideRaw.replace(/[^0-9]/g, ""), 10) || 0)
       : null;
+  // 🆕 Round 28s77 (founder 2026-05-31) — WeChat / Alipay transfer
+  //   surcharge (5% of the order total + ฿200 flat). Applied to the
+  //   customer-calculated total only; an admin owner-override types
+  //   the final figure directly, so no surcharge is layered on top.
+  const paymentFee =
+    adminOverrideTotal != null
+      ? 0
+      : paymentSurcharge(paymentMethod, calculatedTotal);
   const total =
-    adminOverrideTotal != null ? adminOverrideTotal : calculatedTotal;
+    (adminOverrideTotal != null ? adminOverrideTotal : calculatedTotal) +
+    paymentFee;
 
   // 🆕 Round 28b46 (founder 2026-05-05) — Pre-surcharge baseline so we
   //   can render "~~฿1,800~~ ฿2,018" when rain or admin-quote bumps the
@@ -647,7 +662,12 @@ const BookingFlowPage: React.FC = () => {
   const baseTotal =
     servicePrice +
     addonsTotal +
-    (taxiResult?.baseFareBeforeRain ?? taxiFare);
+    (taxiResult?.baseFareBeforeRain ?? taxiFare) +
+    // 🆕 Round 28s77 — include the payment surcharge in the baseline
+    //   too, so the WeChat/Alipay fee doesn't falsely trip the
+    //   rain-style "~~strikethrough~~" (that's reserved for rain /
+    //   admin-quote bumps). The fee shows as its own price row instead.
+    paymentFee;
   const hasSurcharge = total > baseTotal + 0.5; // guard against rounding noise
 
   // 🆕 Round 28r29 (founder 2026-05-07) — "Original price" + total
@@ -860,6 +880,9 @@ const BookingFlowPage: React.FC = () => {
         // confirms via Telegram, but we capture intent here).
         payment: PAYMENT_LABELS[paymentMethod],
         paymentMethodId: paymentMethod,
+        // 🆕 Round 28s77 — WeChat/Alipay transfer surcharge (0 for
+        //   other methods). `totalPrice` already includes it.
+        paymentFee,
         taxiFee: taxiFare,
         taxiTier: taxiResult?.tier ?? null,
         taxiBaseFee: taxiResult?.baseFareBeforeRain ?? taxiFare,
@@ -981,6 +1004,8 @@ const BookingFlowPage: React.FC = () => {
         // 🆕 Round 14: send chosen payment method label to Telegram so
         //    admin sees what the customer selected (e.g. "PromptPay").
         payment: PAYMENT_LABELS[paymentMethod],
+        // 🆕 Round 28s77 — transfer surcharge (WeChat/Alipay); 0 otherwise.
+        paymentFee,
       });
 
       // 🆕 Round 28b7 — booking confirmed → clear the persisted WIP
@@ -1906,6 +1931,21 @@ const BookingFlowPage: React.FC = () => {
                     −{formatTHB(discountAmount)}
                   </Box>
                 }
+              />
+            </Box>
+          )}
+
+          {/* 🆕 Round 28s77 — WeChat/Alipay transfer surcharge row.
+              Only renders when one of those methods is selected. */}
+          {paymentFee > 0 && (
+            <Box sx={{ marginTop: "6px" }}>
+              <PriceRow
+                label={t(
+                  "booking.priceRow.paymentFee",
+                  "Transfer fee ({{pct}}% + ฿{{flat}})",
+                  { pct: SURCHARGE_PCT, flat: SURCHARGE_FLAT }
+                )}
+                value={`+${formatTHB(paymentFee)}`}
               />
             </Box>
           )}
