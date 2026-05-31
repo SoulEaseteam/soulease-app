@@ -88,19 +88,21 @@ const CHAT_OPTIONS: ChatOption[] = [
   {
     title: "WhatsApp",
     href: "https://wa.me/66634350987",
-    src: "/images/profli/Whatsapp.gif",
+    // 🆕 Round 28s103 (perf) — was Whatsapp.gif (10MB) loaded on the
+    //   global concierge widget; swapped to the 42KB PNG.
+    src: "/images/profli/whatsapp.png",
     tint: "#25D366",
   },
   {
     title: "WeChat",
     href: "/wechat-scan",
-    src: "/images/profli/Wechat.gif",
+    src: "/images/profli/wechat_2626283.png",
     tint: "#07C160",
   },
   {
     title: "Telegram",
     href: "https://t.me/SunRedvip_bkk",
-    src: "/images/profli/Telegram.gif",
+    src: "/images/profli/telegram.png",
     tint: "#26A1E0",
   },
   {
