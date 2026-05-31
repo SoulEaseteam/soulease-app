@@ -160,10 +160,12 @@ const ServicesPage: React.FC = () => {
   const SERVICE_DISPLAY_ORDER = React.useMemo(
     () =>
       [
-        "SR-HJ2200", // Gentleman's Signature — ฿2,200
-        "SR-B2B3200", // SunRed Therapeutic — ฿3,200
-        "SR-Aroma", // Aromatherapy — ฿1,600
+        // 🆕 Round 28s93 (founder reorder) — Gentleman's first (TRENDING),
+        //   then Thai, Aromatherapy, SunRed Therapeutic last.
+        "SR-HJ2200", // Gentleman's Signature — ฿2,200 (TRENDING)
         "xSR-Thai", // Thai Massage — ฿1,200
+        "SR-Aroma", // Aromatherapy — ฿1,600
+        "SR-B2B3200", // SunRed Therapeutic — ฿3,200
       ] as const,
     []
   );
@@ -661,6 +663,8 @@ const ServicesPage: React.FC = () => {
                     },
                   }}
                 >
+                  {/* 🆕 Round 28s93 — flagship card shows a "• TRENDING"
+                      pill (pulse dot); the rest show their data badge. */}
                   <Box
                     sx={{
                       position: "absolute",
@@ -678,9 +682,31 @@ const ServicesPage: React.FC = () => {
                       letterSpacing: "0.06em",
                       boxShadow: "0 4px 10px rgba(254, 9, 68, 0.35)",
                       zIndex: 1,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: isFlagship ? 0.6 : 0,
                     }}
                   >
-                    {svc.badge.replace(/_/g, " ")}
+                    {isFlagship && (
+                      <Box
+                        component="span"
+                        aria-hidden
+                        sx={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: "50%",
+                          background: "#fff",
+                          boxShadow: "0 0 0 3px rgba(255,255,255,0.30)",
+                          animation:
+                            "sunredTrendingPulse 1.6s ease-in-out infinite",
+                          "@keyframes sunredTrendingPulse": {
+                            "0%, 100%": { opacity: 1 },
+                            "50%": { opacity: 0.45 },
+                          },
+                        }}
+                      />
+                    )}
+                    {isFlagship ? "Trending" : svc.badge.replace(/_/g, " ")}
                   </Box>
 
                   {/* 🆕 Round 28s91 (founder "รายละเอียด เหลือแค่นี้พอ
