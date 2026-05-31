@@ -217,7 +217,32 @@ const ServicesPage: React.FC = () => {
         {/* ─── Header — logo + verified + tagline ─── */}
         <Box sx={{ height: 50 }} />
 
-        <Box sx={{ px: 2, mt: 1 }}>
+        {/* 🆕 Round 28s95 — centered profile header on a soft warm
+            backdrop, premium "link-in-bio" register. */}
+        <Box
+          sx={{
+            position: "relative",
+            px: 2,
+            pt: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textAlign: "center",
+          }}
+        >
+          <Box
+            aria-hidden
+            sx={{
+              position: "absolute",
+              top: -50,
+              left: 0,
+              right: 0,
+              height: 260,
+              background:
+                "radial-gradient(110% 80% at 50% 0%, rgba(254,122,82,0.13) 0%, rgba(254,9,68,0.05) 38%, transparent 72%)",
+              pointerEvents: "none",
+            }}
+          />
           {/* Logo — spring entry + one-time halo flash + warm hover glow. */}
           <Box
             component={motion.div}
@@ -288,21 +313,49 @@ const ServicesPage: React.FC = () => {
             />
           </Box>
 
-          {/* 🆕 Round 28s94 (founder) — brand name + tagline ABOVE the
+          {/* Verified · location chip */}
+          <Box
+            component={motion.div}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            sx={{
+              mt: 1.75,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.5,
+              px: 1.25,
+              py: 0.4,
+              borderRadius: 999,
+              background: "rgba(29, 155, 240, 0.10)",
+              border: "1px solid rgba(29, 155, 240, 0.22)",
+              fontFamily: SANS,
+              fontSize: 10.5,
+              fontWeight: 800,
+              letterSpacing: "0.06em",
+              color: "#1d83c0",
+              textTransform: "uppercase",
+            }}
+          >
+            <VerifiedRoundedIcon sx={{ fontSize: 14 }} />
+            Verified · Central Bangkok
+          </Box>
+
+          {/* 🆕 Round 28s94/95 — brand name + tagline (centered) ABOVE the
               social row. */}
           <Typography
             component={motion.h1}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.35, ease: "easeOut" }}
+            transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
             sx={{
               fontFamily: SERIF,
-              fontSize: 26,
+              fontSize: 27,
               fontWeight: 600,
               color: "#3c1e14",
               letterSpacing: "-0.015em",
               lineHeight: 1.1,
-              mt: 1.5,
+              mt: 1,
             }}
           >
             SunRed Wellness
@@ -318,10 +371,12 @@ const ServicesPage: React.FC = () => {
               fontSize: 16,
               fontWeight: 500,
               color: "rgba(60,30,20,0.7)",
-              mt: 0.5,
+              mt: 0.75,
               letterSpacing: "-0.01em",
-              lineHeight: 1.35,
+              lineHeight: 1.4,
               maxWidth: "30ch",
+              mx: "auto",
+              textAlign: "center",
             }}
           >
             Bangkok&apos;s most discreet outcall massage,{" "}
@@ -337,7 +392,15 @@ const ServicesPage: React.FC = () => {
           </Typography>
 
           {/* Social icons — frosted white chips below the tagline. */}
-          <Box sx={{ display: "flex", gap: 1, mt: 2.25, flexWrap: "wrap" }}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1,
+              mt: 2.25,
+              flexWrap: "wrap",
+              justifyContent: "center",
+            }}
+          >
             {[
               {
                 href: "https://lin.ee/uqvdwWt",
