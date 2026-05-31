@@ -298,7 +298,7 @@ const ServicesPage: React.FC = () => {
                 • Brand-color glow under each on hover (LINE green,
                   Telegram blue, WhatsApp green, X slate, etc.)
                 • Tap: scale 0.88 with rotation snap back to 0 */}
-          <Box sx={{ ml: "auto", display: "flex", gap: 0.25 }}>
+          <Box sx={{ ml: "auto", display: "flex", gap: 0.75, mb: 0.5 }}>
             {[
               {
                 href: "https://lin.ee/uqvdwWt",
@@ -384,7 +384,7 @@ const ServicesPage: React.FC = () => {
                     component="img"
                     src={src}
                     alt={alt}
-                    sx={{ width: 28, height: 28 }}
+                    sx={{ width: 33, height: 33 }}
                   />
                 </IconButton>
               </Box>
@@ -393,93 +393,6 @@ const ServicesPage: React.FC = () => {
         </Box>
 
         <Box sx={{ px: 2, mt: 3 }}>
-          {/* Username + verified — verified mark pulses gently */}
-          <Box
-            component={motion.div}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
-            sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-          >
-            <Typography
-              sx={{
-                fontFamily: SERIF,
-                fontSize: 22,
-                fontWeight: 600,
-                color: "#3c1e14",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              SunRed.vip
-            </Typography>
-            {/* Verified ✓ with ripple ring — feels like a live presence
-                indicator. The icon stays still; a faint ring expands
-                outward and fades, looping every ~4s (calmer than the
-                old 2.6s infinite scale-pulse). */}
-            <Box
-              sx={{
-                position: "relative",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 20,
-                height: 20,
-              }}
-            >
-              <Box
-                component={motion.span}
-                aria-hidden
-                initial={{ scale: 0.85, opacity: 0 }}
-                animate={{
-                  scale: [0.85, 1.55, 1.95],
-                  opacity: [0, 0.55, 0],
-                }}
-                transition={{
-                  duration: 2.4,
-                  repeat: Infinity,
-                  repeatDelay: 1.6,
-                  ease: "easeOut",
-                  times: [0, 0.5, 1],
-                  delay: 1.2,
-                }}
-                sx={{
-                  position: "absolute",
-                  inset: 0,
-                  borderRadius: "50%",
-                  border: "1.5px solid #1d9bf0",
-                  pointerEvents: "none",
-                }}
-              />
-              <VerifiedRoundedIcon
-                sx={{
-                  position: "relative",
-                  fontSize: 20,
-                  color: "#1d9bf0",
-                  filter: "drop-shadow(0 1px 2px rgba(29, 155, 240, 0.35))",
-                  zIndex: 1,
-                }}
-              />
-            </Box>
-          </Box>
-
-          {/* Handle */}
-          <Box
-            component={motion.div}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-          >
-            <Typography
-              sx={{
-                fontSize: 13,
-                color: "rgba(60,30,20,0.55)",
-                mt: 0.25,
-              }}
-            >
-              @sunred.vip
-            </Typography>
-          </Box>
-
           {/* Editorial italic tagline — fade-up entry, then the em
               accent blossoms from slate to brand red after a short
               beat. Round 28c12 — tiny "moment of brand reveal". */}
@@ -492,10 +405,10 @@ const ServicesPage: React.FC = () => {
             <Typography
               sx={{
                 fontFamily: SERIF,
-                fontSize: 17,
+                fontSize: 19,
                 fontWeight: 500,
                 color: "#3c1e14",
-                mt: 1.75,
+                mt: 0,
                 letterSpacing: "-0.01em",
                 lineHeight: 1.3,
               }}
@@ -722,7 +635,7 @@ const ServicesPage: React.FC = () => {
                   onClick={() => handleSelectService(svc.id)}
                   sx={{
                     position: "relative",
-                    height: isFlagship ? 280 : 240,
+                    height: isFlagship ? 200 : 178,
                     borderRadius: "18px",
                     overflow: "hidden",
                     backgroundImage: `url(${svc.image})`,
