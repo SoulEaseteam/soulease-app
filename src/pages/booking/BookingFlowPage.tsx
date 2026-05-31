@@ -159,6 +159,14 @@ import { logBookingError } from "@/utils/bookingError";
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
+// 🆕 Round 28s83 (founder 2026-05-31: "โปรโมชั่น ยังไม่ต้องโชว์ …
+//   ยังไม่ได้คิด โปร กัน เสี่ยง") — master promo kill-switch. While
+//   OFF: the discount-code field is hidden AND no code can ever apply
+//   a discount (even a ?ref= / persisted code resolves to ฿0 off), so
+//   there's zero money-giveaway risk until promos are designed. Flip
+//   to `true` to re-enable the discount UI + code logic.
+const PROMOS_ENABLED = false;
+
 // Round 28s71 (audit) — defensive HH:mm → minutes parse. Returns NaN
 //   for missing / malformed values instead of NaN-poisoning the
 //   overnight booking math (therapist.startTime/endTime are static but
@@ -620,11 +628,14 @@ const BookingFlowPage: React.FC = () => {
       }),
     [form.discountCode, discountableBase, bookingHourBKK, form.serviceId, taxiFare]
   );
-  const discountAmount = discount.valid ? discount.amount : 0;
+  // 🆕 Round 28s83 — promos OFF: force ฿0 discount regardless of code.
+  const discountAmount =
+    PROMOS_ENABLED && discount.valid ? discount.amount : 0;
   // 🆕 Round 28r28 — Total calc branches on FREETAXI vs others:
   //   FREETAXI: total = service + addons + (taxi - discount=taxi) = service + addons
   //   Other codes: total = (service + addons - discount) + taxi
-  const isFreeTaxi = discount.valid && discount.code === "FREETAXI";
+  const isFreeTaxi =
+    PROMOS_ENABLED && discount.valid && discount.code === "FREETAXI";
   const calculatedTotal = isFreeTaxi
     ? discountableBase
     : Math.max(
@@ -1741,7 +1752,9 @@ const BookingFlowPage: React.FC = () => {
 
           {/* 🆕 Founder 2026-05-01 round 13: Discount code input. No
               backend validation yet — admin verifies and applies it
-              manually after seeing the booking in Telegram. */}
+              manually after seeing the booking in Telegram.
+              🆕 Round 28s83 — hidden while PROMOS_ENABLED is off. */}
+          {PROMOS_ENABLED && (
           <Box sx={{ marginTop: "10px" }}>
             <TextField
               fullWidth
@@ -1881,6 +1894,7 @@ const BookingFlowPage: React.FC = () => {
               </Box>
             )}
           </Box>
+          )}
 
           {/* 🆕 Round 28r14 — Discount row in the price breakdown.
               Only renders when a valid code is applied. Shows the
