@@ -44,6 +44,7 @@ import { therapists } from "../data/therapists";
 import { startingPrice, durationsFor, formatTHB } from "../utils/servicePricing";
 import HowItWorks from "@/components/home/HowItWorks";
 import { useServiceUsageStats } from "@/hooks/useServiceUsageStats";
+import { useDocumentMeta } from "@/utils/useDocumentMeta";
 
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -107,6 +108,15 @@ const ServicesPage: React.FC = () => {
   // Live booking counts — UNIQUE customers (humans), not raw session count.
   const { customersById: customerCounts, servedById: servedCounts } =
     useServiceUsageStats();
+
+  // 🆕 Round 28s96 (SEO) — per-page meta (restored Clean v3 page had none).
+  useDocumentMeta({
+    title: "Services · SunRed Bangkok Outcall Massage",
+    description:
+      "Choose your outcall massage in Bangkok — Thai, Aromatherapy, Gentleman's Signature, and SunRed Therapeutic. From ฿1,200, delivered to your hotel or residence.",
+    url: "https://sunred.vip/services",
+    type: "website",
+  });
 
   // Round 28c18 — Welcome banner state.
   //   First-time guests see a complimentary-travel welcome card. We

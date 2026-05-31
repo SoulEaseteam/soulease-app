@@ -24,6 +24,7 @@ import {
   SURCHARGE_PCT,
   SURCHARGE_FLAT,
 } from "@/utils/paymentSurcharge";
+import { useDocumentMeta } from "@/utils/useDocumentMeta";
 // 🆕 Round 28b7 — `fonts` import was unused (default-import shape was
 //   also wrong: the theme module exports `fonts` as a named export,
 //   not default). Removed to silence the warning.
@@ -233,6 +234,15 @@ function methodBadge(t: TFn, option: PaymentOption): string | undefined {
 
 const PaymentMethodsPage: React.FC = () => {
   const navigate = useNavigate();
+
+  // 🆕 Round 28s96 (SEO) — per-page meta (FAQ / policy content lives here).
+  useDocumentMeta({
+    title: "Payment & Policy · SunRed Bangkok",
+    description:
+      "Payment methods, deposits, cancellation, and how SunRed keeps your reservation discreet and private. Cash, PromptPay, WeChat Pay, Alipay.",
+    url: "https://sunred.vip/payment-methods",
+    type: "website",
+  });
   const { t } = useTranslation();
   const [selected, setSelected] = useState<PaymentMethodId>(() =>
     safePaymentId(readStoredPaymentRaw())

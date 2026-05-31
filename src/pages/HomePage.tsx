@@ -72,6 +72,25 @@ const HomePage: React.FC = () => {
           🆕 Round 28s20 — Below-fold marketing chrome (PromiseStrip,
           HomeFooter) removed. Bottom padding gives the last therapist
           card breathing room above MainLayout's BottomNavGlass. */}
+      {/* 🆕 Round 28s96 (SEO) — single visually-hidden H1 with the
+          primary keyword. The hero greeting is dynamic ("Good evening")
+          so the crawler-facing H1 lives here, sr-only. */}
+      <Box
+        component="h1"
+        sx={{
+          position: "absolute",
+          width: "1px",
+          height: "1px",
+          padding: 0,
+          margin: "-1px",
+          overflow: "hidden",
+          clip: "rect(0 0 0 0)",
+          whiteSpace: "nowrap",
+          border: 0,
+        }}
+      >
+        SunRed — Luxury outcall massage in Bangkok, delivered to your hotel
+      </Box>
       <HeroSection />
       <HomeTherapistGrid />
       <Box sx={{ height: "32px" }} aria-hidden="true" />
