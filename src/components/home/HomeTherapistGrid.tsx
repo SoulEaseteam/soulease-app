@@ -552,7 +552,7 @@ const HomeTherapistGrid: React.FC = () => {
               fontWeight: 600,
             }}
           >
-            {searchQ ? "No matches" : "No therapists right now"}
+            {searchQ ? "No matches" : "All practitioners are with guests right now"}
           </Typography>
           <Typography
             sx={{
@@ -564,8 +564,48 @@ const HomeTherapistGrid: React.FC = () => {
           >
             {searchQ
               ? `Nothing matches "${searchQ}". Try a different keyword.`
-              : "Check back in a moment."}
+              : "Message the concierge to be first in line tonight."}
           </Typography>
+
+          {/* 🆕 Round 28s86 — supply-constrained prime-time conversion fix.
+              When the roster filter (default "available_now" in prime
+              hours) returns zero practitioners, the old dead-end empty
+              state killed momentum during the exact window that matters.
+              Surface a discreet concierge WhatsApp CTA so a guest can be
+              first in line instead of bouncing. Search-no-match keeps the
+              "try a different keyword" line; the CTA still helps either way. */}
+          <Box
+            component="a"
+            href={`https://wa.me/66634350987?text=${encodeURIComponent(
+              "Hi SunRed concierge, I'd like to book an outcall massage tonight — who's available?",
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              marginTop: "18px",
+              padding: "11px 22px",
+              borderRadius: "999px",
+              background: gradients.primary,
+              color: "#fff",
+              fontFamily: SANS,
+              fontSize: "13px",
+              fontWeight: 700,
+              letterSpacing: "0.01em",
+              textDecoration: "none",
+              boxShadow: "0 8px 22px rgba(254, 9, 68, 0.28)",
+              transition: "transform 0.15s ease, box-shadow 0.15s ease",
+              "&:hover": {
+                transform: "translateY(-1px)",
+                boxShadow: "0 10px 26px rgba(254, 9, 68, 0.34)",
+              },
+            }}
+          >
+            Chat with concierge
+            <ArrowForwardRoundedIcon sx={{ fontSize: 16 }} />
+          </Box>
         </Box>
       ) : (
         <Box

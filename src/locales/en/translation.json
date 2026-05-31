@@ -383,5 +383,11 @@
   "success.prep.water": "Drink water · {{name}} brings everything else",
   "success.copyCode": "Copy reservation code · {{ref}}",
   "success.msg.confirm": "Hi SunRed concierge, I just placed reservation {{ref}}. Please confirm my order. Thanks!",
-  "success.confirmWith": "Confirm with concierge · {{ref}}"
+  "success.confirmWith": "Confirm with concierge · {{ref}}",
+  "success.confirmHeading": "Confirm with concierge",
+  "success.channel.whatsapp": "WhatsApp",
+  "success.channel.line": "LINE",
+  "success.channel.telegram": "Telegram",
+  "success.channel.wechat": "WeChat",
+  "success.replyFast": "Concierge typically replies in minutes · 24/7"
 }

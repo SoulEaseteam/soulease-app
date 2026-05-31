@@ -55,6 +55,11 @@ import ShowerRoundedIcon from "@mui/icons-material/ShowerRounded";
 import WaterDropRoundedIcon from "@mui/icons-material/WaterDropRounded";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+// 🆕 Round 28s90 (CRO audit) — multi-channel confirm row. Chinese
+//   tourists (WeChat) + the Telegram-first audience were being dumped
+//   into a LINE-only button and bailing at the finish line. Same
+//   brand-color channel icon set the home concierge grid uses.
+import { FaWhatsapp, FaLine, FaTelegramPlane, FaWeixin } from "react-icons/fa";
 import { doc, getDoc, type DocumentData } from "firebase/firestore";
 // 🆕 Round 28b59 — `dayjs` direct import dropped (was only used by
 //   the now-removed onAddToCalendar handler). All time formatting
@@ -936,9 +941,36 @@ const BookingSuccessPage: React.FC = () => {
                   ref: refCode,
                 })}
               </Button>
-              <Button
-                fullWidth
-                onClick={() => {
+              {/* 🆕 Round 28s90 (CRO audit) — Multi-channel confirm row.
+                  Was a single LINE-only gradient button that dropped
+                  WeChat (Chinese tourists) + Telegram-first guests into
+                  the wrong app, where they bailed. Now every guest taps
+                  their own channel; the booking refCode is pre-filled in
+                  the message everywhere the platform allows a body
+                  (WhatsApp + Telegram + LINE web; WeChat → QR scan page).
+                  Brand-color icons reuse the home concierge grid set. */}
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                  color: "rgba(60, 30, 20, 0.55)",
+                  textAlign: "center",
+                  marginBottom: "-2px",
+                }}
+              >
+                {t("success.confirmHeading", "Confirm with concierge")}
+              </Typography>
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "8px",
+                }}
+              >
+                {(() => {
                   const message = encodeURIComponent(
                     t(
                       "success.msg.confirm",
@@ -946,43 +978,107 @@ const BookingSuccessPage: React.FC = () => {
                       { ref: refCode }
                     )
                   );
-                  // Prefer LINE on mobile, fall back to WhatsApp.
-                  // Both deep-links auto-open the right app on iOS/Android.
-                  const lineUrl = `https://line.me/R/ti/p/@sunred.bkk?from=page&searchId=sunred.bkk`;
-                  const waUrl = `https://wa.me/66634350987?text=${message}`;
-                  // Open LINE first; if user has no LINE installed, browser
-                  // will fall back to the web LINE which still works.
-                  window.open(lineUrl, "_blank", "noopener,noreferrer");
-                  // Round 28s75 (audit) — only log the WhatsApp fallback
-                  //   (contains the business number + booking ref) in dev;
-                  //   it was running on every tap in production.
-                  if (import.meta.env.DEV) {
-                    // eslint-disable-next-line no-console
-                    console.info("[contact-admin] WA fallback:", waUrl);
-                  }
-                }}
+                  const channels: Array<{
+                    name: string;
+                    Icon: React.ComponentType<{ size?: number }>;
+                    href: string;
+                    external: boolean;
+                    fg: string;
+                    bg: string;
+                    border: string;
+                  }> = [
+                    {
+                      name: t("success.channel.whatsapp", "WhatsApp"),
+                      Icon: FaWhatsapp,
+                      href: `https://wa.me/66634350987?text=${message}`,
+                      external: true,
+                      fg: "#25D366",
+                      bg: "rgba(37, 211, 102, 0.10)",
+                      border: "rgba(37, 211, 102, 0.28)",
+                    },
+                    {
+                      name: t("success.channel.line", "LINE"),
+                      Icon: FaLine,
+                      href: "https://line.me/R/ti/p/@sunred.bkk",
+                      external: true,
+                      fg: "#06C755",
+                      bg: "rgba(6, 199, 85, 0.10)",
+                      border: "rgba(6, 199, 85, 0.28)",
+                    },
+                    {
+                      name: t("success.channel.telegram", "Telegram"),
+                      Icon: FaTelegramPlane,
+                      href: `https://t.me/SunRedvip_bkk?text=${message}`,
+                      external: true,
+                      fg: "#229ED9",
+                      bg: "rgba(34, 158, 217, 0.10)",
+                      border: "rgba(34, 158, 217, 0.28)",
+                    },
+                    {
+                      name: t("success.channel.wechat", "WeChat"),
+                      Icon: FaWeixin,
+                      href: "/wechat-scan",
+                      external: false,
+                      fg: "#07C160",
+                      bg: "rgba(7, 193, 96, 0.10)",
+                      border: "rgba(7, 193, 96, 0.28)",
+                    },
+                  ];
+                  return channels.map((c) => (
+                    <Button
+                      key={c.name}
+                      fullWidth
+                      onClick={() => {
+                        if (c.external) {
+                          window.open(
+                            c.href,
+                            "_blank",
+                            "noopener,noreferrer"
+                          );
+                        } else {
+                          void navigate(c.href);
+                        }
+                      }}
+                      startIcon={<c.Icon size={18} />}
+                      sx={{
+                        height: 46,
+                        borderRadius: "999px",
+                        background: c.bg,
+                        color: c.fg,
+                        fontFamily: SANS,
+                        fontWeight: 700,
+                        fontSize: "13.5px",
+                        textTransform: "none",
+                        border: `1px solid ${c.border}`,
+                        "& .MuiButton-startIcon": { marginRight: "8px" },
+                        "&:hover": {
+                          background: c.bg,
+                          borderColor: c.fg,
+                          boxShadow: `0 4px 14px ${c.bg}`,
+                        },
+                      }}
+                    >
+                      {c.name}
+                    </Button>
+                  ));
+                })()}
+              </Box>
+              {/* 🆕 Round 28s90 — reassurance line near the contact CTAs. */}
+              <Typography
                 sx={{
-                  height: 48,
-                  borderRadius: "999px",
-                  background:
-                    "linear-gradient(135deg, #06C755 0%, #00B900 100%)",
-                  color: "#fff",
                   fontFamily: SANS,
-                  fontWeight: 700,
-                  fontSize: "14.5px",
-                  textTransform: "none",
-                  boxShadow:
-                    "0 6px 18px rgba(6, 199, 85, 0.32), 0 1px 2px rgba(0,0,0,0.08)",
-                  "&:hover": {
-                    background:
-                      "linear-gradient(135deg, #05B84D 0%, #009900 100%)",
-                  },
+                  fontSize: "11.5px",
+                  color: "rgba(60, 30, 20, 0.55)",
+                  textAlign: "center",
+                  marginTop: "-2px",
+                  lineHeight: 1.4,
                 }}
               >
-                {t("success.confirmWith", "Confirm with concierge · {{ref}}", {
-                  ref: refCode,
-                })}
-              </Button>
+                {t(
+                  "success.replyFast",
+                  "Concierge typically replies in minutes · 24/7"
+                )}
+              </Typography>
               <Button
                 fullWidth
                 onClick={() => void navigate("/")}
