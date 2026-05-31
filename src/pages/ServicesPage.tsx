@@ -217,12 +217,8 @@ const ServicesPage: React.FC = () => {
         {/* ─── Header — logo + verified + tagline ─── */}
         <Box sx={{ height: 50 }} />
 
-        <Box sx={{ px: 2, mt: 1, display: "flex", alignItems: "flex-end" }}>
-          {/* Logo — spring entry + one-time halo flash + warm hover glow.
-              Round 28c12 — three combined effects:
-                • spring: a tiny natural bounce settling into place
-                • halo: a soft red ring radiates outward once on mount
-                • hover: red glow shadow + subtle lift */}
+        <Box sx={{ px: 2, mt: 1 }}>
+          {/* Logo — spring entry + one-time halo flash + warm hover glow. */}
           <Box
             component={motion.div}
             initial={{ opacity: 0, scale: 0.86 }}
@@ -278,8 +274,8 @@ const ServicesPage: React.FC = () => {
               alt="SunRed"
               sx={{
                 position: "relative",
-                width: 130,
-                height: 130,
+                width: 118,
+                height: 118,
                 borderRadius: "50%",
                 border: "3px solid #FFFFFF",
                 boxShadow:
@@ -292,15 +288,56 @@ const ServicesPage: React.FC = () => {
             />
           </Box>
 
-          {/* Social icons — Round 28c13.
-              Five upgrades from the previous version:
-                • Spring entry (subtle bounce as each icon settles)
-                • Stagger raised to 0.07s/icon for a more deliberate cascade
-                • Hover: scale 1.12 + lift -4 + alternating tilt (-5°/+5°)
-                • Brand-color glow under each on hover (LINE green,
-                  Telegram blue, WhatsApp green, X slate, etc.)
-                • Tap: scale 0.88 with rotation snap back to 0 */}
-          <Box sx={{ ml: "auto", display: "flex", gap: 0.75, mb: 0.5 }}>
+          {/* 🆕 Round 28s94 (founder) — brand name + tagline ABOVE the
+              social row. */}
+          <Typography
+            component={motion.h1}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.35, ease: "easeOut" }}
+            sx={{
+              fontFamily: SERIF,
+              fontSize: 26,
+              fontWeight: 600,
+              color: "#3c1e14",
+              letterSpacing: "-0.015em",
+              lineHeight: 1.1,
+              mt: 1.5,
+            }}
+          >
+            SunRed Wellness
+          </Typography>
+
+          <Typography
+            component={motion.p}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5, ease: "easeOut" }}
+            sx={{
+              fontFamily: SERIF,
+              fontSize: 16,
+              fontWeight: 500,
+              color: "rgba(60,30,20,0.7)",
+              mt: 0.5,
+              letterSpacing: "-0.01em",
+              lineHeight: 1.35,
+              maxWidth: "30ch",
+            }}
+          >
+            Bangkok&apos;s most discreet outcall massage,{" "}
+            <Box
+              component={motion.em}
+              initial={{ color: "rgba(60,30,20,0.7)" }}
+              animate={{ color: "#FE0944" }}
+              transition={{ duration: 0.9, delay: 1.15, ease: "easeOut" }}
+              sx={{ fontStyle: "italic" }}
+            >
+              delivered to you.
+            </Box>
+          </Typography>
+
+          {/* Social icons — frosted white chips below the tagline. */}
+          <Box sx={{ display: "flex", gap: 1, mt: 2.25, flexWrap: "wrap" }}>
             {[
               {
                 href: "https://lin.ee/uqvdwWt",
@@ -378,6 +415,14 @@ const ServicesPage: React.FC = () => {
                 <IconButton
                   component="a"
                   href={href}
+                  aria-label={alt}
+                  sx={{
+                    p: 0.85,
+                    background: "#fff",
+                    border: "1px solid rgba(126, 30, 46, 0.08)",
+                    boxShadow: "0 3px 10px rgba(126, 30, 46, 0.10)",
+                    "&:hover": { background: "#fff" },
+                  }}
                   {...(external
                     ? { target: "_blank", rel: "noopener noreferrer" }
                     : {})}
@@ -386,46 +431,11 @@ const ServicesPage: React.FC = () => {
                     component="img"
                     src={src}
                     alt={alt}
-                    sx={{ width: 33, height: 33 }}
+                    sx={{ width: 30, height: 30 }}
                   />
                 </IconButton>
               </Box>
             ))}
-          </Box>
-        </Box>
-
-        <Box sx={{ px: 2, mt: 3 }}>
-          {/* Editorial italic tagline — fade-up entry, then the em
-              accent blossoms from slate to brand red after a short
-              beat. Round 28c12 — tiny "moment of brand reveal". */}
-          <Box
-            component={motion.div}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}
-          >
-            <Typography
-              sx={{
-                fontFamily: SERIF,
-                fontSize: 19,
-                fontWeight: 500,
-                color: "#3c1e14",
-                mt: 0,
-                letterSpacing: "-0.01em",
-                lineHeight: 1.3,
-              }}
-            >
-              Bangkok&apos;s most discreet outcall massage,{" "}
-              <Box
-                component={motion.em}
-                initial={{ color: "#3c1e14" }}
-                animate={{ color: "#FE0944" }}
-                transition={{ duration: 0.9, delay: 1.15, ease: "easeOut" }}
-                sx={{ fontStyle: "italic" }}
-              >
-                delivered to you.
-              </Box>
-            </Typography>
           </Box>
         </Box>
 
