@@ -336,6 +336,45 @@ they prefer.
 - [ ] Set up LINE OA (TH/JP/KR)
 - [ ] Decide: keep "Sammyboy 200฿ off" promo or drop?
 
+### Round 28s105–107 — SSR-hardening "ข้อ 1" + static SEO prerender (LIVE)
+
+- ✅ **28s105**: Firebase SSR-prep — `initializeApp` now idempotent
+  (`getApps()/getApp()`); removed the unused `storage` export (zero
+  consumers) → trims firebase/storage from the customer bundle.
+- ✅ **28s106**: `scripts/prerender-routes.mjs` (postbuild) bakes
+  per-route static HTML for `/services` + the 4 service SKUs:
+  route-specific `<title>`/description/canonical/OG/Twitter/hreflang +
+  Service & BreadcrumbList JSON-LD + a tailored crawlable `<noscript>`
+  body. The body still loads the same SPA bundle → **zero hydration
+  risk**. Vercel serves these filesystem files ahead of the SPA rewrite.
+  Wired into `build` + `vercel-build`. Script asserts every head swap
+  fires (fails the build if index.html shape changes).
+- ✅ **28s107**: fixed Vercel build — `.vercelignore` excluded `scripts/`
+  so the prerender file was missing in the build container. Changed to
+  `scripts/*` + `!scripts/prerender-routes.mjs`. Verified LIVE: each
+  service route now serves its own title + JSON-LD to non-JS crawlers
+  (Baidu/Naver/Bing → matters for our CN/JP/KR audience). Home unchanged.
+
+- 🛑 **DECISION: full React-tree SSG is NOT being done.** Investigation
+  (28s105) found the app is SSR-cleaner than feared (no module-level
+  browser access; entry/providers/layouts clean; home components touch
+  browser only in effects/handlers). BUT full SSG would still require:
+  i18n LanguageDetector SSR-guarding + router refactor to a route-array
+  + a server-side Head solution — and the app is **time-aware** (Hero
+  concierge mode flips by hour) + **locale-auto-detecting**, so SSR/CSR
+  hydration mismatch is a real risk on a live booking site, and we
+  **can't hydration-test in this env**. The static per-route head/body
+  prerender above captures ~80% of the SEO win with none of that risk.
+  If we ever want true SSG: do it as a dedicated project with a Vercel
+  preview to hydration-test before promoting.
+
+- 📝 NOTE on deploys: 28s106's first attempt failed (ERROR state) — the
+  bad build never reached production (stayed on 28s104), confirming the
+  "build fails → live site safe" guarantee. Also: the GitHub-triggered
+  build of ca569c7 appeared in the deployment list, so Vercel
+  auto-deploy *may* have recovered — but still using manual
+  `vercel --prod --yes` as the source of truth until confirmed.
+
 ### Round 28r4–r32 deliveries (already shipped + pushed)
 
 - ✅ Round 28r32: Fixed "You saved tonight" pill bug — was missing
