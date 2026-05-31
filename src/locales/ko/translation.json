@@ -225,6 +225,7 @@
   "booking.paymentDetail": "결제 상세",
   "booking.cancellation.label": "취소",
   "booking.cancellation.body": "예약 30분 전까지 무료로 취소할 수 있습니다. 이후에는 서비스 요금의 50%가 부과됩니다.",
+  "booking.discreetNote": "조용한 방문 · 카드 명세서에 서비스명 미표기 · 개인정보 비공개",
   "booking.error.missingDetails": "예약 정보가 누락되었습니다",
   "booking.error.invalidTime": "예약 시간이 올바르지 않습니다",
   "booking.notif.title": "예약이 확정되었습니다",

@@ -225,6 +225,7 @@
   "booking.paymentDetail": "支付详情",
   "booking.cancellation.label": "取消政策",
   "booking.cancellation.body": "预约前 30 分钟以上可免费取消。之后将收取服务费的 50%。",
+  "booking.discreetNote": "私密上门 · 银行账单不显示服务名称 · 您的信息严格保密",
   "booking.error.missingDetails": "预订信息不完整",
   "booking.error.invalidTime": "预订时间无效",
   "booking.notif.title": "预订已确认",

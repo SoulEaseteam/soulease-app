@@ -227,6 +227,7 @@
   "booking.paymentDetail": "รายละเอียดการชำระเงิน",
   "booking.cancellation.label": "การยกเลิก",
   "booking.cancellation.body": "ยกเลิกฟรีได้ถึง 30 นาทีก่อนเวลานัดหมายของคุณ หลังจากนั้นคิด 50% ของค่าบริการ",
+  "booking.discreetNote": "มาถึงแบบเป็นส่วนตัว · บิลบัตรไม่ระบุชื่อบริการ · ข้อมูลของคุณเป็นความลับ",
   "booking.error.missingDetails": "ข้อมูลการจองไม่ครบถ้วน",
   "booking.error.invalidTime": "เวลาการจองไม่ถูกต้อง",
   "booking.notif.title": "ยืนยันการจองแล้ว",

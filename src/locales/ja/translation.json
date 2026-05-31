@@ -225,6 +225,7 @@
   "booking.paymentDetail": "お支払い詳細",
   "booking.cancellation.label": "キャンセル",
   "booking.cancellation.body": "ご予約の 30 分前まで無料でキャンセルできます。それ以降はサービス料金の 50% を申し受けます。",
+  "booking.discreetNote": "控えめなご訪問 · 明細に施術名の記載なし · 個人情報は厳重に保護",
   "booking.error.missingDetails": "予約内容が不足しています",
   "booking.error.invalidTime": "予約時間が無効です",
   "booking.notif.title": "予約が確定しました",

@@ -2340,6 +2340,23 @@ const BookingFlowPage: React.FC = () => {
             "Free up to 30 minutes before your reservation. After that, 50% of the service fee."
           )}
         </Typography>
+        {/* 🆕 Round 28s104 (conversion) — discretion reassurance at the
+            decision moment; trust is everything for this guest. */}
+        <Typography
+          sx={{
+            fontFamily: SANS,
+            fontSize: "10.5px",
+            color: "rgba(22, 163, 74, 0.85)",
+            fontWeight: 600,
+            lineHeight: 1.5,
+            padding: "6px 8px 0",
+          }}
+        >
+          {t(
+            "booking.discreetNote",
+            "Discreet arrival · plain-card billing · your details stay private.",
+          )}
+        </Typography>
       </Box>
 
       {/* ─────────── Sticky bottom (pattern 7A: Total left + Confirm right) ─────────── */}

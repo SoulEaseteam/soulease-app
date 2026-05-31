@@ -225,6 +225,7 @@
   "booking.paymentDetail": "Payment detail",
   "booking.cancellation.label": "Cancellation",
   "booking.cancellation.body": "Free up to 30 minutes before your reservation. After that, 50% of the service fee.",
+  "booking.discreetNote": "Discreet arrival · plain-card billing · your details stay private.",
   "booking.error.missingDetails": "Missing reservation details",
   "booking.error.invalidTime": "Invalid reservation time",
   "booking.notif.title": "Reservation confirmed",
