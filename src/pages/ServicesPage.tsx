@@ -30,29 +30,33 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
-import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
-
-import services from "@/data/services";
+import services, { type MassageService } from "@/data/services";
 import { brand, fonts } from "@/theme";
+import {
+  startingPrice,
+  durationsFor,
+  formatTHB,
+} from "@/utils/servicePricing";
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 import { trackServiceView } from "@/utils/analytics";
 
 // Service display order — premium first so high-margin items anchor
-// the scroll. Matches the home hero's row order.
+// the scroll. Matches the home hero's row order + the booking picker
+// (StepService) editorial order, so both surfaces read identically.
 const SERVICE_ORDER = [
-  "SR-HJ2200", // Gentleman's Signature — ฿2,200
+  "SR-HJ2200", // Gentleman's Signature — ฿2,200 (best seller → trending)
   "SR-B2B3200", // SunRed Therapeutic — ฿3,200
   "SR-Aroma", // Aromatherapy — ฿1,600
   "xSR-Thai", // Thai Massage — ฿1,200
 ] as const;
 
-// 🆕 Round 28s85 — full-bleed photo cards; only the tier label is
-//   overlaid now (the per-service icon/swatch treatment was retired).
-const TIER_BY_ID: Record<string, "SIGNATURE" | "PREMIUM"> = {
-  "xSR-Thai": "SIGNATURE",
-  "SR-Aroma": "PREMIUM",
-  "SR-HJ2200": "PREMIUM",
-  "SR-B2B3200": "PREMIUM",
+// 🆕 Round 28s87 — badge colour ladder, mirrored from StepService so
+//   the lobby cards and the in-flow picker look identical.
+const BADGE_COLORS: Record<MassageService["badge"], { bg: string; fg: string }> = {
+  SIGNATURE: { bg: "rgba(254, 9, 68, 0.95)", fg: "#fff" },
+  POPULAR: { bg: "rgba(254, 122, 82, 0.95)", fg: "#fff" },
+  RECOMMEND: { bg: "rgba(184, 92, 60, 0.95)", fg: "#fff" },
+  EXCLUSIVE: { bg: "rgba(60, 30, 20, 0.95)", fg: "#FEC9A7" },
 };
 
 const ServicesPage: React.FC = () => {
@@ -162,9 +166,14 @@ const ServicesPage: React.FC = () => {
           gap: "12px",
         }}
       >
-        {sortedServices.map((svc) => {
-          const tier = TIER_BY_ID[svc.id];
-          if (!tier) return null;
+        {sortedServices.map((svc, idx) => {
+          // 🆕 Round 28s87 — mirror the booking picker (StepService):
+          //   real badge + Trending on the top (best-seller) card +
+          //   description + "From ฿X · 60/90/120 min".
+          const isTrending = idx === 0;
+          const badgeColor = BADGE_COLORS[svc.badge];
+          const fromPrice = startingPrice(svc);
+          const tiers = durationsFor(svc);
           return (
             <Box
               key={svc.id}
@@ -232,52 +241,80 @@ const ServicesPage: React.FC = () => {
                 }}
               />
 
-              {/* Tier pill — top-left */}
+              {/* Top row — badge (left) + Trending (right) */}
               <Box
                 sx={{
                   position: "absolute",
                   top: 12,
                   left: 12,
-                  padding: "4px 10px",
-                  borderRadius: "999px",
-                  background: "rgba(255, 255, 255, 0.18)",
-                  backdropFilter: "blur(8px)",
-                  WebkitBackdropFilter: "blur(8px)",
-                  border: "1px solid rgba(255, 255, 255, 0.28)",
-                  fontFamily: fonts.body,
-                  fontSize: "9.5px",
-                  fontWeight: 800,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  color: "#fff",
-                }}
-              >
-                {tier}
-              </Box>
-
-              {/* Arrow affordance — top-right */}
-              <Box
-                aria-hidden="true"
-                sx={{
-                  position: "absolute",
-                  top: 12,
                   right: 12,
-                  width: 30,
-                  height: 30,
-                  borderRadius: "50%",
-                  background: "rgba(255, 255, 255, 0.22)",
-                  backdropFilter: "blur(8px)",
-                  WebkitBackdropFilter: "blur(8px)",
-                  border: "1px solid rgba(255, 255, 255, 0.32)",
+                  zIndex: 2,
                   display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: "8px",
                 }}
               >
-                <ArrowForwardRoundedIcon sx={{ fontSize: 15, color: "#fff" }} />
+                <Box
+                  sx={{
+                    fontFamily: fonts.body,
+                    fontSize: "9px",
+                    fontWeight: 800,
+                    letterSpacing: "0.08em",
+                    background: badgeColor.bg,
+                    color: badgeColor.fg,
+                    padding: "3px 8px",
+                    borderRadius: "6px",
+                    textTransform: "uppercase",
+                    boxShadow: "0 2px 6px rgba(20, 6, 12, 0.22)",
+                  }}
+                >
+                  {svc.badge}
+                </Box>
+                {isTrending && (
+                  <Box
+                    aria-label="Trending"
+                    sx={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      padding: "3px 9px 3px 7px",
+                      borderRadius: 999,
+                      background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+                      color: "#fff",
+                      fontFamily: fonts.body,
+                      fontSize: "9.5px",
+                      fontWeight: 800,
+                      letterSpacing: "0.10em",
+                      textTransform: "uppercase",
+                      boxShadow:
+                        "0 6px 14px rgba(254, 9, 68, 0.36), inset 0 1px 0 rgba(255,255,255,0.30)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <Box
+                      component="span"
+                      aria-hidden
+                      sx={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        background: "#fff",
+                        boxShadow: "0 0 0 3px rgba(255,255,255,0.30)",
+                        animation:
+                          "sunredTrendingPulse 1.6s ease-in-out infinite",
+                        "@keyframes sunredTrendingPulse": {
+                          "0%, 100%": { opacity: 1 },
+                          "50%": { opacity: 0.45 },
+                        },
+                      }}
+                    />
+                    Trending
+                  </Box>
+                )}
               </Box>
 
-              {/* Overlaid text — bottom */}
+              {/* Overlaid detail — bottom */}
               <Box
                 sx={{
                   position: "absolute",
@@ -291,49 +328,77 @@ const ServicesPage: React.FC = () => {
                   component="h2"
                   sx={{
                     fontFamily: fonts.heading,
-                    fontSize: "21px",
+                    fontSize: "20px",
                     fontWeight: 600,
                     color: "#fff",
-                    lineHeight: 1.12,
+                    lineHeight: 1.13,
                     letterSpacing: "-0.01em",
-                    textShadow: "0 1px 8px rgba(0,0,0,0.35)",
-                    marginBottom: "6px",
+                    textShadow: "0 1px 8px rgba(0,0,0,0.4)",
+                    marginBottom: "4px",
                   }}
                 >
                   {svc.name}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: fonts.body,
+                    fontSize: "12px",
+                    color: "rgba(255,255,255,0.86)",
+                    lineHeight: 1.4,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    textShadow: "0 1px 6px rgba(0,0,0,0.35)",
+                    marginBottom: "8px",
+                  }}
+                >
+                  {svc.desc}
                 </Typography>
                 <Box
                   sx={{
                     display: "flex",
                     alignItems: "baseline",
-                    justifyContent: "space-between",
-                    gap: "8px",
+                    gap: "6px",
+                    flexWrap: "wrap",
                   }}
                 >
                   <Typography
                     component="span"
                     sx={{
                       fontFamily: fonts.body,
-                      fontSize: "11.5px",
-                      fontWeight: 600,
-                      color: "rgba(255,255,255,0.82)",
-                      letterSpacing: "0.03em",
+                      fontSize: "9.5px",
+                      fontWeight: 700,
+                      color: "rgba(255,255,255,0.7)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
                     }}
                   >
-                    {svc.duration} {t("common.min", "min")}
+                    {t("services.from", "From")}
                   </Typography>
                   <Typography
                     component="span"
                     sx={{
                       fontFamily: fonts.heading,
-                      fontSize: "19px",
+                      fontSize: "17px",
                       fontWeight: 700,
                       color: "#fff",
-                      lineHeight: 1,
-                      textShadow: "0 1px 8px rgba(0,0,0,0.35)",
+                      letterSpacing: "-0.02em",
+                      textShadow: "0 1px 8px rgba(0,0,0,0.4)",
                     }}
                   >
-                    {`฿${svc.price.toLocaleString()}`}
+                    {formatTHB(fromPrice)}
+                  </Typography>
+                  <Typography
+                    component="span"
+                    sx={{
+                      fontFamily: fonts.body,
+                      fontSize: "11px",
+                      color: "rgba(255,255,255,0.72)",
+                      fontWeight: 500,
+                    }}
+                  >
+                    · {tiers.join("/")} {t("common.min", "min")}
                   </Typography>
                 </Box>
               </Box>
