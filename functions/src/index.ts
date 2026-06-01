@@ -885,11 +885,12 @@ export {
 //   that handles inbound customer DMs and admin reply relays from the
 //   admin group.
 //
-//   Required setup BEFORE first deploy — see
-//   docs/telegram-concierge-bot-setup.md:
-//     1. firebase functions:secrets:set TELEGRAM_CONCIERGE_BOT_TOKEN
-//     2. firebase deploy --only functions:telegramConciergeWebhook
-//     3. Register the deployed URL with Telegram's setWebhook
-//     4. Add the bot to the admin Telegram group
+//   🔒 Round 28s121 — Export commented out. View runs the manual
+//   "2 personal account" workflow instead (@SunRedvip_bkk for
+//   EN/TH/JA/KO, @YuNiSpaBkk for ZH), so the auto-greet bot isn't
+//   needed right now. Code is kept in src/telegram-concierge-bot/
+//   ready to re-enable later by uncommenting this export + setting
+//   the TELEGRAM_CONCIERGE_BOT_TOKEN secret + running the steps in
+//   docs/telegram-concierge-bot-setup.md.
 // ─────────────────────────────────────────────────────────────
-export { telegramConciergeWebhook } from "./telegram-concierge-bot";
+// export { telegramConciergeWebhook } from "./telegram-concierge-bot";
