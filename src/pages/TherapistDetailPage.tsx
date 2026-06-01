@@ -1399,48 +1399,37 @@ const TherapistDetailPage: React.FC = () => {
       )}
 
       {/* ── Services panel ─────────────────────────────────────── */}
+      {/* 🆕 Round 28s222 — Services tab redesign (founder "tab service
+          ปรับแก้"): SERIF title → SANS 700 for legibility consistency
+          (matches Services / How-to-book / About / Admin audits).
+          Eyebrow + title redundancy collapsed into one eyebrow header
+          (the cards already announce "Services" visually). Hint text
+          tightened from a chatty two-line nudge to a single concierge
+          line. */}
       {detailTab === "services" && (
       <Box
         id="tdp-service-picker"
         role="tabpanel"
         sx={{
-          padding: "20px",
+          padding: "16px 20px 20px",
           maxWidth: 430,
           margin: "0 auto",
         }}
       >
         <Typography
-          component="p"
-          sx={{
-            fontFamily: SANS,
-            fontSize: "11px",
-            fontWeight: 800,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: "#4A5568",
-            marginBottom: "6px",
-          }}
-        >
-          {t("detail.picker.eyebrow", "Choose your ritual")}
-        </Typography>
-        <Typography
           component="h2"
           sx={{
-            fontFamily: SERIF,
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "#1A2B2E",
-            letterSpacing: "-0.015em",
-            lineHeight: 1.1,
-            marginBottom: "6px",
+            fontFamily: SANS,
+            fontSize: 11,
+            fontWeight: 800,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: "#B4000A",
+            marginBottom: "10px",
           }}
         >
-          {t("detail.picker.title", "Services")}
+          {t("detail.picker.eyebrow", "Reserve a ritual")}
         </Typography>
-        {/* Round 28s48 — Subtitle "Tap a ritual to pick duration,
-            date, and time — all in one step." removed (founder
-            request). The cards do the explaining; the eyebrow +
-            title already announce the section. */}
 
         <StepService
           value={selection.serviceId}
@@ -1459,17 +1448,16 @@ const TherapistDetailPage: React.FC = () => {
         <Typography
           sx={{
             fontFamily: SANS,
-            fontSize: "12px",
-            color: "rgba(15, 23, 42, 0.5)",
+            fontSize: 12,
+            color: "#4A5568",
             textAlign: "center",
             marginTop: "14px",
             lineHeight: 1.5,
-            whiteSpace: "pre-line",
           }}
         >
           {t(
             "detail.picker.serviceHint",
-            "Didn't find your preferred service? \n Contact us for more personalized options.",
+            "Need something bespoke? The concierge tailors it on chat.",
           )}
         </Typography>
       </Box>
