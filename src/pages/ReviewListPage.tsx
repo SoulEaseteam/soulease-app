@@ -4,7 +4,6 @@ import {
   collection,
   query,
   where,
-  onSnapshot,
   doc,
   getDoc,
   getDocs,
@@ -51,18 +50,16 @@ interface Review {
   photoURL?: string;
 }
 
-/** narrow shape ของ booking doc ที่ ReviewListPage อ่าน — รับเฉพาะฟิลด์ที่ใช้จริง */
-interface BookingReviewDoc {
+/** narrow shape ของ review doc ที่ ReviewListPage อ่าน — ตรงกับ ReviewPage.tsx writes */
+interface ReviewDoc {
   id?: string;
   therapistId?: string;
   userId?: string | null;
   rating?: number;
-  reviewText?: string;
-  startAt?: FirestoreDateLike;
+  comment?: string;
   createdAt?: FirestoreDateLike;
   userName?: string;
-  userEmail?: string;
-  userAvatar?: string;
+  status?: string;
 }
 
 interface TherapistInfo {
@@ -128,30 +125,29 @@ const ReviewListPage: React.FC = () => {
   }, [id]);
 
   // =======================================================
-  // LOAD REVIEWS (from bookings)
+  // LOAD REVIEWS (from reviews collection)
   // =======================================================
   useEffect(() => {
     if (!id) return;
 
     const q = query(
-      collection(db, "bookings"),
-      where("therapistId", "==", id),
-      where("reviewText", "!=", "")
+      collection(db, "reviews"),
+      where("therapistId", "==", id)
     );
 
-    const unsub = onSnapshot(q, (snapshot) => {
-      // enrich with fallback reviewer name + avatar
+    getDocs(q).then((snapshot) => {
+      // enrich with fallback reviewer name
       const enriched: Review[] = snapshot.docs.map((d) => {
-        const r = d.data() as BookingReviewDoc;
+        const r = d.data() as ReviewDoc;
         return {
           id: d.id, // ใช้ docId ของจริง ไม่ใช่ field `id` ที่อาจไม่มี
           therapistId: r.therapistId ?? "",
           userId: r.userId ?? null,
           rating: typeof r.rating === "number" ? r.rating : 5,
-          comment: r.reviewText ?? "",
-          createdAt: r.startAt ?? r.createdAt ?? null,
-          userName: r.userName ?? r.userEmail ?? `Booking: ${d.id}`,
-          photoURL: r.userAvatar ?? "/images/default-avatar.png",
+          comment: r.comment ?? "",
+          createdAt: r.createdAt ?? null,
+          userName: r.userName ?? "Guest",
+          photoURL: "/images/default-avatar.png",
         };
       });
 
@@ -160,8 +156,6 @@ const ReviewListPage: React.FC = () => {
 
       setReviews(enriched);
     });
-
-    return () => unsub();
   }, [id]);
 
   // =======================================================
