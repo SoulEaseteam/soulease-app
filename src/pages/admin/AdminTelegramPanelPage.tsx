@@ -179,7 +179,7 @@ const AdminTelegramPanelPage: React.FC = () => {
           fontWeight: 800,
           letterSpacing: "0.24em",
           textTransform: "uppercase",
-          color: "#b85c3c",
+          color: "#4A5568",
           marginBottom: "6px",
         }}
       >
@@ -219,7 +219,7 @@ const AdminTelegramPanelPage: React.FC = () => {
           fontWeight: 800,
           letterSpacing: "0.14em",
           textTransform: "uppercase",
-          color: "#b85c3c",
+          color: "#4A5568",
           marginBottom: "10px",
         }}
       >
@@ -259,7 +259,7 @@ const AdminTelegramPanelPage: React.FC = () => {
           fontWeight: 800,
           letterSpacing: "0.14em",
           textTransform: "uppercase",
-          color: "#b85c3c",
+          color: "#4A5568",
           marginBottom: "10px",
         }}
       >
@@ -305,7 +305,7 @@ const AdminTelegramPanelPage: React.FC = () => {
               fontWeight: 800,
               letterSpacing: "0.14em",
               textTransform: "uppercase",
-              color: "#b85c3c",
+              color: "#4A5568",
               marginBottom: "10px",
             }}
           >
@@ -355,7 +355,7 @@ const AdminTelegramPanelPage: React.FC = () => {
               fontWeight: 800,
               letterSpacing: "0.14em",
               textTransform: "uppercase",
-              color: "#b85c3c",
+              color: "#4A5568",
               marginBottom: "10px",
             }}
           >
@@ -467,7 +467,7 @@ const AdminTelegramPanelPage: React.FC = () => {
             fontWeight: 800,
             letterSpacing: "0.18em",
             textTransform: "uppercase",
-            color: "#b85c3c",
+            color: "#4A5568",
             marginBottom: "4px",
           }}
         >

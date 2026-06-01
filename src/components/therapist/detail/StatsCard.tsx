@@ -213,7 +213,7 @@ const StatsCard: React.FC<Props> = ({
               transform: "translateX(-50%) rotate(45deg)",
               width: 10,
               height: 10,
-              background: "#D62828",
+              background: "#B4000A",
               boxShadow: "3px 3px 8px rgba(15, 23, 42, 0.25)",
             }}
           />

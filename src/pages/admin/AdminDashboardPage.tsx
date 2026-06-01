@@ -60,8 +60,12 @@ import { fmtBKK } from "@/utils/time";
 import { formatTHB } from "@/utils/servicePricing";
 import { getServiceLabel } from "@/utils/serviceCatalog";
 
+// 🆕 Round 28s217 — palette + type swap to match Round 28s150-156
+//   project-wide redesign (cool slate text · mint bg · flat #B4000A
+//   red · Federo-led heading stack).
 const SANS  = '"Inter", system-ui, sans-serif';
-const SERIF = '"Fraunces", Georgia, serif';
+const SERIF =
+  '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 
 // ── types ─────────────────────────────────────────────────────────────
 type FBTS = Timestamp | { seconds: number } | Date | string | null | undefined;
@@ -219,12 +223,12 @@ const AdminDashboardPage: React.FC = () => {
   const todayLabel = dayjs().format("ddd D MMM YYYY");
 
   return (
-    <Box sx={{ fontFamily: SANS, minHeight: "100vh", background: "#F7F3F1", pb: 10 }}>
+    <Box sx={{ fontFamily: SANS, minHeight: "100vh", background: "#F4F6F5", pb: 10 }}>
 
       {/* ── dark hero ───────────────────────────────────────────────── */}
       <Box
         sx={{
-          background: "#1A0805",
+          background: "#1A2B2E",
           px: { xs: 2, md: 3 },
           pt: 3, pb: 2.5,
           position: "relative",
@@ -240,7 +244,9 @@ const AdminDashboardPage: React.FC = () => {
       >
         <motion.div {...fadeUp(0)}>
           <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, mb: 0.4 }}>
-            <Typography sx={{ fontFamily: SERIF, fontSize: { xs: 24, md: 28 }, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
+            {/* 🆕 Round 28s217 — SERIF → SANS 700 to match
+                Services / How-to-book / About audits (28s199-216). */}
+            <Typography sx={{ fontFamily: SANS, fontSize: { xs: 24, md: 28 }, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
               Dashboard
             </Typography>
             {loading && <CircularProgress size={18} sx={{ color: "rgba(255,255,255,0.40)", mt: 0.5 }} />}
@@ -262,7 +268,7 @@ const AdminDashboardPage: React.FC = () => {
               { label: "Pending", value: pendingBookings.length,         unit: "need action", accent: pendingBookings.length > 0 },
             ].map((s, i) => (
               <Box key={i} sx={{ flex: 1, textAlign: "center", borderRight: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
-                <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: s.accent ? "#D62828" : "#fff", lineHeight: 1 }}>
+                <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: s.accent ? "#B4000A" : "#fff", lineHeight: 1 }}>
                   {s.value}
                 </Typography>
                 <Typography sx={{ fontFamily: SANS, fontSize: 10, color: "rgba(255,255,255,0.40)", mt: 0.4, textTransform: "uppercase", letterSpacing: "0.06em" }}>
@@ -318,7 +324,10 @@ const AdminDashboardPage: React.FC = () => {
                       <Box sx={{ width: 8, height: 8, borderRadius: "50%", background: "#B4000A", flexShrink: 0 }} />
 
                       <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 700, color: "#1a0805", lineHeight: 1.2, mb: 0.2 }}>
+                        {/* 🆕 Round 28s217 — list-item names should
+                            be SANS bold; SERIF stays only on hero
+                            stat numbers. */}
+                        <Typography sx={{ fontFamily: SANS, fontSize: 14, fontWeight: 700, color: "#1A2B2E", lineHeight: 1.2, mb: 0.2 }}>
                           {b.therapistName}
                         </Typography>
                         <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.55)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -466,7 +475,7 @@ const AdminDashboardPage: React.FC = () => {
               >
                 <Box sx={{ color: "#B4000A" }}>{c.icon}</Box>
                 <Box>
-                  <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: "#1a0805", lineHeight: 1 }}>{c.value}</Typography>
+                  <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: "#1A2B2E", lineHeight: 1 }}>{c.value}</Typography>
                   <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "rgba(15, 23, 42,0.45)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{c.label}</Typography>
                 </Box>
               </Box>
@@ -530,7 +539,7 @@ const AdminDashboardPage: React.FC = () => {
                 }}
               >
                 <Box sx={{ color: t.accent ? "#fff" : "#B4000A" }}>{t.icon}</Box>
-                <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: t.accent ? "#fff" : "#1a0805" }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: t.accent ? "#fff" : "#1A2B2E" }}>
                   {t.label}
                 </Typography>
               </motion.button>

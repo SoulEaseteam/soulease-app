@@ -1030,7 +1030,7 @@ const ServicesPage: React.FC = () => {
                   fontSize: 10,
                   letterSpacing: "0.24em",
                   textTransform: "uppercase",
-                  color: "#b85c3c",
+                  color: "#4A5568",
                   fontWeight: 700,
                   mb: 0.5,
                   fontFamily: SANS,
@@ -1214,6 +1214,23 @@ const ServicesPage: React.FC = () => {
         {/* ─── About Us tab ─── */}
         {section === "about" && (
           <Box sx={{ px: 2, mt: 3, display: "flex", flexDirection: "column", gap: 2 }}>
+            {/* 🆕 Round 28s216 (About audit #1) — Added eyebrow
+                section header to match Services + How-to-book visual
+                rhythm ("RATES & SERVICES" / "AREAS & TIMING"). */}
+            <Typography
+              sx={{
+                fontFamily: SANS,
+                fontSize: 11,
+                fontWeight: 800,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: "#B4000A",
+                marginLeft: "2px",
+              }}
+            >
+              About · Our Promise
+            </Typography>
+
             <Box
               sx={{
                 p: 2.5,
@@ -1224,16 +1241,25 @@ const ServicesPage: React.FC = () => {
                   "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.05)",
               }}
             >
+              {/* 🆕 Round 28s216 (About audit #2) — SERIF → SANS 700
+                  for the hero claim, matching Services + How-to-book
+                  audits (28s199 / 28s202). Italic accent kept in
+                  brand red for visual punctuation. */}
               <Typography
                 sx={{
-                  fontFamily: SERIF,
+                  fontFamily: SANS,
                   fontSize: 17,
-                  fontWeight: 500,
+                  fontWeight: 700,
                   color: "#1A2B2E",
                   letterSpacing: "-0.01em",
                   lineHeight: 1.35,
                   mb: 1,
-                  "& em": { color: "#B4000A", fontStyle: "italic" },
+                  "& em": {
+                    color: "#B4000A",
+                    fontStyle: "italic",
+                    fontFamily: SERIF,
+                    fontWeight: 500,
+                  },
                 }}
               >
                 Bangkok&apos;s most discreet outcall massage,{" "}
@@ -1255,11 +1281,15 @@ const ServicesPage: React.FC = () => {
               </Typography>
             </Box>
 
+            {/* 🆕 Round 28s216 (About audit #3) — 2×2 grid → 1-col
+                stack. Each pillar now has icon left + title/body
+                right, easier to scan on phone. Title font SERIF →
+                SANS 700 for consistency. */}
             <Box
               sx={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 1.25,
+                display: "flex",
+                flexDirection: "column",
+                gap: 1,
               }}
             >
               {ABOUT_PILLARS.map(({ Icon, title, body, tone }) => (
@@ -1272,12 +1302,12 @@ const ServicesPage: React.FC = () => {
                     border: "1px solid rgba(15, 23, 42, 0.06)",
                     boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
                     display: "flex",
-                    flexDirection: "column",
-                    gap: 0.75,
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    gap: 1.5,
                     transition:
-                      "transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
+                      "border-color 200ms ease, box-shadow 200ms ease",
                     "&:hover": {
-                      transform: "translateY(-1px)",
                       borderColor: "rgba(15, 23, 42, 0.14)",
                       boxShadow:
                         "0 1px 2px rgba(180, 0, 10, 0.05), 0 8px 22px rgba(180, 0, 10, 0.05)",
@@ -1286,41 +1316,45 @@ const ServicesPage: React.FC = () => {
                 >
                   <Box
                     sx={{
-                      width: 32,
-                      height: 32,
+                      width: 36,
+                      height: 36,
                       borderRadius: "10px",
                       background: tone.bg,
                       color: tone.fg,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      "& svg": { fontSize: 18 },
+                      flexShrink: 0,
+                      "& svg": { fontSize: 20 },
                     }}
                   >
                     <Icon />
                   </Box>
-                  <Typography
-                    sx={{
-                      fontFamily: SERIF,
-                      fontSize: 13.5,
-                      fontWeight: 600,
-                      color: "#1A2B2E",
-                      lineHeight: 1.25,
-                      letterSpacing: "-0.005em",
-                    }}
-                  >
-                    {title}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: SANS,
-                      fontSize: 11.5,
-                      lineHeight: 1.5,
-                      color: "rgba(15, 23, 42,0.7)",
-                    }}
-                  >
-                    {body}
-                  </Typography>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: "#1A2B2E",
+                        lineHeight: 1.25,
+                        letterSpacing: "-0.005em",
+                        mb: 0.4,
+                      }}
+                    >
+                      {title}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: 12,
+                        lineHeight: 1.55,
+                        color: "rgba(15, 23, 42,0.7)",
+                      }}
+                    >
+                      {body}
+                    </Typography>
+                  </Box>
                 </Box>
               ))}
             </Box>
@@ -1338,13 +1372,15 @@ const ServicesPage: React.FC = () => {
                 boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
               }}
             >
+              {/* 🆕 Round 28s216 (About audit #4) — SERIF → SANS 700,
+                  matching the rest of About + Services + How-to-book. */}
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
                 <LanguageRoundedIcon sx={{ color: "#0284C7", fontSize: 18 }} />
                 <Typography
                   sx={{
-                    fontFamily: SERIF,
-                    fontSize: 14.5,
-                    fontWeight: 600,
+                    fontFamily: SANS,
+                    fontSize: 14,
+                    fontWeight: 700,
                     color: "#1A2B2E",
                   }}
                 >

@@ -104,7 +104,7 @@ const BookingSuccessPage: React.FC = () => {
       ? "#F59E0B"
       : concierge.mode === "off"
       ? "rgba(15, 23, 42,0.55)"
-      : "#D62828";
+      : "#B4000A";
 
   useEffect(() => {
     if (!id) {

@@ -706,7 +706,7 @@ const Eyebrow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       fontSize: 10,
       letterSpacing: "0.18em",
       textTransform: "uppercase",
-      color: "#b85c3c",
+      color: "#4A5568",
       fontWeight: 700,
       fontFamily: SANS,
     }}

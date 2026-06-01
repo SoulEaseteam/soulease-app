@@ -196,7 +196,7 @@ const SERVICE_DISPLAY: Record<
     short: "Thai Traditional",
   },
   "SR-Aroma": {
-    icon: <LocalFloristRoundedIcon sx={{ fontSize: 18, color: "#D62828" }} />,
+    icon: <LocalFloristRoundedIcon sx={{ fontSize: 18, color: "#B4000A" }} />,
     short: "Aromatherapy",
   },
   "SR-HJ2200": {

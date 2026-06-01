@@ -160,7 +160,7 @@ const ProfilePage: React.FC = () => {
       <Box
         sx={{
           minHeight: "100vh",
-          background: "#1A0805",
+          background: "#1A2B2E",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -221,7 +221,7 @@ const ProfilePage: React.FC = () => {
       {/* ── Hero ── */}
       <Box
         sx={{
-          background: "#1A0805",
+          background: "#1A2B2E",
           pt: 7,
           pb: 5,
           px: 3,
@@ -278,7 +278,7 @@ const ProfilePage: React.FC = () => {
               <Typography sx={{ fontFamily: SERIF, fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
                 {user.displayName || "Guest"}
               </Typography>
-              <CheckCircle size={18} color="#D62828" weight="fill" />
+              <CheckCircle size={18} color="#B4000A" weight="fill" />
             </Box>
             <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(255,255,255,0.50)", mt: 0.4 }}>
               {user.email}

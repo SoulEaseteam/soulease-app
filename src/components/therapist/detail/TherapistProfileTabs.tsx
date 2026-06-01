@@ -294,7 +294,7 @@ const ProfileTab: React.FC<{
   if (todayBookings > 0) {
     trustCells.push({
       icon: <LocalFireDepartmentRoundedIcon sx={{ fontSize: 18 }} />,
-      color: "#D62828",
+      color: "#B4000A",
       value: `${todayBookings}`,
       label: "Today",
     });

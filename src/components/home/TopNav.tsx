@@ -717,7 +717,7 @@ function renderNavRow(
         <ListItemIcon
           sx={{
             minWidth: 0,
-            color: active ? "#B4000A" : "#b85c3c",
+            color: active ? "#B4000A" : "#4A5568",
           }}
         >
           {item.icon}

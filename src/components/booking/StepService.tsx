@@ -181,7 +181,7 @@ const StepService: React.FC<Props> = ({
               boxShadow: isSelected
                 ? "0 0 0 2.5px #B4000A, 0 14px 32px rgba(15, 23, 42, 0.26)"
                 : isTrending
-                  ? "0 0 0 2px #D62828, 0 12px 28px rgba(15, 23, 42, 0.16)"
+                  ? "0 0 0 2px #B4000A, 0 12px 28px rgba(15, 23, 42, 0.16)"
                   : "0 8px 22px rgba(15, 23, 42, 0.12)",
               transition: "transform 0.2s ease, box-shadow 0.2s ease",
               "@media (hover: hover)": {
@@ -206,7 +206,7 @@ const StepService: React.FC<Props> = ({
                       },
                       "50%": {
                         boxShadow:
-                          "0 0 0 2px #D62828, 0 0 0 9px rgba(15, 23, 42, 0.30), 0 16px 38px rgba(15, 23, 42, 0.40)",
+                          "0 0 0 2px #B4000A, 0 0 0 9px rgba(15, 23, 42, 0.30), 0 16px 38px rgba(15, 23, 42, 0.40)",
                       },
                     },
                     "@media (prefers-reduced-motion: reduce)": {

@@ -390,7 +390,7 @@ const AdminBookingAddPage: React.FC = () => {
   return (
     <Box
       sx={{
-        // 🆕 Round 28r23 — page background swapped from flat #F7F3F1
+        // 🆕 Round 28r23 — page background swapped from flat #F4F6F5
         //   to the same warm-cream gradient customer pages use, so
         //   the editorial hero card sits inside a familiar surface.
         minHeight: "100vh",

@@ -387,7 +387,7 @@ const AdminFloatingChat: React.FC = () => {
                     gap: "10px",
                     padding: "8px 10px",
                     borderRadius: "12px",
-                    background: "#F7F3F1",
+                    background: "#F4F6F5",
                     border: "1px solid rgba(15, 23, 42, 0.06)",
                     textDecoration: "none",
                     transition: "background 0.2s ease, transform 0.2s ease",

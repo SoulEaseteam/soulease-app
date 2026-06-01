@@ -97,7 +97,10 @@ const TABS: { key: TabKey; label: string }[] = [
 ];
 
 const SANS  = '"Inter", system-ui, sans-serif';
-const SERIF = '"Fraunces", Georgia, serif';
+// 🆕 Round 28s217 — Aligned heading stack with project palette
+//   refresh (Round 28s150-156, CLAUDE.md §🔤).
+const SERIF =
+  '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 
 // ──────────────────────────────────────────────────────────────────────
 // Page
@@ -190,12 +193,12 @@ const AdminBookingListPage: React.FC = () => {
   const detailBooking = bookings.find((b) => b.id === detailId) ?? null;
 
   return (
-    <Box sx={{ fontFamily: SANS, minHeight: "100vh", background: "#F7F3F1", pb: 10 }}>
+    <Box sx={{ fontFamily: SANS, minHeight: "100vh", background: "#F4F6F5", pb: 10 }}>
 
       {/* ── header ─────────────────────────────────────────────────── */}
       <Box
         sx={{
-          background: "#1A0805",
+          background: "#1A2B2E",
           px: { xs: 2, md: 3 },
           pt: 3,
           pb: 2.5,
@@ -359,7 +362,7 @@ const AdminBookingListPage: React.FC = () => {
         PaperProps={{
           sx: {
             width: { xs: "100vw", sm: 420 },
-            background: "#F7F3F1",
+            background: "#F4F6F5",
             p: 0,
           },
         }}
@@ -698,7 +701,7 @@ const DetailPanel: React.FC<{
       {/* header */}
       <Box
         sx={{
-          background: "#1A0805",
+          background: "#1A2B2E",
           pt: 3, pb: 2.5, px: 2.5,
           flexShrink: 0,
         }}

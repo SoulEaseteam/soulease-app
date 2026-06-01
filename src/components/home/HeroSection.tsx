@@ -107,7 +107,7 @@ const HERO_SERVICES: HeroService[] = [
     tier: "PREMIUM",
     icon: LocalFloristRoundedIcon,
     swatch: SWATCH_BG,
-    swatchIcon: "#D62828",
+    swatchIcon: "#B4000A",
   },
   {
     id: "SR-HJ2200",

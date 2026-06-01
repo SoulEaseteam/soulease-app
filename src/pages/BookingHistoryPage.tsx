@@ -148,7 +148,7 @@ const BookingHistoryPage: React.FC = () => {
       {/* ── Dark hero header ─────────────────────────────────────── */}
       <Box
         sx={{
-          background: "#1A0805",
+          background: "#1A2B2E",
           pt: "env(safe-area-inset-top, 16px)",
           pb: 3.5,
           px: 2.5,
@@ -467,7 +467,7 @@ const BookingCard: React.FC<{
             </Typography>
             {therapist && (
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.4 }}>
-                <Star size={11} color="#D62828" weight="fill" />
+                <Star size={11} color="#B4000A" weight="fill" />
                 <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "rgba(15, 23, 42,0.55)" }}>
                   {formatRating(bayesianRatingFromAggregate(
                     therapist.rating * (therapist.reviews ?? 0),

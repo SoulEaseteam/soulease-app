@@ -176,6 +176,11 @@ const AdminEarningsPage = React.lazy(
 const AdminTelegramPanelPage = React.lazy(
   () => import("@/pages/admin/AdminTelegramPanelPage")
 );
+// 🆕 Round 28s213 — Backfill rating + reviewText on completed bookings
+//   that never got a guest comment (so they surface as real reviews).
+const AdminSeedReviewsPage = React.lazy(
+  () => import("@/pages/admin/AdminSeedReviewsPage")
+);
 const AdminReportPage = React.lazy(
   () => import("@/pages/admin/AdminReportPage")
 );
@@ -325,6 +330,8 @@ export default function App() {
           {/* 🆕 Round 28r26 — Earnings calculator */}
           <Route path="earnings" element={<AdminEarningsPage />} />
           <Route path="telegram" element={<AdminTelegramPanelPage />} />
+          {/* 🆕 Round 28s213 — Seed anonymous reviews onto bookings. */}
+          <Route path="seed-reviews" element={<AdminSeedReviewsPage />} />
           <Route
             path="blocked-devices"
             element={<AdminBlockedDevicesPage />}

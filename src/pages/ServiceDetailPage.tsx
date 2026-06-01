@@ -82,7 +82,7 @@ const ICON_BY_ID: Record<string, IconConfig> = {
   },
   "SR-Aroma": {
     icon: LocalFloristRoundedIcon,
-    swatchIcon: "#D62828",
+    swatchIcon: "#B4000A",
     tier: "PREMIUM",
   },
   "SR-HJ2200": {

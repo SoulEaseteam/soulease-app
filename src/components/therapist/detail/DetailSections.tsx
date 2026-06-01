@@ -819,7 +819,7 @@ export const GalleryTile: React.FC<{
                   cursor: "pointer",
                   border:
                     i === openIdx
-                      ? "2px solid #D62828"
+                      ? "2px solid #B4000A"
                       : "2px solid transparent",
                   opacity: i === openIdx ? 1 : 0.55,
                   transition: "opacity 0.15s ease, border-color 0.15s ease",

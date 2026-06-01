@@ -25,7 +25,10 @@ import {
 } from "phosphor-react";
 
 const SANS  = '"Inter", system-ui, sans-serif';
-const SERIF = '"Fraunces", Georgia, serif';
+// 🆕 Round 28s217 — Aligned heading stack with project palette
+//   refresh (Round 28s150-156, CLAUDE.md §🔤).
+const SERIF =
+  '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 
 // ── types ─────────────────────────────────────────────────────────────
 type FBTS = Timestamp | { seconds: number } | Date | string | null | undefined;
@@ -153,12 +156,12 @@ const AdminReportPage: React.FC = () => {
   const periodLabel = `${start.format("D MMM")} – ${end.format("D MMM YYYY")}`;
 
   return (
-    <Box sx={{ fontFamily: SANS, minHeight: "100vh", background: "#F7F3F1", pb: 12 }}>
+    <Box sx={{ fontFamily: SANS, minHeight: "100vh", background: "#F4F6F5", pb: 12 }}>
 
       {/* ── hero header ─────────────────────────────────────────────── */}
       <Box
         sx={{
-          background: "#1A0805",
+          background: "#1A2B2E",
           px: { xs: 2, md: 3 }, pt: 3, pb: 2.5,
           display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 2, flexWrap: "wrap",
         }}
@@ -341,7 +344,7 @@ const AdminReportPage: React.FC = () => {
         fullWidth
         PaperProps={{ sx: { borderRadius: "20px", overflow: "hidden", m: { xs: 1, sm: 2 } } }}
       >
-        <Box sx={{ background: "#1A0805", px: 3, pt: 3, pb: 2.5 }}>
+        <Box sx={{ background: "#1A2B2E", px: 3, pt: 3, pb: 2.5 }}>
           <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: "rgba(255,255,255,0.40)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 0.5 }}>
             เปรียบเทียบรายได้
           </Typography>
@@ -370,7 +373,7 @@ const AdminReportPage: React.FC = () => {
           <Box sx={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: SANS }}>
               <thead>
-                <tr style={{ background: "#F7F3F1", borderBottom: "2px solid #EDE8E4" }}>
+                <tr style={{ background: "#F4F6F5", borderBottom: "2px solid #EDE8E4" }}>
                   {[
                     { label: "#",          align: "center" as const },
                     { label: "พนักงาน",    align: "left"   as const },
@@ -436,7 +439,7 @@ const AdminReportPage: React.FC = () => {
                   );
                 })}
                 {/* totals row */}
-                <tr style={{ background: "#F7F3F1", borderTop: "2px solid #EDE8E4" }}>
+                <tr style={{ background: "#F4F6F5", borderTop: "2px solid #EDE8E4" }}>
                   <td colSpan={2} style={{ padding: "12px 14px", fontFamily: SANS, fontSize: 12, fontWeight: 700, color: "rgba(15, 23, 42,0.60)" }}>รวมทั้งหมด</td>
                   <td style={{ padding: "12px 14px", textAlign: "center" }}>
                     <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 800, color: "#16a34a" }}>{totals.jobs}</Typography>
@@ -494,7 +497,7 @@ const AdminReportPage: React.FC = () => {
         {preview && (
           <>
             {/* hero strip */}
-            <Box sx={{ background: "#1A0805", px: 3, pt: 3, pb: 2.5 }}>
+            <Box sx={{ background: "#1A2B2E", px: 3, pt: 3, pb: 2.5 }}>
               <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: "rgba(255,255,255,0.40)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 0.5 }}>
                 สลิปค่าแรง
               </Typography>
@@ -511,7 +514,7 @@ const AdminReportPage: React.FC = () => {
                   { label: "จ่ายนวด",  value: thb(preview.worker) },
                 ].map((s, i) => (
                   <Box key={i} sx={{ flex: 1, textAlign: "center", borderRight: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
-                    <Typography sx={{ fontFamily: SERIF, fontSize: 17, fontWeight: 700, color: i === 2 ? "#D62828" : "#fff", lineHeight: 1 }}>{s.value}</Typography>
+                    <Typography sx={{ fontFamily: SERIF, fontSize: 17, fontWeight: 700, color: i === 2 ? "#B4000A" : "#fff", lineHeight: 1 }}>{s.value}</Typography>
                     <Typography sx={{ fontFamily: SANS, fontSize: 10, color: "rgba(255,255,255,0.38)", mt: 0.3, textTransform: "uppercase", letterSpacing: "0.06em" }}>{s.label}</Typography>
                   </Box>
                 ))}

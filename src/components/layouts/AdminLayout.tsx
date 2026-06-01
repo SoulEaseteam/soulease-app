@@ -45,6 +45,7 @@ import AddBoxIcon from "@mui/icons-material/AddBox";
 import BlockIcon from "@mui/icons-material/Block";
 import InsightsIcon from "@mui/icons-material/Insights";
 import PaidIcon from "@mui/icons-material/Paid";
+import RateReviewIcon from "@mui/icons-material/RateReview";
 
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -72,6 +73,9 @@ const menuItems = [
   { label: "Therapists",   path: "/admin/therapists",         icon: <TherapistIcon /> },
   { label: "Users",        path: "/admin/users",              icon: <UserIcon /> },
   { label: "Reviews",      path: "/admin/reviews",            icon: <ReviewIcon /> },
+  // 🆕 Round 28s213 — Backfill anonymous reviews onto completed bookings
+  //   that never got a guest comment.
+  { label: "Seed Reviews", path: "/admin/seed-reviews",       icon: <RateReviewIcon /> },
   { label: "Blocked",      path: "/admin/blocked-devices",    icon: <BlockIcon /> },
   { label: "Pages",        path: "/admin/pages-list",         icon: <ListAltIcon /> },
   { label: "Settings",     path: "/admin/advanced-settings",  icon: <SettingsIcon /> },

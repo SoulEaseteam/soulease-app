@@ -594,7 +594,7 @@ const TherapistProfilePage: React.FC = () => {
               label="Resting"
               hint="Hide from results"
               Icon={HotelRoundedIcon}
-              accent="#B85C3C"
+              accent="#4A5568"
               active={therapist.statusOverride === "resting"}
               disabled={savingField === "statusOverride"}
               onClick={() => void updateOverride("resting")}
