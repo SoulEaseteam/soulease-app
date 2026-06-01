@@ -36,31 +36,38 @@ import {
 const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
-const POST_KINDS: { value: PostKind; label: string; sub: string }[] = [
+// 🆕 Round 28s122 — Bilingual labels (TH + EN). Admin reads Thai primarily;
+//   English in parens for terms that map 1:1 to the bot's internal `kind`
+//   values so audit logs / docs stay searchable.
+const POST_KINDS: {
+  value: PostKind;
+  label: string;
+  sub: string;
+}[] = [
   {
     value: "tonight",
-    label: "Tonight Special",
-    sub: "1 practitioner · pick or auto-rotate",
+    label: "คืนนี้พิเศษ · Tonight Special",
+    sub: "1 คน · เลือกเอง หรือดึงจาก standby อัตโนมัติ",
   },
   {
     value: "spotlight",
-    label: "Practitioner Spotlight",
-    sub: "Weekly editorial · pick or auto-rotate",
+    label: "ไฮไลต์ประจำสัปดาห์ · Practitioner Spotlight",
+    sub: "แนะนำ 1 คน · หมุนเวียนสัปดาห์ละครั้ง",
   },
   {
     value: "lineup",
-    label: "Tonight's Lineup",
-    sub: "Multiple practitioners · pick 2-4",
+    label: "รายชื่อคืนนี้ · Tonight's Lineup",
+    sub: "หลายคน (2-4) · เลือกเอง หรือดึง standby อัตโนมัติ",
   },
   {
     value: "weekend",
-    label: "Weekend Forecast",
-    sub: "Static · no therapist needed",
+    label: "เสาร์-อาทิตย์ · Weekend Forecast",
+    sub: "ข้อความคงที่ · ไม่ต้องเลือกคน",
   },
   {
     value: "welcome",
-    label: "Welcome Back",
-    sub: "After channel-quiet stretch",
+    label: "กลับมาแล้ว · Welcome Back",
+    sub: "ใช้ตอนช่อง quiet หลายวัน",
   },
 ];
 
@@ -127,14 +134,14 @@ const AdminTelegramPanelPage: React.FC = () => {
         setToast({
           open: true,
           severity: "success",
-          message: `Posted to @SunRed_BKK (message #${res.messageId})`,
+          message: `ส่งเข้า ${channelForLang(lang)} แล้ว · message #${res.messageId}`,
         });
         if (needsMultipleTherapists) setLineupIds([]);
       } else {
         setToast({
           open: true,
           severity: "error",
-          message: "Post failed — check Firestore telegramPosts for details",
+          message: "ส่งไม่สำเร็จ — เช็ค Firestore telegramPosts",
         });
       }
     } catch (err) {
@@ -142,7 +149,7 @@ const AdminTelegramPanelPage: React.FC = () => {
       setToast({
         open: true,
         severity: "error",
-        message: `Error: ${msg}`,
+        message: `ผิดพลาด: ${msg}`,
       });
     } finally {
       setSending(false);
@@ -176,7 +183,7 @@ const AdminTelegramPanelPage: React.FC = () => {
           marginBottom: "6px",
         }}
       >
-        Concierge · Telegram channel
+        แอดมิน · Telegram channel
       </Typography>
       <Typography
         component="h1"
@@ -190,7 +197,7 @@ const AdminTelegramPanelPage: React.FC = () => {
           marginBottom: "8px",
         }}
       >
-        Post to <em style={{ color: "#FE0944", fontStyle: "italic" }}>@SunRed_BKK</em>
+        โพสต์เข้า <em style={{ color: "#FE0944", fontStyle: "italic" }}>{channelForLang(lang)}</em>
       </Typography>
       <Typography
         component="p"
@@ -200,8 +207,8 @@ const AdminTelegramPanelPage: React.FC = () => {
           marginBottom: "28px",
         }}
       >
-        Fires <code>postToChannelManual</code> Cloud Function · audit
-        log written to Firestore <code>telegramPosts</code> collection.
+        เลือก ประเภทโพสต์ · ภาษา · นักบำบัด · แล้วกดส่ง · ทุกโพสต์มี audit log
+        ใน Firestore (<code>telegramPosts</code>)
       </Typography>
 
       {/* Post kind picker */}
@@ -216,7 +223,7 @@ const AdminTelegramPanelPage: React.FC = () => {
           marginBottom: "10px",
         }}
       >
-        1. Post type
+        1. ประเภทโพสต์
       </Typography>
       <Stack spacing={1} sx={{ marginBottom: "24px" }}>
         {POST_KINDS.map((opt) => (
@@ -256,7 +263,7 @@ const AdminTelegramPanelPage: React.FC = () => {
           marginBottom: "10px",
         }}
       >
-        2. Language
+        2. ภาษา · ZH ส่งเข้า @manguyujianniSPA · อื่นๆ ส่ง @SunRed_BKK
       </Typography>
       <ToggleButtonGroup
         value={lang}
@@ -302,7 +309,7 @@ const AdminTelegramPanelPage: React.FC = () => {
               marginBottom: "10px",
             }}
           >
-            3. Practitioner
+            3. นักบำบัด
           </Typography>
           <Select
             fullWidth
@@ -312,8 +319,8 @@ const AdminTelegramPanelPage: React.FC = () => {
           >
             <MenuItem value="__auto__">
               {kind === "tonight"
-                ? "Auto-pick (live standby from admin dashboard)"
-                : "Auto-pick (next in editorial rotation)"}
+                ? "🟢 อัตโนมัติ · ดึง standby จาก Admin Dashboard"
+                : "🟢 อัตโนมัติ · หมุนเวียนตามคิว editorial"}
             </MenuItem>
             {ROSTER.map((t) => (
               <MenuItem key={t.id} value={t.id}>
@@ -332,8 +339,8 @@ const AdminTelegramPanelPage: React.FC = () => {
             }}
           >
             {kind === "tonight"
-              ? "Live standby = whoever has statusOverride: available OR is within working hours and not busy"
-              : "Editorial rotation skips Yuri — gives the other 11 a turn to be spotlighted"}
+              ? "Live standby = คนที่ Admin ตั้ง statusOverride = available หรือ Auto + อยู่ในเวลาทำงาน + ไม่ busy"
+              : "Editorial rotation = สลับ 11 คน (ไม่รวม Yuri) · ให้คนใหม่ได้ขึ้น spotlight"}
           </Typography>
         </>
       )}
@@ -352,7 +359,7 @@ const AdminTelegramPanelPage: React.FC = () => {
               marginBottom: "10px",
             }}
           >
-            3. Lineup (pick 2-4 · or use live standby)
+            3. รายชื่อ (เลือก 2-4 คน · หรือใช้ standby อัตโนมัติ)
           </Typography>
           {/* Auto-from-dashboard option · clears the manual chip selection */}
           <Box
@@ -372,11 +379,11 @@ const AdminTelegramPanelPage: React.FC = () => {
             }}
           >
             <Typography sx={{ fontSize: "13px", fontWeight: 600, color: "#16a34a" }}>
-              🟢 Auto from admin dashboard (live standby)
+              🟢 อัตโนมัติ · ดึง standby จาก Admin Dashboard
             </Typography>
             <Typography sx={{ fontSize: "11px", color: "#6b5b50", marginTop: "2px" }}>
-              Server fetches who's currently available · top 4 used in the lineup.
-              Tap any chip below to override.
+              Server ดึงคนที่ available ตอนนี้ · ใช้สูงสุด 4 คนแรก
+              · กด chip ด้านล่างเพื่อเลือกเอง
             </Typography>
           </Box>
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "24px" }}>
@@ -437,11 +444,71 @@ const AdminTelegramPanelPage: React.FC = () => {
           },
         }}
       >
-        {sending ? "Posting…" : "Post to channel"}
+        {sending ? "กำลังส่ง…" : "ส่งเข้าช่อง"}
       </Button>
 
+      {/* 🆕 Round 28s122 — สรุปก่อนส่ง (Thai gloss · แอดมินอ่านออกชัด) */}
+      <Box
+        sx={{
+          marginTop: "16px",
+          padding: "12px 14px",
+          borderRadius: "10px",
+          background: lang === "zh"
+            ? "rgba(254, 9, 68, 0.05)"
+            : "rgba(0, 0, 0, 0.03)",
+          border: `1px solid ${
+            lang === "zh" ? "rgba(254, 9, 68, 0.20)" : "rgba(0, 0, 0, 0.08)"
+          }`,
+        }}
+      >
+        <Typography
+          sx={{
+            fontSize: "10px",
+            fontWeight: 800,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: "#b85c3c",
+            marginBottom: "4px",
+          }}
+        >
+          สรุปก่อนส่ง
+        </Typography>
+        <Typography sx={{ fontSize: "12.5px", color: "#2a1a14", lineHeight: 1.5 }}>
+          จะส่ง <b>
+            {POST_KINDS.find((k) => k.value === kind)?.label.split(" · ")[0]}
+          </b>{" "}
+          ภาษา <b>{LANGS.find((l) => l.value === lang)?.label}</b>{" "}
+          เข้าช่อง <b>{channelForLang(lang)}</b>
+          {lang === "zh" ? " (曼谷遇你SPA)" : " (SunRed Pretty massage)"}
+          {needsSingleTherapist && therapistId !== "__auto__" && (
+            <> · นักบำบัด <b>
+              {ROSTER.find((r) => r.id === therapistId)?.name}
+            </b></>
+          )}
+          {needsSingleTherapist && therapistId === "__auto__" && (
+            <> · นักบำบัดเลือก<b>อัตโนมัติ</b>
+              {kind === "tonight" ? " (จาก standby)" : " (จาก rotation)"}</>
+          )}
+          {needsMultipleTherapists && lineupIds.length === 0 && (
+            <> · รายชื่อ<b>อัตโนมัติ</b> (ดึง standby)</>
+          )}
+          {needsMultipleTherapists && lineupIds.length > 0 && (
+            <> · {lineupIds.length} คน:{" "}
+              <b>
+                {lineupIds
+                  .map((id) => ROSTER.find((r) => r.id === id)?.name)
+                  .filter(Boolean)
+                  .join(" · ")}
+              </b>
+            </>
+          )}
+          {" · ลูกค้าทักกลับที่ "}
+          <b>{lang === "zh" ? "@YuNiSpaBkk" : "@SunRedvip_bkk"}</b>
+        </Typography>
+      </Box>
+
       <Typography sx={{ fontSize: "11px", color: "#9b8b80", marginTop: "12px", textAlign: "center" }}>
-        Target channel: <b>{channelForLang(lang)}</b>
+        ช่องเป้าหมาย: <b>{channelForLang(lang)}</b>
         {lang === "zh" ? " · 曼谷遇你SPA" : " · SunRed Pretty massage"}
       </Typography>
 
