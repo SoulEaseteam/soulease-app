@@ -12,6 +12,7 @@
 //        fallback + toast notification.
 
 import React, { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Box,
   Typography,
@@ -108,6 +109,9 @@ const DetailHero: React.FC<Props> = ({
   onRequestLocation,
   geoStatus = "idle",
 }) => {
+  // 🆕 Round 28s219 — i18n for hardcoded Thai "ดูทั้งหมด" overlay
+  //   (founder: "ทำไมเป็นภาษาไทย").
+  const { t } = useTranslation();
   // 🆕 Round 28b33 — Prefer the new prop. Fall back to the legacy
   //   string for callers that haven't migrated yet.
   const resolvedLabel = distanceLabel ?? distance ?? null;
@@ -344,7 +348,7 @@ const DetailHero: React.FC<Props> = ({
                           "0 4px 12px rgba(15, 23, 42, 0.40), inset 0 1px 0 rgba(255,255,255,0.25)",
                       }}
                     >
-                      ดูทั้งหมด
+                      {t("detail.gallery.viewAll", "View all")}
                     </Box>
                   </Box>
                 )}

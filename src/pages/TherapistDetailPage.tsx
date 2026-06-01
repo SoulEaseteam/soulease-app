@@ -45,6 +45,9 @@ import SchoolRoundedIcon from "@mui/icons-material/SchoolRounded";
 import ShieldRoundedIcon from "@mui/icons-material/ShieldRounded";
 import TherapistInfoSheet from "@/components/therapist/detail/TherapistInfoSheet";
 import StatusPill from "@/components/therapist/detail/StatusPill";
+// 🆕 Round 28s220 — Rolodex-style profile features card (ref: founder
+//   ROLADEX competitor screenshot).
+import FeaturesPanel from "@/components/therapist/detail/FeaturesPanel";
 // StickyBookCTA — kept on disk but no longer mounted (Phase 5 auto-nav).
 
 // 🆕 Phase 5 — Service + Duration + Date + Time picker now lives in ONE
@@ -663,11 +666,9 @@ const TherapistDetailPage: React.FC = () => {
     "profile" | "reviews" | "loyalty" | null
   >(null);
 
-  // 🆕 Round 28s208 (audit #9) — About panel sub-sections
-  //   (Credentials / Specialties / Languages) collapse by default
-  //   so the About tab fits on one screen. Guests tap "Show more
-  //   details" to expand.
-  const [showAboutDetails, setShowAboutDetails] = useState(false);
+  // 🆕 Round 28s221 — Show/Hide details toggle removed (founder
+  //   "ปรับ แก้ ทั้ง tab About"). FEATURES + Credentials + Specialties
+  //   + Languages now render always-visible under the About card.
 
   // Round 28s42 — Underline-tab state (founder ref: a hotel
   // overview screen with "ภาพรวม / นโยบายและเงื่อนไข" tabs).
@@ -1084,19 +1085,16 @@ const TherapistDetailPage: React.FC = () => {
       {/* ── About panel ─────────────────────────────────────────── */}
       {detailTab === "about" && (
         <Box role="tabpanel" sx={{ paddingTop: "12px" }}>
+          {/* 🆕 Round 28s221 — Drop the 3 fact-chip rows (info now lives
+              in FeaturesPanel below) + drop the embedded gallery (hero
+              handles photos). About card now renders only header + bio
+              quote — clean intro, no duplicate facts. */}
           <About
             name={therapist.name}
-            rows={therapist.aboutRows}
-            facts={therapist.aboutFacts}
+            rows={[]}
+            facts={[]}
             body={therapist.about}
             gender={therapist.gender}
-            images={therapist.images}
-            galleryAltBase={`${therapist.name} photo`}
-            enhance={(url, mode) =>
-              enhanceImage(url, {
-                variant: mode === "thumb" ? "card" : "hero",
-              })
-            }
           />
 
           {/* 🆕 Round 28s114 — Discovery Reservation callout (Phase 2 of
@@ -1170,65 +1168,28 @@ const TherapistDetailPage: React.FC = () => {
             </Box>
           )}
 
-          {/* Round 28s50 — Inline profile detail sections under the
-              About card so guests don't have to dig into the
-              centred InfoSheet to see Credentials / Specialties /
-              Languages. Each section is hidden when its source
-              array is empty.
-              🆕 Round 28s208 (audit #9) — Sections collapse behind a
-              "Show more details" toggle so the About tab opens compact. */}
+          {/* 🆕 Round 28s221 — Drop the "Show more details" toggle and
+              the embedded sub-sections. FEATURES + Credentials +
+              Specialties + Languages now always render below the About
+              card. Founder: "ปรับ แก้ ทั้ง tab About" — flatter, less
+              progressive disclosure. */}
           <Box
             sx={{
               maxWidth: 430,
               margin: "0 auto",
-              padding: "10px 20px 8px",
+              padding: "16px 20px 24px",
               display: "flex",
-              justifyContent: "center",
-            }}
-          >
-            <Box
-              component="button"
-              type="button"
-              onClick={() => setShowAboutDetails((p) => !p)}
-              aria-expanded={showAboutDetails}
-              sx={{
-                background: "transparent",
-                border: "1px solid rgba(15, 23, 42, 0.12)",
-                borderRadius: "999px",
-                padding: "7px 16px",
-                fontFamily: SANS,
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                color: "#1A2B2E",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                transition:
-                  "border-color 0.18s ease, background 0.18s ease",
-                "&:hover": {
-                  borderColor: "#B4000A",
-                  background: "rgba(180, 0, 10, 0.04)",
-                },
-              }}
-            >
-              {showAboutDetails
-                ? "Hide details ▴"
-                : "Show more details ▾"}
-            </Box>
-          </Box>
-          <Box
-            sx={{
-              maxWidth: 430,
-              margin: "0 auto",
-              padding: "10px 20px 24px",
-              display: showAboutDetails ? "flex" : "none",
               flexDirection: "column",
-              gap: "22px",
+              gap: "16px",
             }}
           >
+            {/* 🆕 Round 28s220 — Rolodex-style features panel (founder
+                ref: ROLADEX competitor). Shows physical + personality
+                descriptors in a clean info-table. Brand-voice compliant. */}
+            {realRecord?.features && (
+              <FeaturesPanel features={realRecord.features} />
+            )}
+
             {therapist.creds.length > 0 && (
               <Box>
                 <Typography

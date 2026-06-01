@@ -20,6 +20,13 @@ export interface Features {
   bodyType: string;
   bustSize?: string;
   hairColor?: string;
+  /** Round 28s220 — extended profile fields surfaced in the About
+   *  panel "Features" card. On-brand subset of competitor inventory
+   *  (descriptive · non-explicit). Optional so legacy docs stay valid. */
+  hairLength?: string;
+  eyeColor?: string;
+  tattoos?: string;
+  personality?: string;
   vaccinated?: string;
   smoker?: string;
   language: string;
