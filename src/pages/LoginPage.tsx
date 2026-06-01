@@ -147,7 +147,7 @@ const LoginPage: React.FC = () => {
           <Box sx={{ textAlign: "center", mt: -12 }}>
             <Box
               component="img"
-              src="/images/icon/User.gif"
+              src="/images/icon/User.webp"
               alt="User Icon"
               sx={{
                 width: 120,

@@ -109,8 +109,9 @@ export interface Therapist {
   }>;
   bioGeneratedAt?: FirestoreDateLike;
 
-  /** badge system */
-  badgeKey?: "VIP" | "HOT" | "NEW" | null;
+  /** badge system — TOP_RATED is the daily bestseller, assigned across the
+   *  roster in HomeTherapistGrid; VIP/HOT/NEW are per-therapist thresholds. */
+  badgeKey?: "TOP_RATED" | "VIP" | "HOT" | "NEW" | null;
   badgeUpdatedAt?: number | null;
 
   /** extra fields */

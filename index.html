@@ -114,14 +114,15 @@
       content="https://res.cloudinary.com/dhzvzvatb/image/fetch/w_1200,h_630,c_fit,b_white,f_jpg,q_auto:best/https://sunred.vip/images/og/sunred-share.svg"
     />
 
-    <!-- Hreflang — Asia foreign-customer focus -->
+    <!-- Hreflang — Asia foreign-customer focus. Path-based to match the
+         localized /zh /ja /ko home shells + /services pages (prerender-routes.mjs
+         homeHreflang). th is auto-detected client-side, not a crawl target. -->
     <link rel="alternate" hreflang="en" href="https://sunred.vip/" />
-    <link rel="alternate" hreflang="th" href="https://sunred.vip/?lang=th" />
-    <link rel="alternate" hreflang="zh" href="https://sunred.vip/?lang=zh" />
-    <link rel="alternate" hreflang="zh-CN" href="https://sunred.vip/?lang=zh" />
-    <link rel="alternate" hreflang="zh-TW" href="https://sunred.vip/?lang=zh" />
-    <link rel="alternate" hreflang="ja" href="https://sunred.vip/?lang=ja" />
-    <link rel="alternate" hreflang="ko" href="https://sunred.vip/?lang=ko" />
+    <link rel="alternate" hreflang="zh" href="https://sunred.vip/zh" />
+    <link rel="alternate" hreflang="zh-CN" href="https://sunred.vip/zh" />
+    <link rel="alternate" hreflang="zh-TW" href="https://sunred.vip/zh" />
+    <link rel="alternate" hreflang="ja" href="https://sunred.vip/ja" />
+    <link rel="alternate" hreflang="ko" href="https://sunred.vip/ko" />
     <link rel="alternate" hreflang="x-default" href="https://sunred.vip/" />
 
     <!-- Organization JSON-LD -->

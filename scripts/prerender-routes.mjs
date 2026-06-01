@@ -455,7 +455,89 @@ function therapistRoutes() {
   }));
 }
 
-const ROUTES = [...serviceRoutes(), ...therapistRoutes()];
+// ── Localized home pages (zh / ja / ko) ────────────────────────────────────
+// The EN home is dist/index.html itself (edited at source, not generated here).
+// Real visitors hitting /zh|/ja|/ko are redirected to / by App.tsx's
+// LocaleEntryRedirect; these static shells exist so JS-light crawlers (Baidu,
+// Naver) get a localized landing page on the most important URL, with a
+// path-based hreflang cluster consistent with the localized /services pages.
+const HOME_COPY = {
+  zh: {
+    title: "曼谷上门按摩 24小时 · 送达酒店 — 泰式 / 精油 / 尊享理疗 | SunRed",
+    desc: "SunRed 曼谷高端上门按摩，认证女性技师送达您的酒店、公寓或别墅 — Sukhumvit、Silom、Asok、Thonglor 等核心地段。泰式、芳香精油、尊享男士理疗。实时空闲、全天候24小时、支持微信支付与支付宝。",
+    ogTitle: "SunRed 曼谷 — 24小时上门按摩",
+    ogDesc:
+      "认证技师送达您的曼谷酒店、公寓或别墅。泰式·精油·尊享理疗。实时空闲、全天候24小时。",
+    h1: "曼谷上门按摩 — 送达您的酒店、公寓或别墅",
+    crumb: "首页",
+  },
+  ja: {
+    title:
+      "バンコク出張マッサージ 24時間 · ホテルへお届け — タイ古式 / アロマ / メンズ | SunRed",
+    desc: "SunRed バンコクの高級出張マッサージ。認定女性セラピストがホテル・ご滞在先へ訪問（Sukhumvit、Silom、Asok、Thonglor など）。タイ古式・アロマ・メンズシグネチャー。リアルタイム予約、24時間対応。",
+    ogTitle: "SunRed バンコク — 24時間出張マッサージ",
+    ogDesc:
+      "認定セラピストがバンコクのホテルへ出張。タイ古式・アロマ・メンズ。リアルタイム予約、24時間対応。",
+    h1: "バンコク出張マッサージ — ホテル・ご滞在先へお届け",
+    crumb: "ホーム",
+  },
+  ko: {
+    title:
+      "방콕 출장 마사지 24시간 · 호텔로 방문 — 타이 / 아로마 / 시그니처 | SunRed",
+    desc: "SunRed 방콕 프리미엄 출장 마사지. 인증 여성 테라피스트가 호텔·레지던스로 방문 (Sukhumvit, Silom, Asok, Thonglor 등). 타이·아로마·젠틀맨 시그니처. 실시간 예약, 24시간 운영.",
+    ogTitle: "SunRed 방콕 — 24시간 출장 마사지",
+    ogDesc:
+      "인증 테라피스트가 방콕 호텔·레지던스로 방문. 타이·아로마·시그니처. 실시간 예약, 24시간.",
+    h1: "방콕 출장 마사지 — 호텔·레지던스로 방문",
+    crumb: "홈",
+  },
+};
+
+function homeRoutes() {
+  return ["zh", "ja", "ko"].map((lang) => {
+    const L = LOC[lang];
+    const H = HOME_COPY[lang];
+    const pfx = `/${lang}`;
+    return {
+      path: pfx,
+      canonicalPath: pfx,
+      hreflang: homeHreflang(),
+      htmlLang: L.htmlLang,
+      ogLocale: L.ogLocale,
+      title: H.title,
+      description: H.desc,
+      ogTitle: H.ogTitle,
+      ogDescription: H.ogDesc,
+      jsonLd: [
+        breadcrumbJsonLd([
+          { name: L.brand, url: `${ORIGIN}/` },
+          { name: H.crumb, url: `${ORIGIN}${pfx}` },
+        ]),
+      ],
+      noscript: `
+        <h1>${H.h1}</h1>
+        <p>${L.servicesIntro}</p>
+        <h2>${L.menuHeading}</h2>
+        <ul>
+${SERVICES.map(
+  (s) =>
+    `          <li><a href="${ORIGIN}${pfx}/services/${s.slug}">${s[lang].name}</a> — ${L.fromPrice(
+      s.price
+    )} (${L.durations})</li>`
+).join("\n")}
+        </ul>
+        <h2>${L.reserveHeading}</h2>
+        <ul>
+          <li><a href="${ORIGIN}${pfx}/services">${L.allServices}</a></li>
+          <li><a href="https://lin.ee/uqvdwWt">LINE</a></li>
+          <li><a href="https://t.me/SunRedvip_bkk">Telegram</a></li>
+          <li><a href="https://wa.me/66634350987">WhatsApp</a></li>
+        </ul>`,
+    };
+  });
+}
+
+const ROUTES = [...serviceRoutes(), ...therapistRoutes(), ...homeRoutes()];
 
 // ── Replacement helpers (assert every swap fires) ──────────────────────────
 function replaceOnce(html, regex, replacement, label) {
@@ -492,6 +574,21 @@ function therapistHreflang(path) {
   return [
     `<link rel="alternate" hreflang="en" href="${ORIGIN}${path}" />`,
     `<link rel="alternate" hreflang="x-default" href="${ORIGIN}${path}" />`,
+  ].join("\n    ");
+}
+
+// Home cluster — EN root + the three localized home shells. Shared verbatim
+// by dist/index.html (edited at source) and the /zh|/ja|/ko home pages so the
+// reciprocal cluster matches. Path-based to mirror the localized /services.
+function homeHreflang() {
+  return [
+    `<link rel="alternate" hreflang="en" href="${ORIGIN}/" />`,
+    `<link rel="alternate" hreflang="zh" href="${ORIGIN}/zh" />`,
+    `<link rel="alternate" hreflang="zh-CN" href="${ORIGIN}/zh" />`,
+    `<link rel="alternate" hreflang="zh-TW" href="${ORIGIN}/zh" />`,
+    `<link rel="alternate" hreflang="ja" href="${ORIGIN}/ja" />`,
+    `<link rel="alternate" hreflang="ko" href="${ORIGIN}/ko" />`,
+    `<link rel="alternate" hreflang="x-default" href="${ORIGIN}/" />`,
   ].join("\n    ");
 }
 
@@ -561,8 +658,9 @@ function buildRouteHtml(template, route) {
     "twitter:description"
   );
   // hreflang cluster
-  const hl =
-    route.hreflangBase === null
+  const hl = route.hreflang
+    ? route.hreflang
+    : route.hreflangBase === null
       ? therapistHreflang(route.canonicalPath)
       : hreflangBlock(route.hreflangBase);
   html = replaceOnce(

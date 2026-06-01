@@ -2,19 +2,22 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
-  <!-- Home -->
+  <!-- Home + localized home shells (en/zh/ja/ko path-based, Round 28s223).
+       Path-based to match index.html + prerender homeHreflang reciprocity. -->
   <url>
     <loc>https://sunred.vip/</loc>
-    <lastmod>2026-05-31</lastmod>
+    <lastmod>2026-06-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/"/>
-    <xhtml:link rel="alternate" hreflang="th" href="https://sunred.vip/?lang=th"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/?lang=zh"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/?lang=ja"/>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/?lang=ko"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/"/>
   </url>
+  <url><loc>https://sunred.vip/zh</loc><lastmod>2026-06-02</lastmod><changefreq>daily</changefreq><priority>0.95</priority><xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/"/><xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh"/><xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja"/><xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko"/><xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/"/></url>
+  <url><loc>https://sunred.vip/ja</loc><lastmod>2026-06-02</lastmod><changefreq>daily</changefreq><priority>0.95</priority><xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/"/><xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh"/><xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja"/><xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko"/><xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/"/></url>
+  <url><loc>https://sunred.vip/ko</loc><lastmod>2026-06-02</lastmod><changefreq>daily</changefreq><priority>0.95</priority><xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/"/><xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh"/><xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja"/><xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko"/><xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/"/></url>
 
   <!-- Services menu + localized variants (en/zh/ja/ko path-based, Round 28s109).
        Each language version is listed with the full reciprocal hreflang cluster. -->
