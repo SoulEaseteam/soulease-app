@@ -31,7 +31,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 //    via dayjs.fromNow() — '2 days ago' beats '2025-11-22 01:30'.
 dayjs.extend(relativeTime);
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // =======================================================
@@ -192,7 +192,7 @@ const ReviewListPage: React.FC = () => {
   if (loading) {
     return (
       <Box minHeight="80vh" display="flex" justifyContent="center" alignItems="center">
-        <CircularProgress sx={{ color: "#FE0944" }} />
+        <CircularProgress sx={{ color: "#B4000A" }} />
       </Box>
     );
   }
@@ -207,10 +207,10 @@ const ReviewListPage: React.FC = () => {
         maxWidth: 430,
         margin: "0 auto",
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
+        background: "#F4F6F5",
         borderRadius: "28px",
         overflow: "hidden",
-        boxShadow: "0 20px 60px rgba(126, 30, 46, 0.15)",
+        boxShadow: "0 20px 60px rgba(15, 23, 42, 0.15)",
         position: "relative",
         pb: 10,
         fontFamily: SANS,
@@ -220,7 +220,7 @@ const ReviewListPage: React.FC = () => {
       <Box
         sx={{
           height: 110,
-          background: "linear-gradient(to bottom, #FE0944, #FEAE96)",
+          background: "#B4000A",
           position: "relative",
         }}
       >
@@ -275,7 +275,7 @@ const ReviewListPage: React.FC = () => {
           fontWeight={700}
           fontSize={26}
           mt={2}
-          sx={{ color: "#3c1e14", letterSpacing: "-0.02em" }}
+          sx={{ color: "#1A2B2E", letterSpacing: "-0.02em" }}
         >
           {therapistInfo.name || "Therapist"}
         </Typography>
@@ -284,7 +284,7 @@ const ReviewListPage: React.FC = () => {
           fontSize={13}
           mt={0.5}
           sx={{
-            color: "rgba(60, 30, 20, 0.6)",
+            color: "rgba(15, 23, 42, 0.6)",
             display: "inline-flex",
             alignItems: "center",
             gap: 0.5,
@@ -304,8 +304,8 @@ const ReviewListPage: React.FC = () => {
               p: 2.5,
               borderRadius: 4,
               background: "#fff",
-              border: "1px solid rgba(60,30,20,0.08)",
-              boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
+              border: "1px solid rgba(15, 23, 42,0.08)",
+              boxShadow: "0 4px 14px rgba(15, 23, 42, 0.06)",
               display: "flex",
               gap: 2.5,
               alignItems: "center",
@@ -317,7 +317,7 @@ const ReviewListPage: React.FC = () => {
                 fontFamily={SERIF}
                 fontWeight={700}
                 fontSize={36}
-                sx={{ color: "#FE0944", letterSpacing: "-0.02em", lineHeight: 1 }}
+                sx={{ color: "#B4000A", letterSpacing: "-0.02em", lineHeight: 1 }}
               >
                 {avgRating.toFixed(1)}
               </Typography>
@@ -330,7 +330,7 @@ const ReviewListPage: React.FC = () => {
               />
               <Typography
                 fontSize={11}
-                sx={{ color: "rgba(60, 30, 20, 0.55)", mt: 0.25 }}
+                sx={{ color: "rgba(15, 23, 42, 0.55)", mt: 0.25 }}
               >
                 {total} {total === 1 ? "review" : "reviews"}
               </Typography>
@@ -354,7 +354,7 @@ const ReviewListPage: React.FC = () => {
                       sx={{
                         width: 14,
                         textAlign: "right",
-                        color: "rgba(60, 30, 20, 0.7)",
+                        color: "rgba(15, 23, 42, 0.7)",
                         fontWeight: 600,
                       }}
                     >
@@ -380,7 +380,7 @@ const ReviewListPage: React.FC = () => {
                           height: "100%",
                           width: `${pct}%`,
                           background:
-                            "linear-gradient(90deg, #FE0944, #FE7A52)",
+                            "#B4000A",
                           transition: "width 0.4s ease",
                         }}
                       />
@@ -389,7 +389,7 @@ const ReviewListPage: React.FC = () => {
                       sx={{
                         width: 22,
                         textAlign: "right",
-                        color: "rgba(60, 30, 20, 0.55)",
+                        color: "rgba(15, 23, 42, 0.55)",
                         fontVariantNumeric: "tabular-nums",
                       }}
                     >
@@ -410,7 +410,7 @@ const ReviewListPage: React.FC = () => {
           fontWeight={600}
           fontSize={18}
           mb={2}
-          sx={{ color: "#3c1e14" }}
+          sx={{ color: "#1A2B2E" }}
         >
           ⭐ All Reviews ({reviews.length})
         </Typography>
@@ -464,7 +464,7 @@ const ReviewListPage: React.FC = () => {
                 sx={{
                   mt: 1,
                   display: "block",
-                  color: "rgba(60, 30, 20, 0.55)",
+                  color: "rgba(15, 23, 42, 0.55)",
                   fontSize: 11.5,
                 }}
                 title={(() => {

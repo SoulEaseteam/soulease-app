@@ -30,7 +30,7 @@ import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownR
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import { useTranslation } from "react-i18next";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 /** 5-star row that reflects an actual numeric rating (rounded to int). */
@@ -74,10 +74,10 @@ const DSectionH2: React.FC<{ children: React.ReactNode; em?: string }> = ({
       fontFamily: SERIF,
       fontWeight: 500,
       fontSize: "17px",
-      color: "#2a1a14",
+      color: "#1A2B2E",
       marginBottom: "8px",
       letterSpacing: "-0.01em",
-      "& em": { fontStyle: "italic", color: "#FE0944", fontWeight: 500 },
+      "& em": { fontStyle: "italic", color: "#B4000A", fontWeight: 500 },
     }}
   >
     {children}
@@ -123,7 +123,7 @@ const TONE_STYLES: Record<
   { iconBg: string; iconColor: string }
 > = {
   work: {
-    iconBg: "rgba(254, 122, 82, 0.12)",
+    iconBg: "rgba(214, 40, 40, 0.12)",
     iconColor: "#B85C3C",
   },
   ethnicity: {
@@ -131,8 +131,8 @@ const TONE_STYLES: Record<
     iconColor: "#16a34a",
   },
   body: {
-    iconBg: "rgba(254, 9, 68, 0.10)",
-    iconColor: "#FE0944",
+    iconBg: "rgba(15, 23, 42, 0.10)",
+    iconColor: "#B4000A",
   },
   language: {
     iconBg: "rgba(14, 165, 233, 0.10)",
@@ -377,7 +377,7 @@ export const About: React.FC<{
                       fontFamily: SANS,
                       fontSize: "13px",
                       fontWeight: 600,
-                      color: "#2a1a14",
+                      color: "#1A2B2E",
                       letterSpacing: "0.005em",
                       lineHeight: 1.45,
                     }}
@@ -446,7 +446,7 @@ export const About: React.FC<{
                       fontFamily: SANS,
                       fontSize: "11.5px",
                       fontWeight: 600,
-                      color: "rgba(60, 30, 20, 0.85)",
+                      color: "rgba(15, 23, 42, 0.85)",
                     }}
                   >
                     {f.text}
@@ -461,7 +461,7 @@ export const About: React.FC<{
             sx={{
               fontFamily: SANS,
               fontSize: "13px",
-              color: "rgba(60, 30, 20, 0.72)",
+              color: "rgba(15, 23, 42, 0.72)",
               lineHeight: 1.55,
               margin: 0,
             }}
@@ -616,7 +616,7 @@ export const GalleryTile: React.FC<{
         <Box
           component="span"
           sx={{
-            color: "rgba(60, 30, 20, 0.55)",
+            color: "rgba(15, 23, 42, 0.55)",
             fontWeight: 400,
             fontSize: "13px",
             fontFamily: SANS,
@@ -675,7 +675,7 @@ export const GalleryTile: React.FC<{
                 boxShadow: "0 6px 18px rgba(15, 23, 42, 0.12)",
               },
               "&:focus-visible": {
-                outline: "2px solid #FE0944",
+                outline: "2px solid #B4000A",
                 outlineOffset: 2,
               },
             }}
@@ -819,7 +819,7 @@ export const GalleryTile: React.FC<{
                   cursor: "pointer",
                   border:
                     i === openIdx
-                      ? "2px solid #FE7A52"
+                      ? "2px solid #D62828"
                       : "2px solid transparent",
                   opacity: i === openIdx ? 1 : 0.55,
                   transition: "opacity 0.15s ease, border-color 0.15s ease",
@@ -904,7 +904,7 @@ export const Credentials: React.FC<{ creds: Cred[] }> = ({ creds }) => {
                   fontFamily: SANS,
                   fontSize: "12px",
                   fontWeight: 700,
-                  color: "#2a1a14",
+                  color: "#1A2B2E",
                   marginBottom: "1px",
                 }}
               >
@@ -914,7 +914,7 @@ export const Credentials: React.FC<{ creds: Cred[] }> = ({ creds }) => {
                 sx={{
                   fontFamily: SANS,
                   fontSize: "10.5px",
-                  color: "rgba(60, 30, 20, 0.72)",
+                  color: "rgba(15, 23, 42, 0.72)",
                 }}
               >
                 {c.meta}
@@ -965,8 +965,8 @@ export const Specialties: React.FC<{ specs: Spec[] }> = ({ specs }) => {
                 height: 32,
                 borderRadius: "50%",
                 background:
-                  "linear-gradient(135deg, rgba(254,9,68,0.10), rgba(254,122,82,0.08))",
-                color: "#FE0944",
+                  "rgba(180, 0, 10, 0.09)",
+                color: "#B4000A",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -983,7 +983,7 @@ export const Specialties: React.FC<{ specs: Spec[] }> = ({ specs }) => {
                   fontFamily: SERIF,
                   fontWeight: 500,
                   fontSize: "13px",
-                  color: "#2a1a14",
+                  color: "#1A2B2E",
                   lineHeight: 1.2,
                 }}
               >
@@ -994,7 +994,7 @@ export const Specialties: React.FC<{ specs: Spec[] }> = ({ specs }) => {
                   sx={{
                     fontFamily: SANS,
                     fontSize: "9.5px",
-                    color: "rgba(60, 30, 20, 0.72)",
+                    color: "rgba(15, 23, 42, 0.72)",
                     fontWeight: 600,
                     marginTop: "2px",
                   }}
@@ -1050,14 +1050,14 @@ export const Languages: React.FC<{ langs: Lang[] }> = ({ langs }) => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+                background: "#B4000A",
                 color: "#fff",
                 fontFamily: SANS,
                 fontSize: "11px",
                 fontWeight: 800,
                 letterSpacing: "0.02em",
                 flexShrink: 0,
-                boxShadow: "0 2px 6px rgba(254, 9, 68, 0.22)",
+                boxShadow: "0 2px 6px rgba(15, 23, 42, 0.22)",
               }}
             >
               {LANG_CODE[l.name] ?? l.name.slice(0, 2).toUpperCase()}
@@ -1068,7 +1068,7 @@ export const Languages: React.FC<{ langs: Lang[] }> = ({ langs }) => {
                 fontFamily: SANS,
                 fontSize: "12.5px",
                 fontWeight: 600,
-                color: "#2a1a14",
+                color: "#1A2B2E",
               }}
             >
               {l.name}
@@ -1122,7 +1122,7 @@ export const Pricing: React.FC<{ items: Price[] }> = ({ items }) => {
                   fontFamily: SERIF,
                   fontWeight: 500,
                   fontSize: "13px",
-                  color: "#2a1a14",
+                  color: "#1A2B2E",
                 }}
               >
                 {p.name}
@@ -1131,7 +1131,7 @@ export const Pricing: React.FC<{ items: Price[] }> = ({ items }) => {
                 sx={{
                   fontFamily: SANS,
                   fontSize: "10px",
-                  color: "rgba(60, 30, 20, 0.72)",
+                  color: "rgba(15, 23, 42, 0.72)",
                   marginTop: "1px",
                 }}
               >
@@ -1143,7 +1143,7 @@ export const Pricing: React.FC<{ items: Price[] }> = ({ items }) => {
                 fontFamily: SERIF,
                 fontWeight: 600,
                 fontSize: "14px",
-                color: "#FE0944",
+                color: "#B4000A",
                 letterSpacing: "-0.02em",
               }}
             >
@@ -1200,7 +1200,7 @@ export const Calendar: React.FC<CalendarProps> = ({ days, slots }) => {
                 padding: "8px 10px",
                 borderRadius: "12px",
                 background: active
-                  ? "linear-gradient(135deg, #FE0944, #FE7A52)"
+                  ? "#B4000A"
                   : "#FFFFFF",
                 border: active
                   ? "1px solid rgba(255, 255, 255, 0.4)"
@@ -1210,7 +1210,7 @@ export const Calendar: React.FC<CalendarProps> = ({ days, slots }) => {
                 cursor: d.unavailable ? "not-allowed" : "pointer",
                 opacity: d.unavailable ? 0.45 : 1,
                 boxShadow: active
-                  ? "0 4px 12px rgba(254, 9, 68, 0.35)"
+                  ? "0 4px 12px rgba(15, 23, 42, 0.35)"
                   : "0 1px 2px rgba(15, 23, 42, 0.03)",
               }}
             >
@@ -1221,7 +1221,7 @@ export const Calendar: React.FC<CalendarProps> = ({ days, slots }) => {
                   fontWeight: 700,
                   textTransform: "uppercase",
                   letterSpacing: "0.05em",
-                  color: active ? "rgba(255, 255, 255, 0.85)" : "rgba(60, 30, 20, 0.72)",
+                  color: active ? "rgba(255, 255, 255, 0.85)" : "rgba(15, 23, 42, 0.72)",
                 }}
               >
                 {d.dow}
@@ -1231,7 +1231,7 @@ export const Calendar: React.FC<CalendarProps> = ({ days, slots }) => {
                   fontFamily: SERIF,
                   fontWeight: 600,
                   fontSize: "16px",
-                  color: active ? "#fff" : "#2a1a14",
+                  color: active ? "#fff" : "#1A2B2E",
                   marginTop: "1px",
                 }}
               >
@@ -1262,7 +1262,7 @@ export const Calendar: React.FC<CalendarProps> = ({ days, slots }) => {
                 padding: "8px 4px",
                 borderRadius: "10px",
                 background: active
-                  ? "linear-gradient(135deg, #FE0944, #FE7A52)"
+                  ? "#B4000A"
                   : "#FFFFFF",
                 border: active
                   ? "1px solid rgba(255, 255, 255, 0.4)"
@@ -1271,11 +1271,11 @@ export const Calendar: React.FC<CalendarProps> = ({ days, slots }) => {
                 fontFamily: SANS,
                 fontSize: "11px",
                 fontWeight: 700,
-                color: active ? "#fff" : "#2a1a14",
+                color: active ? "#fff" : "#1A2B2E",
                 cursor: s.taken ? "not-allowed" : "pointer",
                 ...(s.taken && { opacity: 0.4, textDecoration: "line-through" }),
                 boxShadow: active
-                  ? "0 4px 12px rgba(254, 9, 68, 0.3)"
+                  ? "0 4px 12px rgba(15, 23, 42, 0.30)"
                   : "0 1px 2px rgba(15, 23, 42, 0.03)",
               }}
             >
@@ -1318,7 +1318,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
           fontFamily: SERIF,
           fontWeight: 500,
           fontSize: "17px",
-          color: "#2a1a14",
+          color: "#1A2B2E",
           marginBottom: "8px",
           letterSpacing: "-0.01em",
         }}
@@ -1327,7 +1327,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
         <Box
           component="span"
           sx={{
-            color: "rgba(60, 30, 20, 0.72)",
+            color: "rgba(15, 23, 42, 0.72)",
             fontWeight: 400,
             fontSize: "13px",
             fontFamily: SANS,
@@ -1361,7 +1361,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
               fontFamily: SERIF,
               fontWeight: 600,
               fontSize: "32px",
-              color: "#FE0944",
+              color: "#B4000A",
               letterSpacing: "-0.03em",
               lineHeight: 1,
             }}
@@ -1375,7 +1375,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
             sx={{
               fontFamily: SANS,
               fontSize: "9.5px",
-              color: "rgba(60, 30, 20, 0.72)",
+              color: "rgba(15, 23, 42, 0.72)",
               marginTop: "2px",
               fontWeight: 600,
             }}
@@ -1393,7 +1393,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
                 gap: "6px",
                 fontFamily: SANS,
                 fontSize: "9.5px",
-                color: "rgba(60, 30, 20, 0.72)",
+                color: "rgba(15, 23, 42, 0.72)",
               }}
             >
               <Box sx={{ width: "8px", fontWeight: 700 }}>{b.num}</Box>
@@ -1410,7 +1410,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
                   sx={{
                     height: "100%",
                     width: `${b.pct}%`,
-                    background: "linear-gradient(90deg, #FE0944, #FE7A52)",
+                    background: "#B4000A",
                     borderRadius: "2px",
                   }}
                 />
@@ -1448,7 +1448,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
                 width: "32px",
                 height: "32px",
                 borderRadius: "50%",
-                background: "linear-gradient(135deg, #FE7A52, #FFB088)",
+                background: "#B4000A",
                 color: "#fff",
                 display: "flex",
                 alignItems: "center",
@@ -1466,7 +1466,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
                   fontFamily: SANS,
                   fontSize: "12px",
                   fontWeight: 700,
-                  color: "#2a1a14",
+                  color: "#1A2B2E",
                   display: "flex",
                   alignItems: "center",
                   gap: "5px",
@@ -1486,7 +1486,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
                 <Box
                   component="span"
                   sx={{
-                    color: "rgba(60, 30, 20, 0.72)",
+                    color: "rgba(15, 23, 42, 0.72)",
                     fontWeight: 400,
                     fontSize: "10px",
                   }}
@@ -1498,7 +1498,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
                 sx={{
                   fontFamily: SANS,
                   fontSize: "10px",
-                  color: "rgba(60, 30, 20, 0.72)",
+                  color: "rgba(15, 23, 42, 0.72)",
                   marginTop: "1px",
                 }}
               >
@@ -1513,7 +1513,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
               fontStyle: "italic",
               fontSize: "13px",
               lineHeight: 1.45,
-              color: "#2a1a14",
+              color: "#1A2B2E",
             }}
           >
             &ldquo;{r.quote}&rdquo;

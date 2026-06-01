@@ -19,10 +19,10 @@ import { useAuth } from "@/providers/AuthProvider";
 import { brand, fonts } from "@/theme";
 
 const TABS = [
-  { label: "Therapists", value: "/",                icon: (a: boolean) => <FaRegHeart   size={18} color={a ? "#fff" : "rgba(60,30,20,0.50)"} /> },
-  { label: "Services",   value: "/services",        icon: (a: boolean) => <SpaOutlined  sx={{ fontSize: 20, color: a ? "#fff" : "rgba(60,30,20,0.50)" }} /> },
-  { label: "History",    value: "/booking/history", icon: (a: boolean) => <FaRegFileAlt size={18} color={a ? "#fff" : "rgba(60,30,20,0.50)"} /> },
-  { label: "Profile",    value: "/profile",         icon: (a: boolean) => <UserCircle   size={20} color={a ? "#fff" : "rgba(60,30,20,0.50)"} /> },
+  { label: "Therapists", value: "/",                icon: (a: boolean) => <FaRegHeart   size={18} color={a ? "#fff" : "rgba(15, 23, 42,0.50)"} /> },
+  { label: "Services",   value: "/services",        icon: (a: boolean) => <SpaOutlined  sx={{ fontSize: 20, color: a ? "#fff" : "rgba(15, 23, 42,0.50)" }} /> },
+  { label: "History",    value: "/booking/history", icon: (a: boolean) => <FaRegFileAlt size={18} color={a ? "#fff" : "rgba(15, 23, 42,0.50)"} /> },
+  { label: "Profile",    value: "/profile",         icon: (a: boolean) => <UserCircle   size={20} color={a ? "#fff" : "rgba(15, 23, 42,0.50)"} /> },
 ] as const;
 
 const N    = TABS.length;  // 4
@@ -119,7 +119,7 @@ const BottomNavGlass: React.FC = () => {
           borderRight:  "1px solid rgba(255,255,255,0.6)",
           borderBottom: "none",
           boxShadow:
-            "0 -10px 28px rgba(254,9,68,0.10), 0 -2px 6px rgba(60,30,20,0.04)",
+            "0 -10px 28px rgba(15, 23, 42, 0.10), 0 -2px 6px rgba(15, 23, 42,0.04)",
           borderRadius: "22px 22px 0 0",
           px: 1, py: 0.75,
         }}
@@ -150,8 +150,8 @@ const BottomNavGlass: React.FC = () => {
                 left: 0,
                 width: pillW,
                 borderRadius: 999,
-                background: "linear-gradient(135deg, #FE0944, #FE7A52)",
-                boxShadow: "0 4px 14px rgba(254,9,68,0.30)",
+                background: "#B4000A",
+                boxShadow: "0 4px 14px rgba(15, 23, 42, 0.30)",
                 zIndex: 0,
                 pointerEvents: "none",
               }}
@@ -227,7 +227,7 @@ const BottomNavGlass: React.FC = () => {
                       fontWeight: active ? 700 : 600,
                       letterSpacing: "0.05em",
                       textTransform: "uppercase",
-                      color: active ? "#fff" : "rgba(60,30,20,0.55)",
+                      color: active ? "#fff" : "rgba(15, 23, 42,0.55)",
                       transition: "color 0.16s ease",
                       lineHeight: 1,
                     }}

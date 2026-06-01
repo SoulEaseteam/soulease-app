@@ -82,12 +82,12 @@ const ICON_BY_ID: Record<string, IconConfig> = {
   },
   "SR-Aroma": {
     icon: LocalFloristRoundedIcon,
-    swatchIcon: "#FE7A52",
+    swatchIcon: "#D62828",
     tier: "PREMIUM",
   },
   "SR-HJ2200": {
     icon: DiamondRoundedIcon,
-    swatchIcon: "#FE0944",
+    swatchIcon: "#B4000A",
     tier: "PREMIUM",
   },
   "SR-B2B3200": {
@@ -226,7 +226,7 @@ const ServiceDetailPage: React.FC = () => {
         maxWidth: 430,
         margin: "0 auto",
         background:
-          "linear-gradient(180deg, #FFF6EF 0%, #FCEBDC 60%, #FAFBFC 100%)",
+          "#F4F6F5",
         minHeight: "100vh",
         position: "relative",
         paddingBottom: "120px",
@@ -356,12 +356,12 @@ const ServiceDetailPage: React.FC = () => {
                     ? "1px solid transparent"
                     : "1px solid rgba(184, 92, 60, 0.18)",
                   background: isActive
-                    ? "linear-gradient(135deg, #FE0944, #FE7A52)"
+                    ? "#B4000A"
                     : "#fff",
                   color: isActive ? "#fff" : brand.text,
                   boxShadow: isActive
-                    ? "0 8px 22px rgba(254, 9, 68, 0.28), inset 0 1px 0 rgba(255,255,255,0.25)"
-                    : "0 1px 3px rgba(126, 30, 46, 0.05)",
+                    ? "0 8px 22px rgba(15, 23, 42, 0.28), inset 0 1px 0 rgba(255,255,255,0.25)"
+                    : "0 1px 3px rgba(15, 23, 42, 0.05)",
                   transition:
                     "background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease",
                   "&:hover": { transform: "translateY(-1px)" },
@@ -466,7 +466,7 @@ const ServiceDetailPage: React.FC = () => {
                   width: 20,
                   height: 20,
                   borderRadius: "50%",
-                  background: "rgba(254, 9, 68, 0.10)",
+                  background: "rgba(15, 23, 42, 0.10)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -532,7 +532,7 @@ const ServiceDetailPage: React.FC = () => {
                   borderRadius: "16px",
                   background: "#fff",
                   border: "1px solid rgba(184, 92, 60, 0.10)",
-                  boxShadow: "0 4px 12px rgba(126, 30, 46, 0.05)",
+                  boxShadow: "0 4px 12px rgba(15, 23, 42, 0.05)",
                 }}
               >
                 <Box
@@ -605,17 +605,17 @@ const ServiceDetailPage: React.FC = () => {
             sx={{
               padding: "14px 20px",
               borderRadius: "16px",
-              background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+              background: "#B4000A",
               color: "#fff",
               fontFamily: fonts.body,
               fontWeight: 700,
               fontSize: "15px",
               textTransform: "none",
               boxShadow:
-                "0 12px 32px rgba(254, 9, 68, 0.34), inset 0 1px 0 rgba(255,255,255,0.20)",
+                "0 12px 32px rgba(15, 23, 42, 0.34), inset 0 1px 0 rgba(255,255,255,0.20)",
               "&:hover": {
-                background: "linear-gradient(135deg, #E00738, #E76E48)",
-                boxShadow: "0 16px 40px rgba(254, 9, 68, 0.40)",
+                background: "#B4000A",
+                boxShadow: "0 16px 40px rgba(15, 23, 42, 0.40)",
               },
             }}
           >

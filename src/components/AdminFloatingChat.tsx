@@ -128,7 +128,7 @@ const AdminFloatingChat: React.FC = () => {
       : concierge.mode === "evening"
       ? "#F59E0B"
       : concierge.mode === "off"
-      ? "rgba(60,30,20,0.55)"
+      ? "rgba(15, 23, 42,0.55)"
       : brand.green;
   // Per-mode greeting copy — friendlier than the static "Hi! Need help"
   // because each mode answers a different unspoken guest question:
@@ -261,8 +261,8 @@ const AdminFloatingChat: React.FC = () => {
               padding: "16px 14px 12px",
               borderRadius: "20px",
               background: "#fff",
-              border: "1px solid rgba(126, 30, 46, 0.08)",
-              boxShadow: "0 8px 32px rgba(126, 30, 46, 0.14), 0 2px 8px rgba(0,0,0,0.06)",
+              border: "1px solid rgba(15, 23, 42, 0.08)",
+              boxShadow: "0 8px 32px rgba(15, 23, 42, 0.14), 0 2px 8px rgba(0,0,0,0.06)",
               transformOrigin: "bottom right",
               "@media (max-width: 500px)": {
                 bottom: 158,
@@ -388,7 +388,7 @@ const AdminFloatingChat: React.FC = () => {
                     padding: "8px 10px",
                     borderRadius: "12px",
                     background: "#F7F3F1",
-                    border: "1px solid rgba(126, 30, 46, 0.06)",
+                    border: "1px solid rgba(15, 23, 42, 0.06)",
                     textDecoration: "none",
                     transition: "background 0.2s ease, transform 0.2s ease",
                     "&:hover": {
@@ -474,8 +474,8 @@ const AdminFloatingChat: React.FC = () => {
               padding: "10px 14px 10px 12px",
               borderRadius: "16px",
               background: "#fff",
-              border: "1px solid rgba(126, 30, 46, 0.08)",
-              boxShadow: "0 8px 28px rgba(126, 30, 46, 0.12), 0 2px 6px rgba(0,0,0,0.05)",
+              border: "1px solid rgba(15, 23, 42, 0.08)",
+              boxShadow: "0 8px 28px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(0,0,0,0.05)",
               cursor: "pointer",
               // Decorative tail pointing toward the FAB
               "&::after": {
@@ -486,8 +486,8 @@ const AdminFloatingChat: React.FC = () => {
                 width: 14,
                 height: 14,
                 background: "#fff",
-                borderRight: "1px solid rgba(126, 30, 46, 0.08)",
-                borderBottom: "1px solid rgba(126, 30, 46, 0.08)",
+                borderRight: "1px solid rgba(15, 23, 42, 0.08)",
+                borderBottom: "1px solid rgba(15, 23, 42, 0.08)",
                 transform: "rotate(-45deg)",
               },
               "@media (max-width: 500px)": {
@@ -601,14 +601,14 @@ const AdminFloatingChat: React.FC = () => {
           borderRadius: "50%",
           border: "none",
           background:
-            "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+            "#B4000A",
           color: "#fff",
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           boxShadow:
-            "0 12px 28px rgba(254, 9, 68, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.32)",
+            "0 12px 28px rgba(15, 23, 42, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.32)",
           "&:focus-visible": {
             outline: `3px solid ${brand.red}`,
             outlineOffset: 3,

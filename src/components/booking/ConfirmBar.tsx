@@ -20,7 +20,7 @@ import { useTranslation } from "react-i18next";
 import { formatTHB } from "@/utils/servicePricing";
 import useTweenedNumber from "@/hooks/useTweenedNumber";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 export interface ConfirmBarProps {
@@ -61,7 +61,7 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
         width: "100%",
         maxWidth: "430px",
         zIndex: 50,
-        background: "rgba(255, 248, 240, 0.92)",
+        background: "rgba(244, 246, 245, 0.92)",
         backdropFilter: "blur(30px) saturate(180%)",
         WebkitBackdropFilter: "blur(30px) saturate(180%)",
         borderTop: "1px solid rgba(0, 0, 0, 0.06)",
@@ -70,7 +70,7 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
         display: "flex",
         alignItems: "center",
         gap: "12px",
-        boxShadow: "0 -8px 24px rgba(126, 30, 46, 0.08)",
+        boxShadow: "0 -8px 24px rgba(15, 23, 42, 0.08)",
       }}
     >
       <Box>
@@ -79,7 +79,7 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
             fontFamily: SANS,
             fontSize: "10px",
             fontWeight: 700,
-            color: "rgba(60, 30, 20, 0.55)",
+            color: "rgba(15, 23, 42, 0.55)",
             textTransform: "uppercase",
             letterSpacing: "0.08em",
           }}
@@ -92,7 +92,7 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
             fontFamily: SERIF,
             fontSize: "22px",
             fontWeight: 700,
-            color: "#FE0944",
+            color: "#B4000A",
             letterSpacing: "-0.02em",
             lineHeight: 1,
             marginTop: "2px",
@@ -117,16 +117,16 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
           flex: 1,
           height: 50,
           borderRadius: "999px",
-          background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+          background: "#B4000A",
           color: "#fff",
           fontFamily: SANS,
           fontSize: "15px",
           fontWeight: 700,
           letterSpacing: "0.02em",
           textTransform: "none",
-          boxShadow: "0 6px 20px rgba(254, 9, 68, 0.35)",
+          boxShadow: "0 6px 20px rgba(15, 23, 42, 0.35)",
           "&:hover": {
-            background: "linear-gradient(135deg, #E50840, #E56A47)",
+            background: "#B4000A",
           },
           "&.Mui-disabled": {
             background: "rgba(0, 0, 0, 0.12)",

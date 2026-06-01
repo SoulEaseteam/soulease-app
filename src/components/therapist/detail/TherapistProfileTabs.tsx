@@ -50,7 +50,7 @@ import SpaRoundedIcon from "@mui/icons-material/SpaRounded";
 import LocalFireDepartmentRoundedIcon from "@mui/icons-material/LocalFireDepartmentRounded";
 import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // ── shared types (kept loose to match existing DemoTherapist shape)
@@ -154,7 +154,7 @@ const TherapistProfileTabs: React.FC<Props> = ({
           backdropFilter: "blur(20px) saturate(180%)",
           WebkitBackdropFilter: "blur(20px) saturate(180%)",
           borderRadius: "16px 16px 0 0",
-          boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
+          boxShadow: "0 4px 14px rgba(15, 23, 42, 0.06)",
           overflow: "hidden",
         }}
       >
@@ -169,15 +169,15 @@ const TherapistProfileTabs: React.FC<Props> = ({
               fontSize: "12px",
               fontWeight: 700,
               textTransform: "none",
-              color: "rgba(60, 30, 20, 0.55)",
+              color: "rgba(15, 23, 42, 0.55)",
               minHeight: 48,
               gap: "4px",
               padding: "0 8px",
               minWidth: "auto",
-              "&.Mui-selected": { color: "#FE0944" },
+              "&.Mui-selected": { color: "#B4000A" },
             },
             "& .MuiTabs-indicator": {
-              background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+              background: "#B4000A",
               height: "3px",
               borderRadius: "2px 2px 0 0",
             },
@@ -205,7 +205,7 @@ const TherapistProfileTabs: React.FC<Props> = ({
           WebkitBackdropFilter: "blur(20px) saturate(180%)",
           borderRadius: "0 0 16px 16px",
           padding: "16px",
-          boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
+          boxShadow: "0 4px 14px rgba(15, 23, 42, 0.06)",
         }}
       >
         {tab === "profile" && (
@@ -282,7 +282,7 @@ const ProfileTab: React.FC<{
   if (totalSessions > 0) {
     trustCells.push({
       icon: <SpaRoundedIcon sx={{ fontSize: 18 }} />,
-      color: "#FE0944",
+      color: "#B4000A",
       value:
         totalSessions >= 1000
           ? `${Math.round(totalSessions / 100) / 10}k`
@@ -294,7 +294,7 @@ const ProfileTab: React.FC<{
   if (todayBookings > 0) {
     trustCells.push({
       icon: <LocalFireDepartmentRoundedIcon sx={{ fontSize: 18 }} />,
-      color: "#FE7A52",
+      color: "#D62828",
       value: `${todayBookings}`,
       label: "Today",
     });
@@ -317,8 +317,8 @@ const ProfileTab: React.FC<{
             padding: "14px 16px",
             borderRadius: "14px",
             background:
-              "linear-gradient(135deg, rgba(254, 9, 68, 0.08), rgba(254, 122, 82, 0.08))",
-            border: "1px solid rgba(254, 9, 68, 0.18)",
+              "#F4F6F5",
+            border: "1px solid rgba(15, 23, 42, 0.18)",
             display: "grid",
             gridTemplateColumns: `repeat(${trustCells.length}, 1fr)`,
             gap: "8px",
@@ -359,7 +359,7 @@ const ProfileTab: React.FC<{
                     fontFamily: SANS,
                     fontSize: "13px",
                     fontWeight: 600,
-                    color: "#3c1e14",
+                    color: "#1A2B2E",
                     lineHeight: 1.2,
                   }}
                 >
@@ -369,7 +369,7 @@ const ProfileTab: React.FC<{
                   sx={{
                     fontFamily: SANS,
                     fontSize: "11px",
-                    color: "rgba(60, 30, 20, 0.55)",
+                    color: "rgba(15, 23, 42, 0.55)",
                     marginTop: "2px",
                   }}
                 >
@@ -409,7 +409,7 @@ const ProfileTab: React.FC<{
                     fontFamily: SERIF,
                     fontSize: "13px",
                     fontWeight: 600,
-                    color: "#3c1e14",
+                    color: "#1A2B2E",
                     lineHeight: 1.1,
                   }}
                 >
@@ -422,7 +422,7 @@ const ProfileTab: React.FC<{
                     sx={{
                       fontFamily: SANS,
                       fontSize: "10.5px",
-                      color: "rgba(60, 30, 20, 0.55)",
+                      color: "rgba(15, 23, 42, 0.55)",
                       marginTop: "2px",
                     }}
                   >
@@ -462,7 +462,7 @@ const ProfileTab: React.FC<{
                     fontFamily: SANS,
                     fontSize: "12px",
                     fontWeight: 600,
-                    color: "#3c1e14",
+                    color: "#1A2B2E",
                   }}
                 >
                   {l.name}
@@ -473,7 +473,7 @@ const ProfileTab: React.FC<{
                     fontSize: "9.5px",
                     fontWeight: 800,
                     letterSpacing: "0.06em",
-                    color: isNative ? "#FE0944" : "rgba(60, 30, 20, 0.55)",
+                    color: isNative ? "#B4000A" : "rgba(15, 23, 42, 0.55)",
                     textTransform: "uppercase",
                   }}
                 >
@@ -497,7 +497,7 @@ const ProfileTab: React.FC<{
               textAlign: "center",
               fontFamily: SANS,
               fontSize: "12px",
-              color: "rgba(60, 30, 20, 0.5)",
+              color: "rgba(15, 23, 42, 0.5)",
               fontStyle: "italic",
             }}
           >
@@ -513,7 +513,7 @@ const TrustCell: React.FC<{
   color?: string;
   value: string;
   label: string;
-}> = ({ icon, color = "#3c1e14", value, label }) => (
+}> = ({ icon, color = "#1A2B2E", value, label }) => (
   <Box sx={{ textAlign: "center" }}>
     <Box
       sx={{
@@ -532,7 +532,7 @@ const TrustCell: React.FC<{
         fontFamily: SERIF,
         fontSize: "13px",
         fontWeight: 700,
-        color: "#3c1e14",
+        color: "#1A2B2E",
         lineHeight: 1.1,
       }}
     >
@@ -543,7 +543,7 @@ const TrustCell: React.FC<{
         fontFamily: SANS,
         fontSize: "9px",
         fontWeight: 600,
-        color: "rgba(60, 30, 20, 0.55)",
+        color: "rgba(15, 23, 42, 0.55)",
         textTransform: "uppercase",
         letterSpacing: "0.06em",
         marginTop: "2px",
@@ -591,7 +591,7 @@ const ReviewsTab: React.FC<{
               fontFamily: SERIF,
               fontSize: "36px",
               fontWeight: 700,
-              color: "#FE0944",
+              color: "#B4000A",
               lineHeight: 1,
               letterSpacing: "-0.02em",
             }}
@@ -602,7 +602,7 @@ const ReviewsTab: React.FC<{
             sx={{
               fontFamily: SANS,
               fontSize: "11px",
-              color: "rgba(60, 30, 20, 0.55)",
+              color: "rgba(15, 23, 42, 0.55)",
               marginTop: "4px",
             }}
           >
@@ -625,7 +625,7 @@ const ReviewsTab: React.FC<{
                   fontFamily: SANS,
                   fontSize: "10.5px",
                   fontWeight: 600,
-                  color: "rgba(60, 30, 20, 0.65)",
+                  color: "rgba(15, 23, 42, 0.65)",
                   width: "10px",
                 }}
               >
@@ -645,7 +645,7 @@ const ReviewsTab: React.FC<{
                     width: `${b.pct}%`,
                     height: "100%",
                     background:
-                      "linear-gradient(90deg, #FE0944, #FE7A52)",
+                      "#B4000A",
                     transition: "width 0.4s ease",
                   }}
                 />
@@ -654,7 +654,7 @@ const ReviewsTab: React.FC<{
                 sx={{
                   fontFamily: SANS,
                   fontSize: "10px",
-                  color: "rgba(60, 30, 20, 0.55)",
+                  color: "rgba(15, 23, 42, 0.55)",
                   width: "30px",
                   textAlign: "right",
                 }}
@@ -672,7 +672,7 @@ const ReviewsTab: React.FC<{
           sx={{
             fontFamily: SANS,
             fontSize: "12px",
-            color: "rgba(60, 30, 20, 0.5)",
+            color: "rgba(15, 23, 42, 0.5)",
             textAlign: "center",
             padding: "20px",
             fontStyle: "italic",
@@ -707,7 +707,7 @@ const ReviewsTab: React.FC<{
                       fontFamily: SANS,
                       fontSize: "12px",
                       fontWeight: 700,
-                      color: "rgba(60, 30, 20, 0.7)",
+                      color: "rgba(15, 23, 42, 0.7)",
                       letterSpacing: "0.04em",
                     }}
                   >
@@ -739,7 +739,7 @@ const ReviewsTab: React.FC<{
                 sx={{
                   fontFamily: SANS,
                   fontSize: "12px",
-                  color: "rgba(60, 30, 20, 0.78)",
+                  color: "rgba(15, 23, 42, 0.78)",
                   lineHeight: 1.5,
                   marginBottom: "4px",
                 }}
@@ -750,7 +750,7 @@ const ReviewsTab: React.FC<{
                 sx={{
                   fontFamily: SANS,
                   fontSize: "10px",
-                  color: "rgba(60, 30, 20, 0.5)",
+                  color: "rgba(15, 23, 42, 0.5)",
                 }}
               >
                 {r.ago} · {r.service}
@@ -850,7 +850,7 @@ const LoyaltyTab: React.FC<{
         sx={{
           padding: "32px 24px",
           textAlign: "center",
-          color: "rgba(60, 30, 20, 0.62)",
+          color: "rgba(15, 23, 42, 0.62)",
           fontFamily: SANS,
         }}
       >
@@ -863,10 +863,10 @@ const LoyaltyTab: React.FC<{
             height: 56,
             borderRadius: "50%",
             background:
-              "linear-gradient(135deg, rgba(254, 9, 68, 0.08), rgba(254, 122, 82, 0.08))",
+              "#F4F6F5",
             marginBottom: "14px",
             fontSize: "22px",
-            color: "#FE0944",
+            color: "#B4000A",
           }}
         >
           ✦
@@ -876,7 +876,7 @@ const LoyaltyTab: React.FC<{
             fontFamily: SERIF,
             fontSize: "17px",
             fontWeight: 600,
-            color: "#2a1a14",
+            color: "#1A2B2E",
             marginBottom: "6px",
           }}
         >
@@ -886,7 +886,7 @@ const LoyaltyTab: React.FC<{
           sx={{
             fontFamily: SANS,
             fontSize: "12.5px",
-            color: "rgba(60, 30, 20, 0.6)",
+            color: "rgba(15, 23, 42, 0.6)",
             lineHeight: 1.5,
             maxWidth: 280,
             margin: "0 auto",
@@ -907,8 +907,8 @@ const LoyaltyTab: React.FC<{
           padding: "16px 18px",
           borderRadius: "16px",
           background:
-            "linear-gradient(135deg, rgba(254, 9, 68, 0.08), rgba(254, 122, 82, 0.08))",
-          border: "1px solid rgba(254, 9, 68, 0.18)",
+            "#F4F6F5",
+          border: "1px solid rgba(15, 23, 42, 0.18)",
         }}
       >
         <Box
@@ -924,7 +924,7 @@ const LoyaltyTab: React.FC<{
               fontFamily: SERIF,
               fontSize: "36px",
               fontWeight: 700,
-              color: "#FE0944",
+              color: "#B4000A",
               letterSpacing: "-0.02em",
               lineHeight: 1,
             }}
@@ -936,7 +936,7 @@ const LoyaltyTab: React.FC<{
               fontFamily: SANS,
               fontSize: "12px",
               fontWeight: 600,
-              color: "rgba(60, 30, 20, 0.7)",
+              color: "rgba(15, 23, 42, 0.7)",
             }}
           >
             rebook rate
@@ -946,7 +946,7 @@ const LoyaltyTab: React.FC<{
           sx={{
             fontFamily: SANS,
             fontSize: "12px",
-            color: "rgba(60, 30, 20, 0.7)",
+            color: "rgba(15, 23, 42, 0.7)",
             lineHeight: 1.5,
           }}
         >
@@ -961,7 +961,7 @@ const LoyaltyTab: React.FC<{
             sx={{
               fontFamily: SANS,
               fontSize: "10px",
-              color: "rgba(60, 30, 20, 0.45)",
+              color: "rgba(15, 23, 42, 0.45)",
               fontStyle: "italic",
               marginTop: "4px",
             }}
@@ -997,7 +997,7 @@ const LoyaltyTab: React.FC<{
             fontFamily: SANS,
             fontSize: "10.5px",
             fontWeight: 800,
-            color: "rgba(60, 30, 20, 0.55)",
+            color: "rgba(15, 23, 42, 0.55)",
             textTransform: "uppercase",
             letterSpacing: "0.1em",
             marginBottom: "10px",
@@ -1009,13 +1009,13 @@ const LoyaltyTab: React.FC<{
         <BenchmarkBar
           label="This therapist"
           pct={headlinePct}
-          color="linear-gradient(90deg, #FE0944, #FE7A52)"
+          color="#B4000A"
           highlight
         />
         <BenchmarkBar
           label="Bangkok avg"
           pct={INDUSTRY_REBOOK_AVG}
-          color="rgba(60, 30, 20, 0.25)"
+          color="rgba(15, 23, 42, 0.25)"
         />
       </Box>
 
@@ -1026,7 +1026,7 @@ const LoyaltyTab: React.FC<{
             fontFamily: SANS,
             fontSize: "10.5px",
             fontWeight: 800,
-            color: "rgba(60, 30, 20, 0.55)",
+            color: "rgba(15, 23, 42, 0.55)",
             textTransform: "uppercase",
             letterSpacing: "0.1em",
             marginBottom: "10px",
@@ -1047,7 +1047,7 @@ const LoyaltyTab: React.FC<{
           <Box
             sx={{
               width: `${repeatPct}%`,
-              background: "linear-gradient(90deg, #FE0944, #FE7A52)",
+              background: "#B4000A",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -1063,11 +1063,11 @@ const LoyaltyTab: React.FC<{
           <Box
             sx={{
               width: `${firstTimePct}%`,
-              background: "rgba(60, 30, 20, 0.12)",
+              background: "rgba(15, 23, 42, 0.12)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "rgba(60, 30, 20, 0.7)",
+              color: "rgba(15, 23, 42, 0.7)",
               fontFamily: SANS,
               fontSize: "11px",
               fontWeight: 700,
@@ -1084,7 +1084,7 @@ const LoyaltyTab: React.FC<{
             marginTop: "8px",
             fontFamily: SANS,
             fontSize: "11px",
-            color: "rgba(60, 30, 20, 0.6)",
+            color: "rgba(15, 23, 42, 0.6)",
           }}
         >
           <Typography sx={{ fontSize: "11px" }}>
@@ -1103,7 +1103,7 @@ const LoyaltyTab: React.FC<{
             fontFamily: SANS,
             fontSize: "10.5px",
             fontWeight: 800,
-            color: "rgba(60, 30, 20, 0.55)",
+            color: "rgba(15, 23, 42, 0.55)",
             textTransform: "uppercase",
             letterSpacing: "0.1em",
             marginBottom: "10px",
@@ -1117,7 +1117,7 @@ const LoyaltyTab: React.FC<{
             key={b.label}
             label={b.label}
             pct={b.pct}
-            color="linear-gradient(90deg, #FE0944, #FE7A52)"
+            color="#B4000A"
           />
         ))}
       </Box>
@@ -1134,7 +1134,7 @@ const LoyaltyTab: React.FC<{
           sx={{
             fontFamily: SANS,
             fontSize: "10.5px",
-            color: "rgba(60, 30, 20, 0.55)",
+            color: "rgba(15, 23, 42, 0.55)",
             lineHeight: 1.5,
           }}
         >
@@ -1171,7 +1171,7 @@ const BenchmarkBar: React.FC<{
           fontFamily: SANS,
           fontSize: "11.5px",
           fontWeight: highlight ? 700 : 600,
-          color: highlight ? "#3c1e14" : "rgba(60, 30, 20, 0.7)",
+          color: highlight ? "#1A2B2E" : "rgba(15, 23, 42, 0.7)",
         }}
       >
         {label}
@@ -1181,7 +1181,7 @@ const BenchmarkBar: React.FC<{
           fontFamily: SANS,
           fontSize: "11.5px",
           fontWeight: 700,
-          color: highlight ? "#FE0944" : "rgba(60, 30, 20, 0.7)",
+          color: highlight ? "#B4000A" : "rgba(15, 23, 42, 0.7)",
         }}
       >
         {pct}%
@@ -1218,7 +1218,7 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({
         fontFamily: SANS,
         fontSize: "10.5px",
         fontWeight: 800,
-        color: "rgba(60, 30, 20, 0.55)",
+        color: "rgba(15, 23, 42, 0.55)",
         textTransform: "uppercase",
         letterSpacing: "0.1em",
         marginBottom: "8px",

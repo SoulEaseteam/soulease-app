@@ -30,7 +30,7 @@ import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 interface QA {
@@ -231,7 +231,7 @@ const FAQRow: React.FC<FAQRowProps> = ({ qa, open, onToggle }) => (
         cursor: "pointer",
         textAlign: "left",
         "&:focus-visible": {
-          outline: "2px solid #FE0944",
+          outline: "2px solid #B4000A",
           outlineOffset: 2,
           borderRadius: 4,
         },
@@ -243,7 +243,7 @@ const FAQRow: React.FC<FAQRowProps> = ({ qa, open, onToggle }) => (
           fontFamily: SERIF,
           fontSize: "14px",
           fontWeight: 500,
-          color: "#3c1e14",
+          color: "#1A2B2E",
           lineHeight: 1.4,
           flex: 1,
           letterSpacing: "-0.01em",
@@ -254,7 +254,7 @@ const FAQRow: React.FC<FAQRowProps> = ({ qa, open, onToggle }) => (
       <ExpandMoreRoundedIcon
         sx={{
           fontSize: 20,
-          color: open ? "#FE0944" : "rgba(60, 30, 20, 0.45)",
+          color: open ? "#B4000A" : "rgba(15, 23, 42, 0.45)",
           transform: open ? "rotate(180deg)" : "rotate(0deg)",
           transition: "transform 0.25s ease, color 0.2s ease",
           marginTop: "1px",
@@ -267,7 +267,7 @@ const FAQRow: React.FC<FAQRowProps> = ({ qa, open, onToggle }) => (
         sx={{
           fontFamily: SANS,
           fontSize: "12.5px",
-          color: "rgba(60, 30, 20, 0.78)",
+          color: "rgba(15, 23, 42, 0.78)",
           lineHeight: 1.65,
           paddingBottom: "14px",
           paddingRight: "8px",
@@ -323,10 +323,10 @@ export const HowItWorksFAQ: React.FC = () => {
             fontFamily: SERIF,
             fontSize: "22px",
             fontWeight: 500,
-            color: "#2a1a14",
+            color: "#1A2B2E",
             letterSpacing: "-0.02em",
             lineHeight: 1.2,
-            "& em": { fontStyle: "italic", color: "#FE0944" },
+            "& em": { fontStyle: "italic", color: "#B4000A" },
           }}
           dangerouslySetInnerHTML={{
             __html: t(
@@ -339,7 +339,7 @@ export const HowItWorksFAQ: React.FC = () => {
           sx={{
             fontFamily: SANS,
             fontSize: 12.5,
-            color: "rgba(60, 30, 20, 0.65)",
+            color: "rgba(15, 23, 42, 0.65)",
             lineHeight: 1.55,
             marginTop: "8px",
             fontStyle: "italic",
@@ -359,7 +359,7 @@ export const HowItWorksFAQ: React.FC = () => {
             borderRadius: "16px",
             background: "rgba(255, 255, 255, 0.7)",
             border: "1px solid rgba(255, 255, 255, 0.6)",
-            boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
+            boxShadow: "0 4px 14px rgba(15, 23, 42, 0.06)",
             padding: "16px 18px 6px",
           }}
         >
@@ -379,8 +379,8 @@ export const HowItWorksFAQ: React.FC = () => {
                 height: 30,
                 flexShrink: 0,
                 borderRadius: "9px",
-                background: "rgba(254, 9, 68, 0.10)",
-                color: "#FE0944",
+                background: "rgba(15, 23, 42, 0.10)",
+                color: "#B4000A",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -394,7 +394,7 @@ export const HowItWorksFAQ: React.FC = () => {
                 fontFamily: SERIF,
                 fontSize: "16px",
                 fontWeight: 600,
-                color: "#3c1e14",
+                color: "#1A2B2E",
                 letterSpacing: "-0.01em",
               }}
             >

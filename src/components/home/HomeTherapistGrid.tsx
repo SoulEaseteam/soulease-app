@@ -7,10 +7,14 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Therapist as TherapistType, Avail } from "@/types/therapist";
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
-import { getBadgeForTherapist } from "@/utils/getTherapistBadge";
+import { getBadgeForTherapist, pickTopRatedTherapistId } from "@/utils/getTherapistBadge";
 import { haversineKm } from "@/utils/taxiFare";
 
 import TherapistProfileCard from "@/components/TherapistProfileCard";
+// 🆕 Round 28s128 — Clean single-column list card for the home grid.
+//   Replaces the 2-column TherapistProfileCard layout per founder
+//   feedback ("หน้าเว็บรกมาก"). Old card kept for other surfaces.
+import TherapistMinimalCard from "@/components/TherapistMinimalCard";
 import TherapistSearchBar from "@/components/TherapistSearchBar";
 import HomeMapBrowse from "@/components/home/HomeMapBrowse";
 import { matchesQuery } from "@/utils/therapistSearch";
@@ -30,7 +34,7 @@ import { useConciergeMode } from "@/utils/conciergeMode";
 //   cards first.
 import { nowBKK } from "@/utils/time";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 interface Therapist extends TherapistType {
@@ -152,6 +156,12 @@ const HomeTherapistGrid: React.FC = () => {
         raw.push({ ...data, id: data.id || docSnap.id });
       });
 
+      // 🆕 Round 28s153 — TOP RATED is the daily bestseller. Picked
+      //   once across the whole roster (top 1 by todayBookings, tie-
+      //   broken by totalBookings, min 1 sale to qualify) so only
+      //   ONE practitioner ever wears the badge per day.
+      const topRatedId = pickTopRatedTherapistId(raw);
+
       const enriched = raw.map((t) => {
         const { status, nextAvailable } = calculateTherapistStatus(t);
         // Defensive: clamp engine output to known Avail union — admin
@@ -168,11 +178,13 @@ const HomeTherapistGrid: React.FC = () => {
           badgeKey: t.badgeKey,
           badgeUpdatedAt: t.badgeUpdatedAt,
         });
+        // TOP_RATED override — beats VIP/HOT/NEW for the day's #1.
+        const badgeKey = t.id === topRatedId ? "TOP_RATED" : badge.key;
         return {
           ...t,
           computedStatus: safeStatus,
           computedNext: nextAvailable ?? null,
-          badgeKey: badge.key,
+          badgeKey,
         };
       });
 
@@ -253,10 +265,11 @@ const HomeTherapistGrid: React.FC = () => {
   //
   //   Filters reset cleanly with "All".
   type RosterFilter = "all" | "available_now" | "express";
-  const [rosterFilter, setRosterFilter] = useState<RosterFilter>(() => {
-    const hour = nowBKK().hour();
-    return hour >= 22 || hour < 4 ? "available_now" : "all";
-  });
+  // 🆕 Round 28s166 — Filter UI removed (founder: "เอาตัวกรอง ออก").
+  //   Default fixed to "all" so the grid shows every practitioner;
+  //   the prime-hours auto-flip to "available_now" no longer makes
+  //   sense without a visible chip explaining the filter.
+  const [rosterFilter, setRosterFilter] = useState<RosterFilter>("all");
 
   // ── Apply search filter (free-text) + roster filter.
   //   Round 28s2 — area chip filter dropped (see comment near top of file).
@@ -322,9 +335,15 @@ const HomeTherapistGrid: React.FC = () => {
         // 🆕 Round 28b30 (perf #66) — Reserve vertical space BEFORE
         //   therapists load. PageSpeed flagged 0.097 CLS from this
         //   section: cards fly in from below the search bar, pushing
-        //   everything around as Firestore docs arrive. minHeight
-        //   sized for ~6 rows of 2-col cards (typical first-fold).
-        minHeight: { xs: "1200px", sm: "1400px" },
+        //   everything around as Firestore docs arrive.
+        // 🆕 Round 28s146 (audit #2) — minHeight halved (was
+        //   1200/1400 → now 800/900). Cards switched to single
+        //   column (28s128) so the old 2-col 6-row reservation was
+        //   way over-budget — guests saw a giant empty cream void
+        //   under "Available now" when supply was low, which looked
+        //   broken. 800px ≈ first 4 cards of the list + filter chips,
+        //   still enough to absorb the Firestore load without CLS.
+        minHeight: { xs: "800px", sm: "900px" },
       }}
     >
       {/* Header: serif title + live count.
@@ -343,49 +362,55 @@ const HomeTherapistGrid: React.FC = () => {
           single-color Fraunces serif title, a clean live-status
           pill, and the concierge headline as a quiet italic line —
           all in the same hierarchy register the hero now uses. */}
-      <Box sx={{ marginBottom: "14px", padding: "0 18px" }}>
-        <Typography
-          component="p"
-          sx={{
-            fontFamily: fonts.body,
-            fontSize: "11px",
-            fontWeight: 800,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: brand.accent,
-            marginBottom: "6px",
-          }}
-        >
-          Tonight · Bangkok
-        </Typography>
-
+      {/* 🆕 Round 28s165 — Founder: drop the "TONIGHT · BANGKOK"
+          eyebrow + "Our Therapists" H2. Header replaced with a
+          single centred tagline beneath TopNav.
+          "delivered to you." kept as italic accent in brand red,
+          matching the founder's original about-us card composition. */}
+      <Box
+        sx={{
+          margin: "8px 18px 18px",
+          textAlign: "center",
+        }}
+      >
+        {/* 🆕 Round 28s172 — Founder: "จัดให้พอดีกับจอ". Shrink size
+            + tighter line-height + force balanced two-line wrap via
+            CSS `text-wrap: balance` so the comma never strands a
+            single "delivered to you." word on its own line. */}
         <Typography
           component="h2"
           sx={{
             fontFamily: fonts.heading,
-            fontSize: "23px",
-            fontWeight: 600,
+            fontSize: { xs: 15, sm: 16 },
+            fontWeight: 500,
             color: brand.text,
-            letterSpacing: "-0.01em",
-            lineHeight: 1.1,
-            marginBottom: "8px",
+            letterSpacing: "0.005em",
+            lineHeight: 1.4,
+            textWrap: "balance",
+            // Cap width slightly under the 430px phone shell so the
+            // line never crowds the edges.
+            maxWidth: 380,
+            margin: "0 auto",
+            "& em": {
+              fontStyle: "italic",
+              fontWeight: 500,
+              color: brand.red,
+              whiteSpace: "nowrap",
+            },
           }}
-        >
-          Our Therapists
-        </Typography>
-
-        {!loading && therapists.length > 0 && availableNow > 0 && (
-          // Round 28s18 — Was a saturated green pill + an italic clay
-          // "On standby · Bangkok Tonight" line that re-stated the same
-          // thing. Founder: "ตรงไหน ดู ขัดตา เอา ออก". Green pill was
-          // the only non-cream/coral/red colour on the home — collapsed
-          // to a plain inline status with a single small dot and a
-          // muted body text. Concierge headline dropped (redundant).
+          dangerouslySetInnerHTML={{
+            __html:
+              "Bangkok's most discreet outcall massage, <em>delivered to you.</em>",
+          }}
+        />
+        {/* On-standby line kept compact, below the tagline. */}
+        {!loading && therapists.length > 0 && (
           <Box
             sx={{
               display: "inline-flex",
               alignItems: "center",
               gap: "8px",
+              marginTop: "10px",
             }}
           >
             <Box
@@ -394,8 +419,10 @@ const HomeTherapistGrid: React.FC = () => {
                 width: 7,
                 height: 7,
                 borderRadius: "50%",
-                background: brand.green,
-                boxShadow: `0 0 0 3px ${brand.green}22`,
+                background: availableNow > 0 ? brand.green : "#f59e0b",
+                boxShadow: `0 0 0 3px ${
+                  availableNow > 0 ? brand.green : "#f59e0b"
+                }22`,
                 flexShrink: 0,
               }}
             />
@@ -403,118 +430,25 @@ const HomeTherapistGrid: React.FC = () => {
               component="span"
               sx={{
                 fontFamily: fonts.body,
-                fontSize: "12.5px",
+                fontSize: "12px",
                 fontWeight: 600,
                 color: brand.textMuted,
                 letterSpacing: "0.005em",
               }}
             >
-              {availableNow} practitioners on standby
+              {availableNow > 0
+                ? `${availableNow} practitioners on standby`
+                : `All ${therapists.length} with guests — message concierge to be next`}
             </Typography>
           </Box>
         )}
       </Box>
 
-      {/* 🆕 Round 28r16 (founder 2026-05-07) — Roster filter strip.
-          Sits ABOVE the Areas chip strip so the highest-priority
-          filter (status: available now / express) is one tap away.
-          Pre-selected to "available_now" during prime hours so a
-          guest opening at 23:30 lands directly on actionable cards.
-          Each chip carries its own count so the guest knows
-          immediately whether the filter has anything in it. */}
-      <Box
-        role="group"
-        aria-label="Filter therapists by availability"
-        sx={{
-          display: "flex",
-          gap: "8px",
-          padding: "0 18px 12px",
-          overflowX: "auto",
-          scrollbarWidth: "none",
-          "&::-webkit-scrollbar": { display: "none" },
-        }}
-      >
-        {(
-          [
-            { id: "all", label: "All", count: sorted.length },
-            {
-              id: "available_now",
-              label: "● Available now",
-              count: totalAvailable,
-            },
-            { id: "express", label: "Express ≤5km", count: totalExpress },
-          ] as const
-        ).map((opt) => {
-          const isActive = rosterFilter === opt.id;
-          const isAvailableChip = opt.id !== "all";
-          return (
-            <Box
-              key={opt.id}
-              component="button"
-              type="button"
-              onClick={() => setRosterFilter(opt.id)}
-              aria-pressed={isActive}
-              sx={{
-                // Round 28s17 — chip refresh. Pill-shaped, soft
-                // fill at rest, brand-red gradient when active.
-                // Same register as hero CTAs so the whole home
-                // reads in one design language.
-                flexShrink: 0,
-                padding: "7px 14px",
-                borderRadius: 999,
-                fontFamily: fonts.body,
-                fontSize: 11.5,
-                fontWeight: 700,
-                letterSpacing: "0.005em",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                border: isActive
-                  ? "1px solid transparent"
-                  : "1px solid rgba(184, 92, 60, 0.15)",
-                background: isActive
-                  ? "linear-gradient(135deg, #FE0944, #FE7A52)"
-                  : "#fff",
-                color: isActive ? "#fff" : brand.text,
-                boxShadow: isActive
-                  ? "0 4px 12px rgba(254, 9, 68, 0.28), inset 0 1px 0 rgba(255,255,255,0.20)"
-                  : "0 1px 2px rgba(126, 30, 46, 0.04)",
-                transition:
-                  "background 0.18s ease, border-color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease",
-                "&:hover": {
-                  transform: "translateY(-1px)",
-                  boxShadow: isActive
-                    ? "0 6px 16px rgba(254, 9, 68, 0.32)"
-                    : "0 4px 10px rgba(126, 30, 46, 0.08)",
-                },
-                "&:focus-visible": {
-                  outline: `2px solid ${brand.red}`,
-                  outlineOffset: 2,
-                },
-              }}
-            >
-              {opt.label}
-              <Box
-                component="span"
-                sx={{
-                  fontSize: 10,
-                  fontWeight: 800,
-                  padding: "1px 6px",
-                  borderRadius: 999,
-                  background: isActive
-                    ? "rgba(255,255,255,0.22)"
-                    : "rgba(184, 92, 60, 0.10)",
-                  color: isActive ? "#fff" : brand.accent,
-                  opacity: 1,
-                }}
-              >
-                {opt.count}
-              </Box>
-            </Box>
-          );
-        })}
-      </Box>
+      {/* 🆕 Round 28s166 — Founder: "เอาตัวกรอง ออก". Roster filter
+          chip strip (All / Available now / Express ≤5km) removed
+          from the home. `rosterFilter` state still defaults to
+          "all" so every practitioner shows; the `visible` list
+          stays unfiltered until a future UI brings filtering back. */}
 
       {/* Round 28s2 — area chip strip removed (Sukhumvit/Asok/Thonglor
           chronically read "0", actively driving bounces). */}
@@ -531,7 +465,7 @@ const HomeTherapistGrid: React.FC = () => {
             alignItems: "center",
           }}
         >
-          <CircularProgress size={28} sx={{ color: "#FE0944" }} />
+          <CircularProgress size={28} sx={{ color: "#B4000A" }} />
         </Box>
       ) : visible.length === 0 ? (
         <Box
@@ -548,7 +482,7 @@ const HomeTherapistGrid: React.FC = () => {
             sx={{
               fontFamily: fonts.heading,
               fontSize: "15px",
-              color: "#3c1e14",
+              color: "#1A2B2E",
               fontWeight: 600,
             }}
           >
@@ -558,7 +492,7 @@ const HomeTherapistGrid: React.FC = () => {
             sx={{
               fontFamily: SANS,
               fontSize: "12px",
-              color: "rgba(60, 30, 20, 0.6)",
+              color: "rgba(15, 23, 42, 0.6)",
               marginTop: "4px",
             }}
           >
@@ -595,11 +529,11 @@ const HomeTherapistGrid: React.FC = () => {
               fontWeight: 700,
               letterSpacing: "0.01em",
               textDecoration: "none",
-              boxShadow: "0 8px 22px rgba(254, 9, 68, 0.28)",
+              boxShadow: "0 8px 22px rgba(15, 23, 42, 0.28)",
               transition: "transform 0.15s ease, box-shadow 0.15s ease",
               "&:hover": {
                 transform: "translateY(-1px)",
-                boxShadow: "0 10px 26px rgba(254, 9, 68, 0.34)",
+                boxShadow: "0 10px 26px rgba(15, 23, 42, 0.34)",
               },
             }}
           >
@@ -608,33 +542,52 @@ const HomeTherapistGrid: React.FC = () => {
           </Box>
         </Box>
       ) : (
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)",
-            gap: "10px",
-            padding: "0 14px 16px",
-          }}
-        >
-          {visible.map((t, i) => (
-            <TherapistProfileCard
-              key={t.id}
-              therapist={t}
-              priority={i < 2 /* eager-load top row for LCP */}
-              userLocation={userLocation}
-              services={servicesById}
-              // Round 28aw — pass requestLocation so the "Allow location"
-              // chip can trigger the browser permission prompt directly.
-              onRequestLocation={requestLocation}
-            />
-          ))}
-        </Box>
+        // 🆕 Round 28s128 — Single-column clean list (was 2-column dense
+        //   grid). Each card is the minimal portrait-right design that
+        //   matches the founder's reference. Old TherapistProfileCard
+        //   stays the import in case future iteration needs it but is
+        //   intentionally not rendered here. eslint silenced below.
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        (() => {
+          // Touch TherapistProfileCard so TS doesn't complain about the
+          // unused import while it's preserved for revert.
+          void TherapistProfileCard;
+          void userLocation;
+          void servicesById;
+          void requestLocation;
+          // 🆕 Round 28s166 — Filter UI dropped; the chip counts
+          //   + state setter + prime-hours helper are unused now.
+          void setRosterFilter;
+          void totalAvailable;
+          void totalExpress;
+          void nowBKK;
+          return (
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                padding: "0 14px 16px",
+              }}
+            >
+              {visible.map((t) => (
+                <TherapistMinimalCard
+                  key={t.id}
+                  therapist={t}
+                  computedStatus={t.computedStatus}
+                />
+              ))}
+            </Box>
+          );
+        })()
       )}
 
-      {/* 🆕 Round 26d — "Or browse by location ↓" map preview.
-          Shown only when there are therapists in the visible list and
-          we're not in a no-match search state. Pass the live user
-          position so pins can be projected at real lat/lng offsets. */}
+      {/* 🆕 Round 28s149 — HomeMapBrowse restored (founder pushback
+          on 28s146 removal: "โลเคชั่นหายลบไปทำไม"). For SunRed the
+          map is a real differentiator: tourists glance at which
+          practitioner is near their hotel before tapping a card,
+          and TG-channel competitors don't surface this. Removing
+          it was a generic-web-audit call that didn't apply to this
+          vertical. */}
       {!loading && visible.length > 0 && (
         <HomeMapBrowse
           therapists={visible}

@@ -224,7 +224,7 @@ const AdminDashboardPage: React.FC = () => {
       {/* ── dark hero ───────────────────────────────────────────────── */}
       <Box
         sx={{
-          background: "linear-gradient(160deg,#1a0805 0%,#3c1010 55%,#2d0909 100%)",
+          background: "#1A0805",
           px: { xs: 2, md: 3 },
           pt: 3, pb: 2.5,
           position: "relative",
@@ -233,7 +233,7 @@ const AdminDashboardPage: React.FC = () => {
             content: '""', position: "absolute",
             bottom: -32, left: "50%", transform: "translateX(-50%)",
             width: 300, height: 80, borderRadius: "50%",
-            background: "rgba(254,9,68,0.10)", filter: "blur(32px)",
+            background: "rgba(15, 23, 42, 0.10)", filter: "blur(32px)",
             pointerEvents: "none",
           },
         }}
@@ -262,7 +262,7 @@ const AdminDashboardPage: React.FC = () => {
               { label: "Pending", value: pendingBookings.length,         unit: "need action", accent: pendingBookings.length > 0 },
             ].map((s, i) => (
               <Box key={i} sx={{ flex: 1, textAlign: "center", borderRight: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
-                <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: s.accent ? "#FE7A52" : "#fff", lineHeight: 1 }}>
+                <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: s.accent ? "#D62828" : "#fff", lineHeight: 1 }}>
                   {s.value}
                 </Typography>
                 <Typography sx={{ fontFamily: SANS, fontSize: 10, color: "rgba(255,255,255,0.40)", mt: 0.4, textTransform: "uppercase", letterSpacing: "0.06em" }}>
@@ -281,8 +281,8 @@ const AdminDashboardPage: React.FC = () => {
           <motion.div {...fadeUp(0.05)}>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.25 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                <Box sx={{ width: 8, height: 8, borderRadius: "50%", background: "#FE0944", boxShadow: "0 0 0 3px rgba(254,9,68,0.20)" }} />
-                <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "#FE0944", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: "50%", background: "#B4000A", boxShadow: "0 0 0 3px rgba(15, 23, 42, 0.20)" }} />
+                <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "#B4000A", letterSpacing: "0.1em", textTransform: "uppercase" }}>
                   Needs Confirmation — {pendingBookings.length}
                 </Typography>
               </Box>
@@ -290,8 +290,8 @@ const AdminDashboardPage: React.FC = () => {
                 onClick={() => navigate("/admin/bookings")}
                 sx={{ display: "flex", alignItems: "center", gap: 0.4, cursor: "pointer" }}
               >
-                <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, color: "rgba(60,30,20,0.45)" }}>View all</Typography>
-                <ArrowRight size={13} color="rgba(60,30,20,0.40)" />
+                <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, color: "rgba(15, 23, 42,0.45)" }}>View all</Typography>
+                <ArrowRight size={13} color="rgba(15, 23, 42,0.40)" />
               </Box>
             </Box>
 
@@ -310,22 +310,22 @@ const AdminDashboardPage: React.FC = () => {
                         p: "12px 14px",
                         borderRadius: "14px",
                         background: "#fff",
-                        border: "1px solid rgba(254,9,68,0.12)",
-                        boxShadow: "0 2px 8px rgba(254,9,68,0.06)",
+                        border: "1px solid rgba(15, 23, 42, 0.12)",
+                        boxShadow: "0 2px 8px rgba(180,0,10,0.06)",
                       }}
                     >
                       {/* red dot */}
-                      <Box sx={{ width: 8, height: 8, borderRadius: "50%", background: "#FE0944", flexShrink: 0 }} />
+                      <Box sx={{ width: 8, height: 8, borderRadius: "50%", background: "#B4000A", flexShrink: 0 }} />
 
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 700, color: "#1a0805", lineHeight: 1.2, mb: 0.2 }}>
                           {b.therapistName}
                         </Typography>
-                        <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(60,30,20,0.55)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.55)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {getServiceLabel(b.serviceId, b.serviceName)} · {dateLabel}
                         </Typography>
                         {b.userName && (
-                          <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "rgba(60,30,20,0.40)", mt: 0.1 }}>
+                          <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "rgba(15, 23, 42,0.40)", mt: 0.1 }}>
                             👤 {b.userName}
                           </Typography>
                         )}
@@ -333,7 +333,7 @@ const AdminDashboardPage: React.FC = () => {
 
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexShrink: 0 }}>
                         {(b.totalPrice || b.servicePrice) && (
-                          <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 700, color: "#FE0944" }}>
+                          <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 700, color: "#B4000A" }}>
                             {formatTHB(b.totalPrice ?? b.servicePrice ?? 0)}
                           </Typography>
                         )}
@@ -342,10 +342,10 @@ const AdminDashboardPage: React.FC = () => {
                           onClick={() => b.id && void confirmBooking(b.id)}
                           style={{
                             height: 34, padding: "0 14px", borderRadius: 999,
-                            background: "linear-gradient(135deg,#FE0944,#FE7A52)",
+                            background: "#B4000A",
                             color: "#fff", fontFamily: SANS, fontSize: 12, fontWeight: 700,
                             border: "none", cursor: "pointer",
-                            boxShadow: "0 3px 10px rgba(254,9,68,0.28)",
+                            boxShadow: "0 3px 10px rgba(15, 23, 42, 0.28)",
                             display: "flex", alignItems: "center", gap: 4,
                           }}
                         >
@@ -374,7 +374,7 @@ const AdminDashboardPage: React.FC = () => {
               alignItems: "center",
             }}
           >
-            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.08em", textTransform: "uppercase", mr: 0.5 }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.08em", textTransform: "uppercase", mr: 0.5 }}>
               Period
             </Typography>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -411,15 +411,15 @@ const AdminDashboardPage: React.FC = () => {
 
         {/* ── period stat cards ────────────────────────────────────────── */}
         <motion.div {...fadeUp(0.10)}>
-          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.25 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.25 }}>
             Period Summary — {startDate.format("D MMM")} to {endDate.format("D MMM YYYY")}
           </Typography>
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4,1fr)" }, gap: 1.5 }}>
             {[
-              { icon: <CalendarBlank size={18} weight="duotone" />, label: "Bookings",    value: String(stats.periodBookings),       color: "#FE0944" },
+              { icon: <CalendarBlank size={18} weight="duotone" />, label: "Bookings",    value: String(stats.periodBookings),       color: "#B4000A" },
               { icon: <ChartBar      size={18} weight="duotone" />, label: "Service Rev", value: money(stats.periodService),        color: "#16a34a" },
               { icon: <Buildings     size={18} weight="duotone" />, label: "Shop 40%",    value: money(stats.periodShop),          color: "#7c3aed" },
-              { icon: <XCircle       size={18} weight="duotone" />, label: "Cancelled",   value: String(stats.periodCancelled),     color: "rgba(60,30,20,0.40)" },
+              { icon: <XCircle       size={18} weight="duotone" />, label: "Cancelled",   value: String(stats.periodCancelled),     color: "rgba(15, 23, 42,0.40)" },
             ].map((c) => (
               <Box
                 key={c.label}
@@ -432,7 +432,7 @@ const AdminDashboardPage: React.FC = () => {
               >
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.75, color: c.color }}>
                   {c.icon}
-                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
                     {c.label}
                   </Typography>
                 </Box>
@@ -461,13 +461,13 @@ const AdminDashboardPage: React.FC = () => {
                   p: "12px 14px",
                   cursor: "pointer",
                   display: "flex", alignItems: "center", gap: 1,
-                  "&:active": { background: "rgba(254,9,68,0.04)" },
+                  "&:active": { background: "rgba(180,0,10,0.04)" },
                 }}
               >
-                <Box sx={{ color: "#FE0944" }}>{c.icon}</Box>
+                <Box sx={{ color: "#B4000A" }}>{c.icon}</Box>
                 <Box>
                   <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: "#1a0805", lineHeight: 1 }}>{c.value}</Typography>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "rgba(60,30,20,0.45)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{c.label}</Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "rgba(15, 23, 42,0.45)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{c.label}</Typography>
                 </Box>
               </Box>
             ))}
@@ -484,20 +484,20 @@ const AdminDashboardPage: React.FC = () => {
                 p: "16px 16px 12px",
               }}
             >
-              <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.5 }}>
+              <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.5 }}>
                 Monthly Revenue
               </Typography>
               <ResponsiveContainer width="100%" height={isMobile ? 180 : 240}>
                 <BarChart data={stats.monthlyData} margin={{ top: 0, right: 4, left: -18, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,23,42,0.05)" />
-                  <XAxis dataKey="month" tick={{ fontFamily: SANS, fontSize: 11, fill: "rgba(60,30,20,0.50)" }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontFamily: SANS, fontSize: 10, fill: "rgba(60,30,20,0.40)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `฿${(v/1000).toFixed(0)}k`} />
+                  <XAxis dataKey="month" tick={{ fontFamily: SANS, fontSize: 11, fill: "rgba(15, 23, 42,0.50)" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontFamily: SANS, fontSize: 10, fill: "rgba(15, 23, 42,0.40)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `฿${(v/1000).toFixed(0)}k`} />
                   <Tooltip
                     contentStyle={{ fontFamily: SANS, fontSize: 12, borderRadius: 10, border: "1px solid rgba(15,23,42,0.08)", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
                     formatter={(value, name) => [name === "revenue" ? money(Number(value)) : value, name === "revenue" ? "Revenue" : "Bookings"]}
                   />
-                  <Bar dataKey="bookings" fill="rgba(254,9,68,0.15)" radius={[4,4,0,0]} name="bookings" />
-                  <Bar dataKey="revenue"  fill="#FE0944"              radius={[4,4,0,0]} name="revenue" />
+                  <Bar dataKey="bookings" fill="rgba(15, 23, 42, 0.15)" radius={[4,4,0,0]} name="bookings" />
+                  <Bar dataKey="revenue"  fill="#B4000A"              radius={[4,4,0,0]} name="revenue" />
                 </BarChart>
               </ResponsiveContainer>
             </Box>
@@ -506,7 +506,7 @@ const AdminDashboardPage: React.FC = () => {
 
         {/* ── quick action tiles ───────────────────────────────────────── */}
         <motion.div {...fadeUp(0.16)}>
-          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.25 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.25 }}>
             Quick Actions
           </Typography>
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(4,1fr)" }, gap: 1.25 }}>
@@ -522,14 +522,14 @@ const AdminDashboardPage: React.FC = () => {
                 onClick={() => t.blank ? window.open(t.path, "_blank") : navigate(t.path)}
                 style={{
                   borderRadius: 16, padding: "16px 12px",
-                  background: t.accent ? "linear-gradient(135deg,#FE0944,#FE7A52)" : "#fff",
+                  background: t.accent ? "#B4000A" : "#fff",
                   border: t.accent ? "none" : "1px solid rgba(15,23,42,0.07)",
                   cursor: "pointer",
                   display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-                  boxShadow: t.accent ? "0 4px 14px rgba(254,9,68,0.28)" : "0 1px 4px rgba(15,23,42,0.05)",
+                  boxShadow: t.accent ? "0 4px 14px rgba(15, 23, 42, 0.28)" : "0 1px 4px rgba(15,23,42,0.05)",
                 }}
               >
-                <Box sx={{ color: t.accent ? "#fff" : "#FE0944" }}>{t.icon}</Box>
+                <Box sx={{ color: t.accent ? "#fff" : "#B4000A" }}>{t.icon}</Box>
                 <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: t.accent ? "#fff" : "#1a0805" }}>
                   {t.label}
                 </Typography>

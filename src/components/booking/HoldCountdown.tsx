@@ -30,7 +30,7 @@ import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 type Tier = "calm" | "urgent" | "critical" | "expired";
@@ -82,8 +82,8 @@ const tierStyles: Record<
     pulseAnim: false,
   },
   critical: {
-    bg: "rgba(254, 9, 68, 0.10)",
-    border: "rgba(254, 9, 68, 0.32)",
+    bg: "rgba(15, 23, 42, 0.10)",
+    border: "rgba(15, 23, 42, 0.32)",
     titleColor: "#b91c1c",
     bodyColor: "rgba(127, 29, 29, 0.88)",
     icon: <ErrorOutlineRoundedIcon sx={{ fontSize: 18 }} />,
@@ -173,10 +173,10 @@ export const HoldCountdown: React.FC<HoldCountdownProps> = ({
           : "none",
         "@keyframes holdPulse": {
           "0%, 100%": {
-            boxShadow: "0 0 0 0 rgba(254, 9, 68, 0.0)",
+            boxShadow: "0 0 0 0 rgba(180, 0, 10, 0.0)",
           },
           "50%": {
-            boxShadow: "0 0 0 6px rgba(254, 9, 68, 0.18)",
+            boxShadow: "0 0 0 6px rgba(15, 23, 42, 0.18)",
           },
         },
         "@media (prefers-reduced-motion: reduce)": {
@@ -244,7 +244,7 @@ export const HoldCountdown: React.FC<HoldCountdownProps> = ({
             height: 30,
             paddingX: "12px",
             borderRadius: "999px",
-            background: "#FE0944",
+            background: "#B4000A",
             color: "#fff",
             fontFamily: SANS,
             fontWeight: 700,

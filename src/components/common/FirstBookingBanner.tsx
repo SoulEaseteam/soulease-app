@@ -19,7 +19,7 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import useFirstBookingDiscount from "@/hooks/useFirstBookingDiscount";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 const DISMISS_KEY = "sunred_dismissed_first10";
@@ -80,16 +80,16 @@ export const FirstBookingBanner: React.FC = () => {
         padding: "10px 12px",
         borderRadius: "16px",
         background:
-          "linear-gradient(135deg, rgba(254, 9, 68, 0.08), rgba(254, 122, 82, 0.10))",
-        border: "1px solid rgba(254, 9, 68, 0.20)",
+          "rgba(180, 0, 10, 0.06)",
+        border: "1px solid rgba(15, 23, 42, 0.20)",
         cursor: "pointer",
         transition: "transform 0.15s ease, box-shadow 0.15s ease",
         "&:hover": {
           transform: "translateY(-1px)",
-          boxShadow: "0 8px 22px rgba(254, 9, 68, 0.18)",
+          boxShadow: "0 8px 22px rgba(15, 23, 42, 0.18)",
         },
         "&:focus-visible": {
-          outline: "2px solid #FE0944",
+          outline: "2px solid #B4000A",
           outlineOffset: "2px",
         },
       }}
@@ -100,13 +100,13 @@ export const FirstBookingBanner: React.FC = () => {
           width: 32,
           height: 32,
           borderRadius: "10px",
-          background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+          background: "#B4000A",
           color: "#fff",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           flexShrink: 0,
-          boxShadow: "0 4px 10px rgba(254, 9, 68, 0.30)",
+          boxShadow: "0 4px 10px rgba(15, 23, 42, 0.30)",
         }}
       >
         <LocalOfferRoundedIcon sx={{ fontSize: 18 }} />

@@ -93,7 +93,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { haversineKm } from "@/utils/taxiFare";
 import { formatDistanceEta } from "@/utils/formatDistanceEta";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // Demo data shaped exactly to mockup Phone B. Keyed by `:id` so each card
@@ -162,7 +162,7 @@ function gradientForId(id: string): string {
   let hash = 0;
   for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
   const [a, b] = palette[Math.abs(hash) % palette.length];
-  return `linear-gradient(135deg, ${a}, ${b})`;
+  return a;
 }
 
 
@@ -181,15 +181,15 @@ const SERVICE_DISPLAY: Record<
     short: "Thai Traditional",
   },
   "SR-Aroma": {
-    icon: <LocalFloristRoundedIcon sx={{ fontSize: 18, color: "#FE7A52" }} />,
+    icon: <LocalFloristRoundedIcon sx={{ fontSize: 18, color: "#D62828" }} />,
     short: "Aromatherapy",
   },
   "SR-HJ2200": {
-    icon: <FitnessCenterRoundedIcon sx={{ fontSize: 18, color: "#3c1e14" }} />,
+    icon: <FitnessCenterRoundedIcon sx={{ fontSize: 18, color: "#1A2B2E" }} />,
     short: "Gentleman's Signature",
   },
   "SR-B2B3200": {
-    icon: <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#FE0944" }} />,
+    icon: <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#B4000A" }} />,
     short: "SunRed Therapeutic",
   },
 };
@@ -288,7 +288,7 @@ function buildFromReal(real: Therapist, lang?: string): DemoTherapist {
       const display = SERVICE_DISPLAY[sid];
       return {
         icon: display?.icon ?? (
-          <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#FE0944" }} />
+          <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#B4000A" }} />
         ),
         name: display?.short ?? sid,
         yrs: "", // empty → UI hides subtext line
@@ -776,6 +776,17 @@ const TherapistDetailPage: React.FC = () => {
     time: string,
   ) => {
     if (!therapist) return;
+    // 🆕 Round 28s141 — Holiday gate. Founder: "หน้าดีเทล ก็จองไม่ได้".
+    //   If admin toggled this practitioner to HOLIDAY in the
+    //   Therapist Manager, block the booking flow entry here too —
+    //   not just the home card. Guest sees an inline alert + the
+    //   concierge handle so they can request a future date.
+    if (engineStatus === "holiday") {
+      alert(
+        `${therapist.name} is on holiday today.\nPlease pick another practitioner or contact concierge for a future date.`,
+      );
+      return;
+    }
     // Round 28s54 — `setSelection` removed here; the StepService
     // onConfirm callback already sets it before calling this, so
     // the second write was a redundant render. This fn just
@@ -818,7 +829,7 @@ const TherapistDetailPage: React.FC = () => {
             fontFamily: SERIF,
             fontSize: "22px",
             fontWeight: 600,
-            color: "#2a1a14",
+            color: "#1A2B2E",
             marginBottom: "8px",
           }}
         >
@@ -827,7 +838,7 @@ const TherapistDetailPage: React.FC = () => {
         <Typography
           sx={{
             fontSize: "13.5px",
-            color: "rgba(60, 30, 20, 0.65)",
+            color: "rgba(15, 23, 42, 0.65)",
             marginBottom: "20px",
           }}
         >
@@ -845,7 +856,7 @@ const TherapistDetailPage: React.FC = () => {
             border: "1px solid rgba(184, 92, 60, 0.20)",
             borderRadius: 999,
             background: "#fff",
-            color: "#2a1a14",
+            color: "#1A2B2E",
             fontFamily: SANS,
             fontSize: "13px",
             fontWeight: 700,
@@ -873,7 +884,7 @@ const TherapistDetailPage: React.FC = () => {
         // Round 28s39 — paddingBottom removed; the sticky bottom
         // CTA moved inline after the About card.
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
+        background: "#F4F6F5",
         position: "relative",
       }}
     >
@@ -958,7 +969,7 @@ const TherapistDetailPage: React.FC = () => {
               fontFamily: SANS,
               fontSize: "13px",
               fontWeight: 600,
-              color: "#2a1a14",
+              color: "#1A2B2E",
             }}
           >
             {realRecord.startTime}–{realRecord.endTime}
@@ -967,7 +978,7 @@ const TherapistDetailPage: React.FC = () => {
                 component="span"
                 sx={{
                   fontWeight: 500,
-                  color: "rgba(60, 30, 20, 0.55)",
+                  color: "rgba(15, 23, 42, 0.55)",
                   marginLeft: "6px",
                 }}
               >
@@ -1045,18 +1056,18 @@ const TherapistDetailPage: React.FC = () => {
                 fontWeight: 700,
                 letterSpacing: "0.005em",
                 color: isActive
-                  ? "#FE0944"
-                  : "rgba(60, 30, 20, 0.55)",
+                  ? "#B4000A"
+                  : "rgba(15, 23, 42, 0.55)",
                 textAlign: "center",
                 transition: "color 0.18s ease",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 "&:hover": {
-                  color: isActive ? "#FE0944" : "#2a1a14",
+                  color: isActive ? "#B4000A" : "#1A2B2E",
                 },
                 "&:focus-visible": {
-                  outline: "2px solid #FE0944",
+                  outline: "2px solid #B4000A",
                   outlineOffset: 2,
                   borderRadius: "6px",
                 },
@@ -1069,7 +1080,7 @@ const TherapistDetailPage: React.FC = () => {
                   height: 3,
                   borderRadius: 3,
                   background: isActive
-                    ? "linear-gradient(135deg, #FE0944, #FE7A52)"
+                    ? "#B4000A"
                     : "transparent",
                   transition: "background 0.18s ease",
                 },
@@ -1114,7 +1125,7 @@ const TherapistDetailPage: React.FC = () => {
                 padding: "14px 18px",
                 borderRadius: "16px",
                 background:
-                  "linear-gradient(135deg, #FFF6EF 0%, #FCEBDC 100%)",
+                  "#F4F6F5",
                 border: "1px solid rgba(184, 92, 60, 0.18)",
                 display: "flex",
                 gap: "12px",
@@ -1126,7 +1137,7 @@ const TherapistDetailPage: React.FC = () => {
                 sx={{
                   fontSize: 22,
                   lineHeight: 1,
-                  color: "#FE0944",
+                  color: "#B4000A",
                   marginTop: "1px",
                 }}
               >
@@ -1156,7 +1167,7 @@ const TherapistDetailPage: React.FC = () => {
                     fontFamily: SERIF,
                     fontSize: "13.5px",
                     fontWeight: 500,
-                    color: "#2a1a14",
+                    color: "#1A2B2E",
                     lineHeight: 1.4,
                   }}
                 >
@@ -1217,7 +1228,7 @@ const TherapistDetailPage: React.FC = () => {
                         gap: "12px",
                       }}
                     >
-                      <Box sx={{ fontSize: "20px", color: "#2a1a14" }}>
+                      <Box sx={{ fontSize: "20px", color: "#1A2B2E" }}>
                         {c.icon}
                       </Box>
                       <Box>
@@ -1226,7 +1237,7 @@ const TherapistDetailPage: React.FC = () => {
                             fontFamily: SANS,
                             fontSize: "13px",
                             fontWeight: 700,
-                            color: "#2a1a14",
+                            color: "#1A2B2E",
                             lineHeight: 1.2,
                           }}
                         >
@@ -1236,7 +1247,7 @@ const TherapistDetailPage: React.FC = () => {
                           sx={{
                             fontFamily: SANS,
                             fontSize: "11.5px",
-                            color: "rgba(60, 30, 20, 0.6)",
+                            color: "rgba(15, 23, 42, 0.6)",
                             marginTop: "2px",
                           }}
                         >
@@ -1290,7 +1301,7 @@ const TherapistDetailPage: React.FC = () => {
                             fontFamily: SERIF,
                             fontSize: "14px",
                             fontWeight: 600,
-                            color: "#2a1a14",
+                            color: "#1A2B2E",
                             lineHeight: 1.15,
                           }}
                         >
@@ -1301,7 +1312,7 @@ const TherapistDetailPage: React.FC = () => {
                             sx={{
                               fontFamily: SANS,
                               fontSize: "11px",
-                              color: "rgba(60, 30, 20, 0.55)",
+                              color: "rgba(15, 23, 42, 0.55)",
                               marginTop: "1px",
                             }}
                           >
@@ -1358,7 +1369,7 @@ const TherapistDetailPage: React.FC = () => {
                             fontFamily: SANS,
                             fontSize: "13px",
                             fontWeight: 600,
-                            color: "#2a1a14",
+                            color: "#1A2B2E",
                           }}
                         >
                           {l.name}
@@ -1371,8 +1382,8 @@ const TherapistDetailPage: React.FC = () => {
                             fontWeight: 800,
                             letterSpacing: "0.08em",
                             color: isNative
-                              ? "#FE0944"
-                              : "rgba(60, 30, 20, 0.55)",
+                              ? "#B4000A"
+                              : "rgba(15, 23, 42, 0.55)",
                             textTransform: "uppercase",
                           }}
                         >
@@ -1424,7 +1435,7 @@ const TherapistDetailPage: React.FC = () => {
             fontFamily: SERIF,
             fontSize: "22px",
             fontWeight: 600,
-            color: "#2a1a14",
+            color: "#1A2B2E",
             letterSpacing: "-0.015em",
             lineHeight: 1.1,
             marginBottom: "6px",
@@ -1455,7 +1466,7 @@ const TherapistDetailPage: React.FC = () => {
           sx={{
             fontFamily: SANS,
             fontSize: "12px",
-            color: "rgba(60, 30, 20, 0.5)",
+            color: "rgba(15, 23, 42, 0.5)",
             textAlign: "center",
             marginTop: "14px",
             lineHeight: 1.5,
@@ -1583,12 +1594,12 @@ const PickerSection: React.FC<{
         fontFamily: SERIF,
         fontSize: "22px",
         fontWeight: 500,
-        color: "#2a1a14",
+        color: "#1A2B2E",
         letterSpacing: "-0.02em",
         marginBottom: subtitle ? "4px" : "16px",
         "& em": {
           fontStyle: "italic",
-          color: "#FE0944",
+          color: "#B4000A",
           fontWeight: 500,
         },
       }}
@@ -1600,7 +1611,7 @@ const PickerSection: React.FC<{
         sx={{
           fontFamily: SANS,
           fontSize: "12px",
-          color: "rgba(60, 30, 20, 0.6)",
+          color: "rgba(15, 23, 42, 0.6)",
           marginBottom: "16px",
         }}
       >

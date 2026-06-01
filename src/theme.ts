@@ -2,70 +2,91 @@
 import { createTheme } from "@mui/material/styles";
 
 // ─────────────────────────────────────────────────────────────────────
-// 🎨 BRAND tokens — verbatim from 00-handoff/BRAND.md
+// 🎨 BRAND tokens — Round 28s150 palette swap
+//
+// Source references:
+//   • Red base: DOT Podcast brand book (#B4000A — deep crimson, not
+//     the old hot #B4000A). Cleaner, more "editorial premium".
+//   • Neutrals + status: extracted from competitor (cbody.vip) palette,
+//     EXCLUDING their signature mint-teal CTA (#2EC4B0) so SunRed
+//     doesn't read as a clone. SunRed's primary action stays red.
+//
+// Founder direction (2026-XX): "เปลี่ยนสีธีมทั้งโปรเจค สีแดงตามนี้
+//   สีอื่นๆ ตามนี้ ยกเว้นเขียวแบบ cbody."
 // ─────────────────────────────────────────────────────────────────────
+// 🆕 Round 28s152 — Founder pushback on 28s151: "สีเขาเรา ดูเศร้าไปนะ
+//   พื้นหลัง สีแดง ok ละ แต่ไม่เอา เรืองแสง". Translation: bg + red
+//   are fine, but the page looks dead — bring some accent life back
+//   (stars · NEW badge · tag chips · soft favourite). No glow shadows
+//   though. Result: red CTA stays flat, plus 3 accents used SPARINGLY.
 export const brand = {
-  // primary palette
-  red: "#FE0944",            // primary CTA + italic accent + brand wordmark
-  coral: "#FE7A52",          // gradient pair with red
-  peach: "#FFB088",          // tertiary accent + animated blob
-  cream: "#FEC9A7",          // soft accent + animated blob
+  // ── Primary (kept from 28s151)
+  red: "#B4000A",            // CTA · brand wordmark · accent (flat)
+  text: "#1A2B2E",           // headings + dark surfaces
+  textMuted: "#4A5568",      // body copy + subtitles
+  bg1: "#F4F6F5",            // page background
+  bg2: "#F4F6F5",            // alias = bg1
+  green: "#16A34A",          // online dot ONLY
 
-  // 🆕 Round 28b1 (founder 2026-05-03): "Clean v3" — competitor-inspired
-  //   cooler neutral palette. Founder feedback: "อันนี้ ร้านคู่แข่ง
-  //   ดูว่ามันสบายตากว่า" — cool gray-green looks crisper than warm
-  //   cream because cards/photos pop instead of blending into the bg.
-  //   Keeping the SunRed red/coral accents — only the base canvas is
-  //   neutralised. Old warm cream tones kept as legacy aliases.
-  bg1: "#FAFBFC",            // top — neutral off-white (was #FAFBFC cream)
-  bg2: "#F1F3F5",            // bottom — soft cool gray (was #F1F3F5 sand)
-  /** Legacy warm cream tones — kept for backward compat. */
-  bg1Legacy: "#FFF8F0",
-  bg2Legacy: "#FCEBDC",
-  /** Round 28b0 warm cream pair — kept for any caller that
-   *  intentionally wants the previous cleaner-but-still-warm look. */
-  bg1Warm: "#FAFBFC",
-  bg2Warm: "#F1F3F5",
+  // ── Small accent palette (28s152 restoration · use sparingly)
+  amber: "#F5A623",          // ★ star ratings · NEW / TOP-RATED badge
+  pink: "#FFE5EC",           // favourite heart bg · subtle highlight
+  tagBlue: "#E0E7FF",        // tag chip bg "Natural" etc.
+  tagPeach: "#FFE7D6",       // tag chip bg "Fair-skin" etc.
 
-  // text
-  text: "#2a1a14",           // primary text on cream bg
-  textMuted: "rgba(60, 30, 20, 0.72)",
-
-  // accents
-  accent: "#b85c3c",         // eyebrow labels, decorative dividers
-  burgundy: "#831843",       // dark red accent, "live" status
-  green: "#16a34a",          // online indicator, success
-
-  // legacy aliases — kept for backward compat with files that still import them.
-  // do NOT add new uses — prefer the canonical names above.
-  ink: "#2a1a14",            // alias of `text`
+  // ── Legacy aliases — fewer aliases collapse onto red now
+  //   (peach + cream re-route to the amber/pink restoration above).
+  coral: "#B4000A",          // legacy gradient pair → solid red
+  peach: "#F5A623",          // legacy urgency badge → AMBER (restored)
+  cream: "#FFE5EC",          // legacy soft accent → PINK (restored)
+  accent: "#4A5568",         // eyebrow labels (cool gray)
+  burgundy: "#B4000A",       // dark accent → solid red
+  bg1Legacy: "#F4F6F5",
+  bg2Legacy: "#F4F6F5",
+  bg1Warm: "#F4F6F5",
+  bg2Warm: "#F4F6F5",
+  greenSoft: "#E8F8F5",      // available pill bg (soft mint)
+  ink: "#1A2B2E",
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────
-// 🌈 Gradient patterns — verbatim from BRAND.md
+// 🌈 "Gradients" — Round 28s151: founder direction "ไม่ต้องไล่สี".
+//   Every token below is now a flat solid colour expressed as a CSS
+//   gradient string so existing call sites (background: gradients.X)
+//   keep compiling. No more red→coral sunset · no more cream wash ·
+//   just clean editorial reds + neutral bg.
 // ─────────────────────────────────────────────────────────────────────
 export const gradients = {
-  /** Primary CTA — red→coral diagonal */
-  primary: `linear-gradient(135deg, ${brand.red}, ${brand.coral})`,
-  /** Section accent — warm cream bg gradient */
-  surface: `linear-gradient(180deg, ${brand.bg1} 0%, ${brand.bg2} 100%)`,
-  /** Final-CTA hero — full sunset (red → coral → peach) */
-  finalCta: `linear-gradient(135deg, ${brand.red} 0%, ${brand.coral} 50%, ${brand.peach} 100%)`,
+  /** Primary CTA — flat brand red */
+  primary: brand.red,
+  /** Section background — flat off-white */
+  surface: brand.bg1,
+  /** Final hero CTA — flat brand red (was sunset) */
+  finalCta: brand.red,
 
   // legacy aliases
-  primaryHover: `linear-gradient(135deg, #E00738, #E76E48)`,
+  primaryHover: "#7C0007", // single darker shade for hover state only
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────
 // 🔤 Font stacks — Fraunces (serif headlines + italic accent) + Inter (body).
 //    Both already loaded by Google Fonts <link> in index.html.
 // ─────────────────────────────────────────────────────────────────────
+// 🆕 Round 28s155 — Heading font swapped Cinzel → Italiana
+//   (founder reference image: "3. HOW WE MAY COLLECT YOUR
+//   PERSONAL INFORMATION" rendered in classical tall-narrow
+//   Roman caps). Cinzel kept as fallback for graceful degradation
+//   while Italiana streams in. Inter stays for body.
 const FONT_BODY =
   '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+// 🆕 Round 28s156 — Heading font: Federo (Art Deco Roman caps).
+//   Founder reference image showed even-stroke geometric letters
+//   with flat-top A, straight-stroke W, angled-leg R. Italiana
+//   and Cinzel retained as fallbacks while Federo streams in.
 const FONT_HEADING =
-  '"Fraunces", Georgia, "Times New Roman", serif';
-// Kept for legacy components still referencing the old wordmark stack
-const FONT_BRAND_SERIF = '"Fraunces", "Chonburi", serif';
+  '"Federo", "Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
+const FONT_BRAND_SERIF =
+  '"Federo", "Federo", "Italiana", "Cinzel", "Fraunces", "Chonburi", serif';
 
 export const fonts = {
   body: FONT_BODY,
@@ -86,7 +107,7 @@ export const glass = {
     WebkitBackdropFilter: "blur(30px) saturate(180%)",
     border: "1px solid rgba(255, 255, 255, 0.65)",
     boxShadow:
-      "0 12px 40px rgba(254, 9, 68, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.7)",
+      "0 12px 40px rgba(15, 23, 42, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.7)",
   },
   /** Top pill / nav — `blur(20px)`, `rgba(0.55)` */
   pill: {
@@ -221,10 +242,10 @@ const theme = createTheme({
         containedPrimary: {
           background: gradients.primary,
           boxShadow:
-            "0 8px 24px rgba(254, 9, 68, 0.30), inset 0 1px 0 rgba(255,255,255,0.30)",
+            "0 8px 24px rgba(15, 23, 42, 0.30), inset 0 1px 0 rgba(255,255,255,0.30)",
           "&:hover": {
             background: gradients.primaryHover,
-            boxShadow: "0 10px 28px rgba(254, 9, 68, 0.36)",
+            boxShadow: "0 10px 28px rgba(15, 23, 42, 0.36)",
           },
         },
       },

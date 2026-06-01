@@ -158,7 +158,7 @@ const AdminReportPage: React.FC = () => {
       {/* ── hero header ─────────────────────────────────────────────── */}
       <Box
         sx={{
-          background: "linear-gradient(160deg,#1a0805 0%,#3c1010 55%,#2d0909 100%)",
+          background: "#1A0805",
           px: { xs: 2, md: 3 }, pt: 3, pb: 2.5,
           display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 2, flexWrap: "wrap",
         }}
@@ -218,7 +218,7 @@ const AdminReportPage: React.FC = () => {
           <MenuItem value="__ALL__">All therapists</MenuItem>
           {summaries.map((s) => <MenuItem key={s.key} value={s.key}>{s.name}</MenuItem>)}
         </Select>
-        {loading && <CircularProgress size={16} sx={{ color: "#FE0944" }} />}
+        {loading && <CircularProgress size={16} sx={{ color: "#B4000A" }} />}
       </Box>
 
       <Box sx={{ px: { xs: 2, md: 3 }, pt: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
@@ -231,8 +231,8 @@ const AdminReportPage: React.FC = () => {
             { icon: <Taxi      size={16} weight="duotone" />, label: "Taxi",         value: thb(totals.taxi),   accent: false },
             { icon: <CalendarBlank size={16} weight="duotone" />, label: "Jobs Done", value: String(totals.jobs), accent: false },
           ].map((c) => (
-            <Box key={c.label} sx={{ borderRadius: "14px", background: c.accent ? "linear-gradient(135deg,#FE0944,#FE7A52)" : "#fff", border: c.accent ? "none" : "1px solid rgba(15,23,42,0.06)", p: "14px 16px", boxShadow: c.accent ? "0 4px 14px rgba(254,9,68,0.22)" : "0 1px 4px rgba(15,23,42,0.04)" }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.75, color: c.accent ? "rgba(255,255,255,0.70)" : "rgba(60,30,20,0.45)" }}>
+            <Box key={c.label} sx={{ borderRadius: "14px", background: c.accent ? "#B4000A" : "#fff", border: c.accent ? "none" : "1px solid rgba(15,23,42,0.06)", p: "14px 16px", boxShadow: c.accent ? "0 4px 14px rgba(15, 23, 42, 0.22)" : "0 1px 4px rgba(15,23,42,0.04)" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.75, color: c.accent ? "rgba(255,255,255,0.70)" : "rgba(15, 23, 42,0.45)" }}>
                 {c.icon}
                 <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "inherit" }}>{c.label}</Typography>
               </Box>
@@ -244,13 +244,13 @@ const AdminReportPage: React.FC = () => {
         </Box>
 
         {/* ── per-therapist pay cards ─────────────────────────────────── */}
-        <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+        <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
           Pay per therapist — {visible.length} staff
         </Typography>
 
         {visible.length === 0 && !loading && (
           <Box sx={{ textAlign: "center", py: 6 }}>
-            <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(60,30,20,0.35)" }}>No bookings in this period</Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(15, 23, 42,0.35)" }}>No bookings in this period</Typography>
           </Box>
         )}
 
@@ -258,7 +258,7 @@ const AdminReportPage: React.FC = () => {
           <motion.div key={s.key} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
             <Box sx={{ borderRadius: "18px", background: "#fff", border: "1px solid rgba(15,23,42,0.06)", overflow: "hidden", boxShadow: "0 2px 8px rgba(15,23,42,0.05)" }}>
               {/* stripe */}
-              <Box sx={{ height: 3, background: "linear-gradient(90deg,#FE0944,#FE7A52)" }} />
+              <Box sx={{ height: 3, background: "#B4000A" }} />
 
               <Box sx={{ p: "14px 16px" }}>
                 {/* name + badges */}
@@ -272,9 +272,9 @@ const AdminReportPage: React.FC = () => {
                       <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "#16a34a" }}>{s.jobs} งาน</Typography>
                     </Box>
                     {s.cancelled > 0 && (
-                      <Box sx={{ px: "9px", py: "3px", borderRadius: 999, background: "rgba(60,30,20,0.06)", display: "flex", alignItems: "center", gap: 0.4 }}>
-                        <XCircle size={11} color="rgba(60,30,20,0.45)" />
-                        <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.45)" }}>{s.cancelled} ยกเลิก</Typography>
+                      <Box sx={{ px: "9px", py: "3px", borderRadius: 999, background: "rgba(15, 23, 42,0.06)", display: "flex", alignItems: "center", gap: 0.4 }}>
+                        <XCircle size={11} color="rgba(15, 23, 42,0.45)" />
+                        <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)" }}>{s.cancelled} ยกเลิก</Typography>
                       </Box>
                     )}
                   </Box>
@@ -289,10 +289,10 @@ const AdminReportPage: React.FC = () => {
                     { label: "จ่ายนวด 60%", value: thb(s.worker),    highlight: true  },
                   ].map((c) => (
                     <Box key={c.label} sx={{ textAlign: "center" }}>
-                      <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.05em", textTransform: "uppercase", mb: 0.3 }}>
+                      <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.05em", textTransform: "uppercase", mb: 0.3 }}>
                         {c.label}
                       </Typography>
-                      <Typography sx={{ fontFamily: SERIF, fontSize: { xs: 13, sm: 14 }, fontWeight: 700, color: c.highlight ? "#FE0944" : "#1a0805" }}>
+                      <Typography sx={{ fontFamily: SERIF, fontSize: { xs: 13, sm: 14 }, fontWeight: 700, color: c.highlight ? "#B4000A" : "#1a0805" }}>
                         {c.value}
                       </Typography>
                     </Box>
@@ -306,8 +306,8 @@ const AdminReportPage: React.FC = () => {
                     onClick={() => setPreview(s)}
                     style={{
                       flex: 1, height: 36, borderRadius: 999,
-                      background: "rgba(60,30,20,0.05)", border: "1px solid rgba(15,23,42,0.08)",
-                      fontFamily: SANS, fontSize: 12, fontWeight: 600, color: "rgba(60,30,20,0.60)",
+                      background: "rgba(15, 23, 42,0.05)", border: "1px solid rgba(15,23,42,0.08)",
+                      fontFamily: SANS, fontSize: 12, fontWeight: 600, color: "rgba(15, 23, 42,0.60)",
                       cursor: "pointer",
                     }}
                   >
@@ -318,7 +318,7 @@ const AdminReportPage: React.FC = () => {
                     onClick={() => void exportOne(s)}
                     style={{
                       flex: 1, height: 36, borderRadius: 999,
-                      background: "linear-gradient(135deg,#FE0944,#FE7A52)", border: "none",
+                      background: "#B4000A", border: "none",
                       fontFamily: SANS, fontSize: 12, fontWeight: 700, color: "#fff",
                       cursor: "pointer", boxShadow: "0 3px 10px rgba(248, 248, 248, 0.25)",
                       display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
@@ -341,7 +341,7 @@ const AdminReportPage: React.FC = () => {
         fullWidth
         PaperProps={{ sx: { borderRadius: "20px", overflow: "hidden", m: { xs: 1, sm: 2 } } }}
       >
-        <Box sx={{ background: "linear-gradient(160deg,#1a0805 0%,#3c1010 100%)", px: 3, pt: 3, pb: 2.5 }}>
+        <Box sx={{ background: "#1A0805", px: 3, pt: 3, pb: 2.5 }}>
           <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: "rgba(255,255,255,0.40)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 0.5 }}>
             เปรียบเทียบรายได้
           </Typography>
@@ -382,7 +382,7 @@ const AdminReportPage: React.FC = () => {
                     { label: "นวด 60%",    align: "right"  as const },
                     { label: "% ของรวม",   align: "center" as const },
                   ].map((h) => (
-                    <th key={h.label} style={{ padding: "10px 14px", textAlign: h.align, fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: "rgba(60,30,20,0.50)", letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                    <th key={h.label} style={{ padding: "10px 14px", textAlign: h.align, fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: "rgba(15, 23, 42,0.50)", letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
                       {h.label}
                     </th>
                   ))}
@@ -394,7 +394,7 @@ const AdminReportPage: React.FC = () => {
                   const barW = totals.service > 0 ? (s.serviceTotal / totals.service) * 100 : 0;
                   return (
                     <tr key={s.key} style={{ borderBottom: "1px solid #F0EBE8", background: i % 2 === 0 ? "#fff" : "#FAFAF8" }}>
-                      <td style={{ padding: "10px 14px", textAlign: "center", fontSize: 12, color: "rgba(60,30,20,0.30)", fontWeight: 600 }}>{i + 1}</td>
+                      <td style={{ padding: "10px 14px", textAlign: "center", fontSize: 12, color: "rgba(15, 23, 42,0.30)", fontWeight: 600 }}>{i + 1}</td>
                       <td style={{ padding: "10px 14px" }}>
                         <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 700, color: "#1a0805" }}>{s.name}</Typography>
                       </td>
@@ -406,30 +406,30 @@ const AdminReportPage: React.FC = () => {
                       </td>
                       <td style={{ padding: "10px 14px", textAlign: "center" }}>
                         {s.cancelled > 0
-                          ? <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.4, px: "8px", py: "3px", borderRadius: 999, background: "rgba(254,9,68,0.07)" }}>
-                              <XCircle size={11} color="#FE0944" />
-                              <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: "#FE0944" }}>{s.cancelled}</Typography>
+                          ? <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.4, px: "8px", py: "3px", borderRadius: 999, background: "rgba(180,0,10,0.07)" }}>
+                              <XCircle size={11} color="#B4000A" />
+                              <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: "#B4000A" }}>{s.cancelled}</Typography>
                             </Box>
-                          : <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(60,30,20,0.25)" }}>—</Typography>}
+                          : <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.25)" }}>—</Typography>}
                       </td>
                       <td style={{ padding: "10px 14px", textAlign: "right" }}>
                         <Typography sx={{ fontFamily: SERIF, fontSize: 13, fontWeight: 600, color: "#1a0805" }}>{thb(s.serviceTotal)}</Typography>
                       </td>
                       <td style={{ padding: "10px 14px", textAlign: "right" }}>
-                        <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(60,30,20,0.55)" }}>{thb(s.taxiTotal)}</Typography>
+                        <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.55)" }}>{thb(s.taxiTotal)}</Typography>
                       </td>
                       <td style={{ padding: "10px 14px", textAlign: "right" }}>
                         <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: "#7c3aed" }}>{thb(s.shop)}</Typography>
                       </td>
                       <td style={{ padding: "10px 14px", textAlign: "right" }}>
-                        <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 800, color: "#FE0944" }}>{thb(s.worker)}</Typography>
+                        <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 800, color: "#B4000A" }}>{thb(s.worker)}</Typography>
                       </td>
                       <td style={{ padding: "10px 20px", minWidth: 110 }}>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                           <Box sx={{ flex: 1, height: 6, borderRadius: 999, background: "#EDE8E4", overflow: "hidden" }}>
-                            <Box sx={{ width: `${barW}%`, height: "100%", background: "linear-gradient(90deg,#FE0944,#FE7A52)", borderRadius: 999 }} />
+                            <Box sx={{ width: `${barW}%`, height: "100%", background: "#B4000A", borderRadius: 999 }} />
                           </Box>
-                          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.55)", minWidth: 34, textAlign: "right" }}>{pct}%</Typography>
+                          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.55)", minWidth: 34, textAlign: "right" }}>{pct}%</Typography>
                         </Box>
                       </td>
                     </tr>
@@ -437,7 +437,7 @@ const AdminReportPage: React.FC = () => {
                 })}
                 {/* totals row */}
                 <tr style={{ background: "#F7F3F1", borderTop: "2px solid #EDE8E4" }}>
-                  <td colSpan={2} style={{ padding: "12px 14px", fontFamily: SANS, fontSize: 12, fontWeight: 700, color: "rgba(60,30,20,0.60)" }}>รวมทั้งหมด</td>
+                  <td colSpan={2} style={{ padding: "12px 14px", fontFamily: SANS, fontSize: 12, fontWeight: 700, color: "rgba(15, 23, 42,0.60)" }}>รวมทั้งหมด</td>
                   <td style={{ padding: "12px 14px", textAlign: "center" }}>
                     <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 800, color: "#16a34a" }}>{totals.jobs}</Typography>
                   </td>
@@ -446,16 +446,16 @@ const AdminReportPage: React.FC = () => {
                     <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 800, color: "#1a0805" }}>{thb(totals.service)}</Typography>
                   </td>
                   <td style={{ padding: "12px 14px", textAlign: "right" }}>
-                    <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: "rgba(60,30,20,0.55)" }}>{thb(totals.taxi)}</Typography>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: "rgba(15, 23, 42,0.55)" }}>{thb(totals.taxi)}</Typography>
                   </td>
                   <td style={{ padding: "12px 14px", textAlign: "right" }}>
                     <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 800, color: "#7c3aed" }}>{thb(totals.shop)}</Typography>
                   </td>
                   <td style={{ padding: "12px 14px", textAlign: "right" }}>
-                    <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 800, color: "#FE0944" }}>{thb(totals.worker)}</Typography>
+                    <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 800, color: "#B4000A" }}>{thb(totals.worker)}</Typography>
                   </td>
                   <td style={{ padding: "12px 14px" }}>
-                    <Box sx={{ width: "100%", height: 6, borderRadius: 999, background: "linear-gradient(90deg,#FE0944,#FE7A52)" }} />
+                    <Box sx={{ width: "100%", height: 6, borderRadius: 999, background: "#B4000A" }} />
                   </td>
                 </tr>
               </tbody>
@@ -464,7 +464,7 @@ const AdminReportPage: React.FC = () => {
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 2.5, pt: 1.5, gap: 1, borderTop: "1px solid #EDE8E4" }}>
-          <Button onClick={() => setShowTable(false)} sx={{ borderRadius: 999, fontFamily: SANS, fontSize: 13, textTransform: "none", color: "rgba(60,30,20,0.45)" }}>
+          <Button onClick={() => setShowTable(false)} sx={{ borderRadius: 999, fontFamily: SANS, fontSize: 13, textTransform: "none", color: "rgba(15, 23, 42,0.45)" }}>
             ปิด
           </Button>
           <motion.button
@@ -472,9 +472,9 @@ const AdminReportPage: React.FC = () => {
             onClick={() => { void exportAll(); setShowTable(false); }}
             style={{
               height: 40, padding: "0 20px", borderRadius: 999,
-              background: "linear-gradient(135deg,#FE0944,#FE7A52)", border: "none",
+              background: "#B4000A", border: "none",
               fontFamily: SANS, fontSize: 13, fontWeight: 700, color: "#fff",
-              cursor: "pointer", boxShadow: "0 4px 12px rgba(254,9,68,0.28)",
+              cursor: "pointer", boxShadow: "0 4px 12px rgba(15, 23, 42, 0.28)",
               display: "flex", alignItems: "center", gap: 6,
             }}
           >
@@ -494,7 +494,7 @@ const AdminReportPage: React.FC = () => {
         {preview && (
           <>
             {/* hero strip */}
-            <Box sx={{ background: "linear-gradient(160deg,#1a0805 0%,#3c1010 100%)", px: 3, pt: 3, pb: 2.5 }}>
+            <Box sx={{ background: "#1A0805", px: 3, pt: 3, pb: 2.5 }}>
               <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: "rgba(255,255,255,0.40)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 0.5 }}>
                 สลิปค่าแรง
               </Typography>
@@ -511,7 +511,7 @@ const AdminReportPage: React.FC = () => {
                   { label: "จ่ายนวด",  value: thb(preview.worker) },
                 ].map((s, i) => (
                   <Box key={i} sx={{ flex: 1, textAlign: "center", borderRight: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
-                    <Typography sx={{ fontFamily: SERIF, fontSize: 17, fontWeight: 700, color: i === 2 ? "#FE7A52" : "#fff", lineHeight: 1 }}>{s.value}</Typography>
+                    <Typography sx={{ fontFamily: SERIF, fontSize: 17, fontWeight: 700, color: i === 2 ? "#D62828" : "#fff", lineHeight: 1 }}>{s.value}</Typography>
                     <Typography sx={{ fontFamily: SANS, fontSize: 10, color: "rgba(255,255,255,0.38)", mt: 0.3, textTransform: "uppercase", letterSpacing: "0.06em" }}>{s.label}</Typography>
                   </Box>
                 ))}
@@ -522,19 +522,19 @@ const AdminReportPage: React.FC = () => {
               {[
                 { label: "ค่าบริการรวม",       value: thb(preview.serviceTotal) },
                 { label: "Taxi รวม",           value: thb(preview.taxiTotal) },
-                { label: "ร้านได้ (40%)",       value: thb(preview.shop),    color: "rgba(60,30,20,0.55)" },
-                { label: "จ่ายนวด (60%)",      value: thb(preview.worker),  color: "#FE0944", bold: true },
-                ...(preview.cancelled > 0 ? [{ label: "ยกเลิก", value: `${preview.cancelled} ครั้ง`, color: "rgba(60,30,20,0.40)" }] : []),
+                { label: "ร้านได้ (40%)",       value: thb(preview.shop),    color: "rgba(15, 23, 42,0.55)" },
+                { label: "จ่ายนวด (60%)",      value: thb(preview.worker),  color: "#B4000A", bold: true },
+                ...(preview.cancelled > 0 ? [{ label: "ยกเลิก", value: `${preview.cancelled} ครั้ง`, color: "rgba(15, 23, 42,0.40)" }] : []),
               ].map((row) => (
                 <Box key={row.label} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.75, borderBottom: "1px solid rgba(15,23,42,0.05)" }}>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(60,30,20,0.55)" }}>{row.label}</Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(15, 23, 42,0.55)" }}>{row.label}</Typography>
                   <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: (row as any).bold ? 800 : 600, color: (row as any).color || "#1a0805" }}>{row.value}</Typography>
                 </Box>
               ))}
             </DialogContent>
 
             <DialogActions sx={{ px: 3, pb: 2.5, pt: 0, gap: 1 }}>
-              <Button onClick={() => setPreview(null)} sx={{ borderRadius: 999, fontFamily: SANS, fontSize: 13, textTransform: "none", color: "rgba(60,30,20,0.45)" }}>
+              <Button onClick={() => setPreview(null)} sx={{ borderRadius: 999, fontFamily: SANS, fontSize: 13, textTransform: "none", color: "rgba(15, 23, 42,0.45)" }}>
                 ปิด
               </Button>
               <motion.button
@@ -542,9 +542,9 @@ const AdminReportPage: React.FC = () => {
                 onClick={() => { void exportOne(preview); setPreview(null); }}
                 style={{
                   height: 40, padding: "0 20px", borderRadius: 999,
-                  background: "linear-gradient(135deg,#FE0944,#FE7A52)", border: "none",
+                  background: "#B4000A", border: "none",
                   fontFamily: SANS, fontSize: 13, fontWeight: 700, color: "#fff",
-                  cursor: "pointer", boxShadow: "0 4px 12px rgba(254,9,68,0.28)",
+                  cursor: "pointer", boxShadow: "0 4px 12px rgba(15, 23, 42, 0.28)",
                   display: "flex", alignItems: "center", gap: 6,
                 }}
               >

@@ -29,7 +29,7 @@ const LoadingSpinner: React.FC = () => {
           alignItems: "center",
           justifyContent: "center",
           flexDirection: "column",
-          background: "linear-gradient(to bottom right, #fff0f7, #f7f2ff)",
+          background: "#F4F6F5",
           overflow: "hidden",
           fontFamily: "Trebuchet MS, sans-serif",
         }}

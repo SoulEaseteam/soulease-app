@@ -19,7 +19,7 @@ import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 export interface AddressTileProps {
@@ -60,7 +60,7 @@ export const AddressTile: React.FC<AddressTileProps> = ({ location, onTap }) => 
         cursor: "pointer",
         background: "rgba(255, 255, 255, 0.85)",
         border: fullySet
-          ? "1.5px solid #FE0944"
+          ? "1.5px solid #B4000A"
           : "1px solid rgba(0, 0, 0, 0.06)",
         transition: "all 0.15s ease",
         "&:hover": { background: "rgba(255, 255, 255, 0.95)" },
@@ -73,12 +73,12 @@ export const AddressTile: React.FC<AddressTileProps> = ({ location, onTap }) => 
           flexShrink: 0,
           borderRadius: "10px",
           background: location.hasCoords
-            ? "linear-gradient(135deg, rgba(254, 9, 68, 0.14), rgba(254, 122, 82, 0.14))"
-            : "rgba(254, 201, 167, 0.35)",
+            ? "rgba(15, 23, 42, 0.12)"
+            : "rgba(255, 240, 240, 0.35)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "#FE0944",
+          color: "#B4000A",
         }}
       >
         <LocationOnRoundedIcon fontSize="small" />
@@ -91,7 +91,7 @@ export const AddressTile: React.FC<AddressTileProps> = ({ location, onTap }) => 
                 fontFamily: SERIF,
                 fontSize: "14px",
                 fontWeight: 600,
-                color: "#3c1e14",
+                color: "#1A2B2E",
                 lineHeight: 1.2,
                 whiteSpace: "nowrap",
                 overflow: "hidden",
@@ -104,7 +104,7 @@ export const AddressTile: React.FC<AddressTileProps> = ({ location, onTap }) => 
               sx={{
                 fontFamily: SANS,
                 fontSize: "11px",
-                color: "rgba(60, 30, 20, 0.6)",
+                color: "rgba(15, 23, 42, 0.6)",
                 marginTop: "2px",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
@@ -119,7 +119,7 @@ export const AddressTile: React.FC<AddressTileProps> = ({ location, onTap }) => 
                 sx={{
                   fontFamily: SANS,
                   fontSize: "11px",
-                  color: "rgba(60, 30, 20, 0.55)",
+                  color: "rgba(15, 23, 42, 0.55)",
                   marginTop: "3px",
                   display: "flex",
                   alignItems: "center",
@@ -141,7 +141,7 @@ export const AddressTile: React.FC<AddressTileProps> = ({ location, onTap }) => 
                 sx={{
                   fontFamily: SANS,
                   fontSize: "11px",
-                  color: "#FE0944",
+                  color: "#B4000A",
                   fontWeight: 600,
                   marginTop: "3px",
                   display: "flex",
@@ -160,7 +160,7 @@ export const AddressTile: React.FC<AddressTileProps> = ({ location, onTap }) => 
               fontFamily: SERIF,
               fontSize: "14px",
               fontWeight: 600,
-              color: "rgba(60, 30, 20, 0.55)",
+              color: "rgba(15, 23, 42, 0.55)",
               lineHeight: 1.2,
             }}
           >
@@ -172,7 +172,7 @@ export const AddressTile: React.FC<AddressTileProps> = ({ location, onTap }) => 
         aria-hidden
         sx={{
           fontSize: "20px",
-          color: fullySet ? "#FE0944" : "rgba(60, 30, 20, 0.35)",
+          color: fullySet ? "#B4000A" : "rgba(15, 23, 42, 0.35)",
           flexShrink: 0,
           fontWeight: 800,
         }}

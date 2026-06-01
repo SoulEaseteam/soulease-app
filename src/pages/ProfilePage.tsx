@@ -77,12 +77,12 @@ const Row: React.FC<RowProps> = ({ icon, label, sub, onClick, danger }) => (
         width: 36,
         height: 36,
         borderRadius: "12px",
-        background: danger ? "rgba(254,9,68,0.08)" : "rgba(60,30,20,0.06)",
+        background: danger ? "rgba(180,0,10,0.08)" : "rgba(15, 23, 42,0.06)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         flexShrink: 0,
-        color: danger ? "#FE0944" : "rgba(60,30,20,0.75)",
+        color: danger ? "#B4000A" : "rgba(15, 23, 42,0.75)",
       }}
     >
       {icon}
@@ -93,20 +93,20 @@ const Row: React.FC<RowProps> = ({ icon, label, sub, onClick, danger }) => (
           fontFamily: SANS,
           fontSize: 14,
           fontWeight: 600,
-          color: danger ? "#FE0944" : "#1a0805",
+          color: danger ? "#B4000A" : "#1a0805",
           lineHeight: 1.2,
         }}
       >
         {label}
       </Typography>
       {sub && (
-        <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "rgba(60,30,20,0.5)", mt: 0.2 }}>
+        <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "rgba(15, 23, 42,0.5)", mt: 0.2 }}>
           {sub}
         </Typography>
       )}
     </Box>
     {onClick && (
-      <CaretRight size={16} color={danger ? "#FE0944" : "rgba(60,30,20,0.35)"} />
+      <CaretRight size={16} color={danger ? "#B4000A" : "rgba(15, 23, 42,0.35)"} />
     )}
   </Box>
 );
@@ -160,7 +160,7 @@ const ProfilePage: React.FC = () => {
       <Box
         sx={{
           minHeight: "100vh",
-          background: "linear-gradient(160deg,#1a0805 0%,#3c1010 60%,#2a0808 100%)",
+          background: "#1A0805",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -187,7 +187,7 @@ const ProfilePage: React.FC = () => {
           <Box
             onClick={() => navigate("/login")}
             sx={{
-              background: "linear-gradient(135deg,#FE0944,#FE7A52)",
+              background: "#B4000A",
               color: "#fff",
               borderRadius: 999,
               py: 1.6,
@@ -196,7 +196,7 @@ const ProfilePage: React.FC = () => {
               fontSize: 15,
               fontWeight: 700,
               cursor: "pointer",
-              boxShadow: "0 8px 24px rgba(254,9,68,0.35)",
+              boxShadow: "0 8px 24px rgba(15, 23, 42, 0.35)",
               letterSpacing: "0.01em",
             }}
           >
@@ -213,7 +213,7 @@ const ProfilePage: React.FC = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        background: "linear-gradient(180deg,#F7F3F1 0%,#F0EBE8 100%)",
+        background: "#F4F6F5",
         pb: 12,
         fontFamily: SANS,
       }}
@@ -221,7 +221,7 @@ const ProfilePage: React.FC = () => {
       {/* ── Hero ── */}
       <Box
         sx={{
-          background: "linear-gradient(160deg,#1a0805 0%,#3c1010 55%,#2d0909 100%)",
+          background: "#1A0805",
           pt: 7,
           pb: 5,
           px: 3,
@@ -236,7 +236,7 @@ const ProfilePage: React.FC = () => {
             width: 280,
             height: 80,
             borderRadius: "50%",
-            background: "rgba(254,9,68,0.12)",
+            background: "rgba(15, 23, 42, 0.12)",
             filter: "blur(30px)",
             pointerEvents: "none",
           },
@@ -250,9 +250,9 @@ const ProfilePage: React.FC = () => {
                 width: 90,
                 height: 90,
                 borderRadius: "50%",
-                background: "linear-gradient(135deg,#FE0944,#FE7A52)",
+                background: "#B4000A",
                 p: "2.5px",
-                boxShadow: "0 0 0 3px rgba(254,9,68,0.18), 0 8px 32px rgba(0,0,0,0.35)",
+                boxShadow: "0 0 0 3px rgba(15, 23, 42, 0.18), 0 8px 32px rgba(0,0,0,0.35)",
               }}
             >
               <Avatar
@@ -278,7 +278,7 @@ const ProfilePage: React.FC = () => {
               <Typography sx={{ fontFamily: SERIF, fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
                 {user.displayName || "Guest"}
               </Typography>
-              <CheckCircle size={18} color="#FE7A52" weight="fill" />
+              <CheckCircle size={18} color="#D62828" weight="fill" />
             </Box>
             <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(255,255,255,0.50)", mt: 0.4 }}>
               {user.email}
@@ -341,7 +341,7 @@ const ProfilePage: React.FC = () => {
         {/* Admin Panel shortcut — only visible to admins */}
         {role === "admin" && (
           <motion.div {...fadeUp(0.12)}>
-            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
               Admin
             </Typography>
             <Section>
@@ -357,7 +357,7 @@ const ProfilePage: React.FC = () => {
 
         {/* Bookings */}
         <motion.div {...fadeUp(0.15)}>
-          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
             Reservations
           </Typography>
           <Section>
@@ -378,7 +378,7 @@ const ProfilePage: React.FC = () => {
 
         {/* Account */}
         <motion.div {...fadeUp(0.2)}>
-          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
             Account
           </Typography>
           <Section>
@@ -399,7 +399,7 @@ const ProfilePage: React.FC = () => {
 
         {/* Support */}
         <motion.div {...fadeUp(0.25)}>
-          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(60,30,20,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
             Support
           </Typography>
           <Section>
@@ -425,7 +425,7 @@ const ProfilePage: React.FC = () => {
         </motion.div>
 
         <motion.div {...fadeUp(0.35)}>
-          <Typography sx={{ textAlign: "center", fontFamily: SANS, fontSize: 11, color: "rgba(60,30,20,0.3)", mt: 1 }}>
+          <Typography sx={{ textAlign: "center", fontFamily: SANS, fontSize: 11, color: "rgba(15, 23, 42,0.3)", mt: 1 }}>
             SunRed · Bangkok · sunred.vip
           </Typography>
         </motion.div>

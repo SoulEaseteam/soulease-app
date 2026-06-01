@@ -134,9 +134,9 @@ const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
       PaperProps={{
         sx: {
           borderRadius: "20px",
-          background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
+          background: "#F4F6F5",
           border: "1px solid rgba(255, 255, 255, 0.7)",
-          boxShadow: "0 24px 60px rgba(126, 30, 46, 0.25)",
+          boxShadow: "0 24px 60px rgba(15, 23, 42, 0.25)",
           margin: 2,
           overflow: "hidden",
         },
@@ -146,7 +146,7 @@ const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
       <Box
         sx={{
           padding: "20px 22px 18px",
-          background: "linear-gradient(135deg, #FE0944 0%, #FE7A52 50%, #FFB088 100%)",
+          background: "#B4000A",
           color: "#fff",
           position: "relative",
           overflow: "hidden",
@@ -321,17 +321,17 @@ const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
           startIcon={<IosShareRoundedIcon />}
           onClick={() => void handleShare()}
           sx={{
-            background: "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+            background: "#B4000A",
             textTransform: "none",
             fontFamily: fonts.body,
             fontWeight: 700,
             fontSize: 14,
             padding: "11px",
             borderRadius: "12px",
-            boxShadow: "0 6px 18px rgba(254, 9, 68, 0.28)",
+            boxShadow: "0 6px 18px rgba(15, 23, 42, 0.28)",
             "&:hover": {
-              background: "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
-              boxShadow: "0 8px 22px rgba(254, 9, 68, 0.36)",
+              background: "#B4000A",
+              boxShadow: "0 8px 22px rgba(15, 23, 42, 0.36)",
             },
           }}
         >

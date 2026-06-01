@@ -82,7 +82,7 @@ import ConciergeModeIcon from "@/components/common/ConciergeModeIcon";
 
 import { db } from "@/lib/firebase";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // 30 min prep buffer — shown as 'Will leave for your location at HH:mm'
@@ -99,12 +99,12 @@ const BookingSuccessPage: React.FC = () => {
   const concierge = useConciergeMode();
   const modeTint =
     concierge.mode === "prime"
-      ? "#FE0944"
+      ? "#B4000A"
       : concierge.mode === "evening"
       ? "#F59E0B"
       : concierge.mode === "off"
-      ? "rgba(60,30,20,0.55)"
-      : "#FE7A52";
+      ? "rgba(15, 23, 42,0.55)"
+      : "#D62828";
 
   useEffect(() => {
     if (!id) {
@@ -217,10 +217,10 @@ const BookingSuccessPage: React.FC = () => {
         maxWidth: "430px",
         margin: "0 auto",
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
+        background: "#F4F6F5",
         borderRadius: "28px",
         overflow: "hidden",
-        boxShadow: "0 20px 60px rgba(126, 30, 46, 0.15)",
+        boxShadow: "0 20px 60px rgba(15, 23, 42, 0.15)",
         position: "relative",
         padding: "32px 20px 40px",
         fontFamily: SANS,
@@ -234,7 +234,7 @@ const BookingSuccessPage: React.FC = () => {
             paddingTop: "120px",
           }}
         >
-          <CircularProgress sx={{ color: "#FE0944" }} />
+          <CircularProgress sx={{ color: "#B4000A" }} />
         </Box>
       ) : error ? (
         <Box sx={{ textAlign: "center", paddingTop: "60px" }}>
@@ -242,7 +242,7 @@ const BookingSuccessPage: React.FC = () => {
             sx={{
               fontFamily: SERIF,
               fontSize: "20px",
-              color: "#3c1e14",
+              color: "#1A2B2E",
               marginBottom: "12px",
             }}
           >
@@ -250,7 +250,7 @@ const BookingSuccessPage: React.FC = () => {
           </Typography>
           <Button
             onClick={() => void navigate("/")}
-            sx={{ color: "#FE0944", textTransform: "none" }}
+            sx={{ color: "#B4000A", textTransform: "none" }}
           >
             {t("success.backHome", "Back to home")}
           </Button>
@@ -264,23 +264,23 @@ const BookingSuccessPage: React.FC = () => {
                 width: 96,
                 height: 96,
                 borderRadius: "50%",
-                background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+                background: "#B4000A",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 margin: "16px auto 20px",
-                boxShadow: "0 14px 40px rgba(254, 9, 68, 0.35)",
+                boxShadow: "0 14px 40px rgba(15, 23, 42, 0.35)",
                 animation: "successPulse 1.6s ease-in-out infinite",
                 "@keyframes successPulse": {
                   "0%, 100%": {
                     transform: "scale(1)",
                     boxShadow:
-                      "0 14px 40px rgba(254, 9, 68, 0.35), 0 0 0 0 rgba(254, 9, 68, 0.45)",
+                      "0 14px 40px rgba(15, 23, 42, 0.35), 0 0 0 0 rgba(15, 23, 42, 0.45)",
                   },
                   "50%": {
                     transform: "scale(1.06)",
                     boxShadow:
-                      "0 18px 48px rgba(254, 9, 68, 0.45), 0 0 0 14px rgba(254, 9, 68, 0)",
+                      "0 18px 48px rgba(15, 23, 42, 0.45), 0 0 0 14px rgba(180, 0, 10, 0)",
                   },
                 },
                 "@media (prefers-reduced-motion: reduce)": {
@@ -299,7 +299,7 @@ const BookingSuccessPage: React.FC = () => {
                 fontSize: "30px",
                 fontWeight: 500,
                 letterSpacing: "-0.02em",
-                color: "#3c1e14",
+                color: "#1A2B2E",
                 textAlign: "center",
                 lineHeight: 1.05,
               }}
@@ -321,12 +321,12 @@ const BookingSuccessPage: React.FC = () => {
                   alignItems: "center",
                   padding: "5px 14px",
                   borderRadius: "999px",
-                  background: "rgba(254, 9, 68, 0.08)",
-                  border: "1px solid rgba(254, 9, 68, 0.18)",
+                  background: "rgba(180, 0, 10, 0.08)",
+                  border: "1px solid rgba(15, 23, 42, 0.18)",
                   fontFamily: SANS,
                   fontSize: "12px",
                   fontWeight: 700,
-                  color: "#FE0944",
+                  color: "#B4000A",
                   letterSpacing: "0.06em",
                   fontVariantNumeric: "tabular-nums",
                 }}
@@ -340,7 +340,7 @@ const BookingSuccessPage: React.FC = () => {
               sx={{
                 fontFamily: SANS,
                 fontSize: "13px",
-                color: "rgba(60, 30, 20, 0.7)",
+                color: "rgba(15, 23, 42, 0.7)",
                 textAlign: "center",
                 marginTop: "12px",
                 lineHeight: 1.55,
@@ -402,7 +402,7 @@ const BookingSuccessPage: React.FC = () => {
                     fontWeight: 700,
                     color:
                       concierge.mode === "off"
-                        ? "rgba(60,30,20,0.7)"
+                        ? "rgba(15, 23, 42,0.7)"
                         : "#15803d",
                   }}
                 >
@@ -639,7 +639,7 @@ const BookingSuccessPage: React.FC = () => {
                 backdropFilter: "blur(20px) saturate(180%)",
                 WebkitBackdropFilter: "blur(20px) saturate(180%)",
                 border: "1px solid rgba(255, 255, 255, 0.6)",
-                boxShadow: "0 4px 14px rgba(126, 30, 46, 0.05)",
+                boxShadow: "0 4px 14px rgba(15, 23, 42, 0.05)",
               }}
             >
               <Typography
@@ -648,7 +648,7 @@ const BookingSuccessPage: React.FC = () => {
                   fontFamily: SERIF,
                   fontSize: "16px",
                   fontWeight: 600,
-                  color: "#FE0944",
+                  color: "#B4000A",
                   fontStyle: "italic",
                   marginBottom: "10px",
                 }}
@@ -766,7 +766,7 @@ const BookingSuccessPage: React.FC = () => {
                             sx={{
                               fontFamily: SERIF,
                               fontSize: "12.5px",
-                              color: "rgba(60, 30, 20, 0.45)",
+                              color: "rgba(15, 23, 42, 0.45)",
                               textDecoration: "line-through",
                               fontVariantNumeric: "tabular-nums",
                             }}
@@ -799,7 +799,7 @@ const BookingSuccessPage: React.FC = () => {
                     sx={{
                       fontFamily: SERIF,
                       fontWeight: 700,
-                      color: "#FE0944",
+                      color: "#B4000A",
                       fontSize: "16px",
                     }}
                   >
@@ -825,7 +825,7 @@ const BookingSuccessPage: React.FC = () => {
                 backdropFilter: "blur(20px) saturate(180%)",
                 WebkitBackdropFilter: "blur(20px) saturate(180%)",
                 border: "1px solid rgba(255, 255, 255, 0.6)",
-                boxShadow: "0 4px 14px rgba(126, 30, 46, 0.05)",
+                boxShadow: "0 4px 14px rgba(15, 23, 42, 0.05)",
               }}
             >
               <Box
@@ -842,7 +842,7 @@ const BookingSuccessPage: React.FC = () => {
                     fontFamily: SERIF,
                     fontSize: "16px",
                     fontWeight: 600,
-                    color: "#FE0944",
+                    color: "#B4000A",
                     fontStyle: "italic",
                   }}
                 >
@@ -852,7 +852,7 @@ const BookingSuccessPage: React.FC = () => {
                   sx={{
                     fontFamily: SANS,
                     fontSize: "11px",
-                    color: "rgba(60, 30, 20, 0.45)",
+                    color: "rgba(15, 23, 42, 0.45)",
                     fontStyle: "italic",
                   }}
                 >
@@ -925,7 +925,7 @@ const BookingSuccessPage: React.FC = () => {
                   height: 44,
                   borderRadius: "999px",
                   background: "rgba(255, 255, 255, 0.95)",
-                  color: "#3c1e14",
+                  color: "#1A2B2E",
                   fontFamily: SANS,
                   fontWeight: 700,
                   fontSize: "13.5px",
@@ -956,7 +956,7 @@ const BookingSuccessPage: React.FC = () => {
                   fontWeight: 700,
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
-                  color: "rgba(60, 30, 20, 0.55)",
+                  color: "rgba(15, 23, 42, 0.55)",
                   textAlign: "center",
                   marginBottom: "-2px",
                 }}
@@ -1068,7 +1068,7 @@ const BookingSuccessPage: React.FC = () => {
                 sx={{
                   fontFamily: SANS,
                   fontSize: "11.5px",
-                  color: "rgba(60, 30, 20, 0.55)",
+                  color: "rgba(15, 23, 42, 0.55)",
                   textAlign: "center",
                   marginTop: "-2px",
                   lineHeight: 1.4,
@@ -1085,7 +1085,7 @@ const BookingSuccessPage: React.FC = () => {
                 sx={{
                   height: 38,
                   borderRadius: "999px",
-                  color: "rgba(60, 30, 20, 0.55)",
+                  color: "rgba(15, 23, 42, 0.55)",
                   fontFamily: SANS,
                   fontWeight: 600,
                   fontSize: "12.5px",
@@ -1139,7 +1139,7 @@ const ActionCard: React.FC<{
       border: "1px solid rgba(255, 255, 255, 0.6)",
       boxShadow: disabled
         ? "0 1px 2px rgba(15, 23, 42, 0.03)"
-        : "0 2px 8px rgba(126, 30, 46, 0.04)",
+        : "0 2px 8px rgba(15, 23, 42, 0.04)",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
@@ -1153,10 +1153,10 @@ const ActionCard: React.FC<{
         : {
             "&:hover": {
               transform: "translateY(-1px)",
-              boxShadow: "0 6px 16px rgba(126, 30, 46, 0.08)",
+              boxShadow: "0 6px 16px rgba(15, 23, 42, 0.08)",
             },
             "&:focus-visible": {
-              outline: "2px solid #FE0944",
+              outline: "2px solid #B4000A",
               outlineOffset: "2px",
             },
           }),
@@ -1169,15 +1169,15 @@ const ActionCard: React.FC<{
         height: 36,
         borderRadius: "50%",
         background: disabled
-          ? "linear-gradient(135deg, #94a3b8, #64748b)"
-          : "linear-gradient(135deg, #FE0944, #FE7A52)",
+          ? "#64748b"
+          : "#B4000A",
         color: "#fff",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         boxShadow: disabled
           ? "0 2px 6px rgba(15, 23, 42, 0.08)"
-          : "0 4px 10px rgba(254, 9, 68, 0.22)",
+          : "0 4px 10px rgba(15, 23, 42, 0.22)",
         "& svg": { fontSize: 18 },
       }}
     >
@@ -1188,7 +1188,7 @@ const ActionCard: React.FC<{
         fontFamily: SERIF,
         fontSize: "12.5px",
         fontWeight: 700,
-        color: "#3c1e14",
+        color: "#1A2B2E",
         textAlign: "center",
         lineHeight: 1.15,
       }}
@@ -1200,7 +1200,7 @@ const ActionCard: React.FC<{
         sx={{
           fontFamily: SANS,
           fontSize: "10px",
-          color: "rgba(60, 30, 20, 0.55)",
+          color: "rgba(15, 23, 42, 0.55)",
           textAlign: "center",
           marginTop: "-3px",
           lineHeight: 1.15,
@@ -1231,7 +1231,7 @@ const SummaryLine: React.FC<{
       sx={{
         fontFamily: SANS,
         fontSize: "12.5px",
-        color: "rgba(60, 30, 20, 0.6)",
+        color: "rgba(15, 23, 42, 0.6)",
         flexShrink: 0,
       }}
     >
@@ -1243,7 +1243,7 @@ const SummaryLine: React.FC<{
         fontFamily: SANS,
         fontSize: "13.5px",
         fontWeight: 600,
-        color: "#3c1e14",
+        color: "#1A2B2E",
         textAlign: "right",
         lineHeight: 1.3,
         minWidth: 0,
@@ -1291,7 +1291,7 @@ const PrepLine: React.FC<{
         flex: 1,
         fontFamily: SANS,
         fontSize: "13px",
-        color: "rgba(60, 30, 20, 0.78)",
+        color: "rgba(15, 23, 42, 0.78)",
         lineHeight: 1.55,
       }}
     >

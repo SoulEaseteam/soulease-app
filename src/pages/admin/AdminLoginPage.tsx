@@ -97,7 +97,7 @@ const AdminLoginPage: React.FC = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(180deg, #FE0944, #FE7E6D)",
+        background: "#B4000A",
         px: 2,
       }}
     >
@@ -124,7 +124,7 @@ const AdminLoginPage: React.FC = () => {
           variant="h5"
           fontWeight="bold"
           mb={3}
-          sx={{ color: "#FE0944" }}
+          sx={{ color: "#B4000A" }}
         >
           Admin Login
         </Typography>
@@ -157,7 +157,7 @@ const AdminLoginPage: React.FC = () => {
               py: 1.2,
               fontWeight: "bold",
               borderRadius: 2,
-              background: "#FE0944",
+              background: "#B4000A",
               "&:hover": { background: "#FE7144" },
             }}
             disabled={loading}

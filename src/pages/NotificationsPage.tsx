@@ -43,7 +43,7 @@ import { useAuth } from "@/providers/AuthProvider";
 
 dayjs.extend(relativeTime);
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 interface Notification {
@@ -129,10 +129,10 @@ const NotificationsPage: React.FC = () => {
         maxWidth: "430px",
         margin: "0 auto",
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
+        background: "#F4F6F5",
         borderRadius: "28px",
         overflow: "hidden",
-        boxShadow: "0 20px 60px rgba(126, 30, 46, 0.15)",
+        boxShadow: "0 20px 60px rgba(15, 23, 42, 0.15)",
         position: "relative",
         paddingBottom: "calc(40px + env(safe-area-inset-bottom, 0px))",
         fontFamily: SANS,
@@ -144,7 +144,7 @@ const NotificationsPage: React.FC = () => {
           position: "sticky",
           top: 0,
           zIndex: 10,
-          background: "#FFF8F0",
+          background: "#F4F6F5",
           borderBottom: "1px solid rgba(0, 0, 0, 0.04)",
           display: "flex",
           alignItems: "center",
@@ -159,8 +159,8 @@ const NotificationsPage: React.FC = () => {
             height: 38,
             background: "rgba(255, 255, 255, 0.85)",
             border: "1px solid rgba(0, 0, 0, 0.06)",
-            color: "#3c1e14",
-            boxShadow: "0 2px 8px rgba(126, 30, 46, 0.06)",
+            color: "#1A2B2E",
+            boxShadow: "0 2px 8px rgba(15, 23, 42, 0.06)",
             "&:hover": { background: "#fff" },
           }}
         >
@@ -174,7 +174,7 @@ const NotificationsPage: React.FC = () => {
             fontFamily: SERIF,
             fontSize: "18px",
             fontWeight: 600,
-            color: "#3c1e14",
+            color: "#1A2B2E",
             letterSpacing: "-0.01em",
             marginRight: "38px",
           }}
@@ -192,7 +192,7 @@ const NotificationsPage: React.FC = () => {
               paddingTop: "80px",
             }}
           >
-            <CircularProgress sx={{ color: "#FE0944" }} />
+            <CircularProgress sx={{ color: "#B4000A" }} />
           </Box>
         ) : items.length === 0 ? (
           <EmptyState />
@@ -242,10 +242,10 @@ const NotificationRow: React.FC<{
           : "rgba(255, 255, 255, 0.95)",
         border: n.read
           ? "1px solid rgba(0, 0, 0, 0.04)"
-          : "1px solid rgba(254, 9, 68, 0.18)",
+          : "1px solid rgba(15, 23, 42, 0.18)",
         boxShadow: n.read
-          ? "0 2px 6px rgba(126, 30, 46, 0.04)"
-          : "0 6px 18px rgba(254, 9, 68, 0.10)",
+          ? "0 2px 6px rgba(15, 23, 42, 0.04)"
+          : "0 6px 18px rgba(15, 23, 42, 0.10)",
         cursor: "pointer",
         transition: "all 0.15s ease",
         "&:hover": {
@@ -255,7 +255,7 @@ const NotificationRow: React.FC<{
           transform: "translateY(-1px)",
         },
         "&:focus-visible": {
-          outline: "2px solid #FE0944",
+          outline: "2px solid #B4000A",
           outlineOffset: "2px",
         },
       }}
@@ -268,15 +268,15 @@ const NotificationRow: React.FC<{
           flexShrink: 0,
           borderRadius: "12px",
           background: n.read
-            ? "rgba(60, 30, 20, 0.06)"
-            : "linear-gradient(135deg, #FE0944, #FE7A52)",
-          color: n.read ? "rgba(60, 30, 20, 0.55)" : "#fff",
+            ? "rgba(15, 23, 42, 0.06)"
+            : "#B4000A",
+          color: n.read ? "rgba(15, 23, 42, 0.55)" : "#fff",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           boxShadow: n.read
             ? "none"
-            : "0 4px 10px rgba(254, 9, 68, 0.25)",
+            : "0 4px 10px rgba(15, 23, 42, 0.25)",
           "& svg": { fontSize: 22 },
         }}
       >
@@ -309,7 +309,7 @@ const NotificationRow: React.FC<{
               sx={{
                 fontFamily: SANS,
                 fontSize: "10.5px",
-                color: "rgba(60, 30, 20, 0.5)",
+                color: "rgba(15, 23, 42, 0.5)",
                 flexShrink: 0,
               }}
             >
@@ -321,7 +321,7 @@ const NotificationRow: React.FC<{
           sx={{
             fontFamily: SANS,
             fontSize: "12.5px",
-            color: "rgba(60, 30, 20, 0.7)",
+            color: "rgba(15, 23, 42, 0.7)",
             lineHeight: 1.45,
           }}
         >
@@ -338,8 +338,8 @@ const NotificationRow: React.FC<{
             width: 8,
             height: 8,
             borderRadius: "50%",
-            background: "#FE0944",
-            boxShadow: "0 0 0 3px rgba(254, 9, 68, 0.18)",
+            background: "#B4000A",
+            boxShadow: "0 0 0 3px rgba(15, 23, 42, 0.18)",
           }}
         />
       )}
@@ -361,8 +361,8 @@ const EmptyState: React.FC = () => (
         width: 64,
         height: 64,
         borderRadius: "50%",
-        background: "rgba(254, 9, 68, 0.08)",
-        color: "#FE0944",
+        background: "rgba(180, 0, 10, 0.08)",
+        color: "#B4000A",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -377,7 +377,7 @@ const EmptyState: React.FC = () => (
         fontFamily: SERIF,
         fontSize: "18px",
         fontWeight: 600,
-        color: "#3c1e14",
+        color: "#1A2B2E",
         marginBottom: "6px",
       }}
     >
@@ -387,7 +387,7 @@ const EmptyState: React.FC = () => (
       sx={{
         fontFamily: SANS,
         fontSize: "13px",
-        color: "rgba(60, 30, 20, 0.6)",
+        color: "rgba(15, 23, 42, 0.6)",
         lineHeight: 1.5,
       }}
     >

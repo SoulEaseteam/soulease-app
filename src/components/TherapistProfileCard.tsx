@@ -193,7 +193,7 @@ function gradientForId(id: string): string {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
   const [a, b] = hues[h % hues.length];
-  return `linear-gradient(135deg, ${a}, ${b})`;
+  return a;
 }
 
 
@@ -588,7 +588,7 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
           transition: "box-shadow 0.25s ease, transform 0.25s ease",
           "&:hover": {
             boxShadow:
-              "0 2px 4px rgba(15, 23, 42, 0.05), 0 16px 40px rgba(254, 9, 68, 0.10)",
+              "0 2px 4px rgba(15, 23, 42, 0.05), 0 16px 40px rgba(15, 23, 42, 0.10)",
             transform: "translateY(-1px)",
           },
           "&:focus-visible": {
@@ -606,7 +606,7 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
               sx={{
                 position: "absolute",
                 inset: 0,
-                background: `linear-gradient(135deg, ${brand.bg2} 0%, ${brand.cream} 50%, ${brand.bg2} 100%)`,
+                background: `${brand.bg1}`,
                 backgroundSize: "200% 200%",
                 animation: prefersReducedMotion
                   ? "none"
@@ -898,7 +898,7 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
                   sx={{
                     px: 0.75,
                     py: 0.25,
-                    background: "rgba(254, 122, 82, 0.1)",
+                    background: "rgba(214, 40, 40, 0.1)",
                     color: brand.coral,
                     borderRadius: "5px",
                     fontFamily: fonts.body,
@@ -1063,7 +1063,7 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
                   letterSpacing: "0.02em",
                   borderRadius: "999px",
                   boxShadow:
-                    "0 2px 8px rgba(254, 122, 82, 0.30), 0 1px 2px rgba(0,0,0,0.08)",
+                    "0 2px 8px rgba(214, 40, 40, 0.30), 0 1px 2px rgba(0,0,0,0.08)",
                 }}
               >
                 {/* 🆕 Round 28b51 — wrap with prettyHHMM so the

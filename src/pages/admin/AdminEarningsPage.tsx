@@ -42,7 +42,7 @@ import { db } from "@/lib/firebase";
 import { formatTHB } from "@/utils/servicePricing";
 import { getServiceLabel } from "@/utils/serviceCatalog";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // 🆕 Round 28r27 (founder 2026-05-07) — Tier-based commission split.
@@ -387,9 +387,9 @@ const AdminEarningsPage: React.FC = () => {
               fontFamily: SERIF,
               fontSize: { xs: 24, md: 30 },
               fontWeight: 600,
-              color: "#3c1e14",
+              color: "#1A2B2E",
               letterSpacing: "-0.02em",
-              "& em": { fontStyle: "italic", color: "#FE0944" },
+              "& em": { fontStyle: "italic", color: "#B4000A" },
             }}
           >
             Earnings <em>calculator</em>
@@ -398,7 +398,7 @@ const AdminEarningsPage: React.FC = () => {
             sx={{
               fontFamily: SANS,
               fontSize: 13,
-              color: "rgba(60, 30, 20, 0.65)",
+              color: "rgba(15, 23, 42, 0.65)",
               marginTop: "4px",
             }}
           >
@@ -417,11 +417,11 @@ const AdminEarningsPage: React.FC = () => {
             fontFamily: SANS,
             fontSize: 13,
             fontWeight: 600,
-            borderColor: "#FE0944",
-            color: "#FE0944",
+            borderColor: "#B4000A",
+            color: "#B4000A",
             "&:hover": {
-              borderColor: "#FE0944",
-              background: "rgba(254, 9, 68, 0.06)",
+              borderColor: "#B4000A",
+              background: "rgba(180, 0, 10, 0.06)",
             },
           }}
         >
@@ -445,11 +445,11 @@ const AdminEarningsPage: React.FC = () => {
 
       {loading ? (
         <Box sx={{ textAlign: "center", py: 6 }}>
-          <CircularProgress size={28} sx={{ color: "#FE0944" }} />
+          <CircularProgress size={28} sx={{ color: "#B4000A" }} />
         </Box>
       ) : bookings.length === 0 ? (
         <Card>
-          <Typography sx={{ fontFamily: SANS, fontSize: 14, color: "rgba(60,30,20,0.6)" }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 14, color: "rgba(15, 23, 42,0.6)" }}>
             No bookings in this period.
           </Typography>
         </Card>
@@ -505,7 +505,7 @@ const AdminEarningsPage: React.FC = () => {
                   fontFamily: SERIF,
                   fontSize: 22,
                   fontWeight: 600,
-                  color: "#3c1e14",
+                  color: "#1A2B2E",
                   mt: 1,
                 }}
               >
@@ -515,7 +515,7 @@ const AdminEarningsPage: React.FC = () => {
                 sx={{
                   fontFamily: SANS,
                   fontSize: 11,
-                  color: "rgba(60, 30, 20, 0.55)",
+                  color: "rgba(15, 23, 42, 0.55)",
                   mt: 0.5,
                 }}
               >
@@ -529,7 +529,7 @@ const AdminEarningsPage: React.FC = () => {
                   fontFamily: SERIF,
                   fontSize: 22,
                   fontWeight: 600,
-                  color: "#3c1e14",
+                  color: "#1A2B2E",
                   mt: 1,
                 }}
               >
@@ -543,7 +543,7 @@ const AdminEarningsPage: React.FC = () => {
                 sx={{
                   fontFamily: SANS,
                   fontSize: 11,
-                  color: "rgba(60, 30, 20, 0.55)",
+                  color: "rgba(15, 23, 42, 0.55)",
                   mt: 0.5,
                 }}
               >
@@ -560,7 +560,7 @@ const AdminEarningsPage: React.FC = () => {
                 fontFamily: SERIF,
                 fontSize: 18,
                 fontWeight: 600,
-                color: "#3c1e14",
+                color: "#1A2B2E",
                 mt: 0.5,
                 mb: 2,
               }}
@@ -587,7 +587,7 @@ const AdminEarningsPage: React.FC = () => {
                       height: `${pct}%`,
                       background:
                         v > 0
-                          ? "linear-gradient(180deg, #FE7A52, #FE0944)"
+                          ? "#B4000A"
                           : "rgba(15, 23, 42, 0.06)",
                       borderRadius: "3px 3px 0 0",
                       minHeight: 2,
@@ -603,7 +603,7 @@ const AdminEarningsPage: React.FC = () => {
                 mt: 1,
                 fontFamily: SANS,
                 fontSize: 10,
-                color: "rgba(60, 30, 20, 0.55)",
+                color: "rgba(15, 23, 42, 0.55)",
               }}
             >
               <span>{dayjs(trendDates[0]).format("D MMM")}</span>
@@ -628,7 +628,7 @@ const AdminEarningsPage: React.FC = () => {
                   fontFamily: SERIF,
                   fontSize: 18,
                   fontWeight: 600,
-                  color: "#3c1e14",
+                  color: "#1A2B2E",
                   mt: 0.5,
                   mb: 1.5,
                 }}
@@ -658,7 +658,7 @@ const AdminEarningsPage: React.FC = () => {
                   fontFamily: SERIF,
                   fontSize: 18,
                   fontWeight: 600,
-                  color: "#3c1e14",
+                  color: "#1A2B2E",
                   mt: 0.5,
                   mb: 1.5,
                 }}
@@ -728,7 +728,7 @@ const BigStat: React.FC<{
         fontFamily: SERIF,
         fontSize: { xs: 24, md: 28 },
         fontWeight: 700,
-        color: accent === "brand" ? "#FE0944" : "#3c1e14",
+        color: accent === "brand" ? "#B4000A" : "#1A2B2E",
         letterSpacing: "-0.02em",
         marginTop: "6px",
         lineHeight: 1.05,
@@ -741,7 +741,7 @@ const BigStat: React.FC<{
       sx={{
         fontFamily: SANS,
         fontSize: 11.5,
-        color: "rgba(60, 30, 20, 0.55)",
+        color: "rgba(15, 23, 42, 0.55)",
         marginTop: "4px",
       }}
     >
@@ -759,7 +759,7 @@ const RankedRows: React.FC<{
         sx={{
           fontFamily: SANS,
           fontSize: 12,
-          color: "rgba(60, 30, 20, 0.55)",
+          color: "rgba(15, 23, 42, 0.55)",
           fontStyle: "italic",
         }}
       >
@@ -786,7 +786,7 @@ const RankedRows: React.FC<{
                   fontFamily: SANS,
                   fontSize: 13,
                   fontWeight: 600,
-                  color: "#3c1e14",
+                  color: "#1A2B2E",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -798,7 +798,7 @@ const RankedRows: React.FC<{
                 sx={{
                   fontFamily: SANS,
                   fontSize: 11,
-                  color: "rgba(60, 30, 20, 0.55)",
+                  color: "rgba(15, 23, 42, 0.55)",
                 }}
               >
                 {r.sub}
@@ -809,7 +809,7 @@ const RankedRows: React.FC<{
                 fontFamily: SERIF,
                 fontSize: 14,
                 fontWeight: 700,
-                color: "#FE0944",
+                color: "#B4000A",
                 fontVariantNumeric: "tabular-nums",
                 flexShrink: 0,
               }}
@@ -829,7 +829,7 @@ const RankedRows: React.FC<{
               sx={{
                 height: "100%",
                 width: `${Math.max(2, r.pct * 100)}%`,
-                background: "rgba(254, 9, 68, 0.55)",
+                background: "rgba(15, 23, 42, 0.55)",
                 borderRadius: "999px",
               }}
             />

@@ -33,7 +33,7 @@ const NotFoundPage: React.FC = () => {
           sx={{
             height: 160,
             background:
-              "linear-gradient(135deg, #C62828 0%, #FF8A65 100%)",
+              "#B4000A",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -78,11 +78,11 @@ const NotFoundPage: React.FC = () => {
               py: 1.3,
               borderRadius: 3,
               fontWeight: "bold",
-              background: "linear-gradient(90deg, #C62828, #FF8A65)",
+              background: "#B4000A",
               boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
               textTransform: "none",
               "&:hover": {
-                background: "linear-gradient(90deg, #b32222, #ff7449)",
+                background: "#7C0007",
               },
             }}
           >

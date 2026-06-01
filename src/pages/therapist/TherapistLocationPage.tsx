@@ -207,8 +207,8 @@ const TherapistLocationPage: React.FC = () => {
         position="static"
         elevation={0}
         sx={{
-          background: "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
-          boxShadow: "0 4px 12px rgba(254, 9, 68, 0.22)",
+          background: "#B4000A",
+          boxShadow: "0 4px 12px rgba(15, 23, 42, 0.22)",
         }}
       >
         <Toolbar>
@@ -263,18 +263,18 @@ const TherapistLocationPage: React.FC = () => {
           fullWidth
           onClick={handleReturnHome}
           sx={{
-            background: "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+            background: "#B4000A",
             color: "#fff",
             fontSize: 14,
             fontWeight: 800,
             letterSpacing: "0.04em",
             borderRadius: 99,
             py: 1.25,
-            boxShadow: "0 6px 16px rgba(254, 9, 68, 0.26)",
+            boxShadow: "0 6px 16px rgba(15, 23, 42, 0.26)",
             textTransform: "none",
             "&:hover": {
-              background: "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
-              boxShadow: "0 8px 20px rgba(254, 9, 68, 0.36)",
+              background: "#B4000A",
+              boxShadow: "0 8px 20px rgba(15, 23, 42, 0.36)",
             },
           }}
         >
@@ -286,7 +286,7 @@ const TherapistLocationPage: React.FC = () => {
           fullWidth
           onClick={handleUpdateCurrentLocation}
           sx={{
-            background: "rgba(255, 248, 240, 0.95)",
+            background: "rgba(244, 246, 245, 0.95)",
             color: "#831843",
             fontSize: 14,
             fontWeight: 800,
@@ -294,7 +294,7 @@ const TherapistLocationPage: React.FC = () => {
             borderRadius: 99,
             py: 1.25,
             border: "1px solid rgba(184, 92, 60, 0.22)",
-            boxShadow: "0 4px 12px rgba(126, 30, 46, 0.08)",
+            boxShadow: "0 4px 12px rgba(15, 23, 42, 0.08)",
             textTransform: "none",
             "&:hover": { background: "#fff" },
           }}

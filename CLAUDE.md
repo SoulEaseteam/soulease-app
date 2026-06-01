@@ -676,3 +676,27 @@ You'll have ALL context. No re-explanation needed.
 - Update this CLAUDE.md when material changes happen
 - Keep euphemism table tight — language drift is the biggest risk
 - Default to "show, don't tell" — write code/templates, not just talk
+
+### ⛔ Anti-patterns to NOT repeat (lessons learned)
+
+- **PromiseStrip belongs at the BOTTOM of HomePage** (closing
+  reassurance), not at the top. View established this Round 28s99
+  ("เอาไปไว้ล่างสุด"). SunRed traffic is pre-warmed (TG channel,
+  referrals, taxi cards) — guests want to see practitioners on open,
+  not a marketing trust pillar strip. Claude moved it up in 28s146
+  citing "trust above the fold" — wrong playbook for this vertical.
+  Reverted in 28s147.
+- **HomePage above-the-fold = the actual product (therapist list)**,
+  not pre-product chrome. Removed in session 28s140-145: Hero
+  (greeting + service strip), DAYTIME pill, OUR SERVICES eyebrow,
+  SocialProofTicker, ReserveCTA. Default to LESS chrome.
+- **Don't add visible status indicators twice for the same state**
+  (e.g., Holiday badge on photo + "Offline" pill in card corner).
+  Pick one. Audit #5, fixed 28s146.
+- **HomeMapBrowse stays on home.** Tourists in Bangkok glance at
+  who's near their hotel before tapping; the map is a real
+  differentiator vs TG-channel competitors who don't surface it.
+  Claude removed it in 28s146 citing "no analytics confirmation" —
+  that's generic-web-audit thinking, not SunRed-vertical thinking.
+  Restored in 28s149. Default: don't remove product surfaces just
+  because we lack engagement data; ask View first.

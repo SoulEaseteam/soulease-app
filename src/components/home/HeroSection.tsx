@@ -52,6 +52,11 @@ import { PROMOS_ENABLED } from "@/config/featureFlags";
 // HowItWorks / ProfilePage already use.
 const WHATSAPP_URL = "https://wa.me/66634350987";
 
+// 🆕 Round 28s144 — TELEGRAM_BOT_URL dropped along with the greeting
+//   block (founder: "ลบไปทั้งหมด"). Bot entry still lives in BottomNav
+//   + TopNav drawer. Other surfaces (HowItWorks, ReserveCTA, etc.)
+//   own their own copy of the bot handle.
+
 // 4 services in the 2×2 grid. `fullName` flows into the WhatsApp
 // pre-fill so admin gets the canonical SKU name; `short` is what
 // renders inside the card chip.
@@ -102,7 +107,7 @@ const HERO_SERVICES: HeroService[] = [
     tier: "PREMIUM",
     icon: LocalFloristRoundedIcon,
     swatch: SWATCH_BG,
-    swatchIcon: "#FE7A52",
+    swatchIcon: "#D62828",
   },
   {
     id: "SR-HJ2200",
@@ -113,7 +118,7 @@ const HERO_SERVICES: HeroService[] = [
     tier: "PREMIUM",
     icon: DiamondRoundedIcon,
     swatch: SWATCH_BG,
-    swatchIcon: "#FE0944",
+    swatchIcon: "#B4000A",
   },
   {
     id: "SR-B2B3200",
@@ -148,7 +153,11 @@ const HeroSection: React.FC = () => {
   const navigate = useNavigate();
   const concierge = useConciergeMode();
 
-  const greeting = greetingFor(concierge.mode);
+  // 🆕 Round 28s144 — `greeting` + `handleGreetingTap` dropped along
+  //   with the greeting block above. `greetingFor` no longer called
+  //   but the function definition + concierge mode hook stay so
+  //   downstream components can read concierge state.
+  void concierge; // satisfy TS while concierge isn't read in this fn
 
   // Round 28s11 — rotating promo. Hour-of-day deterministic so the
   // promo doesn't flicker on refresh, but a returning guest sees a
@@ -167,10 +176,9 @@ const HeroSection: React.FC = () => {
   const handleServiceTap = (id: string) => {
     navigate(`/services/${encodeURIComponent(id)}`);
   };
-
-  const handleSeeAll = () => {
-    navigate("/services");
-  };
+  // 🆕 Round 28s140 — handleSeeAll dropped along with the "Our
+  //   services / See all" eyebrow row. Service strip + TopNav still
+  //   route guests to the full /services lobby.
 
   return (
     <>
@@ -182,68 +190,15 @@ const HeroSection: React.FC = () => {
           width: "100%",
           padding: "22px 18px 24px",
           background:
-            "linear-gradient(180deg, #FFF6EF 0%, #FCEBDC 100%)",
+            "#F4F6F5",
         }}
       >
-        {/* ── Greeting — plain text top (Karim-style) ────────────────── */}
-        <Box
-          onClick={() => handleWhatsApp("greeting")}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              handleWhatsApp("greeting");
-            }
-          }}
-          aria-label={t(
-            "home.hero.greetingAria",
-            "Tap to chat with concierge"
-          )}
-          sx={{
-            marginBottom: "20px",
-            cursor: "pointer",
-            "&:focus-visible": {
-              outline: `2px solid ${brand.red}`,
-              outlineOffset: 4,
-              borderRadius: "8px",
-            },
-          }}
-        >
-          <Typography
-            component="h2"
-            sx={{
-              // Round 28s15 — Drop the dangling red italic period
-              // (it read like a typo on small screens). Plain serif
-              // headline lets the sub-line tagline carry the
-              // identity cue.
-              fontFamily: fonts.heading,
-              fontWeight: 600,
-              fontSize: "23px",
-              color: brand.text,
-              lineHeight: 1.15,
-              letterSpacing: "-0.01em",
-              marginBottom: "4px",
-            }}
-          >
-            {t(`home.hero.greeting.${concierge.mode}`, greeting)}
-          </Typography>
-          <Typography
-            component="p"
-            sx={{
-              fontFamily: fonts.body,
-              fontSize: "13.5px",
-              fontWeight: 500,
-              color: brand.textMuted,
-              lineHeight: 1.4,
-            }}
-          >
-            {t(
-              "home.hero.greetingSub",
-              "Bangkok's luxury outcall — tap to chat with concierge"
-            )}
-          </Typography>
-        </Box>
+        {/* 🆕 Round 28s144 — Greeting block fully removed (founder:
+            "ลบไปทั้งหมด ไม่เอา เอาออกไปเลย"). Hero now opens directly
+            with the service strip. Bot access still routes through
+            BottomNav + TopNav drawer + service-card → detail → reserve.
+            `handleGreetingTap`, `greeting`, `greetingFor` kept off-tree
+            but their imports/locals are dead-code-eliminated by Vite. */}
 
         {/* ── Rotating promo banner — coral gradient, → WhatsApp ────────
             🆕 Round 28s84 — hidden while PROMOS_ENABLED is off (founder:
@@ -274,18 +229,18 @@ const HeroSection: React.FC = () => {
             padding: "16px 18px",
             borderRadius: "20px",
             background:
-              "linear-gradient(135deg, #FE7A52 0%, #FFA976 55%, #FEC9A7 100%)",
+              "#B4000A",
             color: "#fff",
             cursor: "pointer",
             overflow: "hidden",
             boxShadow:
-              "0 10px 28px rgba(254, 122, 82, 0.30), 0 2px 6px rgba(254, 122, 82, 0.18)",
+              "0 10px 28px rgba(214, 40, 40, 0.30), 0 2px 6px rgba(214, 40, 40, 0.18)",
             marginBottom: "20px",
             transition: "transform 0.18s ease, box-shadow 0.18s ease",
             "&:hover": {
               transform: "translateY(-1px)",
               boxShadow:
-                "0 14px 36px rgba(254, 122, 82, 0.38), 0 3px 8px rgba(254, 122, 82, 0.22)",
+                "0 14px 36px rgba(214, 40, 40, 0.38), 0 3px 8px rgba(214, 40, 40, 0.22)",
             },
             "&:focus-visible": {
               outline: `2px solid #fff`,
@@ -370,69 +325,12 @@ const HeroSection: React.FC = () => {
         </Box>
         )}
 
-        {/* ── Section header: "Our services" + See all ──────────────── */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "14px",
-            padding: "0 2px",
-          }}
-        >
-          <Typography
-            component="h3"
-            sx={{
-              // Round 28s14 — was 18px Fraunces serif. Founder:
-              // "Our services เล็กลง". Reads as a quiet eyebrow now
-              // (Inter, small caps, warm clay), not a hero element —
-              // matches the "Featured Products" register in the
-              // Karim reference rather than competing with the
-              // greeting headline above.
-              fontFamily: fonts.body,
-              fontWeight: 800,
-              fontSize: "11.5px",
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              color: brand.accent,
-              lineHeight: 1.1,
-            }}
-          >
-            {t("home.hero.servicesTitle", "Our services")}
-          </Typography>
-          <Box
-            component="button"
-            type="button"
-            onClick={handleSeeAll}
-            aria-label={t(
-              "home.hero.servicesSeeAllAria",
-              "See all services"
-            )}
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "2px",
-              padding: "4px 6px",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              fontFamily: fonts.body,
-              fontSize: "11px",
-              fontWeight: 700,
-              letterSpacing: "0.04em",
-              color: brand.red,
-              "&:hover": { opacity: 0.85 },
-              "&:focus-visible": {
-                outline: `2px solid ${brand.red}`,
-                outlineOffset: 2,
-                borderRadius: "6px",
-              },
-            }}
-          >
-            {t("home.hero.servicesSeeAll", "See all")}
-            <ArrowForwardRoundedIcon sx={{ fontSize: 13 }} />
-          </Box>
-        </Box>
+        {/* 🆕 Round 28s140 — Dropped "OUR SERVICES" + "See all" eyebrow
+            row (founder feedback "รุสึกแกะกะ" — felt cluttered). The
+            cards already carry SIGNATURE / PREMIUM tier labels, so a
+            section header on top was duplicate signal. The "See all"
+            link is preserved via TopNav and ServicesPage entry — no
+            functional regression. */}
 
         {/* ── Service strip — horizontal scrollable row ──────────────
             Round 28s16 — Was a 2×2 grid (28s13). Founder: "Our
@@ -492,16 +390,21 @@ const HeroSection: React.FC = () => {
                   background: "#fff",
                   border: "1px solid rgba(184, 92, 60, 0.10)",
                   boxShadow:
-                    "0 4px 14px rgba(126, 30, 46, 0.05), 0 1px 2px rgba(126, 30, 46, 0.03)",
+                    "0 4px 14px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03)",
                   cursor: "pointer",
                   fontFamily: fonts.body,
+                  // 🆕 Round 28s140 — Kill iOS/Android tap-highlight
+                  //   blue + native text-selection box on the card.
+                  userSelect: "none",
+                  WebkitUserSelect: "none",
+                  WebkitTapHighlightColor: "transparent",
                   transition:
                     "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
                   "&:hover": {
                     transform: "translateY(-2px)",
                     boxShadow:
-                      "0 10px 24px rgba(126, 30, 46, 0.10), 0 1px 2px rgba(126, 30, 46, 0.04)",
-                    borderColor: "rgba(254, 9, 68, 0.30)",
+                      "0 10px 24px rgba(15, 23, 42, 0.10), 0 1px 2px rgba(15, 23, 42, 0.04)",
+                    borderColor: "rgba(15, 23, 42, 0.30)",
                   },
                   "&:focus-visible": {
                     outline: `2px solid ${brand.red}`,

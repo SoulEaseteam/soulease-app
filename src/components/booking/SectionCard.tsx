@@ -10,7 +10,7 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 
 export interface SectionCardProps {
   label: string;
@@ -34,7 +34,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
       borderRadius: "16px",
       background: "rgba(255, 255, 255, 0.7)",
       border: "1px solid rgba(255, 255, 255, 0.6)",
-      boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
+      boxShadow: "0 4px 14px rgba(15, 23, 42, 0.06)",
     }}
   >
     <Box
@@ -53,8 +53,8 @@ export const SectionCard: React.FC<SectionCardProps> = ({
             height: 30,
             flexShrink: 0,
             borderRadius: "9px",
-            background: "rgba(254, 9, 68, 0.10)",
-            color: "#FE0944",
+            background: "rgba(15, 23, 42, 0.10)",
+            color: "#B4000A",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -69,7 +69,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
           fontFamily: SERIF,
           fontSize: "15px",
           fontWeight: 600,
-          color: "#3c1e14",
+          color: "#1A2B2E",
         }}
       >
         {label}

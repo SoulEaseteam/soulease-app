@@ -34,7 +34,10 @@ export interface TherapistSearchBarProps {
 const TherapistSearchBar: React.FC<TherapistSearchBarProps> = ({
   value,
   onChange,
-  placeholder = "Search by name, language, specialty…",
+  // 🆕 Round 28s167 — Founder: "ตรงค้นหา ลดข้อความลง". Was
+  //   "Search by name, language, specialty…" — too busy. Short
+  //   single word reads cleaner with the rest of the page.
+  placeholder = "Search…",
   m = "0 14px 12px",
   autoFocus = false,
 }) => {
@@ -60,13 +63,17 @@ const TherapistSearchBar: React.FC<TherapistSearchBarProps> = ({
           "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.06)",
         transition: "box-shadow 0.2s ease, border-color 0.2s ease",
         "&:focus-within": {
-          borderColor: "rgba(254, 9, 68, 0.45)",
+          borderColor: "rgba(15, 23, 42, 0.45)",
           boxShadow:
-            "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(254, 9, 68, 0.12), 0 0 0 3px rgba(254, 9, 68, 0.10)",
+            "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.12), 0 0 0 3px rgba(15, 23, 42, 0.10)",
         },
       }}
     >
-      <SearchRoundedIcon sx={{ fontSize: 20, color: brand.red, flexShrink: 0 }} />
+      {/* 🆕 Round 28s167 — Founder: "สีอ่อนลง". Magnifier was brand
+          red — too loud against the muted page. Soft cool gray now. */}
+      <SearchRoundedIcon
+        sx={{ fontSize: 20, color: "rgba(15, 23, 42, 0.40)", flexShrink: 0 }}
+      />
       <Box
         component="input"
         type="search"
@@ -93,7 +100,8 @@ const TherapistSearchBar: React.FC<TherapistSearchBarProps> = ({
           color: brand.text,
           minWidth: 0, // allows shrink in flex container
           "&::placeholder": {
-            color: "rgba(60, 30, 20, 0.55)",
+            // 🆕 Round 28s167 — softer placeholder colour (0.55 → 0.35)
+            color: "rgba(15, 23, 42, 0.35)",
             fontWeight: 500,
           },
           // Hide the native search × button — we render our own clear icon

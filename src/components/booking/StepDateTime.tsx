@@ -45,7 +45,7 @@ import {
   isSlotTaken,
 } from "@/utils/useTherapistBookings";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 const SLOT_INCREMENT_MIN = 30;
@@ -478,20 +478,20 @@ const StepDateTime: React.FC<Props> = ({
                   // hairline clay border at rest, no shadow. Only
                   // the active pill carries the gradient + glow.
                   background: isActive
-                    ? "linear-gradient(135deg, #FE0944, #FE7A52)"
+                    ? "#B4000A"
                     : "#fff",
-                  color: isActive ? "#fff" : "#2a1a14",
+                  color: isActive ? "#fff" : "#1A2B2E",
                   border: isActive
                     ? "1px solid transparent"
                     : "1px solid rgba(184, 92, 60, 0.16)",
                   boxShadow: isActive
-                    ? "0 6px 16px rgba(254, 9, 68, 0.26)"
+                    ? "0 6px 16px rgba(15, 23, 42, 0.26)"
                     : "none",
                   fontFamily: SANS,
                   transition:
                     "background 0.2s ease, border-color 0.2s ease",
                   "&:focus-visible": {
-                    outline: "2px solid #FE0944",
+                    outline: "2px solid #B4000A",
                     outlineOffset: "2px",
                   },
                 }}
@@ -527,7 +527,7 @@ const StepDateTime: React.FC<Props> = ({
             sx={{
               fontFamily: SANS,
               fontSize: "11.5px",
-              color: "rgba(60, 30, 20, 0.55)",
+              color: "rgba(15, 23, 42, 0.55)",
               marginTop: "10px",
               paddingLeft: "4px",
             }}
@@ -558,7 +558,7 @@ const StepDateTime: React.FC<Props> = ({
             sx={{
               width: 13,
               height: 13,
-              color: "rgba(60, 30, 20, 0.45)",
+              color: "rgba(15, 23, 42, 0.45)",
               flexShrink: 0,
             }}
           >
@@ -571,7 +571,7 @@ const StepDateTime: React.FC<Props> = ({
             sx={{
               fontFamily: SANS,
               fontSize: "10.5px",
-              color: "rgba(60, 30, 20, 0.5)",
+              color: "rgba(15, 23, 42, 0.5)",
               fontStyle: "italic",
               letterSpacing: "0.01em",
             }}
@@ -640,7 +640,7 @@ const StepDateTime: React.FC<Props> = ({
                 fontFamily: SERIF,
                 fontSize: "16px",
                 fontWeight: 700,
-                color: "#3c1e14",
+                color: "#1A2B2E",
                 lineHeight: 1.2,
               }}
             >
@@ -655,8 +655,8 @@ const StepDateTime: React.FC<Props> = ({
                     marginLeft: "6px",
                     padding: "2px 6px",
                     borderRadius: "4px",
-                    background: "rgba(60, 30, 20, 0.08)",
-                    color: "rgba(60, 30, 20, 0.7)",
+                    background: "rgba(15, 23, 42, 0.08)",
+                    color: "rgba(15, 23, 42, 0.7)",
                     verticalAlign: "middle",
                   }}
                 >
@@ -684,7 +684,7 @@ const StepDateTime: React.FC<Props> = ({
         <Typography
           sx={{
             fontFamily: SANS,
-            color: "rgba(60, 30, 20, 0.5)",
+            color: "rgba(15, 23, 42, 0.5)",
             textAlign: "center",
             padding: "40px 20px",
             fontStyle: "italic",
@@ -706,7 +706,7 @@ const StepDateTime: React.FC<Props> = ({
             sx={{
               fontFamily: SERIF,
               fontSize: "16px",
-              color: "#3c1e14",
+              color: "#1A2B2E",
               marginBottom: "4px",
             }}
           >
@@ -716,7 +716,7 @@ const StepDateTime: React.FC<Props> = ({
             sx={{
               fontFamily: SANS,
               fontSize: "12px",
-              color: "rgba(60, 30, 20, 0.6)",
+              color: "rgba(15, 23, 42, 0.6)",
             }}
           >
             {t("stepdt.noSlotsHint", "Try another day or another therapist.")}
@@ -774,7 +774,7 @@ const StepDateTime: React.FC<Props> = ({
                       color:
                         key === "rightNow"
                           ? "#16a34a"
-                          : "rgba(60, 30, 20, 0.4)",
+                          : "rgba(15, 23, 42, 0.4)",
                       textTransform: "uppercase",
                       letterSpacing: "0.07em",
                       marginBottom: "10px",
@@ -868,15 +868,15 @@ const StepDateTime: React.FC<Props> = ({
                             background: taken
                               ? "transparent"
                               : isActive
-                                ? "linear-gradient(135deg, #FE0944, #FE7A52)"
+                                ? "#B4000A"
                                 : "#fff",
                             color: taken
-                              ? "rgba(60, 30, 20, 0.3)"
+                              ? "rgba(15, 23, 42, 0.3)"
                               : isActive
                                 ? "#fff"
-                                : "#2a1a14",
+                                : "#1A2B2E",
                             border: taken
-                              ? "1px solid rgba(60, 30, 20, 0.10)"
+                              ? "1px solid rgba(15, 23, 42, 0.10)"
                               : isActive
                                 ? "1px solid transparent"
                                 : "1px solid rgba(184, 92, 60, 0.16)",
@@ -887,7 +887,7 @@ const StepDateTime: React.FC<Props> = ({
                             whiteSpace: "nowrap",
                             textDecoration: taken ? "line-through" : "none",
                             boxShadow: isActive
-                              ? "0 6px 16px rgba(254, 9, 68, 0.28)"
+                              ? "0 6px 16px rgba(15, 23, 42, 0.28)"
                               : "none",
                             transition:
                               "background 0.15s ease, border-color 0.15s ease, transform 0.12s ease",
@@ -897,12 +897,12 @@ const StepDateTime: React.FC<Props> = ({
                                 : isActive
                                   ? {}
                                   : {
-                                      borderColor: "rgba(254, 9, 68, 0.4)",
-                                      background: "rgba(254, 9, 68, 0.03)",
+                                      borderColor: "rgba(15, 23, 42, 0.40)",
+                                      background: "rgba(180, 0, 10, 0.03)",
                                     },
                             },
                             "&:focus-visible": {
-                              outline: "2px solid #FE0944",
+                              outline: "2px solid #B4000A",
                               outlineOffset: "2px",
                             },
                           }}

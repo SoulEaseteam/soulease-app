@@ -52,7 +52,7 @@ const ReferralActiveBanner: React.FC = () => {
         padding: "8px 12px 8px 10px",
         borderRadius: "12px",
         background:
-          "linear-gradient(135deg, rgba(255,231,213,0.85) 0%, rgba(254,201,167,0.55) 100%)",
+          "#F4F6F5",
         border: "1px solid rgba(184, 92, 60, 0.22)",
         boxShadow: "0 2px 8px rgba(184, 92, 60, 0.10)",
         textDecoration: "none",

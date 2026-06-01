@@ -39,7 +39,7 @@ import { FaLine, FaTelegramPlane, FaWeixin, FaWhatsapp } from "react-icons/fa";
 //   bloating this component.
 import HowItWorksFAQ from "@/components/home/HowItWorksFAQ";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // ─── Three-movement ritual data ───────────────────────────────────────
@@ -98,7 +98,7 @@ const RESERVATION_PILLARS: Array<{
     title: "One-tap reservation",
     body:
       "Choose a profile, complete the brief form, and our concierge confirms within minutes via WhatsApp or Telegram.",
-    tone: { bg: "rgba(254, 9, 68, 0.08)", fg: "#FE0944" },
+    tone: { bg: "rgba(180, 0, 10, 0.08)", fg: "#B4000A" },
   },
   {
     Icon: BadgeRoundedIcon,
@@ -207,9 +207,9 @@ const HowItWorks: React.FC = () => {
             fontSize: "28px",
             lineHeight: 1.15,
             letterSpacing: "-0.02em",
-            color: "#2a1a14",
+            color: "#1A2B2E",
             marginBottom: "10px",
-            "& em": { fontStyle: "italic", color: "#FE0944" },
+            "& em": { fontStyle: "italic", color: "#B4000A" },
           }}
         >
           {t("home.howItWorks.title.pre", "A ritual in three ")}
@@ -221,7 +221,7 @@ const HowItWorks: React.FC = () => {
           sx={{
             fontFamily: SANS,
             fontSize: "13.5px",
-            color: "rgba(60, 30, 20, 0.72)",
+            color: "rgba(15, 23, 42, 0.72)",
             lineHeight: 1.6,
             marginBottom: "22px",
             maxWidth: "36ch",
@@ -245,7 +245,7 @@ const HowItWorks: React.FC = () => {
             bottom: "70px",
             width: "1px",
             background:
-              "linear-gradient(180deg, rgba(254, 9, 68, 0.32) 0%, rgba(254, 122, 82, 0.22) 55%, rgba(254, 122, 82, 0.05) 100%)",
+              "linear-gradient(180deg, rgba(15, 23, 42, 0.32) 0%, rgba(214, 40, 40, 0.22) 55%, rgba(214, 40, 40, 0.05) 100%)",
             pointerEvents: "none",
           }}
         />
@@ -272,14 +272,14 @@ const HowItWorks: React.FC = () => {
                 border: "1px solid rgba(255, 255, 255, 0.7)",
                 borderRadius: "18px",
                 boxShadow:
-                  "0 1px 2px rgba(254, 9, 68, 0.04), 0 8px 24px rgba(254, 9, 68, 0.06)",
+                  "0 1px 2px rgba(180, 0, 10, 0.04), 0 8px 24px rgba(180, 0, 10, 0.06)",
                 transition:
                   "transform 220ms ease, box-shadow 220ms ease, background 220ms ease",
                 "&:hover": {
                   transform: "translateY(-1px)",
                   background: "rgba(255, 255, 255, 0.82)",
                   boxShadow:
-                    "0 2px 4px rgba(254, 9, 68, 0.06), 0 14px 32px rgba(254, 9, 68, 0.08)",
+                    "0 2px 4px rgba(180, 0, 10, 0.06), 0 14px 32px rgba(180, 0, 10, 0.08)",
                 },
               }}
             >
@@ -291,7 +291,7 @@ const HowItWorks: React.FC = () => {
                   flexShrink: 0,
                   borderRadius: "50%",
                   background:
-                    "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+                    "#B4000A",
                   color: "#fff",
                   display: "flex",
                   alignItems: "center",
@@ -301,7 +301,7 @@ const HowItWorks: React.FC = () => {
                   fontSize: "15px",
                   letterSpacing: "0.04em",
                   boxShadow:
-                    "0 4px 14px rgba(254, 9, 68, 0.32), inset 0 1px 0 rgba(255,255,255,0.22)",
+                    "0 4px 14px rgba(15, 23, 42, 0.32), inset 0 1px 0 rgba(255,255,255,0.22)",
                   "&::before": {
                     content: '""',
                     position: "absolute",
@@ -323,7 +323,7 @@ const HowItWorks: React.FC = () => {
                     fontFamily: SERIF,
                     fontWeight: 500,
                     fontSize: "16px",
-                    color: "#2a1a14",
+                    color: "#1A2B2E",
                     marginBottom: "4px",
                     letterSpacing: "-0.01em",
                   }}
@@ -336,7 +336,7 @@ const HowItWorks: React.FC = () => {
                   sx={{
                     fontFamily: SANS,
                     fontSize: "12.5px",
-                    color: "rgba(60, 30, 20, 0.72)",
+                    color: "rgba(15, 23, 42, 0.72)",
                     lineHeight: 1.55,
                     margin: 0,
                   }}
@@ -396,9 +396,9 @@ const HowItWorks: React.FC = () => {
                   "transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
                 "&:hover": {
                   transform: "translateY(-1px)",
-                  borderColor: "rgba(254, 9, 68, 0.14)",
+                  borderColor: "rgba(15, 23, 42, 0.14)",
                   boxShadow:
-                    "0 1px 2px rgba(254, 9, 68, 0.05), 0 8px 22px rgba(254, 9, 68, 0.05)",
+                    "0 1px 2px rgba(180, 0, 10, 0.05), 0 8px 22px rgba(180, 0, 10, 0.05)",
                 },
               }}
             >
@@ -422,7 +422,7 @@ const HowItWorks: React.FC = () => {
                   fontFamily: SERIF,
                   fontSize: 13.5,
                   fontWeight: 600,
-                  color: "#3c1e14",
+                  color: "#1A2B2E",
                   lineHeight: 1.25,
                   letterSpacing: "-0.005em",
                 }}
@@ -434,7 +434,7 @@ const HowItWorks: React.FC = () => {
                   fontFamily: SANS,
                   fontSize: 11.5,
                   lineHeight: 1.5,
-                  color: "rgba(60,30,20,0.7)",
+                  color: "rgba(15, 23, 42,0.7)",
                 }}
               >
                 {body}
@@ -462,9 +462,9 @@ const HowItWorks: React.FC = () => {
               "transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
             "&:hover": {
               transform: "translateY(-1px)",
-              borderColor: "rgba(254, 9, 68, 0.18)",
+              borderColor: "rgba(15, 23, 42, 0.18)",
               boxShadow:
-                "0 1px 2px rgba(254, 9, 68, 0.05), 0 8px 22px rgba(254, 9, 68, 0.06)",
+                "0 1px 2px rgba(180, 0, 10, 0.05), 0 8px 22px rgba(180, 0, 10, 0.06)",
             },
           }}
         >
@@ -504,7 +504,7 @@ const HowItWorks: React.FC = () => {
                 fontFamily: SERIF,
                 fontSize: 14,
                 fontWeight: 500,
-                color: "#2a1a14",
+                color: "#1A2B2E",
                 letterSpacing: "-0.005em",
                 lineHeight: 1.3,
               }}
@@ -513,7 +513,7 @@ const HowItWorks: React.FC = () => {
             </Typography>
           </Box>
           <ChevronRightRoundedIcon
-            sx={{ color: "rgba(60,30,20,0.4)", fontSize: 22 }}
+            sx={{ color: "rgba(15, 23, 42,0.4)", fontSize: 22 }}
           />
         </Box>
 
@@ -536,14 +536,14 @@ const HowItWorks: React.FC = () => {
             }}
           >
             <AccessTimeRoundedIcon
-              sx={{ color: "#FE0944", fontSize: 18 }}
+              sx={{ color: "#B4000A", fontSize: 18 }}
             />
             <Typography
               sx={{
                 fontFamily: SERIF,
                 fontSize: 14.5,
                 fontWeight: 600,
-                color: "#3c1e14",
+                color: "#1A2B2E",
               }}
             >
               Typical arrival window
@@ -554,14 +554,14 @@ const HowItWorks: React.FC = () => {
               fontFamily: SANS,
               fontSize: 12.5,
               lineHeight: 1.6,
-              color: "rgba(60,30,20,0.72)",
+              color: "rgba(15, 23, 42,0.72)",
             }}
           >
-            <Box component="span" sx={{ fontWeight: 600, color: "#3c1e14" }}>
+            <Box component="span" sx={{ fontWeight: 600, color: "#1A2B2E" }}>
               Central Bangkok:
             </Box>{" "}
             30 to 60 minutes.{" "}
-            <Box component="span" sx={{ fontWeight: 600, color: "#3c1e14" }}>
+            <Box component="span" sx={{ fontWeight: 600, color: "#1A2B2E" }}>
               Outside the centre or peak hours:
             </Box>{" "}
             60 to 90 minutes. The booking screen displays a precise arrival
@@ -607,11 +607,11 @@ const HowItWorks: React.FC = () => {
               fontFamily: SERIF,
               fontSize: 17,
               fontWeight: 500,
-              color: "#2a1a14",
+              color: "#1A2B2E",
               letterSpacing: "-0.01em",
               lineHeight: 1.3,
               mb: 0.5,
-              "& em": { fontStyle: "italic", color: "#FE0944" },
+              "& em": { fontStyle: "italic", color: "#B4000A" },
             }}
           >
             At your <em>service</em>
@@ -620,7 +620,7 @@ const HowItWorks: React.FC = () => {
             sx={{
               fontFamily: SANS,
               fontSize: 12.5,
-              color: "rgba(60,30,20,0.65)",
+              color: "rgba(15, 23, 42,0.65)",
               lineHeight: 1.55,
               mb: 1.75,
             }}
@@ -660,9 +660,9 @@ const HowItWorks: React.FC = () => {
                       "transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
                     "&:hover": {
                       transform: "translateY(-1px)",
-                      borderColor: "rgba(254, 9, 68, 0.14)",
+                      borderColor: "rgba(15, 23, 42, 0.14)",
                       boxShadow:
-                        "0 1px 2px rgba(254, 9, 68, 0.05), 0 8px 22px rgba(254, 9, 68, 0.05)",
+                        "0 1px 2px rgba(180, 0, 10, 0.05), 0 8px 22px rgba(180, 0, 10, 0.05)",
                     },
                   }}
                 >
@@ -685,7 +685,7 @@ const HowItWorks: React.FC = () => {
                       fontFamily: SERIF,
                       fontSize: 13.5,
                       fontWeight: 600,
-                      color: "#3c1e14",
+                      color: "#1A2B2E",
                       lineHeight: 1.25,
                       letterSpacing: "-0.005em",
                     }}
@@ -697,7 +697,7 @@ const HowItWorks: React.FC = () => {
                       fontFamily: SANS,
                       fontSize: 11.5,
                       lineHeight: 1.4,
-                      color: "rgba(60,30,20,0.7)",
+                      color: "rgba(15, 23, 42,0.7)",
                       wordBreak: "break-word",
                     }}
                   >
@@ -720,7 +720,7 @@ const HowItWorks: React.FC = () => {
               fontFamily: SANS,
               fontSize: 12,
               fontWeight: 600,
-              color: "rgba(60,30,20,0.7)",
+              color: "rgba(15, 23, 42,0.7)",
               textDecoration: "none",
               letterSpacing: "0.02em",
               display: "inline-flex",
@@ -729,7 +729,7 @@ const HowItWorks: React.FC = () => {
               py: 0.5,
               transition: "color 200ms ease",
               "&:hover": {
-                color: "#FE0944",
+                color: "#B4000A",
                 "& .arrow": { transform: "translateX(2px)" },
               },
             }}
@@ -763,7 +763,7 @@ const HowItWorks: React.FC = () => {
             textAlign: "center",
             fontFamily: SANS,
             fontSize: 12,
-            color: "rgba(60,30,20,0.55)",
+            color: "rgba(15, 23, 42,0.55)",
             lineHeight: 1.55,
             fontStyle: "italic",
             marginTop: "24px",

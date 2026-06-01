@@ -81,6 +81,9 @@ void i18n
           bookable: "Bookable",
           resting: "Resting",
           holiday: "Holiday",
+          // 🆕 Round 28s138 — Shared label for resting + holiday on
+          //   the home card. Bookable keeps its own label (orange).
+          offline: "Offline",
           // Hero
           "hero.title": "Bangkok's #1 Outcall Massage",
           "hero.subtitle":
@@ -91,6 +94,9 @@ void i18n
           "filter.all": "All",
           "filter.thai": "Thai",
           "filter.aroma": "Aroma",
+          // 🆕 Round 28s132 — Therapist card UI
+          "therapistCard.startingFrom": "Starting from",
+          "therapistCard.bookNow": "Book Now",
           // Home
           "home.escorts": "Escorts",
           "home.search": "Search name…",
@@ -120,6 +126,7 @@ void i18n
           bookable: "จองได้",
           resting: "ไม่สามารถจองได้",
           holiday: "วันหยุด",
+          offline: "ไม่ว่าง",
           "hero.title": "นวดถึงที่ระดับหรู #1 กรุงเทพ",
           "hero.subtitle":
             "หมอนวดยืนยันตัวตน • จองสด 24 ชม. • รองรับ 5 ภาษา",
@@ -128,6 +135,8 @@ void i18n
           "filter.all": "ทั้งหมด",
           "filter.thai": "นวดไทย",
           "filter.aroma": "อโรมา",
+          "therapistCard.startingFrom": "ราคาเริ่มต้น",
+          "therapistCard.bookNow": "จองเลย",
           "home.escorts": "นักบำบัด",
           "home.search": "ค้นหาชื่อ…",
           "home.subtitle": "นวดถึงที่ในกรุงเทพ",
@@ -155,6 +164,7 @@ void i18n
           bookable: "可预订",
           resting: "休息中",
           holiday: "休假",
+          offline: "暂停接单",
           "hero.title": "曼谷第一外送按摩",
           "hero.subtitle":
             "认证按摩师 • 实时可订 • 支持英语 / 中文 / 日本語 / 한국어",
@@ -163,6 +173,8 @@ void i18n
           "filter.all": "全部",
           "filter.thai": "泰式",
           "filter.aroma": "精油",
+          "therapistCard.startingFrom": "起价",
+          "therapistCard.bookNow": "立即预订",
           "home.escorts": "按摩师",
           "home.search": "搜索姓名…",
           "home.subtitle": "曼谷外送按摩",
@@ -190,6 +202,7 @@ void i18n
           bookable: "予約可能",
           resting: "休憩中",
           holiday: "休業日",
+          offline: "受付停止",
           "hero.title": "バンコク No.1 出張マッサージ",
           "hero.subtitle":
             "認定セラピスト • リアルタイム予約 • EN/中文/日本語/한국어 対応",
@@ -198,6 +211,8 @@ void i18n
           "filter.all": "すべて",
           "filter.thai": "タイ式",
           "filter.aroma": "アロマ",
+          "therapistCard.startingFrom": "料金",
+          "therapistCard.bookNow": "今すぐ予約",
           "home.escorts": "セラピスト",
           "home.search": "名前で検索…",
           "home.subtitle": "バンコク出張マッサージ",
@@ -225,6 +240,7 @@ void i18n
           bookable: "예약 가능",
           resting: "휴식 중",
           holiday: "휴일",
+          offline: "예약 불가",
           "hero.title": "방콕 1위 출장 마사지",
           "hero.subtitle":
             "인증 테라피스트 • 실시간 예약 • EN/中文/日本語/한국어 지원",
@@ -233,6 +249,8 @@ void i18n
           "filter.all": "전체",
           "filter.thai": "타이",
           "filter.aroma": "아로마",
+          "therapistCard.startingFrom": "가격",
+          "therapistCard.bookNow": "지금 예약",
           "home.escorts": "테라피스트",
           "home.search": "이름 검색…",
           "home.subtitle": "방콕 출장 마사지",

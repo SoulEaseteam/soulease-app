@@ -342,7 +342,7 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
         sx={{
           position: "relative",
           height: 380,
-          background: "linear-gradient(180deg, #F1F5F9 0%, #E2E8F0 100%)",
+          background: "#F4F6F5",
           borderRadius: "18px",
           overflow: "hidden",
           border: "1px solid rgba(15, 23, 42, 0.06)",
@@ -435,7 +435,7 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
                 cursor: "pointer",
                 padding: 0,
                 boxShadow: isActive
-                  ? "0 6px 20px rgba(254, 9, 68, 0.5), 0 2px 6px rgba(15,23,42,0.10)"
+                  ? "0 6px 20px rgba(15, 23, 42, 0.50), 0 2px 6px rgba(15,23,42,0.10)"
                   : "0 4px 12px rgba(15, 23, 42, 0.18)",
                 zIndex: isActive ? 4 : 2,
                 transition:
@@ -574,7 +574,7 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
                 // 🆕 Round 28b1 — fallback gradient swapped from
                 //   warm tan/brown to brand red→coral so the
                 //   missing-photo case still feels SunRed.
-                background: `linear-gradient(135deg, ${brand.red}, ${brand.coral})`,
+                background: `#B4000A`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -774,7 +774,7 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
                   letterSpacing: "0.02em",
                   borderRadius: "999px",
                   boxShadow:
-                    "0 2px 6px rgba(254, 122, 82, 0.28)",
+                    "0 2px 6px rgba(214, 40, 40, 0.28)",
                 }}
               >
                 {activeNext ? `Avail ${activeNext}` : "In session"}

@@ -34,7 +34,7 @@ import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import NearMeRoundedIcon from "@mui/icons-material/NearMeRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 /** 3-state availability — drives the colored status dot in the hero
@@ -222,7 +222,7 @@ const DetailHero: React.FC<Props> = ({
           margin: "8px 12px 0",
           borderRadius: "22px",
           boxShadow:
-            "0 14px 34px rgba(126, 30, 46, 0.16), 0 2px 6px rgba(126, 30, 46, 0.08)",
+            "0 14px 34px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.08)",
         }}
       >
         {/* 🆕 28s30 — Airbnb-style 5-cell grid. Each cell tap opens
@@ -336,12 +336,12 @@ const DetailHero: React.FC<Props> = ({
                         padding: "5px 14px",
                         borderRadius: "999px",
                         background:
-                          "linear-gradient(135deg, #FE0944, #FE7A52)",
+                          "#B4000A",
                         fontSize: "12px",
                         fontWeight: 800,
                         letterSpacing: "0.04em",
                         boxShadow:
-                          "0 4px 12px rgba(254, 9, 68, 0.40), inset 0 1px 0 rgba(255,255,255,0.25)",
+                          "0 4px 12px rgba(15, 23, 42, 0.40), inset 0 1px 0 rgba(255,255,255,0.25)",
                       }}
                     >
                       ดูทั้งหมด
@@ -782,11 +782,11 @@ const DetailHero: React.FC<Props> = ({
             marginTop: "6px",
             minWidth: 180,
             borderRadius: "14px",
-            background: "rgba(255, 248, 240, 0.96)",
+            background: "rgba(244, 246, 245, 0.96)",
             backdropFilter: "blur(20px) saturate(180%)",
             WebkitBackdropFilter: "blur(20px) saturate(180%)",
             border: "1px solid rgba(0, 0, 0, 0.06)",
-            boxShadow: "0 12px 32px rgba(126, 30, 46, 0.18)",
+            boxShadow: "0 12px 32px rgba(15, 23, 42, 0.18)",
           },
         }}
       >
@@ -799,7 +799,7 @@ const DetailHero: React.FC<Props> = ({
           <ListItemIcon>
             <IosShareRoundedIcon
               fontSize="small"
-              sx={{ color: "#3c1e14" }}
+              sx={{ color: "#1A2B2E" }}
             />
           </ListItemIcon>
           <ListItemText
@@ -808,7 +808,7 @@ const DetailHero: React.FC<Props> = ({
                 fontFamily: SANS,
                 fontSize: "13.5px",
                 fontWeight: 600,
-                color: "#3c1e14",
+                color: "#1A2B2E",
               },
             }}
           >
@@ -824,7 +824,7 @@ const DetailHero: React.FC<Props> = ({
           <ListItemIcon>
             <FavoriteBorderRoundedIcon
               fontSize="small"
-              sx={{ color: "#FE0944" }}
+              sx={{ color: "#B4000A" }}
             />
           </ListItemIcon>
           <ListItemText
@@ -833,7 +833,7 @@ const DetailHero: React.FC<Props> = ({
                 fontFamily: SANS,
                 fontSize: "13.5px",
                 fontWeight: 600,
-                color: "#3c1e14",
+                color: "#1A2B2E",
               },
             }}
           >
@@ -849,7 +849,7 @@ const DetailHero: React.FC<Props> = ({
           <ListItemIcon>
             <FlagOutlinedIcon
               fontSize="small"
-              sx={{ color: "rgba(60, 30, 20, 0.7)" }}
+              sx={{ color: "rgba(15, 23, 42, 0.7)" }}
             />
           </ListItemIcon>
           <ListItemText
@@ -858,7 +858,7 @@ const DetailHero: React.FC<Props> = ({
                 fontFamily: SANS,
                 fontSize: "13.5px",
                 fontWeight: 600,
-                color: "rgba(60, 30, 20, 0.7)",
+                color: "rgba(15, 23, 42, 0.7)",
               },
             }}
           >

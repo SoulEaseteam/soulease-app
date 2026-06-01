@@ -35,7 +35,7 @@ import {
 } from "@/utils/servicePricing";
 import ServiceDurationSheet from "@/components/booking/ServiceDurationSheet";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 interface Props {
@@ -63,10 +63,10 @@ interface Props {
 }
 
 const BADGE_COLORS: Record<MassageService["badge"], { bg: string; fg: string }> = {
-  SIGNATURE: { bg: "rgba(254, 9, 68, 0.95)", fg: "#fff" },
-  POPULAR: { bg: "rgba(254, 122, 82, 0.95)", fg: "#fff" },
+  SIGNATURE: { bg: "rgba(15, 23, 42, 0.95)", fg: "#fff" },
+  POPULAR: { bg: "rgba(214, 40, 40, 0.95)", fg: "#fff" },
   RECOMMEND: { bg: "rgba(184, 92, 60, 0.95)", fg: "#fff" },
-  EXCLUSIVE: { bg: "rgba(60, 30, 20, 0.95)", fg: "#FEC9A7" },
+  EXCLUSIVE: { bg: "rgba(15, 23, 42, 0.95)", fg: "#FFF0F0" },
 };
 
 // Round 28s33 (founder 2026-05-31, "เอา เมนูขายดีขึ้นก่อน") —
@@ -179,17 +179,17 @@ const StepService: React.FC<Props> = ({
               cursor: "pointer",
               userSelect: "none",
               boxShadow: isSelected
-                ? "0 0 0 2.5px #FE0944, 0 14px 32px rgba(254, 9, 68, 0.26)"
+                ? "0 0 0 2.5px #B4000A, 0 14px 32px rgba(15, 23, 42, 0.26)"
                 : isTrending
-                  ? "0 0 0 2px #FE7A52, 0 12px 28px rgba(254, 9, 68, 0.16)"
-                  : "0 8px 22px rgba(126, 30, 46, 0.12)",
+                  ? "0 0 0 2px #D62828, 0 12px 28px rgba(15, 23, 42, 0.16)"
+                  : "0 8px 22px rgba(15, 23, 42, 0.12)",
               transition: "transform 0.2s ease, box-shadow 0.2s ease",
               "@media (hover: hover)": {
                 "&:hover": { transform: "translateY(-2px)" },
                 "&:hover .svc-img": { transform: "scale(1.05)" },
               },
               "&:focus-visible": {
-                outline: "2px solid #FE0944",
+                outline: "2px solid #B4000A",
                 outlineOffset: "2px",
               },
               // 🆕 Round 28s88 (founder "ตรง •TRENDING เป็นกรอบ และมี
@@ -202,11 +202,11 @@ const StepService: React.FC<Props> = ({
                     "@keyframes sunredTrendFrame": {
                       "0%, 100%": {
                         boxShadow:
-                          "0 0 0 2px #FE0944, 0 0 0 4px rgba(254,9,68,0.10), 0 10px 26px rgba(254,9,68,0.22)",
+                          "0 0 0 2px #B4000A, 0 0 0 4px rgba(15, 23, 42, 0.10), 0 10px 26px rgba(15, 23, 42, 0.22)",
                       },
                       "50%": {
                         boxShadow:
-                          "0 0 0 2px #FE7A52, 0 0 0 9px rgba(254,9,68,0.30), 0 16px 38px rgba(254,9,68,0.40)",
+                          "0 0 0 2px #D62828, 0 0 0 9px rgba(15, 23, 42, 0.30), 0 16px 38px rgba(15, 23, 42, 0.40)",
                       },
                     },
                     "@media (prefers-reduced-motion: reduce)": {
@@ -277,7 +277,7 @@ const StepService: React.FC<Props> = ({
                     gap: "4px",
                     padding: "3px 9px 3px 7px",
                     borderRadius: 999,
-                    background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+                    background: "#B4000A",
                     color: "#fff",
                     fontFamily: SANS,
                     fontSize: "9.5px",
@@ -285,7 +285,7 @@ const StepService: React.FC<Props> = ({
                     letterSpacing: "0.10em",
                     textTransform: "uppercase",
                     boxShadow:
-                      "0 6px 14px rgba(254, 9, 68, 0.36), inset 0 1px 0 rgba(255,255,255,0.30)",
+                      "0 6px 14px rgba(15, 23, 42, 0.36), inset 0 1px 0 rgba(255,255,255,0.30)",
                     whiteSpace: "nowrap",
                   }}
                 >
@@ -323,12 +323,12 @@ const StepService: React.FC<Props> = ({
                   marginTop: isTrending ? "26px" : 0,
                   padding: "3px 9px",
                   borderRadius: 999,
-                  background: "#FE0944",
+                  background: "#B4000A",
                   color: "#fff",
                   fontFamily: SANS,
                   fontSize: "10px",
                   fontWeight: 800,
-                  boxShadow: "0 4px 12px rgba(254, 9, 68, 0.4)",
+                  boxShadow: "0 4px 12px rgba(15, 23, 42, 0.40)",
                 }}
               >
                 {selectedDuration}m
@@ -453,7 +453,7 @@ const StepService: React.FC<Props> = ({
         <Typography
           sx={{
             fontFamily: SANS,
-            color: "rgba(60, 30, 20, 0.5)",
+            color: "rgba(15, 23, 42, 0.5)",
             textAlign: "center",
             padding: "40px 20px",
           }}

@@ -15,7 +15,7 @@ import { useTranslation } from "react-i18next";
 
 const HINT_LS_KEY = "sunred_stats_hint_seen_v1";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 interface Stat {
@@ -107,7 +107,7 @@ const StatsCard: React.FC<Props> = ({
     {
       num: (
         <>
-          <Box component="span" sx={{ color: "#FE0944" }}>★</Box> {rating}
+          <Box component="span" sx={{ color: "#B4000A" }}>★</Box> {rating}
         </>
       ),
       label: t("detail.stats.reviews", "{{count}} reviews", { count: reviewCount }),
@@ -177,14 +177,14 @@ const StatsCard: React.FC<Props> = ({
             sx={{
               padding: "8px 14px",
               borderRadius: "999px",
-              background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+              background: "#B4000A",
               color: "#fff",
               fontFamily: '"Inter", system-ui, -apple-system, sans-serif',
               fontSize: "12px",
               fontWeight: 700,
               letterSpacing: "0.01em",
               whiteSpace: "nowrap",
-              boxShadow: "0 8px 22px rgba(254, 9, 68, 0.35)",
+              boxShadow: "0 8px 22px rgba(15, 23, 42, 0.35)",
               display: "flex",
               alignItems: "center",
               gap: "6px",
@@ -213,8 +213,8 @@ const StatsCard: React.FC<Props> = ({
               transform: "translateX(-50%) rotate(45deg)",
               width: 10,
               height: 10,
-              background: "#FE7A52",
-              boxShadow: "3px 3px 8px rgba(254, 9, 68, 0.25)",
+              background: "#D62828",
+              boxShadow: "3px 3px 8px rgba(15, 23, 42, 0.25)",
             }}
           />
         </Box>
@@ -230,7 +230,7 @@ const StatsCard: React.FC<Props> = ({
           WebkitBackdropFilter: "blur(30px) saturate(180%)",
           border: "1px solid rgba(255, 255, 255, 0.7)",
           boxShadow:
-            "0 12px 32px rgba(126, 30, 46, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.7)",
+            "0 12px 32px rgba(15, 23, 42, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.7)",
         }}
       >
       {/* Round 28s41 — Persistent "Tap any stat for full profile ↗"
@@ -282,14 +282,14 @@ const StatsCard: React.FC<Props> = ({
               // relies on the brief :active scale alone.
               "@media (hover: hover)": {
                 "&:hover": {
-                  background: "rgba(254, 9, 68, 0.04)",
+                  background: "rgba(180, 0, 10, 0.04)",
                 },
               },
               "&:active": {
                 transform: "scale(0.97)",
               },
               "&:focus-visible": {
-                outline: "2px solid #FE0944",
+                outline: "2px solid #B4000A",
                 outlineOffset: "2px",
               },
             }),
@@ -300,7 +300,7 @@ const StatsCard: React.FC<Props> = ({
               fontFamily: SERIF,
               fontWeight: 600,
               fontSize: "18px",
-              color: "#2a1a14",
+              color: "#1A2B2E",
               letterSpacing: "-0.02em",
             }}
           >
@@ -310,7 +310,7 @@ const StatsCard: React.FC<Props> = ({
             sx={{
               fontFamily: SANS,
               fontSize: "9px",
-              color: "rgba(60, 30, 20, 0.72)",
+              color: "rgba(15, 23, 42, 0.72)",
               textTransform: "uppercase",
               letterSpacing: "0.08em",
               fontWeight: 700,
@@ -332,7 +332,7 @@ const StatsCard: React.FC<Props> = ({
                   // Static red chevron now; the cell's own hover/active
                   // states still signal it's tappable.
                   fontSize: "12px",
-                  color: "#FE0944",
+                  color: "#B4000A",
                   fontWeight: 800,
                   marginLeft: "1px",
                   lineHeight: 1,

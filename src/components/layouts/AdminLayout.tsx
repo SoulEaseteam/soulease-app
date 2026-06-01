@@ -147,7 +147,7 @@ const AdminLayout: React.FC = () => {
         <Box
           sx={{
             width: 32, height: 32, borderRadius: "50%",
-            background: "linear-gradient(135deg,#FE0944,#FE7A52)",
+            background: "#B4000A",
             display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0,
           }}
@@ -157,7 +157,7 @@ const AdminLayout: React.FC = () => {
         {!compact && (
           <Box>
             <Typography sx={{ fontSize: 13.5, fontWeight: 800, color: "#1a0805", lineHeight: 1.1 }}>SunRed</Typography>
-            <Typography sx={{ fontSize: 10.5, fontWeight: 600, color: "rgba(60,30,20,0.45)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Admin</Typography>
+            <Typography sx={{ fontSize: 10.5, fontWeight: 600, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Admin</Typography>
           </Box>
         )}
       </Box>
@@ -179,18 +179,18 @@ const AdminLayout: React.FC = () => {
                 px: compact ? 1 : 1.5,
                 borderRadius: "10px",
                 mb: 0.25,
-                color: active ? "#FE0944" : "#3c1e14",
+                color: active ? "#B4000A" : "#1A2B2E",
                 "&:hover": {
-                  background: "rgba(254,9,68,0.04)",
+                  background: "rgba(180,0,10,0.04)",
                 },
                 "&.Mui-selected": {
-                  background: "rgba(254,9,68,0.08)",
-                  color: "#FE0944",
-                  "&:hover": { background: "rgba(254,9,68,0.12)" },
-                  "& .MuiListItemIcon-root": { color: "#FE0944" },
+                  background: "rgba(180,0,10,0.08)",
+                  color: "#B4000A",
+                  "&:hover": { background: "rgba(15, 23, 42, 0.12)" },
+                  "& .MuiListItemIcon-root": { color: "#B4000A" },
                 },
                 "& .MuiListItemIcon-root": {
-                  color: active ? "#FE0944" : "rgba(60,30,20,0.55)",
+                  color: active ? "#B4000A" : "rgba(15, 23, 42,0.55)",
                   minWidth: compact ? "auto" : 38,
                 },
               }}
@@ -222,10 +222,10 @@ const AdminLayout: React.FC = () => {
             display: "flex", alignItems: "center", gap: 1,
           }}
         >
-          <Avatar sx={{ width: 28, height: 28, bgcolor: "rgba(254,9,68,0.10)", color: "#FE0944", fontSize: 13, fontWeight: 700 }}>
+          <Avatar sx={{ width: 28, height: 28, bgcolor: "rgba(15, 23, 42, 0.10)", color: "#B4000A", fontSize: 13, fontWeight: 700 }}>
             {user.email?.[0]?.toUpperCase()}
           </Avatar>
-          <Typography sx={{ fontSize: 12, fontWeight: 600, color: "rgba(60,30,20,0.60)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+          <Typography sx={{ fontSize: 12, fontWeight: 600, color: "rgba(15, 23, 42,0.60)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
             {user.email}
           </Typography>
         </Box>
@@ -244,8 +244,8 @@ const AdminLayout: React.FC = () => {
         position="fixed"
         sx={{
           zIndex: (t) => t.zIndex.drawer + 1,
-          background: "linear-gradient(135deg,#FE0944,#FE7E6D)",
-          boxShadow: "0 2px 12px rgba(254,9,68,0.25)",
+          background: "#B4000A",
+          boxShadow: "0 2px 12px rgba(15, 23, 42, 0.25)",
         }}
       >
         <Toolbar sx={{ justifyContent: "space-between" }}>
@@ -271,7 +271,7 @@ const AdminLayout: React.FC = () => {
             </Tooltip>
 
             <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small">
-              <Avatar sx={{ width: 30, height: 30, bgcolor: "#fff", color: "#FE0944", fontSize: 14, fontWeight: 700 }}>
+              <Avatar sx={{ width: 30, height: 30, bgcolor: "#fff", color: "#B4000A", fontSize: 14, fontWeight: 700 }}>
                 {user.email?.[0]?.toUpperCase()}
               </Avatar>
             </IconButton>
@@ -279,7 +279,7 @@ const AdminLayout: React.FC = () => {
             <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
               <MenuItem onClick={() => { void navigate("/admin/advanced-settings"); setAnchorEl(null); }}>Settings</MenuItem>
               <MenuItem onClick={() => { void navigate("/profile"); setAnchorEl(null); }}>My Profile</MenuItem>
-              <MenuItem onClick={logout} sx={{ color: "#FE0944" }}>Logout</MenuItem>
+              <MenuItem onClick={logout} sx={{ color: "#B4000A" }}>Logout</MenuItem>
             </Menu>
           </Box>
         </Toolbar>

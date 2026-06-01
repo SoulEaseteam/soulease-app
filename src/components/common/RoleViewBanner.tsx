@@ -75,12 +75,12 @@ const RoleViewBanner: React.FC = () => {
     }
   };
 
-  const accent = isAdmin ? "#FE0944" : "#16a34a";
+  const accent = isAdmin ? "#B4000A" : "#16a34a";
   const accentSoft = isAdmin
-    ? "rgba(254, 9, 68, 0.10)"
+    ? "rgba(15, 23, 42, 0.10)"
     : "rgba(22, 163, 74, 0.10)";
   const accentBorder = isAdmin
-    ? "rgba(254, 9, 68, 0.28)"
+    ? "rgba(15, 23, 42, 0.28)"
     : "rgba(22, 163, 74, 0.28)";
   const labelInk = isAdmin ? "#9F0731" : "#15803d";
 
@@ -101,7 +101,7 @@ const RoleViewBanner: React.FC = () => {
         transition: "background 0.15s ease",
         "&:hover": {
           background: isAdmin
-            ? "rgba(254, 9, 68, 0.16)"
+            ? "rgba(15, 23, 42, 0.16)"
             : "rgba(22, 163, 74, 0.16)",
         },
       }}
@@ -148,7 +148,7 @@ const RoleViewBanner: React.FC = () => {
             display: "block",
             fontSize: 12,
             fontWeight: 700,
-            color: "#3c1e14",
+            color: "#1A2B2E",
             marginTop: "2px",
             lineHeight: 1.2,
           }}

@@ -46,7 +46,7 @@ import HowItWorks from "@/components/home/HowItWorks";
 import { useServiceUsageStats } from "@/hooks/useServiceUsageStats";
 import { useDocumentMeta } from "@/utils/useDocumentMeta";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // ─── About pillars — factual only, no fake metrics ────────────────────
@@ -75,7 +75,7 @@ const ABOUT_PILLARS: Array<{
     title: "Hotel & residence outcall",
     body:
       "Your practitioner arrives anywhere in central Bangkok — Sukhumvit, Silom, Asok, Thonglor, Sathorn.",
-    tone: { bg: "rgba(254, 9, 68, 0.08)", fg: "#FE0944" },
+    tone: { bg: "rgba(180, 0, 10, 0.08)", fg: "#B4000A" },
   },
   {
     Icon: SupportAgentRoundedIcon,
@@ -214,7 +214,7 @@ const ServicesPage: React.FC = () => {
         maxWidth: 430,
         margin: "0 auto",
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
+        background: "#F4F6F5",
         borderRadius: "28px",
         overflow: "hidden",
         boxShadow: "0 20px 60px rgba(15, 23, 42, 0.08)",
@@ -249,7 +249,7 @@ const ServicesPage: React.FC = () => {
               right: 0,
               height: 260,
               background:
-                "radial-gradient(110% 80% at 50% 0%, rgba(254,122,82,0.13) 0%, rgba(254,9,68,0.05) 38%, transparent 72%)",
+                "radial-gradient(110% 80% at 50% 0%, rgba(214,40,40,0.13) 0%, rgba(180,0,10,0.05) 38%, transparent 72%)",
               pointerEvents: "none",
             }}
           />
@@ -277,7 +277,7 @@ const ServicesPage: React.FC = () => {
               },
               "&:hover img": {
                 boxShadow:
-                  "0 1px 2px rgba(15, 23, 42, 0.04), 0 14px 36px rgba(254, 9, 68, 0.22)",
+                  "0 1px 2px rgba(15, 23, 42, 0.04), 0 14px 36px rgba(15, 23, 42, 0.22)",
               },
             }}
           >
@@ -298,7 +298,7 @@ const ServicesPage: React.FC = () => {
                 inset: -6,
                 borderRadius: "50%",
                 background:
-                  "radial-gradient(circle, rgba(254, 9, 68, 0.32) 0%, rgba(254, 122, 82, 0.18) 55%, rgba(254, 122, 82, 0) 78%)",
+                  "radial-gradient(circle, rgba(15, 23, 42, 0.32) 0%, rgba(214, 40, 40, 0.18) 55%, rgba(214, 40, 40, 0) 78%)",
                 pointerEvents: "none",
                 zIndex: 0,
               }}
@@ -362,7 +362,7 @@ const ServicesPage: React.FC = () => {
               fontFamily: SERIF,
               fontSize: 27,
               fontWeight: 600,
-              color: "#3c1e14",
+              color: "#1A2B2E",
               letterSpacing: "-0.015em",
               lineHeight: 1.1,
               mt: 1,
@@ -380,7 +380,7 @@ const ServicesPage: React.FC = () => {
               fontFamily: SERIF,
               fontSize: 16,
               fontWeight: 500,
-              color: "rgba(60,30,20,0.7)",
+              color: "rgba(15, 23, 42,0.7)",
               mt: 0.75,
               letterSpacing: "-0.01em",
               lineHeight: 1.4,
@@ -392,8 +392,8 @@ const ServicesPage: React.FC = () => {
             Bangkok&apos;s most discreet outcall massage,{" "}
             <Box
               component={motion.em}
-              initial={{ color: "rgba(60,30,20,0.7)" }}
-              animate={{ color: "#FE0944" }}
+              initial={{ color: "rgba(15, 23, 42,0.7)" }}
+              animate={{ color: "#B4000A" }}
               transition={{ duration: 0.9, delay: 1.15, ease: "easeOut" }}
               sx={{ fontStyle: "italic" }}
             >
@@ -493,8 +493,8 @@ const ServicesPage: React.FC = () => {
                   sx={{
                     p: 0.85,
                     background: "#fff",
-                    border: "1px solid rgba(126, 30, 46, 0.08)",
-                    boxShadow: "0 3px 10px rgba(126, 30, 46, 0.10)",
+                    border: "1px solid rgba(15, 23, 42, 0.08)",
+                    boxShadow: "0 3px 10px rgba(15, 23, 42, 0.10)",
                     "&:hover": { background: "#fff" },
                   }}
                   {...(external
@@ -523,14 +523,18 @@ const ServicesPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.75, ease: "easeOut" }}
           sx={{
+            // 🆕 Round 28s169 — Founder: "3 แทบ เอากรอบออก". Strip
+            //   the white pill background + slate border + shadow
+            //   so the tabs read as clean inline buttons against
+            //   the page bg. Active pill (red gradient) still slides
+            //   between tabs via the existing `layoutId` animation.
             mt: 2.5,
             mx: 2,
             p: 0.5,
             borderRadius: 999,
-            background: "#FFFFFF",
-            border: "1px solid rgba(15, 23, 42, 0.06)",
-            boxShadow:
-              "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.04)",
+            background: "transparent",
+            border: "none",
+            boxShadow: "none",
             display: "flex",
             position: "relative",
           }}
@@ -565,15 +569,15 @@ const ServicesPage: React.FC = () => {
                   fontSize: 12.5,
                   fontWeight: isActive ? 700 : 600,
                   letterSpacing: "0.01em",
-                  color: isActive ? "#fff" : "rgba(60, 30, 20, 0.55)",
+                  color: isActive ? "#fff" : "rgba(15, 23, 42, 0.55)",
                   transition:
                     "color 0.25s ease, transform 0.18s ease",
                   "&:hover": isActive
                     ? {}
-                    : { color: "#FE0944", transform: "translateY(-1px)" },
+                    : { color: "#B4000A", transform: "translateY(-1px)" },
                   "&:active": { transform: "scale(0.96)" },
                   "&:focus-visible": {
-                    outline: "2px solid rgba(254, 9, 68, 0.5)",
+                    outline: "2px solid rgba(15, 23, 42, 0.50)",
                     outlineOffset: -2,
                     borderRadius: 999,
                   },
@@ -594,9 +598,9 @@ const ServicesPage: React.FC = () => {
                       inset: 0,
                       borderRadius: 999,
                       background:
-                        "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+                        "#B4000A",
                       boxShadow:
-                        "0 4px 14px rgba(254, 9, 68, 0.32), inset 0 1px 0 rgba(255,255,255,0.18)",
+                        "0 4px 14px rgba(15, 23, 42, 0.32), inset 0 1px 0 rgba(255,255,255,0.18)",
                       zIndex: 0,
                     }}
                   />
@@ -636,10 +640,10 @@ const ServicesPage: React.FC = () => {
                   flex: 1,
                   border: "1px solid rgba(15, 23, 42, 0.06)",
                   borderColor: quizOpen
-                    ? "rgba(254, 9, 68, 0.32)"
+                    ? "rgba(15, 23, 42, 0.32)"
                     : "rgba(15, 23, 42, 0.06)",
                   background: quizOpen
-                    ? "linear-gradient(135deg, rgba(254, 9, 68, 0.08), rgba(254, 122, 82, 0.05))"
+                    ? "#F4F6F5"
                     : "#FFFFFF",
                   borderRadius: "12px",
                   px: 1.5,
@@ -651,7 +655,7 @@ const ServicesPage: React.FC = () => {
                   fontFamily: SANS,
                   fontSize: 12.5,
                   fontWeight: 600,
-                  color: quizOpen ? "#FE0944" : "#3c1e14",
+                  color: quizOpen ? "#B4000A" : "#1A2B2E",
                   letterSpacing: "0.01em",
                   transition:
                     "border-color 0.22s ease, background 0.22s ease, color 0.22s ease",
@@ -670,10 +674,10 @@ const ServicesPage: React.FC = () => {
                   flex: 1,
                   border: "1px solid rgba(15, 23, 42, 0.06)",
                   borderColor: compareOpen
-                    ? "rgba(254, 9, 68, 0.32)"
+                    ? "rgba(15, 23, 42, 0.32)"
                     : "rgba(15, 23, 42, 0.06)",
                   background: compareOpen
-                    ? "linear-gradient(135deg, rgba(254, 9, 68, 0.08), rgba(254, 122, 82, 0.05))"
+                    ? "#F4F6F5"
                     : "#FFFFFF",
                   borderRadius: "12px",
                   px: 1.5,
@@ -685,7 +689,7 @@ const ServicesPage: React.FC = () => {
                   fontFamily: SANS,
                   fontSize: 12.5,
                   fontWeight: 600,
-                  color: compareOpen ? "#FE0944" : "#3c1e14",
+                  color: compareOpen ? "#B4000A" : "#1A2B2E",
                   letterSpacing: "0.01em",
                   transition:
                     "border-color 0.22s ease, background 0.22s ease, color 0.22s ease",
@@ -732,10 +736,10 @@ const ServicesPage: React.FC = () => {
                     justifyContent: "flex-end",
                     cursor: "pointer",
                     border: isFlagship
-                      ? "1.5px solid rgba(254, 9, 68, 0.36)"
+                      ? "1.5px solid rgba(15, 23, 42, 0.36)"
                       : "1px solid rgba(15, 23, 42, 0.06)",
                     boxShadow: isFlagship
-                      ? "0 1px 2px rgba(254, 9, 68, 0.08), 0 14px 36px rgba(254, 9, 68, 0.20), 0 4px 14px rgba(254, 122, 82, 0.10)"
+                      ? "0 1px 2px rgba(180, 0, 10, 0.08), 0 14px 36px rgba(15, 23, 42, 0.20), 0 4px 14px rgba(214, 40, 40, 0.10)"
                       : "0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px rgba(15, 23, 42, 0.10)",
                     "&::before": {
                       content: '""',
@@ -760,11 +764,11 @@ const ServicesPage: React.FC = () => {
                       fontWeight: 700,
                       color: "#fff",
                       background:
-                        "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+                        "#B4000A",
                       borderRadius: 1.2,
                       textTransform: "uppercase",
                       letterSpacing: "0.06em",
-                      boxShadow: "0 4px 10px rgba(254, 9, 68, 0.35)",
+                      boxShadow: "0 4px 10px rgba(15, 23, 42, 0.35)",
                       zIndex: 1,
                       display: "inline-flex",
                       alignItems: "center",
@@ -894,7 +898,7 @@ const ServicesPage: React.FC = () => {
                 textAlign: "center",
                 mt: 1.5,
                 fontSize: 12.5,
-                color: "rgba(60, 30, 20, 0.6)",
+                color: "rgba(15, 23, 42, 0.6)",
                 lineHeight: 1.65,
                 fontFamily: SANS,
                 fontStyle: "italic",
@@ -926,11 +930,11 @@ const ServicesPage: React.FC = () => {
                   fontFamily: SERIF,
                   fontSize: 17,
                   fontWeight: 500,
-                  color: "#3c1e14",
+                  color: "#1A2B2E",
                   letterSpacing: "-0.01em",
                   lineHeight: 1.35,
                   mb: 1,
-                  "& em": { color: "#FE0944", fontStyle: "italic" },
+                  "& em": { color: "#B4000A", fontStyle: "italic" },
                 }}
               >
                 Bangkok&apos;s most discreet outcall massage,{" "}
@@ -941,7 +945,7 @@ const ServicesPage: React.FC = () => {
                   fontFamily: SANS,
                   fontSize: 13.5,
                   lineHeight: 1.65,
-                  color: "rgba(60,30,20,0.78)",
+                  color: "rgba(15, 23, 42,0.78)",
                 }}
               >
                 SunRed is a private concierge for verified outcall wellness
@@ -975,9 +979,9 @@ const ServicesPage: React.FC = () => {
                       "transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
                     "&:hover": {
                       transform: "translateY(-1px)",
-                      borderColor: "rgba(254, 9, 68, 0.14)",
+                      borderColor: "rgba(15, 23, 42, 0.14)",
                       boxShadow:
-                        "0 1px 2px rgba(254, 9, 68, 0.05), 0 8px 22px rgba(254, 9, 68, 0.05)",
+                        "0 1px 2px rgba(180, 0, 10, 0.05), 0 8px 22px rgba(180, 0, 10, 0.05)",
                     },
                   }}
                 >
@@ -1001,7 +1005,7 @@ const ServicesPage: React.FC = () => {
                       fontFamily: SERIF,
                       fontSize: 13.5,
                       fontWeight: 600,
-                      color: "#3c1e14",
+                      color: "#1A2B2E",
                       lineHeight: 1.25,
                       letterSpacing: "-0.005em",
                     }}
@@ -1013,7 +1017,7 @@ const ServicesPage: React.FC = () => {
                       fontFamily: SANS,
                       fontSize: 11.5,
                       lineHeight: 1.5,
-                      color: "rgba(60,30,20,0.7)",
+                      color: "rgba(15, 23, 42,0.7)",
                     }}
                   >
                     {body}
@@ -1032,13 +1036,13 @@ const ServicesPage: React.FC = () => {
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                <LocationOnRoundedIcon sx={{ color: "#FE0944", fontSize: 18 }} />
+                <LocationOnRoundedIcon sx={{ color: "#B4000A", fontSize: 18 }} />
                 <Typography
                   sx={{
                     fontFamily: SERIF,
                     fontSize: 14.5,
                     fontWeight: 600,
-                    color: "#3c1e14",
+                    color: "#1A2B2E",
                   }}
                 >
                   Service area
@@ -1049,7 +1053,7 @@ const ServicesPage: React.FC = () => {
                   fontFamily: SANS,
                   fontSize: 12.5,
                   lineHeight: 1.6,
-                  color: "rgba(60,30,20,0.72)",
+                  color: "rgba(15, 23, 42,0.72)",
                 }}
               >
                 Sukhumvit · Silom · Asok · Thonglor · Sathorn · Phrom Phong ·
@@ -1075,7 +1079,7 @@ const ServicesPage: React.FC = () => {
                     fontFamily: SERIF,
                     fontSize: 14.5,
                     fontWeight: 600,
-                    color: "#3c1e14",
+                    color: "#1A2B2E",
                   }}
                 >
                   Languages supported
@@ -1086,7 +1090,7 @@ const ServicesPage: React.FC = () => {
                   fontFamily: SANS,
                   fontSize: 12.5,
                   lineHeight: 1.6,
-                  color: "rgba(60,30,20,0.72)",
+                  color: "rgba(15, 23, 42,0.72)",
                 }}
               >
                 English · ไทย · 中文 · 日本語 · 한국어 — our concierge
@@ -1113,8 +1117,8 @@ const ServicesPage: React.FC = () => {
             position: "relative",
             borderRadius: "22px",
             background:
-              "linear-gradient(180deg, #FFFFFF 0%, rgba(254, 234, 217, 0.45) 100%)",
-            border: "1.5px solid rgba(254, 9, 68, 0.18)",
+              "#FFFFFF",
+            border: "1.5px solid rgba(15, 23, 42, 0.18)",
             m: 2.5,
             width: "calc(100% - 40px)",
             maxWidth: 340,
@@ -1123,7 +1127,7 @@ const ServicesPage: React.FC = () => {
             display: "flex",
             flexDirection: "column",
             boxShadow:
-              "0 1px 2px rgba(254, 9, 68, 0.06), 0 24px 56px rgba(60, 30, 20, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.7)",
+              "0 1px 2px rgba(180, 0, 10, 0.06), 0 24px 56px rgba(15, 23, 42, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.7)",
             // Top-right warm radial glow — same brand gesture as Bundle card
             "&::before": {
               content: '""',
@@ -1134,7 +1138,7 @@ const ServicesPage: React.FC = () => {
               height: 200,
               borderRadius: "50%",
               background:
-                "radial-gradient(circle, rgba(254, 9, 68, 0.16) 0%, rgba(254, 122, 82, 0.05) 55%, transparent 78%)",
+                "radial-gradient(circle, rgba(15, 23, 42, 0.16) 0%, rgba(214, 40, 40, 0.05) 55%, transparent 78%)",
               pointerEvents: "none",
               zIndex: 0,
             },
@@ -1185,8 +1189,8 @@ const ServicesPage: React.FC = () => {
               top: 8,
               right: 8,
               zIndex: 1,
-              color: "rgba(60, 30, 20, 0.5)",
-              "&:hover": { color: "#FE0944" },
+              color: "rgba(15, 23, 42, 0.5)",
+              "&:hover": { color: "#B4000A" },
             }}
           >
             <CloseRoundedIcon sx={{ fontSize: 20 }} />
@@ -1216,8 +1220,8 @@ const ServicesPage: React.FC = () => {
             position: "relative",
             borderRadius: "22px",
             background:
-              "linear-gradient(180deg, #FFFFFF 0%, rgba(254, 234, 217, 0.42) 100%)",
-            border: "1.5px solid rgba(254, 9, 68, 0.18)",
+              "#FFFFFF",
+            border: "1.5px solid rgba(15, 23, 42, 0.18)",
             m: 2.5,
             width: "calc(100% - 40px)",
             maxWidth: 380,
@@ -1226,7 +1230,7 @@ const ServicesPage: React.FC = () => {
             display: "flex",
             flexDirection: "column",
             boxShadow:
-              "0 1px 2px rgba(254, 9, 68, 0.06), 0 24px 56px rgba(60, 30, 20, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.7)",
+              "0 1px 2px rgba(180, 0, 10, 0.06), 0 24px 56px rgba(15, 23, 42, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.7)",
             "&::before": {
               content: '""',
               position: "absolute",
@@ -1236,7 +1240,7 @@ const ServicesPage: React.FC = () => {
               height: 200,
               borderRadius: "50%",
               background:
-                "radial-gradient(circle, rgba(254, 9, 68, 0.14) 0%, rgba(254, 122, 82, 0.05) 55%, transparent 78%)",
+                "radial-gradient(circle, rgba(15, 23, 42, 0.14) 0%, rgba(214, 40, 40, 0.05) 55%, transparent 78%)",
               pointerEvents: "none",
               zIndex: 0,
             },
@@ -1282,8 +1286,8 @@ const ServicesPage: React.FC = () => {
               top: 8,
               right: 8,
               zIndex: 1,
-              color: "rgba(60, 30, 20, 0.5)",
-              "&:hover": { color: "#FE0944" },
+              color: "rgba(15, 23, 42, 0.5)",
+              "&:hover": { color: "#B4000A" },
             }}
           >
             <CloseRoundedIcon sx={{ fontSize: 20 }} />
@@ -1415,9 +1419,9 @@ const ServiceQuiz: React.FC<{
           p: 2,
           borderRadius: "16px",
           background: "#FFFFFF",
-          border: "1px solid rgba(254, 9, 68, 0.18)",
+          border: "1px solid rgba(15, 23, 42, 0.18)",
           boxShadow:
-            "0 1px 2px rgba(254, 9, 68, 0.05), 0 8px 22px rgba(254, 9, 68, 0.06)",
+            "0 1px 2px rgba(180, 0, 10, 0.05), 0 8px 22px rgba(180, 0, 10, 0.06)",
         }}
       >
         <Box
@@ -1447,11 +1451,11 @@ const ServiceQuiz: React.FC<{
             fontFamily: SERIF,
             fontSize: 20,
             fontWeight: 500,
-            color: "#2a1a14",
+            color: "#1A2B2E",
             letterSpacing: "-0.01em",
             lineHeight: 1.25,
             mb: 0.5,
-            "& em": { fontStyle: "italic", color: "#FE0944" },
+            "& em": { fontStyle: "italic", color: "#B4000A" },
           }}
         >
           {recommended.name}
@@ -1460,7 +1464,7 @@ const ServiceQuiz: React.FC<{
           sx={{
             fontFamily: SANS,
             fontSize: 12.5,
-            color: "rgba(60, 30, 20, 0.7)",
+            color: "rgba(15, 23, 42, 0.7)",
             lineHeight: 1.55,
             mb: 1.5,
             fontStyle: "italic",
@@ -1476,16 +1480,16 @@ const ServiceQuiz: React.FC<{
               flex: 1,
               height: 36,
               borderRadius: 999,
-              background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+              background: "#B4000A",
               color: "#fff",
               fontFamily: SANS,
               fontSize: 12.5,
               fontWeight: 700,
               textTransform: "none",
               letterSpacing: "0.01em",
-              boxShadow: "0 4px 12px rgba(254, 9, 68, 0.32)",
+              boxShadow: "0 4px 12px rgba(15, 23, 42, 0.32)",
               "&:hover": {
-                background: "linear-gradient(135deg, #E50840, #E56A47)",
+                background: "#B4000A",
               },
             }}
           >
@@ -1498,14 +1502,14 @@ const ServiceQuiz: React.FC<{
               height: 36,
               borderRadius: 999,
               borderColor: "rgba(15, 23, 42, 0.12)",
-              color: "#3c1e14",
+              color: "#1A2B2E",
               fontFamily: SANS,
               fontSize: 12.5,
               fontWeight: 600,
               textTransform: "none",
               "&:hover": {
-                borderColor: "rgba(254, 9, 68, 0.3)",
-                background: "rgba(254, 9, 68, 0.03)",
+                borderColor: "rgba(15, 23, 42, 0.30)",
+                background: "rgba(180, 0, 10, 0.03)",
               },
             }}
           >
@@ -1562,9 +1566,9 @@ const ServiceQuiz: React.FC<{
                 borderRadius: 999,
                 background:
                   i < step
-                    ? "#FE0944"
+                    ? "#B4000A"
                     : i === step
-                      ? "linear-gradient(90deg, #FE0944, rgba(254, 9, 68, 0.2))"
+                      ? "#B4000A"
                       : "rgba(15, 23, 42, 0.08)",
               }}
             />
@@ -1576,7 +1580,7 @@ const ServiceQuiz: React.FC<{
           fontFamily: SERIF,
           fontSize: 17,
           fontWeight: 500,
-          color: "#2a1a14",
+          color: "#1A2B2E",
           letterSpacing: "-0.01em",
           lineHeight: 1.3,
           mb: 1.25,
@@ -1602,16 +1606,16 @@ const ServiceQuiz: React.FC<{
               fontFamily: SANS,
               fontSize: 13,
               fontWeight: 500,
-              color: "#3c1e14",
+              color: "#1A2B2E",
               textAlign: "left",
               cursor: "pointer",
               letterSpacing: "0.005em",
               transition:
                 "border-color 0.2s ease, background 0.2s ease, transform 0.18s ease, color 0.2s ease",
               "&:hover": {
-                borderColor: "rgba(254, 9, 68, 0.32)",
-                background: "rgba(254, 9, 68, 0.03)",
-                color: "#FE0944",
+                borderColor: "rgba(15, 23, 42, 0.32)",
+                background: "rgba(180, 0, 10, 0.03)",
+                color: "#B4000A",
                 transform: "translateY(-1px)",
               },
               "&:active": { transform: "scale(0.985)" },
@@ -1693,11 +1697,11 @@ const ServiceCompare: React.FC<{
           fontFamily: SERIF,
           fontSize: 22,
           fontWeight: 400,
-          color: "#2a1a14",
+          color: "#1A2B2E",
           letterSpacing: "-0.02em",
           lineHeight: 1.2,
           mb: 0.5,
-          "& em": { fontStyle: "italic", color: "#FE0944" },
+          "& em": { fontStyle: "italic", color: "#B4000A" },
         }}
       >
         At a <em>glance</em>
@@ -1706,7 +1710,7 @@ const ServiceCompare: React.FC<{
         sx={{
           fontFamily: SANS,
           fontSize: 12.5,
-          color: "rgba(60, 30, 20, 0.65)",
+          color: "rgba(15, 23, 42, 0.65)",
           lineHeight: 1.5,
           mb: 2,
         }}
@@ -1734,9 +1738,9 @@ const ServiceCompare: React.FC<{
                 "transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease",
               "&:hover": {
                 transform: "translateY(-1px)",
-                borderColor: "rgba(254, 9, 68, 0.22)",
+                borderColor: "rgba(15, 23, 42, 0.22)",
                 boxShadow:
-                  "0 1px 2px rgba(254, 9, 68, 0.05), 0 8px 22px rgba(254, 9, 68, 0.06)",
+                  "0 1px 2px rgba(180, 0, 10, 0.05), 0 8px 22px rgba(180, 0, 10, 0.06)",
               },
             }}
           >
@@ -1769,7 +1773,7 @@ const ServiceCompare: React.FC<{
                     fontFamily: SERIF,
                     fontSize: 16,
                     fontWeight: 600,
-                    color: "#2a1a14",
+                    color: "#1A2B2E",
                     letterSpacing: "-0.01em",
                     lineHeight: 1.25,
                   }}
@@ -1784,7 +1788,7 @@ const ServiceCompare: React.FC<{
                     fontWeight: 600,
                     letterSpacing: "0.16em",
                     textTransform: "uppercase",
-                    color: "rgba(60, 30, 20, 0.5)",
+                    color: "rgba(15, 23, 42, 0.5)",
                     lineHeight: 1.2,
                   }}
                 >
@@ -1796,7 +1800,7 @@ const ServiceCompare: React.FC<{
                     fontStyle: "italic",
                     fontSize: 17,
                     fontWeight: 600,
-                    color: "#FE0944",
+                    color: "#B4000A",
                     letterSpacing: "-0.01em",
                     lineHeight: 1.15,
                   }}
@@ -1831,7 +1835,7 @@ const ServiceCompare: React.FC<{
                       fontWeight: 700,
                       letterSpacing: "0.14em",
                       textTransform: "uppercase",
-                      color: "rgba(60, 30, 20, 0.5)",
+                      color: "rgba(15, 23, 42, 0.5)",
                       width: 70,
                       flexShrink: 0,
                     }}
@@ -1841,7 +1845,7 @@ const ServiceCompare: React.FC<{
                   <Box
                     sx={{
                       fontSize: 12,
-                      color: "rgba(60, 30, 20, 0.82)",
+                      color: "rgba(15, 23, 42, 0.82)",
                       lineHeight: 1.45,
                       flex: 1,
                     }}
@@ -1865,7 +1869,7 @@ const ServiceCompare: React.FC<{
                   fontSize: 11,
                   fontWeight: 700,
                   letterSpacing: "0.04em",
-                  color: "#FE0944",
+                  color: "#B4000A",
                 }}
               >
                 View →

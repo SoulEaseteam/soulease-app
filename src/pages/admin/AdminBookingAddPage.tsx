@@ -56,7 +56,7 @@ const MENU_PROPS = {
       background: "#fff",
       boxShadow: "0 8px 24px rgba(0,0,0,0.14)",
       borderRadius: "14px",
-      border: "1px solid rgba(60,30,20,0.08)",
+      border: "1px solid rgba(15, 23, 42,0.08)",
       mt: 0.5,
     },
   },
@@ -179,7 +179,7 @@ const AdminBookingAddPage: React.FC = () => {
     if (!document.getElementById(styleId)) {
       const s = document.createElement("style");
       s.id = styleId;
-      s.textContent = ".pac-container{z-index:9999!important;border-radius:12px;font-family:'Inter',sans-serif;box-shadow:0 12px 40px rgba(126,30,46,0.18);}";
+      s.textContent = ".pac-container{z-index:9999!important;border-radius:12px;font-family:'Inter',sans-serif;box-shadow:0 12px 40px rgba(15, 23, 42,0.18);}";
       document.head.appendChild(s);
     }
   }, [ready]);
@@ -328,7 +328,7 @@ const AdminBookingAddPage: React.FC = () => {
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.75 }}>
         <Box sx={{ color: brand.red, lineHeight: 0 }}>{icon}</Box>
         <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700,
-          textTransform: "uppercase", letterSpacing: "0.06em", color: "rgba(60,30,20,0.55)" }}>
+          textTransform: "uppercase", letterSpacing: "0.06em", color: "rgba(15, 23, 42,0.55)" }}>
           {label}
         </Typography>
       </Box>
@@ -347,7 +347,7 @@ const AdminBookingAddPage: React.FC = () => {
       fontFamily: SANS,
       fontSize: 14,
       background: "#fff",
-      "& fieldset": { borderColor: hasError ? "#c0392b" : "rgba(60,30,20,0.12)" },
+      "& fieldset": { borderColor: hasError ? "#c0392b" : "rgba(15, 23, 42,0.12)" },
       "&:hover fieldset": { borderColor: hasError ? "#c0392b" : brand.red },
       "&.Mui-focused fieldset": { borderColor: brand.red },
     },
@@ -365,7 +365,7 @@ const AdminBookingAddPage: React.FC = () => {
         borderRadius: "16px",
         background: "rgba(255, 255, 255, 0.85)",
         border: "1px solid rgba(255, 255, 255, 0.7)",
-        boxShadow: "0 4px 14px rgba(126, 30, 46, 0.06)",
+        boxShadow: "0 4px 14px rgba(15, 23, 42, 0.06)",
       }}
     >
       <Typography
@@ -394,7 +394,7 @@ const AdminBookingAddPage: React.FC = () => {
         //   to the same warm-cream gradient customer pages use, so
         //   the editorial hero card sits inside a familiar surface.
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #FFF8F0 0%, #FCEBDC 100%)",
+        background: "#F4F6F5",
         pb: 6,
       }}
     >
@@ -421,7 +421,7 @@ const AdminBookingAddPage: React.FC = () => {
           size="small"
           onClick={() => navigate(-1)}
           sx={{
-            color: "rgba(60,30,20,0.55)",
+            color: "rgba(15, 23, 42,0.55)",
             mt: 0.25,
             "&:hover": { color: brand.red },
           }}
@@ -447,7 +447,7 @@ const AdminBookingAddPage: React.FC = () => {
               fontFamily: SERIF,
               fontSize: 22,
               fontWeight: 600,
-              color: "#3c1e14",
+              color: "#1A2B2E",
               lineHeight: 1.15,
               letterSpacing: "-0.01em",
               "& em": { fontStyle: "italic", color: brand.red },
@@ -459,7 +459,7 @@ const AdminBookingAddPage: React.FC = () => {
             sx={{
               fontFamily: SANS,
               fontSize: 11.5,
-              color: "rgba(60,30,20,0.6)",
+              color: "rgba(15, 23, 42,0.6)",
               mt: 0.5,
               lineHeight: 1.4,
             }}
@@ -483,7 +483,7 @@ const AdminBookingAddPage: React.FC = () => {
                 MenuProps={MENU_PROPS}
                 renderValue={(v) =>
                   v ? therapists.find((t) => t.id === v)?.name ?? v : (
-                    <span style={{ color: "rgba(60,30,20,0.35)" }}>เลือกนักบำบัด</span>
+                    <span style={{ color: "rgba(15, 23, 42,0.35)" }}>เลือกนักบำบัด</span>
                   )
                 }
               >
@@ -503,7 +503,7 @@ const AdminBookingAddPage: React.FC = () => {
                 MenuProps={MENU_PROPS}
                 renderValue={(v) =>
                   v ? services.find((s) => s.id === v)?.name ?? v : (
-                    <span style={{ color: "rgba(60,30,20,0.35)" }}>เลือกบริการ</span>
+                    <span style={{ color: "rgba(15, 23, 42,0.35)" }}>เลือกบริการ</span>
                   )
                 }
               >
@@ -519,7 +519,7 @@ const AdminBookingAddPage: React.FC = () => {
             <Box>
               <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700,
                 textTransform: "uppercase", letterSpacing: "0.06em",
-                color: "rgba(60,30,20,0.55)", mb: 0.75 }}>
+                color: "rgba(15, 23, 42,0.55)", mb: 0.75 }}>
                 ระยะเวลา
               </Typography>
               <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
@@ -530,16 +530,16 @@ const AdminBookingAddPage: React.FC = () => {
                       key={d}
                       onClick={() => setDuration(d)}
                       style={{
-                        border: `1.5px solid ${active ? brand.red : "rgba(60,30,20,0.15)"}`,
+                        border: `1.5px solid ${active ? brand.red : "rgba(15, 23, 42,0.15)"}`,
                         borderRadius: 12,
                         padding: "8px 18px",
                         cursor: "pointer",
-                        background: active ? "linear-gradient(135deg,#FE0944,#FE7A52)" : "#fff",
+                        background: active ? "#B4000A" : "#fff",
                         color: active ? "#fff" : "#1a0805",
                         fontFamily: SANS,
                         fontSize: 13,
                         fontWeight: 600,
-                        boxShadow: active ? "0 3px 10px rgba(254,9,68,0.25)" : "none",
+                        boxShadow: active ? "0 3px 10px rgba(15, 23, 42, 0.25)" : "none",
                       }}
                     >
                       {d} นาที · {formatTHB(priceForDuration(selectedService, d))}
@@ -595,14 +595,14 @@ const AdminBookingAddPage: React.FC = () => {
           {date && time && (
             <Box sx={{
               p: 1.25, borderRadius: "10px",
-              background: "rgba(254,9,68,0.06)",
-              border: "1px solid rgba(254,9,68,0.12)",
+              background: "rgba(180,0,10,0.06)",
+              border: "1px solid rgba(15, 23, 42, 0.12)",
             }}>
               <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "#1a0805", fontWeight: 600 }}>
                 {dayjs(`${date} ${time}`).format("dddd D MMMM YYYY")} · {time} น.
               </Typography>
               {duration > 0 && (
-                <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(60,30,20,0.55)", mt: 0.25 }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.55)", mt: 0.25 }}>
                   เสร็จ {dayjs(`${date} ${time}`).add(duration, "minute").format("HH:mm")} น.
                 </Typography>
               )}
@@ -618,7 +618,7 @@ const AdminBookingAddPage: React.FC = () => {
               position: "relative",
               "& .MuiOutlinedInput-root": {
                 borderRadius: "12px", fontFamily: SANS, fontSize: 14, background: "#fff",
-                "& fieldset": { borderColor: errors.address ? "#c0392b" : "rgba(60,30,20,0.12)" },
+                "& fieldset": { borderColor: errors.address ? "#c0392b" : "rgba(15, 23, 42,0.12)" },
                 "&:hover fieldset": { borderColor: errors.address ? "#c0392b" : brand.red },
                 "&.Mui-focused fieldset": { borderColor: brand.red },
               },
@@ -631,7 +631,7 @@ const AdminBookingAddPage: React.FC = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <MagnifyingGlass size={16} color="rgba(60,30,20,0.4)" />
+                      <MagnifyingGlass size={16} color="rgba(15, 23, 42,0.4)" />
                     </InputAdornment>
                   ),
                 }}
@@ -644,7 +644,7 @@ const AdminBookingAddPage: React.FC = () => {
             <Box sx={{
               p: 1.5, borderRadius: "12px",
               background: "#fff",
-              border: "1px solid rgba(60,30,20,0.08)",
+              border: "1px solid rgba(15, 23, 42,0.08)",
               boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
             }}>
               <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
@@ -655,7 +655,7 @@ const AdminBookingAddPage: React.FC = () => {
                       {loc.placeName}
                     </Typography>
                   )}
-                  <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(60,30,20,0.55)", mt: 0.25 }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.55)", mt: 0.25 }}>
                     {loc.address}
                   </Typography>
                   {loc.mapUrl && (
@@ -704,7 +704,7 @@ const AdminBookingAddPage: React.FC = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(60,30,20,0.4)" }}>฿</Typography>
+                      <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(15, 23, 42,0.4)" }}>฿</Typography>
                     </InputAdornment>
                   ),
                 }}
@@ -713,7 +713,7 @@ const AdminBookingAddPage: React.FC = () => {
           </Box>
 
           {taxiAuto > 0 && taxiFee === "" && (
-            <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "rgba(60,30,20,0.45)", mt: -0.5 }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "rgba(15, 23, 42,0.45)", mt: -0.5 }}>
               คำนวณจากระยะทาง · แก้ไขได้ในช่องด้านบน
             </Typography>
           )}
@@ -736,8 +736,8 @@ const AdminBookingAddPage: React.FC = () => {
         <motion.div {...fadeUp(0.26)}>
           <Box sx={{
             borderRadius: "18px", background: "#fff",
-            border: "1px solid rgba(60,30,20,0.08)",
-            boxShadow: "0 2px 10px rgba(60,30,20,0.06)",
+            border: "1px solid rgba(15, 23, 42,0.08)",
+            boxShadow: "0 2px 10px rgba(15, 23, 42,0.06)",
             overflow: "hidden", mb: 3,
           }}>
             <Box sx={{ background: "linear-gradient(135deg,#1a0805,#3c1010)", px: 2.5, py: 1.75 }}>
@@ -756,9 +756,9 @@ const AdminBookingAddPage: React.FC = () => {
                 <Box key={i} sx={{
                   display: "flex", justifyContent: "space-between", gap: 2,
                   py: 0.85,
-                  borderBottom: i < 4 ? "1px solid rgba(60,30,20,0.06)" : "none",
+                  borderBottom: i < 4 ? "1px solid rgba(15, 23, 42,0.06)" : "none",
                 }}>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(60,30,20,0.45)", fontWeight: 600 }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.45)", fontWeight: 600 }}>
                     {r.label}
                   </Typography>
                   <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "#1a0805",
@@ -768,17 +768,17 @@ const AdminBookingAddPage: React.FC = () => {
                 </Box>
               ))}
 
-              <Box sx={{ mt: 1.5, pt: 1.5, borderTop: "1px solid rgba(60,30,20,0.10)" }}>
+              <Box sx={{ mt: 1.5, pt: 1.5, borderTop: "1px solid rgba(15, 23, 42,0.10)" }}>
                 {[
                   { label: "ค่าบริการ", value: formatTHB(servicePrice) },
                   { label: "ค่า Taxi",  value: formatTHB(effectiveTaxi) },
                 ].map((r, i) => (
                   <Box key={i} sx={{ display: "flex", justifyContent: "space-between", py: 0.6 }}>
-                    <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(60,30,20,0.55)" }}>{r.label}</Typography>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(15, 23, 42,0.55)" }}>{r.label}</Typography>
                     <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "#1a0805", fontWeight: 600 }}>{r.value}</Typography>
                   </Box>
                 ))}
-                <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.75, pt: 1, borderTop: "1px solid rgba(60,30,20,0.10)" }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.75, pt: 1, borderTop: "1px solid rgba(15, 23, 42,0.10)" }}>
                   <Typography sx={{ fontFamily: SERIF, fontSize: 16, fontWeight: 700, color: "#1a0805" }}>รวมทั้งหมด</Typography>
                   <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: brand.red }}>{formatTHB(total)}</Typography>
                 </Box>
@@ -795,15 +795,15 @@ const AdminBookingAddPage: React.FC = () => {
             style={{
               width: "100%", padding: "17px 24px", borderRadius: 16, border: "none",
               cursor: saving ? "not-allowed" : "pointer",
-              background: saving ? "rgba(60,30,20,0.12)" : "linear-gradient(135deg,#FE0944 0%,#FE7A52 100%)",
-              color: saving ? "rgba(60,30,20,0.4)" : "#fff",
+              background: saving ? "rgba(15, 23, 42,0.12)" : "#B4000A",
+              color: saving ? "rgba(15, 23, 42,0.4)" : "#fff",
               fontFamily: SANS, fontSize: 16, fontWeight: 700, letterSpacing: "0.02em",
-              boxShadow: saving ? "none" : "0 6px 22px rgba(254,9,68,0.35)",
+              boxShadow: saving ? "none" : "0 6px 22px rgba(15, 23, 42, 0.35)",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
             }}
           >
             {saving
-              ? <><CircularProgress size={18} sx={{ color: "rgba(60,30,20,0.4)" }} /> กำลังบันทึก…</>
+              ? <><CircularProgress size={18} sx={{ color: "rgba(15, 23, 42,0.4)" }} /> กำลังบันทึก…</>
               : "✅ สร้างการจอง"}
           </motion.button>
         </motion.div>

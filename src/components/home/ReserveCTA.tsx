@@ -127,10 +127,10 @@ const ReserveCTA: React.FC = () => {
         padding: "20px 18px 16px",
         borderRadius: "20px",
         background:
-          "linear-gradient(135deg, #FFF6EF 0%, #FCEBDC 60%, #FFE2D2 100%)",
+          "#F4F6F5",
         border: "1px solid rgba(184, 92, 60, 0.14)",
         boxShadow:
-          "0 10px 30px rgba(126, 30, 46, 0.06), 0 2px 6px rgba(126, 30, 46, 0.04)",
+          "0 10px 30px rgba(15, 23, 42, 0.06), 0 2px 6px rgba(15, 23, 42, 0.04)",
       }}
     >
       {/* Eyebrow */}
@@ -201,7 +201,7 @@ const ReserveCTA: React.FC = () => {
           padding: "13px 16px",
           borderRadius: "14px",
           background:
-            "linear-gradient(120deg, #FE0944 0%, #FE5A48 55%, #FE7A52 100%)",
+            "#B4000A",
           color: "#fff",
           border: "none",
           cursor: "pointer",
@@ -210,12 +210,12 @@ const ReserveCTA: React.FC = () => {
           fontSize: "15px",
           letterSpacing: "0.005em",
           boxShadow:
-            "0 10px 24px rgba(254, 9, 68, 0.28), 0 2px 6px rgba(254, 9, 68, 0.16)",
+            "0 10px 24px rgba(15, 23, 42, 0.28), 0 2px 6px rgba(15, 23, 42, 0.16)",
           transition: "transform 0.18s ease, box-shadow 0.18s ease",
           "&:hover": {
             transform: "translateY(-1px)",
             boxShadow:
-              "0 14px 30px rgba(254, 9, 68, 0.34), 0 3px 8px rgba(254, 9, 68, 0.18)",
+              "0 14px 30px rgba(15, 23, 42, 0.34), 0 3px 8px rgba(15, 23, 42, 0.18)",
           },
           "&:focus-visible": {
             outline: "2px solid #fff",

@@ -29,7 +29,7 @@ export const PriceRow: React.FC<PriceRowProps> = ({ label, value }) => (
       sx={{
         fontFamily: SANS,
         fontSize: "13px",
-        color: "rgba(60, 30, 20, 0.7)",
+        color: "rgba(15, 23, 42, 0.7)",
       }}
     >
       {label}
@@ -39,7 +39,7 @@ export const PriceRow: React.FC<PriceRowProps> = ({ label, value }) => (
         fontFamily: SANS,
         fontSize: "13px",
         fontWeight: 600,
-        color: "#3c1e14",
+        color: "#1A2B2E",
       }}
     >
       {value}

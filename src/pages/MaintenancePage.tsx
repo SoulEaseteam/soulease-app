@@ -9,7 +9,7 @@ const MaintenancePage: React.FC = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        background: "linear-gradient(to bottom, #FFF4EC, #FFE8DF)",
+        background: "#F4F6F5",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",

@@ -63,8 +63,8 @@ const buildMessages = (
     {
       icon: <LocalFireDepartmentRoundedIcon sx={{ fontSize: 14 }} />,
       text: `${count24h} bookings in last 24 h`,
-      color: "#FE0944",
-      bg: "rgba(254, 9, 68, 0.08)",
+      color: "#B4000A",
+      bg: "rgba(180, 0, 10, 0.08)",
     },
   ];
   if (bookingNow > 0) {

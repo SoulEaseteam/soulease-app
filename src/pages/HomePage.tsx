@@ -4,7 +4,12 @@ import React, { useEffect } from "react";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
-import HeroSection from "@/components/home/HeroSection";
+// 🆕 Round 28s145 — HeroSection fully dropped from home (founder:
+//   "ลบ ค่ะ" — pointing at the entire Hero block, greeting + 4-card
+//   service strip). Home now opens directly with TherapistGrid.
+//   HeroSection.tsx still on disk for `git revert` if we ever bring
+//   it back; the file isn't imported anywhere else.
+// import HeroSection from "@/components/home/HeroSection";
 // 🆕 Round 28r7 (founder 2026-05-06) — Phase 1 referral capture.
 //   When a friend opens https://sunred.vip/?ref=SUN-XXXXXX, this hook
 //   stashes the code in localStorage so the Hero + booking flow can
@@ -15,16 +20,16 @@ import { captureReferralFromURL } from "@/utils/referral";
 import { trackHomeView } from "@/utils/analytics";
 
 import HomeTherapistGrid from "@/components/home/HomeTherapistGrid";
-// 🆕 Round 28s98 (conversion) — trust strip restored below the hero.
-import PromiseStrip from "@/components/home/PromiseStrip";
-// 🆕 Round 28s112 (conversion) — addresses audit gap #9-10 in
-//   docs/site-audit-2026-06.md: first-time visitors from Stickman /
-//   Telegram cross-promo / WeChat OA had no obvious "where to book"
-//   signal above the fold, and no social proof to validate the choice.
-//   SocialProofTicker shows live Firestore-backed reservation activity;
-//   ReserveCTA gives a single mode-aware Telegram-first CTA below.
-import SocialProofTicker from "@/components/common/SocialProofTicker";
-import ReserveCTA from "@/components/home/ReserveCTA";
+// 🆕 Round 28s148 — PromiseStrip dropped (founder: "ลบทิ้งไป"). Value
+//   was low — price anchor duplicated each card, "5 Languages" already
+//   shown by TopNav pill, "Licensed · Ministry-verified" was an
+//   over-claim for the gray-area positioning, "Quiet luxury" was brand
+//   copy that didn't drive action. Component file kept on disk for
+//   `git revert` if a future round wants it back.
+// import PromiseStrip from "@/components/home/PromiseStrip";
+// 🔒 Round 28s127 — SocialProofTicker + ReserveCTA removed from home
+//   (founder feedback "หน้าเว็บรกมาก ไม่สววเลย"). Components still
+//   live in their own files for revert via `git revert <this>`.
 
 // Round 28s20 — PromiseStrip + HomeFooter dropped from the home
 // page composition (founder: "ตัดส่วนที่ไม่ต้องมีก็ได้ ทำให้เหมือน
@@ -70,10 +75,10 @@ const HomePage: React.FC = () => {
         // .phone — Round 28b0 cleaner palette
         maxWidth: "430px",
         margin: "0 auto",
-        background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
+        background: "#F4F6F5",
         borderRadius: "28px",
         overflow: "hidden",
-        boxShadow: "0 20px 60px rgba(126, 30, 46, 0.10)",
+        boxShadow: "0 20px 60px rgba(15, 23, 42, 0.10)",
         position: "relative",
       }}
     >
@@ -101,24 +106,19 @@ const HomePage: React.FC = () => {
       >
         SunRed — Luxury outcall massage in Bangkok, delivered to your hotel
       </Box>
-      <HeroSection />
-      {/* 🆕 Round 28s112 — trust signal (live Firestore: "X bookings in
-          last 24h", "Y sessions now", "Most popular: Z"). Banner variant
-          fills the home shell edge-to-edge. Sits between Hero and
-          ReserveCTA so the trust register precedes the ask. */}
-      <Box sx={{ padding: "12px 16px 0" }}>
-        <SocialProofTicker variant="banner" />
-      </Box>
-      {/* 🆕 Round 28s112 — Reserve CTA (audit gap #9). Time-aware
-          headline ("Reserve tonight" / "your evening" / etc.) +
-          Telegram-first primary button per CLAUDE.md §5 founder bias,
-          with WhatsApp / LINE / WeChat secondary chips. */}
-      <ReserveCTA />
+      {/* 🆕 Round 28s145 — Hero block removed entirely. Home opens
+          directly with trust + the therapist grid (the actual
+          product). Anything Hero used to surface (greeting, service
+          menu, promo banner, language switch hint) lives elsewhere:
+            • Greeting → none (sr-only H1 above carries the SEO copy)
+            • Service menu → ServicesPage (/services) + BottomNav
+            • Promo banner → ServicesPage detail callouts
+            • Language switch → TopNav lang pill (always visible) */}
+      {/* 🆕 Round 28s148 — PromiseStrip removed entirely (founder:
+          "ลบทิ้งไป"). Home now ends at the therapist list, app-style
+          (Grab / Booking / Klook close the same way). 32px bottom
+          spacer keeps the last card off BottomNav. */}
       <HomeTherapistGrid />
-      {/* 🆕 Round 28s98 — trust strip (Why SunRed · Licensed · Discreet
-          · 5-Lang · 24/7). Round 28s99 (founder "เอาไปไว้ล่างสุด") —
-          moved below the therapist grid as a closing reassurance. */}
-      <PromiseStrip />
       <Box sx={{ height: "32px" }} aria-hidden="true" />
     </Box>
   );

@@ -82,10 +82,10 @@ const STATUS_CFG: Record<string, {
   stripe: string;
   badge: { bg: string; fg: string };
 }> = {
-  pending:   { label: "Pending",   stripe: "linear-gradient(90deg,#FE0944,#FE7A52)", badge: { bg: "rgba(254,9,68,0.10)",  fg: "#FE0944"             } },
-  confirmed: { label: "Confirmed", stripe: "linear-gradient(90deg,#16a34a,#4ade80)", badge: { bg: "rgba(22,163,74,0.12)", fg: "#16a34a"             } },
-  completed: { label: "Completed", stripe: "rgba(60,30,20,0.12)",                   badge: { bg: "rgba(60,30,20,0.08)",  fg: "rgba(60,30,20,0.65)" } },
-  cancelled: { label: "Cancelled", stripe: "rgba(0,0,0,0.08)",                      badge: { bg: "rgba(0,0,0,0.06)",     fg: "rgba(60,30,20,0.45)" } },
+  pending:   { label: "Pending",   stripe: "#B4000A", badge: { bg: "rgba(15, 23, 42, 0.10)",  fg: "#B4000A"             } },
+  confirmed: { label: "Confirmed", stripe: "#16a34a", badge: { bg: "rgba(22,163,74,0.12)", fg: "#16a34a"             } },
+  completed: { label: "Completed", stripe: "rgba(15, 23, 42,0.12)",                   badge: { bg: "rgba(15, 23, 42,0.08)",  fg: "rgba(15, 23, 42,0.65)" } },
+  cancelled: { label: "Cancelled", stripe: "rgba(0,0,0,0.08)",                      badge: { bg: "rgba(0,0,0,0.06)",     fg: "rgba(15, 23, 42,0.45)" } },
 };
 
 const TABS: { key: TabKey; label: string }[] = [
@@ -195,7 +195,7 @@ const AdminBookingListPage: React.FC = () => {
       {/* ── header ─────────────────────────────────────────────────── */}
       <Box
         sx={{
-          background: "linear-gradient(160deg,#1a0805 0%,#3c1010 55%,#2d0909 100%)",
+          background: "#1A0805",
           px: { xs: 2, md: 3 },
           pt: 3,
           pb: 2.5,
@@ -239,7 +239,7 @@ const AdminBookingListPage: React.FC = () => {
             boxShadow: "0 1px 4px rgba(15,23,42,0.05)",
           }}
         >
-          <MagnifyingGlass size={16} color="rgba(60,30,20,0.40)" />
+          <MagnifyingGlass size={16} color="rgba(15, 23, 42,0.40)" />
           <InputBase
             placeholder="Search customer, therapist, ID…"
             value={search}
@@ -273,14 +273,14 @@ const AdminBookingListPage: React.FC = () => {
                 height: 32,
                 padding: "0 12px",
                 borderRadius: 999,
-                background: active ? "linear-gradient(135deg,#FE0944,#FE7A52)" : "#fff",
+                background: active ? "#B4000A" : "#fff",
                 border: active ? "none" : "1px solid rgba(15,23,42,0.10)",
-                color: active ? "#fff" : "rgba(60,30,20,0.60)",
+                color: active ? "#fff" : "rgba(15, 23, 42,0.60)",
                 fontFamily: SANS,
                 fontSize: 12,
                 fontWeight: 700,
                 cursor: "pointer",
-                boxShadow: active ? "0 4px 12px rgba(254,9,68,0.25)" : "none",
+                boxShadow: active ? "0 4px 12px rgba(15, 23, 42, 0.25)" : "none",
                 display: "flex", alignItems: "center", gap: 5,
               }}
             >
@@ -290,8 +290,8 @@ const AdminBookingListPage: React.FC = () => {
                   component="span"
                   sx={{
                     minWidth: 18, height: 18, borderRadius: 999, px: "5px",
-                    background: active ? "rgba(255,255,255,0.25)" : "rgba(254,9,68,0.10)",
-                    color: active ? "#fff" : "#FE0944",
+                    background: active ? "rgba(255,255,255,0.25)" : "rgba(15, 23, 42, 0.10)",
+                    color: active ? "#fff" : "#B4000A",
                     fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center",
                   }}
                 >
@@ -315,13 +315,13 @@ const AdminBookingListPage: React.FC = () => {
       >
         {loading ? (
           <Box sx={{ gridColumn: "1/-1", textAlign: "center", py: 6 }}>
-            <CircularProgress sx={{ color: "#FE0944" }} />
+            <CircularProgress sx={{ color: "#B4000A" }} />
           </Box>
         ) : visible.length === 0 ? (
           <Box
             sx={{
               gridColumn: "1/-1", textAlign: "center", py: 8,
-              color: "rgba(60,30,20,0.40)", fontFamily: SANS, fontSize: 14,
+              color: "rgba(15, 23, 42,0.40)", fontFamily: SANS, fontSize: 14,
             }}
           >
             No bookings found
@@ -452,22 +452,22 @@ const BookingCard: React.FC<{
         </Box>
 
         {/* service */}
-        <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(60,30,20,0.70)", mb: 0.5 }}>
+        <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(15, 23, 42,0.70)", mb: 0.5 }}>
           {getServiceLabel(b.serviceId, b.serviceName)}
-          {b.duration && <Box component="span" sx={{ color: "rgba(60,30,20,0.45)", ml: 0.75 }}>· {b.duration} min</Box>}
+          {b.duration && <Box component="span" sx={{ color: "rgba(15, 23, 42,0.45)", ml: 0.75 }}>· {b.duration} min</Box>}
         </Typography>
 
         {/* datetime */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.4 }}>
-          <Clock size={12} color="rgba(60,30,20,0.45)" />
-          <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(60,30,20,0.55)" }}>{dateLabel}</Typography>
+          <Clock size={12} color="rgba(15, 23, 42,0.45)" />
+          <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.55)" }}>{dateLabel}</Typography>
         </Box>
 
         {/* location */}
         {(b.locationName || b.address) && (
           <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5, mb: 0.4 }}>
-            <MapPin size={12} color="rgba(60,30,20,0.45)" style={{ flexShrink: 0, marginTop: 2 }} />
-            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(60,30,20,0.55)", lineHeight: 1.4 }}>
+            <MapPin size={12} color="rgba(15, 23, 42,0.45)" style={{ flexShrink: 0, marginTop: 2 }} />
+            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.55)", lineHeight: 1.4 }}>
               {b.locationName || b.address}
             </Typography>
           </Box>
@@ -476,8 +476,8 @@ const BookingCard: React.FC<{
         {/* customer */}
         {b.userName && (
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <User size={12} color="rgba(60,30,20,0.45)" />
-            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(60,30,20,0.55)" }}>{b.userName}</Typography>
+            <User size={12} color="rgba(15, 23, 42,0.45)" />
+            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.55)" }}>{b.userName}</Typography>
           </Box>
         )}
 
@@ -487,11 +487,11 @@ const BookingCard: React.FC<{
         {/* bottom row: price + paid toggle + primary CTA */}
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
           <Box>
-            <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: "#FE0944", letterSpacing: "-0.02em", lineHeight: 1 }}>
+            <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: "#B4000A", letterSpacing: "-0.02em", lineHeight: 1 }}>
               {formatTHB(total)}
             </Typography>
             {b.taxiFee ? (
-              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "rgba(60,30,20,0.40)", mt: 0.2 }}>
+              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "rgba(15, 23, 42,0.40)", mt: 0.2 }}>
                 incl. ฿{b.taxiFee} taxi
               </Typography>
             ) : null}
@@ -505,12 +505,12 @@ const BookingCard: React.FC<{
               title={b.paid ? "Mark unpaid" : "Mark paid"}
               style={{
                 width: 32, height: 32, borderRadius: "50%",
-                background: b.paid ? "rgba(22,163,74,0.12)" : "rgba(60,30,20,0.06)",
+                background: b.paid ? "rgba(22,163,74,0.12)" : "rgba(15, 23, 42,0.06)",
                 border: "none", cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}
             >
-              <CurrencyCircleDollar size={16} color={b.paid ? "#16a34a" : "rgba(60,30,20,0.40)"} weight={b.paid ? "fill" : "regular"} />
+              <CurrencyCircleDollar size={16} color={b.paid ? "#16a34a" : "rgba(15, 23, 42,0.40)"} weight={b.paid ? "fill" : "regular"} />
             </motion.button>
 
             {/* expand toggle */}
@@ -519,13 +519,13 @@ const BookingCard: React.FC<{
               onClick={() => setExpanded((v) => !v)}
               style={{
                 width: 32, height: 32, borderRadius: "50%",
-                background: "rgba(60,30,20,0.05)", border: "none", cursor: "pointer",
+                background: "rgba(15, 23, 42,0.05)", border: "none", cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}
             >
               {expanded
-                ? <CaretUp size={14} color="rgba(60,30,20,0.50)" weight="bold" />
-                : <CaretDown size={14} color="rgba(60,30,20,0.50)" weight="bold" />}
+                ? <CaretUp size={14} color="rgba(15, 23, 42,0.50)" weight="bold" />
+                : <CaretDown size={14} color="rgba(15, 23, 42,0.50)" weight="bold" />}
             </motion.button>
 
             {/* primary action */}
@@ -535,10 +535,10 @@ const BookingCard: React.FC<{
                 onClick={onConfirm}
                 style={{
                   height: 36, padding: "0 16px", borderRadius: 999,
-                  background: "linear-gradient(135deg,#FE0944,#FE7A52)",
+                  background: "#B4000A",
                   color: "#fff", fontFamily: SANS, fontSize: 13, fontWeight: 700,
                   border: "none", cursor: "pointer",
-                  boxShadow: "0 4px 12px rgba(254,9,68,0.30)",
+                  boxShadow: "0 4px 12px rgba(15, 23, 42, 0.30)",
                   display: "flex", alignItems: "center", gap: 5,
                 }}
               >
@@ -585,7 +585,7 @@ const BookingCard: React.FC<{
                     border: "1px solid rgba(15,23,42,0.06)",
                   }}
                 >
-                  <NotePencil size={13} color="rgba(60,30,20,0.45)" style={{ flexShrink: 0 }} />
+                  <NotePencil size={13} color="rgba(15, 23, 42,0.45)" style={{ flexShrink: 0 }} />
                   <InputBase
                     placeholder="Admin note…"
                     value={note}
@@ -604,9 +604,9 @@ const BookingCard: React.FC<{
                     onClick={onViewDetail}
                     style={{
                       flex: 1, minWidth: 80, height: 34, borderRadius: 999,
-                      background: "rgba(60,30,20,0.05)",
+                      background: "rgba(15, 23, 42,0.05)",
                       border: "1px solid rgba(15,23,42,0.08)",
-                      color: "rgba(60,30,20,0.65)", fontFamily: SANS, fontSize: 12, fontWeight: 600,
+                      color: "rgba(15, 23, 42,0.65)", fontFamily: SANS, fontSize: 12, fontWeight: 600,
                       cursor: "pointer",
                     }}
                   >
@@ -619,9 +619,9 @@ const BookingCard: React.FC<{
                       onClick={onCancel}
                       style={{
                         flex: 1, minWidth: 80, height: 34, borderRadius: 999,
-                        background: "rgba(254,9,68,0.06)",
-                        border: "1px solid rgba(254,9,68,0.12)",
-                        color: "#FE0944", fontFamily: SANS, fontSize: 12, fontWeight: 600,
+                        background: "rgba(180,0,10,0.06)",
+                        border: "1px solid rgba(15, 23, 42, 0.12)",
+                        color: "#B4000A", fontFamily: SANS, fontSize: 12, fontWeight: 600,
                         cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
                       }}
                     >
@@ -634,9 +634,9 @@ const BookingCard: React.FC<{
                       component="span"
                       sx={{
                         flex: 1, minWidth: 80, height: 34, borderRadius: 999,
-                        background: "rgba(60,30,20,0.04)",
+                        background: "rgba(15, 23, 42,0.04)",
                         border: "1px solid rgba(15,23,42,0.06)",
-                        color: "rgba(60,30,20,0.45)", fontFamily: SANS, fontSize: 12, fontWeight: 600,
+                        color: "rgba(15, 23, 42,0.45)", fontFamily: SANS, fontSize: 12, fontWeight: 600,
                         display: "flex", alignItems: "center", justifyContent: "center",
                       }}
                     >
@@ -646,7 +646,7 @@ const BookingCard: React.FC<{
                 </Box>
 
                 {/* booking ID */}
-                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "rgba(60,30,20,0.30)", textAlign: "right", letterSpacing: "0.04em" }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "rgba(15, 23, 42,0.30)", textAlign: "right", letterSpacing: "0.04em" }}>
                   #{b.id.slice(0, 10).toUpperCase()}
                 </Typography>
               </Box>
@@ -688,7 +688,7 @@ const DetailPanel: React.FC<{
   const Row = ({ label, value }: { label: string; value?: string | React.ReactNode }) =>
     value ? (
       <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, py: 0.75 }}>
-        <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(60,30,20,0.45)", fontWeight: 600, whiteSpace: "nowrap" }}>{label}</Typography>
+        <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.45)", fontWeight: 600, whiteSpace: "nowrap" }}>{label}</Typography>
         <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "#1a0805", textAlign: "right", wordBreak: "break-word" }}>{value}</Typography>
       </Box>
     ) : null;
@@ -698,7 +698,7 @@ const DetailPanel: React.FC<{
       {/* header */}
       <Box
         sx={{
-          background: "linear-gradient(160deg,#1a0805 0%,#3c1010 55%,#2d0909 100%)",
+          background: "#1A0805",
           pt: 3, pb: 2.5, px: 2.5,
           flexShrink: 0,
         }}
@@ -749,7 +749,7 @@ const DetailPanel: React.FC<{
       <Box sx={{ flex: 1, overflowY: "auto", px: 2.5, py: 2 }}>
 
         {/* booking info */}
-        <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: "rgba(60,30,20,0.40)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 1 }}>
+        <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: "rgba(15, 23, 42,0.40)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 1 }}>
           Booking Info
         </Typography>
         <Box
@@ -775,8 +775,8 @@ const DetailPanel: React.FC<{
               onClick={onTogglePaid}
               sx={{
                 px: "10px", py: "3px", borderRadius: 999, cursor: "pointer",
-                background: b.paid ? "rgba(22,163,74,0.12)" : "rgba(60,30,20,0.06)",
-                color: b.paid ? "#16a34a" : "rgba(60,30,20,0.55)",
+                background: b.paid ? "rgba(22,163,74,0.12)" : "rgba(15, 23, 42,0.06)",
+                color: b.paid ? "#16a34a" : "rgba(15, 23, 42,0.55)",
                 fontFamily: SANS, fontSize: 11, fontWeight: 700,
                 userSelect: "none",
               }}
@@ -789,7 +789,7 @@ const DetailPanel: React.FC<{
         </Box>
 
         {/* admin note */}
-        <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: "rgba(60,30,20,0.40)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 1 }}>
+        <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: "rgba(15, 23, 42,0.40)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 1 }}>
           Admin Note
         </Typography>
         <Box
@@ -813,10 +813,10 @@ const DetailPanel: React.FC<{
           onClick={() => onSaveNote(note)}
           style={{
             width: "100%", height: 38, borderRadius: 999,
-            background: "rgba(60,30,20,0.06)",
+            background: "rgba(15, 23, 42,0.06)",
             border: "1px solid rgba(15,23,42,0.08)",
             fontFamily: SANS, fontSize: 13, fontWeight: 600,
-            color: "rgba(60,30,20,0.65)", cursor: "pointer", marginBottom: 12,
+            color: "rgba(15, 23, 42,0.65)", cursor: "pointer", marginBottom: 12,
           }}
         >
           Save note
@@ -839,10 +839,10 @@ const DetailPanel: React.FC<{
             onClick={onConfirm}
             style={{
               flex: 1, height: 48, borderRadius: 999,
-              background: "linear-gradient(135deg,#FE0944,#FE7A52)",
+              background: "#B4000A",
               color: "#fff", fontFamily: SANS, fontSize: 15, fontWeight: 700,
               border: "none", cursor: "pointer",
-              boxShadow: "0 6px 18px rgba(254,9,68,0.30)",
+              boxShadow: "0 6px 18px rgba(15, 23, 42, 0.30)",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
             }}
           >
@@ -870,12 +870,12 @@ const DetailPanel: React.FC<{
               onClick={onCancel}
               style={{
                 width: 48, height: 48, borderRadius: "50%",
-                background: "rgba(254,9,68,0.08)",
+                background: "rgba(180,0,10,0.08)",
                 border: "none", cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}
             >
-              <XCircle size={22} color="#FE0944" weight="fill" />
+              <XCircle size={22} color="#B4000A" weight="fill" />
             </motion.button>
           </>
         )}
@@ -885,17 +885,17 @@ const DetailPanel: React.FC<{
             onClick={onCancel}
             style={{
               width: 48, height: 48, borderRadius: "50%",
-              background: "rgba(254,9,68,0.08)",
+              background: "rgba(180,0,10,0.08)",
               border: "none", cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}
           >
-            <XCircle size={22} color="#FE0944" weight="fill" />
+            <XCircle size={22} color="#B4000A" weight="fill" />
           </motion.button>
         )}
         {(b.status === "completed" || b.status === "cancelled") && (
           <Box sx={{ flex: 1, height: 48, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(60,30,20,0.40)", fontWeight: 600 }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(15, 23, 42,0.40)", fontWeight: 600 }}>
               {b.status === "completed" ? "Session completed" : "Booking cancelled"}
             </Typography>
           </Box>

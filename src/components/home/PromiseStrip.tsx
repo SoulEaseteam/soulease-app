@@ -74,9 +74,9 @@ const PromiseStrip: React.FC = () => {
         padding: "20px 18px 22px",
         borderRadius: "20px",
         background:
-          "linear-gradient(180deg, rgba(255, 248, 240, 0.92) 0%, rgba(252, 235, 220, 0.95) 100%)",
+          "#F4F6F5",
         border: "1px solid rgba(255, 255, 255, 0.7)",
-        boxShadow: "0 8px 24px rgba(126, 30, 46, 0.06)",
+        boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
       }}
     >
       {/* Eyebrow with side lines — same editorial pattern as the
@@ -160,8 +160,8 @@ const PromiseStrip: React.FC = () => {
             alignItems: "center",
             padding: "7px 14px",
             borderRadius: 999,
-            background: "rgba(254, 9, 68, 0.08)",
-            border: "1px solid rgba(254, 9, 68, 0.18)",
+            background: "rgba(180, 0, 10, 0.08)",
+            border: "1px solid rgba(15, 23, 42, 0.18)",
             fontFamily: fonts.body,
             fontSize: 12,
             fontWeight: 700,
@@ -192,7 +192,7 @@ const PromiseStrip: React.FC = () => {
               borderRadius: "14px",
               background: "#FFFFFF",
               border: "1px solid rgba(255, 255, 255, 0.7)",
-              boxShadow: "0 2px 8px rgba(126, 30, 46, 0.06)",
+              boxShadow: "0 2px 8px rgba(15, 23, 42, 0.06)",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
@@ -206,12 +206,12 @@ const PromiseStrip: React.FC = () => {
                 width: 40,
                 height: 40,
                 borderRadius: "50%",
-                background: `linear-gradient(135deg, ${brand.red}, ${brand.coral})`,
+                background: `#B4000A`,
                 color: "#fff",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 4px 12px rgba(254, 9, 68, 0.30)",
+                boxShadow: "0 4px 12px rgba(15, 23, 42, 0.30)",
               }}
             >
               <Icon sx={{ fontSize: 20 }} />

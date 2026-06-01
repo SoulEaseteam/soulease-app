@@ -10,7 +10,7 @@ import RoleViewBanner from "@/components/common/RoleViewBanner";
 
 /**
  * 🎨 Page surface — Phase 1 redesign defers all styling to the MUI theme's
- * `MuiCssBaseline` body override (warm-cream gradient `#FFF8F0 → #FCEBDC`
+ * `MuiCssBaseline` body override (warm-cream gradient `#F4F6F5 → #F4F6F5`
  * from BRAND.md). MainLayout used to set its own "Aurora pastel" bg which
  * conflicted with the mockup's surface. Other routes (Booking, Login,
  * Therapist Detail, etc.) inherit the same warm-cream surface until each

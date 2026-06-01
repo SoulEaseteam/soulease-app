@@ -127,7 +127,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           WebkitBackdropFilter: "blur(20px) saturate(180%)",
           border: "1px solid rgba(255, 255, 255, 0.7)",
           boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.6)",
-          color: "#2a1a14",
+          color: "#1A2B2E",
           fontSize: `${fontSize}px`,
           fontWeight: 700,
           letterSpacing: "0.05em",
@@ -136,7 +136,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           transition: "background 0.2s ease",
           "&:hover": { background: "rgba(255, 255, 255, 0.75)" },
           "&:focus-visible": {
-            outline: "2px solid #FE0944",
+            outline: "2px solid #B4000A",
             outlineOffset: 2,
           },
         }}
@@ -156,11 +156,11 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           sx: {
             mt: 1,
             borderRadius: "14px",
-            background: "rgba(255, 248, 240, 0.95)",
+            background: "rgba(244, 246, 245, 0.95)",
             backdropFilter: "blur(20px) saturate(180%)",
             WebkitBackdropFilter: "blur(20px) saturate(180%)",
             border: "1px solid rgba(255, 255, 255, 0.7)",
-            boxShadow: "0 12px 32px rgba(126, 30, 46, 0.18)",
+            boxShadow: "0 12px 32px rgba(15, 23, 42, 0.18)",
             minWidth: 180,
           },
         }}
@@ -174,23 +174,23 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
             fontFamily: fonts.body,
             fontSize: 13,
             fontWeight: 600,
-            color: "#2a1a14",
+            color: "#1A2B2E",
             gap: 1,
             "&.Mui-selected": {
-              background: "rgba(254, 9, 68, 0.08)",
-              "&:hover": { background: "rgba(254, 9, 68, 0.12)" },
+              background: "rgba(180, 0, 10, 0.08)",
+              "&:hover": { background: "rgba(15, 23, 42, 0.12)" },
             },
           }}
         >
           <AutoAwesomeRoundedIcon
-            sx={{ fontSize: 16, color: "#FE0944" }}
+            sx={{ fontSize: 16, color: "#B4000A" }}
           />
           <Box sx={{ flex: 1 }}>
             {t("language.auto", "Auto (device)")}
           </Box>
           {isAuto && (
             <CheckRoundedIcon
-              sx={{ fontSize: 16, color: "#FE0944" }}
+              sx={{ fontSize: 16, color: "#B4000A" }}
               aria-label="current"
             />
           )}
@@ -218,11 +218,11 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                 fontFamily: fonts.body,
                 fontSize: 13,
                 fontWeight: 600,
-                color: "#2a1a14",
+                color: "#1A2B2E",
                 gap: 1,
                 "&.Mui-selected": {
-                  background: "rgba(254, 9, 68, 0.08)",
-                  "&:hover": { background: "rgba(254, 9, 68, 0.12)" },
+                  background: "rgba(180, 0, 10, 0.08)",
+                  "&:hover": { background: "rgba(15, 23, 42, 0.12)" },
                 },
               }}
             >
@@ -232,7 +232,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
               <Box sx={{ flex: 1 }}>{l.label}</Box>
               {selected && (
                 <CheckRoundedIcon
-                  sx={{ fontSize: 16, color: "#FE0944" }}
+                  sx={{ fontSize: 16, color: "#B4000A" }}
                   aria-label="current"
                 />
               )}

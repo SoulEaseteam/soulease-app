@@ -77,9 +77,9 @@ const DistanceDepositDialog: React.FC<Props> = ({ open, onClose }) => {
       PaperProps={{
         sx: {
           borderRadius: "20px",
-          background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
+          background: "#F4F6F5",
           border: "1px solid rgba(255, 255, 255, 0.7)",
-          boxShadow: "0 24px 60px rgba(126, 30, 46, 0.25)",
+          boxShadow: "0 24px 60px rgba(15, 23, 42, 0.25)",
           margin: 2,
         },
       }}
@@ -105,7 +105,7 @@ const DistanceDepositDialog: React.FC<Props> = ({ open, onClose }) => {
               height: 32,
               borderRadius: "50%",
               background:
-                "linear-gradient(135deg, rgba(254, 9, 68, 0.12), rgba(254, 122, 82, 0.08))",
+                "rgba(15, 23, 42, 0.10)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -199,8 +199,8 @@ const DistanceDepositDialog: React.FC<Props> = ({ open, onClose }) => {
               gap: 1.25,
               padding: "12px 14px",
               borderRadius: "14px",
-              background: "rgba(254, 122, 82, 0.1)",
-              border: "1px solid rgba(254, 122, 82, 0.32)",
+              background: "rgba(214, 40, 40, 0.1)",
+              border: "1px solid rgba(214, 40, 40, 0.32)",
             }}
           >
             <WarningAmberRoundedIcon
@@ -286,18 +286,18 @@ const DistanceDepositDialog: React.FC<Props> = ({ open, onClose }) => {
                 disabled={status === "unsupported"}
                 sx={{
                   background:
-                    "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+                    "#B4000A",
                   textTransform: "none",
                   fontFamily: fonts.body,
                   fontWeight: 700,
                   fontSize: 12.5,
                   padding: "8px 14px",
                   borderRadius: "10px",
-                  boxShadow: "0 4px 14px rgba(254, 9, 68, 0.25)",
+                  boxShadow: "0 4px 14px rgba(15, 23, 42, 0.25)",
                   "&:hover": {
                     background:
-                      "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
-                    boxShadow: "0 6px 18px rgba(254, 9, 68, 0.35)",
+                      "#B4000A",
+                    boxShadow: "0 6px 18px rgba(15, 23, 42, 0.35)",
                   },
                 }}
               >
@@ -390,10 +390,10 @@ const DistanceDepositDialog: React.FC<Props> = ({ open, onClose }) => {
                     padding: "5px 11px",
                     borderRadius: 99,
                     background: depositRequired
-                      ? "rgba(254, 122, 82, 0.18)"
+                      ? "rgba(214, 40, 40, 0.18)"
                       : "rgba(22, 163, 74, 0.16)",
                     border: depositRequired
-                      ? "1px solid rgba(254, 122, 82, 0.4)"
+                      ? "1px solid rgba(214, 40, 40, 0.4)"
                       : "1px solid rgba(22, 163, 74, 0.4)",
                     color: depositRequired ? brand.coral : brand.green,
                     fontFamily: fonts.body,

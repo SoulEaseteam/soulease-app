@@ -60,7 +60,7 @@ import type { Therapist, Avail, StatusOverride } from "@/types/therapist";
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
 import { enhanceImage } from "@/utils/cloudinary";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 /** Narrow shape of a booking record we read from Firestore. */
@@ -73,9 +73,9 @@ interface BookingDoc {
 /** Status pill colors — brand-consistent, no salmon. */
 const STATUS_PILL: Record<Avail, { bg: string; color: string; label: string }> = {
   available: { bg: "#16a34a", color: "#fff", label: "Available" },
-  bookable: { bg: "#831843", color: "#FCEBDC", label: "In session" },
+  bookable: { bg: "#831843", color: "#F4F6F5", label: "In session" },
   resting: { bg: "rgba(184,92,60,0.18)", color: "#831843", label: "Resting" },
-  holiday: { bg: "rgba(254,9,68,0.10)", color: "#831843", label: "On holiday" },
+  holiday: { bg: "rgba(15, 23, 42, 0.10)", color: "#831843", label: "On holiday" },
 };
 
 const TherapistProfilePage: React.FC = () => {
@@ -315,7 +315,7 @@ const TherapistProfilePage: React.FC = () => {
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-        <CircularProgress sx={{ color: "#FE0944" }} />
+        <CircularProgress sx={{ color: "#B4000A" }} />
       </Box>
     );
   }
@@ -335,7 +335,7 @@ const TherapistProfilePage: React.FC = () => {
             fontFamily: SERIF,
             fontSize: "18px",
             fontWeight: 600,
-            color: "#3c1e14",
+            color: "#1A2B2E",
             marginBottom: 1,
           }}
         >
@@ -345,7 +345,7 @@ const TherapistProfilePage: React.FC = () => {
           sx={{
             fontFamily: SANS,
             fontSize: "13px",
-            color: "rgba(60,30,20,0.6)",
+            color: "rgba(15, 23, 42,0.6)",
             marginBottom: 3,
           }}
         >
@@ -376,7 +376,7 @@ const TherapistProfilePage: React.FC = () => {
         maxWidth: 430,
         margin: "0 auto",
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
+        background: "#F4F6F5",
         paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
         fontFamily: SANS,
       }}
@@ -386,11 +386,11 @@ const TherapistProfilePage: React.FC = () => {
         sx={{
           position: "relative",
           padding: "24px 20px 28px",
-          background: "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+          background: "#B4000A",
           borderBottomLeftRadius: 28,
           borderBottomRightRadius: 28,
           color: "#fff",
-          boxShadow: "0 12px 30px rgba(254, 9, 68, 0.22)",
+          boxShadow: "0 12px 30px rgba(15, 23, 42, 0.22)",
         }}
       >
         <IconButton
@@ -509,7 +509,7 @@ const TherapistProfilePage: React.FC = () => {
             border: "1px solid rgba(184,92,60,0.18)",
             borderRadius: 3,
             padding: "14px 16px 16px",
-            boxShadow: "0 6px 18px rgba(126,30,46,0.06)",
+            boxShadow: "0 6px 18px rgba(15, 23, 42,0.06)",
           }}
         >
           <Box
@@ -525,7 +525,7 @@ const TherapistProfilePage: React.FC = () => {
                 fontFamily: SERIF,
                 fontWeight: 700,
                 fontSize: "15px",
-                color: "#3c1e14",
+                color: "#1A2B2E",
               }}
             >
               Working Status
@@ -534,7 +534,7 @@ const TherapistProfilePage: React.FC = () => {
               sx={{
                 fontFamily: SANS,
                 fontSize: "10.5px",
-                color: "rgba(60,30,20,0.55)",
+                color: "rgba(15, 23, 42,0.55)",
               }}
             >
               Live · customers see this
@@ -545,7 +545,7 @@ const TherapistProfilePage: React.FC = () => {
             sx={{
               fontFamily: SANS,
               fontSize: "11.5px",
-              color: "rgba(60,30,20,0.65)",
+              color: "rgba(15, 23, 42,0.65)",
               lineHeight: 1.45,
               marginBottom: 1.25,
             }}
@@ -565,7 +565,7 @@ const TherapistProfilePage: React.FC = () => {
               label="Auto"
               hint="Engine decides"
               Icon={AutorenewRoundedIcon}
-              accent="#3c1e14"
+              accent="#1A2B2E"
               active={
                 !therapist.statusOverride || therapist.statusOverride === "Auto"
               }
@@ -608,10 +608,10 @@ const TherapistProfilePage: React.FC = () => {
               padding: "10px 12px",
               borderRadius: 2,
               background: therapist.isHoliday
-                ? "linear-gradient(135deg, rgba(254,9,68,0.08), rgba(254,122,82,0.08))"
+                ? "rgba(180, 0, 10, 0.08)"
                 : "rgba(252,235,220,0.5)",
               border: therapist.isHoliday
-                ? "1px solid rgba(254,9,68,0.22)"
+                ? "1px solid rgba(15, 23, 42, 0.22)"
                 : "1px solid rgba(184,92,60,0.12)",
               display: "flex",
               alignItems: "center",
@@ -625,7 +625,7 @@ const TherapistProfilePage: React.FC = () => {
                   fontFamily: SANS,
                   fontWeight: 700,
                   fontSize: "12.5px",
-                  color: "#3c1e14",
+                  color: "#1A2B2E",
                 }}
               >
                 Holiday mode
@@ -634,7 +634,7 @@ const TherapistProfilePage: React.FC = () => {
                 sx={{
                   fontFamily: SANS,
                   fontSize: "10.5px",
-                  color: "rgba(60,30,20,0.6)",
+                  color: "rgba(15, 23, 42,0.6)",
                   lineHeight: 1.4,
                 }}
               >
@@ -647,10 +647,10 @@ const TherapistProfilePage: React.FC = () => {
               onChange={(_, checked) => void updateHoliday(checked)}
               sx={{
                 "& .MuiSwitch-switchBase.Mui-checked": {
-                  color: "#FE0944",
+                  color: "#B4000A",
                 },
                 "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-                  backgroundColor: "#FE0944",
+                  backgroundColor: "#B4000A",
                 },
               }}
             />
@@ -739,13 +739,13 @@ const MenuTile: React.FC<MenuTileProps> = ({ label, Icon, onClick }) => (
       borderRadius: "16px",
       background: "rgba(255,255,255,0.7)",
       border: "1px solid rgba(184,92,60,0.15)",
-      boxShadow: "0 4px 12px rgba(126,30,46,0.06)",
+      boxShadow: "0 4px 12px rgba(15, 23, 42,0.06)",
       textTransform: "none",
       transition: "transform 0.2s ease, box-shadow 0.2s ease",
       "&:hover": {
         background: "rgba(255,255,255,0.9)",
         transform: "translateY(-2px)",
-        boxShadow: "0 8px 20px rgba(254,9,68,0.12)",
+        boxShadow: "0 8px 20px rgba(15, 23, 42, 0.12)",
       },
     }}
   >
@@ -754,12 +754,12 @@ const MenuTile: React.FC<MenuTileProps> = ({ label, Icon, onClick }) => (
         width: 40,
         height: 40,
         borderRadius: "50%",
-        background: "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+        background: "#B4000A",
         color: "#fff",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        boxShadow: "0 4px 10px rgba(254,9,68,0.25)",
+        boxShadow: "0 4px 10px rgba(15, 23, 42, 0.25)",
       }}
     >
       <Icon sx={{ fontSize: 20 }} />
@@ -769,7 +769,7 @@ const MenuTile: React.FC<MenuTileProps> = ({ label, Icon, onClick }) => (
         fontFamily: SANS,
         fontSize: "12px",
         fontWeight: 700,
-        color: "#3c1e14",
+        color: "#1A2B2E",
         letterSpacing: "0.01em",
       }}
     >
@@ -816,15 +816,15 @@ const StatusChoice: React.FC<StatusChoiceProps> = ({
       textTransform: "none",
       textAlign: "left",
       background: active
-        ? `linear-gradient(135deg, ${accent}E6 0%, ${accent} 100%)`
+        ? `${accent}`
         : "rgba(255,255,255,0.85)",
       border: active
         ? `1px solid ${accent}`
         : "1px solid rgba(184,92,60,0.18)",
       boxShadow: active
         ? `0 6px 14px ${accent}33`
-        : "0 2px 6px rgba(126,30,46,0.04)",
-      color: active ? "#fff" : "#3c1e14",
+        : "0 2px 6px rgba(15, 23, 42,0.04)",
+      color: active ? "#fff" : "#1A2B2E",
       transition: "transform 0.15s ease, box-shadow 0.15s ease",
       "&:hover": !disabled
         ? {
@@ -836,7 +836,7 @@ const StatusChoice: React.FC<StatusChoiceProps> = ({
         : undefined,
       "&.Mui-disabled": {
         opacity: 0.55,
-        color: active ? "#fff" : "#3c1e14",
+        color: active ? "#fff" : "#1A2B2E",
       },
     }}
   >

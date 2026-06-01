@@ -26,7 +26,7 @@ import { useTranslation } from "react-i18next";
 //   alongside 24h to remove ambiguity for tourist visitors.
 import { nowBKK, parseHHMMatBKK, prettyHHMM } from "@/utils/time";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 /** Build a "in 2 hours" / "in 35 min" / "tomorrow" hint relative to now-BKK. */
@@ -100,10 +100,10 @@ const VARIANTS: Record<
     icon: "💤",
     title: "Off duty",
     titleKey: "detail.status.offline",
-    bg: "rgba(60, 30, 20, 0.05)",
-    border: "rgba(60, 30, 20, 0.12)",
-    fg: "rgba(60, 30, 20, 0.6)",
-    iconBg: "rgba(60, 30, 20, 0.4)",
+    bg: "rgba(15, 23, 42, 0.05)",
+    border: "rgba(15, 23, 42, 0.12)",
+    fg: "rgba(15, 23, 42, 0.6)",
+    iconBg: "rgba(15, 23, 42, 0.4)",
   },
 };
 
@@ -193,7 +193,7 @@ const StatusPill: React.FC<Props> = ({
             fontFamily: SERIF,
             fontSize: "15px",
             fontWeight: 700,
-            color: "#3c1e14",
+            color: "#1A2B2E",
             lineHeight: 1.2,
             marginBottom: "2px",
           }}
@@ -204,7 +204,7 @@ const StatusPill: React.FC<Props> = ({
           sx={{
             fontFamily: SANS,
             fontSize: "11.5px",
-            color: "rgba(60, 30, 20, 0.7)",
+            color: "rgba(15, 23, 42, 0.7)",
             lineHeight: 1.4,
           }}
         >

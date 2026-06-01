@@ -149,10 +149,10 @@ const HomeFooter: React.FC = () => {
         padding: "22px 18px 20px",
         borderRadius: "20px",
         background:
-          "linear-gradient(180deg, rgba(255, 248, 240, 0.85) 0%, rgba(252, 235, 220, 0.95) 100%)",
+          "#F4F6F5",
         border: "1px solid rgba(255, 255, 255, 0.7)",
         boxShadow:
-          "0 8px 24px rgba(126, 30, 46, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.7)",
+          "0 8px 24px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.7)",
         overflow: "hidden",
       }}
     >
@@ -210,7 +210,7 @@ const HomeFooter: React.FC = () => {
                 width: 34,
                 height: 34,
                 borderRadius: "50%",
-                background: "rgba(254, 9, 68, 0.08)",
+                background: "rgba(180, 0, 10, 0.08)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -219,7 +219,7 @@ const HomeFooter: React.FC = () => {
                 cursor: "pointer",
                 transition: "background 0.2s ease, transform 0.2s ease",
                 "&:hover": {
-                  background: "rgba(254, 9, 68, 0.16)",
+                  background: "rgba(15, 23, 42, 0.16)",
                   transform: "translateY(-1px)",
                 },
                 "&:focus-visible": {

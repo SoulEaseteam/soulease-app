@@ -66,17 +66,17 @@ export interface ConciergeModeInfo {
 //     • off      → slate dawn → muted clay (cool, resting)
 // ─────────────────────────────────────────────────────────────────────
 const GRADIENT_PRIME =
-  "linear-gradient(135deg, #831843 0%, #FE0944 50%, #FE7A52 100%)";
+  "#B4000A";
 const GRADIENT_EVENING =
-  "linear-gradient(135deg, #F59E0B 0%, #FE7A52 55%, #FE0944 100%)";
+  "#B4000A";
 const GRADIENT_DAY =
-  "linear-gradient(135deg, #FE7A52 0%, #FCD34D 55%, #FFE0B5 100%)";
+  "#B4000A";
 const GRADIENT_OFF =
-  "linear-gradient(135deg, #475569 0%, #64748B 50%, #B85C3C 100%)";
+  "#475569";
 
 const GLOW_PRIME = "0 10px 28px rgba(132, 24, 67, 0.42)";
 const GLOW_EVENING = "0 10px 28px rgba(245, 158, 11, 0.36)";
-const GLOW_DAY = "0 10px 28px rgba(254, 122, 82, 0.28)";
+const GLOW_DAY = "0 10px 28px rgba(214, 40, 40, 0.28)";
 const GLOW_OFF = "0 10px 28px rgba(71, 85, 105, 0.24)";
 
 /**

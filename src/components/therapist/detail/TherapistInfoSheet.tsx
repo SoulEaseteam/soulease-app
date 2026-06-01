@@ -65,7 +65,7 @@ const TherapistInfoSheet: React.FC<Props> = ({
       PaperProps={{
         sx: {
           background:
-            "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
+            "#F4F6F5",
           borderRadius: "24px",
           maxWidth: "430px",
           width: "calc(100% - 32px)",
@@ -94,7 +94,7 @@ const TherapistInfoSheet: React.FC<Props> = ({
             width: 36,
             height: 36,
             background: "rgba(184, 92, 60, 0.10)",
-            color: "#2a1a14",
+            color: "#1A2B2E",
             "&:hover": {
               background: "rgba(184, 92, 60, 0.18)",
             },

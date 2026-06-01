@@ -33,7 +33,7 @@ import {
   type PostLang,
 } from "@/utils/telegramPostBot";
 
-const SERIF = '"Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // 🆕 Round 28s122 — Bilingual labels (TH + EN). Admin reads Thai primarily;
@@ -193,11 +193,11 @@ const AdminTelegramPanelPage: React.FC = () => {
           fontSize: "28px",
           lineHeight: 1.15,
           letterSpacing: "-0.01em",
-          color: "#2a1a14",
+          color: "#1A2B2E",
           marginBottom: "8px",
         }}
       >
-        โพสต์เข้า <em style={{ color: "#FE0944", fontStyle: "italic" }}>{channelForLang(lang)}</em>
+        โพสต์เข้า <em style={{ color: "#B4000A", fontStyle: "italic" }}>{channelForLang(lang)}</em>
       </Typography>
       <Typography
         component="p"
@@ -234,9 +234,9 @@ const AdminTelegramPanelPage: React.FC = () => {
               padding: "12px 14px",
               borderRadius: "12px",
               border: `1px solid ${
-                kind === opt.value ? "#FE0944" : "rgba(0,0,0,0.10)"
+                kind === opt.value ? "#B4000A" : "rgba(0,0,0,0.10)"
               }`,
-              background: kind === opt.value ? "rgba(254, 9, 68, 0.04)" : "#fff",
+              background: kind === opt.value ? "rgba(180, 0, 10, 0.04)" : "#fff",
               cursor: "pointer",
               transition: "all 0.18s",
             }}
@@ -284,7 +284,7 @@ const AdminTelegramPanelPage: React.FC = () => {
               fontWeight: 600,
               textTransform: "none",
               "&.Mui-selected": {
-                background: "#FE0944",
+                background: "#B4000A",
                 color: "#fff",
                 "&:hover": { background: "#E0083B" },
               },
@@ -398,8 +398,8 @@ const AdminTelegramPanelPage: React.FC = () => {
                     fontFamily: SANS,
                     fontSize: "12.5px",
                     fontWeight: 600,
-                    background: selected ? "#FE0944" : "rgba(0,0,0,0.05)",
-                    color: selected ? "#fff" : "#2a1a14",
+                    background: selected ? "#B4000A" : "rgba(0,0,0,0.05)",
+                    color: selected ? "#fff" : "#1A2B2E",
                     cursor: "pointer",
                   }}
                 />
@@ -426,17 +426,17 @@ const AdminTelegramPanelPage: React.FC = () => {
           padding: "14px 16px",
           borderRadius: "14px",
           background:
-            "linear-gradient(120deg, #FE0944 0%, #FE5A48 55%, #FE7A52 100%)",
+            "#B4000A",
           fontFamily: SERIF,
           fontWeight: 600,
           fontSize: "15px",
           textTransform: "none",
           letterSpacing: "0.005em",
           boxShadow:
-            "0 10px 24px rgba(254, 9, 68, 0.28), 0 2px 6px rgba(254, 9, 68, 0.16)",
+            "0 10px 24px rgba(15, 23, 42, 0.28), 0 2px 6px rgba(15, 23, 42, 0.16)",
           "&:hover": {
             background:
-              "linear-gradient(120deg, #E0083B 0%, #E0432F 55%, #E55F30 100%)",
+              "#B4000A",
           },
           "&.Mui-disabled": {
             background: "rgba(0,0,0,0.12)",
@@ -454,10 +454,10 @@ const AdminTelegramPanelPage: React.FC = () => {
           padding: "12px 14px",
           borderRadius: "10px",
           background: lang === "zh"
-            ? "rgba(254, 9, 68, 0.05)"
+            ? "rgba(180, 0, 10, 0.05)"
             : "rgba(0, 0, 0, 0.03)",
           border: `1px solid ${
-            lang === "zh" ? "rgba(254, 9, 68, 0.20)" : "rgba(0, 0, 0, 0.08)"
+            lang === "zh" ? "rgba(15, 23, 42, 0.20)" : "rgba(0, 0, 0, 0.08)"
           }`,
         }}
       >
@@ -473,7 +473,7 @@ const AdminTelegramPanelPage: React.FC = () => {
         >
           สรุปก่อนส่ง
         </Typography>
-        <Typography sx={{ fontSize: "12.5px", color: "#2a1a14", lineHeight: 1.5 }}>
+        <Typography sx={{ fontSize: "12.5px", color: "#1A2B2E", lineHeight: 1.5 }}>
           จะส่ง <b>
             {POST_KINDS.find((k) => k.value === kind)?.label.split(" · ")[0]}
           </b>{" "}

@@ -54,7 +54,10 @@ import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 //   of view. A guest scrolling through the therapist grid still sees
 //   "🌙 Prime hours" pinned to the navbar.
 import { useConciergeMode } from "@/utils/conciergeMode";
-import ConciergeModeIcon from "@/components/common/ConciergeModeIcon";
+// 🆕 Round 28s142 — ConciergeModeIcon import dropped; the mode chip
+//   that used it was removed (founder: "เอาออก มันแกะกะ"). The icon
+//   component still ships for other surfaces (Hero greeting).
+// import ConciergeModeIcon from "@/components/common/ConciergeModeIcon";
 import { brand, fonts } from "@/theme";
 
 // Wordmark uses fonts.heading via theme; SANS kept locally for drawer
@@ -175,17 +178,11 @@ const TopNav: React.FC = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  // 🆕 Round 28r6 — mirror the Hero's Live pill in the navbar so the
-  //   page mood stays visible after the Hero scrolls out of view.
-  const concierge = useConciergeMode();
-  const modeTint =
-    concierge.mode === "prime"
-      ? brand.red
-      : concierge.mode === "evening"
-      ? "#F59E0B"
-      : concierge.mode === "off"
-      ? "rgba(60,30,20,0.55)"
-      : "#FE7A52";
+  // 🆕 Round 28s142 — concierge mode read + tint dropped along with
+  //   the mode chip in the right cluster (founder feedback). Other
+  //   surfaces still read mode via the same hook.
+  // const concierge = useConciergeMode();
+  // const modeTint = concierge.mode === "prime" ? brand.red : ...
 
   // 🆕 Round 28r21 (founder 2026-05-07) — Use the AuthProvider type
   //   directly instead of the old defensive cast. Founder reported
@@ -258,11 +255,17 @@ const TopNav: React.FC = () => {
           zIndex: 10,
           transform: hidden ? "translateY(-100%)" : "translateY(0)",
           transition: "transform 0.28s ease, background 0.2s ease, box-shadow 0.2s ease",
-          background: scrolled ? "rgba(255,248,240,0.92)" : "transparent",
-          backdropFilter: scrolled ? "blur(12px)" : "none",
-          WebkitBackdropFilter: scrolled ? "blur(12px)" : "none",
-          boxShadow: scrolled ? "0 1px 0 rgba(126,30,46,0.08)" : "none",
-          borderBottom: scrolled ? "1px solid rgba(255,255,255,0.6)" : "none",
+          // 🆕 Round 28s153 — Cool-mint bg replaces warm cream when
+          //   scrolled (was rgba(255,248,240) = old #F4F6F5). Matches
+          //   the new flat palette and stops the dour warm-tint
+          //   from creeping over the top of the page.
+          // 🆕 Round 28s163 — Founder: TopNav bg = brand red #B4000A
+          //   (ROLADEX reference). Always solid, both at rest and on
+          //   scroll. White text + icons ride on top.
+          background: "#B4000A",
+          color: "#ffffff",
+          boxShadow: scrolled ? "0 2px 8px rgba(15,23,42,0.20)" : "none",
+          borderBottom: "none",
         }}
       >
         {/* Menu button — opens drawer */}
@@ -273,15 +276,16 @@ const TopNav: React.FC = () => {
             width: "40px",
             height: "40px",
             borderRadius: "50%",
-            background: "rgba(255, 255, 255, 0.55)",
-            backdropFilter: "blur(20px) saturate(180%)",
-            WebkitBackdropFilter: "blur(20px) saturate(180%)",
-            border: "1px solid rgba(255, 255, 255, 0.7)",
-            boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.6)",
-            color: "#2a1a14",
-            "&:hover": { background: "rgba(255, 255, 255, 0.75)" },
+            // 🆕 Round 28s170 — Founder: "3 แทบ เอากรอบ ออก".
+            //   Drop the white ring around the hamburger; the 3
+            //   bars alone on the red bg are plenty of affordance.
+            background: "transparent",
+            border: "none",
+            boxShadow: "none",
+            color: "#ffffff",
+            "&:hover": { background: "rgba(255, 255, 255, 0.10)" },
             "&:focus-visible": {
-              outline: "2px solid #FE0944",
+              outline: "2px solid #B4000A",
               outlineOffset: 2,
             },
           }}
@@ -302,95 +306,53 @@ const TopNav: React.FC = () => {
             cursor: "pointer",
             borderRadius: "8px",
             "&:focus-visible": {
-              outline: "2px solid #FE0944",
+              outline: "2px solid #B4000A",
               outlineOffset: 2,
             },
           }}
         >
-          {/* 🆕 Round 28e — wordmark uses shared `<SunRedWordmark>`
-              (sun glyph + italic serif). Single source of truth so
-              every brand mention in the app reads identically. */}
-          <SunRedWordmark size={22} />
-        </Box>
-
-        {/* Right cluster — 🆕 Round 28r6: Concierge mode chip + lang. */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          {/* Mode chip — compact icon-only pill with mode tint.
-              Tap → scroll the page back to the top so the guest sees
-              the full Hero (Live pill + promo banner) again, in case
-              they scrolled past and want to re-check tonight's mood. */}
+          {/* 🆕 Round 28s163 — Wordmark replaced with the founder's
+              ROLADEX-style brand bar: "SUNRED BANGKOK" in white sans
+              caps with wide letter-spacing. SunRedWordmark sun glyph
+              kept (small, white) so the visual identity carries over,
+              but the italic serif "SunRed" wordmark is gone. */}
           <Box
-            component="button"
-            type="button"
-            onClick={() => {
-              if (typeof window !== "undefined") {
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }
-            }}
-            aria-label={`Concierge mode: ${concierge.pillLabel}`}
             sx={{
               display: "inline-flex",
               alignItems: "center",
-              gap: "5px",
-              padding: "5px 9px 5px 7px",
-              border: "1px solid rgba(255,255,255,0.7)",
-              borderRadius: 999,
-              background: "rgba(255, 255, 255, 0.55)",
-              backdropFilter: "blur(20px) saturate(180%)",
-              WebkitBackdropFilter: "blur(20px) saturate(180%)",
-              boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.6)",
-              cursor: "pointer",
-              transition: "transform 0.15s ease, box-shadow 0.2s ease",
-              "&:hover": {
-                transform: "translateY(-1px)",
-                boxShadow:
-                  "inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 4px 12px rgba(254, 9, 68, 0.12)",
-              },
-              "&:focus-visible": {
-                outline: "2px solid #FE0944",
-                outlineOffset: 2,
-              },
+              gap: "10px",
             }}
           >
-            <ConciergeModeIcon
-              mode={concierge.mode}
-              sx={{
-                fontSize: 13,
-                color: modeTint,
-                filter:
-                  concierge.mode === "off"
-                    ? "none"
-                    : `drop-shadow(0 0 3px ${modeTint})`,
-                animation:
-                  concierge.mode === "off"
-                    ? "none"
-                    : "topNavModePulse 2s ease-in-out infinite",
-                "@keyframes topNavModePulse": {
-                  "0%, 100%": { opacity: 1 },
-                  "50%": { opacity: 0.55 },
-                },
-              }}
-            />
+     
             <Typography
               component="span"
               sx={{
-                fontFamily: fonts.body,
-                fontSize: 9.5,
+                // 🆕 Round 28s172 — Founder: "TopNav ตัวหนังสือ
+                //   หนาขึ้น". Stack reordered so Cinzel (real
+                //   700/800 weights) leads; weight bumped 500 → 700.
+                fontFamily:
+                  '"Cinzel", "Federo", "Italiana", "Fraunces", Georgia, serif',
+                fontSize: "17px",
                 fontWeight: 700,
-                color: brand.burgundy,
-                letterSpacing: "0.04em",
+                letterSpacing: "0.22em",
                 textTransform: "uppercase",
+                color: "#ffffff",
                 whiteSpace: "nowrap",
               }}
             >
-              {concierge.pillLabel}
+              SunRed Bangkok
             </Typography>
           </Box>
-
-          {/* Language pill — shared component, identical UX as the
-              site-wide GlobalLanguagePill on non-home pages. */}
-          <LanguageSwitcher size="md" />
         </Box>
+
+        {/* 🆕 Round 28s168 — Language pill removed (founder: "เอา
+            แปลภาษา ออก · เราแปลจากการตั้งค่ามือถือลูกค้าอยู่แล้ว").
+            i18next LanguageDetector already pulls navigator/htmlTag
+            so EN/TH/ZH/JA/KO auto-switch by device locale. Manual
+            switcher was redundant + crowded the red TopNav.
+            Placeholder Box keeps the flex layout balanced so the
+            wordmark stays centred between menu + this slot. */}
+        <Box sx={{ width: 40 }} aria-hidden="true" />
       </Box>
 
       {/* ───────── Navigation drawer ───────── */}
@@ -401,9 +363,9 @@ const TopNav: React.FC = () => {
         PaperProps={{
           sx: {
             width: 280,
-            background: "linear-gradient(180deg, #FAFBFC 0%, #F1F3F5 100%)",
+            background: "#F4F6F5",
             borderRight: "1px solid rgba(255, 255, 255, 0.7)",
-            boxShadow: "0 24px 60px rgba(126, 30, 46, 0.2)",
+            boxShadow: "0 24px 60px rgba(15, 23, 42, 0.2)",
           },
         }}
       >
@@ -423,7 +385,7 @@ const TopNav: React.FC = () => {
             aria-label={t("nav.closeMenu", "Close menu")}
             onClick={() => setDrawerOpen(false)}
             size="small"
-            sx={{ color: "#2a1a14" }}
+            sx={{ color: "#1A2B2E" }}
           >
             <CloseRoundedIcon />
           </IconButton>
@@ -467,10 +429,10 @@ const TopNav: React.FC = () => {
               padding: "12px 14px",
               borderRadius: "12px",
               background: isAdmin
-                ? "linear-gradient(135deg, rgba(254, 9, 68, 0.12), rgba(254, 122, 82, 0.10))"
+                ? "rgba(15, 23, 42, 0.11)"
                 : "linear-gradient(135deg, rgba(22, 163, 74, 0.12), rgba(22, 163, 74, 0.06))",
               border: isAdmin
-                ? "1px solid rgba(254, 9, 68, 0.28)"
+                ? "1px solid rgba(15, 23, 42, 0.28)"
                 : "1px solid rgba(22, 163, 74, 0.28)",
               cursor: "pointer",
               fontFamily: SANS,
@@ -478,7 +440,7 @@ const TopNav: React.FC = () => {
               "&:hover": { transform: "translateY(-1px)" },
               transition: "transform 0.15s ease",
               "&:focus-visible": {
-                outline: "2px solid #FE0944",
+                outline: "2px solid #B4000A",
                 outlineOffset: 2,
               },
             }}
@@ -489,7 +451,7 @@ const TopNav: React.FC = () => {
                 width: 36,
                 height: 36,
                 borderRadius: "50%",
-                background: isAdmin ? "#FE0944" : "#16a34a",
+                background: isAdmin ? "#B4000A" : "#16a34a",
                 color: "#fff",
                 display: "inline-flex",
                 alignItems: "center",
@@ -512,7 +474,7 @@ const TopNav: React.FC = () => {
                   fontWeight: 800,
                   letterSpacing: "0.10em",
                   textTransform: "uppercase",
-                  color: isAdmin ? "#FE0944" : "#15803d",
+                  color: isAdmin ? "#B4000A" : "#15803d",
                 }}
               >
                 {t("nav.signedInAs", "Signed in as")}{" "}
@@ -524,7 +486,7 @@ const TopNav: React.FC = () => {
                   display: "block",
                   fontSize: 14,
                   fontWeight: 700,
-                  color: "#3c1e14",
+                  color: "#1A2B2E",
                   marginTop: "2px",
                 }}
               >
@@ -537,7 +499,7 @@ const TopNav: React.FC = () => {
               aria-hidden
               sx={{
                 fontSize: 18,
-                color: isAdmin ? "#FE0944" : "#15803d",
+                color: isAdmin ? "#B4000A" : "#15803d",
                 fontWeight: 800,
                 flexShrink: 0,
               }}
@@ -576,7 +538,7 @@ const TopNav: React.FC = () => {
             fontFamily: SANS,
             fontSize: 9.5,
             fontWeight: 700,
-            color: "rgba(60, 30, 20, 0.55)",
+            color: "rgba(15, 23, 42, 0.55)",
             letterSpacing: "0.12em",
             textTransform: "uppercase",
           }}
@@ -618,7 +580,7 @@ const TopNav: React.FC = () => {
                 cursor: "pointer",
                 "&:hover": { background: "rgba(255, 255, 255, 0.55)" },
                 "&:focus-visible": {
-                  outline: "2px solid #FE0944",
+                  outline: "2px solid #B4000A",
                   outlineOffset: 2,
                 },
               }}
@@ -641,7 +603,7 @@ const TopNav: React.FC = () => {
                 padding: "12px 14px",
                 borderRadius: "12px",
                 background:
-                  "linear-gradient(135deg, #FE0944 0%, #FE7A52 100%)",
+                  "#B4000A",
                 border: "none",
                 color: "#fff",
                 fontFamily: SANS,
@@ -649,12 +611,12 @@ const TopNav: React.FC = () => {
                 fontWeight: 700,
                 textAlign: "left",
                 cursor: "pointer",
-                boxShadow: "0 6px 16px rgba(254, 9, 68, 0.28)",
+                boxShadow: "0 6px 16px rgba(15, 23, 42, 0.28)",
                 "&:hover": {
-                  boxShadow: "0 8px 20px rgba(254, 9, 68, 0.36)",
+                  boxShadow: "0 8px 20px rgba(15, 23, 42, 0.36)",
                 },
                 "&:focus-visible": {
-                  outline: "2px solid #FE0944",
+                  outline: "2px solid #B4000A",
                   outlineOffset: 2,
                 },
               }}
@@ -674,7 +636,7 @@ const TopNav: React.FC = () => {
             padding: "16px 18px",
             fontSize: 10,
             fontWeight: 500,
-            color: "rgba(60, 30, 20, 0.55)",
+            color: "rgba(15, 23, 42, 0.55)",
             letterSpacing: "0.04em",
             textTransform: "uppercase",
             fontFamily: SANS,
@@ -731,10 +693,10 @@ function renderNavRow(
           padding: "12px 14px",
           borderRadius: "12px",
           background: active
-            ? "linear-gradient(135deg, rgba(254, 9, 68, 0.1), rgba(254, 122, 82, 0.08))"
+            ? "linear-gradient(135deg, rgba(15, 23, 42, 0.10), rgba(214, 40, 40, 0.08))"
             : "transparent",
           border: "none",
-          color: active ? "#FE0944" : "#2a1a14",
+          color: active ? "#B4000A" : "#1A2B2E",
           fontFamily: SANS,
           fontSize: 14,
           fontWeight: active ? 700 : 600,
@@ -743,11 +705,11 @@ function renderNavRow(
           transition: "background 0.2s ease",
           "&:hover": {
             background: active
-              ? "linear-gradient(135deg, rgba(254, 9, 68, 0.14), rgba(254, 122, 82, 0.12))"
+              ? "linear-gradient(135deg, rgba(15, 23, 42, 0.14), rgba(214, 40, 40, 0.12))"
               : "rgba(255, 255, 255, 0.55)",
           },
           "&:focus-visible": {
-            outline: "2px solid #FE0944",
+            outline: "2px solid #B4000A",
             outlineOffset: 2,
           },
         }}
@@ -755,7 +717,7 @@ function renderNavRow(
         <ListItemIcon
           sx={{
             minWidth: 0,
-            color: active ? "#FE0944" : "#b85c3c",
+            color: active ? "#B4000A" : "#b85c3c",
           }}
         >
           {item.icon}
@@ -770,7 +732,7 @@ function renderNavRow(
           secondaryTypographyProps={{
             fontSize: 11,
             fontWeight: 500,
-            color: "rgba(60, 30, 20, 0.6)",
+            color: "rgba(15, 23, 42, 0.6)",
             sx: { mt: 0.25 },
           }}
         />
