@@ -28,6 +28,8 @@ import { Link as RouterLink } from "react-router-dom";
 // 🆕 Round 28s201 — TouchApp / Badge / Shield / VerifiedUser icons
 //   dropped along with the reservation pillars (audit cleanup).
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
+// 🆕 Round 28s204 — Typical arrival window restored to this tab.
+import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 
 // 🆕 Round 28r12 — FAQ section appended to "How to Book". Lives in a
@@ -385,9 +387,10 @@ const HowItWorks: React.FC = () => {
           />
         </Box>
 
-        {/* 🆕 Round 28s189 — Typical arrival window + Concierge
-            grid + Telegram broadcast all moved to Services tab
-            (founder: "ย้ายมาคอลั้ม services" · "อันนี้ ด้วย"). */}
+        {/* 🆕 Round 28s205 — Founder: "ดึงกลับมาที่เดิม · ลูกค้า
+            ขี้เกียจอ่านหลายหน้า". Typical arrival window moved back
+            to Services tab where guests already are — no tab-switch
+            required to learn the timing. */}
 
         {/* 🆕 Round 28r12 (founder 2026-05-06) — FAQ section.
             Six categories × 4–5 Q&A each (booking / practitioners /

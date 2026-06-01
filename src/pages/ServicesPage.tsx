@@ -813,80 +813,213 @@ const ServicesPage: React.FC = () => {
             </Box>
 
 
-            {/* 🆕 Round 28s189 — Founder: "อันนี้ ด้วย". Typical
-                arrival window relocated from the How-to-book tab. */}
-            <Box
-              sx={{
-                margin: "8px 4px 0",
-                padding: 2,
-                borderRadius: "16px",
-                background: "#FFFFFF",
-                border: "1px solid rgba(15, 23, 42, 0.06)",
-                boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
-              }}
-            >
+            {/* 🆕 Round 28s206 — Founder: "Services tab จัดให้สวย
+                ขึ้น". Service area + Typical arrival window combined
+                into a single "Logistics" card with two split panels —
+                cleaner visual rhythm, less vertical scroll. Section
+                eyebrow bar ("AREAS & TIMING") echoes the
+                RATES & SERVICES treatment at the top. */}
+            <Box sx={{ mt: 2, mx: 0 }}>
               <Box
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 1,
-                  mb: 1,
+                  gap: "10px",
+                  padding: "0 4px",
+                  mb: 1.25,
                 }}
               >
-                <AccessTimeRoundedIcon
-                  sx={{ color: "#B4000A", fontSize: 18 }}
+                <Box
+                  aria-hidden
+                  sx={{
+                    width: 22,
+                    height: 1,
+                    background: "rgba(180, 0, 10, 0.45)",
+                  }}
                 />
                 <Typography
                   sx={{
-                    fontFamily: SERIF,
-                    fontSize: 14.5,
-                    fontWeight: 600,
-                    color: "#1A2B2E",
+                    fontFamily: SANS,
+                    fontSize: 10,
+                    fontWeight: 800,
+                    letterSpacing: "0.22em",
+                    textTransform: "uppercase",
+                    color: "#B4000A",
                   }}
                 >
-                  Typical arrival window
+                  Areas &amp; Timing
                 </Typography>
+                <Box
+                  aria-hidden
+                  sx={{
+                    flex: 1,
+                    height: 1,
+                    background: "rgba(15, 23, 42, 0.06)",
+                  }}
+                />
               </Box>
-              <Typography
+              <Box
                 sx={{
-                  fontFamily: SANS,
-                  fontSize: 12.5,
-                  color: "rgba(15, 23, 42, 0.7)",
-                  lineHeight: 1.55,
+                  borderRadius: "18px",
+                  background: "#FFFFFF",
+                  border: "1px solid rgba(15, 23, 42, 0.06)",
+                  boxShadow:
+                    "0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 18px rgba(15, 23, 42, 0.05)",
+                  overflow: "hidden",
+                }}
+              >
+                {/* Service area */}
+                <Box sx={{ padding: "18px 20px 16px" }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 1,
+                    }}
+                  >
+                    <LocationOnRoundedIcon
+                      sx={{ color: "#B4000A", fontSize: 18 }}
+                    />
+                    <Typography
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: 13.5,
+                        fontWeight: 700,
+                        color: "#1A2B2E",
+                        letterSpacing: "-0.005em",
+                      }}
+                    >
+                      Service area
+                    </Typography>
+                  </Box>
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: 12.5,
+                      lineHeight: 1.6,
+                      color: "rgba(15, 23, 42, 0.72)",
+                    }}
+                  >
+                    Sukhumvit · Silom · Asok · Thonglor · Sathorn · Phrom
+                    Phong · Ari · Chidlom · Ploenchit. For destinations
+                    beyond the central districts, our concierge is
+                    pleased to provide a private quotation.
+                  </Typography>
+                </Box>
+
+                {/* Hairline divider */}
+                <Box
+                  aria-hidden
+                  sx={{
+                    height: 1,
+                    background: "rgba(15, 23, 42, 0.06)",
+                    mx: "20px",
+                  }}
+                />
+
+                {/* Typical arrival window */}
+                <Box sx={{ padding: "16px 20px 18px" }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 1,
+                    }}
+                  >
+                    <AccessTimeRoundedIcon
+                      sx={{ color: "#B4000A", fontSize: 18 }}
+                    />
+                    <Typography
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: 13.5,
+                        fontWeight: 700,
+                        color: "#1A2B2E",
+                        letterSpacing: "-0.005em",
+                      }}
+                    >
+                      Typical arrival window
+                    </Typography>
+                  </Box>
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: 12.5,
+                      color: "rgba(15, 23, 42, 0.7)",
+                      lineHeight: 1.55,
+                    }}
+                  >
+                    <Box
+                      component="span"
+                      sx={{ fontWeight: 600, color: "#1A2B2E" }}
+                    >
+                      Central Bangkok:
+                    </Box>{" "}
+                    30 to 60 minutes.{" "}
+                    <Box
+                      component="span"
+                      sx={{ fontWeight: 600, color: "#1A2B2E" }}
+                    >
+                      Outside the centre or peak hours:
+                    </Box>{" "}
+                    60 to 90 minutes.
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+
+            {/* 🆕 Round 28s206 — Concierge section now sits under a
+                matching "RESERVE" eyebrow bar so the page reads as 3
+                distinct chapters: Rates · Areas & Timing · Reserve. */}
+            <Box sx={{ mt: 2.5, mx: 0 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "0 4px",
+                  mb: 1.25,
                 }}
               >
                 <Box
-                  component="span"
-                  sx={{ fontWeight: 600, color: "#1A2B2E" }}
+                  aria-hidden
+                  sx={{
+                    width: 22,
+                    height: 1,
+                    background: "rgba(180, 0, 10, 0.45)",
+                  }}
+                />
+                <Typography
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: 10,
+                    fontWeight: 800,
+                    letterSpacing: "0.22em",
+                    textTransform: "uppercase",
+                    color: "#B4000A",
+                  }}
                 >
-                  Central Bangkok:
-                </Box>{" "}
-                30 to 60 minutes.{" "}
+                  Reserve
+                </Typography>
                 <Box
-                  component="span"
-                  sx={{ fontWeight: 600, color: "#1A2B2E" }}
-                >
-                  Outside the centre or peak hours:
-                </Box>{" "}
-                60 to 90 minutes. The booking screen displays a precise
-                arrival window before you confirm.
-              </Typography>
-            </Box>
-
-            {/* 🆕 Round 28s188 — Founder: "ย้ายมา คอลั้ม services".
-                Concierge "At your service" panel relocated here from
-                the How-to-book tab so guests can reach the channels
-                without switching tabs. Same 2×2 channel grid +
-                "Subscribe to our Telegram channel" tail. */}
+                  aria-hidden
+                  sx={{
+                    flex: 1,
+                    height: 1,
+                    background: "rgba(15, 23, 42, 0.06)",
+                  }}
+                />
+              </Box>
             <Box
               sx={{
-                margin: "8px 4px 0",
                 padding: 2.25,
                 borderRadius: "18px",
                 background: "#FFFFFF",
                 border: "1px solid rgba(15, 23, 42, 0.06)",
                 boxShadow:
-                  "0 1px 2px rgba(15, 23, 42, 0.03), 0 8px 24px rgba(15, 23, 42, 0.05)",
+                  "0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 18px rgba(15, 23, 42, 0.05)",
               }}
             >
               <Box
@@ -1071,9 +1204,10 @@ const ServicesPage: React.FC = () => {
                 }}
               >
                 Subscribe to our Telegram channel for updates
-            
+
               </Box>
             </Box>
+            </Box>{/* /Reserve section wrapper (28s206) */}
           </Box>
         )}
 
@@ -1191,42 +1325,9 @@ const ServicesPage: React.FC = () => {
               ))}
             </Box>
 
-            <Box
-              sx={{
-                p: 2,
-                borderRadius: "16px",
-                background: "#FFFFFF",
-                border: "1px solid rgba(15, 23, 42, 0.06)",
-                boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                <LocationOnRoundedIcon sx={{ color: "#B4000A", fontSize: 18 }} />
-                <Typography
-                  sx={{
-                    fontFamily: SERIF,
-                    fontSize: 14.5,
-                    fontWeight: 600,
-                    color: "#1A2B2E",
-                  }}
-                >
-                  Service area
-                </Typography>
-              </Box>
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: 12.5,
-                  lineHeight: 1.6,
-                  color: "rgba(15, 23, 42,0.72)",
-                }}
-              >
-                Sukhumvit · Silom · Asok · Thonglor · Sathorn · Phrom Phong ·
-                Ari · Chidlom · Ploenchit. For destinations beyond the central
-                districts, our concierge is pleased to provide a private
-                quotation.
-              </Typography>
-            </Box>
+            {/* 🆕 Round 28s204 — Service area block fully deleted
+                from About us (was display:none after move to
+                Services tab in 28s203). */}
 
             <Box
               sx={{
