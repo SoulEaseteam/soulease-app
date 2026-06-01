@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.postToChannelManual = exports.scheduledChannelWeekend = exports.scheduledChannelSpotlight = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelWeekend = exports.scheduledChannelSpotlight = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -705,13 +705,14 @@ Object.defineProperty(exports, "postToChannelManual", { enumerable: true, get: f
 //   that handles inbound customer DMs and admin reply relays from the
 //   admin group.
 //
-//   🔒 Round 28s121 — Export commented out. View runs the manual
-//   "2 personal account" workflow instead (@SunRedvip_bkk for
-//   EN/TH/JA/KO, @YuNiSpaBkk for ZH), so the auto-greet bot isn't
-//   needed right now. Code is kept in src/telegram-concierge-bot/
-//   ready to re-enable later by uncommenting this export + setting
-//   the TELEGRAM_CONCIERGE_BOT_TOKEN secret + running the steps in
-//   docs/telegram-concierge-bot-setup.md.
+//   🆕 Round 28s123 — Re-enabled. Refactored from forwarding relay
+//   into a 24/7 multilingual ROUTER. Customer DMs bot → bot greets
+//   in their language + offers tap-button to the right concierge
+//   personal account (@YuNiSpaBkk for ZH, @SunRedvip_bkk for others).
+//   No admin-group monitoring needed — View keeps her existing 2-
+//   personal-account workflow; the bot fills the "instant 24/7
+//   acknowledgement" gap that personal accounts can't provide.
 // ─────────────────────────────────────────────────────────────
-// export { telegramConciergeWebhook } from "./telegram-concierge-bot";
+var telegram_concierge_bot_1 = require("./telegram-concierge-bot");
+Object.defineProperty(exports, "telegramConciergeWebhook", { enumerable: true, get: function () { return telegram_concierge_bot_1.telegramConciergeWebhook; } });
 //# sourceMappingURL=index.js.map

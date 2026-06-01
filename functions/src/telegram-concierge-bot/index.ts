@@ -31,6 +31,11 @@ export const telegramConciergeWebhook = onRequest(
     secrets: [TELEGRAM_CONCIERGE_BOT_TOKEN],
     // Region matches other concierge-bot functions (us-central1) so all
     // posting/relay infra clusters in one region.
+    // 🆕 Round 28s124 — allow Telegram (anonymous) to invoke. Without
+    //   `invoker: "public"`, Cloud Run blocks unauthenticated POSTs and
+    //   Telegram silently drops them — observed as 0 requests in the
+    //   Firebase Console even though setWebhook succeeded.
+    invoker: "public",
   },
   async (req, res) => {
     if (req.method !== "POST") {
