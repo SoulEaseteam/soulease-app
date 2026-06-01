@@ -1,39 +1,31 @@
 // functions/src/telegram-concierge-bot/relay.ts
 //
-// 🆕 Round 28s117 — Concierge bot ↔ admin group relay.
+// 🆕 Round 28s123 — Refactored from a forwarding relay into a simple
+//   router. Customer DMs the bot → bot auto-greets in their language
+//   and offers a tap-button to the appropriate concierge personal
+//   account (@YuNiSpaBkk for ZH, @SunRedvip_bkk for others). No
+//   message forwarding · no admin-group reply tracking. View handles
+//   actual chat in her personal Telegram account as she's already
+//   doing.
 //
-// Flow:
-//   1. Customer DMs the bot in private chat
-//   2. Bot saves a `conciergeChats/{chatId}` doc with lang + name
-//   3. Bot copies the message into the admin group with a HEADER that
-//      embeds the customer's chat_id, language, and display name —
-//      e.g., `[chat:123456789] [lang:zh] John Doe (@john_doe)`
-//   4. Bot auto-replies to customer ("got it · concierge notified")
-//   5. When View REPLIES to that forwarded message inside the admin
-//      group, the bot parses the header in `reply_to_message.text` and
-//      sends View's reply back to the original customer's chat.
-//
-// Why this design: View doesn't need a separate admin UI — she just
-// uses Telegram's native swipe-to-reply UX in the existing admin group.
-// One unified inbox.
+// Why simpler: solo founder workflow is already set up around 2
+// personal accounts. The bot's job is the part personal accounts
+// CAN'T do — instant auto-greet in 5 languages 24/7.
 
 import { logger } from "firebase-functions/v2";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 
-import { sendMessage, copyMessage } from "./client";
+import { sendMessage } from "./client";
 import {
   welcomeFor,
-  autoReplyAfterForward,
+  buttonLabelFor,
+  nudgeFor,
+  conciergeHandleFor,
   normalizeLang,
   type Lang,
 } from "./greetings";
 
 const CHATS_COLLECTION = "conciergeChats";
-
-/** Admin group chat ID — re-uses the same group that the booking bot
- *  already alerts so View has one Telegram surface for everything.
- *  Source: TELEGRAM_CHAT_ID constant in functions/src/index.ts. */
-const ADMIN_CHAT_ID = "-1002962073895";
 
 interface TelegramUser {
   id: number;
@@ -54,11 +46,11 @@ interface TelegramMessage {
   chat: TelegramChat;
   date: number;
   text?: string;
-  reply_to_message?: TelegramMessage;
 }
 
 // ─────────────────────────────────────────────────────────────
-// Customer chat metadata
+// Save customer metadata + count messages so View can see who's
+// been engaging in the Firestore admin view.
 // ─────────────────────────────────────────────────────────────
 async function upsertCustomerChat(msg: TelegramMessage): Promise<Lang> {
   const from = msg.from;
@@ -82,123 +74,74 @@ async function upsertCustomerChat(msg: TelegramMessage): Promise<Lang> {
   return lang;
 }
 
-function displayName(from: TelegramUser | undefined): string {
-  if (!from) return "Unknown";
-  const parts = [from.first_name, from.last_name].filter(Boolean);
-  const name = parts.join(" ") || from.username || `id:${from.id}`;
-  return from.username ? `${name} (@${from.username})` : name;
-}
-
 // ─────────────────────────────────────────────────────────────
-// Customer → Admin forward
+// Send the welcome + route button. Called on /start and on the
+// customer's FIRST non-/start message (so they always see the
+// route even if they skip /start).
 // ─────────────────────────────────────────────────────────────
-export async function handleCustomerMessage(
-  msg: TelegramMessage,
+async function sendWelcomeWithRoute(
   token: string,
+  chatId: number,
+  lang: Lang,
 ): Promise<void> {
-  if (!msg.from) return;
-  const lang = await upsertCustomerChat(msg);
-
-  // /start → welcome only (no forward to avoid spamming admin with
-  // empty pings on every fresh chat).
-  if (msg.text?.trim() === "/start") {
-    await sendMessage(token, msg.chat.id, welcomeFor(lang));
-    return;
-  }
-
-  // Forward to admin group with embedded chat_id header.
-  // The header is plain text so it survives copyMessage's caption
-  // limits and is parseable on the reply side.
-  const header =
-    `<b>[chat:${msg.from.id}]</b> [lang:${lang}] ` +
-    `<i>${displayName(msg.from)}</i>`;
-
-  const copied = await copyMessage(
-    token,
-    msg.chat.id,
-    msg.message_id,
-    ADMIN_CHAT_ID,
-    header,
-  );
-
-  if (!copied.ok) {
-    logger.error("[concierge-bot] forward to admin failed", {
-      error: copied.error,
-      customerId: msg.from.id,
-    });
-    return;
-  }
-
-  // Acknowledge customer so they know we got it.
-  await sendMessage(token, msg.chat.id, autoReplyAfterForward(lang));
+  const route = conciergeHandleFor(lang);
+  await sendMessage(token, chatId, welcomeFor(lang), {
+    inlineKeyboard: [
+      [{ text: buttonLabelFor(lang), url: route.url }],
+    ],
+  });
 }
 
 // ─────────────────────────────────────────────────────────────
-// Admin → Customer relay (admin replies to forwarded msg in group)
-// ─────────────────────────────────────────────────────────────
-/**
- * Parse the header embedded in a forwarded message's caption to
- * extract the customer's chat_id. Returns null when the message isn't
- * one of ours (e.g., admin chatter unrelated to concierge).
- */
-function extractCustomerChatId(text: string | undefined): string | null {
-  if (!text) return null;
-  const m = text.match(/\[chat:(\d+)\]/);
-  return m ? m[1] : null;
-}
-
-export async function handleAdminReply(
-  msg: TelegramMessage,
-  token: string,
-): Promise<void> {
-  const replyTarget = msg.reply_to_message;
-  if (!replyTarget) return;
-  if (String(msg.chat.id) !== ADMIN_CHAT_ID) return;
-
-  const customerChatId = extractCustomerChatId(replyTarget.text);
-  if (!customerChatId) return;
-  if (!msg.text) return;
-
-  const res = await sendMessage(token, customerChatId, msg.text);
-  if (!res.ok) {
-    logger.error("[concierge-bot] admin → customer relay failed", {
-      error: res.error,
-      customerChatId,
-    });
-    // Notify admin group so View knows the relay failed.
-    await sendMessage(
-      token,
-      ADMIN_CHAT_ID,
-      `⚠️ Reply to chat:${customerChatId} failed — ${res.error}`,
-      { replyTo: msg.message_id },
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
-// Top-level dispatcher
+// Main handler — only acts on private DMs. Groups/channels are
+// ignored (the bot doesn't need to do anything there for this
+// router design).
 // ─────────────────────────────────────────────────────────────
 export async function handleUpdate(
   update: { message?: TelegramMessage },
   token: string,
 ): Promise<void> {
   const msg = update.message;
-  if (!msg) return;
+  if (!msg || msg.chat.type !== "private") return;
+  if (!msg.from) return;
 
-  // Private chat = customer DM
-  if (msg.chat.type === "private") {
-    await handleCustomerMessage(msg, token);
+  const lang = await upsertCustomerChat(msg);
+
+  // /start = always send the welcome
+  if (msg.text?.trim() === "/start") {
+    await sendWelcomeWithRoute(token, msg.chat.id, lang);
     return;
   }
 
-  // Admin group reply
-  if (
-    (msg.chat.type === "group" || msg.chat.type === "supergroup") &&
-    msg.reply_to_message
-  ) {
-    await handleAdminReply(msg, token);
+  // First-ever message that isn't /start — send welcome anyway so
+  // the customer sees the route. We detect "first message" by reading
+  // messageCount from Firestore after the upsert.
+  const snap = await getFirestore()
+    .collection(CHATS_COLLECTION)
+    .doc(String(msg.from.id))
+    .get();
+  const count = Number(snap.data()?.messageCount ?? 0);
+
+  if (count <= 1) {
+    await sendWelcomeWithRoute(token, msg.chat.id, lang);
     return;
   }
 
-  // Anything else (channel, non-reply group chatter) — ignore.
+  // Subsequent messages — gentle nudge to use the button (View hasn't
+  // got time to monitor the bot inbox individually; the personal
+  // accounts are where conversation should happen).
+  try {
+    await sendMessage(token, msg.chat.id, nudgeFor(lang), {
+      inlineKeyboard: [
+        [
+          {
+            text: buttonLabelFor(lang),
+            url: conciergeHandleFor(lang).url,
+          },
+        ],
+      ],
+    });
+  } catch (err) {
+    logger.warn("[concierge-bot] nudge failed", { err });
+  }
 }

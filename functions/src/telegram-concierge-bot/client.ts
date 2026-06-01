@@ -19,7 +19,8 @@ interface SendResult {
 
 /**
  * Send a plain text message to a chat. HTML parse mode supports
- * <b>/<i>/<a> tags.
+ * <b>/<i>/<a> tags. Optional inline keyboard for action buttons
+ * (e.g., "Open chat" → t.me/X).
  */
 export async function sendMessage(
   token: string,
@@ -29,6 +30,7 @@ export async function sendMessage(
     replyTo?: number;
     parseMode?: "HTML" | "MarkdownV2";
     disablePreview?: boolean;
+    inlineKeyboard?: Array<Array<{ text: string; url: string }>>;
   } = {},
 ): Promise<SendResult> {
   if (!token) return { ok: false, error: "TOKEN_MISSING" };
@@ -44,6 +46,9 @@ export async function sendMessage(
           parse_mode: options.parseMode ?? "HTML",
           disable_web_page_preview: options.disablePreview ?? true,
           reply_to_message_id: options.replyTo,
+          reply_markup: options.inlineKeyboard
+            ? { inline_keyboard: options.inlineKeyboard }
+            : undefined,
         }),
       },
     );

@@ -1,14 +1,20 @@
 // functions/src/telegram-concierge-bot/greetings.ts
 //
-// 🆕 Round 28s117 — Multi-language welcome messages for the customer
-//   concierge bot. Triggered on /start and when a new customer first
-//   DMs the bot.
+// 🆕 Round 28s123 — Greeting bot now acts as a multilingual ROUTER
+//   instead of a forwarding relay. The previous design (R28s117)
+//   forwarded customer messages into the admin Telegram group; the
+//   simpler approach for View's "2 personal accounts" workflow is:
 //
-// Language detection: prefers Telegram's `from.language_code` (ISO
-// 639-1), falls back to "en" when unknown. Each greeting is brief and
-// warm — purpose is to set expectation (concierge replies in minutes)
-// + show that we cover the major service categories. The customer then
-// just types their question.
+//     • Customer DMs bot
+//     • Bot detects language (Telegram from.language_code)
+//     • Bot replies with welcome + tap-button to the right concierge:
+//         ZH      → @YuNiSpaBkk  (曼谷遇你SPA personal)
+//         others  → @SunRedvip_bkk (main concierge personal)
+//     • Customer taps → opens direct chat with View
+//     • View replies natively in her personal Telegram account
+//
+//   This keeps View on her familiar 2-account flow but adds a 24/7
+//   instant auto-greet that the personal accounts can't provide.
 
 export type Lang = "en" | "th" | "zh" | "ja" | "ko";
 
@@ -21,68 +27,97 @@ export function normalizeLang(input: string | undefined): Lang {
   return SUPPORTED.includes(v) ? v : "en";
 }
 
+/** Where to route each language. ZH → 曼谷遇你SPA · others → main. */
+export function conciergeHandleFor(lang: Lang): { handle: string; url: string } {
+  if (lang === "zh") {
+    return { handle: "@YuNiSpaBkk", url: "https://t.me/YuNiSpaBkk" };
+  }
+  return { handle: "@SunRedvip_bkk", url: "https://t.me/SunRedvip_bkk" };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Welcome messages — kept short. Lead with brand · then expectation
+// (concierge replies in minutes) · close with tap-button route.
+// The button is rendered separately via sendMessage's inlineKeyboard.
+// ─────────────────────────────────────────────────────────────
 const WELCOME: Record<Lang, string> = {
   en:
-    `Welcome to SunRed 🌙\n` +
+    `<b>Welcome to SunRed 🌙</b>\n` +
     `\n` +
-    `Concierge replies in minutes. You can ask about:\n` +
-    `— Available practitioners tonight\n` +
-    `— Services (Thai · Aromatherapy · Gentleman's · Therapeutic)\n` +
-    `— Pricing · Areas we serve · Reservations\n` +
+    `Premium outcall massage in Bangkok · 24/7 concierge.\n` +
     `\n` +
-    `Just send your question — we'll respond.`,
+    `For booking, pricing, or availability — tap the button below ` +
+    `to chat with our concierge directly.\n` +
+    `\n` +
+    `sunred.vip`,
   th:
-    `ยินดีต้อนรับสู่ SunRed 🌙\n` +
+    `<b>ยินดีต้อนรับสู่ SunRed 🌙</b>\n` +
     `\n` +
-    `Concierge ตอบภายในไม่กี่นาที สอบถามได้:\n` +
-    `— นักบำบัดที่ว่างคืนนี้\n` +
-    `— บริการ (Thai · Aroma · Gentleman's · Therapeutic)\n` +
-    `— ราคา · พื้นที่ให้บริการ · จอง\n` +
+    `บริการนวดถึงที่ระดับพรีเมียม กรุงเทพฯ · concierge 24/7\n` +
     `\n` +
-    `ส่งข้อความได้เลย`,
+    `จอง · ราคา · เวลาว่าง — แตะปุ่มด้านล่างเพื่อคุยกับ concierge ` +
+    `โดยตรง\n` +
+    `\n` +
+    `sunred.vip`,
   zh:
-    `欢迎来到 SunRed 🌙\n` +
+    `<b>欢迎来到 SunRed 🌙</b>\n` +
     `\n` +
-    `管家几分钟内回复。可以咨询:\n` +
-    `— 今夜可预约的治疗师\n` +
-    `— 服务选项(泰式 · 芳香 · Gentleman's · Therapeutic)\n` +
-    `— 价格 · 服务区域 · 预约\n` +
+    `曼谷高端外送按摩 · 24/7 管家服务\n` +
     `\n` +
-    `直接发消息即可。`,
+    `预约 · 价格 · 今夜可预约 — 点击下方按钮直接联系管家\n` +
+    `\n` +
+    `sunred.vip`,
   ja:
-    `SunRed へようこそ 🌙\n` +
+    `<b>SunRed へようこそ 🌙</b>\n` +
     `\n` +
-    `コンシェルジュが数分以内にお返事します。\n` +
-    `お気軽にお問合せください:\n` +
-    `— 今夜のセラピスト\n` +
-    `— サービス(タイ式・アロマ・Gentleman's・Therapeutic)\n` +
-    `— 料金・対応エリア・ご予約\n` +
+    `バンコク プレミアム出張マッサージ · 24時間コンシェルジュ\n` +
     `\n` +
-    `メッセージをお送りください。`,
+    `ご予約・料金・本日のご対応 — 下のボタンをタップして` +
+    `コンシェルジュと直接お話しください\n` +
+    `\n` +
+    `sunred.vip`,
   ko:
-    `SunRed에 오신 것을 환영합니다 🌙\n` +
+    `<b>SunRed에 오신 것을 환영합니다 🌙</b>\n` +
     `\n` +
-    `컨시어지가 몇 분 내로 답변드립니다.\n` +
-    `문의 가능한 항목:\n` +
-    `— 오늘 밤 예약 가능한 치료사\n` +
-    `— 서비스(타이·아로마·Gentleman's·Therapeutic)\n` +
-    `— 가격·서비스 지역·예약\n` +
+    `방콕 프리미엄 출장 마사지 · 24/7 컨시어지\n` +
     `\n` +
-    `메시지를 보내주세요.`,
+    `예약 · 가격 · 오늘 밤 가능 여부 — 아래 버튼을 눌러 컨시어지와 ` +
+    `직접 채팅하세요\n` +
+    `\n` +
+    `sunred.vip`,
 };
 
 export function welcomeFor(lang: Lang): string {
   return WELCOME[lang] || WELCOME.en;
 }
 
-const AUTOREPLY_AFTER_FORWARD: Record<Lang, string> = {
-  en: "Got it — concierge has been notified. We'll reply shortly.",
-  th: "รับเรื่องแล้ว · concierge ได้รับการแจ้งแล้ว · ตอบกลับเร็วๆนี้",
-  zh: "已收到 · 管家已收到通知 · 即将回复",
-  ja: "承知しました · コンシェルジュに通知済み · 間もなくご返答いたします",
-  ko: "확인했습니다 · 컨시어지에 전달되었습니다 · 곧 답변드리겠습니다",
+// ─────────────────────────────────────────────────────────────
+// Button labels — what shows on the tap-to-route inline button.
+// ─────────────────────────────────────────────────────────────
+const BUTTON_LABELS: Record<Lang, string> = {
+  en: "💬 Open concierge chat",
+  th: "💬 เปิดแชท concierge",
+  zh: "💬 联系管家 (中文)",
+  ja: "💬 コンシェルジュとチャット",
+  ko: "💬 컨시어지와 채팅",
 };
 
-export function autoReplyAfterForward(lang: Lang): string {
-  return AUTOREPLY_AFTER_FORWARD[lang] || AUTOREPLY_AFTER_FORWARD.en;
+export function buttonLabelFor(lang: Lang): string {
+  return BUTTON_LABELS[lang] || BUTTON_LABELS.en;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Follow-up message when customer keeps typing instead of tapping
+// the button — gentle nudge to use the concierge handle.
+// ─────────────────────────────────────────────────────────────
+const NUDGE: Record<Lang, string> = {
+  en: "For a faster reply, please tap the button above to reach our concierge directly.",
+  th: "เพื่อให้ตอบเร็วขึ้น · แตะปุ่มด้านบนเพื่อคุยกับ concierge ได้ตรงๆ",
+  zh: "为了更快回复 · 请点击上方按钮直接联系管家",
+  ja: "より早くお返事するため · 上のボタンをタップしてコンシェルジュと直接お話しください",
+  ko: "더 빠른 답변을 위해 위의 버튼을 눌러 컨시어지와 직접 채팅해주세요",
+};
+
+export function nudgeFor(lang: Lang): string {
+  return NUDGE[lang] || NUDGE.en;
 }

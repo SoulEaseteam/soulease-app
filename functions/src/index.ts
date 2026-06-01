@@ -885,12 +885,12 @@ export {
 //   that handles inbound customer DMs and admin reply relays from the
 //   admin group.
 //
-//   🔒 Round 28s121 — Export commented out. View runs the manual
-//   "2 personal account" workflow instead (@SunRedvip_bkk for
-//   EN/TH/JA/KO, @YuNiSpaBkk for ZH), so the auto-greet bot isn't
-//   needed right now. Code is kept in src/telegram-concierge-bot/
-//   ready to re-enable later by uncommenting this export + setting
-//   the TELEGRAM_CONCIERGE_BOT_TOKEN secret + running the steps in
-//   docs/telegram-concierge-bot-setup.md.
+//   🆕 Round 28s123 — Re-enabled. Refactored from forwarding relay
+//   into a 24/7 multilingual ROUTER. Customer DMs bot → bot greets
+//   in their language + offers tap-button to the right concierge
+//   personal account (@YuNiSpaBkk for ZH, @SunRedvip_bkk for others).
+//   No admin-group monitoring needed — View keeps her existing 2-
+//   personal-account workflow; the bot fills the "instant 24/7
+//   acknowledgement" gap that personal accounts can't provide.
 // ─────────────────────────────────────────────────────────────
-// export { telegramConciergeWebhook } from "./telegram-concierge-bot";
+export { telegramConciergeWebhook } from "./telegram-concierge-bot";
