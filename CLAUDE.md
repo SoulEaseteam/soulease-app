@@ -354,6 +354,46 @@ Code shipped (5 rounds in main):
 - 28s114: Discovery Reservation callout component on
   TherapistDetailPage for every non-Yuri therapist (audit gap #11)
 
+### 🆕 What Round 28s140-211 shipped (this session, 2026-06-XX)
+
+**UI/UX overhaul** (no functional changes — all visual + IA):
+- Hero block fully removed from home (28s144-145) — opens straight to
+  TherapistGrid.
+- TherapistMinimalCard: 3-state status (Available / Bookable / Offline)
+  · Holiday badge + soft blur · still-tappable for info; AGE + VERIFIED
+  + ★ rating + 📍 BANGKOK district rows (28s138-141, 158-167).
+- TopNav: red `#B4000A` bar · "SUNRED BANGKOK" wordmark (Cinzel caps
+  wide-tracking) · language pill removed (auto-detect from device).
+- Palette swap (28s150-152): flat `#B4000A` red · cool gray text ·
+  Off-White Mint bg · amber + pink accents (sparingly). No gradients.
+- Type system (28s154-156): heading stack Federo · Italiana · Cinzel ·
+  Fraunces · Inter for body.
+- Services tab (28s175-206): ROLADEX-style rate cards · horizontal
+  snap-row · BESTSELLER ribbon (amber gradient, scale 1.06) ·
+  AREAS & TIMING + RESERVE eyebrow sections · Concierge channel grid
+  + Telegram subscribe relocated from How-to-book.
+- How-to-book (28s201-202): dropped Reservation pillars · FAQ trimmed
+  28→13 Q&A · category jump pills · heading fonts switched to sans
+  for legibility.
+- TherapistDetailPage (28s207-210): working hours dedup · clay→cool
+  gray sweep · DetailHero status dot removed (StatusPill is sole
+  source) · 12h AM/PM format · About panel sub-sections collapse
+  behind "Show more details" toggle · StatsCard taps + InfoSheet
+  restored (founder feedback "กดดูไม่ได้").
+- BookingFlowPage page title → sans 700 (28s211).
+- AdminFloatingChat: radial gradient FAB · twin radiating pulse
+  rings · idle breathing scale (28s194).
+- Anti-patterns documented (Section 12): PromiseStrip bottom-only ·
+  HomePage no chrome · don't duplicate status indicators ·
+  HomeMapBrowse stays · Google Business Profile do-not-verify.
+
+**Architecture / cleanup:**
+- ServicesPage: 1594 → ~1260 lines (dropped quiz/compare dialogs +
+  unused helpers).
+- HowItWorks: 779 → ~510 lines (dropped Concierge + arrival + pillars).
+- TherapistDetailPage: 1625 → ~1586 lines (working hours dedup +
+  Discovery copy soften + InfoSheet kept after revert).
+
 ### 🆕 What this session shipped (2026-06-07)
 
 Strategic docs (8 new):
@@ -416,31 +456,9 @@ Code shipped (3 commits in main, 1+ staged):
   `notifications (userId asc, createdAt desc)` composite index (Round
   28s1). Without it, NotificationsPage shows empty for every user.
   Deploy via `firebase deploy --only firestore:indexes`.
-- [x] ~~**Deploy Cloud Functions for Telegram notifications**~~ DONE
-  2026-05-31 — `firebase deploy --only functions` ran successfully
-  (project soulease-spa, all 9 functions updated). Telegram booking
-  alerts are live.
-- [x] ~~**Round 28s81: Telegram dedup**~~ DEPLOYED 2026-05-31. Bug was:
-  BOTH `notifyBooking` (client callable) AND `onBookingCreate` (trigger)
-  sent → **2 messages per booking**, and notifyBooking had no auth gate.
-  Fix shipped + deployed: client no longer calls notifyBooking;
-  `onBookingCreate` is the single source (now itemizes the WeChat/Alipay
-  service charge + includes the map link); notifyBooking got an auth gate
-  (deprecated — safe to delete the callable later).
-- [x] ~~**Round 28s82: therapist DM gated OFF**~~ DEPLOYED 2026-05-31
-  (founder "เอาแค่ส่งหาฉันคนเดียวก่อน"). `DISPATCH_THERAPIST_DM = false`
-  in functions/src/index.ts — onBookingCreate alerts the admin group
-  ONLY; View dispatches manually. To auto-DM practitioners later: flip
-  the flag to `true`, redeploy functions, and have them link Telegram
-  via /start.
-- [x] ~~**Composite Firestore index** — `bookings` collection,
-  fields: `status` (asc) + `startAt` (asc).~~ Re-added to
-  `firestore.indexes.json` in Round 28s1 hotfix (accidentally deleted
-  during the rules deploy when CLI asked "delete these indexes?" —
-  the two console-built indexes for `(therapistId, startAt)` and
-  `(status, startAt)` were not in JSON yet, so they were removed.
-  Both restored + redeployed. Will take a few minutes to rebuild
-  before SocialProofTicker shows the live "X sessions now" line.
+- [x] ~~Telegram functions deploy + dedup + therapist DM gate OFF +
+  composite Firestore index~~ — all DEPLOYED 2026-05-31 · history in
+  git.
 
 **🔒 Security audit follow-ups (2026-05-30, Round 28s1):**
 - [ ] Rotate unused `VITE_OPENWEATHER_KEY` in `.env` (still live, bundled
@@ -452,12 +470,9 @@ Code shipped (3 commits in main, 1+ staged):
 - [ ] Add auth gate to `notifyBooking` + `moderateText` callables
 - [ ] Drop `'unsafe-inline'` from CSP in `vercel.json` after build verify
 
-**📋 Decisions needed from View (for auto-bot Round next):**
-- [ ] Confirm Telegram channel ID — `@SunRed_BKK`?
-- [ ] Confirm bot token — same one that sends booking notifications, or new?
-- [ ] Pick posting cadence — A) every 30min in prime, B) real-time on
-      status change, C) hybrid (recommended: C)
-- [ ] Pick edit-old vs new-post strategy (recommended: edit + auto-delete >24h)
+**📋 Decisions needed from View** — *(all bot-related decisions
+resolved 28s115-149 · channel @SunRed_BKK + @manguyujianniSPA, bots
+@SunRedPostBot + @SunRedGreeterBot live)*
 
 **📅 Marketing channel actions (View only):**
 - [ ] Cancel Singapore site (founder confirmed: no contract lock-in)

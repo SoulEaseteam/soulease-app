@@ -96,6 +96,21 @@ import { formatDistanceEta } from "@/utils/formatDistanceEta";
 const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
+// 🆕 Round 28s207 (audit #6) — 24h "HH:mm" → "h AM/PM" so the working
+//   hours read naturally everywhere (matches TherapistMinimalCard).
+function toAmPm(hhmm: string): string {
+  if (!hhmm) return "";
+  const [hStr, mStr] = hhmm.split(":");
+  const h = Number(hStr);
+  const m = Number(mStr);
+  if (Number.isNaN(h) || Number.isNaN(m)) return hhmm;
+  const period = h >= 12 ? "PM" : "AM";
+  const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return m === 0
+    ? `${hour12} ${period}`
+    : `${hour12}:${m.toString().padStart(2, "0")} ${period}`;
+}
+
 // Demo data shaped exactly to mockup Phone B. Keyed by `:id` so each card
 // in the Browse grid lands on its own profile. Unknown ids fall back to Mai.
 // TODO (Task 7 / data wiring): replace with `therapistsData` lookup +
@@ -641,9 +656,18 @@ const TherapistDetailPage: React.FC = () => {
   // 🆕 Phase 4 — Stats cells now open this sheet (Reviews tab from the
   //    rating cell, Profile tab from years/rebook cells). Lets us drop
   //    the always-visible TherapistProfileTabs section to save space.
+  // 🆕 Round 28s210 — Restored after founder feedback "กดดูไม่ได้":
+  //   StatsCard cells are tappable again and open the InfoSheet
+  //   modal (reviews / profile / loyalty deep dives).
   const [infoSheet, setInfoSheet] = useState<
     "profile" | "reviews" | "loyalty" | null
   >(null);
+
+  // 🆕 Round 28s208 (audit #9) — About panel sub-sections
+  //   (Credentials / Specialties / Languages) collapse by default
+  //   so the About tab fits on one screen. Guests tap "Show more
+  //   details" to expand.
+  const [showAboutDetails, setShowAboutDetails] = useState(false);
 
   // Round 28s42 — Underline-tab state (founder ref: a hotel
   // overview screen with "ภาพรวม / นโยบายและเงื่อนไข" tabs).
@@ -917,12 +941,15 @@ const TherapistDetailPage: React.FC = () => {
         online={livePillStatus}
         photoBg={therapist.photoBg}
         images={therapist.images}
-        // Round 28s52 — Working hours surface in the info overlay
-        // (next to Allow location + status) instead of the About
-        // tab section.
+        // 🆕 Round 28s207 (audit #6) — Working hours formatted as
+        //   12-hour AM/PM (was 24h "19:00–05:00"). Matches the
+        //   TherapistMinimalCard format on the home page so guests
+        //   see one register everywhere ("7 PM – 5 AM (overnight)").
         workingHours={
           realRecord?.startTime && realRecord?.endTime
-            ? `${realRecord.startTime}–${realRecord.endTime}${
+            ? `${toAmPm(realRecord.startTime)} – ${toAmPm(
+                realRecord.endTime,
+              )}${
                 realRecord.startTime > realRecord.endTime
                   ? " (overnight)"
                   : ""
@@ -931,10 +958,9 @@ const TherapistDetailPage: React.FC = () => {
         }
       />
 
-      {/* Round 28s36 — StatsCard restored (founder "StatsCard เอา
-          กลับมา"). The inline stat row from 28s35 reverted; the
-          4-cell card carries the tap-to-info-sheet affordance the
-          guests rely on. */}
+      {/* 🆕 Round 28s210 — Founder: "กดดูไม่ได้". StatsCard tap
+          interactions restored. Cells open the InfoSheet deep-dive
+          (reviews · profile · loyalty) — guests rely on tapping. */}
       <StatsCard
         rating={displayRating}
         reviewCount={therapist.reviewCount}
@@ -946,48 +972,10 @@ const TherapistDetailPage: React.FC = () => {
         onTapLoyalty={() => setInfoSheet("loyalty")}
       />
 
-      {/* Round 28s57 — Working hours moved here (founder
-          "ย้ายลงมาข้างล่าง") — below the StatsCard, out of the photo
-          overlay. Single quiet clay-tinted line with a clock icon. */}
-      {realRecord?.startTime && realRecord?.endTime && (
-        <Box
-          sx={{
-            maxWidth: 430,
-            margin: "0 auto",
-            padding: "10px 18px 0",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
-          <ScheduleRoundedIcon
-            sx={{ fontSize: 16, color: "#b85c3c", flexShrink: 0 }}
-          />
-          <Typography
-            component="span"
-            sx={{
-              fontFamily: SANS,
-              fontSize: "13px",
-              fontWeight: 600,
-              color: "#1A2B2E",
-            }}
-          >
-            {realRecord.startTime}–{realRecord.endTime}
-            {realRecord.startTime > realRecord.endTime && (
-              <Box
-                component="span"
-                sx={{
-                  fontWeight: 500,
-                  color: "rgba(15, 23, 42, 0.55)",
-                  marginLeft: "6px",
-                }}
-              >
-                (overnight)
-              </Box>
-            )}
-          </Typography>
-        </Box>
-      )}
+      {/* 🆕 Round 28s207 (audit #1) — Working hours line removed.
+          The same hours render inside DetailHero's overlay already
+          (workingHours prop on the hero); a second copy here was
+          redundant and added vertical drift before the StatusPill. */}
 
       {/* Round 28s42 — StatusPill rendered ABOVE the tabs so the
           status signal stays visible whichever panel is active.
@@ -1030,9 +1018,10 @@ const TherapistDetailPage: React.FC = () => {
             },
             {
               id: "about" as const,
-              label: t("detail.tabs.about", "About {{name}}", {
-                name: therapist.name,
-              }),
+              // 🆕 Round 28s207 (audit #5) — Was "About {name}".
+              //   Trimmed to just "About" so the label doesn't go
+              //   awkward when the name is long.
+              label: t("detail.tabs.about", "About"),
             },
           ]
         ).map((tab) => {
@@ -1152,7 +1141,7 @@ const TherapistDetailPage: React.FC = () => {
                     fontWeight: 800,
                     letterSpacing: "0.18em",
                     textTransform: "uppercase",
-                    color: "#b85c3c",
+                    color: "#4A5568",
                     marginBottom: "4px",
                   }}
                 >
@@ -1173,7 +1162,7 @@ const TherapistDetailPage: React.FC = () => {
                 >
                   {t(
                     "detail.discovery.body",
-                    "First reservation with {{name}} includes a complimentary 15-minute warm scalp and foot welcome ritual · ask the concierge for details.",
+                    "First reservation with {{name}}? Ask the concierge — we may have a complimentary welcome gesture for you.",
                     { name: therapist.name }
                   )}
                 </Typography>
@@ -1185,13 +1174,57 @@ const TherapistDetailPage: React.FC = () => {
               About card so guests don't have to dig into the
               centred InfoSheet to see Credentials / Specialties /
               Languages. Each section is hidden when its source
-              array is empty. */}
+              array is empty.
+              🆕 Round 28s208 (audit #9) — Sections collapse behind a
+              "Show more details" toggle so the About tab opens compact. */}
+          <Box
+            sx={{
+              maxWidth: 430,
+              margin: "0 auto",
+              padding: "10px 20px 8px",
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
+            <Box
+              component="button"
+              type="button"
+              onClick={() => setShowAboutDetails((p) => !p)}
+              aria-expanded={showAboutDetails}
+              sx={{
+                background: "transparent",
+                border: "1px solid rgba(15, 23, 42, 0.12)",
+                borderRadius: "999px",
+                padding: "7px 16px",
+                fontFamily: SANS,
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                color: "#1A2B2E",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                transition:
+                  "border-color 0.18s ease, background 0.18s ease",
+                "&:hover": {
+                  borderColor: "#B4000A",
+                  background: "rgba(180, 0, 10, 0.04)",
+                },
+              }}
+            >
+              {showAboutDetails
+                ? "Hide details ▴"
+                : "Show more details ▾"}
+            </Box>
+          </Box>
           <Box
             sx={{
               maxWidth: 430,
               margin: "0 auto",
               padding: "10px 20px 24px",
-              display: "flex",
+              display: showAboutDetails ? "flex" : "none",
               flexDirection: "column",
               gap: "22px",
             }}
@@ -1206,7 +1239,7 @@ const TherapistDetailPage: React.FC = () => {
                     fontWeight: 800,
                     letterSpacing: "0.14em",
                     textTransform: "uppercase",
-                    color: "#b85c3c",
+                    color: "#4A5568",
                     marginBottom: "10px",
                   }}
                 >
@@ -1270,7 +1303,7 @@ const TherapistDetailPage: React.FC = () => {
                     fontWeight: 800,
                     letterSpacing: "0.14em",
                     textTransform: "uppercase",
-                    color: "#b85c3c",
+                    color: "#4A5568",
                     marginBottom: "10px",
                   }}
                 >
@@ -1336,7 +1369,7 @@ const TherapistDetailPage: React.FC = () => {
                     fontWeight: 800,
                     letterSpacing: "0.14em",
                     textTransform: "uppercase",
-                    color: "#b85c3c",
+                    color: "#4A5568",
                     marginBottom: "10px",
                   }}
                 >
@@ -1423,7 +1456,7 @@ const TherapistDetailPage: React.FC = () => {
             fontWeight: 800,
             letterSpacing: "0.14em",
             textTransform: "uppercase",
-            color: "#b85c3c",
+            color: "#4A5568",
             marginBottom: "6px",
           }}
         >
@@ -1490,26 +1523,22 @@ const TherapistDetailPage: React.FC = () => {
           component file is kept around in case we need a manual confirm
           fallback later. */}
 
-      {/* Phase 4 — Therapist info sheet (Verified Profile / Reviews).
-          Opened from StatsCard's tappable cells; closed by backdrop tap,
-          drag, or the close button in the sheet header. */}
+      {/* 🆕 Round 28s210 — TherapistInfoSheet restored after founder
+          feedback "กดดูไม่ได้". StatsCard cells reopen this sheet
+          for the per-tab deep dive (reviews · profile · loyalty). */}
       <TherapistInfoSheet
         open={infoSheet !== null}
         onClose={() => setInfoSheet(null)}
-        // Round 28ah — 'loyalty' is now a real tab. Forward whichever
-        // cell the user tapped on; default to 'profile' on null/unknown.
         initialTab={
           infoSheet === "reviews"
             ? "reviews"
             : infoSheet === "loyalty"
-            ? "loyalty"
-            : "profile"
+              ? "loyalty"
+              : "profile"
         }
         data={{
           yearsExp: therapist.yearsExp,
           totalSessions: therapist.totalSessions,
-          // 🆕 Round 28aj — live "today" count surfaces as a momentum
-          //   signal in the InfoSheet TrustHero strip.
           todayBookings: loyaltyStats.todayBookings,
           rebookRate: therapist.rebookRate,
           hasLicense: therapist.creds.some((c) =>
@@ -1526,11 +1555,12 @@ const TherapistDetailPage: React.FC = () => {
             sub: s.yrs,
           })),
           langs: therapist.langs,
-          rating: therapist.rating,
-          reviewCount: therapist.reviewCount,
-          // 🆕 Round 28ae — when live reviews exist, ship those directly
-          //   so we never invent a fake rating/booking id. Otherwise pass
-          //   empty arrays — InfoSheet renders the "No reviews yet" state.
+          rating: displayRating,
+          reviewCount: liveReviews.reviewCount,
+          // Live reviews → mapped to the InfoSheet Review type
+          //   { bookingId, rating, service, body, ago, verified }.
+          // Round 28s212 — restored from e9480f6 after the 28s210
+          //   "restore" passed wrong shape and crashed the page.
           reviewBuckets:
             liveReviews.reviewCount > 0
               ? liveReviews.buckets.map((b) => ({
@@ -1550,9 +1580,6 @@ const TherapistDetailPage: React.FC = () => {
                   verified: r.verified,
                 }))
               : [],
-          // 🆕 Round 28af — pipe live booking aggregates through. The
-          //   Loyalty tab uses real values when uniqueCustomers ≥ 3,
-          //   otherwise falls back to synthetic estimates from rebookRate.
           loyaltyStats: {
             totalCompleted: loyaltyStats.totalCompleted,
             uniqueCustomers: loyaltyStats.uniqueCustomers,

@@ -590,36 +590,10 @@ const DetailHero: React.FC<Props> = ({
                 </>
               )}
             </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
-              {(() => {
-                const status = resolveStatus(online);
-                const meta = STATUS_COLORS[status];
-                return (
-                  <>
-                    <Box
-                      component="span"
-                      aria-hidden
-                      sx={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        background: meta.dot,
-                        boxShadow: `0 0 10px ${meta.dot}`,
-                        display: "inline-block",
-                        flexShrink: 0,
-                        // Pulse for all statuses (color-tinted glow per status).
-                        animation: "sunredPulseDot 1.8s ease-in-out infinite",
-                        "@keyframes sunredPulseDot": {
-                          "0%, 100%": { transform: "scale(1)", opacity: 1 },
-                          "50%": { transform: "scale(1.2)", opacity: 0.72 },
-                        },
-                      }}
-                    />
-                    {meta.label}
-                  </>
-                );
-              })()}
-            </Box>
+            {/* 🆕 Round 28s207 (audit #4) — Status dot removed from
+                hero overlay. The StatusPill rendered below the
+                StatsCard is the single source of truth for live
+                status (Online/Busy/Offline + Next available). */}
             {/* Round 28s57 — Working hours moved OUT of the photo
                 overlay (founder "ย้ายลงมาข้างล่าง"); it now renders
                 below the StatsCard in TherapistDetailPage so the

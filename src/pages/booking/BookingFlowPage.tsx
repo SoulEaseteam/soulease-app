@@ -1074,16 +1074,18 @@ const BookingFlowPage: React.FC = () => {
         >
           <ArrowBackRoundedIcon fontSize="small" />
         </IconButton>
+        {/* 🆕 Round 28s211 — Page title sans-serif for legibility,
+            matching Services / How-to-book audit (28s199 / 28s202). */}
         <Typography
           component="h1"
           sx={{
             flex: 1,
             textAlign: "center",
-            fontFamily: SERIF,
-            fontSize: "18px",
-            fontWeight: 600,
+            fontFamily: SANS,
+            fontSize: "16px",
+            fontWeight: 700,
             color: "#1A2B2E",
-            letterSpacing: "-0.01em",
+            letterSpacing: "-0.005em",
             marginRight: "36px", // visual balance for the left icon button
           }}
         >

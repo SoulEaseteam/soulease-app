@@ -124,7 +124,7 @@ const TONE_STYLES: Record<
 > = {
   work: {
     iconBg: "rgba(214, 40, 40, 0.12)",
-    iconColor: "#B85C3C",
+    iconColor: "#4A5568",
   },
   ethnicity: {
     iconBg: "rgba(22, 163, 74, 0.12)",
@@ -1077,7 +1077,7 @@ export const Languages: React.FC<{ langs: Lang[] }> = ({ langs }) => {
               sx={{
                 fontFamily: SANS,
                 fontSize: "10px",
-                color: "#b85c3c",
+                color: "#4A5568",
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
@@ -1525,7 +1525,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
         sx={{
           textAlign: "center",
           padding: "8px",
-          color: "#b85c3c",
+          color: "#4A5568",
           fontSize: "12px",
           fontWeight: 700,
           fontFamily: SANS,
