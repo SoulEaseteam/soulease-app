@@ -17,6 +17,13 @@ interface SendResult {
   error?: string;
 }
 
+/** Inline keyboard button — supports both URL and callback variants. */
+export type InlineButton =
+  | { text: string; url: string }
+  | { text: string; callback_data: string };
+
+export type InlineKeyboard = InlineButton[][];
+
 /**
  * Send a plain text message to a chat. HTML parse mode supports
  * <b>/<i>/<a> tags. Optional inline keyboard for action buttons
@@ -30,7 +37,7 @@ export async function sendMessage(
     replyTo?: number;
     parseMode?: "HTML" | "MarkdownV2";
     disablePreview?: boolean;
-    inlineKeyboard?: Array<Array<{ text: string; url: string }>>;
+    inlineKeyboard?: InlineKeyboard;
   } = {},
 ): Promise<SendResult> {
   if (!token) return { ok: false, error: "TOKEN_MISSING" };
@@ -68,6 +75,86 @@ export async function sendMessage(
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return { ok: false, error: message };
+  }
+}
+
+/**
+ * Edit an existing message's text + keyboard. Used for in-place FAQ
+ * replies so the menu stays in one tidy thread rather than spamming
+ * the chat with new messages on every button tap.
+ */
+export async function editMessageText(
+  token: string,
+  chatId: string | number,
+  messageId: number,
+  text: string,
+  options: {
+    parseMode?: "HTML" | "MarkdownV2";
+    disablePreview?: boolean;
+    inlineKeyboard?: InlineKeyboard;
+  } = {},
+): Promise<SendResult> {
+  if (!token) return { ok: false, error: "TOKEN_MISSING" };
+  try {
+    const res = await fetch(
+      `https://api.telegram.org/bot${token}/editMessageText`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          message_id: messageId,
+          text: text.slice(0, 4000),
+          parse_mode: options.parseMode ?? "HTML",
+          disable_web_page_preview: options.disablePreview ?? true,
+          reply_markup: options.inlineKeyboard
+            ? { inline_keyboard: options.inlineKeyboard }
+            : undefined,
+        }),
+      },
+    );
+    const data = (await res.json()) as {
+      ok: boolean;
+      description?: string;
+    };
+    if (!data.ok) {
+      logger.warn("[concierge-bot] editMessageText failed", {
+        description: data.description,
+      });
+      return { ok: false, error: data.description };
+    }
+    return { ok: true, message_id: messageId };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: message };
+  }
+}
+
+/**
+ * Acknowledge a callback_query so the loading spinner on the button
+ * stops. Required for inline-keyboard taps — Telegram retries until
+ * the bot answers.
+ */
+export async function answerCallbackQuery(
+  token: string,
+  callbackQueryId: string,
+  text?: string,
+): Promise<void> {
+  if (!token) return;
+  try {
+    await fetch(
+      `https://api.telegram.org/bot${token}/answerCallbackQuery`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          callback_query_id: callbackQueryId,
+          text: text?.slice(0, 200),
+        }),
+      },
+    );
+  } catch (err) {
+    logger.warn("[concierge-bot] answerCallbackQuery threw", { err });
   }
 }
 

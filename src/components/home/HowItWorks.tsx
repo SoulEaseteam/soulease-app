@@ -143,8 +143,11 @@ const CONCIERGE_CHANNELS: Array<{
   {
     Icon: FaTelegramPlane,
     name: "Telegram",
-    handle: "@SunRedvip_bkk",
-    href: "https://t.me/SunRedvip_bkk",
+    // 🆕 Round 28s126 — Customer-facing CTAs route through the FAQ
+    //   bot for instant multilingual greeting + 6-button menu before
+    //   reaching View's personal account.
+    handle: "@SunRedGreeterBot",
+    href: "https://t.me/SunRedGreeterBot",
     external: true,
     tone: { bg: "rgba(34, 158, 217, 0.10)", fg: "#229ED9" },
   },

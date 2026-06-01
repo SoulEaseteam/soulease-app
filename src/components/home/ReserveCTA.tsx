@@ -32,8 +32,12 @@ import { brand, fonts } from "@/theme";
 import { useConciergeMode } from "@/utils/conciergeMode";
 import { trackConciergeOpen } from "@/utils/analytics";
 
-// Canonical channel URLs — same set used in HowItWorks / HomeFooter.
-const TELEGRAM_URL = "https://t.me/SunRedvip_bkk";
+// 🆕 Round 28s126 — Primary Telegram CTA now routes through the FAQ
+//   bot (@SunRedGreeterBot) instead of the personal concierge handle.
+//   Customers get instant multilingual greeting + 6-button menu
+//   (Pricing · Services · Areas · Available now · How to book · Chat
+//   with concierge) before reaching View's inbox.
+const TELEGRAM_URL = "https://t.me/SunRedGreeterBot";
 const WHATSAPP_URL = "https://wa.me/66634350987";
 const LINE_URL = "https://lin.ee/uqvdwWt";
 const WECHAT_ROUTE = "/wechat-scan"; // internal scan page

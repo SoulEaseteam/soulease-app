@@ -427,7 +427,8 @@ const ServicesPage: React.FC = () => {
                 external: true,
               },
               {
-                href: "https://t.me/SunRedvip_bkk",
+                // 🆕 Round 28s126 — route through FAQ bot first
+                href: "https://t.me/SunRedGreeterBot",
                 src: "/images/profli/telegram.png",
                 alt: "Telegram",
                 glow: "rgba(34, 158, 217, 0.45)",
