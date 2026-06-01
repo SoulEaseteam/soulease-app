@@ -287,8 +287,39 @@ they prefer.
 
 ### 🔔 OPEN REMINDERS FOR VIEW (read first every session)
 
-**Last updated: 2026-06-07 after Round 28s116 (Telegram channel-posting
-bot scaffold + admin UI panel + multi-language post templates)**
+**Last updated: 2026-06-02 after Round 28s223 (live-site audit + fixes:
+localized home prerender, hreflang consistency, type + asset cleanup)**
+
+### 🆕 What Round 28s223 shipped (2026-06-02) — audit fixes
+
+Triggered by a full audit of the live site. Shipped (commit ebd8856):
+- **Localized home prerender** (`/zh /ja /ko`) added to
+  `scripts/prerender-routes.mjs` (homeRoutes + HOME_COPY + homeHreflang).
+  Static shells with localized title/desc/OG/JSON-LD + crawlable
+  `<noscript>` h1, self-canonical, path-based hreflang. Gives Baidu/Naver
+  a localized landing page on the most important URL. Prerender now writes
+  35 routes (was 32). Sitemap 35 → 38 URLs.
+- **hreflang made consistent** — home was mixing `?lang=zh` (index.html +
+  sitemap) with `/zh/` (services). Now all path-based + reciprocal. Dropped
+  `th` from the home cluster (auto-detected client-side, not a crawl target).
+- **Type fix** — `types/therapist.ts` badgeKey union now includes
+  `"TOP_RATED"` (was assigned in HomeTherapistGrid but missing from the
+  type; latent tsc error — build passed only because Vite/esbuild skips
+  typecheck). tsc now clean.
+- **Dead code removed** — deleted `src/utils/badgeConfig.ts` (imported
+  nowhere, tree-shaken). It also held a broken `/badges/Best (1).gif` ref
+  (file no longer on disk).
+- **Perf** — `User.gif` (1200×1200, 899 KB, shown 120×120 on
+  login/register) → 240×240 animated WebP, **89 KB (−90%)**. Refs updated
+  in LoginPage + RegisterPage.
+
+⚠️ **LESSON (don't repeat):** I initially reported "16 commits undeployed /
+live site 2 days stale." **That was WRONG** — caused by a stale local
+`origin/main` tracking ref (never `git fetch`ed). Vercel **GitHub
+auto-deploy works fine**; every commit 28s111→222 was already live & READY.
+ALWAYS `git fetch` before judging deploy state. Auto-deploy means a plain
+`git push origin main` is enough — the manual `vercel --prod` is a fallback,
+not required.
 
 ### 🆕 What Round 28s115-116 shipped (2026-06-07)
 
