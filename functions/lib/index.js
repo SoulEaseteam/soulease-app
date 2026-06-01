@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.postToChannelManual = exports.scheduledChannelWeekend = exports.scheduledChannelSpotlight = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelWeekend = exports.scheduledChannelSpotlight = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -699,4 +699,19 @@ var telegram_post_bot_1 = require("./telegram-post-bot");
 Object.defineProperty(exports, "scheduledChannelSpotlight", { enumerable: true, get: function () { return telegram_post_bot_1.scheduledChannelSpotlight; } });
 Object.defineProperty(exports, "scheduledChannelWeekend", { enumerable: true, get: function () { return telegram_post_bot_1.scheduledChannelWeekend; } });
 Object.defineProperty(exports, "postToChannelManual", { enumerable: true, get: function () { return telegram_post_bot_1.postToChannelManual; } });
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28s117 — Customer-facing Telegram Concierge Bot.
+//   Lives in src/telegram-concierge-bot/. Exposes one webhook receiver
+//   that handles inbound customer DMs and admin reply relays from the
+//   admin group.
+//
+//   Required setup BEFORE first deploy — see
+//   docs/telegram-concierge-bot-setup.md:
+//     1. firebase functions:secrets:set TELEGRAM_CONCIERGE_BOT_TOKEN
+//     2. firebase deploy --only functions:telegramConciergeWebhook
+//     3. Register the deployed URL with Telegram's setWebhook
+//     4. Add the bot to the admin Telegram group
+// ─────────────────────────────────────────────────────────────
+var telegram_concierge_bot_1 = require("./telegram-concierge-bot");
+Object.defineProperty(exports, "telegramConciergeWebhook", { enumerable: true, get: function () { return telegram_concierge_bot_1.telegramConciergeWebhook; } });
 //# sourceMappingURL=index.js.map
