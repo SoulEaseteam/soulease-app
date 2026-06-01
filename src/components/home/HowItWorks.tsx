@@ -14,25 +14,21 @@
 //   2. Three-movement ritual — 01 · 02 · 03 with connecting thread
 //   3. Reservation pillars — 2x2 grid (one-tap · profiles · privacy · photo)
 //   4. Payment & Policy CTA — links to /payment-methods (canonical source)
-//   5. Typical arrival window — wide card
-//   6. Concierge — 2x2 channel grid (WhatsApp · Telegram · LINE · WeChat)
-//   7. Telegram broadcast — single subtle text link
-//   8. Closing italic — concierge availability note
+//   5. Typical arrival window — moved to Services tab (28s189)
+//
+// 🆕 Round 28s188-189 — Concierge channels + Telegram subscribe link
+//   + Typical arrival window all moved to ServicesPage Services tab
+//   (founder: "ย้ายมาคอลั้ม services").
 
 import React from "react";
 import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { Link as RouterLink } from "react-router-dom";
 
-import TouchAppRoundedIcon from "@mui/icons-material/TouchAppRounded";
-import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
-import ShieldRoundedIcon from "@mui/icons-material/ShieldRounded";
-import VerifiedUserRoundedIcon from "@mui/icons-material/VerifiedUserRounded";
-import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+// 🆕 Round 28s201 — TouchApp / Badge / Shield / VerifiedUser icons
+//   dropped along with the reservation pillars (audit cleanup).
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
-
-import { FaLine, FaTelegramPlane, FaWeixin, FaWhatsapp } from "react-icons/fa";
 
 // 🆕 Round 28r12 — FAQ section appended to "How to Book". Lives in a
 //   separate file so the 25+ Q&A entries are easy to maintain without
@@ -57,12 +53,12 @@ const STEPS: StepDef[] = [
   {
     num: 1,
     titleKey: "home.howItWorks.step1.title",
-    titleFallback: "Select your therapist",
+    titleFallback: "Select your practitioner",
     bodyKey: "home.howItWorks.step1.body",
     bodyFallback:
-      "Browse a curated roster of licensed practitioners. Filter by specialty, language, and same-day availability in your district.",
+      "Browse a curated roster of licensed practitioners. Filter by specialty, language, and who's available tonight.",
     metaKey: "home.howItWorks.step1.meta",
-    metaFallback: "Browse · Compare · Choose",
+    metaFallback: "Browse · Choose · Confirm",
   },
   {
     num: 2,
@@ -80,94 +76,19 @@ const STEPS: StepDef[] = [
     titleFallback: "Restore in your sanctuary",
     bodyKey: "home.howItWorks.step3.body",
     bodyFallback:
-      "Your therapist arrives fully equipped. Settle the booking securely, share a private review, and re-book your preferred practitioner with a single tap.",
+      "Your practitioner arrives fully equipped. Settle the booking securely, share a private review, and request her again anytime through the concierge.",
     metaKey: "home.howItWorks.step3.meta",
     metaFallback: "Arrival · Service · Renewal",
   },
 ];
 
-// ─── Reservation pillars ──────────────────────────────────────────────
-const RESERVATION_PILLARS: Array<{
-  Icon: typeof TouchAppRoundedIcon;
-  title: string;
-  body: string;
-  tone: { bg: string; fg: string };
-}> = [
-  {
-    Icon: TouchAppRoundedIcon,
-    title: "One-tap reservation",
-    body:
-      "Choose a profile, complete the brief form, and our concierge confirms within minutes via WhatsApp or Telegram.",
-    tone: { bg: "rgba(180, 0, 10, 0.08)", fg: "#B4000A" },
-  },
-  {
-    Icon: BadgeRoundedIcon,
-    title: "Detailed profiles",
-    body:
-      "Specialties, languages, today's availability, and authentic reviews from past guests — on every profile.",
-    tone: { bg: "rgba(15, 23, 42, 0.08)", fg: "#475569" },
-  },
-  {
-    Icon: ShieldRoundedIcon,
-    title: "Privacy by design",
-    body:
-      "All correspondence is routed through our concierge — a quiet measure that protects both you and your practitioner.",
-    tone: { bg: "rgba(14, 165, 233, 0.10)", fg: "#0284C7" },
-  },
-  {
-    Icon: VerifiedUserRoundedIcon,
-    title: "Photo verified",
-    body:
-      "Every photograph passes our verification protocol before publication, with periodic re-checks thereafter.",
-    tone: { bg: "rgba(22, 163, 74, 0.10)", fg: "#16a34a" },
-  },
-];
+// 🆕 Round 28s201 — RESERVATION_PILLARS array removed along with
+//   the 2×2 grid that consumed it. Keep on disk via `git revert`
+//   if a future round wants to bring them back.
 
 // ─── Concierge channels ───────────────────────────────────────────────
-const CONCIERGE_CHANNELS: Array<{
-  Icon: React.ElementType;
-  name: string;
-  handle: string;
-  href: string;
-  external: boolean;
-  tone: { bg: string; fg: string };
-}> = [
-  {
-    Icon: FaWhatsapp,
-    name: "WhatsApp",
-    handle: "+66 63 435 0987",
-    href: "https://wa.me/66634350987",
-    external: true,
-    tone: { bg: "rgba(37, 211, 102, 0.10)", fg: "#25D366" },
-  },
-  {
-    Icon: FaTelegramPlane,
-    name: "Telegram",
-    // 🆕 Round 28s126 — Customer-facing CTAs route through the FAQ
-    //   bot for instant multilingual greeting + 6-button menu before
-    //   reaching View's personal account.
-    handle: "@SunRedGreeterBot",
-    href: "https://t.me/SunRedGreeterBot",
-    external: true,
-    tone: { bg: "rgba(34, 158, 217, 0.10)", fg: "#229ED9" },
-  },
-  {
-    Icon: FaLine,
-    name: "LINE",
-    handle: "Add friend",
-    href: "https://lin.ee/uqvdwWt",
-    external: true,
-    tone: { bg: "rgba(6, 199, 85, 0.10)", fg: "#06C755" },
-  },
-  {
-    Icon: FaWeixin,
-    name: "WeChat",
-    handle: "Scan QR",
-    href: "/wechat-scan",
-    external: false,
-    tone: { bg: "rgba(7, 193, 96, 0.10)", fg: "#07C160" },
-  },
-];
+// 🆕 Round 28s189 — CONCIERGE_CHANNELS array removed along with the
+//   panel that consumed it (moved to ServicesPage).
 
 const HowItWorks: React.FC = () => {
   const { t } = useTranslation();
@@ -175,7 +96,7 @@ const HowItWorks: React.FC = () => {
   return (
     <Box>
       {/* ───────── 1. Section header ───────── */}
-      <Box sx={{ padding: "36px 20px 8px", position: "relative" }}>
+      <Box sx={{ padding: "18px 20px 8px", position: "relative" }}>
         <Box
           sx={{
             display: "flex",
@@ -184,7 +105,7 @@ const HowItWorks: React.FC = () => {
             fontSize: "10px",
             letterSpacing: "0.24em",
             textTransform: "uppercase",
-            color: "#b85c3c",
+            color: "#4A5568",
             fontWeight: 700,
             marginBottom: "10px",
             fontFamily: SANS,
@@ -199,17 +120,25 @@ const HowItWorks: React.FC = () => {
           {t("home.howItWorks.eyebrow", "The Experience")}
         </Box>
 
+        {/* 🆕 Round 28s202 — Title sans-serif (was Federo display
+            serif) for legibility. Keeps the italic "movements"
+            accent in brand red so the editorial flavour survives. */}
         <Typography
           component="h2"
           sx={{
-            fontFamily: SERIF,
-            fontWeight: 400,
-            fontSize: "28px",
-            lineHeight: 1.15,
-            letterSpacing: "-0.02em",
+            fontFamily: SANS,
+            fontWeight: 700,
+            fontSize: "24px",
+            lineHeight: 1.2,
+            letterSpacing: "-0.015em",
             color: "#1A2B2E",
             marginBottom: "10px",
-            "& em": { fontStyle: "italic", color: "#B4000A" },
+            "& em": {
+              fontFamily: SERIF,
+              fontStyle: "italic",
+              fontWeight: 500,
+              color: "#B4000A",
+            },
           }}
         >
           {t("home.howItWorks.title.pre", "A ritual in three ")}
@@ -317,15 +246,19 @@ const HowItWorks: React.FC = () => {
               </Box>
 
               <Box sx={{ flex: 1, pt: "2px" }}>
+                {/* 🆕 Round 28s202 — Founder: "เปลี่ยนฟ้อนหน่อย
+                    อ่านยากมาก". Step titles switched from serif
+                    (Federo display) → sans-serif (Inter 700) for
+                    better legibility at small sizes. */}
                 <Typography
                   component="h3"
                   sx={{
-                    fontFamily: SERIF,
-                    fontWeight: 500,
-                    fontSize: "16px",
+                    fontFamily: SANS,
+                    fontWeight: 700,
+                    fontSize: "15px",
                     color: "#1A2B2E",
                     marginBottom: "4px",
-                    letterSpacing: "-0.01em",
+                    letterSpacing: "-0.005em",
                   }}
                 >
                   {t(step.titleKey, step.titleFallback)}
@@ -335,9 +268,9 @@ const HowItWorks: React.FC = () => {
                   component="p"
                   sx={{
                     fontFamily: SANS,
-                    fontSize: "12.5px",
-                    color: "rgba(15, 23, 42, 0.72)",
-                    lineHeight: 1.55,
+                    fontSize: "13px",
+                    color: "rgba(15, 23, 42, 0.75)",
+                    lineHeight: 1.6,
                     margin: 0,
                   }}
                 >
@@ -352,7 +285,7 @@ const HowItWorks: React.FC = () => {
                     fontWeight: 700,
                     letterSpacing: "0.2em",
                     textTransform: "uppercase",
-                    color: "rgba(184, 92, 60, 0.85)",
+                    color: "#4A5568",
                   }}
                 >
                   {t(step.metaKey, step.metaFallback)}
@@ -363,7 +296,7 @@ const HowItWorks: React.FC = () => {
         </Box>
       </Box>
 
-      {/* ───────── 3+. Supporting cards (pillars · payment · arrival · concierge · close) ───────── */}
+      {/* ───────── 3. Payment & Policy CTA + FAQ ───────── */}
       <Box
         sx={{
           padding: "20px 20px 28px",
@@ -372,76 +305,11 @@ const HowItWorks: React.FC = () => {
           gap: 2,
         }}
       >
-        {/* Reservation pillars — 2x2 grid */}
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 1.25,
-          }}
-        >
-          {RESERVATION_PILLARS.map(({ Icon, title, body, tone }) => (
-            <Box
-              key={title}
-              sx={{
-                p: 1.5,
-                borderRadius: "14px",
-                background: "#FFFFFF",
-                border: "1px solid rgba(15, 23, 42, 0.06)",
-                boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
-                display: "flex",
-                flexDirection: "column",
-                gap: 0.75,
-                transition:
-                  "transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
-                "&:hover": {
-                  transform: "translateY(-1px)",
-                  borderColor: "rgba(15, 23, 42, 0.14)",
-                  boxShadow:
-                    "0 1px 2px rgba(180, 0, 10, 0.05), 0 8px 22px rgba(180, 0, 10, 0.05)",
-                },
-              }}
-            >
-              <Box
-                sx={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: "10px",
-                  background: tone.bg,
-                  color: tone.fg,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  "& svg": { fontSize: 18 },
-                }}
-              >
-                <Icon />
-              </Box>
-              <Typography
-                sx={{
-                  fontFamily: SERIF,
-                  fontSize: 13.5,
-                  fontWeight: 600,
-                  color: "#1A2B2E",
-                  lineHeight: 1.25,
-                  letterSpacing: "-0.005em",
-                }}
-              >
-                {title}
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: 11.5,
-                  lineHeight: 1.5,
-                  color: "rgba(15, 23, 42,0.7)",
-                }}
-              >
-                {body}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
+        {/* 🆕 Round 28s201 — Reservation pillars (2×2 grid) removed.
+            Founder audit: "One-tap" + "Detailed profiles" duplicated
+            Services/Therapist cards; "Privacy by design" + "Photo
+            verified" are brand-trust signals that belong in About us.
+            How-to-book now stays focused on the 3-step ritual + FAQ. */}
 
         {/* Payment & Policy CTA → /payment-methods (canonical source) */}
         <Box
@@ -492,7 +360,7 @@ const HowItWorks: React.FC = () => {
                 fontWeight: 700,
                 letterSpacing: "0.18em",
                 textTransform: "uppercase",
-                color: "#b85c3c",
+                color: "#4A5568",
                 lineHeight: 1.2,
                 mb: 0.25,
               }}
@@ -517,236 +385,9 @@ const HowItWorks: React.FC = () => {
           />
         </Box>
 
-        {/* Typical arrival window */}
-        <Box
-          sx={{
-            p: 2,
-            borderRadius: "16px",
-            background: "#FFFFFF",
-            border: "1px solid rgba(15, 23, 42, 0.06)",
-            boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              mb: 1,
-            }}
-          >
-            <AccessTimeRoundedIcon
-              sx={{ color: "#B4000A", fontSize: 18 }}
-            />
-            <Typography
-              sx={{
-                fontFamily: SERIF,
-                fontSize: 14.5,
-                fontWeight: 600,
-                color: "#1A2B2E",
-              }}
-            >
-              Typical arrival window
-            </Typography>
-          </Box>
-          <Typography
-            sx={{
-              fontFamily: SANS,
-              fontSize: 12.5,
-              lineHeight: 1.6,
-              color: "rgba(15, 23, 42,0.72)",
-            }}
-          >
-            <Box component="span" sx={{ fontWeight: 600, color: "#1A2B2E" }}>
-              Central Bangkok:
-            </Box>{" "}
-            30 to 60 minutes.{" "}
-            <Box component="span" sx={{ fontWeight: 600, color: "#1A2B2E" }}>
-              Outside the centre or peak hours:
-            </Box>{" "}
-            60 to 90 minutes. The booking screen displays a precise arrival
-            window before you confirm.
-          </Typography>
-        </Box>
-
-        {/* Concierge — 2x2 channel grid (matches About-us pillar pattern) */}
-        <Box
-          sx={{
-            p: 2.25,
-            borderRadius: "18px",
-            background: "#FFFFFF",
-            border: "1px solid rgba(15, 23, 42, 0.06)",
-            boxShadow:
-              "0 1px 2px rgba(15, 23, 42, 0.03), 0 8px 24px rgba(15, 23, 42, 0.05)",
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              fontSize: 10,
-              letterSpacing: "0.24em",
-              textTransform: "uppercase",
-              color: "#b85c3c",
-              fontWeight: 700,
-              mb: 0.5,
-              fontFamily: SANS,
-              "&::before": {
-                content: '""',
-                width: "22px",
-                height: "1px",
-                background: "rgba(184, 92, 60, 0.55)",
-              },
-            }}
-          >
-            Concierge
-          </Box>
-          <Typography
-            sx={{
-              fontFamily: SERIF,
-              fontSize: 17,
-              fontWeight: 500,
-              color: "#1A2B2E",
-              letterSpacing: "-0.01em",
-              lineHeight: 1.3,
-              mb: 0.5,
-              "& em": { fontStyle: "italic", color: "#B4000A" },
-            }}
-          >
-            At your <em>service</em>
-          </Typography>
-          <Typography
-            sx={{
-              fontFamily: SANS,
-              fontSize: 12.5,
-              color: "rgba(15, 23, 42,0.65)",
-              lineHeight: 1.55,
-              mb: 1.75,
-            }}
-          >
-            Around the clock, in your preferred language. Reach us through
-            any of the channels below.
-          </Typography>
-
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 1.25,
-            }}
-          >
-            {CONCIERGE_CHANNELS.map(
-              ({ Icon, name, handle, href, external, tone }) => (
-                <Box
-                  key={name}
-                  component="a"
-                  href={href}
-                  {...(external
-                    ? { target: "_blank", rel: "noopener noreferrer" }
-                    : {})}
-                  sx={{
-                    textDecoration: "none",
-                    color: "inherit",
-                    p: 1.5,
-                    borderRadius: "14px",
-                    background: "#FFFFFF",
-                    border: "1px solid rgba(15, 23, 42, 0.06)",
-                    boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 0.75,
-                    transition:
-                      "transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
-                    "&:hover": {
-                      transform: "translateY(-1px)",
-                      borderColor: "rgba(15, 23, 42, 0.14)",
-                      boxShadow:
-                        "0 1px 2px rgba(180, 0, 10, 0.05), 0 8px 22px rgba(180, 0, 10, 0.05)",
-                    },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: "10px",
-                      background: tone.bg,
-                      color: tone.fg,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Icon size={18} />
-                  </Box>
-                  <Typography
-                    sx={{
-                      fontFamily: SERIF,
-                      fontSize: 13.5,
-                      fontWeight: 600,
-                      color: "#1A2B2E",
-                      lineHeight: 1.25,
-                      letterSpacing: "-0.005em",
-                    }}
-                  >
-                    {name}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: SANS,
-                      fontSize: 11.5,
-                      lineHeight: 1.4,
-                      color: "rgba(15, 23, 42,0.7)",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {handle}
-                  </Typography>
-                </Box>
-              )
-            )}
-          </Box>
-        </Box>
-
-        {/* Telegram broadcast — single subtle text link for updates */}
-        <Box sx={{ display: "flex", justifyContent: "center" }}>
-          <Box
-            component="a"
-            href="https://t.me/SunRed_BKK"
-            target="_blank"
-            rel="noopener noreferrer"
-            sx={{
-              fontFamily: SANS,
-              fontSize: 12,
-              fontWeight: 600,
-              color: "rgba(15, 23, 42,0.7)",
-              textDecoration: "none",
-              letterSpacing: "0.02em",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 0.5,
-              py: 0.5,
-              transition: "color 200ms ease",
-              "&:hover": {
-                color: "#B4000A",
-                "& .arrow": { transform: "translateX(2px)" },
-              },
-            }}
-          >
-            Subscribe to our Telegram channel for updates
-            <Box
-              component="span"
-              className="arrow"
-              sx={{
-                transition: "transform 200ms ease",
-                display: "inline-block",
-              }}
-            >
-              →
-            </Box>
-          </Box>
-        </Box>
+        {/* 🆕 Round 28s189 — Typical arrival window + Concierge
+            grid + Telegram broadcast all moved to Services tab
+            (founder: "ย้ายมาคอลั้ม services" · "อันนี้ ด้วย"). */}
 
         {/* 🆕 Round 28r12 (founder 2026-05-06) — FAQ section.
             Six categories × 4–5 Q&A each (booking / practitioners /
@@ -757,21 +398,9 @@ const HowItWorks: React.FC = () => {
             Self-contained component — see HowItWorksFAQ.tsx. */}
         <HowItWorksFAQ />
 
-        {/* Closing italic note */}
-        <Typography
-          sx={{
-            textAlign: "center",
-            fontFamily: SANS,
-            fontSize: 12,
-            color: "rgba(15, 23, 42,0.55)",
-            lineHeight: 1.55,
-            fontStyle: "italic",
-            marginTop: "24px",
-          }}
-        >
-          Should you require further assistance, our concierge is at your
-          service — twenty-four hours a day.
-        </Typography>
+        {/* 🆕 Round 28s201 — Closing italic note removed (founder
+            audit: concierge channels now live on the Services tab,
+            so this dangling reassurance was redundant). */}
       </Box>
     </Box>
   );

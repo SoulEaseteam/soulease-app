@@ -570,6 +570,48 @@ const AdminFloatingChat: React.FC = () => {
         )}
       </AnimatePresence>
 
+      {/* 🆕 Round 28s194 — Twin radiating pulse rings behind the
+          FAB so the concierge button feels alive without animating
+          the button itself (which a rotation already owns). Rings
+          disable during expanded / reduced-motion. */}
+      {!isExpanded && !prefersReducedMotion && concierge.mode !== "off" && (
+        <>
+          {[0, 0.7].map((delay, i) => (
+            <Box
+              key={i}
+              component={motion.span}
+              aria-hidden
+              initial={{ scale: 0.6, opacity: 0.55 }}
+              animate={{ scale: [0.6, 1.6, 1.9], opacity: [0.55, 0.15, 0] }}
+              transition={{
+                duration: 2.0,
+                delay,
+                repeat: Infinity,
+                ease: "easeOut",
+              }}
+              sx={{
+                position: "fixed",
+                bottom: 96,
+                right: 18,
+                zIndex: 1499,
+                width: 60,
+                height: 60,
+                borderRadius: "50%",
+                background:
+                  "radial-gradient(circle, rgba(180, 0, 10, 0.42) 0%, rgba(180, 0, 10, 0) 70%)",
+                pointerEvents: "none",
+                "@media (max-width: 500px)": {
+                  bottom: 88,
+                  right: 12,
+                  width: 54,
+                  height: 54,
+                },
+              }}
+            />
+          ))}
+        </>
+      )}
+
       {/* Main FAB — gradient brand button with chat icon + live dot */}
       <Box
         component={motion.button}
@@ -581,16 +623,32 @@ const AdminFloatingChat: React.FC = () => {
           dismissGreeting();
           setIsExpanded((p) => !p);
         }}
-        whileHover={prefersReducedMotion ? undefined : { scale: 1.06 }}
-        whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
+        whileHover={prefersReducedMotion ? undefined : { scale: 1.08 }}
+        whileTap={prefersReducedMotion ? undefined : { scale: 0.94 }}
         animate={
           prefersReducedMotion
             ? undefined
             : isExpanded
-            ? { rotate: 90 }
-            : { rotate: 0 }
+              ? { rotate: 90, scale: 1 }
+              : {
+                  rotate: 0,
+                  scale: [1, 1.04, 1],
+                }
         }
-        transition={{ type: "spring", stiffness: 260, damping: 20 }}
+        transition={
+          prefersReducedMotion
+            ? undefined
+            : isExpanded
+              ? { type: "spring", stiffness: 260, damping: 20 }
+              : {
+                  rotate: { type: "spring", stiffness: 260, damping: 20 },
+                  scale: {
+                    duration: 2.6,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  },
+                }
+        }
         sx={{
           position: "fixed",
           bottom: 96,
@@ -599,16 +657,25 @@ const AdminFloatingChat: React.FC = () => {
           width: 60,
           height: 60,
           borderRadius: "50%",
-          border: "none",
+          border: "2px solid rgba(255, 255, 255, 0.35)",
+          // 🆕 Round 28s194 — Radial-gradient FAB body with inset
+          //   highlight so the button has dimension instead of a flat
+          //   red disc. Conic sheen on hover gives a subtle "rotate
+          //   the light" hover affordance.
           background:
-            "#B4000A",
+            "radial-gradient(circle at 30% 30%, #DC1B26 0%, #B4000A 55%, #7C0007 100%)",
           color: "#fff",
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           boxShadow:
-            "0 12px 28px rgba(15, 23, 42, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.32)",
+            "0 14px 32px rgba(180, 0, 10, 0.46), 0 4px 10px rgba(15, 23, 42, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.40), inset 0 -2px 6px rgba(0, 0, 0, 0.16)",
+          transition: "box-shadow 0.22s ease",
+          "&:hover": {
+            boxShadow:
+              "0 18px 40px rgba(180, 0, 10, 0.55), 0 6px 14px rgba(15, 23, 42, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.50), inset 0 -2px 6px rgba(0, 0, 0, 0.16)",
+          },
           "&:focus-visible": {
             outline: `3px solid ${brand.red}`,
             outlineOffset: 3,

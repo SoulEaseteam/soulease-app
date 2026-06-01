@@ -340,7 +340,7 @@ const TopNav: React.FC = () => {
                 whiteSpace: "nowrap",
               }}
             >
-              SunRed Bangkok
+              SunRed
             </Typography>
           </Box>
         </Box>

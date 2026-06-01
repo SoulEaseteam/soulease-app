@@ -28,7 +28,8 @@ import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
 import LocalOfferRoundedIcon from "@mui/icons-material/LocalOfferRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
-import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
+// 🆕 Round 28s202 — HelpOutlineRoundedIcon dropped along with the
+//   trimmed "Common questions" FAQ section.
 
 const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -44,6 +45,10 @@ interface FAQSection {
   items: QA[];
 }
 
+// 🆕 Round 28s202 — Founder audit: "ลดจำนวนลงหน่อย มีบางอย่าง
+//   เยอะไป". FAQ trimmed from 28 → 13 Q&As (roughly the top 2-3
+//   per category that the concierge actually answers most often).
+//   Full archive preserved in git history if a future round needs it.
 const FAQ_SECTIONS: FAQSection[] = [
   {
     id: "booking",
@@ -56,19 +61,11 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "How quickly can a practitioner arrive?",
-        a: "Most reservations land between 30 — 45 minutes after concierge confirmation. Express slots within the hour are noted on each practitioner's card when they're already on standby in your district.",
-      },
-      {
-        q: "Can I extend the session once it's started?",
-        a: "Yes — extension is at the practitioner's discretion based on her schedule. Mention it during the ritual; she'll confirm with the concierge. Extension is billed at the per-minute rate of your booked tier.",
+        a: "Most reservations land between 30–60 minutes after concierge confirmation. Express slots within the hour are flagged on each practitioner's card when she's already on standby in your district.",
       },
       {
         q: "What's the cancellation policy?",
         a: "Cancellation is complimentary up until the practitioner has been dispatched. Once she's en route, a travel reimbursement applies. The concierge will tell you transparently before charging anything.",
-      },
-      {
-        q: "How does the 10-minute hold work?",
-        a: "After you place a reservation, the slot is held for 10 minutes while the concierge confirms. If you don't hear back within that window, the slot is released — tap re-book on the success page to retry.",
       },
     ],
   },
@@ -79,23 +76,11 @@ const FAQ_SECTIONS: FAQSection[] = [
     items: [
       {
         q: "Are all practitioners female?",
-        a: "Yes — 100% Thai, cisgender female. Verified roster only. We do not include trans or male practitioners on this platform. If you require otherwise, BKK has many other options outside our service.",
+        a: "Yes — 100% Thai, cisgender female. Verified roster only. If you require otherwise, Bangkok has many other options outside our service.",
       },
       {
         q: "Are the photos real?",
-        a: "Every photo on a practitioner profile is taken in-house — no AI-generated images, no stock, no filtered-beyond-recognition retouching. The roster is small enough that we vet every photograph manually.",
-      },
-      {
-        q: "My favorite practitioner isn't available — what now?",
-        a: "Tap any other practitioner on the Therapists tab and the concierge will recommend the closest match (specialty, area, language). Or message the concierge directly with your preferences and we'll suggest who's on tonight.",
-      },
-      {
-        q: "Which languages do practitioners speak?",
-        a: "Each profile lists language proficiency. English, Thai, and basic Mandarin are common across the roster. A handful are conversational in Japanese or Korean — the concierge can match you to a language preference at booking.",
-      },
-      {
-        q: "Why do you not list age?",
-        a: "We list practitioner status (specialised, certified, etc.) instead of age. All practitioners are verified adults; precise age is omitted to protect their privacy on a public platform.",
+        a: "Every photo is taken in-house — no AI-generated images, no stock, no filtered-beyond-recognition retouching. The roster is small enough that we vet every photograph manually.",
       },
     ],
   },
@@ -106,23 +91,15 @@ const FAQ_SECTIONS: FAQSection[] = [
     items: [
       {
         q: "What's the difference between the four services?",
-        a: "Thai Massage is traditional dry-compression, fully clothed. Aromatherapy is oil-based whole-body relaxation. Gentleman's Signature is aromatherapy with a personalised finishing ritual. SunRed Therapeutic is our most refined ritual — a whole-body oil ceremony with continuous-contact technique, reserved for specialised practitioners only. Tap any service for the full inclusions list.",
+        a: "Thai Massage is traditional dry-compression, fully clothed. Aromatherapy is oil-based whole-body relaxation. Gentleman's Signature is aromatherapy with a personalised finishing ritual. SunRed Therapeutic is our most refined ritual — a whole-body oil ceremony reserved for specialised practitioners. Tap any service for the full inclusions list.",
       },
       {
         q: "Why are SunRed prices higher than other Bangkok options?",
-        a: "Each session price includes premium aromatic oil, in-suite delivery (no commute, no taxi negotiation), a verified-roster practitioner, an unhurried 60–120 minute ritual, and a fixed concierge-confirmed total — no haggling, no surprise add-ons, no bait-and-switch. Other places typically charge those separately.",
-      },
-      {
-        q: "Can I upgrade to SunRed Therapeutic on the night?",
-        a: "Yes — message the concierge with your booking code and we'll see whether your practitioner is qualified for the SunRed Therapeutic ritual (it's reserved for specialised practitioners only). The price difference is settled by your existing payment method.",
+        a: "Each session price includes premium aromatic oil, in-suite delivery, a verified-roster practitioner, an unhurried 60–120 minute ritual, and a fixed concierge-confirmed total — no haggling, no surprise add-ons. Other places typically charge those separately.",
       },
       {
         q: "Are there any add-ons or extras?",
-        a: "Premium aromatic oil upgrades, beyond-central-zone travel, session extension (60→90→120 min), and duo experiences are the formal enhancements. Anything outside the listed ritual is not part of our service — guests seeking something else are politely directed elsewhere.",
-      },
-      {
-        q: "Do you offer discounts or promo codes?",
-        a: "First-time guests have a 10% welcome credit (capped at 200฿ — mention 'first booking' to the concierge), valid on Thai & Aromatherapy menu. The Refer & earn program gives 200฿ back to both referrer and friend after the friend's first completed session, also entry-tier. For our Gentleman's Signature and Therapeutic Experience guests, ask about the VIP100 (฿100 off) or FREETAXI (travel comped) tokens. Outside-source promo codes are honoured on a case-by-case basis — share the code at booking.",
+        a: "Premium aromatic oil upgrades, beyond-central-zone travel, session extension (60→90→120 min), and duo experiences are the formal enhancements. Anything outside the listed ritual is not part of our service.",
       },
     ],
   },
@@ -137,15 +114,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "How is the travel fee calculated?",
-        a: "Travel within central Bangkok is included for most reservations. For locations outside the dense central zone (typically beyond ~10km), a transparent surcharge is added at booking time — no hidden fees on arrival.",
-      },
-      {
-        q: "What if I'm in a far district?",
-        a: "Distances beyond 25km require admin-quoted travel and a small refundable hold to confirm. The concierge will quote the exact figure before you commit.",
-      },
-      {
-        q: "Outcall only — no shop visits?",
-        a: "Correct. SunRed is exclusively outcall — your hotel suite or residence. We do not maintain a public-facing shop. This protects guest privacy and keeps the experience consistent across every booking.",
+        a: "Travel within central Bangkok is included for most reservations. For locations beyond the dense central zone (typically beyond ~10km), a transparent surcharge is added at booking time — no hidden fees on arrival.",
       },
     ],
   },
@@ -156,7 +125,7 @@ const FAQ_SECTIONS: FAQSection[] = [
     items: [
       {
         q: "Which payment methods do you accept?",
-        a: "PromptPay (instant Thai bank transfer) and cash on arrival are the canonical methods. Credit-card payment is available via the concierge for trusted repeat guests. Cryptocurrency is not currently supported.",
+        a: "PromptPay (instant Thai bank transfer) and cash on arrival are the canonical methods. Credit-card payment is available via the concierge for trusted repeat guests.",
       },
       {
         q: "Will the charge appear discreetly?",
@@ -164,38 +133,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "Is the practitioner's arrival hotel-discrete?",
-        a: "Yes. Practitioners arrive in everyday attire — there's nothing on their person that signals 'massage service'. Hotel reception sees a guest visitor; nothing more. We've operated across every major Bangkok hotel without incident.",
-      },
-      {
-        q: "Do you keep my personal information?",
-        a: "We retain only the minimum needed to deliver the service — name, contact phone, address. We don't sell, share, or surface guest data publicly. Booking history is visible only to the guest and the concierge.",
-      },
-    ],
-  },
-  {
-    id: "common",
-    icon: <HelpOutlineRoundedIcon />,
-    title: "Common questions",
-    items: [
-      {
-        q: "Is the ritual performed unclothed?",
-        a: "Each service has its own protocol — Thai is fully clothed, Aromatherapy and beyond are oil-based and follow the practitioner's standard draping etiquette. Specifics vary by practitioner; the concierge can clarify before booking.",
-      },
-      {
-        q: "Do you offer overnight bookings?",
-        a: "No. The longest session tier is 120 minutes. We don't offer overnight or multi-hour engagements — that's a different service category we don't operate in.",
-      },
-      {
-        q: "Are practitioners available during the daytime?",
-        a: "Yes — daytime reservations from 09:00 onward are welcome. Prime hours (22:00 — 04:00) tend to fill faster, so early booking is encouraged for late-night slots.",
-      },
-      {
-        q: "Can the booking be made by a third party (concierge, friend)?",
-        a: "Yes. As long as we have a confirmed contact phone for the actual guest, the booking can be placed by anyone. The practitioner liaises with the on-site phone number, not the booker.",
-      },
-      {
-        q: "I have a preference you didn't list — can I ask?",
-        a: "Reach out to the concierge. We can answer most preference questions discreetly via private chat — anything within the listed services is fair to discuss; anything outside isn't on offer, and we'll be clear about that.",
+        a: "Yes. Practitioners arrive in everyday attire — nothing on their person signals 'massage service'. Hotel reception sees a guest visitor; nothing more.",
       },
     ],
   },
@@ -237,16 +175,19 @@ const FAQRow: React.FC<FAQRowProps> = ({ qa, open, onToggle }) => (
         },
       }}
     >
+      {/* 🆕 Round 28s202 — Questions switched to sans-serif (Inter
+          600) for legibility. The previous serif at 14px wasn't
+          easy to scan on mobile. */}
       <Typography
         component="span"
         sx={{
-          fontFamily: SERIF,
-          fontSize: "14px",
-          fontWeight: 500,
+          fontFamily: SANS,
+          fontSize: "13.5px",
+          fontWeight: 600,
           color: "#1A2B2E",
-          lineHeight: 1.4,
+          lineHeight: 1.45,
           flex: 1,
-          letterSpacing: "-0.01em",
+          letterSpacing: "-0.005em",
         }}
       >
         {qa.q}
@@ -304,7 +245,7 @@ export const HowItWorksFAQ: React.FC = () => {
             fontSize: 10,
             letterSpacing: "0.24em",
             textTransform: "uppercase",
-            color: "#b85c3c",
+            color: "#4A5568",
             fontWeight: 700,
             mb: 1,
             fontFamily: SANS,
@@ -318,15 +259,22 @@ export const HowItWorksFAQ: React.FC = () => {
         >
           {t("home.faq2.eyebrow", "Frequently asked")}
         </Box>
+        {/* 🆕 Round 28s202 — FAQ title sans-serif for legibility,
+            serif italic kept only on the "ask" accent. */}
         <Typography
           sx={{
-            fontFamily: SERIF,
-            fontSize: "22px",
-            fontWeight: 500,
+            fontFamily: SANS,
+            fontSize: "20px",
+            fontWeight: 700,
             color: "#1A2B2E",
-            letterSpacing: "-0.02em",
-            lineHeight: 1.2,
-            "& em": { fontStyle: "italic", color: "#B4000A" },
+            letterSpacing: "-0.015em",
+            lineHeight: 1.25,
+            "& em": {
+              fontFamily: SERIF,
+              fontStyle: "italic",
+              fontWeight: 500,
+              color: "#B4000A",
+            },
           }}
           dangerouslySetInnerHTML={{
             __html: t(
@@ -352,10 +300,75 @@ export const HowItWorksFAQ: React.FC = () => {
         </Typography>
       </Box>
 
+      {/* 🆕 Round 28s201 — Category jump pills. Founder audit:
+          28 Q&A is a long scroll — guests should be able to skip to
+          the section they need. Horizontal snap row mirrors the
+          Services rate-card row's interaction model. */}
+      <Box
+        sx={{
+          display: "flex",
+          gap: 1,
+          padding: "4px 4px 6px",
+          margin: "-4px -4px 0",
+          overflowX: "auto",
+          scrollSnapType: "x proximity",
+          scrollbarWidth: "none",
+          "&::-webkit-scrollbar": { display: "none" },
+        }}
+      >
+        {FAQ_SECTIONS.map((section) => (
+          <Box
+            key={section.id}
+            component="button"
+            type="button"
+            onClick={() => {
+              const el = document.getElementById(`faq-${section.id}`);
+              if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "start" });
+              }
+            }}
+            sx={{
+              flexShrink: 0,
+              padding: "7px 14px",
+              borderRadius: 999,
+              border: "1px solid rgba(15, 23, 42, 0.12)",
+              background: "#FFFFFF",
+              fontFamily: SANS,
+              fontSize: 11.5,
+              fontWeight: 700,
+              letterSpacing: "0.02em",
+              color: "#1A2B2E",
+              cursor: "pointer",
+              scrollSnapAlign: "start",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.75,
+              transition:
+                "transform 0.15s ease, border-color 0.15s ease, background 0.15s ease",
+              "& svg": { fontSize: 14, color: "#B4000A" },
+              "&:hover": {
+                transform: "translateY(-1px)",
+                borderColor: "#B4000A",
+                background: "rgba(180, 0, 10, 0.04)",
+              },
+              "&:focus-visible": {
+                outline: "2px solid #B4000A",
+                outlineOffset: 2,
+              },
+            }}
+          >
+            {section.icon}
+            {section.title}
+          </Box>
+        ))}
+      </Box>
+
       {FAQ_SECTIONS.map((section) => (
         <Box
           key={section.id}
+          id={`faq-${section.id}`}
           sx={{
+            scrollMarginTop: "80px",
             borderRadius: "16px",
             background: "rgba(255, 255, 255, 0.7)",
             border: "1px solid rgba(255, 255, 255, 0.6)",

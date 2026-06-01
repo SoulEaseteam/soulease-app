@@ -700,3 +700,48 @@ You'll have ALL context. No re-explanation needed.
   that's generic-web-audit thinking, not SunRed-vertical thinking.
   Restored in 28s149. Default: don't remove product surfaces just
   because we lack engagement data; ask View first.
+
+### 🎨 Theme palette (Round 28s150-152, current)
+
+```
+Primary red   #B4000A   CTA · brand wordmark · accents
+Text          #1A2B2E   headings + dark UI
+Text muted    #4A5568   body copy
+Bg            #F4F6F5   page surface (flat — no gradients)
+Green         #16A34A   online status dot only (NOT CBODY-style CTA)
+Amber accent  #F5A623   ★ stars · NEW / TOP-RATED · sparingly
+Pink accent   #FFE5EC   favourite heart · highlights · sparingly
+```
+
+Flat colours, no `linear-gradient(...)` for brand surfaces. Status
+pill rgba tints kept (functional). Photo scrims kept (legibility).
+
+### 🔤 Type system (Round 28s154-156, current)
+
+```
+Heading stack:  Federo · Italiana · Cinzel · Fraunces · Georgia
+Body stack:     Inter · system-ui · ...
+Wordmark:       same heading stack
+```
+
+Cinzel weights 400-800 loaded; Italiana + Federo single-weight.
+
+### 🛒 Services page architecture (Round 28s175-194, current)
+
+- Vertical-scroll body with one section header bar `RATES & SERVICES`
+- Horizontal-scroll snap row of service rate cards (centered snap)
+- 4 services: Aromatherapy · Thai · **Gentleman's (BESTSELLER)** · Therapeutic
+- `BESTSELLER_SERVICE_ID = "SR-HJ2200"` — single source of truth for
+  the recommended-card ribbon + ring + scale-up + auto-scroll on mount
+- Each card: hero image · rate table · About · What's included
+- Below cards: Typical arrival window + Concierge channel grid +
+  TG broadcast subscribe link (all moved here from "How to book"
+  tab in 28s188-189)
+
+### 🎯 BookingFlow / Reserve UX (current)
+
+- Card tap does NOT navigate (handleSelectService is a no-op);
+  reservation routes through concierge channels in the panel
+  below the cards, NOT a separate detail page.
+- Detail page `/services/:id` is still reachable via direct URL
+  (SEO / share), but no card UI links there.
