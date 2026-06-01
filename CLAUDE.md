@@ -315,11 +315,29 @@ Triggered by a full audit of the live site. Shipped (commit ebd8856):
 
 ⚠️ **LESSON (don't repeat):** I initially reported "16 commits undeployed /
 live site 2 days stale." **That was WRONG** — caused by a stale local
-`origin/main` tracking ref (never `git fetch`ed). Vercel **GitHub
-auto-deploy works fine**; every commit 28s111→222 was already live & READY.
-ALWAYS `git fetch` before judging deploy state. Auto-deploy means a plain
-`git push origin main` is enough — the manual `vercel --prod` is a fallback,
-not required.
+`origin/main` tracking ref (never `git fetch`ed). ALWAYS `git fetch` before
+judging deploy state.
+
+### 🆕 28s224 — Real push-to-deploy → Vercel (CI fixed)
+
+Deeper investigation corrected a second wrong assumption: `git push` did NOT
+auto-deploy to Vercel. A **leftover Firebase Hosting** GitHub Action fired on
+push (deploying to the orphan `soulease-spa.web.app`, NOT sunred.vip). Vercel
+production only updated via manual `vercel --prod`. Fixed:
+- Added `.github/workflows/vercel-deploy.yml` — push to main → `vercel pull` →
+  `vercel build` (vite build + prerender) → `vercel deploy --prebuilt --prod`.
+  Build failure = job fails = nothing deployed (live site safe).
+- Removed both `firebase-hosting-*.yml` workflows.
+- View added repo secret `VERCEL_TOKEN` (vercel.com/account/tokens, scope
+  sunred-projects). Org/project IDs are inlined in the workflow (not secret).
+
+**DEPLOY NOW = `git push origin main`** — the Action builds + ships to
+sunred.vip automatically (watch the Actions tab; green ✓ = live). Manual
+`npm run deploy:vercel` remains as fallback. NOTE: pushing changes *to*
+`.github/workflows/*` from this machine needs a token with `workflow` scope —
+the current fine-grained PAT lacks it, so workflow-file edits must go through
+the GitHub web UI (or grant the token "Workflows: write"). The stale
+`FIREBASE_SERVICE_ACCOUNT_SOULEASE_SPA` repo secret can be deleted (unused).
 
 ### 🆕 What Round 28s115-116 shipped (2026-06-07)
 
