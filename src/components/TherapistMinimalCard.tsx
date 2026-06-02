@@ -31,6 +31,13 @@ interface Props {
   computedStatus?: Avail;
   /** Optional click → routes to booking flow with the therapist pre-picked. */
   onBook?: (therapist: Therapist) => void;
+  /**
+   * 🆕 Round 28s227 — Marks the first card as the LCP element.
+   *   • loading="eager" + fetchPriority="high" on the portrait
+   *   • Tells the browser to skip lazy-load + bump network priority
+   *   First card is what Search Console scores for Core Web Vitals.
+   */
+  eager?: boolean;
 }
 
 // 🆕 Round 28s138 — Founder: split "Bookable" back out as its own
@@ -56,6 +63,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
   therapist,
   computedStatus,
   onBook,
+  eager = false,
 }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -530,7 +538,16 @@ const TherapistMinimalCard: React.FC<Props> = ({
             component="img"
             src={portrait}
             alt={therapist.name}
-            loading="lazy"
+            /* 🆕 Round 28s227 — explicit intrinsic dims (3:4 portrait
+               aspect ratio at 2× for retina) reserve layout space
+               before the image loads → eliminates CLS on slow networks
+               even without aspect-ratio CSS. The CSS below stretches
+               it to 100% width/height of the parent. */
+            width={300}
+            height={400}
+            loading={eager ? "eager" : "lazy"}
+            fetchPriority={eager ? "high" : "auto"}
+            decoding={eager ? "sync" : "async"}
             sx={{
               width: "100%",
               height: "100%",

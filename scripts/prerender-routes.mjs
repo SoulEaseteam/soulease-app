@@ -537,130 +537,341 @@ ${SERVICES.map(
   });
 }
 
-// ── District landing pages (28s224) ────────────────────────────────────────
+// ── District landing pages (28s224 + 28s227 i18n expansion) ───────────────
 // Search Console 3-month data showed our top-traffic queries were all
 // English-language outcall + Bangkok permutations, with "outcall massage
 // sukhumvit" specifically losing -25% MoM and "massage near me" jumping
 // +300% (small base). Competitor CBODY ranks via 3 domains + 4 cities.
-// We answer with district-specific landing shells targeting the exact
-// long-tail phrases. Each shell is en-only (path-based hreflang would
-// dilute Baidu/Naver for queries that are not natively asked in CN/JP/KR).
-// Routes are 301'd to / by App.tsx so the SPA still serves the practitioner
-// roster to humans — the URL exists to anchor the search snippet + JSON-LD
-// targeting that district.
+//
+// 28s227 expansion: full zh / ja / ko localisation. Chinese, Japanese
+// and Korean tourists DO search with localized phrases on Baidu, Yahoo
+// JP and Naver — without a localized district page, Baidu/Naver fall
+// back to ranking our generic /zh /ja /ko home shell, which is too broad
+// for "曼谷素坤逸出张按摩" / "バンコク スクンビット 出張マッサージ" /
+// "방콕 수쿰빗 출장 마사지" intent. Each district now ships in 4 langs.
+//
+// 5 districts × 4 langs = 20 prerendered shells. App.tsx 301s the en
+// URLs to / (humans see the practitioner roster). Localized /zh|/ja|/ko
+// URLs are caught by LocaleEntryRedirect which switches i18n then
+// redirects to / — same UX, localized crawler bait.
 const DISTRICTS = [
   {
     slug: "outcall-massage-sukhumvit",
-    name: "Sukhumvit",
-    nearby: "Asok, Phrom Phong, Thonglor and Ekkamai",
-    intro:
-      "Premium outcall massage delivered to your Sukhumvit hotel, residence or villa — including the BTS belt from Nana, Asok and Phrom Phong through Thonglor and Ekkamai.",
-    extra:
-      "Verified Thai practitioners typically arrive within 30–45 minutes anywhere along the Sukhumvit corridor; the closest practitioner is selected automatically based on your hotel.",
+    en: {
+      name: "Sukhumvit",
+      nearby: "Asok, Phrom Phong, Thonglor and Ekkamai",
+      intro:
+        "Premium outcall massage delivered to your Sukhumvit hotel, residence or villa — including the BTS belt from Nana, Asok and Phrom Phong through Thonglor and Ekkamai.",
+      extra:
+        "Verified Thai practitioners typically arrive within 30–45 minutes anywhere along the Sukhumvit corridor; the closest practitioner is selected automatically based on your hotel.",
+    },
+    zh: {
+      name: "素坤逸",
+      nearby: "阿索克、彭蓬、通罗、伊卡迈",
+      intro:
+        "高端上门按摩送达您在素坤逸的酒店、公寓或别墅——覆盖 BTS 沿线的 Nana、阿索克、彭蓬、通罗、伊卡迈整条走廊。",
+      extra:
+        "认证泰国女性技师通常在 30–45 分钟内抵达素坤逸任何位置，系统会自动为您匹配距离最近的技师。",
+    },
+    ja: {
+      name: "スクンビット",
+      nearby: "アソーク、プロンポン、トンロー、エカマイ",
+      intro:
+        "スクンビットのホテル・ご滞在先へ出張高級マッサージをお届けします。BTS 沿線のナナ、アソーク、プロンポン、トンロー、エカマイの全エリアに対応。",
+      extra:
+        "認定タイ人女性セラピストは通常 30〜45 分以内にスクンビットエリアへ到着。最寄りのセラピストを自動で手配いたします。",
+    },
+    ko: {
+      name: "수쿰빗",
+      nearby: "아속, 프롬퐁, 통러, 에까마이",
+      intro:
+        "수쿰빗 호텔·레지던스·빌라로 프리미엄 출장 마사지를 제공합니다 — BTS 라인의 나나, 아속, 프롬퐁, 통러, 에까마이 전 구간 커버.",
+      extra:
+        "인증된 태국 여성 테라피스트가 수쿰빗 어디든 보통 30~45분 내 도착합니다. 가까운 테라피스트가 자동 배정됩니다.",
+    },
   },
   {
     slug: "outcall-massage-silom",
-    name: "Silom",
-    nearby: "Sathorn, Sala Daeng, Surasak and Chong Nonsi",
-    intro:
-      "Premium outcall massage delivered to your Silom or Sathorn hotel — including the MRT/BTS interchange at Sala Daeng, Surasak and the riverside Chong Nonsi corridor.",
-    extra:
-      "Verified Thai practitioners typically arrive within 30–45 minutes anywhere in the Silom–Sathorn CBD; payment by cash, PromptPay, WeChat Pay or AliPay.",
+    en: {
+      name: "Silom",
+      nearby: "Sathorn, Sala Daeng, Surasak and Chong Nonsi",
+      intro:
+        "Premium outcall massage delivered to your Silom or Sathorn hotel — including the MRT/BTS interchange at Sala Daeng, Surasak and the riverside Chong Nonsi corridor.",
+      extra:
+        "Verified Thai practitioners typically arrive within 30–45 minutes anywhere in the Silom–Sathorn CBD; payment by cash, PromptPay, WeChat Pay or AliPay.",
+    },
+    zh: {
+      name: "是隆",
+      nearby: "沙吞、莎拉当、苏拉萨、崇农席",
+      intro:
+        "高端上门按摩送达您在是隆或沙吞的酒店——覆盖 MRT/BTS 莎拉当交汇点、苏拉萨与沿河崇农席整条 CBD 走廊。",
+      extra:
+        "认证泰国女性技师通常在 30–45 分钟内抵达是隆—沙吞 CBD 任何位置，支持现金、PromptPay、微信支付与支付宝。",
+    },
+    ja: {
+      name: "シーロム",
+      nearby: "サトーン、サラデーン、スラサック、チョンノンシー",
+      intro:
+        "シーロムやサトーンのホテルへ出張高級マッサージをお届けします。MRT/BTS サラデーン乗換、スラサック、リバーサイドのチョンノンシー周辺をカバー。",
+      extra:
+        "認定タイ人女性セラピストは通常 30〜45 分以内にシーロム/サトーン CBD へ到着。現金・PromptPay・WeChat Pay・AliPay でお支払いいただけます。",
+    },
+    ko: {
+      name: "실롬",
+      nearby: "사톤, 살라댕, 수라삭, 총논시",
+      intro:
+        "실롬 또는 사톤의 호텔로 프리미엄 출장 마사지를 제공합니다 — MRT/BTS 살라댕 환승역, 수라삭, 강변의 총논시까지 CBD 전체 커버.",
+      extra:
+        "인증 태국 여성 테라피스트가 실롬-사톤 CBD 어디든 보통 30~45분 내 도착. 현금, PromptPay, WeChat Pay, AliPay 결제 지원.",
+    },
   },
   {
     slug: "outcall-massage-asok",
-    name: "Asok",
-    nearby: "Nana, Phrom Phong, Sukhumvit and Ratchada",
-    intro:
-      "Premium outcall massage delivered to your Asok hotel or residence — the BTS/MRT interchange and the surrounding Sukhumvit blocks from Nana through Phrom Phong.",
-    extra:
-      "Verified Thai practitioners typically arrive within 20–40 minutes anywhere around Asok; multilingual concierge available 24/7.",
+    en: {
+      name: "Asok",
+      nearby: "Nana, Phrom Phong, Sukhumvit and Ratchada",
+      intro:
+        "Premium outcall massage delivered to your Asok hotel or residence — the BTS/MRT interchange and the surrounding Sukhumvit blocks from Nana through Phrom Phong.",
+      extra:
+        "Verified Thai practitioners typically arrive within 20–40 minutes anywhere around Asok; multilingual concierge available 24/7.",
+    },
+    zh: {
+      name: "阿索克",
+      nearby: "Nana、彭蓬、素坤逸、拉差达",
+      intro:
+        "高端上门按摩送达您在阿索克的酒店或公寓——BTS/MRT 交汇点及周边素坤逸区，从 Nana 至彭蓬。",
+      extra:
+        "认证泰国女性技师通常在 20–40 分钟内抵达阿索克周边，全天候 24 小时多语言客服。",
+    },
+    ja: {
+      name: "アソーク",
+      nearby: "ナナ、プロンポン、スクンビット、ラチャダー",
+      intro:
+        "アソークのホテル・ご滞在先へ出張高級マッサージをお届けします。BTS/MRT 交差点と周辺のスクンビット（ナナ〜プロンポン）に対応。",
+      extra:
+        "認定タイ人女性セラピストは通常 20〜40 分以内にアソーク周辺へ到着。多言語コンシェルジュが 24 時間対応。",
+    },
+    ko: {
+      name: "아속",
+      nearby: "나나, 프롬퐁, 수쿰빗, 라차다",
+      intro:
+        "아속의 호텔이나 레지던스로 프리미엄 출장 마사지를 제공합니다 — BTS/MRT 환승역 및 주변 수쿰빗(나나~프롬퐁) 커버.",
+      extra:
+        "인증 태국 여성 테라피스트가 아속 인근에 보통 20~40분 내 도착. 다국어 컨시어지 24시간.",
+    },
   },
   {
     slug: "outcall-massage-thonglor",
-    name: "Thonglor",
-    nearby: "Ekkamai, Phrom Phong, Sukhumvit and Phra Khanong",
-    intro:
-      "Premium outcall massage delivered to your Thonglor hotel, residence or condominium — including Soi 38 dining row, Ekkamai and the upper Sukhumvit corridor.",
-    extra:
-      "Verified Thai practitioners typically arrive within 25–45 minutes anywhere in Thonglor and Ekkamai; payment in cash on arrival or by transfer.",
+    en: {
+      name: "Thonglor",
+      nearby: "Ekkamai, Phrom Phong, Sukhumvit and Phra Khanong",
+      intro:
+        "Premium outcall massage delivered to your Thonglor hotel, residence or condominium — including Soi 38 dining row, Ekkamai and the upper Sukhumvit corridor.",
+      extra:
+        "Verified Thai practitioners typically arrive within 25–45 minutes anywhere in Thonglor and Ekkamai; payment in cash on arrival or by transfer.",
+    },
+    zh: {
+      name: "通罗",
+      nearby: "伊卡迈、彭蓬、素坤逸、帕卡农",
+      intro:
+        "高端上门按摩送达您在通罗的酒店、公寓或 condo——包括 Soi 38 餐饮街、伊卡迈与素坤逸上段走廊。",
+      extra:
+        "认证泰国女性技师通常在 25–45 分钟内抵达通罗与伊卡迈，支持到付现金或转账。",
+    },
+    ja: {
+      name: "トンロー",
+      nearby: "エカマイ、プロンポン、スクンビット、プラカノン",
+      intro:
+        "トンローのホテル・ご滞在先・コンドミニアムへ出張高級マッサージをお届けします。ソイ 38 のダイニングエリア、エカマイ、上スクンビット沿線に対応。",
+      extra:
+        "認定タイ人女性セラピストは通常 25〜45 分以内にトンロー・エカマイへ到着。現金または振込でお支払いいただけます。",
+    },
+    ko: {
+      name: "통러",
+      nearby: "에까마이, 프롬퐁, 수쿰빗, 프라카농",
+      intro:
+        "통러의 호텔·레지던스·콘도미니엄으로 프리미엄 출장 마사지를 제공합니다 — Soi 38 다이닝 거리, 에까마이, 어퍼 수쿰빗 커버.",
+      extra:
+        "인증 태국 여성 테라피스트가 통러·에까마이 어디든 보통 25~45분 내 도착. 현금 또는 송금 결제.",
+    },
   },
   {
     slug: "outcall-massage-near-me",
-    name: "Bangkok (near you)",
-    nearby:
-      "Sukhumvit, Silom, Asok, Thonglor, Sathorn, Phrom Phong, Ekkamai and Ratchada",
-    intro:
-      "Premium outcall massage delivered anywhere in central Bangkok — the practitioner closest to your hotel is selected automatically. Live availability is shown on the homepage in real time so you can see who's free now.",
-    extra:
-      "Verified Thai practitioners typically arrive within 30–60 minutes in central Bangkok. Multilingual concierge (English, 中文, 日本語, 한국어), 24/7.",
+    en: {
+      name: "Bangkok (near you)",
+      nearby:
+        "Sukhumvit, Silom, Asok, Thonglor, Sathorn, Phrom Phong, Ekkamai and Ratchada",
+      intro:
+        "Premium outcall massage delivered anywhere in central Bangkok — the practitioner closest to your hotel is selected automatically. Live availability is shown on the homepage in real time so you can see who's free now.",
+      extra:
+        "Verified Thai practitioners typically arrive within 30–60 minutes in central Bangkok. Multilingual concierge (English, 中文, 日本語, 한국어), 24/7.",
+    },
+    zh: {
+      name: "曼谷（离您最近）",
+      nearby: "素坤逸、是隆、阿索克、通罗、沙吞、彭蓬、伊卡迈、拉差达",
+      intro:
+        "高端上门按摩送达曼谷市中心任何位置——系统自动为您匹配距离最近的技师。首页实时显示当下可订状态。",
+      extra:
+        "认证泰国女性技师通常在 30–60 分钟内抵达曼谷市中心。多语言客服（English / 中文 / 日本語 / 한국어），全天候 24 小时。",
+    },
+    ja: {
+      name: "バンコク（お近く）",
+      nearby:
+        "スクンビット、シーロム、アソーク、トンロー、サトーン、プロンポン、エカマイ、ラチャダー",
+      intro:
+        "バンコク中心部のどこへでも出張高級マッサージをお届けします。ホテルに最も近いセラピストを自動で手配。トップページにはリアルタイムの空き状況を表示します。",
+      extra:
+        "認定タイ人女性セラピストは通常 30〜60 分以内にバンコク中心部へ到着。多言語コンシェルジュ（English / 中文 / 日本語 / 한국어）、24 時間対応。",
+    },
+    ko: {
+      name: "방콕(가까운 위치)",
+      nearby: "수쿰빗, 실롬, 아속, 통러, 사톤, 프롬퐁, 에까마이, 라차다",
+      intro:
+        "방콕 시내 어디든 프리미엄 출장 마사지를 제공합니다 — 호텔에서 가장 가까운 테라피스트가 자동 배정됩니다. 홈페이지에서 실시간 예약 가능 상태를 확인할 수 있습니다.",
+      extra:
+        "인증 태국 여성 테라피스트가 방콕 시내 어디든 보통 30~60분 내 도착. 다국어 컨시어지 (English / 中文 / 日本語 / 한국어), 24시간 운영.",
+    },
   },
 ];
 
+// Per-locale wrappers for the district shell (title, h2, links).
+const DISTRICT_COPY = {
+  en: {
+    title: (name) => `Outcall Massage ${name} — Delivered to Your Hotel 24/7 | SunRed`,
+    ogTitle: (name) => `Outcall Massage ${name} — Delivered to Your Hotel | SunRed`,
+    description: (name, nearby) =>
+      `Premium outcall massage in ${name}, Bangkok, delivered to your hotel — verified Thai practitioners, live 24/7 availability, multilingual concierge. Covering ${nearby}.`,
+    ogDescription: (name) =>
+      `Premium outcall massage delivered to your hotel in ${name} — verified practitioners, live 24/7 availability. SunRed.`,
+    h1: (name) => `Outcall Massage in ${name} — Delivered to Your Hotel`,
+    menuHeading: "Service menu &amp; pricing",
+    reserveHeading: "Reserve or ask the concierge",
+    homeLink: "Home — live practitioner availability",
+    allServices: "Browse all services",
+    minutesLabel: "min",
+    fromLabel: (p) => `from ฿${fmt(p)}`,
+  },
+  zh: {
+    title: (name) => `${name}上门按摩 24小时 · 送达酒店 | SunRed`,
+    ogTitle: (name) => `${name}上门按摩 · 送达酒店 | SunRed`,
+    description: (name, nearby) =>
+      `${name}（曼谷）高端上门按摩送达您的酒店——认证泰国女性技师、全天候 24 小时实时空闲、多语言客服。覆盖 ${nearby}。`,
+    ogDescription: (name) =>
+      `${name}高端上门按摩，送达您的酒店——认证技师，24小时实时可订。SunRed。`,
+    h1: (name) => `${name}上门按摩 — 送达您的酒店`,
+    menuHeading: "服务菜单与价格",
+    reserveHeading: "预订或咨询礼宾",
+    homeLink: "首页 — 实时空闲",
+    allServices: "全部服务",
+    minutesLabel: "分钟",
+    fromLabel: (p) => `฿${fmt(p)} 起`,
+  },
+  ja: {
+    title: (name) =>
+      `${name}出張マッサージ 24時間 · ホテルへお届け | SunRed`,
+    ogTitle: (name) => `${name}出張マッサージ · ホテルへお届け | SunRed`,
+    description: (name, nearby) =>
+      `${name}（バンコク）の高級出張マッサージをホテルへお届け——認定タイ人女性セラピスト、24 時間リアルタイム予約、多言語コンシェルジュ。${nearby} に対応。`,
+    ogDescription: (name) =>
+      `${name}の高級出張マッサージをホテルへお届け——認定セラピスト、24 時間予約可。SunRed。`,
+    h1: (name) => `${name}出張マッサージ — ホテルへお届け`,
+    menuHeading: "サービスメニューと料金",
+    reserveHeading: "予約・コンシェルジュへ相談",
+    homeLink: "ホーム — リアルタイム空き状況",
+    allServices: "すべてのサービス",
+    minutesLabel: "分",
+    fromLabel: (p) => `฿${fmt(p)}〜`,
+  },
+  ko: {
+    title: (name) => `${name} 출장 마사지 24시간 · 호텔로 방문 | SunRed`,
+    ogTitle: (name) => `${name} 출장 마사지 · 호텔로 방문 | SunRed`,
+    description: (name, nearby) =>
+      `${name}(방콕) 프리미엄 출장 마사지를 호텔로 — 인증 태국 여성 테라피스트, 24시간 실시간 예약, 다국어 컨시어지. ${nearby} 커버.`,
+    ogDescription: (name) =>
+      `${name} 프리미엄 출장 마사지를 호텔로 — 인증 테라피스트, 24시간 예약 가능. SunRed.`,
+    h1: (name) => `${name} 출장 마사지 — 호텔로 방문`,
+    menuHeading: "서비스 메뉴 & 가격",
+    reserveHeading: "예약 또는 컨시어지 문의",
+    homeLink: "홈 — 실시간 예약 가능",
+    allServices: "전체 서비스",
+    minutesLabel: "분",
+    fromLabel: (p) => `฿${fmt(p)}부터`,
+  },
+};
+
 function districtRoutes() {
-  return DISTRICTS.map((d) => {
-    const url = `${ORIGIN}/${d.slug}`;
-    const title = `Outcall Massage ${d.name} — Delivered to Your Hotel 24/7 | SunRed`;
-    const ogTitle = `Outcall Massage ${d.name} — Delivered to Your Hotel | SunRed`;
-    const description = `Premium outcall massage in ${d.name}, Bangkok, delivered to your hotel — verified Thai practitioners, live 24/7 availability, multilingual concierge. Covering ${d.nearby}.`;
-    const ogDescription = `Premium outcall massage delivered to your hotel in ${d.name} — verified practitioners, live 24/7 availability. SunRed.`;
-    return {
-      path: `/${d.slug}`,
-      canonicalPath: `/${d.slug}`,
-      hreflangBase: null, // en-only, intentional
-      htmlLang: "en",
-      ogLocale: "en_US",
-      title,
-      description,
-      ogTitle,
-      ogDescription,
-      jsonLd: [
-        {
-          "@context": "https://schema.org",
-          "@type": "Service",
-          "@id": `${url}#service`,
-          name: `Outcall Massage in ${d.name}, Bangkok`,
-          serviceType: "Outcall massage",
-          description,
-          areaServed: { "@type": "Place", name: d.name },
-          provider: { "@id": BUSINESS_ID },
-          offers: {
-            "@type": "AggregateOffer",
-            priceCurrency: "THB",
-            lowPrice: "1200",
-            highPrice: "3200",
-            offerCount: SERVICES.length,
-            url,
+  const routes = [];
+  for (const lang of LOCALES) {
+    const L = LOC[lang];
+    const C = DISTRICT_COPY[lang];
+    const pfx = localePrefix(lang);
+    for (const d of DISTRICTS) {
+      const c = d[lang];
+      const path = `${pfx}/${d.slug}`;
+      const url = `${ORIGIN}${path}`;
+      const title = C.title(c.name);
+      const ogTitle = C.ogTitle(c.name);
+      const description = C.description(c.name, c.nearby);
+      const ogDescription = C.ogDescription(c.name);
+      routes.push({
+        path,
+        canonicalPath: path,
+        hreflangBase: `/${d.slug}`, // shared base across all 4 langs
+        htmlLang: L.htmlLang,
+        ogLocale: L.ogLocale,
+        title,
+        description,
+        ogTitle,
+        ogDescription,
+        jsonLd: [
+          {
+            "@context": "https://schema.org",
+            "@type": "Service",
+            "@id": `${url}#service`,
+            name: `${c.name} — Outcall Massage`,
+            serviceType: "Outcall massage",
+            description,
+            areaServed: { "@type": "Place", name: c.name },
+            provider: { "@id": BUSINESS_ID },
+            offers: {
+              "@type": "AggregateOffer",
+              priceCurrency: "THB",
+              lowPrice: "1200",
+              highPrice: "3200",
+              offerCount: SERVICES.length,
+              url,
+            },
           },
-        },
-        breadcrumbJsonLd([
-          { name: "SunRed", url: `${ORIGIN}/` },
-          { name: `Outcall Massage ${d.name}`, url },
-        ]),
-      ],
-      noscript: `
-        <h1>Outcall Massage in ${d.name} — Delivered to Your Hotel</h1>
-        <p>${d.intro}</p>
-        <p>${d.extra}</p>
-        <h2>Service menu &amp; pricing</h2>
+          breadcrumbJsonLd([
+            { name: L.brand, url: `${ORIGIN}/` },
+            { name: c.name, url },
+          ]),
+        ],
+        noscript: `
+        <h1>${C.h1(c.name)}</h1>
+        <p>${c.intro}</p>
+        <p>${c.extra}</p>
+        <h2>${C.menuHeading}</h2>
         <ul>
 ${SERVICES.map(
   (s) =>
-    `          <li><a href="${ORIGIN}/services/${s.slug}">${s.en.name}</a> — from ฿${fmt(
+    `          <li><a href="${ORIGIN}${pfx}/services/${s.slug}">${s[lang].name}</a> — ${C.fromLabel(
       s.price
-    )} (60 / 90 / 120 min)</li>`
+    )} (60 / 90 / 120 ${C.minutesLabel})</li>`
 ).join("\n")}
         </ul>
-        <h2>Reserve or ask the concierge</h2>
+        <h2>${C.reserveHeading}</h2>
         <ul>
-          <li><a href="${ORIGIN}/">Home — live practitioner availability</a></li>
-          <li><a href="${ORIGIN}/services">Browse all services</a></li>
+          <li><a href="${ORIGIN}${pfx}/">${C.homeLink}</a></li>
+          <li><a href="${ORIGIN}${pfx}/services">${C.allServices}</a></li>
           <li><a href="https://lin.ee/uqvdwWt">LINE</a></li>
           <li><a href="https://t.me/SunRedvip_bkk">Telegram</a></li>
           <li><a href="https://wa.me/66634350987">WhatsApp</a></li>
         </ul>`,
-    };
-  });
+      });
+    }
+  }
+  return routes;
 }
 
 const ROUTES = [

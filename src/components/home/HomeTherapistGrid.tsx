@@ -580,11 +580,17 @@ const HomeTherapistGrid: React.FC = () => {
                 padding: "0 14px 16px",
               }}
             >
-              {visible.map((t) => (
+              {visible.map((t, i) => (
                 <TherapistMinimalCard
                   key={t.id}
                   therapist={t}
                   computedStatus={t.computedStatus}
+                  // 🆕 Round 28s227 — First card is the LCP element
+                  //   on the home page (and the LCP target Search
+                  //   Console grades for Core Web Vitals). Pass
+                  //   `eager` so the portrait gets fetchpriority=high
+                  //   + loading=eager + decoding=sync.
+                  eager={i === 0}
                 />
               ))}
             </Box>
