@@ -54,10 +54,21 @@ void i18n
     keySeparator: false,
     nsSeparator: false,
 
+    // 🆕 Round 28s223 — Founder report: "มือถือตั้งค่าจีน แต่เว็บไม่เป็น
+    //   ภาษาจีน". Root cause: `localStorage` was first in the detection
+    //   chain, so a stale "th" cached from any earlier session beat the
+    //   visitor's actual device locale (zh-CN / zh-TW / ja-JP / ko-KR).
+    //   Reordered to put `querystring` first (so ?lang= still wins for
+    //   shared links) and `navigator` SECOND — device locale now wins
+    //   over a stale cache on each visit, and the language switcher
+    //   still persists an explicit user override via localStorage.
+    //   Bumped lookupLocalStorage key to `i18nextLng_v2` so existing
+    //   cached values stop applying on this deploy (one-time reset).
     detection: {
-      order: ["localStorage", "querystring", "navigator", "htmlTag", "cookie", "path"],
+      order: ["querystring", "navigator", "localStorage", "htmlTag", "cookie", "path"],
       caches: ["localStorage", "cookie"],
       lookupQuerystring: "lang",
+      lookupLocalStorage: "i18nextLng_v2",
     },
 
     interpolation: {
