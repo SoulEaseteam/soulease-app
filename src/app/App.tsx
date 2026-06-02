@@ -224,6 +224,19 @@ export default function App() {
         <Route path="/zh/*" element={<LocaleEntryRedirect lng="zh" />} />
         <Route path="/ja/*" element={<LocaleEntryRedirect lng="ja" />} />
         <Route path="/ko/*" element={<LocaleEntryRedirect lng="ko" />} />
+        {/* ===== Round 28s224: district SEO landing pages ===========
+            Search Console showed lost ground on "outcall massage
+            sukhumvit" (-25%) and a 300% rise on "massage near me".
+            These URLs ship as static prerendered shells (district-
+            specific English title + LocalBusiness JSON-LD + crawlable
+            noscript body); humans landing on them get the home page
+            (the SPA boots and shows the practitioner roster).
+            =========================================================== */}
+        <Route path="/outcall-massage-sukhumvit" element={<Navigate to="/" replace />} />
+        <Route path="/outcall-massage-silom" element={<Navigate to="/" replace />} />
+        <Route path="/outcall-massage-asok" element={<Navigate to="/" replace />} />
+        <Route path="/outcall-massage-thonglor" element={<Navigate to="/" replace />} />
+        <Route path="/outcall-massage-near-me" element={<Navigate to="/" replace />} />
         {/* ================= PUBLIC ================= */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />

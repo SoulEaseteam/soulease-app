@@ -537,7 +537,138 @@ ${SERVICES.map(
   });
 }
 
-const ROUTES = [...serviceRoutes(), ...therapistRoutes(), ...homeRoutes()];
+// ── District landing pages (28s224) ────────────────────────────────────────
+// Search Console 3-month data showed our top-traffic queries were all
+// English-language outcall + Bangkok permutations, with "outcall massage
+// sukhumvit" specifically losing -25% MoM and "massage near me" jumping
+// +300% (small base). Competitor CBODY ranks via 3 domains + 4 cities.
+// We answer with district-specific landing shells targeting the exact
+// long-tail phrases. Each shell is en-only (path-based hreflang would
+// dilute Baidu/Naver for queries that are not natively asked in CN/JP/KR).
+// Routes are 301'd to / by App.tsx so the SPA still serves the practitioner
+// roster to humans — the URL exists to anchor the search snippet + JSON-LD
+// targeting that district.
+const DISTRICTS = [
+  {
+    slug: "outcall-massage-sukhumvit",
+    name: "Sukhumvit",
+    nearby: "Asok, Phrom Phong, Thonglor and Ekkamai",
+    intro:
+      "Premium outcall massage delivered to your Sukhumvit hotel, residence or villa — including the BTS belt from Nana, Asok and Phrom Phong through Thonglor and Ekkamai.",
+    extra:
+      "Verified Thai practitioners typically arrive within 30–45 minutes anywhere along the Sukhumvit corridor; the closest practitioner is selected automatically based on your hotel.",
+  },
+  {
+    slug: "outcall-massage-silom",
+    name: "Silom",
+    nearby: "Sathorn, Sala Daeng, Surasak and Chong Nonsi",
+    intro:
+      "Premium outcall massage delivered to your Silom or Sathorn hotel — including the MRT/BTS interchange at Sala Daeng, Surasak and the riverside Chong Nonsi corridor.",
+    extra:
+      "Verified Thai practitioners typically arrive within 30–45 minutes anywhere in the Silom–Sathorn CBD; payment by cash, PromptPay, WeChat Pay or AliPay.",
+  },
+  {
+    slug: "outcall-massage-asok",
+    name: "Asok",
+    nearby: "Nana, Phrom Phong, Sukhumvit and Ratchada",
+    intro:
+      "Premium outcall massage delivered to your Asok hotel or residence — the BTS/MRT interchange and the surrounding Sukhumvit blocks from Nana through Phrom Phong.",
+    extra:
+      "Verified Thai practitioners typically arrive within 20–40 minutes anywhere around Asok; multilingual concierge available 24/7.",
+  },
+  {
+    slug: "outcall-massage-thonglor",
+    name: "Thonglor",
+    nearby: "Ekkamai, Phrom Phong, Sukhumvit and Phra Khanong",
+    intro:
+      "Premium outcall massage delivered to your Thonglor hotel, residence or condominium — including Soi 38 dining row, Ekkamai and the upper Sukhumvit corridor.",
+    extra:
+      "Verified Thai practitioners typically arrive within 25–45 minutes anywhere in Thonglor and Ekkamai; payment in cash on arrival or by transfer.",
+  },
+  {
+    slug: "outcall-massage-near-me",
+    name: "Bangkok (near you)",
+    nearby:
+      "Sukhumvit, Silom, Asok, Thonglor, Sathorn, Phrom Phong, Ekkamai and Ratchada",
+    intro:
+      "Premium outcall massage delivered anywhere in central Bangkok — the practitioner closest to your hotel is selected automatically. Live availability is shown on the homepage in real time so you can see who's free now.",
+    extra:
+      "Verified Thai practitioners typically arrive within 30–60 minutes in central Bangkok. Multilingual concierge (English, 中文, 日本語, 한국어), 24/7.",
+  },
+];
+
+function districtRoutes() {
+  return DISTRICTS.map((d) => {
+    const url = `${ORIGIN}/${d.slug}`;
+    const title = `Outcall Massage ${d.name} — Delivered to Your Hotel 24/7 | SunRed`;
+    const ogTitle = `Outcall Massage ${d.name} — Delivered to Your Hotel | SunRed`;
+    const description = `Premium outcall massage in ${d.name}, Bangkok, delivered to your hotel — verified Thai practitioners, live 24/7 availability, multilingual concierge. Covering ${d.nearby}.`;
+    const ogDescription = `Premium outcall massage delivered to your hotel in ${d.name} — verified practitioners, live 24/7 availability. SunRed.`;
+    return {
+      path: `/${d.slug}`,
+      canonicalPath: `/${d.slug}`,
+      hreflangBase: null, // en-only, intentional
+      htmlLang: "en",
+      ogLocale: "en_US",
+      title,
+      description,
+      ogTitle,
+      ogDescription,
+      jsonLd: [
+        {
+          "@context": "https://schema.org",
+          "@type": "Service",
+          "@id": `${url}#service`,
+          name: `Outcall Massage in ${d.name}, Bangkok`,
+          serviceType: "Outcall massage",
+          description,
+          areaServed: { "@type": "Place", name: d.name },
+          provider: { "@id": BUSINESS_ID },
+          offers: {
+            "@type": "AggregateOffer",
+            priceCurrency: "THB",
+            lowPrice: "1200",
+            highPrice: "3200",
+            offerCount: SERVICES.length,
+            url,
+          },
+        },
+        breadcrumbJsonLd([
+          { name: "SunRed", url: `${ORIGIN}/` },
+          { name: `Outcall Massage ${d.name}`, url },
+        ]),
+      ],
+      noscript: `
+        <h1>Outcall Massage in ${d.name} — Delivered to Your Hotel</h1>
+        <p>${d.intro}</p>
+        <p>${d.extra}</p>
+        <h2>Service menu &amp; pricing</h2>
+        <ul>
+${SERVICES.map(
+  (s) =>
+    `          <li><a href="${ORIGIN}/services/${s.slug}">${s.en.name}</a> — from ฿${fmt(
+      s.price
+    )} (60 / 90 / 120 min)</li>`
+).join("\n")}
+        </ul>
+        <h2>Reserve or ask the concierge</h2>
+        <ul>
+          <li><a href="${ORIGIN}/">Home — live practitioner availability</a></li>
+          <li><a href="${ORIGIN}/services">Browse all services</a></li>
+          <li><a href="https://lin.ee/uqvdwWt">LINE</a></li>
+          <li><a href="https://t.me/SunRedvip_bkk">Telegram</a></li>
+          <li><a href="https://wa.me/66634350987">WhatsApp</a></li>
+        </ul>`,
+    };
+  });
+}
+
+const ROUTES = [
+  ...serviceRoutes(),
+  ...therapistRoutes(),
+  ...homeRoutes(),
+  ...districtRoutes(),
+];
 
 // ── Replacement helpers (assert every swap fires) ──────────────────────────
 function replaceOnce(html, regex, replacement, label) {

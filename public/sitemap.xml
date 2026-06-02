@@ -94,6 +94,41 @@
   <url><loc>https://sunred.vip/ja/services/SR-B2B3200</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
   <url><loc>https://sunred.vip/ko/services/SR-B2B3200</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
 
+  <!-- District landing pages (Round 28s224) — exact-match long-tail
+       capture for "outcall massage {district}" + "near me" queries.
+       Static prerendered shells with district-specific title +
+       LocalBusiness JSON-LD; SPA navigates humans to home. -->
+  <url>
+    <loc>https://sunred.vip/outcall-massage-sukhumvit</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://sunred.vip/outcall-massage-silom</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://sunred.vip/outcall-massage-asok</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://sunred.vip/outcall-massage-thonglor</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://sunred.vip/outcall-massage-near-me</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
   <!-- Payment & policy -->
   <url>
     <loc>https://sunred.vip/payment-methods</loc>

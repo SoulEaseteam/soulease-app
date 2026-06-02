@@ -18,11 +18,15 @@ import { SpaOutlined } from "@mui/icons-material";
 import { useAuth } from "@/providers/AuthProvider";
 import { brand, fonts } from "@/theme";
 
+// 🆕 Round 28s224 — "Therapists" → "Practitioners". CLAUDE.md §3 euphemism
+//   table: therapist → practitioner (more premium register). Tab is the
+//   most-visible label in the app — was the loudest remaining brand
+//   violation after the title/meta rewrite.
 const TABS = [
-  { label: "Therapists", value: "/",                icon: (a: boolean) => <FaRegHeart   size={18} color={a ? "#fff" : "rgba(15, 23, 42,0.50)"} /> },
-  { label: "Services",   value: "/services",        icon: (a: boolean) => <SpaOutlined  sx={{ fontSize: 20, color: a ? "#fff" : "rgba(15, 23, 42,0.50)" }} /> },
-  { label: "History",    value: "/booking/history", icon: (a: boolean) => <FaRegFileAlt size={18} color={a ? "#fff" : "rgba(15, 23, 42,0.50)"} /> },
-  { label: "Profile",    value: "/profile",         icon: (a: boolean) => <UserCircle   size={20} color={a ? "#fff" : "rgba(15, 23, 42,0.50)"} /> },
+  { label: "Practitioners", value: "/",                icon: (a: boolean) => <FaRegHeart   size={18} color={a ? "#fff" : "rgba(15, 23, 42,0.50)"} /> },
+  { label: "Services",      value: "/services",        icon: (a: boolean) => <SpaOutlined  sx={{ fontSize: 20, color: a ? "#fff" : "rgba(15, 23, 42,0.50)" }} /> },
+  { label: "History",       value: "/booking/history", icon: (a: boolean) => <FaRegFileAlt size={18} color={a ? "#fff" : "rgba(15, 23, 42,0.50)"} /> },
+  { label: "Profile",       value: "/profile",         icon: (a: boolean) => <UserCircle   size={20} color={a ? "#fff" : "rgba(15, 23, 42,0.50)"} /> },
 ] as const;
 
 const N    = TABS.length;  // 4

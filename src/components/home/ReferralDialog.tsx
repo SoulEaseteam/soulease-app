@@ -84,7 +84,7 @@ const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
 
   const shareText = t(
     "referral.shareText",
-    `I love SunRed — Bangkok's #1 outcall massage. Use my code ${code} for ${REFERRAL_REWARD_THB.toLocaleString()}฿ off your first booking: ${SHARE_HOST}/?ref=${code}`
+    `I love SunRed — premium outcall massage delivered to your Bangkok hotel. Use my code ${code} for ${REFERRAL_REWARD_THB.toLocaleString()}฿ off your first booking: ${SHARE_HOST}/?ref=${code}`
   );
 
   const handleCopy = async () => {

@@ -36,8 +36,11 @@ const TherapistSearchBar: React.FC<TherapistSearchBarProps> = ({
   onChange,
   // 🆕 Round 28s167 — Founder: "ตรงค้นหา ลดข้อความลง". Was
   //   "Search by name, language, specialty…" — too busy. Short
-  //   single word reads cleaner with the rest of the page.
-  placeholder = "Search…",
+  //   reads cleaner with the rest of the page.
+  // 🆕 Round 28s224 — "Search…" → "Find your practitioner…" — the
+  //   premium register from CLAUDE.md §3, and a softer concierge
+  //   tone than a blank "Search…".
+  placeholder = "Find your practitioner…",
   m = "0 14px 12px",
   autoFocus = false,
 }) => {
@@ -83,7 +86,7 @@ const TherapistSearchBar: React.FC<TherapistSearchBarProps> = ({
         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
           onChange(e.target.value)
         }
-        aria-label="Search therapists"
+        aria-label="Search practitioners"
         sx={{
           flex: 1,
           background: "transparent",

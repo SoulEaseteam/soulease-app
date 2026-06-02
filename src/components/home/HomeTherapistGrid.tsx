@@ -292,6 +292,15 @@ const HomeTherapistGrid: React.FC = () => {
   const availableNow = visible.filter(
     (t) => t.computedStatus === "available"
   ).length;
+  // 🆕 Round 28s224 — Honest count: working today = visible - on-holiday.
+  // Old copy said "All 12 with guests" which contradicted the holiday
+  // badges on the cards. Now reflects roster reality.
+  const workingTodayCount = visible.filter(
+    (t) => t.computedStatus !== "holiday"
+  ).length;
+  const onHolidayCount = visible.filter(
+    (t) => t.computedStatus === "holiday"
+  ).length;
   // Total available regardless of filter — for chip badge counts.
   const totalAvailable = sorted.filter(
     (t) => t.computedStatus === "available"
@@ -438,7 +447,9 @@ const HomeTherapistGrid: React.FC = () => {
             >
               {availableNow > 0
                 ? `${availableNow} practitioners on standby`
-                : `All ${therapists.length} with guests — message concierge to be next`}
+                : onHolidayCount > 0
+                  ? `All ${workingTodayCount} working tonight are with guests · ${onHolidayCount} off today — message concierge to be next`
+                  : `All ${workingTodayCount} with guests — message concierge to be next`}
             </Typography>
           </Box>
         )}

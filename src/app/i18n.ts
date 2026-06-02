@@ -96,9 +96,9 @@ void i18n
           //   the home card. Bookable keeps its own label (orange).
           offline: "Offline",
           // Hero
-          "hero.title": "Bangkok's #1 Outcall Massage",
+          "hero.title": "Outcall Massage in Bangkok",
           "hero.subtitle":
-            "Verified therapists • Live availability • English / 中文 / 日本語 / 한국어",
+            "Verified practitioners • Live availability • English / 中文 / 日本語 / 한국어",
           "hero.badge.verified": "Verified",
           "hero.badge.always": "24 / 7",
           // Service filter chips
@@ -109,15 +109,21 @@ void i18n
           "therapistCard.startingFrom": "Starting from",
           "therapistCard.bookNow": "Book Now",
           // Home
-          "home.escorts": "Escorts",
-          "home.search": "Search name…",
+          "home.escorts": "Practitioners",
+          "home.search": "Find your practitioner…",
           "home.subtitle": "Outcall Massage in Bangkok",
-          "home.noResults": "No therapists match your filters.",
-          // Meta (per-page)
+          "home.noResults": "No practitioners match your filters.",
+          // 🆕 Round 28s224 — Meta rewrite. Search Console showed every
+          // top-traffic query is English ("outcall massage bangkok",
+          // "bangkok outcall massage", "outcall massage in bangkok",
+          // "outcall massage sukhumvit", "massage near me"). Old title
+          // led with brand + "#1" (a falsifiable superlative claim,
+          // same category as the fake "4.8★ 1,200+" removed in 28s108).
+          // New title puts the exact-match phrase first.
           "meta.home.title":
-            "SUNRED Bangkok • #1 Luxury Outcall Massage • EN/中文/日本語/한국어",
+            "Outcall Massage Bangkok — Delivered to Your Hotel 24/7 | SunRed",
           "meta.home.description":
-            "Bangkok's #1 luxury outcall massage. Verified therapists delivered to your hotel — Sukhumvit, Silom, Asok, Thonglor & all major areas. English, 中文, 日本語, 한국어. 24/7 live availability.",
+            "Premium outcall massage in Bangkok delivered to your hotel — Sukhumvit, Silom, Asok, Thonglor. Verified Thai practitioners, 24/7 live availability. Book in English, 中文, 日本語, 한국어.",
         },
       },
 
@@ -138,9 +144,9 @@ void i18n
           resting: "ไม่สามารถจองได้",
           holiday: "วันหยุด",
           offline: "ไม่ว่าง",
-          "hero.title": "นวดถึงที่ระดับหรู #1 กรุงเทพ",
+          "hero.title": "บริการนวดถึงที่ในกรุงเทพ",
           "hero.subtitle":
-            "หมอนวดยืนยันตัวตน • จองสด 24 ชม. • รองรับ 5 ภาษา",
+            "Practitioner ยืนยันตัวตน • จองสด 24 ชม. • รองรับ 5 ภาษา",
           "hero.badge.verified": "ยืนยันตัวตน",
           "hero.badge.always": "24 ชม.",
           "filter.all": "ทั้งหมด",
@@ -148,14 +154,14 @@ void i18n
           "filter.aroma": "อโรมา",
           "therapistCard.startingFrom": "ราคาเริ่มต้น",
           "therapistCard.bookNow": "จองเลย",
-          "home.escorts": "นักบำบัด",
-          "home.search": "ค้นหาชื่อ…",
+          "home.escorts": "Practitioner",
+          "home.search": "ค้นหา practitioner…",
           "home.subtitle": "นวดถึงที่ในกรุงเทพ",
-          "home.noResults": "ไม่พบนักบำบัดที่ตรงกับการค้นหา",
+          "home.noResults": "ไม่พบ practitioner ที่ตรงกับการค้นหา",
           "meta.home.title":
-            "SUNRED Bangkok • บริการนวดถึงที่หรูระดับ #1 • EN/ไทย/中文/日本語/한국어",
+            "บริการนวดถึงที่กรุงเทพ — ส่งถึงโรงแรม 24 ชม. | SunRed",
           "meta.home.description":
-            "บริการนวดถึงที่ระดับหรูในกรุงเทพ — สุขุมวิท สีลม อโศก ทองหล่อ พร้อมรองรับ 5 ภาษา ดูเวลาว่างสด ๆ ตลอด 24 ชั่วโมง",
+            "บริการนวดถึงที่ระดับหรูในกรุงเทพ ส่งถึงโรงแรม — สุขุมวิท สีลม อโศก ทองหล่อ Practitioner ยืนยันตัวตน เวลาว่างสดตลอด 24 ชั่วโมง รองรับ ไทย/EN/中文/日本語/한국어",
         },
       },
 
@@ -176,9 +182,9 @@ void i18n
           resting: "休息中",
           holiday: "休假",
           offline: "暂停接单",
-          "hero.title": "曼谷第一外送按摩",
+          "hero.title": "曼谷上门按摩",
           "hero.subtitle":
-            "认证按摩师 • 实时可订 • 支持英语 / 中文 / 日本語 / 한국어",
+            "认证技师 • 实时可订 • 支持英语 / 中文 / 日本語 / 한국어",
           "hero.badge.verified": "已认证",
           "hero.badge.always": "24 小时",
           "filter.all": "全部",
@@ -186,14 +192,14 @@ void i18n
           "filter.aroma": "精油",
           "therapistCard.startingFrom": "起价",
           "therapistCard.bookNow": "立即预订",
-          "home.escorts": "按摩师",
-          "home.search": "搜索姓名…",
-          "home.subtitle": "曼谷外送按摩",
-          "home.noResults": "没有符合条件的按摩师。",
+          "home.escorts": "技师",
+          "home.search": "搜索技师…",
+          "home.subtitle": "曼谷上门按摩",
+          "home.noResults": "没有符合条件的技师。",
           "meta.home.title":
-            "SUNRED 曼谷 • 第一外送按摩 • 多语言客服 EN/中文/日本語/한국어",
+            "曼谷上门按摩 24小时 · 送达酒店 — 泰式 / 精油 / 尊享理疗 | SunRed",
           "meta.home.description":
-            "曼谷第一外送按摩 — 苏坤蔚、是隆、阿索克、通罗等核心地段。认证按摩师 24 小时实时可订。支持微信支付、支付宝、人民币结算。",
+            "SunRed 曼谷上门按摩，认证女性技师送达酒店 — 苏坤蔚、是隆、阿索克、通罗等核心地段。泰式、芳香精油、尊享理疗。实时空闲、24小时可订、支持微信支付与支付宝。",
         },
       },
 
@@ -214,7 +220,7 @@ void i18n
           resting: "休憩中",
           holiday: "休業日",
           offline: "受付停止",
-          "hero.title": "バンコク No.1 出張マッサージ",
+          "hero.title": "バンコク出張マッサージ",
           "hero.subtitle":
             "認定セラピスト • リアルタイム予約 • EN/中文/日本語/한국어 対応",
           "hero.badge.verified": "認証済",
@@ -225,13 +231,13 @@ void i18n
           "therapistCard.startingFrom": "料金",
           "therapistCard.bookNow": "今すぐ予約",
           "home.escorts": "セラピスト",
-          "home.search": "名前で検索…",
+          "home.search": "セラピストを探す…",
           "home.subtitle": "バンコク出張マッサージ",
           "home.noResults": "条件に合うセラピストが見つかりません。",
           "meta.home.title":
-            "SUNRED バンコク • No.1 出張マッサージ • EN/中文/日本語/한국어",
+            "バンコク出張マッサージ 24時間 · ホテルへお届け — タイ古式 / アロマ / メンズ | SunRed",
           "meta.home.description":
-            "バンコク No.1 高級出張マッサージ。スクンビット・シーロム・アソーク・トンローのホテルへセラピストが直接訪問。日本語OK、認定済セラピスト、リアルタイム予約 24時間対応。",
+            "SunRed バンコク高級出張マッサージ。認定セラピストがホテルへ訪問 — スクンビット、シーロム、アソーク、トンロー。タイ古式、アロマ、メンズシグネチャー。日本語OK、リアルタイム予約、24時間対応。",
         },
       },
 
@@ -252,7 +258,7 @@ void i18n
           resting: "휴식 중",
           holiday: "휴일",
           offline: "예약 불가",
-          "hero.title": "방콕 1위 출장 마사지",
+          "hero.title": "방콕 출장 마사지",
           "hero.subtitle":
             "인증 테라피스트 • 실시간 예약 • EN/中文/日本語/한국어 지원",
           "hero.badge.verified": "인증됨",
@@ -263,13 +269,13 @@ void i18n
           "therapistCard.startingFrom": "가격",
           "therapistCard.bookNow": "지금 예약",
           "home.escorts": "테라피스트",
-          "home.search": "이름 검색…",
+          "home.search": "테라피스트 검색…",
           "home.subtitle": "방콕 출장 마사지",
           "home.noResults": "조건에 맞는 테라피스트가 없습니다.",
           "meta.home.title":
-            "SUNRED 방콕 • 1위 출장 마사지 • EN/中文/日本語/한국어",
+            "방콕 출장 마사지 24시간 · 호텔로 방문 — 타이 / 아로마 / 시그니처 | SunRed",
           "meta.home.description":
-            "방콕 1위 럭셔리 출장 마사지. 수쿰빗·실롬·아속·통러 호텔로 인증 테라피스트가 방문. 한국어 가능, 24시간 실시간 예약, 안전한 결제(원화·달러).",
+            "SunRed 방콕 프리미엄 출장 마사지. 인증 테라피스트가 호텔·레지던스로 방문 — 수쿰빗, 실롬, 아속, 통러. 타이·아로마·젠틀맨 시그니처. 한국어 가능, 실시간 예약, 24시간 운영.",
         },
       },
     },
