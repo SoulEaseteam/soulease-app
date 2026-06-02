@@ -287,8 +287,108 @@ they prefer.
 
 ### 🔔 OPEN REMINDERS FOR VIEW (read first every session)
 
-**Last updated: 2026-06-02 after Round 28s223 (live-site audit + fixes:
-localized home prerender, hreflang consistency, type + asset cleanup)**
+**Last updated: 2026-06-02 after Round 28s226 + 28s227 (SEO+brand batch:
+keyword-first title, dropped #1 superlatives, Practitioner naming, 5
+EN district landing pages → 5 × 4-lang localised, LCP image perf,
+multi-domain strategy doc + 4 deploy-ready satellite landing pages)**
+
+### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
+
+**Trigger.** View shared Google Search Console 3-month data:
+- Top branded `sunred massage` +16% MoM (79 clicks) — TG + WOM working
+- Top non-branded `outcall massage bangkok` **−30%** (32 clicks)
+- `bangkok outcall massage` **−41%** (13 clicks)
+- `outcall massage sukhumvit` −25% (3 clicks)
+- `massage near me` +300% (4 clicks)
+- Every top query is **English** but home `<html lang>` was `th` at
+  runtime + Thai meta + buried "outcall massage" tokens behind
+  brand + a "#1 / No.1 / 第一 / 1위 / ระดับ #1" superlative
+- Competitor CBODY ranks page 1 with **3 domains** (`cbody.vip`,
+  `cbodyspa.com`, `cbodyapp.com`) + targets 4 cities + has a CN-only
+  domain — same playbook we should run
+
+**28s226 — keyword-first rewrite + brand discipline (commit `49c1e4b`):**
+- `index.html` title: was *"SUNRED Bangkok · Luxury Outcall Massage
+  to Your Hotel"* → *"Outcall Massage Bangkok — Delivered to Your
+  Hotel 24/7 | SunRed"*. og:title + twitter:title + meta description
+  + keywords meta all repointed at exact-match phrases + 4 districts.
+- Removed every `#1 / No.1 / 第一 / 1위 / ระดับ #1` falsifiable
+  superlative across all 5 langs in `src/app/i18n.ts`
+  (hero.title + meta.home.title + meta.home.description) +
+  `ReferralDialog.tsx` share text + `locales/ja/translation.json`
+  `sheet.duration.popular` (`人気No.1` → `人気`). Same category as
+  the fake "4.8★ 1,200+" rating removed in 28s108.
+- Per-locale meta.home titles rewritten to lead with the local search
+  phrase (`Outcall Massage Bangkok` · `曼谷上门按摩` · `バンコク出張
+  マッサージ` · `방콕 출장 마사지` · `บริการนวดถึงที่กรุงเทพ`).
+- BottomNav tab `Therapists` → `Practitioners` (loudest remaining
+  euphemism-table violation in the app per §3).
+- TherapistSearchBar default placeholder + aria-label switched to
+  `Find your practitioner…` / `Search practitioners`.
+- HomeTherapistGrid "All N with guests" → honest split:
+  *"All N working tonight are with guests · M off today — message
+  concierge to be next"* (was claiming all 12 when 4 were on holiday).
+- 5 new prerendered EN district landing pages:
+  `/outcall-massage-sukhumvit` · `/outcall-massage-silom` ·
+  `/outcall-massage-asok` · `/outcall-massage-thonglor` ·
+  `/outcall-massage-near-me`. Each: district-specific title,
+  Service + BreadcrumbList JSON-LD, crawlable noscript with district
+  intro + service menu + concierge links. App.tsx routes 301 humans
+  to `/` (SPA still serves the practitioner roster). sitemap.xml += 5.
+
+**28s227 — image perf + zh/ja/ko district localisation + multi-domain prep (commit `52e3c04`):**
+- `TherapistMinimalCard` accepts `eager?: boolean`. When true:
+  `loading="eager"`, `fetchPriority="high"`, `decoding="sync"`, plus
+  explicit intrinsic `width={300} height={400}` (3:4 portrait at 2×
+  retina). HomeTherapistGrid passes `eager={i === 0}` so the LCP
+  target card no longer waits in the lazy queue, and CLS is reserved
+  before paint on every card.
+- District landing pages now ship in 4 langs (was en-only). 5 districts
+  × 4 langs = **20 prerendered shells**. Each localized shell ships
+  native-language title (素坤逸上门按摩 / スクンビット出張マッサージ
+  / 수쿰빗 출장 마사지), description, H1, intro/extra paragraphs +
+  localized service menu. hreflang cluster (en + zh + zh-CN + zh-TW +
+  ja + ko + x-default) on every district shell. Targets Baidu / Yahoo
+  JP / Naver long-tail that path-based hreflang of the home cluster
+  alone doesn't unlock — CN tourists searching `曼谷素坤逸出门按摩`
+  now land on a 中文 page with the answer. Prerender count:
+  **40 → 55 routes**. sitemap.xml += 15 URLs (43 → 58 total).
+- **Bundle audit.** Imports of phosphor-react, @mui/icons-material,
+  react-icons/fa all use named subpath imports — tree-shaking works.
+  Main bundle 1.0M raw / 332 KB gzipped (acceptable for first paint
+  on 4G). No refactor needed now.
+- **Multi-domain strategy** — 4 deploy-ready static landing pages in
+  `docs/multi-domain-landing/` (`sunred-bkk-com.html`, `sunred-app.html`,
+  `sunred-cn.html`, `sunred-asia.html`). Each is single-file, no build
+  step, full LocalBusiness JSON-LD, links openly to sunred.vip as the
+  canonical. Plus `docs/multi-domain-strategy.md` — 7-section playbook
+  (which domains to register in what order, ~฿2,275/yr Y1 cost, 60-day
+  consolidation plan with 301 redirects after week 9, anti-pattern
+  list, Vercel deploy checklist). Recommended first satellite:
+  `sunred-bkk.com` (~฿350/yr Porkbun). 2nd priority: `sunred.cn`
+  for Baidu + WeChat reach.
+
+**🔥 Manual action items for View (do before 28s228):**
+- [ ] **Submit `https://sunred.vip/sitemap.xml` in Google Search
+      Console** (resubmit even if listed — triggers recrawl of the
+      20 new district URLs)
+- [ ] **Request indexing on the 5 EN district URLs** in GSC URL
+      Inspection (one at a time, ~30 sec each)
+- [ ] **Request indexing on the 15 zh/ja/ko district URLs** —
+      spread over 3 days due to GSC rate limit (5/day per property)
+- [ ] **(Optional)** Submit to Bing Webmaster Tools + Baidu Webmaster
+      (zh URLs) + Naver Webmaster (ko URLs). Each ~15 min one-time setup.
+- [ ] **Decision:** Register `sunred-bkk.com` (~฿350/yr)?
+      Strategy doc in `docs/multi-domain-strategy.md`. When ready,
+      deploy `docs/multi-domain-landing/sunred-bkk-com.html` to a
+      new Vercel project (~5 min). Ping Claude after registration
+      for the GSC + sitemap setup on the new domain.
+- [ ] Check Search Console 7 days post-deploy:
+      - `outcall massage bangkok` clicks should rebound (was −30%)
+      - `outcall massage sukhumvit` impressions should grow
+      - District URLs should appear in Performance report
+      - If localized district URLs are getting impressions but
+        zero clicks → CTR-fix the snippet (titles/descs)
 
 ### 🆕 What Round 28s223 shipped (2026-06-02) — audit fixes
 
