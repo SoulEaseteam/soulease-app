@@ -1,24 +1,21 @@
 // functions/src/telegram-post-bot/templates.ts
 //
-// 🆕 Round 28s116 — Multi-language post text builders (EN/TH/ZH/JA/KO).
+// 🆕 Round 28s224 — Founder pivot: drop all therapist-specific posts
+//   (privacy-first per CLAUDE.md §🔐) and use 3 brand-level promo posts
+//   that fire at fixed BKK prime times (18:00 / 22:00 / 01:00). No
+//   individual practitioner names ever leak through the channel.
 //
-// Renderers ONLY — no I/O, no state. Each function takes a `lang`
-// argument and falls back to EN when the requested locale is missing.
-// Source of truth for editorial copy: docs/telegram-templates.md (5
-// language variants per category). Ported here so the bot can serve
-// WeChat OA / LINE OA traffic in the visitor's native language.
+// Three renderers in 5 languages each:
+//   1. renderEveningOpen  — 18:00 BKK, warm-up / planning hour
+//   2. renderPrimeTime    — 22:00 BKK, official open / call-to-action
+//   3. renderLateNight    — 01:00 BKK, last-call / "still open"
 //
-// Mode: HTML — see client.ts parse_mode. Use <b>/<i>/<a>. Escape any
-// stray angle brackets in user data with `esc()`.
+// All posts close with the per-lang Reserve via DM link (CN → YuNiSpaBkk,
+// others → SunRedvip_bkk).
 
-import type { TherapistRecord, Lang } from "./rotation";
-import { bioFor } from "./rotation";
+import type { Lang } from "./rotation";
 
-// 🆕 Round 28s120 — Per-language reserve target. CN customers seeing
-//   posts in @manguyujianniSPA (曼谷遇你SPA) should DM the dedicated
-//   Chinese-speaking account @YuNiSpaBkk, not the main @SunRedvip_bkk.
-//   Brand consistency · plus View's separate Chinese account lives on
-//   a separate device/login so messages don't drown out the main inbox.
+// Per-language reserve target (CN gets dedicated handle).
 const RESERVE_HANDLES: Record<Lang, string> = {
   en: "@SunRedvip_bkk",
   th: "@SunRedvip_bkk",
@@ -35,11 +32,6 @@ const RESERVE_URLS: Record<Lang, string> = {
 };
 const WEBSITE = "sunred.vip";
 
-/** Escape arbitrary text before inserting into HTML body. */
-function esc(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
 /** "Reserve via DM" link, localized. Falls back to EN. */
 function reserveLine(lang: Lang): string {
   const labels: Record<Lang, string> = {
@@ -54,213 +46,179 @@ function reserveLine(lang: Lang): string {
   return `${labels[lang] || labels.en} → <a href="${url}">${handle}</a>`;
 }
 
-// ─────────────────────────────────────────────────────────────
-// 1. Practitioner Spotlight — Monday weekly rotation.
-// ─────────────────────────────────────────────────────────────
-
-const SPOTLIGHT_HEADERS: Record<Lang, string> = {
-  en: "PRACTITIONER SPOTLIGHT · this week",
-  th: "นักบำบัดประจำสัปดาห์",
-  zh: "本周推荐治疗师",
-  ja: "今週のセラピスト",
-  ko: "이번 주 추천 치료사",
-};
-
-export function renderSpotlight(t: TherapistRecord, lang: Lang = "en"): string {
-  const header = SPOTLIGHT_HEADERS[lang] || SPOTLIGHT_HEADERS.en;
-  return (
-    `<b>${header}</b>\n` +
-    `\n` +
-    `<b>${esc(t.name)}</b>\n` +
-    `${esc(t.area)}\n` +
-    `\n` +
-    `${esc(bioFor(t, lang))}\n` +
-    `\n` +
-    `${reserveLine(lang)}`
-  );
+/** Website link, plain HTML. */
+function websiteLine(): string {
+  return `<a href="https://${WEBSITE}">${WEBSITE}</a>`;
 }
 
 // ─────────────────────────────────────────────────────────────
-// 2. Tonight Special — single therapist (manual).
+// 1. Evening Opening · 18:00 BKK · warm-up / planning hour
 // ─────────────────────────────────────────────────────────────
 
-const TONIGHT_HEADERS: Record<Lang, string> = {
-  en: "TONIGHT · 22:00–04:00 BKK",
-  th: "คืนนี้ · 22:00–04:00 BKK",
-  zh: "今夜 · 22:00–04:00 曼谷",
-  ja: "今夜 · 22:00–04:00 バンコク",
-  ko: "오늘 밤 · 22:00–04:00 방콕",
-};
-
-const TONIGHT_BODY_TEMPLATES: Record<Lang, (name: string, area: string) => string> = {
-  en: (n, a) => `${n} available for outcall in ${a}.`,
-  th: (n, a) => `${n} เข้าทำงาน · ย่าน ${a}`,
-  zh: (n, a) => `${n} 今晚可预约 · ${a} 区域`,
-  ja: (n, a) => `${n} 本日対応可能 · ${a} エリア`,
-  ko: (n, a) => `${n} 오늘 밤 예약 가능 · ${a} 지역`,
-};
-
-export function renderTonightSpecial(t: TherapistRecord, lang: Lang = "en"): string {
-  const header = TONIGHT_HEADERS[lang] || TONIGHT_HEADERS.en;
-  const body = (TONIGHT_BODY_TEMPLATES[lang] || TONIGHT_BODY_TEMPLATES.en)(
-    esc(t.name),
-    esc(t.area),
-  );
-  return (
-    `<b>${header}</b> 🌙\n` +
-    `\n` +
-    `${body}\n` +
-    `\n` +
-    `${esc(bioFor(t, lang))}\n` +
-    `\n` +
-    `${reserveLine(lang)}`
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
-// 3. Tonight Lineup — multiple therapists (manual).
-// ─────────────────────────────────────────────────────────────
-
-const LINEUP_HEADERS: Record<Lang, string> = {
-  en: "TONIGHT'S LINEUP · 22:00–04:00",
-  th: "คืนนี้ · 22:00–04:00",
-  zh: "今夜阵容 · 22:00–04:00",
-  ja: "今夜のラインナップ · 22:00–04:00",
-  ko: "오늘 밤 라인업 · 22:00–04:00",
-};
-
-const LINEUP_INTRO: Record<Lang, (n: number) => string> = {
-  en: (n) => `${n} practitioners ready for outcall:`,
-  th: (n) => `นักบำบัด ${n} ท่านพร้อมเข้าทำงาน:`,
-  zh: (n) => `${n} 位治疗师今晚可预约:`,
-  ja: (n) => `${n}名のセラピストが対応可能:`,
-  ko: (n) => `${n}명의 치료사 예약 가능:`,
-};
-
-export function renderTonightLineup(ts: TherapistRecord[], lang: Lang = "en"): string {
-  const header = LINEUP_HEADERS[lang] || LINEUP_HEADERS.en;
-  const intro = (LINEUP_INTRO[lang] || LINEUP_INTRO.en)(ts.length);
-  const lines = ts
-    .slice(0, 4)
-    .map((t) => `— ${esc(t.name)} · ${esc(t.area)}`)
-    .join("\n");
-  return (
-    `<b>${header}</b>\n` +
-    `\n` +
-    `${intro}\n` +
-    `\n` +
-    `${lines}\n` +
-    `\n` +
-    `${reserveLine(lang)}`
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
-// 4. Weekend Forecast — Friday static post.
-// ─────────────────────────────────────────────────────────────
-
-const WEEKEND: Record<Lang, string> = {
+const EVENING: Record<Lang, string> = {
   en:
-    `<b>WEEKEND IN BANGKOK</b> ✦\n` +
+    `<b>EVENING UNFURLS · BANGKOK</b> ✦\n` +
     `\n` +
-    `Saturday + Sunday outcall available across Sukhumvit, ` +
-    `Silom, Asok, Sathorn, and Thonglor.\n` +
+    `Premium outcall therapies now opening for tonight.\n` +
+    `Sukhumvit · Silom · Asok · Sathorn · Thonglor.\n` +
     `\n` +
-    `Premium therapies from ฿1,200 · Late-night arrivals ` +
-    `welcomed · 24/7 concierge.`,
+    `Verified female practitioners on standby. Reserve early to lock ` +
+    `your preferred hour.\n` +
+    `\n` +
+    `From ฿1,200 · concierge 24/7`,
   th:
-    `<b>สุดสัปดาห์ที่กรุงเทพ</b> ✦\n` +
+    `<b>เย็นนี้ที่กรุงเทพ</b> ✦\n` +
     `\n` +
-    `เสาร์ + อาทิตย์ เปิดบริการนวดถึงที่ · สุขุมวิท · สีลม · ` +
-    `อโศก · สาทร · ทองหล่อ\n` +
+    `เปิดบริการนวดถึงที่ระดับพรีเมียมสำหรับคืนนี้\n` +
+    `สุขุมวิท · สีลม · อโศก · สาทร · ทองหล่อ\n` +
     `\n` +
-    `จาก ฿1,200 · รับงานช่วงดึก · concierge 24/7`,
+    `นักบำบัดหญิงผ่านการยืนยัน พร้อมเข้าทำงาน · จองไว้ก่อนเพื่อ` +
+    `ล็อกเวลาที่คุณต้องการ\n` +
+    `\n` +
+    `จาก ฿1,200 · concierge 24/7`,
   zh:
-    `<b>曼谷周末</b> ✦\n` +
+    `<b>曼谷夜幕初启</b> ✦\n` +
     `\n` +
-    `周六周日可预约 · 苏坤蔚、是隆、阿索、沙吞、通罗\n` +
+    `高端外送按摩今晚正式开放预约\n` +
+    `苏坤蔚 · 是隆 · 阿索 · 沙吞 · 通罗\n` +
     `\n` +
-    `精品按摩 ฿1,200 起 · 接受深夜预约 · 24小时管家服务`,
+    `认证女性治疗师待命 · 提前预约可锁定您理想的时段\n` +
+    `\n` +
+    `฿1,200 起 · 24小时管家服务`,
   ja:
-    `<b>バンコクの週末</b> ✦\n` +
+    `<b>夕暮れのバンコク</b> ✦\n` +
     `\n` +
-    `土日対応可能 · スクンビット・シーロム・アソーク・` +
-    `サートーン・トンロー\n` +
+    `本日のプレミアム出張マッサージ受付開始\n` +
+    `スクンビット · シーロム · アソーク · サートーン · トンロー\n` +
     `\n` +
-    `プレミアム施術 ฿1,200〜 · 深夜対応 · 24時間コンシェルジュ`,
+    `認証済み女性セラピストが待機中 · ご希望の時間を` +
+    `早めにご予約ください\n` +
+    `\n` +
+    `฿1,200〜 · 24時間コンシェルジュ`,
   ko:
-    `<b>방콕의 주말</b> ✦\n` +
+    `<b>방콕의 저녁</b> ✦\n` +
     `\n` +
-    `토요일+일요일 출장 가능 · 수쿰빗·실롬·아속·사톤·통러\n` +
+    `오늘 밤 프리미엄 출장 마사지 예약 시작\n` +
+    `수쿰빗 · 실롬 · 아속 · 사톤 · 통러\n` +
     `\n` +
-    `프리미엄 테라피 ฿1,200부터 · 늦은 시간 환영 · 24/7 컨시어지`,
+    `인증된 여성 치료사 대기 중 · 원하시는 시간을 미리 예약하세요\n` +
+    `\n` +
+    `฿1,200부터 · 24/7 컨시어지`,
 };
 
-export function renderWeekendForecast(lang: Lang = "en"): string {
-  const body = WEEKEND[lang] || WEEKEND.en;
+export function renderEveningOpen(lang: Lang = "en"): string {
+  const body = EVENING[lang] || EVENING.en;
   return `${body}\n\n${reserveLine(lang)}`;
 }
 
 // ─────────────────────────────────────────────────────────────
-// 5. Welcome Back — after channel-quiet stretch.
+// 2. Prime Time · 22:00 BKK · official open / call-to-action
 // ─────────────────────────────────────────────────────────────
 
-const WELCOME_BACK: Record<Lang, string> = {
+const PRIME: Record<Lang, string> = {
   en:
-    `<b>A QUIET MOMENT, RESTORED</b> ✦\n` +
-    `\n` +
-    `SunRed concierge is open and curating tonight's roster.\n` +
+    `<b>TONIGHT · 22:00–04:00 BKK</b> ✦\n` +
     `\n` +
     `Premium outcall massage delivered to your hotel suite or ` +
-    `residence — Sukhumvit, Silom, Asok, Sathorn, Thonglor.\n` +
+    `residence — Sukhumvit · Silom · Asok · Sathorn · Thonglor.\n` +
     `\n` +
-    `Verified female practitioners · Discreet · 24/7`,
+    `Verified female practitioners on standby. Late-night arrivals ` +
+    `welcomed. Discreet · 24/7 concierge.\n` +
+    `\n` +
+    `From ฿1,200 · pay on arrival`,
   th:
-    `<b>กลับมาอีกครั้ง</b> ✦\n` +
+    `<b>คืนนี้ · 22:00–04:00 BKK</b> ✦\n` +
     `\n` +
-    `SunRed concierge เปิดบริการ · กำลังจัดนักบำบัดประจำคืนนี้\n` +
+    `บริการนวดถึงที่ระดับพรีเมียม ส่งถึงห้องโรงแรมหรือที่พักของคุณ — ` +
+    `สุขุมวิท · สีลม · อโศก · สาทร · ทองหล่อ\n` +
     `\n` +
-    `บริการนวดถึงที่ระดับพรีเมียม · ส่งถึงห้องโรงแรมหรือ` +
-    `ที่พักของคุณ — สุขุมวิท · สีลม · อโศก · สาทร · ทองหล่อ\n` +
+    `นักบำบัดหญิงผ่านการยืนยัน รับงานช่วงดึก · privacy-first · ` +
+    `concierge 24/7\n` +
     `\n` +
-    `นักบำบัดหญิงผ่านการยืนยัน · privacy-first · 24/7`,
+    `จาก ฿1,200 · จ่ายตอนเสร็จงาน`,
   zh:
-    `<b>静谧时光,优雅回归</b> ✦\n` +
+    `<b>今夜 · 22:00–04:00 曼谷</b> ✦\n` +
     `\n` +
-    `SunRed管家服务持续为您甄选今夜的治疗师阵容。\n` +
+    `精品外送按摩送达您的酒店套房或住所 — ` +
+    `苏坤蔚 · 是隆 · 阿索 · 沙吞 · 通罗\n` +
     `\n` +
-    `精品外送按摩 · 送达您的酒店套房或住所 · ` +
-    `苏坤蔚、是隆、阿索、沙吞、通罗\n` +
+    `认证女性治疗师待命 · 接受深夜预约 · 私密 · 24小时管家\n` +
     `\n` +
-    `认证女性治疗师 · 私密 · 24/7`,
+    `฿1,200 起 · 现场结算`,
   ja:
-    `<b>静寂のひととき、再び</b> ✦\n` +
+    `<b>今夜 · 22:00–04:00 バンコク</b> ✦\n` +
     `\n` +
-    `SunRed コンシェルジュがオープン、今夜のセラピスト編成を` +
-    `準備中です。\n` +
+    `プレミアム出張マッサージ · ご宿泊のスイートまたはご住所まで ` +
+    `お届け — スクンビット · シーロム · アソーク · サートーン · トンロー\n` +
     `\n` +
-    `プレミアム出張マッサージ · ご宿泊先のスイートまたは住所まで` +
-    `お届け — スクンビット・シーロム・アソーク・サートーン・` +
-    `トンロー\n` +
+    `認証済み女性セラピスト待機中 · 深夜対応可 · ` +
+    `プライバシー重視 · 24時間コンシェルジュ\n` +
     `\n` +
-    `認証済み女性セラピスト · プライバシー重視 · 24時間対応`,
+    `฿1,200〜 · 到着時お支払い`,
   ko:
-    `<b>고요한 순간, 다시</b> ✦\n` +
+    `<b>오늘 밤 · 22:00–04:00 방콕</b> ✦\n` +
     `\n` +
-    `SunRed 컨시어지가 오픈했습니다 · 오늘 밤 치료사 라인업 ` +
-    `준비 중\n` +
+    `프리미엄 출장 마사지 · 호텔 스위트 또는 거주지로 직접 방문 — ` +
+    `수쿰빗 · 실롬 · 아속 · 사톤 · 통러\n` +
     `\n` +
-    `프리미엄 출장 마사지 · 호텔 스위트 또는 거주지로 직접 방문 ` +
-    `— 수쿰빗·실롬·아속·사톤·통러\n` +
+    `인증된 여성 치료사 대기 중 · 늦은 시간 환영 · 프라이버시 우선 · ` +
+    `24/7 컨시어지\n` +
     `\n` +
-    `인증된 여성 치료사 · 프라이버시 우선 · 24/7`,
+    `฿1,200부터 · 도착 시 결제`,
 };
 
-export function renderWelcomeBack(lang: Lang = "en"): string {
-  const body = WELCOME_BACK[lang] || WELCOME_BACK.en;
-  return (
-    `${body}\n\n` +
-    `${reserveLine(lang)}\n` +
-    `<a href="https://${WEBSITE}">${WEBSITE}</a>`
-  );
+export function renderPrimeTime(lang: Lang = "en"): string {
+  const body = PRIME[lang] || PRIME.en;
+  return `${body}\n\n${reserveLine(lang)}`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// 3. Late Night · 01:00 BKK · still-open / last-call
+// ─────────────────────────────────────────────────────────────
+
+const LATE: Record<Lang, string> = {
+  en:
+    `<b>STILL OPEN · LATE NIGHT BKK</b> ✦\n` +
+    `\n` +
+    `Outcall practitioners continue through the early hours.\n` +
+    `Sukhumvit · Silom · Asok · Sathorn · Thonglor — discreet ` +
+    `delivery to your hotel suite or residence.\n` +
+    `\n` +
+    `From ฿1,200 · concierge replies fast`,
+  th:
+    `<b>ยังเปิด · ดึกที่กรุงเทพ</b> ✦\n` +
+    `\n` +
+    `นักบำบัดยังรับงานต่อช่วงเช้ามืด\n` +
+    `สุขุมวิท · สีลม · อโศก · สาทร · ทองหล่อ — ส่งถึงห้องโรงแรม` +
+    `หรือที่พักของคุณแบบ privacy-first\n` +
+    `\n` +
+    `จาก ฿1,200 · concierge ตอบเร็ว`,
+  zh:
+    `<b>仍在营业 · 曼谷深夜</b> ✦\n` +
+    `\n` +
+    `治疗师继续接受凌晨时段预约\n` +
+    `苏坤蔚 · 是隆 · 阿索 · 沙吞 · 通罗 — 私密送达您的酒店套房或住所\n` +
+    `\n` +
+    `฿1,200 起 · 管家快速回复`,
+  ja:
+    `<b>営業中 · バンコク深夜</b> ✦\n` +
+    `\n` +
+    `セラピストは早朝までご対応継続\n` +
+    `スクンビット · シーロム · アソーク · サートーン · トンロー — ` +
+    `ご宿泊先のスイートまたはご住所までプライバシー重視でお届け\n` +
+    `\n` +
+    `฿1,200〜 · コンシェルジュ即返信`,
+  ko:
+    `<b>영업 중 · 방콕 심야</b> ✦\n` +
+    `\n` +
+    `치료사가 새벽 시간대까지 계속 대응\n` +
+    `수쿰빗 · 실롬 · 아속 · 사톤 · 통러 — 호텔 스위트 또는 거주지로 ` +
+    `프라이버시 우선으로 방문\n` +
+    `\n` +
+    `฿1,200부터 · 컨시어지 빠른 응답`,
+};
+
+export function renderLateNight(lang: Lang = "en"): string {
+  const body = LATE[lang] || LATE.en;
+  return `${body}\n\n${reserveLine(lang)}\n${websiteLine()}`;
 }

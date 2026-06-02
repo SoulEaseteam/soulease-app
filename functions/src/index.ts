@@ -873,9 +873,12 @@ export const telegramWebhook = onRequest(
 //   Deploy: firebase deploy --only functions:scheduledChannelSpotlight,
 //   functions:scheduledChannelWeekend,functions:postToChannelManual
 // ─────────────────────────────────────────────────────────────
+// 🆕 Round 28s224 — replaced Spotlight/Weekend with 3 brand promo
+//   cron jobs (evening 18:00 · prime 22:00 · late 01:00 BKK).
 export {
-  scheduledChannelSpotlight,
-  scheduledChannelWeekend,
+  scheduledChannelEvening,
+  scheduledChannelPrime,
+  scheduledChannelLate,
   postToChannelManual,
 } from "./telegram-post-bot";
 

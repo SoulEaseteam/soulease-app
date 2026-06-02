@@ -1,20 +1,20 @@
 // functions/src/telegram-post-bot/index.ts
 //
-// 🆕 Round 28s115 — Cloud Function bindings for @SunRedPostBot.
+// 🆕 Round 28s224 — Pivot from per-therapist posts to brand-level promo
+//   posts that fan out at 3 fixed BKK prime times. Privacy-first: no
+//   individual practitioner name ever appears on the public channel.
 //
-// Two scheduled functions (Monday spotlight + Friday weekend) and one
-// admin-only callable for manual posts. All read the bot token from
-// the TELEGRAM_POST_BOT_TOKEN secret — see telegram-post-bot/client.ts
-// for the rationale on bot separation.
+// Posting cadence (3 posts/day, every day, both channels):
+//   Daily 18:00 BKK  →  Evening Opening (warm-up / planning)
+//   Daily 22:00 BKK  →  Prime Time (peak open / CTA)
+//   Daily 01:00 BKK  →  Late Night (still-open / last-call)
 //
-// Posting cadence (3 posts/week minimum, per docs/telegram-templates.md):
-//   Mon 20:00 BKK  →  Practitioner Spotlight (rotates 11 non-Yuri)
-//   Fri 18:00 BKK  →  Weekend Forecast (static)
-//   Manual         →  Tonight Special / Lineup / Yuri / Welcome Back
+// Each cron posts to both channels in parallel:
+//   @SunRed_BKK        →  EN
+//   @manguyujianniSPA  →  ZH
 //
-// Logs: every successful post writes to `telegramPosts` Firestore
-// collection with kind + therapistId + message_id so View can audit
-// what went out without scrolling the channel.
+// Logs: every send writes to `telegramPosts` Firestore collection with
+// kind + lang + channel + message_id for audit + future analytics.
 
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
@@ -24,20 +24,11 @@ import { getFirestore, FieldValue } from "firebase-admin/firestore";
 
 import { sendChannelMessage, channelForLang, CHANNELS } from "./client";
 import {
-  renderSpotlight,
-  renderTonightSpecial,
-  renderTonightLineup,
-  renderWeekendForecast,
-  renderWelcomeBack,
+  renderEveningOpen,
+  renderPrimeTime,
+  renderLateNight,
 } from "./templates";
-import {
-  pickNextSpotlight,
-  findInRoster,
-  POST_ROSTER,
-  type TherapistRecord,
-  type Lang,
-} from "./rotation";
-import { fetchAvailableTherapists } from "./availability";
+import type { Lang } from "./rotation";
 
 const SUPPORTED_LANGS: Lang[] = ["en", "th", "zh", "ja", "ko"];
 
@@ -52,13 +43,11 @@ const TELEGRAM_POST_BOT_TOKEN = defineSecret("TELEGRAM_POST_BOT_TOKEN");
 const POSTS_COLLECTION = "telegramPosts";
 
 // ─────────────────────────────────────────────────────────────
-// Helper: log every send to Firestore for audit + future analytics.
+// Helper: log every send to Firestore for audit.
 // ─────────────────────────────────────────────────────────────
 async function recordPost(payload: {
   kind: string;
   messageId?: number;
-  therapistId?: string;
-  therapistName?: string;
   manual?: boolean;
   adminUid?: string;
   lang?: Lang;
@@ -79,123 +68,123 @@ async function recordPost(payload: {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Scheduled: Monday 20:00 BKK — Practitioner Spotlight rotation
-//   Cron in UTC: 0 13 * * 1  (BKK = UTC+7)
+// Promo kinds — single source of truth for routing.
 // ─────────────────────────────────────────────────────────────
-export const scheduledChannelSpotlight = onSchedule(
+type PromoKind = "evening" | "prime" | "late";
+
+function renderByKind(kind: PromoKind, lang: Lang): string {
+  switch (kind) {
+    case "evening":
+      return renderEveningOpen(lang);
+    case "prime":
+      return renderPrimeTime(lang);
+    case "late":
+      return renderLateNight(lang);
+  }
+}
+
+// Shared fan-out logic for scheduled posts.
+async function broadcastPromo(kind: PromoKind, token: string): Promise<void> {
+  const targets: { lang: Lang; channel: string }[] = [
+    { lang: "en", channel: CHANNELS.EN },
+    { lang: "zh", channel: CHANNELS.ZH },
+  ];
+  for (const target of targets) {
+    const text = renderByKind(kind, target.lang);
+    const res = await sendChannelMessage(token, text, target.channel);
+    if (res.ok) {
+      logger.info(`[promo:${kind}] posted`, {
+        lang: target.lang,
+        channel: target.channel,
+        message_id: res.message_id,
+      });
+    } else {
+      logger.error(`[promo:${kind}] failed`, {
+        lang: target.lang,
+        channel: target.channel,
+        error: res.error,
+      });
+    }
+    await recordPost({
+      kind,
+      messageId: res.message_id,
+      lang: target.lang,
+      channel: target.channel,
+      ok: res.ok,
+      error: res.error,
+    });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Scheduled · Daily 18:00 BKK — Evening Opening
+//   Cron in UTC: 0 11 * * *  (BKK = UTC+7)
+// ─────────────────────────────────────────────────────────────
+export const scheduledChannelEvening = onSchedule(
   {
-    schedule: "0 13 * * 1",
+    schedule: "0 11 * * *",
     timeZone: "UTC",
     secrets: [TELEGRAM_POST_BOT_TOKEN],
   },
   async () => {
     const token = TELEGRAM_POST_BOT_TOKEN.value().trim();
     if (!token) {
-      logger.error(
-        "[scheduledChannelSpotlight] TELEGRAM_POST_BOT_TOKEN missing",
-      );
+      logger.error("[scheduledChannelEvening] TELEGRAM_POST_BOT_TOKEN missing");
       return;
     }
-    // 🆕 Round 28s118 — Fan-out to BOTH channels in their primary
-    //   languages: EN to @SunRed_BKK, ZH to @YuNiSpaBkk. One rotation
-    //   pick · two parallel posts. Each is logged separately to
-    //   telegramPosts so audits/metrics stay per-channel.
-    const therapist = await pickNextSpotlight();
-    const targets: { lang: Lang; channel: string }[] = [
-      { lang: "en", channel: CHANNELS.EN },
-      { lang: "zh", channel: CHANNELS.ZH },
-    ];
-    for (const target of targets) {
-      const text = renderSpotlight(therapist, target.lang);
-      const res = await sendChannelMessage(token, text, target.channel);
-      if (res.ok) {
-        logger.info("[scheduledChannelSpotlight] posted", {
-          name: therapist.name,
-          lang: target.lang,
-          channel: target.channel,
-          message_id: res.message_id,
-        });
-      } else {
-        logger.error("[scheduledChannelSpotlight] failed", {
-          lang: target.lang,
-          channel: target.channel,
-          error: res.error,
-        });
-      }
-      await recordPost({
-        kind: "spotlight",
-        messageId: res.message_id,
-        therapistId: therapist.id,
-        therapistName: therapist.name,
-        lang: target.lang,
-        channel: target.channel,
-        ok: res.ok,
-        error: res.error,
-      });
-    }
+    await broadcastPromo("evening", token);
   },
 );
 
 // ─────────────────────────────────────────────────────────────
-// Scheduled: Friday 18:00 BKK — Weekend Forecast
-//   Cron in UTC: 0 11 * * 5
+// Scheduled · Daily 22:00 BKK — Prime Time
+//   Cron in UTC: 0 15 * * *  (BKK = UTC+7)
 // ─────────────────────────────────────────────────────────────
-export const scheduledChannelWeekend = onSchedule(
+export const scheduledChannelPrime = onSchedule(
   {
-    schedule: "0 11 * * 5",
+    schedule: "0 15 * * *",
     timeZone: "UTC",
     secrets: [TELEGRAM_POST_BOT_TOKEN],
   },
   async () => {
     const token = TELEGRAM_POST_BOT_TOKEN.value().trim();
     if (!token) {
-      logger.error(
-        "[scheduledChannelWeekend] TELEGRAM_POST_BOT_TOKEN missing",
-      );
+      logger.error("[scheduledChannelPrime] TELEGRAM_POST_BOT_TOKEN missing");
       return;
     }
-    // 🆕 Round 28s118 — Fan-out (see scheduledChannelSpotlight comment).
-    const targets: { lang: Lang; channel: string }[] = [
-      { lang: "en", channel: CHANNELS.EN },
-      { lang: "zh", channel: CHANNELS.ZH },
-    ];
-    for (const target of targets) {
-      const text = renderWeekendForecast(target.lang);
-      const res = await sendChannelMessage(token, text, target.channel);
-      if (res.ok) {
-        logger.info("[scheduledChannelWeekend] posted", {
-          lang: target.lang,
-          channel: target.channel,
-          message_id: res.message_id,
-        });
-      } else {
-        logger.error("[scheduledChannelWeekend] failed", {
-          lang: target.lang,
-          channel: target.channel,
-          error: res.error,
-        });
-      }
-      await recordPost({
-        kind: "weekend",
-        messageId: res.message_id,
-        lang: target.lang,
-        channel: target.channel,
-        ok: res.ok,
-        error: res.error,
-      });
-    }
+    await broadcastPromo("prime", token);
   },
 );
 
 // ─────────────────────────────────────────────────────────────
-// Callable: postToChannelManual — admin-only ad-hoc post.
+// Scheduled · Daily 01:00 BKK (next day) — Late Night
+//   Cron in UTC: 0 18 * * *  (previous calendar day in UTC)
+// ─────────────────────────────────────────────────────────────
+export const scheduledChannelLate = onSchedule(
+  {
+    schedule: "0 18 * * *",
+    timeZone: "UTC",
+    secrets: [TELEGRAM_POST_BOT_TOKEN],
+  },
+  async () => {
+    const token = TELEGRAM_POST_BOT_TOKEN.value().trim();
+    if (!token) {
+      logger.error("[scheduledChannelLate] TELEGRAM_POST_BOT_TOKEN missing");
+      return;
+    }
+    await broadcastPromo("late", token);
+  },
+);
+
+// ─────────────────────────────────────────────────────────────
+// Callable · postToChannelManual — admin-only ad-hoc promo post.
 //
 // Payload:
-//   { kind: "tonight" | "spotlight" | "lineup" | "weekend" | "welcome",
-//     therapistId?: string,      // for tonight/spotlight; if omitted,
-//                                // rotation auto-picks
-//     therapistIds?: string[],   // for lineup
+//   { kind: "evening" | "prime" | "late",
+//     lang?: "en" | "th" | "zh" | "ja" | "ko"   // defaults to en
 //   }
+//
+// Routes by lang: zh → @YuNiSpaBkk · others → @SunRed_BKK.
 // ─────────────────────────────────────────────────────────────
 export const postToChannelManual = onCall(
   {
@@ -216,110 +205,25 @@ export const postToChannelManual = onCall(
       );
     }
 
-    const { kind, therapistId, therapistIds, lang: langRaw } =
-      (req.data ?? {}) as {
-        kind?: string;
-        therapistId?: string;
-        therapistIds?: string[];
-        lang?: string;
-      };
+    const { kind, lang: langRaw } = (req.data ?? {}) as {
+      kind?: string;
+      lang?: string;
+    };
     const lang = normalizeLang(langRaw);
 
-    let text: string;
-    let pickedTherapist: TherapistRecord | undefined;
-
-    switch (kind) {
-      case "tonight": {
-        // 🆕 Round 28s119 — when no therapistId is provided, pick the
-        //   FIRST currently-available therapist from live Firestore
-        //   status (admin dashboard data) instead of the rotation. The
-        //   channel says "TONIGHT" — should reflect actual standby.
-        if (therapistId) {
-          pickedTherapist = findInRoster(therapistId);
-        } else {
-          const available = await fetchAvailableTherapists();
-          pickedTherapist = available[0];
-        }
-        if (!pickedTherapist) {
-          throw new HttpsError(
-            "not-found",
-            therapistId
-              ? `Therapist ${therapistId} not in posting roster`
-              : "No therapist is currently available · check admin dashboard",
-          );
-        }
-        text = renderTonightSpecial(pickedTherapist, lang);
-        break;
-      }
-      case "spotlight": {
-        pickedTherapist = therapistId
-          ? findInRoster(therapistId)
-          : await pickNextSpotlight();
-        if (!pickedTherapist) {
-          throw new HttpsError(
-            "not-found",
-            `Therapist ${therapistId} not in posting roster`,
-          );
-        }
-        text = renderSpotlight(pickedTherapist, lang);
-        break;
-      }
-      case "lineup": {
-        const ids = therapistIds ?? [];
-        let picks: TherapistRecord[];
-        // 🆕 Round 28s119 — when no IDs provided, auto-fetch the live
-        //   standby list from Firestore (admin dashboard data). Caps at
-        //   4 entries since the template only renders the first 4.
-        if (ids.length === 0) {
-          picks = await fetchAvailableTherapists();
-          if (picks.length < 2) {
-            throw new HttpsError(
-              "not-found",
-              "Need at least 2 standby therapists for a lineup · check admin dashboard",
-            );
-          }
-          picks = picks.slice(0, 4);
-        } else if (ids.length < 2) {
-          throw new HttpsError(
-            "invalid-argument",
-            "lineup requires therapistIds with at least 2 entries (or omit to use live availability)",
-          );
-        } else {
-          picks = ids
-            .map((id) => findInRoster(id))
-            .filter((t): t is TherapistRecord => Boolean(t));
-          if (picks.length === 0) {
-            throw new HttpsError(
-              "not-found",
-              "None of the therapistIds matched the roster",
-            );
-          }
-        }
-        text = renderTonightLineup(picks, lang);
-        break;
-      }
-      case "weekend": {
-        text = renderWeekendForecast(lang);
-        break;
-      }
-      case "welcome": {
-        text = renderWelcomeBack(lang);
-        break;
-      }
-      default:
-        throw new HttpsError("invalid-argument", `Unknown kind: ${kind}`);
+    if (kind !== "evening" && kind !== "prime" && kind !== "late") {
+      throw new HttpsError(
+        "invalid-argument",
+        `Unknown kind: ${kind} (expected evening | prime | late)`,
+      );
     }
 
-    // 🆕 Round 28s118 — Manual posts route by lang: zh → @YuNiSpaBkk,
-    //   others → @SunRed_BKK. View can pick lang in the AdminTelegram
-    //   panel and the target channel follows automatically.
+    const text = renderByKind(kind, lang);
     const channel = channelForLang(lang);
     const res = await sendChannelMessage(token, text, channel);
     await recordPost({
-      kind: kind || "unknown",
+      kind,
       messageId: res.message_id,
-      therapistId: pickedTherapist?.id,
-      therapistName: pickedTherapist?.name,
       manual: true,
       adminUid: req.auth?.uid,
       lang,
@@ -334,8 +238,3 @@ export const postToChannelManual = onCall(
     return { ok: true, messageId: res.message_id, channel };
   },
 );
-
-// Re-export for direct callers (e.g., a future onTherapistUpdate trigger
-// that wants to fire a manual Tonight Special when a roster availability
-// flips green during prime hours).
-export { POST_ROSTER };

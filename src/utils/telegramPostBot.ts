@@ -1,9 +1,9 @@
 // src/utils/telegramPostBot.ts
 //
-// 🆕 Round 28s116 — Client wrapper for the postToChannelManual callable
-//   (functions/src/telegram-post-bot/). Lets View fire ad-hoc Telegram
-//   channel posts from the AdminTelegramPanel without dropping into the
-//   terminal or Cloud Scheduler console.
+// 🆕 Round 28s224 — Client wrapper for the simplified postToChannelManual
+//   callable. Drops therapist-specific kinds (tonight/spotlight/lineup)
+//   and the broadcast / welcome posts. Now only 3 brand promo kinds
+//   matching the auto-scheduled fan-out.
 //
 // All language codes match the bot's SUPPORTED_LANGS server-side:
 //   en · th · zh · ja · ko
@@ -16,19 +16,10 @@ import { app as firebaseApp } from "@/lib/firebase";
 
 export type PostLang = "en" | "th" | "zh" | "ja" | "ko";
 
-export type PostKind =
-  | "tonight"
-  | "spotlight"
-  | "lineup"
-  | "weekend"
-  | "welcome";
+export type PostKind = "evening" | "prime" | "late";
 
 export interface PostPayload {
   kind: PostKind;
-  /** Required for tonight/spotlight when overriding the auto-rotation. */
-  therapistId?: string;
-  /** Required for lineup — at least 2 IDs. */
-  therapistIds?: string[];
   /** Defaults to "en" server-side if omitted/invalid. */
   lang?: PostLang;
 }

@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelWeekend = exports.scheduledChannelSpotlight = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -695,9 +695,12 @@ exports.telegramWebhook = (0, https_1.onRequest)({
 //   Deploy: firebase deploy --only functions:scheduledChannelSpotlight,
 //   functions:scheduledChannelWeekend,functions:postToChannelManual
 // ─────────────────────────────────────────────────────────────
+// 🆕 Round 28s224 — replaced Spotlight/Weekend with 3 brand promo
+//   cron jobs (evening 18:00 · prime 22:00 · late 01:00 BKK).
 var telegram_post_bot_1 = require("./telegram-post-bot");
-Object.defineProperty(exports, "scheduledChannelSpotlight", { enumerable: true, get: function () { return telegram_post_bot_1.scheduledChannelSpotlight; } });
-Object.defineProperty(exports, "scheduledChannelWeekend", { enumerable: true, get: function () { return telegram_post_bot_1.scheduledChannelWeekend; } });
+Object.defineProperty(exports, "scheduledChannelEvening", { enumerable: true, get: function () { return telegram_post_bot_1.scheduledChannelEvening; } });
+Object.defineProperty(exports, "scheduledChannelPrime", { enumerable: true, get: function () { return telegram_post_bot_1.scheduledChannelPrime; } });
+Object.defineProperty(exports, "scheduledChannelLate", { enumerable: true, get: function () { return telegram_post_bot_1.scheduledChannelLate; } });
 Object.defineProperty(exports, "postToChannelManual", { enumerable: true, get: function () { return telegram_post_bot_1.postToChannelManual; } });
 // ─────────────────────────────────────────────────────────────
 // 🆕 Round 28s117 — Customer-facing Telegram Concierge Bot.
