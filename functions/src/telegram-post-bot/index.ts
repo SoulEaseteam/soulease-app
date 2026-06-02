@@ -72,14 +72,14 @@ async function recordPost(payload: {
 // ─────────────────────────────────────────────────────────────
 type PromoKind = "evening" | "prime" | "late";
 
-function renderByKind(kind: PromoKind, lang: Lang): string {
+function renderByKind(kind: PromoKind, lang: Lang, date: Date = new Date()): string {
   switch (kind) {
     case "evening":
-      return renderEveningOpen(lang);
+      return renderEveningOpen(date, lang);
     case "prime":
-      return renderPrimeTime(lang);
+      return renderPrimeTime(date, lang);
     case "late":
-      return renderLateNight(lang);
+      return renderLateNight(date, lang);
   }
 }
 
