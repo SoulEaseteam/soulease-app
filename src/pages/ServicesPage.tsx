@@ -1089,8 +1089,8 @@ const ServicesPage: React.FC = () => {
                   {
                     Icon: FaTelegramPlane,
                     name: "Telegram",
-                    handle: "@SunRedGreeterBot",
-                    href: "https://t.me/SunRedGreeterBot",
+                    handle: "@SunRedvip_bkk",
+                    href: "https://t.me/SunRedvip_bkk",
                     external: true,
                     tone: { bg: "rgba(34, 158, 217, 0.10)", fg: "#229ED9" },
                   },

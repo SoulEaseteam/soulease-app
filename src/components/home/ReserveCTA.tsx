@@ -32,12 +32,14 @@ import { brand, fonts } from "@/theme";
 import { useConciergeMode } from "@/utils/conciergeMode";
 import { trackConciergeOpen } from "@/utils/analytics";
 
-// 🆕 Round 28s126 — Primary Telegram CTA now routes through the FAQ
-//   bot (@SunRedGreeterBot) instead of the personal concierge handle.
-//   Customers get instant multilingual greeting + 6-button menu
-//   (Pricing · Services · Areas · Available now · How to book · Chat
-//   with concierge) before reaching View's inbox.
-const TELEGRAM_URL = "https://t.me/SunRedGreeterBot";
+// 🆕 Round 28s226 — Primary CTA routes DIRECT to a HUMAN concierge.
+//   Reverts 28s126, which sent the button to @SunRedGreeterBot — an FAQ
+//   bot whose menu had no "book" / "talk to a person" path and never
+//   forwarded messages to View. Customers dead-ended in the menu loop
+//   and never reached anyone, a primary cause of the quiet stretch.
+//   zh visitors → Chinese concierge, everyone else → the intl concierge.
+const TELEGRAM_CONCIERGE_INTL = "https://t.me/SunRedvip_bkk";
+const TELEGRAM_CONCIERGE_ZH = "https://t.me/YuNiSpaBkk";
 const WHATSAPP_URL = "https://wa.me/66634350987";
 const LINE_URL = "https://lin.ee/uqvdwWt";
 const WECHAT_ROUTE = "/wechat-scan"; // internal scan page
@@ -96,13 +98,15 @@ function headlineFor(mode: string): string {
 }
 
 const ReserveCTA: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const concierge = useConciergeMode();
   const headline = headlineFor(concierge.mode);
 
   const handleTelegram = () => {
-    trackConciergeOpen("reserve_cta_telegram");
-    window.open(TELEGRAM_URL, "_blank", "noopener,noreferrer");
+    const isZh = (i18n.language || "").toLowerCase().startsWith("zh");
+    const url = isZh ? TELEGRAM_CONCIERGE_ZH : TELEGRAM_CONCIERGE_INTL;
+    trackConciergeOpen(isZh ? "reserve_cta_telegram_zh" : "reserve_cta_telegram");
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleChip = (chip: SecondaryChip) => {
