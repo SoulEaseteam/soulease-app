@@ -899,7 +899,19 @@ const BookingFlowPage: React.FC = () => {
         savingsVsGrab: taxiResult?.savingsVsGrab ?? 0,
         distanceKm,
         totalPrice: total,
-        status: "confirmed",
+        // 🆕 Round 28s227 (FIX — orders were invisible) — customer bookings
+        //   must land as "pending" so they surface in the admin dashboard's
+        //   "Needs Confirmation" panel (AdminDashboardPage queries
+        //   status=="pending") and the Booking List's default Pending tab.
+        //   Previously every customer order was written "confirmed", so the
+        //   dashboard showed "Pending 0 / all up to date" and real orders
+        //   silently filed themselves under Confirmed as if already actioned
+        //   — a primary cause of the order drought. Admin-created bookings
+        //   stay pre-confirmed (mirrors the holdState split below). The
+        //   onBookingCreate trigger fires on create regardless of status,
+        //   so Telegram alerts are unaffected; the admin "Confirm" button
+        //   promotes pending → confirmed.
+        status: isAdminBooking ? "confirmed" : "pending",
         // 🆕 Round 16: align with Firestore architecture spec.
         paymentStatus: "unpaid", // → "paid" once admin confirms via Telegram
         // 🆕 Round 28b21 (founder 2026-05-04) — Phase 2: TIME-LIMITED
