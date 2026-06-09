@@ -287,10 +287,76 @@ they prefer.
 
 ### 🔔 OPEN REMINDERS FOR VIEW (read first every session)
 
-**Last updated: 2026-06-02 after Round 28s226 + 28s227 (SEO+brand batch:
-keyword-first title, dropped #1 superlatives, Practitioner naming, 5
-EN district landing pages → 5 × 4-lang localised, LCP image perf,
-multi-domain strategy doc + 4 deploy-ready satellite landing pages)**
+**Last updated: 2026-06-09 — ORDER-PIPELINE + ADMIN RESCUE session (below).
+Previous: 2026-06-02 SEO+brand batch (further down).**
+
+### 🚑 2026-06-09 — "เงียบ 2 อาทิตย์" was NOT a demand problem. Order pipeline + admin were broken.
+
+> ⚠️ ROUND-NUMBER COLLISION: this session numbered its commits 28s226–28s230,
+> which clash with the 2026-06-02 SEO session's 28s226–28s227. Go by DATE, not
+> round number. These commits are by date 2026-06-09.
+
+**The discovery (most important lesson):** View said orders went quiet ~2 weeks.
+It was NOT marketing. The order pipeline + admin dashboard had compounding bugs
+that hid/mishandled real orders. Don't pour traffic into a leaky funnel — verify
+the funnel first.
+
+**What shipped & is LIVE (all deployed direct from local — see deploy note):**
+1. **FIX A — orders were INVISIBLE.** Customer bookings were written
+   status:"confirmed" but the admin dashboard queries status=="pending"
+   (BookingFlowPage:902). So every web order looked already-handled →
+   "Pending 0 / all up to date". Now customer bookings = "pending"
+   (admin-add stays "confirmed"). **Orders from before the fix are status
+   "confirmed" — recover via admin Booking List "All/Confirmed" tab.**
+2. **FIX 1 — book CTA → human.** ServicesPage Telegram contact was
+   @SunRedGreeterBot (FAQ bot, no booking/human path). → @SunRedvip_bkk
+   (zh → @YuNiSpaBkk). NOTE: ReserveCTA was edited too but it's NOT mounted on
+   home (HomePage renders only HomeTherapistGrid since 28s127/145).
+3. **FIX 3 — clean admin Telegram message** (founder format; dropped the
+   confusing "confirm before it expires" line). functions/src/index.ts
+   formatBookingForAdmin. sendTelegram has NO parse_mode → plain text, no
+   markdown escaping.
+4. **firestore.rules + indexes DEPLOYED** (PII was public). Verified safe:
+   every admin op permitted, isAdmin()==admins/{uid} matches app. ✅
+5. **Marketing attribution** — booking captures source/channel + UTM + landing;
+   onBookingCreate adds "🌐 Source: <channel> · <flag CC> · <landing>" (country
+   from phone dial code). Exact Google keyword is impossible (not-provided).
+   Tag marketing links with ?utm_source=… for precise channel.
+6. **Admin A-D:** (A) show customer name+phone+tap-to-call (was reading blank
+   `userName`; real fields are contactName/customerName/phone). (B)
+   AdminTherapistsPage now uses calculateTherapistStatus (BKK) not the legacy
+   device-clock computeStatus. (C) roster summary strip + "คืนนี้เปิดทั้งร้าน"/
+   "กลับ Auto" batch buttons. (D) Confirm settles holdState; needsAdminReview
+   warning badge.
+
+**🔑 DEPLOY MECHANISM (critical — GitHub token died mid-session):**
+- The osxkeychain/gh GitHub token is INVALID ("Bad credentials"). `git push`
+  fails. Local main is ahead of origin by several commits (28s226-230, by date
+  06-09) — NOT pushed. To sync: View runs `gh auth login` then I push.
+- BUT deploys do NOT need GitHub: **frontend → `vercel --prod --yes` from local**
+  (uses Vercel CLI auth, gitDirty deploy); **functions/rules → `firebase deploy
+  --only functions:<name>` / `--only firestore:rules` from local** (firebase
+  CLI logged in as soulease.team@gmail.com, project soulease-spa). Both used
+  today successfully. This is the reliable path while the GH token is dead.
+- The GitHub Action push-to-deploy (added 06-02) exists but is moot while push
+  is blocked.
+
+**🔔 STILL FOR VIEW (no deploy needed — do tonight):**
+1. Admin Booking List → "All/Confirmed" tab → recover the ~2 weeks of orders
+   that were hidden (status confirmed). Real customers may be waiting.
+2. Send a TEST booking through the live site → confirm the admin Telegram group
+   (chat id -1002962073895, hardcoded in functions/src/index.ts:31) still
+   receives it. If a group→supergroup migration changed the id, sends fail
+   silently — tell me, I'll fix the id.
+3. Therapist working hours in Firestore must cover the 22:00–04:00 window or the
+   roster shows "offline" = site looks closed. Or just use the new "คืนนี้
+   เปิดทั้งร้าน" button. Diagnostic: scripts/diagnoseAllTherapists.ts.
+4. `gh auth login` so unpushed commits can sync to GitHub.
+
+**Known remaining (audited, not yet fixed):** Telegram webhooks lack
+secret_token validation; Google Maps key is a single point of failure on the
+booking location step (no no-map fallback); paid vs paymentStatus field
+mismatch; AdminBookingAddPage double-fires the Telegram notify.
 
 ### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
 
