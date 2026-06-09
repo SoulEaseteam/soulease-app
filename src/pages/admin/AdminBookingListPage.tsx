@@ -39,6 +39,7 @@ import {
   Clock,
   MapPin,
   User,
+  Phone,
   CurrencyCircleDollar,
   NotePencil,
   Export,
@@ -52,6 +53,15 @@ import {
 interface Booking {
   id: string;
   userName?: string;
+  // 🆕 Round 28s230 — customer flow writes `contactName`, admin-add writes
+  //   `customerName`; the UI used to read only `userName` (always blank), so
+  //   the operator never saw who to call. `nameOf()` normalises all three.
+  contactName?: string;
+  customerName?: string;
+  phone?: string;
+  holdState?: string;
+  needsAdminReview?: boolean;
+  reviewReason?: string;
   userId?: string;
   therapistId?: string;
   therapistName: string;
@@ -96,6 +106,10 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "cancelled", label: "Cancelled" },
 ];
 
+// 🆕 Round 28s230 — canonical customer name across the two write paths.
+const nameOf = (b: Booking): string =>
+  b.userName || b.contactName || b.customerName || "—";
+
 const SANS  = '"Inter", system-ui, sans-serif';
 // 🆕 Round 28s217 — Aligned heading stack with project palette
 //   refresh (Round 28s150-156, CLAUDE.md §🔤).
@@ -137,7 +151,7 @@ const AdminBookingListPage: React.FC = () => {
     const q = search.toLowerCase();
     return bookings.filter((b) => {
       const matchTab = tab === "all" || b.status === tab;
-      const matchQ   = !q || [b.userName, b.therapistName, b.serviceName, b.address, b.locationName, b.id]
+      const matchQ   = !q || [nameOf(b), b.phone, b.therapistName, b.serviceName, b.address, b.locationName, b.id]
         .join(" ").toLowerCase().includes(q);
       return matchTab && matchQ;
     });
@@ -146,7 +160,14 @@ const AdminBookingListPage: React.FC = () => {
   // ── write helpers ─────────────────────────────────────────────────
   const setStatus = async (id: string, status: string) => {
     try {
-      await updateDoc(doc(db, "bookings", id), { status });
+      // 🆕 Round 28s230 (FIX D) — confirming an order also settles the 10-min
+      //   hold so releaseExpiredHolds can't later stamp it "expired" (which
+      //   would tell the customer their accepted booking lapsed).
+      const patch: Record<string, unknown> =
+        status === "confirmed"
+          ? { status, holdState: "confirmed", holdExpiresAt: null }
+          : { status };
+      await updateDoc(doc(db, "bookings", id), patch);
       setToast({ msg: `Booking ${status}`, ok: true });
     } catch {
       setToast({ msg: "Update failed", ok: false });
@@ -174,7 +195,8 @@ const AdminBookingListPage: React.FC = () => {
   const exportXLSX = async () => {
     const rows = visible.map((b) => ({
       ID:           b.id,
-      User:         b.userName || "-",
+      User:         nameOf(b),
+      Phone:        b.phone || "-",
       Therapist:    b.therapistName,
       Service:      getServiceLabel(b.serviceId, b.serviceName),
       Date:         b.date || (b.startAt ? fmtBKK(b.startAt.toDate(), "YYYY-MM-DD") : "-"),
@@ -476,11 +498,41 @@ const BookingCard: React.FC<{
           </Box>
         )}
 
-        {/* customer */}
-        {b.userName && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <User size={12} color="rgba(15, 23, 42,0.45)" />
-            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.55)" }}>{b.userName}</Typography>
+        {/* customer name */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <User size={12} color="rgba(15, 23, 42,0.45)" />
+          <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.55)" }}>{nameOf(b)}</Typography>
+        </Box>
+
+        {/* 🆕 Round 28s230 — customer phone, tap-to-call (was missing entirely;
+            the operator could see an order but had no way to reach the guest). */}
+        {b.phone && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.3 }}>
+            <Phone size={12} color="#16a34a" weight="fill" />
+            <Typography
+              component="a"
+              href={`tel:${b.phone}`}
+              onClick={(e) => e.stopPropagation()}
+              sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, color: "#16a34a", textDecoration: "none" }}
+            >
+              {b.phone}
+            </Typography>
+          </Box>
+        )}
+
+        {/* 🆕 Round 28s230 — warn when the booked therapist was unavailable
+            (onBookingCreate flagged needsAdminReview). Call the guest before
+            confirming — don't blind-accept. */}
+        {b.needsAdminReview && (
+          <Box
+            sx={{
+              mt: 0.6, px: 0.8, py: 0.4, borderRadius: 1,
+              background: "rgba(180,0,10,0.08)", border: "1px solid rgba(180,0,10,0.25)",
+            }}
+          >
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "#B4000A" }}>
+              ⚠️ ต้องเช็คก่อนยืนยัน{b.reviewReason ? ` · ${b.reviewReason}` : " — หมอนวดอาจไม่ว่าง"}
+            </Typography>
           </Box>
         )}
 
@@ -763,7 +815,25 @@ const DetailPanel: React.FC<{
           }}
         >
           <Divider sx={{ "&:first-of-type": { display: "none" } }} />
-          <Row label="Customer"  value={b.userName || "—"} />
+          <Row label="Customer"  value={nameOf(b)} />
+          <Divider sx={{ opacity: 0.4 }} />
+          {/* 🆕 Round 28s230 — phone with tap-to-call so View can reach the guest. */}
+          <Row
+            label="Phone"
+            value={
+              b.phone ? (
+                <Typography
+                  component="a"
+                  href={`tel:${b.phone}`}
+                  sx={{ fontFamily: SANS, fontWeight: 700, color: "#16a34a", textDecoration: "none" }}
+                >
+                  {b.phone}
+                </Typography>
+              ) : (
+                "—"
+              )
+            }
+          />
           <Divider sx={{ opacity: 0.4 }} />
           <Row label="Date & Time" value={dateLabel} />
           <Divider sx={{ opacity: 0.4 }} />

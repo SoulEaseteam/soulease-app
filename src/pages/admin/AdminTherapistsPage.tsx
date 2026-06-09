@@ -34,11 +34,18 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  writeBatch,
+  serverTimestamp,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
 import { useNavigate } from "react-router-dom";
-import { computeStatus } from "@/utils/therapistStatus";
+// 🆕 Round 28s230 (FIX B) — use the SAME Bangkok-anchored engine the public
+//   site uses (calculateTherapistStatus), not the legacy device-clock
+//   computeStatus. Previously the admin grid and the live site could disagree
+//   ("I set her available but the site says closed").
+import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
+import type { Therapist } from "@/types/therapist";
 
 // ==========================================================
 // TYPES
@@ -100,11 +107,53 @@ const AdminTherapistsPage: React.FC = () => {
 
     timeoutRef.current[mapKey] = setTimeout(async () => {
       try {
-        await updateDoc(doc(db, "therapists", id), { [key]: value });
+        // 🆕 Round 28s230 — bump updatedAt so stale-state tooling stays honest.
+        await updateDoc(doc(db, "therapists", id), {
+          [key]: value,
+          updatedAt: serverTimestamp(),
+        });
       } catch (error) {
         console.error(`Failed updating ${key} for therapist ${id}:`, error);
       }
     }, 250);
+  };
+
+  // 🆕 Round 28s230 (FIX C) — live roster summary + one-tap relight, so View
+  //   can fix "everyone shows offline at night" from her phone in one action.
+  const summary = useMemo(() => {
+    const s = { available: 0, bookable: 0, resting: 0, holiday: 0, override: 0 };
+    for (const t of therapists) {
+      const cs = String(t.computedStatus);
+      if (cs in s) (s as Record<string, number>)[cs]++;
+      if (t.statusOverride && t.statusOverride !== "Auto") s.override++;
+    }
+    return s;
+  }, [therapists]);
+
+  const [batching, setBatching] = useState(false);
+  const rosterBatch = async (mode: "all-available" | "auto") => {
+    const label =
+      mode === "all-available"
+        ? "ตั้งหมอนวดทุกคน (ที่ไม่ใช่วันหยุด) เป็น 'ว่าง' คืนนี้?"
+        : "ล้าง override ทุกคนกลับเป็น Auto (ใช้เวลาทำงานปกติ)?";
+    if (!window.confirm(label)) return;
+    setBatching(true);
+    try {
+      const batch = writeBatch(db);
+      for (const t of therapists) {
+        if (mode === "all-available" && t.isHoliday) continue; // respect real days off
+        batch.update(doc(db, "therapists", t.id), {
+          statusOverride: mode === "all-available" ? "available" : "Auto",
+          updatedAt: serverTimestamp(),
+        });
+      }
+      await batch.commit();
+    } catch (e) {
+      console.error("[rosterBatch] failed", e);
+      window.alert("อัปเดตไม่สำเร็จ ลองใหม่อีกครั้ง");
+    } finally {
+      setBatching(false);
+    }
   };
 
   // ==========================================================
@@ -117,13 +166,9 @@ const AdminTherapistsPage: React.FC = () => {
         const list: TherapistRow[] = snap.docs.map((d) => {
           const data = d.data();
 
-          const computedStatus = computeStatus({
-            startTime: data.startTime,
-            endTime: data.endTime,
-            isBooked: data.isBooked,
-            isHoliday: data.isHoliday,
-            statusOverride: data.statusOverride,
-          });
+          const computedStatus = calculateTherapistStatus(
+            data as Therapist
+          ).status;
 
           return {
             id: d.id,
@@ -502,9 +547,51 @@ const AdminTherapistsPage: React.FC = () => {
         </Button>
       </Box>
 
-      <Typography variant="h5" fontWeight="bold" mb={3} color="#C62828">
+      <Typography variant="h5" fontWeight="bold" mb={2} color="#C62828">
         👑 Therapist Manager
       </Typography>
+
+      {/* 🆕 Round 28s230 (FIX C) — live roster summary + one-tap relight.
+          Counts use the same BKK engine as the public site (FIX B), so this
+          is exactly what guests see right now. */}
+      <Box
+        sx={{
+          mb: 2.5, p: 1.5, borderRadius: 2,
+          background: "#fff", border: "1px solid rgba(15,23,42,0.10)",
+          display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1.5,
+        }}
+      >
+        <Typography sx={{ fontWeight: 700, fontSize: 14, color: summary.available > 0 ? "#16a34a" : "#B4000A" }}>
+          🟢 ว่าง {summary.available}
+        </Typography>
+        <Typography sx={{ fontSize: 14, color: "rgba(15,23,42,0.7)" }}>🟠 จองได้ {summary.bookable}</Typography>
+        <Typography sx={{ fontSize: 14, color: "rgba(15,23,42,0.5)" }}>⚪ พัก {summary.resting}</Typography>
+        <Typography sx={{ fontSize: 14, color: "rgba(15,23,42,0.5)" }}>🏖️ หยุด {summary.holiday}</Typography>
+        {summary.override > 0 && (
+          <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#B4000A" }}>
+            ⚠️ override ค้าง {summary.override}
+          </Typography>
+        )}
+        <Box sx={{ flexGrow: 1 }} />
+        <Button
+          onClick={() => void rosterBatch("all-available")}
+          disabled={batching}
+          variant="contained"
+          size="small"
+          sx={{ background: "#16a34a", textTransform: "none", fontWeight: 700, borderRadius: 2, "&:hover": { background: "#15803d" } }}
+        >
+          คืนนี้เปิดทั้งร้าน
+        </Button>
+        <Button
+          onClick={() => void rosterBatch("auto")}
+          disabled={batching}
+          variant="outlined"
+          size="small"
+          sx={{ borderColor: "rgba(15,23,42,0.3)", color: "rgba(15,23,42,0.7)", textTransform: "none", fontWeight: 700, borderRadius: 2 }}
+        >
+          กลับ Auto
+        </Button>
+      </Box>
 
       <Stack direction="row" spacing={2} mb={3}>
         <TextField

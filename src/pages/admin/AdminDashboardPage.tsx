@@ -82,6 +82,12 @@ interface BookingRow {
   serviceId?: string;
   serviceName?: string;
   userName?: string;
+  // 🆕 Round 28s230 — real customer name/phone live on contactName (customer
+  //   flow) / customerName (admin add); userName was always blank.
+  contactName?: string;
+  customerName?: string;
+  phone?: string;
+  needsAdminReview?: boolean;
   locationName?: string;
   address?: string;
   servicePrice?: number;
@@ -217,7 +223,13 @@ const AdminDashboardPage: React.FC = () => {
 
   // ── confirm booking ──────────────────────────────────────────────
   const confirmBooking = async (id: string) => {
-    await updateDoc(doc(db, "bookings", id), { status: "confirmed" });
+    // 🆕 Round 28s230 (FIX D) — settle the hold on confirm so the scheduler
+    //   can't later mark the accepted order "expired".
+    await updateDoc(doc(db, "bookings", id), {
+      status: "confirmed",
+      holdState: "confirmed",
+      holdExpiresAt: null,
+    });
   };
 
   const todayLabel = dayjs().format("ddd D MMM YYYY");
@@ -333,9 +345,25 @@ const AdminDashboardPage: React.FC = () => {
                         <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.55)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {getServiceLabel(b.serviceId, b.serviceName)} · {dateLabel}
                         </Typography>
-                        {b.userName && (
-                          <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "rgba(15, 23, 42,0.40)", mt: 0.1 }}>
-                            👤 {b.userName}
+                        <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "rgba(15, 23, 42,0.40)", mt: 0.1 }}>
+                          👤 {b.userName || b.contactName || b.customerName || "—"}
+                          {b.phone && (
+                            <>
+                              {" · "}
+                              <Box
+                                component="a"
+                                href={`tel:${b.phone}`}
+                                onClick={(e) => e.stopPropagation()}
+                                sx={{ color: "#16a34a", fontWeight: 700, textDecoration: "none" }}
+                              >
+                                📞 {b.phone}
+                              </Box>
+                            </>
+                          )}
+                        </Typography>
+                        {b.needsAdminReview && (
+                          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "#B4000A", mt: 0.2 }}>
+                            ⚠️ เช็คก่อนยืนยัน — หมอนวดอาจไม่ว่าง
                           </Typography>
                         )}
                       </Box>
