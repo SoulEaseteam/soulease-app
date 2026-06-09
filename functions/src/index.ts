@@ -447,6 +447,12 @@ interface BookingDocLite {
   contactName?: string;
   phone?: string;
   address?: string;
+  // 🆕 Round 28s228 — fields needed for the clean admin layout.
+  locationName?: string;
+  meetingPoint?: string;
+  note?: string;
+  servicePrice?: number;
+  taxiFee?: number;
   totalPrice?: number;
   language?: string;
   payment?: string;
@@ -457,32 +463,67 @@ interface BookingDocLite {
   mapUrl?: string;
 }
 
+// 🆕 Round 28s228 (founder: "ให้บอทส่งแบบนี้") — clean, structured admin
+//   booking message. Plain text (sendTelegram has no parse_mode, so NO
+//   markdown escaping — backslashes would show literally). Dropped the
+//   confusing "Customer hold — confirm before it expires" line: orders now
+//   surface in the dashboard's Needs-Confirmation tab (Round 28s227), so the
+//   Telegram message is a clean notification, not an action prompt.
 const formatBookingForAdmin = (
   bookingId: string,
   b: BookingDocLite
 ): string => {
   const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
-  const lines = [
-    `🆕 NEW BOOKING · ${refCode}`,
+  const divider = "────────────────────";
+
+  // Address: prefer the POI/place name, append the street address if it
+  //   differs (so the operator sees both "Rosewood Bangkok" and the road).
+  const norm = (s?: string) => (s ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+  const place = b.locationName?.trim() || b.address?.trim() || "—";
+  const extra =
+    b.address?.trim() && norm(b.address) !== norm(b.locationName)
+      ? b.address.trim()
+      : "";
+  const addressLine = [place, extra].filter(Boolean).join(", ");
+
+  // Map link: explicit mapUrl, else a Places search on name/address.
+  const mapUrl =
+    b.mapUrl?.trim() ||
+    (place && place !== "—"
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+          place
+        )}`
+      : "");
+
+  const lines: (string | null)[] = [
+    `${b.date ?? "—"} ${b.time ?? "—"}`,
+    `🧾 Booking ID: ${refCode}`,
     "",
-    `👤 ${b.contactName ?? "—"}  📞 ${b.phone ?? "—"}`,
-    `🧖 ${b.therapistName ?? "—"} · ${b.serviceName ?? "—"} · ${b.duration ?? "?"} min`,
-    `📅 ${b.date ?? "—"}  🕐 ${b.time ?? "—"}`,
-    `📍 ${b.address ?? "—"}`,
-    // 🆕 Round 28s81 — map deep-link (was only in the old client
-    //   message; the trigger is now the single source so port it here).
-    ...(b.mapUrl ? [`🗺️ ${b.mapUrl}`] : []),
-    `💴 ฿${(b.totalPrice ?? 0).toLocaleString()}  💳 ${b.payment ?? "Cash"}`,
-    // 🆕 Round 28s81 — itemize the WeChat/Alipay service charge so the
-    //   total above is explainable at a glance (total already includes it).
-    ...(b.paymentFee && b.paymentFee > 0
-      ? [`   ↳ incl. service charge ฿${b.paymentFee.toLocaleString()}`]
-      : []),
-    `🌐 lang: ${b.language ?? "—"}`,
+    `Therapist: ${b.therapistName ?? "—"}`,
+    `Time: ${b.time ?? "—"}`,
+    divider,
+    `📍 Address: ${addressLine}`,
+    b.meetingPoint?.trim() ? `Meeting: 👉🏻 ${b.meetingPoint.trim()}` : null,
     "",
-    `⏳ Customer hold: 10 min — confirm before it expires.`,
+    `Service: ${b.serviceName ?? "—"}`,
+    `Duration: ${b.duration ?? "?"} min`,
+    `Price: ${(b.servicePrice ?? 0).toLocaleString()} ฿`,
+    "",
+    `🚖 Taxi: ${(b.taxiFee ?? 0).toLocaleString()} ฿`,
+    // Payment method kept (cash vs WeChat/Alipay changes the operation).
+    `💳 Payment: ${b.payment ?? "Cash"}`,
+    b.paymentFee && b.paymentFee > 0
+      ? `   ↳ incl. service charge ${b.paymentFee.toLocaleString()} ฿`
+      : null,
+    `💰 Total: ${(b.totalPrice ?? 0).toLocaleString()} ฿`,
+    "",
+    `📞 Phone: ${b.phone ?? "—"}`,
+    `👤 Name: ${b.contactName ?? "—"}`,
+    `Note: ${b.note?.trim() ? b.note.trim() : "-"}`,
+    divider,
+    `🗺️ Map: ${mapUrl || "—"}`,
   ];
-  return lines.join("\n");
+  return lines.filter((l) => l !== null).join("\n");
 };
 
 
