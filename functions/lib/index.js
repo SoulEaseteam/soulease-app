@@ -356,29 +356,101 @@ exports.onTherapistUpdate = (0, firestore_1.onDocumentUpdated)({
         v2_1.logger.error("[onTherapistUpdate] write failed", { therapistId, err });
     }
 });
+// 🆕 Round 28s229 — country from E.164 phone dial code (the markets that
+//   matter for SunRed). Longest code wins. Returns null when the number has
+//   no "+" prefix (can't tell) so we never show a wrong flag.
+const DIAL_TO_COUNTRY = [
+    ["+852", "HK", "🇭🇰"], ["+853", "MO", "🇲🇴"], ["+886", "TW", "🇹🇼"],
+    ["+971", "AE", "🇦🇪"], ["+972", "IL", "🇮🇱"], ["+855", "KH", "🇰🇭"],
+    ["+856", "LA", "🇱🇦"],
+    ["+66", "TH", "🇹🇭"], ["+86", "CN", "🇨🇳"], ["+82", "KR", "🇰🇷"],
+    ["+81", "JP", "🇯🇵"], ["+65", "SG", "🇸🇬"], ["+60", "MY", "🇲🇾"],
+    ["+91", "IN", "🇮🇳"], ["+61", "AU", "🇦🇺"], ["+44", "GB", "🇬🇧"],
+    ["+49", "DE", "🇩🇪"], ["+33", "FR", "🇫🇷"], ["+84", "VN", "🇻🇳"],
+    ["+62", "ID", "🇮🇩"], ["+63", "PH", "🇵🇭"], ["+95", "MM", "🇲🇲"],
+    ["+1", "US/CA", "🇺🇸"], ["+7", "RU/KZ", "🇷🇺"],
+];
+function countryFromPhone(phone) {
+    if (!phone)
+        return null;
+    const norm = phone.replace(/[^\d+]/g, "");
+    if (!norm.startsWith("+"))
+        return null;
+    for (const [dial, code, flag] of DIAL_TO_COUNTRY) {
+        if (norm.startsWith(dial))
+            return { code, flag };
+    }
+    return null;
+}
+// Build the "🌐 Source: …" line — channel · country · landing page.
+function attributionLine(b) {
+    const parts = [];
+    const src = b.attributionSource?.trim();
+    if (src && src !== "direct") {
+        parts.push(b.utmCampaign?.trim() ? `${src} (${b.utmCampaign.trim()})` : src);
+    }
+    else if (src === "direct") {
+        parts.push("direct");
+    }
+    const country = countryFromPhone(b.phone);
+    if (country)
+        parts.push(`${country.flag} ${country.code}`);
+    if (b.landingPath?.trim())
+        parts.push(b.landingPath.trim());
+    return parts.length ? `🌐 Source: ${parts.join(" · ")}` : null;
+}
+// 🆕 Round 28s228 (founder: "ให้บอทส่งแบบนี้") — clean, structured admin
+//   booking message. Plain text (sendTelegram has no parse_mode, so NO
+//   markdown escaping — backslashes would show literally). Dropped the
+//   confusing "Customer hold — confirm before it expires" line: orders now
+//   surface in the dashboard's Needs-Confirmation tab (Round 28s227), so the
+//   Telegram message is a clean notification, not an action prompt.
 const formatBookingForAdmin = (bookingId, b) => {
     const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
+    const divider = "────────────────────";
+    // Address: prefer the POI/place name, append the street address if it
+    //   differs (so the operator sees both "Rosewood Bangkok" and the road).
+    const norm = (s) => (s ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+    const place = b.locationName?.trim() || b.address?.trim() || "—";
+    const extra = b.address?.trim() && norm(b.address) !== norm(b.locationName)
+        ? b.address.trim()
+        : "";
+    const addressLine = [place, extra].filter(Boolean).join(", ");
+    // Map link: explicit mapUrl, else a Places search on name/address.
+    const mapUrl = b.mapUrl?.trim() ||
+        (place && place !== "—"
+            ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place)}`
+            : "");
     const lines = [
-        `🆕 NEW BOOKING · ${refCode}`,
+        `${b.date ?? "—"} ${b.time ?? "—"}`,
+        `🧾 Booking ID: ${refCode}`,
         "",
-        `👤 ${b.contactName ?? "—"}  📞 ${b.phone ?? "—"}`,
-        `🧖 ${b.therapistName ?? "—"} · ${b.serviceName ?? "—"} · ${b.duration ?? "?"} min`,
-        `📅 ${b.date ?? "—"}  🕐 ${b.time ?? "—"}`,
-        `📍 ${b.address ?? "—"}`,
-        // 🆕 Round 28s81 — map deep-link (was only in the old client
-        //   message; the trigger is now the single source so port it here).
-        ...(b.mapUrl ? [`🗺️ ${b.mapUrl}`] : []),
-        `💴 ฿${(b.totalPrice ?? 0).toLocaleString()}  💳 ${b.payment ?? "Cash"}`,
-        // 🆕 Round 28s81 — itemize the WeChat/Alipay service charge so the
-        //   total above is explainable at a glance (total already includes it).
-        ...(b.paymentFee && b.paymentFee > 0
-            ? [`   ↳ incl. service charge ฿${b.paymentFee.toLocaleString()}`]
-            : []),
-        `🌐 lang: ${b.language ?? "—"}`,
+        `Therapist: ${b.therapistName ?? "—"}`,
+        `Time: ${b.time ?? "—"}`,
+        divider,
+        `📍 Address: ${addressLine}`,
+        b.meetingPoint?.trim() ? `Meeting: 👉🏻 ${b.meetingPoint.trim()}` : null,
         "",
-        `⏳ Customer hold: 10 min — confirm before it expires.`,
+        `Service: ${b.serviceName ?? "—"}`,
+        `Duration: ${b.duration ?? "?"} min`,
+        `Price: ${(b.servicePrice ?? 0).toLocaleString()} ฿`,
+        "",
+        `🚖 Taxi: ${(b.taxiFee ?? 0).toLocaleString()} ฿`,
+        // Payment method kept (cash vs WeChat/Alipay changes the operation).
+        `💳 Payment: ${b.payment ?? "Cash"}`,
+        b.paymentFee && b.paymentFee > 0
+            ? `   ↳ incl. service charge ${b.paymentFee.toLocaleString()} ฿`
+            : null,
+        `💰 Total: ${(b.totalPrice ?? 0).toLocaleString()} ฿`,
+        "",
+        `📞 Phone: ${b.phone ?? "—"}`,
+        `👤 Name: ${b.contactName ?? "—"}`,
+        `Note: ${b.note?.trim() ? b.note.trim() : "-"}`,
+        attributionLine(b),
+        divider,
+        `🗺️ Map: ${mapUrl || "—"}`,
     ];
-    return lines.join("\n");
+    return lines.filter((l) => l !== null).join("\n");
 };
 const formatBookingForTherapist = (bookingId, b) => {
     const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;

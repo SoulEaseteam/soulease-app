@@ -461,6 +461,54 @@ interface BookingDocLite {
   holdState?: string;
   holdExpiresAt?: Timestamp;
   mapUrl?: string;
+  // 🆕 Round 28s229 — marketing attribution (captured client-side at first
+  //   touch). Surfaced on the admin message so View sees where each order
+  //   came from. Country is derived from the phone dial code below.
+  attributionSource?: string;
+  utmSource?: string;
+  utmCampaign?: string;
+  landingPath?: string;
+  referrerHost?: string;
+}
+
+// 🆕 Round 28s229 — country from E.164 phone dial code (the markets that
+//   matter for SunRed). Longest code wins. Returns null when the number has
+//   no "+" prefix (can't tell) so we never show a wrong flag.
+const DIAL_TO_COUNTRY: ReadonlyArray<readonly [string, string, string]> = [
+  ["+852", "HK", "🇭🇰"], ["+853", "MO", "🇲🇴"], ["+886", "TW", "🇹🇼"],
+  ["+971", "AE", "🇦🇪"], ["+972", "IL", "🇮🇱"], ["+855", "KH", "🇰🇭"],
+  ["+856", "LA", "🇱🇦"],
+  ["+66", "TH", "🇹🇭"], ["+86", "CN", "🇨🇳"], ["+82", "KR", "🇰🇷"],
+  ["+81", "JP", "🇯🇵"], ["+65", "SG", "🇸🇬"], ["+60", "MY", "🇲🇾"],
+  ["+91", "IN", "🇮🇳"], ["+61", "AU", "🇦🇺"], ["+44", "GB", "🇬🇧"],
+  ["+49", "DE", "🇩🇪"], ["+33", "FR", "🇫🇷"], ["+84", "VN", "🇻🇳"],
+  ["+62", "ID", "🇮🇩"], ["+63", "PH", "🇵🇭"], ["+95", "MM", "🇲🇲"],
+  ["+1", "US/CA", "🇺🇸"], ["+7", "RU/KZ", "🇷🇺"],
+];
+
+function countryFromPhone(phone?: string): { code: string; flag: string } | null {
+  if (!phone) return null;
+  const norm = phone.replace(/[^\d+]/g, "");
+  if (!norm.startsWith("+")) return null;
+  for (const [dial, code, flag] of DIAL_TO_COUNTRY) {
+    if (norm.startsWith(dial)) return { code, flag };
+  }
+  return null;
+}
+
+// Build the "🌐 Source: …" line — channel · country · landing page.
+function attributionLine(b: BookingDocLite): string | null {
+  const parts: string[] = [];
+  const src = b.attributionSource?.trim();
+  if (src && src !== "direct") {
+    parts.push(b.utmCampaign?.trim() ? `${src} (${b.utmCampaign.trim()})` : src);
+  } else if (src === "direct") {
+    parts.push("direct");
+  }
+  const country = countryFromPhone(b.phone);
+  if (country) parts.push(`${country.flag} ${country.code}`);
+  if (b.landingPath?.trim()) parts.push(b.landingPath.trim());
+  return parts.length ? `🌐 Source: ${parts.join(" · ")}` : null;
 }
 
 // 🆕 Round 28s228 (founder: "ให้บอทส่งแบบนี้") — clean, structured admin
@@ -520,6 +568,7 @@ const formatBookingForAdmin = (
     `📞 Phone: ${b.phone ?? "—"}`,
     `👤 Name: ${b.contactName ?? "—"}`,
     `Note: ${b.note?.trim() ? b.note.trim() : "-"}`,
+    attributionLine(b),
     divider,
     `🗺️ Map: ${mapUrl || "—"}`,
   ];

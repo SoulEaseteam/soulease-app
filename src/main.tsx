@@ -35,6 +35,12 @@ import DevPrivacyToggle from "@/components/common/DevPrivacyToggle";
 import "./app/i18n";
 import i18n from "i18next";
 
+// 🆕 Round 28s229 — Capture first-touch marketing attribution at boot,
+//   before the SPA router navigates and strips the URL query. Stored in
+//   sessionStorage; read at booking time and surfaced on the admin Telegram.
+import { captureAttribution } from "@/utils/attribution";
+captureAttribution();
+
 // GA
 const GA_ID = "G-XEMLVVPN4W";
 

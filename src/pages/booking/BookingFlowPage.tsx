@@ -72,6 +72,7 @@ import PaymentRoundedIcon from "@mui/icons-material/PaymentRounded";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import { isInappropriate } from "@/utils/moderate";
+import { getAttribution } from "@/utils/attribution";
 // Round 28s81 — client no longer sends the Telegram notification; the
 //   onBookingCreate Cloud Function trigger is the single source (see
 //   the submit handler). sendBookingNotification import removed.
@@ -846,6 +847,7 @@ const BookingFlowPage: React.FC = () => {
         "minute"
       );
 
+      const attribution = getAttribution();
       const ref = await addDoc(collection(db, "bookings"), {
         userId: user?.uid ?? null,
         therapistId: form.therapistId,
@@ -953,6 +955,16 @@ const BookingFlowPage: React.FC = () => {
         savingsRouting: Math.round(savingsRouting),
         savingsDiscount: Math.round(savingsDiscount),
         yearMonth: startDate.format("YYYY-MM"), // BKK-anchored (Round 28s4)
+        // 🆕 Round 28s229 — first-touch marketing attribution (which channel +
+        //   landing page the order came from). Surfaced on the admin Telegram
+        //   so View can see where each booking originated. Country is derived
+        //   from the phone dial code in the onBookingCreate function.
+        attributionSource: attribution?.source ?? null,
+        utmSource: attribution?.utmSource ?? null,
+        utmMedium: attribution?.utmMedium ?? null,
+        utmCampaign: attribution?.utmCampaign ?? null,
+        landingPath: attribution?.landingPath ?? null,
+        referrerHost: attribution?.referrerHost ?? null,
         createdAt: serverTimestamp(), // server clock — gracefully handles user device clock skew
       });
 
