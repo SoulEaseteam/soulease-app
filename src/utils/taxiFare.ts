@@ -49,6 +49,18 @@ import { getCachedRainStatus, type RainStatus } from "@/utils/weather";
 /** Beyond this requires admin quote + deposit confirm. */
 export const ADMIN_QUOTE_KM = 40;
 
+/**
+ * 🆕 Round 28s231 (FIX — taxi fare was too cheap) — Bangkok road-circuity
+ * factor. Straight-line (haversine) distance underestimates real driving
+ * distance; BKK roads (canals, one-ways, no grid) run ~1.4–1.6× the crow-flies
+ * distance. `directionsApi.ts` already applies 1.45 to ITS haversine fallback,
+ * but `estimateTaxiFare` below was charging on RAW straight-line distance —
+ * ~31% short. Apply the same factor so every fallback path matches the road
+ * estimate and the live Distance-Matrix road distance. Keep in sync with
+ * `BKK_ROAD_FACTOR` in directionsApi.ts.
+ */
+export const BKK_ROAD_FACTOR = 1.45;
+
 /** Legacy alias — kept at 0 so existing chips/logic that gate on
  *  "within free distance" never trigger after the migration. Old
  *  callers that imported this constant won't crash; the UI just
@@ -333,12 +345,12 @@ export function estimateTaxiFare(
   ) {
     return { distanceKm: 0, fare: 0 };
   }
-  const distanceKm = haversineKm(
-    therapistLat,
-    therapistLng,
-    customerLat,
-    customerLng
-  );
+  // 🆕 Round 28s231 — apply the BKK road-circuity factor so this fallback
+  //   path matches the road-distance estimate (directionsApi) instead of
+  //   charging on the too-short straight-line distance.
+  const distanceKm =
+    haversineKm(therapistLat, therapistLng, customerLat, customerLng) *
+    BKK_ROAD_FACTOR;
   const result = calcTaxiFare(distanceKm, rainOverride);
   return {
     distanceKm,
