@@ -1,0 +1,313 @@
+// src/pages/admin/AdminTonightPage.tsx
+//
+// 🆕 Round 28s232 (founder: "หน้าแอดมินให้เหมือนในวงการ") — TONIGHT OPS BOARD.
+//   The single screen to run the night's dispatch. Lists every accepted job
+//   (status === "confirmed", not yet done/cancelled), sorted by appointment
+//   time, and walks each one through the dispatch lifecycle with one tap:
+//
+//     รับงาน → 🚗 ส่งหมอนวด(enroute) → 📍 ถึงแล้ว(arrived)
+//            → ▶️ เริ่มนวด(in_session) → ✅ จบงาน(done → status:completed)
+//
+//   Each transition stamps a server timestamp. When a session starts we also
+//   stamp `expectedEndAt` (start + duration) — the board then highlights an
+//   OVERDUE job in red ("เกินเวลา · เช็กความปลอดภัย"), the foundation for the
+//   Phase-3 therapist-safety alerts. All writes are additive `dispatchState`/
+//   timestamp fields; the core `status` enum (used by Earnings/availability)
+//   is only touched on the final "จบงาน" → status:"completed".
+
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Box,
+  Typography,
+  Button,
+  CircularProgress,
+  Chip,
+} from "@mui/material";
+import {
+  collection,
+  onSnapshot,
+  doc,
+  updateDoc,
+  serverTimestamp,
+  Timestamp,
+} from "firebase/firestore";
+import { Phone, MapPin, ArrowLeft } from "phosphor-react";
+import { useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
+
+import { db } from "@/lib/firebase";
+import { nowBKK } from "@/utils/time";
+
+const SANS = '"Inter", system-ui, sans-serif';
+
+// ── dispatch lifecycle ────────────────────────────────────────────────
+type DispatchState =
+  | "assigned"
+  | "enroute"
+  | "arrived"
+  | "in_session"
+  | "done";
+
+const FLOW: {
+  key: DispatchState;
+  label: string;
+  next: DispatchState | null;
+  btn: string | null;
+  tone: string;
+}[] = [
+  { key: "assigned",   label: "รับงานแล้ว", next: "enroute",    btn: "🚗 ส่งหมอนวด", tone: "#64748b" },
+  { key: "enroute",    label: "กำลังเดินทาง", next: "arrived",   btn: "📍 ถึงแล้ว",   tone: "#2563eb" },
+  { key: "arrived",    label: "ถึงแล้ว",    next: "in_session", btn: "▶️ เริ่มนวด",  tone: "#a16207" },
+  { key: "in_session", label: "กำลังนวด",   next: "done",       btn: "✅ จบงาน",     tone: "#16a34a" },
+  { key: "done",       label: "เสร็จแล้ว",  next: null,         btn: null,            tone: "#16a34a" },
+];
+const STEP = (s?: string) => FLOW.find((f) => f.key === ((s as DispatchState) || "assigned")) ?? FLOW[0];
+
+interface Job {
+  id: string;
+  userName?: string;
+  contactName?: string;
+  customerName?: string;
+  phone?: string;
+  therapistName?: string;
+  serviceName?: string;
+  duration?: number;
+  date?: string;
+  time?: string;
+  startAt?: Timestamp;
+  address?: string;
+  locationName?: string;
+  meetingPoint?: string;
+  mapUrl?: string;
+  totalPrice?: number;
+  status: string;
+  dispatchState?: DispatchState;
+  sessionStartAt?: Timestamp;
+  expectedEndAt?: Timestamp;
+  needsAdminReview?: boolean;
+  reviewReason?: string;
+}
+
+const nameOf = (b: Job) => b.userName || b.contactName || b.customerName || "—";
+const OVERDUE_GRACE_MIN = 20;
+
+const AdminTonightPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [tick, setTick] = useState(0); // 1-min ticker for overdue recompute
+  const [busy, setBusy] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsub = onSnapshot(
+      collection(db, "bookings"),
+      (snap) => {
+        const list = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() } as Job))
+          // Active pipeline = accepted by admin, not finished/cancelled.
+          .filter((b) => b.status === "confirmed");
+        list.sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+        setJobs(list);
+        setLoading(false);
+      },
+      () => setLoading(false)
+    );
+    return () => unsub();
+  }, []);
+
+  // tick every minute so "เกินเวลา" recomputes without a refresh
+  useEffect(() => {
+    const id = window.setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const advance = async (b: Job) => {
+    const step = STEP(b.dispatchState);
+    if (!step.next) return;
+    setBusy(b.id);
+    try {
+      const patch: Record<string, unknown> = {
+        dispatchState: step.next,
+        [`${step.next}At`]: serverTimestamp(),
+      };
+      if (step.next === "in_session") {
+        const mins = b.duration ?? 60;
+        patch.expectedEndAt = Timestamp.fromDate(
+          nowBKK().add(mins, "minute").toDate()
+        );
+      }
+      if (step.next === "done") {
+        patch.status = "completed";
+        patch.sessionEndAt = serverTimestamp();
+      }
+      await updateDoc(doc(db, "bookings", b.id), patch);
+    } catch (e) {
+      console.error("[tonight] advance failed", e);
+      window.alert("อัปเดตไม่สำเร็จ ลองใหม่");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const counts = useMemo(() => {
+    const c = { total: jobs.length, enroute: 0, in_session: 0, overdue: 0 };
+    const now = nowBKK();
+    for (const b of jobs) {
+      const st = (b.dispatchState as DispatchState) || "assigned";
+      if (st === "enroute" || st === "arrived") c.enroute++;
+      if (st === "in_session") {
+        c.in_session++;
+        const exp = b.expectedEndAt?.toDate();
+        if (exp && now.isAfter(dayjs(exp).add(OVERDUE_GRACE_MIN, "minute"))) c.overdue++;
+      }
+    }
+    return c;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobs, tick]);
+
+  return (
+    <Box sx={{ p: 2, maxWidth: 760, mx: "auto" }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+        <Button
+          onClick={() => navigate("/admin/dashboard")}
+          startIcon={<ArrowLeft />}
+          size="small"
+          sx={{ color: "#C62828", textTransform: "none", fontWeight: 700 }}
+        >
+          Dashboard
+        </Button>
+      </Box>
+
+      <Typography sx={{ fontFamily: SANS, fontWeight: 800, fontSize: 22, color: "#1A2B2E", mb: 0.5 }}>
+        🌙 คืนนี้ — ห้องคุมงาน
+      </Typography>
+
+      {/* live counters */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
+        <Chip label={`งานคืนนี้ ${counts.total}`} sx={{ fontWeight: 700, background: "rgba(15,23,42,0.06)" }} />
+        <Chip label={`กำลังไป/ถึง ${counts.enroute}`} sx={{ fontWeight: 700, background: "rgba(37,99,235,0.10)", color: "#2563eb" }} />
+        <Chip label={`กำลังนวด ${counts.in_session}`} sx={{ fontWeight: 700, background: "rgba(22,163,74,0.12)", color: "#16a34a" }} />
+        {counts.overdue > 0 && (
+          <Chip label={`⚠️ เกินเวลา ${counts.overdue}`} sx={{ fontWeight: 800, background: "rgba(180,0,10,0.12)", color: "#B4000A" }} />
+        )}
+      </Box>
+
+      {loading ? (
+        <Box sx={{ textAlign: "center", mt: 6 }}>
+          <CircularProgress />
+        </Box>
+      ) : jobs.length === 0 ? (
+        <Box sx={{ textAlign: "center", mt: 6, color: "rgba(15,23,42,0.5)", fontFamily: SANS }}>
+          ยังไม่มีงานที่ยืนยันแล้วในคิว — งานที่กด Confirm จะมาโผล่ที่นี่
+        </Box>
+      ) : (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+          {jobs.map((b) => {
+            const step = STEP(b.dispatchState);
+            const inSession = step.key === "in_session";
+            const exp = b.expectedEndAt?.toDate();
+            const overdue =
+              inSession && exp && nowBKK().isAfter(dayjs(exp).add(OVERDUE_GRACE_MIN, "minute"));
+            const mapUrl =
+              b.mapUrl ||
+              (b.locationName || b.address
+                ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    b.locationName || b.address || ""
+                  )}`
+                : "");
+            return (
+              <Box
+                key={b.id}
+                sx={{
+                  borderRadius: 2,
+                  border: overdue ? "1.5px solid #B4000A" : "1px solid rgba(15,23,42,0.10)",
+                  background: overdue ? "rgba(180,0,10,0.04)" : "#fff",
+                  p: 1.5,
+                  borderLeft: `4px solid ${step.tone}`,
+                }}
+              >
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, mb: 0.5 }}>
+                  <Typography sx={{ fontFamily: SANS, fontWeight: 800, fontSize: 15, color: "#1A2B2E" }}>
+                    {b.time || "—"} · {b.therapistName || "—"}
+                  </Typography>
+                  <Chip size="small" label={step.label} sx={{ fontWeight: 700, color: step.tone, background: `${step.tone}1a` }} />
+                </Box>
+
+                <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(15,23,42,0.65)" }}>
+                  {b.serviceName || "—"} · {b.duration ?? "?"} min
+                  {typeof b.totalPrice === "number" ? ` · ฿${b.totalPrice.toLocaleString()}` : ""}
+                </Typography>
+
+                {/* customer + phone */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexWrap: "wrap", mt: 0.5 }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(15,23,42,0.65)" }}>👤 {nameOf(b)}</Typography>
+                  {b.phone && (
+                    <Box
+                      component="a"
+                      href={`tel:${b.phone}`}
+                      sx={{ display: "inline-flex", alignItems: "center", gap: 0.4, color: "#16a34a", fontWeight: 700, fontSize: 13, textDecoration: "none", fontFamily: SANS }}
+                    >
+                      <Phone size={13} weight="fill" /> {b.phone}
+                    </Box>
+                  )}
+                </Box>
+
+                {/* address + map */}
+                {(b.locationName || b.address) && (
+                  <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5, mt: 0.4 }}>
+                    <MapPin size={14} color="rgba(15,23,42,0.45)" style={{ flexShrink: 0, marginTop: 2 }} />
+                    <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: "rgba(15,23,42,0.6)", lineHeight: 1.4 }}>
+                      {b.locationName || b.address}
+                      {b.meetingPoint ? ` · พบ: ${b.meetingPoint}` : ""}
+                      {mapUrl && (
+                        <>
+                          {"  "}
+                          <Box component="a" href={mapUrl} target="_blank" rel="noopener noreferrer" sx={{ color: "#2563eb", fontWeight: 700, textDecoration: "none" }}>
+                            แผนที่
+                          </Box>
+                        </>
+                      )}
+                    </Typography>
+                  </Box>
+                )}
+
+                {b.needsAdminReview && (
+                  <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: "#B4000A", mt: 0.5 }}>
+                    ⚠️ เช็คก่อน — หมอนวดอาจไม่ว่าง{b.reviewReason ? ` · ${b.reviewReason}` : ""}
+                  </Typography>
+                )}
+
+                {/* session timing / overdue */}
+                {inSession && exp && (
+                  <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, mt: 0.5, color: overdue ? "#B4000A" : "rgba(15,23,42,0.6)" }}>
+                    {overdue
+                      ? `⚠️ เกินเวลา (คาดจบ ${dayjs(exp).format("HH:mm")}) · เช็กความปลอดภัยหมอนวด`
+                      : `⏱️ คาดจบ ${dayjs(exp).format("HH:mm")}`}
+                  </Typography>
+                )}
+
+                {/* advance button */}
+                {step.next && step.btn && (
+                  <Button
+                    onClick={() => void advance(b)}
+                    disabled={busy === b.id}
+                    fullWidth
+                    sx={{
+                      mt: 1, borderRadius: 2, textTransform: "none", fontWeight: 800,
+                      background: step.tone, color: "#fff",
+                      "&:hover": { background: step.tone, filter: "brightness(0.93)" },
+                    }}
+                  >
+                    {step.btn}
+                  </Button>
+                )}
+              </Box>
+            );
+          })}
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+export default AdminTonightPage;

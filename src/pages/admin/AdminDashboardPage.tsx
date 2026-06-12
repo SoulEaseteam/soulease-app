@@ -294,6 +294,23 @@ const AdminDashboardPage: React.FC = () => {
 
       <Box sx={{ px: { xs: 2, md: 3 }, pt: 2.5, display: "flex", flexDirection: "column", gap: 2.5 }}>
 
+        {/* 🆕 Round 28s232 — Tonight ops board entry (dispatch control room). */}
+        <Box
+          onClick={() => navigate("/admin/tonight")}
+          sx={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            px: 2, py: 1.5, borderRadius: 3, cursor: "pointer",
+            background: "linear-gradient(135deg,#1A2B2E,#3a1e14)", color: "#fff",
+            boxShadow: "0 6px 18px rgba(15,23,42,0.22)",
+          }}
+        >
+          <Box>
+            <Typography sx={{ fontFamily: SANS, fontWeight: 800, fontSize: 16 }}>🌙 คืนนี้ — ห้องคุมงาน</Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 12, opacity: 0.8 }}>ส่งงาน · ติดตามหมอนวด · เช็กเวลา</Typography>
+          </Box>
+          <Typography sx={{ fontSize: 22 }}>→</Typography>
+        </Box>
+
         {/* ── pending quick actions ────────────────────────────────────── */}
         {pendingBookings.length > 0 && (
           <motion.div {...fadeUp(0.05)}>

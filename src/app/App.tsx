@@ -137,6 +137,10 @@ const TherapistProfilePage = React.lazy(
 const AdminDashboardPage = React.lazy(
   () => import("@/pages/admin/AdminDashboardPage")
 );
+// 🆕 Round 28s232 — Tonight ops board (dispatch lifecycle control room).
+const AdminTonightPage = React.lazy(
+  () => import("@/pages/admin/AdminTonightPage")
+);
 const AdminTherapistsPage = React.lazy(
   () => import("@/pages/admin/AdminTherapistsPage")
 );
@@ -322,6 +326,7 @@ export default function App() {
         >
           <Route index element={<AdminDashboardPage />} />
           <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="tonight" element={<AdminTonightPage />} />
           <Route path="therapists" element={<AdminTherapistsPage />} />
           <Route
             path="therapists/:id"
