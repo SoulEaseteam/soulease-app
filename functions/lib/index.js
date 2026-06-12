@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -639,6 +639,63 @@ exports.releaseExpiredHolds = (0, scheduler_1.onSchedule)({
     });
     await batch.commit();
     v2_1.logger.info("[releaseExpiredHolds] released", { count });
+});
+// 🆕 Round 28s232 (Phase 3 — therapist safety) — alert the operator when an
+//   in-session outcall job runs past its expected end time. The Tonight ops
+//   board stamps `expectedEndAt` when "เริ่มนวด" is tapped and `dispatchState`
+//   = "in_session"; if 20+ min pass without "จบงาน", the therapist is alone in
+//   a guest's room past schedule — View gets a Telegram nudge to call and
+//   check safety. One alert per job (overdueAlertedAt guard).
+//   Single-field query (dispatchState ==) → no composite index needed.
+exports.alertOverdueSessions = (0, scheduler_1.onSchedule)({
+    schedule: "every 10 minutes",
+    region: "asia-southeast1",
+    timeZone: "Asia/Bangkok",
+    secrets: [TELEGRAM_BOT_TOKEN],
+}, async () => {
+    const db = (0, firestore_2.getFirestore)();
+    const graceMs = 20 * 60000;
+    const cutoffMs = Date.now() - graceMs;
+    const snap = await db
+        .collection("bookings")
+        .where("dispatchState", "==", "in_session")
+        .limit(100)
+        .get();
+    if (snap.empty) {
+        v2_1.logger.info("[alertOverdueSessions] no in-session jobs");
+        return;
+    }
+    const token = TELEGRAM_BOT_TOKEN.value();
+    if (!token) {
+        v2_1.logger.error("[alertOverdueSessions] missing token");
+        return;
+    }
+    let sent = 0;
+    for (const d of snap.docs) {
+        const b = d.data();
+        if (b.overdueAlertedAt)
+            continue; // already nudged
+        const exp = b.expectedEndAt;
+        if (!exp || exp.toMillis() > cutoffMs)
+            continue; // not overdue yet
+        const refCode = `SR-${d.id.slice(0, 8).toUpperCase()}`;
+        const text = [
+            `🚨 OVERDUE SESSION · ${refCode}`,
+            ``,
+            `🧖 ${b.therapistName ?? "—"} · ${b.serviceName ?? "—"}`,
+            `👤 ${b.contactName ?? b.customerName ?? "—"}  📞 ${b.phone ?? "—"}`,
+            `📍 ${b.address ?? "—"}`,
+            ``,
+            `เริ่มนวดแล้วและเลยเวลาคาดจบเกิน 20 นาที — ยังไม่กด "จบงาน".`,
+            `โทรเช็กความปลอดภัยหมอนวด 🙏`,
+        ].join("\n");
+        const r = await sendTelegram(token, TELEGRAM_CHAT_ID, text);
+        if (r.ok) {
+            await d.ref.update({ overdueAlertedAt: firestore_2.FieldValue.serverTimestamp() });
+            sent += 1;
+        }
+    }
+    v2_1.logger.info("[alertOverdueSessions] sent", { sent });
 });
 exports.recoverAbandonedBookings = (0, scheduler_1.onSchedule)({
     schedule: "every 5 minutes",
