@@ -392,6 +392,28 @@ upgraded from booking-CRUD toward industry dispatch ops:
   customers; the EditTherapistPage vs grid inconsistency (no Holiday toggle on
   EditTherapistPage; no overrideUntil auto-expiry).
 
+### 🆕 2026-06-14 — taxi fare model overhaul (28s233)
+
+Founder saw the SAME hotel quote different taxi fares (฿170 vs ฿142) for two
+practitioners → two fixes, all in `src/utils/taxiFare.ts` (tunable constants):
+- **`DISPATCH_BASE = {13.7548, 100.5656}`** (Huai Khwang/Ratchada) — taxi is now
+  measured from ONE base, not per-therapist coords (which were duplicated/
+  placeholder: Yuri & XingXing share 13.7656,100.5704). So same destination =
+  same fare regardless of who's assigned. BookingFlowPage passes DISPATCH_BASE
+  as origin to fetchDrivingDistance + estimateTaxiFare.
+- **`LIST_PRICE_MULTIPLIER = 2.5`** (was hardcoded ×2.0) — founder: "คิดให้แพงๆ
+  ขึ้น จะได้เอามาลด". Inflates the strike-through "standard rate" + promo % to
+  ~36% off; the fare actually CHARGED (round-trip ×1.6 + rain, via
+  baseFareBeforeRain) is unchanged.
+- (28s231 earlier same day: `BKK_ROAD_FACTOR = 1.45` now applied in
+  estimateTaxiFare too; directionsApi optional-chaining guards.)
+
+The 4 taxi knobs, all in taxiFare.ts: BKK_ROAD_FACTOR (real distance),
+ROUND_TRIP_MULTIPLIER 1.6 (charged), LIST_PRICE_MULTIPLIER 2.5 (display anchor),
+DISPATCH_BASE (origin). ⚠️ Therapist coords in data/therapists.ts are
+duplicated placeholders — if real per-therapist distances ever matter, fix
+those + revisit the single-base decision.
+
 ### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
 
 **Trigger.** View shared Google Search Console 3-month data:
