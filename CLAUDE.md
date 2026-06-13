@@ -358,6 +358,40 @@ secret_token validation; Google Maps key is a single point of failure on the
 booking location step (no no-map fallback); paid vs paymentStatus field
 mismatch; AdminBookingAddPage double-fires the Telegram notify.
 
+### 🆕 2026-06-09 (cont.) — taxi fare fix + admin "control room" (28s231-232)
+
+**28s231 — taxi fare was too cheap.** Two haversine paths disagreed:
+directionsApi.ts applied BKK_ROAD_FACTOR 1.45 to its fallback, but
+taxiFare.ts `estimateTaxiFare` charged on RAW straight-line distance (~31%
+short). Fix: apply 1.45 in estimateTaxiFare; guard directionsApi optional
+chaining (`maps?.DistanceMatrixService`, `duration_in_traffic?.value` — the
+latter threw → dropped to fallback). Fallback fares now ~+22%. Factor 1.45 is
+tunable in both files (keep in sync).
+
+**28s232 — Tonight ops board + dispatch lifecycle + therapist safety.** Admin
+upgraded from booking-CRUD toward industry dispatch ops:
+- New page `/admin/tonight` (AdminTonightPage) — single control screen: all
+  status=="confirmed" jobs sorted by time, live counters, one-tap dispatch
+  lifecycle. Linked from a "🌙 คืนนี้" button on the dashboard.
+- **Dispatch lifecycle = additive `dispatchState` field** (NOT the core
+  `status`): assigned → enroute → arrived → in_session → done. Each tap stamps
+  `<state>At`; starting stamps `expectedEndAt` (= start + duration). "จบงาน"
+  sets dispatchState:done + status:"completed". Core status semantics
+  (Earnings/availability) untouched until completion.
+- **Therapist safety:** `alertOverdueSessions` Cloud Function (every 10 min)
+  Telegrams View "🚨 OVERDUE SESSION" if an in_session job is 20+ min past
+  expectedEndAt and not yet alerted (overdueAlertedAt guard). The Tonight card
+  also shows red "เกินเวลา".
+
+**Admin maturity vs industry — STILL TODO (Phase 4, View asked for "ทั้งหมด"):**
+- Payout tracking (mark therapist paid per night/week; cash collected vs owed;
+  AdminEarningsPage CALCULATES 60/40 but doesn't TRACK payments — its own TODO).
+- Customer CRM (repeat/VIP/no-show count/blocklist-with-reason/LTV badges).
+- Audit-log viewer (auditLogs collection exists, no UI).
+- Also still open from the admin audit: no-show/deposit controls for new
+  customers; the EditTherapistPage vs grid inconsistency (no Holiday toggle on
+  EditTherapistPage; no overrideUntil auto-expiry).
+
 ### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
 
 **Trigger.** View shared Google Search Console 3-month data:
