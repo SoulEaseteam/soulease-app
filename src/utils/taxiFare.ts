@@ -195,8 +195,17 @@ export function grabCarRoundTripFare(distanceKm: number): number {
  * is kept as a thin alias so any caller still importing it doesn't
  * break — but new code should prefer `listPriceRoundTrip`.
  */
+/**
+ * 🆕 Round 28s233 (founder: "คิดให้แพงๆ ขึ้นหน่อย จะได้เอามาลด") — the
+ * strike-through "standard rate" anchor. Raising this only inflates the
+ * DISPLAYED before-discount price + the promo % shown; the fare the customer
+ * actually pays (round-trip × 1.6 + rain) is unchanged. At 2.5× the chip shows
+ * ~36% off; at 2.0× it was ~20%. Tunable — dial to taste vs believability.
+ */
+export const LIST_PRICE_MULTIPLIER = 2.5;
+
 export function listPriceRoundTrip(distanceKm: number): number {
-  return grabCarOneWayFare(distanceKm) * 2;
+  return Math.round(grabCarOneWayFare(distanceKm) * LIST_PRICE_MULTIPLIER);
 }
 
 /** @deprecated Round 28b24 — use `listPriceRoundTrip` instead. Same math. */
