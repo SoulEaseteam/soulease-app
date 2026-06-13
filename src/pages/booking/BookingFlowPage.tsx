@@ -87,6 +87,7 @@ import {
   estimateTaxiFare,
   calcTaxiFare,
   ADMIN_QUOTE_KM,
+  DISPATCH_BASE,
 } from "@/utils/taxiFare";
 // 🆕 Round 28b35 — Live therapist Holiday/override gate.
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
@@ -495,13 +496,16 @@ const BookingFlowPage: React.FC = () => {
       setRoute(null);
       return;
     }
-    if (!therapist?.lat || !therapist.lng) return;
+    if (!form.lat || !form.lng) return;
     if (!mapsReady) return; // wait for SDK
     let cancelled = false;
     void (async () => {
       try {
+        // 🆕 Round 28s233 — origin is the single DISPATCH_BASE (not the
+        //   per-therapist coord) so the same destination always quotes the
+        //   same fare regardless of which practitioner is assigned.
         const r = await fetchDrivingDistance(
-          { lat: therapist.lat!, lng: therapist.lng! },
+          { lat: DISPATCH_BASE.lat, lng: DISPATCH_BASE.lng },
           { lat: form.lat!, lng: form.lng! }
         );
         if (!cancelled) setRoute(r);
@@ -512,7 +516,7 @@ const BookingFlowPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [locationSet, mapsReady, therapist?.lat, therapist?.lng, form.lat, form.lng]);
+  }, [locationSet, mapsReady, form.lat, form.lng]);
 
   // Build the taxi result. If the real route has resolved, use that
   // distance. Otherwise we render with the haversine quick estimate
@@ -531,8 +535,9 @@ const BookingFlowPage: React.FC = () => {
     }
     return estimateTaxiFare(
       {
-        therapistLat: therapist?.lat,
-        therapistLng: therapist?.lng,
+        // 🆕 Round 28s233 — single dispatch base origin (see useEffect above).
+        therapistLat: DISPATCH_BASE.lat,
+        therapistLng: DISPATCH_BASE.lng,
         customerLat: form.lat,
         customerLng: form.lng,
         durationMin: form.duration ?? service?.duration ?? 60,

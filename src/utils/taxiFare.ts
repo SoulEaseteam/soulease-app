@@ -61,6 +61,18 @@ export const ADMIN_QUOTE_KM = 40;
  */
 export const BKK_ROAD_FACTOR = 1.45;
 
+/**
+ * 🆕 Round 28s233 (founder: "พิกัดเดียวกัน") — single dispatch base for the
+ * taxi estimate. Founder wants the SAME destination to always quote the SAME
+ * taxi fare, regardless of which practitioner is assigned (their stored
+ * coordinates were duplicated/placeholder, so per-therapist distance was
+ * meaningless and produced different fares for the same hotel). We now measure
+ * every trip from one operational base (the Huai Khwang / Ratchada cluster
+ * centre, where most of the roster is based). Tunable — set it to wherever the
+ * night's dispatch actually originates.
+ */
+export const DISPATCH_BASE = { lat: 13.7548, lng: 100.5656 } as const;
+
 /** Legacy alias — kept at 0 so existing chips/logic that gate on
  *  "within free distance" never trigger after the migration. Old
  *  callers that imported this constant won't crash; the UI just
