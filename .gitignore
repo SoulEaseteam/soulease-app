@@ -38,3 +38,4 @@ dist-electron/
 **/.DS_Store
 .firebase/
 Portfolio_View_Clean.docx
+.claude/worktrees/

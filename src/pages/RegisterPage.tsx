@@ -6,7 +6,7 @@ import {
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import BottomNav from '../components/layouts/BottomNavGlass';
 import '@fontsource/chonburi';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { auth, db } from "../lib/firebase";
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
@@ -17,6 +17,7 @@ const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
     const trimmedEmail = email.trim().toLowerCase();
@@ -34,6 +35,7 @@ const RegisterPage: React.FC = () => {
       return;
     }
 
+    setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
       const uid = userCredential.user.uid;
@@ -44,10 +46,14 @@ const RegisterPage: React.FC = () => {
         createdAt: serverTimestamp(),
       });
 
-      toast.success('🎉 Register successful!');
+      await sendEmailVerification(userCredential.user);
+
+      toast.success('Register successful! Please check your email to verify your account.');
       void navigate('/login');
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, 'Registration failed.'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -84,6 +90,7 @@ const RegisterPage: React.FC = () => {
           </Typography>
 
           <TextField
+            label="Email"
             placeholder="Email"
             type="email"
             value={email}
@@ -103,6 +110,7 @@ const RegisterPage: React.FC = () => {
           />
 
           <TextField
+            label="รหัสผ่าน"
             placeholder="Password"
             type="password"
             value={password}
@@ -121,6 +129,7 @@ const RegisterPage: React.FC = () => {
           />
 
           <TextField
+            label="ยืนยันรหัสผ่าน"
             placeholder="Confirm Password"
             type="password"
             value={confirmPassword}
@@ -138,8 +147,9 @@ const RegisterPage: React.FC = () => {
             }}
           />
 
-          <Button 
+          <Button
             onClick={handleRegister}
+            disabled={loading}
             sx={{
               mt: 1, py: 1.2, px: 5, fontWeight: 'bold', fontSize: 14,
               borderRadius: '20px', color: '#fff', textTransform: 'uppercase',
@@ -149,7 +159,7 @@ const RegisterPage: React.FC = () => {
               '&:hover': { background: '#FEAE96', transform: 'scale(1.05)' },
               transition: '0.2s ease-in-out'
             }}>
-            SIGN UP
+            {loading ? 'กำลังสมัคร...' : 'SIGN UP'}
           </Button>
 
           <Typography mt={3} fontSize={14}>

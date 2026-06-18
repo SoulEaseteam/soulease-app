@@ -52,7 +52,7 @@ import {
   where,
   orderBy,
   limit,
-  onSnapshot,
+  getDocs,
 } from "firebase/firestore";
 
 import services from "@/data/services";
@@ -134,33 +134,28 @@ const ServiceDetailPage: React.FC = () => {
       orderBy("rating", "desc"),
       limit(8),
     );
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const list: ReviewLite[] = [];
-        snap.forEach((d) => {
-          const data = d.data() as {
-            rating?: number;
-            reviewText?: string;
-            contactName?: string;
-          };
-          const text = (data.reviewText ?? "").trim();
-          if (!text) return;
-          list.push({
-            id: d.id,
-            rating: typeof data.rating === "number" ? data.rating : 5,
-            text,
-            author: data.contactName?.slice(0, 1) ?? "Guest",
-          });
+    getDocs(q).then((snap) => {
+      const list: ReviewLite[] = [];
+      snap.forEach((d) => {
+        const data = d.data() as {
+          rating?: number;
+          reviewText?: string;
+          contactName?: string;
+        };
+        const text = (data.reviewText ?? "").trim();
+        if (!text) return;
+        list.push({
+          id: d.id,
+          rating: typeof data.rating === "number" ? data.rating : 5,
+          text,
+          author: data.contactName?.slice(0, 1) ?? "Guest",
         });
-        setReviews(list);
-      },
-      (err) => {
-        // Reviews are non-essential; log and move on.
-        console.warn("[ServiceDetailPage] reviews error:", err);
-      },
-    );
-    return () => unsub();
+      });
+      setReviews(list);
+    }).catch((err) => {
+      // Reviews are non-essential; log and move on.
+      console.warn("[ServiceDetailPage] reviews error:", err);
+    });
   }, [service]);
 
   useDocumentMeta({
@@ -576,7 +571,7 @@ const ServiceDetailPage: React.FC = () => {
       <Box
         sx={{
           position: "fixed",
-          bottom: 70, // sit above BottomNavGlass
+          bottom: "calc(70px + env(safe-area-inset-bottom, 0px))", // sit above BottomNavGlass + respect notch
           left: 0,
           right: 0,
           display: "flex",

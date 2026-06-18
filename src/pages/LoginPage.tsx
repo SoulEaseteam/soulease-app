@@ -96,13 +96,11 @@ const LoginPage: React.FC = () => {
         severity: "success",
       });
 
-      setTimeout(() => {
-        // ถ้าถูก redirect มาจาก PrivateRoute ให้กลับหน้าเดิม
-        if (fromPath && role !== "admin") return navigate(fromPath, { replace: true });
-        if (role === "admin") return navigate("/admin/dashboard", { replace: true });
-        if (role === "therapist") return navigate("/therapist/profile", { replace: true });
-        return navigate("/profile", { replace: true });
-      }, 300);
+      // ถ้าถูก redirect มาจาก PrivateRoute ให้กลับหน้าเดิม (ไม่อนุญาตให้ non-admin เข้า /admin/*)
+      if (fromPath && role !== "admin" && !fromPath.startsWith("/admin")) return navigate(fromPath, { replace: true });
+      if (role === "admin") return navigate("/admin/dashboard", { replace: true });
+      if (role === "therapist") return navigate("/therapist/profile", { replace: true });
+      return navigate("/profile", { replace: true });
     } catch (err: unknown) {
       setSnackbar({
         open: true,
@@ -175,6 +173,7 @@ const LoginPage: React.FC = () => {
 
           {/* Inputs */}
           <TextField
+            label="Email"
             placeholder="Email"
             fullWidth
             size="small"
@@ -189,6 +188,7 @@ const LoginPage: React.FC = () => {
           />
 
           <TextField
+            label="รหัสผ่าน"
             placeholder="Password"
             type="password"
             fullWidth

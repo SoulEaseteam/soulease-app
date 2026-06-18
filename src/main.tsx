@@ -1,7 +1,7 @@
 // src/main.tsx
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, useLocation } from "react-router-dom";
 
 // MUI theme
 import { ThemeProvider, CssBaseline } from "@mui/material";
@@ -37,6 +37,19 @@ import i18n from "i18next";
 
 // GA
 const GA_ID = "G-XEMLVVPN4W";
+
+/** Fires a GA4 page_view event on every route change. */
+const GATracker: React.FC = () => {
+  const location = useLocation();
+  useEffect(() => {
+    if (typeof window.gtag === "function" && GA_ID) {
+      window.gtag("event", "page_view", {
+        page_path: location.pathname + location.search,
+      });
+    }
+  }, [location.pathname, location.search]);
+  return null;
+};
 
 function ensureGaLoaded() {
   if (!document.querySelector(`script[src*="gtag/js?id=${GA_ID}"]`)) {
@@ -89,6 +102,8 @@ const Root = () => {
         <ThemeProvider theme={theme}>
           <CssBaseline />
           <BrowserRouter>
+            {/* Sends GA4 page_view on every route change (send_page_view:false on config) */}
+            <GATracker />
             <GoogleMapsProvider>
               <AuthProvider>
                 <App />

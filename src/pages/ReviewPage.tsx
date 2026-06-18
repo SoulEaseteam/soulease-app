@@ -38,6 +38,14 @@ type TherapistLite = {
   reviews?: number;
 };
 
+interface TherapistDoc {
+  name?: string;
+  image?: string;
+  profileImage?: string;
+  rating?: number;
+  reviews?: number;
+}
+
 const ReviewPage: React.FC = () => {
   const { therapistId } = useParams<{ therapistId: string }>();
   const navigate = useNavigate();
@@ -59,7 +67,7 @@ const ReviewPage: React.FC = () => {
     const ref = doc(db, "therapists", therapistId);
     const unsub = onSnapshot(ref, (snap) => {
       if (snap.exists()) {
-        const data = snap.data() as any;
+        const data = snap.data() as TherapistDoc;
         setTherapist({
           id: snap.id,
           name: data.name ?? "Unknown",
