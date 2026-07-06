@@ -885,6 +885,27 @@ Founder: "Audit admin/bookings" → "ทั้งหมด". AdminBookingListPag
 **Admin now ALL on Ocean Study** except **AdminTherapistsPage** — the last
 page still on the old theme.
 
+### 🆕 2026-07-06 — AdminBookingListPage visual redesign (28s253)
+
+Founder: "ปรับการตกแต่งใหม่สวยๆ" — shown a mockup in an Artifact first (per
+the established "mockup before shipping" pattern for visual passes), approved
+it, then said "แก้ให้สวยขึ้น admin/bookings" to apply. Pure layout/hierarchy
+polish on top of the 28s252 fixes — no new colors, still Ocean Study only:
+
+- **Summary strip** — 3 stat cards (Needs action / In progress / Booked
+  value) above the fold. "Booked value" sums the currently-loaded (bounded)
+  set excluding cancelled — a real number, not a fabricated "tonight" figure
+  the page can't actually scope to (it has no date filter).
+- **Search + tabs merged** into one control row (was two stacked full-width
+  rows) — tighter, tabs don't eat a full desktop line anymore.
+- **Cards recede once terminal** — completed/cancelled sit on `panel2`
+  (duller), skip the hover lift, price renders in `dim` instead of `accent`.
+  Active (pending/confirmed) cards get a hover lift + deeper shadow so the
+  board reads as live, not a static list. This is the main "make it pretty"
+  move: attention now follows what's actionable, not history.
+- Corner radius 18→20px; shadows re-tuned to the ink-tinted elevation
+  pattern already used on Earnings/Dashboard cards.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
