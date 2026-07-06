@@ -86,6 +86,11 @@ import { getServiceLabel } from "@/utils/serviceCatalog";
 import { ExportToExcel } from "@/utils/exportTools";
 import { logAdminAction } from "@/utils/auditLog";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
+// 🆕 28s258 (founder: "ใน Booked value โชว์ยอดรายได้ร้านด้วย") — shop revenue
+//   uses the SAME shared commission split as Earnings/Reports (currently
+//   flat 60/40, see commission.ts) so this summary number can never drift
+//   from what those two pages say — the exact bug the 28s247 audit fixed.
+import { commissionBaseFor, therapistPayoutFor } from "@/utils/commission";
 import {
   MagnifyingGlass,
   CheckCircle,
@@ -142,6 +147,7 @@ interface Booking {
   address?: string;
   placeDetail?: string;
   servicePrice?: number;
+  discountAmount?: number;  // 🆕 28s258 — needed for the shared commission calc
   taxiFee?: number;
   totalPrice?: number;
   total?: number;
@@ -281,17 +287,24 @@ const AdminBookingListPage: React.FC = () => {
     return c;
   }, [faceted]);
 
-  // 🆕 28s253/254 — summary-strip figures over the faceted (date + therapist +
-  //   payment) set. "Booked value" is a real sum over what's actually loaded/
-  //   selected, never a fabricated "tonight" figure.
+  // 🆕 28s253/254/258 — summary-strip figures over the faceted (date +
+  //   therapist + payment) set. "Booked value" is a real sum over what's
+  //   actually loaded/selected, never a fabricated "tonight" figure.
+  //   `shopRevenue` = commission base (service price − discount) minus the
+  //   therapist payout — i.e. the shop's share of service revenue, same
+  //   definition AdminReportPage uses. It excludes taxi (pass-through) and
+  //   the per-booking overhead AdminEarningsPage subtracts for "net" — this
+  //   is a quick list-page figure, not a replacement for the Earnings page.
   const valueStats = useMemo(() => {
-    let totalValue = 0, activeCount = 0;
+    let totalValue = 0, activeCount = 0, shopRevenue = 0;
     for (const b of faceted) {
       if (b.status === "cancelled") continue;
       activeCount++;
       totalValue += b.totalPrice ?? b.total ?? 0;
+      const base = commissionBaseFor(b);
+      shopRevenue += base - therapistPayoutFor(b);
     }
-    return { totalValue, activeCount };
+    return { totalValue, activeCount, shopRevenue };
   }, [faceted]);
 
   // ── filtered list (facets + tab + search) ──────────────────────────
@@ -438,7 +451,9 @@ const AdminBookingListPage: React.FC = () => {
         {[
           { label: "Needs action",  value: String(counts.pending),               sub: "pending confirmation", rail: adminColor.accent },
           { label: "In progress",   value: String(counts.confirmed),             sub: "confirmed · dispatched", rail: adminColor.green },
-          { label: "Booked value",  value: formatTHB(valueStats.totalValue),     sub: `${valueStats.activeCount} bookings · excl. cancelled`, rail: adminColor.dim },
+          // 🆕 28s258 — shop-revenue line added under "Booked value" (same
+          //   commission split as Earnings/Reports — see commission.ts).
+          { label: "Booked value",  value: formatTHB(valueStats.totalValue),     sub: `${valueStats.activeCount} bookings · excl. cancelled`, extra: `Shop revenue ${formatTHB(valueStats.shopRevenue)}`, rail: adminColor.dim },
         ].map((s) => (
           <Box
             key={s.label}
@@ -462,6 +477,11 @@ const AdminBookingListPage: React.FC = () => {
             <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.dim, mt: 0.5, pl: 1.5 }}>
               {s.sub}
             </Typography>
+            {"extra" in s && s.extra && (
+              <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: adminColor.accent, mt: 0.35, pl: 1.5 }}>
+                {s.extra}
+              </Typography>
+            )}
           </Box>
         ))}
       </Box>
