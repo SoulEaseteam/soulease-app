@@ -19,7 +19,7 @@ import {
 // 🆕 Round 28s268 (founder: "ทำให้สวยขึ้น") — switched from MUI icons/emoji
 //   to phosphor-react, matching every other Ocean-Study-migrated admin page
 //   (AdminUsersPage, AdminBookingListPage, AdminEarningsPage, etc.).
-import { Eye, PencilSimple, Trash, Umbrella, Warning, Check, Clock, MagnifyingGlass, ArrowLeft } from "phosphor-react";
+import { Eye, PencilSimple, Trash, Umbrella, Warning, Check, Clock, MagnifyingGlass, ArrowLeft, UserPlus } from "phosphor-react";
 
 import {
   collection,
@@ -771,6 +771,22 @@ const AdminTherapistsPage: React.FC = () => {
           <ToggleButton value="resting">พัก</ToggleButton>
           <ToggleButton value="holiday">หยุด</ToggleButton>
         </ToggleButtonGroup>
+
+        {/* 🆕 Round 28s270 (founder: "ปุ่มเพิ่มพนักงาน") — the
+            /admin/add-therapist route already existed (AddTherapistPage)
+            but had no entry point from the roster page itself. */}
+        <Button
+          onClick={() => navigate("/admin/add-therapist")}
+          startIcon={<UserPlus size={16} weight="bold" />}
+          sx={{
+            background: `linear-gradient(180deg,#5A8998,${adminColor.accent})`,
+            color: "#fff", textTransform: "none", fontWeight: 700, borderRadius: "11px",
+            boxShadow: "0 3px 10px rgba(78,126,140,0.32)",
+            "&:hover": { background: adminColor.accentDeep },
+          }}
+        >
+          เพิ่มพนักงาน
+        </Button>
       </Box>
 
       {loading ? (
