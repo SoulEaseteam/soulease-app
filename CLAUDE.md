@@ -1234,6 +1234,18 @@ check something "ทั้งระบบ" (system-wide), grep the whole pattern
 just fixing the one instance shown — this round's audit surfaced 8 more
 broken spots the screenshot never showed.
 
+### 🆕 2026-07-06 — admin sidebar nav reordered by workflow (28s266)
+
+Founder: "เรียงแถบนี้อีกครั้ง" — the nav (`src/components/layouts/
+AdminLayout.tsx` `menuItems`) had accumulated in ship order across many
+rounds; New Booking and Bookings had drifted apart (split by Reports).
+Regrouped by actual usage, no route/behavior change:
+- **Daily ops:** Tonight, Dashboard, New Booking, Bookings
+- **Money & numbers:** Earnings, Reports, Analytics
+- **People:** Therapists, Users
+- **Content:** Reviews, Seed Reviews
+- **System:** Blocked, Audit Log, Pages, Settings
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
