@@ -785,6 +785,8 @@ need to differ, that's a bug — they must share this file.
 (the one with explicit founder direction in 28r27). If the real commission
 deal is actually flat 60/40, the fix flips — change the util, both pages
 follow. Flagged to founder; not yet confirmed which is the true deal.
+**→ RESOLVED in 28s248 below: founder confirmed flat 60/40. The shared util
+now returns 0.6 for every tier, so both pages compute flat 60/40.**
 
 **Also:** Reports restyled onto Ocean Study light tokens + `adminFigureSx`
 (it was the LAST admin page still on the old #1A2B2E/#B4000A brand theme).
@@ -802,6 +804,20 @@ requested).
 Reports use the post-discount base — a small internal inconsistency in the
 Earnings CSV only. Worth aligning to `therapistPayoutFor(b)` next time
 Earnings is touched.
+
+### 🆕 2026-07-06 — commission back to FLAT 60/40 (28s248)
+
+Founder answered the 28s247 open question ("แก้ที่ commission.ts"): the real
+deal is a **straight 60/40 for every service**, NOT the tier-aware 65/70%
+premium trialled in 28r27. Set all four tiers in
+`src/utils/commission.ts` `TIER_THERAPIST_PCT` to `0.6`. Because Earnings +
+Reports both read this one map, both payroll surfaces flipped together — no
+other edits. **The post-discount commission base (28r27) was KEPT** — founder
+only spoke to the percentage, not the discount rule. To re-enable tiers
+later: set `SR-HJ2200: 0.65`, `SR-B2B3200: 0.70` in that map, done.
+
+**So the current live payroll rule is:** every therapist earns 60% of
+(servicePrice − discount) on every non-excluded booking; shop keeps 40%.
 
 ### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
 
