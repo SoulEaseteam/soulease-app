@@ -5,6 +5,26 @@
 //   • Taxi fee auto-calculated from haversine distance (editable override)
 //   • mapUrl built from placeName for clean Telegram link
 //   • No working-hour / holiday checks (admin privilege)
+//
+// 🆕 Round 28s249 (audit "แก้ทั้งหมด") — six fixes:
+//   1. DOUBLE TELEGRAM removed. The `onBookingCreate` Cloud Function already
+//      alerts the admin group on every booking doc; this page ALSO called the
+//      deprecated `notifyBooking` callable → two messages per booking. The
+//      client call is gone. It also now writes `contactName` (the field the
+//      server formatter reads) so the customer name is no longer blank in
+//      that alert — it used to write only `customerName`.
+//   2. `Field` / `Section` hoisted to module scope. They were declared inside
+//      the component, so every keystroke created new component identities →
+//      React remounted the whole form → inputs lost focus mid-typing.
+//   3. Taxi origin now the shared `DISPATCH_BASE` (matches the customer flow
+//      since 28s233), not the old Sukhumvit constant + unreliable per-therapist
+//      placeholder coords — so admin & customer quote the same fare.
+//   4. A manual taxi override is no longer wiped when duration/therapist
+//      changes; it only resets when a NEW location is picked.
+//   5. WeChat / Alipay payment options + the 5%+฿200 transfer surcharge
+//      (paymentSurcharge.ts) now apply here too, and write `paymentFee`.
+//   6. Restyled onto the shared Ocean Study admin tokens (was still the old
+//      customer red/cream theme — inconsistent now the rest of admin is light).
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -24,8 +44,8 @@ import { useNavigate } from "react-router-dom";
 import { db } from "@/lib/firebase";
 import services from "@/data/services";
 import { priceForDuration, durationsFor, formatTHB } from "@/utils/servicePricing";
-import { sendBookingNotification } from "@/utils/telegram";
-import { estimateTaxiFare } from "@/utils/taxiFare";
+import { estimateTaxiFare, DISPATCH_BASE } from "@/utils/taxiFare";
+import { paymentSurcharge, hasPaymentSurcharge } from "@/utils/paymentSurcharge";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
 import {
   ArrowLeft, CalendarBlank, Clock, User, Phone, MapPin,
@@ -33,30 +53,29 @@ import {
 } from "phosphor-react";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
-import { brand, fonts } from "@/theme";
+import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 
 // ── constants ─────────────────────────────────────────────────────────
-const SERIF = fonts.brandSerif ?? '"Fraunces", serif';
-const SANS  = fonts.body       ?? '"Inter", sans-serif';
-
-// SunRed base location (Sukhumvit area) — used when therapist lat/lng unknown
-const BASE_LAT = 13.736717;
-const BASE_LNG = 100.523186;
+const SERIF = adminFont.serif;
+const SANS  = adminFont.sans;
 
 const PAYMENT_OPTIONS = [
   { value: "cash",      label: "เงินสด (Cash)" },
   { value: "transfer",  label: "โอนเงิน (Transfer)" },
   { value: "card",      label: "บัตร (Card)" },
   { value: "promptpay", label: "PromptPay" },
+  // 🆕 28s249 — carry the 5% + ฿200 transfer surcharge (paymentSurcharge.ts)
+  { value: "wechat",    label: "WeChat Pay (+ค่าธรรมเนียม)" },
+  { value: "alipay",    label: "Alipay (+ค่าธรรมเนียม)" },
 ];
 
 const MENU_PROPS = {
   PaperProps: {
     sx: {
-      background: "#fff",
-      boxShadow: "0 8px 24px rgba(0,0,0,0.14)",
+      background: adminColor.panel,
+      boxShadow: "0 8px 24px rgba(31,41,51,0.14)",
       borderRadius: "14px",
-      border: "1px solid rgba(15, 23, 42,0.08)",
+      border: `1px solid ${adminColor.line}`,
       mt: 0.5,
     },
   },
@@ -64,16 +83,76 @@ const MENU_PROPS = {
 
 type Errors = Partial<Record<string, string>>;
 
-// 🆕 Round 28r23 (founder 2026-05-07) — `fadeUp` neutered.
-//   Founder feedback: "เอฟเฟต เด้งกิน ทำงานลำบาก" — every section
-//   was wrapped in motion.div animating opacity 0→1 with stagger
-//   delays, so opening the page felt like a slot machine. Each
-//   <Section> tap or refresh re-played the animation, which is
-//   especially annoying when admin is doing 5+ bookings in a row.
-//   Returning empty props makes motion.div a no-op (renders the
-//   children inline, no animation, no delay) without ripping the
-//   wrappers out of the JSX.
+// 🆕 Round 28r23 — `fadeUp` neutered (founder: "เอฟเฟต เด้งกิน ทำงานลำบาก").
+//   Returns empty props so the motion.div wrappers render inline with no
+//   animation instead of ripping them out of the JSX.
 const fadeUp = (_delay = 0) => ({});
+
+// ── shared input styling (module scope — not a component, no remount risk) ─
+const inputSx = (hasError?: string) => ({
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    fontFamily: SANS,
+    fontSize: 14,
+    background: adminColor.panel,
+    "& fieldset": { borderColor: hasError ? adminColor.red : adminColor.line2 },
+    "&:hover fieldset": { borderColor: hasError ? adminColor.red : adminColor.accent },
+    "&.Mui-focused fieldset": { borderColor: adminColor.accent },
+  },
+});
+
+// 🆕 Round 28s249 — Field / Section MUST live at module scope. Declared inside
+//   the component they got a fresh identity on every render, so React
+//   remounted the whole form on each keystroke and inputs lost focus.
+const Field: React.FC<{ label: string; icon: React.ReactNode; children: React.ReactNode; error?: string }> = ({
+  label, icon, children, error,
+}) => (
+  <Box>
+    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.75 }}>
+      <Box sx={{ color: adminColor.accent, lineHeight: 0 }}>{icon}</Box>
+      <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700,
+        textTransform: "uppercase", letterSpacing: "0.06em", color: adminColor.muted }}>
+        {label}
+      </Typography>
+    </Box>
+    {children}
+    {error && (
+      <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.red, mt: 0.5 }}>
+        {error}
+      </Typography>
+    )}
+  </Box>
+);
+
+const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+  <Box
+    sx={{
+      mb: 2,
+      padding: "16px 18px 18px",
+      borderRadius: "16px",
+      background: adminColor.panel,
+      border: `1px solid ${adminColor.line}`,
+      boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 6px 16px rgba(31,41,51,0.06)",
+    }}
+  >
+    <Typography
+      sx={{
+        fontFamily: SANS,
+        fontSize: 10,
+        letterSpacing: "0.18em",
+        textTransform: "uppercase",
+        color: adminColor.muted,
+        fontWeight: 700,
+        mb: 1.25,
+      }}
+    >
+      {title}
+    </Typography>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.75 }}>
+      {children}
+    </Box>
+  </Box>
+);
 
 // ── location state ────────────────────────────────────────────────────
 interface LocationState {
@@ -164,10 +243,10 @@ const AdminBookingAddPage: React.FC = () => {
 
     ac.addListener("place_changed", () => {
       const place = ac.getPlace();
-      const loc   = place.geometry?.location;
-      if (!loc) return;
-      const lat       = loc.lat() as number;
-      const lng       = loc.lng() as number;
+      const gloc  = place.geometry?.location;
+      if (!gloc) return;
+      const lat       = gloc.lat() as number;
+      const lng       = gloc.lng() as number;
       const placeName = place.name ?? place.formatted_address ?? "";
       const address   = place.formatted_address ?? place.name ?? "";
       const mapUrl    = buildMapUrl(placeName, lat, lng);
@@ -179,25 +258,30 @@ const AdminBookingAddPage: React.FC = () => {
     if (!document.getElementById(styleId)) {
       const s = document.createElement("style");
       s.id = styleId;
-      s.textContent = ".pac-container{z-index:9999!important;border-radius:12px;font-family:'Inter',sans-serif;box-shadow:0 12px 40px rgba(15, 23, 42,0.18);}";
+      s.textContent = ".pac-container{z-index:9999!important;border-radius:12px;font-family:'Inter',sans-serif;box-shadow:0 12px 40px rgba(31,41,51,0.18);}";
       document.head.appendChild(s);
     }
   }, [ready]);
 
-  // ── auto taxi when location or therapist changes ──────────────────
+  // ── auto taxi from the SHARED dispatch base (28s249 fix #3) ─────────
+  //   Fare depends only on the customer location + duration now — the origin
+  //   is a fixed base, same as the customer flow (28s233).
   useEffect(() => {
     if (loc.lat == null || loc.lng == null) { setTaxiAuto(0); return; }
-    const therapist = therapists.find((t) => t.id === therapistId);
     const { fare } = estimateTaxiFare({
-      therapistLat: therapist?.lat ?? BASE_LAT,
-      therapistLng: therapist?.lng ?? BASE_LNG,
+      therapistLat: DISPATCH_BASE.lat,
+      therapistLng: DISPATCH_BASE.lng,
       customerLat:  loc.lat,
       customerLng:  loc.lng,
       durationMin:  duration,
     });
     setTaxiAuto(fare);
-    setTaxiFee(""); // reset override so auto value is used
-  }, [loc.lat, loc.lng, therapistId, therapists, duration]);
+  }, [loc.lat, loc.lng, duration]);
+
+  // ── reset a manual override ONLY when a new location is picked (fix #4) ─
+  useEffect(() => {
+    setTaxiFee("");
+  }, [loc.lat, loc.lng]);
 
   // effective taxi = override if set, else auto
   const effectiveTaxi = taxiFee !== "" ? Number(taxiFee) : taxiAuto;
@@ -212,7 +296,9 @@ const AdminBookingAddPage: React.FC = () => {
     () => (selectedService ? priceForDuration(selectedService, duration) : 0),
     [selectedService, duration]
   );
-  const total = servicePrice + effectiveTaxi;
+  const baseTotal = servicePrice + effectiveTaxi;
+  const paymentFee = paymentSurcharge(payment, baseTotal); // 0 unless WeChat/Alipay
+  const total = baseTotal + paymentFee;
 
   const handleServiceChange = (id: string) => {
     setServiceId(id);
@@ -251,7 +337,10 @@ const AdminBookingAddPage: React.FC = () => {
 
       const ref = await addDoc(collection(db, "bookings"), {
         userId:        null,
+        // 🆕 28s249 — write BOTH: dashboards read customerName; the server
+        //   Telegram formatter (formatBookingForAdmin) reads contactName.
         customerName:  customerName.trim(),
+        contactName:   customerName.trim(),
         therapistId,
         therapistName: therapist?.name ?? "",
         serviceName:   selectedService.name,
@@ -259,6 +348,7 @@ const AdminBookingAddPage: React.FC = () => {
         servicePrice,
         duration,
         taxiFee:       effectiveTaxi,
+        paymentFee,
         totalPrice:    total,
         date,
         time,
@@ -281,34 +371,10 @@ const AdminBookingAddPage: React.FC = () => {
       const bookingCode = `SR-${ref.id.slice(0, 8).toUpperCase()}`;
       await updateDoc(doc(db, "bookings", ref.id), { bookingCode });
 
-      void sendBookingNotification({
-        bookingId:      ref.id,
-        therapistName:  therapist?.name ?? null,
-        serviceName:    selectedService.name,
-        duration,
-        date,
-        time,
-        startAt,
-        locationName:   loc.placeName || null,
-        address:        loc.address || loc.placeName,
-        addressDetails: "",
-        contactName:    customerName.trim(),
-        phone:          phone.trim(),
-        note:           note.trim(),
-        servicePrice,
-        taxiFee:        effectiveTaxi,
-        total,
-        distanceKm:     0,
-        payment,
-        language:       "th",
-        addons:         [],
-        rainTier:       "none",
-        meetingPoint:   null,
-        locationType:   null,
-        mapUrl,
-        lat:            loc.lat,
-        lng:            loc.lng,
-      });
+      // 🆕 28s249 — NO client-side Telegram send. `onBookingCreate` (Cloud
+      //   Function) already notifies the admin group + therapist on every
+      //   booking doc; the old `sendBookingNotification` call here was a
+      //   duplicate.
 
       toast.success(`สร้างการจองเรียบร้อย · ${bookingCode}`);
       void navigate("/admin/bookings");
@@ -320,95 +386,20 @@ const AdminBookingAddPage: React.FC = () => {
     }
   };
 
-  // ── UI helpers ────────────────────────────────────────────────────
-  const Field = ({
-    label, icon, children, error,
-  }: { label: string; icon: React.ReactNode; children: React.ReactNode; error?: string }) => (
-    <Box>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.75 }}>
-        <Box sx={{ color: brand.red, lineHeight: 0 }}>{icon}</Box>
-        <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700,
-          textTransform: "uppercase", letterSpacing: "0.06em", color: "rgba(15, 23, 42,0.55)" }}>
-          {label}
-        </Typography>
-      </Box>
-      {children}
-      {error && (
-        <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "#c0392b", mt: 0.5 }}>
-          {error}
-        </Typography>
-      )}
-    </Box>
-  );
-
-  const inputSx = (hasError?: string) => ({
-    "& .MuiOutlinedInput-root": {
-      borderRadius: "12px",
-      fontFamily: SANS,
-      fontSize: 14,
-      background: "#fff",
-      "& fieldset": { borderColor: hasError ? "#c0392b" : "rgba(15, 23, 42,0.12)" },
-      "&:hover fieldset": { borderColor: hasError ? "#c0392b" : brand.red },
-      "&.Mui-focused fieldset": { borderColor: brand.red },
-    },
-  });
-
-  // 🆕 Round 28r23 — Section now renders as an editorial card,
-  //   matching SectionCard / Confirm Order page on the customer
-  //   side. Eyebrow style title, soft pink icon disc spot, white
-  //   card surface. No more `borderLeft: red` admin-form vibe.
-  const Section = ({ title, children }: { title: string; delay?: number; children: React.ReactNode }) => (
-    <Box
-      sx={{
-        mb: 2,
-        padding: "16px 18px 18px",
-        borderRadius: "16px",
-        background: "rgba(255, 255, 255, 0.85)",
-        border: "1px solid rgba(255, 255, 255, 0.7)",
-        boxShadow: "0 4px 14px rgba(15, 23, 42, 0.06)",
-      }}
-    >
-      <Typography
-        sx={{
-          fontFamily: SANS,
-          fontSize: 10,
-          letterSpacing: "0.18em",
-          textTransform: "uppercase",
-          color: brand.accent,
-          fontWeight: 700,
-          mb: 1.25,
-        }}
-      >
-        {title}
-      </Typography>
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.75 }}>
-        {children}
-      </Box>
-    </Box>
-  );
-
   return (
     <Box
       sx={{
-        // 🆕 Round 28r23 — page background swapped from flat #F4F6F5
-        //   to the same warm-cream gradient customer pages use, so
-        //   the editorial hero card sits inside a familiar surface.
         minHeight: "100vh",
-        background: "#F4F6F5",
+        background: adminColor.bg,
         pb: 6,
       }}
     >
 
-      {/* 🆕 Round 28r23 — Editorial header replaces the dark
-          burgundy hero. Reads as the white sticky header used by
-          BookingFlowPage / SelectLocationPage so admin shifts
-          between flows without visual whiplash. */}
+      {/* ── header ── */}
       <Box
         sx={{
-          background: "rgba(255, 255, 255, 0.92)",
-          backdropFilter: "blur(20px) saturate(180%)",
-          WebkitBackdropFilter: "blur(20px) saturate(180%)",
-          borderBottom: "1px solid rgba(184, 92, 60, 0.12)",
+          background: adminColor.bg,
+          borderBottom: `1px solid ${adminColor.line}`,
           px: { xs: 2, sm: 3 },
           pt: 2.5,
           pb: 2,
@@ -421,9 +412,9 @@ const AdminBookingAddPage: React.FC = () => {
           size="small"
           onClick={() => navigate(-1)}
           sx={{
-            color: "rgba(15, 23, 42,0.55)",
+            color: adminColor.muted,
             mt: 0.25,
-            "&:hover": { color: brand.red },
+            "&:hover": { color: adminColor.accent },
           }}
         >
           <ArrowLeft size={20} />
@@ -431,11 +422,11 @@ const AdminBookingAddPage: React.FC = () => {
         <Box sx={{ flex: 1 }}>
           <Typography
             sx={{
-              fontFamily: SERIF,
+              fontFamily: SANS,
               fontSize: 10,
               letterSpacing: "0.18em",
               textTransform: "uppercase",
-              color: brand.accent,
+              color: adminColor.muted,
               fontWeight: 700,
               mb: 0.25,
             }}
@@ -447,10 +438,10 @@ const AdminBookingAddPage: React.FC = () => {
               fontFamily: SERIF,
               fontSize: 22,
               fontWeight: 600,
-              color: "#1A2B2E",
+              color: adminColor.text,
               lineHeight: 1.15,
               letterSpacing: "-0.01em",
-              "& em": { fontStyle: "italic", color: brand.red },
+              "& em": { fontStyle: "italic", color: adminColor.accent },
             }}
           >
             จองให้ <em>ลูกค้า</em>
@@ -459,7 +450,7 @@ const AdminBookingAddPage: React.FC = () => {
             sx={{
               fontFamily: SANS,
               fontSize: 11.5,
-              color: "rgba(15, 23, 42,0.6)",
+              color: adminColor.muted,
               mt: 0.5,
               lineHeight: 1.4,
             }}
@@ -473,7 +464,7 @@ const AdminBookingAddPage: React.FC = () => {
       <Box sx={{ maxWidth: 640, mx: "auto", px: { xs: 2, sm: 3 }, pt: 3 }}>
 
         {/* 1 — นักบำบัด + บริการ */}
-        <Section title="นักบำบัด & บริการ" delay={0.05}>
+        <Section title="นักบำบัด & บริการ">
           <Field label="นักบำบัด" icon={<User size={14} />} error={errors.therapist}>
             <FormControl fullWidth size="small" sx={inputSx(errors.therapist)}>
               <Select
@@ -483,7 +474,7 @@ const AdminBookingAddPage: React.FC = () => {
                 MenuProps={MENU_PROPS}
                 renderValue={(v) =>
                   v ? therapists.find((t) => t.id === v)?.name ?? v : (
-                    <span style={{ color: "rgba(15, 23, 42,0.35)" }}>เลือกนักบำบัด</span>
+                    <span style={{ color: adminColor.dim }}>เลือกนักบำบัด</span>
                   )
                 }
               >
@@ -503,7 +494,7 @@ const AdminBookingAddPage: React.FC = () => {
                 MenuProps={MENU_PROPS}
                 renderValue={(v) =>
                   v ? services.find((s) => s.id === v)?.name ?? v : (
-                    <span style={{ color: "rgba(15, 23, 42,0.35)" }}>เลือกบริการ</span>
+                    <span style={{ color: adminColor.dim }}>เลือกบริการ</span>
                   )
                 }
               >
@@ -519,7 +510,7 @@ const AdminBookingAddPage: React.FC = () => {
             <Box>
               <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700,
                 textTransform: "uppercase", letterSpacing: "0.06em",
-                color: "rgba(15, 23, 42,0.55)", mb: 0.75 }}>
+                color: adminColor.muted, mb: 0.75 }}>
                 ระยะเวลา
               </Typography>
               <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
@@ -530,16 +521,16 @@ const AdminBookingAddPage: React.FC = () => {
                       key={d}
                       onClick={() => setDuration(d)}
                       style={{
-                        border: `1.5px solid ${active ? brand.red : "rgba(15, 23, 42,0.15)"}`,
+                        border: `1.5px solid ${active ? adminColor.accent : adminColor.line2}`,
                         borderRadius: 12,
                         padding: "8px 18px",
                         cursor: "pointer",
-                        background: active ? "#B4000A" : "#fff",
-                        color: active ? "#fff" : "#1a0805",
+                        background: active ? adminColor.accent : adminColor.panel,
+                        color: active ? "#fff" : adminColor.text,
                         fontFamily: SANS,
                         fontSize: 13,
                         fontWeight: 600,
-                        boxShadow: active ? "0 3px 10px rgba(15, 23, 42, 0.25)" : "none",
+                        boxShadow: active ? "0 3px 10px rgba(78,126,140,0.25)" : "none",
                       }}
                     >
                       {d} นาที · {formatTHB(priceForDuration(selectedService, d))}
@@ -552,7 +543,7 @@ const AdminBookingAddPage: React.FC = () => {
         </Section>
 
         {/* 2 — ลูกค้า */}
-        <Section title="ข้อมูลลูกค้า" delay={0.1}>
+        <Section title="ข้อมูลลูกค้า">
           <Field label="ชื่อลูกค้า" icon={<User size={14} />} error={errors.customerName}>
             <TextField
               fullWidth size="small" placeholder="ชื่อ-นามสกุล"
@@ -572,7 +563,7 @@ const AdminBookingAddPage: React.FC = () => {
         </Section>
 
         {/* 3 — วันเวลา */}
-        <Section title="วันและเวลา" delay={0.14}>
+        <Section title="วันและเวลา">
           <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
             <Field label="วันที่" icon={<CalendarBlank size={14} />} error={errors.date}>
               <TextField
@@ -595,14 +586,14 @@ const AdminBookingAddPage: React.FC = () => {
           {date && time && (
             <Box sx={{
               p: 1.25, borderRadius: "10px",
-              background: "rgba(180,0,10,0.06)",
-              border: "1px solid rgba(15, 23, 42, 0.12)",
+              background: adminColor.panel2,
+              border: `1px solid ${adminColor.line}`,
             }}>
-              <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "#1a0805", fontWeight: 600 }}>
+              <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.text, fontWeight: 600 }}>
                 {dayjs(`${date} ${time}`).format("dddd D MMMM YYYY")} · {time} น.
               </Typography>
               {duration > 0 && (
-                <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.55)", mt: 0.25 }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted, mt: 0.25 }}>
                   เสร็จ {dayjs(`${date} ${time}`).add(duration, "minute").format("HH:mm")} น.
                 </Typography>
               )}
@@ -611,16 +602,16 @@ const AdminBookingAddPage: React.FC = () => {
         </Section>
 
         {/* 4 — สถานที่ — Google Places */}
-        <Section title="สถานที่" delay={0.17}>
+        <Section title="สถานที่">
           <Field label="ค้นหาสถานที่" icon={<MagnifyingGlass size={14} />} error={errors.address}>
             {/* Google Autocomplete input */}
             <Box sx={{
               position: "relative",
               "& .MuiOutlinedInput-root": {
-                borderRadius: "12px", fontFamily: SANS, fontSize: 14, background: "#fff",
-                "& fieldset": { borderColor: errors.address ? "#c0392b" : "rgba(15, 23, 42,0.12)" },
-                "&:hover fieldset": { borderColor: errors.address ? "#c0392b" : brand.red },
-                "&.Mui-focused fieldset": { borderColor: brand.red },
+                borderRadius: "12px", fontFamily: SANS, fontSize: 14, background: adminColor.panel,
+                "& fieldset": { borderColor: errors.address ? adminColor.red : adminColor.line2 },
+                "&:hover fieldset": { borderColor: errors.address ? adminColor.red : adminColor.accent },
+                "&.Mui-focused fieldset": { borderColor: adminColor.accent },
               },
             }}>
               <TextField
@@ -631,7 +622,7 @@ const AdminBookingAddPage: React.FC = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <MagnifyingGlass size={16} color="rgba(15, 23, 42,0.4)" />
+                      <MagnifyingGlass size={16} color={adminColor.dim} />
                     </InputAdornment>
                   ),
                 }}
@@ -643,19 +634,18 @@ const AdminBookingAddPage: React.FC = () => {
           {loc.address && (
             <Box sx={{
               p: 1.5, borderRadius: "12px",
-              background: "#fff",
-              border: "1px solid rgba(15, 23, 42,0.08)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              background: adminColor.panel2,
+              border: `1px solid ${adminColor.line}`,
             }}>
               <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
-                <MapPin size={16} color={brand.red} weight="fill" style={{ marginTop: 2, flexShrink: 0 }} />
+                <MapPin size={16} color={adminColor.accent} weight="fill" style={{ marginTop: 2, flexShrink: 0 }} />
                 <Box>
                   {loc.placeName && (
-                    <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: "#1a0805" }}>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: adminColor.text }}>
                       {loc.placeName}
                     </Typography>
                   )}
-                  <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.55)", mt: 0.25 }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted, mt: 0.25 }}>
                     {loc.address}
                   </Typography>
                   {loc.mapUrl && (
@@ -664,7 +654,7 @@ const AdminBookingAddPage: React.FC = () => {
                       href={loc.mapUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      sx={{ fontFamily: SANS, fontSize: 11, color: brand.red, mt: 0.5, display: "block" }}
+                      sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.accent, mt: 0.5, display: "block" }}
                     >
                       ดูใน Google Maps →
                     </Typography>
@@ -676,7 +666,7 @@ const AdminBookingAddPage: React.FC = () => {
         </Section>
 
         {/* 5 — การชำระเงิน & ค่า Taxi */}
-        <Section title="การชำระเงิน & ค่า Taxi" delay={0.20}>
+        <Section title="การชำระเงิน & ค่า Taxi">
           <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
             <Field label="ช่องทางชำระ" icon={<CurrencyCircleDollar size={14} />}>
               <FormControl size="small" sx={{ ...inputSx(), minWidth: 200 }}>
@@ -704,7 +694,7 @@ const AdminBookingAddPage: React.FC = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(15, 23, 42,0.4)" }}>฿</Typography>
+                      <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.dim }}>฿</Typography>
                     </InputAdornment>
                   ),
                 }}
@@ -713,14 +703,21 @@ const AdminBookingAddPage: React.FC = () => {
           </Box>
 
           {taxiAuto > 0 && taxiFee === "" && (
-            <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "rgba(15, 23, 42,0.45)", mt: -0.5 }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: -0.5 }}>
               คำนวณจากระยะทาง · แก้ไขได้ในช่องด้านบน
+            </Typography>
+          )}
+
+          {/* 🆕 28s249 — surcharge notice */}
+          {hasPaymentSurcharge(payment) && paymentFee > 0 && (
+            <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.amber, fontWeight: 600 }}>
+              + ค่าธรรมเนียมโอน {formatTHB(paymentFee)} (5% + ฿200) สำหรับ WeChat/Alipay
             </Typography>
           )}
         </Section>
 
         {/* 6 — หมายเหตุ */}
-        <Section title="หมายเหตุ (ถ้ามี)" delay={0.23}>
+        <Section title="หมายเหตุ (ถ้ามี)">
           <Field label="Note" icon={<Note size={14} />}>
             <TextField
               fullWidth size="small" multiline rows={2}
@@ -735,13 +732,13 @@ const AdminBookingAddPage: React.FC = () => {
         {/* ── Summary card ── */}
         <motion.div {...fadeUp(0.26)}>
           <Box sx={{
-            borderRadius: "18px", background: "#fff",
-            border: "1px solid rgba(15, 23, 42,0.08)",
-            boxShadow: "0 2px 10px rgba(15, 23, 42,0.06)",
+            borderRadius: "18px", background: adminColor.panel,
+            border: `1px solid ${adminColor.line}`,
+            boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 6px 16px rgba(31,41,51,0.07)",
             overflow: "hidden", mb: 3,
           }}>
-            <Box sx={{ background: "linear-gradient(135deg,#1a0805,#3c1010)", px: 2.5, py: 1.75 }}>
-              <Typography sx={{ fontFamily: SERIF, fontSize: 16, fontWeight: 700, color: "#fff" }}>
+            <Box sx={{ background: adminColor.panel2, borderBottom: `1px solid ${adminColor.line}`, px: 2.5, py: 1.75 }}>
+              <Typography sx={{ fontFamily: SERIF, fontSize: 16, fontWeight: 600, color: adminColor.text }}>
                 สรุปคำสั่ง
               </Typography>
             </Box>
@@ -756,31 +753,32 @@ const AdminBookingAddPage: React.FC = () => {
                 <Box key={i} sx={{
                   display: "flex", justifyContent: "space-between", gap: 2,
                   py: 0.85,
-                  borderBottom: i < 4 ? "1px solid rgba(15, 23, 42,0.06)" : "none",
+                  borderBottom: i < 4 ? `1px solid ${adminColor.line}` : "none",
                 }}>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.45)", fontWeight: 600 }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted, fontWeight: 600 }}>
                     {r.label}
                   </Typography>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "#1a0805",
+                  <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.text,
                     textAlign: "right", maxWidth: "60%", wordBreak: "break-word" }}>
                     {r.value}
                   </Typography>
                 </Box>
               ))}
 
-              <Box sx={{ mt: 1.5, pt: 1.5, borderTop: "1px solid rgba(15, 23, 42,0.10)" }}>
+              <Box sx={{ mt: 1.5, pt: 1.5, borderTop: `1px solid ${adminColor.line2}` }}>
                 {[
                   { label: "ค่าบริการ", value: formatTHB(servicePrice) },
                   { label: "ค่า Taxi",  value: formatTHB(effectiveTaxi) },
+                  ...(paymentFee > 0 ? [{ label: "ค่าธรรมเนียมโอน", value: formatTHB(paymentFee) }] : []),
                 ].map((r, i) => (
                   <Box key={i} sx={{ display: "flex", justifyContent: "space-between", py: 0.6 }}>
-                    <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(15, 23, 42,0.55)" }}>{r.label}</Typography>
-                    <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "#1a0805", fontWeight: 600 }}>{r.value}</Typography>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.muted }}>{r.label}</Typography>
+                    <Typography sx={{ ...adminFigureSx, fontSize: 13, fontWeight: 600, color: adminColor.text }}>{r.value}</Typography>
                   </Box>
                 ))}
-                <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.75, pt: 1, borderTop: "1px solid rgba(15, 23, 42,0.10)" }}>
-                  <Typography sx={{ fontFamily: SERIF, fontSize: 16, fontWeight: 700, color: "#1a0805" }}>รวมทั้งหมด</Typography>
-                  <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: brand.red }}>{formatTHB(total)}</Typography>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", mt: 0.75, pt: 1, borderTop: `1px solid ${adminColor.line2}` }}>
+                  <Typography sx={{ fontFamily: SERIF, fontSize: 16, fontWeight: 600, color: adminColor.text }}>รวมทั้งหมด</Typography>
+                  <Typography sx={{ ...adminFigureSx, fontSize: 20, color: adminColor.accent }}>{formatTHB(total)}</Typography>
                 </Box>
               </Box>
             </Box>
@@ -795,15 +793,15 @@ const AdminBookingAddPage: React.FC = () => {
             style={{
               width: "100%", padding: "17px 24px", borderRadius: 16, border: "none",
               cursor: saving ? "not-allowed" : "pointer",
-              background: saving ? "rgba(15, 23, 42,0.12)" : "#B4000A",
-              color: saving ? "rgba(15, 23, 42,0.4)" : "#fff",
+              background: saving ? adminColor.line2 : adminColor.accent,
+              color: saving ? adminColor.dim : "#fff",
               fontFamily: SANS, fontSize: 16, fontWeight: 700, letterSpacing: "0.02em",
-              boxShadow: saving ? "none" : "0 6px 22px rgba(15, 23, 42, 0.35)",
+              boxShadow: saving ? "none" : "0 6px 22px rgba(78,126,140,0.35)",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
             }}
           >
             {saving
-              ? <><CircularProgress size={18} sx={{ color: "rgba(15, 23, 42,0.4)" }} /> กำลังบันทึก…</>
+              ? <><CircularProgress size={18} sx={{ color: adminColor.dim }} /> กำลังบันทึก…</>
               : "✅ สร้างการจอง"}
           </motion.button>
         </motion.div>
