@@ -761,6 +761,48 @@ Applied to every money/count figure on Earnings + Dashboard.
 serif (Hoefler) is for page/card TITLES only, never figures.** The token's
 doc comment in adminTheme.ts repeats this.
 
+### 🆕 2026-07-06 — /admin/reports audit: payroll math fix + restyle (28s247)
+
+Founder: "Audit admin/reports" → "ทั้งหมด" (fix everything found).
+
+**The real bug (financial):** AdminReportPage — the page View uses to PAY
+therapists — disagreed with AdminEarningsPage on how much each is owed.
+Reports used a **flat 60/40 over the full service price**; Earnings (since
+28r27) uses a **tier-aware split (65% Gentleman's, 70% B2B) on the
+post-discount price**. Premium therapists were under-paid (~฿320/job on a
+฿3,200 B2B booking), discounted bookings over-paid. Reports also only
+excluded the exact string `"cancelled"`, so refunds / no-shows / US-spelling
+`"canceled"` / still-`pending` bookings all counted as payable jobs.
+
+**Fix — shared source of truth:** new `src/utils/commission.ts` holds the
+tier map, `PAYROLL_EXCLUDED_STATUSES`, `therapistPctFor`, `commissionBaseFor`,
+`therapistPayoutFor`. BOTH AdminEarningsPage and AdminReportPage import it
+now (Earnings' local copies removed — identical values, zero behaviour
+change) so they can **never drift again**. If the two payroll surfaces ever
+need to differ, that's a bug — they must share this file.
+
+**Business assumption made:** aligned Reports TO Earnings' tier-aware model
+(the one with explicit founder direction in 28r27). If the real commission
+deal is actually flat 60/40, the fix flips — change the util, both pages
+follow. Flagged to founder; not yet confirmed which is the true deal.
+
+**Also:** Reports restyled onto Ocean Study light tokens + `adminFigureSx`
+(it was the LAST admin page still on the old #1A2B2E/#B4000A brand theme).
+Fixed a stray `#7c3aed` purple (in no palette) and a near-white invisible
+button shadow. Dropped the now-wrong "60%/40%" labels → "จ่ายนวด"/"ส่วนร้าน".
+Excel export gained Discount + Pay columns.
+
+**Admin pages now ALL on Ocean Study light + shared tokens:** Layout,
+Dashboard, Tonight, Earnings, Users, Audit Log, Analytics, Reports. Still
+old-theme: AdminBookingListPage, AdminTherapistsPage (tracked, not yet
+requested).
+
+**Known minor (not fixed, out of scope):** AdminEarningsPage's CSV per-row
+`therapistShare` uses `service * tPct` (full price), while its aggregate +
+Reports use the post-discount base — a small internal inconsistency in the
+Earnings CSV only. Worth aligning to `therapistPayoutFor(b)` next time
+Earnings is touched.
+
 ### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
 
 **Trigger.** View shared Google Search Console 3-month data:
