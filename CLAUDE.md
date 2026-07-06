@@ -640,6 +640,27 @@ strings ("Completion Rate", "By Therapist", "By Service", "Recent
 Activity", "Orders Today") are live — same pattern as every other visual
 change this session.
 
+### 🆕 2026-06-14 (cont.) — AdminAnalyticsPage restyled onto Ocean Study (28s242)
+
+Founder: one word, "analytics" — the last admin page still on the
+original pre-redesign light theme (hardcoded `#1A2B2E`/`#B4000A`/
+`rgba(15,23,42,...)` literals), flagged as pending since 28s234/236/237.
+
+Same technique as the AdminEarningsPage restyle (28s236): swapped every
+hardcoded hex/rgba literal for the matching `adminColor` token (text,
+accent, muted, dim, line, panel, panel3) across the page body + all 6
+shared subcomponents (`Card`, `Eyebrow`, `FunnelStep`, `ModeRow`,
+`RankedList`, `Legend`). Added a custom `sx` override to the range
+`ToggleButtonGroup` so its selected state uses `adminColor.accent`
+instead of MUI's default blue. No layout or data-logic changes — funnel
+steps, per-mode conversion, top-services ranking, concierge-channel
+ranking, and the daily trend chart are unchanged, just recolored.
+
+**All 4 shared-token pages are now consistent:** AdminLayout, Dashboard,
+Tonight, Earnings, Users (CRM), Audit Log, Analytics. **Still on the old
+theme** (not requested yet): AdminBookingListPage, AdminTherapistsPage,
+AdminReportPage.
+
 ### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
 
 **Trigger.** View shared Google Search Console 3-month data:
