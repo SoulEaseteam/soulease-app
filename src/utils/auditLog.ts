@@ -19,6 +19,15 @@ export type AuditAction =
   //   payout.mark_* which is the therapist-side weekly payout).
   | "booking.mark_paid"
   | "booking.mark_unpaid"
+  // 🆕 Round 28s259 — DetailPanel gained: a full status-override dropdown
+  //   (for transitions Confirm/Complete/Cancel don't already cover, e.g.
+  //   un-cancelling, marking refunded/no_show), an edit-details form
+  //   (customer name/phone/date/time/location/therapist), and a "mark
+  //   reviewed" dismiss action (the old "Awaiting review" badge had no
+  //   onClick at all — looked like a button, did nothing).
+  | "booking.status_change"
+  | "booking.edit_details"
+  | "booking.mark_reviewed"
   | "payout.mark_paid"
   | "payout.mark_unpaid"
   | "therapist.relight_all"

@@ -67,6 +67,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   collection,
   onSnapshot,
+  getDocs,
   updateDoc,
   doc,
   query,
@@ -105,6 +106,9 @@ import {
   CaretDown,
   CaretUp,
   X,
+  PencilSimple,
+  FloppyDisk,
+  Star,
 } from "phosphor-react";
 
 // Cap the realtime window. Pending/confirmed bookings are always recent; older
@@ -220,6 +224,16 @@ const AdminBookingListPage: React.FC = () => {
   const [toast,       setToast]       = useState<{ msg: string; ok: boolean } | null>(null);
   const [detailId,    setDetailId]    = useState<string | null>(null);
 
+  // 🆕 28s259 (founder audit: "เพิ่มการเปลี่ยนหมอนวดได้ภายในใบจองเดิม") —
+  //   the full therapist roster, so the detail drawer's edit form can offer
+  //   reassignment. Same fetch pattern as AdminBookingAddPage.
+  const [therapists, setTherapists] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    void getDocs(collection(db, "therapists")).then((snap) => {
+      setTherapists(snap.docs.map((d) => ({ id: d.id, name: (d.data() as any).name || d.id })));
+    });
+  }, []);
+
   // 🆕 28s254 — date range + therapist + payment filters.
   const [dateMode,        setDateMode]        = useState<DateMode>("all");
   const [customStart,     setCustomStart]     = useState<Dayjs>(() => dayjs().subtract(30, "day").startOf("day"));
@@ -330,11 +344,15 @@ const AdminBookingListPage: React.FC = () => {
           ? { status, ...(reason ? { cancelReason: reason } : {}) }
           : { status };
       await updateDoc(doc(db, "bookings", id), patch);
+      // 🆕 28s259 — "booking.status_change" is the fallback for transitions
+      //   that don't have a dedicated action name (un-cancelling, marking
+      //   refunded/no_show, reverting completed→confirmed, etc.) — the
+      //   Status dropdown in DetailPanel can reach any of these now.
       const auditAction =
         status === "confirmed" ? "booking.confirm" :
         status === "cancelled" ? "booking.cancel" :
-        status === "completed" ? "booking.complete" : null;
-      if (auditAction) void logAdminAction(auditAction, { bookingId: id, ...(reason ? { reason } : {}) });
+        status === "completed" ? "booking.complete" : "booking.status_change";
+      void logAdminAction(auditAction, { bookingId: id, status, ...(reason ? { reason } : {}) });
       setToast({ msg: `Booking ${status}`, ok: true });
     } catch {
       setToast({ msg: "Update failed", ok: false });
@@ -349,6 +367,44 @@ const AdminBookingListPage: React.FC = () => {
     );
     if (reason === null) return; // operator backed out
     void setStatus(id, "cancelled", reason.trim() || undefined);
+  };
+
+  // 🆕 28s259 — full status-override dropdown (DetailPanel). Routes through
+  //   cancelBooking so choosing "Cancelled" still prompts for a reason,
+  //   same as the dedicated Cancel button.
+  const changeStatus = (id: string, newStatus: string) => {
+    if (newStatus === "cancelled") { cancelBooking(id); return; }
+    void setStatus(id, newStatus);
+  };
+
+  // 🆕 28s259 (fix: "Awaiting review ใช้ไม่ได้") — the badge had no onClick
+  //   at all; it's not even a real gate on anything downstream (grepped:
+  //   `reviewed` is never written anywhere in this codebase, only ever
+  //   read). Turning it into a real action lets the operator dismiss it.
+  const markReviewed = async (id: string) => {
+    try {
+      await updateDoc(doc(db, "bookings", id), { reviewed: true });
+      void logAdminAction("booking.mark_reviewed", { bookingId: id });
+      setToast({ msg: "Marked reviewed", ok: true });
+    } catch {
+      setToast({ msg: "Update failed", ok: false });
+    }
+  };
+
+  // 🆕 28s259 (fix: "full detail แก้ไขไม่ได้" + "เปลี่ยนหมอนวดได้") — the
+  //   detail drawer's edit form (customer/phone/date/time/location/
+  //   therapist) writes through here. Deliberately excludes service/
+  //   duration/price — those drive `servicePrice`/`taxiFee`, already
+  //   computed and settled; editing them needs a real recalculation flow,
+  //   not a quick text-field patch.
+  const saveDetails = async (id: string, patch: Record<string, unknown>) => {
+    try {
+      await updateDoc(doc(db, "bookings", id), patch);
+      void logAdminAction("booking.edit_details", { bookingId: id });
+      setToast({ msg: "Details saved", ok: true });
+    } catch {
+      setToast({ msg: "Save failed", ok: false });
+    }
   };
 
   // 🆕 28s252 (fix #3 + #5) — keep `paid` and `paymentStatus` in sync + audit.
@@ -680,6 +736,7 @@ const AdminBookingListPage: React.FC = () => {
                   onTogglePaid={() => togglePaid(b.id, isPaid(b))}
                   onSaveNote={(note) => saveNote(b.id, note)}
                   onViewDetail={() => setDetailId(b.id)}
+                  onMarkReviewed={() => markReviewed(b.id)}
                 />
               </motion.div>
             ))}
@@ -722,12 +779,15 @@ const AdminBookingListPage: React.FC = () => {
         {detailBooking && (
           <DetailPanel
             booking={detailBooking}
+            therapists={therapists}
             onClose={() => setDetailId(null)}
             onConfirm={() => { void setStatus(detailBooking.id, "confirmed"); }}
             onComplete={() => { void setStatus(detailBooking.id, "completed"); }}
             onCancel={() => cancelBooking(detailBooking.id)}
             onTogglePaid={() => { void togglePaid(detailBooking.id, isPaid(detailBooking)); }}
             onSaveNote={(note) => { void saveNote(detailBooking.id, note); }}
+            onChangeStatus={(status) => changeStatus(detailBooking.id, status)}
+            onSaveDetails={(patch) => { void saveDetails(detailBooking.id, patch); }}
           />
         )}
       </Drawer>
@@ -762,7 +822,8 @@ const BookingCard: React.FC<{
   onTogglePaid: () => void;
   onSaveNote: (note: string) => void;
   onViewDetail: () => void;
-}> = ({ booking: b, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onViewDetail }) => {
+  onMarkReviewed: () => void;
+}> = ({ booking: b, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onViewDetail, onMarkReviewed }) => {
   const [expanded, setExpanded] = useState(false);
   const [note,     setNote]     = useState(b.adminNote ?? "");
 
@@ -1041,19 +1102,26 @@ const BookingCard: React.FC<{
                     </motion.button>
                   )}
 
+                  {/* 🆕 28s259 — this used to be a plain <Box>, same border/
+                      radius as "Full detail" next to it but with NO onClick —
+                      looked like a button, did nothing. Real action now:
+                      dismiss the "waiting on the guest's review" flag. */}
                   {b.status === "completed" && !b.reviewed && (
-                    <Box
-                      component="span"
-                      sx={{
+                    <motion.button
+                      whileTap={{ scale: 0.97 }}
+                      onClick={onMarkReviewed}
+                      title="Dismiss — mark as reviewed"
+                      style={{
                         flex: 1, minWidth: 80, height: 34, borderRadius: 999,
                         background: adminColor.panel2,
                         border: `1px solid ${adminColor.line}`,
                         color: adminColor.dim, fontFamily: SANS, fontSize: 12, fontWeight: 600,
-                        display: "flex", alignItems: "center", justifyContent: "center",
+                        cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
                       }}
                     >
-                      Awaiting review
-                    </Box>
+                      <Star size={12} /> Awaiting review
+                    </motion.button>
                   )}
                 </Box>
 
@@ -1074,20 +1142,68 @@ const BookingCard: React.FC<{
 // ──────────────────────────────────────────────────────────────────────
 // Detail panel (inside Drawer)
 // ──────────────────────────────────────────────────────────────────────
+// 🆕 28s259 — statuses the operator can pick from the override dropdown.
+//   Same set STATUS_CFG already renders badges for.
+const ALL_STATUSES = Object.keys(STATUS_CFG);
+
 const DetailPanel: React.FC<{
   booking: Booking;
+  therapists: { id: string; name: string }[];
   onClose: () => void;
   onConfirm: () => void;
   onComplete: () => void;
   onCancel: () => void;
   onTogglePaid: () => void;
   onSaveNote: (note: string) => void;
-}> = ({ booking: b, onClose, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote }) => {
+  onChangeStatus: (status: string) => void;
+  onSaveDetails: (patch: Record<string, unknown>) => void;
+}> = ({ booking: b, therapists, onClose, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onChangeStatus, onSaveDetails }) => {
   const [note, setNote] = useState(b.adminNote ?? "");
   const cfg        = cfgFor(b.status);
   const isCancelled = b.status === "cancelled";
   const total      = isCancelled ? 0 : (b.totalPrice ?? b.total ?? 0);
   const paid        = isPaid(b);
+
+  // 🆕 28s259 — edit-details form (customer/phone/date/time/location/
+  //   therapist). Deliberately excludes service/duration/price — those
+  //   drive amounts already computed and settled elsewhere.
+  const [editing, setEditing] = useState(false);
+  const startEdit = () => {
+    setEditForm({
+      therapistId: b.therapistId ?? "",
+      contactName: nameOf(b),
+      phone: b.phone ?? "",
+      date: b.date || (b.startAt?.toDate ? fmtBKK(b.startAt.toDate(), "YYYY-MM-DD") : dayjs().format("YYYY-MM-DD")),
+      time: b.time || (b.startAt?.toDate ? fmtBKK(b.startAt.toDate(), "HH:mm") : "10:00"),
+      location: b.locationName || b.address || "",
+    });
+    setEditing(true);
+  };
+  const [editForm, setEditForm] = useState({
+    therapistId: b.therapistId ?? "",
+    contactName: nameOf(b),
+    phone: b.phone ?? "",
+    date: b.date ?? "",
+    time: b.time ?? "",
+    location: b.locationName || b.address || "",
+  });
+  const saveEdit = () => {
+    const startAt = Timestamp.fromDate(dayjs(`${editForm.date} ${editForm.time}`, "YYYY-MM-DD HH:mm").toDate());
+    const newTherapist = therapists.find((t) => t.id === editForm.therapistId);
+    onSaveDetails({
+      contactName: editForm.contactName.trim(),
+      customerName: editForm.contactName.trim(),
+      phone: editForm.phone.trim(),
+      date: editForm.date,
+      time: editForm.time,
+      startAt,
+      locationName: editForm.location.trim(),
+      ...(editForm.therapistId && editForm.therapistId !== b.therapistId
+        ? { therapistId: editForm.therapistId, therapistName: newTherapist?.name ?? b.therapistName }
+        : {}),
+    });
+    setEditing(false);
+  };
 
   const dateLabel = b.startAt?.toDate
     ? fmtBKK(b.startAt.toDate(), "dddd D MMMM YYYY · HH:mm")
@@ -1156,38 +1272,161 @@ const DetailPanel: React.FC<{
       <Box sx={{ flex: 1, overflowY: "auto", px: 2.5, py: 2 }}>
 
         {/* booking info */}
-        <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1 }}>
-          Booking Info
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            Booking Info
+          </Typography>
+          {/* 🆕 28s259 (fix: "full detail แก้ไขไม่ได้") — toggles customer/
+              phone/date/time/location/therapist into editable fields.
+              Excludes service/duration/price on purpose (see saveDetails). */}
+          {!editing && (
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={startEdit}
+              aria-label="Edit booking details"
+              style={{
+                display: "flex", alignItems: "center", gap: 4,
+                height: 26, padding: "0 10px", borderRadius: 999,
+                background: adminColor.panel2, border: `1px solid ${adminColor.line2}`,
+                color: adminColor.muted, fontFamily: SANS, fontSize: 11, fontWeight: 700, cursor: "pointer",
+              }}
+            >
+              <PencilSimple size={11} /> Edit
+            </motion.button>
+          )}
+        </Box>
         <Box
           sx={{
             borderRadius: "14px", background: adminColor.panel,
             border: `1px solid ${adminColor.line}`,
-            px: 1.75, py: 0.5, mb: 2,
+            px: 1.75, py: 0.5, mb: editing ? 1.25 : 2,
           }}
         >
-          <Row label="Customer"  value={nameOf(b)} />
-          <Divider sx={{ opacity: 0.4 }} />
-          <Row
-            label="Phone"
-            value={
-              b.phone ? (
-                <Typography
-                  component="a"
-                  href={`tel:${b.phone}`}
-                  sx={{ fontFamily: SANS, fontWeight: 700, color: adminColor.green, textDecoration: "none" }}
-                >
-                  {b.phone}
+          {/* 🆕 28s259 (fix: "สถานนะ แก้ไขไม่ได้ Cancelled / Completed") —
+              always-active override, works from ANY current status
+              (un-cancel, mark refunded/no_show, revert completed, etc.).
+              Independent of the "Edit" toggle below — status changes are a
+              routine action, not a "fix a mistake" edit. */}
+          <Row label="Status" value={
+            <Select
+              size="small"
+              value={b.status in STATUS_CFG ? b.status : ""}
+              onChange={(e) => onChangeStatus(e.target.value)}
+              displayEmpty
+              renderValue={() => (
+                <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: cfg.badge.fg }}>
+                  {cfg.label}
                 </Typography>
-              ) : (
-                "—"
-              )
-            }
-          />
+              )}
+              sx={{
+                fontSize: 12, height: 28, minWidth: 120,
+                "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 },
+              }}
+              MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
+            >
+              {ALL_STATUSES.map((s) => (
+                <MenuItem key={s} value={s} sx={{ fontSize: 13 }}>{cfgFor(s).label}</MenuItem>
+              ))}
+            </Select>
+          } />
           <Divider sx={{ opacity: 0.4 }} />
-          <Row label="Date & Time" value={dateLabel} />
-          <Divider sx={{ opacity: 0.4 }} />
-          <Row label="Location"  value={b.locationName || b.address || "—"} />
+
+          {editing ? (
+            <>
+              <Box sx={{ py: 1 }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Therapist</Typography>
+                <Select
+                  size="small" fullWidth
+                  value={editForm.therapistId}
+                  onChange={(e) => setEditForm((f) => ({ ...f, therapistId: e.target.value }))}
+                  sx={{ fontSize: 13, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 } }}
+                  MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
+                >
+                  {!therapists.some((t) => t.id === editForm.therapistId) && editForm.therapistId && (
+                    <MenuItem value={editForm.therapistId}>{b.therapistName}</MenuItem>
+                  )}
+                  {therapists.map((t) => (
+                    <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
+                  ))}
+                </Select>
+              </Box>
+              <Divider sx={{ opacity: 0.4 }} />
+              <Box sx={{ py: 1 }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Customer</Typography>
+                <InputBase
+                  fullWidth value={editForm.contactName}
+                  onChange={(e) => setEditForm((f) => ({ ...f, contactName: e.target.value }))}
+                  sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: "10px", px: 1.25, py: 0.5 }}
+                />
+              </Box>
+              <Divider sx={{ opacity: 0.4 }} />
+              <Box sx={{ py: 1 }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Phone</Typography>
+                <InputBase
+                  fullWidth value={editForm.phone}
+                  onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
+                  sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: "10px", px: 1.25, py: 0.5 }}
+                />
+              </Box>
+              <Divider sx={{ opacity: 0.4 }} />
+              <Box sx={{ py: 1, display: "flex", gap: 1 }}>
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Date</Typography>
+                  <input
+                    type="date" value={editForm.date}
+                    onChange={(e) => setEditForm((f) => ({ ...f, date: e.target.value }))}
+                    style={{ width: "100%", fontFamily: SANS, fontSize: 13, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: 10, padding: "6px 10px", boxSizing: "border-box", background: "transparent" }}
+                  />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Time</Typography>
+                  <input
+                    type="time" value={editForm.time}
+                    onChange={(e) => setEditForm((f) => ({ ...f, time: e.target.value }))}
+                    style={{ width: "100%", fontFamily: SANS, fontSize: 13, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: 10, padding: "6px 10px", boxSizing: "border-box", background: "transparent" }}
+                  />
+                </Box>
+              </Box>
+              <Divider sx={{ opacity: 0.4 }} />
+              <Box sx={{ py: 1 }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Location</Typography>
+                <InputBase
+                  fullWidth multiline minRows={2} value={editForm.location}
+                  onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))}
+                  sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: "10px", px: 1.25, py: 0.5 }}
+                />
+              </Box>
+              <Divider sx={{ opacity: 0.4 }} />
+            </>
+          ) : (
+            <>
+              <Row label="Therapist" value={b.therapistName} />
+              <Divider sx={{ opacity: 0.4 }} />
+              <Row label="Customer"  value={nameOf(b)} />
+              <Divider sx={{ opacity: 0.4 }} />
+              <Row
+                label="Phone"
+                value={
+                  b.phone ? (
+                    <Typography
+                      component="a"
+                      href={`tel:${b.phone}`}
+                      sx={{ fontFamily: SANS, fontWeight: 700, color: adminColor.green, textDecoration: "none" }}
+                    >
+                      {b.phone}
+                    </Typography>
+                  ) : (
+                    "—"
+                  )
+                }
+              />
+              <Divider sx={{ opacity: 0.4 }} />
+              <Row label="Date & Time" value={dateLabel} />
+              <Divider sx={{ opacity: 0.4 }} />
+              <Row label="Location"  value={b.locationName || b.address || "—"} />
+            </>
+          )}
+
           {b.placeDetail && <><Divider sx={{ opacity: 0.4 }} /><Row label="Detail" value={b.placeDetail} /></>}
           {b.cancelReason && <><Divider sx={{ opacity: 0.4 }} /><Row label="Cancel reason" value={b.cancelReason} /></>}
           <Divider sx={{ opacity: 0.4 }} />
@@ -1212,6 +1451,34 @@ const DetailPanel: React.FC<{
           <Divider sx={{ opacity: 0.4 }} />
           <Row label="Booking ID" value={b.id} />
         </Box>
+
+        {editing && (
+          <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setEditing(false)}
+              style={{
+                flex: 1, height: 38, borderRadius: 999,
+                background: adminColor.panel2, border: `1px solid ${adminColor.line2}`,
+                fontFamily: SANS, fontSize: 13, fontWeight: 600, color: adminColor.muted, cursor: "pointer",
+              }}
+            >
+              Cancel
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={saveEdit}
+              style={{
+                flex: 1, height: 38, borderRadius: 999,
+                background: adminColor.accent, border: "none",
+                fontFamily: SANS, fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              }}
+            >
+              <FloppyDisk size={14} /> Save changes
+            </motion.button>
+          </Box>
+        )}
 
         {/* admin note */}
         <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1 }}>

@@ -34,6 +34,9 @@ const ACTION_LABEL: Record<string, { label: string; color: string }> = {
   "booking.complete":        { label: "ปิดงานเสร็จ",          color: adminColor.green },
   "booking.mark_paid":       { label: "ลูกค้าจ่ายแล้ว",       color: adminColor.green },
   "booking.mark_unpaid":     { label: "ยกเลิกสถานะจ่าย",      color: adminColor.dim },
+  "booking.status_change":   { label: "เปลี่ยนสถานะ",         color: adminColor.blue },
+  "booking.edit_details":    { label: "แก้ไขรายละเอียดจอง",    color: adminColor.blue },
+  "booking.mark_reviewed":   { label: "เคลียร์รอรีวิว",        color: adminColor.dim },
   "payout.mark_paid":        { label: "จ่ายค่าตอบแทนแล้ว",     color: adminColor.highlight },
   "payout.mark_unpaid":      { label: "ยกเลิกสถานะจ่ายแล้ว",   color: adminColor.dim },
   "therapist.relight_all":   { label: "เปิดร้านทั้งหมด",       color: adminColor.green },
@@ -46,6 +49,7 @@ function detailLine(detail?: Record<string, unknown>): string {
   if (!detail) return "";
   const parts: string[] = [];
   if (detail.bookingId) parts.push(`booking ${String(detail.bookingId).slice(0, 8)}`);
+  if (detail.from && detail.to) parts.push(`${detail.from} → ${detail.to}`);
   if (detail.therapistName) parts.push(String(detail.therapistName));
   if (typeof detail.amount === "number") parts.push(`฿${detail.amount.toLocaleString()}`);
   if (typeof detail.count === "number") parts.push(`${detail.count} คน`);
