@@ -661,6 +661,40 @@ Tonight, Earnings, Users (CRM), Audit Log, Analytics. **Still on the old
 theme** (not requested yet): AdminBookingListPage, AdminTherapistsPage,
 AdminReportPage.
 
+### 🆕 2026-06-14 (cont.) — AdminAnalyticsPage filters (28s243)
+
+Founder asked "AdminAnalyticsPage ใช้ทำอะไรได้อีก" (what else could this
+page do) — offered 3 extension ideas (marketing-source attribution,
+referral-code leaderboard, drop-off diagnostic). Founder didn't pick from
+those; instead said "เพิ่มตัวกรอง" (add a filter), then when asked which
+dimension, answered "ทั้งหมด" (all of them: custom date range + concierge
+mode + language).
+
+Shipped all 3:
+- **Custom date range** — `Range` type extended to `"7d" | "30d" |
+  "custom"`; picking Custom reveals From/To `DatePicker`s. The Firestore
+  query adds a `where("ts", "<=", upper)` bound alongside the existing
+  `>=` cutoff when custom is active — both inequalities on the same
+  field, so no new composite index was needed.
+- **Concierge-mode filter** (prime/evening/day/off) and **language
+  filter** (en/th/zh/ja/ko) — both narrow client-side via a new
+  `filteredEvents` memo that the existing `stats` aggregation now reads
+  instead of raw `events`. All 3 filters compose — every widget (funnel,
+  by-mode card, top services, channel taps, daily trend) reflects the
+  combined filter.
+- Daily-trend chart width now follows the actual custom range (capped
+  60 days) instead of a hardcoded 7/30.
+- Split the empty state: "no events in Firestore at all" (rules/tracking
+  problem) vs "0 events match this filter" (normal — e.g. a rare
+  mode+lang combo) — these used to look identical and would have been
+  confusing once filters could legitimately zero out results.
+
+**Open idea, not yet built** (from the "what else" discussion, still
+worth doing next time it comes up): marketing-source/UTM/district-page
+attribution on the funnel — requires first verifying the `source`/`utm`/
+`landing` fields the 2026-06-02 SEO round mentions are actually landing
+on live booking docs (not yet confirmed).
+
 ### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
 
 **Trigger.** View shared Google Search Console 3-month data:
