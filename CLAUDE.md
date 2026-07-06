@@ -977,6 +977,27 @@ cap, not removing it):
 - Header subtitle ("showing latest N") and the button label both track the
   live `feedSize`, not a hardcoded number.
 
+### 🆕 2026-07-06 — shop revenue on the Bookings summary strip (28s258)
+
+Founder: "ในBooked value โชว์ ยอด รายได้ร้านด้วย" — add shop revenue to the
+"Booked value" card. Implemented via the SHARED `commissionBaseFor()` /
+`therapistPayoutFor()` from `src/utils/commission.ts` (currently flat
+60/40) — not a hardcoded percentage on this page — so this third revenue
+surface can't drift from Earnings/Reports the way they drifted from each
+other before the 28s247 fix. Added `discountAmount` to the page's local
+`Booking` interface (the shared calc needs it).
+
+`shopRevenue = (servicePrice − discount) − therapistPayout`, summed over
+the same faceted/non-cancelled set "Booked value" already totals. Excludes
+taxi (pass-through) and Earnings' per-booking overhead deduction — this is
+a quick glance figure on the list page, not a substitute for the Earnings
+calculator. Rendered as a second line under the bookings-count sub-line, in
+accent color.
+
+**Rule reinforced: any NEW surface that touches therapist pay/shop revenue
+must import from `commission.ts`, never recompute the split locally** — this
+is now the 3rd page (after Earnings, Reports) to follow it.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
