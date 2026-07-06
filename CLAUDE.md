@@ -1534,6 +1534,40 @@ it, but changing it does nothing. When auditing "is this real," grep
 for OTHER readers of the field before trusting that an editable form
 field represents live truth.
 
+### 🆕 2026-07-06 — reviews counted by reviewText, not the rating field (28s276)
+
+Founder shared real Firestore console screenshots: a completed XingXing
+booking with a genuine customer `reviewText` but **no `rating` field at
+all** — confirming her hypothesis "Rating อาจจะต้องดูจากดาวใน
+reviewText, Reviews ดึงจาก reviewText".
+
+**Root cause:** round 28s275 wired this page to the shared
+`useTherapistReviews` hook, whose query is `where("rating", ">=", 1)` —
+silently excluding any booking with a written review but no separate
+numeric rating field, exactly like the one in the screenshot. That
+filter exists in the shared hook **only** because it's also used by the
+public `TherapistDetailPage.tsx`, where anonymous visitors need it to
+satisfy `firestore.rules` (28s6: un-rated bookings still carry PII and
+must stay private from public listeners — the rating field is used as
+a proxy for "deliberately exposed for public display").
+
+**Fix:** this admin page already has its own `isAdmin()`-privileged
+bookings listener (used for today/total/last-booking) — extended it to
+also compute `reviewCount`/`avgRating` in the same pass, counting any
+booking with non-empty `reviewText` and defaulting a missing `rating`
+to 5. This exactly matches the existing convention in
+`ReviewListPage.tsx` (`rating: typeof r.rating === "number" ? r.rating
+: 5`), just applied admin-side where `isAdmin()` already grants full
+list access regardless of whether `rating` exists. Removed the
+`useTherapistReviews` hook from this page entirely.
+
+**Deliberately not touched:** the shared hook and `firestore.rules`
+themselves — the public site's `rating>=1` requirement is a deliberate
+privacy boundary from 28s6, not a bug. If the founder wants the PUBLIC
+site to also count text-only reviews, that's a separate, bigger
+decision involving a real PII-exposure tradeoff on anonymous listeners,
+worth its own conversation rather than a silent side-effect here.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
