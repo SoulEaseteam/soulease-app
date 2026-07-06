@@ -906,6 +906,25 @@ polish on top of the 28s252 fixes — no new colors, still Ocean Study only:
 - Corner radius 18→20px; shadows re-tuned to the ink-tinted elevation
   pattern already used on Earnings/Dashboard cards.
 
+### 🆕 2026-07-06 — AdminBookingListPage filters (28s254)
+
+Founder: "เพิ่มตัวกรอง" → asked which dimension, answered "ทั้งหมด 3 อย่าง
+(แนะนำ)". Same filter pattern as the Earnings/Analytics rounds (28s243/244):
+
+- **Date range** — "All time" (the existing flat last-500-docs fetch) or
+  "Custom" (From/To), which now drives the Firestore query itself (a
+  `createdAt >=/<=` window, still capped at `FEED_LIMIT` for safety).
+- **Therapist filter** — options from the date-scoped set only, so switching
+  the payment filter never collapses the therapist dropdown's choices.
+- **Payment filter** (Any / Paid / Unpaid) via the `isPaid()` helper from
+  28s252.
+
+Therapist + payment are **persistent facets** — a new `faceted` memo narrows
+by them and feeds the summary strip, tab counts, AND the visible list, so
+"Needs action" etc. mean "pending, among what you've selected." Free-text
+search deliberately does NOT re-narrow the facets — it's a one-off look-up,
+not something that should silently change what the summary numbers mean.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
