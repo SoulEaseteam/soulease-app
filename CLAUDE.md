@@ -1353,6 +1353,14 @@ actionable" rule the cards already express visually (recede + no hover
 lift) is now also reflected in ordering. Each status group keeps its
 original roster order among itself (stable sort).
 
+### 🆕 2026-07-06 — "เพิ่มพนักงาน" button on Therapist Manager (28s270)
+
+Founder: "ปุ่มเพิ่มพนักงาน". The `/admin/add-therapist` route
+(`AddTherapistPage.tsx`) already existed but had no entry point from the
+roster page — reachable only by typing the URL directly. Added an
+accent-filled button in `AdminTherapistsPage.tsx`'s toolbar row, next to
+the status filter, using the `UserPlus` phosphor icon.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
