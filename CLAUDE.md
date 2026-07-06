@@ -1182,6 +1182,58 @@ established for Status itself. **Lesson: when regrouping fields that used
 to render unconditionally, explicitly check whether the ternary boundary
 {editing ? ... : ...} now traps something that shouldn't be trapped.**
 
+### 🆕 2026-07-06 — admin-wide dropdown transparency fix (28s265)
+
+Founder screenshotted the Therapist dropdown on the Bookings edit form:
+other therapist names / page content visibly bled through the menu
+background. "เช็คและแก้ dropdown ของ ทั้งระบบ แอดมิน พื้นมันบางใสจนเห็น
+รายละเอียดอื่นด้านหลัง" — explicitly asked to check the WHOLE admin system,
+not just the one dropdown shown.
+
+**Root cause:** the global MUI theme (`src/theme.ts`) sets
+`palette.background.paper: "rgba(255,255,255,0.65)"` — a deliberate
+frosted-glass effect for the CUSTOMER site. Admin shares the same
+`ThemeProvider` (wired once in `main.tsx`), so any Select/TextField-select
+menu that doesn't explicitly override its Paper background inherits that
+65%-opacity white. Did **not** touch `theme.ts` itself — fixing it globally
+would break the customer site's intended look; every fix below is a local,
+explicit opaque override (the same convention already used in ~30 other
+spots in admin).
+
+**Audit method:** regex-scanned every `src/pages/admin/**/*.tsx` for
+`<Select>`/`<TextField select>` blocks lacking a `MenuProps`/`SelectProps`
+override. Found **12 instances across 6 files**:
+- 4 in `AdminBookingListPage.tsx` — introduced by THIS session's own
+  28s264 edit-drawer rewrite. Cause: converting `<Select>` →
+  `<TextField select>` drops the override unless you know the prop is
+  `SelectProps.MenuProps`, not `MenuProps` directly — easy to miss.
+- 8 pre-existing, unrelated to this session: `AdminUsersPage.tsx` (Role),
+  `EditTherapistPage.tsx` + `AdminTherapistDetailPage.tsx` (Badge, Status
+  Override ×2 files), `AdminSeedReviewsPage.tsx` (Therapist filter,
+  Language, Template).
+
+**Fix pattern (2 flavors, by migration status):**
+- Ocean Study pages (`AdminBookingListPage`, `AdminUsersPage`) →
+  `background: adminColor.panel2, color: adminColor.text` (added a shared
+  `editSelectProps` const in BookingListPage, applied to all 4 of its
+  selects via `SelectProps={editSelectProps}`).
+- Pages not yet on Ocean Study tokens (`EditTherapistPage`,
+  `AdminTherapistDetailPage`, `AdminSeedReviewsPage`) → plain opaque
+  `"#fff"`, no new token dependency introduced.
+
+Verified zero remaining instances via re-audit, then confirmed **live in
+production** by curling the deployed chunk for each of the 5 files and
+grepping for the exact `MenuProps:{PaperProps:{sx:{background:...}}}`
+string — counts matched exactly (4+1+2+2+3=12).
+
+**Lesson: `<Select>`'s override prop is `MenuProps`; `<TextField select>`'s
+equivalent is `SelectProps.MenuProps`** — different prop name, same effect.
+Any future `<Select>` → `<TextField select>` conversion must carry this
+across explicitly, it won't transfer automatically. When a founder asks to
+check something "ทั้งระบบ" (system-wide), grep the whole pattern rather than
+just fixing the one instance shown — this round's audit surfaced 8 more
+broken spots the screenshot never showed.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
