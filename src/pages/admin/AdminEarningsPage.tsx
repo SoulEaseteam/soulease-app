@@ -9,9 +9,10 @@
 //
 // Data source: Firestore `bookings` collection. Excludes any doc
 // whose `status` is in {cancelled, canceled, refunded, failed,
-// rejected, no_show}. The computation matches AdminReportPage's
-// existing 60/40 rule so finance numbers stay consistent across
-// the two surfaces.
+// rejected, no_show}. The tier split + excluded-status set now live in
+// `@/utils/commission` and are shared with AdminReportPage, so the
+// payroll numbers stay identical across both surfaces (they had drifted
+// — Reports was still flat 60/40 over full price until round 28s247).
 //
 // What this page deliberately does NOT do:
 //   • Track payouts (which therapist has been paid which week)
@@ -58,34 +59,17 @@ import { getServiceLabel } from "@/utils/serviceCatalog";
 //   money/count figure; Hoefler's old-style digits stay on titles only.
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { logAdminAction } from "@/utils/auditLog";
+// 🆕 Round 28s247 (audit of /admin/reports) — the tier-split + excluded-status
+//   logic moved to a shared util so Earnings and Reports can't drift apart
+//   (they had: Reports was still flat 60/40 over full price). Same values as
+//   before, so Earnings behaviour is unchanged.
+import { therapistPctFor, PAYROLL_EXCLUDED_STATUSES as EXCLUDED_STATUSES } from "@/utils/commission";
 
 // 🆕 Round 28s245 — this page predates adminTheme.ts and still carried its
 //   own Federo/Inter stacks; aliased onto the shared admin fonts so Earnings
 //   typography matches AdminLayout/Dashboard/Analytics.
 const SERIF = adminFont.serif;
 const SANS = adminFont.sans;
-
-// 🆕 Round 28r27 (founder 2026-05-07) — Tier-based commission split.
-// Founder strategy: higher commission on premium tiers attracts
-// better talent + reflects the harder skill required.
-//
-//   Entry (Thai/Aroma)         → 60% therapist · 40% shop
-//   Mid (Gentleman's Signature) → 65% therapist · 35% shop
-//   Premium (B2B Therapeutic)   → 70% therapist · 30% shop
-//
-// Fallback for unmapped services = 60/40 (legacy default).
-const TIER_THERAPIST_PCT: Record<string, number> = {
-  "xSR-Thai": 0.6,
-  "SR-Aroma": 0.6,
-  "SR-HJ2200": 0.65,
-  "SR-B2B3200": 0.7,
-};
-const DEFAULT_THERAPIST_PCT = 0.6;
-
-const therapistPctFor = (serviceId: string | null | undefined): number => {
-  if (!serviceId) return DEFAULT_THERAPIST_PCT;
-  return TIER_THERAPIST_PCT[serviceId] ?? DEFAULT_THERAPIST_PCT;
-};
 
 // Per-booking cost estimates (founder spec image). These are
 // AVERAGES the calculator subtracts to show NET margin — actual
@@ -99,15 +83,6 @@ const COST_PER_BOOKING_THB = {
   /** Admin / ops overhead per booking. */
   ops: 150,
 };
-
-const EXCLUDED_STATUSES = new Set([
-  "cancelled",
-  "canceled",
-  "refunded",
-  "failed",
-  "rejected",
-  "no_show",
-]);
 
 interface BookingRow {
   id: string;
