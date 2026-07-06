@@ -12,18 +12,23 @@
 //   therapists and over-paid on discounted bookings. Both pages now import
 //   from here so they can never drift again.
 //
-//   Founder rule (28r27, "ไม่คุ่มเสี่ยงเกินไป"):
-//     Entry (Thai / Aroma)          → 60% therapist · 40% shop
-//     Mid   (Gentleman's Signature) → 65% therapist · 35% shop
-//     Premium (B2B Therapeutic)     → 70% therapist · 30% shop
-//   Commission is charged on (servicePrice − discount), so therapist + shop
-//   share any promo cost proportionally rather than the shop absorbing 100%.
+//   🆕 Round 28s248 (founder: "แก้ที่ commission.ts") — the split is now a
+//   FLAT 60/40 for every service. Founder confirmed the real deal is a
+//   straight 60% therapist · 40% shop across all tiers; the per-tier premium
+//   (65% Gentleman's / 70% B2B) trialled in 28r27 is OFF. Because both
+//   Earnings and Reports read this one map, changing it here updates both
+//   payroll surfaces at once. To bring tiers back later, just set
+//   "SR-HJ2200": 0.65 and "SR-B2B3200": 0.7 again — nothing else to touch.
+//
+//   Still true (separate 28r27 rule, NOT changed): commission is charged on
+//   (servicePrice − discount), so therapist + shop share any promo cost
+//   proportionally instead of the shop absorbing 100%.
 
 export const TIER_THERAPIST_PCT: Record<string, number> = {
   "xSR-Thai": 0.6,
   "SR-Aroma": 0.6,
-  "SR-HJ2200": 0.65,
-  "SR-B2B3200": 0.7,
+  "SR-HJ2200": 0.6, // was 0.65 (tier premium off — flat 60/40, 28s248)
+  "SR-B2B3200": 0.6, // was 0.70 (tier premium off — flat 60/40, 28s248)
 };
 
 export const DEFAULT_THERAPIST_PCT = 0.6;
