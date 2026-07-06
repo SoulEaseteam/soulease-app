@@ -39,9 +39,13 @@ import {
 import dayjs from "dayjs";
 
 import { db } from "@/lib/firebase";
+// 🆕 Round 28s242 (founder: "analytics" — bring the last un-restyled admin
+//   page onto the shared Ocean Study tokens, same "fix the shared
+//   subcomponents" pattern used for AdminEarningsPage in 28s236).
+import { adminColor, adminFont } from "@/theme/adminTheme";
 
-const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
-const SANS = '"Inter", system-ui, -apple-system, sans-serif';
+const SERIF = adminFont.serif;
+const SANS = adminFont.sans;
 
 interface AnalyticsEvent {
   event: string;
@@ -213,9 +217,9 @@ const AdminAnalyticsPage: React.FC = () => {
             fontFamily: SERIF,
             fontSize: { xs: 24, md: 30 },
             fontWeight: 600,
-            color: "#1A2B2E",
+            color: adminColor.text,
             letterSpacing: "-0.02em",
-            "& em": { fontStyle: "italic", color: "#B4000A" },
+            "& em": { fontStyle: "italic", color: adminColor.accent },
           }}
         >
           Funnel <em>Analytics</em>
@@ -224,7 +228,7 @@ const AdminAnalyticsPage: React.FC = () => {
           sx={{
             fontFamily: SANS,
             fontSize: 13,
-            color: "rgba(15, 23, 42, 0.65)",
+            color: adminColor.muted,
             marginTop: "4px",
           }}
         >
@@ -239,7 +243,14 @@ const AdminAnalyticsPage: React.FC = () => {
         exclusive
         size="small"
         onChange={(_, v) => v && setRange(v as Range)}
-        sx={{ mb: 3 }}
+        sx={{
+          mb: 3,
+          "& .MuiToggleButton-root": {
+            fontFamily: SANS, fontSize: 12.5, fontWeight: 600, textTransform: "none",
+            color: adminColor.muted, borderColor: adminColor.line, padding: "6px 16px",
+            "&.Mui-selected": { color: "#fff", background: adminColor.accent, "&:hover": { background: adminColor.accentDeep } },
+          },
+        }}
       >
         <ToggleButton value="7d">Last 7 days</ToggleButton>
         <ToggleButton value="30d">Last 30 days</ToggleButton>
@@ -247,12 +258,12 @@ const AdminAnalyticsPage: React.FC = () => {
 
       {loading ? (
         <Box sx={{ textAlign: "center", py: 6 }}>
-          <CircularProgress size={28} sx={{ color: "#B4000A" }} />
+          <CircularProgress size={28} sx={{ color: adminColor.accent }} />
         </Box>
       ) : events.length === 0 ? (
         <Card>
           <Typography
-            sx={{ fontFamily: SANS, fontSize: 14, color: "rgba(15, 23, 42,0.6)" }}
+            sx={{ fontFamily: SANS, fontSize: 14, color: adminColor.muted }}
           >
             No events yet. Make sure <code>firestore.rules</code> have been
             published with the <code>analytics_events</code> rule, and that
@@ -275,7 +286,7 @@ const AdminAnalyticsPage: React.FC = () => {
                 fontFamily: SERIF,
                 fontSize: 18,
                 fontWeight: 600,
-                color: "#1A2B2E",
+                color: adminColor.text,
                 mb: 2,
               }}
             >
@@ -302,9 +313,9 @@ const AdminAnalyticsPage: React.FC = () => {
               of={stats.byEvent.home_view ?? 0}
               accent
             />
-            <Box sx={{ mt: 2, fontSize: 12, color: "rgba(15, 23, 42,0.6)" }}>
+            <Box sx={{ mt: 2, fontSize: 12, color: adminColor.muted }}>
               Conversion (home → booking):{" "}
-              <Box component="span" sx={{ fontWeight: 700, color: "#B4000A" }}>
+              <Box component="span" sx={{ fontWeight: 700, color: adminColor.accent }}>
                 {stats.conversionRate.toFixed(1)}%
               </Box>{" "}
               ({stats.sessionsBooked} of {stats.sessionsHome} sessions)
@@ -319,7 +330,7 @@ const AdminAnalyticsPage: React.FC = () => {
                 fontFamily: SERIF,
                 fontSize: 18,
                 fontWeight: 600,
-                color: "#1A2B2E",
+                color: adminColor.text,
                 mb: 2,
               }}
             >
@@ -347,7 +358,7 @@ const AdminAnalyticsPage: React.FC = () => {
                 fontFamily: SERIF,
                 fontSize: 18,
                 fontWeight: 600,
-                color: "#1A2B2E",
+                color: adminColor.text,
                 mb: 2,
               }}
             >
@@ -369,7 +380,7 @@ const AdminAnalyticsPage: React.FC = () => {
                 fontFamily: SERIF,
                 fontSize: 18,
                 fontWeight: 600,
-                color: "#1A2B2E",
+                color: adminColor.text,
                 mb: 2,
               }}
             >
@@ -391,7 +402,7 @@ const AdminAnalyticsPage: React.FC = () => {
                 fontFamily: SERIF,
                 fontSize: 18,
                 fontWeight: 600,
-                color: "#1A2B2E",
+                color: adminColor.text,
                 mb: 2,
               }}
             >
@@ -427,8 +438,7 @@ const AdminAnalyticsPage: React.FC = () => {
                     <Box
                       sx={{
                         height: `${homePct}%`,
-                        background:
-                          "rgba(15, 23, 42, 0.25)",
+                        background: adminColor.panel3,
                         borderRadius: "3px 3px 0 0",
                         position: "relative",
                       }}
@@ -436,7 +446,7 @@ const AdminAnalyticsPage: React.FC = () => {
                     <Box
                       sx={{
                         height: `${bookedPct}%`,
-                        background: "#B4000A",
+                        background: adminColor.accent,
                         position: "absolute",
                         bottom: 0,
                         left: 0,
@@ -455,7 +465,7 @@ const AdminAnalyticsPage: React.FC = () => {
                 marginTop: "8px",
                 fontFamily: SANS,
                 fontSize: 10,
-                color: "rgba(15, 23, 42,0.55)",
+                color: adminColor.dim,
               }}
             >
               <span>{dayjs(trendDates[0]).format("D MMM")}</span>
@@ -468,11 +478,11 @@ const AdminAnalyticsPage: React.FC = () => {
                 marginTop: "8px",
                 fontFamily: SANS,
                 fontSize: 11,
-                color: "rgba(15, 23, 42,0.7)",
+                color: adminColor.muted,
               }}
             >
-              <Legend color="rgba(15, 23, 42, 0.30)" label="Home views" />
-              <Legend color="#B4000A" label="Bookings completed" />
+              <Legend color={adminColor.panel3} label="Home views" />
+              <Legend color={adminColor.accent} label="Bookings completed" />
             </Box>
           </Card>
         </Box>
@@ -491,10 +501,9 @@ const Card: React.FC<{
     sx={{
       padding: "20px 22px",
       borderRadius: "16px",
-      background: "#FFFFFF",
-      border: "1px solid rgba(15, 23, 42, 0.06)",
-      boxShadow:
-        "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.05)",
+      background: adminColor.panel,
+      border: `1px solid ${adminColor.line}`,
+      boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
       ...sx,
     }}
   >
@@ -508,7 +517,7 @@ const Eyebrow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       fontSize: 10,
       letterSpacing: "0.18em",
       textTransform: "uppercase",
-      color: "#4A5568",
+      color: adminColor.muted,
       fontWeight: 700,
       mb: 0.5,
       fontFamily: SANS,
@@ -532,7 +541,7 @@ const FunnelStep: React.FC<{
           width: 100,
           fontFamily: SANS,
           fontSize: 12,
-          color: "rgba(15, 23, 42,0.7)",
+          color: adminColor.muted,
         }}
       >
         {label}
@@ -542,7 +551,7 @@ const FunnelStep: React.FC<{
           sx={{
             position: "absolute",
             inset: 0,
-            background: "rgba(15, 23, 42, 0.06)",
+            background: adminColor.line,
             borderRadius: "999px",
           }}
         />
@@ -554,8 +563,8 @@ const FunnelStep: React.FC<{
             left: 0,
             width: `${pct ?? 100}%`,
             background: accent
-              ? "#B4000A"
-              : "rgba(15, 23, 42, 0.40)",
+              ? adminColor.accent
+              : adminColor.dim,
             borderRadius: "999px",
             transition: "width 0.35s ease",
           }}
@@ -568,7 +577,7 @@ const FunnelStep: React.FC<{
           fontFamily: SANS,
           fontSize: 13,
           fontWeight: 700,
-          color: accent ? "#B4000A" : "#1A2B2E",
+          color: accent ? adminColor.accent : adminColor.text,
           fontVariantNumeric: "tabular-nums",
         }}
       >
@@ -579,7 +588,7 @@ const FunnelStep: React.FC<{
             sx={{
               fontSize: 10,
               fontWeight: 500,
-              color: "rgba(15, 23, 42,0.55)",
+              color: adminColor.dim,
               ml: 0.5,
             }}
           >
@@ -610,22 +619,22 @@ const ModeRow: React.FC<{
         justifyContent: "space-between",
         alignItems: "baseline",
         py: 0.75,
-        borderBottom: "1px solid rgba(184, 92, 60, 0.10)",
+        borderBottom: `1px solid ${adminColor.line}`,
         "&:last-of-type": { borderBottom: "none" },
       }}
     >
-      <Box sx={{ fontFamily: SANS, fontSize: 13, color: "#1A2B2E" }}>
+      <Box sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.text }}>
         {labels[mode]}
       </Box>
       <Box sx={{ fontFamily: SANS, fontSize: 12, fontVariantNumeric: "tabular-nums" }}>
-        <Box component="span" sx={{ color: "rgba(15, 23, 42,0.6)" }}>
+        <Box component="span" sx={{ color: adminColor.muted }}>
           {booked}/{home}
         </Box>
         <Box
           component="span"
           sx={{
             fontWeight: 700,
-            color: "#B4000A",
+            color: adminColor.accent,
             ml: 1,
           }}
         >
@@ -643,7 +652,7 @@ const RankedList: React.FC<{
   if (entries.length === 0) {
     return (
       <Typography
-        sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.55)", fontStyle: "italic" }}
+        sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.dim, fontStyle: "italic" }}
       >
         {emptyHint ?? "No data."}
       </Typography>
@@ -660,7 +669,7 @@ const RankedList: React.FC<{
               minWidth: 0,
               fontFamily: SANS,
               fontSize: 12.5,
-              color: "#1A2B2E",
+              color: adminColor.text,
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -673,7 +682,7 @@ const RankedList: React.FC<{
               sx={{
                 position: "absolute",
                 inset: 0,
-                background: "rgba(15, 23, 42, 0.05)",
+                background: adminColor.panel3,
                 borderRadius: "999px",
               }}
             />
@@ -684,7 +693,7 @@ const RankedList: React.FC<{
                 bottom: 0,
                 left: 0,
                 width: `${(count / max) * 100}%`,
-                background: "rgba(15, 23, 42, 0.55)",
+                background: adminColor.accent,
                 borderRadius: "999px",
               }}
             />
@@ -696,7 +705,7 @@ const RankedList: React.FC<{
               fontFamily: SANS,
               fontSize: 12,
               fontWeight: 700,
-              color: "#1A2B2E",
+              color: adminColor.text,
               fontVariantNumeric: "tabular-nums",
             }}
           >
