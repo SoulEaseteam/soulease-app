@@ -45,13 +45,6 @@ import {
 import { calculateTherapistStatus, isOverrideExpired } from "@/utils/calculateTherapistStatus";
 import { endOfTodayBKK, fmtBKKTimeShort } from "@/utils/time";
 import { useTherapistBookings, findActiveBooking } from "@/utils/useTherapistBookings";
-// 🆕 Round 28s275 (founder: "Custom ID / Rating / Reviews ดึงข้อมูลจากฐานข้อมูลจริงมาใส่")
-// — same live-aggregation hook the PUBLIC therapist page already uses.
-// The therapist doc's own `rating`/`reviews` fields are never written by
-// anything real (confirmed: only this page + AddTherapistPage's one-time
-// creation default touch them) — the actual rating/count customers see
-// is always computed live from `bookings/{id}.rating` via this hook.
-import { useTherapistReviews } from "@/hooks/useTherapistReviews";
 import { logAdminAction } from "@/utils/auditLog";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 
@@ -137,6 +130,13 @@ const AdminTherapistDetailPage: React.FC = () => {
   const [todayBookings, setTodayBookings] = useState(0);
   const [totalBookings, setTotalBookings] = useState(0);
   const [lastBookingAt, setLastBookingAt] = useState<Date | null>(null);
+  // 🆕 Round 28s276 (founder: "Rating อาจจะต้องดูจากดาวใน reviewText, Reviews
+  //   ดึงจาก reviewText") — computed from the SAME bookings listener below
+  //   (admin already has full list access via isAdmin(), so this isn't
+  //   scoped by the rating>=1 filter the public-facing useTherapistReviews
+  //   hook needs for its anonymous-visitor security-rule constraint).
+  const [reviewCount, setReviewCount] = useState(0);
+  const [avgRating, setAvgRating] = useState(0);
   const [saving, setSaving] = useState(false);
 
   // 🆕 opening the roster's Pencil icon lands here with ?edit=1 pre-armed.
@@ -163,10 +163,6 @@ const AdminTherapistDetailPage: React.FC = () => {
   //    calc that didn't account for real active bookings.
   const liveBookings = useTherapistBookings(docId);
   const activeBooking = findActiveBooking(liveBookings);
-  // 🆕 Round 28s275 — real rating/review count, same source the public
-  // site uses (bookings/{id}.rating, not the never-written therapist-doc
-  // field this page used to read).
-  const liveReviews = useTherapistReviews(docId);
 
   useEffect(() => {
     if (!id) return;
@@ -239,6 +235,21 @@ const AdminTherapistDetailPage: React.FC = () => {
           const today = dayjs().format("YYYY-MM-DD");
           let todayCount = 0;
           let last: Date | null = null;
+          // 🆕 Round 28s276 — a booking counts as reviewed if it has real
+          // reviewText, regardless of whether a `rating` field exists.
+          // Matches ReviewListPage.tsx's established convention exactly
+          // (`rating: typeof r.rating === "number" ? r.rating : 5`) — a
+          // written positive comment with no explicit star still counts,
+          // defaulting to 5. Confirmed via a real Firestore doc (founder
+          // screenshot): older completed bookings can have reviewText with
+          // no rating field at all, which the public-facing
+          // useTherapistReviews hook's `where("rating",">=",1)` query
+          // silently excludes — that filter exists there ONLY because
+          // anonymous visitors need it to satisfy firestore.rules (28s6:
+          // un-rated bookings still carry PII and must stay private from
+          // public listeners). Admin already has full list access via
+          // isAdmin(), so this page isn't bound by that same constraint.
+          const ratings: number[] = [];
           snap.forEach((d) => {
             const b = d.data();
             if (b.date === today) todayCount++;
@@ -246,10 +257,14 @@ const AdminTherapistDetailPage: React.FC = () => {
               const dDate = b.startAt.toDate();
               if (!last || dDate > last) last = dDate;
             }
+            const text = typeof b.reviewText === "string" ? b.reviewText.trim() : "";
+            if (text) ratings.push(typeof b.rating === "number" ? b.rating : 5);
           });
           setTodayBookings(todayCount);
           setTotalBookings(snap.size);
           setLastBookingAt(last);
+          setReviewCount(ratings.length);
+          setAvgRating(ratings.length ? ratings.reduce((s, r) => s + r, 0) / ratings.length : 0);
         }
       );
 
@@ -446,13 +461,13 @@ const AdminTherapistDetailPage: React.FC = () => {
         {/* ── Stats row (always visible, always live) ───────────── */}
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: "10px", mt: 2.5, mb: 3 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: "8px", background: adminColor.panel2, borderRadius: "12px", p: "9px 14px" }}>
-            <Star size={15} color={adminColor.dim} weight={liveReviews.reviewCount > 0 ? "fill" : "regular"} />
-            <Typography sx={{ ...adminFigureSx, fontSize: 14 }}>{liveReviews.reviewCount > 0 ? liveReviews.avgRating.toFixed(1) : "—"}</Typography>
+            <Star size={15} color={adminColor.dim} weight={reviewCount > 0 ? "fill" : "regular"} />
+            <Typography sx={{ ...adminFigureSx, fontSize: 14 }}>{reviewCount > 0 ? avgRating.toFixed(1) : "—"}</Typography>
             <Typography sx={{ fontSize: 11, color: adminColor.dim }}>คะแนน</Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: "8px", background: adminColor.panel2, borderRadius: "12px", p: "9px 14px" }}>
             <ChatCircleText size={15} color={adminColor.dim} />
-            <Typography sx={{ ...adminFigureSx, fontSize: 14 }}>{liveReviews.reviewCount}</Typography>
+            <Typography sx={{ ...adminFigureSx, fontSize: 14 }}>{reviewCount}</Typography>
             <Typography sx={{ fontSize: 11, color: adminColor.dim }}>รีวิว</Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: "8px", background: adminColor.panel2, borderRadius: "12px", p: "9px 14px" }}>
