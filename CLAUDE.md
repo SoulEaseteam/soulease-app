@@ -856,6 +856,42 @@ NEW code path, check it populates every field the server Telegram formatter
 reads (contactName, phone, address, locationName, note, payment, paymentFee),
 or the alert silently shows "—".
 
+### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
+
+Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
+No production change — everything removed was dead (tree-shaken) or not
+shipped; the bundle is byte-identical, so this was NOT deployed.
+
+**28s250 — junk + deps:** deleted a tracked file literally named `" "` (a
+stray old default Firestore "allow all" rules template), two obsolete
+one-off scripts (`cleanup.sh`, `removeAvailable.cjs` — targets long gone),
+6 unused deps (`@mui/lab`, `axios`, `react-phone-number-input`, `swiper`,
+`uuid`, `@types/uuid` — 0 refs anywhere; lockfile −226 lines), `src/utils/
+telegram.ts` (orphaned when 28s249 removed its only caller), and swept all
+`.DS_Store` (gitignored).
+
+**28s251 — 20 dead source files:** the home-page chrome removed during the
+28s140s "app-style home" purge (HeroSection, PromiseStrip, HomeFooter,
+ReserveCTA, SocialProofTicker, FirstBookingBanner, AdminPresenceBadge,
+ReferralActiveBanner, FloatingLanguageSwitcher, GlobalLanguagePill +
+data/heroPromos + 7 orphaned hooks), plus AdminLoginPage (superseded by the
+/admin/login→/login redirect to LoginPage) and utils/therapistStatus.ts
+(superseded by calculateTherapistStatus). All verified: zero live importers
+(the only "imports" were commented-out lines in HomePage.tsx), tsc + build
+pass. HomePage's comments claimed these were "kept on disk for git revert" —
+unnecessary, git history preserves them.
+
+**Deliberately NOT touched — knip's "unused exports" list (72):** these are
+tree-shaken (zero production cost) and the list is unreliable — e.g. it flags
+`src/app/i18n.ts`'s default export as unused, but `main.tsx` does
+`import "./app/i18n"` (removing it would break i18n app-wide); it flags the
+taxiFare/servicePricing tunable constants that CLAUDE.md documents as
+intentional knobs; and it flags DetailSections sub-components that are
+rendered inside their own file. Stripping them = zero benefit, real
+whole-app risk. **Rule: don't bulk-apply knip's export-level results on this
+repo — vet each; the file-level and dependency results are trustworthy, the
+export-level ones are not.**
+
 ### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
 
 **Trigger.** View shared Google Search Console 3-month data:
