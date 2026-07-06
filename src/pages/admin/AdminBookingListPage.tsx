@@ -399,16 +399,16 @@ const AdminBookingListPage: React.FC = () => {
     }
   };
 
-  // 🆕 28s259 (fix: "full detail แก้ไขไม่ได้" + "เปลี่ยนหมอนวดได้") — the
-  //   detail drawer's edit form (customer/phone/date/time/location/
-  //   therapist) writes through here. Deliberately excludes service/
-  //   duration/price — those drive `servicePrice`/`taxiFee`, already
-  //   computed and settled; editing them needs a real recalculation flow,
-  //   not a quick text-field patch.
-  const saveDetails = async (id: string, patch: Record<string, unknown>) => {
+  // 🆕 28s259/261 (fix: "full detail แก้ไขไม่ได้" + "เปลี่ยนหมอนวดได้" +
+  //   "แก้ราคาได้ ทั้งหมด") — the detail drawer's edit form (customer/phone/
+  //   date/time/location/therapist/payment method/price) writes through
+  //   here. `auditDetail` is a SEPARATE object from `patch` — it's only for
+  //   the audit-log entry (e.g. price before/after), never written onto the
+  //   booking doc itself.
+  const saveDetails = async (id: string, patch: Record<string, unknown>, auditDetail?: Record<string, unknown>) => {
     try {
       await updateDoc(doc(db, "bookings", id), patch);
-      void logAdminAction("booking.edit_details", { bookingId: id });
+      void logAdminAction("booking.edit_details", { bookingId: id, ...auditDetail });
       setToast({ msg: "Details saved", ok: true });
     } catch {
       setToast({ msg: "Save failed", ok: false });
@@ -795,7 +795,7 @@ const AdminBookingListPage: React.FC = () => {
             onTogglePaid={() => { void togglePaid(detailBooking.id, isPaid(detailBooking)); }}
             onSaveNote={(note) => { void saveNote(detailBooking.id, note); }}
             onChangeStatus={(status) => changeStatus(detailBooking.id, status)}
-            onSaveDetails={(patch) => { void saveDetails(detailBooking.id, patch); }}
+            onSaveDetails={(patch, auditDetail) => { void saveDetails(detailBooking.id, patch, auditDetail); }}
           />
         )}
       </Drawer>
@@ -1178,7 +1178,7 @@ const DetailPanel: React.FC<{
   onTogglePaid: () => void;
   onSaveNote: (note: string) => void;
   onChangeStatus: (status: string) => void;
-  onSaveDetails: (patch: Record<string, unknown>) => void;
+  onSaveDetails: (patch: Record<string, unknown>, auditDetail?: Record<string, unknown>) => void;
 }> = ({ booking: b, therapists, onClose, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onChangeStatus, onSaveDetails }) => {
   const [note, setNote] = useState(b.adminNote ?? "");
   const cfg        = cfgFor(b.status);
@@ -1186,9 +1186,12 @@ const DetailPanel: React.FC<{
   const total      = isCancelled ? 0 : (b.totalPrice ?? b.total ?? 0);
   const paid        = isPaid(b);
 
-  // 🆕 28s259 — edit-details form (customer/phone/date/time/location/
-  //   therapist). Deliberately excludes service/duration/price — those
-  //   drive amounts already computed and settled elsewhere.
+  // 🆕 28s259/261 — edit-details form (customer/phone/date/time/location/
+  //   therapist/payment method/price). Price was deliberately excluded in
+  //   28s259 ("แก้ไม่ได้เพราะกระทบยอดที่คำนวณไว้แล้ว") — founder reversed
+  //   that in 28s261 ("แก้ราคาได้ ทั้งหมด"): service price + taxi fee are
+  //   now free-form numbers, with Total recomputed live (incl. the payment
+  //   surcharge) so the operator sees the real total before saving.
   const [editing, setEditing] = useState(false);
   const startEdit = () => {
     setEditForm({
@@ -1199,6 +1202,8 @@ const DetailPanel: React.FC<{
       time: b.time || (b.startAt?.toDate ? fmtBKK(b.startAt.toDate(), "HH:mm") : "10:00"),
       location: b.locationName || b.address || "",
       payment: b.payment || "cash",
+      servicePrice: String(b.servicePrice ?? 0),
+      taxiFee: String(b.taxiFee ?? 0),
     });
     setEditing(true);
   };
@@ -1210,30 +1215,45 @@ const DetailPanel: React.FC<{
     time: b.time ?? "",
     location: b.locationName || b.address || "",
     payment: b.payment || "cash",
+    servicePrice: String(b.servicePrice ?? 0),
+    taxiFee: String(b.taxiFee ?? 0),
   });
+  // Live totals for the edit form — recomputed from whatever's currently
+  // typed, not the stored booking values.
+  const editServicePrice = Number(editForm.servicePrice) || 0;
+  const editTaxiFee      = Number(editForm.taxiFee) || 0;
+  const editBaseTotal    = editServicePrice + editTaxiFee;
+  const editSurcharge    = paymentSurcharge(editForm.payment, editBaseTotal);
+  const editTotal        = editBaseTotal + editSurcharge;
+
   const saveEdit = () => {
     const startAt = Timestamp.fromDate(dayjs(`${editForm.date} ${editForm.time}`, "YYYY-MM-DD HH:mm").toDate());
     const newTherapist = therapists.find((t) => t.id === editForm.therapistId);
-    // 🆕 28s260 — recompute the surcharge off (service + taxi), never off the
-    //   stored totalPrice, so re-saving with the SAME method twice can't
-    //   compound an old surcharge into the new total.
-    const baseTotal = (b.servicePrice ?? 0) + (b.taxiFee ?? 0);
-    const paymentFee = paymentSurcharge(editForm.payment, baseTotal);
-    onSaveDetails({
-      contactName: editForm.contactName.trim(),
-      customerName: editForm.contactName.trim(),
-      phone: editForm.phone.trim(),
-      date: editForm.date,
-      time: editForm.time,
-      payment: editForm.payment,
-      paymentFee,
-      totalPrice: baseTotal + paymentFee,
-      startAt,
-      locationName: editForm.location.trim(),
-      ...(editForm.therapistId && editForm.therapistId !== b.therapistId
-        ? { therapistId: editForm.therapistId, therapistName: newTherapist?.name ?? b.therapistName }
-        : {}),
-    });
+    const oldTotal = b.totalPrice ?? b.total ?? 0;
+    // 🆕 28s261 — audit detail is a SEPARATE object from the Firestore patch
+    //   (a prior draft of this accidentally put priceChangedFrom/To INTO the
+    //   patch, which would have written those as real fields on the booking
+    //   doc — caught before shipping).
+    onSaveDetails(
+      {
+        contactName: editForm.contactName.trim(),
+        customerName: editForm.contactName.trim(),
+        phone: editForm.phone.trim(),
+        date: editForm.date,
+        time: editForm.time,
+        payment: editForm.payment,
+        servicePrice: editServicePrice,
+        taxiFee: editTaxiFee,
+        paymentFee: editSurcharge,
+        totalPrice: editTotal,
+        startAt,
+        locationName: editForm.location.trim(),
+        ...(editForm.therapistId && editForm.therapistId !== b.therapistId
+          ? { therapistId: editForm.therapistId, therapistName: newTherapist?.name ?? b.therapistName }
+          : {}),
+      },
+      editTotal !== oldTotal ? { priceChangedFrom: oldTotal, priceChangedTo: editTotal } : undefined
+    );
     setEditing(false);
   };
 
@@ -1429,6 +1449,29 @@ const DetailPanel: React.FC<{
                 />
               </Box>
               <Divider sx={{ opacity: 0.4 }} />
+              {/* 🆕 28s261 (founder: "แก้ราคาได้ ทั้งหมด") — reverses the
+                  28s259 exclusion. Free-form Service/Taxi numbers; Total is
+                  ALWAYS derived (service + taxi + surcharge), never itself
+                  editable, so it can't drift from its own inputs. */}
+              <Box sx={{ py: 1, display: "flex", gap: 1 }}>
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Service price (฿)</Typography>
+                  <input
+                    type="number" min={0} step={10} value={editForm.servicePrice}
+                    onChange={(e) => setEditForm((f) => ({ ...f, servicePrice: e.target.value }))}
+                    style={{ width: "100%", fontFamily: SANS, fontSize: 13, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: 10, padding: "6px 10px", boxSizing: "border-box", background: "transparent" }}
+                  />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Taxi fee (฿)</Typography>
+                  <input
+                    type="number" min={0} step={10} value={editForm.taxiFee}
+                    onChange={(e) => setEditForm((f) => ({ ...f, taxiFee: e.target.value }))}
+                    style={{ width: "100%", fontFamily: SANS, fontSize: 13, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: 10, padding: "6px 10px", boxSizing: "border-box", background: "transparent" }}
+                  />
+                </Box>
+              </Box>
+              <Divider sx={{ opacity: 0.4 }} />
               <Box sx={{ py: 1 }}>
                 <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>
                   Payment method
@@ -1436,7 +1479,13 @@ const DetailPanel: React.FC<{
                 <Select
                   size="small" fullWidth
                   value={editForm.payment}
+                  displayEmpty
                   onChange={(e) => setEditForm((f) => ({ ...f, payment: e.target.value }))}
+                  renderValue={(v) => (
+                    <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.text }}>
+                      {paymentMethodLabel(v as string) === "—" ? "Select…" : paymentMethodLabel(v as string)}
+                    </Typography>
+                  )}
                   sx={{ fontSize: 13, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 } }}
                   MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
                 >
@@ -1444,14 +1493,17 @@ const DetailPanel: React.FC<{
                     <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
                   ))}
                 </Select>
-                {/* 🆕 28s260 — preview the surcharge impact before saving, so
-                    switching to WeChat/Alipay doesn't silently change the
-                    total without the operator noticing. */}
-                {paymentSurcharge(editForm.payment, (b.servicePrice ?? 0) + (b.taxiFee ?? 0)) > 0 && (
+                {/* 🆕 28s260/261 — live preview off the CURRENTLY TYPED service
+                    + taxi, not the stale stored values, so the surcharge and
+                    the final total are always accurate to what's on screen. */}
+                {editSurcharge > 0 && (
                   <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.amber, mt: 0.5 }}>
-                    + {formatTHB(paymentSurcharge(editForm.payment, (b.servicePrice ?? 0) + (b.taxiFee ?? 0)))} transfer surcharge will be added to the total
+                    + {formatTHB(editSurcharge)} transfer surcharge will be added to the total
                   </Typography>
                 )}
+                <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.text, fontWeight: 700, mt: 0.75 }}>
+                  New total: <Box component="span" sx={{ ...adminFigureSx, fontSize: 13, color: adminColor.accent }}>{formatTHB(editTotal)}</Box>
+                </Typography>
               </Box>
               <Divider sx={{ opacity: 0.4 }} />
             </>
