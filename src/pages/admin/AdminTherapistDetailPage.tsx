@@ -40,7 +40,7 @@ import {
   ArrowLeft, PencilSimple, FloppyDisk, X, Eye,
   Star, ChatCircleText, Clock, MapPin, Medal, EyeSlash, Prohibit, Umbrella,
   Calendar, ChartBar, ClockCounterClockwise, TelegramLogo, IdentificationCard, Image as ImageIcon, Sparkle,
-  Check, Warning, Globe, Notebook, UserFocus, MapPinLine, Info,
+  Check, Warning, Globe, Notebook, UserFocus, MapPinLine, Info, Plus, Trash,
 } from "phosphor-react";
 import type { Credential, LanguageSkill } from "@/types/therapist";
 import { calculateTherapistStatus, isOverrideExpired } from "@/utils/calculateTherapistStatus";
@@ -48,6 +48,8 @@ import { endOfTodayBKK, fmtBKKTimeShort } from "@/utils/time";
 import { useTherapistBookings, findActiveBooking } from "@/utils/useTherapistBookings";
 import { logAdminAction } from "@/utils/auditLog";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
+import services from "@/data/services";
+import { resolveServiceId, getServiceLabel } from "@/utils/serviceCatalog";
 
 type Avail = "available" | "bookable" | "resting" | "holiday";
 type StatusOverride = "Auto" | "available" | "bookable" | "resting";
@@ -91,6 +93,16 @@ const LANG_LEVEL_TH: Record<string, string> = {
   Native: "เจ้าของภาษา", Fluent: "คล่อง", Conversational: "พอสื่อสาร", Basic: "พื้นฐาน",
 };
 
+// 🆕 Round 28s278 — option lists for the array-field editors.
+const LANG_CODES = ["th", "en", "zh", "ja", "ko"] as const;
+const LANG_LEVELS: LanguageSkill["level"][] = ["Native", "Fluent", "Conversational", "Basic"];
+const CRED_TYPES: Credential["type"][] = ["license", "diploma", "background", "certification"];
+const BIO_LANGS: Array<[string, string]> = [
+  ["th", "ไทย"], ["en", "อังกฤษ"], ["zh", "จีน"], ["ja", "ญี่ปุ่น"], ["ko", "เกาหลี"],
+];
+// The 4 canonical bookable services (SKU ids), for the multi-select.
+const SERVICE_OPTIONS = services.map((s) => ({ id: s.id, name: s.name }));
+
 const selectMenuProps = {
   PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px", boxShadow: "0 8px 24px rgba(31,41,51,0.16)" } },
 } as const;
@@ -107,6 +119,26 @@ const SectionHeader: React.FC<{ icon: React.ReactNode; children: React.ReactNode
   </Box>
 );
 
+// 🆕 Round 28s278 (founder: "ปรับให้สวยขึ้น") — each section is now its own
+// soft card (in both view and edit), so the page reads as grouped panels
+// instead of a flat stack of rows/fields.
+const SectionCard: React.FC<{ icon: React.ReactNode; title: string; children: React.ReactNode }> = ({ icon, title, children }) => (
+  <Box sx={{ background: adminColor.panel2, border: `1px solid ${adminColor.line}`, borderRadius: "16px", p: "16px 16px 17px" }}>
+    <SectionHeader icon={icon}>{title}</SectionHeader>
+    {children}
+  </Box>
+);
+
+const chipDeleteBtnSx = {
+  color: adminColor.dim,
+  "&:hover": { background: "rgba(220,38,38,0.09)", color: adminColor.red },
+} as const;
+
+const addBtnSx = {
+  color: adminColor.accent, textTransform: "none", fontWeight: 700, fontSize: 12.5,
+  alignSelf: "flex-start", mt: "2px",
+} as const;
+
 interface FormState {
   name: string;
   image: string;
@@ -120,12 +152,23 @@ interface FormState {
   hidden: boolean;
   blocked: boolean;
   telegramChatId: string;
+  // 🆕 Round 28s278 — rich fields, now editable (were view-only in 28s277).
+  area: string;
+  homeAddress: string;
+  features: Record<string, string>;
+  languageSkills: LanguageSkill[];
+  servicesAvailable: string[]; // canonical SKU ids
+  credentials: Credential[];
+  gallery: string[];
+  bios: Record<string, string>;
 }
 
 const EMPTY_FORM: FormState = {
   name: "", image: "", specialty: "",
   startTime: "", endTime: "", badge: "", statusOverride: "Auto", isHoliday: false,
   currentLocation: "", hidden: false, blocked: false, telegramChatId: "",
+  area: "", homeAddress: "", features: {}, languageSkills: [], servicesAvailable: [],
+  credentials: [], gallery: [], bios: {},
 };
 
 function toFormState(data: Record<string, unknown>): FormState {
@@ -133,6 +176,30 @@ function toFormState(data: Record<string, unknown>): FormState {
   const statusOverride: StatusOverride =
     rawOverride === "available" || rawOverride === "bookable" || rawOverride === "resting" ? rawOverride : "Auto";
   const loc = data.currentLocation;
+  // features → a flat string map of the known editable keys (unknown keys
+  // like employmentType are preserved separately at save time).
+  const rawFeatures = (data.features && typeof data.features === "object" ? data.features : {}) as Record<string, unknown>;
+  const features: Record<string, string> = {};
+  for (const [k] of FEATURE_ROWS) {
+    if (rawFeatures[k] != null) features[k] = String(rawFeatures[k]);
+  }
+  const langs = Array.isArray(data.languageSkills) ? (data.languageSkills as LanguageSkill[]) : [];
+  const creds = Array.isArray(data.credentials) ? (data.credentials as Credential[]) : [];
+  const gallery = Array.isArray(data.gallery) ? (data.gallery as string[]).filter(Boolean) : [];
+  // Normalize whatever's stored (legacy slug OR SKU id) to canonical SKU.
+  const rawServices = Array.isArray(data.servicesAvailable)
+    ? (data.servicesAvailable as string[])
+    : Array.isArray(data.services)
+      ? (data.services as string[])
+      : [];
+  const servicesAvailable = Array.from(
+    new Set(rawServices.map((s) => resolveServiceId(s) ?? s).filter(Boolean))
+  );
+  const rawBios = (data.bios && typeof data.bios === "object" ? data.bios : {}) as Record<string, unknown>;
+  const bios: Record<string, string> = {};
+  for (const [code] of BIO_LANGS) {
+    if (rawBios[code] != null) bios[code] = String(rawBios[code]);
+  }
   return {
     name: (data.name as string) || "",
     image: (data.image as string) || "",
@@ -147,6 +214,14 @@ function toFormState(data: Record<string, unknown>): FormState {
     hidden: !!data.hidden,
     blocked: !!data.blocked,
     telegramChatId: (data.telegramChatId as string) || "",
+    area: (data.area as string) || "",
+    homeAddress: (data.homeAddress as string) || "",
+    features,
+    languageSkills: langs,
+    servicesAvailable,
+    credentials: creds,
+    gallery,
+    bios,
   };
 }
 
@@ -349,6 +424,41 @@ const AdminTherapistDetailPage: React.FC = () => {
     setFormData((f) => ({ ...f, statusOverride: value, ...(value !== "Auto" ? { isHoliday: false } : {}) }));
   };
 
+  // 🆕 Round 28s278 — mutation helpers for the rich editable fields.
+  const setFeature = (key: string, value: string) =>
+    setFormData((f) => ({ ...f, features: { ...f.features, [key]: value } }));
+
+  const addLanguage = () =>
+    setFormData((f) => ({ ...f, languageSkills: [...f.languageSkills, { code: "th", level: "Fluent" }] }));
+  const updateLanguage = (i: number, patch: Partial<LanguageSkill>) =>
+    setFormData((f) => ({ ...f, languageSkills: f.languageSkills.map((l, idx) => (idx === i ? { ...l, ...patch } : l)) }));
+  const removeLanguage = (i: number) =>
+    setFormData((f) => ({ ...f, languageSkills: f.languageSkills.filter((_, idx) => idx !== i) }));
+
+  const toggleService = (id: string) =>
+    setFormData((f) => ({
+      ...f,
+      servicesAvailable: f.servicesAvailable.includes(id)
+        ? f.servicesAvailable.filter((s) => s !== id)
+        : [...f.servicesAvailable, id],
+    }));
+
+  const addCredential = () =>
+    setFormData((f) => ({ ...f, credentials: [...f.credentials, { type: "certification", label: "", meta: "" }] }));
+  const updateCredential = (i: number, patch: Partial<Credential>) =>
+    setFormData((f) => ({ ...f, credentials: f.credentials.map((c, idx) => (idx === i ? { ...c, ...patch } : c)) }));
+  const removeCredential = (i: number) =>
+    setFormData((f) => ({ ...f, credentials: f.credentials.filter((_, idx) => idx !== i) }));
+
+  const addGallery = () => setFormData((f) => ({ ...f, gallery: [...f.gallery, ""] }));
+  const updateGallery = (i: number, value: string) =>
+    setFormData((f) => ({ ...f, gallery: f.gallery.map((g, idx) => (idx === i ? value : g)) }));
+  const removeGallery = (i: number) =>
+    setFormData((f) => ({ ...f, gallery: f.gallery.filter((_, idx) => idx !== i) }));
+
+  const setBio = (code: string, value: string) =>
+    setFormData((f) => ({ ...f, bios: { ...f.bios, [code]: value } }));
+
   const handleSave = async () => {
     if (!docId) return;
     setSaving(true);
@@ -360,6 +470,30 @@ const AdminTherapistDetailPage: React.FC = () => {
       const lng = parseFloat(lngStr.trim());
       if (!isNaN(lat) && !isNaN(lng)) locationValue = { lat, lng };
     }
+
+    // 🆕 Round 28s278 — rebuild nested objects by OVERLAYING edited keys
+    // onto the ORIGINAL doc's nested object, so unknown/unedited keys
+    // (e.g. features.employmentType, or a bios language not in the editor)
+    // are preserved rather than wiped. Clean out empty strings so we don't
+    // persist blank feature rows.
+    const rawFeatures = (rawDoc?.features && typeof rawDoc.features === "object" ? rawDoc.features : {}) as Record<string, unknown>;
+    const mergedFeatures: Record<string, unknown> = { ...rawFeatures };
+    for (const [k] of FEATURE_ROWS) {
+      const v = (formData.features[k] ?? "").trim();
+      if (v) mergedFeatures[k] = v;
+      else delete mergedFeatures[k];
+    }
+    const rawBios = (rawDoc?.bios && typeof rawDoc.bios === "object" ? rawDoc.bios : {}) as Record<string, unknown>;
+    const mergedBios: Record<string, unknown> = { ...rawBios };
+    for (const [code] of BIO_LANGS) {
+      const v = (formData.bios[code] ?? "").trim();
+      if (v) mergedBios[code] = v;
+      else delete mergedBios[code];
+    }
+    // Drop blank rows the operator added but never filled.
+    const cleanLanguages = formData.languageSkills.filter((l) => l.code);
+    const cleanCredentials = formData.credentials.filter((c) => (c.label ?? "").trim());
+    const cleanGallery = formData.gallery.map((g) => g.trim()).filter(Boolean);
 
     // 🆕 Round 28s275 — customId/rating/reviews dropped from the write
     // patch entirely: customId has no reader anywhere in the codebase
@@ -383,11 +517,20 @@ const AdminTherapistDetailPage: React.FC = () => {
       hidden: formData.hidden,
       blocked: formData.blocked,
       telegramChatId: formData.telegramChatId,
+      // 🆕 Round 28s278 — the rich fields, now written back too.
+      area: formData.area,
+      homeAddress: formData.homeAddress,
+      features: mergedFeatures,
+      languageSkills: cleanLanguages,
+      servicesAvailable: formData.servicesAvailable,
+      credentials: cleanCredentials,
+      gallery: cleanGallery,
+      bios: mergedBios,
       updatedAt: serverTimestamp(),
     };
 
     const changedFields = (Object.keys(formData) as (keyof FormState)[]).filter(
-      (k) => formData[k] !== originalRef.current[k]
+      (k) => JSON.stringify(formData[k]) !== JSON.stringify(originalRef.current[k])
     );
 
     try {
@@ -544,63 +687,59 @@ const AdminTherapistDetailPage: React.FC = () => {
         </Box>
 
         {!editing ? (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <ReadRow icon={<Clock size={14} />} label="Hours" value={`${formData.startTime || "--:--"} – ${formData.endTime || "--:--"}`} />
-                <ReadRow icon={<MapPin size={14} />} label="Location" value={formData.currentLocation || "—"} />
-                <ReadRow icon={<Medal size={14} />} label="Badge" value={formData.badge || "None"} />
-                {rebookRate != null && <ReadRow icon={<ChartBar size={14} />} label="Rebook rate" value={`${rebookRate}%`} />}
-                {totalSessions != null && <ReadRow icon={<Star size={14} />} label="Sessions (สะสม)" value={String(totalSessions)} />}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.75 }}>
+            <SectionCard icon={<Info size={13} />} title="ข้อมูลหลัก">
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: "10px" }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <ReadRow icon={<Clock size={14} />} label="Hours" value={`${formData.startTime || "--:--"} – ${formData.endTime || "--:--"}`} />
+                  <ReadRow icon={<MapPin size={14} />} label="Location" value={formData.currentLocation || "—"} />
+                  <ReadRow icon={<Medal size={14} />} label="Badge" value={formData.badge || "None"} />
+                  {rebookRate != null && <ReadRow icon={<ChartBar size={14} />} label="Rebook rate" value={`${rebookRate}%`} />}
+                  {totalSessions != null && <ReadRow icon={<Star size={14} />} label="Sessions (สะสม)" value={String(totalSessions)} />}
+                </Box>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {/* 🆕 Round 28s275 — "Custom ID" had no reader anywhere in the
+                      codebase; the real public slug IS this doc's Firestore id
+                      (confirmed by this page's own lookup logic above trying it
+                      directly first). Shows the real thing instead of a fake
+                      editable field that never did anything. */}
+                  <ReadRow icon={<IdentificationCard size={14} />} label="รหัส (URL)" value={docId || "—"} />
+                  <ReadRow icon={<TelegramLogo size={14} />} label="Telegram" value={formData.telegramChatId || "ยังไม่ผูก"} />
+                  <ReadRow icon={<EyeSlash size={14} />} label="Hidden" value={formData.hidden ? "ซ่อนจากหน้าเว็บ" : "แสดงปกติ"} alert={formData.hidden} />
+                  <ReadRow icon={<Prohibit size={14} />} label="Blocked" value={formData.blocked ? "ปิดใช้งาน" : "ใช้งานปกติ"} alert={formData.blocked} />
+                  <ReadRow icon={<Umbrella size={14} />} label="Holiday" value={formData.isHoliday ? "วันหยุดวันนี้" : "ไม่ได้หยุด"} alert={formData.isHoliday} />
+                </Box>
               </Box>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {/* 🆕 Round 28s275 — "Custom ID" had no reader anywhere in the
-                    codebase; the real public slug IS this doc's Firestore id
-                    (confirmed by this page's own lookup logic above trying it
-                    directly first). Shows the real thing instead of a fake
-                    editable field that never did anything. */}
-                <ReadRow icon={<IdentificationCard size={14} />} label="รหัส (URL)" value={docId || "—"} />
-                <ReadRow icon={<TelegramLogo size={14} />} label="Telegram" value={formData.telegramChatId || "ยังไม่ผูก"} />
-                <ReadRow icon={<EyeSlash size={14} />} label="Hidden" value={formData.hidden ? "ซ่อนจากหน้าเว็บ" : "แสดงปกติ"} alert={formData.hidden} />
-                <ReadRow icon={<Prohibit size={14} />} label="Blocked" value={formData.blocked ? "ปิดใช้งาน" : "ใช้งานปกติ"} alert={formData.blocked} />
-                <ReadRow icon={<Umbrella size={14} />} label="Holiday" value={formData.isHoliday ? "วันหยุดวันนี้" : "ไม่ได้หยุด"} alert={formData.isHoliday} />
-              </Box>
-            </Box>
+            </SectionCard>
 
-            {/* ── Area / standby address (admin-only, per 28at) ──────── */}
             {(area || homeAddress) && (
-              <Box>
-                <SectionHeader icon={<MapPinLine size={13} />}>พื้นที่ / ที่อยู่</SectionHeader>
+              <SectionCard icon={<MapPinLine size={13} />} title="พื้นที่ / ที่อยู่">
                 <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {area && <ReadRow icon={<MapPin size={14} />} label="พื้นที่" value={area} />}
                   {homeAddress && <ReadRow icon={<MapPinLine size={14} />} label="ที่อยู่ standby" value={homeAddress} />}
                 </Box>
-              </Box>
+              </SectionCard>
             )}
 
-            {/* ── Physical / profile features ───────────────────────── */}
             {featureEntries.length > 0 && (
-              <Box>
-                <SectionHeader icon={<UserFocus size={13} />}>ลักษณะเฉพาะตัว</SectionHeader>
+              <SectionCard icon={<UserFocus size={13} />} title="ลักษณะเฉพาะตัว">
                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(3, 1fr)" }, gap: "8px" }}>
                   {featureEntries.map(([k, label]) => (
-                    <Box key={k} sx={{ background: adminColor.panel2, borderRadius: "10px", p: "8px 12px" }}>
+                    <Box key={k} sx={{ background: adminColor.panel, borderRadius: "10px", p: "8px 12px", border: `1px solid ${adminColor.line}` }}>
                       <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>{label}</Typography>
                       <Typography sx={{ fontSize: 13, fontWeight: 600, color: adminColor.text, mt: "1px" }}>{String(features[k])}</Typography>
                     </Box>
                   ))}
                 </Box>
-              </Box>
+              </SectionCard>
             )}
 
-            {/* ── Languages ─────────────────────────────────────────── */}
             {(languageSkills.length > 0 || featureLanguage) && (
-              <Box>
-                <SectionHeader icon={<Globe size={13} />}>ภาษา</SectionHeader>
+              <SectionCard icon={<Globe size={13} />} title="ภาษา">
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                   {languageSkills.length > 0 ? (
-                    languageSkills.map((l) => (
-                      <Box key={l.code} sx={{ display: "flex", alignItems: "center", gap: "6px", background: adminColor.panel2, borderRadius: "9px", p: "6px 12px" }}>
+                    languageSkills.map((l, i) => (
+                      <Box key={`${l.code}-${i}`} sx={{ display: "flex", alignItems: "center", gap: "6px", background: adminColor.panel, borderRadius: "9px", p: "6px 12px", border: `1px solid ${adminColor.line}` }}>
                         <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: adminColor.text }}>{LANG_LABEL[l.code] ?? l.code}</Typography>
                         <Typography sx={{ fontSize: 11, color: adminColor.dim }}>{LANG_LEVEL_TH[l.level] ?? l.level}</Typography>
                       </Box>
@@ -609,72 +748,57 @@ const AdminTherapistDetailPage: React.FC = () => {
                     <Typography sx={{ fontSize: 13, color: adminColor.muted }}>{featureLanguage}</Typography>
                   )}
                 </Box>
-              </Box>
+              </SectionCard>
             )}
 
-            {/* ── Services she can perform ──────────────────────────── */}
             {servicesAvailable.length > 0 && (
-              <Box>
-                <SectionHeader icon={<Sparkle size={13} />}>บริการที่ทำได้</SectionHeader>
+              <SectionCard icon={<Sparkle size={13} />} title="บริการที่ทำได้">
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                   {servicesAvailable.map((s) => (
                     <Box key={s} sx={{ background: "rgba(78,126,140,0.10)", color: adminColor.accent, borderRadius: "9px", p: "6px 12px", fontSize: 12.5, fontWeight: 700 }}>
-                      {s.replace(/-/g, " ")}
+                      {getServiceLabel(s, s.replace(/-/g, " "))}
                     </Box>
                   ))}
                 </Box>
-              </Box>
+              </SectionCard>
             )}
 
-            {/* ── Credentials / background ──────────────────────────── */}
             {credentials.length > 0 && (
-              <Box>
-                <SectionHeader icon={<Info size={13} />}>ใบรับรอง / ประวัติ</SectionHeader>
+              <SectionCard icon={<Info size={13} />} title="ใบรับรอง / ประวัติ">
                 <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {credentials.map((c, i) => (
-                    <Box key={i} sx={{ background: adminColor.panel2, borderRadius: "10px", p: "9px 13px" }}>
+                    <Box key={i} sx={{ background: adminColor.panel, borderRadius: "10px", p: "9px 13px", border: `1px solid ${adminColor.line}` }}>
                       <Typography sx={{ fontSize: 13, fontWeight: 600, color: adminColor.text }}>{c.label}</Typography>
                       {c.meta && <Typography sx={{ fontSize: 11.5, color: adminColor.dim, mt: "1px" }}>{c.meta}</Typography>}
                     </Box>
                   ))}
                 </Box>
-              </Box>
+              </SectionCard>
             )}
 
-            {/* ── Bio ───────────────────────────────────────────────── */}
             {bioText && (
-              <Box>
-                <SectionHeader icon={<Notebook size={13} />}>ประวัติแนะนำ</SectionHeader>
-                <Typography sx={{ fontSize: 13, color: adminColor.muted, lineHeight: 1.65, background: adminColor.panel2, borderRadius: "12px", p: "12px 14px" }}>{bioText}</Typography>
-              </Box>
+              <SectionCard icon={<Notebook size={13} />} title="ประวัติแนะนำ">
+                <Typography sx={{ fontSize: 13, color: adminColor.muted, lineHeight: 1.65 }}>{bioText}</Typography>
+              </SectionCard>
             )}
 
-            {/* ── Gallery ───────────────────────────────────────────── */}
             {gallery.length > 0 && (
-              <Box>
-                <SectionHeader icon={<ImageIcon size={13} />}>แกลเลอรี ({gallery.length})</SectionHeader>
+              <SectionCard icon={<ImageIcon size={13} />} title={`แกลเลอรี (${gallery.length})`}>
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                   {gallery.map((src, i) => (
                     <Avatar key={i} variant="rounded" src={src} sx={{ width: 74, height: 74, borderRadius: "12px", border: `1px solid ${adminColor.line}` }} />
                   ))}
                 </Box>
-              </Box>
+              </SectionCard>
             )}
           </Box>
         ) : (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-            <Box>
-              <SectionHeader icon={<Sparkle size={13} />}>โปรไฟล์</SectionHeader>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.75 }}>
+            <SectionCard icon={<Sparkle size={13} />} title="โปรไฟล์">
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
                 <TextField label="Name" fullWidth size="small" sx={fieldSx} value={formData.name} onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))} />
                 <TextField label="Image URL" fullWidth size="small" sx={fieldSx} value={formData.image} onChange={(e) => setFormData((f) => ({ ...f, image: e.target.value }))} />
                 <TextField label="Specialty" fullWidth size="small" sx={fieldSx} value={formData.specialty} onChange={(e) => setFormData((f) => ({ ...f, specialty: e.target.value }))} />
-                {/* 🆕 Round 28s275 — moved in from the old "ชื่อเสียง" section,
-                    which existed only to hold Rating/Reviews + Badge. With
-                    Rating/Reviews now live-computed (see the stats row
-                    above) and no longer editable, a whole section for one
-                    dropdown wasn't worth keeping — Badge fits naturally
-                    here as another profile/presentation attribute. */}
                 <TextField
                   select label="Badge" fullWidth size="small" sx={fieldSx}
                   value={formData.badge}
@@ -686,10 +810,9 @@ const AdminTherapistDetailPage: React.FC = () => {
                   ))}
                 </TextField>
               </Box>
-            </Box>
+            </SectionCard>
 
-            <Box>
-              <SectionHeader icon={<Clock size={13} />}>ตารางเวลาและสถานะ</SectionHeader>
+            <SectionCard icon={<Clock size={13} />} title="ตารางเวลาและสถานะ">
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
                 <Box sx={{ display: "flex", gap: 1 }}>
                   <TextField label="Start Time" type="time" fullWidth size="small" sx={fieldSx} InputLabelProps={{ shrink: true }} value={formData.startTime} onChange={(e) => setFormData((f) => ({ ...f, startTime: e.target.value }))} />
@@ -707,16 +830,13 @@ const AdminTherapistDetailPage: React.FC = () => {
                     <MenuItem value="bookable">Bookable</MenuItem>
                     <MenuItem value="resting">Resting</MenuItem>
                   </TextField>
-                  {/* 🆕 Round 28s271 — Holiday was previously only settable from
-                      the roster grid; missing here (flagged in CLAUDE.md's
-                      Phase-4 TODO: "EditTherapistPage vs grid inconsistency"). */}
                   <Box
                     onClick={() => toggleHoliday(!formData.isHoliday)}
                     sx={{
                       display: "flex", alignItems: "center", gap: "6px", fontSize: 12.5, fontWeight: 700, cursor: "pointer",
                       borderRadius: "10px", padding: "9px 14px", whiteSpace: "nowrap",
                       border: `1px solid ${formData.isHoliday ? "rgba(220,38,38,0.25)" : adminColor.line}`,
-                      background: formData.isHoliday ? "rgba(220,38,38,0.09)" : adminColor.panel2,
+                      background: formData.isHoliday ? "rgba(220,38,38,0.09)" : adminColor.panel,
                       color: formData.isHoliday ? adminColor.red : adminColor.dim,
                     }}
                   >
@@ -725,28 +845,143 @@ const AdminTherapistDetailPage: React.FC = () => {
                 </Box>
                 <TextField label="Location (lat,lng)" fullWidth size="small" sx={fieldSx} value={formData.currentLocation} onChange={(e) => setFormData((f) => ({ ...f, currentLocation: e.target.value }))} />
               </Box>
-            </Box>
+            </SectionCard>
 
-            <Box>
-              <SectionHeader icon={<EyeSlash size={13} />}>การมองเห็น</SectionHeader>
+            {/* 🆕 Round 28s278 — area / standby address now editable. */}
+            <SectionCard icon={<MapPinLine size={13} />} title="พื้นที่ / ที่อยู่">
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+                <TextField label="พื้นที่ (เช่น Din Daeng · Ratchada)" fullWidth size="small" sx={fieldSx} value={formData.area} onChange={(e) => setFormData((f) => ({ ...f, area: e.target.value }))} />
+                <TextField label="ที่อยู่ standby (เต็ม · admin เท่านั้น)" fullWidth size="small" multiline minRows={2} sx={fieldSx} value={formData.homeAddress} onChange={(e) => setFormData((f) => ({ ...f, homeAddress: e.target.value }))} />
+              </Box>
+            </SectionCard>
+
+            {/* 🆕 Round 28s278 — full features grid, editable. */}
+            <SectionCard icon={<UserFocus size={13} />} title="ลักษณะเฉพาะตัว">
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "repeat(3, 1fr)" }, gap: 1 }}>
+                {FEATURE_ROWS.map(([k, label]) => (
+                  <TextField key={k} label={label} fullWidth size="small" sx={fieldSx} value={formData.features[k] ?? ""} onChange={(e) => setFeature(k, e.target.value)} />
+                ))}
+              </Box>
+            </SectionCard>
+
+            {/* 🆕 Round 28s278 — language rows, add/remove. */}
+            <SectionCard icon={<Globe size={13} />} title="ภาษา">
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                {formData.languageSkills.map((l, i) => (
+                  <Box key={i} sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                    <TextField
+                      select size="small" sx={{ ...fieldSx, flex: 1 }} label="ภาษา" value={l.code}
+                      onChange={(e) => updateLanguage(i, { code: e.target.value })}
+                      SelectProps={{ MenuProps: selectMenuProps }}
+                    >
+                      {LANG_CODES.map((c) => <MenuItem key={c} value={c}>{LANG_LABEL[c]}</MenuItem>)}
+                    </TextField>
+                    <TextField
+                      select size="small" sx={{ ...fieldSx, flex: 1 }} label="ระดับ" value={l.level}
+                      onChange={(e) => updateLanguage(i, { level: e.target.value as LanguageSkill["level"] })}
+                      SelectProps={{ MenuProps: selectMenuProps }}
+                    >
+                      {LANG_LEVELS.map((lv) => <MenuItem key={lv} value={lv}>{LANG_LEVEL_TH[lv]}</MenuItem>)}
+                    </TextField>
+                    <IconButton size="small" onClick={() => removeLanguage(i)} sx={chipDeleteBtnSx}><Trash size={16} /></IconButton>
+                  </Box>
+                ))}
+                <Button onClick={addLanguage} startIcon={<Plus size={14} weight="bold" />} sx={addBtnSx}>เพิ่มภาษา</Button>
+              </Box>
+            </SectionCard>
+
+            {/* 🆕 Round 28s278 — services multi-select (canonical SKU ids). */}
+            <SectionCard icon={<Sparkle size={13} />} title="บริการที่ทำได้">
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                {SERVICE_OPTIONS.map((s) => {
+                  const on = formData.servicesAvailable.includes(s.id);
+                  return (
+                    <Box
+                      key={s.id}
+                      onClick={() => toggleService(s.id)}
+                      sx={{
+                        display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: 12.5, fontWeight: 700,
+                        borderRadius: "9px", p: "7px 13px",
+                        border: `1px solid ${on ? adminColor.accent : adminColor.line}`,
+                        background: on ? "rgba(78,126,140,0.12)" : adminColor.panel,
+                        color: on ? adminColor.accent : adminColor.dim,
+                      }}
+                    >
+                      {on && <Check size={13} weight="bold" />}
+                      {s.name}
+                    </Box>
+                  );
+                })}
+              </Box>
+            </SectionCard>
+
+            {/* 🆕 Round 28s278 — credential rows, add/remove. */}
+            <SectionCard icon={<Info size={13} />} title="ใบรับรอง / ประวัติ">
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+                {formData.credentials.map((c, i) => (
+                  <Box key={i} sx={{ display: "flex", flexDirection: "column", gap: 1, background: adminColor.panel, borderRadius: "10px", p: "10px 11px", border: `1px solid ${adminColor.line}` }}>
+                    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                      <TextField
+                        select size="small" sx={{ ...fieldSx, width: 160 }} label="ประเภท" value={c.type}
+                        onChange={(e) => updateCredential(i, { type: e.target.value as Credential["type"] })}
+                        SelectProps={{ MenuProps: selectMenuProps }}
+                      >
+                        {CRED_TYPES.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                      </TextField>
+                      <TextField size="small" sx={{ ...fieldSx, flex: 1 }} label="หัวข้อ" value={c.label} onChange={(e) => updateCredential(i, { label: e.target.value })} />
+                      <IconButton size="small" onClick={() => removeCredential(i)} sx={chipDeleteBtnSx}><Trash size={16} /></IconButton>
+                    </Box>
+                    <TextField size="small" sx={fieldSx} label="รายละเอียด" value={c.meta} onChange={(e) => updateCredential(i, { meta: e.target.value })} />
+                  </Box>
+                ))}
+                <Button onClick={addCredential} startIcon={<Plus size={14} weight="bold" />} sx={addBtnSx}>เพิ่มใบรับรอง</Button>
+              </Box>
+            </SectionCard>
+
+            {/* 🆕 Round 28s278 — bios per language. */}
+            <SectionCard icon={<Notebook size={13} />} title="ประวัติแนะนำ (แต่ละภาษา)">
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+                {BIO_LANGS.map(([code, label]) => (
+                  <TextField
+                    key={code} label={label} fullWidth size="small" multiline minRows={2} sx={fieldSx}
+                    value={formData.bios[code] ?? ""} onChange={(e) => setBio(code, e.target.value)}
+                  />
+                ))}
+              </Box>
+            </SectionCard>
+
+            {/* 🆕 Round 28s278 — gallery URL rows, add/remove, live thumbnail. */}
+            <SectionCard icon={<ImageIcon size={13} />} title={`แกลเลอรี (${formData.gallery.filter(Boolean).length})`}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                {formData.gallery.map((src, i) => (
+                  <Box key={i} sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                    <Avatar variant="rounded" src={src} sx={{ width: 40, height: 40, borderRadius: "9px", border: `1px solid ${adminColor.line}`, flexShrink: 0 }} />
+                    <TextField size="small" sx={{ ...fieldSx, flex: 1 }} label={`รูปที่ ${i + 1}`} value={src} onChange={(e) => updateGallery(i, e.target.value)} placeholder="/images/..." />
+                    <IconButton size="small" onClick={() => removeGallery(i)} sx={chipDeleteBtnSx}><Trash size={16} /></IconButton>
+                  </Box>
+                ))}
+                <Button onClick={addGallery} startIcon={<Plus size={14} weight="bold" />} sx={addBtnSx}>เพิ่มรูป</Button>
+              </Box>
+            </SectionCard>
+
+            <SectionCard icon={<EyeSlash size={13} />} title="การมองเห็น">
               <Box sx={{ display: "flex", gap: 1 }}>
                 <Box
                   onClick={() => setFormData((f) => ({ ...f, hidden: !f.hidden }))}
-                  sx={{ flex: 1, display: "flex", alignItems: "center", gap: "6px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", borderRadius: "10px", padding: "9px 14px", border: `1px solid ${formData.hidden ? "rgba(220,38,38,0.25)" : adminColor.line}`, background: formData.hidden ? "rgba(220,38,38,0.09)" : adminColor.panel2, color: formData.hidden ? adminColor.red : adminColor.dim }}
+                  sx={{ flex: 1, display: "flex", alignItems: "center", gap: "6px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", borderRadius: "10px", padding: "9px 14px", border: `1px solid ${formData.hidden ? "rgba(220,38,38,0.25)" : adminColor.line}`, background: formData.hidden ? "rgba(220,38,38,0.09)" : adminColor.panel, color: formData.hidden ? adminColor.red : adminColor.dim }}
                 >
                   <EyeSlash size={14} weight={formData.hidden ? "fill" : "regular"} /> Hide from Homepage
                 </Box>
                 <Box
                   onClick={() => setFormData((f) => ({ ...f, blocked: !f.blocked }))}
-                  sx={{ flex: 1, display: "flex", alignItems: "center", gap: "6px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", borderRadius: "10px", padding: "9px 14px", border: `1px solid ${formData.blocked ? "rgba(220,38,38,0.25)" : adminColor.line}`, background: formData.blocked ? "rgba(220,38,38,0.09)" : adminColor.panel2, color: formData.blocked ? adminColor.red : adminColor.dim }}
+                  sx={{ flex: 1, display: "flex", alignItems: "center", gap: "6px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", borderRadius: "10px", padding: "9px 14px", border: `1px solid ${formData.blocked ? "rgba(220,38,38,0.25)" : adminColor.line}`, background: formData.blocked ? "rgba(220,38,38,0.09)" : adminColor.panel, color: formData.blocked ? adminColor.red : adminColor.dim }}
                 >
                   <Prohibit size={14} weight={formData.blocked ? "fill" : "regular"} /> Blocked (Unavailable)
                 </Box>
               </Box>
-            </Box>
+            </SectionCard>
 
-            <Box>
-              <SectionHeader icon={<TelegramLogo size={13} />}>ติดต่อ</SectionHeader>
+            <SectionCard icon={<TelegramLogo size={13} />} title="ติดต่อ">
               {/* 🆕 Round 28b27 — when set, the therapist receives a personal
                   DM from @SunRedBot every time a booking is assigned to
                   them. Onboarding: therapist sends /myid to @SunRedBot to
@@ -759,7 +994,7 @@ const AdminTherapistDetailPage: React.FC = () => {
                 placeholder="e.g. 123456789"
                 inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               />
-            </Box>
+            </SectionCard>
           </Box>
         )}
 
