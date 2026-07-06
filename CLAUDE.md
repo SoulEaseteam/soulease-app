@@ -1090,6 +1090,29 @@ directly reopens a choice she made herself.
   blank for bookings created before 28s260 (no `payment` field yet). Added
   `displayEmpty` + a `renderValue` fallback so it always shows real text.
 
+### 🆕 2026-07-06 — Total becomes independently editable (28s262)
+
+Founder: "ให้บิล แก้ได้ทั้งหมด บนใบจอง" — one message after 28s261 shipped
+Service/Taxi as editable with Total DERIVED from them. Wants the whole bill
+editable, Total included.
+
+Total is now its own free-typed number, saved exactly as entered — not
+forced to equal `service + taxi + surcharge`. Matches real operator
+behavior: a solo founder sometimes just agrees a number with a guest
+(discount, rounded cash amount) that won't cleanly match the formula, and
+needs the tool to record what actually happened rather than lock her to a
+calculation. The computed figure is still surfaced as a **one-click "Use
+computed: ฿X" suggestion** next to the field — offered, never forced, and
+only shown when it differs from what's currently typed. `paymentFee` is
+still computed/stored for the Payment Method row's "(+฿X surcharge)" note,
+independent of whatever Total the operator ends up saving.
+
+**Pattern for future "make X editable" requests on this page:** default to
+computed/derived, but when the founder pushes back wanting full override,
+give it — she's optimizing for "record reality accurately" over "keep the
+tool's formula authoritative," which is the right call for a business where
+she personally negotiates every price.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
