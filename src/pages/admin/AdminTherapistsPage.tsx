@@ -5,28 +5,21 @@ import {
   TextField,
   Select,
   MenuItem,
-  Switch,
   IconButton,
   CircularProgress,
-  Chip,
   Tooltip,
-  Card,
-  CardContent,
-  Stack,
   Avatar,
-  useMediaQuery,
+  Badge,
   Button,
+  ToggleButtonGroup,
+  ToggleButton,
+  InputAdornment,
 } from "@mui/material";
 
-import EditIcon from "@mui/icons-material/Edit";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import DeleteIcon from "@mui/icons-material/Delete";
-import SpaIcon from "@mui/icons-material/Spa";
-import BeachAccessIcon from "@mui/icons-material/BeachAccess";
-import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
-
-import { DataGrid } from "@mui/x-data-grid";
-import type { GridColDef } from "@mui/x-data-grid";
+// 🆕 Round 28s268 (founder: "ทำให้สวยขึ้น") — switched from MUI icons/emoji
+//   to phosphor-react, matching every other Ocean-Study-migrated admin page
+//   (AdminUsersPage, AdminBookingListPage, AdminEarningsPage, etc.).
+import { Eye, PencilSimple, Trash, Umbrella, Warning, Check, Clock, MagnifyingGlass, ArrowLeft } from "phosphor-react";
 
 import {
   collection,
@@ -99,6 +92,10 @@ type TherapistRow = RawTherapistDoc & {
    *  expired, so the roster summary's "ค้าง override" count doesn't keep
    *  flagging an override the engine has already stopped honouring. */
   overrideActive: boolean;
+  /** 🆕 Round 28s268 — carried through from the engine so the card's
+   *  single status line can say "resting · back at 20:00" instead of
+   *  just "resting". */
+  nextAvailable: string | null;
 };
 
 const STATUS_COLOR: Record<TherapistStatus, string> = {
@@ -108,6 +105,13 @@ const STATUS_COLOR: Record<TherapistStatus, string> = {
   holiday: adminColor.red,
 };
 
+// 🆕 Round 28s256's nested-frame lesson, reused: a background meaningfully
+// darker than the page bg needs to blend toward `dim`/`text`, not `bg`
+// again (adminColor.panel3 is a bg-toward-white blend and reads almost
+// identical to the page background). Same exact 18%-toward-dim blend
+// AdminBookingListPage already established for this purpose.
+const CARD_FRAME_BG = "#C5D8DF";
+
 const selectMenuProps = {
   PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px", boxShadow: "0 8px 24px rgba(31,41,51,0.16)" } },
 } as const;
@@ -116,6 +120,185 @@ function isOverrideExpired(overrideUntil: unknown): boolean {
   const expiry = toBKK(overrideUntil as never);
   return !!expiry && expiry.isBefore(nowBKK());
 }
+
+function statusLine(row: TherapistRow): string {
+  switch (row.computedStatus) {
+    case "available":
+      return "ว่างตอนนี้";
+    case "bookable":
+      return row.activeBookingEndAt
+        ? `กำลังนวด · ถึง ${fmtBKKTimeShort(row.activeBookingEndAt, "—")}`
+        : "จองได้ตอนนี้";
+    case "resting":
+      return row.nextAvailable ? `พัก · เริ่ม ${row.nextAvailable}` : "พัก";
+    case "holiday":
+      return "วันหยุดวันนี้";
+    default:
+      return "";
+  }
+}
+
+const STATUS_ICON: Record<TherapistStatus, React.ElementType> = {
+  available: Check,
+  bookable: Clock,
+  resting: Clock,
+  holiday: Umbrella,
+};
+
+// ==========================================================
+// CARD — module-scope so it never gets redefined per-render (the exact
+// remount-on-keystroke bug filed in 28s249 for a similarly-shaped mistake).
+// ==========================================================
+const TherapistCard: React.FC<{
+  row: TherapistRow;
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
+  onDelete: (row: TherapistRow) => void;
+  onToggleHoliday: (row: TherapistRow, checked: boolean) => void;
+  onChangeOverride: (row: TherapistRow, value: TherapistStatusOverride) => void;
+  onChangeTime: (row: TherapistRow, key: "startTime" | "endTime", value: string) => void;
+}> = ({ row, onView, onEdit, onDelete, onToggleHoliday, onChangeOverride, onChangeTime }) => {
+  const recede = row.computedStatus === "resting" || row.computedStatus === "holiday";
+  const color = STATUS_COLOR[row.computedStatus];
+  const ringColor = row.computedStatus === "resting" ? adminColor.line2 : color;
+  const StatusIcon = STATUS_ICON[row.computedStatus];
+  const cardBg = recede ? adminColor.panel2 : adminColor.panel;
+
+  return (
+    <Box sx={{ background: `linear-gradient(155deg, ${CARD_FRAME_BG}, #D6E5EA)`, borderRadius: "24px", p: "8px" }}>
+      <Box
+        sx={{
+          background: cardBg,
+          borderRadius: "18px",
+          p: "18px 18px 14px",
+          transition: "transform 0.2s cubic-bezier(.2,.8,.3,1), box-shadow 0.2s ease",
+          "&:hover": { transform: "translateY(-4px)", boxShadow: "0 14px 30px rgba(31,41,51,0.16)", cursor: "pointer" },
+        }}
+        onClick={() => onView(row.id)}
+      >
+        {/* ── Head: avatar + name + status line ─────────────────── */}
+        <Box sx={{ display: "flex", alignItems: "flex-start", gap: "13px", mb: "13px" }}>
+          <Badge
+            overlap="circular"
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            variant="dot"
+            sx={{
+              "& .MuiBadge-badge": {
+                background: color,
+                width: 13, height: 13, borderRadius: "50%",
+                border: `2.5px solid ${cardBg}`,
+              },
+            }}
+          >
+            <Avatar
+              src={row.image || ""}
+              sx={{
+                width: 54, height: 54,
+                boxShadow: `0 0 0 3px ${cardBg}, 0 0 0 4.5px ${ringColor}`,
+                filter: recede ? "grayscale(30%)" : "none",
+              }}
+            />
+          </Badge>
+          <Box sx={{ flex: 1, minWidth: 0, pt: "1px" }}>
+            <Typography sx={{ fontFamily: adminFont.serif, fontWeight: 700, fontSize: 16.5, color: recede ? adminColor.muted : adminColor.text, m: 0, mb: "3px" }}>
+              {row.name || "-"}
+            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: "5px", fontSize: 12, fontWeight: 600, color }}>
+              <StatusIcon size={12} weight="bold" />
+              {statusLine(row)}
+            </Box>
+          </Box>
+        </Box>
+
+        {/* ── Meta row: hours + today/total ──────────────────────── */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: "8px", fontSize: 12, color: adminColor.muted, mb: "12px", pb: "12px", borderBottom: `1px solid ${recede ? adminColor.line2 : adminColor.line}` }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: "5px", fontWeight: 600 }}>
+            <Clock size={13} color={adminColor.dim} />
+            {row.startTime || "--:--"}–{row.endTime || "--:--"}
+          </Box>
+          <Box sx={{ display: "flex", gap: "1px", ml: "auto", background: adminColor.panel3, borderRadius: "9px", overflow: "hidden" }} onClick={(e) => e.stopPropagation()}>
+            <Box sx={{ textAlign: "center", p: "5px 11px" }}>
+              <Typography sx={{ ...adminFigureSx, fontSize: 14, color: recede ? adminColor.muted : adminColor.text, lineHeight: 1 }}>{row.todayBookings || 0}</Typography>
+              <Typography sx={{ fontSize: 8.5, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700, mt: "2px" }}>Today</Typography>
+            </Box>
+            <Box sx={{ textAlign: "center", p: "5px 11px" }}>
+              <Typography sx={{ ...adminFigureSx, fontSize: 14, color: recede ? adminColor.muted : adminColor.text, lineHeight: 1 }}>{row.totalBookings || 0}</Typography>
+              <Typography sx={{ fontSize: 8.5, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700, mt: "2px" }}>Total</Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        {/* ── Controls: holiday chip + override select + time edit ── */}
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }} onClick={(e) => e.stopPropagation()}>
+          <Box
+            onClick={() => onToggleHoliday(row, !row.isHoliday)}
+            sx={{
+              display: "flex", alignItems: "center", gap: "5px", fontSize: 11, fontWeight: 700, cursor: "pointer",
+              borderRadius: "9px", padding: "6px 10px", border: `1px solid ${row.isHoliday ? "rgba(220,38,38,0.22)" : adminColor.line}`,
+              background: row.isHoliday ? "rgba(220,38,38,0.09)" : adminColor.panel2,
+              color: row.isHoliday ? adminColor.red : adminColor.dim,
+            }}
+          >
+            <Umbrella size={13} weight={row.isHoliday ? "fill" : "regular"} />
+            Holiday
+          </Box>
+
+          <Select
+            size="small"
+            value={row.statusOverride || "Auto"}
+            MenuProps={selectMenuProps}
+            onChange={(e) => onChangeOverride(row, e.target.value as TherapistStatusOverride)}
+            sx={{
+              fontSize: 11.5, fontWeight: 700,
+              color: row.overrideActive ? adminColor.red : adminColor.accent,
+              background: row.overrideActive ? "rgba(220,38,38,0.07)" : adminColor.panel2,
+              borderRadius: "9px",
+              "& .MuiOutlinedInput-notchedOutline": { border: `1px solid ${row.overrideActive ? "rgba(220,38,38,0.25)" : adminColor.line}` },
+              "& .MuiSelect-select": { padding: "6px 10px" },
+            }}
+          >
+            <MenuItem value="Auto">Auto</MenuItem>
+            <MenuItem value="available">Available</MenuItem>
+            <MenuItem value="bookable">Bookable</MenuItem>
+            <MenuItem value="resting">Resting</MenuItem>
+          </Select>
+        </Box>
+
+        <Box sx={{ display: "flex", gap: "8px", mt: "10px" }} onClick={(e) => e.stopPropagation()}>
+          <TextField
+            type="time" size="small" fullWidth value={row.startTime || ""}
+            onChange={(e) => onChangeTime(row, "startTime", e.target.value)}
+            sx={{ "& .MuiInputBase-input": { fontSize: 12.5, py: "6px" } }}
+          />
+          <TextField
+            type="time" size="small" fullWidth value={row.endTime || ""}
+            onChange={(e) => onChangeTime(row, "endTime", e.target.value)}
+            sx={{ "& .MuiInputBase-input": { fontSize: 12.5, py: "6px" } }}
+          />
+        </Box>
+
+        {/* ── Actions ─────────────────────────────────────────────── */}
+        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: "2px", mt: "12px", pt: "12px", borderTop: `1px solid ${recede ? adminColor.line2 : adminColor.line}` }} onClick={(e) => e.stopPropagation()}>
+          <Tooltip title="View">
+            <IconButton size="small" onClick={() => onView(row.id)} sx={{ color: adminColor.dim, "&:hover": { background: adminColor.panel2, color: adminColor.text } }}>
+              <Eye size={16} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Edit">
+            <IconButton size="small" onClick={() => onEdit(row.id)} sx={{ color: adminColor.dim, "&:hover": { background: "rgba(78,126,140,0.10)", color: adminColor.accent } }}>
+              <PencilSimple size={16} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete">
+            <IconButton size="small" onClick={() => void onDelete(row)} sx={{ color: adminColor.dim, "&:hover": { background: "rgba(220,38,38,0.09)", color: adminColor.red } }}>
+              <Trash size={16} />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Box>
+    </Box>
+  );
+};
 
 // ==========================================================
 // MAIN PAGE
@@ -132,10 +315,8 @@ const AdminTherapistsPage: React.FC = () => {
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | TherapistStatus>("all");
-  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
 
   const navigate = useNavigate();
-  const isMobile = useMediaQuery("(max-width:900px)");
 
   const timeoutRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   // 🆕 Round 28s267 (audit: "แก้ค่าแล้วรีบกดออกจากหน้า ข้อมูลหายเงียบ") —
@@ -325,12 +506,13 @@ const AdminTherapistsPage: React.FC = () => {
         activeBooking: !!activeBooking,
         busyUntil: activeBooking?.endAt ?? null,
       };
-      const computedStatus = calculateTherapistStatus(merged).status;
+      const engine = calculateTherapistStatus(merged);
       const overrideActive =
         !!raw.statusOverride && raw.statusOverride !== "Auto" && !isOverrideExpired(raw.overrideUntil);
       return {
         ...raw,
-        computedStatus,
+        computedStatus: engine.status,
+        nextAvailable: engine.nextAvailable,
         todayBookings: todayCountByTherapist.get(raw.id) ?? 0,
         totalBookings: totalCountByTherapist.get(raw.id) ?? 0,
         activeBookingEndAt: activeBooking?.endAt ?? null,
@@ -366,15 +548,8 @@ const AdminTherapistsPage: React.FC = () => {
     });
   }, [therapists, search, filter]);
 
-  // 🆕 Round 28s267 (audit: filter/search left the grid stranded on an
-  //   out-of-range page) — jump back to page 1 whenever the visible set
-  //   changes shape.
-  useEffect(() => {
-    setPaginationModel((m) => (m.page === 0 ? m : { ...m, page: 0 }));
-  }, [search, filter]);
-
   // ==========================================================
-  // OVERRIDE CHANGE (shared by DataGrid cell + mobile Select)
+  // EDIT HANDLERS
   // ==========================================================
   const applyOverride = (row: TherapistRow, value: TherapistStatusOverride) => {
     updateDebounced(row.id, {
@@ -442,271 +617,11 @@ const AdminTherapistsPage: React.FC = () => {
   };
 
   // ==========================================================
-  // DESKTOP COLUMNS
-  // ==========================================================
-  const columns: GridColDef[] = [
-    {
-      field: "name",
-      headerName: "Name",
-      width: 190,
-      renderCell: (p) => (
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ py: 0.5 }}>
-          <Avatar src={p.row.image || ""} />
-          <Typography sx={{ fontFamily: adminFont.sans, color: adminColor.text }}>{p.row.name || "-"}</Typography>
-        </Stack>
-      ),
-    },
-    {
-      field: "computedStatus",
-      headerName: "Status",
-      width: 140,
-      renderCell: (p) => (
-        <Chip
-          label={String(p.row.computedStatus || "").toUpperCase()}
-          sx={{
-            background: `${STATUS_COLOR[p.row.computedStatus as TherapistStatus]}1F`,
-            color: STATUS_COLOR[p.row.computedStatus as TherapistStatus],
-            fontWeight: 700,
-          }}
-        />
-      ),
-    },
-    {
-      field: "isHoliday",
-      headerName: "Holiday",
-      width: 130,
-      renderCell: (p) =>
-        p.row.isHoliday ? (
-          <Chip label="Holiday" icon={<BeachAccessIcon sx={{ color: `${adminColor.red} !important` }} />} sx={{ background: `${adminColor.red}1F`, color: adminColor.red, fontWeight: 700 }} />
-        ) : (
-          <Chip label="Active" icon={<SpaIcon sx={{ color: `${adminColor.green} !important` }} />} sx={{ background: `${adminColor.green}1F`, color: adminColor.green, fontWeight: 700 }} />
-        ),
-    },
-    {
-      field: "toggleHoliday",
-      headerName: "",
-      width: 85,
-      sortable: false,
-      filterable: false,
-      renderCell: (p) => (
-        <Switch
-          checked={Boolean(p.row.isHoliday)}
-          onChange={(e) => applyHoliday(p.row as TherapistRow, e.target.checked)}
-        />
-      ),
-    },
-    {
-      field: "statusOverride",
-      headerName: "Override",
-      width: 150,
-      renderCell: (p) => (
-        <Select
-          size="small"
-          value={p.row.statusOverride || "Auto"}
-          MenuProps={selectMenuProps}
-          onChange={(e) => applyOverride(p.row as TherapistRow, e.target.value as TherapistStatusOverride)}
-          sx={{ minWidth: 120 }}
-        >
-          <MenuItem value="Auto">Auto</MenuItem>
-          <MenuItem value="available">Available</MenuItem>
-          <MenuItem value="bookable">Bookable</MenuItem>
-          <MenuItem value="resting">Resting</MenuItem>
-        </Select>
-      ),
-    },
-    {
-      field: "startTime",
-      headerName: "Start",
-      width: 110,
-      renderCell: (p) => (
-        <TextField
-          type="time"
-          size="small"
-          value={p.row.startTime || ""}
-          onChange={(e) => applyTime(p.row as TherapistRow, "startTime", e.target.value)}
-        />
-      ),
-    },
-    {
-      field: "endTime",
-      headerName: "End",
-      width: 110,
-      renderCell: (p) => (
-        <TextField
-          type="time"
-          size="small"
-          value={p.row.endTime || ""}
-          onChange={(e) => applyTime(p.row as TherapistRow, "endTime", e.target.value)}
-        />
-      ),
-    },
-    {
-      field: "todayBookings",
-      headerName: "Today",
-      width: 90,
-      renderCell: (p) => <Typography sx={adminFigureSx}>{p.row.todayBookings || 0}</Typography>,
-    },
-    {
-      field: "totalBookings",
-      headerName: "Total",
-      width: 90,
-      renderCell: (p) => <Typography sx={adminFigureSx}>{p.row.totalBookings || 0}</Typography>,
-    },
-    {
-      // 🆕 Round 28s267 — replaces the old manual "Session" switch
-      //   (isBooked), which nothing kept in sync with real bookings and
-      //   is now fully superseded by the live-bookings merge above. This
-      //   column shows the REAL thing instead: is she in an active job
-      //   right now, and until when.
-      field: "activeBookingEndAt",
-      headerName: "Now",
-      width: 120,
-      sortable: false,
-      filterable: false,
-      renderCell: (p) =>
-        p.row.activeBookingEndAt ? (
-          <Chip
-            size="small"
-            label={`ถึง ${fmtBKKTimeShort(p.row.activeBookingEndAt, "—")}`}
-            sx={{ background: `${adminColor.amber}1F`, color: adminColor.amber, fontWeight: 700 }}
-          />
-        ) : (
-          <Typography sx={{ fontSize: 12.5, color: adminColor.dim, fontFamily: adminFont.sans }}>ว่าง</Typography>
-        ),
-    },
-    {
-      field: "actions",
-      headerName: "Actions",
-      width: 170,
-      sortable: false,
-      filterable: false,
-      renderCell: (p) => (
-        <Stack direction="row" spacing={1}>
-          <Tooltip title="View">
-            <IconButton onClick={() => navigate(`/admin/therapists/${p.row.id}`)} sx={{ color: adminColor.dim }}>
-              <VisibilityIcon />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Edit">
-            <IconButton onClick={() => navigate(`/admin/edit-therapist/${p.row.id}`)} sx={{ color: adminColor.accent }}>
-              <EditIcon />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Delete">
-            <IconButton onClick={() => void handleDelete(p.row as TherapistRow)} sx={{ color: adminColor.red }}>
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      ),
-    },
-  ];
-
-  // ==========================================================
-  // MOBILE VIEW
-  // ==========================================================
-  const mobileCards = (
-    <Stack spacing={2}>
-      {filtered.map((t) => (
-        <Card key={t.id} sx={{ borderRadius: 3, background: adminColor.panel, border: `1px solid ${adminColor.line}` }}>
-          <CardContent>
-            <Stack direction="row" spacing={2} alignItems="flex-start">
-              <Avatar src={t.image || ""} sx={{ width: 56, height: 56 }} />
-
-              <Box flexGrow={1}>
-                <Typography fontWeight="bold" sx={{ color: adminColor.text, fontFamily: adminFont.sans }}>{t.name || "-"}</Typography>
-
-                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ mt: 1 }}>
-                  <Chip
-                    size="small"
-                    label={String(t.computedStatus).toUpperCase()}
-                    sx={{ background: `${STATUS_COLOR[t.computedStatus]}1F`, color: STATUS_COLOR[t.computedStatus], fontWeight: 700 }}
-                  />
-                  {t.activeBookingEndAt ? (
-                    <Chip size="small" label={`ถึง ${fmtBKKTimeShort(t.activeBookingEndAt, "—")}`} sx={{ background: `${adminColor.amber}1F`, color: adminColor.amber, fontWeight: 700 }} />
-                  ) : null}
-                </Stack>
-
-                <Typography fontSize={13} mt={1} sx={{ color: adminColor.muted }}>
-                  Time: {t.startTime || "--:--"} - {t.endTime || "--:--"}
-                </Typography>
-
-                <Typography fontSize={13} sx={{ color: adminColor.muted, ...adminFigureSx, fontWeight: 600 }}>
-                  Today: {t.todayBookings || 0} | Total: {t.totalBookings || 0}
-                </Typography>
-
-                <Stack direction="row" spacing={2} mt={1.5} alignItems="center" flexWrap="wrap">
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography fontSize={12} sx={{ color: adminColor.muted }}>Holiday</Typography>
-                    <Switch
-                      size="small"
-                      checked={Boolean(t.isHoliday)}
-                      onChange={(e) => applyHoliday(t, e.target.checked)}
-                    />
-                  </Stack>
-                </Stack>
-
-                <Box mt={1.5}>
-                  <Select
-                    size="small"
-                    fullWidth
-                    value={t.statusOverride || "Auto"}
-                    MenuProps={selectMenuProps}
-                    onChange={(e) => applyOverride(t, e.target.value as TherapistStatusOverride)}
-                  >
-                    <MenuItem value="Auto">Auto</MenuItem>
-                    <MenuItem value="available">Available</MenuItem>
-                    <MenuItem value="bookable">Bookable</MenuItem>
-                    <MenuItem value="resting">Resting</MenuItem>
-                  </Select>
-                </Box>
-
-                <Stack direction="row" spacing={1} mt={1.5}>
-                  <TextField
-                    type="time"
-                    size="small"
-                    fullWidth
-                    value={t.startTime || ""}
-                    onChange={(e) => applyTime(t, "startTime", e.target.value)}
-                  />
-                  <TextField
-                    type="time"
-                    size="small"
-                    fullWidth
-                    value={t.endTime || ""}
-                    onChange={(e) => applyTime(t, "endTime", e.target.value)}
-                  />
-                </Stack>
-              </Box>
-            </Stack>
-
-            <Stack direction="row" spacing={1} mt={2} justifyContent="flex-end">
-              <IconButton onClick={() => navigate(`/admin/therapists/${t.id}`)} sx={{ color: adminColor.dim }}>
-                <VisibilityIcon />
-              </IconButton>
-
-              <IconButton onClick={() => navigate(`/admin/edit-therapist/${t.id}`)} sx={{ color: adminColor.accent }}>
-                <EditIcon />
-              </IconButton>
-
-              <IconButton onClick={() => void handleDelete(t)} sx={{ color: adminColor.red }}>
-                <DeleteIcon />
-              </IconButton>
-            </Stack>
-          </CardContent>
-        </Card>
-      ))}
-    </Stack>
-  );
-
-  // ==========================================================
   // RENDER
   // ==========================================================
   return (
-    <Box sx={{ p: 2 }}>
-      <Box mb={2}>
+    <Box sx={{ p: { xs: 2, md: 3 }, background: `radial-gradient(120% 90% at 15% 0%, ${adminColor.panel3} 0%, ${adminColor.bg} 55%)`, minHeight: "100%" }}>
+      <Box mb={2.5}>
         <Button
           onClick={() => {
             if (window.history.length > 1) {
@@ -715,14 +630,14 @@ const AdminTherapistsPage: React.FC = () => {
               void navigate("/admin/dashboard");
             }
           }}
-          startIcon={<ArrowBackIosNewIcon />}
+          startIcon={<ArrowLeft size={13} weight="bold" />}
           variant="outlined"
           sx={{
             borderColor: adminColor.accent,
             color: adminColor.accent,
             fontWeight: "bold",
             textTransform: "none",
-            borderRadius: 2,
+            borderRadius: "10px",
             "&:hover": {
               borderColor: adminColor.accentDeep,
               background: adminColor.panel2,
@@ -733,38 +648,64 @@ const AdminTherapistsPage: React.FC = () => {
         </Button>
       </Box>
 
-      <Typography variant="h5" fontWeight="bold" mb={2} sx={{ color: adminColor.text, fontFamily: adminFont.serif }}>
-        👑 Therapist Manager
-      </Typography>
+      <Box sx={{ display: "flex", alignItems: "baseline", gap: "11px", mb: 2.5 }}>
+        <Typography sx={{ fontFamily: adminFont.serif, fontSize: 25, fontWeight: 700, color: adminColor.text }}>
+          Therapist Manager
+        </Typography>
+        <Typography sx={{ fontSize: 12, color: adminColor.dim }}>{therapists.length} คนในระบบ · อัปเดตสด</Typography>
+      </Box>
 
       {/* 🆕 Round 28s230 (FIX C) — live roster summary + one-tap relight.
           Counts use the same BKK engine as the public site (FIX B), so this
-          is exactly what guests see right now. */}
-      <Box
-        sx={{
-          mb: 2.5, p: 1.5, borderRadius: 2,
-          background: adminColor.panel, border: `1px solid ${adminColor.line}`,
-          display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1.5,
-        }}
-      >
-        <Typography sx={{ ...adminFigureSx, fontSize: 14, color: summary.available > 0 ? adminColor.green : adminColor.red }}>
-          🟢 ว่าง {summary.available}
-        </Typography>
-        <Typography sx={{ ...adminFigureSx, fontSize: 14, color: adminColor.amber }}>🟠 จองได้ {summary.bookable}</Typography>
-        <Typography sx={{ ...adminFigureSx, fontSize: 14, color: adminColor.dim }}>⚪ พัก {summary.resting}</Typography>
-        <Typography sx={{ ...adminFigureSx, fontSize: 14, color: adminColor.dim }}>🏖️ หยุด {summary.holiday}</Typography>
+          is exactly what guests see right now. Round 28s268 — icon-circle
+          stat pills, matching Dashboard/Earnings' widget vocabulary. */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: "10px", mb: 2.5, alignItems: "center" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: "10px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "15px", p: "8px 15px 8px 8px", boxShadow: "0 1px 3px rgba(31,41,51,0.04)" }}>
+          <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #22C55E, ${adminColor.green})` }} />
+          <Box>
+            <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.green, lineHeight: 1.1 }}>{summary.available}</Typography>
+            <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 700 }}>ว่าง</Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: "10px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "15px", p: "8px 15px 8px 8px", boxShadow: "0 1px 3px rgba(31,41,51,0.04)" }}>
+          <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #F59E0B, ${adminColor.amber})` }} />
+          <Box>
+            <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.amber, lineHeight: 1.1 }}>{summary.bookable}</Typography>
+            <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 700 }}>จองได้</Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: "10px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "15px", p: "8px 15px 8px 8px", boxShadow: "0 1px 3px rgba(31,41,51,0.04)" }}>
+          <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #8CA0AB, ${adminColor.dim})` }} />
+          <Box>
+            <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.dim, lineHeight: 1.1 }}>{summary.resting}</Typography>
+            <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 700 }}>พัก</Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: "10px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "15px", p: "8px 15px 8px 8px", boxShadow: "0 1px 3px rgba(31,41,51,0.04)" }}>
+          <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #8CA0AB, ${adminColor.dim})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Umbrella size={15} color="#fff" weight="fill" />
+          </Box>
+          <Box>
+            <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.dim, lineHeight: 1.1 }}>{summary.holiday}</Typography>
+            <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 700 }}>หยุด</Typography>
+          </Box>
+        </Box>
         {summary.override > 0 && (
-          <Typography sx={{ ...adminFigureSx, fontSize: 14, color: adminColor.red }}>
-            ⚠️ override ค้าง {summary.override}
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: "10px", background: "linear-gradient(180deg,#fff,#FEF2F2)", border: "1px solid rgba(220,38,38,0.22)", borderRadius: "15px", p: "8px 15px 8px 8px" }}>
+            <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #EF4444, ${adminColor.red})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Warning size={15} color="#fff" weight="fill" />
+            </Box>
+            <Box>
+              <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.red, lineHeight: 1.1 }}>{summary.override}</Typography>
+              <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 700 }}>Override ค้าง</Typography>
+            </Box>
+          </Box>
         )}
         <Box sx={{ flexGrow: 1 }} />
         <Button
           onClick={() => void rosterBatch("all-available")}
           disabled={batching}
-          variant="contained"
-          size="small"
-          sx={{ background: adminColor.green, textTransform: "none", fontWeight: 700, borderRadius: 2, "&:hover": { background: "#15803d" } }}
+          sx={{ background: "linear-gradient(180deg,#1CAE52,#149046)", color: "#fff", textTransform: "none", fontWeight: 700, borderRadius: "11px", boxShadow: "0 3px 10px rgba(22,163,74,0.28)", "&:hover": { background: "#15803d" } }}
         >
           คืนนี้เปิดทั้งร้าน
         </Button>
@@ -772,59 +713,71 @@ const AdminTherapistsPage: React.FC = () => {
           onClick={() => void rosterBatch("auto")}
           disabled={batching}
           variant="outlined"
-          size="small"
-          sx={{ borderColor: adminColor.line2, color: adminColor.muted, textTransform: "none", fontWeight: 700, borderRadius: 2 }}
+          sx={{ borderColor: adminColor.line2, color: adminColor.muted, textTransform: "none", fontWeight: 700, borderRadius: "11px" }}
         >
           กลับ Auto
         </Button>
       </Box>
 
-      <Stack direction="row" spacing={2} mb={3}>
+      {/* 🆕 Round 28s268 — search box + segmented filter pills, replacing
+          the plain dropdown (easier to tap on a phone, matches the rest
+          of the Ocean Study widget language). */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: "10px", mb: 2.5, alignItems: "center" }}>
         <TextField
-          label="Search Therapist"
+          placeholder="ค้นหาชื่อหมอนวด…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          fullWidth
-        />
-
-        <Select
           size="small"
+          sx={{ flex: 1, minWidth: 220, "& .MuiOutlinedInput-root": { borderRadius: "13px", background: adminColor.panel } }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <MagnifyingGlass size={15} color={adminColor.dim} />
+              </InputAdornment>
+            ),
+          }}
+        />
+        <ToggleButtonGroup
           value={filter}
-          onChange={(e) => setFilter(e.target.value as "all" | TherapistStatus)}
-          sx={{ minWidth: 140 }}
-          MenuProps={selectMenuProps}
+          exclusive
+          onChange={(_, v) => v && setFilter(v)}
+          sx={{
+            background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "13px", p: "3px", gap: "2px",
+            "& .MuiToggleButton-root": {
+              border: "none", borderRadius: "10px !important", fontFamily: adminFont.sans, fontSize: 12, fontWeight: 700,
+              color: adminColor.dim, textTransform: "none", padding: "8px 14px",
+              "&.Mui-selected": { background: `linear-gradient(180deg,#5A8998,${adminColor.accent})`, color: "#fff", boxShadow: "0 2px 6px rgba(78,126,140,0.35)" },
+              "&.Mui-selected:hover": { background: `linear-gradient(180deg,#5A8998,${adminColor.accent})` },
+            },
+          }}
         >
-          <MenuItem value="all">All</MenuItem>
-          <MenuItem value="available">Available</MenuItem>
-          <MenuItem value="bookable">Bookable</MenuItem>
-          <MenuItem value="resting">Resting</MenuItem>
-          <MenuItem value="holiday">Holiday</MenuItem>
-        </Select>
-      </Stack>
+          <ToggleButton value="all">All</ToggleButton>
+          <ToggleButton value="available">ว่าง</ToggleButton>
+          <ToggleButton value="bookable">จองได้</ToggleButton>
+          <ToggleButton value="resting">พัก</ToggleButton>
+          <ToggleButton value="holiday">หยุด</ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
 
       {loading ? (
         <Box textAlign="center" mt={5}>
-          <CircularProgress />
+          <CircularProgress sx={{ color: adminColor.accent }} />
         </Box>
-      ) : isMobile ? (
-        mobileCards
       ) : (
-        <DataGrid
-          rows={filtered}
-          columns={columns}
-          autoHeight
-          disableRowSelectionOnClick
-          pageSizeOptions={[10, 25, 50]}
-          paginationModel={paginationModel}
-          onPaginationModelChange={setPaginationModel}
-          sx={{
-            bgcolor: adminColor.panel,
-            borderRadius: 2,
-            p: 1,
-            border: `1px solid ${adminColor.line}`,
-            boxShadow: "0 4px 18px rgba(31,41,51,0.08)",
-          }}
-        />
+        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "16px" }}>
+          {filtered.map((t) => (
+            <TherapistCard
+              key={t.id}
+              row={t}
+              onView={(id) => navigate(`/admin/therapists/${id}`)}
+              onEdit={(id) => navigate(`/admin/edit-therapist/${id}`)}
+              onDelete={handleDelete}
+              onToggleHoliday={applyHoliday}
+              onChangeOverride={applyOverride}
+              onChangeTime={applyTime}
+            />
+          ))}
+        </Box>
       )}
     </Box>
   );
