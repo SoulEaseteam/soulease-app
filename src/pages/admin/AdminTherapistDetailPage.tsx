@@ -142,6 +142,20 @@ const AdminTherapistDetailPage: React.FC = () => {
   const [editing, setEditing] = useState(() => searchParams.get("edit") === "1");
   const [formData, setFormData] = useState<FormState>(EMPTY_FORM);
   const originalRef = useRef<FormState>(EMPTY_FORM);
+  // 🆕 Round 28s272 (founder: "กดปากกาแล้วไม่มีข้อมูล") — the onSnapshot
+  // callback below reads `editing` to avoid clobbering in-progress edits
+  // on a live update, but it's created once inside a `[id]`-only effect,
+  // so it closed over whatever `editing` was AT MOUNT. Landing here via
+  // ?edit=1 means editing was already `true` on the very first render —
+  // so the very first real snapshot got treated as "don't stomp an
+  // edit-in-progress" and the form stayed permanently empty. `editingRef`
+  // always reads the CURRENT value; `hasLoadedRef` guarantees the first
+  // successful load always populates regardless of edit mode.
+  const editingRef = useRef(editing);
+  useEffect(() => {
+    editingRef.current = editing;
+  }, [editing]);
+  const hasLoadedRef = useRef(false);
 
   // ── Live status — same engine + live-bookings merge as the roster
   //    grid (28s267), replacing this page's old hand-rolled, simpler
@@ -151,6 +165,15 @@ const AdminTherapistDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (!id) return;
+
+    // 🆕 Round 28s272 — resets when navigating between two different
+    // therapists' URLs without a full remount (same component instance,
+    // just `id` changes) — otherwise a leftover `true` from the previous
+    // therapist would block the new one's very first load the same way
+    // the ?edit=1 case did.
+    hasLoadedRef.current = false;
+    editingRef.current = searchParams.get("edit") === "1";
+    setEditing(editingRef.current);
 
     let unsubTherapist: (() => void) | null = null;
     let unsubBookings: (() => void) | null = null;
@@ -195,8 +218,13 @@ const AdminTherapistDetailPage: React.FC = () => {
           setRawDoc({ id: snap.id, ...data });
           const next = toFormState(data);
           originalRef.current = next;
-          // Don't stomp in-progress edits with a live update mid-typing.
-          setFormData((prev) => (editing ? prev : next));
+          // Always populate on the first successful load, even if we
+          // opened straight into edit mode (?edit=1). After that, don't
+          // stomp in-progress edits with a live update mid-typing.
+          if (!hasLoadedRef.current || !editingRef.current) {
+            setFormData(next);
+          }
+          hasLoadedRef.current = true;
         }
       });
 
