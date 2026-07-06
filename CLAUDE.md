@@ -460,6 +460,32 @@ restarting the server — not connected to this repo. Visual verification for
 this whole redesign relied on tsc/build + real production deploys, same as
 the rest of this session; View confirms visually on the live site.
 
+### 🆕 2026-06-14 (cont.) — admin palette swapped to "Ocean Study" (28s235)
+
+Founder shared a Pinterest palette right after Control Room shipped: "ใช้
+ธีมนี้" — scope confirmed as **admin only** (customer-facing site keeps its
+brand red; a separate earlier mockup showed a red/gold "Modern Premium"
+direction for the customer site, NOT applied).
+
+- `src/theme/adminTheme.ts` tokens **renamed** (not just recolored):
+  `crimson→accent`, `crimsonDeep→accentDeep`, `champagne→highlight` — so the
+  code doesn't lie about what color it holds. Values now Ocean Study: accent
+  `#4E7E8C`, highlight `#A7D8F0`, text `#DCEFF5`, dim `#5C6F7B`, base navy
+  `#1F2933`→built up into panel/panel2/panel3 shades. Semantic state colors
+  (green/blue/amber/red) unchanged.
+- If you ever add a new admin file, import `{ adminColor, adminFont }` from
+  `@/theme/adminTheme` and use `.accent` / `.highlight` — do NOT reintroduce
+  `.crimson`/`.champagne`, those names no longer exist.
+- **AdminTonightPage** (built 28s232, before adminTheme.ts existed) had its
+  OWN hardcoded light palette and was never actually dark/Control-Room —
+  brought onto the shared tokens now. Also: its "จบงาน" (booking.complete)
+  action wasn't audit-logged before; fixed.
+- Still NOT on the new tokens (unchanged since 28s234, pre-redesign light
+  theme): AdminBookingListPage, AdminTherapistsPage, and the original
+  (non-payout) parts of AdminEarningsPage/AdminReportPage/AdminAnalyticsPage.
+  Next consistency pass should bring these onto adminColor/adminFont too —
+  whichever palette is current at the time (check this file first).
+
 ### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
 
 **Trigger.** View shared Google Search Console 3-month data:
