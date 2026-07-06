@@ -32,7 +32,7 @@ const ACTION_LABEL: Record<string, { label: string; color: string }> = {
   "booking.confirm":         { label: "ยืนยันออเดอร์",        color: adminColor.green },
   "booking.cancel":          { label: "ยกเลิกออเดอร์",        color: adminColor.red },
   "booking.complete":        { label: "ปิดงานเสร็จ",          color: adminColor.green },
-  "payout.mark_paid":        { label: "จ่ายค่าตอบแทนแล้ว",     color: adminColor.champagne },
+  "payout.mark_paid":        { label: "จ่ายค่าตอบแทนแล้ว",     color: adminColor.highlight },
   "payout.mark_unpaid":      { label: "ยกเลิกสถานะจ่ายแล้ว",   color: adminColor.dim },
   "therapist.relight_all":   { label: "เปิดร้านทั้งหมด",       color: adminColor.green },
   "therapist.reset_auto":    { label: "รีเซ็ตเป็น Auto",       color: adminColor.blue },
@@ -73,7 +73,7 @@ const AdminAuditLogPage: React.FC = () => {
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
         <Box
           onClick={() => navigate("/admin/dashboard")}
-          sx={{ display: "flex", alignItems: "center", gap: 0.5, cursor: "pointer", color: adminColor.crimson, fontWeight: 700, fontSize: 13 }}
+          sx={{ display: "flex", alignItems: "center", gap: 0.5, cursor: "pointer", color: adminColor.accent, fontWeight: 700, fontSize: 13 }}
         >
           <ArrowLeft size={16} /> Dashboard
         </Box>
@@ -88,7 +88,7 @@ const AdminAuditLogPage: React.FC = () => {
 
       {loading ? (
         <Box sx={{ textAlign: "center", mt: 6 }}>
-          <CircularProgress size={24} sx={{ color: adminColor.crimson }} />
+          <CircularProgress size={24} sx={{ color: adminColor.accent }} />
         </Box>
       ) : rows.length === 0 ? (
         <Box

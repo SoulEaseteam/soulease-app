@@ -599,7 +599,7 @@ const AdminEarningsPage: React.FC = () => {
               size="small"
               disabled={payoutWeekStart.isSame(dayjs().startOf("week"), "day")}
               onClick={() => setPayoutWeekStart(dayjs().startOf("week"))}
-              sx={{ minWidth: 0, color: adminColor.champagne, border: `1px solid ${adminColor.line2}`, borderRadius: "8px", textTransform: "none" }}
+              sx={{ minWidth: 0, color: adminColor.highlight, border: `1px solid ${adminColor.line2}`, borderRadius: "8px", textTransform: "none" }}
             >
               This week
             </Button>
@@ -616,7 +616,7 @@ const AdminEarningsPage: React.FC = () => {
 
         {payoutLoading ? (
           <Box sx={{ py: 3, textAlign: "center" }}>
-            <CircularProgress size={22} sx={{ color: adminColor.crimson }} />
+            <CircularProgress size={22} sx={{ color: adminColor.accent }} />
           </Box>
         ) : Object.keys(payoutByTherapist).length === 0 ? (
           <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.dim }}>
@@ -650,7 +650,7 @@ const AdminEarningsPage: React.FC = () => {
                       </Typography>
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
-                      <Typography sx={{ fontFamily: adminFont.serif, fontSize: 15, fontWeight: 700, color: adminColor.champagne }}>
+                      <Typography sx={{ fontFamily: adminFont.serif, fontSize: 15, fontWeight: 700, color: adminColor.highlight }}>
                         {formatTHB(row.payout)}
                       </Typography>
                       <Button

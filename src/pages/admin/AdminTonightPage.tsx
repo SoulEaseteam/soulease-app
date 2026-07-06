@@ -37,8 +37,13 @@ import dayjs from "dayjs";
 
 import { db } from "@/lib/firebase";
 import { nowBKK } from "@/utils/time";
+// 🆕 Round 28s235 — bring the flagship ops page onto the shared Ocean Study
+//   tokens. It predates adminTheme.ts (built in 28s232, before the theme
+//   file existed) and still had its own hardcoded light-card palette.
+import { adminColor, adminFont } from "@/theme/adminTheme";
+import { logAdminAction } from "@/utils/auditLog";
 
-const SANS = '"Inter", system-ui, sans-serif';
+const SANS = adminFont.sans;
 
 // ── dispatch lifecycle ────────────────────────────────────────────────
 type DispatchState =
@@ -55,11 +60,11 @@ const FLOW: {
   btn: string | null;
   tone: string;
 }[] = [
-  { key: "assigned",   label: "รับงานแล้ว", next: "enroute",    btn: "🚗 ส่งหมอนวด", tone: "#64748b" },
-  { key: "enroute",    label: "กำลังเดินทาง", next: "arrived",   btn: "📍 ถึงแล้ว",   tone: "#2563eb" },
-  { key: "arrived",    label: "ถึงแล้ว",    next: "in_session", btn: "▶️ เริ่มนวด",  tone: "#a16207" },
-  { key: "in_session", label: "กำลังนวด",   next: "done",       btn: "✅ จบงาน",     tone: "#16a34a" },
-  { key: "done",       label: "เสร็จแล้ว",  next: null,         btn: null,            tone: "#16a34a" },
+  { key: "assigned",   label: "รับงานแล้ว", next: "enroute",    btn: "🚗 ส่งหมอนวด", tone: adminColor.dim },
+  { key: "enroute",    label: "กำลังเดินทาง", next: "arrived",   btn: "📍 ถึงแล้ว",   tone: adminColor.blue },
+  { key: "arrived",    label: "ถึงแล้ว",    next: "in_session", btn: "▶️ เริ่มนวด",  tone: adminColor.amber },
+  { key: "in_session", label: "กำลังนวด",   next: "done",       btn: "✅ จบงาน",     tone: adminColor.green },
+  { key: "done",       label: "เสร็จแล้ว",  next: null,         btn: null,            tone: adminColor.green },
 ];
 const STEP = (s?: string) => FLOW.find((f) => f.key === ((s as DispatchState) || "assigned")) ?? FLOW[0];
 
@@ -141,6 +146,7 @@ const AdminTonightPage: React.FC = () => {
         patch.sessionEndAt = serverTimestamp();
       }
       await updateDoc(doc(db, "bookings", b.id), patch);
+      if (step.next === "done") void logAdminAction("booking.complete", { bookingId: b.id });
     } catch (e) {
       console.error("[tonight] advance failed", e);
       window.alert("อัปเดตไม่สำเร็จ ลองใหม่");
@@ -172,32 +178,32 @@ const AdminTonightPage: React.FC = () => {
           onClick={() => navigate("/admin/dashboard")}
           startIcon={<ArrowLeft />}
           size="small"
-          sx={{ color: "#C62828", textTransform: "none", fontWeight: 700 }}
+          sx={{ color: adminColor.accent, textTransform: "none", fontWeight: 700 }}
         >
           Dashboard
         </Button>
       </Box>
 
-      <Typography sx={{ fontFamily: SANS, fontWeight: 800, fontSize: 22, color: "#1A2B2E", mb: 0.5 }}>
+      <Typography sx={{ fontFamily: adminFont.serif, fontWeight: 600, fontSize: 22, color: adminColor.text, mb: 0.5 }}>
         🌙 คืนนี้ — ห้องคุมงาน
       </Typography>
 
       {/* live counters */}
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
-        <Chip label={`งานคืนนี้ ${counts.total}`} sx={{ fontWeight: 700, background: "rgba(15,23,42,0.06)" }} />
-        <Chip label={`กำลังไป/ถึง ${counts.enroute}`} sx={{ fontWeight: 700, background: "rgba(37,99,235,0.10)", color: "#2563eb" }} />
-        <Chip label={`กำลังนวด ${counts.in_session}`} sx={{ fontWeight: 700, background: "rgba(22,163,74,0.12)", color: "#16a34a" }} />
+        <Chip label={`งานคืนนี้ ${counts.total}`} sx={{ fontWeight: 700, background: adminColor.panel, color: adminColor.text }} />
+        <Chip label={`กำลังไป/ถึง ${counts.enroute}`} sx={{ fontWeight: 700, background: "rgba(91,141,239,0.14)", color: adminColor.blue }} />
+        <Chip label={`กำลังนวด ${counts.in_session}`} sx={{ fontWeight: 700, background: "rgba(55,214,122,0.14)", color: adminColor.green }} />
         {counts.overdue > 0 && (
-          <Chip label={`⚠️ เกินเวลา ${counts.overdue}`} sx={{ fontWeight: 800, background: "rgba(180,0,10,0.12)", color: "#B4000A" }} />
+          <Chip label={`⚠️ เกินเวลา ${counts.overdue}`} sx={{ fontWeight: 800, background: "rgba(255,91,110,0.16)", color: adminColor.red }} />
         )}
       </Box>
 
       {loading ? (
         <Box sx={{ textAlign: "center", mt: 6 }}>
-          <CircularProgress />
+          <CircularProgress sx={{ color: adminColor.accent }} />
         </Box>
       ) : jobs.length === 0 ? (
-        <Box sx={{ textAlign: "center", mt: 6, color: "rgba(15,23,42,0.5)", fontFamily: SANS }}>
+        <Box sx={{ textAlign: "center", mt: 6, color: adminColor.muted, fontFamily: SANS }}>
           ยังไม่มีงานที่ยืนยันแล้วในคิว — งานที่กด Confirm จะมาโผล่ที่นี่
         </Box>
       ) : (
@@ -220,32 +226,32 @@ const AdminTonightPage: React.FC = () => {
                 key={b.id}
                 sx={{
                   borderRadius: 2,
-                  border: overdue ? "1.5px solid #B4000A" : "1px solid rgba(15,23,42,0.10)",
-                  background: overdue ? "rgba(180,0,10,0.04)" : "#fff",
+                  border: overdue ? `1.5px solid ${adminColor.red}` : `1px solid ${adminColor.line}`,
+                  background: overdue ? "rgba(255,91,110,0.06)" : adminColor.panel,
                   p: 1.5,
                   borderLeft: `4px solid ${step.tone}`,
                 }}
               >
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, mb: 0.5 }}>
-                  <Typography sx={{ fontFamily: SANS, fontWeight: 800, fontSize: 15, color: "#1A2B2E" }}>
+                  <Typography sx={{ fontFamily: SANS, fontWeight: 800, fontSize: 15, color: adminColor.text }}>
                     {b.time || "—"} · {b.therapistName || "—"}
                   </Typography>
-                  <Chip size="small" label={step.label} sx={{ fontWeight: 700, color: step.tone, background: `${step.tone}1a` }} />
+                  <Chip size="small" label={step.label} sx={{ fontWeight: 700, color: step.tone, background: `${step.tone}22` }} />
                 </Box>
 
-                <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(15,23,42,0.65)" }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.muted }}>
                   {b.serviceName || "—"} · {b.duration ?? "?"} min
                   {typeof b.totalPrice === "number" ? ` · ฿${b.totalPrice.toLocaleString()}` : ""}
                 </Typography>
 
                 {/* customer + phone */}
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexWrap: "wrap", mt: 0.5 }}>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(15,23,42,0.65)" }}>👤 {nameOf(b)}</Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.muted }}>👤 {nameOf(b)}</Typography>
                   {b.phone && (
                     <Box
                       component="a"
                       href={`tel:${b.phone}`}
-                      sx={{ display: "inline-flex", alignItems: "center", gap: 0.4, color: "#16a34a", fontWeight: 700, fontSize: 13, textDecoration: "none", fontFamily: SANS }}
+                      sx={{ display: "inline-flex", alignItems: "center", gap: 0.4, color: adminColor.green, fontWeight: 700, fontSize: 13, textDecoration: "none", fontFamily: SANS }}
                     >
                       <Phone size={13} weight="fill" /> {b.phone}
                     </Box>
@@ -255,14 +261,14 @@ const AdminTonightPage: React.FC = () => {
                 {/* address + map */}
                 {(b.locationName || b.address) && (
                   <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5, mt: 0.4 }}>
-                    <MapPin size={14} color="rgba(15,23,42,0.45)" style={{ flexShrink: 0, marginTop: 2 }} />
-                    <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: "rgba(15,23,42,0.6)", lineHeight: 1.4 }}>
+                    <MapPin size={14} color={adminColor.dim} style={{ flexShrink: 0, marginTop: 2 }} />
+                    <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: adminColor.muted, lineHeight: 1.4 }}>
                       {b.locationName || b.address}
                       {b.meetingPoint ? ` · พบ: ${b.meetingPoint}` : ""}
                       {mapUrl && (
                         <>
                           {"  "}
-                          <Box component="a" href={mapUrl} target="_blank" rel="noopener noreferrer" sx={{ color: "#2563eb", fontWeight: 700, textDecoration: "none" }}>
+                          <Box component="a" href={mapUrl} target="_blank" rel="noopener noreferrer" sx={{ color: adminColor.highlight, fontWeight: 700, textDecoration: "none" }}>
                             แผนที่
                           </Box>
                         </>
@@ -272,14 +278,14 @@ const AdminTonightPage: React.FC = () => {
                 )}
 
                 {b.needsAdminReview && (
-                  <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: "#B4000A", mt: 0.5 }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: adminColor.red, mt: 0.5 }}>
                     ⚠️ เช็คก่อน — หมอนวดอาจไม่ว่าง{b.reviewReason ? ` · ${b.reviewReason}` : ""}
                   </Typography>
                 )}
 
                 {/* session timing / overdue */}
                 {inSession && exp && (
-                  <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, mt: 0.5, color: overdue ? "#B4000A" : "rgba(15,23,42,0.6)" }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, mt: 0.5, color: overdue ? adminColor.red : adminColor.muted }}>
                     {overdue
                       ? `⚠️ เกินเวลา (คาดจบ ${dayjs(exp).format("HH:mm")}) · เช็กความปลอดภัยหมอนวด`
                       : `⏱️ คาดจบ ${dayjs(exp).format("HH:mm")}`}

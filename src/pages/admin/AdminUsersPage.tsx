@@ -245,7 +245,7 @@ const AdminUsersPage: React.FC = () => {
       field: "name", headerName: "Guest", flex: 1.1,
       renderCell: (p) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, height: "100%" }}>
-          {p.row.totalBookings >= VIP_THRESHOLD && <Crown size={14} weight="fill" color={adminColor.champagne} />}
+          {p.row.totalBookings >= VIP_THRESHOLD && <Crown size={14} weight="fill" color={adminColor.highlight} />}
           <span>{p.row.name}</span>
         </Box>
       ),
@@ -301,8 +301,8 @@ const AdminUsersPage: React.FC = () => {
           <Typography sx={{ fontSize: 20, fontWeight: 700, color: adminColor.text, fontFamily: adminFont.serif }}>{insights.length}</Typography>
           <Typography sx={{ fontSize: 10.5, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>Unique guests</Typography>
         </Box>
-        <Box sx={{ px: 2, py: 1, borderRadius: 2, background: adminColor.panel, border: `1px solid ${adminColor.champagne}44` }}>
-          <Typography sx={{ fontSize: 20, fontWeight: 700, color: adminColor.champagne, fontFamily: adminFont.serif }}>{vipCount}</Typography>
+        <Box sx={{ px: 2, py: 1, borderRadius: 2, background: adminColor.panel, border: `1px solid ${adminColor.highlight}44` }}>
+          <Typography sx={{ fontSize: 20, fontWeight: 700, color: adminColor.highlight, fontFamily: adminFont.serif }}>{vipCount}</Typography>
           <Typography sx={{ fontSize: 10.5, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>VIP guests</Typography>
         </Box>
         <Box sx={{ px: 2, py: 1, borderRadius: 2, background: adminColor.panel, border: `1px solid ${adminColor.red}44` }}>

@@ -158,7 +158,7 @@ const AdminLayout: React.FC = () => {
         <Box
           sx={{
             width: 32, height: 32, borderRadius: "50%",
-            background: adminColor.crimson,
+            background: adminColor.accent,
             display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0,
           }}
@@ -168,7 +168,7 @@ const AdminLayout: React.FC = () => {
         {!compact && (
           <Box>
             <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: adminColor.text, lineHeight: 1.1, fontFamily: adminFont.serif, letterSpacing: "0.02em" }}>SunRed</Typography>
-            <Typography sx={{ fontSize: 10, fontWeight: 700, color: adminColor.champagne, letterSpacing: "0.18em", textTransform: "uppercase" }}>Control</Typography>
+            <Typography sx={{ fontSize: 10, fontWeight: 700, color: adminColor.highlight, letterSpacing: "0.18em", textTransform: "uppercase" }}>Control</Typography>
           </Box>
         )}
       </Box>
@@ -190,19 +190,19 @@ const AdminLayout: React.FC = () => {
                 px: compact ? 1 : 1.5,
                 borderRadius: "10px",
                 mb: 0.25,
-                color: active ? adminColor.crimson : adminColor.muted,
+                color: active ? adminColor.accent : adminColor.muted,
                 "&:hover": {
                   background: adminColor.panel2,
                   color: adminColor.text,
                 },
                 "&.Mui-selected": {
-                  background: "rgba(226,58,87,0.12)",
-                  color: adminColor.crimson,
-                  "&:hover": { background: "rgba(226,58,87,0.16)" },
-                  "& .MuiListItemIcon-root": { color: adminColor.crimson },
+                  background: "rgba(78,126,140,0.16)",
+                  color: adminColor.accent,
+                  "&:hover": { background: "rgba(78,126,140,0.22)" },
+                  "& .MuiListItemIcon-root": { color: adminColor.accent },
                 },
                 "& .MuiListItemIcon-root": {
-                  color: active ? adminColor.crimson : adminColor.dim,
+                  color: active ? adminColor.accent : adminColor.dim,
                   minWidth: compact ? "auto" : 38,
                 },
               }}
@@ -234,7 +234,7 @@ const AdminLayout: React.FC = () => {
             display: "flex", alignItems: "center", gap: 1,
           }}
         >
-          <Avatar sx={{ width: 28, height: 28, bgcolor: adminColor.panel3, color: adminColor.crimson, fontSize: 13, fontWeight: 700 }}>
+          <Avatar sx={{ width: 28, height: 28, bgcolor: adminColor.panel3, color: adminColor.accent, fontSize: 13, fontWeight: 700 }}>
             {user.email?.[0]?.toUpperCase()}
           </Avatar>
           <Typography sx={{ fontSize: 12, fontWeight: 600, color: adminColor.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
@@ -270,21 +270,21 @@ const AdminLayout: React.FC = () => {
               {isMobile && mobileOpen ? <CloseIcon /> : <MenuIcon />}
             </IconButton>
             <Typography fontWeight={600} fontSize={15} letterSpacing="0.02em" fontFamily={adminFont.serif} color={adminColor.text}>
-              SunRed <Box component="span" sx={{ color: adminColor.crimson }}>Control</Box>
+              SunRed <Box component="span" sx={{ color: adminColor.accent }}>Control</Box>
             </Typography>
           </Box>
 
           <Box display="flex" alignItems="center" gap={1}>
             <Tooltip title="Notifications">
               <IconButton size="small" sx={{ color: adminColor.text }}>
-                <Badge badgeContent={notifications} sx={{ "& .MuiBadge-badge": { background: adminColor.crimson, color: "#fff" } }}>
+                <Badge badgeContent={notifications} sx={{ "& .MuiBadge-badge": { background: adminColor.accent, color: "#fff" } }}>
                   <NotificationsIcon fontSize="small" />
                 </Badge>
               </IconButton>
             </Tooltip>
 
             <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small">
-              <Avatar sx={{ width: 30, height: 30, bgcolor: adminColor.panel3, color: adminColor.crimson, fontSize: 14, fontWeight: 700 }}>
+              <Avatar sx={{ width: 30, height: 30, bgcolor: adminColor.panel3, color: adminColor.accent, fontSize: 14, fontWeight: 700 }}>
                 {user.email?.[0]?.toUpperCase()}
               </Avatar>
             </IconButton>
@@ -297,7 +297,7 @@ const AdminLayout: React.FC = () => {
             >
               <MenuItem onClick={() => { void navigate("/admin/advanced-settings"); setAnchorEl(null); }}>Settings</MenuItem>
               <MenuItem onClick={() => { void navigate("/profile"); setAnchorEl(null); }}>My Profile</MenuItem>
-              <MenuItem onClick={logout} sx={{ color: adminColor.crimson }}>Logout</MenuItem>
+              <MenuItem onClick={logout} sx={{ color: adminColor.accent }}>Logout</MenuItem>
             </Menu>
           </Box>
         </Toolbar>
@@ -354,7 +354,7 @@ const AdminLayout: React.FC = () => {
           px: 0,
           minWidth: 0,
           overflow: "hidden",
-          background: `radial-gradient(120% 60% at 50% -10%, #1a1424 0%, ${adminColor.bg} 45%)`,
+          background: `radial-gradient(120% 60% at 50% -10%, #22323d 0%, ${adminColor.bg} 45%)`,
           color: adminColor.text,
         }}
       >
