@@ -1140,6 +1140,48 @@ dropdown). What's NOT editable: the booking ID and the `createdAt`
 timestamp (by design — those are the record's own history, not the
 service being delivered).
 
+### 🆕 2026-07-06 — booking edit drawer redesign (28s264)
+
+Founder: "ปรับให้ หน้า แก้ไข มันสวยขึ้นและใช้งานง่าย" — shown a mockup in an
+Artifact first (established pattern for visual passes on this page — same
+as the 28s253 card redesign), approved with one change: **"Duration ทำเป็น
+ดรอปดาว นอกนั้น เอาตามที่ออกแบบ"** (dropdown instead of pills; everything
+else as designed). Pure layout/hierarchy — every field, handler, and write
+path from 28s259–263 is unchanged, only how they're presented.
+
+The edit form had grown field-by-field across 5 rounds into one flat list
+of 12+ rows with thin dividers, all equal visual weight. Regrouped into:
+
+- **Status** — pulled into its own small standalone card at the top,
+  independent of the Edit toggle (routine tap, not a "fix a mistake" edit).
+- **Guest & Schedule** — Customer, Phone, Date & Time, Location.
+- **Service** — Therapist, Service, Duration (dropdown per the one
+  requested change).
+- **Billing** — styled as an actual receipt: Service price + Taxi fee,
+  Payment method (+ surcharge note), a dashed rule, then Total with its
+  "Use computed" suggestion. It's literally the bill, so now it reads
+  like one.
+- **Record** — Booked, Payment status, Booking ID.
+- Header price strip now goes **LIVE while editing** (real service/taxi/
+  total from the form, "Editing" pill, accent highlight ring) so a change's
+  impact is visible without scrolling to Billing.
+- Every field now uses MUI `TextField`/`Select` with a shared
+  `editFieldSx` (teal focus ring matching Ocean Study) instead of native
+  `<input>` elements, which showed the browser's default BLUE focus
+  outline — the single most visible "doesn't match the theme" detail in
+  the old form.
+
+**Caught before shipping:** the "Payment status" (paid/unpaid) toggle was
+part of the flat list before, rendered unconditionally regardless of
+editing state. In the first pass of the regroup it landed inside the
+read-only-only Billing section — meaning it would have DISAPPEARED while
+editing (a real functionality regression, not just a style change). Fixed
+by moving it into the always-visible Record section, matching the "same
+reasoning as Status" pattern (routine tap, not edit-gated) that was already
+established for Status itself. **Lesson: when regrouping fields that used
+to render unconditionally, explicitly check whether the ternary boundary
+{editing ? ... : ...} now traps something that shouldn't be trapped.**
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
