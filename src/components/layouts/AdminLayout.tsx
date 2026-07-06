@@ -168,7 +168,10 @@ const AdminLayout: React.FC = () => {
         {!compact && (
           <Box>
             <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: adminColor.text, lineHeight: 1.1, fontFamily: adminFont.serif, letterSpacing: "0.02em" }}>SunRed</Typography>
-            <Typography sx={{ fontSize: 10, fontWeight: 700, color: adminColor.highlight, letterSpacing: "0.18em", textTransform: "uppercase" }}>Control</Typography>
+            {/* 🆕 Round 28s239 — was adminColor.highlight here but
+                adminColor.accent in the topbar wordmark below; unified on
+                accent so "Control" reads the same color everywhere. */}
+            <Typography sx={{ fontSize: 10, fontWeight: 700, color: adminColor.accent, letterSpacing: "0.18em", textTransform: "uppercase" }}>Control</Typography>
           </Box>
         )}
       </Box>
