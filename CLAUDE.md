@@ -1417,6 +1417,36 @@ Contact), read-only summary rows when not editing.
 this merged detail/edit page), both fully on Ocean Study, both sharing
 the same status engine and audit-log conventions.
 
+### 🆕 2026-07-06 — fixed blank edit form on ?edit=1 entry (28s272)
+
+Founder opened a therapist via the roster's pencil icon (which the
+28s271 merge points at `/admin/therapists/:id?edit=1`) — form loaded
+completely empty (blank name, no avatar, all fields blank) even though
+the doc clearly existed (status/stats computed fine from the same doc).
+
+**Root cause:** the therapist `onSnapshot` callback checks `editing` to
+avoid clobbering in-progress edits on a live update — but that closure
+is created once inside an `[id]`-only effect, so it captured whatever
+`editing` was AT MOUNT. Landing via `?edit=1` means `editing` was
+already `true` on the very first render, so the very FIRST real
+snapshot got treated as "don't stomp an edit in progress" and the form
+never populated at all — a self-inflicted regression from writing the
+"protect the user's typing" guard without considering the case where
+edit mode is already on before any data has loaded.
+
+Fixed with an `editingRef` that always reads the live value (not the
+stale closure) + a `hasLoadedRef` that guarantees the first successful
+snapshot always populates the form regardless of edit mode. Also reset
+both refs — and `editing` itself — at the top of the `[id]` effect, so
+navigating between two different therapists' detail pages without a
+full remount can't inherit a leftover `true` from the previous one and
+hit the same block.
+
+**Confirmed by founder: the "pencil → same merged detail page,
+pre-armed into edit mode, no separate page" design from 28s271 is the
+correct intended behavior** — this round only fixed the data-loading
+bug, no architecture change needed.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
