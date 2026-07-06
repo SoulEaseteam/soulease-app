@@ -925,6 +925,36 @@ by them and feeds the summary strip, tab counts, AND the visible list, so
 search deliberately does NOT re-narrow the facets — it's a one-off look-up,
 not something that should silently change what the summary numbers mean.
 
+### 🆕 2026-07-06 — Bookings default tab (28s255)
+
+Founder: "All show" — clarified as wanting `/admin/bookings` to open on the
+**"All"** tab instead of "Pending". One-line `useState` initializer change.
+
+### 🆕 2026-07-06 — Bookings nested-card frame (28s256)
+
+Founder shared a customer-site screenshot (profile browse cards) and asked
+for AdminBookingListPage to adopt its "สี และ พื้นหลังหลัก พื้นหลังรอง
+กรอบและปุ่ม" (color, main bg, secondary bg, frame, buttons). Since the
+reference's primary button was dark-navy — not Ocean Study's accent teal
+used everywhere else in admin — this warranted a clarifying question before
+touching every button on the page: founder confirmed **keep teal, adopt only
+the nested-card structure** ("คง teal เดิม เอาแค่โครงการ์ดซ้อนในกรอบ").
+
+- Each `BookingCard` now sits inside an outer "frame" Box (secondary
+  background, 8px padding, 24px radius) that holds the existing white/panel2
+  inner card (18px radius) — reproducing the reference's nested-box look.
+- New `CARD_FRAME_BG = "#C5D8DF"` — an 18% blend from `bg` (#DCEFF5) toward
+  `dim` (#5C6F7B). **Lesson: `adminColor.panel3` was tried first and
+  rejected** — it's also a blend toward `bg`, just from white, so it reads as
+  visually near-identical to `bg` itself and couldn't function as a distinct
+  frame layer. When a design calls for a background meaningfully DARKER than
+  the page bg (not just an elevated-panel shade), blend toward the darker
+  anchor (`dim`/`text`), not toward `bg` again.
+- Grid gap 1.5→1 since each card's own frame padding now supplies part of
+  the visual separation between cards.
+- Nothing else changed — accent teal remains the only primary-button color
+  across all of admin, unbroken.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
