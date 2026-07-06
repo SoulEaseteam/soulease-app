@@ -376,6 +376,9 @@ const AdminUsersPage: React.FC = () => {
           />
 
           {/* ❗ ถ้าเป็น admin ตัวเอง => ปิดการแก้ role */}
+          {/* 🆕 Round 28s265 (audit: dropdowns app-wide inheriting the
+              global theme's translucent Paper background) — SelectProps
+              forces an opaque menu; was missing here. */}
           <TextField
             select
             label="Role"
@@ -386,6 +389,7 @@ const AdminUsersPage: React.FC = () => {
               setForm((p) => (p ? { ...p, role: e.target.value as Role } : p))
             }
             disabled={editingUser?.id === currentAdminUid}
+            SelectProps={{ MenuProps: { PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } } }}
           >
             <MenuItem value="admin">Admin</MenuItem>
             <MenuItem value="therapist">Therapist</MenuItem>

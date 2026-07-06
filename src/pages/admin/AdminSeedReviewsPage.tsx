@@ -474,11 +474,15 @@ const AdminSeedReviewsPage: React.FC = () => {
           <ToggleButton value="90d">90 วัน</ToggleButton>
           <ToggleButton value="all">ทั้งหมด</ToggleButton>
         </ToggleButtonGroup>
+        {/* 🆕 Round 28s265 (audit: dropdowns app-wide inheriting the global
+            theme's translucent Paper background) — MenuProps forces an
+            opaque white menu. */}
         <Select
           value={therapistFilter}
           onChange={(e) => setTherapistFilter(e.target.value)}
           size="small"
           sx={{ fontFamily: SANS, fontSize: 12, minWidth: 180 }}
+          MenuProps={{ PaperProps: { sx: { background: "#fff" } } }}
         >
           <MenuItem value="__all__">ทุก practitioner</MenuItem>
           {therapistOptions.map((o) => (
@@ -849,6 +853,7 @@ const SeedRow: React.FC<{
               size="small"
               fullWidth
               sx={{ fontFamily: SANS, fontSize: "13px" }}
+              MenuProps={{ PaperProps: { sx: { background: "#fff" } } }}
             >
               {(Object.keys(LANG_LABELS) as ReviewLang[]).map((k) => (
                 <MenuItem key={k} value={k}>
@@ -918,6 +923,7 @@ const SeedRow: React.FC<{
                 renderValue={() => (
                   <em style={{ color: MUTED }}>เลือก template…</em>
                 )}
+                MenuProps={{ PaperProps: { sx: { background: "#fff" } } }}
               >
                 {tpls.map((tpl, i) => (
                   <MenuItem

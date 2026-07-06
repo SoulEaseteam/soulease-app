@@ -162,6 +162,11 @@ const EditTherapistPage: React.FC = () => {
           onChange={handleChange}
         />
 
+        {/* 🆕 Round 28s265 (audit: dropdowns app-wide inheriting the global
+            theme's translucent Paper background, rgba(255,255,255,0.65) in
+            src/theme.ts) — SelectProps forces an opaque white menu; this
+            page isn't on the Ocean Study admin tokens yet, so a plain
+            opaque white is the safe fix here (not adminColor). */}
         <TextField
           label="Badge"
           name="badge"
@@ -169,6 +174,7 @@ const EditTherapistPage: React.FC = () => {
           fullWidth
           value={therapist.badge || "none"}
           onChange={handleChange}
+          SelectProps={{ MenuProps: { PaperProps: { sx: { background: "#fff" } } } }}
         >
           {badgeOptions.map((b) => (
             <MenuItem key={b} value={b}>
@@ -184,6 +190,7 @@ const EditTherapistPage: React.FC = () => {
           fullWidth
           value={therapist.statusOverride || ""}
           onChange={handleChange}
+          SelectProps={{ MenuProps: { PaperProps: { sx: { background: "#fff" } } } }}
         >
           <MenuItem value="">Auto</MenuItem>
           {statusOptions.map((s) => (

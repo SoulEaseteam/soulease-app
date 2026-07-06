@@ -1190,6 +1190,22 @@ const editFieldSx = {
   },
 } as const;
 
+// 🆕 Round 28s265 (founder: "dropdown ... พื้นมันบางใสจนเห็นรายละเอียดอื่น
+//   ด้านหลัง") — root cause: the app's GLOBAL MUI theme
+//   (`src/theme.ts` → `palette.background.paper`) is a deliberately
+//   translucent `rgba(255,255,255,0.65)` for the customer site's
+//   frosted-glass look. Any Select/TextField-select that doesn't override
+//   its Menu Paper explicitly inherits that see-through background — which
+//   is exactly what the 4 `TextField select` fields added in 28s264
+//   (Therapist/Service/Duration/Payment method) were missing. Every plain
+//   `<Select>` elsewhere in this file already carries an inline
+//   `MenuProps` override; TextField's equivalent is `SelectProps.MenuProps`
+//   — easy to forget since it's a different prop name. This constant is
+//   the fix, applied to all four.
+const editSelectProps = {
+  MenuProps: { PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } },
+} as const;
+
 // 🆕 28s264 — small section header (icon + label) used to group the edit
 //   form into Guest & Schedule / Service / Billing / Record instead of one
 //   long flat list of rows.
@@ -1513,6 +1529,7 @@ const DetailPanel: React.FC<{
                   select label="Therapist" size="small" fullWidth value={editForm.therapistId}
                   onChange={(e) => setEditForm((f) => ({ ...f, therapistId: e.target.value }))}
                   sx={editFieldSx}
+                  SelectProps={editSelectProps}
                 >
                   {!therapists.some((t) => t.id === editForm.therapistId) && editForm.therapistId && (
                     <MenuItem value={editForm.therapistId}>{b.therapistName}</MenuItem>
@@ -1525,6 +1542,7 @@ const DetailPanel: React.FC<{
                   select label="Service" size="small" fullWidth value={editForm.serviceId}
                   onChange={(e) => changeService(e.target.value)}
                   sx={editFieldSx}
+                  SelectProps={editSelectProps}
                 >
                   {services.map((s) => (
                     <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
@@ -1536,6 +1554,7 @@ const DetailPanel: React.FC<{
                   select label="Duration" size="small" fullWidth value={editForm.duration}
                   onChange={(e) => changeDuration(Number(e.target.value))}
                   sx={editFieldSx}
+                  SelectProps={editSelectProps}
                 >
                   {editAvailableDurations.map((d) => (
                     <MenuItem key={d} value={d}>
@@ -1566,6 +1585,7 @@ const DetailPanel: React.FC<{
                   select label="Payment method" size="small" fullWidth value={editForm.payment}
                   onChange={(e) => setEditForm((f) => ({ ...f, payment: e.target.value }))}
                   sx={editFieldSx}
+                  SelectProps={editSelectProps}
                 >
                   {PAYMENT_METHOD_OPTIONS.map((o) => (
                     <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>

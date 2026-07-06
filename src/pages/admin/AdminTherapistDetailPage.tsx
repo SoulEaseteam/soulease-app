@@ -308,6 +308,9 @@ const AdminTherapistDetailPage: React.FC = () => {
                   sx={{ mb: 2 }}
                 />
 
+                {/* 🆕 Round 28s265 (audit: dropdowns app-wide inheriting the
+                    global theme's translucent Paper background) —
+                    SelectProps forces an opaque white menu. */}
                 <TextField
                   label="Badge"
                   select
@@ -315,6 +318,7 @@ const AdminTherapistDetailPage: React.FC = () => {
                   value={formData.badge}
                   onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
                   sx={{ mb: 2 }}
+                  SelectProps={{ MenuProps: { PaperProps: { sx: { background: "#fff" } } } }}
                 >
                   {badgeOptions.map((b) => (
                     <MenuItem key={b} value={b}>
@@ -390,6 +394,7 @@ const AdminTherapistDetailPage: React.FC = () => {
                   statusOverride: (e.target.value || null) as "available" | "bookable" | "resting" | null,
                 })
               }
+              SelectProps={{ MenuProps: { PaperProps: { sx: { background: "#fff" } } } }}
             >
               {statusOptions.map((op) => (
                 <MenuItem key={op.value} value={op.value}>
