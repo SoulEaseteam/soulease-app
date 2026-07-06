@@ -20,6 +20,16 @@ import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 
 import { brand, fonts } from "@/theme";
+
+// 🆕 Round 28s238 (founder: "Ocean Study" trial on the customer-facing
+//   browse card — scoped to THIS file only, not the global `brand` theme).
+//   accent = primary CTA (Book Now button + focus ring) ·
+//   highlight = prominent number emphasis (the price).
+//   Scoped rather than touching theme.ts brand.red globally so the
+//   booking/checkout flow and every other page keep the existing brand
+//   red untouched while this one card style is trialed.
+const oceanAccent = "#4E7E8C";
+const oceanHighlight = "#1F2933";
 import { enhanceImage } from "@/utils/cloudinary";
 import type { Therapist, Avail } from "@/types/therapist";
 // 🆕 Round 28s132 — Surface the therapist's lowest service price so
@@ -179,7 +189,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
             "0 12px 28px rgba(15, 23, 42, 0.10), 0 2px 4px rgba(15, 23, 42, 0.05)",
         },
         "&:focus-visible": {
-          outline: `2px solid ${brand.red}`,
+          outline: `2px solid ${oceanAccent}`,
           outlineOffset: 2,
         },
         // 🆕 Round 28s130 — Fixed card height so the list reads as a
@@ -475,7 +485,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 fontFamily: fonts.heading,
                 fontSize: "16px",
                 fontWeight: 700,
-                color: brand.red,
+                color: oceanHighlight,
                 lineHeight: 1,
               }}
             >
@@ -493,7 +503,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
               // 🆕 Round 28s136 — Disabled visual when off-duty.
               background: isOffDuty
                 ? "rgba(0,0,0,0.18)"
-                : "#B4000A",
+                : oceanAccent,
               color: "#fff",
               border: "none",
               cursor: isOffDuty ? "not-allowed" : "pointer",
