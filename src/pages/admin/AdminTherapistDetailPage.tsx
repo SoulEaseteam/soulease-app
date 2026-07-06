@@ -458,18 +458,18 @@ const AdminTherapistDetailPage: React.FC = () => {
         {!editing ? (
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
             <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <ReadRow icon={<Star size={14} />} label="Rating" value={formData.rating || "0"} />
-              <ReadRow icon={<ChatCircleText size={14} />} label="Reviews" value={formData.reviews || "0"} />
-              <ReadRow icon={<Clock size={14} />} label="Hours" value={`${formData.startTime || "--:--"} – ${formData.endTime || "--:--"}`} />
-              <ReadRow icon={<MapPin size={14} />} label="Location" value={formData.currentLocation || "—"} />
-              <ReadRow icon={<Medal size={14} />} label="Badge" value={formData.badge || "None"} />
+              <ReadRow icon={<Star size={14} />} label="คะแนน" value={formData.rating || "0"} />
+              <ReadRow icon={<ChatCircleText size={14} />} label="รีวิว" value={formData.reviews || "0"} />
+              <ReadRow icon={<Clock size={14} />} label="เวลาทำงาน" value={`${formData.startTime || "--:--"} – ${formData.endTime || "--:--"}`} />
+              <ReadRow icon={<MapPin size={14} />} label="ตำแหน่ง" value={formData.currentLocation || "—"} />
+              <ReadRow icon={<Medal size={14} />} label="ป้าย" value={formData.badge || "ไม่มี"} />
             </Box>
             <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <ReadRow icon={<IdentificationCard size={14} />} label="Custom ID" value={formData.customId || "—"} />
+              <ReadRow icon={<IdentificationCard size={14} />} label="รหัสกำหนดเอง" value={formData.customId || "—"} />
               <ReadRow icon={<TelegramLogo size={14} />} label="Telegram" value={formData.telegramChatId || "ยังไม่ผูก"} />
-              <ReadRow icon={<EyeSlash size={14} />} label="Hidden" value={formData.hidden ? "ซ่อนจากหน้าเว็บ" : "แสดงปกติ"} alert={formData.hidden} />
-              <ReadRow icon={<Prohibit size={14} />} label="Blocked" value={formData.blocked ? "ปิดใช้งาน" : "ใช้งานปกติ"} alert={formData.blocked} />
-              <ReadRow icon={<Umbrella size={14} />} label="Holiday" value={formData.isHoliday ? "วันหยุดวันนี้" : "ไม่ได้หยุด"} alert={formData.isHoliday} />
+              <ReadRow icon={<EyeSlash size={14} />} label="การมองเห็น" value={formData.hidden ? "ซ่อนจากหน้าเว็บ" : "แสดงปกติ"} alert={formData.hidden} />
+              <ReadRow icon={<Prohibit size={14} />} label="บล็อก" value={formData.blocked ? "ปิดใช้งาน" : "ใช้งานปกติ"} alert={formData.blocked} />
+              <ReadRow icon={<Umbrella size={14} />} label="วันหยุด" value={formData.isHoliday ? "วันหยุดวันนี้" : "ไม่ได้หยุด"} alert={formData.isHoliday} />
             </Box>
           </Box>
         ) : (
@@ -477,12 +477,12 @@ const AdminTherapistDetailPage: React.FC = () => {
             <Box>
               <SectionHeader icon={<Sparkle size={13} />}>โปรไฟล์</SectionHeader>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
-                <TextField label="Name" fullWidth size="small" sx={fieldSx} value={formData.name} onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))} />
+                <TextField label="ชื่อ" fullWidth size="small" sx={fieldSx} value={formData.name} onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))} />
                 <Box sx={{ display: "flex", gap: 1 }}>
-                  <TextField label="Custom ID (for URL)" fullWidth size="small" sx={fieldSx} value={formData.customId} onChange={(e) => setFormData((f) => ({ ...f, customId: e.target.value }))} />
-                  <TextField label="Image URL" fullWidth size="small" sx={fieldSx} value={formData.image} onChange={(e) => setFormData((f) => ({ ...f, image: e.target.value }))} />
+                  <TextField label="รหัสกำหนดเอง (สำหรับ URL)" fullWidth size="small" sx={fieldSx} value={formData.customId} onChange={(e) => setFormData((f) => ({ ...f, customId: e.target.value }))} />
+                  <TextField label="ลิงก์รูปภาพ" fullWidth size="small" sx={fieldSx} value={formData.image} onChange={(e) => setFormData((f) => ({ ...f, image: e.target.value }))} />
                 </Box>
-                <TextField label="Specialty" fullWidth size="small" sx={fieldSx} value={formData.specialty} onChange={(e) => setFormData((f) => ({ ...f, specialty: e.target.value }))} />
+                <TextField label="ความถนัด" fullWidth size="small" sx={fieldSx} value={formData.specialty} onChange={(e) => setFormData((f) => ({ ...f, specialty: e.target.value }))} />
               </Box>
             </Box>
 
@@ -490,20 +490,20 @@ const AdminTherapistDetailPage: React.FC = () => {
               <SectionHeader icon={<Clock size={13} />}>ตารางเวลาและสถานะ</SectionHeader>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
                 <Box sx={{ display: "flex", gap: 1 }}>
-                  <TextField label="Start Time" type="time" fullWidth size="small" sx={fieldSx} InputLabelProps={{ shrink: true }} value={formData.startTime} onChange={(e) => setFormData((f) => ({ ...f, startTime: e.target.value }))} />
-                  <TextField label="End Time" type="time" fullWidth size="small" sx={fieldSx} InputLabelProps={{ shrink: true }} value={formData.endTime} onChange={(e) => setFormData((f) => ({ ...f, endTime: e.target.value }))} />
+                  <TextField label="เวลาเริ่ม" type="time" fullWidth size="small" sx={fieldSx} InputLabelProps={{ shrink: true }} value={formData.startTime} onChange={(e) => setFormData((f) => ({ ...f, startTime: e.target.value }))} />
+                  <TextField label="เวลาเลิก" type="time" fullWidth size="small" sx={fieldSx} InputLabelProps={{ shrink: true }} value={formData.endTime} onChange={(e) => setFormData((f) => ({ ...f, endTime: e.target.value }))} />
                 </Box>
                 <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                   <TextField
-                    select label="Status Override" fullWidth size="small" sx={fieldSx}
+                    select label="Override สถานะ" fullWidth size="small" sx={fieldSx}
                     value={formData.statusOverride}
                     onChange={(e) => changeOverride(e.target.value as StatusOverride)}
                     SelectProps={{ MenuProps: selectMenuProps, displayEmpty: true }}
                   >
-                    <MenuItem value="Auto">Auto</MenuItem>
-                    <MenuItem value="available">Available</MenuItem>
-                    <MenuItem value="bookable">Bookable</MenuItem>
-                    <MenuItem value="resting">Resting</MenuItem>
+                    <MenuItem value="Auto">อัตโนมัติ</MenuItem>
+                    <MenuItem value="available">ว่าง</MenuItem>
+                    <MenuItem value="bookable">จองได้</MenuItem>
+                    <MenuItem value="resting">พัก</MenuItem>
                   </TextField>
                   {/* 🆕 Round 28s271 — Holiday was previously only settable from
                       the roster grid; missing here (flagged in CLAUDE.md's
@@ -518,26 +518,26 @@ const AdminTherapistDetailPage: React.FC = () => {
                       color: formData.isHoliday ? adminColor.red : adminColor.dim,
                     }}
                   >
-                    <Umbrella size={14} weight={formData.isHoliday ? "fill" : "regular"} /> Holiday
+                    <Umbrella size={14} weight={formData.isHoliday ? "fill" : "regular"} /> วันหยุด
                   </Box>
                 </Box>
-                <TextField label="Location (lat,lng)" fullWidth size="small" sx={fieldSx} value={formData.currentLocation} onChange={(e) => setFormData((f) => ({ ...f, currentLocation: e.target.value }))} />
+                <TextField label="ตำแหน่ง (lat,lng)" fullWidth size="small" sx={fieldSx} value={formData.currentLocation} onChange={(e) => setFormData((f) => ({ ...f, currentLocation: e.target.value }))} />
               </Box>
             </Box>
 
             <Box>
               <SectionHeader icon={<Star size={13} />}>ชื่อเสียง</SectionHeader>
               <Box sx={{ display: "flex", gap: 1 }}>
-                <TextField label="Rating" type="number" fullWidth size="small" sx={fieldSx} value={formData.rating} onChange={(e) => setFormData((f) => ({ ...f, rating: e.target.value }))} />
-                <TextField label="Reviews" type="number" fullWidth size="small" sx={fieldSx} value={formData.reviews} onChange={(e) => setFormData((f) => ({ ...f, reviews: e.target.value }))} />
+                <TextField label="คะแนน" type="number" fullWidth size="small" sx={fieldSx} value={formData.rating} onChange={(e) => setFormData((f) => ({ ...f, rating: e.target.value }))} />
+                <TextField label="รีวิว" type="number" fullWidth size="small" sx={fieldSx} value={formData.reviews} onChange={(e) => setFormData((f) => ({ ...f, reviews: e.target.value }))} />
                 <TextField
-                  select label="Badge" fullWidth size="small" sx={fieldSx}
+                  select label="ป้าย" fullWidth size="small" sx={fieldSx}
                   value={formData.badge}
                   onChange={(e) => setFormData((f) => ({ ...f, badge: e.target.value }))}
                   SelectProps={{ MenuProps: selectMenuProps, displayEmpty: true }}
                 >
                   {badgeOptions.map((b) => (
-                    <MenuItem key={b} value={b}>{b || "None"}</MenuItem>
+                    <MenuItem key={b} value={b}>{b || "ไม่มี"}</MenuItem>
                   ))}
                 </TextField>
               </Box>
@@ -550,13 +550,13 @@ const AdminTherapistDetailPage: React.FC = () => {
                   onClick={() => setFormData((f) => ({ ...f, hidden: !f.hidden }))}
                   sx={{ flex: 1, display: "flex", alignItems: "center", gap: "6px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", borderRadius: "10px", padding: "9px 14px", border: `1px solid ${formData.hidden ? "rgba(220,38,38,0.25)" : adminColor.line}`, background: formData.hidden ? "rgba(220,38,38,0.09)" : adminColor.panel2, color: formData.hidden ? adminColor.red : adminColor.dim }}
                 >
-                  <EyeSlash size={14} weight={formData.hidden ? "fill" : "regular"} /> Hide from Homepage
+                  <EyeSlash size={14} weight={formData.hidden ? "fill" : "regular"} /> ซ่อนจากหน้าแรก
                 </Box>
                 <Box
                   onClick={() => setFormData((f) => ({ ...f, blocked: !f.blocked }))}
                   sx={{ flex: 1, display: "flex", alignItems: "center", gap: "6px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", borderRadius: "10px", padding: "9px 14px", border: `1px solid ${formData.blocked ? "rgba(220,38,38,0.25)" : adminColor.line}`, background: formData.blocked ? "rgba(220,38,38,0.09)" : adminColor.panel2, color: formData.blocked ? adminColor.red : adminColor.dim }}
                 >
-                  <Prohibit size={14} weight={formData.blocked ? "fill" : "regular"} /> Blocked (Unavailable)
+                  <Prohibit size={14} weight={formData.blocked ? "fill" : "regular"} /> บล็อก (ปิดใช้งาน)
                 </Box>
               </Box>
             </Box>
@@ -568,11 +568,11 @@ const AdminTherapistDetailPage: React.FC = () => {
                   them. Onboarding: therapist sends /myid to @SunRedBot to
                   get this number. */}
               <TextField
-                label="Telegram Chat ID (for job DMs)" fullWidth size="small" sx={fieldSx}
+                label="รหัสแชท Telegram (สำหรับแจ้งงาน)" fullWidth size="small" sx={fieldSx}
                 value={formData.telegramChatId}
                 onChange={(e) => setFormData((f) => ({ ...f, telegramChatId: e.target.value }))}
-                helperText="Therapist sends /myid to @SunRedBot to get this number. Leave blank if not on Telegram."
-                placeholder="e.g. 123456789"
+                helperText="ให้หมอนวดส่ง /myid ไปที่ @SunRedBot เพื่อรับรหัสนี้ ถ้าไม่ได้ใช้ Telegram เว้นว่างไว้ได้"
+                placeholder="เช่น 123456789"
                 inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               />
             </Box>
