@@ -27,6 +27,8 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Button,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import {
   collection,
@@ -40,6 +42,9 @@ import {
   type DocumentData,
 } from "firebase/firestore";
 import dayjs, { type Dayjs } from "dayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 import { db, auth } from "@/lib/firebase";
 import { formatTHB } from "@/utils/servicePricing";
@@ -114,16 +119,22 @@ interface BookingRow {
   discountCode?: string | null;
 }
 
-type Range = "today" | "week" | "month" | "year";
+// 🆕 Round 28s244 (founder: "เพิ่มตัวกรอง" on AdminEarningsPage, same as the
+//   Analytics filters round) — "custom" is a distinct case from the 4 fixed
+//   presets since it needs an upper bound + explicit From/To state, not a
+//   pure function of "now".
+type PresetRange = "today" | "week" | "month" | "year";
+type Range = PresetRange | "custom";
 
 const RANGE_LABEL: Record<Range, string> = {
   today: "Today",
   week: "Last 7 days",
   month: "Last 30 days",
   year: "Last 12 months",
+  custom: "Custom",
 };
 
-function rangeStart(range: Range): Dayjs {
+function rangeStart(range: PresetRange): Dayjs {
   const now = dayjs();
   switch (range) {
     case "today":
@@ -137,19 +148,38 @@ function rangeStart(range: Range): Dayjs {
   }
 }
 
+const selectSx = {
+  minWidth: 160, fontSize: 13,
+  "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 },
+  color: adminColor.text,
+};
+const selectMenuProps = {
+  PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" } },
+};
+
 const AdminEarningsPage: React.FC = () => {
   const [range, setRange] = useState<Range>("month");
+  const [customStart, setCustomStart] = useState<Dayjs>(() => dayjs().subtract(30, "day").startOf("day"));
+  const [customEnd, setCustomEnd] = useState<Dayjs>(() => dayjs());
+  const [therapistFilter, setTherapistFilter] = useState("__ALL__");
+  const [serviceFilter, setServiceFilter] = useState("__ALL__");
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    const cutoff = Timestamp.fromDate(rangeStart(range).toDate());
+    let cutoff: Timestamp;
+    let upper: Timestamp | null = null;
+    if (range === "custom") {
+      cutoff = Timestamp.fromDate(customStart.startOf("day").toDate());
+      upper = Timestamp.fromDate(customEnd.endOf("day").toDate());
+    } else {
+      cutoff = Timestamp.fromDate(rangeStart(range).toDate());
+    }
     // Filter on createdAt server-side; status filter happens client-side
-    const q = query(
-      collection(db, "bookings"),
-      where("createdAt", ">=", cutoff)
-    );
+    const filters: Parameters<typeof query>[1][] = [where("createdAt", ">=", cutoff)];
+    if (upper) filters.push(where("createdAt", "<=", upper));
+    const q = query(collection(db, "bookings"), ...filters);
     const unsub = onSnapshot(
       q,
       (snap) => {
@@ -181,7 +211,36 @@ const AdminEarningsPage: React.FC = () => {
       }
     );
     return () => unsub();
-  }, [range]);
+  }, [range, customStart, customEnd]);
+
+  // 🆕 Round 28s244 — therapist/service option lists derived from the
+  //   date-range-filtered set (NOT further narrowed by the other filter),
+  //   so switching one filter never collapses the other's choices.
+  const therapistOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const b of bookings) {
+      if (b.therapistId) map.set(b.therapistId, b.therapistName || b.therapistId);
+    }
+    return [...map.entries()];
+  }, [bookings]);
+
+  const serviceOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const b of bookings) {
+      const key = b.serviceId ?? b.serviceName ?? null;
+      if (key) map.set(key, getServiceLabel(b.serviceId, b.serviceName));
+    }
+    return [...map.entries()];
+  }, [bookings]);
+
+  const filteredBookings = useMemo(() => {
+    if (therapistFilter === "__ALL__" && serviceFilter === "__ALL__") return bookings;
+    return bookings.filter((b) => {
+      if (therapistFilter !== "__ALL__" && b.therapistId !== therapistFilter) return false;
+      if (serviceFilter !== "__ALL__" && (b.serviceId ?? b.serviceName) !== serviceFilter) return false;
+      return true;
+    });
+  }, [bookings, therapistFilter, serviceFilter]);
 
   // ── Aggregations (🆕 Round 28r27 — tier-aware split + costs +
   //   discount-absorbed transparency) ──
@@ -207,7 +266,7 @@ const AdminEarningsPage: React.FC = () => {
     > = {};
     const byDay: Record<string, number> = {};
 
-    for (const b of bookings) {
+    for (const b of filteredBookings) {
       if (b.status && EXCLUDED_STATUSES.has(b.status)) {
         countCancelled += 1;
         continue;
@@ -299,18 +358,25 @@ const AdminEarningsPage: React.FC = () => {
       byService,
       byDay,
     };
-  }, [bookings]);
+  }, [filteredBookings]);
 
   // Daily trend keys (for chart)
   const trendDates = useMemo(() => {
-    const days = range === "today" ? 1 : range === "week" ? 7 : range === "month" ? 30 : 365;
-    const cap = Math.min(days, 60); // cap chart at 60 days for readability
+    let days: number;
+    let anchor = dayjs();
+    if (range === "custom") {
+      days = customEnd.startOf("day").diff(customStart.startOf("day"), "day") + 1;
+      anchor = customEnd;
+    } else {
+      days = range === "today" ? 1 : range === "week" ? 7 : range === "month" ? 30 : 365;
+    }
+    const cap = Math.min(Math.max(1, days), 60); // cap chart at 60 days for readability
     const out: string[] = [];
     for (let i = cap - 1; i >= 0; i--) {
-      out.push(dayjs().subtract(i, "day").format("YYYY-MM-DD"));
+      out.push(anchor.subtract(i, "day").format("YYYY-MM-DD"));
     }
     return out;
-  }, [range]);
+  }, [range, customStart, customEnd]);
 
   const trendMax = useMemo(
     () => Math.max(1, ...trendDates.map((d) => stats.byDay[d] ?? 0)),
@@ -451,7 +517,7 @@ const AdminEarningsPage: React.FC = () => {
       "TherapistPct",
       "Status",
     ];
-    const rows = bookings
+    const rows = filteredBookings
       .filter((b) => !EXCLUDED_STATUSES.has(b.status ?? ""))
       .map((b) => {
         const gross = b.totalPrice ?? (b.servicePrice ?? 0) + (b.taxiFee ?? 0);
@@ -537,7 +603,7 @@ const AdminEarningsPage: React.FC = () => {
         <Button
           variant="outlined"
           onClick={handleExportCSV}
-          disabled={loading || bookings.length === 0}
+          disabled={loading || filteredBookings.length === 0}
           sx={{
             textTransform: "none",
             borderRadius: "10px",
@@ -556,32 +622,74 @@ const AdminEarningsPage: React.FC = () => {
         </Button>
       </Box>
 
-      <ToggleButtonGroup
-        value={range}
-        exclusive
-        size="small"
-        onChange={(_, v) => v && setRange(v as Range)}
-        sx={{
-          mb: 3,
-          "& .MuiToggleButton-root": {
-            color: adminColor.muted,
-            borderColor: adminColor.line2,
-            fontFamily: SANS,
-            textTransform: "none",
-            "&.Mui-selected": {
-              color: adminColor.text,
-              background: adminColor.accent,
-              "&:hover": { background: adminColor.accentDeep },
+      {/* 🆕 Round 28s244 — filter bar: range (with custom From/To) +
+          therapist filter + service filter. All narrow `filteredBookings`,
+          which feeds stats, the CSV export, and the daily trend chart. */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, alignItems: "center", mb: 3 }}>
+        <ToggleButtonGroup
+          value={range}
+          exclusive
+          size="small"
+          onChange={(_, v) => v && setRange(v as Range)}
+          sx={{
+            "& .MuiToggleButton-root": {
+              color: adminColor.muted,
+              borderColor: adminColor.line2,
+              fontFamily: SANS,
+              textTransform: "none",
+              "&.Mui-selected": {
+                color: adminColor.text,
+                background: adminColor.accent,
+                "&:hover": { background: adminColor.accentDeep },
+              },
             },
-          },
-        }}
-      >
-        {(Object.keys(RANGE_LABEL) as Range[]).map((r) => (
-          <ToggleButton key={r} value={r}>
-            {RANGE_LABEL[r]}
-          </ToggleButton>
-        ))}
-      </ToggleButtonGroup>
+          }}
+        >
+          {(Object.keys(RANGE_LABEL) as Range[]).map((r) => (
+            <ToggleButton key={r} value={r}>
+              {RANGE_LABEL[r]}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+
+        {range === "custom" && (
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DatePicker
+              label="From"
+              value={customStart}
+              maxDate={customEnd}
+              onChange={(v) => v && setCustomStart(v)}
+              slotProps={{ textField: { size: "small", sx: { width: 130, "& .MuiInputBase-root": { color: adminColor.text }, "& .MuiInputLabel-root": { color: adminColor.muted }, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 }, "& .MuiSvgIcon-root": { color: adminColor.muted } } } }}
+            />
+            <DatePicker
+              label="To"
+              value={customEnd}
+              minDate={customStart}
+              maxDate={dayjs()}
+              onChange={(v) => v && setCustomEnd(v)}
+              slotProps={{ textField: { size: "small", sx: { width: 130, "& .MuiInputBase-root": { color: adminColor.text }, "& .MuiInputLabel-root": { color: adminColor.muted }, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 }, "& .MuiSvgIcon-root": { color: adminColor.muted } } } }}
+            />
+          </LocalizationProvider>
+        )}
+
+        {therapistOptions.length > 0 && (
+          <Select size="small" value={therapistFilter} onChange={(e) => setTherapistFilter(e.target.value)} sx={selectSx} MenuProps={selectMenuProps}>
+            <MenuItem value="__ALL__">All therapists</MenuItem>
+            {therapistOptions.map(([id, name]) => (
+              <MenuItem key={id} value={id}>{name}</MenuItem>
+            ))}
+          </Select>
+        )}
+
+        {serviceOptions.length > 0 && (
+          <Select size="small" value={serviceFilter} onChange={(e) => setServiceFilter(e.target.value)} sx={selectSx} MenuProps={selectMenuProps}>
+            <MenuItem value="__ALL__">All services</MenuItem>
+            {serviceOptions.map(([id, name]) => (
+              <MenuItem key={id} value={id}>{name}</MenuItem>
+            ))}
+          </Select>
+        )}
+      </Box>
 
       {/* 🆕 Round 28s234 (Phase 4) — Payout Tracker. Independent of the range
           filter above; tracks "paid this calendar week" per therapist. */}
@@ -692,10 +800,12 @@ const AdminEarningsPage: React.FC = () => {
         <Box sx={{ textAlign: "center", py: 6 }}>
           <CircularProgress size={28} sx={{ color: adminColor.accent }} />
         </Box>
-      ) : bookings.length === 0 ? (
+      ) : filteredBookings.length === 0 ? (
         <Card>
           <Typography sx={{ fontFamily: SANS, fontSize: 14, color: adminColor.muted }}>
-            No bookings in this period.
+            {bookings.length === 0
+              ? "No bookings in this period."
+              : "No bookings match this therapist/service filter for the selected period."}
           </Typography>
         </Card>
       ) : (
