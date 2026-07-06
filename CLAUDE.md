@@ -1497,6 +1497,43 @@ component reused from the customer site with no admin-aware variant, so
 an admin's phone bottom nav shows customer browse tabs that make no
 sense in an admin context. Not touched this round; worth its own pass.
 
+### 🆕 2026-07-06 — Rating/Reviews/Custom ID wired to real data (28s275)
+
+Founder: "ไม่ได้ให้แปล เปลี่ยนกลับ" — reverted the 28s274 label
+translations (that wasn't the ask). Then: "ให้เอา Custom ID / Rating /
+Reviews ดึงข้อมูลจากฐานข้อมูลจริงมาใส่" (make these pull real data).
+
+Investigated why a real, active therapist (Yuri) showed Rating: 0,
+Reviews: 0, Custom ID: — on the admin detail page:
+
+- **Rating/Reviews were dead fields.** Repo-wide grep confirmed NOTHING
+  writes real values to `therapists/{id}.rating`/`.reviews` — not the
+  static seed data (`data/therapists.ts` zeros both for all 12
+  therapists on purpose), not any Cloud Function, not any other admin
+  page. The rating/count customers actually see is always **live-
+  computed from `bookings/{id}.rating`** via `useTherapistReviews` (the
+  same hook the public `TherapistDetailPage.tsx` uses) — this admin page
+  was reading, and letting admins "edit," a field nobody else ever
+  reads. Fixed: wired `useTherapistReviews(docId)` into the page's
+  always-visible stats row (now Rating · Reviews · Today · Total · Last
+  booking, all live); removed the fake editable inputs and stopped
+  writing `rating`/`reviews` to the doc at all.
+- **Custom ID had no reader anywhere in the codebase**, confirmed by
+  grep. The real public slug IS the Firestore document id itself
+  (therapist docs are created with pretty ids like "YuriSunRed" already
+  — this page's own lookup logic even tries the doc id directly first).
+  Replaced the fake editable "Custom ID (for URL)" field with a
+  read-only "รหัส (URL)" row showing the actual resolved doc id.
+- Removed the now-empty "ชื่อเสียง" section (existed only to hold
+  Rating/Reviews); Badge moved into the Profile section.
+
+**Lesson reinforced — same class of bug as the roster page's dead
+Today/Total columns (28s267):** a field that's editable in the admin UI
+but has no reader anywhere else reads as "real" to whoever's looking at
+it, but changing it does nothing. When auditing "is this real," grep
+for OTHER readers of the field before trusting that an editable form
+field represents live truth.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
