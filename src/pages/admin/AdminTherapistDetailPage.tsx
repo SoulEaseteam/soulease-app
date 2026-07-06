@@ -40,8 +40,9 @@ import {
   ArrowLeft, PencilSimple, FloppyDisk, X, Eye,
   Star, ChatCircleText, Clock, MapPin, Medal, EyeSlash, Prohibit, Umbrella,
   Calendar, ChartBar, ClockCounterClockwise, TelegramLogo, IdentificationCard, Image as ImageIcon, Sparkle,
-  Check, Warning,
+  Check, Warning, Globe, Notebook, UserFocus, MapPinLine, Info,
 } from "phosphor-react";
+import type { Credential, LanguageSkill } from "@/types/therapist";
 import { calculateTherapistStatus, isOverrideExpired } from "@/utils/calculateTherapistStatus";
 import { endOfTodayBKK, fmtBKKTimeShort } from "@/utils/time";
 import { useTherapistBookings, findActiveBooking } from "@/utils/useTherapistBookings";
@@ -59,6 +60,36 @@ const STATUS_COLOR: Record<Avail, string> = {
 };
 
 const badgeOptions = ["", "VIP", "HOT", "NEW"] as const;
+
+// 🆕 Round 28s277 (founder: "ดึงดีเทลจริงของพนักงานจาก therapists") — the
+// therapist docs hold much richer real data (features / languageSkills /
+// credentials / area / gallery / bios) than this page surfaced. These maps
+// render the stored `features` object's keys, in a sensible order, with
+// Thai labels. Any key not present on a given doc is simply skipped.
+const FEATURE_ROWS: Array<[string, string]> = [
+  ["age", "อายุ"],
+  ["gender", "เพศ"],
+  ["ethnicity", "เชื้อชาติ"],
+  ["height", "ส่วนสูง"],
+  ["weight", "น้ำหนัก"],
+  ["bodyType", "รูปร่าง"],
+  ["skintone", "สีผิว"],
+  ["bustSize", "หน้าอก"],
+  ["hairColor", "สีผม"],
+  ["hairLength", "ความยาวผม"],
+  ["eyeColor", "สีตา"],
+  ["tattoos", "รอยสัก"],
+  ["personality", "บุคลิก"],
+  ["vaccinated", "วัคซีน"],
+  ["smoker", "สูบบุหรี่"],
+];
+
+const LANG_LABEL: Record<string, string> = {
+  en: "อังกฤษ", th: "ไทย", zh: "จีน", ja: "ญี่ปุ่น", ko: "เกาหลี",
+};
+const LANG_LEVEL_TH: Record<string, string> = {
+  Native: "เจ้าของภาษา", Fluent: "คล่อง", Conversational: "พอสื่อสาร", Basic: "พื้นฐาน",
+};
 
 const selectMenuProps = {
   PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px", boxShadow: "0 8px 24px rgba(31,41,51,0.16)" } },
@@ -398,6 +429,30 @@ const AdminTherapistDetailPage: React.FC = () => {
 
   const ringColor = computedStatus === "resting" ? adminColor.line2 : STATUS_COLOR[computedStatus];
 
+  // 🆕 Round 28s277 — rich real fields, read straight off the live doc.
+  // These are display-only here; handleSave's patch never touches them,
+  // so viewing/editing the basic fields can't wipe them.
+  const features = (rawDoc.features && typeof rawDoc.features === "object" ? rawDoc.features : {}) as Record<string, unknown>;
+  const featureEntries = FEATURE_ROWS.filter(([k]) => {
+    const v = features[k];
+    return v != null && String(v).trim() !== "";
+  });
+  const languageSkills = Array.isArray(rawDoc.languageSkills) ? (rawDoc.languageSkills as LanguageSkill[]) : [];
+  const featureLanguage = typeof features.language === "string" ? features.language : "";
+  const credentials = Array.isArray(rawDoc.credentials) ? (rawDoc.credentials as Credential[]) : [];
+  const gallery = Array.isArray(rawDoc.gallery) ? (rawDoc.gallery as string[]).filter(Boolean) : [];
+  const servicesAvailable = Array.isArray(rawDoc.servicesAvailable)
+    ? (rawDoc.servicesAvailable as string[])
+    : Array.isArray(rawDoc.services)
+      ? (rawDoc.services as string[])
+      : [];
+  const area = typeof rawDoc.area === "string" ? rawDoc.area : "";
+  const homeAddress = typeof rawDoc.homeAddress === "string" ? rawDoc.homeAddress : "";
+  const bios = (rawDoc.bios && typeof rawDoc.bios === "object" ? rawDoc.bios : {}) as Record<string, string>;
+  const bioText = bios.th || bios.en || "";
+  const rebookRate = typeof rawDoc.rebookRate === "number" ? rawDoc.rebookRate : null;
+  const totalSessions = typeof rawDoc.totalSessions === "number" ? rawDoc.totalSessions : null;
+
   return (
     <Box sx={{ p: { xs: 2, md: 4 }, background: `radial-gradient(120% 90% at 15% 0%, ${adminColor.panel3} 0%, ${adminColor.bg} 55%)`, minHeight: "100%" }}>
       <Button
@@ -489,24 +544,122 @@ const AdminTherapistDetailPage: React.FC = () => {
         </Box>
 
         {!editing ? (
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <ReadRow icon={<Clock size={14} />} label="Hours" value={`${formData.startTime || "--:--"} – ${formData.endTime || "--:--"}`} />
-              <ReadRow icon={<MapPin size={14} />} label="Location" value={formData.currentLocation || "—"} />
-              <ReadRow icon={<Medal size={14} />} label="Badge" value={formData.badge || "None"} />
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <ReadRow icon={<Clock size={14} />} label="Hours" value={`${formData.startTime || "--:--"} – ${formData.endTime || "--:--"}`} />
+                <ReadRow icon={<MapPin size={14} />} label="Location" value={formData.currentLocation || "—"} />
+                <ReadRow icon={<Medal size={14} />} label="Badge" value={formData.badge || "None"} />
+                {rebookRate != null && <ReadRow icon={<ChartBar size={14} />} label="Rebook rate" value={`${rebookRate}%`} />}
+                {totalSessions != null && <ReadRow icon={<Star size={14} />} label="Sessions (สะสม)" value={String(totalSessions)} />}
+              </Box>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {/* 🆕 Round 28s275 — "Custom ID" had no reader anywhere in the
+                    codebase; the real public slug IS this doc's Firestore id
+                    (confirmed by this page's own lookup logic above trying it
+                    directly first). Shows the real thing instead of a fake
+                    editable field that never did anything. */}
+                <ReadRow icon={<IdentificationCard size={14} />} label="รหัส (URL)" value={docId || "—"} />
+                <ReadRow icon={<TelegramLogo size={14} />} label="Telegram" value={formData.telegramChatId || "ยังไม่ผูก"} />
+                <ReadRow icon={<EyeSlash size={14} />} label="Hidden" value={formData.hidden ? "ซ่อนจากหน้าเว็บ" : "แสดงปกติ"} alert={formData.hidden} />
+                <ReadRow icon={<Prohibit size={14} />} label="Blocked" value={formData.blocked ? "ปิดใช้งาน" : "ใช้งานปกติ"} alert={formData.blocked} />
+                <ReadRow icon={<Umbrella size={14} />} label="Holiday" value={formData.isHoliday ? "วันหยุดวันนี้" : "ไม่ได้หยุด"} alert={formData.isHoliday} />
+              </Box>
             </Box>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {/* 🆕 Round 28s275 — "Custom ID" had no reader anywhere in the
-                  codebase; the real public slug IS this doc's Firestore id
-                  (confirmed by this page's own lookup logic above trying it
-                  directly first). Shows the real thing instead of a fake
-                  editable field that never did anything. */}
-              <ReadRow icon={<IdentificationCard size={14} />} label="รหัส (URL)" value={docId || "—"} />
-              <ReadRow icon={<TelegramLogo size={14} />} label="Telegram" value={formData.telegramChatId || "ยังไม่ผูก"} />
-              <ReadRow icon={<EyeSlash size={14} />} label="Hidden" value={formData.hidden ? "ซ่อนจากหน้าเว็บ" : "แสดงปกติ"} alert={formData.hidden} />
-              <ReadRow icon={<Prohibit size={14} />} label="Blocked" value={formData.blocked ? "ปิดใช้งาน" : "ใช้งานปกติ"} alert={formData.blocked} />
-              <ReadRow icon={<Umbrella size={14} />} label="Holiday" value={formData.isHoliday ? "วันหยุดวันนี้" : "ไม่ได้หยุด"} alert={formData.isHoliday} />
-            </Box>
+
+            {/* ── Area / standby address (admin-only, per 28at) ──────── */}
+            {(area || homeAddress) && (
+              <Box>
+                <SectionHeader icon={<MapPinLine size={13} />}>พื้นที่ / ที่อยู่</SectionHeader>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {area && <ReadRow icon={<MapPin size={14} />} label="พื้นที่" value={area} />}
+                  {homeAddress && <ReadRow icon={<MapPinLine size={14} />} label="ที่อยู่ standby" value={homeAddress} />}
+                </Box>
+              </Box>
+            )}
+
+            {/* ── Physical / profile features ───────────────────────── */}
+            {featureEntries.length > 0 && (
+              <Box>
+                <SectionHeader icon={<UserFocus size={13} />}>ลักษณะเฉพาะตัว</SectionHeader>
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(3, 1fr)" }, gap: "8px" }}>
+                  {featureEntries.map(([k, label]) => (
+                    <Box key={k} sx={{ background: adminColor.panel2, borderRadius: "10px", p: "8px 12px" }}>
+                      <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>{label}</Typography>
+                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: adminColor.text, mt: "1px" }}>{String(features[k])}</Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            {/* ── Languages ─────────────────────────────────────────── */}
+            {(languageSkills.length > 0 || featureLanguage) && (
+              <Box>
+                <SectionHeader icon={<Globe size={13} />}>ภาษา</SectionHeader>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                  {languageSkills.length > 0 ? (
+                    languageSkills.map((l) => (
+                      <Box key={l.code} sx={{ display: "flex", alignItems: "center", gap: "6px", background: adminColor.panel2, borderRadius: "9px", p: "6px 12px" }}>
+                        <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: adminColor.text }}>{LANG_LABEL[l.code] ?? l.code}</Typography>
+                        <Typography sx={{ fontSize: 11, color: adminColor.dim }}>{LANG_LEVEL_TH[l.level] ?? l.level}</Typography>
+                      </Box>
+                    ))
+                  ) : (
+                    <Typography sx={{ fontSize: 13, color: adminColor.muted }}>{featureLanguage}</Typography>
+                  )}
+                </Box>
+              </Box>
+            )}
+
+            {/* ── Services she can perform ──────────────────────────── */}
+            {servicesAvailable.length > 0 && (
+              <Box>
+                <SectionHeader icon={<Sparkle size={13} />}>บริการที่ทำได้</SectionHeader>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                  {servicesAvailable.map((s) => (
+                    <Box key={s} sx={{ background: "rgba(78,126,140,0.10)", color: adminColor.accent, borderRadius: "9px", p: "6px 12px", fontSize: 12.5, fontWeight: 700 }}>
+                      {s.replace(/-/g, " ")}
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            {/* ── Credentials / background ──────────────────────────── */}
+            {credentials.length > 0 && (
+              <Box>
+                <SectionHeader icon={<Info size={13} />}>ใบรับรอง / ประวัติ</SectionHeader>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {credentials.map((c, i) => (
+                    <Box key={i} sx={{ background: adminColor.panel2, borderRadius: "10px", p: "9px 13px" }}>
+                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: adminColor.text }}>{c.label}</Typography>
+                      {c.meta && <Typography sx={{ fontSize: 11.5, color: adminColor.dim, mt: "1px" }}>{c.meta}</Typography>}
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            {/* ── Bio ───────────────────────────────────────────────── */}
+            {bioText && (
+              <Box>
+                <SectionHeader icon={<Notebook size={13} />}>ประวัติแนะนำ</SectionHeader>
+                <Typography sx={{ fontSize: 13, color: adminColor.muted, lineHeight: 1.65, background: adminColor.panel2, borderRadius: "12px", p: "12px 14px" }}>{bioText}</Typography>
+              </Box>
+            )}
+
+            {/* ── Gallery ───────────────────────────────────────────── */}
+            {gallery.length > 0 && (
+              <Box>
+                <SectionHeader icon={<ImageIcon size={13} />}>แกลเลอรี ({gallery.length})</SectionHeader>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                  {gallery.map((src, i) => (
+                    <Avatar key={i} variant="rounded" src={src} sx={{ width: 74, height: 74, borderRadius: "12px", border: `1px solid ${adminColor.line}` }} />
+                  ))}
+                </Box>
+              </Box>
+            )}
           </Box>
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
