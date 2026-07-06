@@ -955,6 +955,28 @@ the nested-card structure** ("คง teal เดิม เอาแค่โค�
 - Nothing else changed — accent teal remains the only primary-button color
   across all of admin, unbroken.
 
+### 🆕 2026-07-06 — Bookings "Load more" pagination (28s257)
+
+Founder screenshotted the "showing latest 500" line and asked why it can't
+show everything ("ทำไมจำกัดแค่ 500 ทั้งหมดไม่ได้หรอ"). Checked live:
+**the bookings collection has 593 docs right now** — the 500 cap from
+28s252 was already hiding 93 real bookings, not a future hypothetical.
+
+Offered 3 fixes; founder picked **"Load more" pagination** (not raising the
+cap, not removing it):
+
+- `feedSize` state starts at `FEED_LIMIT` (500), grows by `FEED_LIMIT` per
+  click on a new "Load {N} more" button; the Firestore query's `limit()`
+  now reads `feedSize` instead of the constant directly.
+- Resets to `FEED_LIMIT` whenever the date range changes (new `useEffect`
+  keyed on `dateMode`/`customStart`/`customEnd`) — switching windows starts
+  fresh at page one.
+- Preserves the 28s252 guarantee (nothing fetches unboundedly on its own —
+  every additional page is an explicit operator click) while removing the
+  artificial total ceiling the founder was hitting.
+- Header subtitle ("showing latest N") and the button label both track the
+  live `feedSize`, not a hardcoded number.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
