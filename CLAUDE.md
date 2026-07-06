@@ -510,6 +510,27 @@ remaining page. **AdminEarningsPage is now fully on adminColor tokens.**
 Still pending: AdminBookingListPage, AdminTherapistsPage,
 AdminReportPage, AdminAnalyticsPage.
 
+### 🆕 2026-06-14 (cont.) — bg/panel corrected to exact swatch hex (28s237)
+
+Founder compared the live admin against the actual Ocean Study reference
+image and flagged "พื้นหลัง/pane ไม่ตรง" (background/panel doesn't match).
+Root cause: `adminColor.bg` was `#12181D` — a value I computed by further
+darkening the reference, which appears NOWHERE in the actual 5-swatch image.
+Large surfaces (page bg, AdminLayout gradient) read as near-black instead of
+the rich navy shown in the picture. `panel` happened to already equal the
+exact `#1F2933` swatch, which made the mismatch confusing to spot (only `bg`
+was wrong).
+
+**Rule going forward: every color token must trace to one of the 5 official
+hex values, or be an interpolated blend strictly BETWEEN two of them — never
+a separately invented hue**, even one that "looks close." Current mapping:
+`bg=#1F2933` (exact) · `panel/panel2/panel3` = 25%/45%/65% blends toward
+`#5C6F7B` · `dim=#5C6F7B` (exact) · `text=#DCEFF5` (exact) ·
+`accent=#4E7E8C` (exact) · `highlight=#A7D8F0` (exact). Removed the unused
+`bg2` token. If a future palette swap happens, rebuild EVERY surface this
+same way (5 exact anchors + blends only between two of them) to avoid this
+exact bug recurring.
+
 ### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
 
 **Trigger.** View shared Google Search Console 3-month data:
