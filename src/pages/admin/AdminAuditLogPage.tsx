@@ -32,6 +32,8 @@ const ACTION_LABEL: Record<string, { label: string; color: string }> = {
   "booking.confirm":         { label: "ยืนยันออเดอร์",        color: adminColor.green },
   "booking.cancel":          { label: "ยกเลิกออเดอร์",        color: adminColor.red },
   "booking.complete":        { label: "ปิดงานเสร็จ",          color: adminColor.green },
+  "booking.mark_paid":       { label: "ลูกค้าจ่ายแล้ว",       color: adminColor.green },
+  "booking.mark_unpaid":     { label: "ยกเลิกสถานะจ่าย",      color: adminColor.dim },
   "payout.mark_paid":        { label: "จ่ายค่าตอบแทนแล้ว",     color: adminColor.highlight },
   "payout.mark_unpaid":      { label: "ยกเลิกสถานะจ่ายแล้ว",   color: adminColor.dim },
   "therapist.relight_all":   { label: "เปิดร้านทั้งหมด",       color: adminColor.green },

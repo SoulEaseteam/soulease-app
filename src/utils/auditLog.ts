@@ -14,6 +14,11 @@ export type AuditAction =
   | "booking.confirm"
   | "booking.cancel"
   | "booking.complete"
+  // 🆕 Round 28s252 — customer-payment toggle on AdminBookingListPage is
+  //   financially relevant, so it now leaves a trail (distinct from
+  //   payout.mark_* which is the therapist-side weekly payout).
+  | "booking.mark_paid"
+  | "booking.mark_unpaid"
   | "payout.mark_paid"
   | "payout.mark_unpaid"
   | "therapist.relight_all"
