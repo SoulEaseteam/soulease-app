@@ -198,7 +198,8 @@ type DateMode = "all" | "custom";
 const AdminBookingListPage: React.FC = () => {
   const [bookings,    setBookings]    = useState<Booking[]>([]);
   const [loading,     setLoading]     = useState(true);
-  const [tab,         setTab]         = useState<TabKey>("pending");
+  // 🆕 28s255 (founder: "All show") — default tab is now "All", not "Pending".
+  const [tab,         setTab]         = useState<TabKey>("all");
   const [search,      setSearch]      = useState("");
   const [toast,       setToast]       = useState<{ msg: string; ok: boolean } | null>(null);
   const [detailId,    setDetailId]    = useState<string | null>(null);
