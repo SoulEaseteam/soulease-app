@@ -695,6 +695,32 @@ attribution on the funnel — requires first verifying the `source`/`utm`/
 `landing` fields the 2026-06-02 SEO round mentions are actually landing
 on live booking docs (not yet confirmed).
 
+### 🆕 2026-06-14 (cont.) — AdminEarningsPage filters (28s244)
+
+Founder: "admin/earnings" (bare, asked to clarify) → "เพิ่มตัวกรอง (เหมือน
+Analytics)" — same filter pattern as 28s243, applied here.
+
+- `Range` split into `PresetRange` (today/week/month/year) + a separate
+  `"custom"` case with its own From/To `DatePicker` state — custom needs
+  an explicit upper bound the 4 rolling presets don't. Query adds
+  `createdAt <= upper` only when custom is active (same field as the
+  existing `>=`, no new index).
+- **Therapist filter** and **service filter**, both narrowing via a new
+  `filteredBookings` memo that now feeds `stats`, the CSV export, and the
+  disabled/empty-state checks (previously all read raw `bookings`
+  directly). Option lists are derived from the date-range-filtered set
+  only — NOT further narrowed by the other filter — so picking a
+  therapist doesn't collapse the service dropdown's choices.
+- Daily-revenue chart width now follows the actual custom range (capped
+  60 days) instead of a fixed bucket per preset.
+- Split the empty state the same way as Analytics: "no bookings in this
+  period" vs "no bookings match this therapist/service filter."
+
+**Payout Tracker section untouched** — it deliberately uses its own
+fixed-calendar-week query, independent of this range/filter bar, per its
+original 28s234 design (payout persistence needs a STABLE week key, not
+a rolling filter).
+
 ### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
 
 **Trigger.** View shared Google Search Console 3-month data:
