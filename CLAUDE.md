@@ -1568,6 +1568,36 @@ site to also count text-only reviews, that's a separate, bigger
 decision involving a real PII-exposure tradeoff on anonymous listeners,
 worth its own conversation rather than a silent side-effect here.
 
+### 🆕 2026-07-06 — surfaced real rich therapist fields on detail page (28s277)
+
+Founder screenshot of `therapists/BarbieSunRed` in the Firestore console
+showed the docs carry far more real data than the admin detail page was
+rendering: `area`, `homeAddress`, `credentials[]`, `features` (age,
+gender, ethnicity, height, weight, bodyType, skintone, bustSize,
+hairColor, hairLength, eyeColor, tattoos, personality, vaccinated,
+smoker), `gallery[]`, `languageSkills[]`, `bios{}`, `rebookRate`,
+`totalSessions`, `servicesAvailable[]`. "ดึงดีเทลจริงของพนักงานจาก
+therapists" — pull the real details in.
+
+Added read-only sections to the view mode (`AdminTherapistDetailPage.tsx`)
+rendering each straight off the live `rawDoc`, all **conditionally** (a
+section/row appears only when that field actually exists — lean legacy
+records show no empty scaffolding): rebook rate + cumulative sessions;
+พื้นที่/ที่อยู่ standby; ลักษณะเฉพาะตัว (the `features` object as a
+Thai-labelled 3-col grid via a `FEATURE_ROWS` map); ภาษา (structured
+`languageSkills` → Thai name + level, falling back to the legacy
+`features.language` string); บริการที่ทำได้ (servicesAvailable slugs);
+ใบรับรอง/ประวัติ (credentials); ประวัติแนะนำ (bios.th → en); แกลเลอรี
+(gallery thumbnails).
+
+**Display-only** — `handleSave`'s patch still writes only the existing
+editable subset (name/image/specialty/hours/badge/status/holiday/
+location/hidden/blocked/telegram), so these richer nested fields are
+never overwritten by a save. If the founder later wants any of them
+editable, that's a separate ask (nested-array editors are a much bigger
+form). The `Features`/`Credential`/`LanguageSkill` types already existed
+in `types/therapist.ts` (round 28z/28s220) — this just renders them.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
