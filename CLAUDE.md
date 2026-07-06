@@ -1041,6 +1041,27 @@ as broken even when it's "just" a status indicator. If a badge and a button
 sit in the same row, make the non-interactive one visually distinct (or make
 it real), don't let matching CSS imply matching behavior.
 
+### 🆕 2026-07-06 — payment method added to the Bookings edit form (28s260)
+
+Founder: "เพิ่มวิธีีการจ่ายด้วย" — extend the 28s259 edit-details form with
+payment METHOD (cash/transfer/card/promptpay/wechat/alipay), same option
+list as `AdminBookingAddPage`'s `PAYMENT_OPTIONS`. This is distinct from the
+existing paid/unpaid boolean — renamed that row "Payment" → **"Payment
+status"** so the two don't read as duplicates; the method is now its own
+**"Payment method"** row.
+
+**Caught before shipping:** payment method isn't cosmetic — WeChat/Alipay
+carry the existing 5%+฿200 surcharge (`paymentSurcharge.ts`, same util the
+customer flow and AdminBookingAddPage use). Silently letting the operator
+switch a booking to WeChat without updating the total would under-charge it.
+Fix: saving the edit form recomputes `paymentFee`/`totalPrice` from
+`(servicePrice + taxiFee)` — never from the stored `totalPrice`, so
+re-saving the same method twice can't compound an old surcharge — and the
+form shows a live "+฿X surcharge will be added" preview before the operator
+commits, so the total never changes silently.
+
+Added `payment`/`paymentFee` to the page's local `Booking` interface.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
