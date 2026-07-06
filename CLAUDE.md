@@ -998,6 +998,49 @@ accent color.
 must import from `commission.ts`, never recompute the split locally** — this
 is now the 3rd page (after Earnings, Reports) to follow it.
 
+### 🆕 2026-07-06 — Bookings detail drawer: 4 fixes (28s259)
+
+Founder flagged 4 things on the booking card/detail drawer in one message:
+
+1. **"Awaiting review ใช้ไม่ได้"** — it was never a button. Grepped: `reviewed`
+   is written NOWHERE in the codebase, only ever read (mirrors the
+   customer-facing "leave a review" gate on `BookingHistoryPage`). The badge
+   had the exact same border/pill styling as "Full detail" right beside it →
+   looked clickable, had zero `onClick`. Now a real button — "Mark
+   reviewed" (`<Star/>` icon) — sets `reviewed: true`, logs
+   `booking.mark_reviewed`.
+2. **"full detail แก้ไขไม่ได้"** — Booking Info was 100% read-only except the
+   Payment toggle. Added an "Edit" pencil toggle that swaps Customer / Phone
+   / Date & Time / Location / Therapist into editable fields, with Save/
+   Cancel. **Deliberately excludes service/duration/price** — those drive
+   `servicePrice`/`taxiFee`, already computed and settled; changing them
+   needs a real recalc flow, not a text-field patch. Founder confirmed this
+   exclusion explicitly when asked.
+3. **"สถานนะ แก้ไขไม่ได้ Cancelled/Completed"** — added an always-active
+   Status `Select` (NOT gated behind the Edit toggle — status changes are
+   routine, editing customer/location is "fixing a mistake") that reaches
+   ANY of the 6 known statuses from ANY current one — founder chose full
+   flexibility over a narrower "revert to Confirmed only" option. Picking
+   "Cancelled" still routes through the existing reason-prompt. New
+   `booking.status_change` audit action covers whatever Confirm/Complete/
+   Cancel don't already name.
+4. **"เพิ่มการเปลี่ยนหมอนวดได้ภายในใบจองเดิม"** — folded into the same Edit
+   form as a Therapist `Select` (same roster-fetch pattern as
+   AdminBookingAddPage). **No fare recalculation needed** — taxi has been
+   dispatch-base-only, not per-therapist, since 28s233, so reassignment is a
+   pure `therapistId`/`therapistName` patch. Founder confirmed: **no
+   automatic Telegram DM to the newly-assigned therapist** — she calls
+   manually, same as every other dispatch today.
+
+New audit actions in `auditLog.ts` + Thai labels in `AdminAuditLogPage.tsx`:
+`booking.status_change`, `booking.edit_details`, `booking.mark_reviewed`.
+
+**Lesson filed:** a static `<Box>` styled identically to a real button next
+to it (same border/radius/sizing, no `cursor`/`onClick`) is a trap — it reads
+as broken even when it's "just" a status indicator. If a badge and a button
+sit in the same row, make the non-interactive one visually distinct (or make
+it real), don't let matching CSS imply matching behavior.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
