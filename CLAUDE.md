@@ -356,7 +356,8 @@ the funnel first.
 **Known remaining (audited, not yet fixed):** Telegram webhooks lack
 secret_token validation; Google Maps key is a single point of failure on the
 booking location step (no no-map fallback); paid vs paymentStatus field
-mismatch; AdminBookingAddPage double-fires the Telegram notify.
+mismatch. ~~AdminBookingAddPage double-fires the Telegram notify.~~ ✅ FIXED
+in 28s249 (see below).
 
 ### 🆕 2026-06-09 (cont.) — taxi fare fix + admin "control room" (28s231-232)
 
@@ -818,6 +819,42 @@ later: set `SR-HJ2200: 0.65`, `SR-B2B3200: 0.70` in that map, done.
 
 **So the current live payroll rule is:** every therapist earns 60% of
 (servicePrice − discount) on every non-excluded booking; shop keeps 40%.
+
+### 🆕 2026-07-06 — /admin/bookings/add audit: 6 fixes (28s249)
+
+Founder: "Audit adminbookings/add" → "แก้ทั้งหมด". All six findings fixed on
+`AdminBookingAddPage.tsx`:
+
+1. **Double Telegram + blank name (the real bug).** `onBookingCreate` (Cloud
+   Function) already alerts the admin group on every booking doc, but this
+   page ALSO called the deprecated `notifyBooking` callable → TWO messages per
+   admin booking. Worse, the server formatter (`formatBookingForAdmin`) reads
+   `contactName` while this page wrote only `customerName` — so the server
+   copy showed `👤 Name: —`. Fix: removed the client send + now writes BOTH
+   `customerName` and `contactName`. One correct message per booking.
+2. **`Field`/`Section` hoisted to module scope.** They were declared inside
+   the component → new identity every render → React remounted the whole form
+   on each keystroke → inputs lost focus mid-typing. Classic
+   component-in-component bug.
+3. **Taxi origin → shared `DISPATCH_BASE`** (matches customer flow since
+   28s233), replacing an old Sukhumvit constant + placeholder per-therapist
+   coords. Admin & customer now quote the same fare for the same address.
+4. **Manual taxi override no longer wiped** on duration/therapist change —
+   split the "compute auto" and "reset override on new location" into two
+   effects.
+5. **WeChat/Alipay + surcharge** (5%+฿200, paymentSurcharge.ts) now apply on
+   admin bookings too, write `paymentFee`, and show in the summary. The
+   customer flow had this since 28s77.
+6. **Restyled onto Ocean Study** admin tokens + `adminFigureSx` — was the last
+   admin-add page on the old customer red/cream theme (it had been styled that
+   way deliberately in 28r23 to match the customer BookingFlow, but now the
+   whole admin is Ocean Study so matching admin is the consistent choice).
+
+**Lesson filed:** the deprecated `notifyBooking` callable + `formatBookingForAdmin`
+reading `contactName`-only are a reminder — when a booking is written from a
+NEW code path, check it populates every field the server Telegram formatter
+reads (contactName, phone, address, locationName, note, payment, paymentFee),
+or the alert silently shows "—".
 
 ### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
 
