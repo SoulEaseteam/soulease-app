@@ -105,6 +105,16 @@ const STATUS_COLOR: Record<TherapistStatus, string> = {
   holiday: adminColor.red,
 };
 
+// 🆕 Round 28s269 (founder: "เอาคนหยุดไว้ด้านล่าง") — actionable people
+// (available/bookable) sort above resting/holiday, matching the "cards
+// recede once terminal" rule they already visually follow.
+const STATUS_SORT_ORDER: Record<TherapistStatus, number> = {
+  available: 0,
+  bookable: 1,
+  resting: 2,
+  holiday: 3,
+};
+
 // 🆕 Round 28s256's nested-frame lesson, reused: a background meaningfully
 // darker than the page bg needs to blend toward `dim`/`text`, not `bg`
 // again (adminColor.panel3 is a bg-toward-white blend and reads almost
@@ -537,15 +547,19 @@ const AdminTherapistsPage: React.FC = () => {
   // FILTERED LIST
   // ==========================================================
   const filtered = useMemo(() => {
-    return therapists.filter((t) => {
-      const nameOk = (t.name || "")
-        .toLowerCase()
-        .includes(search.trim().toLowerCase());
+    return therapists
+      .filter((t) => {
+        const nameOk = (t.name || "")
+          .toLowerCase()
+          .includes(search.trim().toLowerCase());
 
-      const statusOk = filter === "all" || filter === t.computedStatus;
+        const statusOk = filter === "all" || filter === t.computedStatus;
 
-      return nameOk && statusOk;
-    });
+        return nameOk && statusOk;
+      })
+      // 🆕 Round 28s269 — resting/holiday sink to the bottom; stable sort
+      //   keeps each status group in its original (roster) order.
+      .sort((a, b) => STATUS_SORT_ORDER[a.computedStatus] - STATUS_SORT_ORDER[b.computedStatus]);
   }, [therapists, search, filter]);
 
   // ==========================================================
