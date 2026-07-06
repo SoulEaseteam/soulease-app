@@ -75,6 +75,21 @@ export const adminPanelSx = {
   borderRadius: "16px",
 } as const;
 
+/**
+ * 🆕 Round 28s246 (founder: "ปรับตัวเลข ให้ดูง่าย") — number typography.
+ * Hoefler Text (adminFont.serif) defaults to OLD-STYLE figures — digits with
+ * ascenders/descenders that look elegant in prose but are hard to scan in a
+ * financial dashboard. Every money/count figure should use THIS instead of
+ * the serif: bold sans + lining tabular numerals, all digits one height,
+ * columns align. Serif stays for page/card TITLES only, never figures.
+ */
+export const adminFigureSx = {
+  fontFamily: adminFont.sans,
+  fontWeight: 800,
+  fontVariantNumeric: "lining-nums tabular-nums",
+  letterSpacing: "-0.01em",
+} as const;
+
 /** Status → color map used for dispatch/session/booking state chips. */
 export const adminStateColor: Record<string, string> = {
   pending: adminColor.dim,

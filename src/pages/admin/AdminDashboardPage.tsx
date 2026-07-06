@@ -68,7 +68,7 @@ import { fmtBKK } from "@/utils/time";
 import { formatTHB } from "@/utils/servicePricing";
 import { getServiceLabel } from "@/utils/serviceCatalog";
 // 🆕 Round 28s234 — Control Room redesign (shared dark tokens).
-import { adminColor, adminFont } from "@/theme/adminTheme";
+import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { logAdminAction } from "@/utils/auditLog";
 
 dayjs.extend(relativeTime);
@@ -120,7 +120,7 @@ const DonutRing: React.FC<{ percent: number; color: string; size?: number; thick
           display: "flex", alignItems: "center", justifyContent: "center",
         }}
       >
-        <Typography sx={{ fontFamily: SERIF, fontWeight: 700, fontSize: size / 4.6, color: adminColor.text, lineHeight: 1 }}>
+        <Typography sx={{ ...adminFigureSx, fontSize: size / 4.6, color: adminColor.text, lineHeight: 1 }}>
           {pct}%
         </Typography>
       </Box>
@@ -377,7 +377,7 @@ const AdminDashboardPage: React.FC = () => {
               { label: "Pending", value: pendingBookings.length,         unit: "need action", accent: pendingBookings.length > 0 },
             ].map((s, i) => (
               <Box key={i} sx={{ flex: 1, textAlign: "center", borderRight: i < 2 ? `1px solid ${adminColor.line}` : "none" }}>
-                <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: s.accent ? adminColor.accent : adminColor.text, lineHeight: 1 }}>
+                <Typography sx={{ ...adminFigureSx, fontSize: 19, color: s.accent ? adminColor.accent : adminColor.text, lineHeight: 1 }}>
                   {s.value}
                 </Typography>
                 <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim, mt: 0.4, textTransform: "uppercase", letterSpacing: "0.06em" }}>
@@ -485,7 +485,7 @@ const AdminDashboardPage: React.FC = () => {
 
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexShrink: 0 }}>
                         {(b.totalPrice || b.servicePrice) && (
-                          <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 700, color: adminColor.highlight }}>
+                          <Typography sx={{ ...adminFigureSx, fontSize: 13.5, color: adminColor.highlight }}>
                             {formatTHB(b.totalPrice ?? b.servicePrice ?? 0)}
                           </Typography>
                         )}
@@ -595,7 +595,7 @@ const AdminDashboardPage: React.FC = () => {
                 >
                   {c.icon}
                 </Box>
-                <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: adminColor.text, letterSpacing: "-0.01em", lineHeight: 1 }}>
+                <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.text, lineHeight: 1 }}>
                   {c.value}
                 </Typography>
                 <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>
@@ -651,7 +651,7 @@ const AdminDashboardPage: React.FC = () => {
                       <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.06em", textTransform: "uppercase" }}>
                         Orders Today
                       </Typography>
-                      <Typography sx={{ fontFamily: SERIF, fontSize: 24, fontWeight: 700, color: adminColor.text, lineHeight: 1.2, mt: 0.4 }}>
+                      <Typography sx={{ ...adminFigureSx, fontSize: 23, color: adminColor.text, lineHeight: 1.2, mt: 0.4 }}>
                         {stats.todayBookings}
                       </Typography>
                     </Box>
@@ -698,7 +698,7 @@ const AdminDashboardPage: React.FC = () => {
                           {t.bookings} bookings
                         </Typography>
                       </Box>
-                      <Typography sx={{ fontFamily: SERIF, fontSize: 13, fontWeight: 700, color: adminColor.highlight, flexShrink: 0 }}>
+                      <Typography sx={{ ...adminFigureSx, fontSize: 12.5, color: adminColor.highlight, flexShrink: 0 }}>
                         {money(t.revenue)}
                       </Typography>
                     </Box>
@@ -797,7 +797,7 @@ const AdminDashboardPage: React.FC = () => {
               >
                 <Box sx={{ color: adminColor.accent }}>{c.icon}</Box>
                 <Box>
-                  <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: adminColor.text, lineHeight: 1 }}>{c.value}</Typography>
+                  <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.text, lineHeight: 1 }}>{c.value}</Typography>
                   <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>{c.label}</Typography>
                 </Box>
               </Box>

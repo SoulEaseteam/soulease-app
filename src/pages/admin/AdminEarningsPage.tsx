@@ -54,7 +54,9 @@ import { formatTHB } from "@/utils/servicePricing";
 import { getServiceLabel } from "@/utils/serviceCatalog";
 // 🆕 Round 28s234 (Phase 4 — Payout tracking) — Control Room tokens for the
 //   new Payout Tracker section.
-import { adminColor, adminFont } from "@/theme/adminTheme";
+// 🆕 Round 28s246 (founder: "ปรับตัวเลข ให้ดูง่าย") — adminFigureSx for every
+//   money/count figure; Hoefler's old-style digits stay on titles only.
+import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { logAdminAction } from "@/utils/auditLog";
 
 // 🆕 Round 28s245 — this page predates adminTheme.ts and still carried its
@@ -184,7 +186,7 @@ const DonutRing: React.FC<{ percent: number; color: string; size?: number; thick
           display: "flex", alignItems: "center", justifyContent: "center",
         }}
       >
-        <Typography sx={{ fontFamily: adminFont.serif, fontWeight: 700, fontSize: size / 4.6, color: adminColor.text, lineHeight: 1 }}>
+        <Typography sx={{ ...adminFigureSx, fontSize: size / 4.6, color: adminColor.text, lineHeight: 1 }}>
           {pct}%
         </Typography>
       </Box>
@@ -806,7 +808,7 @@ const AdminEarningsPage: React.FC = () => {
                       </Typography>
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
-                      <Typography sx={{ fontFamily: adminFont.serif, fontSize: 15, fontWeight: 700, color: adminColor.highlight }}>
+                      <Typography sx={{ ...adminFigureSx, fontSize: 14.5, color: adminColor.highlight }}>
                         {formatTHB(row.payout)}
                       </Typography>
                       <Button
@@ -857,9 +859,8 @@ const AdminEarningsPage: React.FC = () => {
                 <Eyebrow>Shop net · this period</Eyebrow>
                 <Typography
                   sx={{
-                    fontFamily: SERIF, fontSize: { xs: 34, md: 42 }, fontWeight: 700,
+                    ...adminFigureSx, fontSize: { xs: 32, md: 40 },
                     color: adminColor.text, letterSpacing: "-0.02em", lineHeight: 1.1, mt: 0.75,
-                    fontVariantNumeric: "tabular-nums",
                   }}
                 >
                   {formatTHB(stats.shopNet)}
@@ -935,7 +936,7 @@ const AdminEarningsPage: React.FC = () => {
                   >
                     {c.icon}
                   </Box>
-                  <Typography sx={{ fontFamily: SERIF, fontSize: 17, fontWeight: 700, color: adminColor.text, letterSpacing: "-0.01em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+                  <Typography sx={{ ...adminFigureSx, fontSize: 16, color: adminColor.text, lineHeight: 1 }}>
                     {c.value}
                   </Typography>
                   <Box>
@@ -975,7 +976,7 @@ const AdminEarningsPage: React.FC = () => {
                   <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                     Peak
                   </Typography>
-                  <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: adminColor.highlight, fontVariantNumeric: "tabular-nums" }}>
+                  <Typography sx={{ ...adminFigureSx, fontSize: 14.5, color: adminColor.highlight }}>
                     {formatTHB(trendMax)}
                   </Typography>
                 </Box>
@@ -1209,11 +1210,9 @@ const RankedRows: React.FC<{
             </Box>
             <Typography
               sx={{
-                fontFamily: SERIF,
-                fontSize: 14,
-                fontWeight: 700,
+                ...adminFigureSx,
+                fontSize: 13.5,
                 color: adminColor.highlight,
-                fontVariantNumeric: "tabular-nums",
                 flexShrink: 0,
               }}
             >
