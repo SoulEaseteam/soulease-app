@@ -721,6 +721,30 @@ fixed-calendar-week query, independent of this range/filter bar, per its
 original 28s234 design (payout persistence needs a STABLE week key, not
 a rolling filter).
 
+### 🆕 2026-06-14 (cont.) — AdminEarningsPage visual redesign (28s246 → committed as 28s245)
+
+Founder: "ลองเปลี่ยนดีไซน์ ให้สวยขึ้น" — restyled Earnings with the same
+widget vocabulary as the Dashboard (28s241), Ocean Study light palette
+unchanged, zero data-logic changes:
+
+- **Hero "Shop net" card** — big serif figure + margin DonutRing +
+  money-flow stacked bar (therapist / taxi / costs / net) with legend.
+  Replaced the flat 3-BigStat grid; `BigStat` component deleted.
+- **Circular-icon stat row** (gross / payout / avg per booking /
+  cancelled) — absorbed the old Cancelled + Average cards.
+- **Daily chart**: peak day emphasized in ink #1F2933 + "Peak" figure in
+  the header; rounded bars, hover state.
+- **RankedRows**: rank badges, medal on #1 (mirrors Dashboard).
+- **Light-mode debt paid off**: Card shadow was still the dark-theme
+  0.25-alpha black → soft ink-tinted (rgba(31,41,51,…)) elevation;
+  payout "Mark paid" text `#052012` → `#fff` (dark-mode remnant); the
+  page's own Federo/Inter font consts aliased onto `adminFont` so
+  Earnings typography finally matches the rest of the admin. Lesson: a
+  token-flip round (28s240) catches token VALUES, but per-page literals
+  tuned for the old mode (shadows, on-color text, font stacks) need
+  their own sweep — grep `boxShadow`/`#fff`-adjacent literals when
+  restyling the remaining pages.
+
 ### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
 
 **Trigger.** View shared Google Search Console 3-month data:
