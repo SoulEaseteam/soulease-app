@@ -221,8 +221,18 @@ const AdminBookingListPage: React.FC = () => {
   const [therapistFilter, setTherapistFilter] = useState("__ALL__");
   const [paymentFilter,   setPaymentFilter]   = useState("__ALL__"); // __ALL__ | paid | unpaid
 
+  // 🆕 28s257 (founder: "ทำไมจำกัดแค่ 500 ทั้งหมดไม่ได้หรอ") — the 500 cap
+  //   from 28s252 was hiding real bookings once the collection passed 500
+  //   docs. Fix: "Load more" pagination instead of either extreme (an
+  //   unbounded fetch — the original bug — or a hard ceiling). `feedSize`
+  //   starts at FEED_LIMIT and grows by FEED_LIMIT each click; it resets to
+  //   FEED_LIMIT whenever the date range changes so a fresh query starts at
+  //   page one, not wherever the operator had scrolled to before.
+  const [feedSize, setFeedSize] = useState(FEED_LIMIT);
+  useEffect(() => { setFeedSize(FEED_LIMIT); }, [dateMode, customStart, customEnd]);
+
   // ── realtime feed (bounded — fix #1; date-scoped when a custom range is
-  //   active — 28s254) ────────────────────────────────────────────────
+  //   active — 28s254; paginated via feedSize — 28s257) ─────────────────
   useEffect(() => {
     setLoading(true);
     const filters: Parameters<typeof query>[1][] = [];
@@ -230,16 +240,16 @@ const AdminBookingListPage: React.FC = () => {
       filters.push(where("createdAt", ">=", Timestamp.fromDate(customStart.startOf("day").toDate())));
       filters.push(where("createdAt", "<=", Timestamp.fromDate(customEnd.endOf("day").toDate())));
     }
-    filters.push(orderBy("createdAt", "desc"), limit(FEED_LIMIT));
+    filters.push(orderBy("createdAt", "desc"), limit(feedSize));
     const q = query(collection(db, "bookings"), ...filters);
     const unsub = onSnapshot(q, (snap) => {
       setBookings(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Booking)));
       setLoading(false);
     }, () => setLoading(false));
     return () => unsub();
-  }, [dateMode, customStart, customEnd]);
+  }, [dateMode, customStart, customEnd, feedSize]);
 
-  const atCap = bookings.length >= FEED_LIMIT;
+  const atCap = bookings.length >= feedSize;
 
   // 🆕 28s254 — therapist option list from the date-scoped set only (not
   //   further narrowed by payment), so switching one filter never collapses
@@ -397,7 +407,7 @@ const AdminBookingListPage: React.FC = () => {
           </Typography>
           <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.muted, mt: 0.3 }}>
             {counts.pending > 0 ? `${counts.pending} pending action${counts.pending > 1 ? "s" : ""}` : "All up to date"}
-            {atCap && ` · showing latest ${FEED_LIMIT}`}
+            {atCap && ` · showing latest ${feedSize}`}
           </Typography>
         </Box>
         <motion.button
@@ -656,6 +666,25 @@ const AdminBookingListPage: React.FC = () => {
           </AnimatePresence>
         )}
       </Box>
+
+      {/* 🆕 28s257 — "Load more" instead of a hard ceiling. Only the operator
+          decides to pull in another page; nothing fetches unboundedly on its
+          own. */}
+      {!loading && atCap && (
+        <Box sx={{ px: { xs: 2, md: 3 }, pt: 2, textAlign: "center" }}>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={() => setFeedSize((s) => s + FEED_LIMIT)}
+            style={{
+              height: 40, padding: "0 22px", borderRadius: 999,
+              background: adminColor.panel, border: `1px solid ${adminColor.line2}`,
+              color: adminColor.text, fontFamily: SANS, fontSize: 13, fontWeight: 600, cursor: "pointer",
+            }}
+          >
+            Load {FEED_LIMIT} more
+          </motion.button>
+        </Box>
+      )}
 
       {/* ── detail drawer ─────────────────────────────────────────── */}
       <Drawer
