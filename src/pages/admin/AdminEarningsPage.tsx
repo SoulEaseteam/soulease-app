@@ -514,9 +514,9 @@ const AdminEarningsPage: React.FC = () => {
               fontFamily: SERIF,
               fontSize: { xs: 24, md: 30 },
               fontWeight: 600,
-              color: "#1A2B2E",
+              color: adminColor.text,
               letterSpacing: "-0.02em",
-              "& em": { fontStyle: "italic", color: "#B4000A" },
+              "& em": { fontStyle: "italic", color: adminColor.highlight },
             }}
           >
             Earnings <em>calculator</em>
@@ -525,7 +525,7 @@ const AdminEarningsPage: React.FC = () => {
             sx={{
               fontFamily: SANS,
               fontSize: 13,
-              color: "rgba(15, 23, 42, 0.65)",
+              color: adminColor.muted,
               marginTop: "4px",
             }}
           >
@@ -544,11 +544,11 @@ const AdminEarningsPage: React.FC = () => {
             fontFamily: SANS,
             fontSize: 13,
             fontWeight: 600,
-            borderColor: "#B4000A",
-            color: "#B4000A",
+            borderColor: adminColor.accent,
+            color: adminColor.highlight,
             "&:hover": {
-              borderColor: "#B4000A",
-              background: "rgba(180, 0, 10, 0.06)",
+              borderColor: adminColor.accent,
+              background: "rgba(78,126,140,0.10)",
             },
           }}
         >
@@ -561,7 +561,20 @@ const AdminEarningsPage: React.FC = () => {
         exclusive
         size="small"
         onChange={(_, v) => v && setRange(v as Range)}
-        sx={{ mb: 3 }}
+        sx={{
+          mb: 3,
+          "& .MuiToggleButton-root": {
+            color: adminColor.muted,
+            borderColor: adminColor.line2,
+            fontFamily: SANS,
+            textTransform: "none",
+            "&.Mui-selected": {
+              color: adminColor.text,
+              background: adminColor.accent,
+              "&:hover": { background: adminColor.accentDeep },
+            },
+          },
+        }}
       >
         {(Object.keys(RANGE_LABEL) as Range[]).map((r) => (
           <ToggleButton key={r} value={r}>
@@ -677,11 +690,11 @@ const AdminEarningsPage: React.FC = () => {
 
       {loading ? (
         <Box sx={{ textAlign: "center", py: 6 }}>
-          <CircularProgress size={28} sx={{ color: "#B4000A" }} />
+          <CircularProgress size={28} sx={{ color: adminColor.accent }} />
         </Box>
       ) : bookings.length === 0 ? (
         <Card>
-          <Typography sx={{ fontFamily: SANS, fontSize: 14, color: "rgba(15, 23, 42,0.6)" }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 14, color: adminColor.muted }}>
             No bookings in this period.
           </Typography>
         </Card>
@@ -737,7 +750,7 @@ const AdminEarningsPage: React.FC = () => {
                   fontFamily: SERIF,
                   fontSize: 22,
                   fontWeight: 600,
-                  color: "#1A2B2E",
+                  color: adminColor.text,
                   mt: 1,
                 }}
               >
@@ -747,7 +760,7 @@ const AdminEarningsPage: React.FC = () => {
                 sx={{
                   fontFamily: SANS,
                   fontSize: 11,
-                  color: "rgba(15, 23, 42, 0.55)",
+                  color: adminColor.dim,
                   mt: 0.5,
                 }}
               >
@@ -761,7 +774,7 @@ const AdminEarningsPage: React.FC = () => {
                   fontFamily: SERIF,
                   fontSize: 22,
                   fontWeight: 600,
-                  color: "#1A2B2E",
+                  color: adminColor.text,
                   mt: 1,
                 }}
               >
@@ -775,7 +788,7 @@ const AdminEarningsPage: React.FC = () => {
                 sx={{
                   fontFamily: SANS,
                   fontSize: 11,
-                  color: "rgba(15, 23, 42, 0.55)",
+                  color: adminColor.dim,
                   mt: 0.5,
                 }}
               >
@@ -792,7 +805,7 @@ const AdminEarningsPage: React.FC = () => {
                 fontFamily: SERIF,
                 fontSize: 18,
                 fontWeight: 600,
-                color: "#1A2B2E",
+                color: adminColor.text,
                 mt: 0.5,
                 mb: 2,
               }}
@@ -819,8 +832,8 @@ const AdminEarningsPage: React.FC = () => {
                       height: `${pct}%`,
                       background:
                         v > 0
-                          ? "#B4000A"
-                          : "rgba(15, 23, 42, 0.06)",
+                          ? adminColor.accent
+                          : adminColor.panel2,
                       borderRadius: "3px 3px 0 0",
                       minHeight: 2,
                     }}
@@ -835,7 +848,7 @@ const AdminEarningsPage: React.FC = () => {
                 mt: 1,
                 fontFamily: SANS,
                 fontSize: 10,
-                color: "rgba(15, 23, 42, 0.55)",
+                color: adminColor.dim,
               }}
             >
               <span>{dayjs(trendDates[0]).format("D MMM")}</span>
@@ -860,7 +873,7 @@ const AdminEarningsPage: React.FC = () => {
                   fontFamily: SERIF,
                   fontSize: 18,
                   fontWeight: 600,
-                  color: "#1A2B2E",
+                  color: adminColor.text,
                   mt: 0.5,
                   mb: 1.5,
                 }}
@@ -890,7 +903,7 @@ const AdminEarningsPage: React.FC = () => {
                   fontFamily: SERIF,
                   fontSize: 18,
                   fontWeight: 600,
-                  color: "#1A2B2E",
+                  color: adminColor.text,
                   mt: 0.5,
                   mb: 1.5,
                 }}
@@ -922,10 +935,9 @@ const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     sx={{
       padding: "20px 22px",
       borderRadius: "16px",
-      background: "#FFFFFF",
-      border: "1px solid rgba(15, 23, 42, 0.06)",
-      boxShadow:
-        "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.05)",
+      background: adminColor.panel,
+      border: `1px solid ${adminColor.line}`,
+      boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
     }}
   >
     {children}
@@ -938,7 +950,7 @@ const Eyebrow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       fontSize: 10,
       letterSpacing: "0.18em",
       textTransform: "uppercase",
-      color: "#4A5568",
+      color: adminColor.muted,
       fontWeight: 700,
       fontFamily: SANS,
     }}
@@ -960,7 +972,7 @@ const BigStat: React.FC<{
         fontFamily: SERIF,
         fontSize: { xs: 24, md: 28 },
         fontWeight: 700,
-        color: accent === "brand" ? "#B4000A" : "#1A2B2E",
+        color: accent === "brand" ? adminColor.highlight : adminColor.text,
         letterSpacing: "-0.02em",
         marginTop: "6px",
         lineHeight: 1.05,
@@ -973,7 +985,7 @@ const BigStat: React.FC<{
       sx={{
         fontFamily: SANS,
         fontSize: 11.5,
-        color: "rgba(15, 23, 42, 0.55)",
+        color: adminColor.dim,
         marginTop: "4px",
       }}
     >
@@ -991,7 +1003,7 @@ const RankedRows: React.FC<{
         sx={{
           fontFamily: SANS,
           fontSize: 12,
-          color: "rgba(15, 23, 42, 0.55)",
+          color: adminColor.dim,
           fontStyle: "italic",
         }}
       >
@@ -1018,7 +1030,7 @@ const RankedRows: React.FC<{
                   fontFamily: SANS,
                   fontSize: 13,
                   fontWeight: 600,
-                  color: "#1A2B2E",
+                  color: adminColor.text,
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -1030,7 +1042,7 @@ const RankedRows: React.FC<{
                 sx={{
                   fontFamily: SANS,
                   fontSize: 11,
-                  color: "rgba(15, 23, 42, 0.55)",
+                  color: adminColor.dim,
                 }}
               >
                 {r.sub}
@@ -1041,7 +1053,7 @@ const RankedRows: React.FC<{
                 fontFamily: SERIF,
                 fontSize: 14,
                 fontWeight: 700,
-                color: "#B4000A",
+                color: adminColor.highlight,
                 fontVariantNumeric: "tabular-nums",
                 flexShrink: 0,
               }}
@@ -1052,7 +1064,7 @@ const RankedRows: React.FC<{
           <Box
             sx={{
               height: 4,
-              background: "rgba(15, 23, 42, 0.05)",
+              background: adminColor.panel3,
               borderRadius: "999px",
               overflow: "hidden",
             }}
@@ -1061,7 +1073,7 @@ const RankedRows: React.FC<{
               sx={{
                 height: "100%",
                 width: `${Math.max(2, r.pct * 100)}%`,
-                background: "rgba(15, 23, 42, 0.55)",
+                background: adminColor.accent,
                 borderRadius: "999px",
               }}
             />
