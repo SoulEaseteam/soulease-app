@@ -67,6 +67,10 @@ export interface Therapist {
 
   /** --- Availability System (Official Engine Inputs) --- */
   statusOverride?: StatusOverride;     // Admin override: "Auto" | Avail
+  /** 🆕 Round 28s267 — expiry stamp for `statusOverride`. Without this an
+   *  override set once (e.g. "resting" to pull someone offline for a
+   *  night) stuck forever until manually reset — see calculateTherapistStatus. */
+  overrideUntil?: FirestoreDateLike;
   isHoliday?: boolean;                 // force resting
   isBooked?: boolean;                  // legacy flag
   busyUntil?: FirestoreDateLike;       // Timestamp / Date / ISO / null

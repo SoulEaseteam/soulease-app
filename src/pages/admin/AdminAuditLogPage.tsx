@@ -41,6 +41,8 @@ const ACTION_LABEL: Record<string, { label: string; color: string }> = {
   "payout.mark_unpaid":      { label: "ยกเลิกสถานะจ่ายแล้ว",   color: adminColor.dim },
   "therapist.relight_all":   { label: "เปิดร้านทั้งหมด",       color: adminColor.green },
   "therapist.reset_auto":    { label: "รีเซ็ตเป็น Auto",       color: adminColor.blue },
+  "therapist.update":        { label: "แก้ไขข้อมูลหมอนวด",     color: adminColor.blue },
+  "therapist.delete":        { label: "ลบหมอนวด",             color: adminColor.red },
   "user.block":              { label: "บล็อกผู้ใช้",          color: adminColor.red },
   "user.unblock":            { label: "ปลดบล็อกผู้ใช้",       color: adminColor.green },
 };
@@ -51,6 +53,7 @@ function detailLine(detail?: Record<string, unknown>): string {
   if (detail.bookingId) parts.push(`booking ${String(detail.bookingId).slice(0, 8)}`);
   if (detail.from && detail.to) parts.push(`${detail.from} → ${detail.to}`);
   if (detail.therapistName) parts.push(String(detail.therapistName));
+  if (detail.field) parts.push(`${String(detail.field)} → ${String(detail.value)}`);
   if (typeof detail.amount === "number") parts.push(`฿${detail.amount.toLocaleString()}`);
   if (typeof detail.count === "number") parts.push(`${detail.count} คน`);
   return parts.join(" · ");

@@ -45,8 +45,16 @@ export function calculateTherapistStatus(t: Therapist): {
 
   // ---------------------------------------------------------
   // 1) ADMIN OVERRIDE
+  //
+  //   🆕 Round 28s267 — an override past its `overrideUntil` stamp is
+  //   treated as expired and falls through to the normal engine below.
+  //   Overrides with no `overrideUntil` (legacy writes, or any future
+  //   caller that doesn't stamp one) keep the old sticky-forever
+  //   behaviour — this is additive, not a breaking change.
   // ---------------------------------------------------------
-  if (t.statusOverride && t.statusOverride !== "Auto") {
+  const overrideExpiry = toBKK(t.overrideUntil);
+  const overrideExpired = !!overrideExpiry && overrideExpiry.isBefore(now);
+  if (t.statusOverride && t.statusOverride !== "Auto" && !overrideExpired) {
     const override = t.statusOverride as Avail;
     return {
       status: override,

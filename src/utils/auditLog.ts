@@ -32,6 +32,11 @@ export type AuditAction =
   | "payout.mark_unpaid"
   | "therapist.relight_all"
   | "therapist.reset_auto"
+  // 🆕 Round 28s267 — individual roster edits (holiday/override/session/
+  //   working hours) and deletion had zero audit trail before, unlike
+  //   every other consequential admin action this session.
+  | "therapist.update"
+  | "therapist.delete"
   | "user.block"
   | "user.unblock";
 

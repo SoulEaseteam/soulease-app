@@ -46,7 +46,10 @@ export interface TherapistBooking {
   status: string;
 }
 
-const ACTIVE_STATUSES = new Set(["confirmed", "pending", "in_progress"]);
+// 🆕 Round 28s267 — exported so AdminTherapistsPage can run ONE shop-wide
+// active-bookings listener (bounded by status, not by a `limit()`) instead
+// of duplicating this set or spinning up a listener per therapist.
+export const ACTIVE_STATUSES = new Set(["confirmed", "pending", "in_progress"]);
 
 function readDate(v: unknown): Date | null {
   if (v === null || v === undefined) return null;
@@ -66,7 +69,9 @@ function readDate(v: unknown): Date | null {
   return null;
 }
 
-function fromSnap(doc: QueryDocumentSnapshot<DocumentData>): TherapistBooking | null {
+// 🆕 Round 28s267 — exported so AdminTherapistsPage can parse booking docs
+// from a shop-wide query the same way this file already does per-therapist.
+export function fromSnap(doc: QueryDocumentSnapshot<DocumentData>): TherapistBooking | null {
   const data = doc.data();
   const startAt = readDate(data.startAt);
   let endAt = readDate(data.endAt);
