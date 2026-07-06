@@ -82,7 +82,11 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { db } from "@/lib/firebase";
 import { fmtBKK } from "@/utils/time";
-import { formatTHB } from "@/utils/servicePricing";
+import { formatTHB, priceForDuration, durationsFor } from "@/utils/servicePricing";
+// 🆕 28s263 (founder: "เปลี่ยนบริการได้ด้วยสิ มันทั้งหมดของบิล") — same
+//   service catalog + pricing helpers AdminBookingAddPage uses to create a
+//   booking, reused here to let the operator change one after the fact.
+import services from "@/data/services";
 import { getServiceLabel } from "@/utils/serviceCatalog";
 import { ExportToExcel } from "@/utils/exportTools";
 import { logAdminAction } from "@/utils/auditLog";
@@ -1206,6 +1210,8 @@ const DetailPanel: React.FC<{
       time: b.time || (b.startAt?.toDate ? fmtBKK(b.startAt.toDate(), "HH:mm") : "10:00"),
       location: b.locationName || b.address || "",
       payment: b.payment || "cash",
+      serviceId: b.serviceId ?? "",
+      duration: b.duration ?? 60,
       servicePrice: String(b.servicePrice ?? 0),
       taxiFee: String(b.taxiFee ?? 0),
       total: String(b.totalPrice ?? b.total ?? 0),
@@ -1220,10 +1226,38 @@ const DetailPanel: React.FC<{
     time: b.time ?? "",
     location: b.locationName || b.address || "",
     payment: b.payment || "cash",
+    serviceId: b.serviceId ?? "",
+    duration: b.duration ?? 60,
     servicePrice: String(b.servicePrice ?? 0),
     taxiFee: String(b.taxiFee ?? 0),
     total: String(b.totalPrice ?? b.total ?? 0),
   });
+
+  // 🆕 28s263 — changing Service or Duration re-fills Service price with the
+  //   catalog's price for that combination (same as AdminBookingAddPage's
+  //   handleServiceChange). It's still just a starting point: the Service
+  //   price field stays freely editable afterward, same as 28s261.
+  const editSelectedService = services.find((s) => s.id === editForm.serviceId);
+  const editAvailableDurations = editSelectedService ? durationsFor(editSelectedService) : [60, 90, 120];
+  const changeService = (serviceId: string) => {
+    const svc = services.find((s) => s.id === serviceId);
+    const tiers = svc ? durationsFor(svc) : [60, 90, 120];
+    const duration = tiers.includes(editForm.duration) ? editForm.duration : tiers[0];
+    setEditForm((f) => ({
+      ...f,
+      serviceId,
+      duration,
+      servicePrice: svc ? String(priceForDuration(svc, duration)) : f.servicePrice,
+    }));
+  };
+  const changeDuration = (duration: number) => {
+    setEditForm((f) => ({
+      ...f,
+      duration,
+      servicePrice: editSelectedService ? String(priceForDuration(editSelectedService, duration)) : f.servicePrice,
+    }));
+  };
+
   // Live figures for the edit form — recomputed from whatever's currently
   // typed. `computedTotal` is a SUGGESTION only; `editForm.total` (what
   // actually gets saved) is independent and freely editable.
@@ -1249,6 +1283,7 @@ const DetailPanel: React.FC<{
         date: editForm.date,
         time: editForm.time,
         payment: editForm.payment,
+        duration: editForm.duration,
         servicePrice: editServicePrice,
         taxiFee: editTaxiFee,
         paymentFee: editSurcharge,
@@ -1257,6 +1292,11 @@ const DetailPanel: React.FC<{
         locationName: editForm.location.trim(),
         ...(editForm.therapistId && editForm.therapistId !== b.therapistId
           ? { therapistId: editForm.therapistId, therapistName: newTherapist?.name ?? b.therapistName }
+          : {}),
+        // 🆕 28s263 — write both id + display name, same dual-write
+        //   convention as therapist reassignment (28s259).
+        ...(editForm.serviceId && editForm.serviceId !== b.serviceId
+          ? { serviceId: editForm.serviceId, serviceName: editSelectedService?.name ?? b.serviceName }
           : {}),
       },
       editTotal !== oldTotal ? { priceChangedFrom: oldTotal, priceChangedTo: editTotal } : undefined
@@ -1456,10 +1496,57 @@ const DetailPanel: React.FC<{
                 />
               </Box>
               <Divider sx={{ opacity: 0.4 }} />
-              {/* 🆕 28s261 (founder: "แก้ราคาได้ ทั้งหมด") — reverses the
-                  28s259 exclusion. Free-form Service/Taxi numbers; Total is
-                  ALWAYS derived (service + taxi + surcharge), never itself
-                  editable, so it can't drift from its own inputs. */}
+              {/* 🆕 28s263 (founder: "เปลี่ยนบริการได้ด้วยสิ มันทั้งหมดของบิล")
+                  — the service type + duration were the last un-editable
+                  price drivers. Picking either re-fills Service price with
+                  the catalog rate for that combo (changeService/
+                  changeDuration); the field stays freely editable after. */}
+              <Box sx={{ py: 1 }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Service</Typography>
+                <Select
+                  size="small" fullWidth
+                  value={editForm.serviceId}
+                  displayEmpty
+                  onChange={(e) => changeService(e.target.value)}
+                  renderValue={(v) => (
+                    <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.text }}>
+                      {services.find((s) => s.id === v)?.name ?? "Select…"}
+                    </Typography>
+                  )}
+                  sx={{ fontSize: 13, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 } }}
+                  MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
+                >
+                  {services.map((s) => (
+                    <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
+                  ))}
+                </Select>
+              </Box>
+              <Divider sx={{ opacity: 0.4 }} />
+              <Box sx={{ py: 1 }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.75 }}>Duration</Typography>
+                <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap" }}>
+                  {editAvailableDurations.map((d) => {
+                    const active = d === editForm.duration;
+                    return (
+                      <motion.button
+                        key={d}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => changeDuration(d)}
+                        style={{
+                          border: `1.5px solid ${active ? adminColor.accent : adminColor.line2}`,
+                          borderRadius: 999, padding: "6px 14px", cursor: "pointer",
+                          background: active ? adminColor.accent : "transparent",
+                          color: active ? "#fff" : adminColor.text,
+                          fontFamily: SANS, fontSize: 12.5, fontWeight: 600,
+                        }}
+                      >
+                        {d} min{editSelectedService ? ` · ${formatTHB(priceForDuration(editSelectedService, d))}` : ""}
+                      </motion.button>
+                    );
+                  })}
+                </Box>
+              </Box>
+              <Divider sx={{ opacity: 0.4 }} />
               <Box sx={{ py: 1, display: "flex", gap: 1 }}>
                 <Box sx={{ flex: 1 }}>
                   <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Service price (฿)</Typography>
