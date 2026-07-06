@@ -63,24 +63,33 @@ import NightsStayIcon from "@mui/icons-material/NightsStay";
 const DRAWER_FULL      = 240;
 const DRAWER_COLLAPSED = 60;
 
-// 🆕 Round 28s232 — Tonight ops board leads the nav (the control-room entry).
+// 🆕 Round 28s266 (founder: "เรียงแถบนี้อีกครั้ง") — regrouped by actual
+// workflow instead of ship order: daily ops → money/numbers → people →
+// content → rarely-touched system pages. Tonight still leads (control-room
+// entry, 28s232); New Booking/Bookings are now adjacent (were split apart
+// by Reports before).
 const menuItems = [
+  // Daily ops
   { label: "Tonight",      path: "/admin/tonight",            icon: <NightsStayIcon /> },
   { label: "Dashboard",    path: "/admin/dashboard",          icon: <DashboardIcon /> },
-  // 🆕 Round 28r15 — Funnel analytics (self-hosted, reads
-  //   `analytics_events` collection populated by Round 28r13).
-  { label: "Analytics",    path: "/admin/analytics",          icon: <InsightsIcon /> },
+  { label: "New Booking",  path: "/admin/bookings/add",       icon: <AddBoxIcon /> },
+  { label: "Bookings",     path: "/admin/bookings",           icon: <BookingIcon /> },
+  // Money & numbers
   // 🆕 Round 28r26 — Earnings calculator (revenue · 60/40 split · CSV).
   { label: "Earnings",     path: "/admin/earnings",           icon: <PaidIcon /> },
   { label: "Reports",      path: "/admin/reports",            icon: <ReportIcon /> },
-  { label: "New Booking",  path: "/admin/bookings/add",       icon: <AddBoxIcon /> },
-  { label: "Bookings",     path: "/admin/bookings",           icon: <BookingIcon /> },
+  // 🆕 Round 28r15 — Funnel analytics (self-hosted, reads
+  //   `analytics_events` collection populated by Round 28r13).
+  { label: "Analytics",    path: "/admin/analytics",          icon: <InsightsIcon /> },
+  // People
   { label: "Therapists",   path: "/admin/therapists",         icon: <TherapistIcon /> },
   { label: "Users",        path: "/admin/users",              icon: <UserIcon /> },
+  // Content
   { label: "Reviews",      path: "/admin/reviews",            icon: <ReviewIcon /> },
   // 🆕 Round 28s213 — Backfill anonymous reviews onto completed bookings
   //   that never got a guest comment.
   { label: "Seed Reviews", path: "/admin/seed-reviews",       icon: <RateReviewIcon /> },
+  // System
   { label: "Blocked",      path: "/admin/blocked-devices",    icon: <BlockIcon /> },
   // 🆕 Round 28s234 — audit log viewer (Phase 4).
   { label: "Audit Log",    path: "/admin/audit-log",          icon: <ListAltIcon /> },
