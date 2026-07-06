@@ -355,8 +355,9 @@ the funnel first.
 
 **Known remaining (audited, not yet fixed):** Telegram webhooks lack
 secret_token validation; Google Maps key is a single point of failure on the
-booking location step (no no-map fallback); paid vs paymentStatus field
-mismatch. ~~AdminBookingAddPage double-fires the Telegram notify.~~ ✅ FIXED
+booking location step (no no-map fallback). ~~paid vs paymentStatus field
+mismatch.~~ ✅ FIXED in 28s252 (unified — see below).
+~~AdminBookingAddPage double-fires the Telegram notify.~~ ✅ FIXED
 in 28s249 (see below).
 
 ### 🆕 2026-06-09 (cont.) — taxi fare fix + admin "control room" (28s231-232)
@@ -855,6 +856,34 @@ reading `contactName`-only are a reminder — when a booking is written from a
 NEW code path, check it populates every field the server Telegram formatter
 reads (contactName, phone, address, locationName, note, payment, paymentFee),
 or the alert silently shows "—".
+
+### 🆕 2026-07-06 — /admin/bookings audit: 8 fixes (28s252)
+
+Founder: "Audit admin/bookings" → "ทั้งหมด". AdminBookingListPage:
+
+1. **Bounded the realtime listener** — was `query(bookings, orderBy createdAt)`
+   with NO limit → streamed the entire collection in realtime (unbounded
+   Firestore read + client memory, grows with history). Now `limit(500)`,
+   newest first; header shows "showing latest 500" when capped. Older records
+   are covered by Reports/Earnings (date-bounded).
+2. **Cancel confirms + captures a reason** (window.prompt) before flipping a
+   real booking → `cancelReason` on the doc (shown in drawer) + in the audit
+   detail. Was one-tap destructive, next to "Mark Complete".
+3. **Unified payment fields** — customer flow writes `paymentStatus` ("unpaid")
+   which nothing here read/updated (dead data); admin used a separate `paid`
+   boolean. Now the toggle writes BOTH in sync and display reads either via
+   `isPaid(b) = b.paid ?? b.paymentStatus === "paid"`. Closes the CLAUDE.md
+   "paid vs paymentStatus" known issue.
+4. Restyled onto Ocean Study light tokens + `adminFigureSx`.
+5. Paid toggle now audit-logs — new `booking.mark_paid`/`booking.mark_unpaid`
+   actions in `auditLog.ts` + labels in AdminAuditLogPage.
+6. `Row` hoisted to module scope (was redefined every render).
+7. aria-labels on icon-only buttons.
+8. Unknown statuses get a neutral badge via `cfgFor()` (not pending-red);
+   refunded/no_show labelled.
+
+**Admin now ALL on Ocean Study** except **AdminTherapistsPage** — the last
+page still on the old theme.
 
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
