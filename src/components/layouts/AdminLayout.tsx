@@ -56,11 +56,16 @@ import { useAuth } from "@/providers/AuthProvider";
 
 import BottomNavGlass from "@/components/layouts/BottomNavGlass";
 import useAdminPresenceHeartbeat from "@/hooks/useAdminPresenceHeartbeat";
+// 🆕 Round 28s234 — Control Room redesign (shared dark tokens).
+import { adminColor, adminFont } from "@/theme/adminTheme";
+import NightsStayIcon from "@mui/icons-material/NightsStay";
 
 const DRAWER_FULL      = 240;
 const DRAWER_COLLAPSED = 60;
 
+// 🆕 Round 28s232 — Tonight ops board leads the nav (the control-room entry).
 const menuItems = [
+  { label: "Tonight",      path: "/admin/tonight",            icon: <NightsStayIcon /> },
   { label: "Dashboard",    path: "/admin/dashboard",          icon: <DashboardIcon /> },
   // 🆕 Round 28r15 — Funnel analytics (self-hosted, reads
   //   `analytics_events` collection populated by Round 28r13).
@@ -77,6 +82,8 @@ const menuItems = [
   //   that never got a guest comment.
   { label: "Seed Reviews", path: "/admin/seed-reviews",       icon: <RateReviewIcon /> },
   { label: "Blocked",      path: "/admin/blocked-devices",    icon: <BlockIcon /> },
+  // 🆕 Round 28s234 — audit log viewer (Phase 4).
+  { label: "Audit Log",    path: "/admin/audit-log",          icon: <ListAltIcon /> },
   { label: "Pages",        path: "/admin/pages-list",         icon: <ListAltIcon /> },
   { label: "Settings",     path: "/admin/advanced-settings",  icon: <SettingsIcon /> },
 ];
@@ -132,9 +139,9 @@ const AdminLayout: React.FC = () => {
     }
   };
 
-  // ── shared sidebar content ─────────────────────────────────────────
+  // ── shared sidebar content — Round 28s234 Control Room redesign ────
   const sidebarContent = (compact: boolean) => (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", background: "#fff" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", background: adminColor.panel }}>
       {/* brand strip */}
       <Box
         sx={{
@@ -144,24 +151,24 @@ const AdminLayout: React.FC = () => {
           justifyContent: compact ? "center" : "flex-start",
           px: compact ? 0 : 2,
           gap: 1.25,
-          borderBottom: "1px solid rgba(15,23,42,0.07)",
+          borderBottom: `1px solid ${adminColor.line}`,
           flexShrink: 0,
         }}
       >
         <Box
           sx={{
             width: 32, height: 32, borderRadius: "50%",
-            background: "#B4000A",
+            background: adminColor.crimson,
             display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0,
           }}
         >
-          <Typography sx={{ color: "#fff", fontSize: 14, fontWeight: 800 }}>S</Typography>
+          <Typography sx={{ color: "#fff", fontSize: 14, fontWeight: 800, fontFamily: adminFont.serif }}>S</Typography>
         </Box>
         {!compact && (
           <Box>
-            <Typography sx={{ fontSize: 13.5, fontWeight: 800, color: "#1a0805", lineHeight: 1.1 }}>SunRed</Typography>
-            <Typography sx={{ fontSize: 10.5, fontWeight: 600, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Admin</Typography>
+            <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: adminColor.text, lineHeight: 1.1, fontFamily: adminFont.serif, letterSpacing: "0.02em" }}>SunRed</Typography>
+            <Typography sx={{ fontSize: 10, fontWeight: 700, color: adminColor.champagne, letterSpacing: "0.18em", textTransform: "uppercase" }}>Control</Typography>
           </Box>
         )}
       </Box>
@@ -183,18 +190,19 @@ const AdminLayout: React.FC = () => {
                 px: compact ? 1 : 1.5,
                 borderRadius: "10px",
                 mb: 0.25,
-                color: active ? "#B4000A" : "#1A2B2E",
+                color: active ? adminColor.crimson : adminColor.muted,
                 "&:hover": {
-                  background: "rgba(180,0,10,0.04)",
+                  background: adminColor.panel2,
+                  color: adminColor.text,
                 },
                 "&.Mui-selected": {
-                  background: "rgba(180,0,10,0.08)",
-                  color: "#B4000A",
-                  "&:hover": { background: "rgba(15, 23, 42, 0.12)" },
-                  "& .MuiListItemIcon-root": { color: "#B4000A" },
+                  background: "rgba(226,58,87,0.12)",
+                  color: adminColor.crimson,
+                  "&:hover": { background: "rgba(226,58,87,0.16)" },
+                  "& .MuiListItemIcon-root": { color: adminColor.crimson },
                 },
                 "& .MuiListItemIcon-root": {
-                  color: active ? "#B4000A" : "rgba(15, 23, 42,0.55)",
+                  color: active ? adminColor.crimson : adminColor.dim,
                   minWidth: compact ? "auto" : 38,
                 },
               }}
@@ -222,14 +230,14 @@ const AdminLayout: React.FC = () => {
         <Box
           sx={{
             px: 2, py: 1.5,
-            borderTop: "1px solid rgba(15,23,42,0.07)",
+            borderTop: `1px solid ${adminColor.line}`,
             display: "flex", alignItems: "center", gap: 1,
           }}
         >
-          <Avatar sx={{ width: 28, height: 28, bgcolor: "rgba(15, 23, 42, 0.10)", color: "#B4000A", fontSize: 13, fontWeight: 700 }}>
+          <Avatar sx={{ width: 28, height: 28, bgcolor: adminColor.panel3, color: adminColor.crimson, fontSize: 13, fontWeight: 700 }}>
             {user.email?.[0]?.toUpperCase()}
           </Avatar>
-          <Typography sx={{ fontSize: 12, fontWeight: 600, color: "rgba(15, 23, 42,0.60)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+          <Typography sx={{ fontSize: 12, fontWeight: 600, color: adminColor.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
             {user.email}
           </Typography>
         </Box>
@@ -240,50 +248,56 @@ const AdminLayout: React.FC = () => {
   const desktopWidth = collapsed ? DRAWER_COLLAPSED : DRAWER_FULL;
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f7f3f1" }}>
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: adminColor.bg }}>
       <CssBaseline />
 
-      {/* ── Top AppBar ─────────────────────────────────────────────── */}
+      {/* ── Top AppBar — Round 28s234 Control Room redesign ─────────── */}
       <AppBar
         position="fixed"
         sx={{
           zIndex: (t) => t.zIndex.drawer + 1,
-          background: "#B4000A",
-          boxShadow: "0 2px 12px rgba(15, 23, 42, 0.25)",
+          background: adminColor.panel,
+          borderBottom: `1px solid ${adminColor.line}`,
+          boxShadow: "0 6px 18px rgba(0,0,0,0.28)",
         }}
       >
         <Toolbar sx={{ justifyContent: "space-between" }}>
           <Box display="flex" alignItems="center" gap={1}>
             <IconButton
-              color="inherit"
+              sx={{ color: adminColor.text }}
               onClick={isMobile ? () => setMobileOpen((v) => !v) : toggleDesktopSidebar}
             >
               {isMobile && mobileOpen ? <CloseIcon /> : <MenuIcon />}
             </IconButton>
-            <Typography fontWeight={700} fontSize={15} letterSpacing="-0.01em">
-              SunRed Admin
+            <Typography fontWeight={600} fontSize={15} letterSpacing="0.02em" fontFamily={adminFont.serif} color={adminColor.text}>
+              SunRed <Box component="span" sx={{ color: adminColor.crimson }}>Control</Box>
             </Typography>
           </Box>
 
           <Box display="flex" alignItems="center" gap={1}>
             <Tooltip title="Notifications">
-              <IconButton color="inherit" size="small">
-                <Badge badgeContent={notifications} color="error">
+              <IconButton size="small" sx={{ color: adminColor.text }}>
+                <Badge badgeContent={notifications} sx={{ "& .MuiBadge-badge": { background: adminColor.crimson, color: "#fff" } }}>
                   <NotificationsIcon fontSize="small" />
                 </Badge>
               </IconButton>
             </Tooltip>
 
             <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small">
-              <Avatar sx={{ width: 30, height: 30, bgcolor: "#fff", color: "#B4000A", fontSize: 14, fontWeight: 700 }}>
+              <Avatar sx={{ width: 30, height: 30, bgcolor: adminColor.panel3, color: adminColor.crimson, fontSize: 14, fontWeight: 700 }}>
                 {user.email?.[0]?.toUpperCase()}
               </Avatar>
             </IconButton>
 
-            <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={() => setAnchorEl(null)}
+              slotProps={{ paper: { sx: { background: adminColor.panel2, color: adminColor.text, border: `1px solid ${adminColor.line}` } } }}
+            >
               <MenuItem onClick={() => { void navigate("/admin/advanced-settings"); setAnchorEl(null); }}>Settings</MenuItem>
               <MenuItem onClick={() => { void navigate("/profile"); setAnchorEl(null); }}>My Profile</MenuItem>
-              <MenuItem onClick={logout} sx={{ color: "#B4000A" }}>Logout</MenuItem>
+              <MenuItem onClick={logout} sx={{ color: adminColor.crimson }}>Logout</MenuItem>
             </Menu>
           </Box>
         </Toolbar>
@@ -300,8 +314,8 @@ const AdminLayout: React.FC = () => {
             "& .MuiDrawer-paper": {
               width: DRAWER_FULL,
               boxSizing: "border-box",
-              background: "#fff",
-              boxShadow: "4px 0 24px rgba(0,0,0,0.12)",
+              background: adminColor.panel,
+              boxShadow: "4px 0 24px rgba(0,0,0,0.4)",
             },
           }}
         >
@@ -321,8 +335,8 @@ const AdminLayout: React.FC = () => {
               transition: "width 0.25s cubic-bezier(0.4,0,0.2,1)",
               overflowX: "hidden",
               boxSizing: "border-box",
-              background: "#fff",
-              borderRight: "1px solid rgba(15,23,42,0.07)",
+              background: adminColor.panel,
+              borderRight: `1px solid ${adminColor.line}`,
             },
           }}
         >
@@ -340,6 +354,8 @@ const AdminLayout: React.FC = () => {
           px: 0,
           minWidth: 0,
           overflow: "hidden",
+          background: `radial-gradient(120% 60% at 50% -10%, #1a1424 0%, ${adminColor.bg} 45%)`,
+          color: adminColor.text,
         }}
       >
         <Outlet />
