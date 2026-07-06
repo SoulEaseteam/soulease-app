@@ -486,6 +486,30 @@ direction for the customer site, NOT applied).
   Next consistency pass should bring these onto adminColor/adminFont too —
   whichever palette is current at the time (check this file first).
 
+### 🆕 2026-06-14 (cont.) — palette exploration + Earnings full restyle (28s236)
+
+Founder browsed 2 more Pinterest options after Ocean Study shipped:
+"Uncharted" (deep petrol-teal, yacht-brand feel) and "Mint Studio" (bright
+white/mint SaaS look) — both were shown as standalone Artifact mockups
+(HTML files in the scratchpad, NOT touching real code) for comparison, per
+the "mockup before shipping" pattern established for big visual swaps.
+**Neither was applied** — founder confirmed staying on Ocean Study (already
+live). If a future session sees `sunred-admin-uncharted.html` /
+`sunred-admin-mint.html` mockup files referenced in transcripts, they were
+rejected concepts, not partially-applied work — adminTheme.ts is the only
+source of truth for the live palette.
+
+**28s236 — finished AdminEarningsPage** (the gap flagged in 28s234/235's
+notes above): founder screenshotted the live page — sidebar/header/Payout
+tracker were Ocean Study dark, but the page's ORIGINAL content (BigStat
+cards, Daily revenue chart, By therapist/By service breakdown) was still
+white, never touched by the 28s234 payout-tracker-only pass. Root cause: 4
+shared subcomponents (`Card`, `Eyebrow`, `BigStat`, `RankedRows`) had the
+white/light hex hardcoded once each — fixing those 4 covered the whole
+remaining page. **AdminEarningsPage is now fully on adminColor tokens.**
+Still pending: AdminBookingListPage, AdminTherapistsPage,
+AdminReportPage, AdminAnalyticsPage.
+
 ### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
 
 **Trigger.** View shared Google Search Console 3-month data:
