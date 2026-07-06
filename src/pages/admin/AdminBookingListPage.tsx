@@ -107,6 +107,16 @@ import {
 // read bounded regardless of how big the collection grows.
 const FEED_LIMIT = 500;
 
+// 🆕 Round 28s256 (founder reference screenshot — nested-card "secondary
+//   background" frame) — an 18% blend from bg (#DCEFF5) toward dim
+//   (#5C6F7B), both official Ocean Study swatches (rule: 28s237, every color
+//   traces to an official hex or a blend strictly between two of them).
+//   `adminColor.panel3` was tried first but it's ALSO a blend toward bg (just
+//   from white) — visually near-identical to `bg` itself, so it couldn't
+//   read as a distinct frame behind the white card. This blend goes toward
+//   the darker anchor instead, so the nesting is actually visible.
+const CARD_FRAME_BG = "#C5D8DF";
+
 // ── types ─────────────────────────────────────────────────────────────
 interface Booking {
   id: string;
@@ -603,7 +613,10 @@ const AdminBookingListPage: React.FC = () => {
           pt: 1.5,
           display: "grid",
           gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", xl: "1fr 1fr 1fr" },
-          gap: 1.5,
+          // 🆕 28s256 — trimmed from 1.5→1: each card frame now carries its
+          // own 8px padding, so the old gap on top of that read as too much
+          // air between cards.
+          gap: 1,
         }}
       >
         {loading ? (
@@ -724,16 +737,21 @@ const BookingCard: React.FC<{
     : "—";
 
   return (
+    // 🆕 Round 28s256 (founder reference screenshot: "พื้นหลังรอง กรอบและปุ่ม
+    //   แบบตัวอย่างนี้" — a customer-site card style with a nested frame:
+    //   duller "secondary background" box holding a white inner card. Kept
+    //   Ocean Study's own accent teal on buttons per founder's explicit
+    //   choice ("คง teal เดิม") — only the nested-frame STRUCTURE was
+    //   adopted, not the reference's dark-navy button color.
     <Box
       sx={{
-        borderRadius: "20px",
-        background: isTerminal ? adminColor.panel2 : adminColor.panel,
-        border: `1px solid ${adminColor.line}`,
+        borderRadius: "24px",
+        background: CARD_FRAME_BG, // secondary background — the frame
+        p: "8px",
+        transition: "transform 0.18s ease, box-shadow 0.18s ease",
         boxShadow: isTerminal
           ? "0 1px 2px rgba(31,41,51,0.03)"
           : "0 1px 2px rgba(31,41,51,0.04), 0 8px 22px rgba(31,41,51,0.07)",
-        overflow: "hidden",
-        transition: "transform 0.18s ease, box-shadow 0.18s ease",
         ...(!isTerminal && {
           "&:hover": {
             transform: "translateY(-3px)",
@@ -742,6 +760,14 @@ const BookingCard: React.FC<{
         }),
       }}
     >
+      <Box
+        sx={{
+          borderRadius: "18px",
+          background: isTerminal ? adminColor.panel2 : adminColor.panel,
+          border: `1px solid ${adminColor.line}`,
+          overflow: "hidden",
+        }}
+      >
       {/* accent stripe */}
       <Box sx={{ height: 3, background: cfg.stripe }} />
 
@@ -990,6 +1016,7 @@ const BookingCard: React.FC<{
             </motion.div>
           )}
         </AnimatePresence>
+      </Box>
       </Box>
     </Box>
   );
