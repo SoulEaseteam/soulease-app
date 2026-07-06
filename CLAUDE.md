@@ -1473,6 +1473,30 @@ Confirmed the tag reaches the base `index.html` AND all 55 prerendered
 route shells (the prerender script clones the head, so it inherited
 automatically — no per-shell edit needed).
 
+### 🆕 2026-07-06 — translated remaining English labels on Therapist Detail (28s274)
+
+Founder screenshot pointed at "Custom ID", "Rating", "Reviews" — these
+plus every other field label on `AdminTherapistDetailPage.tsx` (view
+AND edit mode) were still English while the rest of the page (status
+text, section headers, values) was already Thai — a loose end from the
+28s271 merge. Translated all of them (Rating→คะแนน, Reviews→รีวิว,
+Hours→เวลาทำงาน, Location→ตำแหน่ง, Badge→ป้าย, Custom ID→รหัสกำหนดเอง,
+Hidden→การมองเห็น, Blocked→บล็อก, Holiday→วันหยุด, Name→ชื่อ, etc.).
+Status Override's dropdown DISPLAY text now reuses the exact Thai words
+the roster page already shows for the same 4 states (ว่าง/จองได้/พัก/
+อัตโนมัติ) — only the visible `MenuItem` label changed, the underlying
+stored `value` is untouched, so nothing downstream is affected. Kept
+"Telegram" as the brand name (same convention as LINE/WeChat elsewhere)
+and left generic action verbs (Back/Save/Cancel) in English, matching
+the sibling roster page.
+
+**Also flagged but not fixed (separate issue, different file):**
+`AdminLayout.tsx` renders the CUSTOMER-facing `BottomNavGlass`
+(Practitioners/Services/History/Profile) on mobile admin — same
+component reused from the customer site with no admin-aware variant, so
+an admin's phone bottom nav shows customer browse tabs that make no
+sense in an admin context. Not touched this round; worth its own pass.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
