@@ -40,10 +40,10 @@ import { useNavigate } from "react-router-dom";
 //   site uses (calculateTherapistStatus), not the legacy device-clock
 //   computeStatus. Previously the admin grid and the live site could disagree
 //   ("I set her available but the site says closed").
-import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
+import { calculateTherapistStatus, isOverrideExpired } from "@/utils/calculateTherapistStatus";
 import type { Therapist } from "@/types/therapist";
 import { logAdminAction } from "@/utils/auditLog";
-import { nowBKK, endOfTodayBKK, toBKK, fmtBKKTimeShort } from "@/utils/time";
+import { nowBKK, endOfTodayBKK, fmtBKKTimeShort } from "@/utils/time";
 // 🆕 Round 28s267 (audit: "admin sees a different busy status than
 //   customers do") — same live-bookings derivation BookingFlowPage/
 //   TherapistDetailPage already use (28b49), now shared here instead of
@@ -125,11 +125,6 @@ const CARD_FRAME_BG = "#C5D8DF";
 const selectMenuProps = {
   PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px", boxShadow: "0 8px 24px rgba(31,41,51,0.16)" } },
 } as const;
-
-function isOverrideExpired(overrideUntil: unknown): boolean {
-  const expiry = toBKK(overrideUntil as never);
-  return !!expiry && expiry.isBefore(nowBKK());
-}
 
 function statusLine(row: TherapistRow): string {
   switch (row.computedStatus) {
@@ -800,7 +795,10 @@ const AdminTherapistsPage: React.FC = () => {
               key={t.id}
               row={t}
               onView={(id) => navigate(`/admin/therapists/${id}`)}
-              onEdit={(id) => navigate(`/admin/edit-therapist/${id}`)}
+              // 🆕 Round 28s271 — the separate /admin/edit-therapist page was
+              //   merged into AdminTherapistDetailPage; ?edit=1 opens it
+              //   pre-armed in edit mode instead of view mode.
+              onEdit={(id) => navigate(`/admin/therapists/${id}?edit=1`)}
               onDelete={handleDelete}
               onToggleHoliday={applyHoliday}
               onChangeOverride={applyOverride}

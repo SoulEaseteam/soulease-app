@@ -54,6 +54,11 @@ function detailLine(detail?: Record<string, unknown>): string {
   if (detail.from && detail.to) parts.push(`${detail.from} → ${detail.to}`);
   if (detail.therapistName) parts.push(String(detail.therapistName));
   if (detail.field) parts.push(`${String(detail.field)} → ${String(detail.value)}`);
+  // 🆕 Round 28s271 — AdminTherapistDetailPage's Save button batches many
+  //   field edits into one write; list which fields actually changed.
+  if (Array.isArray(detail.changedFields) && detail.changedFields.length) {
+    parts.push(detail.changedFields.join(", "));
+  }
   if (typeof detail.amount === "number") parts.push(`฿${detail.amount.toLocaleString()}`);
   if (typeof detail.count === "number") parts.push(`${detail.count} คน`);
   return parts.join(" · ");

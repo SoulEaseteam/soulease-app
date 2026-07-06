@@ -21,6 +21,13 @@ import {
 
 export type Avail = "available" | "bookable" | "resting" | "holiday";
 
+/** 🆕 Round 28s267/28s271 — shared so every surface that displays or
+ *  writes `overrideUntil` agrees on what "expired" means. */
+export function isOverrideExpired(overrideUntil: unknown): boolean {
+  const expiry = toBKK(overrideUntil as never);
+  return !!expiry && expiry.isBefore(nowBKK());
+}
+
 /** Re-export for backwards compatibility with code that imports from here. */
 export function getWorkingWindow(
   now: Date,

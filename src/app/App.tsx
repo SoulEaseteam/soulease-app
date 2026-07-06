@@ -153,9 +153,6 @@ const AdminUserDetailPage = React.lazy(
 const AddTherapistPage = React.lazy(
   () => import("@/pages/admin/AddTherapistPage")
 );
-const EditTherapistPage = React.lazy(
-  () => import("@/pages/admin/EditTherapistPage")
-);
 const AdminReviewListPage = React.lazy(
   () => import("@/pages/admin/AdminReviewListPage")
 );
@@ -337,10 +334,6 @@ export default function App() {
             element={<AdminTherapistDetailPage />}
           />
           <Route path="add-therapist" element={<AddTherapistPage />} />
-          <Route
-            path="edit-therapist/:id"
-            element={<EditTherapistPage />}
-          />
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="user/:id" element={<AdminUserDetailPage />} />
           <Route path="bookings" element={<AdminBookingListPage />} />
