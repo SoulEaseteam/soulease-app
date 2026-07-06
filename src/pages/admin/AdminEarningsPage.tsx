@@ -45,6 +45,9 @@ import dayjs, { type Dayjs } from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+// 🆕 Round 28s245 (founder: "ลองเปลี่ยนดีไซน์ ให้สวยขึ้น") — icons for the
+//   Dashboard-style (28s241) widget treatment.
+import { ChartBar, UserCircle, Receipt, XCircle, Medal } from "phosphor-react";
 
 import { db, auth } from "@/lib/firebase";
 import { formatTHB } from "@/utils/servicePricing";
@@ -54,8 +57,11 @@ import { getServiceLabel } from "@/utils/serviceCatalog";
 import { adminColor, adminFont } from "@/theme/adminTheme";
 import { logAdminAction } from "@/utils/auditLog";
 
-const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
-const SANS = '"Inter", system-ui, -apple-system, sans-serif';
+// 🆕 Round 28s245 — this page predates adminTheme.ts and still carried its
+//   own Federo/Inter stacks; aliased onto the shared admin fonts so Earnings
+//   typography matches AdminLayout/Dashboard/Analytics.
+const SERIF = adminFont.serif;
+const SANS = adminFont.sans;
 
 // 🆕 Round 28r27 (founder 2026-05-07) — Tier-based commission split.
 // Founder strategy: higher commission on premium tiers attracts
@@ -154,7 +160,36 @@ const selectSx = {
   color: adminColor.text,
 };
 const selectMenuProps = {
-  PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" } },
+  PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px", boxShadow: "0 8px 24px rgba(31,41,51,0.15)" } },
+};
+
+// 🆕 Round 28s245 — same lightweight CSS conic-gradient ring used on the
+//   Dashboard (28s241); duplicated locally, it's a tiny presentational bit,
+//   not shared logic.
+const DonutRing: React.FC<{ percent: number; color: string; size?: number; thickness?: number }> = ({
+  percent, color, size = 88, thickness = 9,
+}) => {
+  const pct = Math.max(0, Math.min(100, percent));
+  return (
+    <Box
+      sx={{
+        position: "relative", width: size, height: size, borderRadius: "50%", flexShrink: 0,
+        background: `conic-gradient(${color} ${pct * 3.6}deg, ${adminColor.panel3} 0deg)`,
+      }}
+    >
+      <Box
+        sx={{
+          position: "absolute", inset: thickness, borderRadius: "50%",
+          background: adminColor.panel,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}
+      >
+        <Typography sx={{ fontFamily: adminFont.serif, fontWeight: 700, fontSize: size / 4.6, color: adminColor.text, lineHeight: 1 }}>
+          {pct}%
+        </Typography>
+      </Box>
+    </Box>
+  );
 };
 
 const AdminEarningsPage: React.FC = () => {
@@ -781,7 +816,9 @@ const AdminEarningsPage: React.FC = () => {
                         sx={{
                           minWidth: 84, borderRadius: "8px", textTransform: "none", fontWeight: 700, fontSize: 12,
                           background: paid ? "transparent" : adminColor.green,
-                          color: paid ? adminColor.green : "#052012",
+                          // white-on-solid-green — the old #052012 ink was a
+                          // dark-mode remnant (green was brighter then)
+                          color: paid ? adminColor.green : "#fff",
                           border: paid ? `1px solid ${adminColor.green}` : "none",
                           "&:hover": { background: paid ? "rgba(22,163,74,0.1)" : adminColor.green },
                         }}
@@ -810,118 +847,140 @@ const AdminEarningsPage: React.FC = () => {
         </Card>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {/* Headline numbers */}
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr 1fr", sm: "1fr 1fr 1fr" },
-              gap: 2,
-            }}
-          >
-            <BigStat
-              label="Gross revenue"
-              value={formatTHB(stats.totalGross)}
-              sub={`${stats.countCompleted} bookings`}
-              accent="brand"
-            />
-            <BigStat
-              label="Therapist payout (60%)"
-              value={formatTHB(stats.totalTherapistPayout)}
-              sub={
-                stats.totalDiscountAbsorbed > 0
-                  ? `tier-aware split · post-discount`
-                  : `from service price ${formatTHB(stats.totalServicePrice)}`
-              }
-            />
-            <BigStat
-              label="Shop net"
-              value={formatTHB(stats.shopNet)}
-              sub={
-                stats.totalDiscountAbsorbed > 0
-                  ? `after promo cost ${formatTHB(stats.totalDiscountAbsorbed)} (shared)`
-                  : `after costs ${formatTHB(stats.totalCosts)}`
-              }
-              accent="brand"
-            />
-          </Box>
+          {/* 🆕 Round 28s245 — hero card: Shop net is THE number this page
+              exists to answer, so it gets the headline treatment — big serif
+              figure + margin donut + a money-flow bar showing where every
+              baht collected went. All real values from `stats`. */}
+          <Card>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
+              <Box sx={{ minWidth: 0 }}>
+                <Eyebrow>Shop net · this period</Eyebrow>
+                <Typography
+                  sx={{
+                    fontFamily: SERIF, fontSize: { xs: 34, md: 42 }, fontWeight: 700,
+                    color: adminColor.text, letterSpacing: "-0.02em", lineHeight: 1.1, mt: 0.75,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {formatTHB(stats.shopNet)}
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: adminColor.muted, mt: 0.5 }}>
+                  of {formatTHB(stats.totalCollected)} collected · {stats.countCompleted} bookings
+                  {stats.totalDiscountAbsorbed > 0 && ` · promo absorbed ${formatTHB(stats.totalDiscountAbsorbed)} (shared)`}
+                </Typography>
+              </Box>
+              <DonutRing
+                percent={stats.totalCollected > 0 ? Math.round((Math.max(0, stats.shopNet) / stats.totalCollected) * 100) : 0}
+                color={adminColor.accent}
+              />
+            </Box>
 
-          {/* Cancelled + average per booking */}
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr 1fr", sm: "1fr 1fr" },
-              gap: 2,
-            }}
-          >
-            <Card>
-              <Eyebrow>Cancelled / refunded</Eyebrow>
-              <Typography
-                sx={{
-                  fontFamily: SERIF,
-                  fontSize: 22,
-                  fontWeight: 600,
-                  color: adminColor.text,
-                  mt: 1,
-                }}
-              >
-                {stats.countCancelled} bookings
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: 11,
-                  color: adminColor.dim,
-                  mt: 0.5,
-                }}
-              >
-                Excluded from totals above.
-              </Typography>
-            </Card>
-            <Card>
-              <Eyebrow>Average per booking</Eyebrow>
-              <Typography
-                sx={{
-                  fontFamily: SERIF,
-                  fontSize: 22,
-                  fontWeight: 600,
-                  color: adminColor.text,
-                  mt: 1,
-                }}
-              >
-                {formatTHB(
-                  stats.countCompleted
-                    ? Math.round(stats.totalGross / stats.countCompleted)
-                    : 0
-                )}
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: 11,
-                  color: adminColor.dim,
-                  mt: 0.5,
-                }}
-              >
-                Gross / completed bookings.
-              </Typography>
-            </Card>
-          </Box>
+            {/* money-flow bar — where each collected baht went */}
+            {stats.totalCollected > 0 && (
+              <Box sx={{ mt: 2.5 }}>
+                <Box sx={{ display: "flex", height: 12, borderRadius: 999, overflow: "hidden", background: adminColor.panel3 }}>
+                  {[
+                    { key: "Therapist", value: stats.totalTherapistPayout, color: adminColor.accent },
+                    { key: "Taxi", value: stats.totalTaxi, color: adminColor.dim },
+                    { key: "Costs", value: stats.totalCosts, color: adminColor.amber },
+                    { key: "Shop net", value: Math.max(0, stats.shopNet), color: adminColor.green },
+                  ].map((seg) => (
+                    <Box
+                      key={seg.key}
+                      title={`${seg.key}: ${formatTHB(seg.value)}`}
+                      sx={{ width: `${(seg.value / stats.totalCollected) * 100}%`, background: seg.color }}
+                    />
+                  ))}
+                </Box>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mt: 1.25 }}>
+                  {[
+                    { key: "Therapist", value: stats.totalTherapistPayout, color: adminColor.accent },
+                    { key: "Taxi", value: stats.totalTaxi, color: adminColor.dim },
+                    { key: "Costs", value: stats.totalCosts, color: adminColor.amber },
+                    { key: "Shop net", value: stats.shopNet, color: adminColor.green },
+                  ].map((seg) => (
+                    <Box key={seg.key} sx={{ display: "inline-flex", alignItems: "center", gap: 0.75 }}>
+                      <Box sx={{ width: 9, height: 9, borderRadius: "3px", background: seg.color, flexShrink: 0 }} />
+                      <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.muted }}>
+                        {seg.key}{" "}
+                        <Box component="span" sx={{ fontWeight: 700, color: adminColor.text, fontVariantNumeric: "tabular-nums" }}>
+                          {formatTHB(seg.value)}
+                        </Box>
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
+          </Card>
+
+          {/* 🆕 Round 28s245 — circular-icon stat row, same widget style as
+              the Dashboard's period summary (28s241). Absorbs the old
+              Cancelled/Average cards so the page loses a row of noise. */}
+          <Card>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4,1fr)" }, gap: 2 }}>
+              {[
+                { icon: <ChartBar   size={20} weight="duotone" />, label: "Gross revenue",    value: formatTHB(stats.totalGross), sub: `${stats.countCompleted} bookings`, color: adminColor.accent },
+                { icon: <UserCircle size={20} weight="duotone" />, label: "Therapist payout", value: formatTHB(stats.totalTherapistPayout), sub: stats.totalDiscountAbsorbed > 0 ? "tier split · post-discount" : "tier-aware split", color: adminColor.green },
+                { icon: <Receipt    size={20} weight="duotone" />, label: "Avg per booking",  value: formatTHB(stats.countCompleted ? Math.round(stats.totalGross / stats.countCompleted) : 0), sub: "gross / completed", color: adminColor.highlight },
+                { icon: <XCircle    size={20} weight="duotone" />, label: "Cancelled",        value: String(stats.countCancelled), sub: "excluded from totals", color: adminColor.red },
+              ].map((c) => (
+                <Box key={c.label} sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 0.75 }}>
+                  <Box
+                    sx={{
+                      width: 44, height: 44, borderRadius: "50%",
+                      background: `${c.color}1A`, color: c.color,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}
+                  >
+                    {c.icon}
+                  </Box>
+                  <Typography sx={{ fontFamily: SERIF, fontSize: 17, fontWeight: 700, color: adminColor.text, letterSpacing: "-0.01em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+                    {c.value}
+                  </Typography>
+                  <Box>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      {c.label}
+                    </Typography>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim, mt: 0.2 }}>
+                      {c.sub}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          </Card>
 
           {/* Daily trend */}
           <Card>
-            <Eyebrow>Daily revenue</Eyebrow>
-            <Typography
-              sx={{
-                fontFamily: SERIF,
-                fontSize: 18,
-                fontWeight: 600,
-                color: adminColor.text,
-                mt: 0.5,
-                mb: 2,
-              }}
-            >
-              Gross by day · {trendDates.length} days
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, flexWrap: "wrap" }}>
+              <Box>
+                <Eyebrow>Daily revenue</Eyebrow>
+                <Typography
+                  sx={{
+                    fontFamily: SERIF,
+                    fontSize: 18,
+                    fontWeight: 600,
+                    color: adminColor.text,
+                    mt: 0.5,
+                  }}
+                >
+                  Gross by day · {trendDates.length} days
+                </Typography>
+              </Box>
+              {/* 🆕 Round 28s245 — surface the peak day so the tallest bar
+                  answers "which night was that?" without hovering. */}
+              {trendMax > 1 && (
+                <Box sx={{ textAlign: "right" }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    Peak
+                  </Typography>
+                  <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: adminColor.highlight, fontVariantNumeric: "tabular-nums" }}>
+                    {formatTHB(trendMax)}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
             <Box
               sx={{
                 display: "grid",
@@ -929,23 +988,29 @@ const AdminEarningsPage: React.FC = () => {
                 gap: "3px",
                 alignItems: "end",
                 height: 110,
+                mt: 2,
               }}
             >
               {trendDates.map((d) => {
                 const v = stats.byDay[d] ?? 0;
                 const pct = (v / trendMax) * 100;
+                const isPeak = v > 0 && v === trendMax;
                 return (
                   <Box
                     key={d}
                     title={`${d}: ${formatTHB(v)}`}
                     sx={{
                       height: `${pct}%`,
-                      background:
-                        v > 0
+                      // peak day in ink for emphasis; the rest in accent
+                      background: isPeak
+                        ? adminColor.highlight
+                        : v > 0
                           ? adminColor.accent
-                          : adminColor.panel2,
-                      borderRadius: "3px 3px 0 0",
+                          : adminColor.panel3,
+                      borderRadius: "4px 4px 0 0",
                       minHeight: 2,
+                      transition: "opacity 0.15s ease",
+                      "&:hover": { opacity: 0.75 },
                     }}
                   />
                 );
@@ -1047,7 +1112,10 @@ const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       borderRadius: "16px",
       background: adminColor.panel,
       border: `1px solid ${adminColor.line}`,
-      boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
+      // 🆕 Round 28s245 — the 0.25-alpha black shadow was tuned for the dark
+      //   theme; on the light surface it read as a heavy smudge. Soft
+      //   ink-tinted elevation instead (31,41,51 = #1F2933).
+      boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 6px 16px rgba(31,41,51,0.07)",
     }}
   >
     {children}
@@ -1069,40 +1137,8 @@ const Eyebrow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </Box>
 );
 
-const BigStat: React.FC<{
-  label: string;
-  value: string;
-  sub: string;
-  accent?: "brand" | "neutral";
-}> = ({ label, value, sub, accent = "neutral" }) => (
-  <Card>
-    <Eyebrow>{label}</Eyebrow>
-    <Typography
-      sx={{
-        fontFamily: SERIF,
-        fontSize: { xs: 24, md: 28 },
-        fontWeight: 700,
-        color: accent === "brand" ? adminColor.highlight : adminColor.text,
-        letterSpacing: "-0.02em",
-        marginTop: "6px",
-        lineHeight: 1.05,
-        fontVariantNumeric: "tabular-nums",
-      }}
-    >
-      {value}
-    </Typography>
-    <Typography
-      sx={{
-        fontFamily: SANS,
-        fontSize: 11.5,
-        color: adminColor.dim,
-        marginTop: "4px",
-      }}
-    >
-      {sub}
-    </Typography>
-  </Card>
-);
+// (BigStat removed in 28s245 — the headline grid it served was replaced by
+//  the hero Shop-net card + icon stat row.)
 
 const RankedRows: React.FC<{
   rows: { label: string; sub: string; value: string; pct: number }[];
@@ -1123,17 +1159,30 @@ const RankedRows: React.FC<{
   }
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
-      {rows.map((r) => (
+      {rows.map((r, i) => (
         <Box key={r.label}>
           <Box
             sx={{
               display: "flex",
-              justifyContent: "space-between",
-              alignItems: "baseline",
+              alignItems: "center",
               gap: 1,
               mb: 0.5,
             }}
           >
+            {/* 🆕 Round 28s245 — rank badge, medal on #1 (same treatment as
+                the Dashboard's By Therapist widget). */}
+            <Box
+              sx={{
+                width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
+                background: i === 0 ? `${adminColor.accent}22` : adminColor.panel2,
+                color: i === 0 ? adminColor.accent : adminColor.dim,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            >
+              {i === 0 ? <Medal size={12} weight="fill" /> : (
+                <Typography sx={{ fontSize: 10, fontWeight: 700 }}>{i + 1}</Typography>
+              )}
+            </Box>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography
                 sx={{
@@ -1177,6 +1226,7 @@ const RankedRows: React.FC<{
               background: adminColor.panel3,
               borderRadius: "999px",
               overflow: "hidden",
+              ml: "28px",
             }}
           >
             <Box
