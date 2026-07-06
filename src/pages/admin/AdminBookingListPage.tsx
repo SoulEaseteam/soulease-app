@@ -36,6 +36,16 @@
 //   • Active-status cards get a hover lift + deeper shadow (the affordance
 //     was static before; nothing signalled the card was part of a live
 //     board).
+//
+// 🆕 Round 28s254 (founder: "เพิ่มตัวกรอง" — all 3 offered) — date range,
+//   therapist, and payment-status filters, same pattern as the Earnings/
+//   Analytics filter rounds (28s243/244). Date range now controls the
+//   Firestore query itself (a custom range replaces the flat "last 500"
+//   with a proper createdAt >=/<= window); therapist + payment narrow the
+//   already-loaded set client-side. The summary strip and tab counts read
+//   the therapist/payment-narrowed set, so switching either updates what
+//   "Needs action" etc. mean — but never react to the free-text search,
+//   which is a look-up, not a persistent facet.
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -48,6 +58,10 @@ import {
   Drawer,
   IconButton,
   Divider,
+  Select,
+  MenuItem,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -56,10 +70,15 @@ import {
   updateDoc,
   doc,
   query,
+  where,
   orderBy,
   limit,
   Timestamp,
 } from "firebase/firestore";
+import dayjs, { type Dayjs } from "dayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { db } from "@/lib/firebase";
 import { fmtBKK } from "@/utils/time";
 import { formatTHB } from "@/utils/servicePricing";
@@ -174,6 +193,8 @@ const Row: React.FC<{ label: string; value?: string | React.ReactNode }> = ({ la
 // ──────────────────────────────────────────────────────────────────────
 // Page
 // ──────────────────────────────────────────────────────────────────────
+type DateMode = "all" | "custom";
+
 const AdminBookingListPage: React.FC = () => {
   const [bookings,    setBookings]    = useState<Booking[]>([]);
   const [loading,     setLoading]     = useState(true);
@@ -182,50 +203,86 @@ const AdminBookingListPage: React.FC = () => {
   const [toast,       setToast]       = useState<{ msg: string; ok: boolean } | null>(null);
   const [detailId,    setDetailId]    = useState<string | null>(null);
 
-  // ── realtime feed (bounded — fix #1) ───────────────────────────────
+  // 🆕 28s254 — date range + therapist + payment filters.
+  const [dateMode,        setDateMode]        = useState<DateMode>("all");
+  const [customStart,     setCustomStart]     = useState<Dayjs>(() => dayjs().subtract(30, "day").startOf("day"));
+  const [customEnd,       setCustomEnd]       = useState<Dayjs>(() => dayjs());
+  const [therapistFilter, setTherapistFilter] = useState("__ALL__");
+  const [paymentFilter,   setPaymentFilter]   = useState("__ALL__"); // __ALL__ | paid | unpaid
+
+  // ── realtime feed (bounded — fix #1; date-scoped when a custom range is
+  //   active — 28s254) ────────────────────────────────────────────────
   useEffect(() => {
-    const q = query(collection(db, "bookings"), orderBy("createdAt", "desc"), limit(FEED_LIMIT));
+    setLoading(true);
+    const filters: Parameters<typeof query>[1][] = [];
+    if (dateMode === "custom") {
+      filters.push(where("createdAt", ">=", Timestamp.fromDate(customStart.startOf("day").toDate())));
+      filters.push(where("createdAt", "<=", Timestamp.fromDate(customEnd.endOf("day").toDate())));
+    }
+    filters.push(orderBy("createdAt", "desc"), limit(FEED_LIMIT));
+    const q = query(collection(db, "bookings"), ...filters);
     const unsub = onSnapshot(q, (snap) => {
       setBookings(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Booking)));
       setLoading(false);
     }, () => setLoading(false));
     return () => unsub();
-  }, []);
+  }, [dateMode, customStart, customEnd]);
 
   const atCap = bookings.length >= FEED_LIMIT;
 
+  // 🆕 28s254 — therapist option list from the date-scoped set only (not
+  //   further narrowed by payment), so switching one filter never collapses
+  //   the other's choices.
+  const therapistOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const b of bookings) {
+      if (b.therapistId) map.set(b.therapistId, b.therapistName || b.therapistId);
+    }
+    return [...map.entries()];
+  }, [bookings]);
+
+  // Therapist + payment are persistent facets — they narrow what the summary
+  // strip and tab counts mean. Free-text search does NOT (it's a look-up).
+  const faceted = useMemo(() => {
+    return bookings.filter((b) => {
+      const matchTherapist = therapistFilter === "__ALL__" || b.therapistId === therapistFilter;
+      const matchPayment   = paymentFilter === "__ALL__" || (paymentFilter === "paid" ? isPaid(b) : !isPaid(b));
+      return matchTherapist && matchPayment;
+    });
+  }, [bookings, therapistFilter, paymentFilter]);
+
   // ── counts per bucket ──────────────────────────────────────────────
   const counts = useMemo(() => {
-    const c: Record<TabKey, number> = { all: bookings.length, pending: 0, confirmed: 0, completed: 0, cancelled: 0 };
-    for (const b of bookings) {
+    const c: Record<TabKey, number> = { all: faceted.length, pending: 0, confirmed: 0, completed: 0, cancelled: 0 };
+    for (const b of faceted) {
       if (b.status in c) c[b.status as TabKey]++;
     }
     return c;
-  }, [bookings]);
+  }, [faceted]);
 
-  // 🆕 28s253 — summary-strip figures. "Booked value" is a real sum over the
-  //   currently-loaded (bounded) set, not a fabricated/"today" number the
-  //   page can't actually see — it's honest about what it's summing.
+  // 🆕 28s253/254 — summary-strip figures over the faceted (date + therapist +
+  //   payment) set. "Booked value" is a real sum over what's actually loaded/
+  //   selected, never a fabricated "tonight" figure.
   const valueStats = useMemo(() => {
     let totalValue = 0, activeCount = 0;
-    for (const b of bookings) {
+    for (const b of faceted) {
       if (b.status === "cancelled") continue;
       activeCount++;
       totalValue += b.totalPrice ?? b.total ?? 0;
     }
     return { totalValue, activeCount };
-  }, [bookings]);
+  }, [faceted]);
 
-  // ── filtered list ─────────────────────────────────────────────────
+  // ── filtered list (facets + tab + search) ──────────────────────────
   const visible = useMemo(() => {
     const q = search.toLowerCase();
-    return bookings.filter((b) => {
+    return faceted.filter((b) => {
       const matchTab = tab === "all" || b.status === tab;
       const matchQ   = !q || [nameOf(b), b.phone, b.therapistName, b.serviceName, b.address, b.locationName, b.id]
         .join(" ").toLowerCase().includes(q);
       return matchTab && matchQ;
     });
-  }, [bookings, tab, search]);
+  }, [faceted, tab, search]);
 
   // ── write helpers ─────────────────────────────────────────────────
   const setStatus = async (id: string, status: string, reason?: string) => {
@@ -460,6 +517,82 @@ const AdminBookingListPage: React.FC = () => {
             );
           })}
         </Box>
+      </Box>
+
+      {/* 🆕 28s254 — date range + therapist + payment filters. */}
+      <Box
+        sx={{
+          px: { xs: 2, md: 3 }, pt: 1.25,
+          display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center",
+          "& .MuiInputBase-root": { color: adminColor.text },
+          "& .MuiInputLabel-root": { color: adminColor.muted },
+          "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 },
+          "& .MuiSvgIcon-root": { color: adminColor.muted },
+        }}
+      >
+        <ToggleButtonGroup
+          value={dateMode}
+          exclusive
+          size="small"
+          onChange={(_, v) => v && setDateMode(v as DateMode)}
+          sx={{
+            "& .MuiToggleButton-root": {
+              fontFamily: SANS, fontSize: 12.5, fontWeight: 600, textTransform: "none",
+              color: adminColor.muted, borderColor: adminColor.line2, padding: "6px 14px",
+              "&.Mui-selected": { color: "#fff", background: adminColor.accent, "&:hover": { background: adminColor.accentDeep } },
+            },
+          }}
+        >
+          <ToggleButton value="all">All time</ToggleButton>
+          <ToggleButton value="custom">Custom</ToggleButton>
+        </ToggleButtonGroup>
+
+        {dateMode === "custom" && (
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DatePicker
+              label="From"
+              value={customStart}
+              maxDate={customEnd}
+              onChange={(v) => v && setCustomStart(v)}
+              slotProps={{ textField: { size: "small", sx: { width: 130 } } }}
+            />
+            <DatePicker
+              label="To"
+              value={customEnd}
+              minDate={customStart}
+              maxDate={dayjs()}
+              onChange={(v) => v && setCustomEnd(v)}
+              slotProps={{ textField: { size: "small", sx: { width: 130 } } }}
+            />
+          </LocalizationProvider>
+        )}
+
+        {therapistOptions.length > 0 && (
+          <Select
+            size="small"
+            value={therapistFilter}
+            onChange={(e) => setTherapistFilter(e.target.value)}
+            sx={{ minWidth: 160, fontSize: 13 }}
+            MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
+          >
+            <MenuItem value="__ALL__">All therapists</MenuItem>
+            {therapistOptions.map(([id, name]) => (
+              <MenuItem key={id} value={id}>{name}</MenuItem>
+            ))}
+          </Select>
+        )}
+
+        <Select
+          size="small"
+          value={paymentFilter}
+          onChange={(e) => setPaymentFilter(e.target.value)}
+          sx={{ minWidth: 130, fontSize: 13 }}
+          MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
+        >
+          <MenuItem value="__ALL__">Any payment</MenuItem>
+          <MenuItem value="paid">Paid</MenuItem>
+          <MenuItem value="unpaid">Unpaid</MenuItem>
+        </Select>
       </Box>
 
       {/* ── card list ─────────────────────────────────────────────── */}
