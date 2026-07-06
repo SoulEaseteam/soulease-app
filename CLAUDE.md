@@ -1062,6 +1062,34 @@ commits, so the total never changes silently.
 
 Added `payment`/`paymentFee` to the page's local `Booking` interface.
 
+### 🆕 2026-07-06 — price made editable in the Bookings edit form (28s261)
+
+Founder: "แก้ราคาได้ ทั้งหมด" — reverses the 28s259 scope decision that
+excluded price ("กระทบราคาที่คำนวณไว้แล้ว, เสี่ยงเงินขัดกันถ้าให้แก้ด้วย").
+Founder wants it editable after all — no re-confirmation needed, this
+directly reopens a choice she made herself.
+
+- Service price + taxi fee are now free-form number inputs. **Total is
+  never itself an input** — always derived as
+  `service + taxi + paymentSurcharge(method, service+taxi)` — so it can't
+  drift from its own components no matter what gets typed.
+- The 28s260 surcharge preview now reads the LIVE typed service/taxi values
+  (not the stale stored ones), plus a new "New total: ฿X" line so the
+  operator sees the real final number before committing.
+- **Caught before shipping:** a draft of the audit-log enrichment
+  (before/after total on price changes) accidentally put
+  `priceChangedFrom`/`priceChangedTo` straight into the Firestore `patch`
+  object — which would have written those as real, permanent fields on the
+  booking doc. Fixed by splitting `onSaveDetails` into two arguments: the
+  actual Firestore patch, and a separate audit-only detail object that only
+  ever reaches `logAdminAction`, never `updateDoc`. **Rule: audit-trail
+  metadata and the Firestore write patch must never share one object** —
+  it's too easy for one to leak into the other.
+- **Also fixed** (spotted in the founder's screenshot, unrelated to the
+  price ask but the same Select): Payment Method dropdown could render
+  blank for bookings created before 28s260 (no `payment` field yet). Added
+  `displayEmpty` + a `renderValue` fallback so it always shows real text.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
