@@ -649,8 +649,8 @@ const AdminEarningsPage: React.FC = () => {
                     sx={{
                       display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5,
                       p: "10px 12px", borderRadius: "12px",
-                      background: paid ? "rgba(55,214,122,0.08)" : adminColor.panel2,
-                      border: `1px solid ${paid ? "rgba(55,214,122,0.3)" : adminColor.line}`,
+                      background: paid ? "rgba(22,163,74,0.08)" : adminColor.panel2,
+                      border: `1px solid ${paid ? "rgba(22,163,74,0.3)" : adminColor.line}`,
                     }}
                   >
                     <Box sx={{ minWidth: 0 }}>
@@ -675,7 +675,7 @@ const AdminEarningsPage: React.FC = () => {
                           background: paid ? "transparent" : adminColor.green,
                           color: paid ? adminColor.green : "#052012",
                           border: paid ? `1px solid ${adminColor.green}` : "none",
-                          "&:hover": { background: paid ? "rgba(55,214,122,0.1)" : adminColor.green },
+                          "&:hover": { background: paid ? "rgba(22,163,74,0.1)" : adminColor.green },
                         }}
                       >
                         {paid ? "✓ Paid" : "Mark paid"}

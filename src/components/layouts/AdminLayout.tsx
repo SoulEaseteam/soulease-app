@@ -357,10 +357,10 @@ const AdminLayout: React.FC = () => {
           px: 0,
           minWidth: 0,
           overflow: "hidden",
-          // 🆕 Round 28s237 — glow center now uses panel3 (a legitimate
-          //   blend toward the palette's own #5C6F7B), not a separately
-          //   invented hex, so the ambient glow stays inside the palette.
-          background: `radial-gradient(120% 60% at 50% -10%, ${adminColor.panel3} 0%, ${adminColor.bg} 45%)`,
+          // 🆕 Round 28s240 — the dark-mode "ambient glow" gradient is
+          //   pointless on a light surface (both ends are near-identical
+          //   pale tints now); flat bg reads cleaner in light mode.
+          background: adminColor.bg,
           color: adminColor.text,
         }}
       >

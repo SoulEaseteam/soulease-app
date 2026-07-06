@@ -191,10 +191,10 @@ const AdminTonightPage: React.FC = () => {
       {/* live counters */}
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
         <Chip label={`งานคืนนี้ ${counts.total}`} sx={{ fontWeight: 700, background: adminColor.panel, color: adminColor.text }} />
-        <Chip label={`กำลังไป/ถึง ${counts.enroute}`} sx={{ fontWeight: 700, background: "rgba(91,141,239,0.14)", color: adminColor.blue }} />
-        <Chip label={`กำลังนวด ${counts.in_session}`} sx={{ fontWeight: 700, background: "rgba(55,214,122,0.14)", color: adminColor.green }} />
+        <Chip label={`กำลังไป/ถึง ${counts.enroute}`} sx={{ fontWeight: 700, background: "rgba(37,99,235,0.14)", color: adminColor.blue }} />
+        <Chip label={`กำลังนวด ${counts.in_session}`} sx={{ fontWeight: 700, background: "rgba(22,163,74,0.14)", color: adminColor.green }} />
         {counts.overdue > 0 && (
-          <Chip label={`⚠️ เกินเวลา ${counts.overdue}`} sx={{ fontWeight: 800, background: "rgba(255,91,110,0.16)", color: adminColor.red }} />
+          <Chip label={`⚠️ เกินเวลา ${counts.overdue}`} sx={{ fontWeight: 800, background: "rgba(220,38,38,0.16)", color: adminColor.red }} />
         )}
       </Box>
 
@@ -227,7 +227,7 @@ const AdminTonightPage: React.FC = () => {
                 sx={{
                   borderRadius: 2,
                   border: overdue ? `1.5px solid ${adminColor.red}` : `1px solid ${adminColor.line}`,
-                  background: overdue ? "rgba(255,91,110,0.06)" : adminColor.panel,
+                  background: overdue ? "rgba(220,38,38,0.06)" : adminColor.panel,
                   p: 1.5,
                   borderLeft: `4px solid ${step.tone}`,
                 }}

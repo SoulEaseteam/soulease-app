@@ -531,6 +531,76 @@ a separately invented hue**, even one that "looks close." Current mapping:
 same way (5 exact anchors + blends only between two of them) to avoid this
 exact bug recurring.
 
+### 🆕 2026-06-14 (cont.) — Ocean Study trial on the customer site (28s238)
+
+Founder sent an OLD screenshot of the live customer-facing browse page
+("Escorts"/practitioner grid) with explicit color-role mapping: accent
+`#4E7E8C` = primary button, highlight `#1F2933` = prominent numbers/labels,
+dim `#5C6F7B` = darkest/secondary background. Confirmed (via AskUserQuestion)
+this meant the REAL customer site, not another admin mockup.
+
+Scoped to ONE component — `src/components/TherapistMinimalCard.tsx` — NOT
+the global `src/theme.ts` `brand.red` token that every other customer page
+(checkout, payment, booking flow) depends on. Added local `oceanAccent`/
+`oceanHighlight` consts in that file only; applied to the card focus outline,
+the starting-price color, and the "Book Now" button fill. This keeps the
+trial contained and reversible — revert = delete 2 consts + 3 usages in one
+file, nothing else touched.
+
+**Disclosed to founder:** the screenshot was from an older build — current
+i18n calls the tab "Practitioners" (not "Escorts", renamed in 28s226 for
+euphemism-table compliance) and the search bar is coded white, not dark navy,
+per an earlier documented decision. Reskin was applied to the CURRENT card
+component regardless; only the reference photo was stale.
+
+**If founder later asks to extend this beyond the one card** (e.g. full
+`brand.red` sitewide swap) — that is explicitly a SEPARATE, bigger decision
+(checkout/payment flow blast radius) and should get its own confirmation
+before touching `theme.ts`.
+
+### 🆕 2026-06-14 (cont.) — admin wordmark color unified (28s239)
+
+Founder: "SunRed Control ปรับให้เข้ากับธีมเดียวกัน" — the sidebar's "Control"
+label used `adminColor.highlight` while the topbar's used `adminColor.accent`,
+so the same wordmark showed two different colors depending on which chrome
+you looked at. Unified both onto `.accent` (`AdminLayout.tsx`, sidebar
+`<Typography>` + topbar `<Box component="span">`).
+
+### 🆕 2026-06-14 (cont.) — admin flipped dark → LIGHT Ocean Study (28s240)
+
+Founder: "เอาโทนสว่าง" (use the light tone). Same 5 official hex values as
+28s235/237, just reassigned which end is surface vs ink:
+
+- `bg` = `#DCEFF5` (lightest swatch, page background)
+- `panel` = `#FFFFFF` (pure white card — standard light-UI elevation, not
+  one of the 5 swatches but the accepted "paper" convention for a light
+  flip; `panel2`/`panel3` are blends toward `bg` for hover/secondary states)
+- `text` / `highlight` = `#1F2933` (the darkest swatch, now used as INK
+  instead of surface — prominent numbers read via weight/serif, not a
+  lighter color, since ink IS the dark anchor in light mode)
+- `accent` = `#4E7E8C` unchanged (works as a button fill in either mode)
+- Semantic state colors (green/blue/amber/red) were tuned bright-for-dark
+  before; darkened for contrast on the new white/light surfaces (still a
+  separate hue family from the teal accent, per design guidance):
+  green `#16A34A` · blue `#2563EB` · amber `#D97706` · red `#DC2626`.
+
+Removed dead `bg2`/`greenDeep`/`blueDeep` tokens (zero references). Audited
+every hardcoded `"#fff"` text-color usage across admin first — all sit on
+solid accent/semantic button fills, never directly on panel/bg, so the flip
+needed no separate per-component contrast fixes. Also found and fixed 6
+hardcoded `rgba(...)` tints in `AdminEarningsPage.tsx` (payout "paid" state)
+and `AdminTonightPage.tsx` (dispatch chips + overdue-card tint) that were
+still using the OLD dark-mode semantic RGB triplets — updated to match the
+new darkened hex values.
+
+`AdminLayout.tsx`'s main-content background also simplified: the dark-mode
+"ambient glow" radial-gradient made no visual sense once both gradient
+endpoints are near-identical pale tints, so it's now a flat `adminColor.bg`.
+
+**Still not yet re-audited for light mode** (should auto-flip correctly
+since they're fully token-based, but not visually re-confirmed this round):
+AdminDashboardPage, AdminUsersPage (CRM panel), AdminAuditLogPage.
+
 ### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
 
 **Trigger.** View shared Google Search Console 3-month data:
