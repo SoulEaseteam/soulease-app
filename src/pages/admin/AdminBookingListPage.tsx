@@ -32,6 +32,7 @@ import { fmtBKK } from "@/utils/time";
 import { formatTHB } from "@/utils/servicePricing";
 import { getServiceLabel } from "@/utils/serviceCatalog";
 import { ExportToExcel } from "@/utils/exportTools";
+import { logAdminAction } from "@/utils/auditLog";
 import {
   MagnifyingGlass,
   CheckCircle,
@@ -168,6 +169,11 @@ const AdminBookingListPage: React.FC = () => {
           ? { status, holdState: "confirmed", holdExpiresAt: null }
           : { status };
       await updateDoc(doc(db, "bookings", id), patch);
+      const auditAction =
+        status === "confirmed" ? "booking.confirm" :
+        status === "cancelled" ? "booking.cancel" :
+        status === "completed" ? "booking.complete" : null;
+      if (auditAction) void logAdminAction(auditAction, { bookingId: id });
       setToast({ msg: `Booking ${status}`, ok: true });
     } catch {
       setToast({ msg: "Update failed", ok: false });

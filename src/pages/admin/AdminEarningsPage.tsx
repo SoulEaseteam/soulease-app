@@ -34,13 +34,20 @@ import {
   query,
   where,
   Timestamp,
+  doc,
+  setDoc,
+  serverTimestamp,
   type DocumentData,
 } from "firebase/firestore";
 import dayjs, { type Dayjs } from "dayjs";
 
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { formatTHB } from "@/utils/servicePricing";
 import { getServiceLabel } from "@/utils/serviceCatalog";
+// 🆕 Round 28s234 (Phase 4 — Payout tracking) — Control Room tokens for the
+//   new Payout Tracker section.
+import { adminColor, adminFont } from "@/theme/adminTheme";
+import { logAdminAction } from "@/utils/auditLog";
 
 const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -310,6 +317,126 @@ const AdminEarningsPage: React.FC = () => {
     [stats.byDay, trendDates]
   );
 
+  // ── 🆕 Round 28s234 (Phase 4) — Payout tracker ────────────────────────
+  // Founder's original TODO on this page: "Track payouts (which therapist
+  // has been paid which week)". Independent of the `range` filter above
+  // (which is a rolling window and not a stable payout period) — this uses
+  // a fixed calendar week so "mark paid" persists against the SAME week
+  // every time the page loads. Stores one doc per therapist per week in a
+  // new `payouts` collection (admin-only, see firestore.rules).
+  const [payoutWeekStart, setPayoutWeekStart] = useState<Dayjs>(() => dayjs().startOf("week"));
+  const [payoutBookings, setPayoutBookings] = useState<BookingRow[]>([]);
+  const [payoutRecords, setPayoutRecords] = useState<Record<string, { paid: boolean; paidAt?: Timestamp | null }>>({});
+  const [payoutLoading, setPayoutLoading] = useState(true);
+  const [payoutBusy, setPayoutBusy] = useState<string | null>(null);
+
+  const payoutWeekEnd = useMemo(() => payoutWeekStart.add(7, "day"), [payoutWeekStart]);
+  const payoutWeekKey = useMemo(() => payoutWeekStart.format("YYYY-MM-DD"), [payoutWeekStart]);
+
+  // Bookings created within the selected week.
+  useEffect(() => {
+    setPayoutLoading(true);
+    const s = Timestamp.fromDate(payoutWeekStart.toDate());
+    const e = Timestamp.fromDate(payoutWeekEnd.toDate());
+    const q = query(
+      collection(db, "bookings"),
+      where("createdAt", ">=", s),
+      where("createdAt", "<", e)
+    );
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const arr: BookingRow[] = [];
+        snap.forEach((d0) => {
+          const d = d0.data() as DocumentData;
+          arr.push({
+            id: d0.id,
+            therapistId: d.therapistId ?? null,
+            therapistName: d.therapistName ?? null,
+            serviceId: d.serviceId ?? null,
+            serviceName: d.serviceName ?? null,
+            totalPrice: d.totalPrice ?? null,
+            servicePrice: d.servicePrice ?? null,
+            taxiFee: d.taxiFee ?? null,
+            status: d.status ?? "",
+            startAt: d.startAt ?? null,
+            createdAt: d.createdAt ?? null,
+            discountAmount: d.discountAmount ?? null,
+            discountCode: d.discountCode ?? null,
+          });
+        });
+        setPayoutBookings(arr);
+        setPayoutLoading(false);
+      },
+      () => setPayoutLoading(false)
+    );
+    return () => unsub();
+  }, [payoutWeekStart, payoutWeekEnd]);
+
+  // Existing payout records for this week (paid/unpaid state).
+  useEffect(() => {
+    const q = query(collection(db, "payouts"), where("weekKey", "==", payoutWeekKey));
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const rec: Record<string, { paid: boolean; paidAt?: Timestamp | null }> = {};
+        snap.forEach((d) => {
+          const data = d.data() as DocumentData;
+          rec[data.therapistId ?? d.id] = { paid: !!data.paid, paidAt: data.paidAt ?? null };
+        });
+        setPayoutRecords(rec);
+      },
+      () => setPayoutRecords({})
+    );
+    return () => unsub();
+  }, [payoutWeekKey]);
+
+  // Per-therapist payout for the selected week (same tier math as `stats`).
+  const payoutByTherapist = useMemo(() => {
+    const acc: Record<string, { name: string; jobs: number; payout: number }> = {};
+    for (const b of payoutBookings) {
+      if (b.status && EXCLUDED_STATUSES.has(b.status)) continue;
+      const service = b.servicePrice ?? 0;
+      const discount = b.discountAmount ?? 0;
+      const tPct = therapistPctFor(b.serviceId);
+      const commissionBase = Math.max(0, service - discount);
+      const payout = Math.round(commissionBase * tPct);
+      const tKey = b.therapistId ?? "(no therapist)";
+      const tName = b.therapistName ?? tKey;
+      if (!acc[tKey]) acc[tKey] = { name: tName, jobs: 0, payout: 0 };
+      acc[tKey].jobs += 1;
+      acc[tKey].payout += payout;
+    }
+    return acc;
+  }, [payoutBookings]);
+
+  const markPayout = async (therapistId: string, name: string, amount: number, jobs: number, paid: boolean) => {
+    const payoutId = `${payoutWeekKey}__${therapistId}`;
+    setPayoutBusy(payoutId);
+    try {
+      await setDoc(doc(db, "payouts", payoutId), {
+        weekKey: payoutWeekKey,
+        weekStart: payoutWeekStart.format("YYYY-MM-DD"),
+        weekEnd: payoutWeekEnd.format("YYYY-MM-DD"),
+        therapistId,
+        therapistName: name,
+        amount,
+        jobs,
+        paid,
+        paidAt: paid ? serverTimestamp() : null,
+        paidBy: paid ? (auth.currentUser?.email ?? null) : null,
+      });
+      void logAdminAction(paid ? "payout.mark_paid" : "payout.mark_unpaid", {
+        therapistId, therapistName: name, amount, weekKey: payoutWeekKey,
+      });
+    } catch (e) {
+      console.error("[payout] mark failed", e);
+      window.alert("บันทึกไม่สำเร็จ ลองใหม่");
+    } finally {
+      setPayoutBusy(null);
+    }
+  };
+
   const handleExportCSV = () => {
     const headers = [
       "Date",
@@ -442,6 +569,111 @@ const AdminEarningsPage: React.FC = () => {
           </ToggleButton>
         ))}
       </ToggleButtonGroup>
+
+      {/* 🆕 Round 28s234 (Phase 4) — Payout Tracker. Independent of the range
+          filter above; tracks "paid this calendar week" per therapist. */}
+      <Box
+        sx={{
+          mb: 3, borderRadius: "16px", background: adminColor.panel,
+          border: `1px solid ${adminColor.line}`, p: "18px 20px",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1, mb: 1.5 }}>
+          <Box>
+            <Typography sx={{ fontFamily: adminFont.serif, fontSize: 17, fontWeight: 600, color: adminColor.text }}>
+              Payout tracker
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted, mt: 0.25 }}>
+              Week of {payoutWeekStart.format("D MMM")} – {payoutWeekEnd.subtract(1, "day").format("D MMM YYYY")}
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", gap: 0.75 }}>
+            <Button
+              size="small"
+              onClick={() => setPayoutWeekStart((w) => w.subtract(7, "day"))}
+              sx={{ minWidth: 0, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: "8px", textTransform: "none" }}
+            >
+              ← Prev
+            </Button>
+            <Button
+              size="small"
+              disabled={payoutWeekStart.isSame(dayjs().startOf("week"), "day")}
+              onClick={() => setPayoutWeekStart(dayjs().startOf("week"))}
+              sx={{ minWidth: 0, color: adminColor.champagne, border: `1px solid ${adminColor.line2}`, borderRadius: "8px", textTransform: "none" }}
+            >
+              This week
+            </Button>
+            <Button
+              size="small"
+              disabled={payoutWeekEnd.isAfter(dayjs())}
+              onClick={() => setPayoutWeekStart((w) => w.add(7, "day"))}
+              sx={{ minWidth: 0, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: "8px", textTransform: "none" }}
+            >
+              Next →
+            </Button>
+          </Box>
+        </Box>
+
+        {payoutLoading ? (
+          <Box sx={{ py: 3, textAlign: "center" }}>
+            <CircularProgress size={22} sx={{ color: adminColor.crimson }} />
+          </Box>
+        ) : Object.keys(payoutByTherapist).length === 0 ? (
+          <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.dim }}>
+            No completed jobs this week.
+          </Typography>
+        ) : (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+            {Object.entries(payoutByTherapist)
+              .sort((a, b) => b[1].payout - a[1].payout)
+              .map(([tKey, row]) => {
+                const rec = payoutRecords[tKey];
+                const paid = !!rec?.paid;
+                const busyId = `${payoutWeekKey}__${tKey}`;
+                return (
+                  <Box
+                    key={tKey}
+                    sx={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5,
+                      p: "10px 12px", borderRadius: "12px",
+                      background: paid ? "rgba(55,214,122,0.08)" : adminColor.panel2,
+                      border: `1px solid ${paid ? "rgba(55,214,122,0.3)" : adminColor.line}`,
+                    }}
+                  >
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography sx={{ fontFamily: SANS, fontSize: 13.5, fontWeight: 700, color: adminColor.text }}>
+                        {row.name}
+                      </Typography>
+                      <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.muted }}>
+                        {row.jobs} job{row.jobs === 1 ? "" : "s"}
+                        {paid && rec?.paidAt?.toDate && ` · paid ${dayjs(rec.paidAt.toDate()).format("D MMM")}`}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
+                      <Typography sx={{ fontFamily: adminFont.serif, fontSize: 15, fontWeight: 700, color: adminColor.champagne }}>
+                        {formatTHB(row.payout)}
+                      </Typography>
+                      <Button
+                        size="small"
+                        disabled={payoutBusy === busyId}
+                        onClick={() => void markPayout(tKey, row.name, row.payout, row.jobs, !paid)}
+                        sx={{
+                          minWidth: 84, borderRadius: "8px", textTransform: "none", fontWeight: 700, fontSize: 12,
+                          background: paid ? "transparent" : adminColor.green,
+                          color: paid ? adminColor.green : "#052012",
+                          border: paid ? `1px solid ${adminColor.green}` : "none",
+                          "&:hover": { background: paid ? "rgba(55,214,122,0.1)" : adminColor.green },
+                        }}
+                      >
+                        {paid ? "✓ Paid" : "Mark paid"}
+                      </Button>
+                    </Box>
+                  </Box>
+                );
+              })}
+          </Box>
+        )}
+      </Box>
 
       {loading ? (
         <Box sx={{ textAlign: "center", py: 6 }}>

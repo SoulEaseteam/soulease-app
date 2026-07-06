@@ -191,6 +191,10 @@ const AdminReportPage = React.lazy(
 const AdminBlockedDevicesPage = React.lazy(
   () => import("@/pages/admin/AdminBlockedDevicesPage")
 );
+// 🆕 Round 28s234 (Phase 4) — Audit log viewer.
+const AdminAuditLogPage = React.lazy(
+  () => import("@/pages/admin/AdminAuditLogPage")
+);
 const AdminUsersPage = React.lazy(
   () => import("@/pages/admin/AdminUsersPage")
 );
@@ -354,6 +358,8 @@ export default function App() {
             path="blocked-devices"
             element={<AdminBlockedDevicesPage />}
           />
+          {/* 🆕 Round 28s234 (Phase 4) — Audit log viewer. */}
+          <Route path="audit-log" element={<AdminAuditLogPage />} />
           <Route path="pages-list" element={<AdminPagesListPage />} />
           <Route
             path="advanced-settings"

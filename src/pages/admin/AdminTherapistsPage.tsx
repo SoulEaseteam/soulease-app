@@ -46,6 +46,7 @@ import { useNavigate } from "react-router-dom";
 //   ("I set her available but the site says closed").
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
 import type { Therapist } from "@/types/therapist";
+import { logAdminAction } from "@/utils/auditLog";
 
 // ==========================================================
 // TYPES
@@ -148,6 +149,9 @@ const AdminTherapistsPage: React.FC = () => {
         });
       }
       await batch.commit();
+      void logAdminAction(mode === "all-available" ? "therapist.relight_all" : "therapist.reset_auto", {
+        count: therapists.length,
+      });
     } catch (e) {
       console.error("[rosterBatch] failed", e);
       window.alert("อัปเดตไม่สำเร็จ ลองใหม่อีกครั้ง");
