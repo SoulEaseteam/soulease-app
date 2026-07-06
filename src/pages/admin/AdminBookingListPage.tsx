@@ -21,6 +21,21 @@
 //   7. aria-labels on icon-only buttons.
 //   8. Unknown statuses get a neutral badge instead of pending-red, and
 //      refunded/no_show are labelled.
+//
+// 🆕 Round 28s253 (founder: "แก้ให้สวยขึ้น admin/bookings") — visual pass on
+//   top of the 28s252 fixes, still Ocean Study, no new colors:
+//   • A "what needs you" summary strip up top (pending / active / booked
+//     value) so the operator reads priority before scanning cards.
+//   • Search + status tabs merged into one control row (was two stacked
+//     full-width rows) — tighter, and the tabs no longer eat a whole line
+//     on desktop.
+//   • Cards now visually RECEDE once their story is over: completed/
+//     cancelled cards sit on a duller panel, skip the hover lift, and their
+//     price goes ink instead of accent — so the eye lands on what's still
+//     actionable, not on history.
+//   • Active-status cards get a hover lift + deeper shadow (the affordance
+//     was static before; nothing signalled the card was part of a live
+//     board).
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -188,6 +203,19 @@ const AdminBookingListPage: React.FC = () => {
     return c;
   }, [bookings]);
 
+  // 🆕 28s253 — summary-strip figures. "Booked value" is a real sum over the
+  //   currently-loaded (bounded) set, not a fabricated/"today" number the
+  //   page can't actually see — it's honest about what it's summing.
+  const valueStats = useMemo(() => {
+    let totalValue = 0, activeCount = 0;
+    for (const b of bookings) {
+      if (b.status === "cancelled") continue;
+      activeCount++;
+      totalValue += b.totalPrice ?? b.total ?? 0;
+    }
+    return { totalValue, activeCount };
+  }, [bookings]);
+
   // ── filtered list ─────────────────────────────────────────────────
   const visible = useMemo(() => {
     const q = search.toLowerCase();
@@ -310,7 +338,7 @@ const AdminBookingListPage: React.FC = () => {
           aria-label="Export bookings to Excel"
           style={{
             display: "flex", alignItems: "center", gap: 6,
-            height: 36, padding: "0 14px", borderRadius: 999,
+            height: 40, padding: "0 18px", borderRadius: 999,
             background: adminColor.panel, border: `1px solid ${adminColor.line2}`,
             color: adminColor.text, fontFamily: SANS, fontSize: 13, fontWeight: 600, cursor: "pointer",
           }}
@@ -319,13 +347,54 @@ const AdminBookingListPage: React.FC = () => {
         </motion.button>
       </Box>
 
-      {/* ── search ─────────────────────────────────────────────────── */}
-      <Box sx={{ px: { xs: 2, md: 3 }, pt: 2 }}>
+      {/* 🆕 28s253 — summary strip: what needs the operator's attention first,
+          before any card is scanned. */}
+      <Box
+        sx={{
+          px: { xs: 2, md: 3 }, pt: 2.5,
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", sm: "repeat(3,1fr)" },
+          gap: 1.25,
+        }}
+      >
+        {[
+          { label: "Needs action",  value: String(counts.pending),               sub: "pending confirmation", rail: adminColor.accent },
+          { label: "In progress",   value: String(counts.confirmed),             sub: "confirmed · dispatched", rail: adminColor.green },
+          { label: "Booked value",  value: formatTHB(valueStats.totalValue),     sub: `${valueStats.activeCount} bookings · excl. cancelled`, rail: adminColor.dim },
+        ].map((s) => (
+          <Box
+            key={s.label}
+            sx={{
+              position: "relative", overflow: "hidden",
+              background: adminColor.panel, border: `1px solid ${adminColor.line}`,
+              borderRadius: "18px", p: "16px 18px",
+              boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 8px 22px rgba(31,41,51,0.07)",
+              "&::before": {
+                content: '""', position: "absolute", left: 0, top: 14, bottom: 14, width: 3,
+                borderRadius: 3, background: s.rail,
+              },
+            }}
+          >
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: adminColor.muted, pl: 1.5 }}>
+              {s.label}
+            </Typography>
+            <Typography sx={{ ...adminFigureSx, fontSize: 25, mt: 0.75, pl: 1.5, lineHeight: 1 }}>
+              {s.value}
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.dim, mt: 0.5, pl: 1.5 }}>
+              {s.sub}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+
+      {/* ── search + status tabs (merged into one control row — 28s253) ── */}
+      <Box sx={{ px: { xs: 2, md: 3 }, pt: 2, display: "flex", gap: 1.25, flexWrap: "wrap", alignItems: "center" }}>
         <Box
           sx={{
             display: "flex", alignItems: "center", gap: 1,
-            px: 1.5, height: 42,
-            borderRadius: "12px",
+            px: 1.5, height: 44, flex: "1 1 220px",
+            borderRadius: "13px",
             background: adminColor.panel,
             border: `1px solid ${adminColor.line}`,
           }}
@@ -338,61 +407,59 @@ const AdminBookingListPage: React.FC = () => {
             sx={{ flex: 1, fontFamily: SANS, fontSize: 13, color: adminColor.text }}
           />
         </Box>
-      </Box>
 
-      {/* ── filter tabs ────────────────────────────────────────────── */}
-      <Box
-        sx={{
-          display: "flex",
-          gap: 0.75,
-          px: { xs: 2, md: 3 },
-          pt: 1.5,
-          overflowX: "auto",
-          pb: 0.5,
-          "&::-webkit-scrollbar": { display: "none" },
-        }}
-      >
-        {TABS.map((t) => {
-          const active = tab === t.key;
-          return (
-            <motion.button
-              key={t.key}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setTab(t.key)}
-              aria-pressed={active}
-              style={{
-                flexShrink: 0,
-                height: 32,
-                padding: "0 12px",
-                borderRadius: 999,
-                background: active ? adminColor.accent : adminColor.panel,
-                border: active ? "none" : `1px solid ${adminColor.line2}`,
-                color: active ? "#fff" : adminColor.muted,
-                fontFamily: SANS,
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: "pointer",
-                boxShadow: active ? "0 4px 12px rgba(78,126,140,0.25)" : "none",
-                display: "flex", alignItems: "center", gap: 5,
-              }}
-            >
-              {t.label}
-              {counts[t.key] > 0 && (
-                <Box
-                  component="span"
-                  sx={{
-                    minWidth: 18, height: 18, borderRadius: 999, px: "5px",
-                    background: active ? "rgba(255,255,255,0.25)" : `${adminColor.accent}1A`,
-                    color: active ? "#fff" : adminColor.accent,
-                    fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center",
-                  }}
-                >
-                  {counts[t.key]}
-                </Box>
-              )}
-            </motion.button>
-          );
-        })}
+        <Box
+          sx={{
+            display: "flex",
+            gap: 0.75,
+            overflowX: "auto",
+            flexShrink: 0,
+            "&::-webkit-scrollbar": { display: "none" },
+          }}
+        >
+          {TABS.map((t) => {
+            const active = tab === t.key;
+            return (
+              <motion.button
+                key={t.key}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setTab(t.key)}
+                aria-pressed={active}
+                style={{
+                  flexShrink: 0,
+                  height: 36,
+                  padding: "0 14px",
+                  borderRadius: 999,
+                  background: active ? adminColor.accent : adminColor.panel,
+                  border: active ? "none" : `1px solid ${adminColor.line2}`,
+                  color: active ? "#fff" : adminColor.muted,
+                  fontFamily: SANS,
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  boxShadow: active ? "0 5px 14px rgba(78,126,140,0.28)" : "none",
+                  display: "flex", alignItems: "center", gap: 5,
+                  transition: "border-color 0.15s ease, color 0.15s ease",
+                }}
+              >
+                {t.label}
+                {counts[t.key] > 0 && (
+                  <Box
+                    component="span"
+                    sx={{
+                      minWidth: 19, height: 19, borderRadius: 999, px: "5px",
+                      background: active ? "rgba(255,255,255,0.24)" : `${adminColor.accent}1F`,
+                      color: active ? "#fff" : adminColor.accent,
+                      fontSize: 10.5, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center",
+                    }}
+                  >
+                    {counts[t.key]}
+                  </Box>
+                )}
+              </motion.button>
+            );
+          })}
+        </Box>
       </Box>
 
       {/* ── card list ─────────────────────────────────────────────── */}
@@ -509,6 +576,10 @@ const BookingCard: React.FC<{
   const isPending   = b.status === "pending";
   const isConfirmed = b.status === "confirmed";
   const paid        = isPaid(b);
+  // 🆕 28s253 — "terminal" bookings (done/cancelled) recede: duller panel,
+  //   no hover lift, ink price instead of accent. Keeps the eye on what's
+  //   still actionable rather than history.
+  const isTerminal  = b.status === "completed" || b.status === "cancelled";
 
   const dateLabel = b.startAt?.toDate
     ? fmtBKK(b.startAt.toDate(), "ddd D MMM · HH:mm")
@@ -521,11 +592,20 @@ const BookingCard: React.FC<{
   return (
     <Box
       sx={{
-        borderRadius: "18px",
-        background: adminColor.panel,
+        borderRadius: "20px",
+        background: isTerminal ? adminColor.panel2 : adminColor.panel,
         border: `1px solid ${adminColor.line}`,
-        boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 6px 16px rgba(31,41,51,0.06)",
+        boxShadow: isTerminal
+          ? "0 1px 2px rgba(31,41,51,0.03)"
+          : "0 1px 2px rgba(31,41,51,0.04), 0 8px 22px rgba(31,41,51,0.07)",
         overflow: "hidden",
+        transition: "transform 0.18s ease, box-shadow 0.18s ease",
+        ...(!isTerminal && {
+          "&:hover": {
+            transform: "translateY(-3px)",
+            boxShadow: "0 2px 4px rgba(31,41,51,0.05), 0 16px 40px rgba(31,41,51,0.12)",
+          },
+        }),
       }}
     >
       {/* accent stripe */}
@@ -534,7 +614,7 @@ const BookingCard: React.FC<{
       <Box sx={{ p: "14px 16px 12px" }}>
         {/* row 1: therapist + status badge */}
         <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, mb: 0.75 }}>
-          <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 600, color: adminColor.text, lineHeight: 1.2 }}>
+          <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 600, color: isTerminal ? adminColor.muted : adminColor.text, lineHeight: 1.2 }}>
             {b.therapistName}
           </Typography>
           <Box sx={{ px: "9px", py: "3px", borderRadius: 999, background: cfg.badge.bg, flexShrink: 0 }}>
@@ -607,7 +687,7 @@ const BookingCard: React.FC<{
         {/* bottom row: price + paid toggle + primary CTA */}
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
           <Box>
-            <Typography sx={{ ...adminFigureSx, fontSize: 18, color: adminColor.accent, lineHeight: 1 }}>
+            <Typography sx={{ ...adminFigureSx, fontSize: 18, color: isTerminal ? adminColor.dim : adminColor.accent, lineHeight: 1 }}>
               {formatTHB(total)}
             </Typography>
             {b.taxiFee ? (
