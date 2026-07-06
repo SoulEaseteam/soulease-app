@@ -18,7 +18,14 @@
 // What it deliberately doesn't do:
 //   • Per-user / session-level drill-down (privacy + scope creep)
 //   • Real-time live counter (refresh every 30s is fine)
-//   • Date range pickers — sticking to last 7 / 30 days for v1
+//
+// 🆕 Round 28s243 (founder: "เพิ่มตัวกรอง" — "ทั้งหมด", i.e. all 3 filter
+//   ideas offered) — added a custom date-range picker (was locked to preset
+//   7d/30d), a concierge-mode filter, and a language filter. All three
+//   compose: the Firestore query narrows by date range server-side, then
+//   mode/lang narrow `events` client-side before the existing aggregation
+//   runs — so every widget on the page (funnel, by-mode, top services,
+//   channels, daily trend) reflects the combined filter, not just one.
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -27,6 +34,8 @@ import {
   CircularProgress,
   ToggleButton,
   ToggleButtonGroup,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import {
   collection,
@@ -36,7 +45,10 @@ import {
   Timestamp,
   type DocumentData,
 } from "firebase/firestore";
-import dayjs from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 import { db } from "@/lib/firebase";
 // 🆕 Round 28s242 (founder: "analytics" — bring the last un-restyled admin
@@ -58,25 +70,51 @@ interface AnalyticsEvent {
   ts?: Timestamp | null;
 }
 
-type Range = "7d" | "30d";
+type Range = "7d" | "30d" | "custom";
+
+const LANG_OPTIONS = ["en", "th", "zh", "ja", "ko"] as const;
+const MODE_OPTIONS = ["prime", "evening", "day", "off"] as const;
+const MODE_FILTER_LABEL: Record<(typeof MODE_OPTIONS)[number], string> = {
+  prime: "🌙 Prime (22:00–04:00)",
+  evening: "🌅 Evening (17:00–22:00)",
+  day: "☀ Day (09:00–17:00)",
+  off: "☕ Off-hours (04:00–09:00)",
+};
+
+const selectSx = {
+  minWidth: 150, fontSize: 13,
+  "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 },
+};
+const selectMenuProps = {
+  PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" } },
+};
 
 const AdminAnalyticsPage: React.FC = () => {
   const [range, setRange] = useState<Range>("7d");
+  const [customStart, setCustomStart] = useState<Dayjs>(dayjs().subtract(7, "day"));
+  const [customEnd, setCustomEnd] = useState<Dayjs>(dayjs());
+  const [modeFilter, setModeFilter] = useState("__ALL__");
+  const [langFilter, setLangFilter] = useState("__ALL__");
   const [events, setEvents] = useState<AnalyticsEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Subscribe to events in the chosen window. Filters server-side by
-  // `ts >= cutoff` so we don't pull more than necessary.
+  // `ts >= cutoff` (and `ts <= upper` for a custom range) so we don't pull
+  // more than necessary.
   useEffect(() => {
     setLoading(true);
-    const days = range === "7d" ? 7 : 30;
-    const cutoff = Timestamp.fromDate(
-      dayjs().subtract(days, "day").toDate()
-    );
-    const q = query(
-      collection(db, "analytics_events"),
-      where("ts", ">=", cutoff)
-    );
+    let cutoff: Timestamp;
+    let upper: Timestamp | null = null;
+    if (range === "custom") {
+      cutoff = Timestamp.fromDate(customStart.startOf("day").toDate());
+      upper = Timestamp.fromDate(customEnd.endOf("day").toDate());
+    } else {
+      const days = range === "7d" ? 7 : 30;
+      cutoff = Timestamp.fromDate(dayjs().subtract(days, "day").toDate());
+    }
+    const filters: Parameters<typeof query>[1][] = [where("ts", ">=", cutoff)];
+    if (upper) filters.push(where("ts", "<=", upper));
+    const q = query(collection(db, "analytics_events"), ...filters);
     const unsub = onSnapshot(
       q,
       (snap) => {
@@ -103,9 +141,20 @@ const AdminAnalyticsPage: React.FC = () => {
       }
     );
     return () => unsub();
-  }, [range]);
+  }, [range, customStart, customEnd]);
 
-  // ── Aggregations (memoised, recomputed on event/range change) ──
+  // 🆕 Round 28s243 — mode/lang filters narrow client-side, after the
+  //   date-range query already narrowed server-side.
+  const filteredEvents = useMemo(() => {
+    if (modeFilter === "__ALL__" && langFilter === "__ALL__") return events;
+    return events.filter((ev) => {
+      if (modeFilter !== "__ALL__" && (ev.mode ?? "day") !== modeFilter) return false;
+      if (langFilter !== "__ALL__" && ev.lang !== langFilter) return false;
+      return true;
+    });
+  }, [events, modeFilter, langFilter]);
+
+  // ── Aggregations (memoised, recomputed on filtered events change) ──
   const stats = useMemo(() => {
     const byEvent: Record<string, number> = {};
     const sessionsByEvent: Record<string, Set<string>> = {};
@@ -122,7 +171,7 @@ const AdminAnalyticsPage: React.FC = () => {
       booking_complete: {},
     };
 
-    for (const ev of events) {
+    for (const ev of filteredEvents) {
       byEvent[ev.event] = (byEvent[ev.event] ?? 0) + 1;
 
       if (ev.sid) {
@@ -187,17 +236,24 @@ const AdminAnalyticsPage: React.FC = () => {
       channels,
       dailyByEvent,
     };
-  }, [events]);
+  }, [filteredEvents]);
 
-  // Build the 7/30-day x-axis (newest first → oldest)
+  // Build the x-axis (newest first → oldest). Custom ranges are capped at
+  // 60 days so the bar-per-day trend chart doesn't degrade into hairlines.
   const trendDates = useMemo(() => {
-    const days = range === "7d" ? 7 : 30;
+    let days: number;
+    if (range === "custom") {
+      days = Math.min(60, Math.max(1, customEnd.startOf("day").diff(customStart.startOf("day"), "day") + 1));
+    } else {
+      days = range === "7d" ? 7 : 30;
+    }
+    const anchor = range === "custom" ? customEnd : dayjs();
     const out: string[] = [];
     for (let i = days - 1; i >= 0; i--) {
-      out.push(dayjs().subtract(i, "day").format("YYYY-MM-DD"));
+      out.push(anchor.subtract(i, "day").format("YYYY-MM-DD"));
     }
     return out;
-  }, [range]);
+  }, [range, customStart, customEnd]);
 
   const trendMaxHome = useMemo(
     () =>
@@ -237,37 +293,90 @@ const AdminAnalyticsPage: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* Range toggle */}
-      <ToggleButtonGroup
-        value={range}
-        exclusive
-        size="small"
-        onChange={(_, v) => v && setRange(v as Range)}
+      {/* 🆕 Round 28s243 — filter bar: date range (with custom From/To) +
+           concierge-mode filter + language filter. All three narrow every
+           widget below via `filteredEvents`. */}
+      <Box
         sx={{
-          mb: 3,
-          "& .MuiToggleButton-root": {
-            fontFamily: SANS, fontSize: 12.5, fontWeight: 600, textTransform: "none",
-            color: adminColor.muted, borderColor: adminColor.line, padding: "6px 16px",
-            "&.Mui-selected": { color: "#fff", background: adminColor.accent, "&:hover": { background: adminColor.accentDeep } },
-          },
+          borderRadius: "16px", background: adminColor.panel, border: `1px solid ${adminColor.line}`,
+          p: "14px 16px", display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center", mb: 3,
+          "& .MuiInputBase-root": { color: adminColor.text },
+          "& .MuiInputLabel-root": { color: adminColor.muted },
+          "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 },
+          "& .MuiSvgIcon-root": { color: adminColor.muted },
         }}
       >
-        <ToggleButton value="7d">Last 7 days</ToggleButton>
-        <ToggleButton value="30d">Last 30 days</ToggleButton>
-      </ToggleButtonGroup>
+        <ToggleButtonGroup
+          value={range}
+          exclusive
+          size="small"
+          onChange={(_, v) => v && setRange(v as Range)}
+          sx={{
+            "& .MuiToggleButton-root": {
+              fontFamily: SANS, fontSize: 12.5, fontWeight: 600, textTransform: "none",
+              color: adminColor.muted, borderColor: adminColor.line, padding: "6px 16px",
+              "&.Mui-selected": { color: "#fff", background: adminColor.accent, "&:hover": { background: adminColor.accentDeep } },
+            },
+          }}
+        >
+          <ToggleButton value="7d">7 days</ToggleButton>
+          <ToggleButton value="30d">30 days</ToggleButton>
+          <ToggleButton value="custom">Custom</ToggleButton>
+        </ToggleButtonGroup>
+
+        {range === "custom" && (
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DatePicker
+              label="From"
+              value={customStart}
+              maxDate={customEnd}
+              onChange={(v) => v && setCustomStart(v)}
+              slotProps={{ textField: { size: "small", sx: { width: 130 } } }}
+            />
+            <DatePicker
+              label="To"
+              value={customEnd}
+              minDate={customStart}
+              maxDate={dayjs()}
+              onChange={(v) => v && setCustomEnd(v)}
+              slotProps={{ textField: { size: "small", sx: { width: 130 } } }}
+            />
+          </LocalizationProvider>
+        )}
+
+        <Select size="small" value={modeFilter} onChange={(e) => setModeFilter(e.target.value)} sx={selectSx} MenuProps={selectMenuProps}>
+          <MenuItem value="__ALL__">All modes</MenuItem>
+          {MODE_OPTIONS.map((m) => (
+            <MenuItem key={m} value={m}>{MODE_FILTER_LABEL[m]}</MenuItem>
+          ))}
+        </Select>
+
+        <Select size="small" value={langFilter} onChange={(e) => setLangFilter(e.target.value)} sx={selectSx} MenuProps={selectMenuProps}>
+          <MenuItem value="__ALL__">All languages</MenuItem>
+          {LANG_OPTIONS.map((l) => (
+            <MenuItem key={l} value={l}>{l.toUpperCase()}</MenuItem>
+          ))}
+        </Select>
+      </Box>
 
       {loading ? (
         <Box sx={{ textAlign: "center", py: 6 }}>
           <CircularProgress size={28} sx={{ color: adminColor.accent }} />
         </Box>
-      ) : events.length === 0 ? (
+      ) : filteredEvents.length === 0 ? (
         <Card>
           <Typography
             sx={{ fontFamily: SANS, fontSize: 14, color: adminColor.muted }}
           >
-            No events yet. Make sure <code>firestore.rules</code> have been
-            published with the <code>analytics_events</code> rule, and that
-            the site is being viewed on a non-localhost domain.
+            {events.length === 0 ? (
+              <>
+                No events yet. Make sure <code>firestore.rules</code> have
+                been published with the <code>analytics_events</code> rule,
+                and that the site is being viewed on a non-localhost domain.
+              </>
+            ) : (
+              "No events match this mode/language filter for the selected range."
+            )}
           </Typography>
         </Card>
       ) : (
@@ -406,7 +515,7 @@ const AdminAnalyticsPage: React.FC = () => {
                 mb: 2,
               }}
             >
-              Home views vs Bookings · {range === "7d" ? "7" : "30"} days
+              Home views vs Bookings · {trendDates.length} days
             </Typography>
             <Box
               sx={{
