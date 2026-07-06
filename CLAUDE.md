@@ -601,6 +601,45 @@ endpoints are near-identical pale tints, so it's now a flat `adminColor.bg`.
 since they're fully token-based, but not visually re-confirmed this round):
 AdminDashboardPage, AdminUsersPage (CRM panel), AdminAuditLogPage.
 
+### 🆕 2026-06-14 (cont.) — AdminDashboardPage widget redesign (28s241)
+
+Founder shared a reference screenshot of a generic SaaS admin template
+("Dashboard แบบนี้") — icon-circle stat row, revenue+budget+orders row,
+sales-report table, goal-overview ring, transactions feed, browser-stats
+bars. Scope confirmed via AskUserQuestion: **widget structure only, keep
+the Ocean Study light palette from 28s240** — the reference's purple/
+gradient colors were explicitly NOT adopted.
+
+New widgets on `AdminDashboardPage.tsx`, all backed by real Firestore data
+already loaded on the page (no fabricated numbers — the reference's "68.2%
+more than last month" style stats are only rendered here when a real prior
+month exists to compute the delta from):
+- Period stat row → circular icon badges (was plain 4-cards).
+- Row: Monthly Revenue bar chart (existing, kept) + a **Completion Rate**
+  donut ring (custom CSS conic-gradient, not a chart-lib import — see
+  `DonutRing` component near the top of the file) + an **Orders Today**
+  card with a real month-over-month % delta + sparkline.
+- Row: **By Therapist** (top 5 by period revenue, medal on #1) + **By
+  Service** (share-of-revenue progress bars) — both aggregated from the
+  same `allRows` the page already fetches, added to the `stats` useMemo.
+- **Recent Activity** — new live `onSnapshot` on `auditLogs` (collection
+  built in 28s234 for `/admin/audit-log`, never surfaced on the dashboard
+  itself before this).
+- Platform-count tiles (Customers/Therapists/Services) kept, just moved
+  below the new sections.
+
+No functional/data-model changes — pending-confirmation quick actions,
+filter bar, quick-action tiles, Tonight-ops entry banner untouched.
+
+**Preview tooling note (still true, re-confirmed this round):** the
+`mcp__Claude_Preview__*` tools in this sandbox have no dev server wired to
+this repo (only an unrelated Artifact viewer). Verification for this
+change was tsc clean → build OK → `vercel --prod --yes` → direct curl of
+the deployed `AdminDashboardPage-*.js` chunk confirming the new widget
+strings ("Completion Rate", "By Therapist", "By Service", "Recent
+Activity", "Orders Today") are live — same pattern as every other visual
+change this session.
+
 ### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
 
 **Trigger.** View shared Google Search Console 3-month data:
