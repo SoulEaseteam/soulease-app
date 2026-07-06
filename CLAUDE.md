@@ -1447,6 +1447,32 @@ pre-armed into edit mode, no separate page" design from 28s271 is the
 correct intended behavior** — this round only fixed the data-loading
 bug, no architecture change needed.
 
+### 🆕 2026-07-06 — disabled Chrome auto-translate mangling admin (28s273)
+
+Founder screenshot: her own admin console rendering garbled — "Seed
+Reviews" → "รีวิวเมล็ดพันธุ์" (literally "seed" as in plant seed),
+"SunRed Control" transliterated into Thai script, "ไม่ได้หยุด" ("not on
+holiday") round-tripped through English back into nonsense
+"กิจกรรมหยุด". Asked to make the page "ใช้งานได้จริง" (actually usable).
+
+**Root cause:** `<html lang="en">` in `index.html` is deliberate — kept
+for the customer site's English-first SEO (2026-06-02 Search Console
+round: top queries are all English). But `/admin/*` is heavily Thai by
+now (many rounds of founder-requested Thai copy). That English-declared/
+Thai-actual mismatch is exactly what triggers Chrome's "this page might
+be in a different language" translate prompt/auto-apply — which then
+translates already-Thai text AGAIN, producing garbage.
+
+**Fix:** added `<meta name="google" content="notranslate">` to
+`index.html`. This does **not** affect SEO/crawling (Google documents
+this explicitly) — it only tells the Translate feature to leave the
+page alone. Did NOT touch `lang="en"` itself (SEO-load-bearing, out of
+scope). Customers were never relying on browser-translate anyway — the
+site has its own real i18n system (5 languages, `src/locales/`).
+Confirmed the tag reaches the base `index.html` AND all 55 prerendered
+route shells (the prerender script clones the head, so it inherited
+automatically — no per-shell edit needed).
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
