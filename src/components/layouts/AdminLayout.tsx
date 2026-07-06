@@ -354,7 +354,10 @@ const AdminLayout: React.FC = () => {
           px: 0,
           minWidth: 0,
           overflow: "hidden",
-          background: `radial-gradient(120% 60% at 50% -10%, #22323d 0%, ${adminColor.bg} 45%)`,
+          // 🆕 Round 28s237 — glow center now uses panel3 (a legitimate
+          //   blend toward the palette's own #5C6F7B), not a separately
+          //   invented hex, so the ambient glow stays inside the palette.
+          background: `radial-gradient(120% 60% at 50% -10%, ${adminColor.panel3} 0%, ${adminColor.bg} 45%)`,
           color: adminColor.text,
         }}
       >

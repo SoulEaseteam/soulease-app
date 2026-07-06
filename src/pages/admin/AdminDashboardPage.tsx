@@ -283,7 +283,9 @@ const AdminDashboardPage: React.FC = () => {
           sx={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             px: 2, py: 1.5, borderRadius: 3, cursor: "pointer",
-            background: `linear-gradient(135deg, ${adminColor.panel2}, #16232b)`,
+            // 🆕 Round 28s237 — anchor the gradient's dark end to the exact
+            //   palette bg instead of a separately invented hex.
+            background: `linear-gradient(135deg, ${adminColor.panel2}, ${adminColor.bg})`,
             border: `1px solid ${adminColor.accent}44`,
             color: adminColor.text,
             boxShadow: "0 6px 18px rgba(0,0,0,0.3)",
