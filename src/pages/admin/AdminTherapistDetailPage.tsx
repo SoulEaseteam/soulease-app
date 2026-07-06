@@ -45,6 +45,13 @@ import {
 import { calculateTherapistStatus, isOverrideExpired } from "@/utils/calculateTherapistStatus";
 import { endOfTodayBKK, fmtBKKTimeShort } from "@/utils/time";
 import { useTherapistBookings, findActiveBooking } from "@/utils/useTherapistBookings";
+// 🆕 Round 28s275 (founder: "Custom ID / Rating / Reviews ดึงข้อมูลจากฐานข้อมูลจริงมาใส่")
+// — same live-aggregation hook the PUBLIC therapist page already uses.
+// The therapist doc's own `rating`/`reviews` fields are never written by
+// anything real (confirmed: only this page + AddTherapistPage's one-time
+// creation default touch them) — the actual rating/count customers see
+// is always computed live from `bookings/{id}.rating` via this hook.
+import { useTherapistReviews } from "@/hooks/useTherapistReviews";
 import { logAdminAction } from "@/utils/auditLog";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 
@@ -78,11 +85,8 @@ const SectionHeader: React.FC<{ icon: React.ReactNode; children: React.ReactNode
 
 interface FormState {
   name: string;
-  customId: string;
   image: string;
   specialty: string;
-  rating: string;
-  reviews: string;
   startTime: string;
   endTime: string;
   badge: string;
@@ -95,7 +99,7 @@ interface FormState {
 }
 
 const EMPTY_FORM: FormState = {
-  name: "", customId: "", image: "", specialty: "", rating: "", reviews: "",
+  name: "", image: "", specialty: "",
   startTime: "", endTime: "", badge: "", statusOverride: "Auto", isHoliday: false,
   currentLocation: "", hidden: false, blocked: false, telegramChatId: "",
 };
@@ -107,11 +111,8 @@ function toFormState(data: Record<string, unknown>): FormState {
   const loc = data.currentLocation;
   return {
     name: (data.name as string) || "",
-    customId: (data.customId as string) || "",
     image: (data.image as string) || "",
     specialty: (data.specialty as string) || "",
-    rating: data.rating != null ? String(data.rating) : "",
-    reviews: data.reviews != null ? String(data.reviews) : "",
     startTime: (data.startTime as string) || "",
     endTime: (data.endTime as string) || "",
     badge: (data.badge as string) || "",
@@ -162,6 +163,10 @@ const AdminTherapistDetailPage: React.FC = () => {
   //    calc that didn't account for real active bookings.
   const liveBookings = useTherapistBookings(docId);
   const activeBooking = findActiveBooking(liveBookings);
+  // 🆕 Round 28s275 — real rating/review count, same source the public
+  // site uses (bookings/{id}.rating, not the never-written therapist-doc
+  // field this page used to read).
+  const liveReviews = useTherapistReviews(docId);
 
   useEffect(() => {
     if (!id) return;
@@ -310,13 +315,16 @@ const AdminTherapistDetailPage: React.FC = () => {
       if (!isNaN(lat) && !isNaN(lng)) locationValue = { lat, lng };
     }
 
+    // 🆕 Round 28s275 — customId/rating/reviews dropped from the write
+    // patch entirely: customId has no reader anywhere in the codebase
+    // (the real public slug is the Firestore doc id itself), and rating/
+    // reviews are always live-computed from real bookings, never read
+    // from this doc field by anything — writing them here was cosmetic
+    // at best, misleading at worst (looks settable, does nothing).
     const patch: Record<string, unknown> = {
       name: formData.name,
-      customId: formData.customId,
       image: formData.image,
       specialty: formData.specialty,
-      rating: Number(formData.rating) || 0,
-      reviews: Number(formData.reviews) || 0,
       startTime: formData.startTime,
       endTime: formData.endTime,
       badge: formData.badge,
@@ -438,6 +446,16 @@ const AdminTherapistDetailPage: React.FC = () => {
         {/* ── Stats row (always visible, always live) ───────────── */}
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: "10px", mt: 2.5, mb: 3 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: "8px", background: adminColor.panel2, borderRadius: "12px", p: "9px 14px" }}>
+            <Star size={15} color={adminColor.dim} weight={liveReviews.reviewCount > 0 ? "fill" : "regular"} />
+            <Typography sx={{ ...adminFigureSx, fontSize: 14 }}>{liveReviews.reviewCount > 0 ? liveReviews.avgRating.toFixed(1) : "—"}</Typography>
+            <Typography sx={{ fontSize: 11, color: adminColor.dim }}>คะแนน</Typography>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: "8px", background: adminColor.panel2, borderRadius: "12px", p: "9px 14px" }}>
+            <ChatCircleText size={15} color={adminColor.dim} />
+            <Typography sx={{ ...adminFigureSx, fontSize: 14 }}>{liveReviews.reviewCount}</Typography>
+            <Typography sx={{ fontSize: 11, color: adminColor.dim }}>รีวิว</Typography>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: "8px", background: adminColor.panel2, borderRadius: "12px", p: "9px 14px" }}>
             <Calendar size={15} color={adminColor.dim} />
             <Typography sx={{ ...adminFigureSx, fontSize: 14 }}>{todayBookings}</Typography>
             <Typography sx={{ fontSize: 11, color: adminColor.dim }}>วันนี้</Typography>
@@ -458,14 +476,17 @@ const AdminTherapistDetailPage: React.FC = () => {
         {!editing ? (
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
             <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <ReadRow icon={<Star size={14} />} label="Rating" value={formData.rating || "0"} />
-              <ReadRow icon={<ChatCircleText size={14} />} label="Reviews" value={formData.reviews || "0"} />
               <ReadRow icon={<Clock size={14} />} label="Hours" value={`${formData.startTime || "--:--"} – ${formData.endTime || "--:--"}`} />
               <ReadRow icon={<MapPin size={14} />} label="Location" value={formData.currentLocation || "—"} />
               <ReadRow icon={<Medal size={14} />} label="Badge" value={formData.badge || "None"} />
             </Box>
             <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <ReadRow icon={<IdentificationCard size={14} />} label="Custom ID" value={formData.customId || "—"} />
+              {/* 🆕 Round 28s275 — "Custom ID" had no reader anywhere in the
+                  codebase; the real public slug IS this doc's Firestore id
+                  (confirmed by this page's own lookup logic above trying it
+                  directly first). Shows the real thing instead of a fake
+                  editable field that never did anything. */}
+              <ReadRow icon={<IdentificationCard size={14} />} label="รหัส (URL)" value={docId || "—"} />
               <ReadRow icon={<TelegramLogo size={14} />} label="Telegram" value={formData.telegramChatId || "ยังไม่ผูก"} />
               <ReadRow icon={<EyeSlash size={14} />} label="Hidden" value={formData.hidden ? "ซ่อนจากหน้าเว็บ" : "แสดงปกติ"} alert={formData.hidden} />
               <ReadRow icon={<Prohibit size={14} />} label="Blocked" value={formData.blocked ? "ปิดใช้งาน" : "ใช้งานปกติ"} alert={formData.blocked} />
@@ -478,11 +499,24 @@ const AdminTherapistDetailPage: React.FC = () => {
               <SectionHeader icon={<Sparkle size={13} />}>โปรไฟล์</SectionHeader>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
                 <TextField label="Name" fullWidth size="small" sx={fieldSx} value={formData.name} onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))} />
-                <Box sx={{ display: "flex", gap: 1 }}>
-                  <TextField label="Custom ID (for URL)" fullWidth size="small" sx={fieldSx} value={formData.customId} onChange={(e) => setFormData((f) => ({ ...f, customId: e.target.value }))} />
-                  <TextField label="Image URL" fullWidth size="small" sx={fieldSx} value={formData.image} onChange={(e) => setFormData((f) => ({ ...f, image: e.target.value }))} />
-                </Box>
+                <TextField label="Image URL" fullWidth size="small" sx={fieldSx} value={formData.image} onChange={(e) => setFormData((f) => ({ ...f, image: e.target.value }))} />
                 <TextField label="Specialty" fullWidth size="small" sx={fieldSx} value={formData.specialty} onChange={(e) => setFormData((f) => ({ ...f, specialty: e.target.value }))} />
+                {/* 🆕 Round 28s275 — moved in from the old "ชื่อเสียง" section,
+                    which existed only to hold Rating/Reviews + Badge. With
+                    Rating/Reviews now live-computed (see the stats row
+                    above) and no longer editable, a whole section for one
+                    dropdown wasn't worth keeping — Badge fits naturally
+                    here as another profile/presentation attribute. */}
+                <TextField
+                  select label="Badge" fullWidth size="small" sx={fieldSx}
+                  value={formData.badge}
+                  onChange={(e) => setFormData((f) => ({ ...f, badge: e.target.value }))}
+                  SelectProps={{ MenuProps: selectMenuProps, displayEmpty: true }}
+                >
+                  {badgeOptions.map((b) => (
+                    <MenuItem key={b} value={b}>{b || "None"}</MenuItem>
+                  ))}
+                </TextField>
               </Box>
             </Box>
 
@@ -522,24 +556,6 @@ const AdminTherapistDetailPage: React.FC = () => {
                   </Box>
                 </Box>
                 <TextField label="Location (lat,lng)" fullWidth size="small" sx={fieldSx} value={formData.currentLocation} onChange={(e) => setFormData((f) => ({ ...f, currentLocation: e.target.value }))} />
-              </Box>
-            </Box>
-
-            <Box>
-              <SectionHeader icon={<Star size={13} />}>ชื่อเสียง</SectionHeader>
-              <Box sx={{ display: "flex", gap: 1 }}>
-                <TextField label="Rating" type="number" fullWidth size="small" sx={fieldSx} value={formData.rating} onChange={(e) => setFormData((f) => ({ ...f, rating: e.target.value }))} />
-                <TextField label="Reviews" type="number" fullWidth size="small" sx={fieldSx} value={formData.reviews} onChange={(e) => setFormData((f) => ({ ...f, reviews: e.target.value }))} />
-                <TextField
-                  select label="Badge" fullWidth size="small" sx={fieldSx}
-                  value={formData.badge}
-                  onChange={(e) => setFormData((f) => ({ ...f, badge: e.target.value }))}
-                  SelectProps={{ MenuProps: selectMenuProps, displayEmpty: true }}
-                >
-                  {badgeOptions.map((b) => (
-                    <MenuItem key={b} value={b}>{b || "None"}</MenuItem>
-                  ))}
-                </TextField>
               </Box>
             </Box>
 
