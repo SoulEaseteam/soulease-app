@@ -1361,6 +1361,62 @@ roster page — reachable only by typing the URL directly. Added an
 accent-filled button in `AdminTherapistsPage.tsx`'s toolbar row, next to
 the status filter, using the `UserPlus` phosphor icon.
 
+### 🆕 2026-07-06 — merged the two duplicate therapist edit pages (28s271)
+
+Founder sent screenshots of `/admin/therapists/:id` (Therapist Detail)
+and `/admin/edit-therapist/:id` (Edit Therapist) reached from the SAME
+roster card's View/Edit buttons: "เหมือนซ้ำ แก้ และปรับให้สวยขึ้นและเพิ่ม
+มีฟังชั้นที่ต้องมี" (looks duplicated, fix it, prettier, add missing
+functions).
+
+**Root cause:** two separate pages editing an overlapping-but-different
+field subset, both still on the pre-Ocean-Study theme. Detail page had
+rating/reviews/hours/location/badge/hidden/blocked/override but NOT
+name/customId/image/specialty/telegramChatId; Edit page had the reverse.
+Neither had a Holiday toggle.
+
+**Fix — merged into ONE page**, `AdminTherapistDetailPage.tsx`.
+`EditTherapistPage.tsx` **deleted** (+ its route/lazy-import in
+`App.tsx`); roster's Edit button now opens `/admin/therapists/:id?edit=1`
+(same page, pre-armed into edit mode) instead of a second page.
+
+**Bugs fixed along the way (the "missing functions" ask):**
+- **Status Override rendered BLANK** when set to Auto — the exact
+  missing-`displayEmpty` bug already fixed once this session (28s261's
+  Payment Method dropdown), just recurring on a different page/field.
+  Fixed + standardized on the literal `"Auto"` string everywhere (the
+  two old pages disagreed: one used `""`, one used `null`, the roster
+  grid used `"Auto"` — three different sentinels for the same concept).
+- **Holiday toggle was missing from BOTH old pages** — the only way to
+  send someone on holiday was the roster grid. Tracked in this file's
+  Phase-4 TODO since round 28s234 as "EditTherapistPage vs grid
+  inconsistency (no Holiday toggle on EditTherapistPage)" — now fixed.
+- **This page's own status calc was a hand-rolled duplicate**
+  (`therapist.isBooked ? "bookable" : "available"`) ignoring real
+  bookings — explicitly flagged as a follow-up in round 28s267's commit.
+  Now uses the shared `calculateTherapistStatus` + live-bookings merge,
+  same engine the roster card and public site use.
+- **`overrideUntil` auto-expiry (28s267's rule) now applies here too** —
+  this page could previously set a sticky-forever override outside the
+  roster grid, silently reintroducing the bug the grid had just fixed.
+- **Zero audit trail on saves** — now logs `therapist.update` with the
+  actual list of changed fields (diffed against the loaded snapshot).
+  `AdminAuditLogPage.tsx`'s `detailLine()` extended to render a
+  `changedFields` array.
+- `isOverrideExpired` extracted from `AdminTherapistsPage.tsx` into
+  `calculateTherapistStatus.ts` (the engine file itself) so every
+  surface shares one definition of "expired," instead of each page
+  defining its own copy.
+
+**Visual:** restyled onto Ocean Study to match the 28s268 roster card
+redesign — serif name, presence-ring avatar, phosphor icons, grouped
+edit sections (Profile / Schedule & Status / Reputation / Visibility /
+Contact), read-only summary rows when not editing.
+
+**Admin therapist surfaces are now down to 2 pages** (roster list +
+this merged detail/edit page), both fully on Ocean Study, both sharing
+the same status engine and audit-log conventions.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
