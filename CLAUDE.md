@@ -414,6 +414,52 @@ DISPATCH_BASE (origin). ⚠️ Therapist coords in data/therapists.ts are
 duplicated placeholders — if real per-therapist distances ever matter, fix
 those + revisit the single-base decision.
 
+### 🆕 2026-06-14 (cont.) — admin "Control Room" redesign + Phase 4 (28s234)
+
+Founder: "อยากรื้อ ทำให้ ตกแต่ง และฟังก์ชั่น" (redesign admin visually + add
+the 3 missing functions found in the earlier dashboard-checklist audit).
+Also: a mockup was shown first (Artifact) — Control Room dark theme, crimson
+accent, champagne highlights — approved before touching real code.
+
+**Visual (checkpoints 1-2, deployed via vercel):**
+- New `src/theme/adminTheme.ts` — shared dark tokens (adminColor/adminFont)
+  for every /admin/* page. `AdminLayout.tsx` fully restyled (dark sidebar/
+  topbar, crimson active-nav, serif "SunRed Control" wordmark, Tonight moved
+  first in nav). `AdminDashboardPage.tsx` fully restyled to match.
+- NOT yet restyled: AdminBookingListPage, AdminTherapistsPage, AdminEarningsPage
+  (charts/cards still light), AdminReportPage, AdminAnalyticsPage — only the
+  NEW payout/CRM sections added to Earnings/Users got the dark treatment.
+  Next session: finish restyling the remaining pages for full consistency.
+
+**Functions (checkpoint 3, Phase 4 — deployed via vercel + firebase):**
+1. **Payout tracker** (AdminEarningsPage) — the page's own long-standing
+   comment said "Track payouts (which therapist has been paid which week)"
+   but only ever calculated, never tracked. New self-contained weekly
+   section (stable calendar week, independent of the page's rolling `range`
+   filter) with a "Mark paid" toggle → new `payouts` Firestore collection
+   (`{weekKey}__{therapistId}` doc id).
+2. **Customer Insights / CRM** (AdminUsersPage) — `users` collection only
+   covers signed-up accounts; most guests book without one (`userId: null`
+   is the norm — see §5). New panel aggregates `bookings` BY PHONE (always
+   present) → total bookings, no-show count, total spent, last visit, VIP
+   badge (5+ bookings, `VIP_THRESHOLD` in the file).
+3. **Audit log viewer** (`/admin/audit-log`, new page) — `auditLogs` rule was
+   `write: false` ("Cloud Functions only") but no function ever wrote it —
+   permanently empty. New `src/utils/auditLog.ts` `logAdminAction()` lets an
+   admin log their OWN actions (rule: `actorId == request.auth.uid`,
+   append-only). Wired into: booking confirm/cancel/complete (Dashboard +
+   BookingList), payout mark-paid, roster relight ("คืนนี้เปิดทั้งร้าน").
+
+firestore.rules changed: `auditLogs` create allowed (self-attributed);
+new `payouts` collection (admin-only). Deployed via `firebase deploy --only
+firestore:rules` — same pattern as the earlier rules hardening.
+
+**Preview tooling note:** the `mcp__Claude_Preview__*` tools in this sandbox
+resolved to an UNRELATED project (a Hunan restaurant demo) even after
+restarting the server — not connected to this repo. Visual verification for
+this whole redesign relied on tsc/build + real production deploys, same as
+the rest of this session; View confirms visually on the live site.
+
 ### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
 
 **Trigger.** View shared Google Search Console 3-month data:
