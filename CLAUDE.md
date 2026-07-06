@@ -745,6 +745,22 @@ unchanged, zero data-logic changes:
   their own sweep — grep `boxShadow`/`#fff`-adjacent literals when
   restyling the remaining pages.
 
+### 🆕 2026-07-06 — admin figures switched to lining sans numerals (28s246)
+
+Founder screenshotted the live Earnings page: "ปรับตัวเลข ให้ดูง่าย". Root
+cause: 28s245's font unification aliased SERIF onto **Hoefler Text, whose
+default digits are OLD-STYLE figures** (varying heights, like lowercase
+letters) — elegant in prose, hard to scan for money. The Dashboard
+(28s241) had the identical problem.
+
+Fix: new shared **`adminFigureSx`** token in `adminTheme.ts` — bold sans
++ `lining-nums tabular-nums`, all digits one height, columns align.
+Applied to every money/count figure on Earnings + Dashboard.
+
+**Rule for future admin pages: numbers ALWAYS use `adminFigureSx`; the
+serif (Hoefler) is for page/card TITLES only, never figures.** The token's
+doc comment in adminTheme.ts repeats this.
+
 ### 🆕 What Round 28s226 + 28s227 shipped (2026-06-02) — Search Console-driven SEO batch
 
 **Trigger.** View shared Google Search Console 3-month data:
