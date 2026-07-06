@@ -1307,6 +1307,41 @@ has its own hand-rolled status calc (`therapist.isBooked ? "bookable" :
 — same root issue as finding #1 but on a different page. Worth aligning
 next time that page is touched.
 
+### 🆕 2026-07-06 — Therapist Manager redesigned as a card grid (28s268)
+
+Founder: "ปรับให้สวยขึ้น" right after the 28s267 audit fixes shipped —
+mockup shown via Artifact (2 rounds: first pass, then "ทำให้สวยขึ้น" again
+for a more refined v2 — presence-ring avatars, serif names, phosphor line
+icons, single status line) → "ok". Pure visual/IA pass, zero data-logic
+changes (all of 28s267's live-status/audit/overrideUntil logic untouched).
+
+- **Unified desktop DataGrid + mobile Stack-of-Cards into ONE responsive
+  card grid** used at every viewport. Only 12 therapists exist — a dense
+  spreadsheet added nothing a card couldn't show more legibly, and this
+  deletes an entire duplicated render path (columns array + separate
+  mobile JSX) that had to be hand-kept in sync.
+- Avatar gets a status-colored ring + presence dot (MUI `Badge` dot
+  variant) instead of a separate status chip floating next to the name.
+- Collapsed 2-3 separate status/session pills into ONE status line under
+  the name: "กำลังนวด · ถึง 22:30" / "พัก · เริ่ม 20:00" / "วันหยุดวันนี้"
+  — reuses `calculateTherapistStatus`'s `nextAvailable` return (previously
+  computed but discarded by this page).
+- Names set in the admin serif (Hoefler Text, same as the "SunRed
+  Control" wordmark) — cards read as staff profiles, not table rows.
+- Resting/holiday cards recede (panel2 bg, muted figures, no hover lift)
+  — same "attention follows what's actionable" rule already established
+  on the Bookings cards (28s253).
+- Nested-frame treatment reuses AdminBookingListPage's exact
+  `CARD_FRAME_BG` (#C5D8DF, 18%-toward-dim blend) instead of inventing a
+  new hue — Ocean Study palette rule (28s237) still holding.
+- Icons switched from MUI icons/emoji to **phosphor-react** (Eye,
+  PencilSimple, Trash, Umbrella, Warning, Check, Clock, MagnifyingGlass) —
+  matches every other Ocean-Study admin page (Users, Bookings, Earnings).
+- Search is now an icon-adorned field; status filter dropdown became a
+  segmented `ToggleButtonGroup` (easier to tap on a phone than a Select).
+- Roster summary strip restyled into icon-circle stat pills, matching
+  the Dashboard/Earnings widget vocabulary established in 28s241/28s246.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
