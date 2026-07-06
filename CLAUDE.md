@@ -1113,6 +1113,33 @@ give it — she's optimizing for "record reality accurately" over "keep the
 tool's formula authoritative," which is the right call for a business where
 she personally negotiates every price.
 
+### 🆕 2026-07-06 — service + duration now editable, completes the bill (28s263)
+
+Founder: "เปลี่ยนบริการได้ด้วยสิ มันทั้งหมดของบิล ยังไง" — the very next
+message after Total. Service type and duration were the last two
+price-driving fields still locked to the DetailPanel's read-only header.
+
+- New "Service" `Select` (reuses `services` from `@/data/services` —
+  the same catalog `AdminBookingAddPage` draws from) and a "Duration" pill
+  row (`durationsFor()` for the tier options, `priceForDuration()` shown per
+  pill) — identical helpers to the booking-creation flow, so the numbers an
+  operator sees when EDITING a booking match what they'd see CREATING one.
+- Picking either re-fills Service price with the catalog rate for that
+  combo — but the price field stays freely editable afterward (28s261's
+  rule still applies): this is a convenient starting point, never a lock.
+- `serviceId`/`serviceName` dual-write together only when actually changed
+  (mirrors the therapist-reassignment convention from 28s259); `duration`
+  always writes through.
+
+**This closes the "แก้ได้ทั้งหมด" (fully editable) arc across
+28s259→28s263**: therapist, customer, phone, date/time, location, payment
+method, service, duration, and every price component (service price, taxi
+fee, total) are now all editable on one booking, in one drawer, in one
+Save. Status is separately always-overridable (28s259's independent
+dropdown). What's NOT editable: the booking ID and the `createdAt`
+timestamp (by design — those are the record's own history, not the
+service being delivered).
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
