@@ -52,6 +52,7 @@ import {
   Box,
   Typography,
   InputBase,
+  TextField,
   CircularProgress,
   Snackbar,
   Alert,
@@ -119,6 +120,9 @@ import {
   PencilSimple,
   FloppyDisk,
   Star,
+  Sparkle,
+  Receipt,
+  ClockCounterClockwise,
 } from "phosphor-react";
 
 // Cap the realtime window. Pending/confirmed bookings are always recent; older
@@ -1172,6 +1176,32 @@ const PAYMENT_METHOD_OPTIONS = [
 const paymentMethodLabel = (v?: string): string =>
   PAYMENT_METHOD_OPTIONS.find((o) => o.value === v)?.label ?? (v || "—");
 
+// 🆕 Round 28s264 (founder: "ปรับให้หน้าแก้ไข มันสวยขึ้นและใช้งานง่าย") —
+//   shared field styling for every editable control in the edit form
+//   (TextField AND Select alike), so focus/hover always reads as "this
+//   theme," not a native-browser blue ring. Applied consistently instead
+//   of the ad-hoc one-off sx each field carried before.
+const editFieldSx = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "10px", fontFamily: SANS, fontSize: 13.5, background: adminColor.panel,
+    "& fieldset": { borderColor: adminColor.line2 },
+    "&:hover fieldset": { borderColor: adminColor.dim },
+    "&.Mui-focused fieldset": { borderColor: adminColor.accent, borderWidth: "1.5px" },
+  },
+} as const;
+
+// 🆕 28s264 — small section header (icon + label) used to group the edit
+//   form into Guest & Schedule / Service / Billing / Record instead of one
+//   long flat list of rows.
+const SectionHeader: React.FC<{ icon: React.ReactNode; children: React.ReactNode }> = ({ icon, children }) => (
+  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1 }}>
+    <Box sx={{ color: adminColor.dim, display: "flex", lineHeight: 0 }}>{icon}</Box>
+    <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+      {children}
+    </Typography>
+  </Box>
+);
+
 const DetailPanel: React.FC<{
   booking: Booking;
   therapists: { id: string; name: string }[];
@@ -1345,22 +1375,32 @@ const DetailPanel: React.FC<{
           </IconButton>
         </Box>
 
-        {/* price strip */}
+        {/* 🆕 28s264 — price strip now goes LIVE while editing (real figures
+            from editForm, not the stale stored ones), so the operator sees
+            the impact of what they're typing without scrolling down to the
+            Billing section. */}
         <Box
           sx={{
+            position: "relative",
             display: "flex", gap: 1, mt: 2,
             p: 1.5, borderRadius: "14px",
             background: adminColor.panel,
-            border: `1px solid ${adminColor.line}`,
+            border: `1px solid ${editing ? adminColor.accent : adminColor.line}`,
+            boxShadow: editing ? `0 0 0 3px ${adminColor.accent}1F` : "none",
           }}
         >
+          {editing && (
+            <Box sx={{ position: "absolute", top: -9, right: 10, background: adminColor.accent, color: "#fff", fontSize: 9, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", px: 1, py: "3px", borderRadius: 999 }}>
+              Editing
+            </Box>
+          )}
           {[
-            { label: "Service", value: formatTHB(isCancelled ? 0 : (b.servicePrice || 0)) },
-            { label: "Taxi",    value: formatTHB(isCancelled ? 0 : (b.taxiFee     || 0)) },
-            { label: "Total",   value: formatTHB(total) },
+            { label: "Service", value: formatTHB(editing ? editServicePrice : (isCancelled ? 0 : (b.servicePrice || 0))) },
+            { label: "Taxi",    value: formatTHB(editing ? editTaxiFee : (isCancelled ? 0 : (b.taxiFee || 0))) },
+            { label: "Total",   value: formatTHB(editing ? editTotal : total), accent: true },
           ].map((s, i) => (
             <Box key={i} sx={{ flex: 1, textAlign: "center", borderRight: i < 2 ? `1px solid ${adminColor.line}` : "none" }}>
-              <Typography sx={{ ...adminFigureSx, fontSize: 16, color: adminColor.text, lineHeight: 1 }}>{s.value}</Typography>
+              <Typography sx={{ ...adminFigureSx, fontSize: 16, color: s.accent ? adminColor.accent : adminColor.text, lineHeight: 1 }}>{s.value}</Typography>
               <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim, mt: 0.3, textTransform: "uppercase", letterSpacing: "0.06em" }}>{s.label}</Typography>
             </Box>
           ))}
@@ -1370,76 +1410,109 @@ const DetailPanel: React.FC<{
       {/* scrollable body */}
       <Box sx={{ flex: 1, overflowY: "auto", px: 2.5, py: 2 }}>
 
-        {/* booking info */}
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-          <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-            Booking Info
-          </Typography>
-          {/* 🆕 28s259 (fix: "full detail แก้ไขไม่ได้") — toggles customer/
-              phone/date/time/location/therapist into editable fields.
-              Excludes service/duration/price on purpose (see saveDetails). */}
-          {!editing && (
+        {/* 🆕 28s259 (fix: "สถานนะ แก้ไขไม่ได้ Cancelled / Completed") —
+            always-active override, works from ANY current status (un-cancel,
+            mark refunded/no_show, revert completed, etc). Standalone, small —
+            28s264 pulled it out of the flat field list so it doesn't compete
+            with the Edit-gated sections below; a status change is a routine
+            tap, not a "fix a mistake" edit. */}
+        <Box
+          sx={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            borderRadius: "14px", background: adminColor.panel, border: `1px solid ${adminColor.line}`,
+            px: 1.75, py: 1.25, mb: 2,
+          }}
+        >
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.04em" }}>Status</Typography>
+          <Select
+            size="small"
+            value={b.status in STATUS_CFG ? b.status : ""}
+            onChange={(e) => onChangeStatus(e.target.value)}
+            displayEmpty
+            renderValue={() => (
+              <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: cfg.badge.fg }}>
+                {cfg.label}
+              </Typography>
+            )}
+            sx={{
+              fontSize: 12, height: 30, minWidth: 130, borderRadius: 999,
+              background: cfg.badge.bg,
+              "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+            }}
+            MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
+          >
+            {ALL_STATUSES.map((s) => (
+              <MenuItem key={s} value={s} sx={{ fontSize: 13 }}>{cfgFor(s).label}</MenuItem>
+            ))}
+          </Select>
+        </Box>
+
+        {/* 🆕 28s264 — Edit toggle now lives above the grouped sections,
+            not buried inside a "Booking Info" label. */}
+        {!editing && (
+          <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1 }}>
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={startEdit}
               aria-label="Edit booking details"
               style={{
                 display: "flex", alignItems: "center", gap: 4,
-                height: 26, padding: "0 10px", borderRadius: 999,
+                height: 28, padding: "0 12px", borderRadius: 999,
                 background: adminColor.panel2, border: `1px solid ${adminColor.line2}`,
-                color: adminColor.muted, fontFamily: SANS, fontSize: 11, fontWeight: 700, cursor: "pointer",
+                color: adminColor.muted, fontFamily: SANS, fontSize: 11.5, fontWeight: 700, cursor: "pointer",
               }}
             >
-              <PencilSimple size={11} /> Edit
+              <PencilSimple size={12} /> Edit details
             </motion.button>
-          )}
-        </Box>
-        <Box
-          sx={{
-            borderRadius: "14px", background: adminColor.panel,
-            border: `1px solid ${adminColor.line}`,
-            px: 1.75, py: 0.5, mb: editing ? 1.25 : 2,
-          }}
-        >
-          {/* 🆕 28s259 (fix: "สถานนะ แก้ไขไม่ได้ Cancelled / Completed") —
-              always-active override, works from ANY current status
-              (un-cancel, mark refunded/no_show, revert completed, etc.).
-              Independent of the "Edit" toggle below — status changes are a
-              routine action, not a "fix a mistake" edit. */}
-          <Row label="Status" value={
-            <Select
-              size="small"
-              value={b.status in STATUS_CFG ? b.status : ""}
-              onChange={(e) => onChangeStatus(e.target.value)}
-              displayEmpty
-              renderValue={() => (
-                <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: cfg.badge.fg }}>
-                  {cfg.label}
-                </Typography>
-              )}
-              sx={{
-                fontSize: 12, height: 28, minWidth: 120,
-                "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 },
-              }}
-              MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
-            >
-              {ALL_STATUSES.map((s) => (
-                <MenuItem key={s} value={s} sx={{ fontSize: 13 }}>{cfgFor(s).label}</MenuItem>
-              ))}
-            </Select>
-          } />
-          <Divider sx={{ opacity: 0.4 }} />
+          </Box>
+        )}
 
-          {editing ? (
-            <>
-              <Box sx={{ py: 1 }}>
-                <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Therapist</Typography>
-                <Select
-                  size="small" fullWidth
-                  value={editForm.therapistId}
+        {editing ? (
+          <>
+            {/* ── Guest & Schedule ─────────────────────────────────────── */}
+            <Box sx={{ mb: 2 }}>
+              <SectionHeader icon={<User size={13} />}>Guest &amp; Schedule</SectionHeader>
+              <Box sx={{ borderRadius: "14px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, p: "13px 14px", display: "flex", flexDirection: "column", gap: 1.25 }}>
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  <TextField
+                    label="Customer" size="small" fullWidth value={editForm.contactName}
+                    onChange={(e) => setEditForm((f) => ({ ...f, contactName: e.target.value }))}
+                    sx={editFieldSx}
+                  />
+                  <TextField
+                    label="Phone" size="small" fullWidth value={editForm.phone}
+                    onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
+                    sx={editFieldSx}
+                  />
+                </Box>
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  <TextField
+                    label="Date" type="date" size="small" fullWidth value={editForm.date}
+                    onChange={(e) => setEditForm((f) => ({ ...f, date: e.target.value }))}
+                    InputLabelProps={{ shrink: true }} sx={editFieldSx}
+                  />
+                  <TextField
+                    label="Time" type="time" size="small" fullWidth value={editForm.time}
+                    onChange={(e) => setEditForm((f) => ({ ...f, time: e.target.value }))}
+                    InputLabelProps={{ shrink: true }} sx={editFieldSx}
+                  />
+                </Box>
+                <TextField
+                  label="Location" size="small" fullWidth multiline minRows={2} value={editForm.location}
+                  onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))}
+                  sx={editFieldSx}
+                />
+              </Box>
+            </Box>
+
+            {/* ── Service ──────────────────────────────────────────────── */}
+            <Box sx={{ mb: 2 }}>
+              <SectionHeader icon={<Sparkle size={13} />}>Service</SectionHeader>
+              <Box sx={{ borderRadius: "14px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, p: "13px 14px", display: "flex", flexDirection: "column", gap: 1.25 }}>
+                <TextField
+                  select label="Therapist" size="small" fullWidth value={editForm.therapistId}
                   onChange={(e) => setEditForm((f) => ({ ...f, therapistId: e.target.value }))}
-                  sx={{ fontSize: 13, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 } }}
-                  MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
+                  sx={editFieldSx}
                 >
                   {!therapists.some((t) => t.id === editForm.therapistId) && editForm.therapistId && (
                     <MenuItem value={editForm.therapistId}>{b.therapistName}</MenuItem>
@@ -1447,267 +1520,216 @@ const DetailPanel: React.FC<{
                   {therapists.map((t) => (
                     <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
                   ))}
-                </Select>
-              </Box>
-              <Divider sx={{ opacity: 0.4 }} />
-              <Box sx={{ py: 1 }}>
-                <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Customer</Typography>
-                <InputBase
-                  fullWidth value={editForm.contactName}
-                  onChange={(e) => setEditForm((f) => ({ ...f, contactName: e.target.value }))}
-                  sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: "10px", px: 1.25, py: 0.5 }}
-                />
-              </Box>
-              <Divider sx={{ opacity: 0.4 }} />
-              <Box sx={{ py: 1 }}>
-                <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Phone</Typography>
-                <InputBase
-                  fullWidth value={editForm.phone}
-                  onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
-                  sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: "10px", px: 1.25, py: 0.5 }}
-                />
-              </Box>
-              <Divider sx={{ opacity: 0.4 }} />
-              <Box sx={{ py: 1, display: "flex", gap: 1 }}>
-                <Box sx={{ flex: 1 }}>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Date</Typography>
-                  <input
-                    type="date" value={editForm.date}
-                    onChange={(e) => setEditForm((f) => ({ ...f, date: e.target.value }))}
-                    style={{ width: "100%", fontFamily: SANS, fontSize: 13, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: 10, padding: "6px 10px", boxSizing: "border-box", background: "transparent" }}
-                  />
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Time</Typography>
-                  <input
-                    type="time" value={editForm.time}
-                    onChange={(e) => setEditForm((f) => ({ ...f, time: e.target.value }))}
-                    style={{ width: "100%", fontFamily: SANS, fontSize: 13, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: 10, padding: "6px 10px", boxSizing: "border-box", background: "transparent" }}
-                  />
-                </Box>
-              </Box>
-              <Divider sx={{ opacity: 0.4 }} />
-              <Box sx={{ py: 1 }}>
-                <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Location</Typography>
-                <InputBase
-                  fullWidth multiline minRows={2} value={editForm.location}
-                  onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))}
-                  sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: "10px", px: 1.25, py: 0.5 }}
-                />
-              </Box>
-              <Divider sx={{ opacity: 0.4 }} />
-              {/* 🆕 28s263 (founder: "เปลี่ยนบริการได้ด้วยสิ มันทั้งหมดของบิล")
-                  — the service type + duration were the last un-editable
-                  price drivers. Picking either re-fills Service price with
-                  the catalog rate for that combo (changeService/
-                  changeDuration); the field stays freely editable after. */}
-              <Box sx={{ py: 1 }}>
-                <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Service</Typography>
-                <Select
-                  size="small" fullWidth
-                  value={editForm.serviceId}
-                  displayEmpty
+                </TextField>
+                <TextField
+                  select label="Service" size="small" fullWidth value={editForm.serviceId}
                   onChange={(e) => changeService(e.target.value)}
-                  renderValue={(v) => (
-                    <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.text }}>
-                      {services.find((s) => s.id === v)?.name ?? "Select…"}
-                    </Typography>
-                  )}
-                  sx={{ fontSize: 13, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 } }}
-                  MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
+                  sx={editFieldSx}
                 >
                   {services.map((s) => (
                     <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
                   ))}
-                </Select>
+                </TextField>
+                {/* 🆕 28s264 (founder: "Duration ทำเป็น ดรอปดาว") — was a pill
+                    row in 28s263; founder asked for a dropdown instead. */}
+                <TextField
+                  select label="Duration" size="small" fullWidth value={editForm.duration}
+                  onChange={(e) => changeDuration(Number(e.target.value))}
+                  sx={editFieldSx}
+                >
+                  {editAvailableDurations.map((d) => (
+                    <MenuItem key={d} value={d}>
+                      {d} min{editSelectedService ? ` · ${formatTHB(priceForDuration(editSelectedService, d))}` : ""}
+                    </MenuItem>
+                  ))}
+                </TextField>
               </Box>
-              <Divider sx={{ opacity: 0.4 }} />
-              <Box sx={{ py: 1 }}>
-                <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.75 }}>Duration</Typography>
-                <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap" }}>
-                  {editAvailableDurations.map((d) => {
-                    const active = d === editForm.duration;
-                    return (
-                      <motion.button
-                        key={d}
-                        whileTap={{ scale: 0.96 }}
-                        onClick={() => changeDuration(d)}
-                        style={{
-                          border: `1.5px solid ${active ? adminColor.accent : adminColor.line2}`,
-                          borderRadius: 999, padding: "6px 14px", cursor: "pointer",
-                          background: active ? adminColor.accent : "transparent",
-                          color: active ? "#fff" : adminColor.text,
-                          fontFamily: SANS, fontSize: 12.5, fontWeight: 600,
-                        }}
-                      >
-                        {d} min{editSelectedService ? ` · ${formatTHB(priceForDuration(editSelectedService, d))}` : ""}
-                      </motion.button>
-                    );
-                  })}
-                </Box>
-              </Box>
-              <Divider sx={{ opacity: 0.4 }} />
-              <Box sx={{ py: 1, display: "flex", gap: 1 }}>
-                <Box sx={{ flex: 1 }}>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Service price (฿)</Typography>
-                  <input
-                    type="number" min={0} step={10} value={editForm.servicePrice}
+            </Box>
+
+            {/* ── Billing — styled as the bill it is ──────────────────── */}
+            <Box sx={{ mb: 2 }}>
+              <SectionHeader icon={<Receipt size={13} />}>Billing</SectionHeader>
+              <Box sx={{ borderRadius: "14px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, p: "13px 14px" }}>
+                <Box sx={{ display: "flex", gap: 1, mb: 1.25 }}>
+                  <TextField
+                    label="Service price (฿)" type="number" size="small" fullWidth value={editForm.servicePrice}
                     onChange={(e) => setEditForm((f) => ({ ...f, servicePrice: e.target.value }))}
-                    style={{ width: "100%", fontFamily: SANS, fontSize: 13, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: 10, padding: "6px 10px", boxSizing: "border-box", background: "transparent" }}
+                    sx={editFieldSx}
                   />
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>Taxi fee (฿)</Typography>
-                  <input
-                    type="number" min={0} step={10} value={editForm.taxiFee}
+                  <TextField
+                    label="Taxi fee (฿)" type="number" size="small" fullWidth value={editForm.taxiFee}
                     onChange={(e) => setEditForm((f) => ({ ...f, taxiFee: e.target.value }))}
-                    style={{ width: "100%", fontFamily: SANS, fontSize: 13, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: 10, padding: "6px 10px", boxSizing: "border-box", background: "transparent" }}
+                    sx={editFieldSx}
                   />
                 </Box>
-              </Box>
-              <Divider sx={{ opacity: 0.4 }} />
-              <Box sx={{ py: 1 }}>
-                <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>
-                  Payment method
-                </Typography>
-                <Select
-                  size="small" fullWidth
-                  value={editForm.payment}
-                  displayEmpty
+                <TextField
+                  select label="Payment method" size="small" fullWidth value={editForm.payment}
                   onChange={(e) => setEditForm((f) => ({ ...f, payment: e.target.value }))}
-                  renderValue={(v) => (
-                    <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.text }}>
-                      {paymentMethodLabel(v as string) === "—" ? "Select…" : paymentMethodLabel(v as string)}
-                    </Typography>
-                  )}
-                  sx={{ fontSize: 13, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 } }}
-                  MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
+                  sx={editFieldSx}
                 >
                   {PAYMENT_METHOD_OPTIONS.map((o) => (
                     <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
                   ))}
-                </Select>
+                </TextField>
                 {editSurcharge > 0 && (
-                  <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.amber, mt: 0.5 }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.amber, mt: 0.75, textAlign: "right" }}>
                     + {formatTHB(editSurcharge)} transfer surcharge on this method
                   </Typography>
                 )}
-              </Box>
-              <Divider sx={{ opacity: 0.4 }} />
-              {/* 🆕 28s262 (founder: "ให้บิล แก้ได้ทั้งหมด บนใบจอง") — Total
-                  is now its OWN free number, independent of service+taxi+
-                  surcharge. The computed figure is a one-click suggestion,
-                  never forced — a manually agreed price is a real price. */}
-              <Box sx={{ py: 1 }}>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600 }}>Total (฿)</Typography>
-                  {computedTotal !== editTotal && (
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setEditForm((f) => ({ ...f, total: String(computedTotal) }))}
-                      style={{
-                        border: "none", background: "transparent", cursor: "pointer",
-                        fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.accent, padding: 0,
+
+                {/* 🆕 28s262 — Total is its OWN free number, independent of
+                    service+taxi+surcharge. Computed figure is a one-click
+                    suggestion, never forced. */}
+                <Box sx={{ mt: 1.5, pt: 1.5, borderTop: `1.5px dashed ${adminColor.line2}`, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 1 }}>
+                  <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 600, color: adminColor.text }}>Total</Typography>
+                  <Box sx={{ textAlign: "right" }}>
+                    <TextField
+                      type="number" size="small" value={editForm.total}
+                      onChange={(e) => setEditForm((f) => ({ ...f, total: e.target.value }))}
+                      sx={{
+                        width: 140,
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: "10px", fontFamily: adminFigureSx.fontFamily, fontWeight: 800, fontSize: 16,
+                          color: adminColor.accent, background: `${adminColor.accent}0D`,
+                          "& fieldset": { borderColor: adminColor.accent },
+                          "&.Mui-focused fieldset": { borderColor: adminColor.accent, borderWidth: "2px" },
+                        },
+                        "& input": { textAlign: "right" },
                       }}
-                    >
-                      Use computed: {formatTHB(computedTotal)}
-                    </motion.button>
-                  )}
+                    />
+                    {computedTotal !== editTotal && (
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setEditForm((f) => ({ ...f, total: String(computedTotal) }))}
+                        style={{
+                          display: "block", marginTop: 4, marginLeft: "auto",
+                          border: "none", background: "transparent", cursor: "pointer",
+                          fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.accent, padding: 0,
+                        }}
+                      >
+                        Use computed: {formatTHB(computedTotal)}
+                      </motion.button>
+                    )}
+                  </Box>
                 </Box>
-                <input
-                  type="number" min={0} step={10} value={editForm.total}
-                  onChange={(e) => setEditForm((f) => ({ ...f, total: e.target.value }))}
-                  style={{ width: "100%", fontFamily: SANS, fontSize: 15, fontWeight: 700, color: adminColor.accent, border: `1px solid ${adminColor.line2}`, borderRadius: 10, padding: "8px 10px", boxSizing: "border-box", background: "transparent" }}
+              </Box>
+            </Box>
+
+            <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setEditing(false)}
+                style={{
+                  flex: "none", width: 100, height: 44, borderRadius: 999,
+                  background: adminColor.panel2, border: `1px solid ${adminColor.line2}`,
+                  fontFamily: SANS, fontSize: 13, fontWeight: 600, color: adminColor.muted, cursor: "pointer",
+                }}
+              >
+                Cancel
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={saveEdit}
+                style={{
+                  flex: 1, height: 44, borderRadius: 999,
+                  background: adminColor.accent, border: "none",
+                  fontFamily: SANS, fontSize: 14, fontWeight: 700, color: "#fff", cursor: "pointer",
+                  boxShadow: "0 6px 16px rgba(78,126,140,0.30)",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                }}
+              >
+                <FloppyDisk size={15} /> Save changes
+              </motion.button>
+            </Box>
+          </>
+        ) : (
+          <>
+            {/* ── Guest & Schedule (read-only) ─────────────────────────── */}
+            <Box sx={{ mb: 2 }}>
+              <SectionHeader icon={<User size={13} />}>Guest &amp; Schedule</SectionHeader>
+              <Box sx={{ borderRadius: "14px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, px: 1.75, py: 0.5 }}>
+                <Row label="Customer" value={nameOf(b)} />
+                <Divider sx={{ opacity: 0.4 }} />
+                <Row
+                  label="Phone"
+                  value={
+                    b.phone ? (
+                      <Typography
+                        component="a"
+                        href={`tel:${b.phone}`}
+                        sx={{ fontFamily: SANS, fontWeight: 700, color: adminColor.green, textDecoration: "none" }}
+                      >
+                        {b.phone}
+                      </Typography>
+                    ) : (
+                      "—"
+                    )
+                  }
+                />
+                <Divider sx={{ opacity: 0.4 }} />
+                <Row label="Date & Time" value={dateLabel} />
+                <Divider sx={{ opacity: 0.4 }} />
+                <Row label="Location" value={b.locationName || b.address || "—"} />
+                {b.placeDetail && <><Divider sx={{ opacity: 0.4 }} /><Row label="Detail" value={b.placeDetail} /></>}
+              </Box>
+            </Box>
+
+            {/* ── Service (read-only) ──────────────────────────────────── */}
+            <Box sx={{ mb: 2 }}>
+              <SectionHeader icon={<Sparkle size={13} />}>Service</SectionHeader>
+              <Box sx={{ borderRadius: "14px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, px: 1.75, py: 0.5 }}>
+                <Row label="Therapist" value={b.therapistName} />
+              </Box>
+            </Box>
+
+            {/* ── Billing (read-only) ──────────────────────────────────── */}
+            <Box sx={{ mb: 2 }}>
+              <SectionHeader icon={<Receipt size={13} />}>Billing</SectionHeader>
+              <Box sx={{ borderRadius: "14px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, px: 1.75, py: 0.5 }}>
+                <Row
+                  label="Payment method"
+                  value={`${paymentMethodLabel(b.payment)}${b.paymentFee ? ` (+${formatTHB(b.paymentFee)} surcharge)` : ""}`}
                 />
               </Box>
-              <Divider sx={{ opacity: 0.4 }} />
-            </>
-          ) : (
-            <>
-              <Row label="Therapist" value={b.therapistName} />
-              <Divider sx={{ opacity: 0.4 }} />
-              <Row label="Customer"  value={nameOf(b)} />
-              <Divider sx={{ opacity: 0.4 }} />
-              <Row
-                label="Phone"
-                value={
-                  b.phone ? (
-                    <Typography
-                      component="a"
-                      href={`tel:${b.phone}`}
-                      sx={{ fontFamily: SANS, fontWeight: 700, color: adminColor.green, textDecoration: "none" }}
-                    >
-                      {b.phone}
-                    </Typography>
-                  ) : (
-                    "—"
-                  )
-                }
-              />
-              <Divider sx={{ opacity: 0.4 }} />
-              <Row label="Date & Time" value={dateLabel} />
-              <Divider sx={{ opacity: 0.4 }} />
-              <Row label="Location"  value={b.locationName || b.address || "—"} />
-              <Divider sx={{ opacity: 0.4 }} />
-              <Row
-                label="Payment method"
-                value={`${paymentMethodLabel(b.payment)}${b.paymentFee ? ` (+${formatTHB(b.paymentFee)} surcharge)` : ""}`}
-              />
-            </>
-          )}
-
-          {b.placeDetail && <><Divider sx={{ opacity: 0.4 }} /><Row label="Detail" value={b.placeDetail} /></>}
-          {b.cancelReason && <><Divider sx={{ opacity: 0.4 }} /><Row label="Cancel reason" value={b.cancelReason} /></>}
-          <Divider sx={{ opacity: 0.4 }} />
-          <Row label="Booked"    value={createdLabel} />
-          <Divider sx={{ opacity: 0.4 }} />
-          <Row label="Payment status" value={
-            <Box
-              component="span"
-              onClick={onTogglePaid}
-              role="button"
-              sx={{
-                px: "10px", py: "3px", borderRadius: 999, cursor: "pointer",
-                background: paid ? `${adminColor.green}1F` : adminColor.panel2,
-                color: paid ? adminColor.green : adminColor.muted,
-                fontFamily: SANS, fontSize: 11, fontWeight: 700,
-                userSelect: "none",
-              }}
-            >
-              {paid ? "✓ Paid" : "Unpaid — tap to mark paid"}
             </Box>
-          } />
-          <Divider sx={{ opacity: 0.4 }} />
-          <Row label="Booking ID" value={b.id} />
-        </Box>
+          </>
+        )}
 
-        {editing && (
-          <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setEditing(false)}
-              style={{
-                flex: 1, height: 38, borderRadius: 999,
-                background: adminColor.panel2, border: `1px solid ${adminColor.line2}`,
-                fontFamily: SANS, fontSize: 13, fontWeight: 600, color: adminColor.muted, cursor: "pointer",
-              }}
-            >
-              Cancel
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={saveEdit}
-              style={{
-                flex: 1, height: 38, borderRadius: 999,
-                background: adminColor.accent, border: "none",
-                fontFamily: SANS, fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              }}
-            >
-              <FloppyDisk size={14} /> Save changes
-            </motion.button>
+        {b.cancelReason && (
+          <Box sx={{ mb: 2, borderRadius: "14px", background: `${adminColor.red}0D`, border: `1px solid ${adminColor.red}33`, px: 1.75, py: 1 }}>
+            <Row label="Cancel reason" value={b.cancelReason} />
           </Box>
         )}
+
+        {/* ── Record — unchanged fields, just grouped for consistency.
+            Payment status (paid/unpaid) lives HERE, not gated by the Edit
+            toggle — same reasoning as Status: it's a routine tap, always
+            reachable, not a "fix a mistake" edit. ── */}
+        <Box sx={{ mb: 2 }}>
+          <SectionHeader icon={<ClockCounterClockwise size={13} />}>Record</SectionHeader>
+          <Box sx={{ borderRadius: "14px", background: adminColor.panel2, border: `1px solid ${adminColor.line}`, px: 1.75, py: 0.5 }}>
+            <Row label="Booked" value={createdLabel} />
+            <Divider sx={{ opacity: 0.4 }} />
+            <Row label="Payment status" value={
+              <Box
+                component="span"
+                onClick={onTogglePaid}
+                role="button"
+                sx={{
+                  px: "10px", py: "3px", borderRadius: 999, cursor: "pointer",
+                  background: paid ? `${adminColor.green}1F` : adminColor.panel2,
+                  color: paid ? adminColor.green : adminColor.muted,
+                  fontFamily: SANS, fontSize: 11, fontWeight: 700,
+                  userSelect: "none",
+                }}
+              >
+                {paid ? "✓ Paid" : "Unpaid — tap to mark paid"}
+              </Box>
+            } />
+            <Divider sx={{ opacity: 0.4 }} />
+            <Row label="Booking ID" value={b.id} />
+          </Box>
+        </Box>
 
         {/* admin note */}
         <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1 }}>
