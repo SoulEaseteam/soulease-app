@@ -92,6 +92,12 @@ import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 //   flat 60/40, see commission.ts) so this summary number can never drift
 //   from what those two pages say — the exact bug the 28s247 audit fixed.
 import { commissionBaseFor, therapistPayoutFor } from "@/utils/commission";
+// 🆕 28s260 (founder: "เพิ่มวิธีการจ่ายด้วย") — WeChat/Alipay carry a 5%+฿200
+//   surcharge (same rule as the customer flow + AdminBookingAddPage).
+//   Editing payment method is a price-affecting edit, so the total gets
+//   recomputed on save — silently leaving it stale would under-charge a
+//   booking that got switched to a surcharged method.
+import { paymentSurcharge } from "@/utils/paymentSurcharge";
 import {
   MagnifyingGlass,
   CheckCircle,
@@ -153,10 +159,12 @@ interface Booking {
   servicePrice?: number;
   discountAmount?: number;  // 🆕 28s258 — needed for the shared commission calc
   taxiFee?: number;
+  paymentFee?: number;      // 🆕 28s260 — WeChat/Alipay surcharge, recomputed if payment method is edited
   totalPrice?: number;
   total?: number;
   createdAt: Timestamp;
   status: string;
+  payment?: string;         // 🆕 28s260 — payment METHOD (cash/transfer/…), distinct from paid/paymentStatus below
   paid?: boolean;
   paymentStatus?: string;   // 🆕 28s252 — customer-flow field, now kept in sync
   cancelReason?: string;    // 🆕 28s252 — captured on cancel
@@ -1146,6 +1154,20 @@ const BookingCard: React.FC<{
 //   Same set STATUS_CFG already renders badges for.
 const ALL_STATUSES = Object.keys(STATUS_CFG);
 
+// 🆕 28s260 (founder: "เพิ่มวิธีการจ่ายด้วย") — same options AdminBookingAddPage
+//   offers when creating a booking; kept in sync so the two pages never
+//   disagree on what payment methods exist.
+const PAYMENT_METHOD_OPTIONS = [
+  { value: "cash",      label: "เงินสด (Cash)" },
+  { value: "transfer",  label: "โอนเงิน (Transfer)" },
+  { value: "card",      label: "บัตร (Card)" },
+  { value: "promptpay", label: "PromptPay" },
+  { value: "wechat",    label: "WeChat Pay" },
+  { value: "alipay",    label: "Alipay" },
+];
+const paymentMethodLabel = (v?: string): string =>
+  PAYMENT_METHOD_OPTIONS.find((o) => o.value === v)?.label ?? (v || "—");
+
 const DetailPanel: React.FC<{
   booking: Booking;
   therapists: { id: string; name: string }[];
@@ -1176,6 +1198,7 @@ const DetailPanel: React.FC<{
       date: b.date || (b.startAt?.toDate ? fmtBKK(b.startAt.toDate(), "YYYY-MM-DD") : dayjs().format("YYYY-MM-DD")),
       time: b.time || (b.startAt?.toDate ? fmtBKK(b.startAt.toDate(), "HH:mm") : "10:00"),
       location: b.locationName || b.address || "",
+      payment: b.payment || "cash",
     });
     setEditing(true);
   };
@@ -1186,16 +1209,25 @@ const DetailPanel: React.FC<{
     date: b.date ?? "",
     time: b.time ?? "",
     location: b.locationName || b.address || "",
+    payment: b.payment || "cash",
   });
   const saveEdit = () => {
     const startAt = Timestamp.fromDate(dayjs(`${editForm.date} ${editForm.time}`, "YYYY-MM-DD HH:mm").toDate());
     const newTherapist = therapists.find((t) => t.id === editForm.therapistId);
+    // 🆕 28s260 — recompute the surcharge off (service + taxi), never off the
+    //   stored totalPrice, so re-saving with the SAME method twice can't
+    //   compound an old surcharge into the new total.
+    const baseTotal = (b.servicePrice ?? 0) + (b.taxiFee ?? 0);
+    const paymentFee = paymentSurcharge(editForm.payment, baseTotal);
     onSaveDetails({
       contactName: editForm.contactName.trim(),
       customerName: editForm.contactName.trim(),
       phone: editForm.phone.trim(),
       date: editForm.date,
       time: editForm.time,
+      payment: editForm.payment,
+      paymentFee,
+      totalPrice: baseTotal + paymentFee,
       startAt,
       locationName: editForm.location.trim(),
       ...(editForm.therapistId && editForm.therapistId !== b.therapistId
@@ -1397,6 +1429,31 @@ const DetailPanel: React.FC<{
                 />
               </Box>
               <Divider sx={{ opacity: 0.4 }} />
+              <Box sx={{ py: 1 }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600, mb: 0.5 }}>
+                  Payment method
+                </Typography>
+                <Select
+                  size="small" fullWidth
+                  value={editForm.payment}
+                  onChange={(e) => setEditForm((f) => ({ ...f, payment: e.target.value }))}
+                  sx={{ fontSize: 13, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 } }}
+                  MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
+                >
+                  {PAYMENT_METHOD_OPTIONS.map((o) => (
+                    <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+                  ))}
+                </Select>
+                {/* 🆕 28s260 — preview the surcharge impact before saving, so
+                    switching to WeChat/Alipay doesn't silently change the
+                    total without the operator noticing. */}
+                {paymentSurcharge(editForm.payment, (b.servicePrice ?? 0) + (b.taxiFee ?? 0)) > 0 && (
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.amber, mt: 0.5 }}>
+                    + {formatTHB(paymentSurcharge(editForm.payment, (b.servicePrice ?? 0) + (b.taxiFee ?? 0)))} transfer surcharge will be added to the total
+                  </Typography>
+                )}
+              </Box>
+              <Divider sx={{ opacity: 0.4 }} />
             </>
           ) : (
             <>
@@ -1424,6 +1481,11 @@ const DetailPanel: React.FC<{
               <Row label="Date & Time" value={dateLabel} />
               <Divider sx={{ opacity: 0.4 }} />
               <Row label="Location"  value={b.locationName || b.address || "—"} />
+              <Divider sx={{ opacity: 0.4 }} />
+              <Row
+                label="Payment method"
+                value={`${paymentMethodLabel(b.payment)}${b.paymentFee ? ` (+${formatTHB(b.paymentFee)} surcharge)` : ""}`}
+              />
             </>
           )}
 
@@ -1432,7 +1494,7 @@ const DetailPanel: React.FC<{
           <Divider sx={{ opacity: 0.4 }} />
           <Row label="Booked"    value={createdLabel} />
           <Divider sx={{ opacity: 0.4 }} />
-          <Row label="Payment"   value={
+          <Row label="Payment status" value={
             <Box
               component="span"
               onClick={onTogglePaid}
