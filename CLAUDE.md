@@ -1342,6 +1342,17 @@ changes (all of 28s267's live-status/audit/overrideUntil logic untouched).
 - Roster summary strip restyled into icon-circle stat pills, matching
   the Dashboard/Earnings widget vocabulary established in 28s241/28s246.
 
+### 🆕 2026-07-06 — resting/holiday therapists sort to the bottom (28s269)
+
+Founder: "เอาคนหยุดไว้ด้านล่าง" — one-line follow-up right after the
+28s268 card-grid redesign shipped. Added `STATUS_SORT_ORDER`
+(available=0, bookable=1, resting=2, holiday=3) and a stable `.sort()`
+on the `filtered` list in `AdminTherapistsPage.tsx`, so inactive people
+now sink below anyone actionable — the same "attention follows what's
+actionable" rule the cards already express visually (recede + no hover
+lift) is now also reflected in ordering. Each status group keeps its
+original roster order among itself (stable sort).
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
