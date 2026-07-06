@@ -1598,6 +1598,47 @@ editable, that's a separate ask (nested-array editors are a much bigger
 form). The `Features`/`Credential`/`LanguageSkill` types already existed
 in `types/therapist.ts` (round 28z/28s220) — this just renders them.
 
+### 🆕 2026-07-07 — all rich therapist fields editable + card polish (28s278)
+
+Founder: "ปรับให้สวยขึ้น และ หน้าแก้ไขก็ ข้อมูลเชื่อมกัน แก้ไขได้จริง" —
+prettier, and the edit page's rich data should be connected + actually
+editable. 28s277 surfaced the rich fields read-only; this round makes
+them fully editable with two-way binding on `AdminTherapistDetailPage.tsx`.
+
+Now editable (were view-only): `area`, `homeAddress`, the whole
+`features` object (15-field grid), `languageSkills` (add/remove rows with
+language + level selects), `servicesAvailable` (multi-select of the 4
+canonical services), `credentials` (add/remove: type + label + meta),
+`gallery` (add/remove URL rows w/ live thumbnail), `bios` per language
+(th/en/zh/ja/ko).
+
+Key data-integrity decisions:
+- **Nested objects merged, not replaced.** `handleSave` rebuilds
+  `features`/`bios` by overlaying edited keys onto the ORIGINAL doc's
+  object, so unknown/unedited keys (e.g. `features.employmentType`, or a
+  bios lang not in the editor) are preserved rather than wiped. Blank
+  feature values / empty gallery URLs / label-less credentials are
+  dropped on save.
+- **servicesAvailable canonicalizes to SKU ids** (`resolveServiceId` on
+  load, SKU written on save). Verified safe: `StepService` matches
+  offered ids exactly against `services.ts` SKU ids, every other reader
+  uses `resolveServiceId` — so storing the SKU (which IS `s.id`) only
+  ever helps a doc that had legacy slugs, never breaks one.
+- `changedFields` diff switched to `JSON.stringify` compare so
+  array/object edits register in the audit log.
+- No `firestore.rules` change — admin already has full therapist update
+  access; the patch only writes these known fields.
+
+Visual polish: new `SectionCard` wrapper — every section in both view
+and edit mode is its own soft panel (grouped cards, not a flat stack).
+
+**⚠️ Vercel free-tier upload limit hit this session.** After ~a dozen
+`vercel --prod` deploys in one day, got `Too many requests ... more than
+5000, code: "api-upload-free"`. Fix: **`vercel --prod --yes
+--archive=tgz`** uploads one tarball instead of thousands of individual
+files, sidestepping the file-count limit. Use `--archive=tgz` as the
+default deploy flag going forward on heavy-iteration days.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
