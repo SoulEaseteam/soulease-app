@@ -1186,12 +1186,16 @@ const DetailPanel: React.FC<{
   const total      = isCancelled ? 0 : (b.totalPrice ?? b.total ?? 0);
   const paid        = isPaid(b);
 
-  // 🆕 28s259/261 — edit-details form (customer/phone/date/time/location/
-  //   therapist/payment method/price). Price was deliberately excluded in
-  //   28s259 ("แก้ไม่ได้เพราะกระทบยอดที่คำนวณไว้แล้ว") — founder reversed
-  //   that in 28s261 ("แก้ราคาได้ ทั้งหมด"): service price + taxi fee are
-  //   now free-form numbers, with Total recomputed live (incl. the payment
-  //   surcharge) so the operator sees the real total before saving.
+  // 🆕 28s259/261/262 — edit-details form (customer/phone/date/time/
+  //   location/therapist/payment method/price). Price was excluded in
+  //   28s259, reopened in 28s261 (service+taxi editable, Total derived), and
+  //   in 28s262 (founder: "ให้บิล แก้ได้ทั้งหมด บนใบจอง") Total ITSELF
+  //   became a free number too — the whole bill, not just its components.
+  //   Reasoning: a solo operator sometimes just agrees a number with the
+  //   guest that doesn't cleanly equal service+taxi+surcharge (a one-off
+  //   discount, a rounded cash amount) and needs to record reality, not be
+  //   locked to a formula. The computed value is still surfaced as a
+  //   one-click suggestion, never forced.
   const [editing, setEditing] = useState(false);
   const startEdit = () => {
     setEditForm({
@@ -1204,6 +1208,7 @@ const DetailPanel: React.FC<{
       payment: b.payment || "cash",
       servicePrice: String(b.servicePrice ?? 0),
       taxiFee: String(b.taxiFee ?? 0),
+      total: String(b.totalPrice ?? b.total ?? 0),
     });
     setEditing(true);
   };
@@ -1217,14 +1222,16 @@ const DetailPanel: React.FC<{
     payment: b.payment || "cash",
     servicePrice: String(b.servicePrice ?? 0),
     taxiFee: String(b.taxiFee ?? 0),
+    total: String(b.totalPrice ?? b.total ?? 0),
   });
-  // Live totals for the edit form — recomputed from whatever's currently
-  // typed, not the stored booking values.
+  // Live figures for the edit form — recomputed from whatever's currently
+  // typed. `computedTotal` is a SUGGESTION only; `editForm.total` (what
+  // actually gets saved) is independent and freely editable.
   const editServicePrice = Number(editForm.servicePrice) || 0;
   const editTaxiFee      = Number(editForm.taxiFee) || 0;
-  const editBaseTotal    = editServicePrice + editTaxiFee;
-  const editSurcharge    = paymentSurcharge(editForm.payment, editBaseTotal);
-  const editTotal        = editBaseTotal + editSurcharge;
+  const editSurcharge    = paymentSurcharge(editForm.payment, editServicePrice + editTaxiFee);
+  const computedTotal    = editServicePrice + editTaxiFee + editSurcharge;
+  const editTotal        = Number(editForm.total) || 0;
 
   const saveEdit = () => {
     const startAt = Timestamp.fromDate(dayjs(`${editForm.date} ${editForm.time}`, "YYYY-MM-DD HH:mm").toDate());
@@ -1493,17 +1500,38 @@ const DetailPanel: React.FC<{
                     <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
                   ))}
                 </Select>
-                {/* 🆕 28s260/261 — live preview off the CURRENTLY TYPED service
-                    + taxi, not the stale stored values, so the surcharge and
-                    the final total are always accurate to what's on screen. */}
                 {editSurcharge > 0 && (
                   <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.amber, mt: 0.5 }}>
-                    + {formatTHB(editSurcharge)} transfer surcharge will be added to the total
+                    + {formatTHB(editSurcharge)} transfer surcharge on this method
                   </Typography>
                 )}
-                <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.text, fontWeight: 700, mt: 0.75 }}>
-                  New total: <Box component="span" sx={{ ...adminFigureSx, fontSize: 13, color: adminColor.accent }}>{formatTHB(editTotal)}</Box>
-                </Typography>
+              </Box>
+              <Divider sx={{ opacity: 0.4 }} />
+              {/* 🆕 28s262 (founder: "ให้บิล แก้ได้ทั้งหมด บนใบจอง") — Total
+                  is now its OWN free number, independent of service+taxi+
+                  surcharge. The computed figure is a one-click suggestion,
+                  never forced — a manually agreed price is a real price. */}
+              <Box sx={{ py: 1 }}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, fontWeight: 600 }}>Total (฿)</Typography>
+                  {computedTotal !== editTotal && (
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setEditForm((f) => ({ ...f, total: String(computedTotal) }))}
+                      style={{
+                        border: "none", background: "transparent", cursor: "pointer",
+                        fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.accent, padding: 0,
+                      }}
+                    >
+                      Use computed: {formatTHB(computedTotal)}
+                    </motion.button>
+                  )}
+                </Box>
+                <input
+                  type="number" min={0} step={10} value={editForm.total}
+                  onChange={(e) => setEditForm((f) => ({ ...f, total: e.target.value }))}
+                  style={{ width: "100%", fontFamily: SANS, fontSize: 15, fontWeight: 700, color: adminColor.accent, border: `1px solid ${adminColor.line2}`, borderRadius: 10, padding: "8px 10px", boxSizing: "border-box", background: "transparent" }}
+                />
               </Box>
               <Divider sx={{ opacity: 0.4 }} />
             </>
