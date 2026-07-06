@@ -1246,6 +1246,67 @@ Regrouped by actual usage, no route/behavior change:
 - **Content:** Reviews, Seed Reviews
 - **System:** Blocked, Audit Log, Pages, Settings
 
+### 🆕 2026-07-06 — /admin/therapists audit: 8 fixes (28s267)
+
+Founder: "Audit admin/therapists" → "แก้ทั้งหมด". `AdminTherapistsPage.tsx`
+was the last admin page not yet audited this session (and the last one
+still on the pre-redesign theme). Findings + fixes:
+
+1. **The real bug.** Admin's own roster could show a therapist as
+   "available" while she was actually mid-session, or "busy" long after a
+   job ended — because the page fed `calculateTherapistStatus()` raw
+   Firestore fields and trusted the legacy manual `isBooked` toggle. The
+   CUSTOMER-facing booking flow had already stopped trusting that same
+   field back in round 28b49, specifically because admin's manual toggle
+   goes stale — but admin's own page was never updated to match. Fixed:
+   one shop-wide bookings listener bounded by `status in
+   [confirmed,pending,in_progress]` (small by construction — mirrors why
+   the per-therapist version never needed a `limit()`), merged into the
+   same `activeBooking`/`busyUntil` shape BookingFlowPage already builds.
+   Admin now sees exactly what customers see. This made the old manual
+   "Session" switch pure dead weight, so it's replaced with a real **"Now"**
+   column showing the actual booking end time (or "ว่าง").
+2. **Today/Total columns always showed 0.** Grepped the whole repo — no
+   code anywhere ever wrote `todayBookings`/`totalBookings` onto a
+   therapist doc after creation-time `0`. Today is now a live count from
+   a `date`-scoped bookings query (one day of volume, safe to stream);
+   Total uses `getCountFromServer` per therapist (server-side aggregate,
+   zero documents downloaded), refetched only when the roster's id set
+   changes.
+3. **`statusOverride` never expired** (this exact gap was already flagged
+   in the Phase-4 TODO above — confirmed still true, zero `overrideUntil`
+   refs anywhere before this round). New `overrideUntil` field on
+   `Therapist` (`src/types/therapist.ts`), stamped to end-of-BKK-day
+   whenever a non-Auto override is set — including the "คืนนี้เปิดทั้งร้าน"
+   roster-batch action. `calculateTherapistStatus.ts` now ignores an
+   expired override and falls through to normal working-hours logic.
+   Additive only — overrides with no `overrideUntil` keep the old sticky
+   behavior, so nothing existing breaks.
+4. **Silent data loss.** Edit a field, hit Back within the 250ms debounce
+   window, the edit vanished — unmount cleared the pending timer instead
+   of flushing it. Fixed: unmount now fires every still-pending write
+   immediately instead of discarding it.
+5. **Zero audit trail on individual edits.** Only the two roster-batch
+   actions were logged; holiday toggle, override change, working-hours
+   edits, and delete were not. Added `therapist.update`/`therapist.delete`
+   to `auditLog.ts` + Thai labels in `AdminAuditLogPage.tsx`, wired into
+   every edit path.
+6. **Hard delete, zero warning.** Delete now precounts bookings tied to
+   that therapist (`getCountFromServer`) and shows the real number in the
+   confirm dialog before deleting — still allows it (founder is the sole
+   operator), just makes the risk visible instead of silent.
+7. **Restyled onto Ocean Study** (`adminColor`/`adminFont`/`adminFigureSx`)
+   — this was the last admin page on the pre-redesign theme. **Every admin
+   page is now on Ocean Study.**
+8. **Pagination stranding** — DataGrid now resets to page 1 whenever
+   search/filter narrows the visible set.
+
+**Flagged, not fixed (adjacent, different page):** `AdminTherapistDetailPage.tsx`
+has its own hand-rolled status calc (`therapist.isBooked ? "bookable" :
+"available"`) that duplicates rather than reuses `calculateTherapistStatus`
+— same root issue as finding #1 but on a different page. Worth aligning
+next time that page is touched.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
