@@ -6,6 +6,17 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
+    <!-- 🆕 Round 28s273 (founder: admin console showing up mangled by
+         Chrome's auto-translate — "Seed Reviews" → "รีวิวเมล็ดพันธุ์",
+         "SunRed Control" transliterated, etc). Root cause: <html lang>
+         is "en" (kept for the customer site's English-first SEO — see
+         2026-06-02 round), but /admin/* is heavily Thai, so Chrome's
+         language-mismatch heuristic offers/auto-applies translation on
+         top of already-Thai text. `notranslate` doesn't affect SEO or
+         crawling (Google documents this) — it only tells the Translate
+         feature to leave the page alone. Customers don't rely on this
+         either; the site has its own real i18n system (5 languages). -->
+    <meta name="google" content="notranslate" />
 
     <title>Outcall Massage Bangkok — Delivered to Your Hotel 24/7 | SunRed</title>
 
