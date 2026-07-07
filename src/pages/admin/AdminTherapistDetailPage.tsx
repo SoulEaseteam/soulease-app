@@ -40,8 +40,7 @@ import {
   ArrowLeft, PencilSimple, FloppyDisk, X, Eye,
   Star, ChatCircleText, Clock, MapPin, Medal, EyeSlash, Prohibit, Umbrella,
   Calendar, ChartBar, ClockCounterClockwise, TelegramLogo, IdentificationCard, Image as ImageIcon, Sparkle,
-  Check, Warning, Globe, Notebook, UserFocus, MapPinLine, Info, Plus, Trash,
-  MagnifyingGlass, UploadSimple, CircleNotch,
+  Check, Warning, Globe, Notebook, UserFocus, MapPinLine, Info,
 } from "phosphor-react";
 import type { Credential, LanguageSkill } from "@/types/therapist";
 import { calculateTherapistStatus, isOverrideExpired } from "@/utils/calculateTherapistStatus";
@@ -49,10 +48,12 @@ import { endOfTodayBKK, fmtBKKTimeShort } from "@/utils/time";
 import { useTherapistBookings, findActiveBooking } from "@/utils/useTherapistBookings";
 import { logAdminAction } from "@/utils/auditLog";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
-import services from "@/data/services";
 import { resolveServiceId, getServiceLabel } from "@/utils/serviceCatalog";
-import { useGoogleMaps } from "@/context/GoogleMapsContext";
-import { app } from "@/lib/firebase";
+import {
+  SectionCard, LocationPicker, FeaturesEditor, LanguagesEditor, ServicesEditor,
+  CredentialsEditor, BiosEditor, GalleryEditor, AvatarUploader, fieldSx, selectMenuProps,
+  FEATURE_ROWS, LANG_LABEL, LANG_LEVEL_TH, BIO_LANGS,
+} from "./therapistFormKit";
 
 type Avail = "available" | "bookable" | "resting" | "holiday";
 type StatusOverride = "Auto" | "available" | "bookable" | "resting";
@@ -65,188 +66,6 @@ const STATUS_COLOR: Record<Avail, string> = {
 };
 
 const badgeOptions = ["", "VIP", "HOT", "NEW"] as const;
-
-// 🆕 Round 28s277 (founder: "ดึงดีเทลจริงของพนักงานจาก therapists") — the
-// therapist docs hold much richer real data (features / languageSkills /
-// credentials / area / gallery / bios) than this page surfaced. These maps
-// render the stored `features` object's keys, in a sensible order, with
-// Thai labels. Any key not present on a given doc is simply skipped.
-const FEATURE_ROWS: Array<[string, string]> = [
-  ["age", "อายุ"],
-  ["gender", "เพศ"],
-  ["ethnicity", "เชื้อชาติ"],
-  ["height", "ส่วนสูง"],
-  ["weight", "น้ำหนัก"],
-  ["bodyType", "รูปร่าง"],
-  ["skintone", "สีผิว"],
-  ["bustSize", "หน้าอก"],
-  ["hairColor", "สีผม"],
-  ["hairLength", "ความยาวผม"],
-  ["eyeColor", "สีตา"],
-  ["tattoos", "รอยสัก"],
-  ["personality", "บุคลิก"],
-  ["vaccinated", "วัคซีน"],
-  ["smoker", "สูบบุหรี่"],
-];
-
-const LANG_LABEL: Record<string, string> = {
-  en: "อังกฤษ", th: "ไทย", zh: "จีน", ja: "ญี่ปุ่น", ko: "เกาหลี",
-};
-const LANG_LEVEL_TH: Record<string, string> = {
-  Native: "เจ้าของภาษา", Fluent: "คล่อง", Conversational: "พอสื่อสาร", Basic: "พื้นฐาน",
-};
-
-// 🆕 Round 28s278 — option lists for the array-field editors.
-const LANG_CODES = ["th", "en", "zh", "ja", "ko"] as const;
-const LANG_LEVELS: LanguageSkill["level"][] = ["Native", "Fluent", "Conversational", "Basic"];
-const CRED_TYPES: Credential["type"][] = ["license", "diploma", "background", "certification"];
-const BIO_LANGS: Array<[string, string]> = [
-  ["th", "ไทย"], ["en", "อังกฤษ"], ["zh", "จีน"], ["ja", "ญี่ปุ่น"], ["ko", "เกาหลี"],
-];
-// The 4 canonical bookable services (SKU ids), for the multi-select.
-const SERVICE_OPTIONS = services.map((s) => ({ id: s.id, name: s.name }));
-
-const selectMenuProps = {
-  PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px", boxShadow: "0 8px 24px rgba(31,41,51,0.16)" } },
-} as const;
-
-const fieldSx = {
-  "& .MuiOutlinedInput-root": { borderRadius: "10px", background: adminColor.panel, fontSize: 13.5 },
-  "& .MuiInputLabel-root": { fontSize: 13 },
-} as const;
-
-const SectionHeader: React.FC<{ icon: React.ReactNode; children: React.ReactNode }> = ({ icon, children }) => (
-  <Box sx={{ display: "flex", alignItems: "center", gap: "6px", mb: "10px", color: adminColor.dim }}>
-    {icon}
-    <Typography sx={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.07em" }}>{children}</Typography>
-  </Box>
-);
-
-// 🆕 Round 28s278 (founder: "ปรับให้สวยขึ้น") — each section is now its own
-// soft card (in both view and edit), so the page reads as grouped panels
-// instead of a flat stack of rows/fields.
-const SectionCard: React.FC<{ icon: React.ReactNode; title: string; children: React.ReactNode }> = ({ icon, title, children }) => (
-  <Box sx={{ background: adminColor.panel2, border: `1px solid ${adminColor.line}`, borderRadius: "16px", p: "16px 16px 17px" }}>
-    <SectionHeader icon={icon}>{title}</SectionHeader>
-    {children}
-  </Box>
-);
-
-// 🆕 Round 28s280 (founder: "ช่องค้นหา ดึงเมปจริง จากเมฟเดียวกับการจอง") —
-// a compact address-search + map picker, using the SAME Google Maps /
-// Places setup the customer booking flow (SelectLocationPage) uses via the
-// app-wide GoogleMapsProvider. Search a place OR tap the map → fills
-// area (place name) + homeAddress (formatted address) + lat/lng.
-const LocationPicker: React.FC<{
-  initial: { lat: number | null; lng: number | null };
-  onPick: (r: { area: string; address: string; lat: number; lng: number }) => void;
-}> = ({ initial, onPick }) => {
-  const { ready, loadIfNeeded } = useGoogleMaps();
-  const searchRef = useRef<HTMLInputElement | null>(null);
-  const mapElRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
-  const acRef = useRef<any>(null);
-  const onPickRef = useRef(onPick);
-  onPickRef.current = onPick;
-
-  useEffect(() => { loadIfNeeded(); }, [loadIfNeeded]);
-
-  useEffect(() => {
-    if (!ready || !mapElRef.current || mapRef.current) return;
-    const G = (window as any).google?.maps;
-    if (!G) return;
-
-    const initLat = initial.lat ?? 13.7563;
-    const initLng = initial.lng ?? 100.5018;
-    const map = new G.Map(mapElRef.current, {
-      center: { lat: initLat, lng: initLng }, zoom: 15,
-      disableDefaultUI: true, zoomControl: true, gestureHandling: "greedy",
-    });
-    mapRef.current = map;
-
-    const placeMarker = (lat: number, lng: number) => {
-      if (markerRef.current) { markerRef.current.setPosition({ lat, lng }); return; }
-      markerRef.current = new G.Marker({ position: { lat, lng }, map });
-    };
-    if (initial.lat != null && initial.lng != null) placeMarker(initLat, initLng);
-
-    const reverseGeocode = (lat: number, lng: number) => {
-      const geocoder = new G.Geocoder();
-      geocoder.geocode({ location: { lat, lng } }, (results: any[], status: string) => {
-        const addr = status === "OK" && results?.length ? (results[0].formatted_address ?? "") : "";
-        onPickRef.current({ area: "", address: addr, lat, lng });
-      });
-    };
-
-    map.addListener("click", (e: any) => {
-      const ll = e.latLng; if (!ll) return;
-      const lat = ll.lat(); const lng = ll.lng();
-      placeMarker(lat, lng);
-      if (e.placeId) e.stop?.();
-      reverseGeocode(lat, lng);
-    });
-
-    if (G.places && searchRef.current) {
-      const ac = new G.places.Autocomplete(searchRef.current, {
-        componentRestrictions: { country: "th" },
-        fields: ["name", "formatted_address", "geometry"],
-      });
-      acRef.current = ac;
-      ac.addListener("place_changed", () => {
-        const place = ac.getPlace();
-        const loc = place.geometry?.location; if (!loc) return;
-        const lat = loc.lat(); const lng = loc.lng();
-        placeMarker(lat, lng); map.panTo({ lat, lng }); map.setZoom(17);
-        onPickRef.current({ area: place.name ?? "", address: place.formatted_address ?? "", lat, lng });
-      });
-      const styleId = "sunred-pac-zindex-admin";
-      if (!document.getElementById(styleId)) {
-        const style = document.createElement("style");
-        style.id = styleId;
-        style.textContent = ".pac-container{z-index:13000 !important;border-radius:12px;font-family:'Inter',sans-serif;box-shadow:0 12px 40px rgba(31,41,51,0.18);}";
-        document.head.appendChild(style);
-      }
-    }
-
-    return () => {
-      const gEvent = (window as any).google?.maps?.event;
-      if (gEvent) {
-        if (mapRef.current) gEvent.clearInstanceListeners(mapRef.current);
-        if (acRef.current) gEvent.clearInstanceListeners(acRef.current);
-      }
-      if (markerRef.current) markerRef.current.setMap(null);
-      markerRef.current = null; acRef.current = null; mapRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready]);
-
-  return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-      <Box sx={{ position: "relative" }}>
-        <MagnifyingGlass size={16} color={adminColor.dim} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
-        <input
-          ref={searchRef}
-          placeholder={ready ? "ค้นหาสถานที่ / โรงแรม / คอนโด…" : "กำลังโหลดแผนที่…"}
-          inputMode="search" autoCapitalize="off" autoCorrect="off" spellCheck={false}
-          style={{ width: "100%", padding: "11px 14px 11px 38px", borderRadius: "10px", border: `1px solid ${adminColor.line}`, background: adminColor.panel, fontFamily: adminFont.sans, fontSize: 16, color: adminColor.text, outline: "none" }}
-        />
-      </Box>
-      <Box ref={mapElRef} sx={{ width: "100%", height: 220, borderRadius: "12px", overflow: "hidden", border: `1px solid ${adminColor.line}`, background: adminColor.panel3 }} />
-      <Typography sx={{ fontSize: 11, color: adminColor.dim }}>ค้นหาด้านบน หรือแตะบนแผนที่เพื่อปักหมุด — ระบบจะเติมพื้นที่/ที่อยู่/พิกัดให้อัตโนมัติ</Typography>
-    </Box>
-  );
-};
-
-const chipDeleteBtnSx = {
-  color: adminColor.dim,
-  "&:hover": { background: "rgba(220,38,38,0.09)", color: adminColor.red },
-} as const;
-
-const addBtnSx = {
-  color: adminColor.accent, textTransform: "none", fontWeight: 700, fontSize: 12.5,
-  alignSelf: "flex-start", mt: "2px",
-} as const;
 
 interface FormState {
   name: string;
@@ -279,39 +98,6 @@ const EMPTY_FORM: FormState = {
   area: "", homeAddress: "", features: {}, languageSkills: [], servicesAvailable: [],
   credentials: [], gallery: [], bios: {},
 };
-
-// 🆕 Round 28s281 — resize an image file in-browser to a max long edge,
-// re-encode as JPEG. Falls back to the original file if anything about the
-// canvas path fails (e.g. exotic format). Keeps uploads small + fast.
-async function downscaleImage(file: File, maxEdge = 1600, quality = 0.85): Promise<Blob> {
-  try {
-    const dataUrl: string = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-    const img: HTMLImageElement = await new Promise((resolve, reject) => {
-      const im = new Image();
-      im.onload = () => resolve(im);
-      im.onerror = reject;
-      im.src = dataUrl;
-    });
-    const scale = Math.min(1, maxEdge / Math.max(img.width, img.height));
-    const w = Math.round(img.width * scale);
-    const h = Math.round(img.height * scale);
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return file;
-    ctx.drawImage(img, 0, 0, w, h);
-    const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
-    return blob ?? file;
-  } catch {
-    return file;
-  }
-}
 
 function toFormState(data: Record<string, unknown>): FormState {
   const rawOverride = data.statusOverride;
@@ -386,10 +172,6 @@ const AdminTherapistDetailPage: React.FC = () => {
   const [reviewCount, setReviewCount] = useState(0);
   const [avgRating, setAvgRating] = useState(0);
   const [saving, setSaving] = useState(false);
-  // 🆕 Round 28s280 — gallery photo upload (Firebase Storage) state.
-  const [uploading, setUploading] = useState(0);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // 🆕 opening the roster's Pencil icon lands here with ?edit=1 pre-armed.
   const [editing, setEditing] = useState(() => searchParams.get("edit") === "1");
@@ -570,86 +352,6 @@ const AdminTherapistDetailPage: React.FC = () => {
     setFormData((f) => ({ ...f, statusOverride: value, ...(value !== "Auto" ? { isHoliday: false } : {}) }));
   };
 
-  // 🆕 Round 28s278 — mutation helpers for the rich editable fields.
-  const setFeature = (key: string, value: string) =>
-    setFormData((f) => ({ ...f, features: { ...f.features, [key]: value } }));
-
-  const addLanguage = () =>
-    setFormData((f) => ({ ...f, languageSkills: [...f.languageSkills, { code: "th", level: "Fluent" }] }));
-  const updateLanguage = (i: number, patch: Partial<LanguageSkill>) =>
-    setFormData((f) => ({ ...f, languageSkills: f.languageSkills.map((l, idx) => (idx === i ? { ...l, ...patch } : l)) }));
-  const removeLanguage = (i: number) =>
-    setFormData((f) => ({ ...f, languageSkills: f.languageSkills.filter((_, idx) => idx !== i) }));
-
-  const toggleService = (id: string) =>
-    setFormData((f) => ({
-      ...f,
-      servicesAvailable: f.servicesAvailable.includes(id)
-        ? f.servicesAvailable.filter((s) => s !== id)
-        : [...f.servicesAvailable, id],
-    }));
-
-  const addCredential = () =>
-    setFormData((f) => ({ ...f, credentials: [...f.credentials, { type: "certification", label: "", meta: "" }] }));
-  const updateCredential = (i: number, patch: Partial<Credential>) =>
-    setFormData((f) => ({ ...f, credentials: f.credentials.map((c, idx) => (idx === i ? { ...c, ...patch } : c)) }));
-  const removeCredential = (i: number) =>
-    setFormData((f) => ({ ...f, credentials: f.credentials.filter((_, idx) => idx !== i) }));
-
-  const addGallery = () => setFormData((f) => ({ ...f, gallery: [...f.gallery, ""] }));
-  const updateGallery = (i: number, value: string) =>
-    setFormData((f) => ({ ...f, gallery: f.gallery.map((g, idx) => (idx === i ? value : g)) }));
-  const removeGallery = (i: number) =>
-    setFormData((f) => ({ ...f, gallery: f.gallery.filter((_, idx) => idx !== i) }));
-
-  const setBio = (code: string, value: string) =>
-    setFormData((f) => ({ ...f, bios: { ...f.bios, [code]: value } }));
-
-  // 🆕 Round 28s280 — upload photos straight from the phone to Firebase
-  // Storage, then push the download URLs into the gallery. firebase/storage
-  // is dynamically imported so it never enters the customer bundle (the
-  // reason its export was dropped in 28s105). Uploads to
-  // therapists/{docId}/gallery/{ts}-{name}; storage.rules gates writes to
-  // admins only. Fails soft with a clear message if Storage isn't enabled
-  // on the project yet (one-time console step — see CLAUDE.md 28s280).
-  const onUploadFiles = async (files: FileList | null) => {
-    if (!files || !files.length || !docId) return;
-    setUploadError(null);
-    setUploading(files.length);
-    try {
-      const { getStorage, ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
-      const storage = getStorage(app);
-      const picked = Array.from(files);
-      const urls: string[] = [];
-      for (const file of picked) {
-        if (!file.type.startsWith("image/")) { setUploading((n) => Math.max(0, n - 1)); continue; }
-        // 🆕 Round 28s281 — downscale in the browser BEFORE upload: a raw
-        // phone photo is often 5-12MB (some 48MP shots exceed the rule's
-        // cap); resizing to ~1600px / JPEG 0.85 lands well under 500KB,
-        // uploads fast on mobile data, and stores web-optimized images.
-        const blob = await downscaleImage(file);
-        const path = `therapists/${docId}/gallery/${dayjs().valueOf()}-${Math.round((blob.size % 100000))}.jpg`;
-        const snap = await uploadBytes(ref(storage, path), blob, { contentType: "image/jpeg" });
-        urls.push(await getDownloadURL(snap.ref));
-        setUploading((n) => Math.max(0, n - 1));
-      }
-      if (urls.length) setFormData((f) => ({ ...f, gallery: [...f.gallery, ...urls] }));
-    } catch (err) {
-      console.error("[gallery upload] failed", err);
-      const msg = String((err as { code?: string })?.code ?? err ?? "");
-      setUploadError(
-        msg.includes("unauthorized") || msg.includes("unauthenticated")
-          ? "อัปโหลดไม่ได้ — สิทธิ์ไม่พอ (ยังไม่ได้ล็อกอิน หรือ storage.rules ยังไม่อัปเดต)"
-          : msg.includes("storage/unknown") || msg.includes("does not exist") || msg.includes("app/no-app")
-            ? "ยังเปิด Firebase Storage ไม่ได้ในโปรเจกต์ — ต้องกด Get Started ในคอนโซลก่อน"
-            : "อัปโหลดรูปไม่สำเร็จ ลองใหม่อีกครั้ง (หรือใส่ลิงก์รูปด้านล่างแทน)"
-      );
-    } finally {
-      setUploading(0);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
-
   const handleSave = async () => {
     if (!docId) return;
     setSaving(true);
@@ -801,14 +503,20 @@ const AdminTherapistDetailPage: React.FC = () => {
       <Box sx={{ background: adminColor.panel, borderRadius: "20px", border: `1px solid ${adminColor.line}`, boxShadow: "0 4px 18px rgba(31,41,51,0.08)", p: { xs: 2.5, md: 3.5 } }}>
         {/* ── Header ─────────────────────────────────────────────── */}
         <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, flexWrap: "wrap" }}>
-          <Badge
-            overlap="circular"
-            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-            variant="dot"
-            sx={{ "& .MuiBadge-badge": { background: STATUS_COLOR[computedStatus], width: 15, height: 15, borderRadius: "50%", border: `3px solid ${adminColor.panel}` } }}
-          >
-            <Avatar src={formData.image} sx={{ width: 76, height: 76, boxShadow: `0 0 0 3px ${adminColor.panel}, 0 0 0 5px ${ringColor}` }} />
-          </Badge>
+          {/* 🆕 Round 28s284 — tap the photo to change it while editing
+              (replaces the Image URL text field); display-only otherwise. */}
+          {editing ? (
+            <AvatarUploader value={formData.image} onChange={(url) => setFormData((f) => ({ ...f, image: url }))} docId={docId ?? ""} size={76} ringColor={ringColor} />
+          ) : (
+            <Badge
+              overlap="circular"
+              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+              variant="dot"
+              sx={{ "& .MuiBadge-badge": { background: STATUS_COLOR[computedStatus], width: 15, height: 15, borderRadius: "50%", border: `3px solid ${adminColor.panel}` } }}
+            >
+              <Avatar src={formData.image} sx={{ width: 76, height: 76, boxShadow: `0 0 0 3px ${adminColor.panel}, 0 0 0 5px ${ringColor}` }} />
+            </Badge>
+          )}
           <Box sx={{ flex: 1, minWidth: 200 }}>
             <Typography sx={{ fontFamily: adminFont.serif, fontWeight: 700, fontSize: 24, color: adminColor.text }}>{formData.name || "-"}</Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: "6px", fontSize: 13, fontWeight: 600, color: STATUS_COLOR[computedStatus], mt: "4px" }}>
@@ -987,13 +695,17 @@ const AdminTherapistDetailPage: React.FC = () => {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1.75 }}>
             <SectionCard icon={<Sparkle size={13} />} title="โปรไฟล์">
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+                {/* 🆕 Round 28s284 — Image URL field removed; change the photo
+                    by tapping the avatar in the header above. */}
                 <TextField label="Name" fullWidth size="small" sx={fieldSx} value={formData.name} onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))} />
-                <TextField label="Image URL" fullWidth size="small" sx={fieldSx} value={formData.image} onChange={(e) => setFormData((f) => ({ ...f, image: e.target.value }))} />
                 <TextField label="Specialty" fullWidth size="small" sx={fieldSx} value={formData.specialty} onChange={(e) => setFormData((f) => ({ ...f, specialty: e.target.value }))} />
+                {/* 🆕 Round 28s284 — shrink:true so the "Badge" label doesn't
+                    overlap the "None" text displayEmpty renders while empty. */}
                 <TextField
                   select label="Badge" fullWidth size="small" sx={fieldSx}
                   value={formData.badge}
                   onChange={(e) => setFormData((f) => ({ ...f, badge: e.target.value }))}
+                  InputLabelProps={{ shrink: true }}
                   SelectProps={{ MenuProps: selectMenuProps, displayEmpty: true }}
                 >
                   {badgeOptions.map((b) => (
@@ -1062,137 +774,32 @@ const AdminTherapistDetailPage: React.FC = () => {
 
             {/* 🆕 Round 28s278 — full features grid, editable. */}
             <SectionCard icon={<UserFocus size={13} />} title="ลักษณะเฉพาะตัว">
-              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "repeat(3, 1fr)" }, gap: 1 }}>
-                {FEATURE_ROWS.map(([k, label]) => (
-                  <TextField key={k} label={label} fullWidth size="small" sx={fieldSx} value={formData.features[k] ?? ""} onChange={(e) => setFeature(k, e.target.value)} />
-                ))}
-              </Box>
+              <FeaturesEditor value={formData.features} onChange={(k, v) => setFormData((f) => ({ ...f, features: { ...f.features, [k]: v } }))} />
             </SectionCard>
 
             {/* 🆕 Round 28s278 — language rows, add/remove. */}
             <SectionCard icon={<Globe size={13} />} title="ภาษา">
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                {formData.languageSkills.map((l, i) => (
-                  <Box key={i} sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                    <TextField
-                      select size="small" sx={{ ...fieldSx, flex: 1 }} label="ภาษา" value={l.code}
-                      onChange={(e) => updateLanguage(i, { code: e.target.value })}
-                      SelectProps={{ MenuProps: selectMenuProps }}
-                    >
-                      {LANG_CODES.map((c) => <MenuItem key={c} value={c}>{LANG_LABEL[c]}</MenuItem>)}
-                    </TextField>
-                    <TextField
-                      select size="small" sx={{ ...fieldSx, flex: 1 }} label="ระดับ" value={l.level}
-                      onChange={(e) => updateLanguage(i, { level: e.target.value as LanguageSkill["level"] })}
-                      SelectProps={{ MenuProps: selectMenuProps }}
-                    >
-                      {LANG_LEVELS.map((lv) => <MenuItem key={lv} value={lv}>{LANG_LEVEL_TH[lv]}</MenuItem>)}
-                    </TextField>
-                    <IconButton size="small" onClick={() => removeLanguage(i)} sx={chipDeleteBtnSx}><Trash size={16} /></IconButton>
-                  </Box>
-                ))}
-                <Button onClick={addLanguage} startIcon={<Plus size={14} weight="bold" />} sx={addBtnSx}>เพิ่มภาษา</Button>
-              </Box>
+              <LanguagesEditor value={formData.languageSkills} onChange={(next) => setFormData((f) => ({ ...f, languageSkills: next }))} />
             </SectionCard>
 
             {/* 🆕 Round 28s278 — services multi-select (canonical SKU ids). */}
             <SectionCard icon={<Sparkle size={13} />} title="บริการที่ทำได้">
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                {SERVICE_OPTIONS.map((s) => {
-                  const on = formData.servicesAvailable.includes(s.id);
-                  return (
-                    <Box
-                      key={s.id}
-                      onClick={() => toggleService(s.id)}
-                      sx={{
-                        display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: 12.5, fontWeight: 700,
-                        borderRadius: "9px", p: "7px 13px",
-                        border: `1px solid ${on ? adminColor.accent : adminColor.line}`,
-                        background: on ? "rgba(78,126,140,0.12)" : adminColor.panel,
-                        color: on ? adminColor.accent : adminColor.dim,
-                      }}
-                    >
-                      {on && <Check size={13} weight="bold" />}
-                      {s.name}
-                    </Box>
-                  );
-                })}
-              </Box>
+              <ServicesEditor value={formData.servicesAvailable} onChange={(next) => setFormData((f) => ({ ...f, servicesAvailable: next }))} />
             </SectionCard>
 
             {/* 🆕 Round 28s278 — credential rows, add/remove. */}
             <SectionCard icon={<Info size={13} />} title="ใบรับรอง / ประวัติ">
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
-                {formData.credentials.map((c, i) => (
-                  <Box key={i} sx={{ display: "flex", flexDirection: "column", gap: 1, background: adminColor.panel, borderRadius: "10px", p: "10px 11px", border: `1px solid ${adminColor.line}` }}>
-                    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                      <TextField
-                        select size="small" sx={{ ...fieldSx, width: 160 }} label="ประเภท" value={c.type}
-                        onChange={(e) => updateCredential(i, { type: e.target.value as Credential["type"] })}
-                        SelectProps={{ MenuProps: selectMenuProps }}
-                      >
-                        {CRED_TYPES.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
-                      </TextField>
-                      <TextField size="small" sx={{ ...fieldSx, flex: 1 }} label="หัวข้อ" value={c.label} onChange={(e) => updateCredential(i, { label: e.target.value })} />
-                      <IconButton size="small" onClick={() => removeCredential(i)} sx={chipDeleteBtnSx}><Trash size={16} /></IconButton>
-                    </Box>
-                    <TextField size="small" sx={fieldSx} label="รายละเอียด" value={c.meta} onChange={(e) => updateCredential(i, { meta: e.target.value })} />
-                  </Box>
-                ))}
-                <Button onClick={addCredential} startIcon={<Plus size={14} weight="bold" />} sx={addBtnSx}>เพิ่มใบรับรอง</Button>
-              </Box>
+              <CredentialsEditor value={formData.credentials} onChange={(next) => setFormData((f) => ({ ...f, credentials: next }))} />
             </SectionCard>
 
             {/* 🆕 Round 28s278 — bios per language. */}
             <SectionCard icon={<Notebook size={13} />} title="ประวัติแนะนำ (แต่ละภาษา)">
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
-                {BIO_LANGS.map(([code, label]) => (
-                  <TextField
-                    key={code} label={label} fullWidth size="small" multiline minRows={2} sx={fieldSx}
-                    value={formData.bios[code] ?? ""} onChange={(e) => setBio(code, e.target.value)}
-                  />
-                ))}
-              </Box>
+              <BiosEditor value={formData.bios} onChange={(code, v) => setFormData((f) => ({ ...f, bios: { ...f.bios, [code]: v } }))} />
             </SectionCard>
 
             {/* 🆕 Round 28s278 gallery URL rows · 28s280 photo upload. */}
             <SectionCard icon={<ImageIcon size={13} />} title={`แกลเลอรี (${formData.gallery.filter(Boolean).length})`}>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                {/* 🆕 Round 28s280 — upload straight from phone camera/library. */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  style={{ display: "none" }}
-                  onChange={(e) => void onUploadFiles(e.target.files)}
-                />
-                <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading > 0}
-                  startIcon={uploading > 0 ? <CircleNotch size={15} className="spin" /> : <UploadSimple size={15} weight="bold" />}
-                  sx={{
-                    alignSelf: "stretch", background: `linear-gradient(180deg,#5A8998,${adminColor.accent})`, color: "#fff",
-                    textTransform: "none", fontWeight: 700, borderRadius: "10px", boxShadow: "0 3px 10px rgba(78,126,140,0.28)",
-                    "&:hover": { background: adminColor.accentDeep }, "&.Mui-disabled": { color: "#fff", opacity: 0.7 },
-                    "& .spin": { animation: "spin 0.8s linear infinite" }, "@keyframes spin": { to: { transform: "rotate(360deg)" } },
-                  }}
-                >
-                  {uploading > 0 ? `กำลังอัปโหลด… (${uploading})` : "อัปโหลดรูปจากมือถือ"}
-                </Button>
-                {uploadError && (
-                  <Typography sx={{ fontSize: 11.5, color: adminColor.red, background: "rgba(220,38,38,0.07)", borderRadius: "8px", p: "8px 10px" }}>{uploadError}</Typography>
-                )}
-
-                {formData.gallery.map((src, i) => (
-                  <Box key={i} sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                    <Avatar variant="rounded" src={src} sx={{ width: 40, height: 40, borderRadius: "9px", border: `1px solid ${adminColor.line}`, flexShrink: 0 }} />
-                    <TextField size="small" sx={{ ...fieldSx, flex: 1 }} label={`รูปที่ ${i + 1}`} value={src} onChange={(e) => updateGallery(i, e.target.value)} placeholder="/images/... หรือ URL" />
-                    <IconButton size="small" onClick={() => removeGallery(i)} sx={chipDeleteBtnSx}><Trash size={16} /></IconButton>
-                  </Box>
-                ))}
-                <Button onClick={addGallery} startIcon={<Plus size={14} weight="bold" />} sx={addBtnSx}>เพิ่มลิงก์รูปเอง</Button>
-              </Box>
+              <GalleryEditor value={formData.gallery} onChange={(next) => setFormData((f) => ({ ...f, gallery: next }))} docId={docId} />
             </SectionCard>
 
             <SectionCard icon={<EyeSlash size={13} />} title="การมองเห็น">

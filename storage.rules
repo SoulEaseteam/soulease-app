@@ -24,7 +24,10 @@ service firebase.storage {
     // of the app's very few account holders. Tighten to true admin-only
     // later via an `admin:true` custom claim (needs a Cloud Function) if
     // storage-fill abuse ever shows up.
-    match /therapists/{therapistId}/gallery/{fileName} {
+    // 🆕 Round 28s284 — broadened from .../gallery/** to .../** so profile
+    // photos (therapists/{id}/profile/**) uploaded from the avatar picker
+    // are covered too, alongside gallery/**.
+    match /therapists/{therapistId}/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null
                    && request.resource.size < 15 * 1024 * 1024

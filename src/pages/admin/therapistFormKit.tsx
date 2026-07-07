@@ -8,7 +8,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Box, Typography, TextField, MenuItem, IconButton, Button, Avatar } from "@mui/material";
-import { Plus, Trash, MagnifyingGlass, UploadSimple, CircleNotch } from "phosphor-react";
+import { Plus, Trash, MagnifyingGlass, UploadSimple, CircleNotch, Camera } from "phosphor-react";
 import type { Credential, LanguageSkill } from "@/types/therapist";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
@@ -318,6 +318,69 @@ export const GalleryEditor: React.FC<{ value: string[]; onChange: (next: string[
         </Box>
       ))}
       <Button onClick={() => onChange([...value, ""])} startIcon={<Plus size={14} weight="bold" />} sx={addBtnSx}>เพิ่มลิงก์รูปเอง</Button>
+    </Box>
+  );
+};
+
+// 🆕 Round 28s284 (founder: "เอา Image URL ออกทั้งคู่ ให้เปลี่ยนโปรไฟล์ตรงรูป
+// ได้เลย") — the profile photo IS the control: tap it to pick a photo from
+// the phone → downscaled + uploaded to therapists/{id}/profile → onChange
+// gets the URL. Replaces the "Image URL" text field on both Add + Edit.
+export const AvatarUploader: React.FC<{
+  value: string;
+  onChange: (url: string) => void;
+  docId: string;
+  size?: number;
+  ringColor?: string;
+}> = ({ value, onChange, docId, size = 84, ringColor }) => {
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const onFile = async (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file) return;
+    if (!docId.trim()) { setErr("ใส่ ID ของหมอนวดก่อน แล้วค่อยเปลี่ยนรูป"); return; }
+    if (!file.type.startsWith("image/")) return;
+    setUploading(true);
+    setErr(null);
+    try {
+      const { getStorage, ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
+      const storage = getStorage(app);
+      const blob = await downscaleImage(file, 800, 0.86); // profile pic — smaller than gallery
+      const path = `therapists/${docId}/profile/${Date.now()}.jpg`;
+      const snap = await uploadBytes(ref(storage, path), blob, { contentType: "image/jpeg" });
+      onChange(await getDownloadURL(snap.ref));
+    } catch (e) {
+      console.error("[avatar upload] failed", e);
+      const msg = String((e as { code?: string })?.code ?? e ?? "");
+      setErr(msg.includes("unauthorized") ? "อัปโหลดไม่ได้ — สิทธิ์ไม่พอ" : "อัปโหลดรูปไม่สำเร็จ ลองใหม่");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "5px", "@keyframes spinAv": { to: { transform: "rotate(360deg)" } } }}>
+      <input ref={inputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => void onFile(e.target.files)} />
+      <Box
+        onClick={() => inputRef.current?.click()}
+        sx={{
+          position: "relative", cursor: "pointer", width: size, height: size, borderRadius: "50%",
+          boxShadow: ringColor ? `0 0 0 3px ${adminColor.panel}, 0 0 0 5px ${ringColor}` : `0 0 0 3px ${adminColor.panel}, 0 0 0 4.5px ${adminColor.line2}`,
+        }}
+      >
+        <Avatar src={value} sx={{ width: size, height: size }} />
+        <Box sx={{ position: "absolute", inset: 0, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+          background: "rgba(31,41,51,0.40)", opacity: uploading || !value ? 1 : 0, transition: "opacity .15s ease", "&:hover": { opacity: 1 } }}>
+          {uploading
+            ? <CircleNotch size={24} color="#fff" style={{ animation: "spinAv .8s linear infinite" }} />
+            : <Camera size={24} color="#fff" weight="fill" />}
+        </Box>
+      </Box>
+      <Typography sx={{ fontSize: 10.5, color: adminColor.dim, fontWeight: 700 }}>{uploading ? "กำลังอัป…" : "แตะที่รูปเพื่อเปลี่ยน"}</Typography>
+      {err && <Typography sx={{ fontSize: 10, color: adminColor.red, textAlign: "center" }}>{err}</Typography>}
     </Box>
   );
 };

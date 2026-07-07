@@ -20,7 +20,7 @@ import {
 } from "phosphor-react";
 import {
   SectionCard, LocationPicker, FeaturesEditor, LanguagesEditor, ServicesEditor,
-  CredentialsEditor, BiosEditor, GalleryEditor, TogglePill, fieldSx, selectMenuProps,
+  CredentialsEditor, BiosEditor, GalleryEditor, TogglePill, AvatarUploader, fieldSx, selectMenuProps,
 } from "./therapistFormKit";
 
 const badgeOptions = ["", "VIP", "HOT", "NEW"] as const;
@@ -183,13 +183,17 @@ const AddTherapistPage: React.FC = () => {
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.75 }}>
           <SectionCard icon={<IdentificationCard size={13} />} title="ข้อมูลระบุตัวตน">
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+              {/* 🆕 Round 28s284 — profile photo = the control (tap to upload);
+                  the old Image URL text field is gone. */}
+              <Box sx={{ display: "flex", justifyContent: "center", py: 0.5 }}>
+                <AvatarUploader value={form.image} onChange={(url) => set("image", url)} docId={slugify(form.id)} />
+              </Box>
               <TextField
                 label="ID (สำหรับ URL · ห้ามซ้ำ · เช่น BarbieSunRed)" fullWidth size="small" sx={fieldSx}
                 value={form.id} onChange={(e) => set("id", e.target.value)}
-                helperText="ใช้เป็นลิงก์ /therapists/<ID> — ตั้งครั้งเดียว เปลี่ยนภายหลังไม่ได้"
+                helperText="ใช้เป็นลิงก์ /therapists/<ID> — ตั้งครั้งเดียว เปลี่ยนภายหลังไม่ได้ · ต้องใส่ก่อนถึงจะอัปรูปได้"
               />
               <TextField label="ชื่อ" fullWidth size="small" sx={fieldSx} value={form.name} onChange={(e) => set("name", e.target.value)} />
-              <TextField label="Image URL (รูปโปรไฟล์)" fullWidth size="small" sx={fieldSx} value={form.image} onChange={(e) => set("image", e.target.value)} placeholder="/images/... หรืออัปในแกลเลอรีด้านล่างแล้ววางลิงก์" />
               <TextField label="Specialty (ความถนัด)" fullWidth size="small" sx={fieldSx} value={form.specialty} onChange={(e) => set("specialty", e.target.value)} />
               {/* 🆕 Round 28s283 — InputLabelProps shrink:true so the floating
                   "Badge" label doesn't overlap the "None" text that
