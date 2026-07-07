@@ -3535,3 +3535,39 @@ No schema change (reuses the existing `payouts` docs from 28s234), no rules
 change (admin already has full read/write on `payouts`). tsc + build clean
 (55 routes), deployed to prod; "Paid history" / "Archived payouts" / "All N
 paid this week" confirmed in the live `AdminEarningsPage` chunk.
+
+### 🆕 2026-07-07 — Earnings: monthly shop-revenue ledger (28s312)
+
+Founder (admin/earnings): "Payout tracker / Paid history → เปลี่ยนเป็น
+รายได้ของร้าน · โชว์เป็นเดือน · งานต่องาน." Confirmed via prompt she wanted a
+**full replace** (drop the therapist mark-paid workflow), not keep-alongside.
+So the 28s311 work is **superseded**: the weekly Payout tracker + monthly
+Paid-history archive are gone.
+
+- **Removed:** payout state/effects (`payoutWeekStart`, `payoutBookings`,
+  `payoutRecords`, `paidArchive`, `payoutByTherapist`, `weeklyUnpaid` …),
+  `markPayout`/`undoPaidRecord`, the `payouts`-collection reads/writes, the
+  `PaidRecord` type, and now-unused imports (`setDoc`/`doc`/`serverTimestamp`,
+  `auth`, `logAdminAction`, `CaretDown`). Nothing else reads `payouts` now
+  (the collection + its admin-only rule are left in place, just unused).
+- **New "รายได้ของร้าน" section** (replaces both): month navigator
+  (← ก่อน / เดือนนี้ / ถัดไป →) over `bookings.createdAt` in
+  `[monthStart, nextMonthStart)`. `monthRevenue` lists every completed job
+  (cancelled excluded, counted separately) with the shop's take per job =
+  `collected − payout − taxi` (taxi is a pass-through to the driver, nets to
+  zero for the shop). Row: service · customer · date/time · therapist ·
+  ลูกค้าจ่าย · หมอนวด · เดินทาง → **ร้านได้**. Newest job first. Header
+  summary: ร้านได้เดือนนี้ (headline) · N งาน · ลูกค้าจ่ายรวม · หมอนวดได้รวม ·
+  ยกเลิก.
+- **Reconciles** with the calculator above: shop-per-job uses the SAME
+  tier + discounted-base math (`therapistPctFor`, `max(0, service−discount)`)
+  as `stats`, so the month total = `stats.shopGross` over that window. This
+  is shop **gross** (before the averaged supplies/ops fixed costs the top
+  hero's "Shop net" subtracts) — labelled "ราคาบริการหักส่วนแบ่งหมอนวด
+  (ไม่รวมค่าเดินทาง)".
+- Added `customerName` (`d.customerName ?? d.name`) to the booking read so
+  the per-job row can name the customer.
+
+tsc=0 + build clean (55 routes), deployed to prod; "รายได้ของร้าน" /
+"ร้านได้เดือนนี้" present and "Payout tracker" / "Paid history" / "Mark paid"
+absent in the live `AdminEarningsPage` chunk.
