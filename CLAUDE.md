@@ -1714,6 +1714,36 @@ storage` (same pattern as firestore rules). App Check is NOT enforced
 (optional; our rules don't require it), so uploads work without an App
 Check token.
 
+### 🆕 2026-07-07 — gallery upload fix: auth-only rule + downscale (28s281)
+
+First real upload after Storage went live failed with "อัปโหลดไม่ได้ —
+สิทธิ์ไม่พอ" (`storage/unauthorized`). Cause: 28s280's storage rule gated
+writes on `firestore.exists(/databases/(default)/documents/admins/{uid})`
+— a **Storage→Firestore cross-service read that did not resolve**,
+denying every admin upload even though the admin was authenticated.
+
+- **storage.rules**: dropped the cross-service admin check. Writes to
+  `therapists/{id}/gallery/**` now require only an authenticated user (+
+  `image/*` + `<15MB`). This is an acceptable posture: a file only shows
+  on a public profile once its URL is written into a therapist's `gallery`
+  array, and firestore.rules already restricts that doc write to admins —
+  so a stray upload is at worst an orphan file (shown nowhere), size-
+  capped, from one of the app's very few account holders. **Lesson:
+  `firestore.exists()` inside Storage rules is unreliable here — don't
+  gate Storage writes on a Firestore admin-doc lookup; use auth + a
+  Firestore-side gate on whatever makes the file public, or a custom
+  claim.** Redeploy storage rule changes with `firebase deploy --only
+  storage`.
+- **Client downscale**: each image is resized in-browser before upload
+  (`downscaleImage`: canvas → max 1600px long edge → JPEG 0.85, typically
+  <500KB), falling back to the raw file if the canvas path fails. Kills
+  two birds — raw phone photos (5-12MB, some 48MP over the cap) no longer
+  get size-rejected, and stored gallery images are web-optimized instead
+  of multi-MB originals (also the right pattern for the "huge unoptimized
+  jinny/*.JPG" concern flagged in 28s279).
+
+Gallery photo upload from mobile is now working end to end.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
