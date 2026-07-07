@@ -1702,17 +1702,17 @@ URL" rows kept as fallback. New infra committed: `storage.rules`
 (admin-only writes via `firestore.exists(/admins/{uid})`, public read,
 10MB image cap) + `firebase.json` storage block.
 
-**🔔 OPEN FOR VIEW — enable Firebase Storage (unblocks upload):**
-Firebase Storage is NOT provisioned on `soulease-spa` — `firebase deploy
---only storage` returns "Firebase Storage has not been set up... Get
-Started". One-time console step only View can do:
-  1. https://console.firebase.google.com/project/soulease-spa/storage →
-     Get Started → location asia-southeast1 (match Firestore).
-  2. Then Claude runs `firebase deploy --only storage` (rules already
-     committed) and verifies an upload.
-Until then the upload button fails SOFT with a Thai "enable Storage first"
-message; the map picker + URL rows + every other field work normally.
-(Tracked as a spawned background task.)
+**✅ RESOLVED 2026-07-07 — Firebase Storage enabled + rules deployed.**
+View clicked "Get Started" in the console (bucket
+`gs://soulease-spa.firebasestorage.app` is live — she picked the free "No
+cost location" / US region; region doesn't affect our code since
+getStorage resolves the default bucket by name, and images serve via
+CDN). Claude then ran `firebase deploy --only storage` — compiled clean,
+released. **The phone photo-upload feature is now fully live end to end.**
+Deploy storage rule changes going forward with `firebase deploy --only
+storage` (same pattern as firestore rules). App Check is NOT enforced
+(optional; our rules don't require it), so uploads work without an App
+Check token.
 
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
