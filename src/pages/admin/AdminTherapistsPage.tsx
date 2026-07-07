@@ -176,8 +176,13 @@ const TherapistCard: React.FC<{
           background: cardBg,
           borderRadius: "18px",
           p: "18px 18px 14px",
+          // 🆕 Round 28r46 — subtle depth at rest so cards read as
+          // liftable objects, not flat; recede cards keep no shadow.
+          boxShadow: recede ? "none" : "0 2px 10px rgba(31,41,51,0.04)",
           transition: "transform 0.2s cubic-bezier(.2,.8,.3,1), box-shadow 0.2s ease",
-          "&:hover": { transform: "translateY(-4px)", boxShadow: "0 14px 30px rgba(31,41,51,0.16)", cursor: "pointer" },
+          "&:hover": recede
+            ? { cursor: "pointer" }
+            : { transform: "translateY(-4px)", boxShadow: "0 14px 30px rgba(31,41,51,0.16)", cursor: "pointer" },
         }}
         onClick={() => onView(row.id)}
       >
@@ -657,56 +662,65 @@ const AdminTherapistsPage: React.FC = () => {
         </Button>
       </Box>
 
-      <Box sx={{ display: "flex", alignItems: "baseline", gap: "11px", mb: 2.5 }}>
-        <Typography sx={{ fontFamily: adminFont.serif, fontSize: 25, fontWeight: 700, color: adminColor.text }}>
-          Therapist Manager
+      <Box sx={{ mb: 2.5 }}>
+        <Typography sx={{ fontFamily: adminFont.serif, fontSize: 25, fontWeight: 700, color: adminColor.text, lineHeight: 1.15 }}>
+          Therapists
         </Typography>
-        <Typography sx={{ fontSize: 12, color: adminColor.dim }}>{therapists.length} คนในระบบ · อัปเดตสด</Typography>
+        <Typography sx={{ fontSize: 12, color: adminColor.dim, mt: "3px" }}>
+          หมอนวด · {therapists.length} in roster · live updates
+        </Typography>
       </Box>
 
       {/* 🆕 Round 28s230 (FIX C) — live roster summary + one-tap relight.
           Counts use the same BKK engine as the public site (FIX B), so this
           is exactly what guests see right now. Round 28s268 — icon-circle
-          stat pills, matching Dashboard/Earnings' widget vocabulary. */}
+          stat pills, matching Dashboard/Earnings' widget vocabulary.
+          🆕 Round 28r46 — bilingual English + Thai subtitle labels;
+          46px icon plates + inner-highlight shadow + radius 18. */}
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: "10px", mb: 2.5, alignItems: "center" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: "10px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "15px", p: "8px 15px 8px 8px", boxShadow: "0 1px 3px rgba(31,41,51,0.04)" }}>
-          <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #22C55E, ${adminColor.green})` }} />
+        <Box sx={{ display: "flex", alignItems: "center", gap: "12px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "18px", p: "9px 18px 9px 9px", boxShadow: "0 2px 10px rgba(31,41,51,0.04)" }}>
+          <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #22C55E, ${adminColor.green})`, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.55), 0 1px 3px rgba(22,163,74,0.22)" }} />
           <Box>
-            <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.green, lineHeight: 1.1 }}>{summary.available}</Typography>
-            <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 700 }}>ว่าง</Typography>
+            <Typography sx={{ ...adminFigureSx, fontSize: 20, color: adminColor.green, lineHeight: 1.05 }}>{summary.available}</Typography>
+            <Typography sx={{ fontSize: 10, color: adminColor.text, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 800, mt: "1px" }}>Available</Typography>
+            <Typography sx={{ fontSize: 9.5, color: adminColor.dim, mt: "-1px" }}>ว่าง</Typography>
           </Box>
         </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: "10px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "15px", p: "8px 15px 8px 8px", boxShadow: "0 1px 3px rgba(31,41,51,0.04)" }}>
-          <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #F59E0B, ${adminColor.amber})` }} />
+        <Box sx={{ display: "flex", alignItems: "center", gap: "12px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "18px", p: "9px 18px 9px 9px", boxShadow: "0 2px 10px rgba(31,41,51,0.04)" }}>
+          <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #F59E0B, ${adminColor.amber})`, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.55), 0 1px 3px rgba(217,119,6,0.22)" }} />
           <Box>
-            <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.amber, lineHeight: 1.1 }}>{summary.bookable}</Typography>
-            <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 700 }}>จองได้</Typography>
+            <Typography sx={{ ...adminFigureSx, fontSize: 20, color: adminColor.amber, lineHeight: 1.05 }}>{summary.bookable}</Typography>
+            <Typography sx={{ fontSize: 10, color: adminColor.text, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 800, mt: "1px" }}>Bookable</Typography>
+            <Typography sx={{ fontSize: 9.5, color: adminColor.dim, mt: "-1px" }}>จองได้</Typography>
           </Box>
         </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: "10px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "15px", p: "8px 15px 8px 8px", boxShadow: "0 1px 3px rgba(31,41,51,0.04)" }}>
-          <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #8CA0AB, ${adminColor.dim})` }} />
+        <Box sx={{ display: "flex", alignItems: "center", gap: "12px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "18px", p: "9px 18px 9px 9px", boxShadow: "0 2px 10px rgba(31,41,51,0.04)" }}>
+          <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #8CA0AB, ${adminColor.dim})`, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.4), 0 1px 3px rgba(92,111,123,0.20)" }} />
           <Box>
-            <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.dim, lineHeight: 1.1 }}>{summary.resting}</Typography>
-            <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 700 }}>พัก</Typography>
+            <Typography sx={{ ...adminFigureSx, fontSize: 20, color: adminColor.dim, lineHeight: 1.05 }}>{summary.resting}</Typography>
+            <Typography sx={{ fontSize: 10, color: adminColor.text, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 800, mt: "1px" }}>Resting</Typography>
+            <Typography sx={{ fontSize: 9.5, color: adminColor.dim, mt: "-1px" }}>พัก</Typography>
           </Box>
         </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: "10px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "15px", p: "8px 15px 8px 8px", boxShadow: "0 1px 3px rgba(31,41,51,0.04)" }}>
-          <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #8CA0AB, ${adminColor.dim})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Umbrella size={15} color="#fff" weight="fill" />
+        <Box sx={{ display: "flex", alignItems: "center", gap: "12px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "18px", p: "9px 18px 9px 9px", boxShadow: "0 2px 10px rgba(31,41,51,0.04)" }}>
+          <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #8CA0AB, ${adminColor.dim})`, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.4), 0 1px 3px rgba(92,111,123,0.20)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Umbrella size={20} color="#fff" weight="fill" />
           </Box>
           <Box>
-            <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.dim, lineHeight: 1.1 }}>{summary.holiday}</Typography>
-            <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 700 }}>หยุด</Typography>
+            <Typography sx={{ ...adminFigureSx, fontSize: 20, color: adminColor.dim, lineHeight: 1.05 }}>{summary.holiday}</Typography>
+            <Typography sx={{ fontSize: 10, color: adminColor.text, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 800, mt: "1px" }}>Holiday</Typography>
+            <Typography sx={{ fontSize: 9.5, color: adminColor.dim, mt: "-1px" }}>วันหยุด</Typography>
           </Box>
         </Box>
         {summary.override > 0 && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: "10px", background: "linear-gradient(180deg,#fff,#FEF2F2)", border: "1px solid rgba(220,38,38,0.22)", borderRadius: "15px", p: "8px 15px 8px 8px" }}>
-            <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #EF4444, ${adminColor.red})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Warning size={15} color="#fff" weight="fill" />
+          <Box sx={{ display: "flex", alignItems: "center", gap: "12px", background: `linear-gradient(180deg,${adminColor.panel},#FEF2F2)`, border: "1px solid rgba(220,38,38,0.22)", borderRadius: "18px", p: "9px 18px 9px 9px", boxShadow: "0 2px 10px rgba(220,38,38,0.06)" }}>
+            <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #EF4444, ${adminColor.red})`, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5), 0 1px 3px rgba(220,38,38,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Warning size={20} color="#fff" weight="fill" />
             </Box>
             <Box>
-              <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.red, lineHeight: 1.1 }}>{summary.override}</Typography>
-              <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 700 }}>Override ค้าง</Typography>
+              <Typography sx={{ ...adminFigureSx, fontSize: 20, color: adminColor.red, lineHeight: 1.05 }}>{summary.override}</Typography>
+              <Typography sx={{ fontSize: 10, color: adminColor.red, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 800, mt: "1px" }}>Override</Typography>
+              <Typography sx={{ fontSize: 9.5, color: adminColor.dim, mt: "-1px" }}>ค้าง</Typography>
             </Box>
           </Box>
         )}
@@ -716,7 +730,7 @@ const AdminTherapistsPage: React.FC = () => {
           disabled={batching}
           sx={{ background: "linear-gradient(180deg,#1CAE52,#149046)", color: "#fff", textTransform: "none", fontWeight: 700, borderRadius: "11px", boxShadow: "0 3px 10px rgba(22,163,74,0.28)", "&:hover": { background: "#15803d" } }}
         >
-          คืนนี้เปิดทั้งร้าน
+          Open All Tonight · เปิดทั้งร้าน
         </Button>
         <Button
           onClick={() => void rosterBatch("auto")}
@@ -724,16 +738,18 @@ const AdminTherapistsPage: React.FC = () => {
           variant="outlined"
           sx={{ borderColor: adminColor.line2, color: adminColor.muted, textTransform: "none", fontWeight: 700, borderRadius: "11px" }}
         >
-          กลับ Auto
+          Reset Auto · กลับ Auto
         </Button>
       </Box>
 
       {/* 🆕 Round 28s268 — search box + segmented filter pills, replacing
           the plain dropdown (easier to tap on a phone, matches the rest
-          of the Ocean Study widget language). */}
+          of the Ocean Study widget language).
+          🆕 Round 28r46 — filter area kept ENGLISH-ONLY per r43 rule
+          (no Thai on filter/search chrome). */}
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: "10px", mb: 2.5, alignItems: "center" }}>
         <TextField
-          placeholder="ค้นหาชื่อหมอนวด…"
+          placeholder="Search therapists…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           size="small"
@@ -761,10 +777,10 @@ const AdminTherapistsPage: React.FC = () => {
           }}
         >
           <ToggleButton value="all">All</ToggleButton>
-          <ToggleButton value="available">ว่าง</ToggleButton>
-          <ToggleButton value="bookable">จองได้</ToggleButton>
-          <ToggleButton value="resting">พัก</ToggleButton>
-          <ToggleButton value="holiday">หยุด</ToggleButton>
+          <ToggleButton value="available">Available</ToggleButton>
+          <ToggleButton value="bookable">Bookable</ToggleButton>
+          <ToggleButton value="resting">Resting</ToggleButton>
+          <ToggleButton value="holiday">Holiday</ToggleButton>
         </ToggleButtonGroup>
 
         {/* 🆕 Round 28s270 (founder: "ปุ่มเพิ่มพนักงาน") — the
@@ -780,7 +796,7 @@ const AdminTherapistsPage: React.FC = () => {
             "&:hover": { background: adminColor.accentDeep },
           }}
         >
-          เพิ่มพนักงาน
+          Add Therapist · เพิ่มพนักงาน
         </Button>
       </Box>
 

@@ -497,7 +497,7 @@ const AdminTherapistDetailPage: React.FC = () => {
   if (!rawDoc || !docId)
     return (
       <Box sx={{ p: 4 }}>
-        <Typography sx={{ color: adminColor.text }}>Therapist not found.</Typography>
+        <Typography sx={{ color: adminColor.text }}>Therapist not found · ไม่พบข้อมูล</Typography>
       </Box>
     );
 
@@ -535,7 +535,7 @@ const AdminTherapistDetailPage: React.FC = () => {
         variant="outlined"
         sx={{ borderColor: adminColor.accent, color: adminColor.accent, fontWeight: "bold", textTransform: "none", borderRadius: "10px", mb: 2.5, "&:hover": { borderColor: adminColor.accentDeep, background: adminColor.panel2 } }}
       >
-        Back
+        Back · กลับ
       </Button>
 
       <Box sx={{ background: adminColor.panel, borderRadius: "20px", border: `1px solid ${adminColor.line}`, boxShadow: "0 4px 18px rgba(31,41,51,0.08)", p: { xs: 2.5, md: 3.5 } }}>
@@ -562,15 +562,15 @@ const AdminTherapistDetailPage: React.FC = () => {
               {statusLine}
               {overrideActive && (
                 <Box sx={{ display: "flex", alignItems: "center", gap: "3px", fontSize: 11, fontWeight: 700, color: adminColor.red, background: "rgba(220,38,38,0.08)", borderRadius: "6px", px: "6px", py: "1px", ml: "6px" }}>
-                  <Warning size={11} weight="bold" /> override ถึงสิ้นวัน
+                  <Warning size={11} weight="bold" /> Override · ถึงสิ้นวัน
                 </Box>
               )}
             </Box>
-            <Typography sx={{ fontSize: 12.5, color: adminColor.dim, mt: "4px" }}>{formData.specialty || "ยังไม่ระบุความถนัด"}</Typography>
+            <Typography sx={{ fontSize: 12.5, color: adminColor.dim, mt: "4px" }}>{formData.specialty || "No specialty set · ยังไม่ระบุความถนัด"}</Typography>
           </Box>
           <Box sx={{ display: "flex", gap: 1 }}>
             {!editing ? (
-              <Tooltip title="Edit">
+              <Tooltip title="Edit · แก้ไข">
                 <IconButton onClick={startEditing} sx={{ color: adminColor.accent, background: adminColor.panel2, "&:hover": { background: "rgba(78,126,140,0.14)" } }}>
                   <PencilSimple size={18} />
                 </IconButton>
@@ -583,10 +583,10 @@ const AdminTherapistDetailPage: React.FC = () => {
                   startIcon={<FloppyDisk size={15} weight="bold" />}
                   sx={{ background: `linear-gradient(180deg,#5A8998,${adminColor.accent})`, color: "#fff", textTransform: "none", fontWeight: 700, borderRadius: "10px", boxShadow: "0 3px 10px rgba(78,126,140,0.32)", "&:hover": { background: adminColor.accentDeep } }}
                 >
-                  Save
+                  Save · บันทึก
                 </Button>
                 <Button onClick={cancelEditing} startIcon={<X size={15} weight="bold" />} variant="outlined" sx={{ borderColor: adminColor.line2, color: adminColor.muted, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>
-                  Cancel
+                  Cancel · ยกเลิก
                 </Button>
               </>
             )}
@@ -594,45 +594,46 @@ const AdminTherapistDetailPage: React.FC = () => {
         </Box>
 
         {/* ── Stats row (always visible, always live) ───────────── */}
+        {/* 🆕 Round 28r46 — bilingual English · ไทย labels. */}
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: "10px", mt: 2.5, mb: 3 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: "8px", background: adminColor.panel2, borderRadius: "12px", p: "9px 14px" }}>
             <Star size={15} color={adminColor.dim} weight={reviewCount > 0 ? "fill" : "regular"} />
             <Typography sx={{ ...adminFigureSx, fontSize: 14 }}>{reviewCount > 0 ? avgRating.toFixed(1) : "—"}</Typography>
-            <Typography sx={{ fontSize: 11, color: adminColor.dim }}>คะแนน</Typography>
+            <Typography sx={{ fontSize: 11, color: adminColor.dim }}>Rating · คะแนน</Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: "8px", background: adminColor.panel2, borderRadius: "12px", p: "9px 14px" }}>
             <ChatCircleText size={15} color={adminColor.dim} />
             <Typography sx={{ ...adminFigureSx, fontSize: 14 }}>{reviewCount}</Typography>
-            <Typography sx={{ fontSize: 11, color: adminColor.dim }}>รีวิว</Typography>
+            <Typography sx={{ fontSize: 11, color: adminColor.dim }}>Reviews · รีวิว</Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: "8px", background: adminColor.panel2, borderRadius: "12px", p: "9px 14px" }}>
             <Calendar size={15} color={adminColor.dim} />
             <Typography sx={{ ...adminFigureSx, fontSize: 14 }}>{todayBookings}</Typography>
-            <Typography sx={{ fontSize: 11, color: adminColor.dim }}>วันนี้</Typography>
+            <Typography sx={{ fontSize: 11, color: adminColor.dim }}>Today · วันนี้</Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: "8px", background: adminColor.panel2, borderRadius: "12px", p: "9px 14px" }}>
             <ChartBar size={15} color={adminColor.dim} />
             <Typography sx={{ ...adminFigureSx, fontSize: 14 }}>{totalBookings}</Typography>
-            <Typography sx={{ fontSize: 11, color: adminColor.dim }}>ทั้งหมด</Typography>
+            <Typography sx={{ fontSize: 11, color: adminColor.dim }}>Total · รวม</Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: "8px", background: adminColor.panel2, borderRadius: "12px", p: "9px 14px" }}>
             <ClockCounterClockwise size={15} color={adminColor.dim} />
             <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: adminColor.muted }}>
-              {lastBookingAt ? dayjs(lastBookingAt).format("YYYY-MM-DD HH:mm") : "ยังไม่เคยมีงาน"}
+              {lastBookingAt ? dayjs(lastBookingAt).format("YYYY-MM-DD HH:mm") : "No bookings yet · ยังไม่เคยมีงาน"}
             </Typography>
           </Box>
         </Box>
 
         {!editing ? (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1.75 }}>
-            <SectionCard icon={<Info size={13} />} title="ข้อมูลหลัก">
+            <SectionCard icon={<Info size={13} />} title="Profile · ข้อมูลหลัก">
               <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: "10px" }}>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  <ReadRow icon={<Clock size={14} />} label="Hours" value={`${formData.startTime || "--:--"} – ${formData.endTime || "--:--"}`} />
+                  <ReadRow icon={<Clock size={14} />} label="Working Hours" value={`${formData.startTime || "--:--"} – ${formData.endTime || "--:--"}`} />
                   <ReadRow icon={<MapPin size={14} />} label="Location" value={formData.currentLocation || "—"} />
                   <ReadRow icon={<Medal size={14} />} label="Badge" value={formData.badge || "None"} />
-                  {rebookRate != null && <ReadRow icon={<ChartBar size={14} />} label="Rebook rate" value={`${rebookRate}%`} />}
-                  {totalSessions != null && <ReadRow icon={<Star size={14} />} label="Sessions (สะสม)" value={String(totalSessions)} />}
+                  {rebookRate != null && <ReadRow icon={<ChartBar size={14} />} label="Rebook Rate" value={`${rebookRate}%`} />}
+                  {totalSessions != null && <ReadRow icon={<Star size={14} />} label="Sessions (lifetime)" value={String(totalSessions)} />}
                 </Box>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {/* 🆕 Round 28s275 — "Custom ID" had no reader anywhere in the
@@ -640,11 +641,11 @@ const AdminTherapistDetailPage: React.FC = () => {
                       (confirmed by this page's own lookup logic above trying it
                       directly first). Shows the real thing instead of a fake
                       editable field that never did anything. */}
-                  <ReadRow icon={<IdentificationCard size={14} />} label="รหัส (URL)" value={docId || "—"} />
+                  <ReadRow icon={<IdentificationCard size={14} />} label="URL Slug" value={docId || "—"} />
                   <ReadRow icon={<TelegramLogo size={14} />} label="Telegram" value={formData.telegramChatId || "ยังไม่ผูก"} />
                   <ReadRow
                     icon={<Bank size={14} />}
-                    label="บัญชีโอนเงิน"
+                    label="Payout Account"
                     value={
                       bankForm.bankAccount
                         ? `${bankForm.bankName ? `${bankForm.bankName} · ` : ""}${bankForm.bankAccount}${bankForm.bankAccountName ? ` (${bankForm.bankAccountName})` : ""}`
@@ -660,16 +661,16 @@ const AdminTherapistDetailPage: React.FC = () => {
             </SectionCard>
 
             {(area || homeAddress) && (
-              <SectionCard icon={<MapPinLine size={13} />} title="พื้นที่ / ที่อยู่">
+              <SectionCard icon={<MapPinLine size={13} />} title="Area · พื้นที่ / ที่อยู่">
                 <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {area && <ReadRow icon={<MapPin size={14} />} label="พื้นที่" value={area} />}
-                  {homeAddress && <ReadRow icon={<MapPinLine size={14} />} label="ที่อยู่ standby" value={homeAddress} />}
+                  {area && <ReadRow icon={<MapPin size={14} />} label="Area" value={area} />}
+                  {homeAddress && <ReadRow icon={<MapPinLine size={14} />} label="Standby address" value={homeAddress} />}
                 </Box>
               </SectionCard>
             )}
 
             {featureEntries.length > 0 && (
-              <SectionCard icon={<UserFocus size={13} />} title="ลักษณะเฉพาะตัว">
+              <SectionCard icon={<UserFocus size={13} />} title="Features · ลักษณะเฉพาะตัว">
                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(3, 1fr)" }, gap: "8px" }}>
                   {featureEntries.map(([k, label]) => (
                     <Box key={k} sx={{ background: adminColor.panel, borderRadius: "10px", p: "8px 12px", border: `1px solid ${adminColor.line}` }}>
@@ -682,7 +683,7 @@ const AdminTherapistDetailPage: React.FC = () => {
             )}
 
             {(languageSkills.length > 0 || featureLanguage) && (
-              <SectionCard icon={<Globe size={13} />} title="ภาษา">
+              <SectionCard icon={<Globe size={13} />} title="Languages · ภาษา">
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                   {languageSkills.length > 0 ? (
                     languageSkills.map((l, i) => (
@@ -699,7 +700,7 @@ const AdminTherapistDetailPage: React.FC = () => {
             )}
 
             {servicesAvailable.length > 0 && (
-              <SectionCard icon={<Sparkle size={13} />} title="บริการที่ทำได้">
+              <SectionCard icon={<Sparkle size={13} />} title="Services · บริการที่ทำได้">
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                   {servicesAvailable.map((s) => (
                     <Box key={s} sx={{ background: "rgba(78,126,140,0.10)", color: adminColor.accent, borderRadius: "9px", p: "6px 12px", fontSize: 12.5, fontWeight: 700 }}>
@@ -711,7 +712,7 @@ const AdminTherapistDetailPage: React.FC = () => {
             )}
 
             {credentials.length > 0 && (
-              <SectionCard icon={<Info size={13} />} title="ใบรับรอง / ประวัติ">
+              <SectionCard icon={<Info size={13} />} title="Credentials · ใบรับรอง">
                 <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {credentials.map((c, i) => (
                     <Box key={i} sx={{ background: adminColor.panel, borderRadius: "10px", p: "9px 13px", border: `1px solid ${adminColor.line}` }}>
@@ -724,13 +725,13 @@ const AdminTherapistDetailPage: React.FC = () => {
             )}
 
             {bioText && (
-              <SectionCard icon={<Notebook size={13} />} title="ประวัติแนะนำ">
+              <SectionCard icon={<Notebook size={13} />} title="Bio · ประวัติแนะนำ">
                 <Typography sx={{ fontSize: 13, color: adminColor.muted, lineHeight: 1.65 }}>{bioText}</Typography>
               </SectionCard>
             )}
 
             {gallery.length > 0 && (
-              <SectionCard icon={<ImageIcon size={13} />} title={`แกลเลอรี (${gallery.length})`}>
+              <SectionCard icon={<ImageIcon size={13} />} title={`Gallery · แกลเลอรี (${gallery.length})`}>
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                   {gallery.map((src, i) => (
                     <Avatar key={i} variant="rounded" src={src} sx={{ width: 74, height: 74, borderRadius: "12px", border: `1px solid ${adminColor.line}` }} />
@@ -741,7 +742,7 @@ const AdminTherapistDetailPage: React.FC = () => {
           </Box>
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1.75 }}>
-            <SectionCard icon={<Sparkle size={13} />} title="โปรไฟล์">
+            <SectionCard icon={<Sparkle size={13} />} title="Profile · โปรไฟล์">
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
                 {/* 🆕 Round 28s284 — Image URL field removed; change the photo
                     by tapping the avatar in the header above. */}
@@ -763,7 +764,7 @@ const AdminTherapistDetailPage: React.FC = () => {
               </Box>
             </SectionCard>
 
-            <SectionCard icon={<Clock size={13} />} title="ตารางเวลาและสถานะ">
+            <SectionCard icon={<Clock size={13} />} title="Schedule & Status · ตารางเวลา">
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
                 <Box sx={{ display: "flex", gap: 1 }}>
                   <TextField label="Start Time" type="time" fullWidth size="small" sx={fieldSx} InputLabelProps={{ shrink: true }} value={formData.startTime} onChange={(e) => setFormData((f) => ({ ...f, startTime: e.target.value }))} />
@@ -791,14 +792,14 @@ const AdminTherapistDetailPage: React.FC = () => {
                       color: formData.isHoliday ? adminColor.red : adminColor.dim,
                     }}
                   >
-                    <Umbrella size={14} weight={formData.isHoliday ? "fill" : "regular"} /> Holiday
+                    <Umbrella size={14} weight={formData.isHoliday ? "fill" : "regular"} /> Holiday · วันหยุด
                   </Box>
                 </Box>
               </Box>
             </SectionCard>
 
             {/* 🆕 Round 28s278 area/address editable · 28s280 map search. */}
-            <SectionCard icon={<MapPinLine size={13} />} title="พื้นที่ / ที่อยู่">
+            <SectionCard icon={<MapPinLine size={13} />} title="Area · พื้นที่ / ที่อยู่">
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                 <LocationPicker
                   initial={(() => {
@@ -814,60 +815,60 @@ const AdminTherapistDetailPage: React.FC = () => {
                     }))
                   }
                 />
-                <TextField label="พื้นที่ (เช่น Din Daeng · Ratchada)" fullWidth size="small" sx={fieldSx} value={formData.area} onChange={(e) => setFormData((f) => ({ ...f, area: e.target.value }))} />
-                <TextField label="ที่อยู่ standby (เต็ม · admin เท่านั้น)" fullWidth size="small" multiline minRows={2} sx={fieldSx} value={formData.homeAddress} onChange={(e) => setFormData((f) => ({ ...f, homeAddress: e.target.value }))} />
-                <TextField label="พิกัด (lat, lng)" fullWidth size="small" sx={fieldSx} value={formData.currentLocation} onChange={(e) => setFormData((f) => ({ ...f, currentLocation: e.target.value }))} />
+                <TextField label="Area (e.g. Din Daeng · Ratchada)" fullWidth size="small" sx={fieldSx} value={formData.area} onChange={(e) => setFormData((f) => ({ ...f, area: e.target.value }))} />
+                <TextField label="Standby address (full · admin only)" fullWidth size="small" multiline minRows={2} sx={fieldSx} value={formData.homeAddress} onChange={(e) => setFormData((f) => ({ ...f, homeAddress: e.target.value }))} />
+                <TextField label="Coordinates (lat, lng)" fullWidth size="small" sx={fieldSx} value={formData.currentLocation} onChange={(e) => setFormData((f) => ({ ...f, currentLocation: e.target.value }))} />
               </Box>
             </SectionCard>
 
             {/* 🆕 Round 28s278 — full features grid, editable. */}
-            <SectionCard icon={<UserFocus size={13} />} title="ลักษณะเฉพาะตัว">
+            <SectionCard icon={<UserFocus size={13} />} title="Features · ลักษณะเฉพาะตัว">
               <FeaturesEditor value={formData.features} onChange={(k, v) => setFormData((f) => ({ ...f, features: { ...f.features, [k]: v } }))} />
             </SectionCard>
 
             {/* 🆕 Round 28s278 — language rows, add/remove. */}
-            <SectionCard icon={<Globe size={13} />} title="ภาษา">
+            <SectionCard icon={<Globe size={13} />} title="Languages · ภาษา">
               <LanguagesEditor value={formData.languageSkills} onChange={(next) => setFormData((f) => ({ ...f, languageSkills: next }))} />
             </SectionCard>
 
             {/* 🆕 Round 28s278 — services multi-select (canonical SKU ids). */}
-            <SectionCard icon={<Sparkle size={13} />} title="บริการที่ทำได้">
+            <SectionCard icon={<Sparkle size={13} />} title="Services · บริการที่ทำได้">
               <ServicesEditor value={formData.servicesAvailable} onChange={(next) => setFormData((f) => ({ ...f, servicesAvailable: next }))} />
             </SectionCard>
 
             {/* 🆕 Round 28s278 — credential rows, add/remove. */}
-            <SectionCard icon={<Info size={13} />} title="ใบรับรอง / ประวัติ">
+            <SectionCard icon={<Info size={13} />} title="Credentials · ใบรับรอง">
               <CredentialsEditor value={formData.credentials} onChange={(next) => setFormData((f) => ({ ...f, credentials: next }))} />
             </SectionCard>
 
             {/* 🆕 Round 28s278 — bios per language. */}
-            <SectionCard icon={<Notebook size={13} />} title="ประวัติแนะนำ (แต่ละภาษา)">
+            <SectionCard icon={<Notebook size={13} />} title="Bio · ประวัติแนะนำ (per language)">
               <BiosEditor value={formData.bios} onChange={(code, v) => setFormData((f) => ({ ...f, bios: { ...f.bios, [code]: v } }))} />
             </SectionCard>
 
             {/* 🆕 Round 28s278 gallery URL rows · 28s280 photo upload. */}
-            <SectionCard icon={<ImageIcon size={13} />} title={`แกลเลอรี (${formData.gallery.filter(Boolean).length})`}>
+            <SectionCard icon={<ImageIcon size={13} />} title={`Gallery · แกลเลอรี (${formData.gallery.filter(Boolean).length})`}>
               <GalleryEditor value={formData.gallery} onChange={(next) => setFormData((f) => ({ ...f, gallery: next }))} docId={docId} />
             </SectionCard>
 
-            <SectionCard icon={<EyeSlash size={13} />} title="การมองเห็น">
+            <SectionCard icon={<EyeSlash size={13} />} title="Visibility · การมองเห็น">
               <Box sx={{ display: "flex", gap: 1 }}>
                 <Box
                   onClick={() => setFormData((f) => ({ ...f, hidden: !f.hidden }))}
                   sx={{ flex: 1, display: "flex", alignItems: "center", gap: "6px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", borderRadius: "10px", padding: "9px 14px", border: `1px solid ${formData.hidden ? "rgba(220,38,38,0.25)" : adminColor.line}`, background: formData.hidden ? "rgba(220,38,38,0.09)" : adminColor.panel, color: formData.hidden ? adminColor.red : adminColor.dim }}
                 >
-                  <EyeSlash size={14} weight={formData.hidden ? "fill" : "regular"} /> Hide from Homepage
+                  <EyeSlash size={14} weight={formData.hidden ? "fill" : "regular"} /> Hide from Homepage · ซ่อน
                 </Box>
                 <Box
                   onClick={() => setFormData((f) => ({ ...f, blocked: !f.blocked }))}
                   sx={{ flex: 1, display: "flex", alignItems: "center", gap: "6px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", borderRadius: "10px", padding: "9px 14px", border: `1px solid ${formData.blocked ? "rgba(220,38,38,0.25)" : adminColor.line}`, background: formData.blocked ? "rgba(220,38,38,0.09)" : adminColor.panel, color: formData.blocked ? adminColor.red : adminColor.dim }}
                 >
-                  <Prohibit size={14} weight={formData.blocked ? "fill" : "regular"} /> Blocked (Unavailable)
+                  <Prohibit size={14} weight={formData.blocked ? "fill" : "regular"} /> Blocked · บล็อก
                 </Box>
               </Box>
             </SectionCard>
 
-            <SectionCard icon={<TelegramLogo size={13} />} title="ติดต่อ">
+            <SectionCard icon={<TelegramLogo size={13} />} title="Contact · ติดต่อ">
               {/* 🆕 Round 28b27 — when set, the therapist receives a personal
                   DM from @SunRedBot every time a booking is assigned to
                   them. Onboarding: therapist sends /myid to @SunRedBot to
@@ -885,23 +886,23 @@ const AdminTherapistDetailPage: React.FC = () => {
             {/* 🆕 Round 28s314 — bank account for the Pay-Therapists transfer
                 flow. The number shows on the payout card with a copy button so
                 the admin can transfer the therapist's cut. */}
-            <SectionCard icon={<Bank size={13} />} title="บัญชีธนาคาร (สำหรับโอนเงินหมอ)">
+            <SectionCard icon={<Bank size={13} />} title="Payout Account · บัญชีธนาคาร">
               <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <TextField
-                  label="ธนาคาร" fullWidth size="small" sx={fieldSx}
+                  label="Bank" fullWidth size="small" sx={fieldSx}
                   value={bankForm.bankName}
                   onChange={(e) => setBankForm((f) => ({ ...f, bankName: e.target.value }))}
-                  placeholder="เช่น กสิกรไทย · SCB · พร้อมเพย์"
+                  placeholder="e.g. Kasikorn · SCB · PromptPay"
                 />
                 <TextField
-                  label="เลขบัญชี / พร้อมเพย์" fullWidth size="small" sx={fieldSx}
+                  label="Account / PromptPay" fullWidth size="small" sx={fieldSx}
                   value={bankForm.bankAccount}
                   onChange={(e) => setBankForm((f) => ({ ...f, bankAccount: e.target.value }))}
-                  placeholder="เช่น 123-4-56789-0"
+                  placeholder="e.g. 123-4-56789-0"
                   inputProps={{ inputMode: "numeric" }}
                 />
                 <TextField
-                  label="ชื่อบัญชี" fullWidth size="small" sx={fieldSx}
+                  label="Account name" fullWidth size="small" sx={fieldSx}
                   value={bankForm.bankAccountName}
                   onChange={(e) => setBankForm((f) => ({ ...f, bankAccountName: e.target.value }))}
                   placeholder="ชื่อ-นามสกุลเจ้าของบัญชี"
@@ -917,7 +918,7 @@ const AdminTherapistDetailPage: React.FC = () => {
             startIcon={<Eye size={15} />}
             sx={{ color: adminColor.accent, textTransform: "none", fontWeight: 700 }}
           >
-            View Public Profile
+            View Public Profile · ดูโปรไฟล์
           </Button>
         </Box>
       </Box>
