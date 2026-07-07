@@ -79,6 +79,17 @@ export interface CustomPromoCode {
   label: string;
   /** Epoch ms; null/undefined = never expires. */
   expiresAt?: number | null;
+  // 🆕 Round 28s299 — scheduling + guards the founder asked for.
+  /** Epoch ms; null/undefined = active immediately. Before this → invalid. */
+  startsAt?: number | null;
+  /** Booking subtotal (service+addons) must reach this or code is invalid. */
+  minSpendThb?: number | null;
+  /** Total redemptions across ALL customers. Enforced at booking submit
+   *  (a count query — see BookingFlowPage), NOT here: validateDiscount
+   *  stays pure/sync with no DB access. */
+  maxRedemptions?: number | null;
+  /** Redemptions allowed per phone number. Same submit-time enforcement. */
+  perPhoneLimit?: number | null;
 }
 let disabledBuiltinCodes = new Set<string>();
 let customCodes: Record<string, CustomPromoCode> = {};
@@ -91,6 +102,25 @@ export function applyLivePromoConfig(cfg: {
     disabledBuiltinCodes = new Set(cfg.disabledCodes.map((c) => c.toUpperCase()));
   }
   if (cfg.customCodes) customCodes = cfg.customCodes;
+}
+
+/**
+ * 🆕 Round 28s299 — redemption caps live on the custom-code definition
+ * but are enforced with a booking-count query at submit time (see
+ * BookingFlowPage), since validateDiscount is pure/sync. This getter
+ * lets the submit guard read a code's caps without re-reading Firestore.
+ * Returns null for built-in codes / codes with no caps.
+ */
+export function getCustomPromoLimits(
+  code: string
+): { maxRedemptions: number | null; perPhoneLimit: number | null } | null {
+  const c = customCodes[code.trim().toUpperCase()];
+  if (!c) return null;
+  if (!c.maxRedemptions && !c.perPhoneLimit) return null;
+  return {
+    maxRedemptions: c.maxRedemptions ?? null,
+    perPhoneLimit: c.perPhoneLimit ?? null,
+  };
 }
 
 export type DiscountType = "percent" | "fixed" | "none";
@@ -304,7 +334,19 @@ export function validateDiscount(
   //   above (admin can't create "FIRST10" and change its behavior).
   const custom = customCodes[code];
   if (custom) {
+    // 🆕 Round 28s299 — scheduling window + min-spend gate. Each is a
+    //   quiet invalid (UI shows the generic "code not recognised" hint),
+    //   same as every other rejected path — we deliberately don't leak
+    //   "this code exists but you don't qualify yet" to a guest probing
+    //   codes. (maxRedemptions/perPhoneLimit are NOT checked here — no
+    //   usage count available in a pure fn; enforced at booking submit.)
+    if (custom.startsAt && Date.now() < custom.startsAt) {
+      return { ...NULL_RESULT, code };
+    }
     if (custom.expiresAt && Date.now() > custom.expiresAt) {
+      return { ...NULL_RESULT, code };
+    }
+    if (custom.minSpendThb && subtotalTHB < custom.minSpendThb) {
       return { ...NULL_RESULT, code };
     }
     const amount =
@@ -324,19 +366,50 @@ export function validateDiscount(
   return { ...NULL_RESULT, code };
 }
 
+// 🆕 Round 28s299 (founder: share-link feature on /admin/promotions) —
+// a `?promo=CODE` link (or its QR) pre-fills the discount field. Mirrors
+// the referral `?ref=` capture: HomePage stashes it into localStorage on
+// mount (via capturePromoFromURL) so it survives navigation to the
+// booking page, where the URL param is no longer present.
+const PROMO_LS_KEY = "sunred.discount.promo";
+
+export function capturePromoFromURL(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = new URLSearchParams(window.location.search).get("promo");
+    if (!raw) return null;
+    const code = raw.trim().toUpperCase();
+    if (!code) return null;
+    window.localStorage.setItem(PROMO_LS_KEY, code);
+    return code;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Suggest an initial discount code on first render of the booking
  * form. Priority:
  *   1. Referral code captured from a `?ref=SUN-XXXX` URL (Round 28r7).
- *   2. FIRST10 code if the guest tapped the FirstBookingBanner —
+ *   2. 🆕 Round 28s299 — a `?promo=CODE` share link (live URL param, or
+ *      the localStorage copy captured on HomePage mount).
+ *   3. FIRST10 code if the guest tapped the FirstBookingBanner —
  *      it stashes the code in sessionStorage on tap (Round 28r14)
  *      so the booking flow can pre-fill it without re-typing.
- *   3. Empty otherwise.
+ *   4. Empty otherwise.
  */
 export function getInitialDiscountCode(): string {
   const ref = getActiveReferralCode();
   if (ref) return ref;
   if (typeof window !== "undefined") {
+    try {
+      const live = new URLSearchParams(window.location.search).get("promo");
+      if (live) return live.trim().toUpperCase();
+      const stashed = window.localStorage.getItem(PROMO_LS_KEY);
+      if (stashed) return stashed;
+    } catch {
+      /* ignore */
+    }
     try {
       const suggested = window.sessionStorage.getItem(
         "sunred.discount.suggested"

@@ -24,6 +24,10 @@ import {
   Timestamp,
   serverTimestamp,
   getDoc,
+  getDocs,
+  query,
+  where,
+  limit as fbLimit,
   doc,
 } from "firebase/firestore";
 import { normPhone } from "@/utils/phoneCountry";
@@ -149,7 +153,7 @@ import {
 // 🆕 Round 28r14 — Discount validator (FIRST10 + SUN-XXXX referral).
 //   Pure function; client-side validation only. Admin still
 //   confirms / overrides via Telegram before payment.
-import { validateDiscount, getInitialDiscountCode } from "@/utils/discount";
+import { validateDiscount, getInitialDiscountCode, getCustomPromoLimits } from "@/utils/discount";
 // 🆕 Round 28s84 — shared promo kill-switch (home banner + discount field).
 import { PROMOS_ENABLED } from "@/config/featureFlags";
 // 🆕 Round 28s77 — WeChat/Alipay transfer surcharge (5% + ฿200).
@@ -922,6 +926,53 @@ const BookingFlowPage: React.FC = () => {
           }
         } catch (err) {
           console.warn("[booking] publicRules check failed:", err);
+        }
+      }
+
+      // 🆕 Round 28s299 — redemption caps on admin-created promo codes.
+      //   Enforced here (not in the pure validateDiscount) because it
+      //   needs a live count of how many times the code was already
+      //   used. getCustomPromoLimits returns null for built-in codes or
+      //   codes with no caps, so this whole block no-ops in the common
+      //   case. Admin bookings bypass, same as the other guards. Fails
+      //   open — a failed count read never blocks a legitimate booking.
+      if (!isAdminBooking && PROMOS_ENABLED && discount.valid) {
+        const limits = getCustomPromoLimits(discount.code);
+        if (limits && (limits.maxRedemptions || limits.perPhoneLimit)) {
+          try {
+            const usedSnap = await getDocs(
+              query(
+                collection(db, "bookings"),
+                where("discountCode", "==", discount.code),
+                fbLimit(1000)
+              )
+            );
+            const myPhone = normPhone(form.customerPhone);
+            let total = 0;
+            let byPhone = 0;
+            usedSnap.forEach((d) => {
+              total += 1;
+              if (normPhone(String((d.data() as { phone?: string }).phone ?? "")) === myPhone) {
+                byPhone += 1;
+              }
+            });
+            if (limits.maxRedemptions && total >= limits.maxRedemptions) {
+              toast.error(
+                t("booking.error.promoExhausted", "This promo code has reached its usage limit.")
+              );
+              setSubmitting(false);
+              return;
+            }
+            if (limits.perPhoneLimit && byPhone >= limits.perPhoneLimit) {
+              toast.error(
+                t("booking.error.promoAlreadyUsed", "You've already used this promo code.")
+              );
+              setSubmitting(false);
+              return;
+            }
+          } catch (err) {
+            console.warn("[booking] promo redemption check failed:", err);
+          }
         }
       }
 

@@ -36,7 +36,7 @@ import {
   limit as fbLimit, serverTimestamp, Timestamp,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { Tag, Percent, Ticket, ChartBar, Plus, Trash, Warning } from "phosphor-react";
+import { Tag, Percent, Ticket, ChartBar, Plus, Trash, Warning, ShareNetwork, Copy } from "phosphor-react";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { SectionCard, fieldSx } from "./therapistFormKit";
 import { logAdminAction } from "@/utils/auditLog";
@@ -67,6 +67,10 @@ interface PromoDoc {
   capThb?: number;
   label?: string;
   expiresAt?: Timestamp | null;
+  startsAt?: Timestamp | null;
+  minSpendThb?: number | null;
+  maxRedemptions?: number | null;
+  perPhoneLimit?: number | null;
 }
 
 interface UsageStat {
@@ -92,11 +96,18 @@ const AdminPromotionsPage: React.FC = () => {
   const [addAmount, setAddAmount] = useState(100);
   const [addCap, setAddCap] = useState(300);
   const [addLabel, setAddLabel] = useState("");
+  const [addStart, setAddStart] = useState("");
   const [addExpiry, setAddExpiry] = useState("");
+  const [addMinSpend, setAddMinSpend] = useState(0);
+  const [addMaxRedemptions, setAddMaxRedemptions] = useState(0);
+  const [addPerPhone, setAddPerPhone] = useState(0);
   const [addSubmitting, setAddSubmitting] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<PromoDoc | null>(null);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+
+  // 🆕 Round 28s299 — share link + QR dialog (any code, builtin or custom).
+  const [shareCode, setShareCode] = useState<string | null>(null);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "adminSettings", "publicRules"), (snap) => {
@@ -119,6 +130,10 @@ const AdminPromotionsPage: React.FC = () => {
           capThb: data.capThb,
           label: data.label,
           expiresAt: data.expiresAt ?? null,
+          startsAt: data.startsAt ?? null,
+          minSpendThb: data.minSpendThb ?? null,
+          maxRedemptions: data.maxRedemptions ?? null,
+          perPhoneLimit: data.perPhoneLimit ?? null,
         };
       });
       setPromoDocs(map);
@@ -189,6 +204,9 @@ const AdminPromotionsPage: React.FC = () => {
     if (!code) { toast.error("กรอกโค้ดก่อน"); return; }
     if (BUILTIN_CODES.some((b) => b.code === code)) { toast.error("ชื่อนี้ซ้ำกับโค้ดมาตรฐาน ใช้ชื่ออื่น"); return; }
     if (addAmount <= 0) { toast.error("จำนวนต้องมากกว่า 0"); return; }
+    if (addStart && addExpiry && new Date(addStart) >= new Date(addExpiry)) {
+      toast.error("วันเริ่มต้องมาก่อนวันหมดอายุ"); return;
+    }
     setAddSubmitting(true);
     try {
       await setDoc(doc(db, "promoCodes", code), {
@@ -198,12 +216,18 @@ const AdminPromotionsPage: React.FC = () => {
         amount: addAmount,
         ...(addType === "percent" ? { capThb: addCap } : {}),
         label: addLabel.trim() || `${code} — ${addType === "percent" ? `${addAmount}% off` : `฿${addAmount} off`}`,
-        expiresAt: addExpiry ? Timestamp.fromDate(new Date(addExpiry)) : null,
+        // startsAt at 00:00, expiresAt at end-of-day so the whole picked day counts.
+        startsAt: addStart ? Timestamp.fromDate(new Date(`${addStart}T00:00:00`)) : null,
+        expiresAt: addExpiry ? Timestamp.fromDate(new Date(`${addExpiry}T23:59:59`)) : null,
+        minSpendThb: addMinSpend > 0 ? addMinSpend : null,
+        maxRedemptions: addMaxRedemptions > 0 ? addMaxRedemptions : null,
+        perPhoneLimit: addPerPhone > 0 ? addPerPhone : null,
         createdAt: serverTimestamp(),
       });
       void logAdminAction("promo.create", { code, type: addType, amount: addAmount });
       setAddOpen(false);
-      setAddCode(""); setAddAmount(100); setAddCap(300); setAddLabel(""); setAddExpiry(""); setAddType("fixed");
+      setAddCode(""); setAddAmount(100); setAddCap(300); setAddLabel("");
+      setAddStart(""); setAddExpiry(""); setAddMinSpend(0); setAddMaxRedemptions(0); setAddPerPhone(0); setAddType("fixed");
       toast.success(`สร้างโค้ด ${code} แล้ว`);
     } catch (err) {
       console.error(err);
@@ -226,6 +250,20 @@ const AdminPromotionsPage: React.FC = () => {
       toast.error("ลบไม่สำเร็จ");
     } finally {
       setDeleteSubmitting(false);
+    }
+  };
+
+  // 🆕 Round 28s299 — share link is the customer origin + ?promo=CODE,
+  //   captured by HomePage into localStorage (see discount.ts).
+  const shareUrl = shareCode
+    ? `${typeof window !== "undefined" ? window.location.origin : "https://sunred.vip"}/?promo=${encodeURIComponent(shareCode)}`
+    : "";
+  const copyShare = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("คัดลอกลิงก์แล้ว");
+    } catch {
+      toast.error("คัดลอกไม่สำเร็จ — กดค้างที่ลิงก์เพื่อคัดลอกเอง");
     }
   };
 
@@ -268,7 +306,14 @@ const AdminPromotionsPage: React.FC = () => {
                     </Typography>
                     <Typography sx={{ fontSize: 11.5, color: adminColor.muted }}>{b.desc}</Typography>
                   </Box>
-                  <Switch checked={enabled} onChange={(e) => void handleToggleBuiltin(b.code, e.target.checked)} sx={switchSx} />
+                  <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0 }}>
+                    {b.code !== "REFERRAL" && (
+                      <Button size="small" onClick={() => setShareCode(b.code)} sx={{ color: adminColor.accent, minWidth: "auto", p: "4px" }} aria-label="Share">
+                        <ShareNetwork size={16} />
+                      </Button>
+                    )}
+                    <Switch checked={enabled} onChange={(e) => void handleToggleBuiltin(b.code, e.target.checked)} sx={switchSx} />
+                  </Stack>
                 </Box>
               );
             })}
@@ -282,20 +327,35 @@ const AdminPromotionsPage: React.FC = () => {
           ) : (
             <Stack spacing={1} sx={{ mb: 1.5 }}>
               {customList.map((c) => {
-                const expired = c.expiresAt && c.expiresAt.toMillis() < Date.now();
+                const now = Date.now();
+                const expired = c.expiresAt && c.expiresAt.toMillis() < now;
+                const notStarted = c.startsAt && c.startsAt.toMillis() > now;
+                // Build the conditions/limits line only from fields that are set.
+                const meta: string[] = [];
+                if (c.minSpendThb) meta.push(`ขั้นต่ำ ฿${c.minSpendThb.toLocaleString()}`);
+                if (c.maxRedemptions) meta.push(`จำกัด ${c.maxRedemptions} ครั้ง`);
+                if (c.perPhoneLimit) meta.push(`${c.perPhoneLimit} ครั้ง/เบอร์`);
+                if (c.startsAt) meta.push(`เริ่ม ${c.startsAt.toDate().toLocaleDateString("th-TH")}`);
+                if (c.expiresAt) meta.push(`${expired ? "หมดอายุแล้ว" : "ถึง"} ${c.expiresAt.toDate().toLocaleDateString("th-TH")}`);
                 return (
-                  <Box key={c.id} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, p: "8px 10px", borderRadius: "10px", background: adminColor.panel2 }}>
+                  <Box key={c.id} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, p: "8px 10px", borderRadius: "10px", background: adminColor.panel2, opacity: expired ? 0.6 : 1 }}>
                     <Box sx={{ minWidth: 0 }}>
                       <Typography sx={{ fontSize: 13, fontWeight: 700, color: adminColor.text }}>
                         {c.id} <span style={{ fontWeight: 400, color: adminColor.dim }}>
                           · {c.type === "percent" ? `${c.amount}% off${c.capThb ? ` (สูงสุด ฿${c.capThb})` : ""}` : `฿${c.amount} off`}
                         </span>
+                        {notStarted && <span style={{ color: adminColor.amber, fontWeight: 700 }}> · ยังไม่เริ่ม</span>}
+                        {expired && <span style={{ color: adminColor.red, fontWeight: 700 }}> · หมดอายุ</span>}
                       </Typography>
-                      <Typography sx={{ fontSize: 11.5, color: expired ? adminColor.red : adminColor.muted }}>
-                        {c.label}{c.expiresAt ? ` · ${expired ? "หมดอายุแล้ว" : "หมดอายุ"} ${c.expiresAt.toDate().toLocaleDateString("th-TH")}` : ""}
-                      </Typography>
+                      <Typography sx={{ fontSize: 11.5, color: adminColor.muted }}>{c.label}</Typography>
+                      {meta.length > 0 && (
+                        <Typography sx={{ fontSize: 10.5, color: adminColor.dim }}>{meta.join(" · ")}</Typography>
+                      )}
                     </Box>
                     <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0 }}>
+                      <Button size="small" onClick={() => setShareCode(c.id)} sx={{ color: adminColor.accent, minWidth: "auto", p: "4px" }} aria-label="Share">
+                        <ShareNetwork size={16} />
+                      </Button>
                       <Switch checked={c.enabled} onChange={(e) => void setDoc(doc(db, "promoCodes", c.id), { enabled: e.target.checked }, { merge: true })} sx={switchSx} />
                       <Button size="small" onClick={() => setDeleteTarget(c)} sx={{ color: adminColor.red, minWidth: "auto", p: "4px" }}>
                         <Trash size={16} />
@@ -358,8 +418,24 @@ const AdminPromotionsPage: React.FC = () => {
           )}
           <TextField fullWidth label="ข้อความที่ลูกค้าเห็น (ไม่บังคับ)" value={addLabel}
             onChange={(e) => setAddLabel(e.target.value)} sx={{ ...fieldSx, mb: 1.5 }} />
-          <TextField fullWidth type="date" label="วันหมดอายุ (ไม่บังคับ)" InputLabelProps={{ shrink: true }} value={addExpiry}
-            onChange={(e) => setAddExpiry(e.target.value)} sx={fieldSx} />
+
+          <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: adminColor.dim, mt: 1, mb: 0.5 }}>
+            เงื่อนไข (ไม่บังคับ)
+          </Typography>
+          <TextField fullWidth type="number" label="ยอดขั้นต่ำ (บาท)" helperText="0 = ไม่กำหนด" value={addMinSpend}
+            onChange={(e) => setAddMinSpend(Math.max(0, Number(e.target.value)))} sx={{ ...fieldSx, mb: 1.5 }} />
+          <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+            <TextField fullWidth type="number" label="จำกัดจำนวนครั้งรวม" helperText="0 = ไม่จำกัด" value={addMaxRedemptions}
+              onChange={(e) => setAddMaxRedemptions(Math.max(0, Number(e.target.value)))} sx={fieldSx} />
+            <TextField fullWidth type="number" label="ครั้ง/เบอร์" helperText="0 = ไม่จำกัด" value={addPerPhone}
+              onChange={(e) => setAddPerPhone(Math.max(0, Number(e.target.value)))} sx={fieldSx} />
+          </Stack>
+          <Stack direction="row" spacing={1}>
+            <TextField fullWidth type="date" label="วันเริ่ม" InputLabelProps={{ shrink: true }} value={addStart}
+              onChange={(e) => setAddStart(e.target.value)} sx={fieldSx} />
+            <TextField fullWidth type="date" label="วันหมดอายุ" InputLabelProps={{ shrink: true }} value={addExpiry}
+              onChange={(e) => setAddExpiry(e.target.value)} sx={fieldSx} />
+          </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAddOpen(false)}>Cancel</Button>
@@ -384,6 +460,46 @@ const AdminPromotionsPage: React.FC = () => {
           <Button onClick={() => setDeleteTarget(null)}>Cancel</Button>
           <Button onClick={() => void handleDelete()} variant="contained" disabled={deleteSubmitting} sx={{ background: adminColor.red, textTransform: "none", fontWeight: 700 }}>
             {deleteSubmitting ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : "ลบ"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 🆕 Round 28s299 — share link + QR. The QR is rendered by a
+          public image API (goqr.me) — CSP allows img-src https:, so no
+          library/bundle cost; the payload is only a public promo URL, no
+          secrets. If admin has promos OFF, the link still works the
+          moment she turns them on. */}
+      <Dialog open={!!shareCode} onClose={() => setShareCode(null)} fullWidth maxWidth="xs">
+        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>
+          แชร์โค้ด {shareCode}
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mb: 1.5 }}>
+            ลูกค้าที่เปิดลิงก์นี้จะได้โค้ดใส่ให้อัตโนมัติตอนจอง
+          </Typography>
+          <Box sx={{ display: "flex", justifyContent: "center", mb: 1.5 }}>
+            {shareUrl && (
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=${encodeURIComponent(shareUrl)}`}
+                alt={`QR ${shareCode}`}
+                width={200}
+                height={200}
+                style={{ borderRadius: 12, border: `1px solid ${adminColor.line}` }}
+              />
+            )}
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, background: adminColor.panel2, border: `1px solid ${adminColor.line}`, borderRadius: "10px", p: "9px 12px" }}>
+            <Typography sx={{ fontSize: 12, color: adminColor.text, wordBreak: "break-all", flex: 1 }}>{shareUrl}</Typography>
+            <Button onClick={() => void copyShare()} size="small" sx={{ color: adminColor.accent, minWidth: "auto", p: "4px", flexShrink: 0 }} aria-label="Copy">
+              <Copy size={16} />
+            </Button>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShareCode(null)} sx={{ color: adminColor.muted, textTransform: "none", fontWeight: 700 }}>ปิด</Button>
+          <Button onClick={() => void copyShare()} variant="contained" startIcon={<Copy size={15} />}
+            sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, "&:hover": { background: adminColor.accentDeep } }}>
+            คัดลอกลิงก์
           </Button>
         </DialogActions>
       </Dialog>

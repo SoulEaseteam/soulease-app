@@ -15,6 +15,9 @@ import { useTranslation } from "react-i18next";
 //   stashes the code in localStorage so the Hero + booking flow can
 //   surface a "Referral active" hint downstream.
 import { captureReferralFromURL } from "@/utils/referral";
+// 🆕 Round 28s299 — same idea for a `?promo=CODE` share link/QR from
+//   the admin Promotions page: stash it so the booking flow pre-fills it.
+import { capturePromoFromURL } from "@/utils/discount";
 // 🆕 Round 28r13 — Self-hosted funnel analytics. Fires home_view
 //   exactly once per page mount (not per render).
 import { trackHomeView } from "@/utils/analytics";
@@ -48,6 +51,7 @@ const HomePage: React.FC = () => {
   //   Idempotent + fully no-op when no `?ref=` is present.
   useEffect(() => {
     captureReferralFromURL();
+    capturePromoFromURL();
   }, []);
 
   // 🆕 Round 28r13 — Funnel analytics: count of unique home opens.

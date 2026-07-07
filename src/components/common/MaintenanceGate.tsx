@@ -69,6 +69,11 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
                 capThb: typeof data.capThb === "number" ? data.capThb : undefined,
                 label: typeof data.label === "string" ? data.label : d.id,
                 expiresAt: data.expiresAt?.toMillis?.() ?? null,
+                // 🆕 Round 28s299 — scheduling + spend/usage guards.
+                startsAt: data.startsAt?.toMillis?.() ?? null,
+                minSpendThb: typeof data.minSpendThb === "number" ? data.minSpendThb : null,
+                maxRedemptions: typeof data.maxRedemptions === "number" ? data.maxRedemptions : null,
+                perPhoneLimit: typeof data.perPhoneLimit === "number" ? data.perPhoneLimit : null,
               };
             }
           } else if (data.enabled === false) {
