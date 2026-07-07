@@ -3433,3 +3433,43 @@ tooltip retitled, "40% off return" copy → round-trip wording
 Verified: isolated math PASS, tsc + build clean, 55 routes prerender, home
 200, fake-discount symbols confirmed GONE from the live bundle, new
 round-trip copy live. No rules change (publicRules doc doesn't exist).
+
+### 🆕 2026-07-07 — Travel fare: Grab booking fee + surge + 15km quote (28s309)
+
+Founder specced a fuller Grab-like model (base 45 + tiers — unchanged from
+current; idle "+2/min"; Grab booking fee 20; weather/traffic/demand surge;
+"15km deposit"). Confirmed the undefined + technically-impossible parts via
+AskUserQuestion (money):
+- **Booking fee = per leg** → round trip adds it twice (`GRAB_BOOKING_FEE × 2`).
+- **Idle "+2/min" + rush/peak/rain can't be measured for a pre-booking
+  quote** (Grab computes those live from GPS at ride time). Approximated as
+  a **time-of-day surge %** on the booking's *scheduled* hour.
+- **"15km deposit"** → she chose "confirm with admin", so just dropped the
+  auto-quote threshold `ADMIN_QUOTE_KM` 40→15 (manual concierge confirm; no
+  real deposit — site has no online payment).
+
+Model: `fare = (oneWay×2.0 + GRAB_BOOKING_FEE×2) × (1 + surge% + rain%)`.
+Surge bands (BKK scheduled hour): **rush** 07–09 & 17–20 (default 25%,
+represents traffic/idle), **peak** 21–02 (default 15%, late-night demand);
+rain still from weather.ts. All new numbers live-overridable; surges
+clamped 0–200 %.
+
+- `taxiFare.ts`: `ADMIN_QUOTE_KM` 40→15; `GRAB_BOOKING_FEE`,
+  `RUSH_SURGE_PCT`/`PEAK_SURGE_PCT` + `surgePctForHour()`;
+  `calcTaxiFare`/`estimateTaxiFare` take optional scheduled `bkkHour`;
+  `TaxiFareResult` gains `bookingFee`+`surgePct`.
+- BookingFlow: passes `form.time`'s hour into the fare memo (added to deps);
+  tooltip fixed — 40+ tier restored, +฿20/leg booking fee, >15km concierge,
+  surge note. i18n `booking.travelTip.bookingFee`/`.surge` in 5 langs.
+- AdminAdvancedSettings (3 new tunable fields) + MaintenanceGate wired.
+
+**Watch-out for future me:** with peak default 15%, most SunRed night
+bookings (21:00+, its prime window) get +15% by default — flagged to
+founder, tunable to 0. And `ADMIN_QUOTE_KM=15` means any trip >15km *road*
+(≈ >10km straight-line from the Huai Khwang base — outer areas/airport)
+now shows "concierge quote" instead of an auto price; central BKK stays
+auto-priced.
+
+Worked table (no surge/rain): 5km ฿194 · 8km ฿238 · 10km ฿266 · 14km ฿322;
+at rush +25% and peak +15% on top. Isolated math test 20/20 PASS. tsc +
+build clean, live checks pass. No rules change.
