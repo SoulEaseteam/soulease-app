@@ -3501,3 +3501,37 @@ clean, home 200, `format=j1` + cache key confirmed in the live bundle.
 
 Note: current-weather path (`getRainStatus`/`getCachedRainStatus`) kept as
 the fallback for out-of-horizon / forecast-fetch-failed bookings.
+
+### 🆕 2026-07-07 — Payout tracker: archive paid + monthly history (28s311)
+
+Founder (admin/earnings): "Payout tracker — ถ้าจ่ายแล้วจะบันทึกและจัดเก็บไป
+ไม่ขึ้นโชว์ และโชว์แบบรายเดือน" (once paid, record & file it away so it stops
+showing in the active list; show it by month). The weekly tracker used to
+keep paid rows visible with a persistent "✓ Paid" toggle — clutter that grew
+every week.
+
+- **Weekly tracker = pure to-pay list.** `weeklyUnpaid` filters
+  `payoutByTherapist` to therapists whose `payoutRecords[tKey].paid` is
+  falsy; marking paid drops the row. Footer shows `N to pay · M already
+  paid` + total **Due**. When everyone owed this week is paid, the list is
+  replaced by a green "✓ All N paid this week · filed in the monthly archive
+  below" banner. The Mark-paid button is now one-way (green) — un-marking
+  moved to the archive.
+- **New "Paid history" section.** Separate `onSnapshot` on
+  `query(payouts, where("paid","==",true))` — index-free, all weeks, not
+  tied to the tracker's viewed week. `paidByMonth` groups by the pay
+  period's month (`weekStart`'s `YYYY-MM`), newest first; each month is a
+  collapsible card (newest open by default) with a rolled-up total + job
+  count, expanding to per-therapist rows (name · jobs · wk · paid date ·
+  amount). Renders entirely from snapshotted payout-doc fields
+  (amount/jobs/name), so it stays correct even if a booking is later edited.
+- **Undo.** Each archived row has an "Undo" that flips `paid→false` on the
+  record's OWN `${weekKey}__${therapistId}` doc (not the tracker's viewed
+  week), so undoing an old month writes back to the right doc. Drops from
+  archive; returns to the to-pay list if it's the current week. Audit-logged
+  `payout.mark_unpaid` as before.
+
+No schema change (reuses the existing `payouts` docs from 28s234), no rules
+change (admin already has full read/write on `payouts`). tsc + build clean
+(55 routes), deployed to prod; "Paid history" / "Archived payouts" / "All N
+paid this week" confirmed in the live `AdminEarningsPage` chunk.
