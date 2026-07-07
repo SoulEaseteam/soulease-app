@@ -644,22 +644,37 @@ const AdminUsersPage: React.FC = () => {
                 {selectedGuest.bookings.map((b) => {
                   const isOpen = openBooking?.id === b.id;
                   return (
-                    <Box key={b.id} sx={{ background: adminColor.panel, border: `1px solid ${isOpen ? adminColor.accent : adminColor.line}`, borderRadius: "12px", overflow: "hidden" }}>
-                      {/* summary row — tap to expand the real booking */}
-                      <Box onClick={() => void openHistoryBooking(b.id)} sx={{ display: "flex", alignItems: "center", gap: 1.25, p: "11px 13px", minHeight: 46, cursor: "pointer", "&:hover": { background: adminColor.panel2 } }}>
-                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: adminColor.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.3 }}>
+                    <Box key={b.id} sx={{ background: adminColor.panel, border: `1px solid ${isOpen ? adminColor.accent : adminColor.line}`, borderRadius: "12px", overflow: "visible" }}>
+                      {/* 🆕 Round 28s290 (founder screenshot: rows clipped/cramped) —
+                          root cause confirmed via an isolated Artifact stress-test:
+                          MUI's sx fontSize (raw numbers) resolves through
+                          pxToRem, so it scales with the device's OS text-size
+                          setting, while the row's padding was fixed px. On a
+                          phone with "larger text" on, the single-line
+                          whiteSpace:nowrap+ellipsis title collapsed to 2-3
+                          characters and the amount/status crowded the edge —
+                          reproduced at 2.4× text in the stress test, matching
+                          the screenshot exactly. Fix: max 2 items per visual
+                          line, and WRAP instead of truncate — text reflows
+                          onto more lines under any scaling instead of
+                          clipping/overlapping. Verified in isolation before
+                          shipping this time. */}
+                      <Box onClick={() => void openHistoryBooking(b.id)} sx={{ display: "flex", flexDirection: "column", gap: "6px", p: "12px 14px", cursor: "pointer", "&:hover": { background: adminColor.panel2 } }}>
+                        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.25, flexWrap: "wrap" }}>
+                          <Typography sx={{ flex: "1 1 120px", minWidth: 0, fontSize: 13.5, fontWeight: 700, color: adminColor.text, wordBreak: "break-word", lineHeight: 1.3 }}>
                             {b.serviceName || "บริการ"}
                           </Typography>
-                          <Typography sx={{ fontSize: 11.5, color: adminColor.dim, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.35 }}>
+                          <Typography sx={{ ...adminFigureSx, fontSize: 13.5, color: adminColor.text, flexShrink: 0, whiteSpace: "nowrap" }}>฿{b.amount.toLocaleString()}</Typography>
+                        </Box>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexWrap: "wrap" }}>
+                          <Typography sx={{ flex: "1 1 100px", minWidth: 0, fontSize: 11.5, color: adminColor.dim, wordBreak: "break-word", lineHeight: 1.35 }}>
                             {b.therapistName ? `${b.therapistName} · ` : ""}{b.date ? b.date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}
                           </Typography>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: "7px", flexShrink: 0 }}>
+                            <Box sx={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em", color: statusColor(b.status), background: `${statusColor(b.status)}1F`, borderRadius: "5px", px: "6px", py: "2px", whiteSpace: "nowrap" }}>{b.status || "—"}</Box>
+                            <CaretDown size={14} color={adminColor.dim} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .15s", flexShrink: 0 }} />
+                          </Box>
                         </Box>
-                        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "3px", flexShrink: 0 }}>
-                          <Typography sx={{ ...adminFigureSx, fontSize: 13.5, color: adminColor.text, lineHeight: 1 }}>฿{b.amount.toLocaleString()}</Typography>
-                          <Box sx={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em", color: statusColor(b.status), background: `${statusColor(b.status)}1F`, borderRadius: "5px", px: "5px", py: "1px", whiteSpace: "nowrap", lineHeight: 1.4 }}>{b.status || "—"}</Box>
-                        </Box>
-                        <CaretDown size={14} color={adminColor.dim} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .15s", flexShrink: 0 }} />
                       </Box>
                       {/* expanded full detail */}
                       {isOpen && (

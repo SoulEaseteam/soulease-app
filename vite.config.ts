@@ -29,6 +29,13 @@ const __dirname = path.dirname(__filename);
  */
 export default defineConfig({
   plugins: [react()],
+  // 🆕 Round 28s290 — honor a harness/env-assigned PORT (Vite doesn't read
+  //   PORT on its own). Falls back to 5173 for a plain `npm run dev`.
+  //   strictPort:false so it auto-increments if the chosen port is busy.
+  server: {
+    port: Number(process.env.PORT) || 5173,
+    strictPort: false,
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
