@@ -41,3 +41,23 @@ scripts/*
 # Whitelist the 4 files we DO use via the negation rules below.
 public/images/icon/*.gif
 !public/images/icon/User.gif
+
+# 🆕 Round 28s279 (founder: "Vercel ฟรีจำกัดจำนวนไฟล์อัปโหลด ลบไฟล์เก่าที่
+#   ไม่ได้ใช้ได้ไหม") — content/docs/marketing files are NOT build inputs
+#   (Vite only needs index.html + src/ + public/ + config + the prerender
+#   script). Excluding them from the Vercel upload cuts the per-deploy file
+#   count so we hit the free-tier `api-upload-free` limit far slower.
+#   Nothing here is deleted from the repo — it just never uploads to Vercel.
+docs/
+Brand/
+SEO_Blog_Pack/
+Expansion/
+.github/
+.claude/
+
+# Markdown + one-off planning/handoff notes (co-founder memory + strategy).
+# None are read at build or runtime.
+*.md
+DEPLOYMENT_STATUS.md
+HANDOFF.md
+ROADMAP.md
