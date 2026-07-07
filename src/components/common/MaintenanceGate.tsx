@@ -20,6 +20,7 @@ import { applyLiveFareConfig } from "@/utils/taxiFare";
 import { applyLivePromosEnabled } from "@/config/featureFlags";
 import { applyLivePromoConfig, type CustomPromoCode } from "@/utils/discount";
 import { applyLiveServiceConfig } from "@/utils/servicePricing";
+import { applyLiveAddonConfig } from "@/data/bookingExtras";
 
 const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { role, loading: authLoading } = useAuth();
@@ -50,6 +51,11 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
         applyLiveServiceConfig({
           overrides: data?.serviceOverrides,
           customServices: data?.customServices,
+          order: data?.serviceOrder,
+        });
+        applyLiveAddonConfig({
+          overrides: data?.addonOverrides,
+          customAddons: data?.customAddons,
         });
       },
       () => setMaintenanceOn(false), // fail open — never let a read error lock everyone out

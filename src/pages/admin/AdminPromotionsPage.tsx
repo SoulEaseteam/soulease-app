@@ -36,13 +36,15 @@ import {
   limit as fbLimit, serverTimestamp, Timestamp,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { Tag, Percent, Ticket, ChartBar, Plus, Trash, Warning, ShareNetwork, Copy, Storefront, FloppyDisk, Camera } from "phosphor-react";
+import { Tag, Percent, Ticket, ChartBar, Plus, Trash, Warning, ShareNetwork, Copy, Storefront, FloppyDisk, Camera, CaretUp, CaretDown, NotePencil, Sparkle } from "phosphor-react";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { SectionCard, fieldSx, downscaleImage } from "./therapistFormKit";
 import { logAdminAction } from "@/utils/auditLog";
 import type { MassageService } from "@/data/services";
 import services from "@/data/services";
 import { priceForDuration, type LiveServiceOverride, type CustomServiceInput } from "@/utils/servicePricing";
+import { ADDONS, type AddonOverride, type CustomAddonInput } from "@/data/bookingExtras";
+import { therapistPctFor } from "@/utils/commission";
 
 const BADGE_OPTIONS: MassageService["badge"][] = ["SIGNATURE", "POPULAR", "RECOMMEND", "EXCLUSIVE"];
 
@@ -84,6 +86,7 @@ interface UsageStat {
 }
 
 // 🆕 Round 28s300 — one editable row per catalog service.
+// 🆕 Round 28s302 — + image/detail/benefit presentation fields.
 interface SvcRow {
   id: string;
   name: string;
@@ -91,13 +94,26 @@ interface SvcRow {
   p60: number;
   p90: number;
   p120: number;
+  image: string;
+  detail: string;
+  benefit: string; // newline-separated in the editor
 }
 
 // 🆕 Round 28s301 — one editable row per admin-created custom service.
 interface CustomSvcRow extends SvcRow {
   desc: string;
-  image: string;
   badge: MassageService["badge"];
+}
+
+// 🆕 Round 28s302 — one editable row per add-on (hardcoded + custom).
+interface AddonRow {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  icon: string;
+  enabled: boolean;
+  custom: boolean;
 }
 
 const switchSx = {
@@ -134,6 +150,18 @@ const AdminPromotionsPage: React.FC = () => {
   // 🆕 Round 28s300 — editable price/name/availability per service.
   const [svcRows, setSvcRows] = useState<SvcRow[]>([]);
   const [svcSaving, setSvcSaving] = useState(false);
+
+  // 🆕 Round 28s302 — display order (ids), add-on rows, and the
+  //   per-service details dialog (image/detail/benefits).
+  const [orderIds, setOrderIds] = useState<string[]>([]);
+  const [addonRows, setAddonRows] = useState<AddonRow[]>([]);
+  const [detailsId, setDetailsId] = useState<string | null>(null);
+  const [detailsUploading, setDetailsUploading] = useState(false);
+  const [addAddonOpen, setAddAddonOpen] = useState(false);
+  const [addAddonName, setAddAddonName] = useState("");
+  const [addAddonDesc, setAddAddonDesc] = useState("");
+  const [addAddonPrice, setAddAddonPrice] = useState(200);
+  const [addAddonIcon, setAddAddonIcon] = useState("✨");
 
   // 🆕 Round 28s301 — admin-created custom services + the "add" dialog.
   const [customSvcRows, setCustomSvcRows] = useState<CustomSvcRow[]>([]);
@@ -217,46 +245,71 @@ const AdminPromotionsPage: React.FC = () => {
     void (async () => {
       let ov: Record<string, LiveServiceOverride> = {};
       let custom: CustomServiceInput[] = [];
+      let order: string[] = [];
+      let addonOv: Record<string, AddonOverride> = {};
+      let customAddons: CustomAddonInput[] = [];
       try {
         const snap = await getDoc(doc(db, "adminSettings", "publicRules"));
-        ov = (snap.data()?.serviceOverrides ?? {}) as Record<string, LiveServiceOverride>;
-        custom = (snap.data()?.customServices ?? []) as CustomServiceInput[];
+        const d = snap.data() ?? {};
+        ov = (d.serviceOverrides ?? {}) as Record<string, LiveServiceOverride>;
+        custom = (d.customServices ?? []) as CustomServiceInput[];
+        order = (d.serviceOrder ?? []) as string[];
+        addonOv = (d.addonOverrides ?? {}) as Record<string, AddonOverride>;
+        customAddons = (d.customAddons ?? []) as CustomAddonInput[];
       } catch (err) {
         console.error("[promotions] serviceOverrides fetch failed:", err);
       }
-      setSvcRows(
-        services.map((s) => {
-          const o = ov[s.id] ?? {};
+      const stdRows: SvcRow[] = services.map((s) => {
+        const o = ov[s.id] ?? {};
+        return {
+          id: s.id,
+          name: o.name ?? s.name,
+          enabled: o.enabled !== false,
+          p60: o.prices?.[60] ?? priceForDuration(s, 60),
+          p90: o.prices?.[90] ?? priceForDuration(s, 90),
+          p120: o.prices?.[120] ?? priceForDuration(s, 120),
+          image: o.image ?? s.image,
+          detail: o.detail ?? s.detail,
+          benefit: (o.benefit ?? s.benefit ?? []).join("\n"),
+        };
+      });
+      const custRows: CustomSvcRow[] = (custom ?? []).filter((c) => c?.id).map((c) => ({
+        id: c.id, name: c.name ?? c.id, desc: c.desc ?? "", image: c.image ?? "",
+        badge: c.badge ?? "POPULAR", enabled: c.enabled !== false,
+        p60: c.prices?.[60] ?? 0, p90: c.prices?.[90] ?? 0, p120: c.prices?.[120] ?? 0,
+        detail: "", benefit: "",
+      }));
+      setSvcRows(stdRows);
+      setCustomSvcRows(custRows);
+      // Order: saved order first (only ids that still exist), then any
+      // new/unlisted ids appended in their natural order.
+      const allIds = [...stdRows.map((r) => r.id), ...custRows.map((r) => r.id)];
+      const savedValid = order.filter((id) => allIds.includes(id));
+      setOrderIds([...savedValid, ...allIds.filter((id) => !savedValid.includes(id))]);
+      // Add-ons: hardcoded (with overrides) + custom.
+      setAddonRows([
+        ...ADDONS.map((a) => {
+          const o = addonOv[a.id] ?? {};
           return {
-            id: s.id,
-            name: o.name ?? s.name,
-            enabled: o.enabled !== false,
-            p60: o.prices?.[60] ?? priceForDuration(s, 60),
-            p90: o.prices?.[90] ?? priceForDuration(s, 90),
-            p120: o.prices?.[120] ?? priceForDuration(s, 120),
+            id: a.id, name: o.name ?? a.name, description: o.description ?? a.description,
+            price: typeof o.price === "number" ? o.price : a.price,
+            icon: o.icon ?? a.icon, enabled: o.enabled !== false, custom: false,
           };
         }),
-      );
-      setCustomSvcRows(
-        (custom ?? []).filter((c) => c?.id).map((c) => ({
-          id: c.id,
-          name: c.name ?? c.id,
-          desc: c.desc ?? "",
-          image: c.image ?? "",
-          badge: c.badge ?? "POPULAR",
-          enabled: c.enabled !== false,
-          p60: c.prices?.[60] ?? 0,
-          p90: c.prices?.[90] ?? 0,
-          p120: c.prices?.[120] ?? 0,
+        ...(customAddons ?? []).filter((a) => a?.id).map((a) => ({
+          id: a.id, name: a.name ?? a.id, description: a.description ?? "",
+          price: a.price ?? 0, icon: a.icon ?? "✨", enabled: a.enabled !== false, custom: true,
         })),
-      );
+      ]);
     })();
   }, []);
 
-  // Single writer for both hardcoded overrides + custom services, taking
-  // explicit rows so add/delete can persist a freshly-built list without
-  // waiting on a state flush.
-  const persistServices = async (rows: SvcRow[], customRows: CustomSvcRow[]) => {
+  // Single writer for the whole pricing/services/add-ons config, taking
+  // explicit values so add/delete/reorder can persist a freshly-built
+  // list without waiting on a state flush.
+  const persistServices = async (
+    rows: SvcRow[], customRows: CustomSvcRow[], order: string[], addons: AddonRow[],
+  ) => {
     const overrides: Record<string, LiveServiceOverride> = {};
     rows.forEach((r) => {
       overrides[r.id] = {
@@ -264,20 +317,27 @@ const AdminPromotionsPage: React.FC = () => {
         name: r.name.trim() || r.id,
         price: r.p60,
         prices: { 60: r.p60, 90: r.p90, 120: r.p120 },
+        image: r.image,
+        detail: r.detail,
+        benefit: r.benefit.split("\n").map((b) => b.trim()).filter(Boolean),
       };
     });
     const customServices: CustomServiceInput[] = customRows.map((c) => ({
-      id: c.id,
-      name: c.name.trim() || c.id,
-      desc: c.desc.trim(),
-      image: c.image,
-      badge: c.badge,
-      enabled: c.enabled,
-      prices: { 60: c.p60, 90: c.p90, 120: c.p120 },
+      id: c.id, name: c.name.trim() || c.id, desc: c.desc.trim(), image: c.image,
+      badge: c.badge, enabled: c.enabled, prices: { 60: c.p60, 90: c.p90, 120: c.p120 },
     }));
+    const addonOverrides: Record<string, AddonOverride> = {};
+    const customAddons: CustomAddonInput[] = [];
+    addons.forEach((a) => {
+      if (a.custom) {
+        customAddons.push({ id: a.id, name: a.name.trim() || a.id, description: a.description.trim(), price: a.price, icon: a.icon, enabled: a.enabled });
+      } else {
+        addonOverrides[a.id] = { enabled: a.enabled, name: a.name.trim(), description: a.description.trim(), price: a.price, icon: a.icon };
+      }
+    });
     await setDoc(
       doc(db, "adminSettings", "publicRules"),
-      { serviceOverrides: overrides, customServices, updatedAt: serverTimestamp() },
+      { serviceOverrides: overrides, customServices, serviceOrder: order, addonOverrides, customAddons, updatedAt: serverTimestamp() },
       { merge: true },
     );
   };
@@ -285,9 +345,9 @@ const AdminPromotionsPage: React.FC = () => {
   const handleSaveServices = async () => {
     setSvcSaving(true);
     try {
-      await persistServices(svcRows, customSvcRows);
+      await persistServices(svcRows, customSvcRows, orderIds, addonRows);
       void logAdminAction("service.update", {
-        count: svcRows.length + customSvcRows.length,
+        count: svcRows.length + customSvcRows.length + addonRows.length,
         changedFields: [...svcRows, ...customSvcRows].filter((r) => !r.enabled).map((r) => `${r.id}: ปิด`),
       });
       toast.success("บันทึกราคา/บริการแล้ว — มีผลกับการจองใหม่ทันที");
@@ -304,6 +364,64 @@ const AdminPromotionsPage: React.FC = () => {
 
   const setCustomField = (id: string, patch: Partial<CustomSvcRow>) =>
     setCustomSvcRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+
+  const setAddonField = (id: string, patch: Partial<AddonRow>) =>
+    setAddonRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+
+  // 🆕 Round 28s302 — reorder a service up/down in the customer menu.
+  const moveService = (id: string, dir: -1 | 1) =>
+    setOrderIds((ids) => {
+      const i = ids.indexOf(id);
+      const j = i + dir;
+      if (i === -1 || j < 0 || j >= ids.length) return ids;
+      const next = [...ids];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+
+  // Details dialog (image/detail/benefits) for a standard service.
+  const detailsRow = svcRows.find((r) => r.id === detailsId) ?? null;
+  const handleUploadDetailsImage = async (file: File) => {
+    if (!detailsId || !file.type.startsWith("image/")) return;
+    setDetailsUploading(true);
+    try {
+      const { getStorage, ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
+      const storage = getStorage(app);
+      const blob = await downscaleImage(file, 1200, 0.85);
+      const path = `services/${detailsId}/${Date.now()}.jpg`;
+      const snap = await uploadBytes(ref(storage, path), blob, { contentType: "image/jpeg" });
+      setSvcField(detailsId, { image: await getDownloadURL(snap.ref) });
+    } catch (err) {
+      console.error("[promotions] details image upload failed", err);
+      toast.error("อัปโหลดรูปไม่สำเร็จ");
+    } finally {
+      setDetailsUploading(false);
+    }
+  };
+
+  const handleAddAddon = async () => {
+    const name = addAddonName.trim();
+    if (!name) { toast.error("ใส่ชื่อ add-on ก่อน"); return; }
+    const id = `AO-${Date.now().toString(36).toUpperCase()}`;
+    const next: AddonRow[] = [...addonRows, { id, name, description: addAddonDesc.trim(), price: addAddonPrice, icon: addAddonIcon.trim() || "✨", enabled: true, custom: true }];
+    try {
+      await persistServices(svcRows, customSvcRows, orderIds, next);
+      setAddonRows(next);
+      void logAdminAction("service.update", { changedFields: [`สร้าง add-on ${name}`] });
+      setAddAddonOpen(false);
+      setAddAddonName(""); setAddAddonDesc(""); setAddAddonPrice(200); setAddAddonIcon("✨");
+      toast.success(`เพิ่ม add-on ${name} แล้ว`);
+    } catch (err) { console.error(err); toast.error("เพิ่มไม่สำเร็จ"); }
+  };
+
+  const handleDeleteAddon = async (id: string) => {
+    const next = addonRows.filter((r) => r.id !== id);
+    try {
+      await persistServices(svcRows, customSvcRows, orderIds, next);
+      setAddonRows(next);
+      toast.success("ลบ add-on แล้ว");
+    } catch (err) { console.error(err); toast.error("ลบไม่สำเร็จ"); }
+  };
 
   // 🆕 Round 28s301 — image upload for the new-service dialog. Reuses the
   //   therapist-gallery pattern (downscale → Storage → URL).
@@ -336,10 +454,13 @@ const AdminPromotionsPage: React.FC = () => {
         id, name, desc: addSvcDesc.trim(), image: addSvcImage,
         badge: addSvcBadge, enabled: true,
         p60: addSvcP60, p90: addSvcP90, p120: addSvcP120,
+        detail: "", benefit: "",
       };
       const next = [...customSvcRows, row];
-      await persistServices(svcRows, next);
+      const nextOrder = [...orderIds, id];
+      await persistServices(svcRows, next, nextOrder, addonRows);
       setCustomSvcRows(next);
+      setOrderIds(nextOrder);
       void logAdminAction("service.update", { changedFields: [`สร้างบริการ ${name} (${id})`] });
       setAddSvcOpen(false);
       setAddSvcName(""); setAddSvcDesc(""); setAddSvcImage(""); setAddSvcBadge("POPULAR");
@@ -355,9 +476,11 @@ const AdminPromotionsPage: React.FC = () => {
 
   const handleDeleteCustomService = async (id: string) => {
     const next = customSvcRows.filter((r) => r.id !== id);
+    const nextOrder = orderIds.filter((x) => x !== id);
     try {
-      await persistServices(svcRows, next);
+      await persistServices(svcRows, next, nextOrder, addonRows);
       setCustomSvcRows(next);
+      setOrderIds(nextOrder);
       void logAdminAction("service.update", { changedFields: [`ลบบริการ ${id}`] });
       toast.success("ลบบริการแล้ว");
     } catch (err) {
@@ -480,56 +603,53 @@ const AdminPromotionsPage: React.FC = () => {
             แก้ราคาแต่ละช่วงเวลา · เปลี่ยนชื่อ · เปิด/ปิดบริการ — มีผลกับการจองใหม่เท่านั้น (ออเดอร์เก่าล็อกราคาที่จ่ายไว้แล้ว)
           </Typography>
           <Stack spacing={1.5}>
-            {svcRows.map((r) => (
-              <Box key={r.id} sx={{ p: "11px 12px", borderRadius: "12px", background: adminColor.panel2, opacity: r.enabled ? 1 : 0.6 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                  <TextField
-                    value={r.name} onChange={(e) => setSvcField(r.id, { name: e.target.value })}
-                    size="small" variant="standard" sx={{ flex: 1, "& .MuiInput-input": { fontSize: 13.5, fontWeight: 700, color: adminColor.text } }}
-                  />
-                  <Typography sx={{ fontSize: 10.5, color: adminColor.dim, flexShrink: 0 }}>{r.id}</Typography>
-                  <Switch checked={r.enabled} onChange={(e) => setSvcField(r.id, { enabled: e.target.checked })} sx={switchSx} size="small" />
-                </Box>
-                <Stack direction="row" spacing={1}>
-                  {([["60 น.", "p60"], ["90 น.", "p90"], ["120 น.", "p120"]] as const).map(([lbl, key]) => (
+            {orderIds.map((oid, idx) => {
+              const std = svcRows.find((r) => r.id === oid);
+              const cus = customSvcRows.find((r) => r.id === oid);
+              const r = std ?? cus;
+              if (!r) return null;
+              const isCustom = !!cus;
+              const set = isCustom ? setCustomField : setSvcField;
+              const pct = therapistPctFor(r.id);
+              const shopCut = Math.round(r.p60 * (1 - pct));
+              const therapistCut = r.p60 - shopCut;
+              return (
+                <Box key={r.id} sx={{ p: "11px 12px", borderRadius: "12px", background: adminColor.panel2, ...(isCustom ? { border: `1px dashed ${adminColor.line2}` } : {}), opacity: r.enabled ? 1 : 0.6 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1 }}>
+                    {/* reorder */}
+                    <Box sx={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
+                      <Box onClick={() => moveService(r.id, -1)} sx={{ cursor: idx === 0 ? "default" : "pointer", opacity: idx === 0 ? 0.25 : 1, lineHeight: 0 }}><CaretUp size={13} color={adminColor.dim} weight="bold" /></Box>
+                      <Box onClick={() => moveService(r.id, 1)} sx={{ cursor: idx === orderIds.length - 1 ? "default" : "pointer", opacity: idx === orderIds.length - 1 ? 0.25 : 1, lineHeight: 0 }}><CaretDown size={13} color={adminColor.dim} weight="bold" /></Box>
+                    </Box>
+                    {(isCustom ? cus!.image : std!.image)
+                      ? <img src={isCustom ? cus!.image : std!.image} alt="" width={30} height={30} style={{ borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
+                      : <Box sx={{ width: 30, height: 30, borderRadius: "8px", background: adminColor.panel3, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Camera size={15} color={adminColor.dim} /></Box>}
                     <TextField
-                      key={key} label={lbl} type="number" size="small" fullWidth sx={fieldSx}
-                      value={r[key]}
-                      onChange={(e) => setSvcField(r.id, { [key]: Math.max(0, Number(e.target.value)) } as Partial<SvcRow>)}
-                      InputProps={{ startAdornment: <span style={{ color: adminColor.dim, fontSize: 12, marginRight: 3 }}>฿</span> }}
+                      value={r.name} onChange={(e) => set(r.id, { name: e.target.value })}
+                      size="small" variant="standard" sx={{ flex: 1, minWidth: 0, "& .MuiInput-input": { fontSize: 13.5, fontWeight: 700, color: adminColor.text } }}
                     />
-                  ))}
-                </Stack>
-              </Box>
-            ))}
-
-            {/* 🆕 Round 28s301 — admin-created custom services */}
-            {customSvcRows.map((r) => (
-              <Box key={r.id} sx={{ p: "11px 12px", borderRadius: "12px", background: adminColor.panel2, border: `1px dashed ${adminColor.line2}`, opacity: r.enabled ? 1 : 0.6 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                  {r.image
-                    ? <img src={r.image} alt="" width={30} height={30} style={{ borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
-                    : <Box sx={{ width: 30, height: 30, borderRadius: "8px", background: adminColor.panel3, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Camera size={15} color={adminColor.dim} /></Box>}
-                  <TextField
-                    value={r.name} onChange={(e) => setCustomField(r.id, { name: e.target.value })}
-                    size="small" variant="standard" sx={{ flex: 1, "& .MuiInput-input": { fontSize: 13.5, fontWeight: 700, color: adminColor.text } }}
-                  />
-                  <Box sx={{ fontSize: 9, fontWeight: 800, color: adminColor.accent, background: `${adminColor.accent}1F`, borderRadius: "5px", px: "5px", py: "1px", flexShrink: 0 }}>NEW</Box>
-                  <Switch checked={r.enabled} onChange={(e) => setCustomField(r.id, { enabled: e.target.checked })} sx={switchSx} size="small" />
-                  <Button size="small" onClick={() => void handleDeleteCustomService(r.id)} sx={{ color: adminColor.red, minWidth: "auto", p: "3px" }}><Trash size={15} /></Button>
+                    {isCustom && <Box sx={{ fontSize: 9, fontWeight: 800, color: adminColor.accent, background: `${adminColor.accent}1F`, borderRadius: "5px", px: "5px", py: "1px", flexShrink: 0 }}>NEW</Box>}
+                    {!isCustom && <Button size="small" onClick={() => setDetailsId(r.id)} sx={{ color: adminColor.accent, minWidth: "auto", p: "3px" }} aria-label="Details"><NotePencil size={16} /></Button>}
+                    <Switch checked={r.enabled} onChange={(e) => set(r.id, { enabled: e.target.checked })} sx={switchSx} size="small" />
+                    {isCustom && <Button size="small" onClick={() => void handleDeleteCustomService(r.id)} sx={{ color: adminColor.red, minWidth: "auto", p: "3px" }}><Trash size={15} /></Button>}
+                  </Box>
+                  <Stack direction="row" spacing={1}>
+                    {([["60 น.", "p60"], ["90 น.", "p90"], ["120 น.", "p120"]] as const).map(([lbl, key]) => (
+                      <TextField
+                        key={key} label={lbl} type="number" size="small" fullWidth sx={fieldSx}
+                        value={r[key]}
+                        onChange={(e) => set(r.id, { [key]: Math.max(0, Number(e.target.value)) } as Partial<CustomSvcRow>)}
+                        InputProps={{ startAdornment: <span style={{ color: adminColor.dim, fontSize: 12, marginRight: 3 }}>฿</span> }}
+                      />
+                    ))}
+                  </Stack>
+                  {/* 🆕 Round 28s302 — margin line (60-min basis) */}
+                  <Typography sx={{ fontSize: 10.5, color: adminColor.dim, mt: 0.75 }}>
+                    60 น.: หมอนวดได้ ฿{therapistCut.toLocaleString()} · ร้าน ฿{shopCut.toLocaleString()} ({Math.round((1 - pct) * 100)}%)
+                  </Typography>
                 </Box>
-                <Stack direction="row" spacing={1}>
-                  {([["60 น.", "p60"], ["90 น.", "p90"], ["120 น.", "p120"]] as const).map(([lbl, key]) => (
-                    <TextField
-                      key={key} label={lbl} type="number" size="small" fullWidth sx={fieldSx}
-                      value={r[key]}
-                      onChange={(e) => setCustomField(r.id, { [key]: Math.max(0, Number(e.target.value)) } as Partial<CustomSvcRow>)}
-                      InputProps={{ startAdornment: <span style={{ color: adminColor.dim, fontSize: 12, marginRight: 3 }}>฿</span> }}
-                    />
-                  ))}
-                </Stack>
-              </Box>
-            ))}
+              );
+            })}
           </Stack>
 
           <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
@@ -548,6 +668,34 @@ const AdminPromotionsPage: React.FC = () => {
               เพิ่มบริการใหม่
             </Button>
           </Stack>
+        </SectionCard>
+
+        {/* 🆕 Round 28s302 — Add-ons editor */}
+        <SectionCard icon={<Sparkle size={13} weight="bold" />} title="Add-on / บริการเสริม">
+          <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.5 }}>
+            บริการเสริมที่ลูกค้าเลือกเพิ่มตอนจอง — แก้ราคา เปิด/ปิด หรือเพิ่มใหม่ได้
+          </Typography>
+          <Stack spacing={1}>
+            {addonRows.map((a) => (
+              <Box key={a.id} sx={{ display: "flex", alignItems: "center", gap: 1, p: "8px 10px", borderRadius: "10px", background: adminColor.panel2, ...(a.custom ? { border: `1px dashed ${adminColor.line2}` } : {}), opacity: a.enabled ? 1 : 0.6 }}>
+                <TextField value={a.icon} onChange={(e) => setAddonField(a.id, { icon: e.target.value })} size="small" variant="standard" sx={{ width: 34, flexShrink: 0, "& .MuiInput-input": { fontSize: 18, textAlign: "center" } }} />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <TextField value={a.name} onChange={(e) => setAddonField(a.id, { name: e.target.value })} size="small" variant="standard" fullWidth sx={{ "& .MuiInput-input": { fontSize: 13, fontWeight: 700, color: adminColor.text } }} />
+                  <TextField value={a.description} onChange={(e) => setAddonField(a.id, { description: e.target.value })} size="small" variant="standard" fullWidth placeholder="คำอธิบาย" sx={{ "& .MuiInput-input": { fontSize: 11, color: adminColor.muted } }} />
+                </Box>
+                <TextField value={a.price} onChange={(e) => setAddonField(a.id, { price: Math.max(0, Number(e.target.value)) })} type="number" size="small" sx={{ width: 90, ...fieldSx }}
+                  InputProps={{ startAdornment: <span style={{ color: adminColor.dim, fontSize: 12, marginRight: 3 }}>฿</span> }} />
+                <Switch checked={a.enabled} onChange={(e) => setAddonField(a.id, { enabled: e.target.checked })} sx={switchSx} size="small" />
+                {a.custom && <Button size="small" onClick={() => void handleDeleteAddon(a.id)} sx={{ color: adminColor.red, minWidth: "auto", p: "3px" }}><Trash size={15} /></Button>}
+              </Box>
+            ))}
+          </Stack>
+          <Button
+            variant="outlined" startIcon={<Plus size={15} weight="bold" />} onClick={() => setAddAddonOpen(true)}
+            sx={{ mt: 1.5, textTransform: "none", fontWeight: 700, borderColor: adminColor.line2, color: adminColor.accent, borderRadius: "10px" }}
+          >
+            เพิ่ม Add-on
+          </Button>
         </SectionCard>
 
         {/* Master switch */}
@@ -814,6 +962,63 @@ const AdminPromotionsPage: React.FC = () => {
             sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, "&:hover": { background: adminColor.accentDeep } }}
           >
             {addSvcSubmitting ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "เพิ่มบริการ"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 🆕 Round 28s302 — edit a standard service's photo + detail-page copy */}
+      <Dialog open={!!detailsRow} onClose={() => setDetailsId(null)} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>
+          รายละเอียด · {detailsRow?.name}
+        </DialogTitle>
+        {detailsRow && (
+          <DialogContent>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2, mt: 0.5 }}>
+              <Box component="label" sx={{ width: 72, height: 72, borderRadius: "12px", flexShrink: 0, cursor: "pointer", overflow: "hidden", border: `1px dashed ${adminColor.line2}`, background: adminColor.panel2, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {detailsUploading ? <CircularProgress size={20} sx={{ color: adminColor.accent }} />
+                  : detailsRow.image ? <img src={detailsRow.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  : <Camera size={22} color={adminColor.dim} />}
+                <input type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleUploadDetailsImage(f); }} />
+              </Box>
+              <Typography sx={{ fontSize: 12, color: adminColor.muted }}>แตะเพื่อเปลี่ยนรูปบริการ</Typography>
+            </Box>
+            <TextField
+              fullWidth multiline minRows={3} label="รายละเอียด (โชว์หน้าบริการ)" value={detailsRow.detail}
+              onChange={(e) => setSvcField(detailsRow.id, { detail: e.target.value })} sx={{ ...fieldSx, mb: 2 }}
+            />
+            <TextField
+              fullWidth multiline minRows={4} label="จุดเด่น (บรรทัดละ 1 ข้อ)" value={detailsRow.benefit}
+              onChange={(e) => setSvcField(detailsRow.id, { benefit: e.target.value })} sx={fieldSx}
+              helperText="แต่ละบรรทัด = 1 bullet บนหน้าบริการ"
+            />
+          </DialogContent>
+        )}
+        <DialogActions>
+          <Button onClick={() => setDetailsId(null)} sx={{ color: adminColor.muted, textTransform: "none", fontWeight: 700 }}>เสร็จ</Button>
+          <Button onClick={() => { setDetailsId(null); void handleSaveServices(); }} variant="contained"
+            sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, "&:hover": { background: adminColor.accentDeep } }}>
+            บันทึก
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 🆕 Round 28s302 — add a custom add-on */}
+      <Dialog open={addAddonOpen} onClose={() => setAddAddonOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>เพิ่ม Add-on</DialogTitle>
+        <DialogContent>
+          <Stack direction="row" spacing={1} sx={{ mt: 0.5, mb: 1.5 }}>
+            <TextField label="ไอคอน" value={addAddonIcon} onChange={(e) => setAddAddonIcon(e.target.value)} sx={{ width: 80, ...fieldSx }} inputProps={{ style: { textAlign: "center", fontSize: 18 } }} />
+            <TextField fullWidth autoFocus label="ชื่อ" value={addAddonName} onChange={(e) => setAddAddonName(e.target.value)} sx={fieldSx} />
+          </Stack>
+          <TextField fullWidth label="คำอธิบาย (ไม่บังคับ)" value={addAddonDesc} onChange={(e) => setAddAddonDesc(e.target.value)} sx={{ ...fieldSx, mb: 1.5 }} />
+          <TextField fullWidth type="number" label="ราคา (บาท)" value={addAddonPrice} onChange={(e) => setAddAddonPrice(Math.max(0, Number(e.target.value)))} sx={fieldSx}
+            InputProps={{ startAdornment: <span style={{ color: adminColor.dim, fontSize: 12, marginRight: 3 }}>฿</span> }} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAddAddonOpen(false)}>Cancel</Button>
+          <Button onClick={() => void handleAddAddon()} variant="contained" disabled={!addAddonName.trim()}
+            sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, "&:hover": { background: adminColor.accentDeep } }}>
+            เพิ่ม
           </Button>
         </DialogActions>
       </Dialog>

@@ -55,8 +55,7 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 
-import services from "@/data/services";
-import { resolveServiceId } from "@/utils/serviceCatalog";
+import { getServiceById } from "@/utils/serviceCatalog";
 import {
   priceForDuration,
   durationsFor,
@@ -109,10 +108,9 @@ const ServiceDetailPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
-  const resolvedId = rawId ? resolveServiceId(rawId) : null;
-  const service = resolvedId
-    ? services.find((s) => s.id === resolvedId)
-    : null;
+  // 🆕 Round 28s302 — via getServiceById so live admin overrides
+  //   (name/price/image/detail/benefits) + custom services flow here too.
+  const service = rawId ? getServiceById(rawId) : null;
 
   const [duration, setDuration] = useState<number>(60);
   const [reviews, setReviews] = useState<ReviewLite[]>([]);

@@ -55,6 +55,11 @@ export interface LiveServiceOverride {
   price?: number;
   /** Explicit per-duration prices (keys are minute counts). Wins over `price`×mult. */
   prices?: Record<number, number>;
+  // 🆕 Round 28s302 — full presentation overrides for the 4 standard
+  //   services (image + detail page copy), editable from /admin/promotions.
+  image?: string;
+  detail?: string;
+  benefit?: string[];
 }
 
 // 🆕 Round 28s301 (founder: "ราคา & บริการ เพิ่ม เมนูได้") — admin-created
@@ -71,6 +76,13 @@ export interface CustomServiceInput {
 
 let liveServiceOverrides: Record<string, LiveServiceOverride> = {};
 let liveCustomServices: MassageService[] = [];
+let liveServiceOrder: string[] = [];
+
+/** Admin-set display order (service ids). Empty = use the caller's own
+ *  default order. 🆕 Round 28s302. */
+export function getLiveServiceOrder(): string[] {
+  return liveServiceOrder;
+}
 
 // Fallback image so a custom service with no uploaded photo still renders
 // a real card instead of a broken image.
@@ -85,7 +97,9 @@ const CUSTOM_SERVICE_FALLBACK_IMAGE = "/images/workphoto/IMG_5096.JPG";
 export function applyLiveServiceConfig(cfg: {
   overrides?: Record<string, LiveServiceOverride> | null;
   customServices?: CustomServiceInput[] | null;
+  order?: string[] | null;
 }): void {
+  liveServiceOrder = Array.isArray(cfg.order) ? cfg.order : [];
   const map: Record<string, LiveServiceOverride> = { ...(cfg.overrides ?? {}) };
   const list: MassageService[] = [];
   for (const cs of cfg.customServices ?? []) {
@@ -143,7 +157,8 @@ export function liveServiceDesc(id: string): string | null {
   return typeof d === "string" && d.trim() ? d : null;
 }
 
-/** Merge any live name/desc/base-price override onto a catalog service. */
+/** Merge any live name/desc/price/image/detail/benefit override onto a
+ *  catalog service. 🆕 Round 28s302 added image/detail/benefit. */
 export function withLiveServiceOverrides(s: MassageService): MassageService {
   const ov = liveServiceOverrides[s.id];
   if (!ov) return s;
@@ -152,6 +167,9 @@ export function withLiveServiceOverrides(s: MassageService): MassageService {
     ...(liveServiceName(s.id) ? { name: ov.name as string } : {}),
     ...(liveServiceDesc(s.id) ? { desc: ov.desc as string } : {}),
     ...(typeof ov.price === "number" && ov.price > 0 ? { price: ov.price } : {}),
+    ...(typeof ov.image === "string" && ov.image.trim() ? { image: ov.image } : {}),
+    ...(typeof ov.detail === "string" && ov.detail.trim() ? { detail: ov.detail } : {}),
+    ...(Array.isArray(ov.benefit) && ov.benefit.length ? { benefit: ov.benefit } : {}),
   };
 }
 

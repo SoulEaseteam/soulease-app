@@ -35,6 +35,7 @@ import {
   isServiceEnabled,
   withLiveServiceOverrides,
   getLiveCustomServices,
+  getLiveServiceOrder,
 } from "@/utils/servicePricing";
 import ServiceDurationSheet from "@/components/booking/ServiceDurationSheet";
 
@@ -90,6 +91,14 @@ const EDITORIAL_ORDER = [
 ] as const;
 
 function orderIdx(id: string): number {
+  // 🆕 Round 28s302 — admin-set order (from /admin/promotions) wins; the
+  //   hardcoded editorial order is the fallback for ids it doesn't list.
+  const live = getLiveServiceOrder();
+  if (live.length) {
+    const li = live.indexOf(id);
+    if (li !== -1) return li;
+    return 900 + EDITORIAL_ORDER.indexOf(id as (typeof EDITORIAL_ORDER)[number]);
+  }
   const i = EDITORIAL_ORDER.indexOf(id as (typeof EDITORIAL_ORDER)[number]);
   return i === -1 ? 999 : i;
 }
