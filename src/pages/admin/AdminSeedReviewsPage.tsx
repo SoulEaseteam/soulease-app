@@ -5,13 +5,13 @@
 //
 // Why this exists:
 //   In our architecture, reviews are NOT a separate collection. A
-//   booking IS a review the moment it has `rating >= 1` AND a non-
-//   empty `reviewText`. Many of View's existing completed bookings
-//   never got a guest comment, so they never surface as reviews on
-//   the practitioner detail page.
+//   booking IS a review the moment it has a non-empty `reviewText`.
+//   Many of View's existing completed bookings never got a guest
+//   comment, so they never surface as reviews on the practitioner
+//   detail page.
 //
 // What this page does:
-//   1. Lists completed bookings without ratings, filtered by recency.
+//   1. Lists completed bookings without a review, filtered by recency.
 //   2. Lets View tap a row, pick a template (service × language),
 //      rate, edit text, and submit.
 //   3. Updates the booking doc in-place with { rating, reviewText,
@@ -24,6 +24,30 @@
 //   • All reviews surface as "Anonymous" on the public detail page.
 //   • Lang detection uses phone country code as a hint (not stored
 //     PII; just steers the template picker).
+//
+// 🆕 Round 28s292 (founder: "admin/reviews ปรับแก้ และ ตกแต่งสวยงาม" —
+//   the seed tool that ships with it) — full pass:
+//   • Data-loss bug: the "needs seeding" filter was
+//     `!rating || rating<1 || !reviewText.trim()` — a booking with REAL
+//     guest reviewText but no rating field (the exact case round 28s291
+//     just proved exists in production) got pulled into this queue, and
+//     both single-submit and bulk-seed overwrite reviewText
+//     unconditionally. That could silently clobber a real guest comment
+//     with a synthetic template. Fixed: "needs seeding" now means ONLY
+//     "no reviewText at all" — matching the same definition of "review"
+//     round 28s291 established (reviewText presence, not rating).
+//   • "ทั้งหมด" (All) time-window toggle silently did nothing — the
+//     server fetch was hardcoded to a 90-day cutoff regardless of the
+//     selected window, so "All" quietly showed the same rows as "90
+//     days". Now refetches with the correct cutoff per window (epoch-0
+//     for "All"), same composite index, so it's an honest "all".
+//   • Ocean Study restyle — this was the last page still on the
+//     pre-28s235 theme; icons moved from @mui/icons-material to
+//     phosphor-react to match every other migrated admin page.
+//   • Added a service-name search box (every other admin list page
+//     gained one this session) and two icon-circle stat pills for
+//     visual parity with AdminReviewListPage.
+//   • Timestamp.now() → serverTimestamp() for `reviewedAt`.
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -32,7 +56,6 @@ import {
   Button,
   Select,
   MenuItem,
-  Chip,
   Stack,
   CircularProgress,
   Snackbar,
@@ -43,10 +66,7 @@ import {
   IconButton,
   Divider,
 } from "@mui/material";
-import StarRoundedIcon from "@mui/icons-material/StarRounded";
-import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
-import ExpandLessRoundedIcon from "@mui/icons-material/ExpandLessRounded";
-import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
+import { Star, CaretDown, CaretUp, ArrowClockwise, MagnifyingGlass, ClockCounterClockwise, UsersThree, Check } from "phosphor-react";
 import {
   collection,
   query,
@@ -57,6 +77,7 @@ import {
   doc,
   updateDoc,
   Timestamp,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import {
@@ -67,15 +88,10 @@ import {
   type ReviewLang,
 } from "@/data/reviewTemplates";
 import { therapists as THERAPIST_DATA } from "@/data/therapists";
+import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 
-const SERIF =
-  '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
-const SANS = '"Inter", system-ui, -apple-system, sans-serif';
-
-const RED = "#B4000A";
-const TEXT = "#1A2B2E";
-const MUTED = "#4A5568";
-const BG = "#F4F6F5";
+const SERIF = adminFont.serif;
+const SANS = adminFont.sans;
 
 type BookingRow = {
   id: string;
@@ -100,8 +116,6 @@ const WINDOW_MS: Record<FilterWindow, number> = {
   "90d": 90 * 24 * 60 * 60 * 1000,
   all: Number.POSITIVE_INFINITY,
 };
-
-const STATUS_DONE = ["completed", "done"] as const;
 
 // Therapist id → display name lookup (built once at module load).
 const THERAPIST_NAME_MAP: Record<string, string> = THERAPIST_DATA.reduce(
@@ -135,6 +149,7 @@ const AdminSeedReviewsPage: React.FC = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   // 🆕 Round 28s215 — Therapist filter + bulk mode.
   const [therapistFilter, setTherapistFilter] = useState<string>("__all__");
+  const [searchQuery, setSearchQuery] = useState("");
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
   const [bulkRating, setBulkRating] = useState(5);
@@ -145,18 +160,16 @@ const AdminSeedReviewsPage: React.FC = () => {
     message: string;
   }>({ open: false, severity: "success", message: "" });
 
-  // ─── Fetch completed bookings without reviews ──────────────────
-  // Pull a bigger window than needed; filter client-side so we can
-  // expand/contract the time window without re-querying.
-  const loadRows = async () => {
+  // ─── Fetch completed bookings without a review ─────────────────
+  // 🆕 Round 28s292 — cutoff now matches the selected window (was
+  //   hardcoded to 90d regardless of the toggle, so "All" silently
+  //   behaved like "90 days"). Re-runs whenever `window` changes.
+  const loadRows = async (win: FilterWindow) => {
     setLoading(true);
     try {
-      // Status filter is server-side (we have an index on status+startAt).
-      // We grab both 'completed' and 'done' in two queries because
-      // Firestore `in` requires a different index; cheaper to merge.
-      const cutoff = Date.now() - WINDOW_MS["90d"];
+      const ms = WINDOW_MS[win];
       const cutoffTs = Timestamp.fromMillis(
-        Number.isFinite(cutoff) ? cutoff : 0,
+        Number.isFinite(ms) ? Date.now() - ms : 0,
       );
 
       // Round 28s213 — use orderBy startAt ASC because that matches the
@@ -214,10 +227,11 @@ const AdminSeedReviewsPage: React.FC = () => {
         return mb - ma;
       });
 
-      // Filter to bookings WITHOUT a rating (i.e. not yet a review).
-      const unrated = merged.filter(
-        (r) => !r.rating || r.rating < 1 || !(r.reviewText ?? "").trim(),
-      );
+      // 🆕 Round 28s292 — "needs seeding" = no reviewText at all. A
+      //   booking with real guest reviewText but no rating field IS
+      //   already a review (round 28s291) and must never be pulled in
+      //   here — both submit paths overwrite reviewText unconditionally.
+      const unrated = merged.filter((r) => !(r.reviewText ?? "").trim());
       setRows(unrated);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -232,23 +246,30 @@ const AdminSeedReviewsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    void loadRows();
-  }, []);
+    void loadRows(window);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [window]);
 
-  // ─── Client-side filters (window + therapist) ─────────────────
+  // ─── Client-side filters (therapist + search) ──────────────────
+  // Time window is now server-scoped (see loadRows), so only
+  // therapist + free-text search need to run client-side here.
   const visibleRows = useMemo(() => {
     let out = rows;
-    if (window !== "all") {
-      const cutoff = Date.now() - WINDOW_MS[window];
-      out = out.filter((r) => (r.startAt?.toMillis() ?? 0) >= cutoff);
-    }
     if (therapistFilter !== "__all__") {
       out = out.filter((r) => r.therapistId === therapistFilter);
     }
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      out = out.filter(
+        (r) =>
+          (r.serviceName ?? "").toLowerCase().includes(q) ||
+          (r.therapistName ?? "").toLowerCase().includes(q),
+      );
+    }
     return out;
-  }, [rows, window, therapistFilter]);
+  }, [rows, therapistFilter, searchQuery]);
 
-  // Therapist options derived from visible rows (so View only sees
+  // Therapist options derived from all loaded rows (so View only sees
   // names that have un-seeded bookings in the current window).
   const therapistOptions = useMemo(() => {
     const seen = new Set<string>();
@@ -293,7 +314,7 @@ const AdminSeedReviewsPage: React.FC = () => {
               rating: bulkRating,
               reviewText: text,
               reviewLang: lang,
-              reviewedAt: Timestamp.now(),
+              reviewedAt: serverTimestamp(),
             });
             successCount++;
           } catch {
@@ -367,7 +388,7 @@ const AdminSeedReviewsPage: React.FC = () => {
         rating,
         reviewText: trimmed,
         reviewLang: lang,
-        reviewedAt: Timestamp.now(),
+        reviewedAt: serverTimestamp(),
       });
       // Optimistic remove from visible list — row no longer "unrated".
       setRows((prev) => prev.filter((r) => r.id !== row.id));
@@ -387,67 +408,74 @@ const AdminSeedReviewsPage: React.FC = () => {
     }
   };
 
+  const practitionerCount = therapistOptions.length;
+
   // ─── Render ───────────────────────────────────────────────────
   return (
-    <Box
-      sx={{
-        padding: { xs: "16px", md: "24px" },
-        background: BG,
-        minHeight: "100vh",
-      }}
-    >
+    <Box sx={{ p: { xs: 2, md: 3 }, fontFamily: SANS }}>
       {/* Title bar */}
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          marginBottom: "16px",
+          mb: 1.5,
           gap: "12px",
           flexWrap: "wrap",
         }}
       >
         <Box>
-          <Typography
-            sx={{
-              fontFamily: SERIF,
-              fontSize: "22px",
-              fontWeight: 700,
-              color: TEXT,
-              lineHeight: 1.1,
-            }}
-          >
+          <Typography sx={{ fontFamily: SERIF, fontSize: 22, fontWeight: 600, color: adminColor.text, lineHeight: 1.1 }}>
             Seed Reviews
           </Typography>
-          <Typography
-            sx={{
-              fontFamily: SANS,
-              fontSize: "12.5px",
-              color: MUTED,
-              marginTop: "4px",
-              maxWidth: "560px",
-            }}
-          >
-            บูคิ้งที่จบแล้วแต่ลูกค้าไม่ได้รีวิว · เลือก template ภาษา + rating
+          <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mt: "4px", maxWidth: 560 }}>
+            บุ๊กกิ้งที่จบแล้วแต่ลูกค้าไม่ได้รีวิว · เลือก template ภาษา + rating
             แล้วบันทึก · จะขึ้นเป็นรีวิวบนหน้า practitioner ทันที (anonymous)
           </Typography>
         </Box>
         <IconButton
-          onClick={() => void loadRows()}
+          onClick={() => void loadRows(window)}
           disabled={loading}
-          sx={{ background: "rgba(15,23,42,0.06)" }}
+          sx={{ background: adminColor.panel2, border: `1px solid ${adminColor.line}` }}
           aria-label="Refresh"
         >
-          <RefreshRoundedIcon sx={{ color: TEXT }} />
+          <ArrowClockwise size={18} color={adminColor.text} />
         </IconButton>
       </Box>
 
-      {/* Window + therapist filter + bulk toggle */}
-      <Stack
-        direction="row"
-        spacing={1}
-        sx={{ marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}
-      >
+      {/* 🆕 Round 28s292 — icon-circle stat pills, matching AdminReviewListPage. */}
+      <Box sx={{ display: "flex", gap: 1.25, mb: 2, flexWrap: "wrap" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: "10px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "15px", p: "8px 15px 8px 8px", boxShadow: "0 1px 3px rgba(31,41,51,0.04)" }}>
+          <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #6FA0AD, ${adminColor.accent})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <ClockCounterClockwise size={16} color="#fff" weight="fill" />
+          </Box>
+          <Box>
+            <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.text, lineHeight: 1.1 }}>{rows.length}</Typography>
+            <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>รอ seed</Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: "10px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "15px", p: "8px 15px 8px 8px", boxShadow: "0 1px 3px rgba(31,41,51,0.04)" }}>
+          <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #3B82F6, ${adminColor.blue})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <UsersThree size={16} color="#fff" weight="fill" />
+          </Box>
+          <Box>
+            <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.blue, lineHeight: 1.1 }}>{practitionerCount}</Typography>
+            <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>Practitioners</Typography>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Search + window + therapist filter + bulk toggle */}
+      <Stack direction="row" spacing={1} sx={{ mb: 1.5, flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
+        <Box sx={{ flex: 1, minWidth: 180, maxWidth: 280, display: "flex", alignItems: "center", gap: 1, background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "12px", p: "8px 12px" }}>
+          <MagnifyingGlass size={15} color={adminColor.dim} />
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="ค้นหาบริการ / practitioner…"
+            style={{ border: "none", outline: "none", background: "transparent", fontSize: 13, color: adminColor.text, width: "100%", fontFamily: SANS }}
+          />
+        </Box>
         <ToggleButtonGroup
           value={window}
           exclusive
@@ -458,13 +486,13 @@ const AdminSeedReviewsPage: React.FC = () => {
               fontSize: "12px",
               fontWeight: 700,
               textTransform: "none",
-              border: "1px solid rgba(15,23,42,0.18)",
-              color: TEXT,
+              border: `1px solid ${adminColor.line2}`,
+              color: adminColor.text,
               padding: "6px 14px",
               "&.Mui-selected": {
-                background: RED,
+                background: adminColor.accent,
                 color: "#fff",
-                "&:hover": { background: RED },
+                "&:hover": { background: adminColor.accentDeep },
               },
             },
           }}
@@ -476,13 +504,13 @@ const AdminSeedReviewsPage: React.FC = () => {
         </ToggleButtonGroup>
         {/* 🆕 Round 28s265 (audit: dropdowns app-wide inheriting the global
             theme's translucent Paper background) — MenuProps forces an
-            opaque white menu. */}
+            opaque menu. */}
         <Select
           value={therapistFilter}
           onChange={(e) => setTherapistFilter(e.target.value)}
           size="small"
-          sx={{ fontFamily: SANS, fontSize: 12, minWidth: 180 }}
-          MenuProps={{ PaperProps: { sx: { background: "#fff" } } }}
+          sx={{ fontFamily: SANS, fontSize: 12, minWidth: 180, borderRadius: "10px", background: adminColor.panel }}
+          MenuProps={{ PaperProps: { sx: { background: adminColor.panel } } }}
         >
           <MenuItem value="__all__">ทุก practitioner</MenuItem>
           {therapistOptions.map((o) => (
@@ -502,16 +530,10 @@ const AdminSeedReviewsPage: React.FC = () => {
             fontFamily: SANS,
             fontWeight: 700,
             textTransform: "none",
+            borderRadius: "10px",
             ...(bulkMode
-              ? {
-                  background: TEXT,
-                  color: "#fff",
-                  "&:hover": { background: "#000" },
-                }
-              : {
-                  borderColor: "rgba(15,23,42,0.20)",
-                  color: TEXT,
-                }),
+              ? { background: adminColor.text, color: "#fff", "&:hover": { background: "#000" } }
+              : { borderColor: adminColor.line2, color: adminColor.text }),
           }}
         >
           {bulkMode ? "Bulk on" : "Bulk mode"}
@@ -522,7 +544,7 @@ const AdminSeedReviewsPage: React.FC = () => {
       {bulkMode && (
         <Box
           sx={{
-            background: "#1A2B2E",
+            background: adminColor.text,
             color: "#fff",
             borderRadius: "12px",
             padding: "10px 14px",
@@ -541,23 +563,14 @@ const AdminSeedReviewsPage: React.FC = () => {
             <Button
               size="small"
               onClick={selectAllVisible}
-              sx={{
-                color: "#fff",
-                textTransform: "none",
-                fontSize: 12,
-                fontWeight: 700,
-              }}
+              sx={{ color: "#fff", textTransform: "none", fontSize: 12, fontWeight: 700 }}
             >
               เลือกทั้งหมด
             </Button>
             <Button
               size="small"
               onClick={clearBulkSelect}
-              sx={{
-                color: "rgba(255,255,255,0.7)",
-                textTransform: "none",
-                fontSize: 12,
-              }}
+              sx={{ color: "rgba(255,255,255,0.7)", textTransform: "none", fontSize: 12 }}
             >
               ล้าง
             </Button>
@@ -565,18 +578,8 @@ const AdminSeedReviewsPage: React.FC = () => {
           <Stack direction="row" spacing={1.5} alignItems="center">
             <Stack direction="row" spacing={0.25} alignItems="center">
               {[1, 2, 3, 4, 5].map((n) => (
-                <IconButton
-                  key={n}
-                  size="small"
-                  onClick={() => setBulkRating(n)}
-                  sx={{ padding: "2px" }}
-                >
-                  <StarRoundedIcon
-                    sx={{
-                      fontSize: 22,
-                      color: n <= bulkRating ? "#F5A623" : "rgba(255,255,255,0.25)",
-                    }}
-                  />
+                <IconButton key={n} size="small" onClick={() => setBulkRating(n)} sx={{ padding: "2px" }}>
+                  <Star size={20} weight="fill" color={n <= bulkRating ? adminColor.amber : "rgba(255,255,255,0.25)"} />
                 </IconButton>
               ))}
             </Stack>
@@ -585,11 +588,12 @@ const AdminSeedReviewsPage: React.FC = () => {
               disabled={bulkSelected.size === 0 || bulkSubmitting}
               onClick={() => void handleBulkSeed()}
               sx={{
-                background: RED,
+                background: adminColor.accent,
                 fontFamily: SANS,
                 fontWeight: 700,
                 textTransform: "none",
-                "&:hover": { background: "#8E0009" },
+                borderRadius: "10px",
+                "&:hover": { background: adminColor.accentDeep },
               }}
             >
               {bulkSubmitting ? (
@@ -605,36 +609,18 @@ const AdminSeedReviewsPage: React.FC = () => {
       {/* Body */}
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", padding: "40px" }}>
-          <CircularProgress sx={{ color: RED }} />
+          <CircularProgress sx={{ color: adminColor.accent }} />
         </Box>
       ) : visibleRows.length === 0 ? (
-        <Box
-          sx={{
-            padding: "40px 16px",
-            textAlign: "center",
-            background: "#fff",
-            borderRadius: "14px",
-            border: "1px solid rgba(15,23,42,0.12)",
-          }}
-        >
-          <Typography sx={{ fontFamily: SANS, color: MUTED, fontSize: "13px" }}>
+        <Box sx={{ padding: "40px 16px", textAlign: "center", background: adminColor.panel, borderRadius: "14px", border: `1px solid ${adminColor.line}` }}>
+          <Typography sx={{ color: adminColor.muted, fontSize: 13 }}>
             🎉 ทุก booking ในช่วงนี้มีรีวิวครบแล้ว
           </Typography>
         </Box>
       ) : (
         <Stack spacing={1.5}>
-          <Typography
-            sx={{
-              fontFamily: SANS,
-              fontSize: "11px",
-              fontWeight: 700,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              color: MUTED,
-            }}
-          >
-            {visibleRows.length} booking{visibleRows.length === 1 ? "" : "s"} รอ
-            seed
+          <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: adminColor.muted }}>
+            {visibleRows.length} booking{visibleRows.length === 1 ? "" : "s"} รอ seed
           </Typography>
           {visibleRows.map((row) => (
             <SeedRow
@@ -644,9 +630,7 @@ const AdminSeedReviewsPage: React.FC = () => {
               bulkMode={bulkMode}
               bulkSelected={bulkSelected.has(row.id)}
               onBulkToggle={() => toggleBulkSelect(row.id)}
-              onToggle={() =>
-                setExpandedId((cur) => (cur === row.id ? null : row.id))
-              }
+              onToggle={() => setExpandedId((cur) => (cur === row.id ? null : row.id))}
               onSubmit={handleSubmit}
             />
           ))}
@@ -659,11 +643,7 @@ const AdminSeedReviewsPage: React.FC = () => {
         onClose={() => setToast((t) => ({ ...t, open: false }))}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert
-          severity={toast.severity}
-          variant="filled"
-          onClose={() => setToast((t) => ({ ...t, open: false }))}
-        >
+        <Alert severity={toast.severity} variant="filled" onClose={() => setToast((t) => ({ ...t, open: false }))}>
           {toast.message}
         </Alert>
       </Snackbar>
@@ -729,14 +709,12 @@ const SeedRow: React.FC<{
   return (
     <Box
       sx={{
-        background: "#fff",
+        background: adminColor.panel,
         borderRadius: "12px",
-        border: "1px solid rgba(15,23,42,0.12)",
+        border: `1px solid ${adminColor.line}`,
         overflow: "hidden",
         transition: "box-shadow 0.18s ease",
-        boxShadow: expanded
-          ? "0 6px 18px rgba(15,23,42,0.08)"
-          : "0 1px 2px rgba(15,23,42,0.04)",
+        boxShadow: expanded ? "0 6px 18px rgba(31,41,51,0.08)" : "0 1px 2px rgba(31,41,51,0.04)",
       }}
     >
       {/* Compact row */}
@@ -748,8 +726,8 @@ const SeedRow: React.FC<{
           alignItems: "center",
           gap: "10px",
           cursor: "pointer",
-          background: bulkMode && bulkSelected ? "rgba(180,0,10,0.06)" : "transparent",
-          "&:hover": { background: "rgba(15,23,42,0.02)" },
+          background: bulkMode && bulkSelected ? `${adminColor.accent}14` : "transparent",
+          "&:hover": { background: adminColor.panel2 },
         }}
       >
         {bulkMode && (
@@ -758,8 +736,8 @@ const SeedRow: React.FC<{
               width: 22,
               height: 22,
               borderRadius: "50%",
-              border: `2px solid ${bulkSelected ? RED : "rgba(15,23,42,0.20)"}`,
-              background: bulkSelected ? RED : "transparent",
+              border: `2px solid ${bulkSelected ? adminColor.accent : adminColor.line2}`,
+              background: bulkSelected ? adminColor.accent : "transparent",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -767,81 +745,38 @@ const SeedRow: React.FC<{
               transition: "background 0.18s ease, border-color 0.18s ease",
             }}
           >
-            {bulkSelected && (
-              <Typography sx={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>
-                ✓
-              </Typography>
-            )}
+            {bulkSelected && <Check size={13} weight="bold" color="#fff" />}
           </Box>
         )}
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography
-            sx={{
-              fontFamily: SANS,
-              fontSize: "14px",
-              fontWeight: 700,
-              color: TEXT,
-              lineHeight: 1.2,
-            }}
-          >
+          <Typography sx={{ fontSize: 14, fontWeight: 700, color: adminColor.text, lineHeight: 1.2 }}>
             {row.serviceName || row.serviceId}
             {row.duration ? ` · ${row.duration} min` : ""}
           </Typography>
-          <Stack
-            direction="row"
-            spacing={0.75}
-            alignItems="center"
-            sx={{ marginTop: "4px", flexWrap: "wrap" }}
-          >
-            <Chip
-              label={row.therapistName || row.therapistId}
-              size="small"
-              sx={{
-                height: 20,
-                fontFamily: SANS,
-                fontSize: "10.5px",
-                fontWeight: 700,
-                background: "rgba(180,0,10,0.10)",
-                color: RED,
-                "& .MuiChip-label": { padding: "0 8px" },
-              }}
-            />
-            <Typography
-              sx={{
-                fontFamily: SANS,
-                fontSize: "11px",
-                color: MUTED,
-              }}
-            >
+          <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mt: "4px", flexWrap: "wrap" }}>
+            <Box sx={{ height: 20, display: "flex", alignItems: "center", fontSize: 10.5, fontWeight: 700, background: `${adminColor.accent}1F`, color: adminColor.accent, borderRadius: "10px", px: "8px" }}>
+              {row.therapistName || row.therapistId}
+            </Box>
+            <Typography sx={{ fontSize: 11, color: adminColor.muted }}>
               {fmtDate(row.startAt)}
             </Typography>
           </Stack>
         </Box>
         {expanded ? (
-          <ExpandLessRoundedIcon sx={{ color: MUTED }} />
+          <CaretUp size={16} color={adminColor.muted} />
         ) : (
-          <ExpandMoreRoundedIcon sx={{ color: MUTED }} />
+          <CaretDown size={16} color={adminColor.muted} />
         )}
       </Box>
 
       {/* Expanded panel */}
       {expanded && (
         <Box sx={{ padding: "0 14px 14px" }}>
-          <Divider sx={{ marginBottom: "12px" }} />
+          <Divider sx={{ mb: "12px", borderColor: adminColor.line }} />
 
           {/* Lang picker */}
-          <Box sx={{ marginBottom: "10px" }}>
-            <Typography
-              sx={{
-                fontFamily: SANS,
-                fontSize: "10.5px",
-                fontWeight: 700,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                color: MUTED,
-                marginBottom: "6px",
-              }}
-            >
+          <Box sx={{ mb: "10px" }}>
+            <Typography sx={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: adminColor.muted, mb: "6px" }}>
               ภาษา · เดาจากเบอร์: {LANG_LABELS[inferredLang]}
             </Typography>
             <Select
@@ -852,8 +787,8 @@ const SeedRow: React.FC<{
               }}
               size="small"
               fullWidth
-              sx={{ fontFamily: SANS, fontSize: "13px" }}
-              MenuProps={{ PaperProps: { sx: { background: "#fff" } } }}
+              sx={{ fontFamily: SANS, fontSize: 13 }}
+              MenuProps={{ PaperProps: { sx: { background: adminColor.panel } } }}
             >
               {(Object.keys(LANG_LABELS) as ReviewLang[]).map((k) => (
                 <MenuItem key={k} value={k}>
@@ -864,34 +799,14 @@ const SeedRow: React.FC<{
           </Box>
 
           {/* Rating */}
-          <Box sx={{ marginBottom: "10px" }}>
-            <Typography
-              sx={{
-                fontFamily: SANS,
-                fontSize: "10.5px",
-                fontWeight: 700,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                color: MUTED,
-                marginBottom: "4px",
-              }}
-            >
+          <Box sx={{ mb: "10px" }}>
+            <Typography sx={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: adminColor.muted, mb: "4px" }}>
               Rating
             </Typography>
             <Stack direction="row" spacing={0.5}>
               {[1, 2, 3, 4, 5].map((n) => (
-                <IconButton
-                  key={n}
-                  onClick={() => setRating(n)}
-                  size="small"
-                  sx={{ padding: "2px" }}
-                >
-                  <StarRoundedIcon
-                    sx={{
-                      fontSize: 28,
-                      color: n <= rating ? "#F5A623" : "rgba(15,23,42,0.20)",
-                    }}
-                  />
+                <IconButton key={n} onClick={() => setRating(n)} size="small" sx={{ padding: "2px" }}>
+                  <Star size={26} weight="fill" color={n <= rating ? adminColor.amber : adminColor.line2} />
                 </IconButton>
               ))}
             </Stack>
@@ -899,18 +814,8 @@ const SeedRow: React.FC<{
 
           {/* Template picker */}
           {tpls.length > 0 && (
-            <Box sx={{ marginBottom: "10px" }}>
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: "10.5px",
-                  fontWeight: 700,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  color: MUTED,
-                  marginBottom: "6px",
-                }}
-              >
+            <Box sx={{ mb: "10px" }}>
+              <Typography sx={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: adminColor.muted, mb: "6px" }}>
                 Template · เลือกหรือพิมพ์เอง
               </Typography>
               <Select
@@ -919,18 +824,12 @@ const SeedRow: React.FC<{
                 onChange={(e) => setText(e.target.value)}
                 size="small"
                 fullWidth
-                sx={{ fontFamily: SANS, fontSize: "13px" }}
-                renderValue={() => (
-                  <em style={{ color: MUTED }}>เลือก template…</em>
-                )}
-                MenuProps={{ PaperProps: { sx: { background: "#fff" } } }}
+                sx={{ fontFamily: SANS, fontSize: 13 }}
+                renderValue={() => <em style={{ color: adminColor.muted }}>เลือก template…</em>}
+                MenuProps={{ PaperProps: { sx: { background: adminColor.panel } } }}
               >
                 {tpls.map((tpl, i) => (
-                  <MenuItem
-                    key={i}
-                    value={tpl}
-                    sx={{ whiteSpace: "normal" }}
-                  >
+                  <MenuItem key={i} value={tpl} sx={{ whiteSpace: "normal" }}>
                     {tpl}
                   </MenuItem>
                 ))}
@@ -939,18 +838,8 @@ const SeedRow: React.FC<{
           )}
 
           {/* Review text */}
-          <Box sx={{ marginBottom: "10px" }}>
-            <Typography
-              sx={{
-                fontFamily: SANS,
-                fontSize: "10.5px",
-                fontWeight: 700,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                color: MUTED,
-                marginBottom: "4px",
-              }}
-            >
+          <Box sx={{ mb: "10px" }}>
+            <Typography sx={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: adminColor.muted, mb: "4px" }}>
               Review text
             </Typography>
             <TextField
@@ -961,76 +850,25 @@ const SeedRow: React.FC<{
               maxRows={6}
               fullWidth
               placeholder="พิมพ์รีวิวที่จะแสดงบนหน้า practitioner…"
-              sx={{
-                "& .MuiInputBase-root": {
-                  fontFamily: SANS,
-                  fontSize: "13px",
-                  background: "#fff",
-                },
-              }}
+              sx={{ "& .MuiInputBase-root": { fontFamily: SANS, fontSize: 13, background: adminColor.panel } }}
             />
           </Box>
 
           {/* Preview */}
-          <Box
-            sx={{
-              padding: "10px 12px",
-              background: BG,
-              borderRadius: "10px",
-              border: "1px dashed rgba(15,23,42,0.18)",
-              marginBottom: "12px",
-            }}
-          >
-            <Typography
-              sx={{
-                fontFamily: SANS,
-                fontSize: "10px",
-                fontWeight: 700,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                color: MUTED,
-                marginBottom: "4px",
-              }}
-            >
+          <Box sx={{ padding: "10px 12px", background: adminColor.bg, borderRadius: "10px", border: `1px dashed ${adminColor.line2}`, mb: "12px" }}>
+            <Typography sx={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: adminColor.muted, mb: "4px" }}>
               Preview
             </Typography>
-            <Stack
-              direction="row"
-              spacing={0.5}
-              alignItems="center"
-              sx={{ marginBottom: "4px" }}
-            >
+            <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mb: "4px" }}>
               {Array.from({ length: rating }).map((_, i) => (
-                <StarRoundedIcon
-                  key={i}
-                  sx={{ fontSize: 14, color: "#F5A623" }}
-                />
+                <Star key={i} size={13} weight="fill" color={adminColor.amber} />
               ))}
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: "11px",
-                  color: MUTED,
-                  marginLeft: "6px !important",
-                }}
-              >
+              <Typography sx={{ fontSize: 11, color: adminColor.muted, ml: "6px !important" }}>
                 Anonymous · just now · Verified booking
               </Typography>
             </Stack>
-            <Typography
-              sx={{
-                fontFamily: SANS,
-                fontSize: "13px",
-                color: TEXT,
-                lineHeight: 1.45,
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {text || (
-                <em style={{ color: MUTED }}>
-                  รีวิวจะแสดงตรงนี้…
-                </em>
-              )}
+            <Typography sx={{ fontSize: 13, color: adminColor.text, lineHeight: 1.45, whiteSpace: "pre-wrap" }}>
+              {text || <em style={{ color: adminColor.muted }}>รีวิวจะแสดงตรงนี้…</em>}
             </Typography>
           </Box>
 
@@ -1042,29 +880,20 @@ const SeedRow: React.FC<{
               disabled={submitting || !text.trim()}
               onClick={() => void handleClickSubmit()}
               sx={{
-                background: RED,
+                background: adminColor.accent,
                 fontFamily: SANS,
                 fontWeight: 700,
                 textTransform: "none",
-                "&:hover": { background: "#8E0009" },
+                borderRadius: "10px",
+                "&:hover": { background: adminColor.accentDeep },
               }}
             >
-              {submitting ? (
-                <CircularProgress size={20} sx={{ color: "#fff" }} />
-              ) : (
-                `บันทึกรีวิว · ★${rating}`
-              )}
+              {submitting ? <CircularProgress size={20} sx={{ color: "#fff" }} /> : `บันทึกรีวิว · ★${rating}`}
             </Button>
             <Button
               variant="outlined"
               onClick={onToggle}
-              sx={{
-                fontFamily: SANS,
-                fontWeight: 700,
-                textTransform: "none",
-                color: TEXT,
-                borderColor: "rgba(15,23,42,0.20)",
-              }}
+              sx={{ fontFamily: SANS, fontWeight: 700, textTransform: "none", color: adminColor.text, borderColor: adminColor.line2, borderRadius: "10px" }}
             >
               ยกเลิก
             </Button>
