@@ -3269,3 +3269,37 @@ confirmed live in `AdminAnalyticsPage-*.js`.
 Known non-issue: GA is NOT wired — index.html has a dead `dns-prefetch`
 to google-analytics only. This self-hosted counter is the source of
 truth; there's no second dashboard/invoice to manage.
+
+### 🆕 2026-07-07 — District SEO landing tracker (28s304)
+
+Founder asked "ส่วนมากลูกค้าค้นหาว่าอะไร" (what do customers mostly search
+for). Honest answer given first: **our data can't show literal Google
+queries** — Google strips the query from referrer, AND the 5 district
+keyword pages (`/outcall-massage-{sukhumvit,silom,asok,thonglor,near-me}`)
+`<Navigate to="/">` so `path` collapses to "/". The real terms live in
+**Google Search Console** (already in use — the -25% sukhumvit / +300%
+near-me figures in the 28s224 comments came from it). Offered an
+in-dashboard proxy; she said "ได้ทั้งหมด" → built it:
+
+- `KeywordLanding.tsx` replaces the bare `<Navigate>` stub on those 5
+  routes. It `recordLandingArea(area)` (sessionStorage) **in the render
+  body** — deliberately not an effect, so the write lands before the
+  redirect mounts HomePage and its home_view effect reads it. Then still
+  renders exactly `<Navigate to="/" replace>`. The write is client-only
+  (`recordLandingArea` no-ops with no `window`), so the **prerendered SEO
+  shell is byte-identical** — verified the built sukhumvit shell keeps its
+  keyword `<title>` + LocalBusiness JSON-LD.
+- `analytics.ts`: `recordLandingArea` / `consumeLandingArea` (read+clear)
+  + `trackHomeView(area?)` attaches `{area}` to the session's home_view.
+- HomePage: `trackHomeView(consumeLandingArea())`.
+- Analytics page: new "คนมาจากหน้าไหน" card (`AREA_LABEL`) ranking the
+  district pages, with an inline note that it's a proxy and real queries
+  are in Search Console.
+
+Important framing for future: this is **forward-only** (attributes new
+sessions from deploy onward) and is a *which-page* proxy, NOT the literal
+search term — always point View to Search Console for actual queries.
+Verified: tsc + build clean, 55 routes prerender, isolated logic test
+PASS (attribution / direct fallback / consume read-clear / prop shape),
+live checks pass (home 200, district title served, `sunred.landing.area`
+in main bundle, card string in analytics chunk).
