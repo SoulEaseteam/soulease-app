@@ -3844,3 +3844,26 @@ So: **Dashboard ≡ Reports ≡ Earnings-gross** for the same (now-shared) windo
 Earnings additionally shows taxi-inclusive "collected" and net-after-costs as
 deeper detail; Pay-Therapists is a different metric (non-cash outstanding only).
 tsc=0 + build clean (55 routes), deployed.
+
+### 🆕 2026-07-07 — Dashboard: lifetime revenue + breakdown fixes (28s323)
+
+Founder (on the yearly Dashboard view): remove activity feed, add cumulative
+revenue, and "สถานะ/แยกตามหมอ/แยกตามบริการ ดึงไม่หมด หรือ ดึงไม่ตรง".
+- **Removed "กิจกรรมล่าสุด"** (Recent Activity) — render block + state + auditLogs
+  listener + ACTIVITY_LABEL/activityDetailLine helpers + unused limit /
+  ClockCounterClockwise imports.
+- **Added "รายได้สะสมทั้งหมด"** (lifetime) card — a one-shot `getDocs` over ALL
+  bookings (not date-filtered), computed with the same rules as every other page:
+  60/40 split, promo applied, cancelled/refunded excluded. Shows shop take (40%
+  after promo), total service revenue, total completed jobs. This is the founder's
+  "รายได้สะสม · 60/40 · promo · cancel" ask.
+- **Fixed by-service DUPLICATE** (the "ดึงไม่ตรง"): the same service split into two
+  rows (e.g. "Gentleman's Signature Therapy" ฿734,000 AND ฿8,800) because the map
+  key was `serviceId || serviceName` — a booking with a serviceId and one with only
+  a serviceName (or a straight ' vs curly ' apostrophe) keyed differently. Now keys
+  by the resolved label **normalized to letters+digits only** (`/[^\p{L}\p{N}]+/gu`,
+  case-folded); Thai names preserved. Verified apostrophe variants merge.
+- **Fixed "ดึงไม่หมด"**: by-therapist / by-service dropped the top-5 / top-6
+  `.slice()` — show ALL rows so the yearly breakdown reconciles with the totals.
+
+tsc=0 + build clean (55 routes), deployed.
