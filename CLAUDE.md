@@ -3393,3 +3393,43 @@ Still open (offered, NOT chosen): making the deposit a REAL charge (would
 need a payment-collection flow) — and the DistanceDepositDialog still tells
 customers about a 500฿ deposit that isn't charged; left as-is per scope,
 but worth reconciling if the deposit ever goes real.
+
+### 🆕 2026-07-07 — Travel fare: actual round-trip, all layers stripped (28s308)
+
+**Reverses/supersedes 28s307.** Founder: "ไปเต็มราคา + กลับตามจริง — ลบค่า
+ทั้งหมดที่เคยคำนวน". Confirmed via AskUserQuestion (money) → "ไป-กลับจริง
+×2.0 + ลบเลเยอร์คำนวณทั้งหมด".
+
+Decisive fact that de-risked it: fetched the live `adminSettings/publicRules`
+doc via the public Firestore REST endpoint (it's `read: if true`) — **it
+404s / doesn't exist**. So no fare value was ever saved; everything ran on
+code defaults. Changing defaults is enough; there was nothing to reset.
+
+New model: **travel fare = one-way GrabCar meter × 2.0 (outbound full +
+return full) + rain.** No discount, no anchor, no deposit. Customers pay
+~25% more than the old ×1.6 (10km ฿181→฿226, 25km ฿349→฿436, 40km
+฿517→฿646) — verified `oneWay×2` exactly, rain stacks.
+
+`taxiFare.ts` rewritten clean. **Deleted exports** (grep before reusing):
+`LIST_PRICE_MULTIPLIER`, `TRAVEL_DISCOUNT_PCT`, `listPriceRoundTrip`,
+`grabRoundTripEstimate`, `returnLegDiscountPct/ChargePct`,
+`RETURN_LEG_DISCOUNT_PCT/CHARGE_PCT`, `FREE_RADIUS_KM`, `DEPOSIT_THB`.
+`TaxiFareResult` slimmed — dropped `listPriceTravel`, `sunredPromoDiscount`,
+`travelDiscountPct/Amt`, `grabEstimate`, `savingsVsGrab`.
+`applyLiveFareConfig` now takes only `{ adminQuoteKm, roundTripMultiplier }`.
+
+Consumers updated: BookingFlow (removed strike-through anchor + Smart
+Routing chip + travel routing-saving → travel is one line; `savingsRouting`
+hard-0 so the "You saved" pill reflects only a real promo code; dropped
+grabEstimate/savingsVsGrab from the booking doc write); MaintenanceGate
+(slim call); AdminAdvancedSettings (section = round-trip multiplier 2.0 +
+max-km only). **Deposit FAQ fully removed**: deleted
+`src/components/home/DistanceDepositDialog.tsx` + its TopNav nav item
+("Distance & deposit") + state/handler/render. i18n 5 langs: travel
+tooltip retitled, "40% off return" copy → round-trip wording
+(`booking.travelTip.roundTrip`; orphaned `smartRouting`/`savedRouting`/
+`returnLeg`/`returnNote` keys left harmless).
+
+Verified: isolated math PASS, tsc + build clean, 55 routes prerender, home
+200, fake-discount symbols confirmed GONE from the live bundle, new
+round-trip copy live. No rules change (publicRules doc doesn't exist).
