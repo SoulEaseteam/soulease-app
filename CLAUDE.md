@@ -3473,3 +3473,31 @@ auto-priced.
 Worked table (no surge/rain): 5km ฿194 · 8km ฿238 · 10km ฿266 · 14km ฿322;
 at rush +25% and peak +15% on top. Isolated math test 20/20 PASS. tsc +
 build clean, live checks pass. No rules change.
+
+### 🆕 2026-07-07 — Rain surcharge from real forecast at scheduled time (28s310)
+
+Founder: "คำนวนสภาพอากาศ ช่วงฝนตก จาก พยากรณ์อากาศ จริง ตามเวลานั้นๆ". The
+rain surcharge used `getCachedRainStatus()` = CURRENT Bangkok weather for
+every booking, ignoring when the appointment is. Now priced from the real
+hourly FORECAST at the booking's scheduled date+hour.
+
+- `weather.ts`: `getRainForecast()` pulls **wttr.in `?format=j1`** (3 days,
+  8 slots/day every 3h), parses each slot's `weatherDesc` + `chanceofrain`
+  via `classifyForecastSlot` (bumps to light at ≥60% rain chance even when
+  the text is mild; heavy on thunder/storm ≥80%), cached 2h in localStorage
+  (`sunred_forecast_v1`). `rainStatusFromForecast(forecast, dateISO, hour)`
+  snaps the hour to the nearest 3h slot (0–21) → RainStatus; returns null
+  beyond the ~3-day horizon so the caller falls back to current weather.
+- BookingFlow: fetches the forecast on mount (`forecast` state); the fare
+  memo uses `rainStatusFromForecast(forecast, form.date, hourBKK) ??
+  rainStatus`, with `form.date`/`forecast` added to deps. `form.date` is
+  already `dayjs().format("YYYY-MM-DD")` (StepDateTime) — matches wttr keys.
+
+Validated the parser against LIVE wttr.in: 3 dates × 8 slots, today showed
+light rain 00–03 & 18:00 (bursty BKK pattern), slot-snap correct (22→21,
+14→15, 2→3). No CSP change (wttr.in already in connect-src — the old
+`format=%C` current-weather fetch used it). No rules change. tsc + build
+clean, home 200, `format=j1` + cache key confirmed in the live bundle.
+
+Note: current-weather path (`getRainStatus`/`getCachedRainStatus`) kept as
+the fallback for out-of-horizon / forecast-fetch-failed bookings.
