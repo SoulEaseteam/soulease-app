@@ -63,6 +63,8 @@ import {
   Medal,
   Wallet,
   Coins,
+  Crown,
+  Storefront,
 } from "phosphor-react";
 import { fmtBKK } from "@/utils/time";
 import { formatTHB } from "@/utils/servicePricing";
@@ -385,16 +387,28 @@ const AdminDashboardPage: React.FC = () => {
   return (
     <Box sx={{ fontFamily: SANS, minHeight: "100vh", pb: 10 }}>
 
-      {/* ── header + today strip — Round 28s234 Control Room ─────────── */}
+      {/* ── header + hero + today strip — Round 28s234 Control Room ───
+           🆕 Round 28r35 (founder 2026-05-07) — bilingual English-primary
+           / Thai-subtitle labels + Lifetime Revenue hero card moved to
+           top. Founder direction: "แก้ รายได้สะสมทั้งหมด · ตั้งแต่เปิดร้าน
+           ไว้บนสุด · ใช้ภาษอังกฤษ กำกับภาษาไทยเล็กๆข้างล่าง". English is
+           the operator-scan language (numbers + shorter labels read
+           faster); Thai stays as a small subtitle so the meaning stays
+           unambiguous when View glances between screens. */}
       <Box sx={{ px: { xs: 2, md: 3 }, pt: 3, pb: 2.5 }}>
         <motion.div {...fadeUp(0)}>
           <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, mb: 0.4 }}>
-            <Typography sx={{ fontFamily: adminFont.serif, fontSize: { xs: 22, md: 26 }, fontWeight: 600, color: adminColor.text, letterSpacing: "0.01em" }}>
-              หน้าหลัก
-            </Typography>
+            <Box>
+              <Typography sx={{ fontFamily: adminFont.serif, fontSize: { xs: 24, md: 28 }, fontWeight: 600, color: adminColor.text, letterSpacing: "0.01em", lineHeight: 1 }}>
+                Dashboard
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.4, letterSpacing: "0.02em" }}>
+                หน้าหลัก
+              </Typography>
+            </Box>
             {loading && <CircularProgress size={18} sx={{ color: adminColor.dim, mt: 0.5 }} />}
           </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 1 }}>
             <CalendarBlank size={13} color={adminColor.dim} />
             <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.muted }}>
               {todayLabel}
@@ -402,20 +416,130 @@ const AdminDashboardPage: React.FC = () => {
           </Box>
         </motion.div>
 
-        {/* today strip */}
+        {/* ── 🆕 Round 28r35 — LIFETIME REVENUE HERO CARD.
+             Moved from mid-dashboard to right below the page title so the
+             first money figure View sees on open is the crown number.
+             All-time, not date-filtered. Shop take = 40% after promo,
+             cancelled excluded. Same source of truth (`lifetime` state)
+             as before, just re-styled as the dashboard's headliner:
+               • Crown icon + amber tint (was Wallet + teal) — reads as
+                 "the total earned since day one", not "one more stat"
+               • Figure bumped 28 → 40 (mobile) / 44 (desktop)
+               • Three-column split: hero shop-net + service subtotal +
+                 completed-job count, each bilingual */}
+        <motion.div {...fadeUp(0.04)}>
+          <Box
+            sx={{
+              mt: 2.25,
+              borderRadius: "20px",
+              background: `linear-gradient(135deg, ${adminColor.accent}22 0%, ${adminColor.panel} 55%, ${adminColor.panel} 100%)`,
+              border: `1px solid ${adminColor.accent}44`,
+              boxShadow: `0 6px 24px ${adminColor.accent}18`,
+              p: { xs: "18px 18px 16px", md: "22px 24px 20px" },
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            {/* subtle corner glow */}
+            <Box
+              aria-hidden
+              sx={{
+                position: "absolute",
+                top: -40,
+                right: -40,
+                width: 160,
+                height: 160,
+                borderRadius: "50%",
+                background: `radial-gradient(circle, ${adminColor.accent}22 0%, transparent 70%)`,
+                pointerEvents: "none",
+              }}
+            />
+            {/* eyebrow — bilingual */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1.5, position: "relative" }}>
+              <Crown size={14} color={adminColor.accent} weight="fill" />
+              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color: adminColor.accent, letterSpacing: "0.14em", textTransform: "uppercase" }}>
+                Lifetime Revenue · Since Opening
+              </Typography>
+            </Box>
+            <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mb: 1.5, ml: 2.6, mt: -1 }}>
+              รายได้สะสมทั้งหมด · ตั้งแต่เปิดร้าน
+            </Typography>
+
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1.6fr 1fr 1fr" }, gap: { xs: 2, sm: 2.5 }, alignItems: "center", position: "relative" }}>
+              {/* hero shop-net column */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box sx={{ width: 56, height: 56, borderRadius: "50%", background: `linear-gradient(135deg, ${adminColor.accent}, ${adminColor.accentDeep ?? adminColor.accent})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 4px 14px ${adminColor.accent}55` }}>
+                  <Wallet size={26} weight="duotone" />
+                </Box>
+                <Box>
+                  <Typography sx={{ ...adminFigureSx, fontSize: { xs: 34, md: 42 }, color: adminColor.text, lineHeight: 1, letterSpacing: "-0.01em" }}>
+                    {money(lifetime.shop)}
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 600, color: adminColor.muted, mt: 0.5 }}>
+                    Shop Net Earned
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim, mt: 0.1 }}>
+                    รายได้ร้านสะสม · 40% หลังโปรฯ · ไม่รวมยกเลิก
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* service revenue */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, borderLeft: { sm: `1px solid ${adminColor.accent}22` }, pl: { sm: 2 } }}>
+                <Box sx={{ width: 34, height: 34, borderRadius: "50%", background: `${adminColor.highlight ?? adminColor.text}18`, color: adminColor.highlight ?? adminColor.text, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <ChartBar size={17} weight="duotone" />
+                </Box>
+                <Box>
+                  <Typography sx={{ ...adminFigureSx, fontSize: { xs: 19, md: 22 }, color: adminColor.text, lineHeight: 1 }}>
+                    {money(lifetime.service)}
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 600, color: adminColor.muted, mt: 0.35, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    Gross Service
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim }}>
+                    ค่าบริการสะสม
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* completed jobs */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, borderLeft: { sm: `1px solid ${adminColor.accent}22` }, pl: { sm: 2 } }}>
+                <Box sx={{ width: 34, height: 34, borderRadius: "50%", background: `${adminColor.green}18`, color: adminColor.green, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <CheckCircle size={17} weight="duotone" />
+                </Box>
+                <Box>
+                  <Typography sx={{ ...adminFigureSx, fontSize: { xs: 19, md: 22 }, color: adminColor.text, lineHeight: 1 }}>
+                    {lifetime.jobs.toLocaleString()}
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 600, color: adminColor.muted, mt: 0.35, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    Sessions Delivered
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim }}>
+                    งานสำเร็จสะสม
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          </Box>
+        </motion.div>
+
+        {/* today strip — 🆕 Round 28r35 bilingual labels */}
         <motion.div {...fadeUp(0.07)}>
-          <Box sx={{ display: "flex", gap: 1, mt: 2.5, p: 1.5, borderRadius: "16px", background: adminColor.panel, border: `1px solid ${adminColor.line}` }}>
+          <Box sx={{ display: "flex", gap: 1, mt: 2, p: 1.5, borderRadius: "16px", background: adminColor.panel, border: `1px solid ${adminColor.line}` }}>
             {[
-              { label: "วันนี้",     value: stats.todayBookings,       unit: "งาน" },
-              { label: "รายได้วันนี้", value: money(stats.todayRevenue), unit: "ค่าบริการ"  },
-              { label: "รอยืนยัน",   value: pendingBookings.length,    unit: "ต้องจัดการ", accent: pendingBookings.length > 0 },
+              { en: "Today",        th: "วันนี้",       value: stats.todayBookings },
+              { en: "Today Revenue", th: "รายได้วันนี้", value: money(stats.todayRevenue) },
+              { en: "Pending",      th: "รอยืนยัน",     value: pendingBookings.length,  accent: pendingBookings.length > 0 },
             ].map((s, i) => (
               <Box key={i} sx={{ flex: 1, textAlign: "center", borderRight: i < 2 ? `1px solid ${adminColor.line}` : "none" }}>
                 <Typography sx={{ ...adminFigureSx, fontSize: 19, color: s.accent ? adminColor.accent : adminColor.text, lineHeight: 1 }}>
                   {s.value}
                 </Typography>
-                <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim, mt: 0.4, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  {s.label}
+                <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 700, color: adminColor.muted, mt: 0.5, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  {s.en}
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 9, color: adminColor.dim, mt: 0.1 }}>
+                  {s.th}
                 </Typography>
               </Box>
             ))}
@@ -431,15 +555,20 @@ const AdminDashboardPage: React.FC = () => {
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.25 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                 <Box sx={{ width: 8, height: 8, borderRadius: "50%", background: adminColor.accent, boxShadow: `0 0 0 3px ${adminColor.accent}33` }} />
-                <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.accent, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                  รอยืนยัน — {pendingBookings.length}
-                </Typography>
+                <Box>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.accent, letterSpacing: "0.12em", textTransform: "uppercase", lineHeight: 1 }}>
+                    Pending Confirmations — {pendingBookings.length}
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.2 }}>
+                    รอยืนยัน
+                  </Typography>
+                </Box>
               </Box>
               <Box
                 onClick={() => navigate("/admin/bookings")}
                 sx={{ display: "flex", alignItems: "center", gap: 0.4, cursor: "pointer" }}
               >
-                <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, color: adminColor.muted }}>ดูทั้งหมด</Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, color: adminColor.muted }}>View all · ดูทั้งหมด</Typography>
                 <ArrowRight size={13} color={adminColor.dim} />
               </Box>
             </Box>
@@ -543,9 +672,14 @@ const AdminDashboardPage: React.FC = () => {
               "& .MuiSvgIcon-root": { color: adminColor.muted },
             }}
           >
-            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.08em", textTransform: "uppercase", mr: 0.5 }}>
-              ช่วงเวลา
-            </Typography>
+            <Box sx={{ mr: 0.5 }}>
+              <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1 }}>
+                Filter
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 9, color: adminColor.dim, mt: 0.2 }}>
+                ช่วงเวลา
+              </Typography>
+            </Box>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <DatePicker
                 label="ตั้งแต่"
@@ -581,9 +715,14 @@ const AdminDashboardPage: React.FC = () => {
         {/* ── period stat icon row — 🆕 Round 28s241, circular-icon widget
              style borrowed from the reference "Statistics" section ────── */}
         <motion.div {...fadeUp(0.10)}>
-          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.25 }}>
-            สรุปช่วงเวลา — {startDate.format("D MMM")} ถึง {endDate.format("D MMM YYYY")}
-          </Typography>
+          <Box sx={{ mb: 1.25 }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1 }}>
+              Period Summary — {startDate.format("D MMM")} → {endDate.format("D MMM YYYY")}
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.2 }}>
+              สรุปช่วงเวลา
+            </Typography>
+          </Box>
           <Box
             sx={{
               borderRadius: "16px", background: adminColor.panel,
@@ -593,12 +732,12 @@ const AdminDashboardPage: React.FC = () => {
             }}
           >
             {[
-              { icon: <CalendarBlank size={20} weight="duotone" />, label: "งานทั้งหมด",  value: String(stats.periodBookings), color: adminColor.accent },
-              { icon: <ChartBar      size={20} weight="duotone" />, label: "ค่าบริการรวม", value: money(stats.periodService),   color: adminColor.green },
-              { icon: <Buildings     size={20} weight="duotone" />, label: "รายได้ร้าน",   value: money(stats.periodShop),      color: adminColor.highlight },
-              { icon: <XCircle       size={20} weight="duotone" />, label: "ยกเลิก",       value: String(stats.periodCancelled), color: adminColor.red },
+              { icon: <CalendarBlank size={20} weight="duotone" />, en: "Total Jobs",     th: "งานทั้งหมด",   value: String(stats.periodBookings), color: adminColor.accent },
+              { icon: <ChartBar      size={20} weight="duotone" />, en: "Gross Service",  th: "ค่าบริการรวม",  value: money(stats.periodService),   color: adminColor.green },
+              { icon: <Buildings     size={20} weight="duotone" />, en: "Shop Revenue",   th: "รายได้ร้าน",    value: money(stats.periodShop),      color: adminColor.highlight },
+              { icon: <XCircle       size={20} weight="duotone" />, en: "Cancelled",      th: "ยกเลิก",       value: String(stats.periodCancelled), color: adminColor.red },
             ].map((c) => (
-              <Box key={c.label} sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 0.75 }}>
+              <Box key={c.en} sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 0.6 }}>
                 <Box
                   sx={{
                     width: 44, height: 44, borderRadius: "50%",
@@ -611,56 +750,14 @@ const AdminDashboardPage: React.FC = () => {
                 <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.text, lineHeight: 1 }}>
                   {c.value}
                 </Typography>
-                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  {c.label}
+                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.05em", lineHeight: 1 }}>
+                  {c.en}
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 9, color: adminColor.dim, mt: -0.2 }}>
+                  {c.th}
                 </Typography>
               </Box>
             ))}
-          </Box>
-        </motion.div>
-
-        {/* ── 🆕 Round 28s323 — lifetime cumulative revenue (all-time, not
-             date-filtered). Shop take = 40% after promo, cancelled excluded. */}
-        <motion.div {...fadeUp(0.11)}>
-          <Box
-            sx={{
-              borderRadius: "18px",
-              background: `linear-gradient(135deg, ${adminColor.accent}14, ${adminColor.panel})`,
-              border: `1px solid ${adminColor.accent}33`,
-              p: "18px 20px",
-            }}
-          >
-            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.5 }}>
-              รายได้สะสมทั้งหมด · ตั้งแต่เปิดร้าน
-            </Typography>
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1.4fr 1fr 1fr" }, gap: 2, alignItems: "center" }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: `${adminColor.accent}22`, color: adminColor.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <Wallet size={22} weight="duotone" />
-                </Box>
-                <Box>
-                  <Typography sx={{ ...adminFigureSx, fontSize: 28, color: adminColor.text, lineHeight: 1 }}>
-                    {money(lifetime.shop)}
-                  </Typography>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, mt: 0.3 }}>
-                    รายได้ร้านสะสม (40% · หักโปรฯ · ไม่รวมยกเลิก)
-                  </Typography>
-                </Box>
-              </Box>
-              {[
-                { label: "ค่าบริการสะสม", value: money(lifetime.service) },
-                { label: "งานสำเร็จสะสม", value: `${lifetime.jobs.toLocaleString()} งาน` },
-              ].map((c) => (
-                <Box key={c.label} sx={{ textAlign: { xs: "left", sm: "center" } }}>
-                  <Typography sx={{ ...adminFigureSx, fontSize: 18, color: adminColor.text, lineHeight: 1 }}>
-                    {c.value}
-                  </Typography>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.muted, mt: 0.3, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    {c.label}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
           </Box>
         </motion.div>
 
@@ -670,9 +767,14 @@ const AdminDashboardPage: React.FC = () => {
           <motion.div {...fadeUp(0.12)}>
             <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 1.5 }}>
               <Box sx={{ flex: { md: "2 1 0" }, borderRadius: "18px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, p: "16px 16px 12px" }}>
-                <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.5 }}>
-                  รายได้รายเดือน
-                </Typography>
+                <Box sx={{ mb: 1.5 }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1 }}>
+                    Monthly Revenue
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.2 }}>
+                    รายได้รายเดือน
+                  </Typography>
+                </Box>
                 <ResponsiveContainer width="100%" height={isMobile ? 180 : 240}>
                   <BarChart data={stats.monthlyData} margin={{ top: 0, right: 4, left: -18, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke={adminColor.line} />
@@ -693,7 +795,10 @@ const AdminDashboardPage: React.FC = () => {
                 <Box sx={{ flex: 1, borderRadius: "18px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, p: "16px", display: "flex", alignItems: "center", gap: 1.5 }}>
                   <DonutRing percent={stats.completionRate} color={adminColor.accent} />
                   <Box>
-                    <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.06em", textTransform: "uppercase", lineHeight: 1 }}>
+                      Completion Rate
+                    </Typography>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 9, color: adminColor.dim, mt: 0.2 }}>
                       อัตราจบงาน
                     </Typography>
                     <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.4 }}>
@@ -706,7 +811,10 @@ const AdminDashboardPage: React.FC = () => {
                 <Box sx={{ flex: 1, borderRadius: "18px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, p: "16px" }}>
                   <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
                     <Box>
-                      <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                      <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.06em", textTransform: "uppercase", lineHeight: 1 }}>
+                        Orders Today
+                      </Typography>
+                      <Typography sx={{ fontFamily: SANS, fontSize: 9, color: adminColor.dim, mt: 0.2 }}>
                         งานวันนี้
                       </Typography>
                       <Typography sx={{ ...adminFigureSx, fontSize: 23, color: adminColor.text, lineHeight: 1.2, mt: 0.4 }}>
@@ -739,9 +847,14 @@ const AdminDashboardPage: React.FC = () => {
           <motion.div {...fadeUp(0.13)}>
             <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 1.5 }}>
               <Box sx={{ flex: 1, borderRadius: "18px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, p: "16px" }}>
-                <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.5 }}>
-                  แยกตามหมอ
-                </Typography>
+                <Box sx={{ mb: 1.5 }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1 }}>
+                    By Therapist
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.2 }}>
+                    แยกตามหมอ
+                  </Typography>
+                </Box>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1.1 }}>
                   {stats.byTherapist.map((t, i) => (
                     <Box key={t.name} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -765,9 +878,14 @@ const AdminDashboardPage: React.FC = () => {
               </Box>
 
               <Box sx={{ flex: 1, borderRadius: "18px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, p: "16px" }}>
-                <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.5 }}>
-                  แยกตามบริการ
-                </Typography>
+                <Box sx={{ mb: 1.5 }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1 }}>
+                    By Service
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.2 }}>
+                    แยกตามบริการ
+                  </Typography>
+                </Box>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
                   {stats.byService.map((s) => (
                     <Box key={s.name}>
@@ -818,9 +936,14 @@ const AdminDashboardPage: React.FC = () => {
 
         {/* ── quick action tiles ───────────────────────────────────────── */}
         <motion.div {...fadeUp(0.16)}>
-          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.25 }}>
-            เมนูด่วน
-          </Typography>
+          <Box sx={{ mb: 1.25 }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1 }}>
+              Quick Actions
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.2 }}>
+              เมนูด่วน
+            </Typography>
+          </Box>
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(3,1fr)" }, gap: 1.25 }}>
             {[
               { icon: <PlusCircle    size={22} weight="duotone" />, label: "จองใหม่",      path: "/admin/bookings/add",   accent: true  },
