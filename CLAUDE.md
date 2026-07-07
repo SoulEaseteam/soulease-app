@@ -3323,3 +3323,30 @@ Display-only — reuses the same commission functions the summary loop
 uses, so the per-job payouts sum to the slip's จ่ายนวด by construction.
 No logic / export / data / rules change. Verified tsc + build clean, 55
 routes prerender, live string in `AdminReportPage-*.js`.
+
+### 🆕 2026-07-07 — Opaque date-picker calendar popover (28s306)
+
+Founder: the date-picker calendar is see-through on every admin page with
+a date filter — page content bleeds into it, unreadable ("พื้นหลังจาง
+ไม่เห็นเลย ปรับแก้ทั้งหมด"). **Root cause is in `theme.ts`, not any admin
+page**: `palette.background.paper` is `rgba(255,255,255,0.65)` — kept
+translucent on purpose for the frosted-glass customer cards. The X
+DatePicker's popover uses that default paper, so its calendar sitting over
+dense content bleeds through. Admin *cards* never hit this because they
+set an opaque `#FFFFFF` (adminColor.panel) themselves; the picker popover
+doesn't, and none of the 5 admin pages (Reports / Analytics / Earnings /
+Dashboard / Bookings) passed a paper background either.
+
+Fixed **once, globally** with a `MuiPickersPopper.styleOverrides.paper`
+theme override (opaque white + border + shadow + radius) — no per-page
+edits, covers all 5 pages and any future picker. Solid white keeps the
+existing dark-text calendar legible; selected/today still use primary red.
+Needed `import type {} from "@mui/x-date-pickers/themeAugmentation"` so
+`createTheme` accepts the `MuiPickersPopper` key (X pickers v7.29.4).
+
+Note for future translucent-paper bugs: the frosted default paper can bite
+any Popper/Menu/Autocomplete that doesn't set its own opaque surface — the
+admin Selects already work around it via explicit MenuProps PaperProps
+(e.g. `selectMenuProps` in AdminAnalyticsPage). Verified tsc + build clean,
+55 routes prerender, override present in the live main bundle
+(`MuiPickersPopper` + the distinctive shadow).
