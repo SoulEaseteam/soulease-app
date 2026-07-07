@@ -1911,6 +1911,48 @@ squeezed row, worse at browser zoom), and the stat pills wrapped unevenly
   subline, amount+status stacked right-aligned in their own column, row
   min-height + vertical centering — no clipping/crowding at any zoom.
 
+### 🆕 2026-07-07 — Promotions: add brand-new custom services (28s301)
+
+Founder: "ราคา & บริการ เพิ่ม เมนูได้" — the add-new-service piece 28s300
+explicitly flagged as a separate, bigger change. Built it.
+
+Custom services live in `publicRules.customServices` (array) and merge
+into an **effective catalog** at every surface that matters:
+- `servicePricing.applyLiveServiceConfig` now takes
+  `{overrides, customServices}` in ONE call (unified so there's no
+  cross-call ordering fragility on the shared override map — the two used
+  to be tempting as separate functions). `getLiveCustomServices()` returns
+  ENABLED customs in MassageService shape. Disabled or zero-price customs
+  are excluded from the catalog list but still registered in the override
+  map so `isServiceEnabled`/`priceForDuration` resolve them (submit guard
+  can still block a disabled one).
+- `serviceCatalog`: `getAllServices()` + `resolveServiceId`/`getServiceById`
+  search hardcoded + custom.
+- `StepService` appends customs shop-wide (AFTER therapist-offered
+  filtering, since a custom isn't in any therapist's `servicesAvailable`);
+  `orderIdx` returns 999 for unknown ids so they sort last, no crash.
+  `BookingFlowPage` resolves the selected service via `getServiceById` so
+  customs are bookable + correctly priced.
+- `storage.rules`: new `services/{allPaths}` path (public read, auth
+  image-write, same posture as therapist images), deployed.
+- `AdminPromotionsPage`: inline-editable custom-service rows (dashed
+  border + NEW chip, delete) + an "add" dialog (name, desc, badge, image
+  upload via the therapist-gallery downscale→Storage→URL pattern, 3
+  prices). Custom-service id auto-generated `SR-C{base36 timestamp}`.
+
+**No firestore.rules change** — `customServices` rides the existing public
+`publicRules` doc (public read, admin write). **SEO note:** a custom
+service has no prerendered `/services/:id` shell, but booking never needs
+it (StepService → duration sheet → confirm), so customs are fully
+bookable regardless.
+
+Verified with an isolated logic check (default-empty = catalog unchanged;
+enabled custom appears + bookable with Firestore string-keyed prices;
+disabled custom excluded from catalog but `isServiceEnabled=false`;
+zero-price custom excluded) + tsc/build clean + storage deploy + homepage
+200 regression + curled the live bundle for `customServices` and the
+Promotions chunk for the add-service UI.
+
 ### 🆕 2026-07-07 — Promotions: live price + service management (28s300)
 
 Founder: "admin/promotions สามารถ จัดการราคา และ บริการ ได้" (make it able
