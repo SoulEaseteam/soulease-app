@@ -26,8 +26,9 @@ import {
 import { motion } from "framer-motion";
 import { db } from "@/lib/firebase";
 import {
-  collection, query, where, orderBy, onSnapshot, Timestamp,
+  collection, query, where, orderBy, onSnapshot, Timestamp, getDocs,
 } from "firebase/firestore";
+import { therapistKey, buildRosterIndex, type RosterEntry } from "@/utils/therapistIdentity";
 import dayjs, { Dayjs } from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -97,6 +98,19 @@ const AdminReportPage: React.FC = () => {
   const [preview,    setPreview]    = useState<TherapistSummary | null>(null);
   const [showTable,  setShowTable]  = useState(false);
 
+  // 🆕 Round 28s324 — therapist roster (canonical id+name), so booking rows
+  //   that stored a variant id/casing resolve to one clean label.
+  const [rosterIdx, setRosterIdx] = useState<Map<string, RosterEntry>>(new Map());
+  useEffect(() => {
+    void getDocs(collection(db, "therapists")).then((snap) => {
+      const roster: RosterEntry[] = snap.docs.map((d) => ({
+        id: d.id,
+        name: (d.data().name as string) ?? d.id,
+      }));
+      setRosterIdx(buildRosterIndex(roster));
+    });
+  }, []);
+
   // ── load bookings in range ────────────────────────────────────────
   useEffect(() => {
     setLoading(true);
@@ -113,8 +127,11 @@ const AdminReportPage: React.FC = () => {
   const summaries = useMemo<TherapistSummary[]>(() => {
     const map = new Map<string, TherapistSummary>();
     for (const b of rows) {
-      const k    = b.therapistId || b.therapistName || "Unknown";
-      const name = b.therapistName || "Unknown";
+      // 🆕 Round 28s324 — group by normalized name key (merges variant ids /
+      //   casing for the same person → no more "Yuri" twice); prefer the
+      //   canonical roster name for display.
+      const k    = therapistKey(b.therapistName, b.therapistId);
+      const name = rosterIdx.get(k)?.name || b.therapistName || "Unknown";
       if (!map.has(k)) map.set(k, { key: k, name, jobs: 0, cancelled: 0, serviceTotal: 0, discountTotal: 0, taxiTotal: 0, worker: 0, shop: 0, bookings: [] });
       const r = map.get(k)!;
       r.bookings.push(b);
@@ -132,7 +149,7 @@ const AdminReportPage: React.FC = () => {
       r.shop          += base - pay;       // shop's share of net service revenue
     }
     return Array.from(map.values()).sort((a, b) => b.serviceTotal - a.serviceTotal);
-  }, [rows]);
+  }, [rows, rosterIdx]);
 
   // ── totals ────────────────────────────────────────────────────────
   const totals = useMemo(() => {

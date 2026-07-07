@@ -57,6 +57,7 @@ import { getServiceLabel } from "@/utils/serviceCatalog";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { logAdminAction } from "@/utils/auditLog";
 import { therapistPayoutFor, isPayrollExcluded } from "@/utils/commission";
+import { therapistKey, buildRosterIndex, type RosterEntry } from "@/utils/therapistIdentity";
 
 const SERIF = adminFont.serif;
 const SANS = adminFont.sans;
@@ -167,6 +168,17 @@ const AdminTherapistPayoutsPage: React.FC = () => {
     });
   }, []);
 
+  // 🆕 Round 28s324 — full therapist roster, so the filter lists EVERY staff
+  //   member (not only those with a non-cash job in the window) and so variant
+  //   ids/casing in bookings resolve to one canonical person.
+  const [roster, setRoster] = useState<RosterEntry[]>([]);
+  useEffect(() => {
+    void getDocs(collection(db, "therapists")).then((snap) => {
+      setRoster(snap.docs.map((d) => ({ id: d.id, name: (d.data().name as string) ?? d.id })));
+    });
+  }, []);
+  const rosterIdx = useMemo(() => buildRosterIndex(roster), [roster]);
+
   // Bookings for the selected date range.
   useEffect(() => {
     setLoading(true);
@@ -229,17 +241,24 @@ const AdminTherapistPayoutsPage: React.FC = () => {
     return () => unsub();
   }, [range, customStart, customEnd]);
 
-  // Therapist filter options come from the date-filtered set only.
+  // 🆕 Round 28s324 — options list the FULL roster (every staff member), keyed
+  //   by the normalized name so ids/casing variants collapse to one entry; plus
+  //   anyone who appears in jobs but was removed from the roster. Options are
+  //   [key, name] tuples — the Select filters by key, matched below.
   const therapistOptions = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const j of jobs) m.set(j.therapistId, j.therapistName);
-    return [...m.entries()];
-  }, [jobs]);
+    const m = new Map<string, string>(); // key → display name
+    for (const r of roster) m.set(therapistKey(r.name, r.id), r.name);
+    for (const j of jobs) {
+      const k = therapistKey(j.therapistName, j.therapistId);
+      if (!m.has(k)) m.set(k, rosterIdx.get(k)?.name || j.therapistName);
+    }
+    return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [roster, jobs, rosterIdx]);
 
   const filtered = useMemo(
     () =>
       jobs.filter((j) => {
-        if (therapistFilter !== "__ALL__" && j.therapistId !== therapistFilter) return false;
+        if (therapistFilter !== "__ALL__" && therapistKey(j.therapistName, j.therapistId) !== therapistFilter) return false;
         if (paidOnly && !j.customerPaid) return false;
         return true;
       }),
@@ -251,11 +270,16 @@ const AdminTherapistPayoutsPage: React.FC = () => {
     const paid = filtered.filter((j) => j.therapistPaid);
     const byT: Record<string, UnpaidGroup> = {};
     for (const j of unpaid) {
-      if (!byT[j.therapistId]) {
-        byT[j.therapistId] = { id: j.therapistId, name: j.therapistName, subtotal: 0, jobs: [] };
+      // 🆕 Round 28s324 — group by normalized name key so a therapist with
+      //   variant ids isn't split into two cards; use the canonical roster id
+      //   (bank details are keyed by it) + name for display.
+      const k = therapistKey(j.therapistName, j.therapistId);
+      if (!byT[k]) {
+        const canon = rosterIdx.get(k);
+        byT[k] = { id: canon?.id || j.therapistId, name: canon?.name || j.therapistName, subtotal: 0, jobs: [] };
       }
-      byT[j.therapistId].jobs.push(j);
-      byT[j.therapistId].subtotal += j.payout;
+      byT[k].jobs.push(j);
+      byT[k].subtotal += j.payout;
     }
     const grouped = Object.values(byT)
       .map((g) => ({ ...g, jobs: g.jobs.sort((a, b) => millis(b.createdAt) - millis(a.createdAt)) }))
@@ -268,7 +292,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
       paidJobs: paid,
       paidTotal: paid.reduce((s, j) => s + j.payout, 0),
     };
-  }, [filtered]);
+  }, [filtered, rosterIdx]);
 
   const copy = (text: string, key: string) => {
     const done = () => {
