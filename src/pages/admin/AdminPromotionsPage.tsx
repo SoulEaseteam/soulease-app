@@ -121,6 +121,23 @@ const switchSx = {
   "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { background: adminColor.accent },
 } as const;
 
+// 🆕 Round 28r48 (bilingual pass) — opaque menu for `<TextField select>`. MUI's
+//   default paper is translucent (theme.ts frosted-glass, kept for the customer
+//   site) — same 28s265 transparency bug pattern. `<TextField select>` needs
+//   `SelectProps.MenuProps`, NOT `MenuProps` directly.
+const selectMenuProps = {
+  MenuProps: {
+    PaperProps: {
+      sx: {
+        background: adminColor.panel,
+        boxShadow: "0 8px 24px rgba(31,41,51,0.14)",
+        borderRadius: "12px",
+        border: `1px solid ${adminColor.line}`,
+      },
+    },
+  },
+} as const;
+
 const AdminPromotionsPage: React.FC = () => {
   const [promosEnabled, setPromosEnabled] = useState(false);
   const [promosSaving, setPromosSaving] = useState(false);
@@ -589,8 +606,13 @@ const AdminPromotionsPage: React.FC = () => {
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 760, mx: "auto", fontFamily: SANS }}>
-      <Typography sx={{ fontFamily: adminFont.serif, fontSize: 22, fontWeight: 600, color: adminColor.text, mb: 0.5 }}>
+      {/* 🆕 Round 28r48 (bilingual pass) — English-primary header + Thai subtitle,
+          matching the r35 admin-page convention (Dashboard / Bookings / Earnings). */}
+      <Typography sx={{ fontFamily: adminFont.serif, fontSize: 22, fontWeight: 600, color: adminColor.text, mb: 0.5, lineHeight: 1 }}>
         Promotions
+      </Typography>
+      <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.4, letterSpacing: "0.02em", mb: 1.25 }}>
+        โปรโมชั่น
       </Typography>
       <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mb: 2.5 }}>
         จัดการราคา/บริการ และโค้ดส่วนลด — บันทึกแล้วมีผลกับการจองใหม่ทันที
@@ -598,7 +620,7 @@ const AdminPromotionsPage: React.FC = () => {
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {/* 🆕 Round 28s300 — Pricing & services editor */}
-        <SectionCard icon={<Storefront size={13} weight="bold" />} title="ราคา & บริการ">
+        <SectionCard icon={<Storefront size={13} weight="bold" />} title="Pricing & Services · ราคา & บริการ">
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.5 }}>
             แก้ราคาแต่ละช่วงเวลา · เปลี่ยนชื่อ · เปิด/ปิดบริการ — มีผลกับการจองใหม่เท่านั้น (ออเดอร์เก่าล็อกราคาที่จ่ายไว้แล้ว)
           </Typography>
@@ -659,19 +681,19 @@ const AdminPromotionsPage: React.FC = () => {
               startIcon={svcSaving ? <CircularProgress size={15} sx={{ color: "#fff" }} /> : <FloppyDisk size={15} weight="bold" />}
               sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, borderRadius: "10px", "&:hover": { background: adminColor.accentDeep } }}
             >
-              {svcSaving ? "กำลังบันทึก…" : "บันทึกราคา/บริการ"}
+              {svcSaving ? "กำลังบันทึก…" : "Save · บันทึก"}
             </Button>
             <Button
               variant="outlined" startIcon={<Plus size={15} weight="bold" />} onClick={() => setAddSvcOpen(true)}
               sx={{ textTransform: "none", fontWeight: 700, borderColor: adminColor.line2, color: adminColor.accent, borderRadius: "10px" }}
             >
-              เพิ่มบริการใหม่
+              Add Service · เพิ่มบริการ
             </Button>
           </Stack>
         </SectionCard>
 
         {/* 🆕 Round 28s302 — Add-ons editor */}
-        <SectionCard icon={<Sparkle size={13} weight="bold" />} title="Add-on / บริการเสริม">
+        <SectionCard icon={<Sparkle size={13} weight="bold" />} title="Add-ons · บริการเสริม">
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.5 }}>
             บริการเสริมที่ลูกค้าเลือกเพิ่มตอนจอง — แก้ราคา เปิด/ปิด หรือเพิ่มใหม่ได้
           </Typography>
@@ -694,14 +716,14 @@ const AdminPromotionsPage: React.FC = () => {
             variant="outlined" startIcon={<Plus size={15} weight="bold" />} onClick={() => setAddAddonOpen(true)}
             sx={{ mt: 1.5, textTransform: "none", fontWeight: 700, borderColor: adminColor.line2, color: adminColor.accent, borderRadius: "10px" }}
           >
-            เพิ่ม Add-on
+            Add Add-on · เพิ่ม
           </Button>
         </SectionCard>
 
         {/* Master switch */}
-        <SectionCard icon={<Tag size={13} weight="bold" />} title="เปิดใช้งานโปรโมชั่น">
+        <SectionCard icon={<Tag size={13} weight="bold" />} title="Master Switch · สวิตช์หลัก">
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
-            <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>เปิดใช้งานโปรโมชั่นทั้งเว็บ</Typography>
+            <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>Enable promotions site-wide · เปิดใช้งานทั้งเว็บ</Typography>
             <Switch checked={promosEnabled} disabled={promosSaving} onChange={(e) => void handleTogglePromos(e.target.checked)} sx={switchSx} />
           </Box>
           {!promosEnabled && (
@@ -715,7 +737,7 @@ const AdminPromotionsPage: React.FC = () => {
         </SectionCard>
 
         {/* Built-in codes */}
-        <SectionCard icon={<Percent size={13} weight="bold" />} title="โค้ดมาตรฐาน">
+        <SectionCard icon={<Percent size={13} weight="bold" />} title="Built-in Codes · โค้ดมาตรฐาน">
           <Stack spacing={1}>
             {BUILTIN_CODES.map((b) => {
               const enabled = promoDocs[b.code]?.enabled !== false;
@@ -742,7 +764,7 @@ const AdminPromotionsPage: React.FC = () => {
         </SectionCard>
 
         {/* Custom codes */}
-        <SectionCard icon={<Ticket size={13} weight="bold" />} title="โค้ดที่สร้างเอง">
+        <SectionCard icon={<Ticket size={13} weight="bold" />} title="Custom Codes · โค้ดที่สร้างเอง">
           {customList.length === 0 ? (
             <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mb: 1 }}>ยังไม่มีโค้ดที่สร้างเอง</Typography>
           ) : (
@@ -791,12 +813,12 @@ const AdminPromotionsPage: React.FC = () => {
             variant="outlined" startIcon={<Plus size={15} weight="bold" />} onClick={() => setAddOpen(true)}
             sx={{ textTransform: "none", fontWeight: 700, borderColor: adminColor.line2, color: adminColor.accent, borderRadius: "10px" }}
           >
-            สร้างโค้ดใหม่
+            Create Code · สร้างโค้ด
           </Button>
         </SectionCard>
 
         {/* Usage stats */}
-        <SectionCard icon={<ChartBar size={13} weight="bold" />} title="สถิติการใช้งาน">
+        <SectionCard icon={<ChartBar size={13} weight="bold" />} title="Usage Stats · สถิติการใช้งาน">
           <Typography sx={{ fontSize: 11.5, color: adminColor.muted, mb: 1 }}>
             จากออเดอร์จริงล่าสุด (สูงสุด 1,000 รายการ)
           </Typography>
@@ -821,11 +843,13 @@ const AdminPromotionsPage: React.FC = () => {
 
       {/* Add custom code dialog */}
       <Dialog open={addOpen} onClose={() => setAddOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>สร้างโค้ดใหม่</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>Create Code · สร้างโค้ดใหม่</DialogTitle>
         <DialogContent>
           <TextField fullWidth autoFocus label="โค้ด" placeholder="เช่น NEWYEAR2026" value={addCode}
             onChange={(e) => setAddCode(e.target.value)} sx={{ ...fieldSx, mb: 1.5, mt: 1 }} />
-          <TextField select fullWidth label="ประเภท" value={addType} onChange={(e) => setAddType(e.target.value as "percent" | "fixed")} sx={{ ...fieldSx, mb: 1.5 }}>
+          {/* 🆕 Round 28r48 (audit) — SelectProps.MenuProps for `<TextField select>` (28s265 pattern);
+              without it, the popover uses theme.ts's translucent paper and page content bleeds through. */}
+          <TextField select fullWidth label="ประเภท" value={addType} onChange={(e) => setAddType(e.target.value as "percent" | "fixed")} sx={{ ...fieldSx, mb: 1.5 }} SelectProps={selectMenuProps}>
             <MenuItem value="fixed">ลดคงที่ (บาท)</MenuItem>
             <MenuItem value="percent">ลดเปอร์เซ็นต์</MenuItem>
           </TextField>
@@ -859,28 +883,28 @@ const AdminPromotionsPage: React.FC = () => {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAddOpen(false)}>Cancel</Button>
+          <Button onClick={() => setAddOpen(false)}>Cancel · ยกเลิก</Button>
           <Button
             onClick={() => void handleAddCustom()} variant="contained" disabled={addSubmitting || !addCode.trim()}
             sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, "&:hover": { background: adminColor.accentDeep } }}
           >
-            {addSubmitting ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "สร้าง"}
+            {addSubmitting ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "Create · สร้าง"}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete confirm */}
       <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} fullWidth maxWidth="xs">
-        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>ลบโค้ดนี้?</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>Delete Code · ลบโค้ด?</DialogTitle>
         <DialogContent>
           <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>
             <strong>{deleteTarget?.id}</strong> จะใช้จองไม่ได้อีกทันที (สถิติการใช้งานเดิมไม่หาย เพราะเก็บอยู่ที่ booking แต่ละรายการ)
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteTarget(null)}>Cancel</Button>
+          <Button onClick={() => setDeleteTarget(null)}>Cancel · ยกเลิก</Button>
           <Button onClick={() => void handleDelete()} variant="contained" disabled={deleteSubmitting} sx={{ background: adminColor.red, textTransform: "none", fontWeight: 700 }}>
-            {deleteSubmitting ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : "ลบ"}
+            {deleteSubmitting ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : "Delete · ลบ"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -892,7 +916,7 @@ const AdminPromotionsPage: React.FC = () => {
           moment she turns them on. */}
       <Dialog open={!!shareCode} onClose={() => setShareCode(null)} fullWidth maxWidth="xs">
         <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>
-          แชร์โค้ด {shareCode}
+          Share Code · แชร์ {shareCode}
         </DialogTitle>
         <DialogContent>
           <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mb: 1.5 }}>
@@ -917,17 +941,17 @@ const AdminPromotionsPage: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShareCode(null)} sx={{ color: adminColor.muted, textTransform: "none", fontWeight: 700 }}>ปิด</Button>
+          <Button onClick={() => setShareCode(null)} sx={{ color: adminColor.muted, textTransform: "none", fontWeight: 700 }}>Close · ปิด</Button>
           <Button onClick={() => void copyShare()} variant="contained" startIcon={<Copy size={15} />}
             sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, "&:hover": { background: adminColor.accentDeep } }}>
-            คัดลอกลิงก์
+            Copy Link · คัดลอก
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* 🆕 Round 28s301 — add a brand-new custom service */}
       <Dialog open={addSvcOpen} onClose={() => setAddSvcOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>เพิ่มบริการใหม่</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>Add Service · เพิ่มบริการ</DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5, mt: 0.5 }}>
             <Box
@@ -943,7 +967,7 @@ const AdminPromotionsPage: React.FC = () => {
           </Box>
           <TextField fullWidth autoFocus label="ชื่อบริการ" value={addSvcName} onChange={(e) => setAddSvcName(e.target.value)} sx={{ ...fieldSx, mb: 1.5 }} />
           <TextField fullWidth label="คำอธิบายสั้น (ไม่บังคับ)" value={addSvcDesc} onChange={(e) => setAddSvcDesc(e.target.value)} sx={{ ...fieldSx, mb: 1.5 }} />
-          <TextField select fullWidth label="ป้าย" value={addSvcBadge} onChange={(e) => setAddSvcBadge(e.target.value as MassageService["badge"])} sx={{ ...fieldSx, mb: 1.5 }}>
+          <TextField select fullWidth label="ป้าย" value={addSvcBadge} onChange={(e) => setAddSvcBadge(e.target.value as MassageService["badge"])} sx={{ ...fieldSx, mb: 1.5 }} SelectProps={selectMenuProps}>
             {BADGE_OPTIONS.map((b) => <MenuItem key={b} value={b}>{b}</MenuItem>)}
           </TextField>
           <Stack direction="row" spacing={1}>
@@ -956,12 +980,12 @@ const AdminPromotionsPage: React.FC = () => {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAddSvcOpen(false)}>Cancel</Button>
+          <Button onClick={() => setAddSvcOpen(false)}>Cancel · ยกเลิก</Button>
           <Button
             onClick={() => void handleAddCustomService()} variant="contained" disabled={addSvcSubmitting || addSvcUploading || !addSvcName.trim()}
             sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, "&:hover": { background: adminColor.accentDeep } }}
           >
-            {addSvcSubmitting ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "เพิ่มบริการ"}
+            {addSvcSubmitting ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "Add · เพิ่ม"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -969,7 +993,7 @@ const AdminPromotionsPage: React.FC = () => {
       {/* 🆕 Round 28s302 — edit a standard service's photo + detail-page copy */}
       <Dialog open={!!detailsRow} onClose={() => setDetailsId(null)} fullWidth maxWidth="sm">
         <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>
-          รายละเอียด · {detailsRow?.name}
+          Details · {detailsRow?.name}
         </DialogTitle>
         {detailsRow && (
           <DialogContent>
@@ -994,17 +1018,17 @@ const AdminPromotionsPage: React.FC = () => {
           </DialogContent>
         )}
         <DialogActions>
-          <Button onClick={() => setDetailsId(null)} sx={{ color: adminColor.muted, textTransform: "none", fontWeight: 700 }}>เสร็จ</Button>
+          <Button onClick={() => setDetailsId(null)} sx={{ color: adminColor.muted, textTransform: "none", fontWeight: 700 }}>Close · เสร็จ</Button>
           <Button onClick={() => { setDetailsId(null); void handleSaveServices(); }} variant="contained"
             sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, "&:hover": { background: adminColor.accentDeep } }}>
-            บันทึก
+            Save · บันทึก
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* 🆕 Round 28s302 — add a custom add-on */}
       <Dialog open={addAddonOpen} onClose={() => setAddAddonOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>เพิ่ม Add-on</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>Add Add-on · เพิ่ม</DialogTitle>
         <DialogContent>
           <Stack direction="row" spacing={1} sx={{ mt: 0.5, mb: 1.5 }}>
             <TextField label="ไอคอน" value={addAddonIcon} onChange={(e) => setAddAddonIcon(e.target.value)} sx={{ width: 80, ...fieldSx }} inputProps={{ style: { textAlign: "center", fontSize: 18 } }} />
@@ -1015,10 +1039,10 @@ const AdminPromotionsPage: React.FC = () => {
             InputProps={{ startAdornment: <span style={{ color: adminColor.dim, fontSize: 12, marginRight: 3 }}>฿</span> }} />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAddAddonOpen(false)}>Cancel</Button>
+          <Button onClick={() => setAddAddonOpen(false)}>Cancel · ยกเลิก</Button>
           <Button onClick={() => void handleAddAddon()} variant="contained" disabled={!addAddonName.trim()}
             sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, "&:hover": { background: adminColor.accentDeep } }}>
-            เพิ่ม
+            Add · เพิ่ม
           </Button>
         </DialogActions>
       </Dialog>

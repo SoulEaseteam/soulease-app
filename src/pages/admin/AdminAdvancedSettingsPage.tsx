@@ -91,14 +91,15 @@ const switchSx = {
   "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { background: adminColor.accent },
 } as const;
 
+// 🆕 Round 28r48 (bilingual pass) — English-primary status badges.
 const NotConnectedBadge: React.FC = () => (
   <Box sx={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: 10.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", color: adminColor.amber, background: `${adminColor.amber}1A`, borderRadius: "6px", px: "8px", py: "3px" }}>
-    <Warning size={12} weight="fill" /> ยังไม่เชื่อมระบบจริง
+    <Warning size={12} weight="fill" /> Not Yet Wired · ยังไม่เชื่อม
   </Box>
 );
 const LiveBadge: React.FC = () => (
   <Box sx={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: 10.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", color: adminColor.green, background: `${adminColor.green}1A`, borderRadius: "6px", px: "8px", py: "3px" }}>
-    <CheckCircle size={12} weight="fill" /> ใช้งานจริง
+    <CheckCircle size={12} weight="fill" /> Live · ใช้งานจริง
   </Box>
 );
 
@@ -158,8 +159,13 @@ const AdminAdvancedSettingsPage: React.FC = () => {
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 720, mx: "auto", fontFamily: SANS }}>
-      <Typography sx={{ fontFamily: adminFont.serif, fontSize: 22, fontWeight: 600, color: adminColor.text, mb: 0.5 }}>
+      {/* 🆕 Round 28r48 (bilingual pass) — English-primary header + Thai subtitle,
+          matching Dashboard/Bookings/Earnings r35 convention. */}
+      <Typography sx={{ fontFamily: adminFont.serif, fontSize: 22, fontWeight: 600, color: adminColor.text, mb: 0.5, lineHeight: 1 }}>
         Advanced Settings
+      </Typography>
+      <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.4, letterSpacing: "0.02em", mb: 1.25 }}>
+        ตั้งค่าขั้นสูง
       </Typography>
       <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mb: 2.5 }}>
         ตั้งค่าระดับระบบ — บันทึกแล้วมีผลทันที ไม่ต้องรอ deploy
@@ -167,13 +173,13 @@ const AdminAdvancedSettingsPage: React.FC = () => {
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {/* 🌙 Maintenance Mode — REAL */}
-        <SectionCard icon={<MoonStars size={13} weight="bold" />} title="โหมดปิดปรับปรุง">
+        <SectionCard icon={<MoonStars size={13} weight="bold" />} title="Maintenance Mode · โหมดปิดปรับปรุง">
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
             เปิดแล้วลูกค้าทั่วไปจะเห็นหน้า "ปิดปรับปรุงชั่วคราว" ทันที (ไม่ต้องรีเฟรช) — แอดมิน/หมอนวดยังเข้าใช้งานได้ตามปกติ
           </Typography>
           <Row>
-            <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>เปิดโหมดปิดปรับปรุง</Typography>
+            <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>Enable maintenance mode · เปิดโหมดปิดปรับปรุง</Typography>
             <Switch
               checked={rules.maintenanceMode}
               onChange={(e) => setRules((prev) => ({ ...prev, maintenanceMode: e.target.checked }))}
@@ -188,7 +194,7 @@ const AdminAdvancedSettingsPage: React.FC = () => {
         </SectionCard>
 
         {/* ⏰ Booking Rules — REAL */}
-        <SectionCard icon={<Clock size={13} weight="bold" />} title="กฎการจอง">
+        <SectionCard icon={<Clock size={13} weight="bold" />} title="Booking Rules · กฎการจอง">
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
           <TextField
             label="ต้องจองล่วงหน้าอย่างน้อย (นาที)" fullWidth type="number" margin="dense" sx={fieldSx}
@@ -205,7 +211,7 @@ const AdminAdvancedSettingsPage: React.FC = () => {
         </SectionCard>
 
         {/* 🔔 Notifications — Telegram REAL, LINE removed */}
-        <SectionCard icon={<BellRinging size={13} weight="bold" />} title="การแจ้งเตือน">
+        <SectionCard icon={<BellRinging size={13} weight="bold" />} title="Notifications · การแจ้งเตือน">
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
             Token เก็บใน Firebase Secret Manager (แก้ตรงนี้ไม่ได้ และไม่ควรเก็บใน Firestore เพื่อความปลอดภัย) — สวิตช์นี้แค่หยุด/เปิดการส่งข้อความจริง
@@ -218,7 +224,7 @@ const AdminAdvancedSettingsPage: React.FC = () => {
 
         {/* 📍 Travel fare & Distance — actual round-trip + Grab fee + surge
              (Round 28s309). */}
-        <SectionCard icon={<CreditCard size={13} weight="bold" />} title="ค่าเดินทาง & ระยะทาง">
+        <SectionCard icon={<CreditCard size={13} weight="bold" />} title="Travel Fare & Distance · ค่าเดินทาง">
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
             ค่าเดินทาง = (มิเตอร์เที่ยวเดียว × ตัวคูณไป-กลับ + ค่าเรียกรถ×2) × (1 + surge ช่วงเวลา + ค่าฝน) · surge/ฝนคิดจากเวลานัด (จองล่วงหน้าคาดการณ์ไม่ได้แบบ Grab สด)
@@ -245,7 +251,7 @@ const AdminAdvancedSettingsPage: React.FC = () => {
         </SectionCard>
 
         {/* 💳 Payment Methods — NOT YET CONNECTED */}
-        <SectionCard icon={<Wallet size={13} weight="bold" />} title="ช่องทางชำระเงิน">
+        <SectionCard icon={<Wallet size={13} weight="bold" />} title="Payment Methods · ช่องทางชำระเงิน">
           <Box sx={{ mb: 1 }}><NotConnectedBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
             PromptPay เป็นตัวเลือกที่เปิดใช้อยู่แล้วในหน้าชำระเงินจริง (ล็อกไว้ในโค้ด) Stripe ยังไม่มีระบบเลย — สวิตช์นี้ยังไม่ได้คุมว่าลูกค้าจะเห็นช่องทางไหนบ้าง
@@ -268,7 +274,7 @@ const AdminAdvancedSettingsPage: React.FC = () => {
         startIcon={loading ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : <FloppyDisk size={16} weight="bold" />}
         sx={{ mt: 2.5, background: adminColor.accent, textTransform: "none", fontWeight: 700, borderRadius: "10px", px: 3, "&:hover": { background: adminColor.accentDeep } }}
       >
-        {loading ? "กำลังบันทึก…" : "Save Settings"}
+        {loading ? "กำลังบันทึก…" : "Save Settings · บันทึก"}
       </Button>
 
       <Snackbar

@@ -129,10 +129,11 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title
     sx={{
       mb: 2,
       padding: "16px 18px 18px",
-      borderRadius: "16px",
+      borderRadius: "18px",
       background: adminColor.panel,
       border: `1px solid ${adminColor.line}`,
-      boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 6px 16px rgba(31,41,51,0.06)",
+      // 🆕 Round 28r48 — deeper shadow (r47 pattern) — subtle depth without a lift.
+      boxShadow: "0 2px 10px rgba(31,41,51,0.04), 0 6px 16px rgba(31,41,51,0.06)",
     }}
   >
     <Typography
@@ -420,6 +421,8 @@ const AdminBookingAddPage: React.FC = () => {
           <ArrowLeft size={20} />
         </IconButton>
         <Box sx={{ flex: 1 }}>
+          {/* 🆕 Round 28r48 (bilingual pass) — English-primary header, Thai
+              subtitle underneath, matching Dashboard/Bookings/Earnings r35. */}
           <Typography
             sx={{
               fontFamily: SANS,
@@ -431,7 +434,7 @@ const AdminBookingAddPage: React.FC = () => {
               mb: 0.25,
             }}
           >
-            Admin · New Booking
+            Admin
           </Typography>
           <Typography
             sx={{
@@ -444,14 +447,17 @@ const AdminBookingAddPage: React.FC = () => {
               "& em": { fontStyle: "italic", color: adminColor.accent },
             }}
           >
-            จองให้ <em>ลูกค้า</em>
+            New <em>Booking</em>
+          </Typography>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.4, letterSpacing: "0.02em" }}>
+            จองใหม่
           </Typography>
           <Typography
             sx={{
               fontFamily: SANS,
               fontSize: 11.5,
               color: adminColor.muted,
-              mt: 0.5,
+              mt: 0.75,
               lineHeight: 1.4,
             }}
           >
@@ -464,8 +470,8 @@ const AdminBookingAddPage: React.FC = () => {
       <Box sx={{ maxWidth: 640, mx: "auto", px: { xs: 2, sm: 3 }, pt: 3 }}>
 
         {/* 1 — นักบำบัด + บริการ */}
-        <Section title="นักบำบัด & บริการ">
-          <Field label="นักบำบัด" icon={<User size={14} />} error={errors.therapist}>
+        <Section title="Therapist & Service · นักบำบัด & บริการ">
+          <Field label="Therapist · นักบำบัด" icon={<User size={14} />} error={errors.therapist}>
             <FormControl fullWidth size="small" sx={inputSx(errors.therapist)}>
               <Select
                 value={therapistId}
@@ -485,7 +491,7 @@ const AdminBookingAddPage: React.FC = () => {
             </FormControl>
           </Field>
 
-          <Field label="บริการ" icon={<Note size={14} />} error={errors.service}>
+          <Field label="Service · บริการ" icon={<Note size={14} />} error={errors.service}>
             <FormControl fullWidth size="small" sx={inputSx(errors.service)}>
               <Select
                 value={serviceId}
@@ -511,7 +517,7 @@ const AdminBookingAddPage: React.FC = () => {
               <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700,
                 textTransform: "uppercase", letterSpacing: "0.06em",
                 color: adminColor.muted, mb: 0.75 }}>
-                ระยะเวลา
+                Duration · ระยะเวลา
               </Typography>
               <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                 {availableDurations.map((d) => {
@@ -543,8 +549,9 @@ const AdminBookingAddPage: React.FC = () => {
         </Section>
 
         {/* 2 — ลูกค้า */}
-        <Section title="ข้อมูลลูกค้า">
-          <Field label="ชื่อลูกค้า" icon={<User size={14} />} error={errors.customerName}>
+        <Section title="Customer · ข้อมูลลูกค้า">
+          {/* Field labels dropped Thai per r43 rule (obvious inputs: Name/Phone) */}
+          <Field label="Name" icon={<User size={14} />} error={errors.customerName}>
             <TextField
               fullWidth size="small" placeholder="ชื่อ-นามสกุล"
               value={customerName}
@@ -552,7 +559,7 @@ const AdminBookingAddPage: React.FC = () => {
               sx={inputSx(errors.customerName)}
             />
           </Field>
-          <Field label="เบอร์โทร" icon={<Phone size={14} />} error={errors.phone}>
+          <Field label="Phone" icon={<Phone size={14} />} error={errors.phone}>
             <TextField
               fullWidth size="small" placeholder="0812345678"
               value={phone}
@@ -563,9 +570,9 @@ const AdminBookingAddPage: React.FC = () => {
         </Section>
 
         {/* 3 — วันเวลา */}
-        <Section title="วันและเวลา">
+        <Section title="Schedule · วันและเวลา">
           <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-            <Field label="วันที่" icon={<CalendarBlank size={14} />} error={errors.date}>
+            <Field label="Date" icon={<CalendarBlank size={14} />} error={errors.date}>
               <TextField
                 type="date" size="small"
                 value={date}
@@ -574,7 +581,7 @@ const AdminBookingAddPage: React.FC = () => {
                 inputProps={{ min: "2020-01-01" }}
               />
             </Field>
-            <Field label="เวลา" icon={<Clock size={14} />} error={errors.time}>
+            <Field label="Time" icon={<Clock size={14} />} error={errors.time}>
               <TextField
                 type="time" size="small"
                 value={time}
@@ -602,8 +609,8 @@ const AdminBookingAddPage: React.FC = () => {
         </Section>
 
         {/* 4 — สถานที่ — Google Places */}
-        <Section title="สถานที่">
-          <Field label="ค้นหาสถานที่" icon={<MagnifyingGlass size={14} />} error={errors.address}>
+        <Section title="Location · สถานที่">
+          <Field label="Search Location · ค้นหา" icon={<MagnifyingGlass size={14} />} error={errors.address}>
             {/* Google Autocomplete input */}
             <Box sx={{
               position: "relative",
@@ -656,7 +663,7 @@ const AdminBookingAddPage: React.FC = () => {
                       rel="noopener noreferrer"
                       sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.accent, mt: 0.5, display: "block" }}
                     >
-                      ดูใน Google Maps →
+                      Open in Google Maps →
                     </Typography>
                   )}
                 </Box>
@@ -666,9 +673,9 @@ const AdminBookingAddPage: React.FC = () => {
         </Section>
 
         {/* 5 — การชำระเงิน & ค่า Taxi */}
-        <Section title="การชำระเงิน & ค่า Taxi">
+        <Section title="Payment & Taxi · การชำระเงิน">
           <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-            <Field label="ช่องทางชำระ" icon={<CurrencyCircleDollar size={14} />}>
+            <Field label="Payment · ช่องทาง" icon={<CurrencyCircleDollar size={14} />}>
               <FormControl size="small" sx={{ ...inputSx(), minWidth: 200 }}>
                 <Select
                   value={payment}
@@ -682,7 +689,7 @@ const AdminBookingAddPage: React.FC = () => {
               </FormControl>
             </Field>
 
-            <Field label={`ค่า Taxi (฿)${taxiAuto > 0 ? ` — อัตโนมัติ ${formatTHB(taxiAuto)}` : ""}`}
+            <Field label={`Taxi (฿)${taxiAuto > 0 ? ` — auto ${formatTHB(taxiAuto)}` : ""}`}
               icon={<Taxi size={14} />}>
               <TextField
                 type="number" size="small"
@@ -708,17 +715,17 @@ const AdminBookingAddPage: React.FC = () => {
             </Typography>
           )}
 
-          {/* 🆕 28s249 — surcharge notice */}
+          {/* 🆕 28s249 — surcharge notice; recompute stays inside paymentSurcharge.ts */}
           {hasPaymentSurcharge(payment) && paymentFee > 0 && (
             <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.amber, fontWeight: 600 }}>
-              + ค่าธรรมเนียมโอน {formatTHB(paymentFee)} (5% + ฿200) สำหรับ WeChat/Alipay
+              + Transfer fee {formatTHB(paymentFee)} (5% + ฿200) · WeChat/Alipay
             </Typography>
           )}
         </Section>
 
         {/* 6 — หมายเหตุ */}
-        <Section title="หมายเหตุ (ถ้ามี)">
-          <Field label="Note" icon={<Note size={14} />}>
+        <Section title="Notes · หมายเหตุ (ถ้ามี)">
+          <Field label="Note · โน้ต" icon={<Note size={14} />}>
             <TextField
               fullWidth size="small" multiline rows={2}
               placeholder="ความต้องการพิเศษ, รหัสเข้าอาคาร, ฯลฯ"
@@ -739,16 +746,16 @@ const AdminBookingAddPage: React.FC = () => {
           }}>
             <Box sx={{ background: adminColor.panel2, borderBottom: `1px solid ${adminColor.line}`, px: 2.5, py: 1.75 }}>
               <Typography sx={{ fontFamily: SERIF, fontSize: 16, fontWeight: 600, color: adminColor.text }}>
-                สรุปคำสั่ง
+                Order Summary · สรุปคำสั่ง
               </Typography>
             </Box>
             <Box sx={{ px: 2.5, py: 2, display: "flex", flexDirection: "column" }}>
               {[
-                { label: "นักบำบัด", value: therapists.find((t) => t.id === therapistId)?.name ?? "—" },
-                { label: "บริการ",   value: selectedService ? `${selectedService.name} · ${duration} นาที` : "—" },
-                { label: "ลูกค้า",  value: customerName || "—" },
-                { label: "วันเวลา", value: date && time ? `${dayjs(date).format("D MMM")} · ${time} น.` : "—" },
-                { label: "สถานที่", value: loc.placeName || loc.address || "—" },
+                { label: "Therapist · นักบำบัด", value: therapists.find((t) => t.id === therapistId)?.name ?? "—" },
+                { label: "Service · บริการ",   value: selectedService ? `${selectedService.name} · ${duration} นาที` : "—" },
+                { label: "Customer · ลูกค้า",  value: customerName || "—" },
+                { label: "When · วันเวลา", value: date && time ? `${dayjs(date).format("D MMM")} · ${time} น.` : "—" },
+                { label: "Location · สถานที่", value: loc.placeName || loc.address || "—" },
               ].map((r, i) => (
                 <Box key={i} sx={{
                   display: "flex", justifyContent: "space-between", gap: 2,
@@ -767,9 +774,9 @@ const AdminBookingAddPage: React.FC = () => {
 
               <Box sx={{ mt: 1.5, pt: 1.5, borderTop: `1px solid ${adminColor.line2}` }}>
                 {[
-                  { label: "ค่าบริการ", value: formatTHB(servicePrice) },
-                  { label: "ค่า Taxi",  value: formatTHB(effectiveTaxi) },
-                  ...(paymentFee > 0 ? [{ label: "ค่าธรรมเนียมโอน", value: formatTHB(paymentFee) }] : []),
+                  { label: "Service · ค่าบริการ", value: formatTHB(servicePrice) },
+                  { label: "Taxi · ค่าเดินทาง",  value: formatTHB(effectiveTaxi) },
+                  ...(paymentFee > 0 ? [{ label: "Transfer fee · ค่าธรรมเนียม", value: formatTHB(paymentFee) }] : []),
                 ].map((r, i) => (
                   <Box key={i} sx={{ display: "flex", justifyContent: "space-between", py: 0.6 }}>
                     <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.muted }}>{r.label}</Typography>
@@ -777,7 +784,7 @@ const AdminBookingAddPage: React.FC = () => {
                   </Box>
                 ))}
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", mt: 0.75, pt: 1, borderTop: `1px solid ${adminColor.line2}` }}>
-                  <Typography sx={{ fontFamily: SERIF, fontSize: 16, fontWeight: 600, color: adminColor.text }}>รวมทั้งหมด</Typography>
+                  <Typography sx={{ fontFamily: SERIF, fontSize: 16, fontWeight: 600, color: adminColor.text }}>Total · รวมทั้งหมด</Typography>
                   <Typography sx={{ ...adminFigureSx, fontSize: 20, color: adminColor.accent }}>{formatTHB(total)}</Typography>
                 </Box>
               </Box>
@@ -802,7 +809,7 @@ const AdminBookingAddPage: React.FC = () => {
           >
             {saving
               ? <><CircularProgress size={18} sx={{ color: adminColor.dim }} /> กำลังบันทึก…</>
-              : "✅ สร้างการจอง"}
+              : "Create Booking · สร้างการจอง"}
           </motion.button>
         </motion.div>
 
