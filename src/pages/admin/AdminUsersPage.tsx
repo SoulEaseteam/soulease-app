@@ -227,15 +227,34 @@ const AdminUsersPage: React.FC = () => {
   }, []);
 
   const [query, setQuery] = useState("");
+  const [countryFilter, setCountryFilter] = useState<string | null>(null); // ISO code · "__none__" · null=all
   const [selectedGuest, setSelectedGuest] = useState<CustomerInsight | null>(null);
+
+  // 🆕 Round 28s287b — guest count per country (doubles as the filter row).
+  const countryBreakdown = useMemo(() => {
+    const m = new Map<string, { country: PhoneCountry; count: number }>();
+    let unknown = 0;
+    for (const i of insights) {
+      if (i.country) {
+        const e = m.get(i.country.code);
+        if (e) e.count += 1;
+        else m.set(i.country.code, { country: i.country, count: 1 });
+      } else unknown += 1;
+    }
+    return { list: Array.from(m.values()).sort((a, b) => b.count - a.count), unknown };
+  }, [insights]);
+
   const filteredInsights = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return insights;
     const qd = q.replace(/\D/g, "");
-    return insights.filter(
-      (i) => i.name.toLowerCase().includes(q) || (qd && i.phone.includes(qd))
-    );
-  }, [insights, query]);
+    return insights.filter((i) => {
+      const matchesText = !q || i.name.toLowerCase().includes(q) || (qd && i.phone.includes(qd));
+      const matchesCountry =
+        !countryFilter ||
+        (countryFilter === "__none__" ? !i.country : i.country?.code === countryFilter);
+      return matchesText && matchesCountry;
+    });
+  }, [insights, query, countryFilter]);
 
   const vipCount = useMemo(() => insights.filter((i) => i.served >= VIP_THRESHOLD).length, [insights]);
   const repeatCount = useMemo(() => insights.filter((i) => i.served >= 2).length, [insights]);
@@ -458,6 +477,35 @@ const AdminUsersPage: React.FC = () => {
           </Box>
         ))}
       </Box>
+
+      {/* 🆕 Round 28s287b — country breakdown that doubles as a filter.
+          Tap a country to show only those guests; tap "ทั้งหมด" to clear. */}
+      {countryBreakdown.list.length > 0 && (
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, mb: 1.5, alignItems: "center" }}>
+          <Typography sx={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: adminColor.dim, mr: 0.5 }}>ตามประเทศ</Typography>
+          {(() => {
+            const chip = (key: string | null, content: React.ReactNode) => {
+              const active = countryFilter === key || (key === null && countryFilter === null);
+              return (
+                <Box key={String(key)} onClick={() => setCountryFilter(key)}
+                  sx={{ display: "flex", alignItems: "center", gap: "5px", cursor: "pointer", fontSize: 12.5, fontWeight: 700, borderRadius: "999px", p: "5px 11px",
+                    border: `1px solid ${active ? adminColor.accent : adminColor.line}`, background: active ? "rgba(78,126,140,0.12)" : adminColor.panel, color: active ? adminColor.accent : adminColor.muted }}>
+                  {content}
+                </Box>
+              );
+            };
+            return (
+              <>
+                {chip(null, <>ทั้งหมด <span style={{ opacity: 0.7 }}>{insights.length}</span></>)}
+                {countryBreakdown.list.map(({ country, count }) =>
+                  chip(country.code, <><span style={{ fontSize: 14 }}>{country.flag}</span> {country.code} <span style={{ opacity: 0.7 }}>{count}</span></>)
+                )}
+                {countryBreakdown.unknown > 0 && chip("__none__", <>ไม่ทราบ <span style={{ opacity: 0.7 }}>{countryBreakdown.unknown}</span></>)}
+              </>
+            );
+          })()}
+        </Box>
+      )}
 
       {/* 🆕 Round 28s285 — search guests by name or phone. */}
       <Box sx={{ mb: 1.5, maxWidth: 360, display: "flex", alignItems: "center", gap: 1, background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "12px", p: "9px 13px" }}>
