@@ -151,3 +151,122 @@ export async function refreshRainStatus(): Promise<RainStatus> {
   }
   return getRainStatus();
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// 🆕 Round 28s310 (founder: "คำนวนสภาพอากาศ ช่วงฝนตก จาก พยากรณ์อากาศ จริง
+//   ตามเวลานั้นๆ") — the surcharge used the CURRENT Bangkok weather for
+//   every booking regardless of when the appointment is. Now we pull the
+//   real hourly FORECAST (wttr.in j1 = 3 days, every 3 h) and price the
+//   rain from the forecast at the booking's scheduled date + hour.
+// ─────────────────────────────────────────────────────────────────────
+
+const FORECAST_CACHE_KEY = "sunred_forecast_v1";
+const FORECAST_TTL_MS = 2 * 60 * 60 * 1000; // 2h — forecasts move slowly
+
+/** date "YYYY-MM-DD" → { 3-hour slot (0,3,…,21) → tier }. */
+export type RainForecast = Record<string, Record<number, RainTier>>;
+
+/** Forecast slots carry a rain-chance %, so a "cloudy but 80% rain" slot
+ *  still prices as rain even when the text label is mild. */
+function classifyForecastSlot(desc: string, chanceOfRainPct: number): RainTier {
+  const base = classifyWeather(desc);
+  if (base === "heavy") return "heavy";
+  if (chanceOfRainPct >= 80 && /(thunder|storm)/i.test(desc)) return "heavy";
+  if (base === "light" || chanceOfRainPct >= 60) return "light";
+  return "none";
+}
+
+async function fetchForecastFromApi(): Promise<RainForecast | null> {
+  try {
+    const r = await fetch("https://wttr.in/Bangkok?format=j1", {
+      method: "GET",
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!r.ok) return null;
+    const j = (await r.json()) as {
+      weather?: Array<{
+        date?: string;
+        hourly?: Array<{
+          time?: string;
+          weatherDesc?: Array<{ value?: string }>;
+          chanceofrain?: string;
+        }>;
+      }>;
+    };
+    const map: RainForecast = {};
+    for (const day of j?.weather ?? []) {
+      if (typeof day?.date !== "string") continue;
+      const slots: Record<number, RainTier> = {};
+      for (const h of day?.hourly ?? []) {
+        const t = parseInt(h?.time ?? "", 10);
+        if (!Number.isFinite(t)) continue;
+        const slot = Math.floor(t / 100); // "2100" → 21
+        const desc = h?.weatherDesc?.[0]?.value ?? "";
+        const chance = parseInt(h?.chanceofrain ?? "0", 10) || 0;
+        slots[slot] = classifyForecastSlot(desc, chance);
+      }
+      map[day.date] = slots;
+    }
+    return Object.keys(map).length ? map : null;
+  } catch {
+    return null;
+  }
+}
+
+function readForecastCache(): RainForecast | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(FORECAST_CACHE_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw) as { at: number; map: RainForecast };
+    if (Date.now() - p.at < FORECAST_TTL_MS) return p.map;
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+/** Fetch (cached 2h) the Bangkok hourly rain forecast. Null on any error
+ *  so the caller falls back to current weather. */
+export async function getRainForecast(): Promise<RainForecast | null> {
+  const cached = readForecastCache();
+  if (cached) return cached;
+  const map = await fetchForecastFromApi();
+  if (map && typeof window !== "undefined") {
+    try {
+      window.localStorage.setItem(
+        FORECAST_CACHE_KEY,
+        JSON.stringify({ at: Date.now(), map })
+      );
+    } catch {
+      // ignore
+    }
+  }
+  return map;
+}
+
+/**
+ * Rain status for a specific scheduled date ("YYYY-MM-DD") + hour (0–23),
+ * read from a fetched forecast. Returns null when the slot isn't covered
+ * (unknown date / beyond the ~3-day horizon) so the caller can fall back
+ * to the current-weather status.
+ */
+export function rainStatusFromForecast(
+  forecast: RainForecast | null,
+  dateISO: string | null | undefined,
+  hour: number | null | undefined
+): RainStatus | null {
+  if (!forecast || !dateISO || hour == null || !Number.isFinite(hour)) return null;
+  const day = forecast[dateISO];
+  if (!day) return null;
+  // Snap the scheduled hour to the nearest 3-hour forecast slot (0–21).
+  const slot = Math.min(21, Math.max(0, Math.round(hour / 3) * 3));
+  const tier: RainTier = day[slot] ?? "none";
+  const meta = TIER_MAP[tier];
+  return {
+    tier,
+    surchargePct: meta.surcharge,
+    label: meta.label,
+    fetchedAt: Date.now(),
+  };
+}

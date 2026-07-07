@@ -117,7 +117,10 @@ import { useGoogleMaps } from "@/context/GoogleMapsContext";
 import {
   getCachedRainStatus,
   getRainStatus,
+  getRainForecast,
+  rainStatusFromForecast,
   type RainStatus,
+  type RainForecast,
 } from "@/utils/weather";
 import { priceForDuration, formatTHB, isServiceEnabled } from "@/utils/servicePricing";
 import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
@@ -284,10 +287,17 @@ const BookingFlowPage: React.FC = () => {
   const [rainStatus, setRainStatus] = useState<RainStatus>(() =>
     getCachedRainStatus()
   );
+  // 🆕 Round 28s310 — real hourly forecast; the fare prices rain from the
+  //   forecast at the booking's scheduled date+hour, falling back to the
+  //   current-weather `rainStatus` when the slot isn't covered.
+  const [forecast, setForecast] = useState<RainForecast | null>(null);
   useEffect(() => {
     let cancelled = false;
     getRainStatus().then((status) => {
       if (!cancelled) setRainStatus(status);
+    });
+    getRainForecast().then((fc) => {
+      if (!cancelled) setForecast(fc);
     });
     return () => {
       cancelled = true;
@@ -548,10 +558,12 @@ const BookingFlowPage: React.FC = () => {
     // 🆕 Round 28s309 — the booking's scheduled hour (BKK) drives the
     //   time-of-day surge (rush / peak). Undefined until a time is picked.
     const hourBKK = form.time ? parseInt(form.time.split(":")[0], 10) : undefined;
+    // 🆕 Round 28s310 — rain priced from the real forecast at the scheduled
+    //   date+hour; falls back to current weather when out of forecast range.
+    const rainForFare =
+      rainStatusFromForecast(forecast, form.date, hourBKK) ?? rainStatus;
     if (route) {
-      // 🆕 Round 28r33 — pass rainStatus so a fetched-mid-session
-      //   surcharge actually surfaces.
-      const result = calcTaxiFare(route.kmRoad, rainStatus, hourBKK);
+      const result = calcTaxiFare(route.kmRoad, rainForFare, hourBKK);
       return {
         distanceKm: route.kmRoad,
         fare: result.fare ?? 0,
@@ -567,7 +579,7 @@ const BookingFlowPage: React.FC = () => {
         customerLng: form.lng,
         durationMin: form.duration ?? service?.duration ?? 60,
       },
-      rainStatus,
+      rainForFare,
       hourBKK
     );
   }, [
@@ -583,6 +595,9 @@ const BookingFlowPage: React.FC = () => {
     rainStatus,
     // 🆕 Round 28s309 — recompute surge when the scheduled time changes.
     form.time,
+    // 🆕 Round 28s310 — recompute rain when forecast loads or date changes.
+    forecast,
+    form.date,
   ]);
   const distanceKm = taxi.distanceKm;
   const taxiFare = taxi.fare;
