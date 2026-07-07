@@ -1847,6 +1847,24 @@ visits · revenue = totalPrice summed over completed/done only.
 aggregation) — fine at current volume, revisit if the collection grows
 large.
 
+### 🆕 2026-07-07 — Customer Insights guest profile drawer (28s286)
+
+Founder asked "Customer Insights ทำไรได้อีกบ้าง"; offered 5 next-step
+options (profile drill-down / win-back list / notes+tags / quick-contact
++ CSV / RFM segmentation) — she picked **guest profile drill-down**.
+
+Tap any guest row on `AdminUsersPage` → a profile drawer: stat pills
+(visits · orders · total spent · avg/visit · no-shows · days-since-last),
+**หมอนวดที่ชอบ / บริการที่ชอบ** (most-frequent therapist + service over
+their delivered bookings via a `modeOf` helper), and the full booking
+history (newest first: service · therapist, date, ฿amount, status chip
+coloured by outcome). Each guest carries a `bookings: BookingLite[]` built
+in the same single aggregation pass — no extra reads, drawer is instant.
+
+**Still on the menu (not built):** win-back/lapsed list, per-guest
+notes+tags, quick-contact deep links (WhatsApp/LINE/Telegram) + CSV
+export, RFM segmentation — offer these again if she wants more CRM depth.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
