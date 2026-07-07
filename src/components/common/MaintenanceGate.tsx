@@ -43,10 +43,14 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
           depositThb: data?.depositAmount,
         });
         applyLivePromosEnabled(data?.promosEnabled === true);
-        // 🆕 Round 28s300 — live service price/name/enabled overrides,
-        //   stored as a nested field on this same public doc (no new
-        //   listener / rules entry). Empty/absent = hardcoded catalog.
-        applyLiveServiceConfig(data?.serviceOverrides ?? {});
+        // 🆕 Round 28s300/28s301 — live service overrides + admin-created
+        //   custom services, both nested fields on this same public doc
+        //   (no new listener / rules entry). Empty/absent = hardcoded
+        //   catalog, unchanged.
+        applyLiveServiceConfig({
+          overrides: data?.serviceOverrides,
+          customServices: data?.customServices,
+        });
       },
       () => setMaintenanceOn(false), // fail open — never let a read error lock everyone out
     );

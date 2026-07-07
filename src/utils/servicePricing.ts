@@ -56,12 +56,74 @@ export interface LiveServiceOverride {
   /** Explicit per-duration prices (keys are minute counts). Wins over `price`×mult. */
   prices?: Record<number, number>;
 }
-let liveServiceOverrides: Record<string, LiveServiceOverride> = {};
 
-export function applyLiveServiceConfig(
-  cfg: Record<string, LiveServiceOverride> | undefined | null
-): void {
-  liveServiceOverrides = cfg ?? {};
+// 🆕 Round 28s301 (founder: "ราคา & บริการ เพิ่ม เมนูได้") — admin-created
+// services (not in the hardcoded catalog) stored on the same public doc.
+export interface CustomServiceInput {
+  id: string;
+  name: string;
+  desc?: string;
+  image?: string;
+  badge?: MassageService["badge"];
+  enabled?: boolean;
+  prices: Record<number, number>;
+}
+
+let liveServiceOverrides: Record<string, LiveServiceOverride> = {};
+let liveCustomServices: MassageService[] = [];
+
+// Fallback image so a custom service with no uploaded photo still renders
+// a real card instead of a broken image.
+const CUSTOM_SERVICE_FALLBACK_IMAGE = "/images/workphoto/IMG_5096.JPG";
+
+/**
+ * 🆕 Round 28s300/28s301 — one entry point (called only by MaintenanceGate)
+ * for BOTH per-service overrides AND admin-created custom services. Unified
+ * so there's no cross-call ordering fragility on the shared override map.
+ * Empty/absent → behaves exactly like the hardcoded catalog.
+ */
+export function applyLiveServiceConfig(cfg: {
+  overrides?: Record<string, LiveServiceOverride> | null;
+  customServices?: CustomServiceInput[] | null;
+}): void {
+  const map: Record<string, LiveServiceOverride> = { ...(cfg.overrides ?? {}) };
+  const list: MassageService[] = [];
+  for (const cs of cfg.customServices ?? []) {
+    if (!cs?.id) continue;
+    const p60 = cs.prices?.[60] ?? 0;
+    // Register enabled state + prices for ALL custom services (even
+    // disabled ones) so isServiceEnabled / priceForDuration resolve them.
+    map[cs.id] = {
+      enabled: cs.enabled !== false,
+      name: cs.name,
+      desc: cs.desc,
+      price: p60,
+      prices: cs.prices,
+    };
+    // Only ENABLED custom services join the catalog the customer sees.
+    if (cs.enabled !== false && p60 > 0) {
+      list.push({
+        id: cs.id,
+        name: cs.name || cs.id,
+        desc: cs.desc || "",
+        price: p60,
+        duration: 60,
+        availableDurations: [60, 90, 120],
+        count: 0,
+        image: cs.image || CUSTOM_SERVICE_FALLBACK_IMAGE,
+        detail: cs.desc || "",
+        benefit: [],
+        badge: cs.badge || "POPULAR",
+      });
+    }
+  }
+  liveServiceOverrides = map;
+  liveCustomServices = list;
+}
+
+/** ENABLED admin-created services, in the shape the catalog uses. */
+export function getLiveCustomServices(): MassageService[] {
+  return liveCustomServices;
 }
 
 /** False only when admin has explicitly disabled the service. Default true. */

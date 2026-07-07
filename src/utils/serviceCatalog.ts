@@ -27,7 +27,22 @@ import {
   startingPrice,
   formatTHB,
   withLiveServiceOverrides,
+  getLiveCustomServices,
 } from "@/utils/servicePricing";
+
+// 🆕 Round 28s301 — effective catalog = hardcoded services + admin-created
+//   custom services (enabled only). Every lookup below resolves against
+//   this so custom services are bookable + labelled everywhere. Empty
+//   custom list → identical to the hardcoded catalog.
+function allServices(): MassageService[] {
+  const custom = getLiveCustomServices();
+  return custom.length ? [...services, ...custom] : services;
+}
+
+/** Full effective catalog (hardcoded + enabled custom). For list surfaces. */
+export function getAllServices(): MassageService[] {
+  return allServices();
+}
 
 // ─── Service lookup ──────────────────────────────────────────────────
 
@@ -71,8 +86,10 @@ export function resolveServiceId(
   const key = idOrSlug.trim().toLowerCase();
   if (!key) return null;
 
+  const catalog = allServices();
+
   // 1. Direct SKU match (case-insensitive — admins sometimes type SR-Aroma vs sr-aroma)
-  const direct = services.find((s) => s.id.toLowerCase() === key);
+  const direct = catalog.find((s) => s.id.toLowerCase() === key);
   if (direct) return direct.id;
 
   // 2. Legacy slug alias
@@ -81,7 +98,7 @@ export function resolveServiceId(
 
   // 3. Name match (last resort — handles old URLs encoded with the
   //    display name e.g. /services/Thai%20Massage)
-  const byName = services.find(
+  const byName = catalog.find(
     (s) => s.name.toLowerCase().replace(/[^a-z0-9]/g, "") === key.replace(/[^a-z0-9]/g, "")
   );
   if (byName) return byName.id;
@@ -96,7 +113,7 @@ export function resolveServiceId(
 export function getServiceById(id: string | null | undefined): MassageService | null {
   const resolved = resolveServiceId(id);
   if (!resolved) return null;
-  const base = services.find((s) => s.id === resolved);
+  const base = allServices().find((s) => s.id === resolved);
   return base ? withLiveServiceOverrides(base) : null;
 }
 

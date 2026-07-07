@@ -30,18 +30,21 @@ import {
   Box, Typography, Switch, TextField, MenuItem, Button, Stack,
   Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress,
 } from "@mui/material";
-import { db } from "@/lib/firebase";
+import { app, db } from "@/lib/firebase";
 import {
   collection, doc, getDoc, onSnapshot, setDoc, deleteDoc, getDocs, query, where,
   limit as fbLimit, serverTimestamp, Timestamp,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { Tag, Percent, Ticket, ChartBar, Plus, Trash, Warning, ShareNetwork, Copy, Storefront, FloppyDisk } from "phosphor-react";
+import { Tag, Percent, Ticket, ChartBar, Plus, Trash, Warning, ShareNetwork, Copy, Storefront, FloppyDisk, Camera } from "phosphor-react";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
-import { SectionCard, fieldSx } from "./therapistFormKit";
+import { SectionCard, fieldSx, downscaleImage } from "./therapistFormKit";
 import { logAdminAction } from "@/utils/auditLog";
+import type { MassageService } from "@/data/services";
 import services from "@/data/services";
-import { priceForDuration, type LiveServiceOverride } from "@/utils/servicePricing";
+import { priceForDuration, type LiveServiceOverride, type CustomServiceInput } from "@/utils/servicePricing";
+
+const BADGE_OPTIONS: MassageService["badge"][] = ["SIGNATURE", "POPULAR", "RECOMMEND", "EXCLUSIVE"];
 
 const SANS = adminFont.sans;
 
@@ -90,6 +93,13 @@ interface SvcRow {
   p120: number;
 }
 
+// 🆕 Round 28s301 — one editable row per admin-created custom service.
+interface CustomSvcRow extends SvcRow {
+  desc: string;
+  image: string;
+  badge: MassageService["badge"];
+}
+
 const switchSx = {
   "& .MuiSwitch-switchBase.Mui-checked": { color: adminColor.accent },
   "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { background: adminColor.accent },
@@ -124,6 +134,19 @@ const AdminPromotionsPage: React.FC = () => {
   // 🆕 Round 28s300 — editable price/name/availability per service.
   const [svcRows, setSvcRows] = useState<SvcRow[]>([]);
   const [svcSaving, setSvcSaving] = useState(false);
+
+  // 🆕 Round 28s301 — admin-created custom services + the "add" dialog.
+  const [customSvcRows, setCustomSvcRows] = useState<CustomSvcRow[]>([]);
+  const [addSvcOpen, setAddSvcOpen] = useState(false);
+  const [addSvcName, setAddSvcName] = useState("");
+  const [addSvcDesc, setAddSvcDesc] = useState("");
+  const [addSvcBadge, setAddSvcBadge] = useState<MassageService["badge"]>("POPULAR");
+  const [addSvcP60, setAddSvcP60] = useState(1500);
+  const [addSvcP90, setAddSvcP90] = useState(2200);
+  const [addSvcP120, setAddSvcP120] = useState(2900);
+  const [addSvcImage, setAddSvcImage] = useState("");
+  const [addSvcUploading, setAddSvcUploading] = useState(false);
+  const [addSvcSubmitting, setAddSvcSubmitting] = useState(false);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "adminSettings", "publicRules"), (snap) => {
@@ -193,9 +216,11 @@ const AdminPromotionsPage: React.FC = () => {
   useEffect(() => {
     void (async () => {
       let ov: Record<string, LiveServiceOverride> = {};
+      let custom: CustomServiceInput[] = [];
       try {
         const snap = await getDoc(doc(db, "adminSettings", "publicRules"));
         ov = (snap.data()?.serviceOverrides ?? {}) as Record<string, LiveServiceOverride>;
+        custom = (snap.data()?.customServices ?? []) as CustomServiceInput[];
       } catch (err) {
         console.error("[promotions] serviceOverrides fetch failed:", err);
       }
@@ -212,29 +237,58 @@ const AdminPromotionsPage: React.FC = () => {
           };
         }),
       );
+      setCustomSvcRows(
+        (custom ?? []).filter((c) => c?.id).map((c) => ({
+          id: c.id,
+          name: c.name ?? c.id,
+          desc: c.desc ?? "",
+          image: c.image ?? "",
+          badge: c.badge ?? "POPULAR",
+          enabled: c.enabled !== false,
+          p60: c.prices?.[60] ?? 0,
+          p90: c.prices?.[90] ?? 0,
+          p120: c.prices?.[120] ?? 0,
+        })),
+      );
     })();
   }, []);
+
+  // Single writer for both hardcoded overrides + custom services, taking
+  // explicit rows so add/delete can persist a freshly-built list without
+  // waiting on a state flush.
+  const persistServices = async (rows: SvcRow[], customRows: CustomSvcRow[]) => {
+    const overrides: Record<string, LiveServiceOverride> = {};
+    rows.forEach((r) => {
+      overrides[r.id] = {
+        enabled: r.enabled,
+        name: r.name.trim() || r.id,
+        price: r.p60,
+        prices: { 60: r.p60, 90: r.p90, 120: r.p120 },
+      };
+    });
+    const customServices: CustomServiceInput[] = customRows.map((c) => ({
+      id: c.id,
+      name: c.name.trim() || c.id,
+      desc: c.desc.trim(),
+      image: c.image,
+      badge: c.badge,
+      enabled: c.enabled,
+      prices: { 60: c.p60, 90: c.p90, 120: c.p120 },
+    }));
+    await setDoc(
+      doc(db, "adminSettings", "publicRules"),
+      { serviceOverrides: overrides, customServices, updatedAt: serverTimestamp() },
+      { merge: true },
+    );
+  };
 
   const handleSaveServices = async () => {
     setSvcSaving(true);
     try {
-      const overrides: Record<string, LiveServiceOverride> = {};
-      svcRows.forEach((r) => {
-        overrides[r.id] = {
-          enabled: r.enabled,
-          name: r.name.trim() || r.id,
-          price: r.p60,
-          prices: { 60: r.p60, 90: r.p90, 120: r.p120 },
-        };
-      });
-      await setDoc(
-        doc(db, "adminSettings", "publicRules"),
-        { serviceOverrides: overrides, updatedAt: serverTimestamp() },
-        { merge: true },
-      );
+      await persistServices(svcRows, customSvcRows);
       void logAdminAction("service.update", {
-        count: svcRows.length,
-        changedFields: svcRows.filter((r) => !r.enabled).map((r) => `${r.id}: ปิด`),
+        count: svcRows.length + customSvcRows.length,
+        changedFields: [...svcRows, ...customSvcRows].filter((r) => !r.enabled).map((r) => `${r.id}: ปิด`),
       });
       toast.success("บันทึกราคา/บริการแล้ว — มีผลกับการจองใหม่ทันที");
     } catch (err) {
@@ -247,6 +301,70 @@ const AdminPromotionsPage: React.FC = () => {
 
   const setSvcField = (id: string, patch: Partial<SvcRow>) =>
     setSvcRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+
+  const setCustomField = (id: string, patch: Partial<CustomSvcRow>) =>
+    setCustomSvcRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+
+  // 🆕 Round 28s301 — image upload for the new-service dialog. Reuses the
+  //   therapist-gallery pattern (downscale → Storage → URL).
+  const handleUploadSvcImage = async (file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("ไฟล์ต้องเป็นรูปภาพ"); return; }
+    setAddSvcUploading(true);
+    try {
+      const { getStorage, ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
+      const storage = getStorage(app);
+      const blob = await downscaleImage(file, 1200, 0.85);
+      const path = `services/new-${Date.now()}-${Math.round(blob.size % 100000)}.jpg`;
+      const snap = await uploadBytes(ref(storage, path), blob, { contentType: "image/jpeg" });
+      setAddSvcImage(await getDownloadURL(snap.ref));
+    } catch (err) {
+      console.error("[promotions] service image upload failed", err);
+      toast.error("อัปโหลดรูปไม่สำเร็จ");
+    } finally {
+      setAddSvcUploading(false);
+    }
+  };
+
+  const handleAddCustomService = async () => {
+    const name = addSvcName.trim();
+    if (!name) { toast.error("ใส่ชื่อบริการก่อน"); return; }
+    if (addSvcP60 <= 0) { toast.error("ราคา 60 นาที ต้องมากกว่า 0"); return; }
+    setAddSvcSubmitting(true);
+    try {
+      const id = `SR-C${Date.now().toString(36).toUpperCase()}`;
+      const row: CustomSvcRow = {
+        id, name, desc: addSvcDesc.trim(), image: addSvcImage,
+        badge: addSvcBadge, enabled: true,
+        p60: addSvcP60, p90: addSvcP90, p120: addSvcP120,
+      };
+      const next = [...customSvcRows, row];
+      await persistServices(svcRows, next);
+      setCustomSvcRows(next);
+      void logAdminAction("service.update", { changedFields: [`สร้างบริการ ${name} (${id})`] });
+      setAddSvcOpen(false);
+      setAddSvcName(""); setAddSvcDesc(""); setAddSvcImage(""); setAddSvcBadge("POPULAR");
+      setAddSvcP60(1500); setAddSvcP90(2200); setAddSvcP120(2900);
+      toast.success(`เพิ่มบริการ ${name} แล้ว`);
+    } catch (err) {
+      console.error(err);
+      toast.error("เพิ่มบริการไม่สำเร็จ");
+    } finally {
+      setAddSvcSubmitting(false);
+    }
+  };
+
+  const handleDeleteCustomService = async (id: string) => {
+    const next = customSvcRows.filter((r) => r.id !== id);
+    try {
+      await persistServices(svcRows, next);
+      setCustomSvcRows(next);
+      void logAdminAction("service.update", { changedFields: [`ลบบริการ ${id}`] });
+      toast.success("ลบบริการแล้ว");
+    } catch (err) {
+      console.error(err);
+      toast.error("ลบไม่สำเร็จ");
+    }
+  };
 
   const customList = useMemo(
     () => Object.values(promoDocs).filter((p) => p.kind === "custom"),
@@ -384,15 +502,52 @@ const AdminPromotionsPage: React.FC = () => {
                 </Stack>
               </Box>
             ))}
+
+            {/* 🆕 Round 28s301 — admin-created custom services */}
+            {customSvcRows.map((r) => (
+              <Box key={r.id} sx={{ p: "11px 12px", borderRadius: "12px", background: adminColor.panel2, border: `1px dashed ${adminColor.line2}`, opacity: r.enabled ? 1 : 0.6 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                  {r.image
+                    ? <img src={r.image} alt="" width={30} height={30} style={{ borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
+                    : <Box sx={{ width: 30, height: 30, borderRadius: "8px", background: adminColor.panel3, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Camera size={15} color={adminColor.dim} /></Box>}
+                  <TextField
+                    value={r.name} onChange={(e) => setCustomField(r.id, { name: e.target.value })}
+                    size="small" variant="standard" sx={{ flex: 1, "& .MuiInput-input": { fontSize: 13.5, fontWeight: 700, color: adminColor.text } }}
+                  />
+                  <Box sx={{ fontSize: 9, fontWeight: 800, color: adminColor.accent, background: `${adminColor.accent}1F`, borderRadius: "5px", px: "5px", py: "1px", flexShrink: 0 }}>NEW</Box>
+                  <Switch checked={r.enabled} onChange={(e) => setCustomField(r.id, { enabled: e.target.checked })} sx={switchSx} size="small" />
+                  <Button size="small" onClick={() => void handleDeleteCustomService(r.id)} sx={{ color: adminColor.red, minWidth: "auto", p: "3px" }}><Trash size={15} /></Button>
+                </Box>
+                <Stack direction="row" spacing={1}>
+                  {([["60 น.", "p60"], ["90 น.", "p90"], ["120 น.", "p120"]] as const).map(([lbl, key]) => (
+                    <TextField
+                      key={key} label={lbl} type="number" size="small" fullWidth sx={fieldSx}
+                      value={r[key]}
+                      onChange={(e) => setCustomField(r.id, { [key]: Math.max(0, Number(e.target.value)) } as Partial<CustomSvcRow>)}
+                      InputProps={{ startAdornment: <span style={{ color: adminColor.dim, fontSize: 12, marginRight: 3 }}>฿</span> }}
+                    />
+                  ))}
+                </Stack>
+              </Box>
+            ))}
           </Stack>
-          <Button
-            variant="contained" disabled={svcSaving || svcRows.length === 0}
-            onClick={() => void handleSaveServices()}
-            startIcon={svcSaving ? <CircularProgress size={15} sx={{ color: "#fff" }} /> : <FloppyDisk size={15} weight="bold" />}
-            sx={{ mt: 1.5, background: adminColor.accent, textTransform: "none", fontWeight: 700, borderRadius: "10px", "&:hover": { background: adminColor.accentDeep } }}
-          >
-            {svcSaving ? "กำลังบันทึก…" : "บันทึกราคา/บริการ"}
-          </Button>
+
+          <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+            <Button
+              variant="contained" disabled={svcSaving || svcRows.length === 0}
+              onClick={() => void handleSaveServices()}
+              startIcon={svcSaving ? <CircularProgress size={15} sx={{ color: "#fff" }} /> : <FloppyDisk size={15} weight="bold" />}
+              sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, borderRadius: "10px", "&:hover": { background: adminColor.accentDeep } }}
+            >
+              {svcSaving ? "กำลังบันทึก…" : "บันทึกราคา/บริการ"}
+            </Button>
+            <Button
+              variant="outlined" startIcon={<Plus size={15} weight="bold" />} onClick={() => setAddSvcOpen(true)}
+              sx={{ textTransform: "none", fontWeight: 700, borderColor: adminColor.line2, color: adminColor.accent, borderRadius: "10px" }}
+            >
+              เพิ่มบริการใหม่
+            </Button>
+          </Stack>
         </SectionCard>
 
         {/* Master switch */}
@@ -618,6 +773,47 @@ const AdminPromotionsPage: React.FC = () => {
           <Button onClick={() => void copyShare()} variant="contained" startIcon={<Copy size={15} />}
             sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, "&:hover": { background: adminColor.accentDeep } }}>
             คัดลอกลิงก์
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 🆕 Round 28s301 — add a brand-new custom service */}
+      <Dialog open={addSvcOpen} onClose={() => setAddSvcOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>เพิ่มบริการใหม่</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5, mt: 0.5 }}>
+            <Box
+              component="label"
+              sx={{ width: 64, height: 64, borderRadius: "12px", flexShrink: 0, cursor: "pointer", overflow: "hidden", border: `1px dashed ${adminColor.line2}`, background: adminColor.panel2, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}
+            >
+              {addSvcUploading ? <CircularProgress size={20} sx={{ color: adminColor.accent }} />
+                : addSvcImage ? <img src={addSvcImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <Camera size={22} color={adminColor.dim} />}
+              <input type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleUploadSvcImage(f); }} />
+            </Box>
+            <Typography sx={{ fontSize: 12, color: adminColor.muted }}>แตะเพื่ออัปโหลดรูป (ไม่บังคับ)</Typography>
+          </Box>
+          <TextField fullWidth autoFocus label="ชื่อบริการ" value={addSvcName} onChange={(e) => setAddSvcName(e.target.value)} sx={{ ...fieldSx, mb: 1.5 }} />
+          <TextField fullWidth label="คำอธิบายสั้น (ไม่บังคับ)" value={addSvcDesc} onChange={(e) => setAddSvcDesc(e.target.value)} sx={{ ...fieldSx, mb: 1.5 }} />
+          <TextField select fullWidth label="ป้าย" value={addSvcBadge} onChange={(e) => setAddSvcBadge(e.target.value as MassageService["badge"])} sx={{ ...fieldSx, mb: 1.5 }}>
+            {BADGE_OPTIONS.map((b) => <MenuItem key={b} value={b}>{b}</MenuItem>)}
+          </TextField>
+          <Stack direction="row" spacing={1}>
+            <TextField fullWidth type="number" label="60 น." value={addSvcP60} onChange={(e) => setAddSvcP60(Math.max(0, Number(e.target.value)))} sx={fieldSx}
+              InputProps={{ startAdornment: <span style={{ color: adminColor.dim, fontSize: 12, marginRight: 3 }}>฿</span> }} />
+            <TextField fullWidth type="number" label="90 น." value={addSvcP90} onChange={(e) => setAddSvcP90(Math.max(0, Number(e.target.value)))} sx={fieldSx}
+              InputProps={{ startAdornment: <span style={{ color: adminColor.dim, fontSize: 12, marginRight: 3 }}>฿</span> }} />
+            <TextField fullWidth type="number" label="120 น." value={addSvcP120} onChange={(e) => setAddSvcP120(Math.max(0, Number(e.target.value)))} sx={fieldSx}
+              InputProps={{ startAdornment: <span style={{ color: adminColor.dim, fontSize: 12, marginRight: 3 }}>฿</span> }} />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAddSvcOpen(false)}>Cancel</Button>
+          <Button
+            onClick={() => void handleAddCustomService()} variant="contained" disabled={addSvcSubmitting || addSvcUploading || !addSvcName.trim()}
+            sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, "&:hover": { background: adminColor.accentDeep } }}
+          >
+            {addSvcSubmitting ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "เพิ่มบริการ"}
           </Button>
         </DialogActions>
       </Dialog>

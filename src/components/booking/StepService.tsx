@@ -34,6 +34,7 @@ import {
   formatTHB,
   isServiceEnabled,
   withLiveServiceOverrides,
+  getLiveCustomServices,
 } from "@/utils/servicePricing";
 import ServiceDurationSheet from "@/components/booking/ServiceDurationSheet";
 
@@ -110,17 +111,22 @@ const StepService: React.FC<Props> = ({
     //   and carry live name/desc/price overrides through to the card +
     //   the duration sheet it opens.
     const catalog = services.filter((s) => isServiceEnabled(s.id));
+    // 🆕 Round 28s301 — admin-created custom services are shop-wide (not
+    //   tied to a therapist's offered list), so they're appended AFTER
+    //   any therapist filtering. getLiveCustomServices returns enabled
+    //   ones only.
+    const custom = getLiveCustomServices();
     let pool: MassageService[];
     if (!therapistId) {
-      pool = catalog;
+      pool = [...catalog, ...custom];
     } else {
       const therapist = therapistsData.find((t) => t.id === therapistId);
       const offered = therapist?.servicesAvailable ?? therapist?.services;
       if (!offered || offered.length === 0) {
-        pool = catalog;
+        pool = [...catalog, ...custom];
       } else {
         const filtered = catalog.filter((s) => offered.includes(s.id));
-        pool = filtered.length > 0 ? filtered : catalog;
+        pool = [...(filtered.length > 0 ? filtered : catalog), ...custom];
       }
     }
     return [...pool]

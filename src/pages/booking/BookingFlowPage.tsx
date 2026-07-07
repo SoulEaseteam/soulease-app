@@ -122,6 +122,7 @@ import {
 import { priceForDuration, formatTHB, isServiceEnabled } from "@/utils/servicePricing";
 import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
 import services from "@/data/services";
+import { getServiceById } from "@/utils/serviceCatalog";
 import therapistsData from "@/data/therapists";
 // 🆕 Round 28b7 — Cloudinary helper for the rounded therapist photo.
 import { enhanceImage } from "@/utils/cloudinary";
@@ -407,8 +408,11 @@ const BookingFlowPage: React.FC = () => {
     ? calculateTherapistStatus(therapistMerged).status
     : "resting";
   const therapistIsBookable = therapistEngineStatus !== "resting";
+  // 🆕 Round 28s301 — resolve via getServiceById so admin-created custom
+  //   services (not in the hardcoded `services` array) also resolve, with
+  //   live name/price overrides applied.
   const service = useMemo(
-    () => services.find((s) => s.id === form.serviceId) ?? null,
+    () => getServiceById(form.serviceId) ?? services.find((s) => s.id === form.serviceId) ?? null,
     [form.serviceId]
   );
   const selectedAddons = useMemo<AddOn[]>(

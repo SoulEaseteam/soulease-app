@@ -35,6 +35,18 @@ service firebase.storage {
       allow delete: if request.auth != null;
     }
 
+    // 🆕 Round 28s301 (founder: "ราคา & บริการ เพิ่ม เมนูได้") — images for
+    // admin-created custom services. Same posture as therapist images:
+    // public read (shown on the customer booking menu), authenticated
+    // write, image-only, size-capped.
+    match /services/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 15 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+
     // Everything else: locked down.
     match /{allPaths=**} {
       allow read, write: if false;
