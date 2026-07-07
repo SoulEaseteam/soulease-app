@@ -36,6 +36,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { ExportMultiSheetExcel, type SheetSpec } from "@/utils/exportTools";
 import {
   Export, CalendarBlank, Buildings, User, Taxi, XCircle, CheckCircle, Table,
+  Coins, ChartBar,
 } from "phosphor-react";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import {
@@ -246,6 +247,130 @@ const AdminReportPage: React.FC = () => {
         </Box>
       </Box>
 
+      {/* ── 🆕 Round 28r42 — TOTAL PAYROLL HERO CARD.
+           Same DNA as AdminDashboardPage's "Lifetime Revenue" hero
+           (r35/r36): gradient bg, dual radial glows, Coins eyebrow,
+           60px accent-gradient plate, 36–44px hero figure, 3-column
+           split.  Zero data-logic change — reuses the SAME totals
+           the per-therapist breakdown already computes via the shared
+           therapistPayoutFor / commissionBaseFor helpers from
+           @/utils/commission (no separate math path). */}
+      <Box sx={{ px: { xs: 2, md: 3 } }}>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
+          <Box
+            sx={{
+              mt: 2.25,
+              borderRadius: "22px",
+              background: `linear-gradient(135deg, ${adminColor.accent}26 0%, ${adminColor.panel} 55%, ${adminColor.panel} 100%)`,
+              border: `1px solid ${adminColor.accent}44`,
+              boxShadow: `0 10px 32px ${adminColor.accent}1E, 0 2px 4px rgba(0,0,0,0.06)`,
+              p: { xs: "20px 18px 18px", md: "26px 28px 22px" },
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            {/* corner glow — top-right */}
+            <Box
+              aria-hidden
+              sx={{
+                position: "absolute",
+                top: -60,
+                right: -60,
+                width: 200,
+                height: 200,
+                borderRadius: "50%",
+                background: `radial-gradient(circle, ${adminColor.accent}30 0%, transparent 70%)`,
+                pointerEvents: "none",
+              }}
+            />
+            {/* corner glow — bottom-left, subtler */}
+            <Box
+              aria-hidden
+              sx={{
+                position: "absolute",
+                bottom: -80,
+                left: -80,
+                width: 220,
+                height: 220,
+                borderRadius: "50%",
+                background: `radial-gradient(circle, ${adminColor.accent}15 0%, transparent 70%)`,
+                pointerEvents: "none",
+              }}
+            />
+
+            {/* eyebrow — bilingual (no MoM chip: page has no prior-period
+                 query and we don't fabricate a delta) */}
+            <Box sx={{ mb: 1.5, position: "relative" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Coins size={15} color={adminColor.accent} weight="fill" />
+                <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.accent, letterSpacing: "0.14em", textTransform: "uppercase", lineHeight: 1 }}>
+                  Total Payroll · Selected Period
+                </Typography>
+              </Box>
+              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 0.4, ml: 2.75 }}>
+                จ่ายหมอนวดรวม · ช่วงเวลานี้
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1.6fr 1fr 1fr" }, gap: { xs: 2.5, sm: 2.5 }, alignItems: "center", position: "relative" }}>
+              {/* hero payroll column */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box sx={{ width: 60, height: 60, borderRadius: "50%", background: `linear-gradient(135deg, ${adminColor.accent}, ${adminColor.accentDeep})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 6px 18px ${adminColor.accent}66, inset 0 1px 0 rgba(255,255,255,0.28)` }}>
+                  <Coins size={28} weight="duotone" />
+                </Box>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography sx={{ ...adminFigureSx, fontSize: { xs: 36, md: 44 }, color: adminColor.text, lineHeight: 1, letterSpacing: "-0.015em" }}>
+                    {thb(totals.worker)}
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: adminColor.muted, mt: 0.55 }}>
+                    Total Paid to Therapists
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim, mt: 0.1 }}>
+                    จ่ายหมอสะสม · {periodLabel}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* gross service revenue */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, borderLeft: { sm: `1px solid ${adminColor.accent}33` }, pl: { sm: 2 } }}>
+                <Box sx={{ width: 38, height: 38, borderRadius: "50%", background: `${adminColor.highlight}18`, color: adminColor.highlight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5)` }}>
+                  <ChartBar size={18} weight="duotone" />
+                </Box>
+                <Box>
+                  <Typography sx={{ ...adminFigureSx, fontSize: { xs: 20, md: 23 }, color: adminColor.text, lineHeight: 1 }}>
+                    {thb(totals.service)}
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, mt: 0.4, textTransform: "uppercase", letterSpacing: "0.06em", lineHeight: 1 }}>
+                    Gross Service
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.15 }}>
+                    ค่าบริการรวม
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* payable jobs */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, borderLeft: { sm: `1px solid ${adminColor.accent}33` }, pl: { sm: 2 } }}>
+                <Box sx={{ width: 38, height: 38, borderRadius: "50%", background: `${adminColor.green}18`, color: adminColor.green, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5)` }}>
+                  <CheckCircle size={18} weight="duotone" />
+                </Box>
+                <Box>
+                  <Typography sx={{ ...adminFigureSx, fontSize: { xs: 20, md: 23 }, color: adminColor.text, lineHeight: 1 }}>
+                    {totals.jobs.toLocaleString()}
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, mt: 0.4, textTransform: "uppercase", letterSpacing: "0.06em", lineHeight: 1 }}>
+                    Payable Jobs
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.15 }}>
+                    งานที่จ่าย
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          </Box>
+        </motion.div>
+      </Box>
+
       {/* ── filter bar ──────────────────────────────────────────────── */}
       <Box
         sx={{
@@ -274,27 +399,72 @@ const AdminReportPage: React.FC = () => {
 
       <Box sx={{ px: { xs: 2, md: 3 }, pt: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
 
-        {/* ── period totals ────────────────────────────────────────────── */}
+        {/* ── period totals — 🆕 Round 28r42 polished:
+             46px icon plates with inner highlight (Dashboard DNA),
+             radius 14 → 16, micro-shadow bumped to
+             `0 2px 10px rgba(31,41,51,0.04)`, hover lift + subtle
+             accent bg tint on non-accent tiles. */}
         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(4,1fr)" }, gap: 1.25 }}>
           {[
-            { icon: <User      size={16} weight="duotone" />, en: "Paid to Therapist", th: "จ่ายนวด",       value: thb(totals.worker), accent: true  },
-            { icon: <Buildings size={16} weight="duotone" />, en: "Shop Take",         th: "ร้านได้",       value: thb(totals.shop),   accent: false },
-            { icon: <Taxi      size={16} weight="duotone" />, en: "Total Taxi",        th: "ค่าเดินทาง",    value: thb(totals.taxi),   accent: false },
-            { icon: <CalendarBlank size={16} weight="duotone" />, en: "Jobs Done",     th: "จำนวนงาน",     value: String(totals.jobs), accent: false },
-          ].map((c) => (
-            <Box key={c.en} sx={{ borderRadius: "14px", background: c.accent ? adminColor.accent : adminColor.panel, border: c.accent ? "none" : `1px solid ${adminColor.line}`, p: "14px 16px", boxShadow: c.accent ? "0 6px 16px rgba(78,126,140,0.25)" : "0 1px 2px rgba(31,41,51,0.04)" }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.5, color: c.accent ? "rgba(255,255,255,0.85)" : adminColor.muted }}>
-                {c.icon}
-                <Box>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "inherit", lineHeight: 1 }}>{c.en}</Typography>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 9, color: c.accent ? "rgba(255,255,255,0.7)" : adminColor.dim, mt: 0.2 }}>{c.th}</Typography>
+            { icon: User,          en: "Paid to Therapist", th: "จ่ายนวด",    value: thb(totals.worker), accent: true  },
+            { icon: Buildings,     en: "Shop Take",         th: "ร้านได้",    value: thb(totals.shop),   accent: false },
+            { icon: Taxi,          en: "Total Taxi",        th: "ค่าเดินทาง", value: thb(totals.taxi),   accent: false },
+            { icon: CalendarBlank, en: "Jobs Done",         th: "จำนวนงาน",  value: String(totals.jobs), accent: false },
+          ].map((c) => {
+            const Icon = c.icon;
+            return (
+              <Box
+                key={c.en}
+                sx={{
+                  borderRadius: "16px",
+                  background: c.accent ? adminColor.accent : adminColor.panel,
+                  border: c.accent ? "none" : `1px solid ${adminColor.line}`,
+                  p: "14px 16px",
+                  boxShadow: c.accent
+                    ? "0 6px 16px rgba(78,126,140,0.25)"
+                    : "0 2px 10px rgba(31,41,51,0.04)",
+                  transition: "background 160ms, transform 160ms, box-shadow 160ms",
+                  "&:hover": c.accent
+                    ? {}
+                    : {
+                        transform: "translateY(-1px)",
+                        background: `${adminColor.accent}0A`,
+                        boxShadow: "0 6px 16px rgba(31,41,51,0.06)",
+                      },
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 0.75 }}>
+                  <Box
+                    sx={{
+                      width: 46,
+                      height: 46,
+                      borderRadius: "50%",
+                      background: c.accent
+                        ? "rgba(255,255,255,0.18)"
+                        : `${adminColor.accent}14`,
+                      color: c.accent ? "#fff" : adminColor.accent,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      boxShadow: c.accent
+                        ? "inset 0 1px 0 rgba(255,255,255,0.3)"
+                        : `inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 2px ${adminColor.accent}22`,
+                    }}
+                  >
+                    <Icon size={20} weight="duotone" />
+                  </Box>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: c.accent ? "rgba(255,255,255,0.9)" : adminColor.muted, lineHeight: 1 }}>{c.en}</Typography>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 9, color: c.accent ? "rgba(255,255,255,0.7)" : adminColor.dim, mt: 0.25 }}>{c.th}</Typography>
+                  </Box>
                 </Box>
+                <Typography sx={{ ...adminFigureSx, fontSize: 22, color: c.accent ? "#fff" : adminColor.text, lineHeight: 1 }}>
+                  {c.value}
+                </Typography>
               </Box>
-              <Typography sx={{ ...adminFigureSx, fontSize: 20, color: c.accent ? "#fff" : adminColor.text, lineHeight: 1 }}>
-                {c.value}
-              </Typography>
-            </Box>
-          ))}
+            );
+          })}
         </Box>
 
         {/* ── per-therapist pay cards ─────────────────────────────────── */}
@@ -314,8 +484,21 @@ const AdminReportPage: React.FC = () => {
         )}
 
         {visible.map((s, i) => (
-          <motion.div key={s.key} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-            <Box sx={{ borderRadius: "18px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, overflow: "hidden", boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 6px 16px rgba(31,41,51,0.07)" }}>
+          <motion.div key={s.key} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} whileHover={{ y: -1 }}>
+            <Box
+              sx={{
+                borderRadius: "18px",
+                background: adminColor.panel,
+                border: `1px solid ${adminColor.line}`,
+                overflow: "hidden",
+                boxShadow: "0 2px 10px rgba(31,41,51,0.04), 0 8px 20px rgba(31,41,51,0.06)",
+                transition: "background 160ms, box-shadow 160ms",
+                "&:hover": {
+                  background: `${adminColor.accent}0A`,
+                  boxShadow: `0 4px 14px rgba(31,41,51,0.06), 0 12px 26px ${adminColor.accent}18`,
+                },
+              }}
+            >
               {/* stripe */}
               <Box sx={{ height: 3, background: adminColor.accent }} />
 
