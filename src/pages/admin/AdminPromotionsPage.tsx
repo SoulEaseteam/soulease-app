@@ -32,14 +32,16 @@ import {
 } from "@mui/material";
 import { db } from "@/lib/firebase";
 import {
-  collection, doc, onSnapshot, setDoc, deleteDoc, getDocs, query, where,
+  collection, doc, getDoc, onSnapshot, setDoc, deleteDoc, getDocs, query, where,
   limit as fbLimit, serverTimestamp, Timestamp,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { Tag, Percent, Ticket, ChartBar, Plus, Trash, Warning, ShareNetwork, Copy } from "phosphor-react";
+import { Tag, Percent, Ticket, ChartBar, Plus, Trash, Warning, ShareNetwork, Copy, Storefront, FloppyDisk } from "phosphor-react";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { SectionCard, fieldSx } from "./therapistFormKit";
 import { logAdminAction } from "@/utils/auditLog";
+import services from "@/data/services";
+import { priceForDuration, type LiveServiceOverride } from "@/utils/servicePricing";
 
 const SANS = adminFont.sans;
 
@@ -78,6 +80,16 @@ interface UsageStat {
   totalDiscount: number;
 }
 
+// 🆕 Round 28s300 — one editable row per catalog service.
+interface SvcRow {
+  id: string;
+  name: string;
+  enabled: boolean;
+  p60: number;
+  p90: number;
+  p120: number;
+}
+
 const switchSx = {
   "& .MuiSwitch-switchBase.Mui-checked": { color: adminColor.accent },
   "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { background: adminColor.accent },
@@ -108,6 +120,10 @@ const AdminPromotionsPage: React.FC = () => {
 
   // 🆕 Round 28s299 — share link + QR dialog (any code, builtin or custom).
   const [shareCode, setShareCode] = useState<string | null>(null);
+
+  // 🆕 Round 28s300 — editable price/name/availability per service.
+  const [svcRows, setSvcRows] = useState<SvcRow[]>([]);
+  const [svcSaving, setSvcSaving] = useState(false);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "adminSettings", "publicRules"), (snap) => {
@@ -168,6 +184,69 @@ const AdminPromotionsPage: React.FC = () => {
       }
     })();
   }, []);
+
+  // 🆕 Round 28s300 — seed the editable service rows ONCE from the live
+  //   publicRules.serviceOverrides (getDoc, not the live listener, so
+  //   typing here isn't clobbered by a snapshot). priceForDuration on
+  //   the raw catalog service returns the current effective price
+  //   (override or hardcoded), so the fields pre-fill with what's live.
+  useEffect(() => {
+    void (async () => {
+      let ov: Record<string, LiveServiceOverride> = {};
+      try {
+        const snap = await getDoc(doc(db, "adminSettings", "publicRules"));
+        ov = (snap.data()?.serviceOverrides ?? {}) as Record<string, LiveServiceOverride>;
+      } catch (err) {
+        console.error("[promotions] serviceOverrides fetch failed:", err);
+      }
+      setSvcRows(
+        services.map((s) => {
+          const o = ov[s.id] ?? {};
+          return {
+            id: s.id,
+            name: o.name ?? s.name,
+            enabled: o.enabled !== false,
+            p60: o.prices?.[60] ?? priceForDuration(s, 60),
+            p90: o.prices?.[90] ?? priceForDuration(s, 90),
+            p120: o.prices?.[120] ?? priceForDuration(s, 120),
+          };
+        }),
+      );
+    })();
+  }, []);
+
+  const handleSaveServices = async () => {
+    setSvcSaving(true);
+    try {
+      const overrides: Record<string, LiveServiceOverride> = {};
+      svcRows.forEach((r) => {
+        overrides[r.id] = {
+          enabled: r.enabled,
+          name: r.name.trim() || r.id,
+          price: r.p60,
+          prices: { 60: r.p60, 90: r.p90, 120: r.p120 },
+        };
+      });
+      await setDoc(
+        doc(db, "adminSettings", "publicRules"),
+        { serviceOverrides: overrides, updatedAt: serverTimestamp() },
+        { merge: true },
+      );
+      void logAdminAction("service.update", {
+        count: svcRows.length,
+        changedFields: svcRows.filter((r) => !r.enabled).map((r) => `${r.id}: ปิด`),
+      });
+      toast.success("บันทึกราคา/บริการแล้ว — มีผลกับการจองใหม่ทันที");
+    } catch (err) {
+      console.error(err);
+      toast.error("บันทึกไม่สำเร็จ");
+    } finally {
+      setSvcSaving(false);
+    }
+  };
+
+  const setSvcField = (id: string, patch: Partial<SvcRow>) =>
+    setSvcRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
 
   const customList = useMemo(
     () => Object.values(promoDocs).filter((p) => p.kind === "custom"),
@@ -273,10 +352,49 @@ const AdminPromotionsPage: React.FC = () => {
         Promotions
       </Typography>
       <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mb: 2.5 }}>
-        จัดการโค้ดส่วนลด — เปิด/ปิดโค้ดมาตรฐาน สร้างโค้ดใหม่ ดูสถิติการใช้งานจริง
+        จัดการราคา/บริการ และโค้ดส่วนลด — บันทึกแล้วมีผลกับการจองใหม่ทันที
       </Typography>
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {/* 🆕 Round 28s300 — Pricing & services editor */}
+        <SectionCard icon={<Storefront size={13} weight="bold" />} title="ราคา & บริการ">
+          <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.5 }}>
+            แก้ราคาแต่ละช่วงเวลา · เปลี่ยนชื่อ · เปิด/ปิดบริการ — มีผลกับการจองใหม่เท่านั้น (ออเดอร์เก่าล็อกราคาที่จ่ายไว้แล้ว)
+          </Typography>
+          <Stack spacing={1.5}>
+            {svcRows.map((r) => (
+              <Box key={r.id} sx={{ p: "11px 12px", borderRadius: "12px", background: adminColor.panel2, opacity: r.enabled ? 1 : 0.6 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                  <TextField
+                    value={r.name} onChange={(e) => setSvcField(r.id, { name: e.target.value })}
+                    size="small" variant="standard" sx={{ flex: 1, "& .MuiInput-input": { fontSize: 13.5, fontWeight: 700, color: adminColor.text } }}
+                  />
+                  <Typography sx={{ fontSize: 10.5, color: adminColor.dim, flexShrink: 0 }}>{r.id}</Typography>
+                  <Switch checked={r.enabled} onChange={(e) => setSvcField(r.id, { enabled: e.target.checked })} sx={switchSx} size="small" />
+                </Box>
+                <Stack direction="row" spacing={1}>
+                  {([["60 น.", "p60"], ["90 น.", "p90"], ["120 น.", "p120"]] as const).map(([lbl, key]) => (
+                    <TextField
+                      key={key} label={lbl} type="number" size="small" fullWidth sx={fieldSx}
+                      value={r[key]}
+                      onChange={(e) => setSvcField(r.id, { [key]: Math.max(0, Number(e.target.value)) } as Partial<SvcRow>)}
+                      InputProps={{ startAdornment: <span style={{ color: adminColor.dim, fontSize: 12, marginRight: 3 }}>฿</span> }}
+                    />
+                  ))}
+                </Stack>
+              </Box>
+            ))}
+          </Stack>
+          <Button
+            variant="contained" disabled={svcSaving || svcRows.length === 0}
+            onClick={() => void handleSaveServices()}
+            startIcon={svcSaving ? <CircularProgress size={15} sx={{ color: "#fff" }} /> : <FloppyDisk size={15} weight="bold" />}
+            sx={{ mt: 1.5, background: adminColor.accent, textTransform: "none", fontWeight: 700, borderRadius: "10px", "&:hover": { background: adminColor.accentDeep } }}
+          >
+            {svcSaving ? "กำลังบันทึก…" : "บันทึกราคา/บริการ"}
+          </Button>
+        </SectionCard>
+
         {/* Master switch */}
         <SectionCard icon={<Tag size={13} weight="bold" />} title="เปิดใช้งานโปรโมชั่น">
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}>

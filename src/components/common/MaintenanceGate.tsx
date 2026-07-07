@@ -19,6 +19,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { applyLiveFareConfig } from "@/utils/taxiFare";
 import { applyLivePromosEnabled } from "@/config/featureFlags";
 import { applyLivePromoConfig, type CustomPromoCode } from "@/utils/discount";
+import { applyLiveServiceConfig } from "@/utils/servicePricing";
 
 const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { role, loading: authLoading } = useAuth();
@@ -42,6 +43,10 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
           depositThb: data?.depositAmount,
         });
         applyLivePromosEnabled(data?.promosEnabled === true);
+        // 🆕 Round 28s300 — live service price/name/enabled overrides,
+        //   stored as a nested field on this same public doc (no new
+        //   listener / rules entry). Empty/absent = hardcoded catalog.
+        applyLiveServiceConfig(data?.serviceOverrides ?? {});
       },
       () => setMaintenanceOn(false), // fail open — never let a read error lock everyone out
     );

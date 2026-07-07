@@ -32,6 +32,8 @@ import {
   startingPrice,
   durationsFor,
   formatTHB,
+  isServiceEnabled,
+  withLiveServiceOverrides,
 } from "@/utils/servicePricing";
 import ServiceDurationSheet from "@/components/booking/ServiceDurationSheet";
 
@@ -104,20 +106,26 @@ const StepService: React.FC<Props> = ({
   // (legacy data) or therapist not found. Then apply the editorial sort
   // so the best-selling SKU lands at the top of the list (28s33).
   const visibleServices = useMemo<MassageService[]>(() => {
+    // 🆕 Round 28s300 — hide services admin has disabled from the menu,
+    //   and carry live name/desc/price overrides through to the card +
+    //   the duration sheet it opens.
+    const catalog = services.filter((s) => isServiceEnabled(s.id));
     let pool: MassageService[];
     if (!therapistId) {
-      pool = services;
+      pool = catalog;
     } else {
       const therapist = therapistsData.find((t) => t.id === therapistId);
       const offered = therapist?.servicesAvailable ?? therapist?.services;
       if (!offered || offered.length === 0) {
-        pool = services;
+        pool = catalog;
       } else {
-        const filtered = services.filter((s) => offered.includes(s.id));
-        pool = filtered.length > 0 ? filtered : services;
+        const filtered = catalog.filter((s) => offered.includes(s.id));
+        pool = filtered.length > 0 ? filtered : catalog;
       }
     }
-    return [...pool].sort((a, b) => orderIdx(a.id) - orderIdx(b.id));
+    return [...pool]
+      .sort((a, b) => orderIdx(a.id) - orderIdx(b.id))
+      .map(withLiveServiceOverrides);
   }, [therapistId]);
 
   // Bottom-sheet state — opens when a card is tapped, closes on backdrop

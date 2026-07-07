@@ -87,6 +87,7 @@ const ACTION_LABEL: Record<string, { label: string; color: string }> = {
   "promo.toggle":            { label: "เปิด/ปิดโค้ดโปรโมชั่น",  color: adminColor.blue },
   "promo.create":            { label: "สร้างโค้ดโปรโมชั่น",     color: adminColor.green },
   "promo.delete":            { label: "ลบโค้ดโปรโมชั่น",        color: adminColor.red },
+  "service.update":          { label: "แก้ไขราคา/บริการ",       color: adminColor.blue },
 };
 
 // 🆕 Round 28s294 — category = the prefix before the dot. New actions
@@ -101,6 +102,7 @@ const CATEGORY_LABEL: Record<string, string> = {
   phone: "เบอร์โทร",
   settings: "ตั้งค่า",
   promo: "โปรโมชั่น",
+  service: "บริการ",
   other: "อื่น ๆ",
 };
 // 🆕 Round 28s295 (founder screenshot: white-screened on "Cannot read

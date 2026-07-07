@@ -119,7 +119,7 @@ import {
   getRainStatus,
   type RainStatus,
 } from "@/utils/weather";
-import { priceForDuration, formatTHB } from "@/utils/servicePricing";
+import { priceForDuration, formatTHB, isServiceEnabled } from "@/utils/servicePricing";
 import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
 import services from "@/data/services";
 import therapistsData from "@/data/therapists";
@@ -810,6 +810,17 @@ const BookingFlowPage: React.FC = () => {
       }
       if (!service || !therapist || !form.date || !form.time) {
         toast.error(t("booking.error.missingDetails", "Missing reservation details"));
+        setSubmitting(false);
+        return;
+      }
+      // 🆕 Round 28s300 — a service admin disabled from /admin/promotions
+      //   is filtered out of the picker, but guard the submit too (a
+      //   stale form or a direct-URL serviceId could still carry it).
+      //   Admin bookings bypass, same as the other availability guards.
+      if (!isAdminBooking && !isServiceEnabled(service.id)) {
+        toast.error(
+          t("booking.error.serviceUnavailable", "This service is not available right now. Please choose another.")
+        );
         setSubmitting(false);
         return;
       }

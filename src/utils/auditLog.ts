@@ -61,7 +61,10 @@ export type AuditAction =
   //   every other pricing-relevant write this session.
   | "promo.toggle"
   | "promo.create"
-  | "promo.delete";
+  | "promo.delete"
+  // 🆕 Round 28s300 — editing live service prices / names / availability
+  //   from /admin/promotions changes what NEW bookings are charged.
+  | "service.update";
 
 export async function logAdminAction(
   action: AuditAction,

@@ -26,6 +26,7 @@ import {
   priceForDuration,
   startingPrice,
   formatTHB,
+  withLiveServiceOverrides,
 } from "@/utils/servicePricing";
 
 // ─── Service lookup ──────────────────────────────────────────────────
@@ -88,11 +89,15 @@ export function resolveServiceId(
   return null;
 }
 
-/** Resolve a service catalog entry by id (or any legacy alias). `null` if not found. */
+/** Resolve a service catalog entry by id (or any legacy alias). `null` if not found.
+ *  🆕 Round 28s300 — applies live admin name/desc/price overrides so every
+ *  label + price lookup that routes through here reflects the current
+ *  admin-set values. No override → the raw catalog entry, unchanged. */
 export function getServiceById(id: string | null | undefined): MassageService | null {
   const resolved = resolveServiceId(id);
   if (!resolved) return null;
-  return services.find((s) => s.id === resolved) ?? null;
+  const base = services.find((s) => s.id === resolved);
+  return base ? withLiveServiceOverrides(base) : null;
 }
 
 /** Display label for a service. Prefers live catalog → falls back to
