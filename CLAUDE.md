@@ -1779,6 +1779,18 @@ page was just stabilized (28s281 upload fix) and the copies are identical
 today (no drift yet), so refactoring a live tool in the same breath as a
 new page is needless risk. Do it as its own pass, tsc+build+deploy-verify.
 
+### 🆕 2026-07-07 — Add Therapist Badge label overlap fix (28s283)
+
+Founder screenshot: the Badge `<TextField select>` on the Add page
+rendered the floating "Badge" label on top of the "None" text. Cause: the
+field starts `value=""` and `displayEmpty` renders the "None" MenuItem,
+but MUI doesn't shrink the label while the value is empty → label + value
+collide. Fixed with `InputLabelProps={{ shrink: true }}` (label stays
+pinned above). Only touched `AddTherapistPage.tsx`; the detail page has
+the same badge pattern but was mid-refactor onto `therapistFormKit` in a
+separate session, so left alone — the kit migration should carry the same
+`shrink` fix (and any other `displayEmpty` select there).
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
