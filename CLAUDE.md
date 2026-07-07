@@ -1879,6 +1879,12 @@ business → spotting a CN/KR/JP caller helps language/therapist matching.
 `phoneCountry.ts` duplicates SelectLocationPage's inline DIAL_CODES — a
 future cleanup could point that page at the shared util too.
 
+**28s287b — country breakdown + filter.** Added a chip row above the
+guest grid: one chip per country (flag + ISO + guest count), sorted most
+first, plus "ทั้งหมด" / "ไม่ทราบ". Tapping a chip filters the grid to that
+country (composes with the name/phone search) — so it's both a
+"which country has the most guests" summary and a one-tap filter.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
