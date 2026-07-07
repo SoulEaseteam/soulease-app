@@ -41,6 +41,7 @@ import {
   Star, ChatCircleText, Clock, MapPin, Medal, EyeSlash, Prohibit, Umbrella,
   Calendar, ChartBar, ClockCounterClockwise, TelegramLogo, IdentificationCard, Image as ImageIcon, Sparkle,
   Check, Warning, Globe, Notebook, UserFocus, MapPinLine, Info, Plus, Trash,
+  MagnifyingGlass, UploadSimple, CircleNotch,
 } from "phosphor-react";
 import type { Credential, LanguageSkill } from "@/types/therapist";
 import { calculateTherapistStatus, isOverrideExpired } from "@/utils/calculateTherapistStatus";
@@ -50,6 +51,8 @@ import { logAdminAction } from "@/utils/auditLog";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import services from "@/data/services";
 import { resolveServiceId, getServiceLabel } from "@/utils/serviceCatalog";
+import { useGoogleMaps } from "@/context/GoogleMapsContext";
+import { app } from "@/lib/firebase";
 
 type Avail = "available" | "bookable" | "resting" | "holiday";
 type StatusOverride = "Auto" | "available" | "bookable" | "resting";
@@ -128,6 +131,112 @@ const SectionCard: React.FC<{ icon: React.ReactNode; title: string; children: Re
     {children}
   </Box>
 );
+
+// 🆕 Round 28s280 (founder: "ช่องค้นหา ดึงเมปจริง จากเมฟเดียวกับการจอง") —
+// a compact address-search + map picker, using the SAME Google Maps /
+// Places setup the customer booking flow (SelectLocationPage) uses via the
+// app-wide GoogleMapsProvider. Search a place OR tap the map → fills
+// area (place name) + homeAddress (formatted address) + lat/lng.
+const LocationPicker: React.FC<{
+  initial: { lat: number | null; lng: number | null };
+  onPick: (r: { area: string; address: string; lat: number; lng: number }) => void;
+}> = ({ initial, onPick }) => {
+  const { ready, loadIfNeeded } = useGoogleMaps();
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  const mapElRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+  const acRef = useRef<any>(null);
+  const onPickRef = useRef(onPick);
+  onPickRef.current = onPick;
+
+  useEffect(() => { loadIfNeeded(); }, [loadIfNeeded]);
+
+  useEffect(() => {
+    if (!ready || !mapElRef.current || mapRef.current) return;
+    const G = (window as any).google?.maps;
+    if (!G) return;
+
+    const initLat = initial.lat ?? 13.7563;
+    const initLng = initial.lng ?? 100.5018;
+    const map = new G.Map(mapElRef.current, {
+      center: { lat: initLat, lng: initLng }, zoom: 15,
+      disableDefaultUI: true, zoomControl: true, gestureHandling: "greedy",
+    });
+    mapRef.current = map;
+
+    const placeMarker = (lat: number, lng: number) => {
+      if (markerRef.current) { markerRef.current.setPosition({ lat, lng }); return; }
+      markerRef.current = new G.Marker({ position: { lat, lng }, map });
+    };
+    if (initial.lat != null && initial.lng != null) placeMarker(initLat, initLng);
+
+    const reverseGeocode = (lat: number, lng: number) => {
+      const geocoder = new G.Geocoder();
+      geocoder.geocode({ location: { lat, lng } }, (results: any[], status: string) => {
+        const addr = status === "OK" && results?.length ? (results[0].formatted_address ?? "") : "";
+        onPickRef.current({ area: "", address: addr, lat, lng });
+      });
+    };
+
+    map.addListener("click", (e: any) => {
+      const ll = e.latLng; if (!ll) return;
+      const lat = ll.lat(); const lng = ll.lng();
+      placeMarker(lat, lng);
+      if (e.placeId) e.stop?.();
+      reverseGeocode(lat, lng);
+    });
+
+    if (G.places && searchRef.current) {
+      const ac = new G.places.Autocomplete(searchRef.current, {
+        componentRestrictions: { country: "th" },
+        fields: ["name", "formatted_address", "geometry"],
+      });
+      acRef.current = ac;
+      ac.addListener("place_changed", () => {
+        const place = ac.getPlace();
+        const loc = place.geometry?.location; if (!loc) return;
+        const lat = loc.lat(); const lng = loc.lng();
+        placeMarker(lat, lng); map.panTo({ lat, lng }); map.setZoom(17);
+        onPickRef.current({ area: place.name ?? "", address: place.formatted_address ?? "", lat, lng });
+      });
+      const styleId = "sunred-pac-zindex-admin";
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement("style");
+        style.id = styleId;
+        style.textContent = ".pac-container{z-index:13000 !important;border-radius:12px;font-family:'Inter',sans-serif;box-shadow:0 12px 40px rgba(31,41,51,0.18);}";
+        document.head.appendChild(style);
+      }
+    }
+
+    return () => {
+      const gEvent = (window as any).google?.maps?.event;
+      if (gEvent) {
+        if (mapRef.current) gEvent.clearInstanceListeners(mapRef.current);
+        if (acRef.current) gEvent.clearInstanceListeners(acRef.current);
+      }
+      if (markerRef.current) markerRef.current.setMap(null);
+      markerRef.current = null; acRef.current = null; mapRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
+
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+      <Box sx={{ position: "relative" }}>
+        <MagnifyingGlass size={16} color={adminColor.dim} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+        <input
+          ref={searchRef}
+          placeholder={ready ? "ค้นหาสถานที่ / โรงแรม / คอนโด…" : "กำลังโหลดแผนที่…"}
+          inputMode="search" autoCapitalize="off" autoCorrect="off" spellCheck={false}
+          style={{ width: "100%", padding: "11px 14px 11px 38px", borderRadius: "10px", border: `1px solid ${adminColor.line}`, background: adminColor.panel, fontFamily: adminFont.sans, fontSize: 16, color: adminColor.text, outline: "none" }}
+        />
+      </Box>
+      <Box ref={mapElRef} sx={{ width: "100%", height: 220, borderRadius: "12px", overflow: "hidden", border: `1px solid ${adminColor.line}`, background: adminColor.panel3 }} />
+      <Typography sx={{ fontSize: 11, color: adminColor.dim }}>ค้นหาด้านบน หรือแตะบนแผนที่เพื่อปักหมุด — ระบบจะเติมพื้นที่/ที่อยู่/พิกัดให้อัตโนมัติ</Typography>
+    </Box>
+  );
+};
 
 const chipDeleteBtnSx = {
   color: adminColor.dim,
@@ -244,6 +353,10 @@ const AdminTherapistDetailPage: React.FC = () => {
   const [reviewCount, setReviewCount] = useState(0);
   const [avgRating, setAvgRating] = useState(0);
   const [saving, setSaving] = useState(false);
+  // 🆕 Round 28s280 — gallery photo upload (Firebase Storage) state.
+  const [uploading, setUploading] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // 🆕 opening the roster's Pencil icon lands here with ?edit=1 pre-armed.
   const [editing, setEditing] = useState(() => searchParams.get("edit") === "1");
@@ -458,6 +571,47 @@ const AdminTherapistDetailPage: React.FC = () => {
 
   const setBio = (code: string, value: string) =>
     setFormData((f) => ({ ...f, bios: { ...f.bios, [code]: value } }));
+
+  // 🆕 Round 28s280 — upload photos straight from the phone to Firebase
+  // Storage, then push the download URLs into the gallery. firebase/storage
+  // is dynamically imported so it never enters the customer bundle (the
+  // reason its export was dropped in 28s105). Uploads to
+  // therapists/{docId}/gallery/{ts}-{name}; storage.rules gates writes to
+  // admins only. Fails soft with a clear message if Storage isn't enabled
+  // on the project yet (one-time console step — see CLAUDE.md 28s280).
+  const onUploadFiles = async (files: FileList | null) => {
+    if (!files || !files.length || !docId) return;
+    setUploadError(null);
+    setUploading(files.length);
+    try {
+      const { getStorage, ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
+      const storage = getStorage(app);
+      const picked = Array.from(files);
+      const urls: string[] = [];
+      for (const file of picked) {
+        if (!file.type.startsWith("image/")) { setUploading((n) => Math.max(0, n - 1)); continue; }
+        const safeName = file.name.replace(/[^\w.\-]/g, "_");
+        const path = `therapists/${docId}/gallery/${dayjs().valueOf()}-${safeName}`;
+        const snap = await uploadBytes(ref(storage, path), file, { contentType: file.type });
+        urls.push(await getDownloadURL(snap.ref));
+        setUploading((n) => Math.max(0, n - 1));
+      }
+      if (urls.length) setFormData((f) => ({ ...f, gallery: [...f.gallery, ...urls] }));
+    } catch (err) {
+      console.error("[gallery upload] failed", err);
+      const msg = String((err as { code?: string })?.code ?? err ?? "");
+      setUploadError(
+        msg.includes("unauthorized") || msg.includes("unauthenticated")
+          ? "อัปโหลดไม่ได้ — สิทธิ์ไม่พอ (ตรวจสอบว่าเปิด Firebase Storage + deploy storage.rules แล้ว)"
+          : msg.includes("storage/unknown") || msg.includes("does not exist") || msg.includes("app/no-app")
+            ? "ยังเปิด Firebase Storage ไม่ได้ในโปรเจกต์ — ต้องกด Get Started ในคอนโซลก่อน (ดู CLAUDE.md 28s280)"
+            : "อัปโหลดรูปไม่สำเร็จ ลองใหม่อีกครั้ง (หรือใส่ลิงก์รูปด้านล่างแทน)"
+      );
+    } finally {
+      setUploading(0);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const handleSave = async () => {
     if (!docId) return;
@@ -843,15 +997,29 @@ const AdminTherapistDetailPage: React.FC = () => {
                     <Umbrella size={14} weight={formData.isHoliday ? "fill" : "regular"} /> Holiday
                   </Box>
                 </Box>
-                <TextField label="Location (lat,lng)" fullWidth size="small" sx={fieldSx} value={formData.currentLocation} onChange={(e) => setFormData((f) => ({ ...f, currentLocation: e.target.value }))} />
               </Box>
             </SectionCard>
 
-            {/* 🆕 Round 28s278 — area / standby address now editable. */}
+            {/* 🆕 Round 28s278 area/address editable · 28s280 map search. */}
             <SectionCard icon={<MapPinLine size={13} />} title="พื้นที่ / ที่อยู่">
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                <LocationPicker
+                  initial={(() => {
+                    const parts = (formData.currentLocation || "").split(",").map((s) => parseFloat(s.trim()));
+                    return { lat: Number.isFinite(parts[0]) ? parts[0] : null, lng: Number.isFinite(parts[1]) ? parts[1] : null };
+                  })()}
+                  onPick={({ area, address, lat, lng }) =>
+                    setFormData((f) => ({
+                      ...f,
+                      area: area || f.area,
+                      homeAddress: address || f.homeAddress,
+                      currentLocation: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+                    }))
+                  }
+                />
                 <TextField label="พื้นที่ (เช่น Din Daeng · Ratchada)" fullWidth size="small" sx={fieldSx} value={formData.area} onChange={(e) => setFormData((f) => ({ ...f, area: e.target.value }))} />
                 <TextField label="ที่อยู่ standby (เต็ม · admin เท่านั้น)" fullWidth size="small" multiline minRows={2} sx={fieldSx} value={formData.homeAddress} onChange={(e) => setFormData((f) => ({ ...f, homeAddress: e.target.value }))} />
+                <TextField label="พิกัด (lat, lng)" fullWidth size="small" sx={fieldSx} value={formData.currentLocation} onChange={(e) => setFormData((f) => ({ ...f, currentLocation: e.target.value }))} />
               </Box>
             </SectionCard>
 
@@ -950,17 +1118,43 @@ const AdminTherapistDetailPage: React.FC = () => {
               </Box>
             </SectionCard>
 
-            {/* 🆕 Round 28s278 — gallery URL rows, add/remove, live thumbnail. */}
+            {/* 🆕 Round 28s278 gallery URL rows · 28s280 photo upload. */}
             <SectionCard icon={<ImageIcon size={13} />} title={`แกลเลอรี (${formData.gallery.filter(Boolean).length})`}>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                {/* 🆕 Round 28s280 — upload straight from phone camera/library. */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  style={{ display: "none" }}
+                  onChange={(e) => void onUploadFiles(e.target.files)}
+                />
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading > 0}
+                  startIcon={uploading > 0 ? <CircleNotch size={15} className="spin" /> : <UploadSimple size={15} weight="bold" />}
+                  sx={{
+                    alignSelf: "stretch", background: `linear-gradient(180deg,#5A8998,${adminColor.accent})`, color: "#fff",
+                    textTransform: "none", fontWeight: 700, borderRadius: "10px", boxShadow: "0 3px 10px rgba(78,126,140,0.28)",
+                    "&:hover": { background: adminColor.accentDeep }, "&.Mui-disabled": { color: "#fff", opacity: 0.7 },
+                    "& .spin": { animation: "spin 0.8s linear infinite" }, "@keyframes spin": { to: { transform: "rotate(360deg)" } },
+                  }}
+                >
+                  {uploading > 0 ? `กำลังอัปโหลด… (${uploading})` : "อัปโหลดรูปจากมือถือ"}
+                </Button>
+                {uploadError && (
+                  <Typography sx={{ fontSize: 11.5, color: adminColor.red, background: "rgba(220,38,38,0.07)", borderRadius: "8px", p: "8px 10px" }}>{uploadError}</Typography>
+                )}
+
                 {formData.gallery.map((src, i) => (
                   <Box key={i} sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                     <Avatar variant="rounded" src={src} sx={{ width: 40, height: 40, borderRadius: "9px", border: `1px solid ${adminColor.line}`, flexShrink: 0 }} />
-                    <TextField size="small" sx={{ ...fieldSx, flex: 1 }} label={`รูปที่ ${i + 1}`} value={src} onChange={(e) => updateGallery(i, e.target.value)} placeholder="/images/..." />
+                    <TextField size="small" sx={{ ...fieldSx, flex: 1 }} label={`รูปที่ ${i + 1}`} value={src} onChange={(e) => updateGallery(i, e.target.value)} placeholder="/images/... หรือ URL" />
                     <IconButton size="small" onClick={() => removeGallery(i)} sx={chipDeleteBtnSx}><Trash size={16} /></IconButton>
                   </Box>
                 ))}
-                <Button onClick={addGallery} startIcon={<Plus size={14} weight="bold" />} sx={addBtnSx}>เพิ่มรูป</Button>
+                <Button onClick={addGallery} startIcon={<Plus size={14} weight="bold" />} sx={addBtnSx}>เพิ่มลิงก์รูปเอง</Button>
               </Box>
             </SectionCard>
 
