@@ -48,6 +48,8 @@ const ACTION_LABEL: Record<string, { label: string; color: string }> = {
   "user.unblock":            { label: "ปลดบล็อกผู้ใช้",       color: adminColor.green },
   "review.edit":             { label: "แก้ไขรีวิว",           color: adminColor.blue },
   "review.hide":             { label: "ซ่อนรีวิว",            color: adminColor.red },
+  "phone.block":             { label: "บล็อกเบอร์โทร",         color: adminColor.red },
+  "phone.unblock":           { label: "ปลดบล็อกเบอร์โทร",      color: adminColor.green },
 };
 
 function detailLine(detail?: Record<string, unknown>): string {
@@ -56,6 +58,8 @@ function detailLine(detail?: Record<string, unknown>): string {
   if (detail.bookingId) parts.push(`booking ${String(detail.bookingId).slice(0, 8)}`);
   if (detail.from && detail.to) parts.push(`${detail.from} → ${detail.to}`);
   if (detail.therapistName) parts.push(String(detail.therapistName));
+  if (detail.phone) parts.push(String(detail.phone));
+  if (detail.reason) parts.push(String(detail.reason));
   if (detail.field) parts.push(`${String(detail.field)} → ${String(detail.value)}`);
   // 🆕 Round 28s271 — AdminTherapistDetailPage's Save button batches many
   //   field edits into one write; list which fields actually changed.

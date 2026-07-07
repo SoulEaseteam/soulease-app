@@ -23,7 +23,10 @@ import {
   collection,
   Timestamp,
   serverTimestamp,
+  getDoc,
+  doc,
 } from "firebase/firestore";
+import { normPhone } from "@/utils/phoneCountry";
 import { toast } from "react-toastify";
 // Round 28s4 — Direct `dayjs` import removed; all time math now goes
 // through `@/utils/time` helpers anchored at Asia/Bangkok.
@@ -851,6 +854,36 @@ const BookingFlowPage: React.FC = () => {
         form.duration ?? service.duration,
         "minute"
       );
+
+      // 🆕 Round 28s293 — /admin/blocked-devices used to block a
+      //   "deviceId" nothing in the app ever generated, so a block never
+      //   actually stopped anyone from booking. Real, enforceable
+      //   version: check the phone the guest just typed against the
+      //   `blockedPhones` list (same normPhone() key the CRM already
+      //   uses). Admin-initiated bookings bypass, same as the other
+      //   guards above — a founder coordinating an exception offline
+      //   shouldn't be blocked by her own blocklist.
+      if (!isAdminBooking) {
+        try {
+          const blockSnap = await getDoc(
+            doc(db, "blockedPhones", normPhone(form.customerPhone))
+          );
+          if (blockSnap.exists()) {
+            toast.error(
+              t(
+                "booking.error.blocked",
+                "Unable to complete this booking right now. Please contact us directly via LINE/Telegram."
+              )
+            );
+            setSubmitting(false);
+            return;
+          }
+        } catch (err) {
+          // Never let a failed block-check itself break a legitimate
+          // booking — fail open, same spirit as logAdminAction's guard.
+          console.warn("[booking] blockedPhones check failed:", err);
+        }
+      }
 
       const attribution = getAttribution();
       const ref = await addDoc(collection(db, "bookings"), {

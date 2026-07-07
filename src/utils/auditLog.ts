@@ -43,7 +43,13 @@ export type AuditAction =
   // 🆕 Round 28s291 — Edit/Hide on AdminReviewListPage had zero audit trail,
   //   unlike every other consequential admin write this session.
   | "review.edit"
-  | "review.hide";
+  | "review.hide"
+  // 🆕 Round 28s293 — blocking a phone number now actually enforces
+  //   something (BookingFlowPage submit guard), so it needs a trail like
+  //   every other consequential admin action. Distinct from user.block/
+  //   unblock, which toggles a signed-up `users` account, not a phone.
+  | "phone.block"
+  | "phone.unblock";
 
 export async function logAdminAction(
   action: AuditAction,

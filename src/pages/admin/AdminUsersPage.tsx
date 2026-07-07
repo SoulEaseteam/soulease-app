@@ -31,11 +31,15 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  onSnapshot,
+  setDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { Crown, Warning, MagnifyingGlass, UsersThree, Repeat, CurrencyCircleDollar, CaretDown, CircleNotch } from "phosphor-react";
+import { Crown, Warning, MagnifyingGlass, UsersThree, Repeat, CurrencyCircleDollar, CaretDown, CircleNotch, ProhibitInset } from "phosphor-react";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
-import { countryFromPhone, type PhoneCountry } from "@/utils/phoneCountry";
+import { countryFromPhone, normPhone, type PhoneCountry } from "@/utils/phoneCountry";
+import { logAdminAction } from "@/utils/auditLog";
 
 const SANS = adminFont.sans;
 
@@ -92,16 +96,6 @@ const NO_SHOW_STATUSES = new Set(["no_show", "no-show", "noshow"]);
 //   still-pending, refunded, etc.) is an order but not a served visit.
 const SERVED_STATUSES = new Set(["completed", "done"]);
 
-// 🆕 Round 28s285 — normalize a phone so the SAME guest booking as
-//   "+66 81 234 5678" (customer flow, E.164) and "0812345678" (admin-add)
-//   collapse into ONE CRM row instead of two. Strips formatting and maps a
-//   Thai +66 prefix back to the local 0-prefix; leaves foreign numbers as
-//   their raw digits (kept distinct).
-function normPhone(raw: string): string {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.startsWith("66") && digits.length >= 11) return "0" + digits.slice(2);
-  return digits;
-}
 
 // 🆕 Round 28s288 — flatten a full booking doc into label/value pairs for
 //   the expandable history row. Only shows fields that are actually present.
@@ -278,7 +272,62 @@ const AdminUsersPage: React.FC = () => {
       setOpenBooking({ id, loading: false, data: null });
     }
   };
-  const closeGuest = () => { setSelectedGuest(null); setOpenBooking(null); };
+  const closeGuest = () => { setSelectedGuest(null); setOpenBooking(null); setBlockFlow(false); setBlockReason(""); };
+
+  // 🆕 Round 28s293 — live set of blocked phone numbers, so the guest
+  //   drawer can show a "Blocked" badge and toggle Block/Unblock in one
+  //   click without leaving Customer Insights. Same `blockedPhones`
+  //   collection the booking-flow submit guard and AdminBlockedDevicesPage
+  //   read/write, keyed by normPhone().
+  const [blockedPhones, setBlockedPhones] = useState<Set<string>>(new Set());
+  const [blockFlow, setBlockFlow] = useState(false);
+  const [blockReason, setBlockReason] = useState("");
+  const [blockSubmitting, setBlockSubmitting] = useState(false);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "blockedPhones"), (snap) => {
+      setBlockedPhones(new Set(snap.docs.map((d) => d.id)));
+    });
+    return () => unsub();
+  }, []);
+
+  const handleBlockGuest = async () => {
+    if (!selectedGuest) return;
+    setBlockSubmitting(true);
+    try {
+      const key = normPhone(selectedGuest.phone);
+      await setDoc(doc(db, "blockedPhones", key), {
+        phoneRaw: selectedGuest.phone,
+        reason: blockReason.trim() || "Blocked by admin",
+        createdAt: serverTimestamp(),
+      });
+      void logAdminAction("phone.block", { phone: key, reason: blockReason.trim() });
+      setBlockFlow(false);
+      setBlockReason("");
+      toast.success(`บล็อกเบอร์ ${selectedGuest.phone} แล้ว`);
+    } catch (err) {
+      console.error("[block guest] failed:", err);
+      toast.error("บล็อกไม่สำเร็จ");
+    } finally {
+      setBlockSubmitting(false);
+    }
+  };
+
+  const handleUnblockGuest = async () => {
+    if (!selectedGuest) return;
+    setBlockSubmitting(true);
+    try {
+      const key = normPhone(selectedGuest.phone);
+      await deleteDoc(doc(db, "blockedPhones", key));
+      void logAdminAction("phone.unblock", { phone: key });
+      toast.success(`ปลดบล็อกเบอร์ ${selectedGuest.phone} แล้ว`);
+    } catch (err) {
+      console.error("[unblock guest] failed:", err);
+      toast.error("ปลดบล็อกไม่สำเร็จ");
+    } finally {
+      setBlockSubmitting(false);
+    }
+  };
 
   // 🆕 Round 28s287b — guest count per country (doubles as the filter row).
   const countryBreakdown = useMemo(() => {
@@ -428,6 +477,8 @@ const AdminUsersPage: React.FC = () => {
       renderCell: (p) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, height: "100%" }}>
           {p.row.served >= VIP_THRESHOLD && <Crown size={14} weight="fill" color={adminColor.amber} />}
+          {/* 🆕 Round 28s293 — glanceable "Blocked" flag in the list, not just the drawer. */}
+          {blockedPhones.has(normPhone(p.row.phone)) && <ProhibitInset size={14} weight="fill" color={adminColor.red} />}
           <span style={{ fontWeight: p.row.served >= VIP_THRESHOLD ? 700 : 400 }}>{p.row.name}</span>
         </Box>
       ),
@@ -602,6 +653,12 @@ const AdminUsersPage: React.FC = () => {
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 {selectedGuest.served >= VIP_THRESHOLD && <Crown size={18} weight="fill" color={adminColor.amber} />}
                 <Typography sx={{ fontFamily: adminFont.serif, fontSize: 20, fontWeight: 700, color: adminColor.text }}>{selectedGuest.name}</Typography>
+                {/* 🆕 Round 28s293 — blocked-phone badge, matches the list flag. */}
+                {blockedPhones.has(normPhone(selectedGuest.phone)) && (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: "4px", fontSize: 10.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", color: adminColor.red, background: `${adminColor.red}1A`, borderRadius: "6px", px: "7px", py: "2px" }}>
+                    <ProhibitInset size={12} weight="fill" /> Blocked
+                  </Box>
+                )}
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <a href={`tel:${selectedGuest.phone}`} style={{ color: adminColor.accent, textDecoration: "none", fontWeight: 600, fontSize: 13 }}>{selectedGuest.phone}</a>
@@ -702,8 +759,54 @@ const AdminUsersPage: React.FC = () => {
                   );
                 })}
               </Box>
+              {/* 🆕 Round 28s293 — block flow, inline (no nested Dialog). */}
+              {blockFlow && (
+                <Box sx={{ mt: 2, p: "12px 13px", background: adminColor.panel, border: `1px solid ${adminColor.red}55`, borderRadius: "12px" }}>
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: adminColor.red, mb: "6px" }}>
+                    บล็อกเบอร์ {selectedGuest.phone} — จะไม่สามารถจองผ่านเว็บได้อีก
+                  </Typography>
+                  <TextField
+                    fullWidth size="small" placeholder="เหตุผล (เช่น เบี้ยวนัดหลายครั้ง)"
+                    value={blockReason} onChange={(e) => setBlockReason(e.target.value)}
+                    sx={{ mb: "8px", "& .MuiOutlinedInput-root": { background: adminColor.bg } }}
+                  />
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                      size="small" variant="contained" disabled={blockSubmitting}
+                      onClick={() => void handleBlockGuest()}
+                      sx={{ background: adminColor.red, textTransform: "none", fontWeight: 700, "&:hover": { background: "#B91C1C" } }}
+                    >
+                      ยืนยันบล็อก
+                    </Button>
+                    <Button size="small" onClick={() => { setBlockFlow(false); setBlockReason(""); }} sx={{ color: adminColor.muted, textTransform: "none" }}>
+                      ยกเลิก
+                    </Button>
+                  </Stack>
+                </Box>
+              )}
             </DialogContent>
             <DialogActions>
+              {blockedPhones.has(normPhone(selectedGuest.phone)) ? (
+                <Button
+                  onClick={() => void handleUnblockGuest()}
+                  disabled={blockSubmitting}
+                  startIcon={<ProhibitInset size={15} />}
+                  sx={{ color: adminColor.red, textTransform: "none", fontWeight: 700 }}
+                >
+                  ปลดบล็อกเบอร์นี้
+                </Button>
+              ) : (
+                !blockFlow && (
+                  <Button
+                    onClick={() => setBlockFlow(true)}
+                    startIcon={<ProhibitInset size={15} />}
+                    sx={{ color: adminColor.red, textTransform: "none", fontWeight: 700 }}
+                  >
+                    บล็อกเบอร์นี้
+                  </Button>
+                )
+              )}
+              <Box sx={{ flex: 1 }} />
               <Button onClick={closeGuest} sx={{ color: adminColor.muted, textTransform: "none", fontWeight: 700 }}>ปิด</Button>
             </DialogActions>
           </>

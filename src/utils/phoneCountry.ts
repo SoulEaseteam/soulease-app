@@ -57,3 +57,14 @@ export function countryFromPhone(raw?: string | null): PhoneCountry | null {
   if (!s.startsWith("+")) s = "+" + s;
   return BY_LEN.find((c) => s.startsWith(c.dial)) ?? null;
 }
+
+// 🆕 Round 28s293 — moved from a local copy in AdminUsersPage.tsx so the
+//   blocked-phone-number feature (BookingFlowPage submit guard +
+//   AdminBlockedDevicesPage + the CRM "Block" button) all normalize the
+//   SAME way. +66 / 66-prefix is remapped to the local 0-prefix Thai
+//   form so "+66812345678" and "0812345678" collapse to one key.
+export function normPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("66") && digits.length >= 11) return "0" + digits.slice(2);
+  return digits;
+}
