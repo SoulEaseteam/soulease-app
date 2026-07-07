@@ -81,6 +81,48 @@ const MODE_FILTER_LABEL: Record<(typeof MODE_OPTIONS)[number], string> = {
   off: "☕ Off-hours (04:00–09:00)",
 };
 
+// 🆕 Round 28s303 (founder: "ทำครบ" — build all 3 offered add-ons:
+//   daily visitor totals, traffic-source breakdown, peak hours). Maps a
+//   raw referrer hostname (from document.referrer, stored per event) to a
+//   friendly channel bucket. Unknown hosts fall through to the raw
+//   hostname so nothing is silently dropped. null/own-domain = "Direct".
+function classifyReferrer(ref?: string | null): string {
+  if (!ref) return "Direct";
+  const h = ref.toLowerCase();
+  if (h.includes("sunred")) return "Direct"; // internal navigation
+  if (h.includes("google")) return "Google";
+  if (h.includes("bing")) return "Bing";
+  if (h.includes("duckduckgo")) return "DuckDuckGo";
+  if (h.includes("yahoo")) return "Yahoo";
+  if (h.includes("instagram")) return "Instagram";
+  if (h.includes("facebook") || h.includes("fb.me") || h === "fb.com") return "Facebook";
+  if (h.includes("line.me") || h.startsWith("line.") || h.includes("liff.line")) return "LINE";
+  if (h.includes("tiktok")) return "TikTok";
+  if (h.includes("t.co") || h.includes("twitter") || h === "x.com" || h.endsWith(".x.com")) return "X / Twitter";
+  if (h.includes("whatsapp") || h.includes("wa.me")) return "WhatsApp";
+  if (h.includes("t.me") || h.includes("telegram")) return "Telegram";
+  if (h.includes("youtube")) return "YouTube";
+  if (h.includes("reddit")) return "Reddit";
+  return ref; // unknown → keep raw hostname
+}
+
+const REF_LABEL: Record<string, string> = {
+  Direct: "🔗 ตรง / พิมพ์เอง",
+  Google: "🔍 Google",
+  Bing: "🔍 Bing",
+  DuckDuckGo: "🔍 DuckDuckGo",
+  Yahoo: "🔍 Yahoo",
+  Instagram: "📸 Instagram",
+  Facebook: "📘 Facebook",
+  LINE: "💚 LINE",
+  TikTok: "🎵 TikTok",
+  "X / Twitter": "𝕏 Twitter",
+  WhatsApp: "💬 WhatsApp",
+  Telegram: "✈️ Telegram",
+  YouTube: "▶️ YouTube",
+  Reddit: "👽 Reddit",
+};
+
 const selectSx = {
   minWidth: 150, fontSize: 13,
   "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 },
@@ -170,9 +212,36 @@ const AdminAnalyticsPage: React.FC = () => {
       home_view: {},
       booking_complete: {},
     };
+    // 🆕 Round 28s303 — visitors-per-day (unique sessions, not raw
+    //   events), traffic-source per session, and a 24-slot BKK-hour
+    //   histogram. All keyed off home_view (the landing signal).
+    const dailySessions: Record<string, Set<string>> = {};
+    const sessionRef: Record<string, string> = {};
+    const hourly: number[] = new Array(24).fill(0);
 
     for (const ev of filteredEvents) {
       byEvent[ev.event] = (byEvent[ev.event] ?? 0) + 1;
+
+      // Traffic source per session: first seen wins, but a known source
+      // always upgrades a "Direct" placeholder (a visitor who arrived via
+      // LINE then navigated internally still counts as LINE).
+      if (ev.sid) {
+        const cat = classifyReferrer(ev.referrer);
+        if (sessionRef[ev.sid] === undefined) sessionRef[ev.sid] = cat;
+        else if (sessionRef[ev.sid] === "Direct" && cat !== "Direct") sessionRef[ev.sid] = cat;
+      }
+
+      // Unique visitors per day + peak-hour histogram, both from the
+      // home_view landing event (BKK = UTC+7, matching analytics.ts).
+      if (ev.event === "home_view" && ev.ts?.toDate) {
+        const dt = ev.ts.toDate();
+        if (ev.sid) {
+          const date = dayjs(dt).format("YYYY-MM-DD");
+          (dailySessions[date] ??= new Set()).add(ev.sid);
+        }
+        const bkkHour = (((dt.getUTCHours() + 7) % 24) + 24) % 24;
+        hourly[bkkHour] += 1;
+      }
 
       if (ev.sid) {
         if (!sessionsByEvent[ev.event]) {
@@ -226,6 +295,28 @@ const AdminAnalyticsPage: React.FC = () => {
       };
     }
 
+    // Collapse per-session referrer map → counts per source bucket.
+    const referrers: Record<string, number> = {};
+    for (const cat of Object.values(sessionRef)) {
+      referrers[cat] = (referrers[cat] ?? 0) + 1;
+    }
+
+    // Unique visitors per day (Set → size).
+    const dailyVisitors: Record<string, number> = {};
+    for (const [date, set] of Object.entries(dailySessions)) {
+      dailyVisitors[date] = set.size;
+    }
+
+    // Peak hour = the busiest BKK hour of day (0 if no traffic).
+    let peakHour = 0;
+    let peakHourCount = 0;
+    for (let h = 0; h < 24; h++) {
+      if (hourly[h] > peakHourCount) {
+        peakHourCount = hourly[h];
+        peakHour = h;
+      }
+    }
+
     return {
       byEvent,
       conversionRate,
@@ -235,6 +326,11 @@ const AdminAnalyticsPage: React.FC = () => {
       serviceViews,
       channels,
       dailyByEvent,
+      referrers,
+      dailyVisitors,
+      hourly,
+      peakHour,
+      peakHourCount,
     };
   }, [filteredEvents]);
 
@@ -263,6 +359,17 @@ const AdminAnalyticsPage: React.FC = () => {
       ),
     [stats.dailyByEvent.home_view, trendDates]
   );
+
+  // 🆕 Round 28s303 — headline "how many people visited" numbers, plus
+  //   the busiest-hour label for the peak-hours card.
+  const todayKey = dayjs().format("YYYY-MM-DD");
+  const yesterdayKey = dayjs().subtract(1, "day").format("YYYY-MM-DD");
+  const visitorsToday = stats.dailyVisitors[todayKey] ?? 0;
+  const visitorsYesterday = stats.dailyVisitors[yesterdayKey] ?? 0;
+  const hourlyMax = Math.max(1, ...stats.hourly);
+  const peakHourLabel = `${String(stats.peakHour).padStart(2, "0")}:00–${String(
+    (stats.peakHour + 1) % 24
+  ).padStart(2, "0")}:00`;
 
   return (
     <Box sx={{ padding: { xs: 2, md: 3 }, maxWidth: 1200, margin: "0 auto" }}>
@@ -380,6 +487,38 @@ const AdminAnalyticsPage: React.FC = () => {
           </Typography>
         </Card>
       ) : (
+        <>
+        {/* 🆕 Round 28s303 — headline visitor counter. Directly answers
+             "คนเข้าเว็บกี่คน": unique sessions that opened the home page,
+             for the selected range + today + yesterday. */}
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+            gap: 2,
+            mb: 2,
+          }}
+        >
+          <HeroStat
+            label="คนเข้าเว็บ (ช่วงที่เลือก)"
+            value={stats.sessionsHome}
+            hint="นับ 1 ต่อ 1 คน (unique session)"
+            big
+          />
+          <HeroStat
+            label="วันนี้"
+            value={visitorsToday}
+            hint={visitorsYesterday > 0
+              ? `${visitorsToday >= visitorsYesterday ? "▲" : "▼"} เทียบเมื่อวาน ${visitorsYesterday}`
+              : "เทียบเมื่อวาน —"}
+          />
+          <HeroStat
+            label="เมื่อวาน"
+            value={visitorsYesterday}
+            hint={`ยอดจอง ${stats.byEvent.booking_complete ?? 0} · ช่วงที่เลือก`}
+          />
+        </Box>
+
         <Box
           sx={{
             display: "grid",
@@ -503,6 +642,106 @@ const AdminAnalyticsPage: React.FC = () => {
             />
           </Card>
 
+          {/* 🆕 Round 28s303 — Traffic sources (referrer breakdown) */}
+          <Card>
+            <Eyebrow>Traffic sources</Eyebrow>
+            <Typography
+              sx={{
+                fontFamily: SERIF,
+                fontSize: 18,
+                fontWeight: 600,
+                color: adminColor.text,
+                mb: 2,
+              }}
+            >
+              คนมาจากไหน
+            </Typography>
+            <RankedList
+              entries={Object.entries(stats.referrers)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 8)
+                .map(([k, v]) => [REF_LABEL[k] ?? k, v] as [string, number])}
+              emptyHint="ยังไม่มีข้อมูลที่มา"
+            />
+          </Card>
+
+          {/* 🆕 Round 28s303 — Peak hours (24-slot BKK-hour histogram) */}
+          <Card>
+            <Eyebrow>Peak hours · เวลา BKK</Eyebrow>
+            <Typography
+              sx={{
+                fontFamily: SERIF,
+                fontSize: 18,
+                fontWeight: 600,
+                color: adminColor.text,
+                mb: 0.5,
+              }}
+            >
+              คนเข้าเยอะช่วงไหน
+            </Typography>
+            <Box sx={{ mb: 1.5, fontFamily: SANS, fontSize: 12, color: adminColor.muted }}>
+              {stats.peakHourCount > 0 ? (
+                <>
+                  พีคสุด{" "}
+                  <Box component="span" sx={{ fontWeight: 700, color: adminColor.accent }}>
+                    {peakHourLabel}
+                  </Box>{" "}
+                  ({stats.peakHourCount.toLocaleString()} เข้าชม)
+                </>
+              ) : (
+                "ยังไม่มีข้อมูลรายชั่วโมง"
+              )}
+            </Box>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "repeat(24, 1fr)",
+                gap: "2px",
+                alignItems: "end",
+                height: 90,
+              }}
+            >
+              {stats.hourly.map((count, h) => (
+                <Box
+                  key={h}
+                  title={`${String(h).padStart(2, "0")}:00 — ${count} เข้าชม`}
+                  sx={{
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "flex-end",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      height: `${Math.max(count > 0 ? 6 : 0, (count / hourlyMax) * 100)}%`,
+                      background: h === stats.peakHour && stats.peakHourCount > 0
+                        ? adminColor.accent
+                        : adminColor.panel3,
+                      borderRadius: "2px 2px 0 0",
+                    }}
+                  />
+                </Box>
+              ))}
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginTop: "6px",
+                fontFamily: SANS,
+                fontSize: 10,
+                color: adminColor.dim,
+              }}
+            >
+              <span>00:00</span>
+              <span>06:00</span>
+              <span>12:00</span>
+              <span>18:00</span>
+              <span>23:00</span>
+            </Box>
+          </Card>
+
           {/* Daily trend — full row */}
           <Card sx={{ gridColumn: { md: "span 2" } }}>
             <Eyebrow>Daily trend</Eyebrow>
@@ -595,12 +834,68 @@ const AdminAnalyticsPage: React.FC = () => {
             </Box>
           </Card>
         </Box>
+        </>
       )}
     </Box>
   );
 };
 
 // ─── Subcomponents ─────────────────────────────────────────────────────
+
+// 🆕 Round 28s303 — headline number tile for the visitor counter.
+const HeroStat: React.FC<{
+  label: string;
+  value: number;
+  hint?: string;
+  big?: boolean;
+}> = ({ label, value, hint, big }) => (
+  <Box
+    sx={{
+      padding: "18px 20px",
+      borderRadius: "16px",
+      background: big ? adminColor.accent : adminColor.panel,
+      border: `1px solid ${big ? adminColor.accent : adminColor.line}`,
+      boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
+    }}
+  >
+    <Box
+      sx={{
+        fontFamily: SANS,
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: "0.06em",
+        color: big ? "rgba(255,255,255,0.85)" : adminColor.muted,
+        mb: 0.5,
+      }}
+    >
+      {label}
+    </Box>
+    <Box
+      sx={{
+        fontFamily: SERIF,
+        fontSize: big ? 40 : 30,
+        fontWeight: 700,
+        lineHeight: 1,
+        color: big ? "#fff" : adminColor.text,
+        fontVariantNumeric: "tabular-nums",
+      }}
+    >
+      {value.toLocaleString()}
+    </Box>
+    {hint && (
+      <Box
+        sx={{
+          fontFamily: SANS,
+          fontSize: 11.5,
+          color: big ? "rgba(255,255,255,0.8)" : adminColor.dim,
+          mt: 0.75,
+        }}
+      >
+        {hint}
+      </Box>
+    )}
+  </Box>
+);
 
 const Card: React.FC<{
   children: React.ReactNode;
