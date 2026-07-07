@@ -1791,6 +1791,31 @@ the same badge pattern but was mid-refactor onto `therapistFormKit` in a
 separate session, so left alone — the kit migration should carry the same
 `shrink` fix (and any other `displayEmpty` select there).
 
+### 🆕 2026-07-07 — tap-photo profile upload + Badge fix + kit migration lands (28s284)
+
+Founder: "เอา Image URL ออกทั้งคู่ ให้เปลี่ยนโปรไฟล์ตรงรูปได้เลย" and fix the
+Edit-page Badge overlap (28s283 fixed it only on Add).
+
+- New shared **`AvatarUploader`** in `therapistFormKit`: the profile photo
+  IS the control — tap → pick from phone → downscale (max 800px) → upload
+  to `therapists/{id}/profile/**` → `onChange` gets the URL. The **"Image
+  URL" text field is removed from BOTH Add and Edit pages.** Add page:
+  uploader at the top of the identity card. Edit page: the header avatar
+  itself becomes the uploader while editing (display-only otherwise).
+- `storage.rules` broadened `therapists/{id}/gallery/**` →
+  `therapists/{id}/{allPaths=**}` so `profile/**` is covered too;
+  redeployed via `firebase deploy --only storage`.
+- Edit-page Badge select got `InputLabelProps={{ shrink: true }}` (the
+  same overlap the Add page fixed in 28s283).
+
+**Also: the therapistFormKit migration of `AdminTherapistDetailPage` (the
+spawned 28s282 follow-up task) landed in this commit** — the edit page now
+consumes the kit's SectionCard/LocationPicker/editors instead of its own
+inline copies, so Add + Edit share ONE source. The task's WIP had already
+been applied to the working tree; folding it in here (tsc + build clean)
+completes the dedup. **Therapist Add + Edit are now fully unified on the
+kit — future field/design changes touch `therapistFormKit.tsx` once.**
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
