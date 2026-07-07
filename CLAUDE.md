@@ -3648,3 +3648,23 @@ additions to the 28s313 Pay-Therapists page.
 tsc=0 + build clean (55 routes); rules deployed; app deployed. Confirmed live:
 "คัดลอกเลขบัญชี" / "เฉพาะลูกค้าจ่ายแล้ว" / "ตั้งค่าบัญชี" / "admin/bookings?open="
 in the pay chunk, and payoutAccounts public read = 403.
+
+### 🆕 2026-07-07 — Pay Therapists pays commission + taxi (28s315)
+
+Founder: "จ่ายยอด 60% และ ยอด เท็กซี่." The therapist is paid their service
+commission (tier %, colloquially "60%" = DEFAULT_THERAPIST_PCT) PLUS the taxi
+fee (trip reimbursement) — the pay page had been showing commission only.
+
+- `Job.payout` = `therapistPayoutFor(...)` **+ `taxiFee`**. Kept `commission`
+  and `taxi` on the Job for the breakdown. `commission <= 0` still skips (no
+  service price). Every subtotal / summary total / paid-history amount now
+  includes taxi automatically (they sum `payout`).
+- Each job row shows a breakdown line: "ค่านวด ฿X + เดินทาง ฿Y" (taxi part
+  only when > 0). Footer note → "ยอด = ค่านวด (ตาม tier · หักส่วนลด) +
+  ค่าเดินทาง". Note: taxi here is a therapist REIMBURSEMENT — this is the
+  opposite side from the shop-revenue ledger (28s312), where taxi nets out as
+  a pass-through; both are consistent (customer's taxi money → shop → paid out
+  to therapist here).
+
+tsc=0 + build clean (55 routes), deployed; "ค่านวด" / "เดินทาง" breakdown
+confirmed in the live pay chunk.
