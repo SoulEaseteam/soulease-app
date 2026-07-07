@@ -3867,3 +3867,31 @@ revenue, and "สถานะ/แยกตามหมอ/แยกตามบ�
   `.slice()` — show ALL rows so the yearly breakdown reconciles with the totals.
 
 tsc=0 + build clean (55 routes), deployed.
+
+### 🆕 2026-07-07 — One therapist = one row; full staff filter (28s324)
+
+Founder: "ทำไมยูริมี 2 ชื่อ" (Reports dropdown showed **Yuri** and **Mini**
+twice) + Pay-Therapists "ชื่อพนักงานไม่ครบ" over a 1-yr custom range. Root cause:
+**bookings** stored `therapistId`/`therapistName` inconsistently — variant ids,
+casing ("xingxing" vs "XingXing"), trailing spaces, and staff later removed from
+the roster but still owning old bookings. Both pages grouped by the raw id, so
+one person split into several rows. The `therapists` collection itself is clean
+(REST check: 14 docs, ids `<Name>SunRed`, **no** duplicate names).
+
+New **`src/utils/therapistIdentity.ts`**: `therapistKey(name,id)` = normalized
+identity key (letters+digits only, case-folded; id fallback) — roster names are
+unique so a name-key never collides two real people but merges every variant;
+`buildRosterIndex(roster)` maps key → canonical `{id,name}`.
+
+- **Reports** (`AdminReportPage`): loads the roster; per-therapist summaries now
+  group by `therapistKey` and display the canonical roster name → Yuri/Mini
+  appear once, `xingxing`→`XingXing`.
+- **Pay-Therapists** (`AdminTherapistPayoutsPage`): loads the roster; the filter
+  now lists the **full staff roster** (keyed by name), not only therapists with a
+  non-cash job in the window, plus any removed staff still in jobs. Job filter +
+  payout-card grouping switched to `therapistKey`, using the canonical roster id
+  (bank details in `payoutAccounts` are keyed by it) + name. Note: picking a
+  therapist with no non-cash outstanding job shows the empty state (expected).
+
+Verified: 10 mixed booking variants → 6 distinct therapists, canonical casing
+wins, removed staff kept separate. tsc=0 + build clean (55 routes), deployed.
