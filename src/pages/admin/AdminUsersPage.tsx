@@ -611,67 +611,68 @@ const AdminUsersPage: React.FC = () => {
               </Box>
             </DialogTitle>
             <DialogContent>
-              {/* stat pills */}
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
+              {/* stat pills — even 3-col grid so none becomes a giant bar */}
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)" }, gap: 1, mb: 2 }}>
                 {[
                   { n: selectedGuest.served, l: "Visits" },
                   { n: selectedGuest.orders, l: "Orders" },
+                  { n: guestStats.daysSince == null ? "—" : `${guestStats.daysSince}d`, l: "Since last" },
                   { n: `฿${selectedGuest.totalSpent.toLocaleString()}`, l: "Spent" },
                   { n: `฿${guestStats.avgSpend.toLocaleString()}`, l: "Avg / visit" },
                   { n: selectedGuest.noShowCount, l: "No-shows", danger: selectedGuest.noShowCount > 0 },
-                  { n: guestStats.daysSince == null ? "—" : `${guestStats.daysSince}d`, l: "Since last" },
                 ].map((s, i) => (
-                  <Box key={i} sx={{ flex: "1 1 90px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "11px", p: "8px 10px" }}>
-                    <Typography sx={{ ...adminFigureSx, fontSize: 15, color: s.danger ? adminColor.red : adminColor.text }}>{s.n}</Typography>
+                  <Box key={i} sx={{ background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "12px", p: "9px 12px" }}>
+                    <Typography sx={{ ...adminFigureSx, fontSize: 16, color: s.danger ? adminColor.red : adminColor.text, lineHeight: 1.2 }}>{s.n}</Typography>
                     <Typography sx={{ fontSize: 9.5, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>{s.l}</Typography>
                   </Box>
                 ))}
               </Box>
 
               {/* favorites */}
-              <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
-                <Box sx={{ flex: 1, minWidth: 140, background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "11px", p: "9px 12px" }}>
-                  <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>หมอนวดที่ชอบ</Typography>
-                  <Typography sx={{ fontSize: 14, fontWeight: 600, color: adminColor.text }}>{guestStats.favTherapist || "—"}</Typography>
-                </Box>
-                <Box sx={{ flex: 1, minWidth: 140, background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "11px", p: "9px 12px" }}>
-                  <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>บริการที่ชอบ</Typography>
-                  <Typography sx={{ fontSize: 14, fontWeight: 600, color: adminColor.text }}>{guestStats.favService || "—"}</Typography>
-                </Box>
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1, mb: 2 }}>
+                {[["หมอนวดที่ชอบ", guestStats.favTherapist], ["บริการที่ชอบ", guestStats.favService]].map(([label, val], i) => (
+                  <Box key={i} sx={{ background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "12px", p: "10px 13px" }}>
+                    <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>{label}</Typography>
+                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: adminColor.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{val || "—"}</Typography>
+                  </Box>
+                ))}
               </Box>
 
               {/* history */}
               <Typography sx={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.07em", color: adminColor.dim, mb: 1 }}>ประวัติการจอง ({selectedGuest.bookings.length})</Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, maxHeight: 320, overflowY: "auto" }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, maxHeight: 340, overflowY: "auto", pr: 0.5 }}>
                 {selectedGuest.bookings.map((b) => {
                   const isOpen = openBooking?.id === b.id;
                   return (
-                    <Box key={b.id} sx={{ background: adminColor.panel, border: `1px solid ${isOpen ? adminColor.accent : adminColor.line}`, borderRadius: "10px", overflow: "hidden" }}>
+                    <Box key={b.id} sx={{ background: adminColor.panel, border: `1px solid ${isOpen ? adminColor.accent : adminColor.line}`, borderRadius: "12px", overflow: "hidden" }}>
                       {/* summary row — tap to expand the real booking */}
-                      <Box onClick={() => void openHistoryBooking(b.id)} sx={{ display: "flex", alignItems: "center", gap: 1, p: "9px 12px", cursor: "pointer", "&:hover": { background: adminColor.panel2 } }}>
+                      <Box onClick={() => void openHistoryBooking(b.id)} sx={{ display: "flex", alignItems: "center", gap: 1.25, p: "11px 13px", minHeight: 46, cursor: "pointer", "&:hover": { background: adminColor.panel2 } }}>
                         <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Typography sx={{ fontSize: 13, fontWeight: 600, color: adminColor.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                            {b.serviceName || "—"}{b.therapistName ? ` · ${b.therapistName}` : ""}
+                          <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: adminColor.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.3 }}>
+                            {b.serviceName || "บริการ"}
                           </Typography>
-                          <Typography sx={{ fontSize: 11, color: adminColor.dim }}>{b.date ? b.date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}</Typography>
+                          <Typography sx={{ fontSize: 11.5, color: adminColor.dim, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.35 }}>
+                            {b.therapistName ? `${b.therapistName} · ` : ""}{b.date ? b.date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                          </Typography>
                         </Box>
-                        <Typography sx={{ ...adminFigureSx, fontSize: 13, color: adminColor.text }}>฿{b.amount.toLocaleString()}</Typography>
-                        <Box sx={{ fontSize: 9.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em", color: statusColor(b.status), background: `${statusColor(b.status)}1F`, borderRadius: "6px", px: "6px", py: "2px", whiteSpace: "nowrap" }}>{b.status || "—"}</Box>
+                        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "3px", flexShrink: 0 }}>
+                          <Typography sx={{ ...adminFigureSx, fontSize: 13.5, color: adminColor.text, lineHeight: 1 }}>฿{b.amount.toLocaleString()}</Typography>
+                          <Box sx={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em", color: statusColor(b.status), background: `${statusColor(b.status)}1F`, borderRadius: "5px", px: "5px", py: "1px", whiteSpace: "nowrap", lineHeight: 1.4 }}>{b.status || "—"}</Box>
+                        </Box>
                         <CaretDown size={14} color={adminColor.dim} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .15s", flexShrink: 0 }} />
                       </Box>
                       {/* expanded full detail */}
                       {isOpen && (
-                        <Box sx={{ borderTop: `1px solid ${adminColor.line}`, p: "10px 12px", background: adminColor.panel2 }}>
+                        <Box sx={{ borderTop: `1px solid ${adminColor.line}`, p: "11px 13px", background: adminColor.panel2 }}>
                           {openBooking?.loading ? (
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: adminColor.dim, fontSize: 12.5 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: adminColor.dim, fontSize: 12.5, "@keyframes spinU": { to: { transform: "rotate(360deg)" } } }}>
                               <CircleNotch size={15} style={{ animation: "spinU .8s linear infinite" }} /> กำลังโหลด…
-                              <Box component="span" sx={{ "@keyframes spinU": { to: { transform: "rotate(360deg)" } } }} />
                             </Box>
                           ) : openBooking?.data ? (
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                            <Box sx={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                               {bookingDetailPairs(openBooking.data).map(([label, value], i) => (
-                                <Box key={i} sx={{ display: "flex", gap: 1, fontSize: 12.5 }}>
-                                  <Typography sx={{ fontSize: 11.5, color: adminColor.dim, minWidth: 76, flexShrink: 0 }}>{label}</Typography>
+                                <Box key={i} sx={{ display: "flex", gap: 1.25 }}>
+                                  <Typography sx={{ fontSize: 11.5, color: adminColor.dim, minWidth: 74, flexShrink: 0 }}>{label}</Typography>
                                   <Typography sx={{ fontSize: 12.5, color: adminColor.text, wordBreak: "break-word" }}>{value}</Typography>
                                 </Box>
                               ))}
