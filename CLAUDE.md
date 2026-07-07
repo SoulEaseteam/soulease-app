@@ -1911,6 +1911,45 @@ squeezed row, worse at browser zoom), and the stat pills wrapped unevenly
   subline, amount+status stacked right-aligned in their own column, row
   min-height + vertical centering — no clipping/crowding at any zoom.
 
+### 🆕 2026-07-07 — Promotions: add-ons, service details, reorder, margin (28s302)
+
+Founder asked "ปกติหน้าตั้งราคา & บริการ มีอะไรบ้าง" → offered the 4 typical
+gaps, she picked "ทั้งหมด และหน้านี้เชื่อมไปทุกที่ที่เกี่ยวข้อง" (all, wired
+everywhere relevant). Built all four:
+
+1. **Add-ons** — were hardcoded in `bookingExtras.ts` AND had no customer
+   picker at all (`form.selectedAddons` existed + the total was wired, but
+   nothing ever set it — a dead feature; the page even commented
+   "add-ons unused"). Now live-editable (price/name/icon/enable + create/
+   delete custom) via `applyLiveAddonConfig` + `getEffectiveAddons`, same
+   override pattern. **Built the missing customer picker** in
+   BookingFlowPage (opt-in rows → the already-wired total). Empty config =
+   the 3 hardcoded add-ons. Add-ons are opt-in, so surfacing them changes
+   no existing booking's price.
+2. **Service image + detail + benefits** — `LiveServiceOverride` gains
+   `image/detail/benefit`; `withLiveServiceOverrides` merges them.
+   `ServiceDetailPage` switched from the raw `services` array to
+   `getServiceById` (so it shows live photo/copy/benefits AND resolves
+   custom services — it silently didn't before). Admin edits via a
+   per-service details dialog (image upload, detail textarea, benefits
+   one-per-line).
+3. **Menu reorder** — `serviceOrder` (id array); StepService's `orderIdx`
+   uses it with the hardcoded EDITORIAL_ORDER as fallback for unlisted
+   ids. Admin reorders with up/down arrows on a unified ordered list
+   (standard + custom merged).
+4. **Margin view** — read-only line per service (therapist 60% / shop 40%
+   from `commission.therapistPctFor`, on the 60-min price) so she can see
+   which service is most profitable.
+
+All ride the existing public `publicRules` doc (no firestore.rules change)
+and the SAME MaintenanceGate listener. `serviceOrder`/`addonOverrides`/
+`customAddons` are new fields on it. Verified: tsc/build clean + isolated
+logic checks (add-on override/hide/custom-merge; order live-vs-fallback)
++ default-empty = unchanged + homepage 200 regression + curled the live
+main bundle (`addonOverrides`, `serviceOrder`), the Promotions chunk
+(add-ons section + margin line), and the BookingFlow chunk (the new
+`section.addons` picker).
+
 ### 🆕 2026-07-07 — Promotions: add brand-new custom services (28s301)
 
 Founder: "ราคา & บริการ เพิ่ม เมนูได้" — the add-new-service piece 28s300
