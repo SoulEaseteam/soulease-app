@@ -3804,3 +3804,43 @@ useMemo over `allRows` (`r.status === statusFilter` and `(r.therapistName||"")
 the dropdown never collapses. Error callback now logs instead of swallowing.
 (Earnings already filtered client-side by id — not affected.) tsc=0 + build
 clean (55 routes), deployed.
+
+### 🆕 2026-07-07 — Revenue audit: reconcile all pages (28s321 + 28s322)
+
+Founder: "Audit รายได้ทั้งหมด ทำไมไม่เท่ากันสักหน้า." Traced the revenue math on
+all four money pages. **Why they disagreed:**
+1. **Different default windows** — Dashboard/Reports = calendar month; Earnings =
+   rolling 30d; Pay-Therapists = rolling 90d. Same metric, different days.
+2. **Dashboard bugs** — excluded only `status==="cancelled"` (so refunded/
+   no_show/rejected/failed/"canceled" counted as revenue), and computed shop
+   share on the **full list price** (`service − payout`) instead of the
+   post-discount base → over-counted when promos applied.
+3. **Gross vs net** — Earnings headline was shop **net** (after the 28s317
+   per-booking costs); Dashboard/Reports show shop **gross** (before costs).
+4. Note: the split is **flat 60/40** (commission.ts, all tiers 0.6), so the
+   split itself was never the mismatch.
+
+**28s321 — Dashboard bug fixes** (`AdminDashboardPage.tsx`): now uses
+`isPayrollExcluded()` (full excluded set, matches Reports/Earnings/Pay-Therapists)
+and `commissionBaseFor()` so shop = `(service − discount) − payout`, identical to
+Reports' `base − pay` and Earnings' `shopGross`.
+
+**28s322 — founder decisions** (via AskUserQuestion): (a) **same window = this
+calendar month everywhere**, (b) **shop figure = gross (before costs) everywhere**.
+- Added a **"เดือนนี้"** (calendar-month) preset to **Earnings** and
+  **Pay-Therapists**, now their DEFAULT (were 30d / 90d). Earnings `trendDates`
+  + `prevWindow` handle it (prev = same span in the previous calendar month).
+  Dashboard + Reports already defaulted to `startOf/endOf("month")`.
+- **Earnings hero** now shows `shopGross` ("รายได้ของร้าน (ก่อนหักต้นทุน)") to
+  match Dashboard/Reports; net kept as a secondary line ("หักต้นทุน X → กำไรสุทธิ
+  Y") and the money-flow bar's green segment relabelled **"กำไรสุทธิ"**. Donut %,
+  growth Delta, and `prevStats` all switched to `shopGross`. PDF export shows both
+  gross + net tiles.
+
+**Reconciliation proven numerically** (scratchpad/recon.mjs): for one mixed
+booking set, Dashboard shop == Reports shop == Earnings gross (identical to the
+baht); the old Dashboard was inflated (counted refunded/no_show, full-price base).
+So: **Dashboard ≡ Reports ≡ Earnings-gross** for the same (now-shared) window;
+Earnings additionally shows taxi-inclusive "collected" and net-after-costs as
+deeper detail; Pay-Therapists is a different metric (non-cash outstanding only).
+tsc=0 + build clean (55 routes), deployed.
