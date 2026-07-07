@@ -1911,6 +1911,40 @@ squeezed row, worse at browser zoom), and the stat pills wrapped unevenly
   subline, amount+status stacked right-aligned in their own column, row
   min-height + vertical centering — no clipping/crowding at any zoom.
 
+### 🆕 2026-07-07 — admin/seed-reviews: could silently overwrite real reviews (28s292)
+
+Founder: "admin/seed-reviews ปรับแก้ และ ตกแต่งสวยงาม". Auditing the seed
+tool right after 28s291 paid off immediately: its "needs seeding" filter
+was `!rating || rating<1 || !reviewText.trim()` — so a booking with REAL
+guest reviewText but no rating field (the exact case 28s291 just proved
+exists in production) got pulled into the seed queue, and both the
+single-row submit and bulk-seed paths overwrite `reviewText`
+unconditionally. A real guest comment could get silently clobbered by a
+synthetic template just because it lacked a numeric rating.
+
+**Fix:** "needs seeding" is now `!reviewText.trim()` only — matching the
+same reviewText-based definition of "review" that 28s291 established for
+the Reviews page. A booking with text but no rating is already a review
+(defaults to ★5 there) and must never re-enter this queue.
+
+**Also found + fixed:** the "ทั้งหมด" (All) time-window toggle did
+nothing — the server fetch was hardcoded to a 90-day cutoff regardless
+of the selected window, so "All" silently showed the same rows as "90
+days". `loadRows` now takes the window and refetches with the correct
+cutoff (epoch-0 for "All", same composite index) whenever the toggle
+changes.
+
+**Also:** Ocean Study restyle + `@mui/icons-material` → `phosphor-react`
+(last page on the pre-28s235 theme), added a service/practitioner search
+box, two icon-circle stat pills (pending count, practitioner count) for
+visual parity with AdminReviewListPage, `Timestamp.now()` →
+`serverTimestamp()` for `reviewedAt`.
+
+Verified live: curled the deployed `AdminSeedReviewsPage-*.js` chunk and
+confirmed the `reviewText` filter (no more `rating` check), `reviewedAt:
+se()` (serverTimestamp), the "Practitioners" stat pill, and the new
+search placeholder are all present in production.
+
 ### 🆕 2026-07-07 — admin/reviews: missing-rating reviews were invisible (28s291)
 
 Founder: "admin/reviews ปรับแก้". Audited the page (last untouched admin
