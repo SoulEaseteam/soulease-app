@@ -204,6 +204,8 @@
   "pay.feeNote": "服务费 · 汇率及手续费",
   "booking.travelTip.title": "往返交通费",
   "booking.travelTip.roundTrip": "往返 · 两程均按全表价",
+  "booking.travelTip.bookingFee": "叫车费/程",
+  "booking.travelTip.surge": "高峰时段、需求高峰及雨天可能加收费用。",
   "booking.travelTip.returnLeg": "返程 · 按表价 6 折",
   "booking.travelTip.returnNote": "(去程全价 + 返程 60% · 自动计算)",
   "booking.travelTip.rain": "雨天可能加收 15–30% · 到达时间 +5 分钟。",

@@ -28,14 +28,14 @@
 import { getCachedRainStatus, type RainStatus } from "@/utils/weather";
 
 /**
- * Beyond this requires an admin quote.
+ * Beyond this (km, road distance) the auto-quote stops and the booking
+ * must be confirmed with an admin.
  *
- * 🆕 Round 28s296 — `export let` + `applyLiveFareConfig()` so a live
- * Firestore value (read by MaintenanceGate.tsx off the public
- * `adminSettings/publicRules` doc) can override the default without
- * touching any importer — ES module named exports are live bindings.
+ * 🆕 Round 28s309 (founder: "15 km เก็บค่ามัดจำ" → chose "เกิน 15 กม. =
+ * ยืนยันกับแอดมินก่อน") — dropped 40 → 15 so long trips route to a manual
+ * concierge confirmation instead of an automatic price. Live-overridable.
  */
-export let ADMIN_QUOTE_KM = 40;
+export let ADMIN_QUOTE_KM = 15;
 
 /**
  * 🆕 Round 28s231 — Bangkok road-circuity factor. Straight-line
@@ -75,15 +75,51 @@ const TIER_4_PER_KM = 10;    // applies to km 40+
  */
 export let ROUND_TRIP_MULTIPLIER = 2.0;
 
+/**
+ * 🆕 Round 28s309 (founder: "มีค่าเรียกรถ Grab 20 บาท" → per leg) — Grab's
+ * per-ride booking fee. A round trip is two rides, so it's added twice.
+ * Live-overridable.
+ */
+export let GRAB_BOOKING_FEE = 20;
+
+/**
+ * 🆕 Round 28s309 (founder: "รถหยุดนิ่ง +2/นาที ... ช่วงเวลาเร่งด่วน และ
+ * แออัด" → chose "surge % ตามช่วงเวลา") — a pre-booking quote can't know
+ * the real idle minutes or live demand (Grab computes those from GPS at
+ * ride time). We approximate with a time-of-day surge applied to the
+ * booking's scheduled hour: a rush-hour band (traffic / idle time) and a
+ * late-night peak-demand band. Both percentages are live-overridable so
+ * the founder tunes them from Settings; 0 disables a band.
+ */
+export let RUSH_SURGE_PCT = 25;  // 07:00–09:00 & 17:00–20:00 (traffic/idle)
+export let PEAK_SURGE_PCT = 15;  // 21:00–02:00 (late-night peak demand)
+
+/** Surge fraction (e.g. 0.25) for a given BKK hour; 0 outside the bands
+ *  or when the hour is unknown. Rain is handled separately (weather.ts). */
+export function surgePctForHour(bkkHour?: number | null): number {
+  if (bkkHour == null || !Number.isFinite(bkkHour)) return 0;
+  const h = ((Math.floor(bkkHour) % 24) + 24) % 24;
+  if ((h >= 7 && h < 9) || (h >= 17 && h < 20)) return Math.max(0, RUSH_SURGE_PCT) / 100;
+  if (h >= 21 || h < 2) return Math.max(0, PEAK_SURGE_PCT) / 100;
+  return 0;
+}
+
 /** Apply live Firestore-sourced overrides (called once at boot + on every
  *  live update — see MaintenanceGate.tsx). Ignores out-of-range values so
  *  a bad write can't break pricing. */
 export function applyLiveFareConfig(cfg: {
   adminQuoteKm?: number;
   roundTripMultiplier?: number;
+  grabBookingFee?: number;
+  rushSurgePct?: number;
+  peakSurgePct?: number;
 }): void {
   if (typeof cfg.adminQuoteKm === "number" && cfg.adminQuoteKm > 0) ADMIN_QUOTE_KM = cfg.adminQuoteKm;
   if (typeof cfg.roundTripMultiplier === "number" && cfg.roundTripMultiplier > 1) ROUND_TRIP_MULTIPLIER = cfg.roundTripMultiplier;
+  if (typeof cfg.grabBookingFee === "number" && cfg.grabBookingFee >= 0) GRAB_BOOKING_FEE = cfg.grabBookingFee;
+  // Surges clamped 0–200 % so a fat-fingered value can't 10× a fare.
+  if (typeof cfg.rushSurgePct === "number" && cfg.rushSurgePct >= 0) RUSH_SURGE_PCT = Math.min(200, cfg.rushSurgePct);
+  if (typeof cfg.peakSurgePct === "number" && cfg.peakSurgePct >= 0) PEAK_SURGE_PCT = Math.min(200, cfg.peakSurgePct);
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -166,12 +202,16 @@ export interface TaxiFareResult {
   label: string;
   /** Distance used for the calculation (km, after road factor). */
   distanceKm: number;
-  /** Fare BEFORE rain surcharge (= round-trip meter). */
+  /** Fare BEFORE rain + surge (= round-trip meter + booking fee). */
   baseFareBeforeRain: number;
   /** Active rain status pulled from `weather.ts` cache. */
   rain: RainStatus;
   /** GrabCar one-way fare (for breakdown / analytics). */
   oneWayFare: number;
+  /** 🆕 28s309 — Grab per-ride booking fee × 2 legs (baht). */
+  bookingFee: number;
+  /** 🆕 28s309 — time-of-day surge fraction applied (0 = none). */
+  surgePct: number;
 }
 
 /** Resolve tier label band from distance (UI-only, doesn't affect price). */
@@ -193,15 +233,22 @@ function resolveTier(distanceKm: number): { tier: TaxiTier; label: string } {
 
 /**
  * Compute the customer-facing travel fare for a distance.
- * Round-trip meter (one-way × 2.0), then rain surcharge.
+ *
+ *   base   = round-trip meter (one-way × 2.0) + Grab booking fee × 2 legs
+ *   fare   = base × (1 + surge% + rain%)
+ *
+ * `bkkHour` is the booking's scheduled hour (0–23, Bangkok) used for the
+ * time-of-day surge; omit it for no surge.
  */
 export function calcTaxiFare(
   distanceKm: number,
-  rainOverride?: RainStatus
+  rainOverride?: RainStatus,
+  bkkHour?: number | null
 ): TaxiFareResult {
   const { tier, label } = resolveTier(distanceKm);
   const rain = rainOverride ?? getCachedRainStatus();
   const oneWayFare = grabCarOneWayFare(distanceKm);
+  const surgePct = surgePctForHour(bkkHour);
 
   if (tier === "admin") {
     return {
@@ -212,20 +259,28 @@ export function calcTaxiFare(
       baseFareBeforeRain: 0,
       rain,
       oneWayFare,
+      bookingFee: 0,
+      surgePct,
     };
   }
 
-  const roundTripBase = grabCarRoundTripFare(distanceKm); // one-way × 2.0
-  const fare = Math.round(roundTripBase * (1 + rain.surchargePct));
+  const roundTripMeter = grabCarRoundTripFare(distanceKm); // one-way × 2.0
+  const bookingFee = Math.round(GRAB_BOOKING_FEE * 2); // one call fee per leg, 2 legs
+  const base = roundTripMeter + bookingFee;
+  // Surge (traffic/idle + peak demand) and rain stack additively so the
+  // combined bump stays predictable and legible.
+  const fare = Math.round(base * (1 + surgePct + rain.surchargePct));
 
   return {
     fare,
     tier,
     label,
     distanceKm,
-    baseFareBeforeRain: roundTripBase,
+    baseFareBeforeRain: base,
     rain,
     oneWayFare,
+    bookingFee,
+    surgePct,
   };
 }
 
@@ -245,7 +300,8 @@ export function estimateTaxiFare(
     customerLng: number | null | undefined;
     durationMin: number | null | undefined; // kept in signature for back-compat
   },
-  rainOverride?: RainStatus
+  rainOverride?: RainStatus,
+  bkkHour?: number | null
 ): { distanceKm: number; fare: number; result?: TaxiFareResult } {
   const {
     therapistLat,
@@ -266,7 +322,7 @@ export function estimateTaxiFare(
   const distanceKm =
     haversineKm(therapistLat, therapistLng, customerLat, customerLng) *
     BKK_ROAD_FACTOR;
-  const result = calcTaxiFare(distanceKm, rainOverride);
+  const result = calcTaxiFare(distanceKm, rainOverride, bkkHour);
   return {
     distanceKm,
     // Caller treats `null` (admin quote) as 0 for total math; UI separately

@@ -37,11 +37,15 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
       (snap) => {
         const data = snap.data();
         setMaintenanceOn(data?.maintenanceMode === true);
-        // 🆕 Round 28s308 — travel fare simplified to actual round-trip;
-        //   only the admin-quote distance + round-trip multiplier remain.
+        // 🆕 Round 28s309 — travel fare gained Grab booking fee + time-of-day
+        //   surge (rush/peak), both admin-tunable, on top of the actual
+        //   round-trip meter; admin-quote distance dropped to 15 km.
         applyLiveFareConfig({
           adminQuoteKm: data?.maxDistance,
           roundTripMultiplier: data?.roundTripMultiplier,
+          grabBookingFee: data?.grabBookingFee,
+          rushSurgePct: data?.rushSurgePct,
+          peakSurgePct: data?.peakSurgePct,
         });
         applyLivePromosEnabled(data?.promosEnabled === true);
         // 🆕 Round 28s300/28s301 — live service overrides + admin-created

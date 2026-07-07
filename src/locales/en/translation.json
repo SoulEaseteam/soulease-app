@@ -204,6 +204,8 @@
   "pay.feeNote": "Service charge · FX & processing",
   "booking.travelTip.title": "Round-trip travel fee",
   "booking.travelTip.roundTrip": "Round-trip · both legs at full meter",
+  "booking.travelTip.bookingFee": "booking fee / leg",
+  "booking.travelTip.surge": "Rush hours, peak demand & rain may add a surcharge.",
   "booking.travelTip.returnLeg": "Return leg · 40% off the meter",
   "booking.travelTip.returnNote": "(outbound full + return 60% · auto-applied)",
   "booking.travelTip.rain": "Rain may add 15–30% surcharge · ETA +5 min.",

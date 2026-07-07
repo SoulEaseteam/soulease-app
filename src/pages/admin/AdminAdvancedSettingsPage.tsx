@@ -57,15 +57,20 @@ interface PublicRules {
   maxFutureDays: number;
   maxDistance: number; // = ADMIN_QUOTE_KM, the manual-quote threshold
   roundTripMultiplier: number;
+  // 🆕 Round 28s309 — Grab booking fee (per leg) + time-of-day surge %.
+  grabBookingFee: number;
+  rushSurgePct: number;
+  peakSurgePct: number;
 }
-// 🆕 Round 28s308 — travel fare gutted to actual round-trip. Deposit,
-//   free-radius, standard-rate anchor and discount % all removed.
 const defaultPublicRules: PublicRules = {
   maintenanceMode: false,
   minAdvanceMins: 0,
   maxFutureDays: 0,
-  maxDistance: 40,
+  maxDistance: 15,
   roundTripMultiplier: 2.0,
+  grabBookingFee: 20,
+  rushSurgePct: 25,
+  peakSurgePct: 15,
 };
 
 // telegramEnabled is real (see functions/src/index.ts). The rest is
@@ -137,6 +142,9 @@ const AdminAdvancedSettingsPage: React.FC = () => {
           rules.maxFutureDays ? `maxFutureDays: ${rules.maxFutureDays}` : null,
           `maxDistance: ${rules.maxDistance}`,
           `roundTripMultiplier: ${rules.roundTripMultiplier}`,
+          `grabBookingFee: ${rules.grabBookingFee}`,
+          `rushSurgePct: ${rules.rushSurgePct}`,
+          `peakSurgePct: ${rules.peakSurgePct}`,
           `telegramEnabled: ${settings.telegramEnabled}`,
         ].filter((v): v is string => !!v),
       });
@@ -208,18 +216,31 @@ const AdminAdvancedSettingsPage: React.FC = () => {
           </Row>
         </SectionCard>
 
-        {/* 📍 Travel fare & Distance — actual round-trip only (Round 28s308). */}
+        {/* 📍 Travel fare & Distance — actual round-trip + Grab fee + surge
+             (Round 28s309). */}
         <SectionCard icon={<CreditCard size={13} weight="bold" />} title="ค่าเดินทาง & ระยะทาง">
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
-            ลูกค้าจ่ายค่าเดินทางไป-กลับตามจริง = ค่ามิเตอร์เที่ยวเดียว × ตัวคูณด้านล่าง (2.0 = ไปเต็ม + กลับเต็ม) + ค่าฝนถ้ามี · ไม่มีส่วนลด/มัดจำแล้ว
+            ค่าเดินทาง = (มิเตอร์เที่ยวเดียว × ตัวคูณไป-กลับ + ค่าเรียกรถ×2) × (1 + surge ช่วงเวลา + ค่าฝน) · surge/ฝนคิดจากเวลานัด (จองล่วงหน้าคาดการณ์ไม่ได้แบบ Grab สด)
           </Typography>
           <TextField label="ตัวคูณค่าเดินทางไป-กลับ" fullWidth type="number" margin="dense" sx={fieldSx}
-            helperText="2.0 = ไปเต็มราคา + กลับตามจริงเต็ม · ต้องมากกว่า 1"
+            helperText="2.0 = ไปเต็ม + กลับเต็มตามจริง · ต้องมากกว่า 1"
             value={rules.roundTripMultiplier}
             onChange={(e) => setRules((p) => ({ ...p, roundTripMultiplier: Math.max(1.01, Number(e.target.value)) }))} />
-          <TextField label="ระยะทางสูงสุดก่อนต้องขอราคาแยก (กม.)" fullWidth type="number" margin="dense" sx={fieldSx}
-            helperText="เกินระยะนี้ระบบจะให้ติดต่อแอดมินขอราคาแทนคิดราคาอัตโนมัติ"
+          <TextField label="ค่าเรียกรถ Grab ต่อเที่ยว (บาท)" fullWidth type="number" margin="dense" sx={fieldSx}
+            helperText={`คิดต่อเที่ยว · ไป-กลับ = ×2 = +฿${(Math.max(0, rules.grabBookingFee) * 2).toLocaleString()} ต่อการจอง`}
+            value={rules.grabBookingFee}
+            onChange={(e) => setRules((p) => ({ ...p, grabBookingFee: Math.max(0, Number(e.target.value)) }))} />
+          <TextField label="Surge ชั่วโมงเร่งด่วน (%)" fullWidth type="number" margin="dense" sx={fieldSx}
+            helperText="รถติด/รถหยุดนิ่ง 07:00–09:00 และ 17:00–20:00 · 0 = ปิด"
+            value={rules.rushSurgePct}
+            onChange={(e) => setRules((p) => ({ ...p, rushSurgePct: Math.min(200, Math.max(0, Number(e.target.value))) }))} />
+          <TextField label="Surge ช่วงพีค/แออัด (%)" fullWidth type="number" margin="dense" sx={fieldSx}
+            helperText="ดึกดีมานด์สูง 21:00–02:00 · 0 = ปิด"
+            value={rules.peakSurgePct}
+            onChange={(e) => setRules((p) => ({ ...p, peakSurgePct: Math.min(200, Math.max(0, Number(e.target.value))) }))} />
+          <TextField label="ระยะทางสูงสุดก่อนต้องยืนยันกับแอดมิน (กม.)" fullWidth type="number" margin="dense" sx={fieldSx}
+            helperText="เกินระยะนี้ระบบให้ติดต่อแอดมินยืนยันแทนคิดราคาอัตโนมัติ (ตอนนี้ 15)"
             value={rules.maxDistance} onChange={(e) => setRules((p) => ({ ...p, maxDistance: Math.max(1, Number(e.target.value)) }))} />
         </SectionCard>
 

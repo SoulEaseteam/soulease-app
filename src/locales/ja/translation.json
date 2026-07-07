@@ -204,6 +204,8 @@
   "pay.feeNote": "サービス料 · 為替・処理手数料",
   "booking.travelTip.title": "往復出張料金",
   "booking.travelTip.roundTrip": "往復 · 両区間フルメーター",
+  "booking.travelTip.bookingFee": "配車料/区間",
+  "booking.travelTip.surge": "ラッシュ時・需要ピーク・雨天は追加料金が発生する場合があります。",
   "booking.travelTip.returnLeg": "復路 · メーターより 40% オフ",
   "booking.travelTip.returnNote": "(往路は全額 + 復路 60% · 自動適用)",
   "booking.travelTip.rain": "雨天時は 15〜30% の追加料金が発生する場合があります · 到着 +5 分。",

@@ -94,6 +94,7 @@ import {
   calcTaxiFare,
   ADMIN_QUOTE_KM,
   DISPATCH_BASE,
+  GRAB_BOOKING_FEE,
 } from "@/utils/taxiFare";
 // 🆕 Round 28b35 — Live therapist Holiday/override gate.
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
@@ -544,10 +545,13 @@ const BookingFlowPage: React.FC = () => {
   // so the page never flickers an empty fare line.
   const taxi = useMemo(() => {
     if (!locationSet) return { distanceKm: 0, fare: 0, result: undefined };
+    // 🆕 Round 28s309 — the booking's scheduled hour (BKK) drives the
+    //   time-of-day surge (rush / peak). Undefined until a time is picked.
+    const hourBKK = form.time ? parseInt(form.time.split(":")[0], 10) : undefined;
     if (route) {
       // 🆕 Round 28r33 — pass rainStatus so a fetched-mid-session
       //   surcharge actually surfaces.
-      const result = calcTaxiFare(route.kmRoad, rainStatus);
+      const result = calcTaxiFare(route.kmRoad, rainStatus, hourBKK);
       return {
         distanceKm: route.kmRoad,
         fare: result.fare ?? 0,
@@ -563,7 +567,8 @@ const BookingFlowPage: React.FC = () => {
         customerLng: form.lng,
         durationMin: form.duration ?? service?.duration ?? 60,
       },
-      rainStatus
+      rainStatus,
+      hourBKK
     );
   }, [
     locationSet,
@@ -576,6 +581,8 @@ const BookingFlowPage: React.FC = () => {
     service?.duration,
     // 🆕 Round 28r33 — recompute when weather state changes.
     rainStatus,
+    // 🆕 Round 28s309 — recompute surge when the scheduled time changes.
+    form.time,
   ]);
   const distanceKm = taxi.distanceKm;
   const taxiFare = taxi.fare;
@@ -1826,9 +1833,12 @@ const BookingFlowPage: React.FC = () => {
                       <br />
                       6–40 km · +฿7/km
                       <br />
-                      &gt; {ADMIN_QUOTE_KM} km · +฿10/km ·{" "}
-                      {t("booking.conciergeQuote", "Concierge quote")}
+                      40+ km · +฿10/km
                       <br />
+                      +฿{GRAB_BOOKING_FEE} · {t("booking.travelTip.bookingFee", "booking fee / leg")}
+                      <br />
+                      &gt; {ADMIN_QUOTE_KM} km ·{" "}
+                      {t("booking.conciergeQuote", "Concierge quote")}
                       <Box
                         component="span"
                         sx={{
@@ -1845,8 +1855,8 @@ const BookingFlowPage: React.FC = () => {
                         sx={{ opacity: 0.85, display: "block", marginTop: "6px" }}
                       >
                         {t(
-                          "booking.travelTip.rain",
-                          "Rain may add 15–30% surcharge · ETA +5 min."
+                          "booking.travelTip.surge",
+                          "Rush hours, peak demand & rain may add a surcharge."
                         )}
                       </Box>
                     </Typography>

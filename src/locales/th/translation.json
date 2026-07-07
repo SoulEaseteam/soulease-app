@@ -206,6 +206,8 @@
   "pay.feeNote": "ค่าบริการ · ค่าแปลงสกุล + ดำเนินการ",
   "booking.travelTip.title": "ค่าเดินทางไป-กลับ",
   "booking.travelTip.roundTrip": "ไป-กลับ · คิดเต็มทั้ง 2 เที่ยว",
+  "booking.travelTip.bookingFee": "ค่าเรียกรถ/เที่ยว",
+  "booking.travelTip.surge": "ช่วงเร่งด่วน แออัด และฝน อาจมีค่าบริการเพิ่ม",
   "booking.travelTip.returnLeg": "เที่ยวกลับ · ลด 40% จากมิเตอร์",
   "booking.travelTip.returnNote": "(ขาไปเต็มราคา + ขากลับ 60% · คิดให้อัตโนมัติ)",
   "booking.travelTip.rain": "ฝนตกอาจมีค่าธรรมเนียมเพิ่ม 15–30% · เวลาถึง +5 นาที",
