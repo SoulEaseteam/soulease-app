@@ -3668,3 +3668,27 @@ fee (trip reimbursement) — the pay page had been showing commission only.
 
 tsc=0 + build clean (55 routes), deployed; "ค่านวด" / "เดินทาง" breakdown
 confirmed in the live pay chunk.
+
+### 🆕 2026-07-07 — Earnings: drop shop-revenue ledger, add period deltas (28s316)
+
+Founder (screenshot of admin/earnings): "รายได้ของร้าน เอาออก · ปรับหน้านี้ให้
+สวยงาม · แนะนำฟังชั่นที่จำเป็น."
+
+- **Removed** the monthly "รายได้ของร้าน" job-by-job ledger (28s312) — it was
+  redundant with the calculator's Shop-net hero + by-therapist/by-service
+  cards, and the therapist-payout workflow now lives on the Pay Therapists
+  page (28s313–315). Dropped `revenueMonth`/`monthBookings`/`monthLoading`
+  state, the month effect, the `monthRevenue` memo, and the render block.
+- **Necessary function = period-over-period comparison.** New `prevWindow`
+  memo derives the previous equal-length window from `range`/custom; a second
+  `bookings` onSnapshot loads it into `prevBookings`; `prevStats` recomputes
+  shopNet / collected / payout / count with the SAME tier math and the SAME
+  therapist/service filters (like-for-like). New `<Delta cur prev neutral />`
+  subcomponent renders ▲/▼ % (green up / red down for revenue; `neutral`
+  muted arrow for payout). Wired onto Shop net (hero, "vs ก่อนหน้า (฿X)"),
+  Gross revenue, and Therapist payout (neutral) in the stat row.
+- **Polish:** stale subtitle "60/40 therapist-shop split" → "tier-based
+  therapist split".
+
+tsc=0 + build clean (55 routes), deployed; "รายได้ของร้าน" gone and
+"vs ก่อนหน้า" / "tier-based therapist split" present in the live earnings chunk.
