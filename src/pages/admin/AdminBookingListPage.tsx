@@ -125,6 +125,13 @@ import {
   Sparkle,
   Receipt,
   ClockCounterClockwise,
+  // 🆕 Round 28r44 (founder: match Dashboard visual quality) — icon-circle
+  //   glyphs for the summary strip stats (Needs Action / In Progress /
+  //   Booked Value / Shop Revenue), mirroring the icon set used on the
+  //   AdminDashboardPage "Period Summary" row (28s241).
+  Warning,
+  Wallet,
+  Buildings,
 } from "phosphor-react";
 
 // Cap the realtime window. Pending/confirmed bookings are always recent; older
@@ -566,52 +573,70 @@ const AdminBookingListPage: React.FC = () => {
       </Box>
 
       {/* 🆕 28s253 — summary strip: what needs the operator's attention first,
-          before any card is scanned. */}
+          before any card is scanned.
+          🆕 Round 28r44 (founder: "polish to Dashboard visual quality") — the
+          original 3-card left-rail strip elevated to the same icon-circle
+          widget vocabulary Dashboard's "Period Summary" row uses (28s241):
+          46px icon circle per stat (Warning / Clock / Wallet / Buildings) on
+          top-center with inset highlight + color-tinted micro-shadow, subtle
+          hover lift + tinted bg, radius 18, depth shadow. Shop Revenue split
+          out of Booked Value's extra tag into its own equal-weight card so
+          each stat gets its own icon and the row reads as one coherent 4-card
+          hero (matches Dashboard's 4-tile period stat pattern exactly). */}
       <Box
         sx={{
           px: { xs: 2, md: 3 }, pt: 2.5,
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "repeat(3,1fr)" },
+          gridTemplateColumns: { xs: "1fr", sm: "repeat(2,1fr)", md: "repeat(4,1fr)" },
           gap: 1.25,
         }}
       >
         {[
-          { label: "Needs Action", labelTh: "ต้องดำเนินการ",     value: String(counts.pending),   sub: "pending confirmation · รอยืนยัน",         rail: adminColor.accent },
-          { label: "In Progress",  labelTh: "กำลังดำเนินการ",    value: String(counts.confirmed), sub: "confirmed · ยืนยันแล้ว",                   rail: adminColor.green },
-          // 🆕 28s258 — shop-revenue line added under "Booked value" (same
-          //   commission split as Earnings/Reports — see commission.ts).
-          { label: "Booked Value", labelTh: "มูลค่ารวม",         value: formatTHB(valueStats.totalValue), sub: `${valueStats.activeCount} bookings · ไม่รวมยกเลิก`, extra: `Shop Revenue · รายได้ร้าน ${formatTHB(valueStats.shopRevenue)}`, rail: adminColor.dim },
+          { label: "Needs Action", labelTh: "ต้องดำเนินการ",  value: String(counts.pending),           sub: "pending confirmation · รอยืนยัน", color: adminColor.amber,     icon: <Warning   size={20} weight="duotone" /> },
+          { label: "In Progress",  labelTh: "กำลังดำเนินการ", value: String(counts.confirmed),         sub: "confirmed · ยืนยันแล้ว",           color: adminColor.accent,    icon: <Clock     size={20} weight="duotone" /> },
+          { label: "Booked Value", labelTh: "มูลค่ารวม",       value: formatTHB(valueStats.totalValue), sub: `${valueStats.activeCount} bookings · ไม่รวมยกเลิก`, color: adminColor.highlight, icon: <Wallet    size={20} weight="duotone" /> },
+          // 🆕 28s258 — shop-revenue was an inline tag under Booked Value; r44
+          //   promotes it to a peer stat card (same commission split as
+          //   Earnings/Reports — see commission.ts).
+          { label: "Shop Revenue", labelTh: "รายได้ร้าน",      value: formatTHB(valueStats.shopRevenue), sub: "after therapist split · หลังหักหมอ", color: adminColor.green,     icon: <Buildings size={20} weight="duotone" /> },
         ].map((s) => (
           <Box
             key={s.label}
             sx={{
-              position: "relative", overflow: "hidden",
+              display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 0.6,
               background: adminColor.panel, border: `1px solid ${adminColor.line}`,
-              borderRadius: "18px", p: "16px 18px",
-              boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 8px 22px rgba(31,41,51,0.07)",
-              "&::before": {
-                content: '""', position: "absolute", left: 0, top: 14, bottom: 14, width: 3,
-                borderRadius: 3, background: s.rail,
+              borderRadius: "18px", p: "18px 12px 16px",
+              boxShadow: "0 2px 10px rgba(31,41,51,0.04)",
+              transition: "transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease",
+              "&:hover": {
+                transform: "translateY(-1px)",
+                background: `${s.color}0A`,
+                boxShadow: `0 4px 14px rgba(31,41,51,0.06), 0 2px 6px ${s.color}18`,
               },
             }}
           >
-            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, letterSpacing: "0.09em", textTransform: "uppercase", color: adminColor.muted, pl: 1.5, lineHeight: 1 }}>
-              {s.label}
-            </Typography>
-            <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 600, color: adminColor.dim, pl: 1.5, mt: 0.3, letterSpacing: "0.02em" }}>
-              {s.labelTh}
-            </Typography>
-            <Typography sx={{ ...adminFigureSx, fontSize: 25, mt: 0.75, pl: 1.5, lineHeight: 1 }}>
+            <Box
+              sx={{
+                width: 46, height: 46, borderRadius: "50%",
+                background: `${s.color}1A`, color: s.color,
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 6px ${s.color}22`,
+              }}
+            >
+              {s.icon}
+            </Box>
+            <Typography sx={{ ...adminFigureSx, fontSize: 22, color: adminColor.text, lineHeight: 1, mt: 0.5 }}>
               {s.value}
             </Typography>
-            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.dim, mt: 0.5, pl: 1.5 }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1, mt: 0.1 }}>
+              {s.label}
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 600, color: adminColor.dim, lineHeight: 1 }}>
+              {s.labelTh}
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 0.35, lineHeight: 1.3 }}>
               {s.sub}
             </Typography>
-            {"extra" in s && s.extra && (
-              <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: adminColor.accent, mt: 0.35, pl: 1.5 }}>
-                {s.extra}
-              </Typography>
-            )}
           </Box>
         ))}
       </Box>
@@ -645,6 +670,12 @@ const AdminBookingListPage: React.FC = () => {
             "&::-webkit-scrollbar": { display: "none" },
           }}
         >
+          {/* 🆕 Round 28r44 (founder: "ตรงตัวกรองไม่ต้อง") — filter labels are
+              English-only. Thai subtitles retained on the page header + summary
+              strip + status badges (row state) + edit-drawer labels + actions
+              per r40 bilingual policy; only the FILTER controls (tabs, date
+              toggle, DatePicker labels, therapist/payment Selects) go English
+              only, since they're controls the operator toggles, not content. */}
           {TABS.map((t) => {
             const active = tab === t.key;
             return (
@@ -653,7 +684,7 @@ const AdminBookingListPage: React.FC = () => {
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setTab(t.key)}
                 aria-pressed={active}
-                aria-label={`${t.label} · ${t.labelTh}`}
+                aria-label={t.label}
                 style={{
                   flexShrink: 0,
                   height: 36,
@@ -671,19 +702,7 @@ const AdminBookingListPage: React.FC = () => {
                   transition: "border-color 0.15s ease, color 0.15s ease",
                 }}
               >
-                <Box component="span" sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
-                  {t.label}
-                  <Box
-                    component="span"
-                    sx={{
-                      fontSize: 10, fontWeight: 600,
-                      opacity: active ? 0.85 : 0.75,
-                      letterSpacing: "0.01em",
-                    }}
-                  >
-                    · {t.labelTh}
-                  </Box>
-                </Box>
+                {t.label}
                 {counts[t.key] > 0 && (
                   <Box
                     component="span"
@@ -727,21 +746,22 @@ const AdminBookingListPage: React.FC = () => {
             },
           }}
         >
-          <ToggleButton value="all">All time · ทุกเวลา</ToggleButton>
-          <ToggleButton value="custom">Custom · กำหนดเอง</ToggleButton>
+          {/* 🆕 Round 28r44 — filter labels English-only (see tabs comment). */}
+          <ToggleButton value="all">All time</ToggleButton>
+          <ToggleButton value="custom">Custom</ToggleButton>
         </ToggleButtonGroup>
 
         {dateMode === "custom" && (
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
-              label="From · จาก"
+              label="From"
               value={customStart}
               maxDate={customEnd}
               onChange={(v) => v && setCustomStart(v)}
               slotProps={{ textField: { size: "small", sx: { width: 150 } } }}
             />
             <DatePicker
-              label="To · ถึง"
+              label="To"
               value={customEnd}
               minDate={customStart}
               maxDate={dayjs()}
@@ -759,7 +779,7 @@ const AdminBookingListPage: React.FC = () => {
             sx={{ minWidth: 180, fontSize: 13 }}
             MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
           >
-            <MenuItem value="__ALL__">All Therapists · ทุกคน</MenuItem>
+            <MenuItem value="__ALL__">All Therapists</MenuItem>
             {therapistOptions.map(([id, name]) => (
               <MenuItem key={id} value={id}>{name}</MenuItem>
             ))}
@@ -773,9 +793,9 @@ const AdminBookingListPage: React.FC = () => {
           sx={{ minWidth: 160, fontSize: 13 }}
           MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
         >
-          <MenuItem value="__ALL__">Any Payment · ทุกสถานะ</MenuItem>
-          <MenuItem value="paid">Paid · จ่ายแล้ว</MenuItem>
-          <MenuItem value="unpaid">Unpaid · ยังไม่จ่าย</MenuItem>
+          <MenuItem value="__ALL__">Any Payment</MenuItem>
+          <MenuItem value="paid">Paid</MenuItem>
+          <MenuItem value="unpaid">Unpaid</MenuItem>
         </Select>
       </Box>
 
@@ -949,10 +969,13 @@ const BookingCard: React.FC<{
         boxShadow: isTerminal
           ? "0 1px 2px rgba(31,41,51,0.03)"
           : "0 1px 2px rgba(31,41,51,0.04), 0 8px 22px rgba(31,41,51,0.07)",
+        // 🆕 Round 28r44 — active card hover elevated slightly (~10% deeper
+        //   alpha on both shadow layers) so the affordance reads a shade
+        //   more clearly against the r44 elevated summary strip above.
         ...(!isTerminal && {
           "&:hover": {
             transform: "translateY(-3px)",
-            boxShadow: "0 2px 4px rgba(31,41,51,0.05), 0 16px 40px rgba(31,41,51,0.12)",
+            boxShadow: "0 3px 6px rgba(31,41,51,0.06), 0 18px 44px rgba(31,41,51,0.14)",
           },
         }),
       }}
