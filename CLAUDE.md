@@ -1911,6 +1911,74 @@ squeezed row, worse at browser zoom), and the stat pills wrapped unevenly
   subline, amount+status stacked right-aligned in their own column, row
   min-height + vertical centering — no clipping/crowding at any zoom.
 
+### 🆕 2026-07-07 — admin/advanced-settings: 13 fields, all decorative (28s296)
+
+Founder: "admin/advanced-settings ปรับแก้ และ ตกแต่งสวยงาม แนะนำ ที่ใช้ได้จริง".
+Same audit method as blocked-devices (28s293), scaled up: `grep -rl` for
+each of the page's 13 field names across the whole repo (`src` +
+`functions`) returned ONLY this file, for every single one. The page had
+never controlled anything — every "real" system these fields sound like
+they'd gate already exists elsewhere, hardcoded and working:
+- Telegram — a real, deployed Cloud Functions bot
+  (`functions/src/telegram-concierge-bot/`, `telegram-post-bot/`), token
+  sourced from Functions config, not this Firestore doc.
+- LINE Notify — zero implementation anywhere. Nothing to enable.
+- PromptPay / deposit — real, hardcoded: `DEPOSIT_THB` in
+  `DistanceDepositDialog.tsx` (500฿, "25km+" policy per its own comment),
+  "promptpay" a real selectable payment METHOD in `PaymentMethodsPage.tsx`
+  (not a feature flag).
+- Distance / round-trip pricing — real, hardcoded in `taxiFare.ts`
+  (`ADMIN_QUOTE_KM=40`, `ROUND_TRIP_MULTIPLIER=1.6`, founder-confirmed
+  business model from round 28b23 — round-trip charging isn't optional,
+  so a "roundTrip" toggle doesn't even match how the system actually
+  works).
+- Blocked IPs — structurally impossible here: a static SPA + client
+  Firestore SDK has no way to learn a visitor's real IP, and Firestore
+  rules can't inspect request IP either.
+
+**Wired for real** (nothing competed with these, so zero risk to
+existing behavior):
+- `maintenanceMode` — new `src/components/common/MaintenanceGate.tsx`
+  wraps the whole customer-facing route tree in `App.tsx` with a live
+  `onSnapshot` on the new public `adminSettings/publicRules` doc. Flips
+  every guest's screen to a "back soon" page instantly, no refresh
+  needed; admin/therapist roles always pass through so the founder can
+  never lock herself out of her own toggle. Fails open on a read error.
+- `minAdvanceMins` / `maxFutureDays` — `BookingFlowPage.tsx`'s submit
+  guard (same slot as the 28s293 blocked-phone check) now reads the real
+  eligibility window from the same public doc and rejects a submit
+  outside it. Default 0 = no restriction either way, so nobody who's
+  never touched Settings sees any behavior change.
+- Removed `blockedIps` outright — same "can't work, don't pretend" logic
+  as the `blockedDevices` cleanup.
+
+**Left editable but honestly labeled** ("✅ ใช้งานจริง" vs "⚠️
+ยังไม่เชื่อมระบบจริง" badge per section) rather than silently wired or
+silently deleted: Notifications (Telegram/LINE tokens) and Payment &
+Distance (PromptPay/Stripe/deposit/distance). Wiring these for real
+means either a separate Cloud Functions deploy (Telegram — different,
+harder-to-verify pipeline than the Vercel loop this session runs on) or
+making live pricing/payment math editable outside code review (deposit
+amount, distance multiplier) — a deliberate product/money decision, not
+a bugfix, so flagged back to the founder via AskUserQuestion rather than
+decided unilaterally. Values still save (nothing lost if she says yes).
+
+`firestore.rules`: new `adminSettings/publicRules` — `read: if true`
+(guest checkout has no auth to gate on, same reasoning as
+`blockedPhones`), kept as a SEPARATE doc from `adminSettings/advanced`
+(admin-only read+write) specifically so a public-read grant can never
+accidentally expose a real secret/token if that doc ever holds one.
+
+Verified live: deployed firestore.rules first, confirmed
+`adminSettings/publicRules` public-read via REST (404 not-found, not 403
+denied) and the homepage still renders normally post-deploy (critical
+regression check since MaintenanceGate wraps literally every customer
+route) — curled the live main bundle and grep-confirmed `publicRules`,
+`maintenanceMode`, and the Thai maintenance-screen copy are all present
+in what customers actually get served. Also confirmed the admin
+Advanced Settings chunk has the two status badges and zero remaining
+`blockedIps` references.
+
 ### 🆕 2026-07-07 — hotfix: audit-log white-screen crash (28s295)
 
 Founder screenshot right after 28s294 shipped: `/admin/audit-log` fully
