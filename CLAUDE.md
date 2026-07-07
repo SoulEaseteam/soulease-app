@@ -1674,6 +1674,46 @@ Tracked files 495 → 468. Deploy cmd going forward: **`vercel --prod
 --yes --archive=tgz`** (28s278) — one tarball upload, so file count no
 longer gates deploys regardless.
 
+### 🆕 2026-07-07 — map-search location picker + phone photo upload (28s280)
+
+Founder, on the therapist edit page: "พื้นที่ / ที่อยู่ standby — ช่องค้นหา
+ดึงเมปจริง จากเมฟเดียวกับการจอง" + "แกลเลอรี — อัปโหลดเพิ่ม/ลบรูปได้ จาก
+มือถือ".
+
+**1) Location picker (LIVE).** New `LocationPicker` component in
+`AdminTherapistDetailPage.tsx`'s area/address edit section, reusing the
+SAME Google Maps + Places setup the customer booking flow
+(`SelectLocationPage`) uses — via the app-wide `GoogleMapsProvider`
+(mounted in main.tsx, so admin pages can call `useGoogleMaps()` directly).
+Search a place OR tap the map → auto-fills พื้นที่ (place name), ที่อยู่
+standby (formatted_address), พิกัด (lat/lng). Text fields stay editable
+for manual tweaks. Removed the duplicate "Location (lat,lng)" from the
+Schedule card. Uses the existing `VITE_GOOGLE_MAPS_API_KEY` (already in
+Vercel — booking uses it).
+
+**2) Gallery photo upload (CODE-READY, blocked on 1 console step).**
+"อัปโหลดรูปจากมือถือ" button → native `<input type=file accept=image/*
+multiple>` (a phone offers camera OR library) → uploads each to Firebase
+Storage `therapists/{docId}/gallery/{ts}-{name}` → pushes download URLs
+into the gallery. **firebase/storage is DYNAMICALLY imported** so it never
+enters the customer bundle (verified: its own lazy chunk, not index-*.js
+— the exact reason its export was dropped in 28s105). Manual "add image
+URL" rows kept as fallback. New infra committed: `storage.rules`
+(admin-only writes via `firestore.exists(/admins/{uid})`, public read,
+10MB image cap) + `firebase.json` storage block.
+
+**🔔 OPEN FOR VIEW — enable Firebase Storage (unblocks upload):**
+Firebase Storage is NOT provisioned on `soulease-spa` — `firebase deploy
+--only storage` returns "Firebase Storage has not been set up... Get
+Started". One-time console step only View can do:
+  1. https://console.firebase.google.com/project/soulease-spa/storage →
+     Get Started → location asia-southeast1 (match Firestore).
+  2. Then Claude runs `firebase deploy --only storage` (rules already
+     committed) and verifies an upload.
+Until then the upload button fails SOFT with a Thai "enable Storage first"
+message; the map picker + URL rows + every other field work normally.
+(Tracked as a spawned background task.)
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
