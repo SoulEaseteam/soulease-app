@@ -95,8 +95,19 @@ const CATEGORY_LABEL: Record<string, string> = {
   user: "ผู้ใช้",
   review: "รีวิว",
   phone: "เบอร์โทร",
+  other: "อื่น ๆ",
 };
-const categoryOf = (action: string) => action.split(".")[0] ?? action;
+// 🆕 Round 28s295 (founder screenshot: white-screened on "Cannot read
+//   properties of undefined (reading 'split')") — a real doc in
+//   `auditLogs` has an `action` that isn't a string (missing/legacy
+//   entry predating logAdminAction, per the file's own 28s234 comment
+//   about a Cloud-Functions-only design this collection had before).
+//   `categoryOptions` runs this eagerly over every loaded row, so one
+//   bad doc crashed the whole page before anything could render or be
+//   filtered out. Firestore data isn't guaranteed to match the
+//   TypeScript-asserted shape — never trust `as AuditRow` at runtime.
+const categoryOf = (action: unknown): string =>
+  typeof action === "string" && action.includes(".") ? action.split(".")[0] : "other";
 
 function detailLine(detail?: Record<string, unknown>): string {
   if (!detail) return "";
@@ -157,7 +168,7 @@ const AdminAuditLogPage: React.FC = () => {
       if ((r.at?.toMillis() ?? 0) < cutoff) return false;
       if (categoryFilter && categoryOf(r.action) !== categoryFilter) return false;
       if (q) {
-        const cfg = ACTION_LABEL[r.action] ?? { label: r.action };
+        const cfg = ACTION_LABEL[r.action as string] ?? { label: typeof r.action === "string" ? r.action : "" };
         const haystack = [cfg.label, detailLine(r.detail), r.actorEmail].filter(Boolean).join(" ").toLowerCase();
         if (!haystack.includes(q)) return false;
       }
@@ -271,7 +282,7 @@ const AdminAuditLogPage: React.FC = () => {
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
           {filteredRows.map((r) => {
-            const cfg = ACTION_LABEL[r.action] ?? { label: r.action, color: adminColor.muted };
+            const cfg = ACTION_LABEL[r.action as string] ?? { label: typeof r.action === "string" ? r.action : "ไม่ทราบประเภท", color: adminColor.muted };
             const when = r.at?.toDate ? dayjs(r.at.toDate()) : null;
             const detail = [detailLine(r.detail), r.actorEmail].filter(Boolean).join(" · ");
             return (
