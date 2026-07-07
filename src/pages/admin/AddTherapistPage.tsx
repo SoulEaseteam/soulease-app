@@ -191,7 +191,10 @@ const AddTherapistPage: React.FC = () => {
               <TextField label="ชื่อ" fullWidth size="small" sx={fieldSx} value={form.name} onChange={(e) => set("name", e.target.value)} />
               <TextField label="Image URL (รูปโปรไฟล์)" fullWidth size="small" sx={fieldSx} value={form.image} onChange={(e) => set("image", e.target.value)} placeholder="/images/... หรืออัปในแกลเลอรีด้านล่างแล้ววางลิงก์" />
               <TextField label="Specialty (ความถนัด)" fullWidth size="small" sx={fieldSx} value={form.specialty} onChange={(e) => set("specialty", e.target.value)} />
-              <TextField select label="Badge" fullWidth size="small" sx={fieldSx} value={form.badge} onChange={(e) => set("badge", e.target.value)} SelectProps={{ MenuProps: selectMenuProps, displayEmpty: true }}>
+              {/* 🆕 Round 28s283 — InputLabelProps shrink:true so the floating
+                  "Badge" label doesn't overlap the "None" text that
+                  displayEmpty renders while the value is still "". */}
+              <TextField select label="Badge" fullWidth size="small" sx={fieldSx} value={form.badge} onChange={(e) => set("badge", e.target.value)} InputLabelProps={{ shrink: true }} SelectProps={{ MenuProps: selectMenuProps, displayEmpty: true }}>
                 {badgeOptions.map((b) => <MenuItem key={b} value={b}>{b || "None"}</MenuItem>)}
               </TextField>
             </Box>
