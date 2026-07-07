@@ -1885,6 +1885,18 @@ dropdown beside the search box — each option shows flag + name + guest
 count (🌏 ทั้งหมด / per-country sorted most-first / ❔ ไม่ทราบ). Composes
 with the name/phone search.
 
+### 🆕 2026-07-07 — guest history rows open the real booking (28s288)
+
+Founder: "ให้ประวัติการจอง ดูได้จริง". The profile drawer's booking-history
+rows were display-only. Now each is tap-to-expand: on click it fetches
+that booking's full doc **by id** (`getDoc` — works even for old bookings
+outside the Bookings-list feed window, which a navigate-to-list approach
+couldn't) and shows the real details inline via `bookingDetailPairs`:
+date/time · phone · location · service·duration · therapist · payment+paid
+· service/taxi/discount/total · note · review+stars · booking id. Caret
+rotates, spinner while loading, "ไม่พบข้อมูล" if deleted. Only present
+fields render.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
