@@ -3350,3 +3350,46 @@ admin Selects already work around it via explicit MenuProps PaperProps
 (e.g. `selectMenuProps` in AdminAnalyticsPage). Verified tsc + build clean,
 55 routes prerender, override present in the live main bundle
 (`MuiPickersPopper` + the distinctive shadow).
+
+### 🆕 2026-07-07 — Travel fare: real discount % + controllable anchor (28s307)
+
+Founder reviewed the "ค่ามัดจำ & ระยะทาง" Advanced-Settings section and
+asked to rethink the calc + surface the customer travel discount in web
+booking. **Presented the analysis first** (worked-example table of what a
+customer pays at 5/10/25/40 km), flagged it as a money decision, and asked
+direction via AskUserQuestion → she chose **"both"** (clarity+control AND a
+real discount lever).
+
+Key facts established: `taxiFare.ts` is the single fare injection point;
+what the customer pays = one-way meter × `ROUND_TRIP_MULTIPLIER` (1.6) +
+rain; `DEPOSIT_THB` (500) and `FREE_RADIUS_KM` (25) are **FAQ-only** — used
+ONLY by `src/components/home/DistanceDepositDialog.tsx`, never charged in
+BookingFlow; the ~36% shown "Smart Routing" discount rode a hardcoded 2.5×
+`LIST_PRICE_MULTIPLIER` anchor she couldn't edit.
+
+Built (all default to current behaviour — **nothing customers pay changes
+until she sets a value**):
+- `taxiFare.ts`: `LIST_PRICE_MULTIPLIER` const→`let` (live display anchor)
+  + new `TRAVEL_DISCOUNT_PCT` (real, clamped 0–90). In `calcTaxiFare`:
+  `fare = withRain − round(withRain × pct/100)`. Added
+  `travelDiscountPct`/`travelDiscountAmt` to `TaxiFareResult`;
+  `sunredPromoDiscount` redefined to `listPrice − fare` so the existing
+  savings pill absorbs the real discount with **zero BookingFlow edits**
+  (taxiFare = result.fare flows through).
+- `MaintenanceGate`: feeds `listPriceMultiplier` + `travelDiscountPct` from
+  publicRules into `applyLiveFareConfig` (clamps: anchor ≥ 1, pct 0–90).
+- `AdminAdvancedSettingsPage`: section retitled "ค่าเดินทาง & ระยะทาง" and
+  split into **💸 คิดเงินจริง** (round-trip ×, real discount %, standard-rate
+  anchor, max-km) vs **📄 FAQ เท่านั้น** (deposit, free-radius) so it's obvious
+  which fields touch money; discount field renders a live worked example.
+
+De-risk: isolated money-math test 15/15 PASS — default `fare === withRain`
+(byte-identical), real discount lowers the customer total by exactly the
+discount amount, the anchor never touches the fare, negative/huge inputs
+clamp safely. No rules change (existing publicRules doc). Verified live:
+`travelDiscountPct` in main bundle, new admin fields in the advanced chunk.
+
+Still open (offered, NOT chosen): making the deposit a REAL charge (would
+need a payment-collection flow) — and the DistanceDepositDialog still tells
+customers about a 500฿ deposit that isn't charged; left as-is per scope,
+but worth reconciling if the deposit ever goes real.
