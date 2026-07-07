@@ -3692,3 +3692,35 @@ Founder (screenshot of admin/earnings): "รายได้ของร้าน
 
 tsc=0 + build clean (55 routes), deployed; "รายได้ของร้าน" gone and
 "vs ก่อนหน้า" / "tier-based therapist split" present in the live earnings chunk.
+
+### 🆕 2026-07-07 — Earnings: 5 functions (cashflow/costs/goal/PDF) (28s317)
+
+Founder picked "ทั้งหมด" from the 28s316 recommendation list. All on
+AdminEarningsPage:
+
+- **(A) ค้างจ่ายหมอ** — a card (click → /admin/pay-therapists) showing
+  therapist pay still owed for the selected period: non-cash + `!therapistPaid`
+  jobs, owed = commission + taxi (matches the Pay-Therapists math, 28s315).
+- **(B) ลูกค้ายังไม่จ่าย** — booked revenue not yet collected (customer
+  `isPaid` false), sum of `collected`. Both A & B are computed inside the
+  `stats` memo; the main `bookings` mapper now carries `paid`/`paymentStatus`/
+  `payment`/`paymentMethodId`/`therapistPaid`, and module helpers
+  `isCashPayment` + `isCustomerPaid` mirror the Pay-Therapists / BookingList
+  logic.
+- **(C) ต้นทุนปรับเองได้** — per-booking costs (supplies/ops/payment), long
+  hardcoded (70/150/0), are now live from **`adminSettings/earnings`**
+  (admin-only via the existing `adminSettings/{id}` rule — NO rules change;
+  publicRules is the only public-read one). A "⚙ ต้นทุน & เป้า" dialog writes
+  the doc (`settings.update` audit, area:"earnings"); `stats` + `prevStats`
+  read live `earn.*`.
+- **(D) เป้ารายได้เดือน** — monthly Shop-net goal (same doc) with a progress
+  bar vs a dedicated **month-to-date** query (`monthNet`, independent of the
+  range filter, since a monthly goal is calendar-monthly). Green + 🎉 when hit.
+- **(E) สรุป PDF** — "⬇ PDF" button opens a print-styled summary window
+  (Shop net / gross / payout / taxi / costs tiles + by-therapist + by-service
+  tables for the current period) and auto-triggers the browser's
+  print-to-PDF. **No new dependency** (window.open + window.print).
+
+Header buttons are now ⚙ ต้นทุน & เป้า · ⬇ PDF · ⬇ CSV. tsc=0 + build clean
+(55 routes), deployed; "ค้างจ่ายหมอ" / "ลูกค้ายังไม่จ่าย" / "เป้ารายได้เดือนนี้"
+/ "ต้นทุนต่องาน" / "สรุปรายได้" confirmed in the live earnings chunk.
