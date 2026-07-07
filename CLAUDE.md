@@ -1865,6 +1865,20 @@ in the same single aggregation pass — no extra reads, drawer is instant.
 notes+tags, quick-contact deep links (WhatsApp/LINE/Telegram) + CSV
 export, RFM segmentation — offer these again if she wants more CRM depth.
 
+### 🆕 2026-07-07 — guest country from phone dial code (28s287)
+
+Founder: "เพิ่มประเทศด้วย ว่าหมายเลขนี้ประเทศอะไร". New
+`src/utils/phoneCountry.ts` (`countryFromPhone`, `PHONE_COUNTRIES`)
+resolves a stored phone → country from its dial-code prefix (same country
+set the booking flow's SelectLocationPage uses). Handles E.164 (+66…),
+00-prefix, and local Thai (leading 0, no code → Thailand). Detected from
+the ORIGINAL raw phone at aggregation (the normalized CRM key drops the
++66 for Thai). Added a **Country** column (flag + ISO) to the insights
+grid and flag + full name to the guest profile drawer. Tourist-heavy
+business → spotting a CN/KR/JP caller helps language/therapist matching.
+`phoneCountry.ts` duplicates SelectLocationPage's inline DIAL_CODES — a
+future cleanup could point that page at the shared util too.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
