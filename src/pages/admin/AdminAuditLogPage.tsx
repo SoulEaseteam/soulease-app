@@ -6,19 +6,52 @@
 //   only" — no function did, so it was permanently empty). Real entries now
 //   come from src/utils/auditLog.ts, called from booking confirm/cancel/
 //   complete, payout mark-paid, and roster relight actions.
+//
+// 🆕 Round 28s294 (founder: "admin/audit-log ปรับแก้ และ ตกแต่งสวยงาม
+//   แนะนำ ที่ใช้ได้จริง") — an audit log's whole value is "can I find
+//   what happened" — a flat unfilterable list of 200 rows fails that the
+//   moment there's more than a screenful of history. Added:
+//   • Search (label / detail / actor email) + category filter (grouped
+//     by the action's `x.y` prefix — booking/payout/therapist/user/
+//     review/phone — so new actions under an existing prefix need no
+//     filter-UI maintenance) + a today/7d/30d/all time window, matching
+//     the filter conventions every other admin list page gained this
+//     session.
+//   • Two stat pills (today's count, total loaded) for an at-a-glance
+//     read before scrolling.
+//   • Bumped the query cap 200 → 500 (now that filters exist, a narrow
+//     window like "today" silently losing older-in-range rows to a low
+//     cap felt wrong) and made the "capped" note honest/dynamic instead
+//     of a hardcoded "200" that would've gone stale the next time this
+//     changed.
+//   • The detail line used single-line nowrap+ellipsis — the same
+//     pattern round 28s290 root-caused as breaking under OS text-size
+//     scaling (fixed elsewhere this session). Reason/changedFields text
+//     can run long (especially now that phone.block carries a free-typed
+//     reason), so long entries were silently cut off with no way to see
+//     the rest. Switched to wrap.
 
-import React, { useEffect, useState } from "react";
-import { Box, Typography, CircularProgress } from "@mui/material";
+import React, { useEffect, useMemo, useState } from "react";
+import { Box, Typography, CircularProgress, MenuItem, TextField, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { collection, onSnapshot, orderBy, query, limit, Timestamp } from "firebase/firestore";
 import dayjs from "dayjs";
-import { ArrowLeft, ClockCounterClockwise } from "phosphor-react";
+import { ArrowLeft, ClockCounterClockwise, MagnifyingGlass, ListChecks } from "phosphor-react";
 import { useNavigate } from "react-router-dom";
 
 import { db } from "@/lib/firebase";
-import { adminColor, adminFont } from "@/theme/adminTheme";
+import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import type { AuditAction } from "@/utils/auditLog";
 
 const SANS = adminFont.sans;
+const LOG_LIMIT = 500;
+
+type TimeWindow = "today" | "7d" | "30d" | "all";
+const WINDOW_MS: Record<TimeWindow, number> = {
+  today: 24 * 60 * 60 * 1000,
+  "7d": 7 * 24 * 60 * 60 * 1000,
+  "30d": 30 * 24 * 60 * 60 * 1000,
+  all: Number.POSITIVE_INFINITY,
+};
 
 interface AuditRow {
   id: string;
@@ -52,6 +85,19 @@ const ACTION_LABEL: Record<string, { label: string; color: string }> = {
   "phone.unblock":           { label: "ปลดบล็อกเบอร์โทร",      color: adminColor.green },
 };
 
+// 🆕 Round 28s294 — category = the prefix before the dot. New actions
+//   under an existing prefix (e.g. a future "booking.refund") need no
+//   change here or in the filter UI — they just inherit the group label.
+const CATEGORY_LABEL: Record<string, string> = {
+  booking: "จอง",
+  payout: "จ่ายเงิน",
+  therapist: "หมอนวด",
+  user: "ผู้ใช้",
+  review: "รีวิว",
+  phone: "เบอร์โทร",
+};
+const categoryOf = (action: string) => action.split(".")[0] ?? action;
+
 function detailLine(detail?: Record<string, unknown>): string {
   if (!detail) return "";
   const parts: string[] = [];
@@ -77,8 +123,12 @@ const AdminAuditLogPage: React.FC = () => {
   const [rows, setRows] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [timeWindow, setTimeWindow] = useState<TimeWindow>("all");
+
   useEffect(() => {
-    const q = query(collection(db, "auditLogs"), orderBy("at", "desc"), limit(200));
+    const q = query(collection(db, "auditLogs"), orderBy("at", "desc"), limit(LOG_LIMIT));
     const unsub = onSnapshot(
       q,
       (snap) => {
@@ -90,8 +140,33 @@ const AdminAuditLogPage: React.FC = () => {
     return () => unsub();
   }, []);
 
+  const categoryOptions = useMemo(
+    () => Array.from(new Set(rows.map((r) => categoryOf(r.action)))).sort(),
+    [rows],
+  );
+
+  const todayCount = useMemo(() => {
+    const cutoff = Date.now() - WINDOW_MS.today;
+    return rows.filter((r) => (r.at?.toMillis() ?? 0) >= cutoff).length;
+  }, [rows]);
+
+  const filteredRows = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const cutoff = timeWindow === "all" ? 0 : Date.now() - WINDOW_MS[timeWindow];
+    return rows.filter((r) => {
+      if ((r.at?.toMillis() ?? 0) < cutoff) return false;
+      if (categoryFilter && categoryOf(r.action) !== categoryFilter) return false;
+      if (q) {
+        const cfg = ACTION_LABEL[r.action] ?? { label: r.action };
+        const haystack = [cfg.label, detailLine(r.detail), r.actorEmail].filter(Boolean).join(" ").toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [rows, searchQuery, categoryFilter, timeWindow]);
+
   return (
-    <Box sx={{ p: 2, maxWidth: 760, mx: "auto" }}>
+    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 860, mx: "auto", fontFamily: SANS }}>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
         <Box
           onClick={() => navigate("/admin/dashboard")}
@@ -104,9 +179,75 @@ const AdminAuditLogPage: React.FC = () => {
       <Typography sx={{ fontFamily: adminFont.serif, fontWeight: 600, fontSize: 22, color: adminColor.text, mb: 0.5 }}>
         Audit Log
       </Typography>
-      <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: adminColor.muted, mb: 2 }}>
-        ประวัติการทำงานของแอดมิน — ยืนยัน/ยกเลิกออเดอร์ · จ่ายค่าตอบแทน · เปิด-ปิดร้าน (ล่าสุด 200 รายการ)
+      <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mb: 2 }}>
+        ประวัติการทำงานของแอดมิน — ยืนยัน/ยกเลิกออเดอร์ · จ่ายค่าตอบแทน · เปิด-ปิดร้าน · บล็อกเบอร์ ฯลฯ
+        {rows.length === LOG_LIMIT && ` (แสดง ${LOG_LIMIT} รายการล่าสุด อาจมีเก่ากว่านี้ที่ไม่แสดง)`}
       </Typography>
+
+      {/* 🆕 Round 28s294 — icon-circle stat pills. */}
+      <Box sx={{ display: "flex", gap: 1.25, mb: 2, flexWrap: "wrap" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: "10px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "15px", p: "8px 15px 8px 8px", boxShadow: "0 1px 3px rgba(31,41,51,0.04)" }}>
+          <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #6FA0AD, ${adminColor.accent})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <ClockCounterClockwise size={16} color="#fff" weight="fill" />
+          </Box>
+          <Box>
+            <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.text, lineHeight: 1.1 }}>{todayCount}</Typography>
+            <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>วันนี้</Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: "10px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "15px", p: "8px 15px 8px 8px", boxShadow: "0 1px 3px rgba(31,41,51,0.04)" }}>
+          <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #3B82F6, ${adminColor.blue})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <ListChecks size={16} color="#fff" weight="fill" />
+          </Box>
+          <Box>
+            <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.blue, lineHeight: 1.1 }}>{rows.length}</Typography>
+            <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>ทั้งหมดที่โหลด</Typography>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* 🆕 Round 28s294 — search + category + time-window filters. */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 1.5, alignItems: "center" }}>
+        <Box sx={{ flex: 1, minWidth: 200, maxWidth: 320, display: "flex", alignItems: "center", gap: 1, background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "12px", p: "9px 13px" }}>
+          <MagnifyingGlass size={15} color={adminColor.dim} />
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="ค้นหา…"
+            style={{ border: "none", outline: "none", background: "transparent", fontSize: 13.5, color: adminColor.text, width: "100%", fontFamily: SANS }}
+          />
+        </Box>
+        {categoryOptions.length > 1 && (
+          <TextField
+            select size="small" label="ประเภท"
+            value={categoryFilter ?? "__all__"}
+            onChange={(e) => setCategoryFilter(e.target.value === "__all__" ? null : e.target.value)}
+            sx={{ minWidth: 130, "& .MuiOutlinedInput-root": { borderRadius: "12px", background: adminColor.panel } }}
+          >
+            <MenuItem value="__all__">ทั้งหมด</MenuItem>
+            {categoryOptions.map((c) => (
+              <MenuItem key={c} value={c}>{CATEGORY_LABEL[c] ?? c}</MenuItem>
+            ))}
+          </TextField>
+        )}
+        <ToggleButtonGroup
+          value={timeWindow}
+          exclusive
+          onChange={(_, v: TimeWindow | null) => v && setTimeWindow(v)}
+          sx={{
+            "& .MuiToggleButton-root": {
+              fontFamily: SANS, fontSize: 12, fontWeight: 700, textTransform: "none",
+              border: `1px solid ${adminColor.line2}`, color: adminColor.text, padding: "6px 12px",
+              "&.Mui-selected": { background: adminColor.accent, color: "#fff", "&:hover": { background: adminColor.accentDeep } },
+            },
+          }}
+        >
+          <ToggleButton value="today">วันนี้</ToggleButton>
+          <ToggleButton value="7d">7 วัน</ToggleButton>
+          <ToggleButton value="30d">30 วัน</ToggleButton>
+          <ToggleButton value="all">ทั้งหมด</ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
 
       {loading ? (
         <Box sx={{ textAlign: "center", mt: 6 }}>
@@ -117,36 +258,47 @@ const AdminAuditLogPage: React.FC = () => {
           sx={{
             textAlign: "center", mt: 4, p: 3, borderRadius: 2,
             background: adminColor.panel, border: `1px solid ${adminColor.line}`,
-            color: adminColor.muted, fontFamily: SANS, fontSize: 13,
+            color: adminColor.muted, fontSize: 13,
           }}
         >
           <ClockCounterClockwise size={28} color={adminColor.dim} style={{ marginBottom: 8 }} />
           <div>ยังไม่มีประวัติ — จะบันทึกอัตโนมัติเมื่อมีการยืนยัน/ยกเลิกออเดอร์, จ่ายค่าตอบแทน หรือเปิด-ปิดร้าน</div>
         </Box>
+      ) : filteredRows.length === 0 ? (
+        <Box sx={{ textAlign: "center", mt: 4, p: 3, borderRadius: 2, background: adminColor.panel, border: `1px solid ${adminColor.line}`, color: adminColor.muted, fontSize: 13 }}>
+          ไม่พบรายการที่ตรงกับตัวกรอง
+        </Box>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
-          {rows.map((r) => {
+          {filteredRows.map((r) => {
             const cfg = ACTION_LABEL[r.action] ?? { label: r.action, color: adminColor.muted };
             const when = r.at?.toDate ? dayjs(r.at.toDate()) : null;
+            const detail = [detailLine(r.detail), r.actorEmail].filter(Boolean).join(" · ");
             return (
               <Box
                 key={r.id}
                 sx={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5,
+                  display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1.5, flexWrap: "wrap",
                   p: "10px 13px", borderRadius: "12px",
                   background: adminColor.panel, border: `1px solid ${adminColor.line}`,
                   borderLeft: `3px solid ${cfg.color}`,
                 }}
               >
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 13.5, fontWeight: 700, color: adminColor.text }}>
+                <Box sx={{ minWidth: 0, flex: "1 1 220px" }}>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: adminColor.text }}>
                     {cfg.label}
                   </Typography>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {[detailLine(r.detail), r.actorEmail].filter(Boolean).join(" · ")}
-                  </Typography>
+                  {/* 🆕 Round 28s294 — wrap instead of single-line ellipsis
+                      (same fix pattern as 28s290): a long reason/changedFields
+                      string used to just get cut off with no way to see the
+                      rest. */}
+                  {detail && (
+                    <Typography sx={{ fontSize: 11.5, color: adminColor.muted, wordBreak: "break-word", lineHeight: 1.4 }}>
+                      {detail}
+                    </Typography>
+                  )}
                 </Box>
-                <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.dim, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
+                <Typography sx={{ fontSize: 11.5, color: adminColor.dim, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
                   {when ? when.format("D MMM HH:mm") : "—"}
                 </Typography>
               </Box>
