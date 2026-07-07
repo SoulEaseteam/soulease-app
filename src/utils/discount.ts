@@ -90,6 +90,22 @@ export interface CustomPromoCode {
   maxRedemptions?: number | null;
   /** Redemptions allowed per phone number. Same submit-time enforcement. */
   perPhoneLimit?: number | null;
+  // 🆕 Round 28r50 (founder 2026-07-08 — Promotions Phase 1, feature #2
+  //   "Scheduled Pricing / Draft Mode") — schedule the code's ACTIVATION for
+  //   a future date without shipping code. Semantics: while `scheduledFor
+  //   > Date.now()`, the code behaves as if it doesn't exist yet
+  //   (byte-identical to no override — the custom-code map filter drops
+  //   the entry entirely at setter time). Distinct from `startsAt` because
+  //   the two exist for different reasons:
+  //     • startsAt: the code exists but gates guests until the window
+  //       opens (quiet-invalid inside validateDiscount).
+  //     • scheduledFor: the ADMIN edit is not live yet — the app behaves
+  //       as if the row hasn't been created / edited at all.
+  //   For a brand-new custom code they're effectively equivalent; kept
+  //   separate for consistency with LiveServiceOverride / BuiltinPromoOverride
+  //   (where the two ARE meaningfully different) and to keep the UI's
+  //   "Activate on" picker semantics uniform across the 3 override kinds.
+  scheduledFor?: number | null;
 }
 
 // 🆕 Round 28r49 (founder 2026-07-08 — "Built-in Codes · โค้ดมาตรฐาน แก้ไข
@@ -130,6 +146,15 @@ export interface BuiltinPromoOverride {
   /** Optional display label override; empty/absent falls back to the
    *  hardcoded template string. */
   label?: string;
+  // 🆕 Round 28r50 (feature #2 "Scheduled Pricing / Draft Mode") —
+  //   schedule the OVERRIDE's activation, not the code's own eligibility.
+  //   While `scheduledFor > Date.now()`, the override is not consulted at
+  //   all (falls back to the hardcoded default in discount.ts) — so the
+  //   old price/percent/cap/etc. remain live for guests until the picked
+  //   time. Filtered out at setter time (applyLiveBuiltinOverrides), so
+  //   validateDiscount stays byte-identical to pre-r50 while a scheduled
+  //   edit sits queued.
+  scheduledFor?: number | null;
 }
 
 let disabledBuiltinCodes = new Set<string>();
@@ -143,11 +168,29 @@ export function applyLivePromoConfig(cfg: {
   if (cfg.disabledCodes) {
     disabledBuiltinCodes = new Set(cfg.disabledCodes.map((c) => c.toUpperCase()));
   }
-  if (cfg.customCodes) customCodes = cfg.customCodes;
+  if (cfg.customCodes) {
+    // 🆕 Round 28r50 — drop any custom code whose `scheduledFor` hasn't
+    //   arrived yet, so the code behaves as if it doesn't exist yet
+    //   (validateDiscount's `customCodes[code]` lookup will simply miss).
+    //   Re-applied every ~60s by MaintenanceGate, so the code snaps live
+    //   at (or shortly after) the scheduled minute.
+    const now = Date.now();
+    const filtered: Record<string, CustomPromoCode> = {};
+    for (const [k, v] of Object.entries(cfg.customCodes)) {
+      if (v?.scheduledFor && v.scheduledFor > now) continue;
+      filtered[k] = v;
+    }
+    customCodes = filtered;
+  }
 }
 
 /** 🆕 Round 28r49 — pushed in by MaintenanceGate from
- *  `publicRules.builtinCodeOverrides` (see there for the wiring). */
+ *  `publicRules.builtinCodeOverrides` (see there for the wiring).
+ *  🆕 Round 28r50 — a builtin override with `scheduledFor > now` is
+ *  dropped entirely at setter time, so validateDiscount falls back to the
+ *  hardcoded default (byte-identical to no override). Re-applied on the
+ *  ~60s MaintenanceGate cadence so a scheduled edit activates without any
+ *  page refresh. */
 export function applyLiveBuiltinOverrides(
   map: Record<string, BuiltinPromoOverride> | null | undefined
 ): void {
@@ -155,9 +198,12 @@ export function applyLiveBuiltinOverrides(
   // silently miss a lookup here. Callers use `builtinOverrides[code]` with
   // `code` already normalised by validateDiscount.
   const clean: Record<string, BuiltinPromoOverride> = {};
+  const now = Date.now();
   if (map) {
     for (const [k, v] of Object.entries(map)) {
-      if (v && typeof v === "object") clean[k.toUpperCase()] = v;
+      if (!v || typeof v !== "object") continue;
+      if (v.scheduledFor && v.scheduledFor > now) continue;
+      clean[k.toUpperCase()] = v;
     }
   }
   builtinOverrides = clean;

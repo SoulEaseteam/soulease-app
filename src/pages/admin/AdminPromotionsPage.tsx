@@ -43,10 +43,10 @@
 // reference data survives in src/data/bookingExtras.ts for legacy
 // booking-doc lookups but is not surfaced anywhere.
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box, Typography, Switch, TextField, MenuItem, Button, Stack,
-  Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress,
+  Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, Checkbox,
 } from "@mui/material";
 import { app, db } from "@/lib/firebase";
 import {
@@ -54,7 +54,7 @@ import {
   limit as fbLimit, serverTimestamp, Timestamp,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { Tag, Percent, Ticket, ChartBar, Plus, Trash, Warning, ShareNetwork, Copy, Storefront, FloppyDisk, Camera, CaretUp, CaretDown, NotePencil, PencilSimple, ArrowCounterClockwise } from "phosphor-react";
+import { Tag, Percent, Ticket, ChartBar, Plus, Trash, Warning, ShareNetwork, Copy, Storefront, FloppyDisk, Camera, CaretUp, CaretDown, NotePencil, PencilSimple, ArrowCounterClockwise, Package, Calendar, Printer, Sliders } from "phosphor-react";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { SectionCard, fieldSx, downscaleImage } from "./therapistFormKit";
 import { logAdminAction } from "@/utils/auditLog";
@@ -62,6 +62,8 @@ import type { MassageService } from "@/data/services";
 import services from "@/data/services";
 import { priceForDuration, type LiveServiceOverride, type CustomServiceInput } from "@/utils/servicePricing";
 import { therapistPctFor } from "@/utils/commission";
+// 🆕 Round 28r50 (Promotions Phase 1) — Bundle Packages helpers.
+import { bundleSavings, type Bundle } from "@/utils/bundles";
 
 const BADGE_OPTIONS: MassageService["badge"][] = ["SIGNATURE", "POPULAR", "RECOMMEND", "EXCLUSIVE"];
 
@@ -111,6 +113,8 @@ interface BuiltinOverrideDoc {
   label?: string;
   startsAt?: Timestamp | null;
   expiryDate?: Timestamp | null;
+  // 🆕 Round 28r50 — schedule the OVERRIDE's activation (feature #2).
+  scheduledFor?: Timestamp | null;
 }
 
 interface PromoDoc {
@@ -126,7 +130,26 @@ interface PromoDoc {
   minSpendThb?: number | null;
   maxRedemptions?: number | null;
   perPhoneLimit?: number | null;
+  // 🆕 Round 28r50 — custom code's own activation schedule.
+  scheduledFor?: Timestamp | null;
 }
+
+// 🆕 Round 28r50 — Firestore-side shape for bundle docs (Timestamps land as
+//   Timestamps here; the utils/bundles.ts Bundle type carries them as ms).
+interface BundleDoc {
+  name: string;
+  sessionCount: number;
+  discountPct: number;
+  serviceId?: string | null;
+  enabled: boolean;
+  expiresAt?: Timestamp | null;
+  label?: string;
+  createdAt?: Timestamp | null;
+}
+
+// 🆕 Round 28r50 — bulk adjustment shape.
+type BulkAdjustMode = "pct_up" | "pct_down" | "thb_up" | "thb_down" | "fixed";
+interface BulkDurationScope { d60: boolean; d90: boolean; d120: boolean }
 
 interface UsageStat {
   count: number;
@@ -145,6 +168,10 @@ interface SvcRow {
   image: string;
   detail: string;
   benefit: string; // newline-separated in the editor
+  // 🆕 Round 28r50 — per-row schedule (feature #2). Epoch ms when the
+  //   pending override should ACTIVATE for customers; null/undefined =
+  //   active immediately. Row shows a "Scheduled" badge when set + future.
+  scheduledForMs?: number | null;
 }
 
 // 🆕 Round 28s301 — one editable row per admin-created custom service.
@@ -152,6 +179,38 @@ interface CustomSvcRow extends SvcRow {
   desc: string;
   badge: MassageService["badge"];
 }
+
+// 🆕 Round 28r50 — YYYY-MM-DDTHH:mm helpers for the "Activate on" pickers.
+//   Kept local so no cross-file dependency on dayjs formatting conventions.
+const tsToInputDT = (t?: Timestamp | null | undefined): string => {
+  if (!t?.toDate) return "";
+  const d = t.toDate();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+const msToInputDT = (ms?: number | null | undefined): string => {
+  if (!ms) return "";
+  const d = new Date(ms);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+const inputDTToTimestamp = (s: string): Timestamp | null => {
+  const t = s.trim();
+  if (!t) return null;
+  const d = new Date(t);
+  if (Number.isNaN(d.getTime())) return null;
+  return Timestamp.fromDate(d);
+};
+const inputDTToMs = (s: string): number | null => {
+  const ts = inputDTToTimestamp(s);
+  return ts ? ts.toMillis() : null;
+};
+const isFutureMs = (ms?: number | null | undefined): boolean => !!ms && ms > Date.now();
+const fmtScheduledLabel = (ms?: number | null | undefined): string => {
+  if (!ms) return "";
+  const d = new Date(ms);
+  return d.toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" });
+};
 
 const switchSx = {
   "& .MuiSwitch-switchBase.Mui-checked": { color: adminColor.accent },
@@ -242,6 +301,50 @@ const AdminPromotionsPage: React.FC = () => {
   const [addSvcUploading, setAddSvcUploading] = useState(false);
   const [addSvcSubmitting, setAddSvcSubmitting] = useState(false);
 
+  // 🆕 Round 28r50 (feature #2 "Scheduled Pricing / Draft Mode") — an
+  //   optional "Activate on" datetime the founder can set on each edit
+  //   dialog. Format: YYYY-MM-DDTHH:mm (matches datetime-local input).
+  //   Empty = active immediately. Non-empty + future = the change sits
+  //   dormant and MaintenanceGate's 60s re-apply pump snaps it live at
+  //   (or shortly after) the picked minute.
+  const [addScheduledFor, setAddScheduledFor] = useState<string>("");
+  const [addSvcScheduledFor, setAddSvcScheduledFor] = useState<string>("");
+  const [builtinEditScheduledFor, setBuiltinEditScheduledFor] = useState<string>("");
+  const [detailsScheduledFor, setDetailsScheduledFor] = useState<string>("");
+
+  // 🆕 Round 28r50 (feature #1 "Bundle Packages") — live-synced from
+  //   publicRules.bundles + local add/edit dialog state. Customer wiring
+  //   is Phase 2; this is the admin-side management surface only.
+  const [bundles, setBundles] = useState<Record<string, BundleDoc>>({});
+  const [bundleDialogOpen, setBundleDialogOpen] = useState(false);
+  const [editingBundleId, setEditingBundleId] = useState<string | null>(null);
+  const [bundleName, setBundleName] = useState<string>("");
+  const [bundleSessionCount, setBundleSessionCount] = useState<number>(3);
+  const [bundleDiscountPct, setBundleDiscountPct] = useState<number>(10);
+  const [bundleServiceId, setBundleServiceId] = useState<string>(""); // "" = any
+  const [bundleExpiresAt, setBundleExpiresAt] = useState<string>(""); // yyyy-MM-dd
+  const [bundleLabel, setBundleLabel] = useState<string>("");
+  const [bundleSubmitting, setBundleSubmitting] = useState(false);
+  const [bundleDeleteId, setBundleDeleteId] = useState<string | null>(null);
+
+  // 🆕 Round 28r50 (feature #3 "Bulk Service Edits") — dialog state.
+  //   Multi-select of standard + custom services; apply-mode; duration
+  //   scope; live before→after preview; batch-write via persistServices.
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkSelected, setBulkSelected] = useState<Record<string, boolean>>({});
+  const [bulkMode, setBulkMode] = useState<BulkAdjustMode>("pct_down");
+  const [bulkValue, setBulkValue] = useState<number>(10);
+  const [bulkScope, setBulkScope] = useState<BulkDurationScope>({ d60: true, d90: true, d120: true });
+  const [bulkScheduledFor, setBulkScheduledFor] = useState<string>("");
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
+
+  // 🆕 Round 28r50 (feature #4 "Print/Share Promo Card") — dialog state.
+  //   Reuses shareCode as the "which code is being printed" pointer for
+  //   both the existing QR-share dialog and the new print dialog.
+  const [printCode, setPrintCode] = useState<string | null>(null);
+  const [printFormat, setPrintFormat] = useState<"a6" | "card" | "square">("a6");
+  const printCardRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "adminSettings", "publicRules"), (snap) => {
       const data = snap.data();
@@ -255,6 +358,17 @@ const AdminPromotionsPage: React.FC = () => {
         if (v && typeof v === "object") clean[k.toUpperCase()] = v;
       }
       setBuiltinOverridesState(clean);
+      // 🆕 Round 28r50 — bundles ride the same public doc + this same
+      //   listener (no rules change: publicRules is already admin-write,
+      //   public-read). Empty/absent → no bundles configured.
+      const rawBundles = (data?.bundles ?? {}) as Record<string, BundleDoc>;
+      const cleanB: Record<string, BundleDoc> = {};
+      for (const [k, v] of Object.entries(rawBundles)) {
+        if (!v || typeof v !== "object") continue;
+        if (typeof v.sessionCount !== "number" || v.sessionCount < 1) continue;
+        cleanB[k] = v;
+      }
+      setBundles(cleanB);
     });
     return () => unsub();
   }, []);
@@ -277,6 +391,7 @@ const AdminPromotionsPage: React.FC = () => {
           minSpendThb: data.minSpendThb ?? null,
           maxRedemptions: data.maxRedemptions ?? null,
           perPhoneLimit: data.perPhoneLimit ?? null,
+          scheduledFor: data.scheduledFor ?? null,
         };
       });
       setPromoDocs(map);
@@ -333,6 +448,10 @@ const AdminPromotionsPage: React.FC = () => {
       }
       const stdRows: SvcRow[] = services.map((s) => {
         const o = ov[s.id] ?? {};
+        // 🆕 Round 28r50 — scheduledFor lands as a Firestore Timestamp; the
+        //   local editable state carries it as epoch ms so the pending
+        //   dialog datetime-local input round-trips cleanly.
+        const rawSched = (o as unknown as { scheduledFor?: Timestamp | null }).scheduledFor;
         return {
           id: s.id,
           name: o.name ?? s.name,
@@ -343,6 +462,7 @@ const AdminPromotionsPage: React.FC = () => {
           image: o.image ?? s.image,
           detail: o.detail ?? s.detail,
           benefit: (o.benefit ?? s.benefit ?? []).join("\n"),
+          scheduledForMs: rawSched?.toMillis?.() ?? null,
         };
       });
       const custRows: CustomSvcRow[] = (custom ?? []).filter((c) => c?.id).map((c) => ({
@@ -350,6 +470,7 @@ const AdminPromotionsPage: React.FC = () => {
         badge: c.badge ?? "POPULAR", enabled: c.enabled !== false,
         p60: c.prices?.[60] ?? 0, p90: c.prices?.[90] ?? 0, p120: c.prices?.[120] ?? 0,
         detail: "", benefit: "",
+        scheduledForMs: null,
       }));
       setSvcRows(stdRows);
       setCustomSvcRows(custRows);
@@ -374,7 +495,11 @@ const AdminPromotionsPage: React.FC = () => {
   const persistServices = async (
     rows: SvcRow[], customRows: CustomSvcRow[], order: string[],
   ) => {
-    const overrides: Record<string, LiveServiceOverride> = {};
+    // Same rationale as customServices below — `scheduledFor` here is
+    //   a Firestore Timestamp on the wire but a number in the runtime
+    //   type; use `unknown` at the write boundary so TS doesn't force
+    //   the runtime shape onto the serialized shape.
+    const overrides: Record<string, Record<string, unknown>> = {};
     rows.forEach((r) => {
       overrides[r.id] = {
         enabled: r.enabled,
@@ -384,11 +509,22 @@ const AdminPromotionsPage: React.FC = () => {
         image: r.image,
         detail: r.detail,
         benefit: r.benefit.split("\n").map((b) => b.trim()).filter(Boolean),
+        // 🆕 Round 28r50 — write the row's schedule as a Firestore
+        //   Timestamp. `null` when the field's empty so an OLD schedule
+        //   that's been cleared doesn't linger on the doc via merge.
+        scheduledFor: r.scheduledForMs ? Timestamp.fromMillis(r.scheduledForMs) : null,
       };
     });
-    const customServices: CustomServiceInput[] = customRows.map((c) => ({
+    // NB: the runtime `CustomServiceInput.scheduledFor` type is
+    //   `number | null` (that's what applyLiveServiceConfig's filter
+    //   compares against Date.now()) — but the Firestore doc stores it
+    //   as a Timestamp, so this write shape uses `unknown` to sidestep
+    //   the mismatch. MaintenanceGate does the Timestamp→ms coercion
+    //   on read back.
+    const customServices: Record<string, unknown>[] = customRows.map((c) => ({
       id: c.id, name: c.name.trim() || c.id, desc: c.desc.trim(), image: c.image,
       badge: c.badge, enabled: c.enabled, prices: { 60: c.p60, 90: c.p90, 120: c.p120 },
+      scheduledFor: c.scheduledForMs ? Timestamp.fromMillis(c.scheduledForMs) : null,
     }));
     await setDoc(
       doc(db, "adminSettings", "publicRules"),
@@ -481,11 +617,18 @@ const AdminPromotionsPage: React.FC = () => {
     setAddSvcSubmitting(true);
     try {
       const id = `SR-C${Date.now().toString(36).toUpperCase()}`;
+      // 🆕 Round 28r50 — for a brand-new custom service, activation
+      //   scheduling is expressed as a "not-enabled-yet" gate + a
+      //   scheduledForMs stamp on the row. The setter in servicePricing
+      //   filters by scheduledFor > now, so a scheduled custom service
+      //   also correctly stays hidden until the picked minute.
+      const scheduledMs = inputDTToMs(addSvcScheduledFor);
       const row: CustomSvcRow = {
         id, name, desc: addSvcDesc.trim(), image: addSvcImage,
         badge: addSvcBadge, enabled: true,
         p60: addSvcP60, p90: addSvcP90, p120: addSvcP120,
         detail: "", benefit: "",
+        scheduledForMs: scheduledMs,
       };
       const next = [...customSvcRows, row];
       const nextOrder = [...orderIds, id];
@@ -496,6 +639,7 @@ const AdminPromotionsPage: React.FC = () => {
       setAddSvcOpen(false);
       setAddSvcName(""); setAddSvcDesc(""); setAddSvcImage(""); setAddSvcBadge("POPULAR");
       setAddSvcP60(1500); setAddSvcP90(2200); setAddSvcP120(2900);
+      setAddSvcScheduledFor("");
       toast.success(`เพิ่มบริการ ${name} แล้ว`);
     } catch (err) {
       console.error(err);
@@ -583,6 +727,11 @@ const AdminPromotionsPage: React.FC = () => {
     };
     setBuiltinEditStart(tsToInput(ov.startsAt));
     setBuiltinEditExpiry(tsToInput(ov.expiryDate));
+    // 🆕 Round 28r50 — activation-schedule pre-fill (feature #2). Uses
+    //   the datetime-local shape (with time-of-day) rather than the
+    //   day-only pickers above, so the founder can hit e.g. 22:00 sharp
+    //   for a night-only promo.
+    setBuiltinEditScheduledFor(tsToInputDT(ov.scheduledFor));
     setBuiltinEditCode(code);
   };
 
@@ -621,6 +770,10 @@ const AdminPromotionsPage: React.FC = () => {
       patch.label = builtinEditLabel.trim() || null;
       patch.startsAt = builtinEditStart ? Timestamp.fromDate(new Date(`${builtinEditStart}T00:00:00`)) : null;
       patch.expiryDate = builtinEditExpiry ? Timestamp.fromDate(new Date(`${builtinEditExpiry}T23:59:59`)) : null;
+      // 🆕 Round 28r50 (feature #2) — activation-schedule for the whole
+      //   override. While in the future, MaintenanceGate drops this
+      //   override entirely; the hardcoded default remains live.
+      patch.scheduledFor = inputDTToTimestamp(builtinEditScheduledFor);
       await setDoc(
         doc(db, "adminSettings", "publicRules"),
         { builtinCodeOverrides: { [code]: patch }, updatedAt: serverTimestamp() },
@@ -696,12 +849,16 @@ const AdminPromotionsPage: React.FC = () => {
         minSpendThb: addMinSpend > 0 ? addMinSpend : null,
         maxRedemptions: addMaxRedemptions > 0 ? addMaxRedemptions : null,
         perPhoneLimit: addPerPhone > 0 ? addPerPhone : null,
+        // 🆕 Round 28r50 (feature #2) — activation schedule; MaintenanceGate
+        //   drops the code entirely until this passes.
+        scheduledFor: inputDTToTimestamp(addScheduledFor),
         createdAt: serverTimestamp(),
       });
       void logAdminAction("promo.create", { code, type: addType, amount: addAmount });
       setAddOpen(false);
       setAddCode(""); setAddAmount(100); setAddCap(300); setAddLabel("");
       setAddStart(""); setAddExpiry(""); setAddMinSpend(0); setAddMaxRedemptions(0); setAddPerPhone(0); setAddType("fixed");
+      setAddScheduledFor("");
       toast.success(`สร้างโค้ด ${code} แล้ว`);
     } catch (err) {
       console.error(err);
@@ -738,6 +895,315 @@ const AdminPromotionsPage: React.FC = () => {
       toast.success("คัดลอกลิงก์แล้ว");
     } catch {
       toast.error("คัดลอกไม่สำเร็จ — กดค้างที่ลิงก์เพื่อคัดลอกเอง");
+    }
+  };
+
+  // ─────────────────────────────────────────────────────────────
+  // 🆕 Round 28r50 (feature #1 "Bundle Packages") — handlers
+  // ─────────────────────────────────────────────────────────────
+
+  const openBundleCreate = () => {
+    setEditingBundleId(null);
+    setBundleName("Weekly Ritual · 3 sessions");
+    setBundleSessionCount(3);
+    setBundleDiscountPct(10);
+    setBundleServiceId("");
+    setBundleExpiresAt("");
+    setBundleLabel("");
+    setBundleDialogOpen(true);
+  };
+  const openBundleEdit = (id: string) => {
+    const b = bundles[id];
+    if (!b) return;
+    setEditingBundleId(id);
+    setBundleName(b.name);
+    setBundleSessionCount(b.sessionCount);
+    setBundleDiscountPct(b.discountPct);
+    setBundleServiceId(b.serviceId ?? "");
+    setBundleExpiresAt(b.expiresAt?.toDate ? tsToInputDT(b.expiresAt).slice(0, 10) : "");
+    setBundleLabel(b.label ?? "");
+    setBundleDialogOpen(true);
+  };
+  const handleSaveBundle = async () => {
+    const nm = bundleName.trim();
+    if (!nm) { toast.error("ใส่ชื่อแพ็คเกจก่อน"); return; }
+    if (bundleSessionCount < 1) { toast.error("จำนวนครั้งต้อง ≥ 1"); return; }
+    if (bundleDiscountPct < 0 || bundleDiscountPct > 100) { toast.error("ส่วนลดต้องอยู่ระหว่าง 0–100%"); return; }
+    setBundleSubmitting(true);
+    try {
+      const id = editingBundleId ?? `SR-BUNDLE-${Date.now().toString(36).toUpperCase()}`;
+      const patch: Record<string, unknown> = {
+        name: nm,
+        sessionCount: Math.round(bundleSessionCount),
+        discountPct: Math.round(bundleDiscountPct),
+        serviceId: bundleServiceId.trim() || null,
+        enabled: bundles[id]?.enabled !== false, // preserve existing on edit
+        expiresAt: bundleExpiresAt ? Timestamp.fromDate(new Date(`${bundleExpiresAt}T23:59:59`)) : null,
+        label: bundleLabel.trim() || null,
+      };
+      if (!editingBundleId) patch.createdAt = serverTimestamp();
+      await setDoc(
+        doc(db, "adminSettings", "publicRules"),
+        { bundles: { [id]: patch }, updatedAt: serverTimestamp() },
+        { merge: true },
+      );
+      void logAdminAction(editingBundleId ? "bundle.update" : "bundle.create", {
+        bundleId: id, name: nm, sessionCount: patch.sessionCount, discountPct: patch.discountPct,
+      });
+      setBundleDialogOpen(false);
+      toast.success(editingBundleId ? "อัปเดตแพ็คเกจแล้ว" : "สร้างแพ็คเกจแล้ว");
+    } catch (err) {
+      console.error(err);
+      toast.error("บันทึกไม่สำเร็จ");
+    } finally {
+      setBundleSubmitting(false);
+    }
+  };
+  const handleToggleBundle = async (id: string, enabled: boolean) => {
+    try {
+      await setDoc(
+        doc(db, "adminSettings", "publicRules"),
+        { bundles: { [id]: { enabled } }, updatedAt: serverTimestamp() },
+        { merge: true },
+      );
+      void logAdminAction("bundle.update", { bundleId: id, changedFields: [`enabled: ${enabled}`] });
+    } catch (err) {
+      console.error(err);
+      toast.error("บันทึกไม่สำเร็จ");
+    }
+  };
+  const handleDeleteBundle = async () => {
+    const id = bundleDeleteId;
+    if (!id) return;
+    try {
+      // Firestore has no path-level unset via setDoc merge without
+      // FieldValue.delete(); simplest is a full re-write of the bundles
+      // map minus this id.
+      const next: Record<string, BundleDoc> = { ...bundles };
+      delete next[id];
+      await setDoc(
+        doc(db, "adminSettings", "publicRules"),
+        { bundles: next, updatedAt: serverTimestamp() },
+        { merge: true },
+      );
+      void logAdminAction("bundle.delete", { bundleId: id });
+      setBundleDeleteId(null);
+      toast.success("ลบแพ็คเกจแล้ว");
+    } catch (err) {
+      console.error(err);
+      toast.error("ลบไม่สำเร็จ");
+    }
+  };
+
+  // Live preview of savings for the bundle currently in the dialog.
+  const bundlePreview = useMemo(() => {
+    const cnt = Math.max(1, Math.round(bundleSessionCount));
+    const pct = Math.max(0, Math.min(100, bundleDiscountPct));
+    // Baseline = the specific service's 60-min price (or the first
+    // standard service if "any").
+    let base = 0;
+    let baseLabel = "60-min baseline";
+    if (bundleServiceId) {
+      const std = svcRows.find((r) => r.id === bundleServiceId);
+      const cus = customSvcRows.find((r) => r.id === bundleServiceId);
+      if (std) { base = std.p60; baseLabel = `${std.name} · 60 min`; }
+      else if (cus) { base = cus.p60; baseLabel = `${cus.name} · 60 min`; }
+    } else if (svcRows[0]) {
+      base = svcRows[0].p60;
+      baseLabel = `e.g. ${svcRows[0].name} · 60 min`;
+    }
+    const s = bundleSavings({ sessionCount: cnt, discountPct: pct }, base);
+    return { ...s, base, baseLabel, cnt, pct };
+  }, [bundleSessionCount, bundleDiscountPct, bundleServiceId, svcRows, customSvcRows]);
+
+  // ─────────────────────────────────────────────────────────────
+  // 🆕 Round 28r50 (feature #3 "Bulk Service Edits") — handlers
+  // ─────────────────────────────────────────────────────────────
+
+  const openBulk = () => {
+    // Pre-select nothing — founder should explicitly opt each row in.
+    setBulkSelected({});
+    setBulkMode("pct_down");
+    setBulkValue(10);
+    setBulkScope({ d60: true, d90: true, d120: true });
+    setBulkScheduledFor("");
+    setBulkOpen(true);
+  };
+  const bulkAllRows: (SvcRow | CustomSvcRow)[] = useMemo(
+    () => [...svcRows, ...customSvcRows],
+    [svcRows, customSvcRows],
+  );
+  const applyBulkAdjustment = (currentPrice: number): number => {
+    if (bulkMode === "pct_up")   return Math.max(0, Math.round(currentPrice * (1 + bulkValue / 100)));
+    if (bulkMode === "pct_down") return Math.max(0, Math.round(currentPrice * (1 - bulkValue / 100)));
+    if (bulkMode === "thb_up")   return Math.max(0, Math.round(currentPrice + bulkValue));
+    if (bulkMode === "thb_down") return Math.max(0, Math.round(currentPrice - bulkValue));
+    if (bulkMode === "fixed")    return Math.max(0, Math.round(bulkValue));
+    return currentPrice;
+  };
+  // Preview of what will change (only rows selected + only durations in scope).
+  interface BulkPreviewCell { row: SvcRow | CustomSvcRow; duration: 60|90|120; before: number; after: number }
+  const bulkPreview = useMemo<BulkPreviewCell[]>(() => {
+    const list: BulkPreviewCell[] = [];
+    for (const row of bulkAllRows) {
+      if (!bulkSelected[row.id]) continue;
+      const durations: (60|90|120)[] = [
+        ...(bulkScope.d60 ? [60 as const] : []),
+        ...(bulkScope.d90 ? [90 as const] : []),
+        ...(bulkScope.d120 ? [120 as const] : []),
+      ];
+      for (const d of durations) {
+        const before = d === 60 ? row.p60 : d === 90 ? row.p90 : row.p120;
+        const after = applyBulkAdjustment(before);
+        if (before !== after) list.push({ row, duration: d, before, after });
+      }
+    }
+    return list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bulkAllRows, bulkSelected, bulkScope, bulkMode, bulkValue]);
+  const handleApplyBulk = async () => {
+    if (bulkPreview.length === 0) { toast.error("ไม่มีการเปลี่ยนแปลง"); return; }
+    setBulkSubmitting(true);
+    try {
+      // Fold changes into local svcRows / customSvcRows AND stamp the
+      // shared scheduledFor onto every touched row (feature #2 combo).
+      const schedMs = inputDTToMs(bulkScheduledFor);
+      const changed = new Set(bulkPreview.map((c) => c.row.id));
+      const patchRow = <T extends SvcRow>(r: T): T => {
+        if (!changed.has(r.id)) return r;
+        const nx: T = { ...r };
+        for (const c of bulkPreview) {
+          if (c.row.id !== r.id) continue;
+          if (c.duration === 60) nx.p60 = c.after;
+          if (c.duration === 90) nx.p90 = c.after;
+          if (c.duration === 120) nx.p120 = c.after;
+        }
+        if (schedMs) nx.scheduledForMs = schedMs;
+        return nx;
+      };
+      const nextStd = svcRows.map(patchRow);
+      const nextCust = customSvcRows.map(patchRow);
+      await persistServices(nextStd, nextCust, orderIds);
+      setSvcRows(nextStd);
+      setCustomSvcRows(nextCust);
+      void logAdminAction("service.bulk_edit", {
+        count: bulkPreview.length,
+        mode: bulkMode,
+        value: bulkValue,
+        scheduledFor: schedMs ?? null,
+        changedFields: Array.from(changed),
+      });
+      setBulkOpen(false);
+      toast.success(`ปรับ ${bulkPreview.length} ราคาแล้ว`);
+    } catch (err) {
+      console.error(err);
+      toast.error("บันทึกไม่สำเร็จ");
+    } finally {
+      setBulkSubmitting(false);
+    }
+  };
+
+  // ─────────────────────────────────────────────────────────────
+  // 🆕 Round 28r50 (feature #4 "Print/Share Promo Card") — handlers
+  // ─────────────────────────────────────────────────────────────
+
+  const printCardUrl = printCode
+    ? `${typeof window !== "undefined" ? window.location.origin : "https://sunred.vip"}/?promo=${encodeURIComponent(printCode)}`
+    : "";
+  // Metadata for the code being printed (used to render the discount
+  // description on the printable card).
+  const printCodeMeta = useMemo(() => {
+    if (!printCode) return null;
+    const b = BUILTIN_CODES.find((x) => x.code === printCode);
+    if (b) {
+      const ov = builtinOverrides[printCode];
+      const amount = b.kind === "percent"
+        ? (ov?.percent ?? b.defaultAmount)
+        : (ov?.amount ?? b.defaultAmount);
+      const cap = b.kind === "percent" ? (ov?.cap ?? b.defaultCap) : undefined;
+      const desc = b.kind === "percent"
+        ? `${amount}% off${cap ? ` (max ฿${cap})` : ""}`
+        : b.kind === "fixed"
+        ? `฿${amount} off`
+        : "Free travel";
+      return { label: ov?.label?.trim() || b.label, desc };
+    }
+    const c = promoDocs[printCode];
+    if (c && c.kind === "custom") {
+      const desc = c.type === "percent"
+        ? `${c.amount}% off${c.capThb ? ` (max ฿${c.capThb})` : ""}`
+        : `฿${c.amount} off`;
+      return { label: c.label ?? printCode, desc };
+    }
+    return { label: printCode, desc: "Present at booking" };
+  }, [printCode, builtinOverrides, promoDocs]);
+
+  const PRINT_FORMATS = {
+    a6:     { label: "A6 flyer (105×148 mm)",   w: 105, h: 148, unit: "mm" as const, cssW: "105mm", cssH: "148mm" },
+    card:   { label: "Business card (85×55 mm)", w: 85,  h: 55,  unit: "mm" as const, cssW: "85mm",  cssH: "55mm" },
+    square: { label: "Social square (1080 px)",   w: 300, h: 300, unit: "px" as const, cssW: "300px", cssH: "300px" },
+  } as const;
+
+  const handleDownloadPrintPDF = () => {
+    if (!printCode || !printCardRef.current) return;
+    // Use window.print() flow: open a new tab with the card + a print
+    // stylesheet, auto-trigger Chrome's print dialog which offers "Save
+    // as PDF" on every OS. jsPDF was considered — it's a repo dep — but
+    // faithfully rendering the serif wordmark + QR image via jsPDF's
+    // primitives is fiddler and less faithful to the on-screen preview
+    // than the browser's own PDF export.
+    const fmt = PRINT_FORMATS[printFormat];
+    const cardHtml = printCardRef.current.outerHTML;
+    const win = window.open("", "_blank", "width=600,height=800");
+    if (!win) { toast.error("เปิดหน้าปริ้นไม่ได้ — ตรวจสอบ pop-up blocker"); return; }
+    win.document.write(`<!doctype html>
+<html><head><title>SunRed Promo · ${printCode}</title>
+<style>
+  @page { size: ${fmt.w}${fmt.unit} ${fmt.h}${fmt.unit}; margin: 0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; font-family: "Helvetica Neue", Inter, system-ui, sans-serif; }
+  .card { width: ${fmt.cssW}; height: ${fmt.cssH}; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6mm; background: #fff; color: #1F2933; }
+  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style>
+</head><body>${cardHtml}<script>window.onload=function(){setTimeout(function(){window.print();},250);};</script></body></html>`);
+    win.document.close();
+    void logAdminAction("promo.print_card", { code: printCode, format: printFormat });
+  };
+
+  const handleCopyPrintAsImage = async () => {
+    if (!printCode || !printCardRef.current) return;
+    try {
+      const { default: html2canvas } = await import("html2canvas");
+      const canvas = await html2canvas(printCardRef.current, {
+        backgroundColor: "#ffffff",
+        // QR image is served cross-origin (api.qrserver.com) — request
+        // useCORS so it lands on the canvas instead of being blocked.
+        useCORS: true,
+      });
+      canvas.toBlob(async (blob) => {
+        if (!blob) { toast.error("แปลงรูปไม่สำเร็จ"); return; }
+        try {
+          // Clipboard image write requires the ClipboardItem API (recent Safari/Chrome).
+          const CI = (window as unknown as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
+          if (CI && navigator.clipboard && "write" in navigator.clipboard) {
+            await navigator.clipboard.write([new CI({ "image/png": blob })]);
+            toast.success("คัดลอกรูปการ์ดแล้ว");
+          } else {
+            // Fallback: download it.
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `sunred-promo-${printCode}.png`;
+            a.click();
+            toast.success("ดาวน์โหลดรูปการ์ดแล้ว");
+          }
+        } catch (e) {
+          console.error("[promotions] clipboard copy failed", e);
+          toast.error("คัดลอกไม่สำเร็จ (QR อาจถูก CORS block)");
+        }
+      }, "image/png");
+    } catch (err) {
+      console.error("[promotions] html2canvas failed", err);
+      toast.error("แปลงรูปไม่สำเร็จ");
     }
   };
 
@@ -788,7 +1254,16 @@ const AdminPromotionsPage: React.FC = () => {
                       size="small" variant="standard" sx={{ flex: 1, minWidth: 0, "& .MuiInput-input": { fontSize: 13.5, fontWeight: 700, color: adminColor.text } }}
                     />
                     {isCustom && <Box sx={{ fontSize: 9, fontWeight: 800, color: adminColor.accent, background: `${adminColor.accent}1F`, borderRadius: "5px", px: "5px", py: "1px", flexShrink: 0 }}>NEW</Box>}
-                    {!isCustom && <Button size="small" onClick={() => setDetailsId(r.id)} sx={{ color: adminColor.accent, minWidth: "auto", p: "3px" }} aria-label="Details"><NotePencil size={16} /></Button>}
+                    {/* 🆕 Round 28r50 (feature #2) — Scheduled badge. Shows
+                        when the row carries a future scheduledForMs; the
+                        override sits queued until that time. */}
+                    {isFutureMs(r.scheduledForMs) && (
+                      <Box title={`Activates ${fmtScheduledLabel(r.scheduledForMs)}`}
+                        sx={{ display: "inline-flex", alignItems: "center", gap: "3px", fontSize: 9, fontWeight: 800, color: adminColor.amber, background: `${adminColor.amber}1F`, borderRadius: "5px", px: "5px", py: "1px", flexShrink: 0 }}>
+                        <Calendar size={9} weight="bold" /> SCHED
+                      </Box>
+                    )}
+                    {!isCustom && <Button size="small" onClick={() => { setDetailsId(r.id); setDetailsScheduledFor(msToInputDT(r.scheduledForMs)); }} sx={{ color: adminColor.accent, minWidth: "auto", p: "3px" }} aria-label="Details"><NotePencil size={16} /></Button>}
                     <Switch checked={r.enabled} onChange={(e) => set(r.id, { enabled: e.target.checked })} sx={switchSx} size="small" />
                     {isCustom && <Button size="small" onClick={() => void handleDeleteCustomService(r.id)} sx={{ color: adminColor.red, minWidth: "auto", p: "3px" }}><Trash size={15} /></Button>}
                   </Box>
@@ -811,7 +1286,7 @@ const AdminPromotionsPage: React.FC = () => {
             })}
           </Stack>
 
-          <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+          <Stack direction="row" spacing={1} sx={{ mt: 1.5, flexWrap: "wrap", gap: 1 }}>
             <Button
               variant="contained" disabled={svcSaving || svcRows.length === 0}
               onClick={() => void handleSaveServices()}
@@ -825,6 +1300,13 @@ const AdminPromotionsPage: React.FC = () => {
               sx={{ textTransform: "none", fontWeight: 700, borderColor: adminColor.line2, color: adminColor.accent, borderRadius: "10px" }}
             >
               Add Service · เพิ่มบริการ
+            </Button>
+            {/* 🆕 Round 28r50 (feature #3 "Bulk Service Edits") */}
+            <Button
+              variant="outlined" startIcon={<Sliders size={15} weight="bold" />} onClick={openBulk}
+              sx={{ textTransform: "none", fontWeight: 700, borderColor: adminColor.line2, color: adminColor.accent, borderRadius: "10px" }}
+            >
+              Bulk Adjust · ปรับยกชุด
             </Button>
           </Stack>
         </SectionCard>
@@ -875,6 +1357,13 @@ const AdminPromotionsPage: React.FC = () => {
               if (ov?.minSpend) extras.push(`ขั้นต่ำ ฿${ov.minSpend.toLocaleString()}`);
               if (ov?.startsAt?.toDate) extras.push(`เริ่ม ${ov.startsAt.toDate().toLocaleDateString("th-TH")}`);
               if (ov?.expiryDate?.toDate) extras.push(`ถึง ${ov.expiryDate.toDate().toLocaleDateString("th-TH")}`);
+              // 🆕 Round 28r50 (feature #2) — scheduled activation for
+              //   the OVERRIDE. Until this date, the code runs on the
+              //   hardcoded default. Distinct from startsAt (which is the
+              //   code's own eligibility window).
+              const scheduledMs = ov?.scheduledFor?.toMillis?.() ?? null;
+              const scheduledFuture = !!scheduledMs && scheduledMs > Date.now();
+              if (scheduledFuture) extras.push(`Scheduled ${fmtScheduledLabel(scheduledMs)}`);
               const displayLabel = ov?.label?.trim() || b.label;
               return (
                 <Box
@@ -919,6 +1408,14 @@ const AdminPromotionsPage: React.FC = () => {
                             <ShareNetwork size={16} />
                           </Button>
                         )}
+                        {/* 🆕 Round 28r50 (feature #4) — Print Card. REFERRAL
+                            is a PATTERN (SUN-XXXX), not a single distributable
+                            code, so no print button there. */}
+                        {b.code !== "REFERRAL" && (
+                          <Button size="small" onClick={() => setPrintCode(b.code)} sx={{ color: adminColor.dim, minWidth: "auto", p: "4px" }} aria-label="Print Card">
+                            <Printer size={16} />
+                          </Button>
+                        )}
                         {/* 🆕 Round 28r49 — Edit + Delete per-code. Enable
                             switch (28s298) stays alongside so admin can
                             still "pause" a code without editing/deleting. */}
@@ -948,6 +1445,10 @@ const AdminPromotionsPage: React.FC = () => {
                 const now = Date.now();
                 const expired = c.expiresAt && c.expiresAt.toMillis() < now;
                 const notStarted = c.startsAt && c.startsAt.toMillis() > now;
+                // 🆕 Round 28r50 (feature #2) — scheduled activation of
+                //   the CODE ITSELF (distinct from startsAt eligibility).
+                const scheduledMs = c.scheduledFor?.toMillis?.() ?? null;
+                const isScheduled = scheduledMs && scheduledMs > now;
                 // Build the conditions/limits line only from fields that are set.
                 const meta: string[] = [];
                 if (c.minSpendThb) meta.push(`ขั้นต่ำ ฿${c.minSpendThb.toLocaleString()}`);
@@ -964,6 +1465,10 @@ const AdminPromotionsPage: React.FC = () => {
                         </span>
                         {notStarted && <span style={{ color: adminColor.amber, fontWeight: 700 }}> · ยังไม่เริ่ม</span>}
                         {expired && <span style={{ color: adminColor.red, fontWeight: 700 }}> · หมดอายุ</span>}
+                        {isScheduled && (
+                          <span style={{ color: adminColor.amber, fontWeight: 700 }}
+                            title={`Activates ${fmtScheduledLabel(scheduledMs)}`}> · Scheduled {fmtScheduledLabel(scheduledMs)}</span>
+                        )}
                       </Typography>
                       <Typography sx={{ fontSize: 11.5, color: adminColor.muted }}>{c.label}</Typography>
                       {meta.length > 0 && (
@@ -973,6 +1478,10 @@ const AdminPromotionsPage: React.FC = () => {
                     <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0 }}>
                       <Button size="small" onClick={() => setShareCode(c.id)} sx={{ color: adminColor.accent, minWidth: "auto", p: "4px" }} aria-label="Share">
                         <ShareNetwork size={16} />
+                      </Button>
+                      {/* 🆕 Round 28r50 (feature #4) — Print Card */}
+                      <Button size="small" onClick={() => setPrintCode(c.id)} sx={{ color: adminColor.dim, minWidth: "auto", p: "4px" }} aria-label="Print Card">
+                        <Printer size={16} />
                       </Button>
                       <Switch checked={c.enabled} onChange={(e) => void setDoc(doc(db, "promoCodes", c.id), { enabled: e.target.checked }, { merge: true })} sx={switchSx} />
                       <Button size="small" onClick={() => setDeleteTarget(c)} sx={{ color: adminColor.red, minWidth: "auto", p: "4px" }}>
@@ -989,6 +1498,80 @@ const AdminPromotionsPage: React.FC = () => {
             sx={{ textTransform: "none", fontWeight: 700, borderColor: adminColor.line2, color: adminColor.accent, borderRadius: "10px" }}
           >
             Create Code · สร้างโค้ด
+          </Button>
+        </SectionCard>
+
+        {/* 🆕 Round 28r50 (feature #1 "Bundle Packages") — prepaid
+            multi-session discounts, e.g. buy-3-get-10%-off. Admin
+            management surface only in this phase — customer-facing
+            display + BookingFlow wiring is Phase 2. Empty = nothing
+            surfaced anywhere. Slots after Custom Codes and before Usage
+            Stats since bundles ARE a kind of pricing promo. */}
+        <SectionCard icon={<Package size={13} weight="bold" />} title="Bundle Packages · แพ็คเกจ">
+          <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
+            แพ็คเกจจ่ายล่วงหน้าหลายครั้ง (เช่น จ่าย 3 ครั้ง ลด 10%) — Phase 1: จัดการฝั่ง admin (ลูกค้าจะเห็นในเฟส 2)
+          </Typography>
+          {Object.keys(bundles).length === 0 ? (
+            <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mb: 1 }}>ยังไม่มีแพ็คเกจ</Typography>
+          ) : (
+            <Stack spacing={1} sx={{ mb: 1.5 }}>
+              {Object.entries(bundles).map(([id, b]) => {
+                const now = Date.now();
+                const expired = b.expiresAt && b.expiresAt.toMillis() < now;
+                // Preview savings: use the target service's 60-min price,
+                // or the first standard service if any-service.
+                let base = 0;
+                if (b.serviceId) {
+                  const std = svcRows.find((r) => r.id === b.serviceId);
+                  const cus = customSvcRows.find((r) => r.id === b.serviceId);
+                  base = std?.p60 ?? cus?.p60 ?? 0;
+                } else {
+                  base = svcRows[0]?.p60 ?? 0;
+                }
+                const s = bundleSavings({ sessionCount: b.sessionCount, discountPct: b.discountPct }, base);
+                const svcName = b.serviceId
+                  ? svcRows.find((r) => r.id === b.serviceId)?.name
+                    ?? customSvcRows.find((r) => r.id === b.serviceId)?.name
+                    ?? b.serviceId
+                  : "Any service · ทุกบริการ";
+                return (
+                  <Box key={id} sx={{ p: "9px 11px", borderRadius: "10px", background: adminColor.panel2, opacity: expired || !b.enabled ? 0.55 : 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5 }}>
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
+                        <Typography sx={{ fontSize: 13, fontWeight: 700, color: adminColor.text }}>
+                          {b.name}
+                          {expired && <span style={{ color: adminColor.red, fontWeight: 700 }}> · หมดอายุ</span>}
+                        </Typography>
+                        <Typography sx={{ fontSize: 11.5, color: adminColor.muted }}>
+                          {b.sessionCount} sessions · {b.discountPct}% off · {svcName}
+                          {b.expiresAt && ` · ถึง ${b.expiresAt.toDate().toLocaleDateString("th-TH")}`}
+                        </Typography>
+                        {base > 0 && (
+                          <Typography sx={{ fontSize: 10.5, color: adminColor.dim }}>
+                            {b.sessionCount} × ฿{base.toLocaleString()} = ฿{s.gross.toLocaleString()} → ฿{s.net.toLocaleString()} (save ฿{s.discountAmt.toLocaleString()})
+                          </Typography>
+                        )}
+                      </Box>
+                      <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0 }}>
+                        <Button size="small" onClick={() => openBundleEdit(id)} sx={{ color: adminColor.blue, minWidth: "auto", p: "4px" }} aria-label="Edit">
+                          <PencilSimple size={16} />
+                        </Button>
+                        <Switch checked={b.enabled !== false} onChange={(e) => void handleToggleBundle(id, e.target.checked)} sx={switchSx} />
+                        <Button size="small" onClick={() => setBundleDeleteId(id)} sx={{ color: adminColor.red, minWidth: "auto", p: "4px" }} aria-label="Delete">
+                          <Trash size={16} />
+                        </Button>
+                      </Stack>
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Stack>
+          )}
+          <Button
+            variant="outlined" startIcon={<Plus size={15} weight="bold" />} onClick={openBundleCreate}
+            sx={{ textTransform: "none", fontWeight: 700, borderColor: adminColor.line2, color: adminColor.accent, borderRadius: "10px" }}
+          >
+            Add Bundle · เพิ่มแพ็คเกจ
           </Button>
         </SectionCard>
 
@@ -1056,6 +1639,20 @@ const AdminPromotionsPage: React.FC = () => {
             <TextField fullWidth type="date" label="วันหมดอายุ" InputLabelProps={{ shrink: true }} value={addExpiry}
               onChange={(e) => setAddExpiry(e.target.value)} sx={fieldSx} />
           </Stack>
+          {/* 🆕 Round 28r50 (feature #2 "Scheduled Pricing / Draft Mode") —
+              activation schedule for this custom code. Distinct from
+              วันเริ่ม above (that gates guest eligibility inside
+              validateDiscount; this hides the code entirely until the
+              picked minute). Empty = active immediately. */}
+          <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: adminColor.dim, mt: 2, mb: 0.5 }}>
+            Activate on · ตั้งเวลาเปิดใช้
+          </Typography>
+          <TextField
+            fullWidth type="datetime-local" label="เปิดใช้เมื่อ" InputLabelProps={{ shrink: true }}
+            value={addScheduledFor} onChange={(e) => setAddScheduledFor(e.target.value)}
+            sx={{ ...fieldSx, mt: 0.5 }}
+            helperText="ว่าง = เปิดทันที · ตั้งเวลาแล้วจะเปิดโดยอัตโนมัติภายใน ~1 นาทีของเวลาที่ตั้ง"
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAddOpen(false)}>Cancel · ยกเลิก</Button>
@@ -1153,6 +1750,15 @@ const AdminPromotionsPage: React.FC = () => {
             <TextField fullWidth type="number" label="120 น." value={addSvcP120} onChange={(e) => setAddSvcP120(Math.max(0, Number(e.target.value)))} sx={fieldSx}
               InputProps={{ startAdornment: <span style={{ color: adminColor.dim, fontSize: 12, marginRight: 3 }}>฿</span> }} />
           </Stack>
+          {/* 🆕 Round 28r50 (feature #2) — schedule this new custom
+              service to appear in the catalog automatically at a future
+              time. Empty = live immediately on Save. */}
+          <TextField
+            fullWidth type="datetime-local" label="เปิดใช้เมื่อ (ไม่บังคับ)" InputLabelProps={{ shrink: true }}
+            value={addSvcScheduledFor} onChange={(e) => setAddSvcScheduledFor(e.target.value)}
+            sx={{ ...fieldSx, mt: 1.5 }}
+            helperText="ว่าง = ปรากฏในเมนูทันที · ตั้งเวลาแล้วจะปรากฏโดยอัตโนมัติ"
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAddSvcOpen(false)}>Cancel · ยกเลิก</Button>
@@ -1189,6 +1795,25 @@ const AdminPromotionsPage: React.FC = () => {
               fullWidth multiline minRows={4} label="จุดเด่น (บรรทัดละ 1 ข้อ)" value={detailsRow.benefit}
               onChange={(e) => setSvcField(detailsRow.id, { benefit: e.target.value })} sx={fieldSx}
               helperText="แต่ละบรรทัด = 1 bullet บนหน้าบริการ"
+            />
+            {/* 🆕 Round 28r50 (feature #2) — schedule this whole override
+                (image/detail/benefit AND the price fields typed in the
+                main list) to go live at a future time. Empty = live on
+                the next Save. Row shows a SCHED badge while queued. */}
+            <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: adminColor.dim, mt: 2, mb: 0.5 }}>
+              Activate on · ตั้งเวลาเปิดใช้
+            </Typography>
+            <TextField
+              fullWidth type="datetime-local" label="เปิดใช้เมื่อ"
+              InputLabelProps={{ shrink: true }}
+              value={detailsScheduledFor}
+              onChange={(e) => {
+                const v = e.target.value;
+                setDetailsScheduledFor(v);
+                setSvcField(detailsRow.id, { scheduledForMs: inputDTToMs(v) });
+              }}
+              sx={fieldSx}
+              helperText="ว่าง = เปิดทันที · ตั้งเวลาแล้วจะเปิดโดยอัตโนมัติภายใน ~1 นาทีของเวลาที่ตั้ง"
             />
           </DialogContent>
         )}
@@ -1282,6 +1907,22 @@ const AdminPromotionsPage: React.FC = () => {
                   sx={fieldSx}
                 />
               </Stack>
+              {/* 🆕 Round 28r50 (feature #2 "Scheduled Pricing / Draft
+                  Mode") — schedule this override's ACTIVATION. Distinct
+                  from วันเริ่ม above (which gates guest eligibility once
+                  the override IS live): scheduledFor sits the override
+                  ITSELF dormant, so the code runs on hardcoded defaults
+                  until then. Empty = active on Save. */}
+              <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: adminColor.dim, mt: 2, mb: 0.5 }}>
+                Activate on · ตั้งเวลาเปิดใช้
+              </Typography>
+              <TextField
+                fullWidth type="datetime-local" label="เปิดใช้เมื่อ" InputLabelProps={{ shrink: true }}
+                value={builtinEditScheduledFor}
+                onChange={(e) => setBuiltinEditScheduledFor(e.target.value)}
+                sx={fieldSx}
+                helperText="ว่าง = เปิดทันที · ตั้งเวลาแล้วจะเปิดโดยอัตโนมัติภายใน ~1 นาที"
+              />
             </DialogContent>
           );
         })()}
@@ -1315,6 +1956,303 @@ const AdminPromotionsPage: React.FC = () => {
             sx={{ background: adminColor.red, textTransform: "none", fontWeight: 700 }}
           >
             {builtinDeleteSubmitting ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : "Delete · ลบ"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 🆕 Round 28r50 (feature #1 "Bundle Packages") — create/edit dialog. */}
+      <Dialog open={bundleDialogOpen} onClose={() => setBundleDialogOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>
+          {editingBundleId ? "Edit Bundle · แก้ไขแพ็คเกจ" : "Add Bundle · เพิ่มแพ็คเกจ"}
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth autoFocus label="Bundle name · ชื่อแพ็คเกจ"
+            placeholder="เช่น Weekly Ritual · 3 sessions"
+            value={bundleName} onChange={(e) => setBundleName(e.target.value)}
+            sx={{ ...fieldSx, mb: 1.5, mt: 1 }}
+          />
+          <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+            <TextField
+              select fullWidth label="จำนวนครั้ง · Sessions"
+              value={bundleSessionCount} onChange={(e) => setBundleSessionCount(Number(e.target.value))}
+              sx={fieldSx} SelectProps={selectMenuProps}
+            >
+              {[3, 5, 10].map((n) => <MenuItem key={n} value={n}>{n}</MenuItem>)}
+            </TextField>
+            <TextField
+              select fullWidth label="ส่วนลด (%) · Discount"
+              value={bundleDiscountPct} onChange={(e) => setBundleDiscountPct(Number(e.target.value))}
+              sx={fieldSx} SelectProps={selectMenuProps}
+            >
+              {[5, 10, 15, 20, 25].map((p) => <MenuItem key={p} value={p}>{p}%</MenuItem>)}
+            </TextField>
+          </Stack>
+          <TextField
+            select fullWidth label="Service · บริการ"
+            value={bundleServiceId} onChange={(e) => setBundleServiceId(e.target.value)}
+            sx={{ ...fieldSx, mb: 1.5 }} SelectProps={selectMenuProps}
+          >
+            <MenuItem value="">Any service · ทุกบริการ</MenuItem>
+            {svcRows.map((r) => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}
+            {customSvcRows.map((r) => <MenuItem key={r.id} value={r.id}>{r.name} · custom</MenuItem>)}
+          </TextField>
+          <TextField
+            fullWidth label="Sub-label (optional) · คำอธิบายสั้น"
+            value={bundleLabel} onChange={(e) => setBundleLabel(e.target.value)}
+            sx={{ ...fieldSx, mb: 1.5 }}
+          />
+          <TextField
+            fullWidth type="date" label="Expires on · วันหมดอายุ (ไม่บังคับ)" InputLabelProps={{ shrink: true }}
+            value={bundleExpiresAt} onChange={(e) => setBundleExpiresAt(e.target.value)}
+            sx={{ ...fieldSx, mb: 1.5 }}
+          />
+
+          {/* Live preview */}
+          <Box sx={{ mt: 1, p: "10px 12px", borderRadius: "10px", background: adminColor.panel2, border: `1px solid ${adminColor.line}` }}>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: adminColor.dim, mb: 0.5 }}>
+              Preview · ตัวอย่าง
+            </Typography>
+            {bundlePreview.base > 0 ? (
+              <>
+                <Typography sx={{ fontSize: 12.5, color: adminColor.text }}>
+                  {bundlePreview.cnt} × ฿{bundlePreview.base.toLocaleString()} = ฿{bundlePreview.gross.toLocaleString()}
+                </Typography>
+                <Typography sx={{ fontSize: 12.5, color: adminColor.accent, fontWeight: 700 }}>
+                  → ฿{bundlePreview.net.toLocaleString()} ({bundlePreview.pct}% off · save ฿{bundlePreview.discountAmt.toLocaleString()})
+                </Typography>
+                <Typography sx={{ fontSize: 10.5, color: adminColor.dim, mt: 0.5 }}>
+                  based on {bundlePreview.baseLabel}
+                </Typography>
+              </>
+            ) : (
+              <Typography sx={{ fontSize: 12, color: adminColor.dim }}>เพิ่มบริการก่อนเพื่อดูตัวอย่าง</Typography>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBundleDialogOpen(false)}>Cancel · ยกเลิก</Button>
+          <Button
+            onClick={() => void handleSaveBundle()} variant="contained"
+            disabled={bundleSubmitting || !bundleName.trim()}
+            sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, "&:hover": { background: adminColor.accentDeep } }}
+          >
+            {bundleSubmitting ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : (editingBundleId ? "Save · บันทึก" : "Create · สร้าง")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 🆕 Round 28r50 (feature #1) — bundle delete confirm. */}
+      <Dialog open={!!bundleDeleteId} onClose={() => setBundleDeleteId(null)} fullWidth maxWidth="xs">
+        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>
+          Delete Bundle · ลบแพ็คเกจ?
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>
+            {bundleDeleteId ? bundles[bundleDeleteId]?.name : ""} จะถูกลบทันที (ผู้ที่ซื้อแพ็คเกจไปแล้วไม่ได้รับผลกระทบ)
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBundleDeleteId(null)}>Cancel · ยกเลิก</Button>
+          <Button onClick={() => void handleDeleteBundle()} variant="contained" sx={{ background: adminColor.red, textTransform: "none", fontWeight: 700 }}>
+            Delete · ลบ
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 🆕 Round 28r50 (feature #3 "Bulk Service Edits") — dialog. */}
+      <Dialog open={bulkOpen} onClose={() => setBulkOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>
+          Bulk Adjust · ปรับราคายกชุด
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mb: 1.5 }}>
+            เลือกบริการ + วิธีปรับ + ช่วงเวลาที่จะใช้ → กด Apply เพื่อบันทึกใน 1 คำสั่ง
+          </Typography>
+
+          {/* Services multi-select */}
+          <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: adminColor.dim, mb: 0.5 }}>
+            Services · บริการ
+          </Typography>
+          <Box sx={{ maxHeight: 200, overflow: "auto", border: `1px solid ${adminColor.line}`, borderRadius: "10px", mb: 1.5 }}>
+            {bulkAllRows.map((r) => (
+              <Box key={r.id} sx={{ display: "flex", alignItems: "center", gap: 1, px: 1, py: 0.5, borderBottom: `1px solid ${adminColor.line}` }}>
+                <Checkbox
+                  checked={!!bulkSelected[r.id]}
+                  onChange={(e) => setBulkSelected((s) => ({ ...s, [r.id]: e.target.checked }))}
+                  size="small" sx={{ color: adminColor.accent, "&.Mui-checked": { color: adminColor.accent } }}
+                />
+                <Typography sx={{ fontSize: 13, color: adminColor.text, flex: 1 }}>{r.name}</Typography>
+                <Typography sx={{ fontSize: 11, color: adminColor.dim }}>
+                  60 ฿{r.p60.toLocaleString()} / 90 ฿{r.p90.toLocaleString()} / 120 ฿{r.p120.toLocaleString()}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+
+          {/* Mode + value */}
+          <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+            <TextField
+              select fullWidth label="Adjustment · วิธีปรับ"
+              value={bulkMode} onChange={(e) => setBulkMode(e.target.value as BulkAdjustMode)}
+              sx={fieldSx} SelectProps={selectMenuProps}
+            >
+              <MenuItem value="pct_down">− %</MenuItem>
+              <MenuItem value="pct_up">+ %</MenuItem>
+              <MenuItem value="thb_down">− ฿</MenuItem>
+              <MenuItem value="thb_up">+ ฿</MenuItem>
+              <MenuItem value="fixed">= ฿ (fixed)</MenuItem>
+            </TextField>
+            <TextField
+              fullWidth type="number" label="Value · จำนวน"
+              value={bulkValue} onChange={(e) => setBulkValue(Math.max(0, Number(e.target.value)))}
+              sx={fieldSx}
+            />
+          </Stack>
+
+          {/* Duration scope */}
+          <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: adminColor.dim, mb: 0.5 }}>
+            Apply to durations · ใช้กับช่วงเวลา
+          </Typography>
+          <Stack direction="row" spacing={2} sx={{ mb: 1.5 }}>
+            {([["60 min", "d60"], ["90 min", "d90"], ["120 min", "d120"]] as const).map(([lbl, key]) => (
+              <Box key={key} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <Checkbox
+                  size="small"
+                  checked={bulkScope[key]}
+                  onChange={(e) => setBulkScope((s) => ({ ...s, [key]: e.target.checked }))}
+                  sx={{ color: adminColor.accent, "&.Mui-checked": { color: adminColor.accent } }}
+                />
+                <Typography sx={{ fontSize: 13, color: adminColor.text }}>{lbl}</Typography>
+              </Box>
+            ))}
+          </Stack>
+
+          {/* Optional scheduled activation */}
+          <TextField
+            fullWidth type="datetime-local" label="Activate on · เปิดใช้เมื่อ (ไม่บังคับ)" InputLabelProps={{ shrink: true }}
+            value={bulkScheduledFor} onChange={(e) => setBulkScheduledFor(e.target.value)}
+            sx={{ ...fieldSx, mb: 1.5 }}
+            helperText="ว่าง = มีผลทันที · ตั้งเวลาแล้วจะปรับให้เองภายใน ~1 นาที"
+          />
+
+          {/* Live preview */}
+          <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: adminColor.dim, mb: 0.5 }}>
+            Preview · ตัวอย่าง ({bulkPreview.length} cells)
+          </Typography>
+          <Box sx={{ maxHeight: 200, overflow: "auto", border: `1px solid ${adminColor.line}`, borderRadius: "10px", p: 1, background: adminColor.panel2 }}>
+            {bulkPreview.length === 0 ? (
+              <Typography sx={{ fontSize: 12, color: adminColor.dim, textAlign: "center", py: 2 }}>
+                ไม่มีการเปลี่ยนแปลง — เลือกบริการก่อน หรือปรับค่าให้ต่างจากปัจจุบัน
+              </Typography>
+            ) : (
+              bulkPreview.map((c, i) => (
+                <Box key={`${c.row.id}-${c.duration}-${i}`} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", py: 0.35 }}>
+                  <Typography sx={{ fontSize: 12, color: adminColor.text }}>
+                    {c.row.name} · {c.duration} min
+                  </Typography>
+                  <Typography sx={{ fontSize: 12, color: adminColor.text, ...adminFigureSx }}>
+                    ฿{c.before.toLocaleString()} → <span style={{ color: c.after > c.before ? adminColor.red : adminColor.green, fontWeight: 800 }}>฿{c.after.toLocaleString()}</span>
+                  </Typography>
+                </Box>
+              ))
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBulkOpen(false)}>Cancel · ยกเลิก</Button>
+          <Button
+            onClick={() => void handleApplyBulk()} variant="contained"
+            disabled={bulkSubmitting || bulkPreview.length === 0}
+            sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, "&:hover": { background: adminColor.accentDeep } }}
+          >
+            {bulkSubmitting ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : `Apply · ปรับ ${bulkPreview.length}`}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 🆕 Round 28r50 (feature #4 "Print/Share Promo Card") — printable
+          card + QR + PDF/image export. */}
+      <Dialog open={!!printCode} onClose={() => setPrintCode(null)} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>
+          Print Card · การ์ดโปรโมชั่น {printCode}
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mb: 1.5 }}>
+            สำหรับแจกคนขับแท็กซี่ / ลง Reddit / Stickman ฯลฯ — สแกน QR ปุ่ม promo=CODE เข้าอัตโนมัติ
+          </Typography>
+          <TextField
+            select fullWidth label="Format · ขนาด"
+            value={printFormat} onChange={(e) => setPrintFormat(e.target.value as "a6" | "card" | "square")}
+            sx={{ ...fieldSx, mb: 1.5 }} SelectProps={selectMenuProps}
+          >
+            {(Object.keys(PRINT_FORMATS) as (keyof typeof PRINT_FORMATS)[]).map((k) => (
+              <MenuItem key={k} value={k}>{PRINT_FORMATS[k].label}</MenuItem>
+            ))}
+          </TextField>
+
+          {/* The card itself — held in a ref so window.print()'s cloned
+              window can serialize its outerHTML, and html2canvas can
+              render the same DOM to image on demand. */}
+          <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
+            <div
+              ref={printCardRef}
+              className="card"
+              style={{
+                width: PRINT_FORMATS[printFormat].cssW,
+                height: PRINT_FORMATS[printFormat].cssH,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "6mm",
+                background: "#fff",
+                color: "#1F2933",
+                border: `1px solid ${adminColor.line}`,
+                boxShadow: "0 4px 14px rgba(31,41,51,0.08)",
+                fontFamily: adminFont.sans,
+              }}
+            >
+              <div style={{ fontFamily: adminFont.serif, fontSize: 20, fontWeight: 700, letterSpacing: "0.02em", marginBottom: 6 }}>
+                SunRed
+              </div>
+              <div style={{ fontFamily: adminFont.serif, fontSize: 32, fontWeight: 800, letterSpacing: "0.04em", marginBottom: 4 }}>
+                {printCode}
+              </div>
+              <div style={{ fontSize: 12, marginBottom: 10, color: "#3E4F58" }}>
+                {printCodeMeta?.desc}
+              </div>
+              {printCardUrl && (
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=6&data=${encodeURIComponent(printCardUrl)}`}
+                  alt={`QR ${printCode}`}
+                  width={130}
+                  height={130}
+                  crossOrigin="anonymous"
+                  style={{ marginBottom: 10 }}
+                />
+              )}
+              <div style={{ fontSize: 9, color: "#5C6F7B", textAlign: "center", lineHeight: 1.35, maxWidth: "90%" }}>
+                Scan · Book · Enjoy at sunred.vip · Terms apply
+              </div>
+            </div>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPrintCode(null)} sx={{ color: adminColor.muted, textTransform: "none", fontWeight: 700 }}>
+            Close · ปิด
+          </Button>
+          <Button
+            onClick={() => void handleCopyPrintAsImage()} variant="outlined"
+            sx={{ borderColor: adminColor.line2, color: adminColor.accent, textTransform: "none", fontWeight: 700 }}
+          >
+            Copy as image · คัดลอกรูป
+          </Button>
+          <Button
+            onClick={handleDownloadPrintPDF} variant="contained" startIcon={<Printer size={15} weight="bold" />}
+            sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, "&:hover": { background: adminColor.accentDeep } }}
+          >
+            Download PDF · พิมพ์ / บันทึก
           </Button>
         </DialogActions>
       </Dialog>

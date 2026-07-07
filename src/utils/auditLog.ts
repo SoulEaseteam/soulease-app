@@ -79,7 +79,22 @@ export type AuditAction =
   | "promo.builtin_restore"
   // 🆕 Round 28s300 — editing live service prices / names / availability
   //   from /admin/promotions changes what NEW bookings are charged.
-  | "service.update";
+  | "service.update"
+  // 🆕 Round 28r50 (Promotions Phase 1) — bulk service price adjustments
+  //   from /admin/promotions (multi-select + +/-%/฿ or fixed). Distinct
+  //   from service.update (which is a single-service save) so an audit
+  //   scan can distinguish "one row edited" from "batch swept".
+  | "service.bulk_edit"
+  // 🆕 Round 28r50 — bundle packages (prepaid multi-session discounts).
+  //   Create/update/delete on `publicRules.bundles`.
+  | "bundle.create"
+  | "bundle.update"
+  | "bundle.delete"
+  // 🆕 Round 28r50 — print/share promo card audit trail (light-weight —
+  //   admin generated a printable handout for a code; doesn't change any
+  //   customer-facing data, but useful for correlating "who handed out
+  //   which code where" if a promo overshoots redemptions).
+  | "promo.print_card";
 
 export async function logAdminAction(
   action: AuditAction,

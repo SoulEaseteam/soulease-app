@@ -91,6 +91,12 @@ const ACTION_LABEL: Record<string, { label: string; color: string }> = {
   "promo.builtin_delete":    { label: "ลบโค้ดมาตรฐาน",          color: adminColor.red },
   "promo.builtin_restore":   { label: "กู้คืนโค้ดมาตรฐาน",       color: adminColor.green },
   "service.update":          { label: "แก้ไขราคา/บริการ",       color: adminColor.blue },
+  // 🆕 Round 28r50 (Promotions Phase 1)
+  "service.bulk_edit":       { label: "แก้ราคาแบบยกชุด",         color: adminColor.blue },
+  "bundle.create":           { label: "สร้างแพ็คเกจ",           color: adminColor.green },
+  "bundle.update":           { label: "แก้ไขแพ็คเกจ",           color: adminColor.blue },
+  "bundle.delete":           { label: "ลบแพ็คเกจ",             color: adminColor.red },
+  "promo.print_card":        { label: "พิมพ์การ์ดโปรโมชั่น",     color: adminColor.dim },
 };
 
 // 🆕 Round 28s294 — category = the prefix before the dot. New actions
@@ -110,6 +116,9 @@ const CATEGORY_LABEL: Record<string, string> = {
   settings: "Settings",
   promo: "Promotions",
   service: "Services",
+  // 🆕 Round 28r50 — bundle packages get their own category so the
+  //   /admin/audit-log filter dropdown can isolate them.
+  bundle: "Bundles",
   other: "Other",
 };
 // 🆕 Round 28s295 (founder screenshot: white-screened on "Cannot read

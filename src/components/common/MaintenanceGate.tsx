@@ -12,7 +12,7 @@
 //   is pausing new guest traffic (e.g. a pricing fix in progress), not
 //   locking the founder out of her own back office.
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { doc, collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
@@ -20,10 +20,23 @@ import { applyLiveFareConfig } from "@/utils/taxiFare";
 import { applyLivePromosEnabled } from "@/config/featureFlags";
 import { applyLivePromoConfig, applyLiveBuiltinOverrides, type CustomPromoCode, type BuiltinPromoOverride } from "@/utils/discount";
 import { applyLiveServiceConfig } from "@/utils/servicePricing";
+import { applyLiveBundles, type Bundle } from "@/utils/bundles";
 
 const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { role, loading: authLoading } = useAuth();
   const [maintenanceOn, setMaintenanceOn] = useState(false);
+
+  // 🆕 Round 28r50 (feature #2 "Scheduled Pricing / Draft Mode") — hold the
+  //   most-recent publicRules snapshot so a 60s interval can re-apply the
+  //   same data through the setters. The setters filter every scheduled
+  //   override by Date.now(), so a queued edit auto-activates within ~60s
+  //   of its target time without any page refresh or new Firestore read.
+  //   `null` before the first snapshot lands.
+  const lastPublicSnapRef = useRef<Record<string, unknown> | null>(null);
+  // The custom-code cache lives in the separate `promoCodes` listener
+  // below; a scheduled custom code needs the same cadence too.
+  const lastCustomCodesRef = useRef<Record<string, CustomPromoCode> | null>(null);
+  const lastDisabledCodesRef = useRef<string[] | null>(null);
 
   useEffect(() => {
     // 🆕 Round 28s296/28s298 — this component already subscribes to the
@@ -35,6 +48,7 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
       doc(db, "adminSettings", "publicRules"),
       (snap) => {
         const data = snap.data();
+        lastPublicSnapRef.current = (data as Record<string, unknown>) ?? {};
         setMaintenanceOn(data?.maintenanceMode === true);
         // 🆕 Round 28s309 — travel fare gained Grab booking fee + time-of-day
         //   surge (rush/peak), both admin-tunable, on top of the actual
@@ -51,9 +65,32 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
         //   custom services, both nested fields on this same public doc
         //   (no new listener / rules entry). Empty/absent = hardcoded
         //   catalog, unchanged.
+        // 🆕 Round 28r50 — `scheduledFor` on a service override is stored
+        //   as a Firestore Timestamp; normalize to epoch ms here so the
+        //   setter's `Date.now()` comparison works. Every other field is
+        //   already a scalar so `{...v}` spread + one field swap is safe.
+        const rawSvcOv = (data?.serviceOverrides ?? {}) as Record<
+          string,
+          Record<string, unknown> & { scheduledFor?: { toMillis?: () => number } | null }
+        >;
+        const normSvcOv: Record<string, Record<string, unknown>> = {};
+        for (const [k, v] of Object.entries(rawSvcOv)) {
+          if (!v || typeof v !== "object") continue;
+          normSvcOv[k] = { ...v, scheduledFor: v.scheduledFor?.toMillis?.() ?? null };
+        }
+        // 🆕 Round 28r50 — also normalize scheduledFor on customServices
+        //   (Firestore stores Timestamps; the setter compares against
+        //   Date.now() as ms).
+        const rawCustSvc = (data?.customServices ?? []) as Array<
+          Record<string, unknown> & { scheduledFor?: { toMillis?: () => number } | null }
+        >;
+        const normCustSvc = rawCustSvc.map((cs) => ({
+          ...cs,
+          scheduledFor: cs?.scheduledFor?.toMillis?.() ?? null,
+        }));
         applyLiveServiceConfig({
-          overrides: data?.serviceOverrides,
-          customServices: data?.customServices,
+          overrides: normSvcOv as never,
+          customServices: normCustSvc as never,
           order: data?.serviceOrder,
         });
         // 🆕 Round 28r49 (founder 2026-07-08 — "Add-ons · บริการเสริม เอาออก
@@ -81,6 +118,8 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
             label?: string;
             startsAt?: { toMillis?: () => number } | null;
             expiryDate?: { toMillis?: () => number } | null;
+            // 🆕 Round 28r50 — schedules the OVERRIDE's activation.
+            scheduledFor?: { toMillis?: () => number } | null;
           }
         >;
         const builtinOverrides: Record<string, BuiltinPromoOverride> = {};
@@ -95,9 +134,49 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
             label: typeof v.label === "string" ? v.label : undefined,
             startsAt: v.startsAt?.toMillis?.() ?? null,
             expiryDate: v.expiryDate?.toMillis?.() ?? null,
+            scheduledFor: v.scheduledFor?.toMillis?.() ?? null,
           };
         }
         applyLiveBuiltinOverrides(builtinOverrides);
+        // 🆕 Round 28r50 (feature #1 "Bundle Packages") — bundles ride the
+        //   SAME public doc + this SAME listener (no new listener, no rules
+        //   change: publicRules already admin-write, public-read). Empty/
+        //   absent map = no bundles surfaced anywhere, byte-identical to
+        //   pre-r50. Customer wiring is Phase 2; this makes the data
+        //   readable so the admin UI + future customer surfaces work off
+        //   one source. Firestore stores expiresAt as a Timestamp, so
+        //   coerce to epoch ms here.
+        const rawBundles = (data?.bundles ?? {}) as Record<
+          string,
+          {
+            name?: string;
+            sessionCount?: number;
+            discountPct?: number;
+            serviceId?: string | null;
+            enabled?: boolean;
+            expiresAt?: { toMillis?: () => number } | null;
+            label?: string;
+            createdAt?: { toMillis?: () => number } | null;
+          }
+        >;
+        const bundleMap: Record<string, Bundle> = {};
+        for (const [id, v] of Object.entries(rawBundles)) {
+          if (!v || typeof v !== "object") continue;
+          if (typeof v.sessionCount !== "number" || v.sessionCount < 1) continue;
+          if (typeof v.discountPct !== "number" || v.discountPct < 0) continue;
+          bundleMap[id] = {
+            id,
+            name: typeof v.name === "string" ? v.name : id,
+            sessionCount: v.sessionCount,
+            discountPct: v.discountPct,
+            serviceId: v.serviceId ?? null,
+            enabled: v.enabled !== false,
+            expiresAt: v.expiresAt?.toMillis?.() ?? null,
+            label: typeof v.label === "string" ? v.label : undefined,
+            createdAt: v.createdAt?.toMillis?.() ?? undefined,
+          };
+        }
+        applyLiveBundles(bundleMap);
       },
       () => {
         // Fail open — never let a read error lock everyone out. Also clear
@@ -105,6 +184,7 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
         // hardcoded defaults, not the last-known map from a previous tick.
         setMaintenanceOn(false);
         applyLiveBuiltinOverrides(null);
+        applyLiveBundles(null);
       },
     );
     return () => unsub();
@@ -136,17 +216,111 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
                 minSpendThb: typeof data.minSpendThb === "number" ? data.minSpendThb : null,
                 maxRedemptions: typeof data.maxRedemptions === "number" ? data.maxRedemptions : null,
                 perPhoneLimit: typeof data.perPhoneLimit === "number" ? data.perPhoneLimit : null,
+                // 🆕 Round 28r50 — schedule this custom code's activation.
+                //   Setter drops the entry entirely when `scheduledFor > now`,
+                //   so the code behaves as if it doesn't exist yet.
+                scheduledFor: data.scheduledFor?.toMillis?.() ?? null,
               };
             }
           } else if (data.enabled === false) {
             disabledCodes.push(d.id);
           }
         });
+        // 🆕 Round 28r50 — stash the raw last-seen data so the reapply
+        //   interval below can re-run this through the setters (which
+        //   filter by Date.now()) without a fresh Firestore read.
+        lastDisabledCodesRef.current = disabledCodes;
+        lastCustomCodesRef.current = custom;
         applyLivePromoConfig({ disabledCodes, customCodes: custom });
       },
-      () => applyLivePromoConfig({ disabledCodes: [], customCodes: {} }), // fail open
+      () => {
+        lastDisabledCodesRef.current = [];
+        lastCustomCodesRef.current = {};
+        applyLivePromoConfig({ disabledCodes: [], customCodes: {} }); // fail open
+      },
     );
     return () => unsub();
+  }, []);
+
+  // 🆕 Round 28r50 (feature #2 "Scheduled Pricing / Draft Mode") — re-run
+  //   the last-seen snapshot through the setters every 60s. All three
+  //   scheduled paths (service overrides, custom promos, built-in promo
+  //   overrides) filter by Date.now() at apply time, so a queued edit
+  //   activates within ~60s of its target minute without any refresh or
+  //   new Firestore read. Guest opens the page at 10:59, code invalid;
+  //   still on the page at 11:00–11:01, code becomes valid.
+  useEffect(() => {
+    const reapply = () => {
+      const data = lastPublicSnapRef.current;
+      if (!data) return;
+      // Service overrides + custom services + order — re-run
+      // applyLiveServiceConfig; its filter drops any override whose
+      // scheduledFor > now. Same Timestamp→ms normalization as the
+      // primary snapshot handler.
+      const rawSvcOv = (data.serviceOverrides ?? {}) as Record<
+        string,
+        Record<string, unknown> & { scheduledFor?: { toMillis?: () => number } | null }
+      >;
+      const normSvcOv: Record<string, Record<string, unknown>> = {};
+      for (const [k, v] of Object.entries(rawSvcOv)) {
+        if (!v || typeof v !== "object") continue;
+        normSvcOv[k] = { ...v, scheduledFor: v.scheduledFor?.toMillis?.() ?? null };
+      }
+      // Same Timestamp→ms normalization for customServices.
+      const rawCustSvc = (data.customServices ?? []) as Array<
+        Record<string, unknown> & { scheduledFor?: { toMillis?: () => number } | null }
+      >;
+      const normCustSvc = rawCustSvc.map((cs) => ({
+        ...cs,
+        scheduledFor: cs?.scheduledFor?.toMillis?.() ?? null,
+      }));
+      applyLiveServiceConfig({
+        overrides: normSvcOv as never,
+        customServices: normCustSvc as never,
+        order: data.serviceOrder as never,
+      });
+      // Built-in promo overrides — re-run applyLiveBuiltinOverrides; its
+      // filter drops any override whose scheduledFor > now.
+      const rawBuiltins = (data.builtinCodeOverrides ?? {}) as Record<
+        string,
+        {
+          deleted?: boolean;
+          amount?: number;
+          percent?: number;
+          cap?: number;
+          minSpend?: number;
+          label?: string;
+          startsAt?: { toMillis?: () => number } | null;
+          expiryDate?: { toMillis?: () => number } | null;
+          scheduledFor?: { toMillis?: () => number } | null;
+        }
+      >;
+      const builtinOverrides: Record<string, BuiltinPromoOverride> = {};
+      for (const [k, v] of Object.entries(rawBuiltins)) {
+        if (!v || typeof v !== "object") continue;
+        builtinOverrides[k] = {
+          deleted: v.deleted === true,
+          amount: typeof v.amount === "number" ? v.amount : undefined,
+          percent: typeof v.percent === "number" ? v.percent : undefined,
+          cap: typeof v.cap === "number" ? v.cap : undefined,
+          minSpend: typeof v.minSpend === "number" ? v.minSpend : undefined,
+          label: typeof v.label === "string" ? v.label : undefined,
+          startsAt: v.startsAt?.toMillis?.() ?? null,
+          expiryDate: v.expiryDate?.toMillis?.() ?? null,
+          scheduledFor: v.scheduledFor?.toMillis?.() ?? null,
+        };
+      }
+      applyLiveBuiltinOverrides(builtinOverrides);
+      // Custom promo codes — re-run with the last-seen collection cache.
+      if (lastCustomCodesRef.current && lastDisabledCodesRef.current) {
+        applyLivePromoConfig({
+          disabledCodes: lastDisabledCodesRef.current,
+          customCodes: lastCustomCodesRef.current,
+        });
+      }
+    };
+    const id = setInterval(reapply, 60_000);
+    return () => clearInterval(id);
   }, []);
 
   // Staff always pass through. Wait for auth to resolve before gating so

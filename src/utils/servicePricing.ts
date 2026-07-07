@@ -60,6 +60,13 @@ export interface LiveServiceOverride {
   image?: string;
   detail?: string;
   benefit?: string[];
+  // 🆕 Round 28r50 (feature #2 "Scheduled Pricing / Draft Mode") — epoch
+  //   ms. While `scheduledFor > Date.now()`, the entire override is NOT
+  //   applied (falls back to the hardcoded catalog price/name/etc.). Once
+  //   the picked time arrives, the next MaintenanceGate re-apply tick (up
+  //   to ~60s later) filters this entry back in and the customer sees the
+  //   new numbers — no code deploy required. Empty/absent = active now.
+  scheduledFor?: number | null;
 }
 
 // 🆕 Round 28s301 (founder: "ราคา & บริการ เพิ่ม เมนูได้") — admin-created
@@ -72,6 +79,11 @@ export interface CustomServiceInput {
   badge?: MassageService["badge"];
   enabled?: boolean;
   prices: Record<number, number>;
+  // 🆕 Round 28r50 (feature #2) — activation schedule for a new custom
+  //   service. While in the future, the service is hidden from the
+  //   catalog + isServiceEnabled returns false (BookingFlow submit guard
+  //   then also rejects any direct-URL attempt). Epoch ms.
+  scheduledFor?: number | null;
 }
 
 let liveServiceOverrides: Record<string, LiveServiceOverride> = {};
@@ -100,11 +112,31 @@ export function applyLiveServiceConfig(cfg: {
   order?: string[] | null;
 }): void {
   liveServiceOrder = Array.isArray(cfg.order) ? cfg.order : [];
-  const map: Record<string, LiveServiceOverride> = { ...(cfg.overrides ?? {}) };
+  // 🆕 Round 28r50 — filter out any override whose `scheduledFor` hasn't
+  //   arrived. Dropping the entry (not zeroing its fields) is critical:
+  //   priceForDuration + withLiveServiceOverrides both use "override
+  //   present?" as the branch condition, so an absent entry cleanly falls
+  //   back to the catalog values — byte-identical to pre-r50 while the
+  //   edit sits queued. Re-applied on the ~60s MaintenanceGate cadence.
+  const now = Date.now();
+  const rawOverrides = cfg.overrides ?? {};
+  const filteredOverrides: Record<string, LiveServiceOverride> = {};
+  for (const [k, v] of Object.entries(rawOverrides)) {
+    if (v?.scheduledFor && v.scheduledFor > now) continue;
+    filteredOverrides[k] = v;
+  }
+  const map: Record<string, LiveServiceOverride> = { ...filteredOverrides };
   const list: MassageService[] = [];
   for (const cs of cfg.customServices ?? []) {
     if (!cs?.id) continue;
     const p60 = cs.prices?.[60] ?? 0;
+    // 🆕 Round 28r50 — a custom service scheduled for the future is
+    //   dropped completely: not registered in the map (so
+    //   isServiceEnabled returns default-true, but withLiveServiceOverrides
+    //   also doesn't kick in — it doesn't exist yet) and not surfaced in
+    //   the catalog. This keeps the "scheduled = doesn't exist yet"
+    //   semantic consistent with the standard-service override path.
+    if (cs.scheduledFor && cs.scheduledFor > now) continue;
     // Register enabled state + prices for ALL custom services (even
     // disabled ones) so isServiceEnabled / priceForDuration resolve them.
     map[cs.id] = {
