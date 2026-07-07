@@ -24,6 +24,24 @@
 // Read live by MaintenanceGate.tsx into discount.ts's module-level
 // cache (same live-binding pattern as taxiFare.ts's pricing overrides)
 // — validateDiscount() itself stays a pure, synchronous function.
+//
+// 🆕 Round 28r49 (founder 2026-07-08 — "Built-in Codes · โค้ดมาตรฐาน
+// แก้ไขและลบได้") — full edit + delete on each built-in code, backed by a
+// new field on the same public doc: `publicRules.builtinCodeOverrides`
+// (map keyed by UPPERCASE code, or the pseudo-key "REFERRAL" for the
+// SUN-XXXX referral pattern). Per-code override entries can carry
+// amount / percent / cap / minSpend / startsAt / expiryDate / label — or
+// `deleted: true` to hide the code entirely (soft-delete, restorable).
+// Read live by the same MaintenanceGate listener (no new listener, no
+// rules change: publicRules is already admin-write from 28s296). The
+// legacy `disabledBuiltinCodes` on/off gate (28s298) stays alongside so
+// admin can still "pause" a code without editing/deleting.
+//
+// 🆕 Round 28r49 (founder 2026-07-08 — "Add-ons · บริการเสริม เอาออกจาก
+// ทุกที่ที่มี") — the add-ons editor + customer picker (28s302) are fully
+// removed from this page and BookingFlowPage. The `AddOn` / `ADDONS`
+// reference data survives in src/data/bookingExtras.ts for legacy
+// booking-doc lookups but is not surfaced anywhere.
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -36,14 +54,13 @@ import {
   limit as fbLimit, serverTimestamp, Timestamp,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { Tag, Percent, Ticket, ChartBar, Plus, Trash, Warning, ShareNetwork, Copy, Storefront, FloppyDisk, Camera, CaretUp, CaretDown, NotePencil, Sparkle } from "phosphor-react";
+import { Tag, Percent, Ticket, ChartBar, Plus, Trash, Warning, ShareNetwork, Copy, Storefront, FloppyDisk, Camera, CaretUp, CaretDown, NotePencil, PencilSimple, ArrowCounterClockwise } from "phosphor-react";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { SectionCard, fieldSx, downscaleImage } from "./therapistFormKit";
 import { logAdminAction } from "@/utils/auditLog";
 import type { MassageService } from "@/data/services";
 import services from "@/data/services";
 import { priceForDuration, type LiveServiceOverride, type CustomServiceInput } from "@/utils/servicePricing";
-import { ADDONS, type AddonOverride, type CustomAddonInput } from "@/data/bookingExtras";
 import { therapistPctFor } from "@/utils/commission";
 
 const BADGE_OPTIONS: MassageService["badge"][] = ["SIGNATURE", "POPULAR", "RECOMMEND", "EXCLUSIVE"];
@@ -55,15 +72,46 @@ const SANS = adminFont.sans;
 // these descriptions are a snapshot of the real rules at write time.
 // "REFERRAL" is a pseudo-code (matches the SUN-XXXX pattern, not one
 // literal string) — see discount.ts's disable check for why.
-const BUILTIN_CODES: Array<{ code: string; label: string; desc: string }> = [
-  { code: "FIRST10", label: "First booking", desc: "ลูกค้าจองครั้งแรก ลด 10% (สูงสุด ฿200)" },
-  { code: "WELCOME20", label: "Welcome", desc: "โปรเปิดตัว ลด 10% (สูงสุด ฿300)" },
-  { code: "TONIGHT500", label: "Late-night", desc: "จองช่วง 22:00–04:00 เท่านั้น · ลด ฿200" },
-  { code: "SAMMY200", label: "Sammyboy forum", desc: "โค้ดจากฟอรัม Sammyboy · ลด ฿200 ไม่มีเงื่อนไข" },
-  { code: "VIP100", label: "VIP (premium only)", desc: "เฉพาะบริการพรีเมียม (Gentleman/B2B) · ลด ฿100" },
-  { code: "FREETAXI", label: "Free travel (premium only)", desc: "เฉพาะบริการพรีเมียม · ฟรีค่าเดินทาง" },
-  { code: "REFERRAL", label: "Referral (SUN-XXXX)", desc: "โค้ดแนะนำเพื่อน รูปแบบ SUN-XXXX · ลด ฿200" },
+//
+// 🆕 Round 28r49 — enriched with per-code metadata so the shared "Edit"
+//   dialog can render the right fields (percent vs fixed vs uneditable-
+//   amount FREETAXI) and reset back to the real hardcoded defaults from
+//   discount.ts. Any change to those defaults must be mirrored here.
+type BuiltinKind = "percent" | "fixed" | "freetaxi";
+interface BuiltinCodeMeta {
+  code: string;
+  label: string;
+  desc: string;
+  kind: BuiltinKind;
+  /** Hardcoded default. For percent codes = %, for fixed = THB, for
+   *  freetaxi = unused (amount always = real taxi fare). */
+  defaultAmount: number;
+  /** Hardcoded cap on percent codes; unused otherwise. */
+  defaultCap?: number;
+}
+const BUILTIN_CODES: BuiltinCodeMeta[] = [
+  { code: "FIRST10",    label: "First booking",              desc: "ลูกค้าจองครั้งแรก ลด 10% (สูงสุด ฿200)",                 kind: "percent", defaultAmount: 10, defaultCap: 200 },
+  { code: "WELCOME20",  label: "Welcome",                    desc: "โปรเปิดตัว ลด 10% (สูงสุด ฿300)",                         kind: "percent", defaultAmount: 10, defaultCap: 300 },
+  { code: "TONIGHT500", label: "Late-night",                 desc: "จองช่วง 22:00–04:00 เท่านั้น · ลด ฿200",                    kind: "fixed",   defaultAmount: 200 },
+  { code: "SAMMY200",   label: "Sammyboy forum",             desc: "โค้ดจากฟอรัม Sammyboy · ลด ฿200 ไม่มีเงื่อนไข",             kind: "fixed",   defaultAmount: 200 },
+  { code: "VIP100",     label: "VIP (premium only)",         desc: "เฉพาะบริการพรีเมียม (Gentleman/B2B) · ลด ฿100",           kind: "fixed",   defaultAmount: 100 },
+  { code: "FREETAXI",   label: "Free travel (premium only)", desc: "เฉพาะบริการพรีเมียม · ฟรีค่าเดินทาง",                       kind: "freetaxi", defaultAmount: 0 },
+  { code: "REFERRAL",   label: "Referral (SUN-XXXX)",        desc: "โค้ดแนะนำเพื่อน รูปแบบ SUN-XXXX · ลด ฿200",                kind: "fixed",   defaultAmount: 200 },
 ];
+
+// 🆕 Round 28r49 — override map = `publicRules.builtinCodeOverrides`. Keys
+//   are UPPERCASE built-in codes (or "REFERRAL"). Value shape mirrors
+//   discount.ts's BuiltinPromoOverride but with Firestore Timestamps.
+interface BuiltinOverrideDoc {
+  deleted?: boolean;
+  amount?: number;
+  percent?: number;
+  cap?: number;
+  minSpend?: number;
+  label?: string;
+  startsAt?: Timestamp | null;
+  expiryDate?: Timestamp | null;
+}
 
 interface PromoDoc {
   id: string;
@@ -103,17 +151,6 @@ interface SvcRow {
 interface CustomSvcRow extends SvcRow {
   desc: string;
   badge: MassageService["badge"];
-}
-
-// 🆕 Round 28s302 — one editable row per add-on (hardcoded + custom).
-interface AddonRow {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  icon: string;
-  enabled: boolean;
-  custom: boolean;
 }
 
 const switchSx = {
@@ -168,17 +205,29 @@ const AdminPromotionsPage: React.FC = () => {
   const [svcRows, setSvcRows] = useState<SvcRow[]>([]);
   const [svcSaving, setSvcSaving] = useState(false);
 
-  // 🆕 Round 28s302 — display order (ids), add-on rows, and the
-  //   per-service details dialog (image/detail/benefits).
+  // 🆕 Round 28s302 — display order (ids) + the per-service details
+  //   dialog (image/detail/benefits). The add-on rows/dialog that
+  //   originally lived here were removed in Round 28r49 (founder:
+  //   "Add-ons · บริการเสริม เอาออกจากทุกที่ที่มี").
   const [orderIds, setOrderIds] = useState<string[]>([]);
-  const [addonRows, setAddonRows] = useState<AddonRow[]>([]);
   const [detailsId, setDetailsId] = useState<string | null>(null);
   const [detailsUploading, setDetailsUploading] = useState(false);
-  const [addAddonOpen, setAddAddonOpen] = useState(false);
-  const [addAddonName, setAddAddonName] = useState("");
-  const [addAddonDesc, setAddAddonDesc] = useState("");
-  const [addAddonPrice, setAddAddonPrice] = useState(200);
-  const [addAddonIcon, setAddAddonIcon] = useState("✨");
+
+  // 🆕 Round 28r49 — per-code overrides for the 7 built-in discount
+  //   codes, live-synced from `publicRules.builtinCodeOverrides`. Empty
+  //   entry / missing key = hardcoded default in discount.ts. `deleted:
+  //   true` hides the code (quiet-invalid, mirrors disable).
+  const [builtinOverrides, setBuiltinOverridesState] = useState<Record<string, BuiltinOverrideDoc>>({});
+  const [builtinEditCode, setBuiltinEditCode] = useState<string | null>(null);
+  const [builtinEditAmount, setBuiltinEditAmount] = useState<string>("");
+  const [builtinEditCap, setBuiltinEditCap] = useState<string>("");
+  const [builtinEditMinSpend, setBuiltinEditMinSpend] = useState<string>("");
+  const [builtinEditLabel, setBuiltinEditLabel] = useState<string>("");
+  const [builtinEditStart, setBuiltinEditStart] = useState<string>("");
+  const [builtinEditExpiry, setBuiltinEditExpiry] = useState<string>("");
+  const [builtinEditSubmitting, setBuiltinEditSubmitting] = useState(false);
+  const [builtinDeleteCode, setBuiltinDeleteCode] = useState<string | null>(null);
+  const [builtinDeleteSubmitting, setBuiltinDeleteSubmitting] = useState(false);
 
   // 🆕 Round 28s301 — admin-created custom services + the "add" dialog.
   const [customSvcRows, setCustomSvcRows] = useState<CustomSvcRow[]>([]);
@@ -195,7 +244,17 @@ const AdminPromotionsPage: React.FC = () => {
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "adminSettings", "publicRules"), (snap) => {
-      setPromosEnabled(snap.data()?.promosEnabled === true);
+      const data = snap.data();
+      setPromosEnabled(data?.promosEnabled === true);
+      // 🆕 Round 28r49 — pull the per-code override map live so the row's
+      //   effective values (and the "deleted" strikethrough) reflect the
+      //   most recent Save without a page refresh.
+      const raw = (data?.builtinCodeOverrides ?? {}) as Record<string, BuiltinOverrideDoc>;
+      const clean: Record<string, BuiltinOverrideDoc> = {};
+      for (const [k, v] of Object.entries(raw)) {
+        if (v && typeof v === "object") clean[k.toUpperCase()] = v;
+      }
+      setBuiltinOverridesState(clean);
     });
     return () => unsub();
   }, []);
@@ -263,16 +322,12 @@ const AdminPromotionsPage: React.FC = () => {
       let ov: Record<string, LiveServiceOverride> = {};
       let custom: CustomServiceInput[] = [];
       let order: string[] = [];
-      let addonOv: Record<string, AddonOverride> = {};
-      let customAddons: CustomAddonInput[] = [];
       try {
         const snap = await getDoc(doc(db, "adminSettings", "publicRules"));
         const d = snap.data() ?? {};
         ov = (d.serviceOverrides ?? {}) as Record<string, LiveServiceOverride>;
         custom = (d.customServices ?? []) as CustomServiceInput[];
         order = (d.serviceOrder ?? []) as string[];
-        addonOv = (d.addonOverrides ?? {}) as Record<string, AddonOverride>;
-        customAddons = (d.customAddons ?? []) as CustomAddonInput[];
       } catch (err) {
         console.error("[promotions] serviceOverrides fetch failed:", err);
       }
@@ -303,29 +358,21 @@ const AdminPromotionsPage: React.FC = () => {
       const allIds = [...stdRows.map((r) => r.id), ...custRows.map((r) => r.id)];
       const savedValid = order.filter((id) => allIds.includes(id));
       setOrderIds([...savedValid, ...allIds.filter((id) => !savedValid.includes(id))]);
-      // Add-ons: hardcoded (with overrides) + custom.
-      setAddonRows([
-        ...ADDONS.map((a) => {
-          const o = addonOv[a.id] ?? {};
-          return {
-            id: a.id, name: o.name ?? a.name, description: o.description ?? a.description,
-            price: typeof o.price === "number" ? o.price : a.price,
-            icon: o.icon ?? a.icon, enabled: o.enabled !== false, custom: false,
-          };
-        }),
-        ...(customAddons ?? []).filter((a) => a?.id).map((a) => ({
-          id: a.id, name: a.name ?? a.id, description: a.description ?? "",
-          price: a.price ?? 0, icon: a.icon ?? "✨", enabled: a.enabled !== false, custom: true,
-        })),
-      ]);
+      // 🆕 Round 28r49 (founder: "Add-ons · บริการเสริม เอาออกจากทุกที่ที่มี")
+      //   — add-on rows previously loaded here were removed. `addonOverrides`
+      //   / `customAddons` on publicRules are no longer read (harmless
+      //   leftover fields if present).
     })();
   }, []);
 
-  // Single writer for the whole pricing/services/add-ons config, taking
-  // explicit values so add/delete/reorder can persist a freshly-built
-  // list without waiting on a state flush.
+  // Single writer for the pricing/services config, taking explicit
+  // values so add/delete/reorder can persist a freshly-built list without
+  // waiting on a state flush.
+  // 🆕 Round 28r49 (founder: "Add-ons · บริการเสริม เอาออกจากทุกที่ที่มี")
+  //   — the `addons` argument + addonOverrides/customAddons writes have
+  //   been removed.
   const persistServices = async (
-    rows: SvcRow[], customRows: CustomSvcRow[], order: string[], addons: AddonRow[],
+    rows: SvcRow[], customRows: CustomSvcRow[], order: string[],
   ) => {
     const overrides: Record<string, LiveServiceOverride> = {};
     rows.forEach((r) => {
@@ -343,18 +390,9 @@ const AdminPromotionsPage: React.FC = () => {
       id: c.id, name: c.name.trim() || c.id, desc: c.desc.trim(), image: c.image,
       badge: c.badge, enabled: c.enabled, prices: { 60: c.p60, 90: c.p90, 120: c.p120 },
     }));
-    const addonOverrides: Record<string, AddonOverride> = {};
-    const customAddons: CustomAddonInput[] = [];
-    addons.forEach((a) => {
-      if (a.custom) {
-        customAddons.push({ id: a.id, name: a.name.trim() || a.id, description: a.description.trim(), price: a.price, icon: a.icon, enabled: a.enabled });
-      } else {
-        addonOverrides[a.id] = { enabled: a.enabled, name: a.name.trim(), description: a.description.trim(), price: a.price, icon: a.icon };
-      }
-    });
     await setDoc(
       doc(db, "adminSettings", "publicRules"),
-      { serviceOverrides: overrides, customServices, serviceOrder: order, addonOverrides, customAddons, updatedAt: serverTimestamp() },
+      { serviceOverrides: overrides, customServices, serviceOrder: order, updatedAt: serverTimestamp() },
       { merge: true },
     );
   };
@@ -362,9 +400,9 @@ const AdminPromotionsPage: React.FC = () => {
   const handleSaveServices = async () => {
     setSvcSaving(true);
     try {
-      await persistServices(svcRows, customSvcRows, orderIds, addonRows);
+      await persistServices(svcRows, customSvcRows, orderIds);
       void logAdminAction("service.update", {
-        count: svcRows.length + customSvcRows.length + addonRows.length,
+        count: svcRows.length + customSvcRows.length,
         changedFields: [...svcRows, ...customSvcRows].filter((r) => !r.enabled).map((r) => `${r.id}: ปิด`),
       });
       toast.success("บันทึกราคา/บริการแล้ว — มีผลกับการจองใหม่ทันที");
@@ -381,9 +419,6 @@ const AdminPromotionsPage: React.FC = () => {
 
   const setCustomField = (id: string, patch: Partial<CustomSvcRow>) =>
     setCustomSvcRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-
-  const setAddonField = (id: string, patch: Partial<AddonRow>) =>
-    setAddonRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
 
   // 🆕 Round 28s302 — reorder a service up/down in the customer menu.
   const moveService = (id: string, dir: -1 | 1) =>
@@ -416,29 +451,8 @@ const AdminPromotionsPage: React.FC = () => {
     }
   };
 
-  const handleAddAddon = async () => {
-    const name = addAddonName.trim();
-    if (!name) { toast.error("ใส่ชื่อ add-on ก่อน"); return; }
-    const id = `AO-${Date.now().toString(36).toUpperCase()}`;
-    const next: AddonRow[] = [...addonRows, { id, name, description: addAddonDesc.trim(), price: addAddonPrice, icon: addAddonIcon.trim() || "✨", enabled: true, custom: true }];
-    try {
-      await persistServices(svcRows, customSvcRows, orderIds, next);
-      setAddonRows(next);
-      void logAdminAction("service.update", { changedFields: [`สร้าง add-on ${name}`] });
-      setAddAddonOpen(false);
-      setAddAddonName(""); setAddAddonDesc(""); setAddAddonPrice(200); setAddAddonIcon("✨");
-      toast.success(`เพิ่ม add-on ${name} แล้ว`);
-    } catch (err) { console.error(err); toast.error("เพิ่มไม่สำเร็จ"); }
-  };
-
-  const handleDeleteAddon = async (id: string) => {
-    const next = addonRows.filter((r) => r.id !== id);
-    try {
-      await persistServices(svcRows, customSvcRows, orderIds, next);
-      setAddonRows(next);
-      toast.success("ลบ add-on แล้ว");
-    } catch (err) { console.error(err); toast.error("ลบไม่สำเร็จ"); }
-  };
+  // 🆕 Round 28r49 — handleAddAddon / handleDeleteAddon were removed with
+  //   the Add-ons editor.
 
   // 🆕 Round 28s301 — image upload for the new-service dialog. Reuses the
   //   therapist-gallery pattern (downscale → Storage → URL).
@@ -475,7 +489,7 @@ const AdminPromotionsPage: React.FC = () => {
       };
       const next = [...customSvcRows, row];
       const nextOrder = [...orderIds, id];
-      await persistServices(svcRows, next, nextOrder, addonRows);
+      await persistServices(svcRows, next, nextOrder);
       setCustomSvcRows(next);
       setOrderIds(nextOrder);
       void logAdminAction("service.update", { changedFields: [`สร้างบริการ ${name} (${id})`] });
@@ -495,7 +509,7 @@ const AdminPromotionsPage: React.FC = () => {
     const next = customSvcRows.filter((r) => r.id !== id);
     const nextOrder = orderIds.filter((x) => x !== id);
     try {
-      await persistServices(svcRows, next, nextOrder, addonRows);
+      await persistServices(svcRows, next, nextOrder);
       setCustomSvcRows(next);
       setOrderIds(nextOrder);
       void logAdminAction("service.update", { changedFields: [`ลบบริการ ${id}`] });
@@ -533,6 +547,129 @@ const AdminPromotionsPage: React.FC = () => {
     } catch (err) {
       console.error(err);
       toast.error("บันทึกไม่สำเร็จ");
+    }
+  };
+
+  // 🆕 Round 28r49 — helpers for the per-code edit / delete / restore
+  //   flow. Writes to publicRules.builtinCodeOverrides.<CODE> as a
+  //   deep-merged partial (setDoc merge:true), so a Save/Delete never
+  //   accidentally clobbers OTHER codes on the same map.
+  const openBuiltinEdit = (code: string) => {
+    const meta = BUILTIN_CODES.find((b) => b.code === code);
+    const ov = builtinOverrides[code] ?? {};
+    // Prefill the form with the CURRENT effective values (override merged
+    // with hardcoded defaults) — makes it obvious what "live" looks like.
+    if (meta?.kind === "percent") {
+      setBuiltinEditAmount(String(ov.percent ?? meta.defaultAmount));
+      setBuiltinEditCap(String(ov.cap ?? meta.defaultCap ?? ""));
+    } else if (meta?.kind === "fixed") {
+      setBuiltinEditAmount(String(ov.amount ?? meta.defaultAmount));
+      setBuiltinEditCap("");
+    } else {
+      // freetaxi — amount uneditable, we still show the fields disabled.
+      setBuiltinEditAmount("");
+      setBuiltinEditCap("");
+    }
+    setBuiltinEditMinSpend(ov.minSpend != null ? String(ov.minSpend) : "");
+    setBuiltinEditLabel(ov.label ?? "");
+    // Timestamp → yyyy-MM-dd (or empty)
+    const tsToInput = (t?: Timestamp | null) => {
+      if (!t?.toDate) return "";
+      const d = t.toDate();
+      const yr = d.getFullYear();
+      const mo = String(d.getMonth() + 1).padStart(2, "0");
+      const da = String(d.getDate()).padStart(2, "0");
+      return `${yr}-${mo}-${da}`;
+    };
+    setBuiltinEditStart(tsToInput(ov.startsAt));
+    setBuiltinEditExpiry(tsToInput(ov.expiryDate));
+    setBuiltinEditCode(code);
+  };
+
+  const handleSaveBuiltinEdit = async () => {
+    const code = builtinEditCode;
+    if (!code) return;
+    const meta = BUILTIN_CODES.find((b) => b.code === code);
+    if (!meta) return;
+    if (builtinEditStart && builtinEditExpiry && new Date(builtinEditStart) >= new Date(builtinEditExpiry)) {
+      toast.error("วันเริ่มต้องมาก่อนวันหมดอายุ"); return;
+    }
+    setBuiltinEditSubmitting(true);
+    try {
+      // Build a minimal patch. `null` explicitly CLEARS a field on merge;
+      // undefined leaves whatever's already there. Empty string in a
+      // required field = "reset to default", which we express as `null`
+      // so the saved doc doesn't retain a phantom 0.
+      const parseOptNum = (raw: string): number | null | undefined => {
+        const t = raw.trim();
+        if (t === "") return null;
+        const n = Number(t);
+        return Number.isFinite(n) && n >= 0 ? n : undefined;
+      };
+      const patch: Record<string, unknown> = { deleted: false };
+      if (meta.kind === "percent") {
+        const p = parseOptNum(builtinEditAmount);
+        const c = parseOptNum(builtinEditCap);
+        if (p !== undefined) patch.percent = p;
+        if (c !== undefined) patch.cap = c;
+      } else if (meta.kind === "fixed") {
+        const a = parseOptNum(builtinEditAmount);
+        if (a !== undefined) patch.amount = a;
+      }
+      const ms = parseOptNum(builtinEditMinSpend);
+      if (ms !== undefined) patch.minSpend = ms;
+      patch.label = builtinEditLabel.trim() || null;
+      patch.startsAt = builtinEditStart ? Timestamp.fromDate(new Date(`${builtinEditStart}T00:00:00`)) : null;
+      patch.expiryDate = builtinEditExpiry ? Timestamp.fromDate(new Date(`${builtinEditExpiry}T23:59:59`)) : null;
+      await setDoc(
+        doc(db, "adminSettings", "publicRules"),
+        { builtinCodeOverrides: { [code]: patch }, updatedAt: serverTimestamp() },
+        { merge: true },
+      );
+      void logAdminAction("promo.builtin_edit", { code, changedFields: Object.keys(patch).filter((k) => k !== "deleted") });
+      setBuiltinEditCode(null);
+      toast.success(`อัปเดตโค้ด ${code} แล้ว`);
+    } catch (err) {
+      console.error(err);
+      toast.error("บันทึกไม่สำเร็จ");
+    } finally {
+      setBuiltinEditSubmitting(false);
+    }
+  };
+
+  const handleDeleteBuiltin = async () => {
+    const code = builtinDeleteCode;
+    if (!code) return;
+    setBuiltinDeleteSubmitting(true);
+    try {
+      await setDoc(
+        doc(db, "adminSettings", "publicRules"),
+        { builtinCodeOverrides: { [code]: { deleted: true } }, updatedAt: serverTimestamp() },
+        { merge: true },
+      );
+      void logAdminAction("promo.builtin_delete", { code });
+      setBuiltinDeleteCode(null);
+      toast.success(`ลบโค้ด ${code} แล้ว (กู้คืนได้)`);
+    } catch (err) {
+      console.error(err);
+      toast.error("ลบไม่สำเร็จ");
+    } finally {
+      setBuiltinDeleteSubmitting(false);
+    }
+  };
+
+  const handleRestoreBuiltin = async (code: string) => {
+    try {
+      await setDoc(
+        doc(db, "adminSettings", "publicRules"),
+        { builtinCodeOverrides: { [code]: { deleted: false } }, updatedAt: serverTimestamp() },
+        { merge: true },
+      );
+      void logAdminAction("promo.builtin_restore", { code });
+      toast.success(`กู้คืนโค้ด ${code} แล้ว`);
+    } catch (err) {
+      console.error(err);
+      toast.error("กู้คืนไม่สำเร็จ");
     }
   };
 
@@ -692,33 +829,11 @@ const AdminPromotionsPage: React.FC = () => {
           </Stack>
         </SectionCard>
 
-        {/* 🆕 Round 28s302 — Add-ons editor */}
-        <SectionCard icon={<Sparkle size={13} weight="bold" />} title="Add-ons · บริการเสริม">
-          <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.5 }}>
-            บริการเสริมที่ลูกค้าเลือกเพิ่มตอนจอง — แก้ราคา เปิด/ปิด หรือเพิ่มใหม่ได้
-          </Typography>
-          <Stack spacing={1}>
-            {addonRows.map((a) => (
-              <Box key={a.id} sx={{ display: "flex", alignItems: "center", gap: 1, p: "8px 10px", borderRadius: "10px", background: adminColor.panel2, ...(a.custom ? { border: `1px dashed ${adminColor.line2}` } : {}), opacity: a.enabled ? 1 : 0.6 }}>
-                <TextField value={a.icon} onChange={(e) => setAddonField(a.id, { icon: e.target.value })} size="small" variant="standard" sx={{ width: 34, flexShrink: 0, "& .MuiInput-input": { fontSize: 18, textAlign: "center" } }} />
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <TextField value={a.name} onChange={(e) => setAddonField(a.id, { name: e.target.value })} size="small" variant="standard" fullWidth sx={{ "& .MuiInput-input": { fontSize: 13, fontWeight: 700, color: adminColor.text } }} />
-                  <TextField value={a.description} onChange={(e) => setAddonField(a.id, { description: e.target.value })} size="small" variant="standard" fullWidth placeholder="คำอธิบาย" sx={{ "& .MuiInput-input": { fontSize: 11, color: adminColor.muted } }} />
-                </Box>
-                <TextField value={a.price} onChange={(e) => setAddonField(a.id, { price: Math.max(0, Number(e.target.value)) })} type="number" size="small" sx={{ width: 90, ...fieldSx }}
-                  InputProps={{ startAdornment: <span style={{ color: adminColor.dim, fontSize: 12, marginRight: 3 }}>฿</span> }} />
-                <Switch checked={a.enabled} onChange={(e) => setAddonField(a.id, { enabled: e.target.checked })} sx={switchSx} size="small" />
-                {a.custom && <Button size="small" onClick={() => void handleDeleteAddon(a.id)} sx={{ color: adminColor.red, minWidth: "auto", p: "3px" }}><Trash size={15} /></Button>}
-              </Box>
-            ))}
-          </Stack>
-          <Button
-            variant="outlined" startIcon={<Plus size={15} weight="bold" />} onClick={() => setAddAddonOpen(true)}
-            sx={{ mt: 1.5, textTransform: "none", fontWeight: 700, borderColor: adminColor.line2, color: adminColor.accent, borderRadius: "10px" }}
-          >
-            Add Add-on · เพิ่ม
-          </Button>
-        </SectionCard>
+        {/* 🆕 Round 28r49 (founder 2026-07-08 — "Add-ons · บริการเสริม
+            เอาออกจากทุกที่ที่มี") — the Add-ons editor (28s302) has been
+            removed alongside the customer picker. If addonOverrides /
+            customAddons still exist on publicRules from a previous save,
+            they're no longer read by anything. */}
 
         {/* Master switch */}
         <SectionCard icon={<Tag size={13} weight="bold" />} title="Master Switch · สวิตช์หลัก">
@@ -738,24 +853,84 @@ const AdminPromotionsPage: React.FC = () => {
 
         {/* Built-in codes */}
         <SectionCard icon={<Percent size={13} weight="bold" />} title="Built-in Codes · โค้ดมาตรฐาน">
+          <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
+            แก้ไข/ลบได้ทุกโค้ด — เก็บไว้ในระบบเสมอ (ลบแล้วกู้คืนได้)
+          </Typography>
           <Stack spacing={1}>
             {BUILTIN_CODES.map((b) => {
               const enabled = promoDocs[b.code]?.enabled !== false;
+              const ov = builtinOverrides[b.code];
+              const deleted = ov?.deleted === true;
+              // Effective values (override merged with hardcoded defaults).
+              const effAmount = b.kind === "percent"
+                ? (ov?.percent ?? b.defaultAmount)
+                : (ov?.amount ?? b.defaultAmount);
+              const effCap = b.kind === "percent" ? (ov?.cap ?? b.defaultCap) : undefined;
+              const summary = b.kind === "percent"
+                ? `${effAmount}% off${effCap ? ` (สูงสุด ฿${effCap})` : ""}`
+                : b.kind === "fixed"
+                ? `฿${effAmount} off`
+                : "ฟรีค่าเดินทาง";
+              const extras: string[] = [];
+              if (ov?.minSpend) extras.push(`ขั้นต่ำ ฿${ov.minSpend.toLocaleString()}`);
+              if (ov?.startsAt?.toDate) extras.push(`เริ่ม ${ov.startsAt.toDate().toLocaleDateString("th-TH")}`);
+              if (ov?.expiryDate?.toDate) extras.push(`ถึง ${ov.expiryDate.toDate().toLocaleDateString("th-TH")}`);
+              const displayLabel = ov?.label?.trim() || b.label;
               return (
-                <Box key={b.code} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, p: "8px 10px", borderRadius: "10px", background: adminColor.panel2 }}>
+                <Box
+                  key={b.code}
+                  sx={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    gap: 2, p: "8px 10px", borderRadius: "10px",
+                    background: adminColor.panel2,
+                    opacity: deleted ? 0.55 : 1,
+                    ...(deleted ? { border: `1px dashed ${adminColor.red}` } : {}),
+                  }}
+                >
                   <Box sx={{ minWidth: 0 }}>
-                    <Typography sx={{ fontSize: 13, fontWeight: 700, color: adminColor.text }}>
-                      {b.code} <span style={{ fontWeight: 400, color: adminColor.dim }}>· {b.label}</span>
+                    <Typography
+                      sx={{
+                        fontSize: 13, fontWeight: 700, color: adminColor.text,
+                        ...(deleted ? { textDecoration: "line-through" } : {}),
+                      }}
+                    >
+                      {b.code} <span style={{ fontWeight: 400, color: adminColor.dim }}>· {displayLabel}</span>
+                      {deleted && <span style={{ marginLeft: 6, color: adminColor.red, fontWeight: 700 }}>· ลบแล้ว</span>}
                     </Typography>
-                    <Typography sx={{ fontSize: 11.5, color: adminColor.muted }}>{b.desc}</Typography>
+                    <Typography sx={{ fontSize: 11.5, color: adminColor.muted }}>{summary} · {b.desc}</Typography>
+                    {extras.length > 0 && (
+                      <Typography sx={{ fontSize: 10.5, color: adminColor.dim }}>{extras.join(" · ")}</Typography>
+                    )}
                   </Box>
                   <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0 }}>
-                    {b.code !== "REFERRAL" && (
-                      <Button size="small" onClick={() => setShareCode(b.code)} sx={{ color: adminColor.accent, minWidth: "auto", p: "4px" }} aria-label="Share">
-                        <ShareNetwork size={16} />
+                    {deleted ? (
+                      <Button
+                        size="small"
+                        onClick={() => void handleRestoreBuiltin(b.code)}
+                        sx={{ color: adminColor.green, minWidth: "auto", p: "4px" }}
+                        aria-label="Restore"
+                      >
+                        <ArrowCounterClockwise size={16} />
                       </Button>
+                    ) : (
+                      <>
+                        {b.code !== "REFERRAL" && (
+                          <Button size="small" onClick={() => setShareCode(b.code)} sx={{ color: adminColor.accent, minWidth: "auto", p: "4px" }} aria-label="Share">
+                            <ShareNetwork size={16} />
+                          </Button>
+                        )}
+                        {/* 🆕 Round 28r49 — Edit + Delete per-code. Enable
+                            switch (28s298) stays alongside so admin can
+                            still "pause" a code without editing/deleting. */}
+                        <Button size="small" onClick={() => openBuiltinEdit(b.code)} sx={{ color: adminColor.blue, minWidth: "auto", p: "4px" }} aria-label="Edit">
+                          <PencilSimple size={16} />
+                        </Button>
+                        <Button size="small" onClick={() => setBuiltinDeleteCode(b.code)} sx={{ color: adminColor.red, minWidth: "auto", p: "4px" }} aria-label="Delete">
+                          <Trash size={16} />
+                        </Button>
+                        <Switch checked={enabled} onChange={(e) => void handleToggleBuiltin(b.code, e.target.checked)} sx={switchSx} />
+                      </>
                     )}
-                    <Switch checked={enabled} onChange={(e) => void handleToggleBuiltin(b.code, e.target.checked)} sx={switchSx} />
                   </Stack>
                 </Box>
               );
@@ -1026,23 +1201,120 @@ const AdminPromotionsPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* 🆕 Round 28s302 — add a custom add-on */}
-      <Dialog open={addAddonOpen} onClose={() => setAddAddonOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>Add Add-on · เพิ่ม</DialogTitle>
+      {/* 🆕 Round 28r49 (founder 2026-07-08 — "Add-ons · บริการเสริม
+          เอาออกจากทุกที่ที่มี") — the "Add Add-on" dialog (28s302) has
+          been removed. */}
+
+      {/* 🆕 Round 28r49 — Edit a built-in code (per-code override into
+          publicRules.builtinCodeOverrides). The visible fields depend on
+          the code's type — percent codes show %+cap, fixed codes show
+          amount, FREETAXI's amount field is hidden with an explanatory
+          notice since the discount equals the actual taxi fare. */}
+      <Dialog open={!!builtinEditCode} onClose={() => setBuiltinEditCode(null)} fullWidth maxWidth="xs">
+        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>
+          Edit Built-in · แก้ไข {builtinEditCode}
+        </DialogTitle>
+        {(() => {
+          const meta = BUILTIN_CODES.find((b) => b.code === builtinEditCode);
+          if (!meta) return null;
+          return (
+            <DialogContent>
+              <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.5, mt: 0.5 }}>
+                ค่าเริ่มต้น: {meta.kind === "percent" ? `${meta.defaultAmount}% (สูงสุด ฿${meta.defaultCap ?? "—"})` : meta.kind === "fixed" ? `฿${meta.defaultAmount}` : "= ค่าเดินทางจริง"}
+              </Typography>
+              {meta.kind === "percent" && (
+                <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+                  <TextField
+                    fullWidth type="number" label="ลด (%)"
+                    value={builtinEditAmount}
+                    onChange={(e) => setBuiltinEditAmount(e.target.value)}
+                    sx={fieldSx}
+                    helperText="ว่าง = ใช้ค่าเริ่มต้น"
+                  />
+                  <TextField
+                    fullWidth type="number" label="ลดสูงสุด (บาท)"
+                    value={builtinEditCap}
+                    onChange={(e) => setBuiltinEditCap(e.target.value)}
+                    sx={fieldSx}
+                    helperText="ว่าง = ใช้ค่าเริ่มต้น"
+                  />
+                </Stack>
+              )}
+              {meta.kind === "fixed" && (
+                <TextField
+                  fullWidth type="number" label="ลด (บาท)"
+                  value={builtinEditAmount}
+                  onChange={(e) => setBuiltinEditAmount(e.target.value)}
+                  sx={{ ...fieldSx, mb: 1.5 }}
+                  helperText="ว่าง = ใช้ค่าเริ่มต้น"
+                />
+              )}
+              {meta.kind === "freetaxi" && (
+                <Box sx={{ mb: 1.5, p: "10px 12px", borderRadius: "10px", background: `${adminColor.accent}12`, color: adminColor.muted, fontSize: 12 }}>
+                  จำนวนที่ลด = ค่าเดินทางจริงของงานนั้น — แก้ไขไม่ได้
+                </Box>
+              )}
+              <TextField
+                fullWidth type="number" label="ยอดขั้นต่ำ (บาท)"
+                value={builtinEditMinSpend}
+                onChange={(e) => setBuiltinEditMinSpend(e.target.value)}
+                sx={{ ...fieldSx, mb: 1.5 }}
+                helperText="ว่าง = ไม่มีขั้นต่ำ"
+              />
+              <TextField
+                fullWidth label="ข้อความที่ลูกค้าเห็น (ไม่บังคับ)"
+                value={builtinEditLabel}
+                onChange={(e) => setBuiltinEditLabel(e.target.value)}
+                sx={{ ...fieldSx, mb: 1.5 }}
+                helperText="ว่าง = ใช้ข้อความเริ่มต้น"
+              />
+              <Stack direction="row" spacing={1}>
+                <TextField
+                  fullWidth type="date" label="วันเริ่ม" InputLabelProps={{ shrink: true }}
+                  value={builtinEditStart}
+                  onChange={(e) => setBuiltinEditStart(e.target.value)}
+                  sx={fieldSx}
+                />
+                <TextField
+                  fullWidth type="date" label="วันหมดอายุ" InputLabelProps={{ shrink: true }}
+                  value={builtinEditExpiry}
+                  onChange={(e) => setBuiltinEditExpiry(e.target.value)}
+                  sx={fieldSx}
+                />
+              </Stack>
+            </DialogContent>
+          );
+        })()}
+        <DialogActions>
+          <Button onClick={() => setBuiltinEditCode(null)} sx={{ color: adminColor.muted, textTransform: "none", fontWeight: 700 }}>Cancel · ยกเลิก</Button>
+          <Button
+            onClick={() => void handleSaveBuiltinEdit()} variant="contained" disabled={builtinEditSubmitting}
+            sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, "&:hover": { background: adminColor.accentDeep } }}
+          >
+            {builtinEditSubmitting ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : "Save · บันทึก"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 🆕 Round 28r49 — Delete-a-built-in confirm. Soft-delete via
+          `deleted: true` on the override so it can be restored without
+          losing any prior amount/label edits. */}
+      <Dialog open={!!builtinDeleteCode} onClose={() => setBuiltinDeleteCode(null)} fullWidth maxWidth="xs">
+        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>
+          Delete Built-in · ลบ {builtinDeleteCode}?
+        </DialogTitle>
         <DialogContent>
-          <Stack direction="row" spacing={1} sx={{ mt: 0.5, mb: 1.5 }}>
-            <TextField label="ไอคอน" value={addAddonIcon} onChange={(e) => setAddAddonIcon(e.target.value)} sx={{ width: 80, ...fieldSx }} inputProps={{ style: { textAlign: "center", fontSize: 18 } }} />
-            <TextField fullWidth autoFocus label="ชื่อ" value={addAddonName} onChange={(e) => setAddAddonName(e.target.value)} sx={fieldSx} />
-          </Stack>
-          <TextField fullWidth label="คำอธิบาย (ไม่บังคับ)" value={addAddonDesc} onChange={(e) => setAddAddonDesc(e.target.value)} sx={{ ...fieldSx, mb: 1.5 }} />
-          <TextField fullWidth type="number" label="ราคา (บาท)" value={addAddonPrice} onChange={(e) => setAddAddonPrice(Math.max(0, Number(e.target.value)))} sx={fieldSx}
-            InputProps={{ startAdornment: <span style={{ color: adminColor.dim, fontSize: 12, marginRight: 3 }}>฿</span> }} />
+          <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>
+            <strong>{builtinDeleteCode}</strong> จะใช้จองไม่ได้ทันที กู้คืนได้ภายหลังจากปุ่ม Restore
+          </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAddAddonOpen(false)}>Cancel · ยกเลิก</Button>
-          <Button onClick={() => void handleAddAddon()} variant="contained" disabled={!addAddonName.trim()}
-            sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, "&:hover": { background: adminColor.accentDeep } }}>
-            Add · เพิ่ม
+          <Button onClick={() => setBuiltinDeleteCode(null)} sx={{ color: adminColor.muted, textTransform: "none", fontWeight: 700 }}>Cancel · ยกเลิก</Button>
+          <Button
+            onClick={() => void handleDeleteBuiltin()} variant="contained" disabled={builtinDeleteSubmitting}
+            sx={{ background: adminColor.red, textTransform: "none", fontWeight: 700 }}
+          >
+            {builtinDeleteSubmitting ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : "Delete · ลบ"}
           </Button>
         </DialogActions>
       </Dialog>

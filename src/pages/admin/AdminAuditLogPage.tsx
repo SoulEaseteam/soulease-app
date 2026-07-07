@@ -87,6 +87,9 @@ const ACTION_LABEL: Record<string, { label: string; color: string }> = {
   "promo.toggle":            { label: "เปิด/ปิดโค้ดโปรโมชั่น",  color: adminColor.blue },
   "promo.create":            { label: "สร้างโค้ดโปรโมชั่น",     color: adminColor.green },
   "promo.delete":            { label: "ลบโค้ดโปรโมชั่น",        color: adminColor.red },
+  "promo.builtin_edit":      { label: "แก้ไขโค้ดมาตรฐาน",       color: adminColor.blue },
+  "promo.builtin_delete":    { label: "ลบโค้ดมาตรฐาน",          color: adminColor.red },
+  "promo.builtin_restore":   { label: "กู้คืนโค้ดมาตรฐาน",       color: adminColor.green },
   "service.update":          { label: "แก้ไขราคา/บริการ",       color: adminColor.blue },
 };
 

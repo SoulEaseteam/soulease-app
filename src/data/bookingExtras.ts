@@ -1,11 +1,21 @@
 // src/data/bookingExtras.ts
 //
-// 🎨 Phase 4 — Static reference data for the Reservation Order page:
+// ⚠️ DEPRECATED (Round 28r49, founder 2026-07-08 — "Add-ons · บริการเสริม
+// เอาออกจากทุกที่ที่มี"). The add-ons feature (introduced 28s302) is fully
+// removed from the customer flow AND the admin editor. The `AddOn`
+// interface and `ADDONS` constant are kept ONLY so that historical
+// bookings written with `selectedAddons: string[]` (a field the customer
+// flow now always writes as `[]`) can still be referenced by id if any
+// legacy display code needs to look up an add-on name/price. The live-
+// config helpers (`applyLiveAddonConfig` / `getEffectiveAddons`) and
+// `AddonOverride` / `CustomAddonInput` types were deleted — they had no
+// remaining call sites once the customer picker and admin editor were
+// removed.
+//
+// Do NOT re-introduce a customer add-on picker without founder direction.
+// Old kept for reference:
 //   • Optional add-ons (Hot stone, Premium oil, Pair booking)
 //   • Preferred-language chips (中文, English, 日本語, 한국어)
-//
-// Lifted out of BookingFlowPage so they're easy to localise / extend
-// when Task 7 wires real Firestore-backed catalogues.
 
 export interface AddOn {
   id: string;
@@ -15,6 +25,9 @@ export interface AddOn {
   icon: string;
 }
 
+/** Historical hardcoded add-on catalog. Kept for backward-compat lookup
+ *  of legacy booking docs' `selectedAddons: string[]` id arrays. Not
+ *  surfaced anywhere in the live UI. */
 export const ADDONS: AddOn[] = [
   {
     id: "hot-stone",
@@ -38,64 +51,6 @@ export const ADDONS: AddOn[] = [
     icon: "👯",
   },
 ];
-
-// 🆕 Round 28s302 (founder: "ราคา & บริการ ... เชื่อมไปทุกที่") — add-ons were
-// hardcoded above with no admin control AND no customer picker (dead
-// feature). Now live-editable from /admin/promotions via the same
-// override pattern as services, and surfaced as a real picker in the
-// booking flow. Empty config → identical to the hardcoded ADDONS.
-export interface AddonOverride {
-  enabled?: boolean;
-  name?: string;
-  description?: string;
-  price?: number;
-  icon?: string;
-}
-export interface CustomAddonInput {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  icon?: string;
-  enabled?: boolean;
-}
-
-let liveAddonOverrides: Record<string, AddonOverride> = {};
-let liveCustomAddons: AddOn[] = [];
-
-export function applyLiveAddonConfig(cfg: {
-  overrides?: Record<string, AddonOverride> | null;
-  customAddons?: CustomAddonInput[] | null;
-}): void {
-  liveAddonOverrides = cfg.overrides ?? {};
-  liveCustomAddons = (cfg.customAddons ?? [])
-    .filter((a) => a?.id && a.enabled !== false && (a.price ?? 0) >= 0)
-    .map((a) => ({
-      id: a.id,
-      name: a.name || a.id,
-      description: a.description || "",
-      price: a.price ?? 0,
-      icon: a.icon || "✨",
-    }));
-}
-
-/** Effective add-on catalog = hardcoded (with overrides, enabled only) +
- *  admin-created custom add-ons (enabled only). */
-export function getEffectiveAddons(): AddOn[] {
-  const base = ADDONS.filter((a) => liveAddonOverrides[a.id]?.enabled !== false).map((a) => {
-    const ov = liveAddonOverrides[a.id];
-    return ov
-      ? {
-          ...a,
-          ...(ov.name?.trim() ? { name: ov.name } : {}),
-          ...(ov.description?.trim() ? { description: ov.description } : {}),
-          ...(typeof ov.price === "number" && ov.price >= 0 ? { price: ov.price } : {}),
-          ...(ov.icon?.trim() ? { icon: ov.icon } : {}),
-        }
-      : a;
-  });
-  return [...base, ...liveCustomAddons];
-}
 
 export interface LanguageOption {
   code: string; // "zh", "en", "ja", "ko", "th"

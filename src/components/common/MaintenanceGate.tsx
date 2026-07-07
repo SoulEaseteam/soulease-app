@@ -18,9 +18,8 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import { applyLiveFareConfig } from "@/utils/taxiFare";
 import { applyLivePromosEnabled } from "@/config/featureFlags";
-import { applyLivePromoConfig, type CustomPromoCode } from "@/utils/discount";
+import { applyLivePromoConfig, applyLiveBuiltinOverrides, type CustomPromoCode, type BuiltinPromoOverride } from "@/utils/discount";
 import { applyLiveServiceConfig } from "@/utils/servicePricing";
-import { applyLiveAddonConfig } from "@/data/bookingExtras";
 
 const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { role, loading: authLoading } = useAuth();
@@ -57,12 +56,56 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
           customServices: data?.customServices,
           order: data?.serviceOrder,
         });
-        applyLiveAddonConfig({
-          overrides: data?.addonOverrides,
-          customAddons: data?.customAddons,
-        });
+        // 🆕 Round 28r49 (founder 2026-07-08 — "Add-ons · บริการเสริม เอาออก
+        //   จากทุกที่ที่มี") — the addon live-config wiring (28s302) has been
+        //   fully removed alongside the customer picker and admin editor.
+        //   `addonOverrides` / `customAddons` fields on this doc are now
+        //   ignored (harmless leftovers if present).
+        //
+        // 🆕 Round 28r49 (founder 2026-07-08 — "Built-in Codes · โค้ดมาตรฐาน
+        //   แก้ไขและลบได้") — per-code editable overrides for the 7 built-in
+        //   discount codes ride the SAME public doc + this SAME listener,
+        //   so no rules change and no second listener. Empty/absent map =
+        //   hardcoded defaults, byte-identical to pre-28r49 behaviour.
+        //   Each override entry can carry amount/percent/cap/minSpend/
+        //   startsAt/expiryDate/label — or `deleted: true` to hide the
+        //   code entirely (quiet-invalid, same as disable).
+        const rawBuiltins = (data?.builtinCodeOverrides ?? {}) as Record<
+          string,
+          {
+            deleted?: boolean;
+            amount?: number;
+            percent?: number;
+            cap?: number;
+            minSpend?: number;
+            label?: string;
+            startsAt?: { toMillis?: () => number } | null;
+            expiryDate?: { toMillis?: () => number } | null;
+          }
+        >;
+        const builtinOverrides: Record<string, BuiltinPromoOverride> = {};
+        for (const [k, v] of Object.entries(rawBuiltins)) {
+          if (!v || typeof v !== "object") continue;
+          builtinOverrides[k] = {
+            deleted: v.deleted === true,
+            amount: typeof v.amount === "number" ? v.amount : undefined,
+            percent: typeof v.percent === "number" ? v.percent : undefined,
+            cap: typeof v.cap === "number" ? v.cap : undefined,
+            minSpend: typeof v.minSpend === "number" ? v.minSpend : undefined,
+            label: typeof v.label === "string" ? v.label : undefined,
+            startsAt: v.startsAt?.toMillis?.() ?? null,
+            expiryDate: v.expiryDate?.toMillis?.() ?? null,
+          };
+        }
+        applyLiveBuiltinOverrides(builtinOverrides);
       },
-      () => setMaintenanceOn(false), // fail open — never let a read error lock everyone out
+      () => {
+        // Fail open — never let a read error lock everyone out. Also clear
+        // any stale per-code overrides so a subsequent booking sees the
+        // hardcoded defaults, not the last-known map from a previous tick.
+        setMaintenanceOn(false);
+        applyLiveBuiltinOverrides(null);
+      },
     );
     return () => unsub();
   }, []);

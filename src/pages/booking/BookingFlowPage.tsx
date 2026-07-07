@@ -129,7 +129,12 @@ import { getServiceById } from "@/utils/serviceCatalog";
 import therapistsData from "@/data/therapists";
 // 🆕 Round 28b7 — Cloudinary helper for the rounded therapist photo.
 import { enhanceImage } from "@/utils/cloudinary";
-import { getEffectiveAddons, type AddOn } from "@/data/bookingExtras";
+// 🆕 Round 28r49 (founder 2026-07-08 — "Add-ons · บริการเสริม เอาออกจาก
+//   ทุกที่ที่มี") — the customer add-on picker (28s302) is fully removed.
+//   `form.selectedAddons` stays initialized to `[]` in bookingFormStorage
+//   for backward compat with existing booking docs, and always writes `[]`
+//   / addonsTotal=0. The `AddOn`/`ADDONS` reference data survives in
+//   src/data/bookingExtras.ts for legacy lookups; nothing here imports it.
 // 🆕 Round 28r10 (founder 2026-05-06) — File-split refactor.
 //   Extracted helpers + subcomponents to keep BookingFlowPage focused
 //   on the booking orchestration logic. Each piece now lives in its
@@ -425,22 +430,10 @@ const BookingFlowPage: React.FC = () => {
     () => getServiceById(form.serviceId) ?? services.find((s) => s.id === form.serviceId) ?? null,
     [form.serviceId]
   );
-  // 🆕 Round 28s302 — effective add-ons = hardcoded (with live overrides) +
-  //   admin-created custom add-ons. availableAddons drives the picker;
-  //   selectedAddons is what the guest ticked (for the price total).
-  const availableAddons = useMemo<AddOn[]>(() => getEffectiveAddons(), []);
-  const selectedAddons = useMemo<AddOn[]>(
-    () => availableAddons.filter((a) => form.selectedAddons.includes(a.id)),
-    [availableAddons, form.selectedAddons]
-  );
-  const toggleAddon = (id: string) =>
-    setForm((f) => ({
-      ...f,
-      selectedAddons: f.selectedAddons.includes(id)
-        ? f.selectedAddons.filter((x) => x !== id)
-        : [...f.selectedAddons, id],
-    }));
- 
+  // 🆕 Round 28r49 (founder 2026-07-08) — the add-on picker (28s302) is
+  //   removed. `form.selectedAddons` stays [] and addonsTotal is 0. The
+  //   `SectionCard` block below (formerly the picker) is deleted.
+
   const cartSnapshot = useMemo(
     () =>
       form.therapistId
@@ -479,7 +472,11 @@ const BookingFlowPage: React.FC = () => {
     service && form.duration
       ? priceForDuration(service, form.duration)
       : service?.price ?? 0;
-  const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.price, 0);
+  // 🆕 Round 28r49 — hardcoded to 0 after add-on removal. Kept as a named
+  //   const so every downstream reference (discountableBase, subtotal,
+  //   originalPrice, baseTotal, the booking doc `addonsTotal` field for
+  //   backward-compat) stays untouched.
+  const addonsTotal = 0;
 
 
   const [travelTipOpen, setTravelTipOpen] = useState<boolean>(false);
@@ -1538,68 +1535,10 @@ const BookingFlowPage: React.FC = () => {
           </Box>
         </SectionCard>
 
-        {/* 🆕 Round 28s302 (founder: "ราคา & บริการ ... เชื่อมไปทุกที่") —
-            add-ons are managed live in /admin/promotions and now have a
-            real customer picker. Renders only when at least one add-on is
-            available. Tapping a row toggles it into the price total. */}
-        {availableAddons.length > 0 && (
-          <SectionCard
-            label={t("booking.section.addons", "Add-ons")}
-            icon={<LocalOfferRoundedIcon />}
-          >
-            <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {availableAddons.map((a) => {
-                const on = form.selectedAddons.includes(a.id);
-                return (
-                  <Box
-                    key={a.id}
-                    role="checkbox"
-                    aria-checked={on}
-                    onClick={() => toggleAddon(a.id)}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      p: "10px 12px",
-                      borderRadius: "12px",
-                      cursor: "pointer",
-                      border: `1.5px solid ${on ? "#1A2B2E" : "rgba(15,23,42,0.12)"}`,
-                      background: on ? "rgba(26,43,46,0.04)" : "#fff",
-                      transition: "border-color .15s, background .15s",
-                    }}
-                  >
-                    <Box sx={{ fontSize: 20, flexShrink: 0 }}>{a.icon}</Box>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography sx={{ fontFamily: SANS, fontSize: "13.5px", fontWeight: 700, color: "#1A2B2E" }}>
-                        {a.name}
-                      </Typography>
-                      {a.description && (
-                        <Typography sx={{ fontFamily: SANS, fontSize: "11.5px", color: "rgba(15,23,42,0.6)" }}>
-                          {a.description}
-                        </Typography>
-                      )}
-                    </Box>
-                    <Typography sx={{ fontFamily: SANS, fontSize: "13px", fontWeight: 700, color: "#1A2B2E", flexShrink: 0 }}>
-                      +{formatTHB(a.price)}
-                    </Typography>
-                    <Box
-                      aria-hidden
-                      sx={{
-                        width: 22, height: 22, flexShrink: 0, borderRadius: "50%",
-                        border: `2px solid ${on ? "#1A2B2E" : "rgba(15,23,42,0.25)"}`,
-                        background: on ? "#1A2B2E" : "transparent",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        color: "#fff", fontSize: 13, fontWeight: 800,
-                      }}
-                    >
-                      {on ? "✓" : ""}
-                    </Box>
-                  </Box>
-                );
-              })}
-            </Box>
-          </SectionCard>
-        )}
+        {/* 🆕 Round 28r49 (founder 2026-07-08 — "Add-ons · บริการเสริม
+            เอาออกจากทุกที่ที่มี") — the add-ons customer picker (28s302)
+            has been removed. addonsTotal is hardcoded to 0 above and the
+            booking doc still writes `addons: []` for backward compat. */}
 
         {/* 🆕 Founder 2026-05-01 round 8 (founder feedback):
             • Preferences cell ลบ — language defaults to 'en'
@@ -1622,14 +1561,8 @@ const BookingFlowPage: React.FC = () => {
             }`}
             value={formatTHB(servicePrice)}
           />
-          {selectedAddons.length > 0 && (
-            <PriceRow
-              label={t("booking.priceRow.addons", "Add-ons ({{count}})", {
-                count: selectedAddons.length,
-              })}
-              value={`+${formatTHB(addonsTotal)}`}
-            />
-          )}
+          {/* 🆕 Round 28r49 — Add-ons removed; the PriceRow that showed
+              their subtotal is gone with addonsTotal always 0. */}
 
           {/* 🆕 Round 10 (founder 2026-05-01): Distance + ETA line. ETA
               factors in a 10-min staff prep buffer + travel time from

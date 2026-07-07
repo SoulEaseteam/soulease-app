@@ -69,6 +69,14 @@ export type AuditAction =
   | "promo.toggle"
   | "promo.create"
   | "promo.delete"
+  // 🆕 Round 28r49 (founder 2026-07-08 — "Built-in Codes · โค้ดมาตรฐาน
+  //   แก้ไขและลบได้") — full edit + delete on the 7 hardcoded discount
+  //   codes now writes per-code overrides to publicRules.builtinCodeOverrides
+  //   (distinct from promo.toggle, which flips enable via the older
+  //   disabledBuiltinCodes gate). Restore reverses a delete.
+  | "promo.builtin_edit"
+  | "promo.builtin_delete"
+  | "promo.builtin_restore"
   // 🆕 Round 28s300 — editing live service prices / names / availability
   //   from /admin/promotions changes what NEW bookings are charged.
   | "service.update";

@@ -91,8 +91,50 @@ export interface CustomPromoCode {
   /** Redemptions allowed per phone number. Same submit-time enforcement. */
   perPhoneLimit?: number | null;
 }
+
+// 🆕 Round 28r49 (founder 2026-07-08 — "Built-in Codes · โค้ดมาตรฐาน แก้ไข
+// และลบได้") — the 7 built-in codes (FIRST10, WELCOME20, TONIGHT500,
+// SAMMY200, VIP100, FREETAXI, and the SUN-XXXX referral pattern under the
+// pseudo-key "REFERRAL") are now fully editable AND deletable from the
+// admin Promotions page. `disabledBuiltinCodes` (28s298) stays as the
+// on/off gate; overrides let admin change amount / percent / cap / spend
+// floor / scheduling / label per code, or mark it `deleted: true` (treated
+// exactly like NULL_RESULT, same "quiet invalid" stance as every other
+// rejected path so a guest probing codes doesn't learn what exists).
+//
+// The override map key is the canonical UPPERCASE code (or the pseudo-key
+// "REFERRAL" for the SUN-XXXX pattern, matching the `disabledBuiltinCodes`
+// convention). Empty override → hardcoded defaults, byte-identical to
+// pre-28r49 behaviour.
+export interface BuiltinPromoOverride {
+  /** If true, the code is completely disabled (returns NULL_RESULT, quiet
+   *  invalid). Distinct from the older `enabled: false` gate — kept
+   *  separate so admin can "delete then restore" without losing the
+   *  amount/label edits. */
+  deleted?: boolean;
+  /** Override the fixed-baht amount for FIXED-type builtin codes
+   *  (TONIGHT500, SAMMY200, VIP100, REFERRAL). Ignored on FREETAXI (its
+   *  amount = actual taxi fare) and on PERCENT codes. */
+  amount?: number;
+  /** Override the % for PERCENT-type codes (FIRST10, WELCOME20). */
+  percent?: number;
+  /** Override the cap (THB) on percent codes. */
+  cap?: number;
+  /** If set, subtotal (discountable base) must reach this or the code is
+   *  quiet-invalid — same as custom-code `minSpendThb`. */
+  minSpend?: number;
+  /** Epoch ms; before this the code is quiet-invalid. */
+  startsAt?: number | null;
+  /** Epoch ms; after this the code is quiet-invalid. */
+  expiryDate?: number | null;
+  /** Optional display label override; empty/absent falls back to the
+   *  hardcoded template string. */
+  label?: string;
+}
+
 let disabledBuiltinCodes = new Set<string>();
 let customCodes: Record<string, CustomPromoCode> = {};
+let builtinOverrides: Record<string, BuiltinPromoOverride> = {};
 
 export function applyLivePromoConfig(cfg: {
   disabledCodes?: string[];
@@ -102,6 +144,39 @@ export function applyLivePromoConfig(cfg: {
     disabledBuiltinCodes = new Set(cfg.disabledCodes.map((c) => c.toUpperCase()));
   }
   if (cfg.customCodes) customCodes = cfg.customCodes;
+}
+
+/** 🆕 Round 28r49 — pushed in by MaintenanceGate from
+ *  `publicRules.builtinCodeOverrides` (see there for the wiring). */
+export function applyLiveBuiltinOverrides(
+  map: Record<string, BuiltinPromoOverride> | null | undefined
+): void {
+  // Canonicalise every key to UPPERCASE so a lowercase Firestore key can't
+  // silently miss a lookup here. Callers use `builtinOverrides[code]` with
+  // `code` already normalised by validateDiscount.
+  const clean: Record<string, BuiltinPromoOverride> = {};
+  if (map) {
+    for (const [k, v] of Object.entries(map)) {
+      if (v && typeof v === "object") clean[k.toUpperCase()] = v;
+    }
+  }
+  builtinOverrides = clean;
+}
+
+/** True if a valid override says this built-in code has been deleted. */
+function isBuiltinDeleted(code: string): boolean {
+  return builtinOverrides[code]?.deleted === true;
+}
+
+/** Check the code's own scheduling / min-spend override gates. Returns
+ *  true if any gate rejects (caller returns NULL_RESULT). */
+function builtinOverrideRejects(code: string, subtotalTHB: number): boolean {
+  const ov = builtinOverrides[code];
+  if (!ov) return false;
+  if (ov.startsAt && Date.now() < ov.startsAt) return true;
+  if (ov.expiryDate && Date.now() > ov.expiryDate) return true;
+  if (ov.minSpend && subtotalTHB < ov.minSpend) return true;
+  return false;
 }
 
 /**
@@ -190,6 +265,12 @@ export function validateDiscount(
   //   code path below.
   if (disabledBuiltinCodes.has(code)) return { ...NULL_RESULT, code };
 
+  // 🆕 Round 28r49 — admin deleted this built-in via /admin/promotions
+  //   (`builtinCodeOverrides[code].deleted === true`). Quiet invalid,
+  //   same posture as disable. Referral pattern check is separate below
+  //   because the exact code varies (SUN-XXXX).
+  if (isBuiltinDeleted(code)) return { ...NULL_RESULT, code };
+
   // 🆕 Round 28r27 — Service-tier gate. Promo codes are blocked on
   //   premium-tier services.
   // 🆕 Round 28r28 — PREMIUM_OK_CODES (VIP100, FREETAXI) bypass the
@@ -219,11 +300,15 @@ export function validateDiscount(
       // (those guests should use FIRST10 / WELCOME20 instead).
       return { ...NULL_RESULT, code };
     }
+    // 🆕 Round 28r49 — admin-set scheduling / min-spend / amount / label.
+    if (builtinOverrideRejects(code, subtotalTHB)) return { ...NULL_RESULT, code };
+    const ov = builtinOverrides[code];
+    const amount = typeof ov?.amount === "number" && ov.amount >= 0 ? ov.amount : VIP100_FIXED_THB;
     return {
       valid: true,
       code,
-      amount: VIP100_FIXED_THB,
-      label: `VIP — ฿${VIP100_FIXED_THB} off premium`,
+      amount,
+      label: ov?.label?.trim() || `VIP — ฿${amount} off premium`,
       type: "fixed",
     };
   }
@@ -241,24 +326,35 @@ export function validateDiscount(
       // Free zone or address not set → code can't apply yet.
       return { ...NULL_RESULT, code };
     }
+    // 🆕 Round 28r49 — scheduling / min-spend / label are all overridable;
+    //   the discount AMOUNT is not (always equals the real taxi fare — a
+    //   fixed override wouldn't make sense here).
+    if (builtinOverrideRejects(code, subtotalTHB)) return { ...NULL_RESULT, code };
+    const ov = builtinOverrides[code];
     return {
       valid: true,
       code,
       amount: taxi,
-      label: `Travel comped — saves ฿${taxi}`,
+      label: ov?.label?.trim() || `Travel comped — saves ฿${taxi}`,
       type: "fixed",
     };
   }
 
-  // ── FIRST10: 10% off, capped at ฿500 ──
+  // ── FIRST10: 10% off, capped at ฿200 (28r28) ──
   if (code === FIRST_TIME_CODE) {
-    const raw10 = Math.round((subtotalTHB * FIRST10_PERCENT) / 100);
-    const amount = Math.max(0, Math.min(raw10, FIRST10_CAP_THB));
+    // 🆕 Round 28r49 — admin-overridable percent + cap + scheduling +
+    //   min-spend + label.
+    if (builtinOverrideRejects(code, subtotalTHB)) return { ...NULL_RESULT, code };
+    const ov = builtinOverrides[code];
+    const percent = typeof ov?.percent === "number" && ov.percent >= 0 ? ov.percent : FIRST10_PERCENT;
+    const cap = typeof ov?.cap === "number" && ov.cap >= 0 ? ov.cap : FIRST10_CAP_THB;
+    const rawPct = Math.round((subtotalTHB * percent) / 100);
+    const amount = Math.max(0, Math.min(rawPct, cap));
     return {
       valid: true,
       code,
       amount,
-      label: `First booking — ${FIRST10_PERCENT}% off`,
+      label: ov?.label?.trim() || `First booking — ${percent}% off`,
       type: "percent",
     };
   }
@@ -267,13 +363,19 @@ export function validateDiscount(
   // Higher-tier launch promo. Customer chooses one (FIRST10 vs
   // WELCOME20) — no stacking; whichever they type wins.
   if (code === WELCOME_CODE) {
-    const raw20 = Math.round((subtotalTHB * WELCOME20_PERCENT) / 100);
-    const amount = Math.max(0, Math.min(raw20, WELCOME20_CAP_THB));
+    // 🆕 Round 28r49 — admin-overridable percent + cap + scheduling +
+    //   min-spend + label.
+    if (builtinOverrideRejects(code, subtotalTHB)) return { ...NULL_RESULT, code };
+    const ov = builtinOverrides[code];
+    const percent = typeof ov?.percent === "number" && ov.percent >= 0 ? ov.percent : WELCOME20_PERCENT;
+    const cap = typeof ov?.cap === "number" && ov.cap >= 0 ? ov.cap : WELCOME20_CAP_THB;
+    const rawPct = Math.round((subtotalTHB * percent) / 100);
+    const amount = Math.max(0, Math.min(rawPct, cap));
     return {
       valid: true,
       code,
       amount,
-      label: `Welcome — ${WELCOME20_PERCENT}% off`,
+      label: ov?.label?.trim() || `Welcome — ${percent}% off`,
       type: "percent",
     };
   }
@@ -291,11 +393,17 @@ export function validateDiscount(
       // Quiet invalid — UI shows "code not recognised" hint.
       return { ...NULL_RESULT, code };
     }
+    // 🆕 Round 28r49 — amount + scheduling + min-spend + label overridable.
+    //   The 22:00–04:00 prime-hour window itself is NOT admin-editable —
+    //   it's the code's whole point (drive prime-hour conversions).
+    if (builtinOverrideRejects(code, subtotalTHB)) return { ...NULL_RESULT, code };
+    const ov = builtinOverrides[code];
+    const amount = typeof ov?.amount === "number" && ov.amount >= 0 ? ov.amount : TONIGHT500_FIXED_THB;
     return {
       valid: true,
       code,
-      amount: TONIGHT500_FIXED_THB,
-      label: `Late-night · ฿${TONIGHT500_FIXED_THB} off`,
+      amount,
+      label: ov?.label?.trim() || `Late-night · ฿${amount} off`,
       type: "fixed",
     };
   }
@@ -303,11 +411,15 @@ export function validateDiscount(
   // 🆕 Round 28r20 — SAMMY200: ฿200 off. Honors the promo founder
   // ran on Sammyboy Bangkok forum. No conditions; flat applies.
   if (code === SAMMY_CODE) {
+    // 🆕 Round 28r49 — amount + scheduling + min-spend + label overridable.
+    if (builtinOverrideRejects(code, subtotalTHB)) return { ...NULL_RESULT, code };
+    const ov = builtinOverrides[code];
+    const amount = typeof ov?.amount === "number" && ov.amount >= 0 ? ov.amount : SAMMY200_FIXED_THB;
     return {
       valid: true,
       code,
-      amount: SAMMY200_FIXED_THB,
-      label: `Sammyboy — ฿${SAMMY200_FIXED_THB} off`,
+      amount,
+      label: ov?.label?.trim() || `Sammyboy — ฿${amount} off`,
       type: "fixed",
     };
   }
@@ -320,11 +432,20 @@ export function validateDiscount(
   //   code check, which only ever sees ONE specific code per call.
   if (REFERRAL_CODE_RE.test(code)) {
     if (disabledBuiltinCodes.has("REFERRAL")) return { ...NULL_RESULT, code };
+    // 🆕 Round 28r49 — same "REFERRAL" pseudo-key for the override lookup
+    //   as the disable check above uses. Deleted / scheduled / min-spend
+    //   / amount / label all overridable per pattern (all SUN-XXXX codes
+    //   share one override — that's the design; individual referral
+    //   codes are minted per user, not editable one-by-one).
+    if (isBuiltinDeleted("REFERRAL")) return { ...NULL_RESULT, code };
+    if (builtinOverrideRejects("REFERRAL", subtotalTHB)) return { ...NULL_RESULT, code };
+    const ov = builtinOverrides["REFERRAL"];
+    const amount = typeof ov?.amount === "number" && ov.amount >= 0 ? ov.amount : REFERRAL_FIXED_THB;
     return {
       valid: true,
       code,
-      amount: REFERRAL_FIXED_THB,
-      label: `Referral · ฿${REFERRAL_FIXED_THB} off`,
+      amount,
+      label: ov?.label?.trim() || `Referral · ฿${amount} off`,
       type: "fixed",
     };
   }
