@@ -27,12 +27,13 @@ import { auth, db } from "@/lib/firebase";
 import {
   collection,
   getDocs,
+  getDoc,
   doc,
   updateDoc,
   deleteDoc,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { Crown, Warning, MagnifyingGlass, UsersThree, Repeat, CurrencyCircleDollar } from "phosphor-react";
+import { Crown, Warning, MagnifyingGlass, UsersThree, Repeat, CurrencyCircleDollar, CaretDown, CircleNotch } from "phosphor-react";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { countryFromPhone, type PhoneCountry } from "@/utils/phoneCountry";
 
@@ -100,6 +101,38 @@ function normPhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
   if (digits.startsWith("66") && digits.length >= 11) return "0" + digits.slice(2);
   return digits;
+}
+
+// 🆕 Round 28s288 — flatten a full booking doc into label/value pairs for
+//   the expandable history row. Only shows fields that are actually present.
+function bookingDetailPairs(d: Record<string, unknown>): Array<[string, string]> {
+  const num = (v: unknown) => Number(v ?? 0);
+  const thb = (v: unknown) => `฿${num(v).toLocaleString()}`;
+  const loc = typeof d.location === "string"
+    ? d.location
+    : d.location && typeof d.location === "object"
+      ? `${(d.location as { lat?: number }).lat}, ${(d.location as { lng?: number }).lng}`
+      : "";
+  const paid = d.paid === true || d.paymentStatus === "paid";
+  const pairs: Array<[string, string]> = [];
+  const dateTime = `${(d.date as string) ?? ""} ${(d.time as string) ?? ""}`.trim();
+  if (dateTime) pairs.push(["วันเวลา", dateTime]);
+  if (d.phone) pairs.push(["โทร", String(d.phone)]);
+  if (loc) pairs.push(["สถานที่", loc]);
+  pairs.push(["บริการ", `${(d.serviceName as string) ?? "—"}${d.duration ? ` · ${d.duration} min` : ""}`]);
+  if (d.therapistName) pairs.push(["หมอนวด", String(d.therapistName)]);
+  pairs.push(["การจ่าย", `${(d.payment as string) ?? "—"} · ${paid ? "จ่ายแล้ว" : "ยังไม่จ่าย"}`]);
+  if (d.servicePrice != null) pairs.push(["ค่าบริการ", thb(d.servicePrice)]);
+  if (num(d.taxiFee) > 0) pairs.push(["ค่าเดินทาง", thb(d.taxiFee)]);
+  if (num(d.discountAmount) > 0) pairs.push(["ส่วนลด", `-${thb(d.discountAmount)}`]);
+  pairs.push(["ยอดรวม", thb(d.totalPrice ?? d.servicePrice)]);
+  const note = (d.addressNote as string) || (d.note as string);
+  if (note) pairs.push(["โน้ต", note]);
+  if (d.reviewText) {
+    const stars = d.rating ? "★".repeat(Math.max(0, Math.min(5, Math.round(num(d.rating))))) + " " : "";
+    pairs.push(["รีวิว", `${stars}${d.reviewText}`]);
+  }
+  return pairs;
 }
 
 // 🆕 Round 28s286 — colour a booking's status chip in the profile drawer.
@@ -229,6 +262,23 @@ const AdminUsersPage: React.FC = () => {
   const [query, setQuery] = useState("");
   const [countryFilter, setCountryFilter] = useState<string | null>(null); // ISO code · "__none__" · null=all
   const [selectedGuest, setSelectedGuest] = useState<CustomerInsight | null>(null);
+  // 🆕 Round 28s288 — one history row can expand to its FULL booking doc,
+  //   fetched on demand (an old booking may be outside the Bookings feed
+  //   window, so we read it directly by id here).
+  const [openBooking, setOpenBooking] = useState<{ id: string; loading: boolean; data: Record<string, unknown> | null } | null>(null);
+
+  const openHistoryBooking = async (id: string) => {
+    if (openBooking?.id === id) { setOpenBooking(null); return; }
+    setOpenBooking({ id, loading: true, data: null });
+    try {
+      const snap = await getDoc(doc(db, "bookings", id));
+      setOpenBooking({ id, loading: false, data: snap.exists() ? (snap.data() as Record<string, unknown>) : null });
+    } catch (err) {
+      console.error("[history booking] fetch failed", err);
+      setOpenBooking({ id, loading: false, data: null });
+    }
+  };
+  const closeGuest = () => { setSelectedGuest(null); setOpenBooking(null); };
 
   // 🆕 Round 28s287b — guest count per country (doubles as the filter row).
   const countryBreakdown = useMemo(() => {
@@ -544,7 +594,7 @@ const AdminUsersPage: React.FC = () => {
       </Paper>
 
       {/* ── Guest profile drawer (28s286) ─────────────────────────────── */}
-      <Dialog open={!!selectedGuest} onClose={() => setSelectedGuest(null)} fullWidth maxWidth="sm"
+      <Dialog open={!!selectedGuest} onClose={closeGuest} fullWidth maxWidth="sm"
         slotProps={{ paper: { sx: { background: adminColor.bg, borderRadius: "18px" } } }}>
         {selectedGuest && guestStats && (
           <>
@@ -592,23 +642,53 @@ const AdminUsersPage: React.FC = () => {
 
               {/* history */}
               <Typography sx={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.07em", color: adminColor.dim, mb: 1 }}>ประวัติการจอง ({selectedGuest.bookings.length})</Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, maxHeight: 280, overflowY: "auto" }}>
-                {selectedGuest.bookings.map((b) => (
-                  <Box key={b.id} sx={{ display: "flex", alignItems: "center", gap: 1, background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "10px", p: "9px 12px" }}>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: adminColor.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {b.serviceName || "—"}{b.therapistName ? ` · ${b.therapistName}` : ""}
-                      </Typography>
-                      <Typography sx={{ fontSize: 11, color: adminColor.dim }}>{b.date ? b.date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}</Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, maxHeight: 320, overflowY: "auto" }}>
+                {selectedGuest.bookings.map((b) => {
+                  const isOpen = openBooking?.id === b.id;
+                  return (
+                    <Box key={b.id} sx={{ background: adminColor.panel, border: `1px solid ${isOpen ? adminColor.accent : adminColor.line}`, borderRadius: "10px", overflow: "hidden" }}>
+                      {/* summary row — tap to expand the real booking */}
+                      <Box onClick={() => void openHistoryBooking(b.id)} sx={{ display: "flex", alignItems: "center", gap: 1, p: "9px 12px", cursor: "pointer", "&:hover": { background: adminColor.panel2 } }}>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography sx={{ fontSize: 13, fontWeight: 600, color: adminColor.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {b.serviceName || "—"}{b.therapistName ? ` · ${b.therapistName}` : ""}
+                          </Typography>
+                          <Typography sx={{ fontSize: 11, color: adminColor.dim }}>{b.date ? b.date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}</Typography>
+                        </Box>
+                        <Typography sx={{ ...adminFigureSx, fontSize: 13, color: adminColor.text }}>฿{b.amount.toLocaleString()}</Typography>
+                        <Box sx={{ fontSize: 9.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em", color: statusColor(b.status), background: `${statusColor(b.status)}1F`, borderRadius: "6px", px: "6px", py: "2px", whiteSpace: "nowrap" }}>{b.status || "—"}</Box>
+                        <CaretDown size={14} color={adminColor.dim} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .15s", flexShrink: 0 }} />
+                      </Box>
+                      {/* expanded full detail */}
+                      {isOpen && (
+                        <Box sx={{ borderTop: `1px solid ${adminColor.line}`, p: "10px 12px", background: adminColor.panel2 }}>
+                          {openBooking?.loading ? (
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: adminColor.dim, fontSize: 12.5 }}>
+                              <CircleNotch size={15} style={{ animation: "spinU .8s linear infinite" }} /> กำลังโหลด…
+                              <Box component="span" sx={{ "@keyframes spinU": { to: { transform: "rotate(360deg)" } } }} />
+                            </Box>
+                          ) : openBooking?.data ? (
+                            <Box sx={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                              {bookingDetailPairs(openBooking.data).map(([label, value], i) => (
+                                <Box key={i} sx={{ display: "flex", gap: 1, fontSize: 12.5 }}>
+                                  <Typography sx={{ fontSize: 11.5, color: adminColor.dim, minWidth: 76, flexShrink: 0 }}>{label}</Typography>
+                                  <Typography sx={{ fontSize: 12.5, color: adminColor.text, wordBreak: "break-word" }}>{value}</Typography>
+                                </Box>
+                              ))}
+                              <Typography sx={{ fontSize: 10.5, color: adminColor.dim, mt: "2px" }}>ID: {b.id}</Typography>
+                            </Box>
+                          ) : (
+                            <Typography sx={{ fontSize: 12.5, color: adminColor.dim }}>ไม่พบข้อมูลการจอง (อาจถูกลบ)</Typography>
+                          )}
+                        </Box>
+                      )}
                     </Box>
-                    <Typography sx={{ ...adminFigureSx, fontSize: 13, color: adminColor.text }}>฿{b.amount.toLocaleString()}</Typography>
-                    <Box sx={{ fontSize: 9.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em", color: statusColor(b.status), background: `${statusColor(b.status)}1F`, borderRadius: "6px", px: "6px", py: "2px", whiteSpace: "nowrap" }}>{b.status || "—"}</Box>
-                  </Box>
-                ))}
+                  );
+                })}
               </Box>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setSelectedGuest(null)} sx={{ color: adminColor.muted, textTransform: "none", fontWeight: 700 }}>ปิด</Button>
+              <Button onClick={closeGuest} sx={{ color: adminColor.muted, textTransform: "none", fontWeight: 700 }}>ปิด</Button>
             </DialogActions>
           </>
         )}
