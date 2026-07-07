@@ -1911,6 +1911,140 @@ squeezed row, worse at browser zoom), and the stat pills wrapped unevenly
   subline, amount+status stacked right-aligned in their own column, row
   min-height + vertical centering — no clipping/crowding at any zoom.
 
+### 🆕 2026-07-07 — new /admin/promotions: manage discount codes (28s298)
+
+Founder: "เพิ่ม เมนู โปรโมชั่น" — a genuinely new feature request, not an
+audit-and-fix. `src/utils/discount.ts` already had a real, working
+discount-code engine (FIRST10, WELCOME20, TONIGHT500, SAMMY200, VIP100,
+FREETAXI, referral `SUN-XXXX` pattern) but every rule was hardcoded with
+zero admin UI — asked the founder what the new menu should actually be
+able to do; she picked all three offered: view + toggle the existing
+codes, create brand-new custom codes, and see real usage stats.
+
+Also surfaced (important context that would've made the whole page
+pointless if missed): `src/config/featureFlags.ts`'s `PROMOS_ENABLED`
+has been hardcoded `false` site-wide since round 28s84 (founder's own
+prior call — "ยังไม่ได้คิด โปร กัน เสี่ยง"). Without making THAT live too,
+every other control on this new page would do nothing visible on the
+real site, same trap as advanced-settings before 28s296.
+
+**Architecture — reused this session's live-override pattern rather
+than making `validateDiscount()` async:** one Firestore doc per code in
+new `promoCodes/{CODE}` (builtin on/off override, or a full custom-code
+definition), read by a new `onSnapshot` listener in `MaintenanceGate.tsx`
+into a module-level cache in `discount.ts` — same shape as
+`applyLiveFareConfig` from 28s297. `validateDiscount()` itself stays a
+pure, synchronous function; the disable-check runs first (quiet invalid,
+same as every existing rejected-code path), the custom-code fallback
+runs last so a custom code can never shadow a hardcoded name. The
+referral program (`SUN-XXXX` pattern, not one literal string) uses a
+pseudo-key `"REFERRAL"` for its disable check, since it can't match
+`disabledBuiltinCodes` by exact code string like the others.
+
+`PROMOS_ENABLED` got the same `export let` + `applyLivePromosEnabled()`
+treatment, set from the SAME `publicRules` doc MaintenanceGate already
+listens on — one more field on an existing listener, no new one opened.
+
+**AdminPromotionsPage.tsx**: master switch up top with a visible amber
+warning when off ("ปิดอยู่ตอนนี้ ... ก็ยังไม่มีผลกับลูกค้าจริง",
+non-negotiable — every other control below is moot without it); built-in
+code list (descriptions kept in sync BY HAND with discount.ts's actual
+branches, flagged in a comment since this page can't introspect that
+logic as data) with a real per-code enable toggle; custom-code creator
+(flat ฿ or %, optional cap + expiry date) with delete; usage stats
+aggregated from real `bookings` docs (`discountCode`/`discountAmount`
+fields already written by BookingFlowPage — capped at 1000 most-recent
+discounted bookings, single-field `!=null` inequality, no composite
+index needed). New sidebar entry in the Money & numbers group.
+
+`firestore.rules`: `promoCodes/{code}` — public read (checkout has no
+auth to gate on, matching `blockedPhones`/`publicRules`), admin-only
+write. `promo.toggle`/`create`/`delete` added to `AuditAction` + labels
++ a new "โปรโมชั่น" category in the audit log filter.
+
+Verified live: deployed rules first, then the app; homepage 200 +
+correct title (regression check), curled the live main bundle for the
+`promosEnabled` property name (function names themselves are minified —
+checked the property access instead, which survives minification), and
+the Promotions page chunk for its Thai section copy + a real code name
+(`FIRST10`) confirming the built-in list rendered.
+
+### 🆕 2026-07-07 — Telegram toggle + live pricing config, for real (28s297)
+
+Direct follow-up to 28s296's audit — asked the founder which of the two
+remaining "not yet connected" categories she actually wanted wired for
+real. She said yes to both:
+
+**Telegram ("เชื่อม Telegram ให้คุมได้จริงจากหน้านี้"):** the bot token
+stays in Firebase Secret Manager — moving a real secret into an
+admin-editable Firestore doc would be a security downgrade, not an
+upgrade the founder asked for. What's now real is the enable/disable
+toggle. `functions/src/index.ts` gained `isTelegramEnabled()` +
+`sendTelegramIfEnabled()` (Admin SDK read of `adminSettings/advanced.
+telegramEnabled`, bypasses Firestore rules entirely, default TRUE if
+unset). Swapped in at every actual outbound-notification call site —
+`onBookingCreate` (admin alert, needs-review alert, therapist DM),
+`onReviewCreate`, `alertOverdueSessions`, `recoverAbandonedBookings` —
+but deliberately NOT `telegramWebhook`'s reply-to-a-command handler,
+since a therapist typing `/myid` to link their chat ID isn't a
+"notification" this toggle should be able to silently break. A
+deliberate skip returns `{ok: true}`, not `false` — `alertOverdueSessions`
+stamps `overdueAlertedAt` and `recoverAbandonedBookings` sets a terminal
+`status` based on `.ok`, so treating "paused" as "failed" would have
+made the first loop-retry forever and the second permanently mark every
+abandoned cart "alert-failed" while the toggle was off. LINE Notify
+removed from the page entirely (not part of what she approved, and
+nothing real backs it — building one is a different-sized ask).
+
+**Pricing ("เชื่อมให้แก้ราคาได้จริงจากหน้านี้"):** `taxiFare.ts`'s
+`ADMIN_QUOTE_KM`/`ROUND_TRIP_MULTIPLIER` and
+`DistanceDepositDialog.tsx`'s `FREE_RADIUS_KM`/`DEPOSIT_THB` (previously
+a SECOND hardcoded copy of the same policy — consolidated into
+taxiFare.ts as the one source) are now `export let` + an
+`applyLiveFareConfig()` setter, called once at boot and on every live
+update by `MaintenanceGate.tsx`'s existing `publicRules` listener — it
+already subscribed to the only public app-config doc, so pricing
+piggybacks on that one listener instead of opening a second. ES module
+named exports are LIVE bindings, so all 8 existing files that import
+these constants (BookingFlowPage, TherapistDetailPage, HomeMapBrowse,
+etc.) see the override automatically — zero call-site changes needed.
+Defaults are unchanged from before, so nobody who hasn't saved new
+values in Settings sees any behavior change.
+
+**Surfaced, not silently fixed:** the "deposit" is informational-only
+today — grep confirms BookingFlowPage never actually charges a separate
+deposit line item; the real distance-based cost customers pay is the
+round-trip travel fare. Editing "Deposit Amount" changes what the FAQ
+dialog tells customers, not a second real charge. Put this directly in
+the Settings UI copy so the founder sees it every time she opens that
+section, not just in a one-off chat message. Also NOT wired (wasn't part
+of either approved question, since it was scoped to pricing not payment-
+method availability): PromptPay/Stripe enable toggles — still marked
+"not yet connected."
+
+**Verification, given the higher blast radius:** confirmed the taxiFare.ts
+diff touches ONLY declarations (`const`→`let`, new setter function) and
+zero lines inside `grabCarOneWayFare`/`calcTaxiFare`/`resolveTier`'s
+function bodies — mathematically identical output unless
+`applyLiveFareConfig` is actually called with new values. `firebase
+deploy --only functions` — 15 functions, all "Successful update
+operation," zero deploy failures. Checked `onBookingCreate`'s post-
+deploy container boot (healthy TCP probe, no crash, no error logs).
+Tried to also confirm a live post-deploy SCHEDULED tick of
+`recoverAbandonedBookings`/`alertOverdueSessions` (to see the new
+`isTelegramEnabled()` Firestore read execute for real, not just boot) by
+polling `firebase functions:log` in the background for ~15 minutes —
+inconclusive: no new tick showed up in that window (Cloud Logging query
+lag via the CLI, most likely — plausible but not confirmed) and no error
+surfaced either. Deploy success + healthy boot + zero errors is real
+signal; a confirmed successful scheduled execution is NOT, and is worth
+a spot-check next time the audit log / telegramLogs collection is
+reviewed. Client-side loop was fully clean: `vercel --prod`, homepage
+200 + correct title (regression check — MaintenanceGate wraps every
+customer route), curled the live main bundle for `roundTripMultiplier`/
+`freeRadiusKm`, and the Advanced Settings chunk for the new section copy
++ zero remaining LINE references.
+
 ### 🆕 2026-07-07 — admin/advanced-settings: 13 fields, all decorative (28s296)
 
 Founder: "admin/advanced-settings ปรับแก้ และ ตกแต่งสวยงาม แนะนำ ที่ใช้ได้จริง".
