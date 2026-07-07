@@ -71,7 +71,9 @@ import { formatTHB } from "@/utils/servicePricing";
 import { getServiceLabel } from "@/utils/serviceCatalog";
 // 🆕 Round 28s319 — tier-based split (shared payroll fn) so the dashboard's
 //   shop cut matches Earnings / Pay-Therapists instead of a stale flat 40%.
-import { therapistPayoutFor } from "@/utils/commission";
+// 🆕 Round 28s321 — also share isPayrollExcluded + commissionBaseFor so the
+//   dashboard reconciles with Reports/Earnings (same exclusions, same shop base).
+import { therapistPayoutFor, isPayrollExcluded, commissionBaseFor } from "@/utils/commission";
 // 🆕 Round 28s234 — Control Room redesign (shared dark tokens).
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { logAdminAction } from "@/utils/auditLog";
@@ -296,14 +298,22 @@ const AdminDashboardPage: React.FC = () => {
       const created = toDate(r.createdAt);
       if (!created) continue;
       const service = r.servicePrice || 0;
-      const isCancelled = r.status === "cancelled";
+      // 🆕 Round 28s321 — exclude the full payroll-excluded set (cancelled /
+      //   refunded / no-show / rejected / failed), not just "cancelled", so
+      //   revenue matches Reports & Earnings.
+      const isCancelled = isPayrollExcluded(r.status);
 
       periodBookings++;
       if (!isCancelled) {
         periodService += service;
+        // 🆕 Round 28s321 — shop share on the POST-discount base (service −
+        //   discount) − payout, identical to Reports' `base − pay` and to
+        //   Earnings' shopGross. The old `service − payout` used the full list
+        //   price, over-counting shop revenue by the discount amount.
         const worker = therapistPayoutFor({ serviceId: r.serviceId, servicePrice: service, discountAmount: r.discountAmount });
+        const base   = commissionBaseFor({ servicePrice: service, discountAmount: r.discountAmount });
         periodWorker += worker;
-        periodShop   += Math.max(0, service - worker);
+        periodShop   += Math.max(0, base - worker);
       }
       if (isCancelled)  periodCancelled++;
 
