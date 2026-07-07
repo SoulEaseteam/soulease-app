@@ -41,11 +41,9 @@ import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import PaymentRoundedIcon from "@mui/icons-material/PaymentRounded";
-import RoomRoundedIcon from "@mui/icons-material/RoomRounded";
 import RedeemRoundedIcon from "@mui/icons-material/RedeemRounded";
 import AdminPanelSettingsRoundedIcon from "@mui/icons-material/AdminPanelSettingsRounded";
 import { useAuth } from "@/providers/AuthProvider";
-import DistanceDepositDialog from "@/components/home/DistanceDepositDialog";
 import ReferralDialog from "@/components/home/ReferralDialog";
 import SunRedWordmark from "@/components/common/SunRedWordmark";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
@@ -77,7 +75,7 @@ interface NavItem {
   /** Route to navigate to. Mutually exclusive with `action`. */
   path?: string;
   /** Inline action — used for dialogs (Distance / Referral). */
-  action?: "openDistance" | "openReferral";
+  action?: "openReferral";
   /** When true, only show when the user is signed in */
   requiresAuth?: boolean;
 }
@@ -164,14 +162,6 @@ const INFO_ITEMS: NavItem[] = [
     defaultHint: "VISA · PromptPay · Cash",
     path: "/payment-methods",
   },
-  {
-    icon: <RoomRoundedIcon />,
-    labelKey: "nav.distance",
-    defaultLabel: "Distance & deposit",
-    hintKey: "nav.distance.hint",
-    defaultHint: "25 km+ requires 500฿",
-    action: "openDistance",
-  },
 ];
 
 const TopNav: React.FC = () => {
@@ -196,7 +186,6 @@ const TopNav: React.FC = () => {
   const isTherapist = role === "therapist";
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [distanceOpen, setDistanceOpen] = useState(false);
   // 🆕 Round 28r7 — Refer & earn dialog state.
   const [referralOpen, setReferralOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -223,11 +212,6 @@ const TopNav: React.FC = () => {
   };
 
   const handleNavItem = (item: NavItem) => {
-    if (item.action === "openDistance") {
-      setDrawerOpen(false);
-      setDistanceOpen(true);
-      return;
-    }
     if (item.action === "openReferral") {
       setDrawerOpen(false);
       setReferralOpen(true);
@@ -645,12 +629,6 @@ const TopNav: React.FC = () => {
           {t("nav.languageHint", "Tap the flag pill to change language")}
         </Box>
       </Drawer>
-
-      {/* ───────── Distance & deposit policy dialog ───────── */}
-      <DistanceDepositDialog
-        open={distanceOpen}
-        onClose={() => setDistanceOpen(false)}
-      />
 
       {/* 🆕 Round 28r7 — Refer & earn dialog (Phase 1, manual flow). */}
       <ReferralDialog

@@ -1,96 +1,59 @@
 // src/utils/taxiFare.ts
 //
-// 🚖 Taxi fare — GrabCar Bangkok rate card · round-trip with
-//                40 % discount on the return leg.
+// 🚖 Travel fare — GrabCar Bangkok rate card · charged round-trip at the
+//                  ACTUAL meter both ways (outbound full + return full).
 //
-// Founder-confirmed rate model (Round 28b23 · 2026-05-04):
+// 🆕 Round 28s308 (founder: "ไปเต็มราคา + กลับตามจริง — ลบค่าทั้งหมดที่เคย
+//   คำนวน") — the model was deliberately gutted of every "calculated
+//   layer" the earlier rounds had stacked on:
+//     ✂ the 40 %-off-return discount framing (×1.6)
+//     ✂ the 2.5× "standard rate" strike-through anchor + fake Smart-Routing %
+//     ✂ the admin-set travel-discount % lever
+//     ✂ the informational deposit / free-radius (DistanceDepositDialog, gone)
+//   What remains is the honest thing: the customer pays what the round
+//   trip actually costs on the meter — outbound + return, both full.
 //
-//   GrabCar Bangkok tiers (per official Grab rate card):
+//   GrabCar Bangkok one-way meter (per the official rate card):
 //     • First km   (≤ 1 km) :  ฿45 base flag-fall
 //     • km 1 → 6           :  +฿8/km
 //     • km 6 → 40          :  +฿7/km
 //     • km 40+             :  +฿10/km
 //
-//   Round-trip pricing for SunRed outcall:
-//     • Outbound (therapist → customer):  100 % GrabCar fare (full)
-//     • Return   (customer → therapist):   60 % GrabCar fare ← founder spec
-//                                          (= 40 % off the meter on the way back)
-//     • Total = oneWay × 1.6
-//
-//   Why this framing
-//     The earlier model was oneWay × 1.5 ("half-price return"). Founder
-//     bumped the return leg to 60 % of the meter (Round 28b23) so it can
-//     be SOLD as a "40 % off return discount" — same dollar amount in
-//     either model, but the customer-facing tooltip now reads as a
-//     promotion rather than just a math identity.
-//
-//   Rain surcharge stacks on top of the round-trip total:
-//     Light rain  +15%
-//     Heavy rain  +30%
-//
-//   Beyond ADMIN_QUOTE_KM (40 km) → admin quote required (deposit policy).
-//
-//   Customer savings vs. calling Grab themselves both ways:
-//     If the customer used Grab for outbound AND therapist used Grab
-//     for the return, they'd pay oneWay × 2. SunRed charges oneWay × 1.6,
-//     so the customer saves oneWay × 0.4 (≈ 20 % of the full round-trip).
-//     This is what the "Save ฿X vs Grab" chip surfaces.
+//   Round-trip = one-way × ROUND_TRIP_MULTIPLIER (2.0 = both legs full).
+//   Rain surcharge stacks on top (light +15 %, heavy +30 %).
+//   Beyond ADMIN_QUOTE_KM (40 km) → admin quote required.
 //
 // Reference: https://www.grab.com/th/blog/pha-pi-du-withi-kar-reiyk-grab/
-//
-// Round 28b8 (founder 2026-05-03) — replaced flat-tier subsidy model
-// with continuous GrabCar tiered pricing × 1.5.
-// Round 28b23 (founder 2026-05-04) — bumped multiplier 1.5 → 1.6
-// (return leg 60 % of meter) so the discount framing reads cleanly:
-// "40 % off the return".
 
 import { getCachedRainStatus, type RainStatus } from "@/utils/weather";
 
 /**
- * Beyond this requires admin quote + deposit confirm.
+ * Beyond this requires an admin quote.
  *
- * 🆕 Round 28s296 (founder: "เชื่อมให้แก้ราคาได้จริงจากหน้านี้") — this and
- * the 3 constants below were `const` (hardcoded) and the
- * AdminAdvancedSettingsPage fields that LOOKED like they controlled them
- * didn't actually connect to anything. Switched to `export let` +
- * `applyLiveFareConfig()` below so a live Firestore value (read once at
- * app boot by MaintenanceGate.tsx, off the public `adminSettings/
- * publicRules` doc) can override the default without changing any of
- * the 8 files that import these — ES module named exports are LIVE
- * bindings, so every existing caller sees the override automatically.
- * Defaults are UNCHANGED from before this round, so a founder who never
- * saves new values in Settings sees zero behavior change.
+ * 🆕 Round 28s296 — `export let` + `applyLiveFareConfig()` so a live
+ * Firestore value (read by MaintenanceGate.tsx off the public
+ * `adminSettings/publicRules` doc) can override the default without
+ * touching any importer — ES module named exports are live bindings.
  */
 export let ADMIN_QUOTE_KM = 40;
 
 /**
- * 🆕 Round 28s231 (FIX — taxi fare was too cheap) — Bangkok road-circuity
- * factor. Straight-line (haversine) distance underestimates real driving
- * distance; BKK roads (canals, one-ways, no grid) run ~1.4–1.6× the crow-flies
- * distance. `directionsApi.ts` already applies 1.45 to ITS haversine fallback,
- * but `estimateTaxiFare` below was charging on RAW straight-line distance —
- * ~31% short. Apply the same factor so every fallback path matches the road
- * estimate and the live Distance-Matrix road distance. Keep in sync with
+ * 🆕 Round 28s231 — Bangkok road-circuity factor. Straight-line
+ * (haversine) distance underestimates real driving distance; BKK roads
+ * run ~1.4–1.6× the crow-flies distance. Keep in sync with
  * `BKK_ROAD_FACTOR` in directionsApi.ts.
  */
 export const BKK_ROAD_FACTOR = 1.45;
 
 /**
- * 🆕 Round 28s233 (founder: "พิกัดเดียวกัน") — single dispatch base for the
- * taxi estimate. Founder wants the SAME destination to always quote the SAME
- * taxi fare, regardless of which practitioner is assigned (their stored
- * coordinates were duplicated/placeholder, so per-therapist distance was
- * meaningless and produced different fares for the same hotel). We now measure
- * every trip from one operational base (the Huai Khwang / Ratchada cluster
- * centre, where most of the roster is based). Tunable — set it to wherever the
- * night's dispatch actually originates.
+ * 🆕 Round 28s233 — single dispatch base so the SAME destination always
+ * quotes the SAME fare regardless of which practitioner is assigned
+ * (Huai Khwang / Ratchada cluster centre). Tunable.
  */
 export const DISPATCH_BASE = { lat: 13.7548, lng: 100.5656 } as const;
 
-/** Legacy alias — kept at 0 so existing chips/logic that gate on
- *  "within free distance" never trigger after the migration. Old
- *  callers that imported this constant won't crash; the UI just
- *  treats every distance as a paid trip now. */
+/** Legacy alias — kept at 0 so any old caller that gated on "within free
+ *  distance" never triggers; every trip is a paid trip. */
 export const FREE_DISTANCE_KM = 0;
 
 // ─── GrabCar Bangkok rate card ───────────────────────────────────────
@@ -102,74 +65,25 @@ const TIER_3_END_KM = 40;
 const TIER_4_PER_KM = 10;    // applies to km 40+
 
 /**
- * Outbound 100 % + return 60 % = 1.6× one-way.
+ * Round-trip multiplier. 2.0 = outbound full + return full (both legs at
+ * the real meter) — the honest cost of the therapist's round trip.
  *
- * 🆕 Round 28b23 (founder 2026-05-04) — bumped from 1.5 → 1.6 so the
- * customer-facing copy can frame the return leg as "40 % off" rather
- * than "half price". The founder's logic: same fare, better story.
- *
- * Pricing breakdown for any one-way fare F:
- *   • Outbound:  F                   (full meter, 100 %)
- *   • Return:    F × 0.6             (40 % discount, 60 % of meter)
- *   • Total:     F × 1.6
- *   • Grab DIY:  F × 2.0             (the customer would pay full both ways)
- *   • Saves:     F × 0.4             (20 % of full Grab round-trip)
- *
- * 🆕 Round 28s296 — `let` + live-overridable (see ADMIN_QUOTE_KM comment
- * above). RETURN_LEG_DISCOUNT_PCT/CHARGE_PCT stay derived from whatever
- * the current value is via the functions below, rather than being
- * frozen at module-load time, so customer-facing "40% off" copy that
- * reads them stays correct if the founder ever changes the multiplier.
+ * 🆕 Round 28s308 — was 1.6 (a 40 %-off-return "discount"). Founder
+ * removed the discount: the customer now pays the actual round trip.
+ * Still `let` + live-overridable so it can be tuned from Settings, but
+ * there is no longer any derived discount/anchor maths hanging off it.
  */
-export let ROUND_TRIP_MULTIPLIER = 1.6;
-/** Return-leg discount as a fraction (e.g. 0.4 = "40% off the meter"). */
-export function returnLegDiscountPct(): number {
-  return Math.max(0, 2 - ROUND_TRIP_MULTIPLIER);
-}
-/** Return-leg charge as a fraction of the one-way meter. */
-export function returnLegChargePct(): number {
-  return 1 - returnLegDiscountPct();
-}
-/** @deprecated Round 28s296 — frozen at module load; use returnLegDiscountPct(). */
-export const RETURN_LEG_DISCOUNT_PCT = 0.4;
-/** @deprecated Round 28s296 — frozen at module load; use returnLegChargePct(). */
-export const RETURN_LEG_CHARGE_PCT = 1 - RETURN_LEG_DISCOUNT_PCT;
-
-/**
- * 🆕 Round 28s296 — moved from a local copy in DistanceDepositDialog.tsx
- * so the informational "why a deposit" dialog and this settings-editable
- * config share ONE source instead of two independently hardcoded
- * numbers. IMPORTANT: this deposit is currently INFORMATIONAL ONLY —
- * grep confirms BookingFlowPage.tsx never actually charges a separate
- * deposit; the real distance-based cost customers pay is the round-trip
- * travel fare below. Editing this changes what the dialog TELLS
- * customers, not a real second charge.
- */
-export let FREE_RADIUS_KM = 25;
-export let DEPOSIT_THB = 500;
+export let ROUND_TRIP_MULTIPLIER = 2.0;
 
 /** Apply live Firestore-sourced overrides (called once at boot + on every
- *  live update — see MaintenanceGate.tsx). Ignores non-positive values so
- *  a bad write can't zero out real pricing. */
+ *  live update — see MaintenanceGate.tsx). Ignores out-of-range values so
+ *  a bad write can't break pricing. */
 export function applyLiveFareConfig(cfg: {
   adminQuoteKm?: number;
   roundTripMultiplier?: number;
-  freeRadiusKm?: number;
-  depositThb?: number;
-  listPriceMultiplier?: number;
-  travelDiscountPct?: number;
 }): void {
   if (typeof cfg.adminQuoteKm === "number" && cfg.adminQuoteKm > 0) ADMIN_QUOTE_KM = cfg.adminQuoteKm;
   if (typeof cfg.roundTripMultiplier === "number" && cfg.roundTripMultiplier > 1) ROUND_TRIP_MULTIPLIER = cfg.roundTripMultiplier;
-  if (typeof cfg.freeRadiusKm === "number" && cfg.freeRadiusKm > 0) FREE_RADIUS_KM = cfg.freeRadiusKm;
-  if (typeof cfg.depositThb === "number" && cfg.depositThb >= 0) DEPOSIT_THB = cfg.depositThb;
-  // 🆕 Round 28s307 — display anchor must stay > the real charge multiplier
-  //   or the "discount" goes negative; clamp to >= 1.
-  if (typeof cfg.listPriceMultiplier === "number" && cfg.listPriceMultiplier >= 1) LIST_PRICE_MULTIPLIER = cfg.listPriceMultiplier;
-  // Real discount: clamp 0–90 so a fat-fingered value can't zero out or
-  //   invert the fare.
-  if (typeof cfg.travelDiscountPct === "number" && cfg.travelDiscountPct >= 0)
-    TRAVEL_DISCOUNT_PCT = Math.min(90, cfg.travelDiscountPct);
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -227,69 +141,11 @@ export function grabCarOneWayFare(distanceKm: number): number {
 }
 
 /**
- * Round-trip fare (outbound 100 % + return 60 %) per founder spec.
- * Equals `grabCarOneWayFare(distanceKm) × 1.6`, rounded.
- *
- * 🆕 Round 28b23 — bumped from ×1.5 to ×1.6 so the return leg reads
- * as a "40 % discount" instead of "half price" in customer copy.
+ * Round-trip fare = one-way meter × ROUND_TRIP_MULTIPLIER (2.0 = both
+ * legs full), rounded.
  */
 export function grabCarRoundTripFare(distanceKm: number): number {
   return Math.round(grabCarOneWayFare(distanceKm) * ROUND_TRIP_MULTIPLIER);
-}
-
-/**
- * 🆕 Round 28b24 (founder 2026-05-04) — "List price" reference for the
- * strike-through promo display.
- *
- * Background: previously this was named `grabRoundTripEstimate` and
- * the chip read "Save ฿X vs Grab". Founder pivoted away from Grab as
- * the comparison anchor — the new framing is a SunRed-OWNED promo:
- * we set our own "list price" and show our own discount.
- *
- * Math is unchanged (still oneWay × 2.0). We're just renaming the
- * concept so the customer-facing copy reads:
- *   ~~฿180 (Standard rate)~~  ฿140  · SunRed Smart Routing 20 % off
- *
- * Why oneWay × 2: it's the natural ceiling — what a round-trip would
- * cost at full meter, both legs, no SunRed optimisation. Our actual
- * fare (oneWay × 1.6) sits 20 % below this ceiling, which makes the
- * promo land cleanly: "SunRed 20 % off the standard round-trip rate."
- *
- * Backwards compatibility: the legacy export `grabRoundTripEstimate`
- * is kept as a thin alias so any caller still importing it doesn't
- * break — but new code should prefer `listPriceRoundTrip`.
- */
-/**
- * 🆕 Round 28s233 (founder: "คิดให้แพงๆ ขึ้นหน่อย จะได้เอามาลด") — the
- * strike-through "standard rate" anchor. Raising this only inflates the
- * DISPLAYED before-discount price + the promo % shown; the fare the customer
- * actually pays (round-trip × 1.6 + rain) is unchanged. At 2.5× the chip shows
- * ~36% off; at 2.0× it was ~20%. Tunable — dial to taste vs believability.
- */
-// 🆕 Round 28s307 (founder: "คิดและคำนวนกันใหม่ รวมถึงส่วนลดค่าเดินทาง") —
-//   was a hardcoded const so the founder couldn't control the shown
-//   discount %. Now live-overridable like the fare levers (default 2.5×
-//   unchanged): raising it inflates only the struck-through "standard
-//   rate" + the promo % displayed; the fare the customer actually pays
-//   is NOT affected by this number.
-export let LIST_PRICE_MULTIPLIER = 2.5;
-
-/**
- * 🆕 Round 28s307 — REAL, admin-controllable travel-fare discount, in
- * percent (0–90). Default 0 = no discount = byte-identical to before.
- * Unlike LIST_PRICE_MULTIPLIER (a display anchor), this actually REDUCES
- * the round-trip travel fare the customer pays — a genuine promo cost
- * the shop absorbs. Applied in calcTaxiFare after rain.
- */
-export let TRAVEL_DISCOUNT_PCT = 0;
-
-export function listPriceRoundTrip(distanceKm: number): number {
-  return Math.round(grabCarOneWayFare(distanceKm) * LIST_PRICE_MULTIPLIER);
-}
-
-/** @deprecated Round 28b24 — use `listPriceRoundTrip` instead. Same math. */
-export function grabRoundTripEstimate(distanceKm: number): number {
-  return listPriceRoundTrip(distanceKm);
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -298,7 +154,7 @@ export function grabRoundTripEstimate(distanceKm: number): number {
 
 /** Tier label kept stable across the codebase even though the
  *  underlying calculation no longer uses flat tiers. Drives chip
- *  styling in BookingFlowPage / DistanceDepositDialog. */
+ *  styling in BookingFlowPage. */
 export type TaxiTier = "free" | "base" | "short" | "standard" | "long" | "admin";
 
 export interface TaxiFareResult {
@@ -308,43 +164,14 @@ export interface TaxiFareResult {
   tier: TaxiTier;
   /** Human label shown next to the price. */
   label: string;
-  /** Distance used for the calculation (km, after Haversine). */
+  /** Distance used for the calculation (km, after road factor). */
   distanceKm: number;
-  /** Fare BEFORE rain surcharge (= round-trip GrabCar × 1.6). */
+  /** Fare BEFORE rain surcharge (= round-trip meter). */
   baseFareBeforeRain: number;
   /** Active rain status pulled from `weather.ts` cache. */
   rain: RainStatus;
   /** GrabCar one-way fare (for breakdown / analytics). */
   oneWayFare: number;
-  /**
-   * 🆕 Round 28b24 — SunRed "list price" reference (= oneWay × 2).
-   * The strike-through anchor for the promo display. Same math as the
-   * legacy `grabEstimate`, just rebranded as our own.
-   */
-  listPriceTravel: number;
-  /**
-   * 🆕 Round 28b24 — SunRed Smart Routing promo discount
-   * (= listPriceTravel - fare, clamped 0). Drives the "20 % off" chip.
-   */
-  sunredPromoDiscount: number;
-  /**
-   * 🆕 Round 28s307 — the REAL admin-set travel discount actually applied
-   * to this fare. `travelDiscountPct` is the percent used; `travelDiscountAmt`
-   * is the baht taken off the round-trip travel fare (after rain, before it
-   * became `fare`). 0 when the founder hasn't set a discount.
-   */
-  travelDiscountPct: number;
-  travelDiscountAmt: number;
-  /**
-   * @deprecated Round 28b24 — use `listPriceTravel` instead.
-   * Kept for backwards-compat with Firestore docs + telegram payload.
-   */
-  grabEstimate: number;
-  /**
-   * @deprecated Round 28b24 — use `sunredPromoDiscount` instead.
-   * Kept for backwards-compat with Firestore docs + telegram payload.
-   */
-  savingsVsGrab: number;
 }
 
 /** Resolve tier label band from distance (UI-only, doesn't affect price). */
@@ -365,8 +192,8 @@ function resolveTier(distanceKm: number): { tier: TaxiTier; label: string } {
 }
 
 /**
- * Compute the customer-facing taxi fare for a distance.
- * GrabCar one-way × 1.5 (return at half price), then rain surcharge.
+ * Compute the customer-facing travel fare for a distance.
+ * Round-trip meter (one-way × 2.0), then rain surcharge.
  */
 export function calcTaxiFare(
   distanceKm: number,
@@ -375,11 +202,6 @@ export function calcTaxiFare(
   const { tier, label } = resolveTier(distanceKm);
   const rain = rainOverride ?? getCachedRainStatus();
   const oneWayFare = grabCarOneWayFare(distanceKm);
-  // 🆕 Round 28b24 — `listPriceTravel` is our "standard rate" anchor
-  //   used for the strike-through display. Same math as the legacy
-  //   `grabEstimate` (= oneWay × 2) but rebranded as a SunRed-owned
-  //   reference, no longer pegged to a competitor's rate card.
-  const listPriceTravel = listPriceRoundTrip(distanceKm);
 
   if (tier === "admin") {
     return {
@@ -390,26 +212,11 @@ export function calcTaxiFare(
       baseFareBeforeRain: 0,
       rain,
       oneWayFare,
-      listPriceTravel,
-      sunredPromoDiscount: 0,
-      travelDiscountPct: 0,
-      travelDiscountAmt: 0,
-      grabEstimate: listPriceTravel, // legacy alias
-      savingsVsGrab: 0,
     };
   }
 
-  const roundTripBase = grabCarRoundTripFare(distanceKm); // oneWay × 1.6
-  const withRain = Math.round(roundTripBase * (1 + rain.surchargePct));
-  // 🆕 Round 28s307 — apply the REAL founder-set travel discount to what
-  //   the customer pays. Default 0 → fare === withRain (unchanged).
-  const pct = Math.min(90, Math.max(0, TRAVEL_DISCOUNT_PCT));
-  const travelDiscountAmt = Math.round(withRain * (pct / 100));
-  const fare = Math.max(0, withRain - travelDiscountAmt);
-  // Total "you saved" vs the standard-rate anchor = list price − what the
-  //   customer actually pays (so it naturally includes both the routing
-  //   headroom AND the real discount above).
-  const sunredPromoDiscount = Math.max(0, listPriceTravel - fare);
+  const roundTripBase = grabCarRoundTripFare(distanceKm); // one-way × 2.0
+  const fare = Math.round(roundTripBase * (1 + rain.surchargePct));
 
   return {
     fare,
@@ -419,12 +226,6 @@ export function calcTaxiFare(
     baseFareBeforeRain: roundTripBase,
     rain,
     oneWayFare,
-    listPriceTravel,
-    sunredPromoDiscount,
-    travelDiscountPct: pct,
-    travelDiscountAmt,
-    grabEstimate: listPriceTravel, // legacy alias
-    savingsVsGrab: sunredPromoDiscount, // legacy alias
   };
 }
 
@@ -433,12 +234,8 @@ export function calcTaxiFare(
  * distance + fare in one call. Returns 0/free when coordinates are
  * missing (caller's UI usually shows "set address" hint instead).
  *
- * 🆕 Round 28r33 (founder 2026-05-07) — `rainOverride` added so the
- *   booking page can pass its rain state (resolved from the async
- *   `getRainStatus()` fetch) and trigger a recalc when weather flips
- *   from cached "Clear" → "Light rain" mid-session. Without this the
- *   surcharge silently no-oped because `calcTaxiFare` reads the
- *   sync cache, which was empty on first render.
+ * 🆕 Round 28r33 — `rainOverride` lets the booking page pass its
+ *   async-resolved rain state and trigger a recalc when weather flips.
  */
 export function estimateTaxiFare(
   args: {
@@ -465,8 +262,7 @@ export function estimateTaxiFare(
     return { distanceKm: 0, fare: 0 };
   }
   // 🆕 Round 28s231 — apply the BKK road-circuity factor so this fallback
-  //   path matches the road-distance estimate (directionsApi) instead of
-  //   charging on the too-short straight-line distance.
+  //   path matches the road-distance estimate (directionsApi).
   const distanceKm =
     haversineKm(therapistLat, therapistLng, customerLat, customerLng) *
     BKK_ROAD_FACTOR;
@@ -474,7 +270,7 @@ export function estimateTaxiFare(
   return {
     distanceKm,
     // Caller treats `null` (admin quote) as 0 for total math; UI separately
-    // checks the result.tier to render the admin-quote chip.
+    // checks result.tier to render the admin-quote chip.
     fare: result.fare ?? 0,
     result,
   };

@@ -57,7 +57,6 @@ import LocalTaxiRoundedIcon from "@mui/icons-material/LocalTaxiRounded";
 // 🆕 Round 28b8 — CheckCircleRoundedIcon retired with the
 //   "Within free distance" chip when GrabCar pricing replaced the
 //   0-4km subsidy.
-import SavingsRoundedIcon from "@mui/icons-material/SavingsRounded";
 import UmbrellaRoundedIcon from "@mui/icons-material/UmbrellaRounded";
 import SupportAgentRoundedIcon from "@mui/icons-material/SupportAgentRounded";
 
@@ -705,33 +704,14 @@ const BookingFlowPage: React.FC = () => {
     paymentFee;
   const hasSurcharge = total > baseTotal + 0.5; // guard against rounding noise
 
-  // 🆕 Round 28r29 (founder 2026-05-07) — "Original price" + total
-  //   savings for the receipt-style display. Founder direction:
-  //   "ใส่ราคาต้นมาด้วยจะได้ดูคุ้ม · เอาส่วนลดเอาประโยชน์มาใส่ด้วย
-  //   ให้ลูกค้าเห็นว่ามันคุ้ม". The customer should always see the
-  //   un-discounted reference price (service + full-meter taxi)
-  //   strikethrough next to the total they actually pay, plus a
-  //   summary of every saving they got.
-  //
-  //   originalPrice = service + addons + un-routed taxi (highest
-  //                    price they would have paid without our magic)
-  //   savingsRouting = taxi-meter savings (Smart Routing chip)
-  //   savingsDiscount = promo / VIP / referral amount
-  //   totalSavings = sum (drives the "You saved ฿X" pill)
-  //
-  // 🆕 Round 28r32 (founder 2026-05-07) — Bug fix: pill was using
-  //   `baseFareBeforeRain` (= post-routing fare, only adds rain on top)
-  //   so savingsRouting always evaluated to 0 and the pill missed the
-  //   ฿44 Smart Routing savings. View saw "−฿100 saved" pill with a
-  //   "−฿44" Smart Routing chip floating loose → "ลด 100 เหา ทำให้
-  //   จาง ลง". Fix: use `listPriceTravel` (the un-routed standard rate
-  //   anchor) for originalPrice, and `sunredPromoDiscount` (already
-  //   computed in taxiFare.ts as listPriceTravel − fare) for routing
-  //   savings. Now the pill aggregates both savings → "−฿144" with
-  //   ฿44 Smart Routing + ฿100 promo broken down underneath.
-  const meterTaxi = taxiResult?.listPriceTravel ?? taxiFare;
-  const originalPrice = servicePrice + addonsTotal + meterTaxi;
-  const savingsRouting = taxiResult?.sunredPromoDiscount ?? 0;
+  // 🆕 Round 28s308 (founder: "ไปเต็มราคา + กลับตามจริง — ลบค่าทั้งหมดที่เคย
+  //   คำนวน") — the strike-through anchor + "Smart Routing" travel saving
+  //   are gone; travel is charged at the actual round-trip. `savingsRouting`
+  //   is kept as a hard 0 so the receipt's "You saved" pill + strikethrough
+  //   logic still compile and simply reflect only a real promo code.
+  //   originalPrice = service + addons + actual round-trip taxi.
+  const originalPrice = servicePrice + addonsTotal + taxiFare;
+  const savingsRouting = 0;
   const savingsDiscount = discount.valid ? discountAmount : 0;
   const totalSavings = savingsRouting + savingsDiscount;
   const hasSavings = totalSavings > 0.5;
@@ -1058,8 +1038,6 @@ const BookingFlowPage: React.FC = () => {
         taxiBaseFee: taxiResult?.baseFareBeforeRain ?? taxiFare,
         rainTier: taxiResult?.rain.tier ?? "none",
         rainSurchargePct: taxiResult?.rain.surchargePct ?? 0,
-        grabEstimate: taxiResult?.grabEstimate ?? null,
-        savingsVsGrab: taxiResult?.savingsVsGrab ?? 0,
         distanceKm,
         totalPrice: total,
         // 🆕 Round 28s227 (FIX — orders were invisible) — customer bookings
@@ -1857,16 +1835,10 @@ const BookingFlowPage: React.FC = () => {
                           display: "block",
                           marginTop: "6px",
                           fontWeight: 700,
-                          color: "#16a34a",
+                          color: "#1A2B2E",
                         }}
                       >
-                        {t("booking.travelTip.returnLeg", "Return leg · 40% off the meter")}
-                      </Box>
-                      <Box component="span" sx={{ opacity: 0.85, display: "block" }}>
-                        {t(
-                          "booking.travelTip.returnNote",
-                          "(outbound full + return 60% · auto-applied)"
-                        )}
+                        {t("booking.travelTip.roundTrip", "Round-trip · both legs at full meter")}
                       </Box>
                       <Box
                         component="span"
@@ -1908,24 +1880,6 @@ const BookingFlowPage: React.FC = () => {
                 discount as "SunRed Smart Routing". We no longer compare
                 to Grab anywhere — it's all our brand. */}
             <Box sx={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
-              {locationSet &&
-                !adminQuoteRequired &&
-                taxiResult &&
-                taxiResult.sunredPromoDiscount > 0 && (
-                  <Typography
-                    component="span"
-                    sx={{
-                      fontFamily: SANS,
-                      fontSize: "11.5px",
-                      fontWeight: 500,
-                      color: "rgba(15, 23, 42, 0.42)",
-                      textDecoration: "line-through",
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    {formatTHB(taxiResult.listPriceTravel)}
-                  </Typography>
-                )}
               <Typography
                 sx={{
                   fontFamily: SANS,
@@ -1961,23 +1915,8 @@ const BookingFlowPage: React.FC = () => {
               marginBottom: "8px",
             }}
           >
-            {/* 🆕 Round 28b24 (founder 2026-05-04) — Pivoted from
-                "Save ฿X vs Grab" → SunRed-OWNED promo branding.
-                The dollar amount is identical (still listPrice − fare),
-                but the framing is now our own product feature
-                ("Smart Routing 20 % off") rather than a competitor
-                comparison. Founder's call: "เราไม่เอาโปรแกรป
-                เราเอาโปรตัวเอง" — keep the brand on us, not Grab. */}
-            {locationSet &&
-              taxiResult &&
-              taxiResult.sunredPromoDiscount > 0 &&
-              !adminQuoteRequired && (
-                <FareChip color="green" icon={<SavingsRoundedIcon />}>
-                  {t("booking.smartRouting", "Smart Routing · {{amount}} off", {
-                    amount: formatTHB(taxiResult.sunredPromoDiscount),
-                  })}
-                </FareChip>
-              )}
+            {/* 🆕 Round 28s308 — Smart Routing chip removed with the fake
+                discount anchor; travel is charged at the actual round-trip. */}
             {locationSet &&
               taxiResult &&
               taxiResult.rain.tier !== "none" && (

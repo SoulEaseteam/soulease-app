@@ -37,15 +37,11 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
       (snap) => {
         const data = snap.data();
         setMaintenanceOn(data?.maintenanceMode === true);
+        // 🆕 Round 28s308 — travel fare simplified to actual round-trip;
+        //   only the admin-quote distance + round-trip multiplier remain.
         applyLiveFareConfig({
           adminQuoteKm: data?.maxDistance,
           roundTripMultiplier: data?.roundTripMultiplier,
-          freeRadiusKm: data?.freeRadiusKm,
-          depositThb: data?.depositAmount,
-          // 🆕 Round 28s307 — display anchor (standard-rate ×) + real
-          //   travel-fare discount %, both editable from Advanced Settings.
-          listPriceMultiplier: data?.listPriceMultiplier,
-          travelDiscountPct: data?.travelDiscountPct,
         });
         applyLivePromosEnabled(data?.promosEnabled === true);
         // 🆕 Round 28s300/28s301 — live service overrides + admin-created
