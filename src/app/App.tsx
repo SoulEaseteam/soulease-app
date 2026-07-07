@@ -176,6 +176,9 @@ const AdminAnalyticsPage = React.lazy(
   () => import("@/pages/admin/AdminAnalyticsPage")
 );
 // 🆕 Round 28r26 — Earnings calculator (revenue + 60/40 split + CSV).
+const AdminTherapistPayoutsPage = React.lazy(
+  () => import("@/pages/admin/AdminTherapistPayoutsPage")
+);
 const AdminEarningsPage = React.lazy(
   () => import("@/pages/admin/AdminEarningsPage")
 );
@@ -351,6 +354,8 @@ export default function App() {
           <Route path="analytics" element={<AdminAnalyticsPage />} />
           {/* 🆕 Round 28r26 — Earnings calculator */}
           <Route path="earnings" element={<AdminEarningsPage />} />
+          {/* 🆕 Round 28s313 — Pay-therapist queue (non-cash bookings) */}
+          <Route path="pay-therapists" element={<AdminTherapistPayoutsPage />} />
           <Route path="telegram" element={<AdminTelegramPanelPage />} />
           {/* 🆕 Round 28s213 — Seed anonymous reviews onto bookings. */}
           <Route path="seed-reviews" element={<AdminSeedReviewsPage />} />

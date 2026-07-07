@@ -45,6 +45,7 @@ import AddBoxIcon from "@mui/icons-material/AddBox";
 import BlockIcon from "@mui/icons-material/Block";
 import InsightsIcon from "@mui/icons-material/Insights";
 import PaidIcon from "@mui/icons-material/Paid";
+import PaymentsIcon from "@mui/icons-material/Payments";
 import RateReviewIcon from "@mui/icons-material/RateReview";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 
@@ -78,6 +79,8 @@ const menuItems = [
   // Money & numbers
   // 🆕 Round 28r26 — Earnings calculator (revenue · 60/40 split · CSV).
   { label: "Earnings",     path: "/admin/earnings",           icon: <PaidIcon /> },
+  // 🆕 Round 28s313 — pay-therapist queue (non-cash bookings → shop owes cut).
+  { label: "Pay Therapists", path: "/admin/pay-therapists",   icon: <PaymentsIcon /> },
   { label: "Reports",      path: "/admin/reports",            icon: <ReportIcon /> },
   // 🆕 Round 28r15 — Funnel analytics (self-hosted, reads
   //   `analytics_events` collection populated by Round 28r13).

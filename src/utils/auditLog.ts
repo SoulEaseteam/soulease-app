@@ -30,6 +30,13 @@ export type AuditAction =
   | "booking.mark_reviewed"
   | "payout.mark_paid"
   | "payout.mark_unpaid"
+  // 🆕 Round 28s313 — per-booking therapist payout on the Pay-Therapists
+  //   queue (non-cash bookings). Distinct from payout.mark_* (the old
+  //   weekly per-therapist tracker, since removed): these mark ONE job's
+  //   therapist share paid, stored on the booking doc.
+  | "therapist_payout.mark_paid"
+  | "therapist_payout.mark_unpaid"
+  | "therapist_payout.mark_paid_batch"
   | "therapist.relight_all"
   | "therapist.reset_auto"
   // 🆕 Round 28s267 — individual roster edits (holiday/override/session/
