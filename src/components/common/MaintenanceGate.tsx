@@ -42,6 +42,10 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
           roundTripMultiplier: data?.roundTripMultiplier,
           freeRadiusKm: data?.freeRadiusKm,
           depositThb: data?.depositAmount,
+          // 🆕 Round 28s307 — display anchor (standard-rate ×) + real
+          //   travel-fare discount %, both editable from Advanced Settings.
+          listPriceMultiplier: data?.listPriceMultiplier,
+          travelDiscountPct: data?.travelDiscountPct,
         });
         applyLivePromosEnabled(data?.promosEnabled === true);
         // 🆕 Round 28s300/28s301 — live service overrides + admin-created

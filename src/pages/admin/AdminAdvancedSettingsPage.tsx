@@ -59,6 +59,10 @@ interface PublicRules {
   freeRadiusKm: number;
   maxDistance: number; // = ADMIN_QUOTE_KM, the manual-quote threshold
   roundTripMultiplier: number;
+  // 🆕 Round 28s307 — standard-rate display anchor (× one-way meter) +
+  //   REAL customer travel discount (%). Defaults keep behaviour identical.
+  listPriceMultiplier: number;
+  travelDiscountPct: number;
 }
 const defaultPublicRules: PublicRules = {
   maintenanceMode: false,
@@ -68,6 +72,8 @@ const defaultPublicRules: PublicRules = {
   freeRadiusKm: 25,
   maxDistance: 40,
   roundTripMultiplier: 1.6,
+  listPriceMultiplier: 2.5,
+  travelDiscountPct: 0,
 };
 
 // telegramEnabled is real (see functions/src/index.ts). The rest is
@@ -140,6 +146,8 @@ const AdminAdvancedSettingsPage: React.FC = () => {
           `depositAmount: ${rules.depositAmount}`,
           `maxDistance: ${rules.maxDistance}`,
           `roundTripMultiplier: ${rules.roundTripMultiplier}`,
+          `listPriceMultiplier: ${rules.listPriceMultiplier}`,
+          `travelDiscountPct: ${rules.travelDiscountPct}`,
           `telegramEnabled: ${settings.telegramEnabled}`,
         ].filter((v): v is string => !!v),
       });
@@ -211,23 +219,42 @@ const AdminAdvancedSettingsPage: React.FC = () => {
           </Row>
         </SectionCard>
 
-        {/* 📍 Deposit & Distance — REAL */}
-        <SectionCard icon={<CreditCard size={13} weight="bold" />} title="ค่ามัดจำ & ระยะทาง">
+        {/* 📍 Travel fare & Distance — REAL levers vs FAQ-only, separated
+             (Round 28s307). */}
+        <SectionCard icon={<CreditCard size={13} weight="bold" />} title="ค่าเดินทาง & ระยะทาง">
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
-          <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
-            ค่ามัดจำเป็นข้อความแจ้งลูกค้าในหน้า FAQ เท่านั้น (ยังไม่ได้เก็บเป็นค่าใช้จ่ายแยกจริงตอนจอง) — ค่าที่ลูกค้าจ่ายจริงตามระยะทางคือค่าเดินทาง round-trip ด้านล่าง
+
+          {/* ── Group 1: affects what the customer actually pays ── */}
+          <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.06em", color: adminColor.text, mt: 0.5, mb: 0.5 }}>
+            💸 คิดเงินจริง — ค่าเดินทางที่ลูกค้าจ่าย
           </Typography>
-          <TextField label="ค่ามัดจำ (บาท)" fullWidth type="number" margin="dense" sx={fieldSx}
-            value={rules.depositAmount} onChange={(e) => setRules((p) => ({ ...p, depositAmount: Math.max(0, Number(e.target.value)) }))} />
-          <TextField label="ระยะที่เริ่มมัดจำ (กม.)" fullWidth type="number" margin="dense" sx={fieldSx}
-            value={rules.freeRadiusKm} onChange={(e) => setRules((p) => ({ ...p, freeRadiusKm: Math.max(1, Number(e.target.value)) }))} />
+          <TextField label="ตัวคูณค่าเดินทางไป-กลับ" fullWidth type="number" margin="dense" sx={fieldSx}
+            helperText="1.6 = ไปเต็มราคา + กลับ 60% (ส่วนลดขากลับ 40%) · ต้องมากกว่า 1"
+            value={rules.roundTripMultiplier}
+            onChange={(e) => setRules((p) => ({ ...p, roundTripMultiplier: Math.max(1.01, Number(e.target.value)) }))} />
+          <TextField label="ส่วนลดค่าเดินทางลูกค้า (%)" fullWidth type="number" margin="dense" sx={fieldSx}
+            helperText={`ลดจากค่าเดินทางไป-กลับจริง · 0 = ไม่ลด · ตัวอย่าง ค่าเดินทาง ฿300 → จ่าย ฿${Math.round(300 * (1 - Math.min(90, Math.max(0, rules.travelDiscountPct)) / 100)).toLocaleString()}`}
+            value={rules.travelDiscountPct}
+            onChange={(e) => setRules((p) => ({ ...p, travelDiscountPct: Math.min(90, Math.max(0, Number(e.target.value))) }))} />
+          <TextField label="ราคามาตรฐานก่อนลด (กี่เท่าของค่ามิเตอร์เที่ยวเดียว)" fullWidth type="number" margin="dense" sx={fieldSx}
+            helperText="ราคาขีดฆ่าที่โชว์ลูกค้า · 2.5 = โชว์ลดราว 36% · ไม่กระทบยอดที่จ่ายจริง · ต้อง ≥ ตัวคูณไป-กลับ"
+            value={rules.listPriceMultiplier}
+            onChange={(e) => setRules((p) => ({ ...p, listPriceMultiplier: Math.max(1, Number(e.target.value)) }))} />
           <TextField label="ระยะทางสูงสุดก่อนต้องขอราคาแยก (กม.)" fullWidth type="number" margin="dense" sx={fieldSx}
             helperText="เกินระยะนี้ระบบจะให้ติดต่อแอดมินขอราคาแทนคิดราคาอัตโนมัติ"
             value={rules.maxDistance} onChange={(e) => setRules((p) => ({ ...p, maxDistance: Math.max(1, Number(e.target.value)) }))} />
-          <TextField label="ตัวคูณค่าเดินทางไป-กลับ" fullWidth type="number" margin="dense" sx={fieldSx}
-            helperText="1.6 = ไปเต็มราคา + กลับ 60% (ส่วนลด 40%) ต้องมากกว่า 1"
-            value={rules.roundTripMultiplier}
-            onChange={(e) => setRules((p) => ({ ...p, roundTripMultiplier: Math.max(1.01, Number(e.target.value)) }))} />
+
+          {/* ── Group 2: FAQ display text only, never charged ── */}
+          <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.06em", color: adminColor.muted, mt: 2, mb: 0.5 }}>
+            📄 ข้อความ FAQ หน้าแรกเท่านั้น — ไม่เก็บเงินจริง
+          </Typography>
+          <Typography sx={{ fontSize: 11.5, color: adminColor.dim, mb: 0.5 }}>
+            สองช่องนี้แค่แสดงในกล่องข้อมูลระยะทางหน้าแรก ไม่ถูกเก็บตอนจอง — ค่าที่ลูกค้าจ่ายจริงคือค่าเดินทางด้านบน
+          </Typography>
+          <TextField label="ค่ามัดจำที่แจ้งใน FAQ (บาท)" fullWidth type="number" margin="dense" sx={fieldSx}
+            value={rules.depositAmount} onChange={(e) => setRules((p) => ({ ...p, depositAmount: Math.max(0, Number(e.target.value)) }))} />
+          <TextField label="ระยะที่เริ่มแจ้งมัดจำใน FAQ (กม.)" fullWidth type="number" margin="dense" sx={fieldSx}
+            value={rules.freeRadiusKm} onChange={(e) => setRules((p) => ({ ...p, freeRadiusKm: Math.max(1, Number(e.target.value)) }))} />
         </SectionCard>
 
         {/* 💳 Payment Methods — NOT YET CONNECTED */}

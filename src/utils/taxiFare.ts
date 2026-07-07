@@ -156,11 +156,20 @@ export function applyLiveFareConfig(cfg: {
   roundTripMultiplier?: number;
   freeRadiusKm?: number;
   depositThb?: number;
+  listPriceMultiplier?: number;
+  travelDiscountPct?: number;
 }): void {
   if (typeof cfg.adminQuoteKm === "number" && cfg.adminQuoteKm > 0) ADMIN_QUOTE_KM = cfg.adminQuoteKm;
   if (typeof cfg.roundTripMultiplier === "number" && cfg.roundTripMultiplier > 1) ROUND_TRIP_MULTIPLIER = cfg.roundTripMultiplier;
   if (typeof cfg.freeRadiusKm === "number" && cfg.freeRadiusKm > 0) FREE_RADIUS_KM = cfg.freeRadiusKm;
   if (typeof cfg.depositThb === "number" && cfg.depositThb >= 0) DEPOSIT_THB = cfg.depositThb;
+  // 🆕 Round 28s307 — display anchor must stay > the real charge multiplier
+  //   or the "discount" goes negative; clamp to >= 1.
+  if (typeof cfg.listPriceMultiplier === "number" && cfg.listPriceMultiplier >= 1) LIST_PRICE_MULTIPLIER = cfg.listPriceMultiplier;
+  // Real discount: clamp 0–90 so a fat-fingered value can't zero out or
+  //   invert the fare.
+  if (typeof cfg.travelDiscountPct === "number" && cfg.travelDiscountPct >= 0)
+    TRAVEL_DISCOUNT_PCT = Math.min(90, cfg.travelDiscountPct);
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -257,7 +266,22 @@ export function grabCarRoundTripFare(distanceKm: number): number {
  * actually pays (round-trip × 1.6 + rain) is unchanged. At 2.5× the chip shows
  * ~36% off; at 2.0× it was ~20%. Tunable — dial to taste vs believability.
  */
-export const LIST_PRICE_MULTIPLIER = 2.5;
+// 🆕 Round 28s307 (founder: "คิดและคำนวนกันใหม่ รวมถึงส่วนลดค่าเดินทาง") —
+//   was a hardcoded const so the founder couldn't control the shown
+//   discount %. Now live-overridable like the fare levers (default 2.5×
+//   unchanged): raising it inflates only the struck-through "standard
+//   rate" + the promo % displayed; the fare the customer actually pays
+//   is NOT affected by this number.
+export let LIST_PRICE_MULTIPLIER = 2.5;
+
+/**
+ * 🆕 Round 28s307 — REAL, admin-controllable travel-fare discount, in
+ * percent (0–90). Default 0 = no discount = byte-identical to before.
+ * Unlike LIST_PRICE_MULTIPLIER (a display anchor), this actually REDUCES
+ * the round-trip travel fare the customer pays — a genuine promo cost
+ * the shop absorbs. Applied in calcTaxiFare after rain.
+ */
+export let TRAVEL_DISCOUNT_PCT = 0;
 
 export function listPriceRoundTrip(distanceKm: number): number {
   return Math.round(grabCarOneWayFare(distanceKm) * LIST_PRICE_MULTIPLIER);
@@ -303,6 +327,14 @@ export interface TaxiFareResult {
    * (= listPriceTravel - fare, clamped 0). Drives the "20 % off" chip.
    */
   sunredPromoDiscount: number;
+  /**
+   * 🆕 Round 28s307 — the REAL admin-set travel discount actually applied
+   * to this fare. `travelDiscountPct` is the percent used; `travelDiscountAmt`
+   * is the baht taken off the round-trip travel fare (after rain, before it
+   * became `fare`). 0 when the founder hasn't set a discount.
+   */
+  travelDiscountPct: number;
+  travelDiscountAmt: number;
   /**
    * @deprecated Round 28b24 — use `listPriceTravel` instead.
    * Kept for backwards-compat with Firestore docs + telegram payload.
@@ -360,6 +392,8 @@ export function calcTaxiFare(
       oneWayFare,
       listPriceTravel,
       sunredPromoDiscount: 0,
+      travelDiscountPct: 0,
+      travelDiscountAmt: 0,
       grabEstimate: listPriceTravel, // legacy alias
       savingsVsGrab: 0,
     };
@@ -367,11 +401,18 @@ export function calcTaxiFare(
 
   const roundTripBase = grabCarRoundTripFare(distanceKm); // oneWay × 1.6
   const withRain = Math.round(roundTripBase * (1 + rain.surchargePct));
-  // SunRed Smart Routing discount = list price - what we actually charge.
-  const sunredPromoDiscount = Math.max(0, listPriceTravel - withRain);
+  // 🆕 Round 28s307 — apply the REAL founder-set travel discount to what
+  //   the customer pays. Default 0 → fare === withRain (unchanged).
+  const pct = Math.min(90, Math.max(0, TRAVEL_DISCOUNT_PCT));
+  const travelDiscountAmt = Math.round(withRain * (pct / 100));
+  const fare = Math.max(0, withRain - travelDiscountAmt);
+  // Total "you saved" vs the standard-rate anchor = list price − what the
+  //   customer actually pays (so it naturally includes both the routing
+  //   headroom AND the real discount above).
+  const sunredPromoDiscount = Math.max(0, listPriceTravel - fare);
 
   return {
-    fare: withRain,
+    fare,
     tier,
     label,
     distanceKm,
@@ -380,6 +421,8 @@ export function calcTaxiFare(
     oneWayFare,
     listPriceTravel,
     sunredPromoDiscount,
+    travelDiscountPct: pct,
+    travelDiscountAmt,
     grabEstimate: listPriceTravel, // legacy alias
     savingsVsGrab: sunredPromoDiscount, // legacy alias
   };
