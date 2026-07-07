@@ -49,7 +49,7 @@ import dayjs, { type Dayjs } from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { CurrencyCircleDollar, Bank, Copy, Check } from "phosphor-react";
+import { CurrencyCircleDollar, Bank, Copy, Check, Wallet, Receipt, Users } from "phosphor-react";
 
 import { db, auth } from "@/lib/firebase";
 import { formatTHB } from "@/utils/servicePricing";
@@ -408,7 +408,128 @@ const AdminTherapistPayoutsPage: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* Filters */}
+      {/* ── 🆕 Round 28r43 — TOTAL OWED HERO CARD.
+           Mirrors the Dashboard r35/r36 lifetime-revenue hero DNA:
+           gradient bg + dual radial glows, Coins/Wallet eyebrow, 60px
+           accent-gradient icon plate, hero figure at 36-44px, and a
+           3-column split (Amount Owed / Unpaid Jobs / Therapists Awaiting).
+           Numbers come from the same outstanding memo the cards below use —
+           no separate calc. Sits above the filter bar per founder direction. */}
+      <Box
+        sx={{
+          mt: 2.25,
+          mb: 2.5,
+          borderRadius: "22px",
+          background: `linear-gradient(135deg, ${adminColor.accent}26 0%, ${adminColor.panel} 55%, ${adminColor.panel} 100%)`,
+          border: `1px solid ${adminColor.accent}44`,
+          boxShadow: `0 10px 32px ${adminColor.accent}1E, 0 2px 4px rgba(0,0,0,0.06)`,
+          p: { xs: "20px 18px 18px", md: "26px 28px 22px" },
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* corner glow — top-right */}
+        <Box
+          aria-hidden
+          sx={{
+            position: "absolute",
+            top: -60,
+            right: -60,
+            width: 200,
+            height: 200,
+            borderRadius: "50%",
+            background: `radial-gradient(circle, ${adminColor.accent}30 0%, transparent 70%)`,
+            pointerEvents: "none",
+          }}
+        />
+        {/* corner glow — bottom-left, subtler */}
+        <Box
+          aria-hidden
+          sx={{
+            position: "absolute",
+            bottom: -80,
+            left: -80,
+            width: 220,
+            height: 220,
+            borderRadius: "50%",
+            background: `radial-gradient(circle, ${adminColor.accent}15 0%, transparent 70%)`,
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* eyebrow */}
+        <Box sx={{ mb: 1.5, position: "relative" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+            <CurrencyCircleDollar size={15} color={adminColor.accent} weight="fill" />
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.accent, letterSpacing: "0.14em", textTransform: "uppercase", lineHeight: 1 }}>
+              Total Owed to Therapists · Outstanding Non-Cash
+            </Typography>
+          </Box>
+          <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 0.4, ml: 2.75 }}>
+            ยอดค้างจ่ายหมอนวด · โอนแล้วยังไม่ได้จ่ายต่อ
+          </Typography>
+        </Box>
+
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1.6fr 1fr 1fr" }, gap: { xs: 2.5, sm: 2.5 }, alignItems: "center", position: "relative" }}>
+          {/* hero column — amount owed */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box sx={{ width: 60, height: 60, borderRadius: "50%", background: `linear-gradient(135deg, ${adminColor.accent}, ${adminColor.accentDeep})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 6px 18px ${adminColor.accent}66, inset 0 1px 0 rgba(255,255,255,0.28)` }}>
+              <Wallet size={28} weight="duotone" />
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={{ ...adminFigureSx, fontSize: { xs: 36, md: 44 }, color: adminColor.text, lineHeight: 1, letterSpacing: "-0.015em" }}>
+                {formatTHB(unpaidTotal)}
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: adminColor.muted, mt: 0.55 }}>
+                Amount Owed
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim, mt: 0.1 }}>
+                ยอดค้างจ่าย · ค่านวด + ค่าเดินทาง
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* unpaid jobs */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, borderLeft: { sm: `1px solid ${adminColor.accent}33` }, pl: { sm: 2 } }}>
+            <Box sx={{ width: 38, height: 38, borderRadius: "50%", background: `${adminColor.highlight}18`, color: adminColor.highlight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5)` }}>
+              <Receipt size={18} weight="duotone" />
+            </Box>
+            <Box>
+              <Typography sx={{ ...adminFigureSx, fontSize: { xs: 20, md: 23 }, color: adminColor.text, lineHeight: 1 }}>
+                {unpaidJobCount.toLocaleString()}
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, mt: 0.4, textTransform: "uppercase", letterSpacing: "0.06em", lineHeight: 1 }}>
+                Unpaid Jobs
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.15 }}>
+                จำนวนงาน
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* therapists awaiting */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, borderLeft: { sm: `1px solid ${adminColor.accent}33` }, pl: { sm: 2 } }}>
+            <Box sx={{ width: 38, height: 38, borderRadius: "50%", background: `${adminColor.green}18`, color: adminColor.green, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5)` }}>
+              <Users size={18} weight="duotone" />
+            </Box>
+            <Box>
+              <Typography sx={{ ...adminFigureSx, fontSize: { xs: 20, md: 23 }, color: adminColor.text, lineHeight: 1 }}>
+                {groups.length.toLocaleString()}
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, mt: 0.4, textTransform: "uppercase", letterSpacing: "0.06em", lineHeight: 1 }}>
+                Therapists Awaiting
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.15 }}>
+                หมอที่รอ
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Filters — 🆕 r43 filter cleanup per founder direction "ตรงตัวกรอง
+           ไม่ต้อง": English-only labels; Thai stays on hero / stat labels
+           / section eyebrows / action buttons per r39 bilingual pattern. */}
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, alignItems: "center", mb: 2.5 }}>
         <ToggleButtonGroup
           value={range}
@@ -430,12 +551,12 @@ const AdminTherapistPayoutsPage: React.FC = () => {
         {range === "custom" && (
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
-              label="From · จาก" value={customStart} maxDate={customEnd}
+              label="From" value={customStart} maxDate={customEnd}
               onChange={(v) => v && setCustomStart(v)}
               slotProps={{ textField: { size: "small", sx: { width: 150, "& .MuiInputBase-root": { color: adminColor.text }, "& .MuiInputLabel-root": { color: adminColor.muted }, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 }, "& .MuiSvgIcon-root": { color: adminColor.muted } } } }}
             />
             <DatePicker
-              label="To · ถึง" value={customEnd} minDate={customStart} maxDate={dayjs()}
+              label="To" value={customEnd} minDate={customStart} maxDate={dayjs()}
               onChange={(v) => v && setCustomEnd(v)}
               slotProps={{ textField: { size: "small", sx: { width: 150, "& .MuiInputBase-root": { color: adminColor.text }, "& .MuiInputLabel-root": { color: adminColor.muted }, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 }, "& .MuiSvgIcon-root": { color: adminColor.muted } } } }}
             />
@@ -444,7 +565,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
 
         {therapistOptions.length > 0 && (
           <Select size="small" value={therapistFilter} onChange={(e) => setTherapistFilter(e.target.value)} sx={selectSx} MenuProps={selectMenuProps}>
-            <MenuItem value="__ALL__">All Therapists · หมอทุกคน</MenuItem>
+            <MenuItem value="__ALL__">All Therapists</MenuItem>
             {therapistOptions.map(([id, name]) => (
               <MenuItem key={id} value={id}>{name}</MenuItem>
             ))}
@@ -462,48 +583,25 @@ const AdminTherapistPayoutsPage: React.FC = () => {
           }}
         >
           {paidOnly ? <Check size={14} weight="bold" /> : null}
-          Only Customer-Paid · เฉพาะลูกค้าจ่ายแล้ว
+          Only Customer-Paid
         </Box>
       </Box>
 
-      {/* Summary strip */}
+      {/* Show/Hide paid strip — Total Owed pill removed (now in hero card above).
+           Keeps a compact toggle for the paid history + a small paid-total chip. */}
       <Box
         sx={{
-          mb: 3, borderRadius: "16px", background: adminColor.panel,
-          border: `1px solid ${adminColor.line}`, p: "18px 20px",
-          display: "flex", flexWrap: "wrap", gap: 2, alignItems: "center", justifyContent: "space-between",
+          mb: 2.5, display: "flex", flexWrap: "wrap", gap: 1,
+          alignItems: "center", justifyContent: "flex-end",
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box
-            sx={{
-              width: 46, height: 46, borderRadius: "50%",
-              background: `${adminColor.accent}1A`, color: adminColor.accent,
-              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-            }}
-          >
-            <CurrencyCircleDollar size={24} weight="duotone" />
-          </Box>
-          <Box>
-            <Typography sx={{ fontFamily: SANS, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: adminColor.accent, fontWeight: 800, lineHeight: 1 }}>
-              Total Owed
-            </Typography>
-            <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.2 }}>
-              ค้างจ่ายหมอ
-            </Typography>
-            <Typography sx={{ ...adminFigureSx, fontSize: 28, color: adminColor.text, lineHeight: 1.1, mt: 0.5 }}>
-              {formatTHB(unpaidTotal)}
-            </Typography>
-            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted }}>
-              {unpaidJobCount} jobs · {groups.length} therapists
-            </Typography>
-          </Box>
-        </Box>
         <Button
           onClick={() => setShowPaid((v) => !v)}
           sx={{
-            textTransform: "none", fontFamily: SANS, fontSize: 12.5, fontWeight: 600,
-            color: adminColor.highlight, borderRadius: "8px",
+            textTransform: "none", fontFamily: SANS, fontSize: 12.5, fontWeight: 700,
+            color: adminColor.highlight, borderRadius: "10px",
+            border: `1px solid ${adminColor.line2}`,
+            px: 1.5, py: 0.5,
             "&:hover": { background: "rgba(78,126,140,0.10)" },
           }}
         >
@@ -543,8 +641,14 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                 <Box
                   key={g.id}
                   sx={{
-                    borderRadius: "16px", background: adminColor.panel,
+                    borderRadius: "18px", background: adminColor.panel,
                     border: `1px solid ${adminColor.line}`, overflow: "hidden",
+                    boxShadow: "0 2px 10px rgba(31,41,51,0.04)",
+                    transition: "transform 160ms ease, box-shadow 160ms ease",
+                    "&:hover": {
+                      transform: "translateY(-1px)",
+                      boxShadow: "0 6px 18px rgba(31,41,51,0.08)",
+                    },
                   }}
                 >
                   {/* therapist header + pay-all */}
@@ -554,13 +658,26 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                       p: "14px 18px 12px", background: adminColor.panel2,
                     }}
                   >
-                    <Box sx={{ minWidth: 0 }}>
-                      <Typography sx={{ fontFamily: SERIF, fontSize: 16, fontWeight: 600, color: adminColor.text }}>
-                        {g.name}
-                      </Typography>
-                      <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.muted }}>
-                        {g.jobs.length} unpaid {g.jobs.length === 1 ? "job" : "jobs"} · ค้าง {g.jobs.length} งาน
-                      </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, minWidth: 0 }}>
+                      {/* 🆕 r43 — 46px accent plate w/ inner highlight, matches hero DNA */}
+                      <Box
+                        sx={{
+                          width: 46, height: 46, borderRadius: "50%",
+                          background: `${adminColor.accent}18`, color: adminColor.accent,
+                          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.55)`,
+                        }}
+                      >
+                        <Users size={22} weight="duotone" />
+                      </Box>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography sx={{ fontFamily: SERIF, fontSize: 16, fontWeight: 600, color: adminColor.text }}>
+                          {g.name}
+                        </Typography>
+                        <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.muted }}>
+                          {g.jobs.length} unpaid {g.jobs.length === 1 ? "job" : "jobs"} · ค้าง {g.jobs.length} งาน
+                        </Typography>
+                      </Box>
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexShrink: 0 }}>
                       <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.text }}>
@@ -716,16 +833,32 @@ const AdminTherapistPayoutsPage: React.FC = () => {
           {showPaid && (
             <Box
               sx={{
-                borderRadius: "16px", background: adminColor.panel,
+                borderRadius: "18px", background: adminColor.panel,
                 border: `1px solid ${adminColor.line}`, p: "18px 20px",
+                boxShadow: "0 2px 10px rgba(31,41,51,0.04)",
               }}
             >
-              <Typography sx={{ fontFamily: SERIF, fontSize: 16, fontWeight: 600, color: adminColor.text }}>
-                Paid History
-              </Typography>
-              <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.2, mb: 1 }}>
-                จ่ายไปแล้ว · {rangeNote}
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 0.75 }}>
+                {/* 🆕 r43 — 46px plate + inner highlight (matches hero DNA) */}
+                <Box
+                  sx={{
+                    width: 46, height: 46, borderRadius: "50%",
+                    background: `${adminColor.green}18`, color: adminColor.green,
+                    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.55)`,
+                  }}
+                >
+                  <Check size={22} weight="duotone" />
+                </Box>
+                <Box>
+                  <Typography sx={{ fontFamily: SERIF, fontSize: 16, fontWeight: 600, color: adminColor.text }}>
+                    Paid History
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.15 }}>
+                    จ่ายไปแล้ว · {rangeNote}
+                  </Typography>
+                </Box>
+              </Box>
               {paidJobs.length === 0 ? (
                 <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.dim }}>
                   No paid records yet · ยังไม่มีรายการที่จ่าย
