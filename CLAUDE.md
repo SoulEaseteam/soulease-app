@@ -1744,6 +1744,41 @@ denying every admin upload even though the admin was authenticated.
 
 Gallery photo upload from mobile is now working end to end.
 
+### 🆕 2026-07-07 — Add New Therapist rebuilt + shared form kit (28s282)
+
+Founder: "Therapist Manager หน้า Add New Therapist (ULTRA) ปรับแก้ให้ตาม
+ดีเทลทั้งหมด และดีไซน์สวย". ("ULTRA" here = "make it really polished", NOT
+the ultracode multi-agent opt-in — no system-reminder for that.) The old
+`AddTherapistPage` was on the pre-Ocean-Study theme with comma-separated
+text inputs for gallery/services and only a partial feature set.
+
+**New `src/pages/admin/therapistFormKit.tsx`** — the shared form building
+blocks extracted once: `SectionCard`/`SectionHeader`, `LocationPicker`
+(map + Places search, same as booking), `downscaleImage`, all the
+constants (FEATURE_ROWS / LANG_* / CRED_TYPES / BIO_LANGS /
+SERVICE_OPTIONS / fieldSx / selectMenuProps), and prop-driven editor
+components: `FeaturesEditor`, `LanguagesEditor`, `ServicesEditor`,
+`CredentialsEditor`, `BiosEditor`, `GalleryEditor` (owns its own phone-
+upload state), `TogglePill`. So the Add + Edit screens share ONE source
+and can't drift — the same lesson as the 28s271 dedup.
+
+**AddTherapistPage rebuilt on the kit**: identical Ocean Study card design
++ the full field set (ID/name/image/specialty/badge · hours/status/holiday
+· map-search area/address · 15-field features grid · languages · services
+multi-select · credentials · per-language bios · gallery w/ mobile upload ·
+visibility toggles · email + Telegram). Creates `therapists/{id}` with a
+duplicate-id guard, honest defaults (rating/reviews 0 — live-computed from
+bookings), new `therapist.create` audit action, routes to the new
+therapist's detail page on success.
+
+**🔔 FOLLOW-UP (tracked, spawned task):** migrate
+`AdminTherapistDetailPage`'s edit mode onto the kit too — it still has its
+own byte-identical inline copies of LocationPicker/downscaleImage/
+SectionCard/constants/editors. Deferred this round on purpose: the detail
+page was just stabilized (28s281 upload fix) and the copies are identical
+today (no drift yet), so refactoring a live tool in the same breath as a
+new page is needless risk. Do it as its own pass, tsc+build+deploy-verify.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
