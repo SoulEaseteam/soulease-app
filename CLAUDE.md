@@ -3781,3 +3781,26 @@ AdminDashboardPage:
 tsc=0 + build clean (55 routes), deployed; bundle grep confirms หน้าหลัก /
 รายได้ร้าน / จ่ายเงินหมอ / เมนูด่วน present, `pay-therapists` link present, and
 **no** "ห้องคุมงาน" / no flat `*0.4` split remaining.
+
+### 🆕 2026-07-07 — Dashboard: fix broken status/therapist filters (28s320)
+
+Founder: "ตัวกรอง ใช้ไม่ได้ ค่าไม่ปรับ" (filters do nothing, numbers don't
+change). Two bugs in the range-bookings effect, both fixed by moving
+status+therapist filtering **client-side**:
+1. Selecting a status or therapist appended `where("status"/"therapistId")`
+   onto a `createdAt`-range query. That combination needs a **composite index**
+   that was never created → the `onSnapshot` error callback fired, which only
+   did `setLoading(false)` and swallowed the error, so `allRows` stayed stale →
+   the figures froze.
+2. The therapist dropdown's value is the therapist **name**, but the clause
+   filtered `where("therapistId","==",name)` — an id vs name mismatch that
+   could never match even with an index.
+
+Fix: the Firestore query now loads **only the date range** (single-field, auto
+-indexed, never fails). Status + therapist are filtered inside the `stats`
+useMemo over `allRows` (`r.status === statusFilter` and `(r.therapistName||"")
+=== therapistFilter`), added to its deps; the effect's deps drop to
+`[startDate,endDate]`; therapistOptions still built from all in-range rows so
+the dropdown never collapses. Error callback now logs instead of swallowing.
+(Earnings already filtered client-side by id — not affected.) tsc=0 + build
+clean (55 routes), deployed.

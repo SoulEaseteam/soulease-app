@@ -240,28 +240,36 @@ const AdminDashboardPage: React.FC = () => {
   }, []);
 
   // ── range bookings ───────────────────────────────────────────────
+  // 🆕 Round 28s320 — query ONLY the date range in Firestore; status +
+  //   therapist are filtered client-side in the stats memo below. The old
+  //   code appended where("status"/"therapistId") clauses, which (a) needed
+  //   composite indexes that don't exist → the listener errored silently and
+  //   the numbers froze ("ค่าไม่ปรับ"), and (b) filtered therapistId by the
+  //   dropdown's NAME value, so it could never match. Client-side is index-free
+  //   and correct (the date range already bounds the row count).
   useEffect(() => {
     const s = Timestamp.fromDate(startDate.startOf("day").toDate());
     const e = Timestamp.fromDate(endDate.endOf("day").toDate());
-    const filters: Parameters<typeof query>[1][] = [
-      where("createdAt", ">=", s),
-      where("createdAt", "<=", e),
-    ];
-    if (statusFilter    !== "__ALL__") filters.push(where("status",      "==", statusFilter));
-    if (therapistFilter !== "__ALL__") filters.push(where("therapistId", "==", therapistFilter));
 
     setLoading(true);
     return onSnapshot(
-      query(collection(db, "bookings"), ...filters, orderBy("createdAt", "asc")),
+      query(
+        collection(db, "bookings"),
+        where("createdAt", ">=", s),
+        where("createdAt", "<=", e),
+        orderBy("createdAt", "asc"),
+      ),
       (snap) => {
         const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() } as BookingRow));
         setAllRows(rows);
+        // Options come from ALL rows in range (not the current filter) so the
+        // therapist dropdown never collapses to just the selected one.
         setTherapistOptions([...new Set(rows.map((r) => r.therapistName || "").filter(Boolean))]);
         setLoading(false);
       },
-      () => setLoading(false),
+      (err) => { console.error("[dashboard] range query failed:", err); setLoading(false); },
     );
-  }, [startDate, endDate, statusFilter, therapistFilter]);
+  }, [startDate, endDate]);
 
   // ── derived stats ────────────────────────────────────────────────
   const stats = useMemo(() => {
@@ -277,7 +285,14 @@ const AdminDashboardPage: React.FC = () => {
     const byTherapistMap: Record<string, { name: string; bookings: number; revenue: number }> = {};
     const byServiceMap: Record<string, { name: string; bookings: number; revenue: number }> = {};
 
-    for (const r of allRows) {
+    // 🆕 Round 28s320 — status + therapist filters applied here (client-side,
+    //   index-free). Therapist matches by NAME (the dropdown's value).
+    const filteredRows = allRows.filter((r) =>
+      (statusFilter    === "__ALL__" || r.status === statusFilter) &&
+      (therapistFilter === "__ALL__" || (r.therapistName || "") === therapistFilter),
+    );
+
+    for (const r of filteredRows) {
       const created = toDate(r.createdAt);
       if (!created) continue;
       const service = r.servicePrice || 0;
@@ -347,7 +362,7 @@ const AdminDashboardPage: React.FC = () => {
       byTherapist, byService, maxServiceRevenue,
       completionRate,
     };
-  }, [allRows, todayStart]);
+  }, [allRows, todayStart, statusFilter, therapistFilter]);
 
   // ── confirm booking ──────────────────────────────────────────────
   const confirmBooking = async (id: string) => {
