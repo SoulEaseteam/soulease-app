@@ -1911,6 +1911,52 @@ squeezed row, worse at browser zoom), and the stat pills wrapped unevenly
   subline, amount+status stacked right-aligned in their own column, row
   min-height + vertical centering — no clipping/crowding at any zoom.
 
+### 🆕 2026-07-07 — Promotions: caps, scheduling, min-spend, share/QR (28s299)
+
+Founder asked "หน้า Promotions ควรมีอะไรบ้าง" — offered 4 additions via
+AskUserQuestion (led with the one real safety gap), she picked all four.
+
+**Usage caps (the money-safety gap I led with):** custom codes gained
+`maxRedemptions` (total) + `perPhoneLimit`. These CAN'T live in
+`validateDiscount` (pure/sync, no usage count), so they're enforced at
+`BookingFlowPage` submit via a bounded count query on
+`bookings.discountCode` (limit 1000 — a capped code has at most
+`maxRedemptions` bookings anyway). `getCustomPromoLimits()` returns null
+for built-ins / uncapped codes so the whole block no-ops in the common
+case; admin bookings bypass; fails open. **Correctness fix found while
+building:** a valid discount used to store the raw-cased `form.discountCode`
+on the booking, but the cap query + usage stats match on the canonical
+UPPERCASE code — a mixed-case entry would slip the cap and miss the
+stats. Now stores `discount.code` (canonical) when valid, raw input only
+when invalid (so admin still sees what was typed).
+
+**Scheduling (`startsAt` + existing `expiresAt`):** a code auto-activates
+and auto-expires on its own dates (start stamped 00:00, expiry 23:59:59
+so the whole picked day counts). Checked in validateDiscount's custom
+branch as a quiet invalid — same "don't leak that the code exists but
+you don't qualify" stance as every other rejected path.
+
+**Min spend (`minSpendThb`):** code invalid until the service+addons
+subtotal (`discountableBase`, the same value passed to validateDiscount,
+i.e. NOT including taxi) reaches it.
+
+**Share link + QR:** a `?promo=CODE` link, captured on HomePage into
+localStorage (mirrors the existing `?ref=` referral capture in
+referral.ts) + read live in `getInitialDiscountCode`, pre-fills the
+booking discount field. Share dialog per code shows a copyable link + a
+QR. QR is an `<img>` from goqr.me's public API — the vercel.json CSP
+already allows `img-src ... https:`, so zero bundle/library cost, and the
+payload is only a public promo URL (no secrets). Verified the endpoint
+returns `image/png` before relying on it.
+
+`MaintenanceGate`'s existing `promoCodes` listener maps all the new
+fields into discount.ts's cache — no new listener. No firestore.rules
+change (the `promoCodes` rule from 28s298 already covers these fields).
+Verified: tsc/build clean, homepage 200 (MaintenanceGate regression),
+curled the live main bundle for the `sunred.discount.promo` localStorage
+key and the Promotions chunk for `api.qrserver.com` + the new Thai form
+labels.
+
 ### 🆕 2026-07-07 — new /admin/promotions: manage discount codes (28s298)
 
 Founder: "เพิ่ม เมนู โปรโมชั่น" — a genuinely new feature request, not an
