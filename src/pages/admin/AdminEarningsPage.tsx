@@ -30,6 +30,11 @@ import {
   Button,
   Select,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from "@mui/material";
 import {
   collection,
@@ -37,6 +42,9 @@ import {
   query,
   where,
   Timestamp,
+  doc,
+  setDoc,
+  serverTimestamp,
   type DocumentData,
 } from "firebase/firestore";
 import dayjs, { type Dayjs } from "dayjs";
@@ -47,7 +55,9 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 //   Dashboard-style (28s241) widget treatment.
 import { ChartBar, UserCircle, Receipt, XCircle, Medal } from "phosphor-react";
 
+import { useNavigate } from "react-router-dom";
 import { db } from "@/lib/firebase";
+import { logAdminAction } from "@/utils/auditLog";
 import { formatTHB } from "@/utils/servicePricing";
 import { getServiceLabel } from "@/utils/serviceCatalog";
 // 🆕 Round 28s234 (Phase 4 — Payout tracking) — Control Room tokens for the
@@ -69,8 +79,8 @@ const SANS = adminFont.sans;
 
 // Per-booking cost estimates (founder spec image). These are
 // AVERAGES the calculator subtracts to show NET margin — actual
-// shop cost will vary. View can tune the numbers as the business
-// learns its real cost structure.
+// shop cost will vary. 🆕 Round 28s317 — now editable by View (stored in
+// adminSettings/earnings, admin-only), so these are just the defaults.
 const COST_PER_BOOKING_THB = {
   /** Payment processor fee — assume PromptPay (free) avg with cards. */
   payment: 0,
@@ -79,6 +89,35 @@ const COST_PER_BOOKING_THB = {
   /** Admin / ops overhead per booking. */
   ops: 150,
 };
+
+// 🆕 Round 28s317 — editable earnings config (per-booking costs + monthly
+// revenue goal), read from / written to adminSettings/earnings.
+interface EarnConfig {
+  supplies: number;
+  ops: number;
+  payment: number;
+  goal: number; // monthly Shop-net target (0 = no goal set)
+}
+const DEFAULT_EARN: EarnConfig = {
+  supplies: COST_PER_BOOKING_THB.supplies,
+  ops: COST_PER_BOOKING_THB.ops,
+  payment: COST_PER_BOOKING_THB.payment,
+  goal: 0,
+};
+
+// 🆕 Round 28s317 — same messy `payment` field as the Pay-Therapists page:
+// customer flow writes a LABEL, admin writes a raw VALUE. Cash = collected in
+// hand by the therapist (shop owes nothing); anything else = money with shop.
+function isCashPayment(payment?: string | null, methodId?: string | null): boolean {
+  const p = (payment ?? "").trim().toLowerCase();
+  const m = (methodId ?? "").trim().toLowerCase();
+  return m === "cash" || p === "cash" || p.startsWith("เงินสด");
+}
+// Customer has paid: the admin `paid` flag if set, else the customer-flow
+// `paymentStatus === "paid"` (mirrors AdminBookingListPage's isPaid).
+function isCustomerPaid(b: BookingRow): boolean {
+  return b.paid ?? b.paymentStatus === "paid";
+}
 
 interface BookingRow {
   id: string;
@@ -98,6 +137,13 @@ interface BookingRow {
   discountCode?: string | null;
   // 🆕 Round 28s312 — surfaced in the per-job shop-revenue list.
   customerName?: string | null;
+  // 🆕 Round 28s317 — customer-payment + therapist-payout status, for the
+  //   cashflow cards (money not yet collected · therapist pay still owed).
+  paid?: boolean | null;
+  paymentStatus?: string | null;
+  payment?: string | null;
+  paymentMethodId?: string | null;
+  therapistPaid?: boolean | null;
 }
 
 // 🆕 Round 28s244 (founder: "เพิ่มตัวกรอง" on AdminEarningsPage, same as the
@@ -168,6 +214,7 @@ const DonutRing: React.FC<{ percent: number; color: string; size?: number; thick
 };
 
 const AdminEarningsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [range, setRange] = useState<Range>("month");
   const [customStart, setCustomStart] = useState<Dayjs>(() => dayjs().subtract(30, "day").startOf("day"));
   const [customEnd, setCustomEnd] = useState<Dayjs>(() => dayjs());
@@ -175,6 +222,22 @@ const AdminEarningsPage: React.FC = () => {
   const [serviceFilter, setServiceFilter] = useState("__ALL__");
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // 🆕 Round 28s317 — editable per-booking costs + monthly goal, live from
+  //   adminSettings/earnings (admin-only). Falls back to the defaults.
+  const [earn, setEarn] = useState<EarnConfig>(DEFAULT_EARN);
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "adminSettings", "earnings"), (snap) => {
+      const d = (snap.exists() ? snap.data() : {}) as Partial<EarnConfig>;
+      setEarn({
+        supplies: typeof d.supplies === "number" ? d.supplies : DEFAULT_EARN.supplies,
+        ops: typeof d.ops === "number" ? d.ops : DEFAULT_EARN.ops,
+        payment: typeof d.payment === "number" ? d.payment : DEFAULT_EARN.payment,
+        goal: typeof d.goal === "number" ? d.goal : DEFAULT_EARN.goal,
+      });
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -210,6 +273,11 @@ const AdminEarningsPage: React.FC = () => {
             createdAt: d.createdAt ?? null,
             discountAmount: d.discountAmount ?? null,
             discountCode: d.discountCode ?? null,
+            paid: d.paid ?? null,
+            paymentStatus: d.paymentStatus ?? null,
+            payment: d.payment ?? null,
+            paymentMethodId: d.paymentMethodId ?? null,
+            therapistPaid: d.therapistPaid ?? null,
           });
         });
         setBookings(arr);
@@ -265,6 +333,11 @@ const AdminEarningsPage: React.FC = () => {
     let totalPayment = 0;
     let countCompleted = 0;
     let countCancelled = 0;
+    // 🆕 Round 28s317 cashflow
+    let outstandingPay = 0;        // therapist pay still owed (non-cash · unpaid)
+    let outstandingPayCount = 0;
+    let unpaidRevenue = 0;         // collected value where customer hasn't paid
+    let unpaidRevenueCount = 0;
 
     const byTherapist: Record<
       string,
@@ -306,9 +379,22 @@ const AdminEarningsPage: React.FC = () => {
       totalDiscountAbsorbed += discount;
       totalTaxi += taxi;
       totalTherapistPayout += payout;
-      totalSupplies += COST_PER_BOOKING_THB.supplies;
-      totalOps += COST_PER_BOOKING_THB.ops;
-      totalPayment += COST_PER_BOOKING_THB.payment;
+      totalSupplies += earn.supplies;
+      totalOps += earn.ops;
+      totalPayment += earn.payment;
+
+      // 🆕 Round 28s317 — cashflow. Therapist pay still owed = non-cash job
+      //   (money with the shop) not yet marked paid on the Pay-Therapists
+      //   page; owed amount = commission + taxi reimbursement (28s315).
+      if (!isCashPayment(b.payment, b.paymentMethodId) && !b.therapistPaid) {
+        outstandingPay += payout + taxi;
+        outstandingPayCount += 1;
+      }
+      // Revenue booked but not yet collected (customer not marked paid).
+      if (!isCustomerPaid(b)) {
+        unpaidRevenue += collected;
+        unpaidRevenueCount += 1;
+      }
 
       // Per-therapist
       const tKey = b.therapistId ?? "(no therapist)";
@@ -364,11 +450,15 @@ const AdminEarningsPage: React.FC = () => {
       totalCosts,
       countCompleted,
       countCancelled,
+      outstandingPay,
+      outstandingPayCount,
+      unpaidRevenue,
+      unpaidRevenueCount,
       byTherapist,
       byService,
       byDay,
     };
-  }, [filteredBookings]);
+  }, [filteredBookings, earn]);
 
   // Daily trend keys (for chart)
   const trendDates = useMemo(() => {
@@ -469,7 +559,7 @@ const AdminEarningsPage: React.FC = () => {
       collected += c;
       payout += p;
       taxi += t;
-      costs += COST_PER_BOOKING_THB.supplies + COST_PER_BOOKING_THB.ops + COST_PER_BOOKING_THB.payment;
+      costs += earn.supplies + earn.ops + earn.payment;
       jobs += 1;
     }
     return {
@@ -478,7 +568,144 @@ const AdminEarningsPage: React.FC = () => {
       totalTherapistPayout: payout,
       countCompleted: jobs,
     };
-  }, [prevBookings, therapistFilter, serviceFilter]);
+  }, [prevBookings, therapistFilter, serviceFilter, earn]);
+
+  // 🆕 Round 28s317 — month-to-date Shop net for the monthly goal card.
+  //   Independent of the range filter (a monthly goal is calendar-monthly).
+  const [monthBookings, setMonthBookings] = useState<BookingRow[]>([]);
+  useEffect(() => {
+    const s = Timestamp.fromDate(dayjs().startOf("month").toDate());
+    const q = query(collection(db, "bookings"), where("createdAt", ">=", s));
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const arr: BookingRow[] = [];
+        snap.forEach((d0) => {
+          const d = d0.data() as DocumentData;
+          arr.push({
+            id: d0.id,
+            serviceId: d.serviceId ?? null,
+            servicePrice: d.servicePrice ?? null,
+            taxiFee: d.taxiFee ?? null,
+            totalPrice: d.totalPrice ?? null,
+            discountAmount: d.discountAmount ?? null,
+            status: d.status ?? "",
+          });
+        });
+        setMonthBookings(arr);
+      },
+      () => setMonthBookings([])
+    );
+    return () => unsub();
+  }, []);
+
+  const monthNet = useMemo(() => {
+    let net = 0;
+    for (const b of monthBookings) {
+      if (b.status && EXCLUDED_STATUSES.has(b.status)) continue;
+      const service = b.servicePrice ?? 0;
+      const taxi = b.taxiFee ?? 0;
+      const collected = b.totalPrice ?? service + taxi;
+      const discount = b.discountAmount ?? 0;
+      const payout = Math.round(Math.max(0, service - discount) * therapistPctFor(b.serviceId));
+      net += collected - payout - taxi - (earn.supplies + earn.ops + earn.payment);
+    }
+    return net;
+  }, [monthBookings, earn]);
+
+  // 🆕 Round 28s317 — cost/goal editor dialog (writes adminSettings/earnings).
+  const [cfgOpen, setCfgOpen] = useState(false);
+  const [cfgForm, setCfgForm] = useState<EarnConfig>(earn);
+  const [cfgSaving, setCfgSaving] = useState(false);
+  const openCfg = () => {
+    setCfgForm(earn);
+    setCfgOpen(true);
+  };
+  const saveCfg = async () => {
+    setCfgSaving(true);
+    try {
+      await setDoc(
+        doc(db, "adminSettings", "earnings"),
+        {
+          supplies: Math.max(0, Math.round(cfgForm.supplies) || 0),
+          ops: Math.max(0, Math.round(cfgForm.ops) || 0),
+          payment: Math.max(0, Math.round(cfgForm.payment) || 0),
+          goal: Math.max(0, Math.round(cfgForm.goal) || 0),
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+      void logAdminAction("settings.update", { area: "earnings", ...cfgForm });
+      setCfgOpen(false);
+    } catch (e) {
+      console.error("[earnings] config save failed", e);
+      window.alert("บันทึกไม่สำเร็จ ลองใหม่");
+    } finally {
+      setCfgSaving(false);
+    }
+  };
+
+  // 🆕 Round 28s317 — monthly PDF summary via the browser's print-to-PDF
+  //   (no dependency). Opens a formatted, print-styled window of the current
+  //   period's numbers + breakdowns and triggers the print dialog.
+  const handleExportPDF = () => {
+    const esc = (s: string) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] as string));
+    const money = (n: number) => `฿${Math.round(n).toLocaleString("en-US")}`;
+    const periodLabel = range === "custom"
+      ? `${customStart.format("D MMM YYYY")} – ${customEnd.format("D MMM YYYY")}`
+      : RANGE_LABEL[range];
+    const therapistRows = Object.values(stats.byTherapist)
+      .sort((a, b) => b.gross - a.gross)
+      .map((r) => `<tr><td>${esc(r.name)}</td><td class="n">${r.jobs}</td><td class="n">${money(r.gross)}</td><td class="n">${money(r.payout)}</td></tr>`)
+      .join("");
+    const serviceRows = Object.values(stats.byService)
+      .sort((a, b) => b.gross - a.gross)
+      .map((r) => `<tr><td>${esc(r.name)}</td><td class="n">${r.jobs}</td><td class="n">${money(r.gross)}</td></tr>`)
+      .join("");
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>SunRed · สรุปรายได้ ${esc(periodLabel)}</title>
+<style>
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,"Segoe UI",Tahoma,sans-serif;color:#1F2933;margin:32px;max-width:720px}
+  h1{font-family:Georgia,"Times New Roman",serif;font-size:24px;margin:0 0 2px}
+  .sub{color:#6b7280;font-size:13px;margin-bottom:20px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px}
+  .tile{border:1px solid #e5e7eb;border-radius:12px;padding:12px 14px}
+  .tile .k{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;font-weight:700}
+  .tile .v{font-family:Georgia,serif;font-size:22px;margin-top:2px}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#4E7E8C;margin:18px 0 8px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #eee}
+  th{color:#6b7280;font-size:11px;text-transform:uppercase}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+  .foot{margin-top:24px;color:#9ca3af;font-size:11px}
+  @media print{body{margin:12mm}}
+</style></head><body>
+  <h1>SunRed · สรุปรายได้</h1>
+  <div class="sub">${esc(periodLabel)} · ${stats.countCompleted} งาน · พิมพ์เพื่อบันทึกเป็น PDF</div>
+  <div class="grid">
+    <div class="tile"><div class="k">Shop net</div><div class="v">${money(stats.shopNet)}</div></div>
+    <div class="tile"><div class="k">Gross revenue</div><div class="v">${money(stats.totalGross)}</div></div>
+    <div class="tile"><div class="k">Therapist payout</div><div class="v">${money(stats.totalTherapistPayout)}</div></div>
+    <div class="tile"><div class="k">Taxi (pass-through)</div><div class="v">${money(stats.totalTaxi)}</div></div>
+    <div class="tile"><div class="k">Costs</div><div class="v">${money(stats.totalCosts)}</div></div>
+    <div class="tile"><div class="k">Cancelled</div><div class="v">${stats.countCancelled}</div></div>
+  </div>
+  <h2>By therapist</h2>
+  <table><thead><tr><th>Therapist</th><th class="n">Jobs</th><th class="n">Gross</th><th class="n">Payout</th></tr></thead><tbody>${therapistRows || '<tr><td colspan="4">—</td></tr>'}</tbody></table>
+  <h2>By service</h2>
+  <table><thead><tr><th>Service</th><th class="n">Jobs</th><th class="n">Gross</th></tr></thead><tbody>${serviceRows || '<tr><td colspan="3">—</td></tr>'}</tbody></table>
+  <div class="foot">SunRed · generated from live booking data · tier-based therapist split · excludes cancelled/refunded</div>
+  <script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>
+</body></html>`;
+    const w = window.open("", "_blank", "width=820,height=1000");
+    if (!w) {
+      window.alert("เปิดหน้าต่างพิมพ์ไม่ได้ — อนุญาต popup แล้วลองใหม่");
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  };
 
   const handleExportCSV = () => {
     const headers = [
@@ -577,26 +804,27 @@ const AdminEarningsPage: React.FC = () => {
           </Typography>
         </Box>
 
-        <Button
-          variant="outlined"
-          onClick={handleExportCSV}
-          disabled={loading || filteredBookings.length === 0}
-          sx={{
-            textTransform: "none",
-            borderRadius: "10px",
-            fontFamily: SANS,
-            fontSize: 13,
-            fontWeight: 600,
-            borderColor: adminColor.accent,
-            color: adminColor.highlight,
-            "&:hover": {
-              borderColor: adminColor.accent,
-              background: "rgba(78,126,140,0.10)",
-            },
-          }}
-        >
-          ⬇ Export CSV
-        </Button>
+        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+          {[
+            { label: "⚙ ต้นทุน & เป้า", onClick: openCfg, disabled: false },
+            { label: "⬇ PDF", onClick: handleExportPDF, disabled: loading || filteredBookings.length === 0 },
+            { label: "⬇ CSV", onClick: handleExportCSV, disabled: loading || filteredBookings.length === 0 },
+          ].map((b) => (
+            <Button
+              key={b.label}
+              variant="outlined"
+              onClick={b.onClick}
+              disabled={b.disabled}
+              sx={{
+                textTransform: "none", borderRadius: "10px", fontFamily: SANS,
+                fontSize: 13, fontWeight: 600, borderColor: adminColor.accent, color: adminColor.highlight,
+                "&:hover": { borderColor: adminColor.accent, background: "rgba(78,126,140,0.10)" },
+              }}
+            >
+              {b.label}
+            </Button>
+          ))}
+        </Box>
       </Box>
 
       {/* 🆕 Round 28s244 — filter bar: range (with custom From/To) +
@@ -754,6 +982,88 @@ const AdminEarningsPage: React.FC = () => {
               </Box>
             )}
           </Card>
+
+          {/* 🆕 Round 28s317 (D) — monthly revenue goal. Progress = this
+              calendar month's Shop net (independent of the range filter). */}
+          <Card>
+            <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 1, flexWrap: "wrap" }}>
+              <Eyebrow>เป้ารายได้เดือนนี้ · {dayjs().format("MMMM")}</Eyebrow>
+              {earn.goal > 0 ? (
+                <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: adminColor.muted }}>
+                  <Box component="span" sx={{ ...adminFigureSx, fontWeight: 700, color: adminColor.text }}>{formatTHB(monthNet)}</Box>
+                  {" / "}{formatTHB(earn.goal)}
+                </Typography>
+              ) : (
+                <Button onClick={openCfg} sx={{ textTransform: "none", fontSize: 12.5, fontWeight: 700, color: adminColor.highlight, minWidth: 0, "&:hover": { background: "rgba(78,126,140,0.10)" } }}>
+                  ตั้งเป้า →
+                </Button>
+              )}
+            </Box>
+            {earn.goal > 0 && (() => {
+              const pct = Math.max(0, Math.min(100, Math.round((monthNet / earn.goal) * 100)));
+              const hit = monthNet >= earn.goal;
+              return (
+                <Box sx={{ mt: 1.25 }}>
+                  <Box sx={{ height: 12, borderRadius: 999, background: adminColor.panel3, overflow: "hidden" }}>
+                    <Box sx={{ width: `${pct}%`, height: "100%", background: hit ? adminColor.green : adminColor.accent, transition: "width 0.3s ease" }} />
+                  </Box>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 12, color: hit ? adminColor.green : adminColor.muted, mt: 0.75, fontWeight: hit ? 700 : 400 }}>
+                    {hit ? `🎉 ถึงเป้าแล้ว · เกิน ${formatTHB(monthNet - earn.goal)}` : `${pct}% ของเป้า · เหลืออีก ${formatTHB(Math.max(0, earn.goal - monthNet))}`}
+                  </Typography>
+                </Box>
+              );
+            })()}
+          </Card>
+
+          {/* 🆕 Round 28s317 (A + B) — cashflow: therapist pay still owed +
+              customer money not yet collected, for the selected period. */}
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+            <Box
+              onClick={() => navigate("/admin/pay-therapists")}
+              sx={{
+                cursor: "pointer", padding: "18px 20px", borderRadius: "16px",
+                background: adminColor.panel, border: `1px solid ${adminColor.line}`,
+                boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 6px 16px rgba(31,41,51,0.07)",
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1,
+                transition: "border-color 0.15s ease", "&:hover": { borderColor: adminColor.accent },
+              }}
+            >
+              <Box>
+                <Eyebrow>ค้างจ่ายหมอ</Eyebrow>
+                <Typography sx={{ ...adminFigureSx, fontSize: 24, color: adminColor.text, lineHeight: 1.1, mt: 0.5 }}>
+                  {formatTHB(stats.outstandingPay)}
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.muted, mt: 0.25 }}>
+                  {stats.outstandingPayCount} งาน · กดดูหน้า Pay Therapists →
+                </Typography>
+              </Box>
+              <Box sx={{ width: 44, height: 44, borderRadius: "50%", background: `${adminColor.amber}1A`, color: adminColor.amber, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <UserCircle size={22} weight="duotone" />
+              </Box>
+            </Box>
+
+            <Box
+              sx={{
+                padding: "18px 20px", borderRadius: "16px",
+                background: adminColor.panel, border: `1px solid ${adminColor.line}`,
+                boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 6px 16px rgba(31,41,51,0.07)",
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1,
+              }}
+            >
+              <Box>
+                <Eyebrow>ลูกค้ายังไม่จ่าย</Eyebrow>
+                <Typography sx={{ ...adminFigureSx, fontSize: 24, color: adminColor.text, lineHeight: 1.1, mt: 0.5 }}>
+                  {formatTHB(stats.unpaidRevenue)}
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.muted, mt: 0.25 }}>
+                  {stats.unpaidRevenueCount} งาน · ยอดจองที่ยังไม่เก็บเงิน
+                </Typography>
+              </Box>
+              <Box sx={{ width: 44, height: 44, borderRadius: "50%", background: `${adminColor.red}1A`, color: adminColor.red, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Receipt size={22} weight="duotone" />
+              </Box>
+            </Box>
+          </Box>
 
           {/* 🆕 Round 28s245 — circular-icon stat row, same widget style as
               the Dashboard's period summary (28s241). Absorbs the old
@@ -943,6 +1253,65 @@ const AdminEarningsPage: React.FC = () => {
           </Box>
         </Box>
       )}
+
+      {/* 🆕 Round 28s317 (C + D) — editable per-booking costs + monthly goal */}
+      <Dialog
+        open={cfgOpen}
+        onClose={() => setCfgOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: "16px", background: adminColor.panel, color: adminColor.text } }}
+      >
+        <DialogTitle sx={{ fontFamily: SERIF, fontWeight: 600, color: adminColor.text }}>
+          ต้นทุน &amp; เป้ารายได้
+        </DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: "10px !important" }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: adminColor.muted }}>
+            ต้นทุนต่องาน (บาท) · หักจาก Shop net
+          </Typography>
+          {([
+            { key: "supplies" as const, label: "ของใช้/งาน (ผ้า·น้ำมัน ฯลฯ)" },
+            { key: "ops" as const, label: "ค่าดำเนินการ/งาน" },
+            { key: "payment" as const, label: "ค่าธรรมเนียมจ่ายเงิน/งาน" },
+          ]).map((f) => (
+            <TextField
+              key={f.key}
+              label={f.label}
+              size="small"
+              type="number"
+              value={Number.isFinite(cfgForm[f.key]) ? cfgForm[f.key] : 0}
+              onChange={(e) => setCfgForm((s) => ({ ...s, [f.key]: Number(e.target.value) }))}
+              inputProps={{ min: 0, inputMode: "numeric" }}
+              sx={{ "& .MuiOutlinedInput-root": { background: "#fff" } }}
+            />
+          ))}
+          <Typography sx={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: adminColor.muted, mt: 0.5 }}>
+            เป้ารายได้ (Shop net) ต่อเดือน
+          </Typography>
+          <TextField
+            label="เป้า/เดือน (0 = ไม่ตั้งเป้า)"
+            size="small"
+            type="number"
+            value={Number.isFinite(cfgForm.goal) ? cfgForm.goal : 0}
+            onChange={(e) => setCfgForm((s) => ({ ...s, goal: Number(e.target.value) }))}
+            inputProps={{ min: 0, inputMode: "numeric" }}
+            sx={{ "& .MuiOutlinedInput-root": { background: "#fff" } }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: "8px 20px 16px" }}>
+          <Button onClick={() => setCfgOpen(false)} sx={{ textTransform: "none", color: adminColor.muted }}>
+            ยกเลิก
+          </Button>
+          <Button
+            onClick={() => void saveCfg()}
+            disabled={cfgSaving}
+            variant="contained"
+            sx={{ textTransform: "none", fontWeight: 700, borderRadius: "8px", background: adminColor.accent, "&:hover": { background: adminColor.accentDeep } }}
+          >
+            บันทึก
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
