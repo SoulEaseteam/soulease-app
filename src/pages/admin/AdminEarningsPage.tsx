@@ -150,10 +150,14 @@ interface BookingRow {
 //   Analytics filters round) — "custom" is a distinct case from the 4 fixed
 //   presets since it needs an upper bound + explicit From/To state, not a
 //   pure function of "now".
-type PresetRange = "today" | "week" | "month" | "year";
+// 🆕 Round 28s321 — "thismonth" = the current CALENDAR month (1st → now), the
+//   shared default across Dashboard / Reports / Pay-Therapists so every page
+//   opens on the same window and the totals reconcile.
+type PresetRange = "thismonth" | "today" | "week" | "month" | "year";
 type Range = PresetRange | "custom";
 
 const RANGE_LABEL: Record<Range, string> = {
+  thismonth: "เดือนนี้",
   today: "วันนี้",
   week: "7 วัน",
   month: "30 วัน",
@@ -164,6 +168,8 @@ const RANGE_LABEL: Record<Range, string> = {
 function rangeStart(range: PresetRange): Dayjs {
   const now = dayjs();
   switch (range) {
+    case "thismonth":
+      return now.startOf("month");
     case "today":
       return now.startOf("day");
     case "week":
@@ -215,7 +221,7 @@ const DonutRing: React.FC<{ percent: number; color: string; size?: number; thick
 
 const AdminEarningsPage: React.FC = () => {
   const navigate = useNavigate();
-  const [range, setRange] = useState<Range>("month");
+  const [range, setRange] = useState<Range>("thismonth");
   const [customStart, setCustomStart] = useState<Dayjs>(() => dayjs().subtract(30, "day").startOf("day"));
   const [customEnd, setCustomEnd] = useState<Dayjs>(() => dayjs());
   const [therapistFilter, setTherapistFilter] = useState("__ALL__");
@@ -467,6 +473,8 @@ const AdminEarningsPage: React.FC = () => {
     if (range === "custom") {
       days = customEnd.startOf("day").diff(customStart.startOf("day"), "day") + 1;
       anchor = customEnd;
+    } else if (range === "thismonth") {
+      days = dayjs().date(); // days elapsed in the current calendar month
     } else {
       days = range === "today" ? 1 : range === "week" ? 7 : range === "month" ? 30 : 365;
     }
@@ -492,6 +500,15 @@ const AdminEarningsPage: React.FC = () => {
       const span = customEnd.endOf("day").diff(customStart.startOf("day"), "day") + 1;
       const end = customStart.startOf("day").subtract(1, "day").endOf("day");
       const start = end.subtract(span - 1, "day").startOf("day");
+      return { start, end };
+    }
+    if (range === "thismonth") {
+      // Compare against the SAME number of days in the previous calendar month
+      // (month-to-date vs same span last month) — a like-for-like delta.
+      const cur = dayjs().startOf("month");
+      const span = dayjs().startOf("day").diff(cur, "day") + 1;
+      const start = cur.subtract(1, "month").startOf("day");
+      const end = start.add(span - 1, "day").endOf("day");
       return { start, end };
     }
     const cur = rangeStart(range);
@@ -563,6 +580,7 @@ const AdminEarningsPage: React.FC = () => {
       jobs += 1;
     }
     return {
+      shopGross: collected - payout - taxi,
       shopNet: collected - payout - taxi - costs,
       totalCollected: collected,
       totalTherapistPayout: payout,
@@ -683,7 +701,8 @@ const AdminEarningsPage: React.FC = () => {
   <h1>SunRed · สรุปรายได้</h1>
   <div class="sub">${esc(periodLabel)} · ${stats.countCompleted} งาน · พิมพ์เพื่อบันทึกเป็น PDF</div>
   <div class="grid">
-    <div class="tile"><div class="k">รายได้ของร้าน (สุทธิ)</div><div class="v">${money(stats.shopNet)}</div></div>
+    <div class="tile"><div class="k">รายได้ของร้าน (ก่อนหักต้นทุน)</div><div class="v">${money(stats.shopGross)}</div></div>
+    <div class="tile"><div class="k">กำไรสุทธิ (หลังหักต้นทุน)</div><div class="v">${money(stats.shopNet)}</div></div>
     <div class="tile"><div class="k">รายได้รวม (เก็บได้)</div><div class="v">${money(stats.totalGross)}</div></div>
     <div class="tile"><div class="k">จ่ายหมอ</div><div class="v">${money(stats.totalTherapistPayout)}</div></div>
     <div class="tile"><div class="k">แท็กซี่ (ส่งต่อ)</div><div class="v">${money(stats.totalTaxi)}</div></div>
@@ -917,29 +936,37 @@ const AdminEarningsPage: React.FC = () => {
           <Card>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
               <Box sx={{ minWidth: 0 }}>
-                <Eyebrow>รายได้ของร้าน (สุทธิ) · ช่วงเวลานี้</Eyebrow>
+                {/* 🆕 Round 28s321 — headline is shop GROSS (before costs) so it
+                    matches หน้าหลัก / Reports for the same window. Net-after-costs
+                    is shown as a secondary line below. */}
+                <Eyebrow>รายได้ของร้าน (ก่อนหักต้นทุน) · ช่วงเวลานี้</Eyebrow>
                 <Typography
                   sx={{
                     ...adminFigureSx, fontSize: { xs: 32, md: 40 },
                     color: adminColor.text, letterSpacing: "-0.02em", lineHeight: 1.1, mt: 0.75,
                   }}
                 >
-                  {formatTHB(stats.shopNet)}
+                  {formatTHB(stats.shopGross)}
                 </Typography>
                 <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: adminColor.muted, mt: 0.5 }}>
                   จากเงินที่เก็บได้ {formatTHB(stats.totalCollected)} · {stats.countCompleted} งาน
                   {stats.totalDiscountAbsorbed > 0 && ` · หักโปรฯ ${formatTHB(stats.totalDiscountAbsorbed)} (แชร์กัน)`}
                 </Typography>
+                {/* net after the founder's per-booking costs — the deeper figure */}
+                <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.dim, mt: 0.25 }}>
+                  หักต้นทุน {formatTHB(stats.totalCosts)} → กำไรสุทธิ{" "}
+                  <Box component="span" sx={{ fontWeight: 700, color: adminColor.green }}>{formatTHB(stats.shopNet)}</Box>
+                </Typography>
                 {/* 🆕 Round 28s316 — growth vs the previous equal-length period */}
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 0.75 }}>
-                  <Delta cur={stats.shopNet} prev={prevStats.shopNet} />
+                  <Delta cur={stats.shopGross} prev={prevStats.shopGross} />
                   <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.dim }}>
-                    vs ก่อนหน้า ({formatTHB(prevStats.shopNet)})
+                    vs ก่อนหน้า ({formatTHB(prevStats.shopGross)})
                   </Typography>
                 </Box>
               </Box>
               <DonutRing
-                percent={stats.totalCollected > 0 ? Math.round((Math.max(0, stats.shopNet) / stats.totalCollected) * 100) : 0}
+                percent={stats.totalCollected > 0 ? Math.round((Math.max(0, stats.shopGross) / stats.totalCollected) * 100) : 0}
                 color={adminColor.accent}
               />
             </Box>
@@ -952,7 +979,7 @@ const AdminEarningsPage: React.FC = () => {
                     { key: "จ่ายหมอ", value: stats.totalTherapistPayout, color: adminColor.accent },
                     { key: "แท็กซี่", value: stats.totalTaxi, color: adminColor.dim },
                     { key: "ต้นทุน", value: stats.totalCosts, color: adminColor.amber },
-                    { key: "รายได้ร้าน", value: Math.max(0, stats.shopNet), color: adminColor.green },
+                    { key: "กำไรสุทธิ", value: Math.max(0, stats.shopNet), color: adminColor.green },
                   ].map((seg) => (
                     <Box
                       key={seg.key}
@@ -966,7 +993,7 @@ const AdminEarningsPage: React.FC = () => {
                     { key: "จ่ายหมอ", value: stats.totalTherapistPayout, color: adminColor.accent },
                     { key: "แท็กซี่", value: stats.totalTaxi, color: adminColor.dim },
                     { key: "ต้นทุน", value: stats.totalCosts, color: adminColor.amber },
-                    { key: "รายได้ร้าน", value: stats.shopNet, color: adminColor.green },
+                    { key: "กำไรสุทธิ", value: stats.shopNet, color: adminColor.green },
                   ].map((seg) => (
                     <Box key={seg.key} sx={{ display: "inline-flex", alignItems: "center", gap: 0.75 }}>
                       <Box sx={{ width: 9, height: 9, borderRadius: "3px", background: seg.color, flexShrink: 0 }} />

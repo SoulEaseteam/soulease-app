@@ -61,14 +61,17 @@ import { therapistPayoutFor, isPayrollExcluded } from "@/utils/commission";
 const SERIF = adminFont.serif;
 const SANS = adminFont.sans;
 
-type Preset = "d7" | "d30" | "d90" | "custom";
+// 🆕 Round 28s321 — "thismonth" (current calendar month) is the shared default
+//   across Dashboard / Reports / Earnings so every page opens on the same window.
+type Preset = "thismonth" | "d7" | "d30" | "d90" | "custom";
 const PRESET_LABEL: Record<Preset, string> = {
+  thismonth: "เดือนนี้",
   d7: "7 วัน",
   d30: "30 วัน",
   d90: "90 วัน",
   custom: "กำหนดเอง",
 };
-const PRESET_DAYS: Record<Exclude<Preset, "custom">, number> = { d7: 7, d30: 30, d90: 90 };
+const PRESET_DAYS: Record<"d7" | "d30" | "d90", number> = { d7: 7, d30: 30, d90: 90 };
 
 interface BankInfo {
   bankName: string;
@@ -139,7 +142,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
   const [copied, setCopied] = useState<string | null>(null);
 
   // Filters
-  const [range, setRange] = useState<Preset>("d90");
+  const [range, setRange] = useState<Preset>("thismonth");
   const [customStart, setCustomStart] = useState<Dayjs>(() => dayjs().subtract(30, "day").startOf("day"));
   const [customEnd, setCustomEnd] = useState<Dayjs>(() => dayjs());
   const [therapistFilter, setTherapistFilter] = useState("__ALL__");
@@ -172,6 +175,8 @@ const AdminTherapistPayoutsPage: React.FC = () => {
     if (range === "custom") {
       start = customStart.startOf("day");
       end = customEnd.endOf("day");
+    } else if (range === "thismonth") {
+      start = dayjs().startOf("month");
     } else {
       start = dayjs().subtract(PRESET_DAYS[range], "day").startOf("day");
     }
@@ -347,6 +352,8 @@ const AdminTherapistPayoutsPage: React.FC = () => {
   const rangeNote =
     range === "custom"
       ? `${customStart.format("D MMM")} – ${customEnd.format("D MMM YYYY")}`
+      : range === "thismonth"
+      ? `เดือนนี้ (${dayjs().startOf("month").format("D MMM")} – ${dayjs().format("D MMM YYYY")})`
       : `${PRESET_DAYS[range]} วันล่าสุด`;
 
   return (
