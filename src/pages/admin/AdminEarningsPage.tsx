@@ -154,11 +154,11 @@ type PresetRange = "today" | "week" | "month" | "year";
 type Range = PresetRange | "custom";
 
 const RANGE_LABEL: Record<Range, string> = {
-  today: "Today",
-  week: "Last 7 days",
-  month: "Last 30 days",
-  year: "Last 12 months",
-  custom: "Custom",
+  today: "วันนี้",
+  week: "7 วัน",
+  month: "30 วัน",
+  year: "12 เดือน",
+  custom: "กำหนดเอง",
 };
 
 function rangeStart(range: PresetRange): Dayjs {
@@ -683,18 +683,18 @@ const AdminEarningsPage: React.FC = () => {
   <h1>SunRed · สรุปรายได้</h1>
   <div class="sub">${esc(periodLabel)} · ${stats.countCompleted} งาน · พิมพ์เพื่อบันทึกเป็น PDF</div>
   <div class="grid">
-    <div class="tile"><div class="k">Shop net</div><div class="v">${money(stats.shopNet)}</div></div>
-    <div class="tile"><div class="k">Gross revenue</div><div class="v">${money(stats.totalGross)}</div></div>
-    <div class="tile"><div class="k">Therapist payout</div><div class="v">${money(stats.totalTherapistPayout)}</div></div>
-    <div class="tile"><div class="k">Taxi (pass-through)</div><div class="v">${money(stats.totalTaxi)}</div></div>
-    <div class="tile"><div class="k">Costs</div><div class="v">${money(stats.totalCosts)}</div></div>
-    <div class="tile"><div class="k">Cancelled</div><div class="v">${stats.countCancelled}</div></div>
+    <div class="tile"><div class="k">รายได้ของร้าน (สุทธิ)</div><div class="v">${money(stats.shopNet)}</div></div>
+    <div class="tile"><div class="k">รายได้รวม (เก็บได้)</div><div class="v">${money(stats.totalGross)}</div></div>
+    <div class="tile"><div class="k">จ่ายหมอ</div><div class="v">${money(stats.totalTherapistPayout)}</div></div>
+    <div class="tile"><div class="k">แท็กซี่ (ส่งต่อ)</div><div class="v">${money(stats.totalTaxi)}</div></div>
+    <div class="tile"><div class="k">ต้นทุน</div><div class="v">${money(stats.totalCosts)}</div></div>
+    <div class="tile"><div class="k">ยกเลิก</div><div class="v">${stats.countCancelled}</div></div>
   </div>
-  <h2>By therapist</h2>
-  <table><thead><tr><th>Therapist</th><th class="n">Jobs</th><th class="n">Gross</th><th class="n">Payout</th></tr></thead><tbody>${therapistRows || '<tr><td colspan="4">—</td></tr>'}</tbody></table>
-  <h2>By service</h2>
-  <table><thead><tr><th>Service</th><th class="n">Jobs</th><th class="n">Gross</th></tr></thead><tbody>${serviceRows || '<tr><td colspan="3">—</td></tr>'}</tbody></table>
-  <div class="foot">SunRed · generated from live booking data · tier-based therapist split · excludes cancelled/refunded</div>
+  <h2>แยกตามหมอ</h2>
+  <table><thead><tr><th>หมอ</th><th class="n">งาน</th><th class="n">รายได้รวม</th><th class="n">จ่ายหมอ</th></tr></thead><tbody>${therapistRows || '<tr><td colspan="4">—</td></tr>'}</tbody></table>
+  <h2>แยกตามบริการ</h2>
+  <table><thead><tr><th>บริการ</th><th class="n">งาน</th><th class="n">รายได้รวม</th></tr></thead><tbody>${serviceRows || '<tr><td colspan="3">—</td></tr>'}</tbody></table>
+  <div class="foot">SunRed · สร้างจากข้อมูลการจองจริง · แบ่งหมอตามระดับ · ไม่รวมที่ยกเลิก/คืนเงิน</div>
   <script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>
 </body></html>`;
     const w = window.open("", "_blank", "width=820,height=1000");
@@ -789,7 +789,7 @@ const AdminEarningsPage: React.FC = () => {
               "& em": { fontStyle: "italic", color: adminColor.highlight },
             }}
           >
-            Earnings <em>calculator</em>
+            รายได้ <em>ของร้าน</em>
           </Typography>
           <Typography
             sx={{
@@ -799,8 +799,8 @@ const AdminEarningsPage: React.FC = () => {
               marginTop: "4px",
             }}
           >
-            Live booking revenue · tier-based therapist split ·
-            excludes cancelled / refunded
+            รายได้จากการจองแบบเรียลไทม์ · แบ่งหมอตามระดับ ·
+            ไม่รวมที่ยกเลิก / คืนเงิน
           </Typography>
         </Box>
 
@@ -860,14 +860,14 @@ const AdminEarningsPage: React.FC = () => {
         {range === "custom" && (
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
-              label="From"
+              label="ตั้งแต่"
               value={customStart}
               maxDate={customEnd}
               onChange={(v) => v && setCustomStart(v)}
               slotProps={{ textField: { size: "small", sx: { width: 130, "& .MuiInputBase-root": { color: adminColor.text }, "& .MuiInputLabel-root": { color: adminColor.muted }, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 }, "& .MuiSvgIcon-root": { color: adminColor.muted } } } }}
             />
             <DatePicker
-              label="To"
+              label="ถึง"
               value={customEnd}
               minDate={customStart}
               maxDate={dayjs()}
@@ -879,7 +879,7 @@ const AdminEarningsPage: React.FC = () => {
 
         {therapistOptions.length > 0 && (
           <Select size="small" value={therapistFilter} onChange={(e) => setTherapistFilter(e.target.value)} sx={selectSx} MenuProps={selectMenuProps}>
-            <MenuItem value="__ALL__">All therapists</MenuItem>
+            <MenuItem value="__ALL__">หมอทุกคน</MenuItem>
             {therapistOptions.map(([id, name]) => (
               <MenuItem key={id} value={id}>{name}</MenuItem>
             ))}
@@ -888,7 +888,7 @@ const AdminEarningsPage: React.FC = () => {
 
         {serviceOptions.length > 0 && (
           <Select size="small" value={serviceFilter} onChange={(e) => setServiceFilter(e.target.value)} sx={selectSx} MenuProps={selectMenuProps}>
-            <MenuItem value="__ALL__">All services</MenuItem>
+            <MenuItem value="__ALL__">บริการทั้งหมด</MenuItem>
             {serviceOptions.map(([id, name]) => (
               <MenuItem key={id} value={id}>{name}</MenuItem>
             ))}
@@ -904,8 +904,8 @@ const AdminEarningsPage: React.FC = () => {
         <Card>
           <Typography sx={{ fontFamily: SANS, fontSize: 14, color: adminColor.muted }}>
             {bookings.length === 0
-              ? "No bookings in this period."
-              : "No bookings match this therapist/service filter for the selected period."}
+              ? "ไม่มีการจองในช่วงเวลานี้"
+              : "ไม่มีการจองที่ตรงกับตัวกรองหมอ/บริการในช่วงที่เลือก"}
           </Typography>
         </Card>
       ) : (
@@ -917,7 +917,7 @@ const AdminEarningsPage: React.FC = () => {
           <Card>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
               <Box sx={{ minWidth: 0 }}>
-                <Eyebrow>Shop net · this period</Eyebrow>
+                <Eyebrow>รายได้ของร้าน (สุทธิ) · ช่วงเวลานี้</Eyebrow>
                 <Typography
                   sx={{
                     ...adminFigureSx, fontSize: { xs: 32, md: 40 },
@@ -927,8 +927,8 @@ const AdminEarningsPage: React.FC = () => {
                   {formatTHB(stats.shopNet)}
                 </Typography>
                 <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: adminColor.muted, mt: 0.5 }}>
-                  of {formatTHB(stats.totalCollected)} collected · {stats.countCompleted} bookings
-                  {stats.totalDiscountAbsorbed > 0 && ` · promo absorbed ${formatTHB(stats.totalDiscountAbsorbed)} (shared)`}
+                  จากเงินที่เก็บได้ {formatTHB(stats.totalCollected)} · {stats.countCompleted} งาน
+                  {stats.totalDiscountAbsorbed > 0 && ` · หักโปรฯ ${formatTHB(stats.totalDiscountAbsorbed)} (แชร์กัน)`}
                 </Typography>
                 {/* 🆕 Round 28s316 — growth vs the previous equal-length period */}
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 0.75 }}>
@@ -949,10 +949,10 @@ const AdminEarningsPage: React.FC = () => {
               <Box sx={{ mt: 2.5 }}>
                 <Box sx={{ display: "flex", height: 12, borderRadius: 999, overflow: "hidden", background: adminColor.panel3 }}>
                   {[
-                    { key: "Therapist", value: stats.totalTherapistPayout, color: adminColor.accent },
-                    { key: "Taxi", value: stats.totalTaxi, color: adminColor.dim },
-                    { key: "Costs", value: stats.totalCosts, color: adminColor.amber },
-                    { key: "Shop net", value: Math.max(0, stats.shopNet), color: adminColor.green },
+                    { key: "จ่ายหมอ", value: stats.totalTherapistPayout, color: adminColor.accent },
+                    { key: "แท็กซี่", value: stats.totalTaxi, color: adminColor.dim },
+                    { key: "ต้นทุน", value: stats.totalCosts, color: adminColor.amber },
+                    { key: "รายได้ร้าน", value: Math.max(0, stats.shopNet), color: adminColor.green },
                   ].map((seg) => (
                     <Box
                       key={seg.key}
@@ -963,10 +963,10 @@ const AdminEarningsPage: React.FC = () => {
                 </Box>
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mt: 1.25 }}>
                   {[
-                    { key: "Therapist", value: stats.totalTherapistPayout, color: adminColor.accent },
-                    { key: "Taxi", value: stats.totalTaxi, color: adminColor.dim },
-                    { key: "Costs", value: stats.totalCosts, color: adminColor.amber },
-                    { key: "Shop net", value: stats.shopNet, color: adminColor.green },
+                    { key: "จ่ายหมอ", value: stats.totalTherapistPayout, color: adminColor.accent },
+                    { key: "แท็กซี่", value: stats.totalTaxi, color: adminColor.dim },
+                    { key: "ต้นทุน", value: stats.totalCosts, color: adminColor.amber },
+                    { key: "รายได้ร้าน", value: stats.shopNet, color: adminColor.green },
                   ].map((seg) => (
                     <Box key={seg.key} sx={{ display: "inline-flex", alignItems: "center", gap: 0.75 }}>
                       <Box sx={{ width: 9, height: 9, borderRadius: "3px", background: seg.color, flexShrink: 0 }} />
@@ -1071,10 +1071,10 @@ const AdminEarningsPage: React.FC = () => {
           <Card>
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4,1fr)" }, gap: 2 }}>
               {[
-                { icon: <ChartBar   size={20} weight="duotone" />, label: "Gross revenue",    value: formatTHB(stats.totalGross), sub: `${stats.countCompleted} bookings`, color: adminColor.accent, delta: <Delta cur={stats.totalGross} prev={prevStats.totalCollected} /> },
-                { icon: <UserCircle size={20} weight="duotone" />, label: "Therapist payout", value: formatTHB(stats.totalTherapistPayout), sub: stats.totalDiscountAbsorbed > 0 ? "tier split · post-discount" : "tier-aware split", color: adminColor.green, delta: <Delta cur={stats.totalTherapistPayout} prev={prevStats.totalTherapistPayout} neutral /> },
-                { icon: <Receipt    size={20} weight="duotone" />, label: "Avg per booking",  value: formatTHB(stats.countCompleted ? Math.round(stats.totalGross / stats.countCompleted) : 0), sub: "gross / completed", color: adminColor.highlight, delta: null },
-                { icon: <XCircle    size={20} weight="duotone" />, label: "Cancelled",        value: String(stats.countCancelled), sub: "excluded from totals", color: adminColor.red, delta: null },
+                { icon: <ChartBar   size={20} weight="duotone" />, label: "รายได้รวม (เก็บได้)", value: formatTHB(stats.totalGross), sub: `${stats.countCompleted} งาน`, color: adminColor.accent, delta: <Delta cur={stats.totalGross} prev={prevStats.totalCollected} /> },
+                { icon: <UserCircle size={20} weight="duotone" />, label: "จ่ายหมอ",           value: formatTHB(stats.totalTherapistPayout), sub: stats.totalDiscountAbsorbed > 0 ? "แบ่งตามระดับ · หลังหักส่วนลด" : "แบ่งตามระดับ", color: adminColor.green, delta: <Delta cur={stats.totalTherapistPayout} prev={prevStats.totalTherapistPayout} neutral /> },
+                { icon: <Receipt    size={20} weight="duotone" />, label: "เฉลี่ยต่องาน",       value: formatTHB(stats.countCompleted ? Math.round(stats.totalGross / stats.countCompleted) : 0), sub: "รายได้รวม / งานสำเร็จ", color: adminColor.highlight, delta: null },
+                { icon: <XCircle    size={20} weight="duotone" />, label: "ยกเลิก",             value: String(stats.countCancelled), sub: "ไม่รวมในยอด", color: adminColor.red, delta: null },
               ].map((c) => (
                 <Box key={c.label} sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 0.75 }}>
                   <Box
@@ -1109,7 +1109,7 @@ const AdminEarningsPage: React.FC = () => {
           <Card>
             <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, flexWrap: "wrap" }}>
               <Box>
-                <Eyebrow>Daily revenue</Eyebrow>
+                <Eyebrow>รายได้รายวัน</Eyebrow>
                 <Typography
                   sx={{
                     fontFamily: SERIF,
@@ -1119,7 +1119,7 @@ const AdminEarningsPage: React.FC = () => {
                     mt: 0.5,
                   }}
                 >
-                  Gross by day · {trendDates.length} days
+                  ยอดเก็บรายวัน · {trendDates.length} วัน
                 </Typography>
               </Box>
               {/* 🆕 Round 28s245 — surface the peak day so the tallest bar
@@ -1127,7 +1127,7 @@ const AdminEarningsPage: React.FC = () => {
               {trendMax > 1 && (
                 <Box sx={{ textAlign: "right" }}>
                   <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    Peak
+                    สูงสุด
                   </Typography>
                   <Typography sx={{ ...adminFigureSx, fontSize: 14.5, color: adminColor.highlight }}>
                     {formatTHB(trendMax)}
@@ -1196,7 +1196,7 @@ const AdminEarningsPage: React.FC = () => {
             }}
           >
             <Card>
-              <Eyebrow>By therapist</Eyebrow>
+              <Eyebrow>แยกตามหมอ</Eyebrow>
               <Typography
                 sx={{
                   fontFamily: SERIF,
@@ -1207,7 +1207,7 @@ const AdminEarningsPage: React.FC = () => {
                   mb: 1.5,
                 }}
               >
-                Top earners
+                หมอทำเงินสูงสุด
               </Typography>
               <RankedRows
                 rows={Object.values(stats.byTherapist)
@@ -1218,7 +1218,7 @@ const AdminEarningsPage: React.FC = () => {
                     // 🆕 Round 28r27 — payout uses the per-row tier
                     //   accumulated payout (already accounts for
                     //   discount + tier %). Truer than recomputing.
-                    sub: `${r.jobs} job${r.jobs === 1 ? "" : "s"} · payout ${formatTHB(r.payout)}`,
+                    sub: `${r.jobs} งาน · จ่ายหมอ ${formatTHB(r.payout)}`,
                     value: formatTHB(r.gross),
                     pct: r.gross / Math.max(1, stats.totalGross),
                   }))}
@@ -1226,7 +1226,7 @@ const AdminEarningsPage: React.FC = () => {
             </Card>
 
             <Card>
-              <Eyebrow>By service</Eyebrow>
+              <Eyebrow>แยกตามบริการ</Eyebrow>
               <Typography
                 sx={{
                   fontFamily: SERIF,
@@ -1237,14 +1237,14 @@ const AdminEarningsPage: React.FC = () => {
                   mb: 1.5,
                 }}
               >
-                Service mix
+                สัดส่วนบริการ
               </Typography>
               <RankedRows
                 rows={Object.values(stats.byService)
                   .sort((a, b) => b.gross - a.gross)
                   .map((r) => ({
                     label: r.name,
-                    sub: `${r.jobs} booking${r.jobs === 1 ? "" : "s"}`,
+                    sub: `${r.jobs} งาน`,
                     value: formatTHB(r.gross),
                     pct: r.gross / Math.max(1, stats.totalGross),
                   }))}
@@ -1267,7 +1267,7 @@ const AdminEarningsPage: React.FC = () => {
         </DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: "10px !important" }}>
           <Typography sx={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: adminColor.muted }}>
-            ต้นทุนต่องาน (บาท) · หักจาก Shop net
+            ต้นทุนต่องาน (บาท) · หักจากรายได้ร้าน
           </Typography>
           {([
             { key: "supplies" as const, label: "ของใช้/งาน (ผ้า·น้ำมัน ฯลฯ)" },
@@ -1286,7 +1286,7 @@ const AdminEarningsPage: React.FC = () => {
             />
           ))}
           <Typography sx={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: adminColor.muted, mt: 0.5 }}>
-            เป้ารายได้ (Shop net) ต่อเดือน
+            เป้ารายได้ (สุทธิของร้าน) ต่อเดือน
           </Typography>
           <TextField
             label="เป้า/เดือน (0 = ไม่ตั้งเป้า)"

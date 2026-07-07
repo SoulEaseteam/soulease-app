@@ -3724,3 +3724,30 @@ AdminEarningsPage:
 Header buttons are now ⚙ ต้นทุน & เป้า · ⬇ PDF · ⬇ CSV. tsc=0 + build clean
 (55 routes), deployed; "ค้างจ่ายหมอ" / "ลูกค้ายังไม่จ่าย" / "เป้ารายได้เดือนนี้"
 / "ต้นทุนต่องาน" / "สรุปรายได้" confirmed in the live earnings chunk.
+
+### 🆕 2026-07-07 — Earnings: Thai-ify all labels ("รายได้ของร้าน") (28s318)
+
+Founder asked "รายได้ของร้าน ดูตรงไหน" — she couldn't find the shop-revenue
+number. Root cause: the page's **auto-translate overlay** was mangling the
+remaining **English** UI labels — the hero eyebrow `"Shop net · this period"`
+was being rendered as **"ร้านค้าออนไลน์"** (machine read "net" as internet), the
+money-flow legend `Costs`→"ราคา", `Shop net`→"ราคาสุทธิ", `Gross revenue`→
+"รายได้รวม", etc. So the actual shop-revenue figure (the big hero number = net =
+collected − payout − taxi − costs) was hidden behind a bad label.
+
+Fix: **translated every user-facing string on AdminEarningsPage to Thai in the
+source** so nothing depends on the overlay. Notable renames:
+- Page title `Earnings calculator` → **"รายได้ของร้าน"** (directly answers her
+  question — the whole page IS the shop revenue).
+- Hero eyebrow → **"รายได้ของร้าน (สุทธิ) · ช่วงเวลานี้"** over the big net figure.
+- Money-flow bar/legend keys → จ่ายหมอ / แท็กซี่ / ต้นทุน / **รายได้ร้าน**.
+- 4-stat grid → รายได้รวม (เก็บได้) / จ่ายหมอ / เฉลี่ยต่องาน / ยกเลิก.
+- Daily trend (รายได้รายวัน · ยอดเก็บรายวัน · สูงสุด), breakdown cards
+  (แยกตามหมอ · หมอทำเงินสูงสุด / แยกตามบริการ · สัดส่วนบริการ), range toggles
+  (วันนี้ / 7 วัน / 30 วัน / 12 เดือน / กำหนดเอง), date pickers (ตั้งแต่/ถึง),
+  filter "All …" options, empty states, and the **PDF export** tiles + table
+  headers all Thai now. CSV headers left English (spreadsheet columns).
+
+Behaviour/math unchanged — labels only. tsc=0 + build clean (55 routes),
+deployed; grep confirms "รายได้ของร้าน (สุทธิ)" present and **zero** "Shop net"
+in the live earnings chunk.
