@@ -393,28 +393,32 @@ const AdminEarningsPage: React.FC = () => {
     [stats.byDay, trendDates]
   );
 
-  // ── 🆕 Round 28s312 (founder: "Payout tracker / Paid history เปลี่ยนเป็น
-  //   รายได้ของร้าน · โชว์เป็นเดือน · งานต่องาน") ─────────────────────────
-  //   Replaced the weekly therapist-payout tracker + monthly paid archive
-  //   with a monthly SHOP-REVENUE ledger: pick a month, see every completed
-  //   job in it and what the shop earned from each, plus the month totals.
-  //   Uses the SAME tier math as `stats`, so the month's shop total equals
-  //   the calculator's shop-gross over that window.
-  const [revenueMonth, setRevenueMonth] = useState<Dayjs>(() => dayjs().startOf("month"));
-  const [monthBookings, setMonthBookings] = useState<BookingRow[]>([]);
-  const [monthLoading, setMonthLoading] = useState(true);
+  // ── 🆕 Round 28s316 (founder: "period comparison") — previous equal-length
+  //   window, so every headline number can show a ▲/▼ delta vs the period
+  //   before. Same date math the main feed uses, shifted back one span, with
+  //   the same therapist/service filters applied for a like-for-like compare.
+  const prevWindow = useMemo(() => {
+    if (range === "custom") {
+      const span = customEnd.endOf("day").diff(customStart.startOf("day"), "day") + 1;
+      const end = customStart.startOf("day").subtract(1, "day").endOf("day");
+      const start = end.subtract(span - 1, "day").startOf("day");
+      return { start, end };
+    }
+    const cur = rangeStart(range);
+    if (range === "today") return { start: cur.subtract(1, "day"), end: cur.subtract(1, "millisecond") };
+    if (range === "week") return { start: cur.subtract(7, "day"), end: cur.subtract(1, "millisecond") };
+    if (range === "month") return { start: cur.subtract(30, "day"), end: cur.subtract(1, "millisecond") };
+    return { start: cur.subtract(12, "month"), end: cur.subtract(1, "millisecond") };
+  }, [range, customStart, customEnd]);
 
-  const revenueMonthEnd = useMemo(() => revenueMonth.add(1, "month"), [revenueMonth]);
-
-  // Bookings created within the selected calendar month.
+  const [prevBookings, setPrevBookings] = useState<BookingRow[]>([]);
   useEffect(() => {
-    setMonthLoading(true);
-    const s = Timestamp.fromDate(revenueMonth.toDate());
-    const e = Timestamp.fromDate(revenueMonthEnd.toDate());
+    const s = Timestamp.fromDate(prevWindow.start.toDate());
+    const e = Timestamp.fromDate(prevWindow.end.toDate());
     const q = query(
       collection(db, "bookings"),
       where("createdAt", ">=", s),
-      where("createdAt", "<", e)
+      where("createdAt", "<=", e)
     );
     const unsub = onSnapshot(
       q,
@@ -436,73 +440,45 @@ const AdminEarningsPage: React.FC = () => {
             createdAt: d.createdAt ?? null,
             discountAmount: d.discountAmount ?? null,
             discountCode: d.discountCode ?? null,
-            customerName: d.customerName ?? d.name ?? null,
           });
         });
-        setMonthBookings(arr);
-        setMonthLoading(false);
+        setPrevBookings(arr);
       },
-      (err) => {
-        console.error("[revenue] month snapshot error:", err);
-        setMonthLoading(false);
-      }
+      () => setPrevBookings([])
     );
     return () => unsub();
-  }, [revenueMonth, revenueMonthEnd]);
+  }, [prevWindow]);
 
-  // Per-job shop revenue for the selected month. The shop keeps what the
-  // customer paid MINUS the therapist's cut MINUS taxi (taxi is a
-  // pass-through to the driver, so it nets to zero for the shop). Same
-  // tier + discounted-base math as `stats`, so the month total reconciles
-  // with the calculator's shop-gross for the same window.
-  const monthRevenue = useMemo(() => {
-    const jobs: {
-      id: string;
-      date: Dayjs | null;
-      service: string;
-      therapist: string;
-      customer: string | null;
-      collected: number;
-      payout: number;
-      taxi: number;
-      shop: number;
-    }[] = [];
-    let shopTotal = 0;
-    let grossTotal = 0;
-    let payoutTotal = 0;
-    let cancelledCount = 0;
-
-    for (const b of monthBookings) {
-      if (b.status && EXCLUDED_STATUSES.has(b.status)) {
-        cancelledCount += 1;
-        continue;
-      }
+  // Shop-net + gross for the previous window (same tier math, same filters),
+  // so the hero can show the growth delta.
+  const prevStats = useMemo(() => {
+    let collected = 0;
+    let payout = 0;
+    let taxi = 0;
+    let costs = 0;
+    let jobs = 0;
+    for (const b of prevBookings) {
+      if (b.status && EXCLUDED_STATUSES.has(b.status)) continue;
+      if (therapistFilter !== "__ALL__" && b.therapistId !== therapistFilter) continue;
+      if (serviceFilter !== "__ALL__" && (b.serviceId ?? b.serviceName) !== serviceFilter) continue;
       const service = b.servicePrice ?? 0;
-      const taxi = b.taxiFee ?? 0;
-      const collected = b.totalPrice ?? service + taxi;
+      const t = b.taxiFee ?? 0;
+      const c = b.totalPrice ?? service + t;
       const discount = b.discountAmount ?? 0;
-      const tPct = therapistPctFor(b.serviceId);
-      const payout = Math.round(Math.max(0, service - discount) * tPct);
-      const shop = collected - payout - taxi; // what the shop keeps
-      jobs.push({
-        id: b.id,
-        date: b.createdAt?.toDate ? dayjs(b.createdAt.toDate()) : null,
-        service: getServiceLabel(b.serviceId, b.serviceName),
-        therapist: b.therapistName ?? "—",
-        customer: b.customerName ?? null,
-        collected,
-        payout,
-        taxi,
-        shop,
-      });
-      shopTotal += shop;
-      grossTotal += collected;
-      payoutTotal += payout;
+      const p = Math.round(Math.max(0, service - discount) * therapistPctFor(b.serviceId));
+      collected += c;
+      payout += p;
+      taxi += t;
+      costs += COST_PER_BOOKING_THB.supplies + COST_PER_BOOKING_THB.ops + COST_PER_BOOKING_THB.payment;
+      jobs += 1;
     }
-    // newest job first
-    jobs.sort((a, b) => (b.date ? b.date.valueOf() : 0) - (a.date ? a.date.valueOf() : 0));
-    return { jobs, shopTotal, grossTotal, payoutTotal, cancelledCount };
-  }, [monthBookings]);
+    return {
+      shopNet: collected - payout - taxi - costs,
+      totalCollected: collected,
+      totalTherapistPayout: payout,
+      countCompleted: jobs,
+    };
+  }, [prevBookings, therapistFilter, serviceFilter]);
 
   const handleExportCSV = () => {
     const headers = [
@@ -596,7 +572,7 @@ const AdminEarningsPage: React.FC = () => {
               marginTop: "4px",
             }}
           >
-            Live booking revenue · 60/40 therapist-shop split ·
+            Live booking revenue · tier-based therapist split ·
             excludes cancelled / refunded
           </Typography>
         </Box>
@@ -692,131 +668,6 @@ const AdminEarningsPage: React.FC = () => {
         )}
       </Box>
 
-      {/* 🆕 Round 28s312 (founder: "Payout tracker / Paid history เปลี่ยนเป็น
-          รายได้ของร้าน · โชว์เป็นเดือน · งานต่องาน") — monthly shop-revenue
-          ledger, job by job. Replaced the weekly payout tracker + paid
-          archive. */}
-      <Box
-        sx={{
-          mb: 3, borderRadius: "16px", background: adminColor.panel,
-          border: `1px solid ${adminColor.line}`, p: "18px 20px",
-        }}
-      >
-        {/* header + month nav */}
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1, mb: 1.5 }}>
-          <Box>
-            <Typography sx={{ fontFamily: adminFont.serif, fontSize: 17, fontWeight: 600, color: adminColor.text }}>
-              รายได้ของร้าน
-            </Typography>
-            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted, mt: 0.25 }}>
-              {revenueMonth.format("MMMM YYYY")} · ราคาบริการหักส่วนแบ่งหมอนวด (ไม่รวมค่าเดินทาง)
-            </Typography>
-          </Box>
-          <Box sx={{ display: "flex", gap: 0.75 }}>
-            <Button
-              size="small"
-              onClick={() => setRevenueMonth((m) => m.subtract(1, "month"))}
-              sx={{ minWidth: 0, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: "8px", textTransform: "none" }}
-            >
-              ← ก่อน
-            </Button>
-            <Button
-              size="small"
-              disabled={revenueMonth.isSame(dayjs().startOf("month"), "month")}
-              onClick={() => setRevenueMonth(dayjs().startOf("month"))}
-              sx={{ minWidth: 0, color: adminColor.highlight, border: `1px solid ${adminColor.line2}`, borderRadius: "8px", textTransform: "none" }}
-            >
-              เดือนนี้
-            </Button>
-            <Button
-              size="small"
-              disabled={revenueMonthEnd.isAfter(dayjs())}
-              onClick={() => setRevenueMonth((m) => m.add(1, "month"))}
-              sx={{ minWidth: 0, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: "8px", textTransform: "none" }}
-            >
-              ถัดไป →
-            </Button>
-          </Box>
-        </Box>
-
-        {monthLoading ? (
-          <Box sx={{ py: 3, textAlign: "center" }}>
-            <CircularProgress size={22} sx={{ color: adminColor.accent }} />
-          </Box>
-        ) : monthRevenue.jobs.length === 0 ? (
-          <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.dim }}>
-            ไม่มีงานในเดือนนี้
-            {monthRevenue.cancelledCount > 0 ? ` (ยกเลิก ${monthRevenue.cancelledCount} งาน)` : ""}
-          </Typography>
-        ) : (
-          <>
-            {/* month summary — the shop's take is the headline number */}
-            <Box
-              sx={{
-                display: "flex", flexWrap: "wrap", gap: 2, alignItems: "baseline",
-                mb: 1.5, pb: 1.5, borderBottom: `1px solid ${adminColor.line}`,
-              }}
-            >
-              <Box>
-                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.06em", color: adminColor.muted, fontWeight: 700 }}>
-                  ร้านได้เดือนนี้
-                </Typography>
-                <Typography sx={{ ...adminFigureSx, fontSize: 26, color: adminColor.text, lineHeight: 1.1 }}>
-                  {formatTHB(monthRevenue.shopTotal)}
-                </Typography>
-              </Box>
-              <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted }}>
-                {monthRevenue.jobs.length} งาน · ลูกค้าจ่าย {formatTHB(monthRevenue.grossTotal)} · หมอนวดได้ {formatTHB(monthRevenue.payoutTotal)}
-                {monthRevenue.cancelledCount > 0 && ` · ยกเลิก ${monthRevenue.cancelledCount}`}
-              </Typography>
-            </Box>
-
-            {/* job-by-job list */}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
-              {monthRevenue.jobs.map((j) => (
-                <Box
-                  key={j.id}
-                  sx={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5,
-                    p: "10px 12px", borderRadius: "12px",
-                    background: adminColor.panel2, border: `1px solid ${adminColor.line}`,
-                  }}
-                >
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography
-                      sx={{
-                        fontFamily: SANS, fontSize: 13.5, fontWeight: 700, color: adminColor.text,
-                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                      }}
-                    >
-                      {j.service}
-                      {j.customer && (
-                        <Box component="span" sx={{ fontWeight: 400, color: adminColor.muted }}>
-                          {" · "}{j.customer}
-                        </Box>
-                      )}
-                    </Typography>
-                    <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.muted }}>
-                      {j.date ? j.date.format("D MMM · HH:mm") : "—"} · {j.therapist}
-                      {" · "}ลูกค้าจ่าย {formatTHB(j.collected)} · หมอนวด {formatTHB(j.payout)}
-                      {j.taxi > 0 && ` · เดินทาง ${formatTHB(j.taxi)}`}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ textAlign: "right", flexShrink: 0 }}>
-                    <Typography sx={{ ...adminFigureSx, fontSize: 14.5, color: adminColor.highlight, lineHeight: 1.1 }}>
-                      {formatTHB(j.shop)}
-                    </Typography>
-                    <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim }}>
-                      ร้านได้
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-          </>
-        )}
-      </Box>
-
       {loading ? (
         <Box sx={{ textAlign: "center", py: 6 }}>
           <CircularProgress size={28} sx={{ color: adminColor.accent }} />
@@ -851,6 +702,13 @@ const AdminEarningsPage: React.FC = () => {
                   of {formatTHB(stats.totalCollected)} collected · {stats.countCompleted} bookings
                   {stats.totalDiscountAbsorbed > 0 && ` · promo absorbed ${formatTHB(stats.totalDiscountAbsorbed)} (shared)`}
                 </Typography>
+                {/* 🆕 Round 28s316 — growth vs the previous equal-length period */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 0.75 }}>
+                  <Delta cur={stats.shopNet} prev={prevStats.shopNet} />
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.dim }}>
+                    vs ก่อนหน้า ({formatTHB(prevStats.shopNet)})
+                  </Typography>
+                </Box>
               </Box>
               <DonutRing
                 percent={stats.totalCollected > 0 ? Math.round((Math.max(0, stats.shopNet) / stats.totalCollected) * 100) : 0}
@@ -903,10 +761,10 @@ const AdminEarningsPage: React.FC = () => {
           <Card>
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4,1fr)" }, gap: 2 }}>
               {[
-                { icon: <ChartBar   size={20} weight="duotone" />, label: "Gross revenue",    value: formatTHB(stats.totalGross), sub: `${stats.countCompleted} bookings`, color: adminColor.accent },
-                { icon: <UserCircle size={20} weight="duotone" />, label: "Therapist payout", value: formatTHB(stats.totalTherapistPayout), sub: stats.totalDiscountAbsorbed > 0 ? "tier split · post-discount" : "tier-aware split", color: adminColor.green },
-                { icon: <Receipt    size={20} weight="duotone" />, label: "Avg per booking",  value: formatTHB(stats.countCompleted ? Math.round(stats.totalGross / stats.countCompleted) : 0), sub: "gross / completed", color: adminColor.highlight },
-                { icon: <XCircle    size={20} weight="duotone" />, label: "Cancelled",        value: String(stats.countCancelled), sub: "excluded from totals", color: adminColor.red },
+                { icon: <ChartBar   size={20} weight="duotone" />, label: "Gross revenue",    value: formatTHB(stats.totalGross), sub: `${stats.countCompleted} bookings`, color: adminColor.accent, delta: <Delta cur={stats.totalGross} prev={prevStats.totalCollected} /> },
+                { icon: <UserCircle size={20} weight="duotone" />, label: "Therapist payout", value: formatTHB(stats.totalTherapistPayout), sub: stats.totalDiscountAbsorbed > 0 ? "tier split · post-discount" : "tier-aware split", color: adminColor.green, delta: <Delta cur={stats.totalTherapistPayout} prev={prevStats.totalTherapistPayout} neutral /> },
+                { icon: <Receipt    size={20} weight="duotone" />, label: "Avg per booking",  value: formatTHB(stats.countCompleted ? Math.round(stats.totalGross / stats.countCompleted) : 0), sub: "gross / completed", color: adminColor.highlight, delta: null },
+                { icon: <XCircle    size={20} weight="duotone" />, label: "Cancelled",        value: String(stats.countCancelled), sub: "excluded from totals", color: adminColor.red, delta: null },
               ].map((c) => (
                 <Box key={c.label} sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 0.75 }}>
                   <Box
@@ -918,9 +776,12 @@ const AdminEarningsPage: React.FC = () => {
                   >
                     {c.icon}
                   </Box>
-                  <Typography sx={{ ...adminFigureSx, fontSize: 16, color: adminColor.text, lineHeight: 1 }}>
-                    {c.value}
-                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
+                    <Typography sx={{ ...adminFigureSx, fontSize: 16, color: adminColor.text, lineHeight: 1 }}>
+                      {c.value}
+                    </Typography>
+                    {c.delta}
+                  </Box>
                   <Box>
                     <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                       {c.label}
@@ -1087,6 +948,29 @@ const AdminEarningsPage: React.FC = () => {
 };
 
 // ─── Subcomponents ─────────────────────────────────────────────────────
+
+// 🆕 Round 28s316 — period-over-period delta chip. Green up / red down for
+// "more is better" metrics (revenue); pass neutral for informational ones
+// (e.g. therapist payout) so the arrow shows direction without a value
+// judgment. Renders nothing when there's no prior baseline to compare against.
+const Delta: React.FC<{ cur: number; prev: number; neutral?: boolean }> = ({ cur, prev, neutral }) => {
+  if (prev <= 0 && cur <= 0) return null;
+  const pct = prev > 0 ? Math.round(((cur - prev) / prev) * 100) : cur > 0 ? 100 : 0;
+  const up = cur >= prev;
+  const color = neutral ? adminColor.muted : up ? adminColor.green : adminColor.red;
+  return (
+    <Box
+      component="span"
+      sx={{
+        display: "inline-flex", alignItems: "center", gap: "2px",
+        fontFamily: SANS, fontSize: 11, fontWeight: 700, color,
+        fontVariantNumeric: "tabular-nums",
+      }}
+    >
+      {up ? "▲" : "▼"} {Math.abs(pct)}%
+    </Box>
+  );
+};
 
 const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <Box
