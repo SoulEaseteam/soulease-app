@@ -1911,6 +1911,34 @@ squeezed row, worse at browser zoom), and the stat pills wrapped unevenly
   subline, amount+status stacked right-aligned in their own column, row
   min-height + vertical centering — no clipping/crowding at any zoom.
 
+### 🆕 2026-07-07 — hotfix: audit-log white-screen crash (28s295)
+
+Founder screenshot right after 28s294 shipped: `/admin/audit-log` fully
+white-screened with "Cannot read properties of undefined (reading
+'split')". Root cause: 28s294's new `categoryOf(action)` called
+`action.split(".")` unconditionally, and `categoryOptions` runs it
+eagerly over EVERY loaded row before any filtering happens. A real doc
+in `auditLogs` has an `action` that isn't a string — almost certainly a
+legacy/malformed entry predating `logAdminAction` (this file's own
+28s234 comment notes the collection was originally meant to be
+"populated by Cloud Functions only," so an old function-written doc with
+a different shape is the likely source). One bad doc crashed the entire
+page for everyone, immediately, with no way to filter it out since the
+crash happened before rendering.
+
+**Lesson:** `as AuditRow` is a compile-time assertion, not a runtime
+guarantee — Firestore data doesn't enforce the TypeScript shape. Any
+`.map()`/`.filter()` that runs eagerly over live Firestore rows (not
+lazily, only on access) needs to tolerate a doc that doesn't match.
+Hardened `categoryOf` (`typeof action === "string"` check, falls back to
+an "other" category) and both `ACTION_LABEL[r.action]` lookups (falls
+back to a Thai "ไม่ทราบประเภท" label instead of literally rendering
+`undefined`).
+
+Verified live: curled the deployed chunk and grep-confirmed the
+`typeof … === "string"` guard, the fallback label, and the "other"
+category are present in production.
+
 ### 🆕 2026-07-07 — admin/audit-log: search + filters (28s294)
 
 Founder: "admin/audit-log ปรับแก้ และ ตกแต่งสวยงาม แนะนำ ที่ใช้ได้จริง".
