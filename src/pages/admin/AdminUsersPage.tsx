@@ -34,6 +34,7 @@ import {
 import { toast } from "react-toastify";
 import { Crown, Warning, MagnifyingGlass, UsersThree, Repeat, CurrencyCircleDollar } from "phosphor-react";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
+import { countryFromPhone, type PhoneCountry } from "@/utils/phoneCountry";
 
 const SANS = adminFont.sans;
 
@@ -60,6 +61,7 @@ interface BookingLite {
 
 interface CustomerInsight {
   phone: string;        // normalized display key
+  country: PhoneCountry | null; // resolved from the original phone's dial code
   name: string;
   orders: number;       // all bookings placed (incl. cancelled)
   served: number;       // actually-delivered (completed/done) — the VIP basis
@@ -180,6 +182,10 @@ const AdminUsersPage: React.FC = () => {
           if (!byPhone[phone]) {
             byPhone[phone] = {
               phone,
+              // 🆕 Round 28s287 — detect country from the ORIGINAL phone
+              //   (raw still has its +66/+86/… dial code; the normalized
+              //   key has dropped it for Thai numbers).
+              country: countryFromPhone(raw),
               name: b.contactName || b.customerName || phone,
               orders: 0, served: 0, noShowCount: 0, totalSpent: 0, lastVisit: null, bookings: [],
             };
@@ -369,6 +375,18 @@ const AdminUsersPage: React.FC = () => {
       ),
     },
     {
+      // 🆕 Round 28s287 — country from the dial code (tourist-heavy business,
+      //   so knowing the caller's country helps language/therapist match).
+      field: "country", headerName: "Country", flex: 0.7,
+      valueGetter: (_v, row) => row.country?.name ?? "",
+      renderCell: (p) => p.row.country ? (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, height: "100%" }}>
+          <span style={{ fontSize: 15 }}>{p.row.country.flag}</span>
+          <span>{p.row.country.code}</span>
+        </Box>
+      ) : <span style={{ color: adminColor.dim }}>—</span>,
+    },
+    {
       field: "served", headerName: "Visits", flex: 0.6, type: "number",
       description: "จำนวนครั้งที่มารับบริการจริง (completed) — เกณฑ์ VIP",
       renderCell: (p) => <span style={{ ...(adminFigureSx as object), fontWeight: 700 }}>{p.row.served}</span>,
@@ -499,7 +517,12 @@ const AdminUsersPage: React.FC = () => {
                 {selectedGuest.served >= VIP_THRESHOLD && <Crown size={18} weight="fill" color={adminColor.amber} />}
                 <Typography sx={{ fontFamily: adminFont.serif, fontSize: 20, fontWeight: 700, color: adminColor.text }}>{selectedGuest.name}</Typography>
               </Box>
-              <a href={`tel:${selectedGuest.phone}`} style={{ color: adminColor.accent, textDecoration: "none", fontWeight: 600, fontSize: 13 }}>{selectedGuest.phone}</a>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <a href={`tel:${selectedGuest.phone}`} style={{ color: adminColor.accent, textDecoration: "none", fontWeight: 600, fontSize: 13 }}>{selectedGuest.phone}</a>
+                {selectedGuest.country && (
+                  <Typography sx={{ fontSize: 12.5, color: adminColor.muted }}>{selectedGuest.country.flag} {selectedGuest.country.name}</Typography>
+                )}
+              </Box>
             </DialogTitle>
             <DialogContent>
               {/* stat pills */}
