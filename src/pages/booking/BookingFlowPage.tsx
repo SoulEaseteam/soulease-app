@@ -1005,7 +1005,13 @@ const BookingFlowPage: React.FC = () => {
         addonsTotal,
         note: form.notes,
         // 🆕 Round 13: discount code (admin verifies + applies after booking)
-        discountCode: form.discountCode || null,
+        // 🆕 Round 28s299 — when the code is VALID, store its canonical
+        //   uppercased form (discount.code), not the raw-cased user
+        //   input, so the redemption-cap count query (which matches on
+        //   the uppercase code) and the Promotions usage stats can't
+        //   miss a booking on a case mismatch. Invalid/absent → keep raw
+        //   input (or null) so admin can still see what was typed.
+        discountCode: discount.valid ? discount.code : (form.discountCode || null),
         // 🆕 Round 28r14 — Discount apply logic: store the validated
         //   amount + label on the booking doc so historical bookings
         //   stay reconstructable even if the FIRST10 / referral code
