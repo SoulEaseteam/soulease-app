@@ -3303,3 +3303,23 @@ Verified: tsc + build clean, 55 routes prerender, isolated logic test
 PASS (attribution / direct fallback / consume read-clear / prop shape),
 live checks pass (home 200, district title served, `sunred.landing.area`
 in main bundle, card string in analytics chunk).
+
+### 🆕 2026-07-07 — Wage slip: per-job service detail (28s305)
+
+Founder opened a therapist payslip on `/admin/reports` and asked to show
+the service details ("ดูสลิป บอกรายละเอียดบริการ"). The slip modal
+(`AdminReportPage.tsx`, bill-preview Dialog) only listed aggregate rows
+(ค่าบริการรวม / Taxi รวม / ร้านได้ / จ่ายนวด / ยกเลิก) — no per-job
+breakdown, so a therapist couldn't see WHICH jobs made up the pay.
+
+Added a **"รายการงาน"** list to the modal, sourced from
+`preview.bookings` (the exact per-job data the Excel export's `buildSheet`
+already itemises). Each row: service name · date · Taxi/ลด notes on the
+left; **payout per job** (`therapistPayoutFor(b)`) + "จาก ฿servicePrice"
+on the right; cancelled/excluded jobs (`isPayrollExcluded`) greyed with a
+ยกเลิก tag. Sorted oldest→newest.
+
+Display-only — reuses the same commission functions the summary loop
+uses, so the per-job payouts sum to the slip's จ่ายนวด by construction.
+No logic / export / data / rules change. Verified tsc + build clean, 55
+routes prerender, live string in `AdminReportPage-*.js`.
