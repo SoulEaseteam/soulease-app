@@ -280,6 +280,39 @@ const EMPTY_FORM: FormState = {
   credentials: [], gallery: [], bios: {},
 };
 
+// 🆕 Round 28s281 — resize an image file in-browser to a max long edge,
+// re-encode as JPEG. Falls back to the original file if anything about the
+// canvas path fails (e.g. exotic format). Keeps uploads small + fast.
+async function downscaleImage(file: File, maxEdge = 1600, quality = 0.85): Promise<Blob> {
+  try {
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const img: HTMLImageElement = await new Promise((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = reject;
+      im.src = dataUrl;
+    });
+    const scale = Math.min(1, maxEdge / Math.max(img.width, img.height));
+    const w = Math.round(img.width * scale);
+    const h = Math.round(img.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(img, 0, 0, w, h);
+    const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+    return blob ?? file;
+  } catch {
+    return file;
+  }
+}
+
 function toFormState(data: Record<string, unknown>): FormState {
   const rawOverride = data.statusOverride;
   const statusOverride: StatusOverride =
@@ -590,9 +623,13 @@ const AdminTherapistDetailPage: React.FC = () => {
       const urls: string[] = [];
       for (const file of picked) {
         if (!file.type.startsWith("image/")) { setUploading((n) => Math.max(0, n - 1)); continue; }
-        const safeName = file.name.replace(/[^\w.\-]/g, "_");
-        const path = `therapists/${docId}/gallery/${dayjs().valueOf()}-${safeName}`;
-        const snap = await uploadBytes(ref(storage, path), file, { contentType: file.type });
+        // 🆕 Round 28s281 — downscale in the browser BEFORE upload: a raw
+        // phone photo is often 5-12MB (some 48MP shots exceed the rule's
+        // cap); resizing to ~1600px / JPEG 0.85 lands well under 500KB,
+        // uploads fast on mobile data, and stores web-optimized images.
+        const blob = await downscaleImage(file);
+        const path = `therapists/${docId}/gallery/${dayjs().valueOf()}-${Math.round((blob.size % 100000))}.jpg`;
+        const snap = await uploadBytes(ref(storage, path), blob, { contentType: "image/jpeg" });
         urls.push(await getDownloadURL(snap.ref));
         setUploading((n) => Math.max(0, n - 1));
       }
@@ -602,9 +639,9 @@ const AdminTherapistDetailPage: React.FC = () => {
       const msg = String((err as { code?: string })?.code ?? err ?? "");
       setUploadError(
         msg.includes("unauthorized") || msg.includes("unauthenticated")
-          ? "อัปโหลดไม่ได้ — สิทธิ์ไม่พอ (ตรวจสอบว่าเปิด Firebase Storage + deploy storage.rules แล้ว)"
+          ? "อัปโหลดไม่ได้ — สิทธิ์ไม่พอ (ยังไม่ได้ล็อกอิน หรือ storage.rules ยังไม่อัปเดต)"
           : msg.includes("storage/unknown") || msg.includes("does not exist") || msg.includes("app/no-app")
-            ? "ยังเปิด Firebase Storage ไม่ได้ในโปรเจกต์ — ต้องกด Get Started ในคอนโซลก่อน (ดู CLAUDE.md 28s280)"
+            ? "ยังเปิด Firebase Storage ไม่ได้ในโปรเจกต์ — ต้องกด Get Started ในคอนโซลก่อน"
             : "อัปโหลดรูปไม่สำเร็จ ลองใหม่อีกครั้ง (หรือใส่ลิงก์รูปด้านล่างแทน)"
       );
     } finally {

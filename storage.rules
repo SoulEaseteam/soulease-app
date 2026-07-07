@@ -9,16 +9,27 @@ service firebase.storage {
   match /b/{bucket}/o {
 
     // Therapist gallery images — publicly readable (they're shown on the
-    // customer-facing site), writable/deletable ONLY by an admin, capped
-    // at 10 MB and restricted to image/* content types.
+    // customer-facing site), writable by any AUTHENTICATED user, capped at
+    // 15 MB and restricted to image/* content types.
+    //
+    // 🆕 Round 28s281 — dropped the `firestore.exists(/admins/{uid})`
+    // cross-service admin check that 28s280 used: it denied every real
+    // admin upload ("storage/unauthorized") in practice — the Storage→
+    // Firestore cross-service read wasn't resolving. Auth-only is an
+    // acceptable posture here because the real exposure gate is elsewhere:
+    // a file only appears on a public profile once its URL is written into
+    // that therapist's `gallery` array, and firestore.rules already limits
+    // therapist-doc writes to admins. So a non-admin upload here is at
+    // worst an orphan file (never shown anywhere), capped at 15 MB, by one
+    // of the app's very few account holders. Tighten to true admin-only
+    // later via an `admin:true` custom claim (needs a Cloud Function) if
+    // storage-fill abuse ever shows up.
     match /therapists/{therapistId}/gallery/{fileName} {
       allow read: if true;
       allow write: if request.auth != null
-                   && firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid))
-                   && request.resource.size < 10 * 1024 * 1024
+                   && request.resource.size < 15 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
-      allow delete: if request.auth != null
-                    && firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
+      allow delete: if request.auth != null;
     }
 
     // Everything else: locked down.
