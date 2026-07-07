@@ -207,8 +207,11 @@ const AdminReportPage: React.FC = () => {
         }}
       >
         <Box>
-          <Typography sx={{ fontFamily: SERIF, fontSize: { xs: 22, md: 26 }, fontWeight: 600, color: adminColor.text, letterSpacing: "-0.01em" }}>
+          <Typography sx={{ fontFamily: SERIF, fontSize: { xs: 22, md: 26 }, fontWeight: 600, color: adminColor.text, letterSpacing: "-0.01em", lineHeight: 1 }}>
             Reports
+          </Typography>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.4, letterSpacing: "0.02em" }}>
+            รายงาน
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 0.4 }}>
             <CalendarBlank size={12} color={adminColor.dim} />
@@ -226,7 +229,7 @@ const AdminReportPage: React.FC = () => {
               color: adminColor.text, fontFamily: SANS, fontSize: 13, fontWeight: 600, cursor: "pointer",
             }}
           >
-            <Table size={14} /> ตาราง
+            <Table size={14} /> Table · ตาราง
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.93 }}
@@ -238,7 +241,7 @@ const AdminReportPage: React.FC = () => {
               color: "#fff", fontFamily: SANS, fontSize: 13, fontWeight: 700, cursor: "pointer",
             }}
           >
-            <Export size={14} /> Export All
+            <Export size={14} /> Download Excel · ทั้งหมด
           </motion.button>
         </Box>
       </Box>
@@ -256,14 +259,14 @@ const AdminReportPage: React.FC = () => {
         }}
       >
         <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <DatePicker label="From" value={start} onChange={(v) => v && setStart(v)}
-            slotProps={{ textField: { size: "small", sx: { width: 135 } } }} />
-          <DatePicker label="To"   value={end}   onChange={(v) => v && setEnd(v)}
-            slotProps={{ textField: { size: "small", sx: { width: 135 } } }} />
+          <DatePicker label="From · ตั้งแต่" value={start} onChange={(v) => v && setStart(v)}
+            slotProps={{ textField: { size: "small", sx: { width: 160 } } }} />
+          <DatePicker label="To · ถึง"   value={end}   onChange={(v) => v && setEnd(v)}
+            slotProps={{ textField: { size: "small", sx: { width: 160 } } }} />
         </LocalizationProvider>
-        <Select size="small" value={filter} onChange={(e) => setFilter(e.target.value)} sx={{ minWidth: 160, fontSize: 13 }}
+        <Select size="small" value={filter} onChange={(e) => setFilter(e.target.value)} sx={{ minWidth: 200, fontSize: 13 }}
           MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}>
-          <MenuItem value="__ALL__">All therapists</MenuItem>
+          <MenuItem value="__ALL__">All Therapists · หมอทุกคน</MenuItem>
           {summaries.map((s) => <MenuItem key={s.key} value={s.key}>{s.name}</MenuItem>)}
         </Select>
         {loading && <CircularProgress size={16} sx={{ color: adminColor.accent }} />}
@@ -274,15 +277,18 @@ const AdminReportPage: React.FC = () => {
         {/* ── period totals ────────────────────────────────────────────── */}
         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(4,1fr)" }, gap: 1.25 }}>
           {[
-            { icon: <User      size={16} weight="duotone" />, label: "Pay Workers",  value: thb(totals.worker), accent: true  },
-            { icon: <Buildings size={16} weight="duotone" />, label: "Shop Share",    value: thb(totals.shop),   accent: false },
-            { icon: <Taxi      size={16} weight="duotone" />, label: "Taxi",          value: thb(totals.taxi),   accent: false },
-            { icon: <CalendarBlank size={16} weight="duotone" />, label: "Jobs Done", value: String(totals.jobs), accent: false },
+            { icon: <User      size={16} weight="duotone" />, en: "Paid to Therapist", th: "จ่ายนวด",       value: thb(totals.worker), accent: true  },
+            { icon: <Buildings size={16} weight="duotone" />, en: "Shop Take",         th: "ร้านได้",       value: thb(totals.shop),   accent: false },
+            { icon: <Taxi      size={16} weight="duotone" />, en: "Total Taxi",        th: "ค่าเดินทาง",    value: thb(totals.taxi),   accent: false },
+            { icon: <CalendarBlank size={16} weight="duotone" />, en: "Jobs Done",     th: "จำนวนงาน",     value: String(totals.jobs), accent: false },
           ].map((c) => (
-            <Box key={c.label} sx={{ borderRadius: "14px", background: c.accent ? adminColor.accent : adminColor.panel, border: c.accent ? "none" : `1px solid ${adminColor.line}`, p: "14px 16px", boxShadow: c.accent ? "0 6px 16px rgba(78,126,140,0.25)" : "0 1px 2px rgba(31,41,51,0.04)" }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.75, color: c.accent ? "rgba(255,255,255,0.85)" : adminColor.muted }}>
+            <Box key={c.en} sx={{ borderRadius: "14px", background: c.accent ? adminColor.accent : adminColor.panel, border: c.accent ? "none" : `1px solid ${adminColor.line}`, p: "14px 16px", boxShadow: c.accent ? "0 6px 16px rgba(78,126,140,0.25)" : "0 1px 2px rgba(31,41,51,0.04)" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.5, color: c.accent ? "rgba(255,255,255,0.85)" : adminColor.muted }}>
                 {c.icon}
-                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "inherit" }}>{c.label}</Typography>
+                <Box>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "inherit", lineHeight: 1 }}>{c.en}</Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 9, color: c.accent ? "rgba(255,255,255,0.7)" : adminColor.dim, mt: 0.2 }}>{c.th}</Typography>
+                </Box>
               </Box>
               <Typography sx={{ ...adminFigureSx, fontSize: 20, color: c.accent ? "#fff" : adminColor.text, lineHeight: 1 }}>
                 {c.value}
@@ -292,13 +298,18 @@ const AdminReportPage: React.FC = () => {
         </Box>
 
         {/* ── per-therapist pay cards ─────────────────────────────────── */}
-        <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-          Pay per therapist — {visible.length} staff
-        </Typography>
+        <Box>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1 }}>
+            Pay per Therapist — {visible.length} Staff
+          </Typography>
+          <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.2 }}>
+            ค่าแรงหมอนวด · {visible.length} คน
+          </Typography>
+        </Box>
 
         {visible.length === 0 && !loading && (
           <Box sx={{ textAlign: "center", py: 6 }}>
-            <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.dim }}>No bookings in this period</Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.dim }}>No data yet · ยังไม่มีข้อมูล</Typography>
           </Box>
         )}
 
@@ -317,12 +328,12 @@ const AdminReportPage: React.FC = () => {
                   <Box sx={{ display: "flex", gap: 0.75 }}>
                     <Box sx={{ px: "9px", py: "3px", borderRadius: 999, background: `${adminColor.green}1A`, display: "flex", alignItems: "center", gap: 0.4 }}>
                       <CheckCircle size={11} color={adminColor.green} weight="fill" />
-                      <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.green }}>{s.jobs} งาน</Typography>
+                      <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.green }}>{s.jobs} jobs</Typography>
                     </Box>
                     {s.cancelled > 0 && (
                       <Box sx={{ px: "9px", py: "3px", borderRadius: 999, background: adminColor.panel2, display: "flex", alignItems: "center", gap: 0.4 }}>
                         <XCircle size={11} color={adminColor.dim} />
-                        <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.dim }}>{s.cancelled} ยกเลิก</Typography>
+                        <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.dim }}>{s.cancelled} cancelled</Typography>
                       </Box>
                     )}
                   </Box>
@@ -331,14 +342,17 @@ const AdminReportPage: React.FC = () => {
                 {/* money breakdown */}
                 <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 0.5, p: "10px 12px", borderRadius: "12px", background: adminColor.panel2, mb: 1.5 }}>
                   {[
-                    { label: "รับทั้งหมด", value: thb(s.serviceTotal), highlight: false },
-                    { label: "Taxi",       value: thb(s.taxiTotal),    highlight: false },
-                    { label: "ส่วนร้าน",   value: thb(s.shop),         highlight: false },
-                    { label: "จ่ายนวด",    value: thb(s.worker),       highlight: true  },
+                    { en: "Gross Service", th: "รับทั้งหมด", value: thb(s.serviceTotal), highlight: false },
+                    { en: "Total Taxi",    th: "เดินทาง",    value: thb(s.taxiTotal),    highlight: false },
+                    { en: "Shop Take",     th: "ส่วนร้าน",    value: thb(s.shop),         highlight: false },
+                    { en: "Paid",          th: "จ่ายนวด",    value: thb(s.worker),       highlight: true  },
                   ].map((c) => (
-                    <Box key={c.label} sx={{ textAlign: "center" }}>
-                      <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.05em", textTransform: "uppercase", mb: 0.3 }}>
-                        {c.label}
+                    <Box key={c.en} sx={{ textAlign: "center" }}>
+                      <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.05em", textTransform: "uppercase", lineHeight: 1 }}>
+                        {c.en}
+                      </Typography>
+                      <Typography sx={{ fontFamily: SANS, fontSize: 8.5, color: adminColor.dim, mt: 0.15, mb: 0.3 }}>
+                        {c.th}
                       </Typography>
                       <Typography sx={{ ...adminFigureSx, fontSize: { xs: 13, sm: 14 }, color: c.highlight ? adminColor.accent : adminColor.text }}>
                         {c.value}
@@ -359,7 +373,7 @@ const AdminReportPage: React.FC = () => {
                       cursor: "pointer",
                     }}
                   >
-                    ดูสลิป
+                    Payslip · สลิป
                   </motion.button>
                   <motion.button
                     whileTap={{ scale: 0.93 }}
@@ -390,25 +404,32 @@ const AdminReportPage: React.FC = () => {
         PaperProps={{ sx: { borderRadius: "20px", overflow: "hidden", m: { xs: 1, sm: 2 }, background: adminColor.panel } }}
       >
         <Box sx={{ background: adminColor.panel2, px: 3, pt: 3, pb: 2.5, borderBottom: `1px solid ${adminColor.line}` }}>
-          <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 0.5 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1 }}>
+            Staff Comparison
+          </Typography>
+          <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.2, mb: 0.6 }}>
             เปรียบเทียบรายได้
           </Typography>
           <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 600, color: adminColor.text }}>
+            All Therapists
+          </Typography>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.3 }}>
             พนักงานทุกคน
           </Typography>
           <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted, mt: 0.3 }}>
-            {periodLabel} · {visible.length} คน
+            {periodLabel} · {visible.length} people · คน
           </Typography>
           <Box sx={{ display: "flex", gap: 1, mt: 2, p: 1.5, borderRadius: "14px", background: adminColor.panel, border: `1px solid ${adminColor.line}` }}>
             {[
-              { label: "งานรวม",      value: String(totals.jobs)  },
-              { label: "รายได้รวม",   value: thb(totals.service)  },
-              { label: "จ่ายนวดรวม", value: thb(totals.worker)   },
-              { label: "ร้านได้รวม", value: thb(totals.shop)     },
+              { en: "Total Jobs",       th: "งานรวม",       value: String(totals.jobs)  },
+              { en: "Booking Total",    th: "รายได้รวม",    value: thb(totals.service)  },
+              { en: "Paid to Therapist",th: "จ่ายนวดรวม",   value: thb(totals.worker)   },
+              { en: "Shop Take",        th: "ร้านได้รวม",    value: thb(totals.shop)     },
             ].map((s, i) => (
               <Box key={i} sx={{ flex: 1, textAlign: "center", borderRight: i < 3 ? `1px solid ${adminColor.line}` : "none" }}>
                 <Typography sx={{ ...adminFigureSx, fontSize: 15, color: adminColor.text, lineHeight: 1 }}>{s.value}</Typography>
-                <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.3, textTransform: "uppercase", letterSpacing: "0.06em" }}>{s.label}</Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.muted, mt: 0.3, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700, lineHeight: 1 }}>{s.en}</Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 8.5, color: adminColor.dim, mt: 0.15 }}>{s.th}</Typography>
               </Box>
             ))}
           </Box>
@@ -420,18 +441,23 @@ const AdminReportPage: React.FC = () => {
               <thead>
                 <tr style={{ background: adminColor.panel2, borderBottom: `2px solid ${adminColor.line}` }}>
                   {[
-                    { label: "#",          align: "center" as const },
-                    { label: "พนักงาน",    align: "left"   as const },
-                    { label: "งาน",        align: "center" as const },
-                    { label: "ยกเลิก",     align: "center" as const },
-                    { label: "ค่าบริการ",  align: "right"  as const },
-                    { label: "Taxi",        align: "right"  as const },
-                    { label: "ส่วนร้าน",   align: "right"  as const },
-                    { label: "จ่ายนวด",    align: "right"  as const },
-                    { label: "% ของรวม",   align: "center" as const },
+                    { en: "#",          th: "",           align: "center" as const },
+                    { en: "Therapist",  th: "พนักงาน",    align: "left"   as const },
+                    { en: "Jobs",       th: "งาน",        align: "center" as const },
+                    { en: "Cancelled",  th: "ยกเลิก",     align: "center" as const },
+                    { en: "Service",    th: "ค่าบริการ",  align: "right"  as const },
+                    { en: "Taxi",       th: "เดินทาง",    align: "right"  as const },
+                    { en: "Shop Take",  th: "ส่วนร้าน",    align: "right"  as const },
+                    { en: "Paid",       th: "จ่ายนวด",    align: "right"  as const },
+                    { en: "Share",      th: "% ของรวม",   align: "center" as const },
                   ].map((h) => (
-                    <th key={h.label} style={{ padding: "10px 14px", textAlign: h.align, fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
-                      {h.label}
+                    <th key={h.en} style={{ padding: "10px 14px", textAlign: h.align, fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap", lineHeight: 1 }}>
+                      {h.en}
+                      {h.th && (
+                        <Box component="span" sx={{ display: "block", fontFamily: SANS, fontSize: 8.5, color: adminColor.dim, mt: 0.3, fontWeight: 400, letterSpacing: 0, textTransform: "none" }}>
+                          {h.th}
+                        </Box>
+                      )}
                     </th>
                   ))}
                 </tr>
@@ -485,7 +511,7 @@ const AdminReportPage: React.FC = () => {
                 })}
                 {/* totals row */}
                 <tr style={{ background: adminColor.panel2, borderTop: `2px solid ${adminColor.line}` }}>
-                  <td colSpan={2} style={{ padding: "12px 14px", fontFamily: SANS, fontSize: 12, fontWeight: 700, color: adminColor.muted }}>รวมทั้งหมด</td>
+                  <td colSpan={2} style={{ padding: "12px 14px", fontFamily: SANS, fontSize: 12, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.06em", textTransform: "uppercase" }}>TOTALS · รวมทั้งหมด</td>
                   <td style={{ padding: "12px 14px", textAlign: "center" }}>
                     <Typography sx={{ ...adminFigureSx, fontSize: 13, color: adminColor.green }}>{totals.jobs}</Typography>
                   </td>
@@ -513,7 +539,7 @@ const AdminReportPage: React.FC = () => {
 
         <DialogActions sx={{ px: 3, pb: 2.5, pt: 1.5, gap: 1, borderTop: `1px solid ${adminColor.line}` }}>
           <Button onClick={() => setShowTable(false)} sx={{ borderRadius: 999, fontFamily: SANS, fontSize: 13, textTransform: "none", color: adminColor.muted }}>
-            ปิด
+            Close · ปิด
           </Button>
           <motion.button
             whileTap={{ scale: 0.93 }}
@@ -526,7 +552,7 @@ const AdminReportPage: React.FC = () => {
               display: "flex", alignItems: "center", gap: 6,
             }}
           >
-            <Export size={14} /> Export Excel
+            <Export size={14} /> Download Excel
           </motion.button>
         </DialogActions>
       </Dialog>
@@ -543,8 +569,11 @@ const AdminReportPage: React.FC = () => {
           <>
             {/* header strip */}
             <Box sx={{ background: adminColor.panel2, px: 3, pt: 3, pb: 2.5, borderBottom: `1px solid ${adminColor.line}` }}>
-              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 0.5 }}>
-                สลิปค่าแรง
+              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.14em", textTransform: "uppercase", lineHeight: 1 }}>
+                Payslip
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.2, mb: 0.5 }}>
+                สลิปเงินเดือน
               </Typography>
               <Typography sx={{ fontFamily: SERIF, fontSize: 22, fontWeight: 600, color: adminColor.text }}>
                 {preview.name}
@@ -554,13 +583,14 @@ const AdminReportPage: React.FC = () => {
               </Typography>
               <Box sx={{ display: "flex", gap: 1, mt: 2, p: 1.5, borderRadius: "14px", background: adminColor.panel, border: `1px solid ${adminColor.line}` }}>
                 {[
-                  { label: "งาน",       value: String(preview.jobs) },
-                  { label: "รับรวม",    value: thb(preview.serviceTotal) },
-                  { label: "จ่ายนวด",  value: thb(preview.worker) },
+                  { en: "Jobs",  th: "งาน",     value: String(preview.jobs) },
+                  { en: "Gross", th: "รับรวม",  value: thb(preview.serviceTotal) },
+                  { en: "Paid",  th: "จ่ายนวด", value: thb(preview.worker) },
                 ].map((s, i) => (
                   <Box key={i} sx={{ flex: 1, textAlign: "center", borderRight: i < 2 ? `1px solid ${adminColor.line}` : "none" }}>
                     <Typography sx={{ ...adminFigureSx, fontSize: 17, color: i === 2 ? adminColor.accent : adminColor.text, lineHeight: 1 }}>{s.value}</Typography>
-                    <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim, mt: 0.3, textTransform: "uppercase", letterSpacing: "0.06em" }}>{s.label}</Typography>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.muted, mt: 0.35, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700, lineHeight: 1 }}>{s.en}</Typography>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 8.5, color: adminColor.dim, mt: 0.15 }}>{s.th}</Typography>
                   </Box>
                 ))}
               </Box>
@@ -568,12 +598,12 @@ const AdminReportPage: React.FC = () => {
 
             <DialogContent sx={{ px: 3, py: 2 }}>
               {[
-                { label: "ค่าบริการรวม",   value: thb(preview.serviceTotal) },
-                ...(preview.discountTotal > 0 ? [{ label: "ส่วนลดโปร", value: `− ${thb(preview.discountTotal)}`, color: adminColor.dim }] : []),
-                { label: "Taxi รวม",       value: thb(preview.taxiTotal) },
-                { label: "ร้านได้",        value: thb(preview.shop),    color: adminColor.dim },
-                { label: "จ่ายนวด",        value: thb(preview.worker),  color: adminColor.accent, bold: true },
-                ...(preview.cancelled > 0 ? [{ label: "ยกเลิก", value: `${preview.cancelled} ครั้ง`, color: adminColor.dim }] : []),
+                { label: "Gross Service · ค่าบริการรวม",   value: thb(preview.serviceTotal) },
+                ...(preview.discountTotal > 0 ? [{ label: "Promo Discount · ส่วนลดโปร", value: `− ${thb(preview.discountTotal)}`, color: adminColor.dim }] : []),
+                { label: "Total Taxi · Taxi รวม",          value: thb(preview.taxiTotal) },
+                { label: "Shop Take · ร้านได้",             value: thb(preview.shop),    color: adminColor.dim },
+                { label: "Paid to Therapist · จ่ายนวด",    value: thb(preview.worker),  color: adminColor.accent, bold: true },
+                ...(preview.cancelled > 0 ? [{ label: "Cancelled · ยกเลิก", value: `${preview.cancelled} times`, color: adminColor.dim }] : []),
               ].map((row) => (
                 <Box key={row.label} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.75, borderBottom: `1px solid ${adminColor.line}` }}>
                   <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.muted }}>{row.label}</Typography>
@@ -587,8 +617,11 @@ const AdminReportPage: React.FC = () => {
                    (same data the Excel export already itemises), payout per
                    job + the service price it came from, cancelled jobs greyed. */}
               <Box sx={{ mt: 2 }}>
-                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1 }}>
-                  รายการงาน · {preview.bookings.length}
+                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1 }}>
+                  Job List · {preview.bookings.length}
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.2, mb: 1 }}>
+                  รายการงาน
                 </Typography>
                 {[...preview.bookings]
                   .sort((a, b) => (toDate(a.createdAt)?.getTime() ?? 0) - (toDate(b.createdAt)?.getTime() ?? 0))
@@ -598,7 +631,7 @@ const AdminReportPage: React.FC = () => {
                     const meta = [
                       d ? dayjs(d).format("D MMM") : null,
                       b.taxiFee ? `Taxi ${thb(b.taxiFee)}` : null,
-                      b.discountAmount ? `ลด ${thb(b.discountAmount)}` : null,
+                      b.discountAmount ? `Discount ${thb(b.discountAmount)}` : null,
                     ].filter(Boolean).join(" · ");
                     return (
                       <Box key={b.id} sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1.5, py: 0.85, borderBottom: `1px solid ${adminColor.line}`, opacity: excluded ? 0.5 : 1 }}>
@@ -614,11 +647,11 @@ const AdminReportPage: React.FC = () => {
                         </Box>
                         <Box sx={{ textAlign: "right", flexShrink: 0 }}>
                           {excluded ? (
-                            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.dim }}>ยกเลิก</Typography>
+                            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.dim }}>Cancelled</Typography>
                           ) : (
                             <>
                               <Typography sx={{ ...adminFigureSx, fontSize: 13.5, fontWeight: 800, color: adminColor.accent, lineHeight: 1.1 }}>{thb(therapistPayoutFor(b))}</Typography>
-                              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim }}>จาก {thb(b.servicePrice || 0)}</Typography>
+                              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim }}>from {thb(b.servicePrice || 0)}</Typography>
                             </>
                           )}
                         </Box>
@@ -630,7 +663,7 @@ const AdminReportPage: React.FC = () => {
 
             <DialogActions sx={{ px: 3, pb: 2.5, pt: 0, gap: 1 }}>
               <Button onClick={() => setPreview(null)} sx={{ borderRadius: 999, fontFamily: SANS, fontSize: 13, textTransform: "none", color: adminColor.muted }}>
-                ปิด
+                Close · ปิด
               </Button>
               <motion.button
                 whileTap={{ scale: 0.93 }}
@@ -643,7 +676,7 @@ const AdminReportPage: React.FC = () => {
                   display: "flex", alignItems: "center", gap: 6,
                 }}
               >
-                <Export size={14} /> Download
+                <Export size={14} /> Download Excel
               </motion.button>
             </DialogActions>
           </>

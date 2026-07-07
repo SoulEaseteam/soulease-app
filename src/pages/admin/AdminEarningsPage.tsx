@@ -156,13 +156,15 @@ interface BookingRow {
 type PresetRange = "thismonth" | "today" | "week" | "month" | "year";
 type Range = PresetRange | "custom";
 
+// 🆕 Round 28r37 — bilingual range labels (English primary · Thai secondary),
+//   matches the r35 Dashboard pattern applied across every admin surface.
 const RANGE_LABEL: Record<Range, string> = {
-  thismonth: "เดือนนี้",
-  today: "วันนี้",
-  week: "7 วัน",
-  month: "30 วัน",
-  year: "12 เดือน",
-  custom: "กำหนดเอง",
+  thismonth: "This Month · เดือนนี้",
+  today: "Today · วันนี้",
+  week: "7 Days · 7 วัน",
+  month: "30 Days · 30 วัน",
+  year: "12 Months · 12 เดือน",
+  custom: "Custom · กำหนดเอง",
 };
 
 function rangeStart(range: PresetRange): Dayjs {
@@ -798,6 +800,7 @@ const AdminEarningsPage: React.FC = () => {
         }}
       >
         <Box>
+          {/* 🆕 Round 28r37 — English-primary title + Thai subtitle, r35 pattern. */}
           <Typography
             sx={{
               fontFamily: SERIF,
@@ -805,17 +808,29 @@ const AdminEarningsPage: React.FC = () => {
               fontWeight: 600,
               color: adminColor.text,
               letterSpacing: "-0.02em",
+              lineHeight: 1,
               "& em": { fontStyle: "italic", color: adminColor.highlight },
             }}
           >
-            รายได้ <em>ของร้าน</em>
+            Shop <em>Earnings</em>
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: 11,
+              color: adminColor.dim,
+              mt: 0.4,
+              letterSpacing: "0.02em",
+            }}
+          >
+            รายได้ของร้าน
           </Typography>
           <Typography
             sx={{
               fontFamily: SANS,
               fontSize: 13,
               color: adminColor.muted,
-              marginTop: "4px",
+              marginTop: "6px",
             }}
           >
             รายได้จากการจองแบบเรียลไทม์ · แบ่งหมอตามระดับ ·
@@ -825,7 +840,7 @@ const AdminEarningsPage: React.FC = () => {
 
         <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
           {[
-            { label: "⚙ ต้นทุน & เป้า", onClick: openCfg, disabled: false },
+            { label: "⚙ Costs & Goal", onClick: openCfg, disabled: false },
             { label: "⬇ PDF", onClick: handleExportPDF, disabled: loading || filteredBookings.length === 0 },
             { label: "⬇ CSV", onClick: handleExportCSV, disabled: loading || filteredBookings.length === 0 },
           ].map((b) => (
@@ -879,14 +894,14 @@ const AdminEarningsPage: React.FC = () => {
         {range === "custom" && (
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
-              label="ตั้งแต่"
+              label="From"
               value={customStart}
               maxDate={customEnd}
               onChange={(v) => v && setCustomStart(v)}
               slotProps={{ textField: { size: "small", sx: { width: 130, "& .MuiInputBase-root": { color: adminColor.text }, "& .MuiInputLabel-root": { color: adminColor.muted }, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 }, "& .MuiSvgIcon-root": { color: adminColor.muted } } } }}
             />
             <DatePicker
-              label="ถึง"
+              label="To"
               value={customEnd}
               minDate={customStart}
               maxDate={dayjs()}
@@ -898,7 +913,7 @@ const AdminEarningsPage: React.FC = () => {
 
         {therapistOptions.length > 0 && (
           <Select size="small" value={therapistFilter} onChange={(e) => setTherapistFilter(e.target.value)} sx={selectSx} MenuProps={selectMenuProps}>
-            <MenuItem value="__ALL__">หมอทุกคน</MenuItem>
+            <MenuItem value="__ALL__">All Therapists</MenuItem>
             {therapistOptions.map(([id, name]) => (
               <MenuItem key={id} value={id}>{name}</MenuItem>
             ))}
@@ -907,7 +922,7 @@ const AdminEarningsPage: React.FC = () => {
 
         {serviceOptions.length > 0 && (
           <Select size="small" value={serviceFilter} onChange={(e) => setServiceFilter(e.target.value)} sx={selectSx} MenuProps={selectMenuProps}>
-            <MenuItem value="__ALL__">บริการทั้งหมด</MenuItem>
+            <MenuItem value="__ALL__">All Services</MenuItem>
             {serviceOptions.map(([id, name]) => (
               <MenuItem key={id} value={id}>{name}</MenuItem>
             ))}
@@ -939,7 +954,7 @@ const AdminEarningsPage: React.FC = () => {
                 {/* 🆕 Round 28s321 — headline is shop GROSS (before costs) so it
                     matches หน้าหลัก / Reports for the same window. Net-after-costs
                     is shown as a secondary line below. */}
-                <Eyebrow>รายได้ของร้าน (ก่อนหักต้นทุน) · ช่วงเวลานี้</Eyebrow>
+                <Eyebrow en="Shop Earnings · Before Costs" th="รายได้ของร้าน (ก่อนหักต้นทุน) · ช่วงเวลานี้" />
                 <Typography
                   sx={{
                     ...adminFigureSx, fontSize: { xs: 32, md: 40 },
@@ -1014,7 +1029,7 @@ const AdminEarningsPage: React.FC = () => {
               calendar month's Shop net (independent of the range filter). */}
           <Card>
             <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 1, flexWrap: "wrap" }}>
-              <Eyebrow>เป้ารายได้เดือนนี้ · {dayjs().format("MMMM")}</Eyebrow>
+              <Eyebrow en={`Monthly Net Revenue Goal · ${dayjs().format("MMMM")}`} th="เป้ารายได้เดือนนี้" />
               {earn.goal > 0 ? (
                 <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: adminColor.muted }}>
                   <Box component="span" sx={{ ...adminFigureSx, fontWeight: 700, color: adminColor.text }}>{formatTHB(monthNet)}</Box>
@@ -1022,7 +1037,7 @@ const AdminEarningsPage: React.FC = () => {
                 </Typography>
               ) : (
                 <Button onClick={openCfg} sx={{ textTransform: "none", fontSize: 12.5, fontWeight: 700, color: adminColor.highlight, minWidth: 0, "&:hover": { background: "rgba(78,126,140,0.10)" } }}>
-                  ตั้งเป้า →
+                  Set Goal · ตั้งเป้า →
                 </Button>
               )}
             </Box>
@@ -1056,7 +1071,7 @@ const AdminEarningsPage: React.FC = () => {
               }}
             >
               <Box>
-                <Eyebrow>ค้างจ่ายหมอ</Eyebrow>
+                <Eyebrow en="Owed to Therapists" th="ค้างจ่ายหมอ" />
                 <Typography sx={{ ...adminFigureSx, fontSize: 24, color: adminColor.text, lineHeight: 1.1, mt: 0.5 }}>
                   {formatTHB(stats.outstandingPay)}
                 </Typography>
@@ -1078,7 +1093,7 @@ const AdminEarningsPage: React.FC = () => {
               }}
             >
               <Box>
-                <Eyebrow>ลูกค้ายังไม่จ่าย</Eyebrow>
+                <Eyebrow en="Uncollected" th="ลูกค้ายังไม่จ่าย" />
                 <Typography sx={{ ...adminFigureSx, fontSize: 24, color: adminColor.text, lineHeight: 1.1, mt: 0.5 }}>
                   {formatTHB(stats.unpaidRevenue)}
                 </Typography>
@@ -1098,12 +1113,15 @@ const AdminEarningsPage: React.FC = () => {
           <Card>
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4,1fr)" }, gap: 2 }}>
               {[
-                { icon: <ChartBar   size={20} weight="duotone" />, label: "รายได้รวม (เก็บได้)", value: formatTHB(stats.totalGross), sub: `${stats.countCompleted} งาน`, color: adminColor.accent, delta: <Delta cur={stats.totalGross} prev={prevStats.totalCollected} /> },
-                { icon: <UserCircle size={20} weight="duotone" />, label: "จ่ายหมอ",           value: formatTHB(stats.totalTherapistPayout), sub: stats.totalDiscountAbsorbed > 0 ? "แบ่งตามระดับ · หลังหักส่วนลด" : "แบ่งตามระดับ", color: adminColor.green, delta: <Delta cur={stats.totalTherapistPayout} prev={prevStats.totalTherapistPayout} neutral /> },
-                { icon: <Receipt    size={20} weight="duotone" />, label: "เฉลี่ยต่องาน",       value: formatTHB(stats.countCompleted ? Math.round(stats.totalGross / stats.countCompleted) : 0), sub: "รายได้รวม / งานสำเร็จ", color: adminColor.highlight, delta: null },
-                { icon: <XCircle    size={20} weight="duotone" />, label: "ยกเลิก",             value: String(stats.countCancelled), sub: "ไม่รวมในยอด", color: adminColor.red, delta: null },
+                // 🆕 Round 28r37 — bilingual stat labels (r35 pattern):
+                //   en → uppercase primary, th → tiny Thai subtitle,
+                //   sub → the contextual data hint underneath.
+                { icon: <ChartBar   size={20} weight="duotone" />, en: "Gross Revenue",     th: "รายได้รวม (เก็บได้)", value: formatTHB(stats.totalGross), sub: `${stats.countCompleted} งาน`, color: adminColor.accent, delta: <Delta cur={stats.totalGross} prev={prevStats.totalCollected} /> },
+                { icon: <UserCircle size={20} weight="duotone" />, en: "Therapist Payout",  th: "จ่ายหมอ",              value: formatTHB(stats.totalTherapistPayout), sub: stats.totalDiscountAbsorbed > 0 ? "แบ่งตามระดับ · หลังหักส่วนลด" : "แบ่งตามระดับ", color: adminColor.green, delta: <Delta cur={stats.totalTherapistPayout} prev={prevStats.totalTherapistPayout} neutral /> },
+                { icon: <Receipt    size={20} weight="duotone" />, en: "Avg per Booking",   th: "เฉลี่ยต่องาน",         value: formatTHB(stats.countCompleted ? Math.round(stats.totalGross / stats.countCompleted) : 0), sub: "รายได้รวม / งานสำเร็จ", color: adminColor.highlight, delta: null },
+                { icon: <XCircle    size={20} weight="duotone" />, en: "Cancelled",         th: "ยกเลิก",              value: String(stats.countCancelled), sub: "ไม่รวมในยอด", color: adminColor.red, delta: null },
               ].map((c) => (
-                <Box key={c.label} sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 0.75 }}>
+                <Box key={c.en} sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 0.75 }}>
                   <Box
                     sx={{
                       width: 44, height: 44, borderRadius: "50%",
@@ -1120,8 +1138,11 @@ const AdminEarningsPage: React.FC = () => {
                     {c.delta}
                   </Box>
                   <Box>
-                    <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                      {c.label}
+                    <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.05em", lineHeight: 1 }}>
+                      {c.en}
+                    </Typography>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 9, color: adminColor.dim, mt: 0.15 }}>
+                      {c.th}
                     </Typography>
                     <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim, mt: 0.2 }}>
                       {c.sub}
@@ -1136,7 +1157,7 @@ const AdminEarningsPage: React.FC = () => {
           <Card>
             <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, flexWrap: "wrap" }}>
               <Box>
-                <Eyebrow>รายได้รายวัน</Eyebrow>
+                <Eyebrow en="Daily Revenue" th="รายได้รายวัน" />
                 <Typography
                   sx={{
                     fontFamily: SERIF,
@@ -1146,7 +1167,7 @@ const AdminEarningsPage: React.FC = () => {
                     mt: 0.5,
                   }}
                 >
-                  ยอดเก็บรายวัน · {trendDates.length} วัน
+                  Daily Collected · {trendDates.length} days
                 </Typography>
               </Box>
               {/* 🆕 Round 28s245 — surface the peak day so the tallest bar
@@ -1154,7 +1175,7 @@ const AdminEarningsPage: React.FC = () => {
               {trendMax > 1 && (
                 <Box sx={{ textAlign: "right" }}>
                   <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    สูงสุด
+                    Peak
                   </Typography>
                   <Typography sx={{ ...adminFigureSx, fontSize: 14.5, color: adminColor.highlight }}>
                     {formatTHB(trendMax)}
@@ -1223,7 +1244,7 @@ const AdminEarningsPage: React.FC = () => {
             }}
           >
             <Card>
-              <Eyebrow>แยกตามหมอ</Eyebrow>
+              <Eyebrow en="By Therapist" th="แยกตามหมอ" />
               <Typography
                 sx={{
                   fontFamily: SERIF,
@@ -1234,7 +1255,7 @@ const AdminEarningsPage: React.FC = () => {
                   mb: 1.5,
                 }}
               >
-                หมอทำเงินสูงสุด
+                Top Earner
               </Typography>
               <RankedRows
                 rows={Object.values(stats.byTherapist)
@@ -1253,7 +1274,7 @@ const AdminEarningsPage: React.FC = () => {
             </Card>
 
             <Card>
-              <Eyebrow>แยกตามบริการ</Eyebrow>
+              <Eyebrow en="By Service" th="แยกตามบริการ" />
               <Typography
                 sx={{
                   fontFamily: SERIF,
@@ -1264,7 +1285,7 @@ const AdminEarningsPage: React.FC = () => {
                   mb: 1.5,
                 }}
               >
-                สัดส่วนบริการ
+                Service Share
               </Typography>
               <RankedRows
                 rows={Object.values(stats.byService)
@@ -1289,13 +1310,21 @@ const AdminEarningsPage: React.FC = () => {
         fullWidth
         PaperProps={{ sx: { borderRadius: "16px", background: adminColor.panel, color: adminColor.text } }}
       >
-        <DialogTitle sx={{ fontFamily: SERIF, fontWeight: 600, color: adminColor.text }}>
-          ต้นทุน &amp; เป้ารายได้
+        <DialogTitle sx={{ fontFamily: SERIF, fontWeight: 600, color: adminColor.text, pb: 0.5 }}>
+          Costs &amp; Goal
+          <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 0.2, letterSpacing: "0.02em" }}>
+            ต้นทุน &amp; เป้ารายได้
+          </Typography>
         </DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: "10px !important" }}>
-          <Typography sx={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: adminColor.muted }}>
-            ต้นทุนต่องาน (บาท) · หักจากรายได้ร้าน
-          </Typography>
+          <Box>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: adminColor.muted, lineHeight: 1 }}>
+              Cost per Booking (THB)
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.25 }}>
+              ต้นทุนต่องาน (บาท) · หักจากรายได้ร้าน
+            </Typography>
+          </Box>
           {([
             { key: "supplies" as const, label: "ของใช้/งาน (ผ้า·น้ำมัน ฯลฯ)" },
             { key: "ops" as const, label: "ค่าดำเนินการ/งาน" },
@@ -1312,9 +1341,14 @@ const AdminEarningsPage: React.FC = () => {
               sx={{ "& .MuiOutlinedInput-root": { background: "#fff" } }}
             />
           ))}
-          <Typography sx={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: adminColor.muted, mt: 0.5 }}>
-            เป้ารายได้ (สุทธิของร้าน) ต่อเดือน
-          </Typography>
+          <Box sx={{ mt: 0.5 }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: adminColor.muted, lineHeight: 1 }}>
+              Monthly Net Revenue Goal
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.25 }}>
+              เป้ารายได้ (สุทธิของร้าน) ต่อเดือน
+            </Typography>
+          </Box>
           <TextField
             label="เป้า/เดือน (0 = ไม่ตั้งเป้า)"
             size="small"
@@ -1327,7 +1361,7 @@ const AdminEarningsPage: React.FC = () => {
         </DialogContent>
         <DialogActions sx={{ p: "8px 20px 16px" }}>
           <Button onClick={() => setCfgOpen(false)} sx={{ textTransform: "none", color: adminColor.muted }}>
-            ยกเลิก
+            Cancel
           </Button>
           <Button
             onClick={() => void saveCfg()}
@@ -1335,7 +1369,7 @@ const AdminEarningsPage: React.FC = () => {
             variant="contained"
             sx={{ textTransform: "none", fontWeight: 700, borderRadius: "8px", background: adminColor.accent, "&:hover": { background: adminColor.accentDeep } }}
           >
-            บันทึก
+            Save
           </Button>
         </DialogActions>
       </Dialog>
@@ -1385,18 +1419,36 @@ const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </Box>
 );
 
-const Eyebrow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <Box
-    sx={{
-      fontSize: 10,
-      letterSpacing: "0.18em",
-      textTransform: "uppercase",
-      color: adminColor.muted,
-      fontWeight: 700,
-      fontFamily: SANS,
-    }}
-  >
-    {children}
+// 🆕 Round 28r37 — bilingual eyebrow (r35 dashboard pattern).
+//   English primary in muted-uppercase, tiny Thai subtitle underneath in dim.
+//   Callers pass en + th; both required so nothing accidentally reverts to a
+//   single-language surface. Legacy children-only usages must migrate before
+//   compiling.
+const Eyebrow: React.FC<{ en: string; th: string }> = ({ en, th }) => (
+  <Box>
+    <Typography
+      sx={{
+        fontFamily: SANS,
+        fontSize: 11,
+        fontWeight: 800,
+        color: adminColor.muted,
+        letterSpacing: "0.1em",
+        textTransform: "uppercase",
+        lineHeight: 1,
+      }}
+    >
+      {en}
+    </Typography>
+    <Typography
+      sx={{
+        fontFamily: SANS,
+        fontSize: 9.5,
+        color: adminColor.dim,
+        mt: 0.25,
+      }}
+    >
+      {th}
+    </Typography>
   </Box>
 );
 
@@ -1416,7 +1468,7 @@ const RankedRows: React.FC<{
           fontStyle: "italic",
         }}
       >
-        No data.
+        No data · ไม่มีข้อมูล
       </Typography>
     );
   }

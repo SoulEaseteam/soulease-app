@@ -64,13 +64,16 @@ const SANS = adminFont.sans;
 
 // 🆕 Round 28s321 — "thismonth" (current calendar month) is the shared default
 //   across Dashboard / Reports / Earnings so every page opens on the same window.
+// 🆕 Round 28r39 — bilingual pass: preset ToggleButton labels switched to
+//   English (compact for a segmented control); Thai stays live in the
+//   `rangeNote` sentence and in the section eyebrows underneath.
 type Preset = "thismonth" | "d7" | "d30" | "d90" | "custom";
 const PRESET_LABEL: Record<Preset, string> = {
-  thismonth: "เดือนนี้",
-  d7: "7 วัน",
-  d30: "30 วัน",
-  d90: "90 วัน",
-  custom: "กำหนดเอง",
+  thismonth: "This Month",
+  d7: "7 Days",
+  d30: "30 Days",
+  d90: "90 Days",
+  custom: "Custom",
 };
 const PRESET_DAYS: Record<"d7" | "d30" | "d90", number> = { d7: 7, d30: 30, d90: 90 };
 
@@ -359,7 +362,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
     <Box
       component="button"
       onClick={() => navigate(`/admin/bookings?open=${id}`)}
-      title="ดูรายละเอียดใน admin/bookings"
+      title="View booking detail · ดูรายละเอียดใน admin/bookings"
       sx={{
         ...adminFigureSx,
         fontSize: strong ? 14 : 13.5,
@@ -377,12 +380,13 @@ const AdminTherapistPayoutsPage: React.FC = () => {
     range === "custom"
       ? `${customStart.format("D MMM")} – ${customEnd.format("D MMM YYYY")}`
       : range === "thismonth"
-      ? `เดือนนี้ (${dayjs().startOf("month").format("D MMM")} – ${dayjs().format("D MMM YYYY")})`
-      : `${PRESET_DAYS[range]} วันล่าสุด`;
+      ? `This Month · เดือนนี้ (${dayjs().startOf("month").format("D MMM")} – ${dayjs().format("D MMM YYYY")})`
+      : `Last ${PRESET_DAYS[range]} Days · ${PRESET_DAYS[range]} วันล่าสุด`;
 
   return (
     <Box sx={{ padding: { xs: 2, md: 3 }, maxWidth: 900, margin: "0 auto" }}>
-      {/* Header */}
+      {/* Header — 🆕 Round 28r39 bilingual: English serif title + tiny Thai
+           subtitle (r35 pattern), then a bilingual one-line description. */}
       <Box sx={{ mb: 3 }}>
         <Typography
           sx={{
@@ -391,9 +395,15 @@ const AdminTherapistPayoutsPage: React.FC = () => {
             "& em": { fontStyle: "italic", color: adminColor.highlight },
           }}
         >
-          จ่ายเงิน<em>หมอนวด</em>
+          Pay <em>Therapists</em>
         </Typography>
-        <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.muted, mt: "4px" }}>
+        <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.4, letterSpacing: "0.02em" }}>
+          จ่ายเงินหมอนวด
+        </Typography>
+        <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.muted, mt: "10px" }}>
+          Non-cash bookings · mark paid once the therapist's share is transferred.
+        </Typography>
+        <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.dim, mt: 0.25 }}>
           บุคกิ้งที่ลูกค้าจ่ายแบบโอน (ไม่ใช่เงินสด) · กดจ่ายเมื่อโอนส่วนแบ่งให้หมอแล้ว
         </Typography>
       </Box>
@@ -420,21 +430,21 @@ const AdminTherapistPayoutsPage: React.FC = () => {
         {range === "custom" && (
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
-              label="จาก" value={customStart} maxDate={customEnd}
+              label="From · จาก" value={customStart} maxDate={customEnd}
               onChange={(v) => v && setCustomStart(v)}
-              slotProps={{ textField: { size: "small", sx: { width: 130, "& .MuiInputBase-root": { color: adminColor.text }, "& .MuiInputLabel-root": { color: adminColor.muted }, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 }, "& .MuiSvgIcon-root": { color: adminColor.muted } } } }}
+              slotProps={{ textField: { size: "small", sx: { width: 150, "& .MuiInputBase-root": { color: adminColor.text }, "& .MuiInputLabel-root": { color: adminColor.muted }, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 }, "& .MuiSvgIcon-root": { color: adminColor.muted } } } }}
             />
             <DatePicker
-              label="ถึง" value={customEnd} minDate={customStart} maxDate={dayjs()}
+              label="To · ถึง" value={customEnd} minDate={customStart} maxDate={dayjs()}
               onChange={(v) => v && setCustomEnd(v)}
-              slotProps={{ textField: { size: "small", sx: { width: 130, "& .MuiInputBase-root": { color: adminColor.text }, "& .MuiInputLabel-root": { color: adminColor.muted }, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 }, "& .MuiSvgIcon-root": { color: adminColor.muted } } } }}
+              slotProps={{ textField: { size: "small", sx: { width: 150, "& .MuiInputBase-root": { color: adminColor.text }, "& .MuiInputLabel-root": { color: adminColor.muted }, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 }, "& .MuiSvgIcon-root": { color: adminColor.muted } } } }}
             />
           </LocalizationProvider>
         )}
 
         {therapistOptions.length > 0 && (
           <Select size="small" value={therapistFilter} onChange={(e) => setTherapistFilter(e.target.value)} sx={selectSx} MenuProps={selectMenuProps}>
-            <MenuItem value="__ALL__">หมอทุกคน</MenuItem>
+            <MenuItem value="__ALL__">All Therapists · หมอทุกคน</MenuItem>
             {therapistOptions.map(([id, name]) => (
               <MenuItem key={id} value={id}>{name}</MenuItem>
             ))}
@@ -452,7 +462,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
           }}
         >
           {paidOnly ? <Check size={14} weight="bold" /> : null}
-          เฉพาะลูกค้าจ่ายแล้ว
+          Only Customer-Paid · เฉพาะลูกค้าจ่ายแล้ว
         </Box>
       </Box>
 
@@ -475,14 +485,17 @@ const AdminTherapistPayoutsPage: React.FC = () => {
             <CurrencyCircleDollar size={24} weight="duotone" />
           </Box>
           <Box>
-            <Typography sx={{ fontFamily: SANS, fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.06em", color: adminColor.muted, fontWeight: 700 }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: adminColor.accent, fontWeight: 800, lineHeight: 1 }}>
+              Total Owed
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.2 }}>
               ค้างจ่ายหมอ
             </Typography>
-            <Typography sx={{ ...adminFigureSx, fontSize: 28, color: adminColor.text, lineHeight: 1.1 }}>
+            <Typography sx={{ ...adminFigureSx, fontSize: 28, color: adminColor.text, lineHeight: 1.1, mt: 0.5 }}>
               {formatTHB(unpaidTotal)}
             </Typography>
             <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted }}>
-              {unpaidJobCount} งาน · {groups.length} หมอ
+              {unpaidJobCount} jobs · {groups.length} therapists
             </Typography>
           </Box>
         </Box>
@@ -494,7 +507,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
             "&:hover": { background: "rgba(78,126,140,0.10)" },
           }}
         >
-          {showPaid ? "ซ่อน" : "ดู"}จ่ายแล้ว · {formatTHB(paidTotal)} ({paidJobs.length})
+          {showPaid ? "Hide" : "Show"} Paid · จ่ายไปแล้ว · {formatTHB(paidTotal)} ({paidJobs.length})
         </Button>
       </Box>
 
@@ -512,10 +525,13 @@ const AdminTherapistPayoutsPage: React.FC = () => {
               }}
             >
               <Typography sx={{ fontFamily: SANS, fontSize: 14, fontWeight: 700, color: adminColor.green }}>
-                ✓ ไม่มีค้างจ่าย
+                ✓ All Paid · ไม่มีค้างจ่าย
               </Typography>
               <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: adminColor.muted, mt: 0.25 }}>
-                จ่ายหมอครบทุกงานที่ลูกค้าโอนมาแล้ว ({rangeNote})
+                Every non-cash booking's therapist share has been transferred ({rangeNote}).
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.dim, mt: 0.15 }}>
+                จ่ายหมอครบทุกงานที่ลูกค้าโอนมาแล้ว
               </Typography>
             </Box>
           ) : (
@@ -543,7 +559,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                         {g.name}
                       </Typography>
                       <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.muted }}>
-                        ค้าง {g.jobs.length} งาน
+                        {g.jobs.length} unpaid {g.jobs.length === 1 ? "job" : "jobs"} · ค้าง {g.jobs.length} งาน
                       </Typography>
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexShrink: 0 }}>
@@ -555,13 +571,13 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                         disabled={busy === batchKey}
                         onClick={() => void payAllForTherapist(g)}
                         sx={{
-                          minWidth: 96, borderRadius: "8px", textTransform: "none", fontWeight: 700, fontSize: 12,
+                          minWidth: 120, borderRadius: "8px", textTransform: "none", fontWeight: 700, fontSize: 12,
                           background: adminColor.green, color: "#fff", border: "none",
                           "&:hover": { background: adminColor.green },
                           "&.Mui-disabled": { background: adminColor.panel3, color: adminColor.dim },
                         }}
                       >
-                        จ่ายหมด
+                        Pay All · จ่ายหมด
                       </Button>
                     </Box>
                   </Box>
@@ -593,7 +609,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                         </Typography>
                       ) : (
                         <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.amber }}>
-                          ยังไม่ผูกบัญชี
+                          No bank account · ยังไม่ผูกบัญชี
                         </Typography>
                       )}
                     </Box>
@@ -611,7 +627,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                           "&:hover": { background: "rgba(78,126,140,0.10)" },
                         }}
                       >
-                        {copied === batchKey ? "คัดลอกแล้ว" : "คัดลอกเลขบัญชี"}
+                        {copied === batchKey ? "Copied · คัดลอกแล้ว" : "Copy Account # · คัดลอก"}
                       </Button>
                     ) : (
                       <Button
@@ -623,7 +639,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                           "&:hover": { background: "rgba(78,126,140,0.10)" },
                         }}
                       >
-                        ตั้งค่าบัญชี
+                        Set Bank Account · ตั้งค่าบัญชี
                       </Button>
                     )}
                   </Box>
@@ -664,13 +680,13 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                                 color: j.customerPaid ? adminColor.green : adminColor.amber,
                               }}
                             >
-                              {j.customerPaid ? "ลูกค้าโอนแล้ว" : "ลูกค้ายังไม่จ่าย"}
+                              {j.customerPaid ? "Customer Paid" : "Customer Not Paid"}
                             </Box>
                           </Box>
-                          {/* 🆕 28s315 — commission + taxi breakdown */}
+                          {/* 🆕 28s315 — commission + taxi breakdown · r39 bilingual */}
                           <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 0.25 }}>
-                            ค่านวด {formatTHB(j.commission)}
-                            {j.taxi > 0 && ` + เดินทาง ${formatTHB(j.taxi)}`}
+                            Service Fee {formatTHB(j.commission)}
+                            {j.taxi > 0 && ` + Travel ${formatTHB(j.taxi)}`}
                           </Typography>
                         </Box>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexShrink: 0 }}>
@@ -680,12 +696,12 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                             disabled={busy === j.id}
                             onClick={() => void setPaid(j, true)}
                             sx={{
-                              minWidth: 74, borderRadius: "8px", textTransform: "none", fontWeight: 700, fontSize: 11.5,
+                              minWidth: 92, borderRadius: "8px", textTransform: "none", fontWeight: 700, fontSize: 11.5,
                               border: `1px solid ${adminColor.green}`, color: adminColor.green, background: "transparent",
                               "&:hover": { background: "rgba(22,163,74,0.1)" },
                             }}
                           >
-                            กดจ่าย
+                            Mark Paid
                           </Button>
                         </Box>
                       </Box>
@@ -704,12 +720,15 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                 border: `1px solid ${adminColor.line}`, p: "18px 20px",
               }}
             >
-              <Typography sx={{ fontFamily: SERIF, fontSize: 16, fontWeight: 600, color: adminColor.text, mb: 1 }}>
-                จ่ายแล้ว · {rangeNote}
+              <Typography sx={{ fontFamily: SERIF, fontSize: 16, fontWeight: 600, color: adminColor.text }}>
+                Paid History
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.2, mb: 1 }}>
+                จ่ายไปแล้ว · {rangeNote}
               </Typography>
               {paidJobs.length === 0 ? (
                 <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.dim }}>
-                  ยังไม่มีรายการที่จ่าย
+                  No paid records yet · ยังไม่มีรายการที่จ่าย
                 </Typography>
               ) : (
                 <Box sx={{ display: "flex", flexDirection: "column" }}>
@@ -730,7 +749,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                         </Typography>
                         <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim }}>
                           {j.createdAt?.toDate ? dayjs(j.createdAt.toDate()).format("D MMM") : "—"}
-                          {j.therapistPaidAt?.toDate && ` · จ่าย ${dayjs(j.therapistPaidAt.toDate()).format("D MMM")}`}
+                          {j.therapistPaidAt?.toDate && ` · paid ${dayjs(j.therapistPaidAt.toDate()).format("D MMM")}`}
                         </Typography>
                       </Box>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexShrink: 0 }}>
@@ -745,7 +764,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                             "&:hover": { background: "rgba(220,38,38,0.08)", color: adminColor.red },
                           }}
                         >
-                          ยกเลิก
+                          Undo
                         </Button>
                       </Box>
                     </Box>
@@ -755,9 +774,14 @@ const AdminTherapistPayoutsPage: React.FC = () => {
             </Box>
           )}
 
-          <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, textAlign: "center", mt: 0.5 }}>
-            บุคกิ้ง {rangeNote} ที่ลูกค้าจ่ายแบบไม่ใช่เงินสด · ยอด = ค่านวด (ตาม tier · หักส่วนลด) + ค่าเดินทาง · กดยอดเพื่อดูรายละเอียดใน admin/bookings
-          </Typography>
+          <Box sx={{ mt: 0.5, textAlign: "center" }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim }}>
+              Non-cash bookings in {rangeNote} · payout = Service Fee (tier · post-discount) + Travel · tap an amount for booking detail
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 0.2 }}>
+              บุคกิ้งที่ลูกค้าจ่ายแบบไม่ใช่เงินสด · ยอด = ค่านวด (ตาม tier · หักส่วนลด) + ค่าเดินทาง · กดยอดเพื่อดูรายละเอียดใน admin/bookings
+            </Typography>
+          </Box>
         </Box>
       )}
     </Box>
