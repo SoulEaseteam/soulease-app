@@ -184,7 +184,18 @@ const AdminDashboardPage: React.FC = () => {
   // 🆕 Round 28s323 — lifetime totals (all bookings, no date filter), computed
   //   with the same rules as every other page: 60/40 split, promo applied,
   //   cancelled/refunded excluded. Loaded once.
-  const [lifetime, setLifetime] = useState({ jobs: 0, service: 0, shop: 0 });
+  // 🆕 Round 28r36 (founder 2026-05-07) — expanded to also track:
+  //   • openedAtMs — earliest booking createdAt → "days since opening"
+  //   • thisMonthShop / prevMonthShop → month-over-month delta chip
+  //   Same single Firestore read — three passes over the same snap.
+  const [lifetime, setLifetime] = useState({
+    jobs: 0,
+    service: 0,
+    shop: 0,
+    openedAtMs: 0,
+    thisMonthShop: 0,
+    prevMonthShop: 0,
+  });
 
   const todayStart = useMemo(() => dayjs().startOf("day").toDate(), []);
 
@@ -193,17 +204,59 @@ const AdminDashboardPage: React.FC = () => {
     (async () => {
       const snap = await getDocs(collection(db, "bookings"));
       let jobs = 0, service = 0, shop = 0;
+      let openedAtMs = Number.MAX_SAFE_INTEGER;
+      let thisMonthShop = 0;
+      let prevMonthShop = 0;
+      const now = dayjs();
+      const thisMonthStart = now.startOf("month").valueOf();
+      const prevMonthStart = now.subtract(1, "month").startOf("month").valueOf();
       snap.forEach((d) => {
         const b = d.data() as BookingRow;
         if (isPayrollExcluded(b.status)) return;         // exclude cancelled/refunded/no-show
         const svc = b.servicePrice || 0;
         const worker = therapistPayoutFor({ serviceId: b.serviceId, servicePrice: svc, discountAmount: b.discountAmount }); // 60%
         const base   = commissionBaseFor({ servicePrice: svc, discountAmount: b.discountAmount });                          // service − promo
+        const shopCut = Math.max(0, base - worker);
         jobs += 1;
         service += svc;
-        shop += Math.max(0, base - worker);              // shop's 40% after promo
+        shop += shopCut;                                 // shop's 40% after promo
+
+        // earliest booking = "opening day" — createdAt can be a Timestamp,
+        //   Date, string, or a raw { seconds } shape depending on where the
+        //   doc was written (customer flow / admin add / legacy backfill).
+        //   Normalise to ms via a permissive helper.
+        const c = b.createdAt as unknown;
+        let createdMs = 0;
+        if (c && typeof c === "object") {
+          const anyC = c as { toDate?: () => Date; seconds?: number };
+          if (typeof anyC.toDate === "function") {
+            createdMs = anyC.toDate().getTime();
+          } else if (typeof anyC.seconds === "number") {
+            createdMs = anyC.seconds * 1000;
+          } else if (c instanceof Date) {
+            createdMs = c.getTime();
+          }
+        } else if (typeof c === "string") {
+          const t = Date.parse(c);
+          if (!Number.isNaN(t)) createdMs = t;
+        }
+        if (createdMs > 0 && createdMs < openedAtMs) openedAtMs = createdMs;
+
+        // this month / previous month — for MoM delta
+        if (createdMs >= thisMonthStart) {
+          thisMonthShop += shopCut;
+        } else if (createdMs >= prevMonthStart) {
+          prevMonthShop += shopCut;
+        }
       });
-      setLifetime({ jobs, service, shop });
+      setLifetime({
+        jobs,
+        service,
+        shop,
+        openedAtMs: openedAtMs === Number.MAX_SAFE_INTEGER ? 0 : openedAtMs,
+        thisMonthShop,
+        prevMonthShop,
+      });
     })();
   }, []);
 
@@ -416,105 +469,174 @@ const AdminDashboardPage: React.FC = () => {
           </Box>
         </motion.div>
 
-        {/* ── 🆕 Round 28r35 — LIFETIME REVENUE HERO CARD.
+        {/* ── 🆕 Round 28r35 → r36 — LIFETIME REVENUE HERO CARD.
              Moved from mid-dashboard to right below the page title so the
              first money figure View sees on open is the crown number.
              All-time, not date-filtered. Shop take = 40% after promo,
-             cancelled excluded. Same source of truth (`lifetime` state)
-             as before, just re-styled as the dashboard's headliner:
-               • Crown icon + amber tint (was Wallet + teal) — reads as
-                 "the total earned since day one", not "one more stat"
-               • Figure bumped 28 → 40 (mobile) / 44 (desktop)
-               • Three-column split: hero shop-net + service subtotal +
-                 completed-job count, each bilingual */}
+             cancelled excluded.
+             r36 additions: MoM delta chip · days-since-opening + avg/day
+             · animated shimmer border · richer three-column stats. */}
         <motion.div {...fadeUp(0.04)}>
           <Box
             sx={{
               mt: 2.25,
-              borderRadius: "20px",
-              background: `linear-gradient(135deg, ${adminColor.accent}22 0%, ${adminColor.panel} 55%, ${adminColor.panel} 100%)`,
+              borderRadius: "22px",
+              background: `linear-gradient(135deg, ${adminColor.accent}26 0%, ${adminColor.panel} 55%, ${adminColor.panel} 100%)`,
               border: `1px solid ${adminColor.accent}44`,
-              boxShadow: `0 6px 24px ${adminColor.accent}18`,
-              p: { xs: "18px 18px 16px", md: "22px 24px 20px" },
+              boxShadow: `0 10px 32px ${adminColor.accent}1E, 0 2px 4px rgba(0,0,0,0.06)`,
+              p: { xs: "20px 18px 18px", md: "26px 28px 22px" },
               position: "relative",
               overflow: "hidden",
             }}
           >
-            {/* subtle corner glow */}
+            {/* corner glow — top-right */}
             <Box
               aria-hidden
               sx={{
                 position: "absolute",
-                top: -40,
-                right: -40,
-                width: 160,
-                height: 160,
+                top: -60,
+                right: -60,
+                width: 200,
+                height: 200,
                 borderRadius: "50%",
-                background: `radial-gradient(circle, ${adminColor.accent}22 0%, transparent 70%)`,
+                background: `radial-gradient(circle, ${adminColor.accent}30 0%, transparent 70%)`,
                 pointerEvents: "none",
               }}
             />
-            {/* eyebrow — bilingual */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1.5, position: "relative" }}>
-              <Crown size={14} color={adminColor.accent} weight="fill" />
-              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color: adminColor.accent, letterSpacing: "0.14em", textTransform: "uppercase" }}>
-                Lifetime Revenue · Since Opening
-              </Typography>
-            </Box>
-            <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mb: 1.5, ml: 2.6, mt: -1 }}>
-              รายได้สะสมทั้งหมด · ตั้งแต่เปิดร้าน
-            </Typography>
+            {/* corner glow — bottom-left, subtler */}
+            <Box
+              aria-hidden
+              sx={{
+                position: "absolute",
+                bottom: -80,
+                left: -80,
+                width: 220,
+                height: 220,
+                borderRadius: "50%",
+                background: `radial-gradient(circle, ${adminColor.accent}15 0%, transparent 70%)`,
+                pointerEvents: "none",
+              }}
+            />
 
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1.6fr 1fr 1fr" }, gap: { xs: 2, sm: 2.5 }, alignItems: "center", position: "relative" }}>
+            {/* eyebrow — bilingual + MoM delta chip on the right */}
+            <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, mb: 1.5, position: "relative" }}>
+              <Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                  <Crown size={15} color={adminColor.accent} weight="fill" />
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.accent, letterSpacing: "0.14em", textTransform: "uppercase", lineHeight: 1 }}>
+                    Lifetime Revenue · Since Opening
+                  </Typography>
+                </Box>
+                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 0.4, ml: 2.75 }}>
+                  รายได้สะสมทั้งหมด · ตั้งแต่เปิดร้าน
+                </Typography>
+              </Box>
+
+              {/* MoM delta chip */}
+              {(() => {
+                if (lifetime.prevMonthShop <= 0) return null;
+                const pct = Math.round(
+                  ((lifetime.thisMonthShop - lifetime.prevMonthShop) / lifetime.prevMonthShop) * 100
+                );
+                const up = pct >= 0;
+                const color = up ? adminColor.green : adminColor.red;
+                return (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.5,
+                      px: 1.25,
+                      py: 0.6,
+                      borderRadius: 999,
+                      background: `${color}18`,
+                      border: `1px solid ${color}44`,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {up ? <TrendUp size={13} color={color} weight="bold" /> : <TrendDown size={13} color={color} weight="bold" />}
+                    <Typography sx={{ ...adminFigureSx, fontSize: 12, color, lineHeight: 1 }}>
+                      {up ? "+" : ""}{pct}%
+                    </Typography>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 600, color: adminColor.muted, ml: 0.4 }}>
+                      MoM
+                    </Typography>
+                  </Box>
+                );
+              })()}
+            </Box>
+
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1.6fr 1fr 1fr" }, gap: { xs: 2.5, sm: 2.5 }, alignItems: "center", position: "relative" }}>
               {/* hero shop-net column */}
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Box sx={{ width: 56, height: 56, borderRadius: "50%", background: `linear-gradient(135deg, ${adminColor.accent}, ${adminColor.accentDeep ?? adminColor.accent})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 4px 14px ${adminColor.accent}55` }}>
-                  <Wallet size={26} weight="duotone" />
+                <Box sx={{ width: 60, height: 60, borderRadius: "50%", background: `linear-gradient(135deg, ${adminColor.accent}, ${adminColor.accentDeep})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 6px 18px ${adminColor.accent}66, inset 0 1px 0 rgba(255,255,255,0.28)` }}>
+                  <Wallet size={28} weight="duotone" />
                 </Box>
-                <Box>
-                  <Typography sx={{ ...adminFigureSx, fontSize: { xs: 34, md: 42 }, color: adminColor.text, lineHeight: 1, letterSpacing: "-0.01em" }}>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography sx={{ ...adminFigureSx, fontSize: { xs: 36, md: 44 }, color: adminColor.text, lineHeight: 1, letterSpacing: "-0.015em" }}>
                     {money(lifetime.shop)}
                   </Typography>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 600, color: adminColor.muted, mt: 0.5 }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: adminColor.muted, mt: 0.55 }}>
                     Shop Net Earned
                   </Typography>
                   <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim, mt: 0.1 }}>
                     รายได้ร้านสะสม · 40% หลังโปรฯ · ไม่รวมยกเลิก
                   </Typography>
+                  {/* days-since-opening + avg/day sub-line */}
+                  {lifetime.openedAtMs > 0 && (() => {
+                    const days = Math.max(1, Math.round((Date.now() - lifetime.openedAtMs) / 86400000));
+                    const avg  = Math.round(lifetime.shop / days);
+                    return (
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.8, flexWrap: "wrap" }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.4, px: 0.9, py: 0.35, borderRadius: 999, background: `${adminColor.accent}12`, border: `1px solid ${adminColor.accent}22` }}>
+                          <CalendarBlank size={11} color={adminColor.accent} weight="duotone" />
+                          <Typography sx={{ ...adminFigureSx, fontSize: 10.5, color: adminColor.text, lineHeight: 1 }}>
+                            {days.toLocaleString()}
+                          </Typography>
+                          <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 600, color: adminColor.muted }}>
+                            days
+                          </Typography>
+                        </Box>
+                        <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim }}>
+                          · avg {money(avg)}/day
+                        </Typography>
+                      </Box>
+                    );
+                  })()}
                 </Box>
               </Box>
 
               {/* service revenue */}
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, borderLeft: { sm: `1px solid ${adminColor.accent}22` }, pl: { sm: 2 } }}>
-                <Box sx={{ width: 34, height: 34, borderRadius: "50%", background: `${adminColor.highlight ?? adminColor.text}18`, color: adminColor.highlight ?? adminColor.text, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <ChartBar size={17} weight="duotone" />
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, borderLeft: { sm: `1px solid ${adminColor.accent}33` }, pl: { sm: 2 } }}>
+                <Box sx={{ width: 38, height: 38, borderRadius: "50%", background: `${adminColor.highlight}18`, color: adminColor.highlight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5)` }}>
+                  <ChartBar size={18} weight="duotone" />
                 </Box>
                 <Box>
-                  <Typography sx={{ ...adminFigureSx, fontSize: { xs: 19, md: 22 }, color: adminColor.text, lineHeight: 1 }}>
+                  <Typography sx={{ ...adminFigureSx, fontSize: { xs: 20, md: 23 }, color: adminColor.text, lineHeight: 1 }}>
                     {money(lifetime.service)}
                   </Typography>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 600, color: adminColor.muted, mt: 0.35, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, mt: 0.4, textTransform: "uppercase", letterSpacing: "0.06em", lineHeight: 1 }}>
                     Gross Service
                   </Typography>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.15 }}>
                     ค่าบริการสะสม
                   </Typography>
                 </Box>
               </Box>
 
               {/* completed jobs */}
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, borderLeft: { sm: `1px solid ${adminColor.accent}22` }, pl: { sm: 2 } }}>
-                <Box sx={{ width: 34, height: 34, borderRadius: "50%", background: `${adminColor.green}18`, color: adminColor.green, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <CheckCircle size={17} weight="duotone" />
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, borderLeft: { sm: `1px solid ${adminColor.accent}33` }, pl: { sm: 2 } }}>
+                <Box sx={{ width: 38, height: 38, borderRadius: "50%", background: `${adminColor.green}18`, color: adminColor.green, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5)` }}>
+                  <CheckCircle size={18} weight="duotone" />
                 </Box>
                 <Box>
-                  <Typography sx={{ ...adminFigureSx, fontSize: { xs: 19, md: 22 }, color: adminColor.text, lineHeight: 1 }}>
+                  <Typography sx={{ ...adminFigureSx, fontSize: { xs: 20, md: 23 }, color: adminColor.text, lineHeight: 1 }}>
                     {lifetime.jobs.toLocaleString()}
                   </Typography>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 600, color: adminColor.muted, mt: 0.35, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, mt: 0.4, textTransform: "uppercase", letterSpacing: "0.06em", lineHeight: 1 }}>
                     Sessions Delivered
                   </Typography>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.15 }}>
                     งานสำเร็จสะสม
                   </Typography>
                 </Box>
@@ -725,9 +847,10 @@ const AdminDashboardPage: React.FC = () => {
           </Box>
           <Box
             sx={{
-              borderRadius: "16px", background: adminColor.panel,
+              borderRadius: "18px", background: adminColor.panel,
               border: `1px solid ${adminColor.line}`,
-              p: "16px 14px",
+              boxShadow: "0 2px 10px rgba(31,41,51,0.04)",
+              p: "20px 16px",
               display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4,1fr)" }, gap: 2,
             }}
           >
@@ -737,17 +860,30 @@ const AdminDashboardPage: React.FC = () => {
               { icon: <Buildings     size={20} weight="duotone" />, en: "Shop Revenue",   th: "รายได้ร้าน",    value: money(stats.periodShop),      color: adminColor.highlight },
               { icon: <XCircle       size={20} weight="duotone" />, en: "Cancelled",      th: "ยกเลิก",       value: String(stats.periodCancelled), color: adminColor.red },
             ].map((c) => (
-              <Box key={c.en} sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 0.6 }}>
+              <Box
+                key={c.en}
+                sx={{
+                  display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 0.6,
+                  p: "8px 4px",
+                  borderRadius: "12px",
+                  transition: "background 0.18s ease, transform 0.18s ease",
+                  "&:hover": {
+                    background: `${c.color}0A`,
+                    transform: "translateY(-1px)",
+                  },
+                }}
+              >
                 <Box
                   sx={{
-                    width: 44, height: 44, borderRadius: "50%",
+                    width: 46, height: 46, borderRadius: "50%",
                     background: `${c.color}1A`, color: c.color,
                     display: "flex", alignItems: "center", justifyContent: "center",
+                    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 6px ${c.color}22`,
                   }}
                 >
                   {c.icon}
                 </Box>
-                <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.text, lineHeight: 1 }}>
+                <Typography sx={{ ...adminFigureSx, fontSize: 18, color: adminColor.text, lineHeight: 1 }}>
                   {c.value}
                 </Typography>
                 <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.05em", lineHeight: 1 }}>
