@@ -563,6 +563,52 @@ const AdminReportPage: React.FC = () => {
                   <Typography sx={{ ...adminFigureSx, fontSize: 15, fontWeight: (row as any).bold ? 800 : 600, color: (row as any).color || adminColor.text }}>{row.value}</Typography>
                 </Box>
               ))}
+
+              {/* 🆕 28s305 (founder: "ดูสลิป บอกรายละเอียดบริการ") — the slip
+                   only showed aggregate totals; therapists couldn't see WHICH
+                   jobs made up the pay. Per-job list from preview.bookings
+                   (same data the Excel export already itemises), payout per
+                   job + the service price it came from, cancelled jobs greyed. */}
+              <Box sx={{ mt: 2 }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1 }}>
+                  รายการงาน · {preview.bookings.length}
+                </Typography>
+                {[...preview.bookings]
+                  .sort((a, b) => (toDate(a.createdAt)?.getTime() ?? 0) - (toDate(b.createdAt)?.getTime() ?? 0))
+                  .map((b) => {
+                    const excluded = isPayrollExcluded(b.status);
+                    const d = toDate(b.createdAt);
+                    const meta = [
+                      d ? dayjs(d).format("D MMM") : null,
+                      b.taxiFee ? `Taxi ${thb(b.taxiFee)}` : null,
+                      b.discountAmount ? `ลด ${thb(b.discountAmount)}` : null,
+                    ].filter(Boolean).join(" · ");
+                    return (
+                      <Box key={b.id} sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1.5, py: 0.85, borderBottom: `1px solid ${adminColor.line}`, opacity: excluded ? 0.5 : 1 }}>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 600, color: adminColor.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {b.serviceName || "—"}
+                          </Typography>
+                          {meta && (
+                            <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.2 }}>
+                              {meta}
+                            </Typography>
+                          )}
+                        </Box>
+                        <Box sx={{ textAlign: "right", flexShrink: 0 }}>
+                          {excluded ? (
+                            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.dim }}>ยกเลิก</Typography>
+                          ) : (
+                            <>
+                              <Typography sx={{ ...adminFigureSx, fontSize: 13.5, fontWeight: 800, color: adminColor.accent, lineHeight: 1.1 }}>{thb(therapistPayoutFor(b))}</Typography>
+                              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim }}>จาก {thb(b.servicePrice || 0)}</Typography>
+                            </>
+                          )}
+                        </Box>
+                      </Box>
+                    );
+                  })}
+              </Box>
             </DialogContent>
 
             <DialogActions sx={{ px: 3, pb: 2.5, pt: 0, gap: 1 }}>
