@@ -53,7 +53,21 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 // 🆕 Round 28s245 (founder: "ลองเปลี่ยนดีไซน์ ให้สวยขึ้น") — icons for the
 //   Dashboard-style (28s241) widget treatment.
-import { ChartBar, UserCircle, Receipt, XCircle, Medal } from "phosphor-react";
+// 🆕 Round 28r41 (founder 2026-07-08) — Wallet/Crown/CheckCircle/TrendUp/
+//   TrendDown added for the new "Total Shop Net" hero card (Dashboard r35/r36
+//   style) that sits above the filter bar.
+import {
+  ChartBar,
+  UserCircle,
+  Receipt,
+  XCircle,
+  Medal,
+  Wallet,
+  Crown,
+  CheckCircle,
+  TrendUp,
+  TrendDown,
+} from "phosphor-react";
 
 import { useNavigate } from "react-router-dom";
 import { db } from "@/lib/firebase";
@@ -791,7 +805,9 @@ const AdminEarningsPage: React.FC = () => {
       {/* Header */}
       <Box
         sx={{
-          mb: 3,
+          // 🆕 Round 28r41 — margin dropped so the new hero card's own
+          //   mt: 2.25 defines the header→hero gap (matches Dashboard r35/r36).
+          mb: 0,
           display: "flex",
           alignItems: "flex-start",
           justifyContent: "space-between",
@@ -858,6 +874,188 @@ const AdminEarningsPage: React.FC = () => {
               {b.label}
             </Button>
           ))}
+        </Box>
+      </Box>
+
+      {/* ── 🆕 Round 28r41 (founder 2026-07-08) — TOTAL SHOP NET HERO CARD.
+           Same visual DNA as AdminDashboardPage's Lifetime Revenue hero
+           (r35/r36): gradient bg, dual radial glows, Crown eyebrow, 60px
+           accent-gradient Wallet plate, big serif figure, MoM delta chip
+           on the right, 3-column split (Shop Net + Gross + Jobs).
+           Sits ABOVE the filter bar so the very first money figure View
+           sees on open is the net take for the selected period; the
+           existing deeper Shop-gross hero below the filter bar stays for
+           reconciliation with Dashboard/Reports (r38 rule). */}
+      <Box
+        sx={{
+          mt: 2.25,
+          mb: 3,
+          borderRadius: "22px",
+          background: `linear-gradient(135deg, ${adminColor.accent}26 0%, ${adminColor.panel} 55%, ${adminColor.panel} 100%)`,
+          border: `1px solid ${adminColor.accent}44`,
+          boxShadow: `0 10px 32px ${adminColor.accent}1E, 0 2px 4px rgba(0,0,0,0.06)`,
+          p: { xs: "20px 18px 18px", md: "26px 28px 22px" },
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* corner glow — top-right */}
+        <Box
+          aria-hidden
+          sx={{
+            position: "absolute",
+            top: -60,
+            right: -60,
+            width: 200,
+            height: 200,
+            borderRadius: "50%",
+            background: `radial-gradient(circle, ${adminColor.accent}30 0%, transparent 70%)`,
+            pointerEvents: "none",
+          }}
+        />
+        {/* corner glow — bottom-left, subtler */}
+        <Box
+          aria-hidden
+          sx={{
+            position: "absolute",
+            bottom: -80,
+            left: -80,
+            width: 220,
+            height: 220,
+            borderRadius: "50%",
+            background: `radial-gradient(circle, ${adminColor.accent}15 0%, transparent 70%)`,
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* eyebrow — bilingual + MoM delta chip on the right */}
+        <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, mb: 1.5, position: "relative" }}>
+          <Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Crown size={15} color={adminColor.accent} weight="fill" />
+              <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.accent, letterSpacing: "0.14em", textTransform: "uppercase", lineHeight: 1 }}>
+                Total Shop Net · Selected Period
+              </Typography>
+            </Box>
+            <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 0.4, ml: 2.75 }}>
+              รายได้สุทธิของร้าน · ช่วงเวลาที่เลือก
+            </Typography>
+          </Box>
+
+          {/* MoM delta chip — hides when no prior baseline to compare. */}
+          {(() => {
+            if (prevStats.shopGross <= 0) return null;
+            const pct = Math.round(((stats.shopGross - prevStats.shopGross) / prevStats.shopGross) * 100);
+            const up = pct >= 0;
+            const color = up ? adminColor.green : adminColor.red;
+            return (
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  px: 1.25,
+                  py: 0.6,
+                  borderRadius: 999,
+                  background: `${color}18`,
+                  border: `1px solid ${color}44`,
+                  flexShrink: 0,
+                }}
+              >
+                {up ? <TrendUp size={13} color={color} weight="bold" /> : <TrendDown size={13} color={color} weight="bold" />}
+                <Typography sx={{ ...adminFigureSx, fontSize: 12, color, lineHeight: 1 }}>
+                  {up ? "+" : ""}{pct}%
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 600, color: adminColor.muted, ml: 0.4 }}>
+                  MoM
+                </Typography>
+              </Box>
+            );
+          })()}
+        </Box>
+
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1.6fr 1fr 1fr" }, gap: { xs: 2.5, sm: 2.5 }, alignItems: "center", position: "relative" }}>
+          {/* hero shop-net column */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box sx={{ width: 60, height: 60, borderRadius: "50%", background: `linear-gradient(135deg, ${adminColor.accent}, ${adminColor.accentDeep})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 6px 18px ${adminColor.accent}66, inset 0 1px 0 rgba(255,255,255,0.28)` }}>
+              <Wallet size={28} weight="duotone" />
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={{ ...adminFigureSx, fontSize: { xs: 36, md: 44 }, color: adminColor.text, lineHeight: 1, letterSpacing: "-0.015em" }}>
+                {formatTHB(stats.shopNet)}
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: adminColor.muted, mt: 0.55 }}>
+                Shop Net Earned
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim, mt: 0.1 }}>
+                รายได้สุทธิ · หักส่วนแบ่งหมอ / ต้นทุน
+              </Typography>
+              {/* avg per day sub-line — days derived from the selected range,
+                  uncapped (trendDates caps at 60 for chart width, unusable here). */}
+              {(() => {
+                const days = range === "custom"
+                  ? Math.max(1, customEnd.startOf("day").diff(customStart.startOf("day"), "day") + 1)
+                  : range === "thismonth" ? Math.max(1, dayjs().date())
+                  : range === "today" ? 1
+                  : range === "week" ? 7
+                  : range === "month" ? 30
+                  : 365;
+                const avg = Math.round(stats.shopNet / days);
+                if (!Number.isFinite(avg)) return null;
+                return (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.8, flexWrap: "wrap" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.4, px: 0.9, py: 0.35, borderRadius: 999, background: `${adminColor.accent}12`, border: `1px solid ${adminColor.accent}22` }}>
+                      <Typography sx={{ ...adminFigureSx, fontSize: 10.5, color: adminColor.text, lineHeight: 1 }}>
+                        {days.toLocaleString()}
+                      </Typography>
+                      <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 600, color: adminColor.muted }}>
+                        days
+                      </Typography>
+                    </Box>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim }}>
+                      · avg {formatTHB(avg)}/day
+                    </Typography>
+                  </Box>
+                );
+              })()}
+            </Box>
+          </Box>
+
+          {/* gross revenue */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, borderLeft: { sm: `1px solid ${adminColor.accent}33` }, pl: { sm: 2 } }}>
+            <Box sx={{ width: 38, height: 38, borderRadius: "50%", background: `${adminColor.highlight}18`, color: adminColor.highlight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5)` }}>
+              <ChartBar size={18} weight="duotone" />
+            </Box>
+            <Box>
+              <Typography sx={{ ...adminFigureSx, fontSize: { xs: 20, md: 23 }, color: adminColor.text, lineHeight: 1 }}>
+                {formatTHB(stats.shopGross)}
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, mt: 0.4, textTransform: "uppercase", letterSpacing: "0.06em", lineHeight: 1 }}>
+                Gross Revenue
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.15 }}>
+                รายได้รวม
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* jobs delivered */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, borderLeft: { sm: `1px solid ${adminColor.accent}33` }, pl: { sm: 2 } }}>
+            <Box sx={{ width: 38, height: 38, borderRadius: "50%", background: `${adminColor.green}18`, color: adminColor.green, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5)` }}>
+              <CheckCircle size={18} weight="duotone" />
+            </Box>
+            <Box>
+              <Typography sx={{ ...adminFigureSx, fontSize: { xs: 20, md: 23 }, color: adminColor.text, lineHeight: 1 }}>
+                {stats.countCompleted.toLocaleString()}
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, mt: 0.4, textTransform: "uppercase", letterSpacing: "0.06em", lineHeight: 1 }}>
+                Jobs Delivered
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, mt: 0.15 }}>
+                งานสำเร็จ
+              </Typography>
+            </Box>
+          </Box>
         </Box>
       </Box>
 
@@ -1063,9 +1261,10 @@ const AdminEarningsPage: React.FC = () => {
             <Box
               onClick={() => navigate("/admin/pay-therapists")}
               sx={{
-                cursor: "pointer", padding: "18px 20px", borderRadius: "16px",
+                // 🆕 Round 28r41 — 16 → 18 radius bump (Card parity).
+                cursor: "pointer", padding: "18px 20px", borderRadius: "18px",
                 background: adminColor.panel, border: `1px solid ${adminColor.line}`,
-                boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 6px 16px rgba(31,41,51,0.07)",
+                boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 2px 10px rgba(31,41,51,0.04), 0 6px 16px rgba(31,41,51,0.07)",
                 display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1,
                 transition: "border-color 0.15s ease", "&:hover": { borderColor: adminColor.accent },
               }}
@@ -1086,9 +1285,10 @@ const AdminEarningsPage: React.FC = () => {
 
             <Box
               sx={{
-                padding: "18px 20px", borderRadius: "16px",
+                // 🆕 Round 28r41 — 16 → 18 radius bump (Card parity).
+                padding: "18px 20px", borderRadius: "18px",
                 background: adminColor.panel, border: `1px solid ${adminColor.line}`,
-                boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 6px 16px rgba(31,41,51,0.07)",
+                boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 2px 10px rgba(31,41,51,0.04), 0 6px 16px rgba(31,41,51,0.07)",
                 display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1,
               }}
             >
@@ -1121,12 +1321,30 @@ const AdminEarningsPage: React.FC = () => {
                 { icon: <Receipt    size={20} weight="duotone" />, en: "Avg per Booking",   th: "เฉลี่ยต่องาน",         value: formatTHB(stats.countCompleted ? Math.round(stats.totalGross / stats.countCompleted) : 0), sub: "รายได้รวม / งานสำเร็จ", color: adminColor.highlight, delta: null },
                 { icon: <XCircle    size={20} weight="duotone" />, en: "Cancelled",         th: "ยกเลิก",              value: String(stats.countCancelled), sub: "ไม่รวมในยอด", color: adminColor.red, delta: null },
               ].map((c) => (
-                <Box key={c.en} sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 0.75 }}>
+                // 🆕 Round 28r41 — hover lift + subtle color-tinted background
+                //   so the stat pills feel interactive (Dashboard r35/r36 parity).
+                <Box
+                  key={c.en}
+                  sx={{
+                    display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 0.75,
+                    py: 1.25, px: 1,
+                    borderRadius: "14px",
+                    transition: "transform 0.18s ease, background 0.18s ease",
+                    "&:hover": {
+                      transform: "translateY(-1px)",
+                      background: `${c.color}0A`,
+                    },
+                  }}
+                >
+                  {/* 🆕 Round 28r41 — 44 → 46 icon plate + inner top highlight
+                      and a soft color-tinted micro-shadow (Dashboard hero plates
+                      use the same recipe). */}
                   <Box
                     sx={{
-                      width: 44, height: 44, borderRadius: "50%",
+                      width: 46, height: 46, borderRadius: "50%",
                       background: `${c.color}1A`, color: c.color,
                       display: "flex", alignItems: "center", justifyContent: "center",
+                      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 6px ${c.color}22`,
                     }}
                   >
                     {c.icon}
@@ -1406,13 +1624,16 @@ const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <Box
     sx={{
       padding: "20px 22px",
-      borderRadius: "16px",
+      // 🆕 Round 28r41 — 16 → 18 borderRadius (Dashboard r35/r36 card parity).
+      borderRadius: "18px",
       background: adminColor.panel,
       border: `1px solid ${adminColor.line}`,
       // 🆕 Round 28s245 — the 0.25-alpha black shadow was tuned for the dark
       //   theme; on the light surface it read as a heavy smudge. Soft
       //   ink-tinted elevation instead (31,41,51 = #1F2933).
-      boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 6px 16px rgba(31,41,51,0.07)",
+      // 🆕 Round 28r41 — added a subtle depth layer (0 2px 10px rgba(31,41,51,0.04))
+      //   on top of the existing elevation for the polished Dashboard look.
+      boxShadow: "0 1px 2px rgba(31,41,51,0.04), 0 2px 10px rgba(31,41,51,0.04), 0 6px 16px rgba(31,41,51,0.07)",
     }}
   >
     {children}
