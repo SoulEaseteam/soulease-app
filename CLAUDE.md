@@ -3611,3 +3611,40 @@ Known scope: 120-day window (older unpaid would drop off — flagged, revisit if
 she clears less often than that). tsc=0 + build clean (55 routes), deployed;
 "ค้างจ่ายหมอ" / "กดจ่าย" / "บุคกิ้งที่ลูกค้าจ่ายแบบโอน" in the new chunk and
 "Pay Therapists" in the nav bundle, confirmed live.
+
+### 🆕 2026-07-07 — Pay Therapists: filters, bank transfer, deep-link (28s314)
+
+Founder: "เพิ่มตัวกรอง และวันที่ · เพิ่มพังชั่นโอนเงิน พร้อมผูกเลขบัญชีของ
+พนักงานแต่ละคน · ทุกยอดกดดูรายละเอียดได้จริงจาก admin/bookings." Three
+additions to the 28s313 Pay-Therapists page.
+
+- **Filters + date.** Replaced the fixed 120-day window with date-range
+  presets (7 / 30 / 90 วัน / กำหนดเอง + From–To pickers, default 90d) + a
+  therapist dropdown + a "เฉพาะลูกค้าจ่ายแล้ว" toggle (hides jobs the customer
+  hasn't paid yet). `range`/`customStart`/`customEnd` drive the `createdAt`
+  query; therapist + paidOnly filter client-side.
+- **Bank / โอนเงิน.** Bank fields (ธนาคาร · เลขบัญชี/พร้อมเพย์ · ชื่อบัญชี) on
+  the therapist create (AddTherapistPage) + edit (AdminTherapistDetailPage)
+  forms. **SECURITY — the key decision:** the `therapists` collection is
+  `allow read: if true` (world-readable for the public homepage), so bank
+  numbers must NOT live there. Stored instead in a NEW **admin-only
+  `payoutAccounts/{therapistId}`** collection (firestore.rules
+  `allow read, write: if isAdmin()`, deployed via `firebase deploy --only
+  firestore:rules`; verified public REST read → **403 PERMISSION_DENIED**).
+  The detail page loads/saves it via a separate `bankForm` state + `getDoc`/
+  `setDoc(merge)` — deliberately NOT in `FormState` (which patches the public
+  therapist doc). The pay page reads the `payoutAccounts` collection into a
+  `bankMap` and shows each therapist's account with a **"คัดลอกเลขบัญชี"**
+  button (native `navigator.clipboard`, no dep) for the transfer; "ตั้งค่าบัญชี"
+  link → `/admin/therapists/:id?edit=1` when none is bound.
+- **Clickable amounts → real booking detail.** admin/bookings
+  (AdminBookingListPage) now honors **`?open=<bookingId>`**: a `useSearchParams`
+  effect sets `detailId`; when the target isn't in the current date-filtered
+  feed it falls back to a one-doc `getDoc` (`fallbackBooking`) so the drawer
+  isn't blank; `closeDetail` clears the param + fallback. Every payout amount
+  on the pay page (outstanding + paid history) is an `AmountLink` button →
+  `navigate('/admin/bookings?open=' + id)`.
+
+tsc=0 + build clean (55 routes); rules deployed; app deployed. Confirmed live:
+"คัดลอกเลขบัญชี" / "เฉพาะลูกค้าจ่ายแล้ว" / "ตั้งค่าบัญชี" / "admin/bookings?open="
+in the pay chunk, and payoutAccounts public read = 403.
