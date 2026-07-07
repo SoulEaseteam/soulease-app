@@ -36,6 +36,7 @@ const AccountLegacyRedirect: React.FC = () => {
 import ScrollToTop from "@/components/common/ScrollToTop";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import MaintenanceGate from "@/components/common/MaintenanceGate";
+import KeywordLanding from "@/components/common/KeywordLanding";
 
 // 🆕 Round 28b29 (founder 2026-05-04, perf #66) — AdminFloatingChat
 //   imports framer-motion (~100 kB) and was eagerly loaded on every
@@ -243,11 +244,11 @@ export default function App() {
             noscript body); humans landing on them get the home page
             (the SPA boots and shows the practitioner roster).
             =========================================================== */}
-        <Route path="/outcall-massage-sukhumvit" element={<Navigate to="/" replace />} />
-        <Route path="/outcall-massage-silom" element={<Navigate to="/" replace />} />
-        <Route path="/outcall-massage-asok" element={<Navigate to="/" replace />} />
-        <Route path="/outcall-massage-thonglor" element={<Navigate to="/" replace />} />
-        <Route path="/outcall-massage-near-me" element={<Navigate to="/" replace />} />
+        <Route path="/outcall-massage-sukhumvit" element={<KeywordLanding area="sukhumvit" />} />
+        <Route path="/outcall-massage-silom" element={<KeywordLanding area="silom" />} />
+        <Route path="/outcall-massage-asok" element={<KeywordLanding area="asok" />} />
+        <Route path="/outcall-massage-thonglor" element={<KeywordLanding area="thonglor" />} />
+        <Route path="/outcall-massage-near-me" element={<KeywordLanding area="near-me" />} />
         {/* ================= PUBLIC ================= */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />

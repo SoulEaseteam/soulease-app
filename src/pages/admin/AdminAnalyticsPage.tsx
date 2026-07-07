@@ -123,6 +123,18 @@ const REF_LABEL: Record<string, string> = {
   Reddit: "👽 Reddit",
 };
 
+// 🆕 Round 28s304 — district SEO landing pages (App.tsx keyword routes).
+//   The `area` prop rides on home_view when a visitor arrived via one of
+//   these pages; absent = they opened the home URL directly.
+const AREA_LABEL: Record<string, string> = {
+  sukhumvit: "🏙 สุขุมวิท",
+  silom: "🏙 สีลม",
+  asok: "🏙 อโศก",
+  thonglor: "🏙 ทองหล่อ",
+  "near-me": "📍 Near me / ใกล้ฉัน",
+  __direct__: "🔗 เข้าหน้าแรกตรง",
+};
+
 const selectSx = {
   minWidth: 150, fontSize: 13,
   "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 },
@@ -218,6 +230,8 @@ const AdminAnalyticsPage: React.FC = () => {
     const dailySessions: Record<string, Set<string>> = {};
     const sessionRef: Record<string, string> = {};
     const hourly: number[] = new Array(24).fill(0);
+    // 🆕 Round 28s304 — which district SEO page pulled the visitor.
+    const landingAreas: Record<string, number> = {};
 
     for (const ev of filteredEvents) {
       byEvent[ev.event] = (byEvent[ev.event] ?? 0) + 1;
@@ -233,14 +247,18 @@ const AdminAnalyticsPage: React.FC = () => {
 
       // Unique visitors per day + peak-hour histogram, both from the
       // home_view landing event (BKK = UTC+7, matching analytics.ts).
-      if (ev.event === "home_view" && ev.ts?.toDate) {
-        const dt = ev.ts.toDate();
-        if (ev.sid) {
-          const date = dayjs(dt).format("YYYY-MM-DD");
-          (dailySessions[date] ??= new Set()).add(ev.sid);
+      if (ev.event === "home_view") {
+        const area = (ev.props?.area as string) || "__direct__";
+        landingAreas[area] = (landingAreas[area] ?? 0) + 1;
+        if (ev.ts?.toDate) {
+          const dt = ev.ts.toDate();
+          if (ev.sid) {
+            const date = dayjs(dt).format("YYYY-MM-DD");
+            (dailySessions[date] ??= new Set()).add(ev.sid);
+          }
+          const bkkHour = (((dt.getUTCHours() + 7) % 24) + 24) % 24;
+          hourly[bkkHour] += 1;
         }
-        const bkkHour = (((dt.getUTCHours() + 7) % 24) + 24) % 24;
-        hourly[bkkHour] += 1;
       }
 
       if (ev.sid) {
@@ -331,6 +349,7 @@ const AdminAnalyticsPage: React.FC = () => {
       hourly,
       peakHour,
       peakHourCount,
+      landingAreas,
     };
   }, [filteredEvents]);
 
@@ -662,6 +681,31 @@ const AdminAnalyticsPage: React.FC = () => {
                 .slice(0, 8)
                 .map(([k, v]) => [REF_LABEL[k] ?? k, v] as [string, number])}
               emptyHint="ยังไม่มีข้อมูลที่มา"
+            />
+          </Card>
+
+          {/* 🆕 Round 28s304 — District SEO landing pages */}
+          <Card>
+            <Eyebrow>SEO landing · หน้า keyword</Eyebrow>
+            <Typography
+              sx={{
+                fontFamily: SERIF,
+                fontSize: 18,
+                fontWeight: 600,
+                color: adminColor.text,
+                mb: 0.5,
+              }}
+            >
+              คนมาจากหน้าไหน
+            </Typography>
+            <Box sx={{ mb: 1.5, fontFamily: SANS, fontSize: 11.5, color: adminColor.dim }}>
+              proxy ของคำค้น — คำที่พิมพ์ใน Google จริงดูที่ Search Console
+            </Box>
+            <RankedList
+              entries={Object.entries(stats.landingAreas)
+                .sort((a, b) => b[1] - a[1])
+                .map(([k, v]) => [AREA_LABEL[k] ?? k, v] as [string, number])}
+              emptyHint="ยังไม่มีข้อมูล (เก็บเฉพาะคนใหม่ตั้งแต่รอบนี้)"
             />
           </Card>
 

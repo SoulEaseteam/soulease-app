@@ -20,7 +20,7 @@ import { captureReferralFromURL } from "@/utils/referral";
 import { capturePromoFromURL } from "@/utils/discount";
 // 🆕 Round 28r13 — Self-hosted funnel analytics. Fires home_view
 //   exactly once per page mount (not per render).
-import { trackHomeView } from "@/utils/analytics";
+import { trackHomeView, consumeLandingArea } from "@/utils/analytics";
 
 import HomeTherapistGrid from "@/components/home/HomeTherapistGrid";
 // 🆕 Round 28s148 — PromiseStrip dropped (founder: "ลบทิ้งไป"). Value
@@ -55,8 +55,10 @@ const HomePage: React.FC = () => {
   }, []);
 
   // 🆕 Round 28r13 — Funnel analytics: count of unique home opens.
+  //   28s304 — attach the district keyword page the visitor arrived on
+  //   (if any) so the dashboard can show which SEO page pulls traffic.
   useEffect(() => {
-    trackHomeView();
+    trackHomeView(consumeLandingArea());
   }, []);
 
   useDocumentMeta({

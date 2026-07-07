@@ -191,8 +191,45 @@ export function trackEvent(
   });
 }
 
+// 🆕 Round 28s304 (founder: "ได้ทั้งหมด" — build the in-dashboard
+//   district-landing tracker offered after the "what do customers search
+//   for" question). The 5 SEO keyword pages (/outcall-massage-sukhumvit
+//   etc.) redirect humans to "/" instantly, so by the time home_view
+//   fires the URL is already "/" and the landing keyword is lost. Fix:
+//   the redirect stub records which district page it was BEFORE
+//   redirecting, and HomePage attaches it to the session's home_view.
+//   This is a proxy for search intent — it tells us which keyword page
+//   pulled the visitor, not the literal Google query (Google hides that;
+//   use Search Console for the real terms).
+const LANDING_KEY = "sunred.landing.area";
+
+/** Called by the keyword-page redirect stub, client-side, before it
+ *  navigates the visitor to the home page. */
+export function recordLandingArea(area: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(LANDING_KEY, area);
+  } catch {
+    // private mode / quota — attribution is best-effort, never blocks.
+  }
+}
+
+/** Read + clear the recorded landing area. Cleared so a later home
+ *  refresh in the same session doesn't re-attribute. */
+export function consumeLandingArea(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = window.sessionStorage.getItem(LANDING_KEY);
+    if (v) window.sessionStorage.removeItem(LANDING_KEY);
+    return v;
+  } catch {
+    return null;
+  }
+}
+
 /** Convenience wrappers — keeps callsites tidy. */
-export const trackHomeView = (): void => trackEvent("home_view");
+export const trackHomeView = (area?: string | null): void =>
+  trackEvent("home_view", area ? { area } : undefined);
 export const trackServiceView = (serviceId: string): void =>
   trackEvent("service_view", { serviceId });
 export const trackBookingStart = (therapistId: string | null): void =>
