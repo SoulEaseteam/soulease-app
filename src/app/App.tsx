@@ -35,6 +35,7 @@ const AccountLegacyRedirect: React.FC = () => {
 
 import ScrollToTop from "@/components/common/ScrollToTop";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import MaintenanceGate from "@/components/common/MaintenanceGate";
 
 // 🆕 Round 28b29 (founder 2026-05-04, perf #66) — AdminFloatingChat
 //   imports framer-motion (~100 kB) and was eagerly loaded on every
@@ -224,6 +225,7 @@ export default function App() {
         <AdminFloatingChat />
       </Suspense>
 
+      <MaintenanceGate>
       <Routes>
         {/* ===== Round 28s109: localized crawler entry points ===== */}
         <Route path="/zh/*" element={<LocaleEntryRedirect lng="zh" />} />
@@ -363,6 +365,7 @@ export default function App() {
         {/* ================= 404 ================= */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      </MaintenanceGate>
     </Suspense>
   );
 }

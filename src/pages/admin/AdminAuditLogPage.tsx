@@ -83,6 +83,7 @@ const ACTION_LABEL: Record<string, { label: string; color: string }> = {
   "review.hide":             { label: "ซ่อนรีวิว",            color: adminColor.red },
   "phone.block":             { label: "บล็อกเบอร์โทร",         color: adminColor.red },
   "phone.unblock":           { label: "ปลดบล็อกเบอร์โทร",      color: adminColor.green },
+  "settings.update":         { label: "แก้ไขการตั้งค่า",       color: adminColor.blue },
 };
 
 // 🆕 Round 28s294 — category = the prefix before the dot. New actions
@@ -95,6 +96,7 @@ const CATEGORY_LABEL: Record<string, string> = {
   user: "ผู้ใช้",
   review: "รีวิว",
   phone: "เบอร์โทร",
+  settings: "ตั้งค่า",
   other: "อื่น ๆ",
 };
 // 🆕 Round 28s295 (founder screenshot: white-screened on "Cannot read

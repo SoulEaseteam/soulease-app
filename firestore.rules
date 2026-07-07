@@ -277,6 +277,19 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // 🆕 Round 28s296 (founder: "admin/advanced-settings ปรับแก้") —
+    //   `publicRules` holds ONLY non-secret booking-eligibility flags
+    //   (maintenanceMode, minAdvanceMins, maxFutureDays) that the
+    //   UNAUTHENTICATED booking flow must read before accepting a
+    //   submission (same reasoning as `blockedPhones` above — guest
+    //   checkout has no auth to gate a signed-in read on). Deliberately
+    //   a SEPARATE doc from `adminSettings/advanced` (which may later
+    //   hold real secrets like a bot token) so a public-read grant here
+    //   can never accidentally expose something sensitive.
+    match /adminSettings/publicRules {
+      allow read: if true;
+    }
+
     // ── audit log ───────────────────────────────────────────────────
     // 🆕 Round 28s234 (Phase 4) — was write:false ("Cloud Functions only")
     // but nothing server-side ever wrote it, so the collection was

@@ -49,7 +49,12 @@ export type AuditAction =
   //   every other consequential admin action. Distinct from user.block/
   //   unblock, which toggles a signed-up `users` account, not a phone.
   | "phone.block"
-  | "phone.unblock";
+  | "phone.unblock"
+  // 🆕 Round 28s296 — AdminAdvancedSettingsPage now actually enforces
+  //   maintenanceMode/minAdvanceMins/maxFutureDays; saving a change to
+  //   live booking-eligibility rules deserves a trail like every other
+  //   consequential admin write.
+  | "settings.update";
 
 export async function logAdminAction(
   action: AuditAction,

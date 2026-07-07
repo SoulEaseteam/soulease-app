@@ -885,6 +885,46 @@ const BookingFlowPage: React.FC = () => {
         }
       }
 
+      // 🆕 Round 28s296 — minAdvanceMins/maxFutureDays on
+      //   AdminAdvancedSettingsPage used to save to Firestore with
+      //   nothing anywhere reading it back — the toggle did nothing.
+      //   Real enforcement: pull the live booking-eligibility window
+      //   from the public `adminSettings/publicRules` doc. Missing
+      //   values default to 0 (= no restriction), so an admin who never
+      //   touches Settings sees no change from today's behavior.
+      if (!isAdminBooking) {
+        try {
+          const rulesSnap = await getDoc(doc(db, "adminSettings", "publicRules"));
+          const rules = rulesSnap.data() as
+            | { minAdvanceMins?: number; maxFutureDays?: number }
+            | undefined;
+          const minAdvanceMins = rules?.minAdvanceMins ?? 0;
+          const maxFutureDays = rules?.maxFutureDays ?? 0;
+          if (minAdvanceMins > 0 && startDate.diff(nowBKK(), "minute") < minAdvanceMins) {
+            toast.error(
+              t(
+                "booking.error.tooSoon",
+                `Please book at least ${minAdvanceMins} minutes in advance.`
+              )
+            );
+            setSubmitting(false);
+            return;
+          }
+          if (maxFutureDays > 0 && startDate.diff(nowBKK(), "day") > maxFutureDays) {
+            toast.error(
+              t(
+                "booking.error.tooFarAhead",
+                `Bookings can only be made up to ${maxFutureDays} days ahead.`
+              )
+            );
+            setSubmitting(false);
+            return;
+          }
+        } catch (err) {
+          console.warn("[booking] publicRules check failed:", err);
+        }
+      }
+
       const attribution = getAttribution();
       const ref = await addDoc(collection(db, "bookings"), {
         userId: user?.uid ?? null,
