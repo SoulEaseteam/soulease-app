@@ -54,7 +54,14 @@ export type AuditAction =
   //   maintenanceMode/minAdvanceMins/maxFutureDays; saving a change to
   //   live booking-eligibility rules deserves a trail like every other
   //   consequential admin write.
-  | "settings.update";
+  | "settings.update"
+  // 🆕 Round 28s298 — new /admin/promotions page: toggling a hardcoded
+  //   code on/off or creating/deleting a custom code changes what a
+  //   customer actually gets charged at checkout, same trail bar as
+  //   every other pricing-relevant write this session.
+  | "promo.toggle"
+  | "promo.create"
+  | "promo.delete";
 
 export async function logAdminAction(
   action: AuditAction,

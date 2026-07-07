@@ -61,6 +61,38 @@ const WELCOME_CODE = "WELCOME20";
 const TONIGHT_CODE = "TONIGHT500";
 const SAMMY_CODE = "SAMMY200";
 
+// 🆕 Round 28s298 (founder: "เพิ่ม เมนู โปรโมชั่น") — every code above
+// was locked in code with no admin UI at all. This stays a pure,
+// synchronous function (no async signature change, no call-site churn)
+// by keeping a module-level cache that the new /admin/promotions page's
+// Firestore data gets pushed into once at boot + on every live update —
+// see MaintenanceGate.tsx, same pattern as taxiFare.ts's live pricing
+// overrides. `disabledBuiltinCodes` lets admin turn OFF one of the
+// hardcoded codes above (e.g. retire SAMMY200 after the forum promo
+// ends) without a code change; `customCodes` are brand-new codes admin
+// creates entirely from the UI, checked as a fallback after every
+// hardcoded name above fails to match.
+export interface CustomPromoCode {
+  type: "percent" | "fixed";
+  amount: number;
+  capThb?: number;
+  label: string;
+  /** Epoch ms; null/undefined = never expires. */
+  expiresAt?: number | null;
+}
+let disabledBuiltinCodes = new Set<string>();
+let customCodes: Record<string, CustomPromoCode> = {};
+
+export function applyLivePromoConfig(cfg: {
+  disabledCodes?: string[];
+  customCodes?: Record<string, CustomPromoCode>;
+}): void {
+  if (cfg.disabledCodes) {
+    disabledBuiltinCodes = new Set(cfg.disabledCodes.map((c) => c.toUpperCase()));
+  }
+  if (cfg.customCodes) customCodes = cfg.customCodes;
+}
+
 export type DiscountType = "percent" | "fixed" | "none";
 
 export interface DiscountResult {
@@ -122,6 +154,11 @@ export function validateDiscount(
   if (!raw) return NULL_RESULT;
   const code = raw.trim().toUpperCase();
   if (!code) return NULL_RESULT;
+
+  // 🆕 Round 28s298 — admin turned this hardcoded code off from
+  //   /admin/promotions. Quiet invalid, same as every other rejected
+  //   code path below.
+  if (disabledBuiltinCodes.has(code)) return { ...NULL_RESULT, code };
 
   // 🆕 Round 28r27 — Service-tier gate. Promo codes are blocked on
   //   premium-tier services.
@@ -246,7 +283,13 @@ export function validateDiscount(
   }
 
   // ── SUN-XXXXXX: referral, flat ฿200 off (entry tier only after r33) ──
+  // 🆕 Round 28s298 — this matches a PATTERN (any SUN-XXXX), not one
+  //   literal code, so the disable check uses the pseudo-key "REFERRAL"
+  //   (doesn't match REFERRAL_CODE_RE, so it can never collide with a
+  //   real customer-typed code) instead of the top-of-function exact-
+  //   code check, which only ever sees ONE specific code per call.
   if (REFERRAL_CODE_RE.test(code)) {
+    if (disabledBuiltinCodes.has("REFERRAL")) return { ...NULL_RESULT, code };
     return {
       valid: true,
       code,
@@ -254,6 +297,27 @@ export function validateDiscount(
       label: `Referral · ฿${REFERRAL_FIXED_THB} off`,
       type: "fixed",
     };
+  }
+
+  // 🆕 Round 28s298 — admin-created custom code from /admin/promotions.
+  //   Checked LAST so it can never accidentally shadow a hardcoded name
+  //   above (admin can't create "FIRST10" and change its behavior).
+  const custom = customCodes[code];
+  if (custom) {
+    if (custom.expiresAt && Date.now() > custom.expiresAt) {
+      return { ...NULL_RESULT, code };
+    }
+    const amount =
+      custom.type === "percent"
+        ? Math.max(
+            0,
+            Math.min(
+              Math.round((subtotalTHB * custom.amount) / 100),
+              custom.capThb ?? Number.POSITIVE_INFINITY
+            )
+          )
+        : Math.max(0, custom.amount);
+    return { valid: true, code, amount, label: custom.label, type: custom.type };
   }
 
   // Unknown code — invalid (UI shows quiet hint, doesn't block booking).

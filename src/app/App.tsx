@@ -166,6 +166,10 @@ const AdminBookingAddPage = React.lazy(
 const AdminAdvancedSettingsPage = React.lazy(
   () => import("@/pages/admin/AdminAdvancedSettingsPage")
 );
+// 🆕 Round 28s298 — manage discount codes + the promos master switch.
+const AdminPromotionsPage = React.lazy(
+  () => import("@/pages/admin/AdminPromotionsPage")
+);
 // 🆕 Round 28r15 — Funnel analytics dashboard for admin.
 const AdminAnalyticsPage = React.lazy(
   () => import("@/pages/admin/AdminAnalyticsPage")
@@ -360,6 +364,7 @@ export default function App() {
             path="advanced-settings"
             element={<AdminAdvancedSettingsPage />}
           />
+          <Route path="promotions" element={<AdminPromotionsPage />} />
         </Route>
 
         {/* ================= 404 ================= */}

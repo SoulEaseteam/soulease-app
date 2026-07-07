@@ -290,6 +290,17 @@ service cloud.firestore {
       allow read: if true;
     }
 
+    // 🆕 Round 28s298 (founder: "เพิ่ม เมนู โปรโมชั่น") — one doc per
+    //   promo code (builtin on/off override OR a brand-new custom code),
+    //   matching `blockedPhones`' shape. Public read: the discount-code
+    //   field in checkout has no auth, so BookingFlowPage's client-side
+    //   validateDiscount() needs to read this before a guest ever signs
+    //   in. Write stays admin-only.
+    match /promoCodes/{code} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // ── audit log ───────────────────────────────────────────────────
     // 🆕 Round 28s234 (Phase 4) — was write:false ("Cloud Functions only")
     // but nothing server-side ever wrote it, so the collection was

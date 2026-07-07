@@ -46,6 +46,7 @@ import BlockIcon from "@mui/icons-material/Block";
 import InsightsIcon from "@mui/icons-material/Insights";
 import PaidIcon from "@mui/icons-material/Paid";
 import RateReviewIcon from "@mui/icons-material/RateReview";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -81,6 +82,9 @@ const menuItems = [
   // 🆕 Round 28r15 — Funnel analytics (self-hosted, reads
   //   `analytics_events` collection populated by Round 28r13).
   { label: "Analytics",    path: "/admin/analytics",          icon: <InsightsIcon /> },
+  // 🆕 Round 28s298 — manage discount codes (on/off + create new) and
+  //   the master promos-enabled switch. See src/utils/discount.ts.
+  { label: "Promotions",   path: "/admin/promotions",         icon: <LocalOfferIcon /> },
   // People
   { label: "Therapists",   path: "/admin/therapists",         icon: <TherapistIcon /> },
   { label: "Users",        path: "/admin/users",              icon: <UserIcon /> },

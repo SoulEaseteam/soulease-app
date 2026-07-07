@@ -13,20 +13,23 @@
 //   locking the founder out of her own back office.
 
 import React, { useEffect, useState } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import { applyLiveFareConfig } from "@/utils/taxiFare";
+import { applyLivePromosEnabled } from "@/config/featureFlags";
+import { applyLivePromoConfig, type CustomPromoCode } from "@/utils/discount";
 
 const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { role, loading: authLoading } = useAuth();
   const [maintenanceOn, setMaintenanceOn] = useState(false);
 
   useEffect(() => {
-    // 🆕 Round 28s296 — this component already subscribes to the ONLY
-    //   public app-config doc, so the live pricing override (deposit,
-    //   admin-quote distance, round-trip multiplier — see taxiFare.ts)
-    //   piggybacks on the same listener instead of opening a second one.
+    // 🆕 Round 28s296/28s298 — this component already subscribes to the
+    //   ONLY public app-config doc, so the live pricing override
+    //   (deposit, admin-quote distance, round-trip multiplier — see
+    //   taxiFare.ts) and the promos master switch (featureFlags.ts)
+    //   piggyback on the same listener instead of opening new ones.
     const unsub = onSnapshot(
       doc(db, "adminSettings", "publicRules"),
       (snap) => {
@@ -38,8 +41,43 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
           freeRadiusKm: data?.freeRadiusKm,
           depositThb: data?.depositAmount,
         });
+        applyLivePromosEnabled(data?.promosEnabled === true);
       },
       () => setMaintenanceOn(false), // fail open — never let a read error lock everyone out
+    );
+    return () => unsub();
+  }, []);
+
+  // 🆕 Round 28s298 (founder: "เพิ่ม เมนู โปรโมชั่น") — separate listener
+  //   on the `promoCodes` collection (not a single doc — each code is
+  //   its own doc, matching blockedPhones' shape) feeding
+  //   discount.ts's live override cache: which hardcoded codes admin
+  //   turned off, plus any brand-new codes she created from the UI.
+  useEffect(() => {
+    const unsub = onSnapshot(
+      collection(db, "promoCodes"),
+      (snap) => {
+        const disabledCodes: string[] = [];
+        const custom: Record<string, CustomPromoCode> = {};
+        snap.forEach((d) => {
+          const data = d.data();
+          if (data.kind === "custom") {
+            if (data.enabled !== false) {
+              custom[d.id] = {
+                type: data.type === "percent" ? "percent" : "fixed",
+                amount: typeof data.amount === "number" ? data.amount : 0,
+                capThb: typeof data.capThb === "number" ? data.capThb : undefined,
+                label: typeof data.label === "string" ? data.label : d.id,
+                expiresAt: data.expiresAt?.toMillis?.() ?? null,
+              };
+            }
+          } else if (data.enabled === false) {
+            disabledCodes.push(d.id);
+          }
+        });
+        applyLivePromoConfig({ disabledCodes, customCodes: custom });
+      },
+      () => applyLivePromoConfig({ disabledCodes: [], customCodes: {} }), // fail open
     );
     return () => unsub();
   }, []);
