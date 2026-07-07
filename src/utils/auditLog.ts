@@ -39,7 +39,11 @@ export type AuditAction =
   | "therapist.update"
   | "therapist.delete"
   | "user.block"
-  | "user.unblock";
+  | "user.unblock"
+  // 🆕 Round 28s291 — Edit/Hide on AdminReviewListPage had zero audit trail,
+  //   unlike every other consequential admin write this session.
+  | "review.edit"
+  | "review.hide";
 
 export async function logAdminAction(
   action: AuditAction,

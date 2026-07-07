@@ -46,6 +46,8 @@ const ACTION_LABEL: Record<string, { label: string; color: string }> = {
   "therapist.delete":        { label: "ลบหมอนวด",             color: adminColor.red },
   "user.block":              { label: "บล็อกผู้ใช้",          color: adminColor.red },
   "user.unblock":            { label: "ปลดบล็อกผู้ใช้",       color: adminColor.green },
+  "review.edit":             { label: "แก้ไขรีวิว",           color: adminColor.blue },
+  "review.hide":             { label: "ซ่อนรีวิว",            color: adminColor.red },
 };
 
 function detailLine(detail?: Record<string, unknown>): string {
@@ -62,6 +64,7 @@ function detailLine(detail?: Record<string, unknown>): string {
   }
   if (typeof detail.amount === "number") parts.push(`฿${detail.amount.toLocaleString()}`);
   if (typeof detail.count === "number") parts.push(`${detail.count} คน`);
+  if (typeof detail.rating === "number") parts.push(`★${detail.rating}`);
   return parts.join(" · ");
 }
 
