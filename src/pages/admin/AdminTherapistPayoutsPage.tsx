@@ -86,6 +86,11 @@ interface Job {
   createdAt?: Timestamp | null;
   customerName?: string | null;
   customerPaid: boolean;
+  // 🆕 Round 28s315 — the shop pays the therapist their service commission
+  //   (tier %, "60%") PLUS the taxi fee (reimbursement for the trip). `payout`
+  //   is the total; commission/taxi are kept for the breakdown line.
+  commission: number;
+  taxi: number;
   payout: number;
   therapistPaid: boolean;
   therapistPaidAt?: Timestamp | null;
@@ -182,12 +187,14 @@ const AdminTherapistPayoutsPage: React.FC = () => {
           const status = (d.status as string) ?? "";
           if (isPayrollExcluded(status)) return; // cancelled / refunded / no-show …
           if (isCashPayment(d.payment, d.paymentMethodId)) return; // cash → nothing owed
-          const payout = therapistPayoutFor({
+          const commission = therapistPayoutFor({
             serviceId: d.serviceId ?? null,
             servicePrice: d.servicePrice ?? null,
             discountAmount: d.discountAmount ?? null,
           });
-          if (payout <= 0) return; // no service price yet → skip
+          if (commission <= 0) return; // no service price yet → skip
+          // 🆕 Round 28s315 — shop pays commission + taxi reimbursement.
+          const taxi = (d.taxiFee as number) ?? 0;
           arr.push({
             id: d0.id,
             therapistId: (d.therapistId as string) ?? "(no therapist)",
@@ -199,7 +206,9 @@ const AdminTherapistPayoutsPage: React.FC = () => {
             createdAt: d.createdAt ?? null,
             customerName: d.customerName ?? d.name ?? null,
             customerPaid: (d.paid as boolean) ?? d.paymentStatus === "paid",
-            payout,
+            commission,
+            taxi,
+            payout: commission + taxi,
             therapistPaid: !!d.therapistPaid,
             therapistPaidAt: d.therapistPaidAt ?? null,
           });
@@ -627,6 +636,11 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                               {j.customerPaid ? "ลูกค้าโอนแล้ว" : "ลูกค้ายังไม่จ่าย"}
                             </Box>
                           </Box>
+                          {/* 🆕 28s315 — commission + taxi breakdown */}
+                          <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 0.25 }}>
+                            ค่านวด {formatTHB(j.commission)}
+                            {j.taxi > 0 && ` + เดินทาง ${formatTHB(j.taxi)}`}
+                          </Typography>
                         </Box>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexShrink: 0 }}>
                           <AmountLink id={j.id} value={j.payout} />
@@ -711,7 +725,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
           )}
 
           <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, textAlign: "center", mt: 0.5 }}>
-            บุคกิ้ง {rangeNote} ที่ลูกค้าจ่ายแบบไม่ใช่เงินสด · ยอด = ส่วนแบ่งหมอ (ตาม tier · หักส่วนลด) · กดยอดเพื่อดูรายละเอียดใน admin/bookings
+            บุคกิ้ง {rangeNote} ที่ลูกค้าจ่ายแบบไม่ใช่เงินสด · ยอด = ค่านวด (ตาม tier · หักส่วนลด) + ค่าเดินทาง · กดยอดเพื่อดูรายละเอียดใน admin/bookings
           </Typography>
         </Box>
       )}
