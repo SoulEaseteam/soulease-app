@@ -187,28 +187,37 @@ type TabKey = "all" | "pending" | "confirmed" | "completed" | "cancelled";
 const SANS  = adminFont.sans;
 const SERIF = adminFont.serif;
 
-type StatusCfg = { label: string; stripe: string; badge: { bg: string; fg: string } };
+// 🆕 Round 28r40 — bilingual pass (matches r35 AdminDashboardPage pattern).
+//   `label` = the compact English badge shown in the tiny status pill; kept
+//   short so the pill never breaks the card layout. `labelTh` = the Thai
+//   counterpart, joined into `bilingual` for wider contexts (tabs, Status
+//   dropdown, drawer header pill where space is generous).
+type StatusCfg = { label: string; labelTh: string; bilingual: string; stripe: string; badge: { bg: string; fg: string } };
+
+const mkCfg = (label: string, labelTh: string, stripe: string, badge: { bg: string; fg: string }): StatusCfg => ({
+  label, labelTh, bilingual: `${label} · ${labelTh}`, stripe, badge,
+});
 
 const STATUS_CFG: Record<string, StatusCfg> = {
-  pending:   { label: "Pending",   stripe: adminColor.accent, badge: { bg: `${adminColor.accent}1A`, fg: adminColor.accent } },
-  confirmed: { label: "Confirmed", stripe: adminColor.green,  badge: { bg: `${adminColor.green}1A`,  fg: adminColor.green  } },
-  completed: { label: "Completed", stripe: adminColor.dim,    badge: { bg: adminColor.panel2,        fg: adminColor.muted  } },
-  cancelled: { label: "Cancelled", stripe: adminColor.line2,  badge: { bg: adminColor.panel2,        fg: adminColor.dim    } },
-  refunded:  { label: "Refunded",  stripe: adminColor.amber,  badge: { bg: `${adminColor.amber}1A`,  fg: adminColor.amber  } },
-  no_show:   { label: "No-show",   stripe: adminColor.red,    badge: { bg: `${adminColor.red}14`,    fg: adminColor.red    } },
+  pending:   mkCfg("Pending",   "รอยืนยัน",   adminColor.accent, { bg: `${adminColor.accent}1A`, fg: adminColor.accent }),
+  confirmed: mkCfg("Confirmed", "ยืนยันแล้ว", adminColor.green,  { bg: `${adminColor.green}1A`,  fg: adminColor.green  }),
+  completed: mkCfg("Completed", "เสร็จสิ้น",  adminColor.dim,    { bg: adminColor.panel2,        fg: adminColor.muted  }),
+  cancelled: mkCfg("Cancelled", "ยกเลิก",     adminColor.line2,  { bg: adminColor.panel2,        fg: adminColor.dim    }),
+  refunded:  mkCfg("Refunded",  "คืนเงิน",    adminColor.amber,  { bg: `${adminColor.amber}1A`,  fg: adminColor.amber  }),
+  no_show:   mkCfg("No-show",   "ไม่มา",     adminColor.red,    { bg: `${adminColor.red}14`,    fg: adminColor.red    }),
 };
 
 // 🆕 28s252 — neutral fallback so an unknown status doesn't render as
 //   pending-red (misleading).
 const cfgFor = (status: string): StatusCfg =>
-  STATUS_CFG[status] ?? { label: status, stripe: adminColor.dim, badge: { bg: adminColor.panel2, fg: adminColor.muted } };
+  STATUS_CFG[status] ?? mkCfg(status, status, adminColor.dim, { bg: adminColor.panel2, fg: adminColor.muted });
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "all",       label: "All"       },
-  { key: "pending",   label: "Pending"   },
-  { key: "confirmed", label: "Confirmed" },
-  { key: "completed", label: "Completed" },
-  { key: "cancelled", label: "Cancelled" },
+const TABS: { key: TabKey; label: string; labelTh: string }[] = [
+  { key: "all",       label: "All",       labelTh: "ทั้งหมด"    },
+  { key: "pending",   label: "Pending",   labelTh: "รอยืนยัน"  },
+  { key: "confirmed", label: "Confirmed", labelTh: "ยืนยันแล้ว" },
+  { key: "completed", label: "Completed", labelTh: "เสร็จสิ้น"  },
+  { key: "cancelled", label: "Cancelled", labelTh: "ยกเลิก"    },
 ];
 
 // 🆕 Round 28s230 — canonical customer name across the two write paths.
@@ -381,9 +390,10 @@ const AdminBookingListPage: React.FC = () => {
         status === "cancelled" ? "booking.cancel" :
         status === "completed" ? "booking.complete" : "booking.status_change";
       void logAdminAction(auditAction, { bookingId: id, status, ...(reason ? { reason } : {}) });
-      setToast({ msg: `Booking ${status}`, ok: true });
+      const statusTh = cfgFor(status).labelTh;
+      setToast({ msg: `Booking ${status} · ${statusTh}`, ok: true });
     } catch {
-      setToast({ msg: "Update failed", ok: false });
+      setToast({ msg: "Update failed · อัปเดตล้มเหลว", ok: false });
     }
   };
 
@@ -413,9 +423,9 @@ const AdminBookingListPage: React.FC = () => {
     try {
       await updateDoc(doc(db, "bookings", id), { reviewed: true });
       void logAdminAction("booking.mark_reviewed", { bookingId: id });
-      setToast({ msg: "Marked reviewed", ok: true });
+      setToast({ msg: "Marked reviewed · ทำเครื่องหมายว่าตรวจแล้ว", ok: true });
     } catch {
-      setToast({ msg: "Update failed", ok: false });
+      setToast({ msg: "Update failed · อัปเดตล้มเหลว", ok: false });
     }
   };
 
@@ -429,9 +439,9 @@ const AdminBookingListPage: React.FC = () => {
     try {
       await updateDoc(doc(db, "bookings", id), patch);
       void logAdminAction("booking.edit_details", { bookingId: id, ...auditDetail });
-      setToast({ msg: "Details saved", ok: true });
+      setToast({ msg: "Details saved · บันทึกแล้ว", ok: true });
     } catch {
-      setToast({ msg: "Save failed", ok: false });
+      setToast({ msg: "Save failed · บันทึกล้มเหลว", ok: false });
     }
   };
 
@@ -444,18 +454,18 @@ const AdminBookingListPage: React.FC = () => {
         paymentStatus: next ? "paid" : "unpaid",
       });
       void logAdminAction(next ? "booking.mark_paid" : "booking.mark_unpaid", { bookingId: id });
-      setToast({ msg: next ? "Marked as paid" : "Marked unpaid", ok: true });
+      setToast({ msg: next ? "Marked as paid · จ่ายแล้ว" : "Marked unpaid · ยังไม่จ่าย", ok: true });
     } catch {
-      setToast({ msg: "Update failed", ok: false });
+      setToast({ msg: "Update failed · อัปเดตล้มเหลว", ok: false });
     }
   };
 
   const saveNote = async (id: string, note: string) => {
     try {
       await updateDoc(doc(db, "bookings", id), { adminNote: note });
-      setToast({ msg: "Note saved", ok: true });
+      setToast({ msg: "Note saved · บันทึกโน้ตแล้ว", ok: true });
     } catch {
-      setToast({ msg: "Save failed", ok: false });
+      setToast({ msg: "Save failed · บันทึกล้มเหลว", ok: false });
     }
   };
 
@@ -527,12 +537,17 @@ const AdminBookingListPage: React.FC = () => {
         }}
       >
         <Box>
-          <Typography sx={{ fontFamily: SERIF, fontSize: { xs: 22, md: 26 }, fontWeight: 600, color: adminColor.text, letterSpacing: "-0.01em" }}>
+          <Typography sx={{ fontFamily: SERIF, fontSize: { xs: 22, md: 26 }, fontWeight: 600, color: adminColor.text, letterSpacing: "-0.01em", lineHeight: 1.1 }}>
             Bookings
           </Typography>
-          <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.muted, mt: 0.3 }}>
-            {counts.pending > 0 ? `${counts.pending} pending action${counts.pending > 1 ? "s" : ""}` : "All up to date"}
-            {atCap && ` · showing latest ${feedSize}`}
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.dim, letterSpacing: "0.14em", textTransform: "uppercase", mt: 0.4 }}>
+            รายการจอง
+          </Typography>
+          <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.muted, mt: 0.6 }}>
+            {counts.pending > 0
+              ? `${counts.pending} pending · รอยืนยัน ${counts.pending} รายการ`
+              : "All up to date · อัปเดตครบแล้ว"}
+            {atCap && ` · showing latest ${feedSize} · แสดง ${feedSize} รายการล่าสุด`}
           </Typography>
         </Box>
         <motion.button
@@ -546,7 +561,7 @@ const AdminBookingListPage: React.FC = () => {
             color: adminColor.text, fontFamily: SANS, fontSize: 13, fontWeight: 600, cursor: "pointer",
           }}
         >
-          <Export size={15} /> Export
+          <Export size={15} /> Export · ส่งออก
         </motion.button>
       </Box>
 
@@ -561,11 +576,11 @@ const AdminBookingListPage: React.FC = () => {
         }}
       >
         {[
-          { label: "Needs action",  value: String(counts.pending),               sub: "pending confirmation", rail: adminColor.accent },
-          { label: "In progress",   value: String(counts.confirmed),             sub: "confirmed · dispatched", rail: adminColor.green },
+          { label: "Needs Action", labelTh: "ต้องดำเนินการ",     value: String(counts.pending),   sub: "pending confirmation · รอยืนยัน",         rail: adminColor.accent },
+          { label: "In Progress",  labelTh: "กำลังดำเนินการ",    value: String(counts.confirmed), sub: "confirmed · ยืนยันแล้ว",                   rail: adminColor.green },
           // 🆕 28s258 — shop-revenue line added under "Booked value" (same
           //   commission split as Earnings/Reports — see commission.ts).
-          { label: "Booked value",  value: formatTHB(valueStats.totalValue),     sub: `${valueStats.activeCount} bookings · excl. cancelled`, extra: `Shop revenue ${formatTHB(valueStats.shopRevenue)}`, rail: adminColor.dim },
+          { label: "Booked Value", labelTh: "มูลค่ารวม",         value: formatTHB(valueStats.totalValue), sub: `${valueStats.activeCount} bookings · ไม่รวมยกเลิก`, extra: `Shop Revenue · รายได้ร้าน ${formatTHB(valueStats.shopRevenue)}`, rail: adminColor.dim },
         ].map((s) => (
           <Box
             key={s.label}
@@ -580,8 +595,11 @@ const AdminBookingListPage: React.FC = () => {
               },
             }}
           >
-            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: adminColor.muted, pl: 1.5 }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, letterSpacing: "0.09em", textTransform: "uppercase", color: adminColor.muted, pl: 1.5, lineHeight: 1 }}>
               {s.label}
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 600, color: adminColor.dim, pl: 1.5, mt: 0.3, letterSpacing: "0.02em" }}>
+              {s.labelTh}
             </Typography>
             <Typography sx={{ ...adminFigureSx, fontSize: 25, mt: 0.75, pl: 1.5, lineHeight: 1 }}>
               {s.value}
@@ -611,7 +629,7 @@ const AdminBookingListPage: React.FC = () => {
         >
           <MagnifyingGlass size={16} color={adminColor.dim} />
           <InputBase
-            placeholder="Search customer, therapist, ID…"
+            placeholder="Search · ค้นหา customer, therapist, ID…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             sx={{ flex: 1, fontFamily: SANS, fontSize: 13, color: adminColor.text }}
@@ -635,6 +653,7 @@ const AdminBookingListPage: React.FC = () => {
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setTab(t.key)}
                 aria-pressed={active}
+                aria-label={`${t.label} · ${t.labelTh}`}
                 style={{
                   flexShrink: 0,
                   height: 36,
@@ -652,7 +671,19 @@ const AdminBookingListPage: React.FC = () => {
                   transition: "border-color 0.15s ease, color 0.15s ease",
                 }}
               >
-                {t.label}
+                <Box component="span" sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
+                  {t.label}
+                  <Box
+                    component="span"
+                    sx={{
+                      fontSize: 10, fontWeight: 600,
+                      opacity: active ? 0.85 : 0.75,
+                      letterSpacing: "0.01em",
+                    }}
+                  >
+                    · {t.labelTh}
+                  </Box>
+                </Box>
                 {counts[t.key] > 0 && (
                   <Box
                     component="span"
@@ -696,26 +727,26 @@ const AdminBookingListPage: React.FC = () => {
             },
           }}
         >
-          <ToggleButton value="all">All time</ToggleButton>
-          <ToggleButton value="custom">Custom</ToggleButton>
+          <ToggleButton value="all">All time · ทุกเวลา</ToggleButton>
+          <ToggleButton value="custom">Custom · กำหนดเอง</ToggleButton>
         </ToggleButtonGroup>
 
         {dateMode === "custom" && (
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
-              label="From"
+              label="From · จาก"
               value={customStart}
               maxDate={customEnd}
               onChange={(v) => v && setCustomStart(v)}
-              slotProps={{ textField: { size: "small", sx: { width: 130 } } }}
+              slotProps={{ textField: { size: "small", sx: { width: 150 } } }}
             />
             <DatePicker
-              label="To"
+              label="To · ถึง"
               value={customEnd}
               minDate={customStart}
               maxDate={dayjs()}
               onChange={(v) => v && setCustomEnd(v)}
-              slotProps={{ textField: { size: "small", sx: { width: 130 } } }}
+              slotProps={{ textField: { size: "small", sx: { width: 150 } } }}
             />
           </LocalizationProvider>
         )}
@@ -725,10 +756,10 @@ const AdminBookingListPage: React.FC = () => {
             size="small"
             value={therapistFilter}
             onChange={(e) => setTherapistFilter(e.target.value)}
-            sx={{ minWidth: 160, fontSize: 13 }}
+            sx={{ minWidth: 180, fontSize: 13 }}
             MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
           >
-            <MenuItem value="__ALL__">All therapists</MenuItem>
+            <MenuItem value="__ALL__">All Therapists · ทุกคน</MenuItem>
             {therapistOptions.map(([id, name]) => (
               <MenuItem key={id} value={id}>{name}</MenuItem>
             ))}
@@ -739,12 +770,12 @@ const AdminBookingListPage: React.FC = () => {
           size="small"
           value={paymentFilter}
           onChange={(e) => setPaymentFilter(e.target.value)}
-          sx={{ minWidth: 130, fontSize: 13 }}
+          sx={{ minWidth: 160, fontSize: 13 }}
           MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
         >
-          <MenuItem value="__ALL__">Any payment</MenuItem>
-          <MenuItem value="paid">Paid</MenuItem>
-          <MenuItem value="unpaid">Unpaid</MenuItem>
+          <MenuItem value="__ALL__">Any Payment · ทุกสถานะ</MenuItem>
+          <MenuItem value="paid">Paid · จ่ายแล้ว</MenuItem>
+          <MenuItem value="unpaid">Unpaid · ยังไม่จ่าย</MenuItem>
         </Select>
       </Box>
 
@@ -772,7 +803,7 @@ const AdminBookingListPage: React.FC = () => {
               color: adminColor.dim, fontFamily: SANS, fontSize: 14,
             }}
           >
-            No bookings found
+            No bookings found · ไม่พบรายการจอง
           </Box>
         ) : (
           <AnimatePresence mode="popLayout">
@@ -814,7 +845,7 @@ const AdminBookingListPage: React.FC = () => {
               color: adminColor.text, fontFamily: SANS, fontSize: 13, fontWeight: 600, cursor: "pointer",
             }}
           >
-            Load {FEED_LIMIT} more
+            Load {FEED_LIMIT} more · โหลดเพิ่ม {FEED_LIMIT}
           </motion.button>
         </Box>
       )}
@@ -939,13 +970,19 @@ const BookingCard: React.FC<{
 
       <Box sx={{ p: "14px 16px 12px" }}>
         {/* row 1: therapist + status badge */}
+        {/* 🆕 Round 28r40 — the compact card pill stays English-only for
+            space; `cfg.bilingual` (Eng · Thai) is used in wider surfaces
+            (drawer header pill + Status dropdown), where there's room. */}
         <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, mb: 0.75 }}>
           <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 600, color: isTerminal ? adminColor.muted : adminColor.text, lineHeight: 1.2 }}>
             {b.therapistName}
           </Typography>
-          <Box sx={{ px: "9px", py: "3px", borderRadius: 999, background: cfg.badge.bg, flexShrink: 0 }}>
+          <Box sx={{ px: "9px", py: "3px", borderRadius: 999, background: cfg.badge.bg, flexShrink: 0 }} title={cfg.bilingual}>
             <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase", color: cfg.badge.fg }}>
               {cfg.label}
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 8.5, fontWeight: 600, color: cfg.badge.fg, opacity: 0.85, textAlign: "center", lineHeight: 1, mt: "1px" }}>
+              {cfg.labelTh}
             </Typography>
           </Box>
         </Box>
@@ -1028,7 +1065,7 @@ const BookingCard: React.FC<{
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={onTogglePaid}
-              title={paid ? "Mark unpaid" : "Mark paid"}
+              title={paid ? "Mark unpaid · ยังไม่จ่าย" : "Mark paid · จ่ายแล้ว"}
               aria-label={paid ? "Mark unpaid" : "Mark paid"}
               style={{
                 width: 32, height: 32, borderRadius: "50%",
@@ -1044,7 +1081,8 @@ const BookingCard: React.FC<{
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={() => setExpanded((v) => !v)}
-              aria-label={expanded ? "Collapse" : "Expand"}
+              aria-label={expanded ? "Collapse · ย่อ" : "Expand · ขยาย"}
+              title={expanded ? "Collapse · ย่อ" : "Expand · ขยาย"}
               aria-expanded={expanded}
               style={{
                 width: 32, height: 32, borderRadius: "50%",
@@ -1062,6 +1100,7 @@ const BookingCard: React.FC<{
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={onConfirm}
+                aria-label="Confirm booking · ยืนยันการจอง"
                 style={{
                   height: 36, padding: "0 16px", borderRadius: 999,
                   background: adminColor.accent,
@@ -1071,13 +1110,14 @@ const BookingCard: React.FC<{
                   display: "flex", alignItems: "center", gap: 5,
                 }}
               >
-                <CheckCircle size={14} weight="fill" /> Confirm
+                <CheckCircle size={14} weight="fill" /> Confirm · ยืนยัน
               </motion.button>
             )}
             {isConfirmed && (
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={onComplete}
+                aria-label="Mark complete · เสร็จสิ้น"
                 style={{
                   height: 36, padding: "0 16px", borderRadius: 999,
                   background: adminColor.green,
@@ -1087,7 +1127,7 @@ const BookingCard: React.FC<{
                   display: "flex", alignItems: "center", gap: 5,
                 }}
               >
-                <CheckCircle size={14} weight="fill" /> Done
+                <CheckCircle size={14} weight="fill" /> Done · เสร็จ
               </motion.button>
             )}
           </Box>
@@ -1116,7 +1156,7 @@ const BookingCard: React.FC<{
                 >
                   <NotePencil size={13} color={adminColor.dim} style={{ flexShrink: 0 }} />
                   <InputBase
-                    placeholder="Admin note…"
+                    placeholder="Admin note · โน้ตแอดมิน…"
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     onBlur={() => onSaveNote(note)}
@@ -1139,7 +1179,7 @@ const BookingCard: React.FC<{
                       cursor: "pointer",
                     }}
                   >
-                    Full detail
+                    Full detail · ดูรายละเอียด
                   </motion.button>
 
                   {(isPending || isConfirmed) && (
@@ -1154,19 +1194,23 @@ const BookingCard: React.FC<{
                         cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
                       }}
                     >
-                      <XCircle size={13} weight="fill" /> Cancel
+                      <XCircle size={13} weight="fill" /> Cancel · ยกเลิก
                     </motion.button>
                   )}
 
                   {/* 🆕 28s259 — this used to be a plain <Box>, same border/
                       radius as "Full detail" next to it but with NO onClick —
                       looked like a button, did nothing. Real action now:
-                      dismiss the "waiting on the guest's review" flag. */}
+                      dismiss the "waiting on the guest's review" flag.
+                      🆕 28r40 — label was "Awaiting review" (a STATE),
+                      confusing: the button says one thing, the action does
+                      another. Renamed to "Mark reviewed · ตรวจแล้ว" —
+                      matches what tapping actually does. */}
                   {b.status === "completed" && !b.reviewed && (
                     <motion.button
                       whileTap={{ scale: 0.97 }}
                       onClick={onMarkReviewed}
-                      title="Dismiss — mark as reviewed"
+                      title="Mark as reviewed · ทำเครื่องหมายว่าตรวจแล้ว"
                       style={{
                         flex: 1, minWidth: 80, height: 34, borderRadius: 999,
                         background: adminColor.panel2,
@@ -1176,7 +1220,7 @@ const BookingCard: React.FC<{
                         display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
                       }}
                     >
-                      <Star size={12} /> Awaiting review
+                      <Star size={12} /> Mark reviewed · ตรวจแล้ว
                     </motion.button>
                   )}
                 </Box>
@@ -1249,12 +1293,21 @@ const editSelectProps = {
 // 🆕 28s264 — small section header (icon + label) used to group the edit
 //   form into Guest & Schedule / Service / Billing / Record instead of one
 //   long flat list of rows.
-const SectionHeader: React.FC<{ icon: React.ReactNode; children: React.ReactNode }> = ({ icon, children }) => (
+// 🆕 28r40 — accepts an optional `subtitle` (Thai counterpart) — mirrors the
+//   r35 AdminDashboardPage eyebrow-with-Thai-tag pattern.
+const SectionHeader: React.FC<{ icon: React.ReactNode; children: React.ReactNode; subtitle?: string }> = ({ icon, children, subtitle }) => (
   <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1 }}>
     <Box sx={{ color: adminColor.dim, display: "flex", lineHeight: 0 }}>{icon}</Box>
-    <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-      {children}
-    </Typography>
+    <Box sx={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
+      <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.1em", lineHeight: 1 }}>
+        {children}
+      </Typography>
+      {subtitle && (
+        <Typography sx={{ fontFamily: SANS, fontSize: 9, fontWeight: 600, color: adminColor.dim, mt: 0.3, letterSpacing: "0.02em" }}>
+          {subtitle}
+        </Typography>
+      )}
+    </Box>
   </Box>
 );
 
@@ -1413,9 +1466,11 @@ const DetailPanel: React.FC<{
       >
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <Box>
+            {/* 🆕 28r40 — drawer header pill uses `bilingual` (has space);
+                the compact card pill still shows just `label`. */}
             <Box sx={{ px: "10px", py: "4px", borderRadius: 999, background: cfg.badge.bg, display: "inline-flex", mb: 1 }}>
               <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase", color: cfg.badge.fg }}>
-                {cfg.label}
+                {cfg.bilingual}
               </Typography>
             </Box>
             <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 600, color: adminColor.text, letterSpacing: "-0.01em" }}>
@@ -1426,7 +1481,7 @@ const DetailPanel: React.FC<{
               {b.duration && ` · ${b.duration} min`}
             </Typography>
           </Box>
-          <IconButton onClick={onClose} aria-label="Close" sx={{ color: adminColor.muted, mt: -0.5 }}>
+          <IconButton onClick={onClose} aria-label="Close · ปิด" sx={{ color: adminColor.muted, mt: -0.5 }}>
             <X size={20} />
           </IconButton>
         </Box>
@@ -1447,17 +1502,18 @@ const DetailPanel: React.FC<{
         >
           {editing && (
             <Box sx={{ position: "absolute", top: -9, right: 10, background: adminColor.accent, color: "#fff", fontSize: 9, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", px: 1, py: "3px", borderRadius: 999 }}>
-              Editing
+              Editing · แก้ไข
             </Box>
           )}
           {[
-            { label: "Service", value: formatTHB(editing ? editServicePrice : (isCancelled ? 0 : (b.servicePrice || 0))) },
-            { label: "Taxi",    value: formatTHB(editing ? editTaxiFee : (isCancelled ? 0 : (b.taxiFee || 0))) },
-            { label: "Total",   value: formatTHB(editing ? editTotal : total), accent: true },
+            { label: "Service", labelTh: "บริการ",  value: formatTHB(editing ? editServicePrice : (isCancelled ? 0 : (b.servicePrice || 0))) },
+            { label: "Taxi",    labelTh: "แท็กซี่",  value: formatTHB(editing ? editTaxiFee : (isCancelled ? 0 : (b.taxiFee || 0))) },
+            { label: "Total",   labelTh: "รวมทั้งหมด", value: formatTHB(editing ? editTotal : total), accent: true },
           ].map((s, i) => (
             <Box key={i} sx={{ flex: 1, textAlign: "center", borderRight: i < 2 ? `1px solid ${adminColor.line}` : "none" }}>
               <Typography sx={{ ...adminFigureSx, fontSize: 16, color: s.accent ? adminColor.accent : adminColor.text, lineHeight: 1 }}>{s.value}</Typography>
               <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim, mt: 0.3, textTransform: "uppercase", letterSpacing: "0.06em" }}>{s.label}</Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 8.5, color: adminColor.dim, opacity: 0.85, lineHeight: 1, mt: 0.15 }}>{s.labelTh}</Typography>
             </Box>
           ))}
         </Box>
@@ -1479,26 +1535,33 @@ const DetailPanel: React.FC<{
             px: 1.75, py: 1.25, mb: 2,
           }}
         >
-          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.04em" }}>Status</Typography>
+          <Box>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1 }}>
+              Status
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 9, fontWeight: 600, color: adminColor.dim, mt: 0.3, letterSpacing: "0.02em" }}>
+              สถานะ
+            </Typography>
+          </Box>
           <Select
             size="small"
             value={b.status in STATUS_CFG ? b.status : ""}
             onChange={(e) => onChangeStatus(e.target.value)}
             displayEmpty
             renderValue={() => (
-              <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: cfg.badge.fg }}>
-                {cfg.label}
+              <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: cfg.badge.fg, whiteSpace: "nowrap" }}>
+                {cfg.bilingual}
               </Typography>
             )}
             sx={{
-              fontSize: 12, height: 30, minWidth: 130, borderRadius: 999,
+              fontSize: 12, height: 30, minWidth: 160, borderRadius: 999,
               background: cfg.badge.bg,
               "& .MuiOutlinedInput-notchedOutline": { border: "none" },
             }}
             MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
           >
             {ALL_STATUSES.map((s) => (
-              <MenuItem key={s} value={s} sx={{ fontSize: 13 }}>{cfgFor(s).label}</MenuItem>
+              <MenuItem key={s} value={s} sx={{ fontSize: 13 }}>{cfgFor(s).bilingual}</MenuItem>
             ))}
           </Select>
         </Box>
@@ -1510,7 +1573,7 @@ const DetailPanel: React.FC<{
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={startEdit}
-              aria-label="Edit booking details"
+              aria-label="Edit booking details · แก้ไขรายละเอียด"
               style={{
                 display: "flex", alignItems: "center", gap: 4,
                 height: 28, padding: "0 12px", borderRadius: 999,
@@ -1518,7 +1581,7 @@ const DetailPanel: React.FC<{
                 color: adminColor.muted, fontFamily: SANS, fontSize: 11.5, fontWeight: 700, cursor: "pointer",
               }}
             >
-              <PencilSimple size={12} /> Edit details
+              <PencilSimple size={12} /> Edit · แก้ไข
             </motion.button>
           </Box>
         )}
@@ -1527,34 +1590,34 @@ const DetailPanel: React.FC<{
           <>
             {/* ── Guest & Schedule ─────────────────────────────────────── */}
             <Box sx={{ mb: 2 }}>
-              <SectionHeader icon={<User size={13} />}>Guest &amp; Schedule</SectionHeader>
+              <SectionHeader icon={<User size={13} />} subtitle="ลูกค้าและตารางเวลา">Guest &amp; Schedule</SectionHeader>
               <Box sx={{ borderRadius: "14px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, p: "13px 14px", display: "flex", flexDirection: "column", gap: 1.25 }}>
                 <Box sx={{ display: "flex", gap: 1 }}>
                   <TextField
-                    label="Customer" size="small" fullWidth value={editForm.contactName}
+                    label="Customer · ลูกค้า" size="small" fullWidth value={editForm.contactName}
                     onChange={(e) => setEditForm((f) => ({ ...f, contactName: e.target.value }))}
                     sx={editFieldSx}
                   />
                   <TextField
-                    label="Phone" size="small" fullWidth value={editForm.phone}
+                    label="Phone · เบอร์" size="small" fullWidth value={editForm.phone}
                     onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
                     sx={editFieldSx}
                   />
                 </Box>
                 <Box sx={{ display: "flex", gap: 1 }}>
                   <TextField
-                    label="Date" type="date" size="small" fullWidth value={editForm.date}
+                    label="Date · วันที่" type="date" size="small" fullWidth value={editForm.date}
                     onChange={(e) => setEditForm((f) => ({ ...f, date: e.target.value }))}
                     InputLabelProps={{ shrink: true }} sx={editFieldSx}
                   />
                   <TextField
-                    label="Time" type="time" size="small" fullWidth value={editForm.time}
+                    label="Time · เวลา" type="time" size="small" fullWidth value={editForm.time}
                     onChange={(e) => setEditForm((f) => ({ ...f, time: e.target.value }))}
                     InputLabelProps={{ shrink: true }} sx={editFieldSx}
                   />
                 </Box>
                 <TextField
-                  label="Location" size="small" fullWidth multiline minRows={2} value={editForm.location}
+                  label="Location · สถานที่" size="small" fullWidth multiline minRows={2} value={editForm.location}
                   onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))}
                   sx={editFieldSx}
                 />
@@ -1563,10 +1626,10 @@ const DetailPanel: React.FC<{
 
             {/* ── Service ──────────────────────────────────────────────── */}
             <Box sx={{ mb: 2 }}>
-              <SectionHeader icon={<Sparkle size={13} />}>Service</SectionHeader>
+              <SectionHeader icon={<Sparkle size={13} />} subtitle="บริการ">Service</SectionHeader>
               <Box sx={{ borderRadius: "14px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, p: "13px 14px", display: "flex", flexDirection: "column", gap: 1.25 }}>
                 <TextField
-                  select label="Therapist" size="small" fullWidth value={editForm.therapistId}
+                  select label="Therapist · หมอนวด" size="small" fullWidth value={editForm.therapistId}
                   onChange={(e) => setEditForm((f) => ({ ...f, therapistId: e.target.value }))}
                   sx={editFieldSx}
                   SelectProps={editSelectProps}
@@ -1579,7 +1642,7 @@ const DetailPanel: React.FC<{
                   ))}
                 </TextField>
                 <TextField
-                  select label="Service" size="small" fullWidth value={editForm.serviceId}
+                  select label="Service · บริการ" size="small" fullWidth value={editForm.serviceId}
                   onChange={(e) => changeService(e.target.value)}
                   sx={editFieldSx}
                   SelectProps={editSelectProps}
@@ -1591,7 +1654,7 @@ const DetailPanel: React.FC<{
                 {/* 🆕 28s264 (founder: "Duration ทำเป็น ดรอปดาว") — was a pill
                     row in 28s263; founder asked for a dropdown instead. */}
                 <TextField
-                  select label="Duration" size="small" fullWidth value={editForm.duration}
+                  select label="Duration · ระยะเวลา" size="small" fullWidth value={editForm.duration}
                   onChange={(e) => changeDuration(Number(e.target.value))}
                   sx={editFieldSx}
                   SelectProps={editSelectProps}
@@ -1607,22 +1670,22 @@ const DetailPanel: React.FC<{
 
             {/* ── Billing — styled as the bill it is ──────────────────── */}
             <Box sx={{ mb: 2 }}>
-              <SectionHeader icon={<Receipt size={13} />}>Billing</SectionHeader>
+              <SectionHeader icon={<Receipt size={13} />} subtitle="บิล">Billing</SectionHeader>
               <Box sx={{ borderRadius: "14px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, p: "13px 14px" }}>
                 <Box sx={{ display: "flex", gap: 1, mb: 1.25 }}>
                   <TextField
-                    label="Service price (฿)" type="number" size="small" fullWidth value={editForm.servicePrice}
+                    label="Service price · ค่าบริการ (฿)" type="number" size="small" fullWidth value={editForm.servicePrice}
                     onChange={(e) => setEditForm((f) => ({ ...f, servicePrice: e.target.value }))}
                     sx={editFieldSx}
                   />
                   <TextField
-                    label="Taxi fee (฿)" type="number" size="small" fullWidth value={editForm.taxiFee}
+                    label="Taxi fee · ค่าเดินทาง (฿)" type="number" size="small" fullWidth value={editForm.taxiFee}
                     onChange={(e) => setEditForm((f) => ({ ...f, taxiFee: e.target.value }))}
                     sx={editFieldSx}
                   />
                 </Box>
                 <TextField
-                  select label="Payment method" size="small" fullWidth value={editForm.payment}
+                  select label="Payment method · วิธีจ่าย" size="small" fullWidth value={editForm.payment}
                   onChange={(e) => setEditForm((f) => ({ ...f, payment: e.target.value }))}
                   sx={editFieldSx}
                   SelectProps={editSelectProps}
@@ -1633,7 +1696,7 @@ const DetailPanel: React.FC<{
                 </TextField>
                 {editSurcharge > 0 && (
                   <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.amber, mt: 0.75, textAlign: "right" }}>
-                    + {formatTHB(editSurcharge)} transfer surcharge on this method
+                    + {formatTHB(editSurcharge)} transfer surcharge · ค่าธรรมเนียมโอน
                   </Typography>
                 )}
 
@@ -1641,7 +1704,10 @@ const DetailPanel: React.FC<{
                     service+taxi+surcharge. Computed figure is a one-click
                     suggestion, never forced. */}
                 <Box sx={{ mt: 1.5, pt: 1.5, borderTop: `1.5px dashed ${adminColor.line2}`, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 1 }}>
-                  <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 600, color: adminColor.text }}>Total</Typography>
+                  <Box>
+                    <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 600, color: adminColor.text, lineHeight: 1 }}>Total</Typography>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim, mt: 0.3 }}>รวมทั้งหมด</Typography>
+                  </Box>
                   <Box sx={{ textAlign: "right" }}>
                     <TextField
                       type="number" size="small" value={editForm.total}
@@ -1667,7 +1733,7 @@ const DetailPanel: React.FC<{
                           fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.accent, padding: 0,
                         }}
                       >
-                        Use computed: {formatTHB(computedTotal)}
+                        Use computed · ใช้ค่าคำนวณ: {formatTHB(computedTotal)}
                       </motion.button>
                     )}
                   </Box>
@@ -1680,12 +1746,12 @@ const DetailPanel: React.FC<{
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setEditing(false)}
                 style={{
-                  flex: "none", width: 100, height: 44, borderRadius: 999,
+                  flex: "none", width: 120, height: 44, borderRadius: 999,
                   background: adminColor.panel2, border: `1px solid ${adminColor.line2}`,
                   fontFamily: SANS, fontSize: 13, fontWeight: 600, color: adminColor.muted, cursor: "pointer",
                 }}
               >
-                Cancel
+                Cancel · ยกเลิก
               </motion.button>
               <motion.button
                 whileTap={{ scale: 0.97 }}
@@ -1698,7 +1764,7 @@ const DetailPanel: React.FC<{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                 }}
               >
-                <FloppyDisk size={15} /> Save changes
+                <FloppyDisk size={15} /> Save · บันทึก
               </motion.button>
             </Box>
           </>
@@ -1706,12 +1772,12 @@ const DetailPanel: React.FC<{
           <>
             {/* ── Guest & Schedule (read-only) ─────────────────────────── */}
             <Box sx={{ mb: 2 }}>
-              <SectionHeader icon={<User size={13} />}>Guest &amp; Schedule</SectionHeader>
+              <SectionHeader icon={<User size={13} />} subtitle="ลูกค้าและตารางเวลา">Guest &amp; Schedule</SectionHeader>
               <Box sx={{ borderRadius: "14px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, px: 1.75, py: 0.5 }}>
-                <Row label="Customer" value={nameOf(b)} />
+                <Row label="Customer · ลูกค้า" value={nameOf(b)} />
                 <Divider sx={{ opacity: 0.4 }} />
                 <Row
-                  label="Phone"
+                  label="Phone · เบอร์"
                   value={
                     b.phone ? (
                       <Typography
@@ -1727,27 +1793,40 @@ const DetailPanel: React.FC<{
                   }
                 />
                 <Divider sx={{ opacity: 0.4 }} />
-                <Row label="Date & Time" value={dateLabel} />
+                <Row label="Date & Time · วันเวลา" value={dateLabel} />
                 <Divider sx={{ opacity: 0.4 }} />
-                <Row label="Location" value={b.locationName || b.address || "—"} />
-                {b.placeDetail && <><Divider sx={{ opacity: 0.4 }} /><Row label="Detail" value={b.placeDetail} /></>}
+                <Row label="Location · สถานที่" value={b.locationName || b.address || "—"} />
+                {b.placeDetail && <><Divider sx={{ opacity: 0.4 }} /><Row label="Detail · รายละเอียด" value={b.placeDetail} /></>}
               </Box>
             </Box>
 
             {/* ── Service (read-only) ──────────────────────────────────── */}
+            {/* 🆕 28r40 — audit polish: this section was labelled "Service"
+                but only rendered the therapist row (which is also implicit
+                in the header). Symmetry with edit mode says show Service +
+                Duration here too — they exist on the booking doc, they're
+                editable when the operator opens Edit, so they belong. */}
             <Box sx={{ mb: 2 }}>
-              <SectionHeader icon={<Sparkle size={13} />}>Service</SectionHeader>
+              <SectionHeader icon={<Sparkle size={13} />} subtitle="บริการ">Service</SectionHeader>
               <Box sx={{ borderRadius: "14px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, px: 1.75, py: 0.5 }}>
-                <Row label="Therapist" value={b.therapistName} />
+                <Row label="Therapist · หมอนวด" value={b.therapistName} />
+                <Divider sx={{ opacity: 0.4 }} />
+                <Row label="Service · บริการ" value={getServiceLabel(b.serviceId, b.serviceName)} />
+                {b.duration && (
+                  <>
+                    <Divider sx={{ opacity: 0.4 }} />
+                    <Row label="Duration · ระยะเวลา" value={`${b.duration} min`} />
+                  </>
+                )}
               </Box>
             </Box>
 
             {/* ── Billing (read-only) ──────────────────────────────────── */}
             <Box sx={{ mb: 2 }}>
-              <SectionHeader icon={<Receipt size={13} />}>Billing</SectionHeader>
+              <SectionHeader icon={<Receipt size={13} />} subtitle="บิล">Billing</SectionHeader>
               <Box sx={{ borderRadius: "14px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, px: 1.75, py: 0.5 }}>
                 <Row
-                  label="Payment method"
+                  label="Payment method · วิธีจ่าย"
                   value={`${paymentMethodLabel(b.payment)}${b.paymentFee ? ` (+${formatTHB(b.paymentFee)} surcharge)` : ""}`}
                 />
               </Box>
@@ -1757,7 +1836,7 @@ const DetailPanel: React.FC<{
 
         {b.cancelReason && (
           <Box sx={{ mb: 2, borderRadius: "14px", background: `${adminColor.red}0D`, border: `1px solid ${adminColor.red}33`, px: 1.75, py: 1 }}>
-            <Row label="Cancel reason" value={b.cancelReason} />
+            <Row label="Cancel reason · เหตุผลที่ยกเลิก" value={b.cancelReason} />
           </Box>
         )}
 
@@ -1766,11 +1845,11 @@ const DetailPanel: React.FC<{
             toggle — same reasoning as Status: it's a routine tap, always
             reachable, not a "fix a mistake" edit. ── */}
         <Box sx={{ mb: 2 }}>
-          <SectionHeader icon={<ClockCounterClockwise size={13} />}>Record</SectionHeader>
+          <SectionHeader icon={<ClockCounterClockwise size={13} />} subtitle="บันทึก">Record</SectionHeader>
           <Box sx={{ borderRadius: "14px", background: adminColor.panel2, border: `1px solid ${adminColor.line}`, px: 1.75, py: 0.5 }}>
-            <Row label="Booked" value={createdLabel} />
+            <Row label="Booked · จองเมื่อ" value={createdLabel} />
             <Divider sx={{ opacity: 0.4 }} />
-            <Row label="Payment status" value={
+            <Row label="Payment status · สถานะจ่าย" value={
               <Box
                 component="span"
                 onClick={onTogglePaid}
@@ -1783,18 +1862,23 @@ const DetailPanel: React.FC<{
                   userSelect: "none",
                 }}
               >
-                {paid ? "✓ Paid" : "Unpaid — tap to mark paid"}
+                {paid ? "✓ Paid · จ่ายแล้ว" : "Unpaid · แตะเพื่อทำเครื่องหมายจ่ายแล้ว"}
               </Box>
             } />
             <Divider sx={{ opacity: 0.4 }} />
-            <Row label="Booking ID" value={b.id} />
+            <Row label="Booking ID · รหัสจอง" value={b.id} />
           </Box>
         </Box>
 
         {/* admin note */}
-        <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1 }}>
-          Admin Note
-        </Typography>
+        <Box sx={{ mb: 1 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 800, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1 }}>
+            Admin Note
+          </Typography>
+          <Typography sx={{ fontFamily: SANS, fontSize: 9, fontWeight: 600, color: adminColor.dim, mt: 0.3, letterSpacing: "0.02em" }}>
+            โน้ตแอดมิน
+          </Typography>
+        </Box>
         <Box
           sx={{
             borderRadius: "14px", background: adminColor.panel,
@@ -1803,7 +1887,7 @@ const DetailPanel: React.FC<{
           }}
         >
           <InputBase
-            placeholder="Type a note…"
+            placeholder="Type a note · พิมพ์โน้ต…"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             multiline
@@ -1822,7 +1906,7 @@ const DetailPanel: React.FC<{
             color: adminColor.muted, cursor: "pointer", marginBottom: 12,
           }}
         >
-          Save note
+          Save note · บันทึกโน้ต
         </motion.button>
       </Box>
 
@@ -1849,7 +1933,7 @@ const DetailPanel: React.FC<{
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
             }}
           >
-            <CheckCircle size={18} weight="fill" /> Confirm Booking
+            <CheckCircle size={18} weight="fill" /> Confirm Booking · ยืนยันการจอง
           </motion.button>
         )}
         {b.status === "confirmed" && (
@@ -1866,12 +1950,13 @@ const DetailPanel: React.FC<{
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               }}
             >
-              <CheckCircle size={18} weight="fill" /> Mark Complete
+              <CheckCircle size={18} weight="fill" /> Mark Complete · เสร็จสิ้น
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={onCancel}
-              aria-label="Cancel booking"
+              aria-label="Cancel booking · ยกเลิกการจอง"
+              title="Cancel booking · ยกเลิกการจอง"
               style={{
                 width: 48, height: 48, borderRadius: "50%",
                 background: `${adminColor.red}14`,
@@ -1887,7 +1972,8 @@ const DetailPanel: React.FC<{
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={onCancel}
-            aria-label="Cancel booking"
+            aria-label="Cancel booking · ยกเลิกการจอง"
+            title="Cancel booking · ยกเลิกการจอง"
             style={{
               width: 48, height: 48, borderRadius: "50%",
               background: `${adminColor.red}14`,
@@ -1901,7 +1987,7 @@ const DetailPanel: React.FC<{
         {(b.status === "completed" || b.status === "cancelled") && (
           <Box sx={{ flex: 1, height: 48, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.dim, fontWeight: 600 }}>
-              {b.status === "completed" ? "Session completed" : "Booking cancelled"}
+              {b.status === "completed" ? "Session completed · จบงานแล้ว" : "Booking cancelled · ยกเลิกแล้ว"}
             </Typography>
           </Box>
         )}
