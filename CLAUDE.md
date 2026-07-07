@@ -1911,6 +1911,35 @@ squeezed row, worse at browser zoom), and the stat pills wrapped unevenly
   subline, amount+status stacked right-aligned in their own column, row
   min-height + vertical centering — no clipping/crowding at any zoom.
 
+### 🆕 2026-07-07 — admin/audit-log: search + filters (28s294)
+
+Founder: "admin/audit-log ปรับแก้ และ ตกแต่งสวยงาม แนะนำ ที่ใช้ได้จริง".
+This page was already on Ocean Study (unlike the last few rounds), so
+the "actually usable" gap wasn't styling — it was that an audit log's
+whole point is "can I find what happened," and a flat 200-row list with
+zero filters fails that past a screenful.
+
+**Added:** search box (label/detail/actor email) + a category filter
+grouped by the action's `x.y` prefix (booking/payout/therapist/user/
+review/phone — a future `booking.refund` needs no filter-UI change,
+it just inherits the "จอง" group) + a today/7d/30d/all time window,
+matching the filter conventions every other admin list page gained this
+session. Two stat pills (today's count, total loaded).
+
+**Also:** bumped the query cap 200→500 — now that a narrow window like
+"today" exists, a low cap is more likely to silently drop older-in-range
+rows without any indication. The "capped" note in the subtitle is now
+computed from the actual limit instead of a hardcoded "200" that would've
+gone stale the next time this changes. Detail line switched from
+single-line ellipsis-truncate to wrap — same fix pattern as round 28s290
+— since `reason`/`changedFields` text can run long (especially now that
+`phone.block` carries a free-typed reason from 28s293) and was silently
+cut off with no way to see the rest.
+
+Verified live: curled the deployed `AdminAuditLogPage-*.js` chunk and
+grep-confirmed the new stat-pill label, empty-filter-state string, and
+the `today`/`7d`/`30d` window values are present in production.
+
 ### 🆕 2026-07-07 — admin/blocked-devices → real, enforced phone block (28s293)
 
 Founder: "admin/blocked-devices ปรับแก้ และ ตกแต่งสวยงาม แนะนำ ที่ใช้ได้จริง"
