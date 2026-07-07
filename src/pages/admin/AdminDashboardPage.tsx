@@ -63,10 +63,15 @@ import {
   TrendDown,
   ClockCounterClockwise,
   Medal,
+  Wallet,
+  Coins,
 } from "phosphor-react";
 import { fmtBKK } from "@/utils/time";
 import { formatTHB } from "@/utils/servicePricing";
 import { getServiceLabel } from "@/utils/serviceCatalog";
+// 🆕 Round 28s319 — tier-based split (shared payroll fn) so the dashboard's
+//   shop cut matches Earnings / Pay-Therapists instead of a stale flat 40%.
+import { therapistPayoutFor } from "@/utils/commission";
 // 🆕 Round 28s234 — Control Room redesign (shared dark tokens).
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { logAdminAction } from "@/utils/auditLog";
@@ -152,6 +157,7 @@ interface BookingRow {
   locationName?: string;
   address?: string;
   servicePrice?: number;
+  discountAmount?: number;
   taxiFee?: number;
   totalPrice?: number;
   duration?: number;
@@ -261,6 +267,10 @@ const AdminDashboardPage: React.FC = () => {
   const stats = useMemo(() => {
     let todayBookings = 0, todayRevenue = 0, todayCancelled = 0;
     let periodBookings = 0, periodService = 0, periodCancelled = 0;
+    // 🆕 Round 28s319 — accumulate the shop / therapist split per booking with
+    //   the real tier %, so these reconcile with the Earnings page (the old
+    //   flat ×0.4 / ×0.6 disagreed with tier-based payroll).
+    let periodShop = 0, periodWorker = 0;
     const monthMap: Record<string, { bookings: number; revenue: number }> = {};
     // 🆕 Round 28s241 — ranked breakdowns for the "By Therapist" / "By Service"
     //   widgets (Sales-Report / Browser-Stats style rows in the reference).
@@ -274,7 +284,12 @@ const AdminDashboardPage: React.FC = () => {
       const isCancelled = r.status === "cancelled";
 
       periodBookings++;
-      if (!isCancelled) periodService += service;
+      if (!isCancelled) {
+        periodService += service;
+        const worker = therapistPayoutFor({ serviceId: r.serviceId, servicePrice: service, discountAmount: r.discountAmount });
+        periodWorker += worker;
+        periodShop   += Math.max(0, service - worker);
+      }
       if (isCancelled)  periodCancelled++;
 
       if (created >= todayStart) {
@@ -324,8 +339,8 @@ const AdminDashboardPage: React.FC = () => {
     return {
       todayBookings, todayRevenue, todayCancelled,
       periodBookings, periodService,
-      periodShop:   periodService * 0.4,
-      periodWorker: periodService * 0.6,
+      periodShop,
+      periodWorker,
       periodCancelled,
       monthlyData,
       momBookingsChange, momRevenueChange,
@@ -356,7 +371,7 @@ const AdminDashboardPage: React.FC = () => {
         <motion.div {...fadeUp(0)}>
           <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, mb: 0.4 }}>
             <Typography sx={{ fontFamily: adminFont.serif, fontSize: { xs: 22, md: 26 }, fontWeight: 600, color: adminColor.text, letterSpacing: "0.01em" }}>
-              Dashboard
+              หน้าหลัก
             </Typography>
             {loading && <CircularProgress size={18} sx={{ color: adminColor.dim, mt: 0.5 }} />}
           </Box>
@@ -372,9 +387,9 @@ const AdminDashboardPage: React.FC = () => {
         <motion.div {...fadeUp(0.07)}>
           <Box sx={{ display: "flex", gap: 1, mt: 2.5, p: 1.5, borderRadius: "16px", background: adminColor.panel, border: `1px solid ${adminColor.line}` }}>
             {[
-              { label: "Today",   value: stats.todayBookings,            unit: "bookings" },
-              { label: "Revenue", value: money(stats.todayRevenue),      unit: "service"  },
-              { label: "Pending", value: pendingBookings.length,         unit: "need action", accent: pendingBookings.length > 0 },
+              { label: "วันนี้",     value: stats.todayBookings,       unit: "งาน" },
+              { label: "รายได้วันนี้", value: money(stats.todayRevenue), unit: "ค่าบริการ"  },
+              { label: "รอยืนยัน",   value: pendingBookings.length,    unit: "ต้องจัดการ", accent: pendingBookings.length > 0 },
             ].map((s, i) => (
               <Box key={i} sx={{ flex: 1, textAlign: "center", borderRight: i < 2 ? `1px solid ${adminColor.line}` : "none" }}>
                 <Typography sx={{ ...adminFigureSx, fontSize: 19, color: s.accent ? adminColor.accent : adminColor.text, lineHeight: 1 }}>
@@ -391,27 +406,6 @@ const AdminDashboardPage: React.FC = () => {
 
       <Box sx={{ px: { xs: 2, md: 3 }, display: "flex", flexDirection: "column", gap: 2.5 }}>
 
-        {/* 🆕 Round 28s232 — Tonight ops board entry (dispatch control room). */}
-        <Box
-          onClick={() => navigate("/admin/tonight")}
-          sx={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            px: 2, py: 1.5, borderRadius: 3, cursor: "pointer",
-            // 🆕 Round 28s237 — anchor the gradient's dark end to the exact
-            //   palette bg instead of a separately invented hex.
-            background: `linear-gradient(135deg, ${adminColor.panel2}, ${adminColor.bg})`,
-            border: `1px solid ${adminColor.accent}44`,
-            color: adminColor.text,
-            boxShadow: "0 6px 18px rgba(0,0,0,0.3)",
-          }}
-        >
-          <Box>
-            <Typography sx={{ fontFamily: SANS, fontWeight: 800, fontSize: 16 }}>🌙 คืนนี้ — ห้องคุมงาน</Typography>
-            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted }}>ส่งงาน · ติดตามหมอนวด · เช็กเวลา</Typography>
-          </Box>
-          <Typography sx={{ fontSize: 22, color: adminColor.highlight }}>→</Typography>
-        </Box>
-
         {/* ── pending quick actions ────────────────────────────────────── */}
         {pendingBookings.length > 0 && (
           <motion.div {...fadeUp(0.05)}>
@@ -419,14 +413,14 @@ const AdminDashboardPage: React.FC = () => {
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                 <Box sx={{ width: 8, height: 8, borderRadius: "50%", background: adminColor.accent, boxShadow: `0 0 0 3px ${adminColor.accent}33` }} />
                 <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.accent, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                  Needs Confirmation — {pendingBookings.length}
+                  รอยืนยัน — {pendingBookings.length}
                 </Typography>
               </Box>
               <Box
                 onClick={() => navigate("/admin/bookings")}
                 sx={{ display: "flex", alignItems: "center", gap: 0.4, cursor: "pointer" }}
               >
-                <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, color: adminColor.muted }}>View all</Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, color: adminColor.muted }}>ดูทั้งหมด</Typography>
                 <ArrowRight size={13} color={adminColor.dim} />
               </Box>
             </Box>
@@ -501,7 +495,7 @@ const AdminDashboardPage: React.FC = () => {
                             display: "flex", alignItems: "center", gap: 4,
                           }}
                         >
-                          <CheckCircle size={13} weight="fill" /> Confirm
+                          <CheckCircle size={13} weight="fill" /> ยืนยัน
                         </motion.button>
                       </Box>
                     </Box>
@@ -531,17 +525,17 @@ const AdminDashboardPage: React.FC = () => {
             }}
           >
             <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.08em", textTransform: "uppercase", mr: 0.5 }}>
-              Period
+              ช่วงเวลา
             </Typography>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <DatePicker
-                label="From"
+                label="ตั้งแต่"
                 value={startDate}
                 onChange={(v) => v && setStartDate(v)}
                 slotProps={{ textField: { size: "small", sx: { width: 130 } } }}
               />
               <DatePicker
-                label="To"
+                label="ถึง"
                 value={endDate}
                 onChange={(v) => v && setEndDate(v)}
                 slotProps={{ textField: { size: "small", sx: { width: 130 } } }}
@@ -549,16 +543,16 @@ const AdminDashboardPage: React.FC = () => {
             </LocalizationProvider>
 
             <Select size="small" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} sx={{ minWidth: 130, fontSize: 13 }} MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" } } }}>
-              <MenuItem value="__ALL__">All status</MenuItem>
-              <MenuItem value="pending">Pending</MenuItem>
-              <MenuItem value="confirmed">Confirmed</MenuItem>
-              <MenuItem value="completed">Completed</MenuItem>
-              <MenuItem value="cancelled">Cancelled</MenuItem>
+              <MenuItem value="__ALL__">ทุกสถานะ</MenuItem>
+              <MenuItem value="pending">รอยืนยัน</MenuItem>
+              <MenuItem value="confirmed">ยืนยันแล้ว</MenuItem>
+              <MenuItem value="completed">เสร็จสิ้น</MenuItem>
+              <MenuItem value="cancelled">ยกเลิก</MenuItem>
             </Select>
 
             {therapistOptions.length > 0 && (
               <Select size="small" value={therapistFilter} onChange={(e) => setTherapistFilter(e.target.value)} sx={{ minWidth: 150, fontSize: 13 }} MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" } } }}>
-                <MenuItem value="__ALL__">All therapists</MenuItem>
+                <MenuItem value="__ALL__">หมอทุกคน</MenuItem>
                 {therapistOptions.map((n) => <MenuItem key={n} value={n}>{n}</MenuItem>)}
               </Select>
             )}
@@ -569,7 +563,7 @@ const AdminDashboardPage: React.FC = () => {
              style borrowed from the reference "Statistics" section ────── */}
         <motion.div {...fadeUp(0.10)}>
           <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.25 }}>
-            Period Summary — {startDate.format("D MMM")} to {endDate.format("D MMM YYYY")}
+            สรุปช่วงเวลา — {startDate.format("D MMM")} ถึง {endDate.format("D MMM YYYY")}
           </Typography>
           <Box
             sx={{
@@ -580,10 +574,10 @@ const AdminDashboardPage: React.FC = () => {
             }}
           >
             {[
-              { icon: <CalendarBlank size={20} weight="duotone" />, label: "Bookings",    value: String(stats.periodBookings), color: adminColor.accent },
-              { icon: <ChartBar      size={20} weight="duotone" />, label: "Service Rev", value: money(stats.periodService),   color: adminColor.green },
-              { icon: <Buildings     size={20} weight="duotone" />, label: "Shop 40%",    value: money(stats.periodShop),      color: adminColor.highlight },
-              { icon: <XCircle       size={20} weight="duotone" />, label: "Cancelled",   value: String(stats.periodCancelled), color: adminColor.red },
+              { icon: <CalendarBlank size={20} weight="duotone" />, label: "งานทั้งหมด",  value: String(stats.periodBookings), color: adminColor.accent },
+              { icon: <ChartBar      size={20} weight="duotone" />, label: "ค่าบริการรวม", value: money(stats.periodService),   color: adminColor.green },
+              { icon: <Buildings     size={20} weight="duotone" />, label: "รายได้ร้าน",   value: money(stats.periodShop),      color: adminColor.highlight },
+              { icon: <XCircle       size={20} weight="duotone" />, label: "ยกเลิก",       value: String(stats.periodCancelled), color: adminColor.red },
             ].map((c) => (
               <Box key={c.label} sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 0.75 }}>
                 <Box
@@ -613,7 +607,7 @@ const AdminDashboardPage: React.FC = () => {
             <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 1.5 }}>
               <Box sx={{ flex: { md: "2 1 0" }, borderRadius: "18px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, p: "16px 16px 12px" }}>
                 <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.5 }}>
-                  Monthly Revenue
+                  รายได้รายเดือน
                 </Typography>
                 <ResponsiveContainer width="100%" height={isMobile ? 180 : 240}>
                   <BarChart data={stats.monthlyData} margin={{ top: 0, right: 4, left: -18, bottom: 0 }}>
@@ -622,7 +616,7 @@ const AdminDashboardPage: React.FC = () => {
                     <YAxis tick={{ fontFamily: SANS, fontSize: 10, fill: adminColor.dim }} axisLine={false} tickLine={false} tickFormatter={(v) => `฿${(v/1000).toFixed(0)}k`} />
                     <Tooltip
                       contentStyle={{ fontFamily: SANS, fontSize: 12, borderRadius: 10, background: adminColor.panel2, border: `1px solid ${adminColor.line2}`, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", color: adminColor.text }}
-                      formatter={(value, name) => [name === "revenue" ? money(Number(value)) : value, name === "revenue" ? "Revenue" : "Bookings"]}
+                      formatter={(value, name) => [name === "revenue" ? money(Number(value)) : value, name === "revenue" ? "รายได้" : "งาน"]}
                     />
                     <Bar dataKey="bookings" fill={adminColor.panel3} radius={[4,4,0,0]} name="bookings" />
                     <Bar dataKey="revenue"  fill={adminColor.accent} radius={[4,4,0,0]} name="revenue" />
@@ -636,10 +630,10 @@ const AdminDashboardPage: React.FC = () => {
                   <DonutRing percent={stats.completionRate} color={adminColor.accent} />
                   <Box>
                     <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                      Completion Rate
+                      อัตราจบงาน
                     </Typography>
                     <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.4 }}>
-                      {stats.periodBookings - stats.periodCancelled} of {stats.periodBookings} bookings
+                      {stats.periodBookings - stats.periodCancelled} จาก {stats.periodBookings} งาน
                     </Typography>
                   </Box>
                 </Box>
@@ -649,7 +643,7 @@ const AdminDashboardPage: React.FC = () => {
                   <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
                     <Box>
                       <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                        Orders Today
+                        งานวันนี้
                       </Typography>
                       <Typography sx={{ ...adminFigureSx, fontSize: 23, color: adminColor.text, lineHeight: 1.2, mt: 0.4 }}>
                         {stats.todayBookings}
@@ -682,7 +676,7 @@ const AdminDashboardPage: React.FC = () => {
             <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 1.5 }}>
               <Box sx={{ flex: 1, borderRadius: "18px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, p: "16px" }}>
                 <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.5 }}>
-                  By Therapist
+                  แยกตามหมอ
                 </Typography>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1.1 }}>
                   {stats.byTherapist.map((t, i) => (
@@ -695,7 +689,7 @@ const AdminDashboardPage: React.FC = () => {
                           {t.name}
                         </Typography>
                         <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim }}>
-                          {t.bookings} bookings
+                          {t.bookings} งาน
                         </Typography>
                       </Box>
                       <Typography sx={{ ...adminFigureSx, fontSize: 12.5, color: adminColor.highlight, flexShrink: 0 }}>
@@ -708,7 +702,7 @@ const AdminDashboardPage: React.FC = () => {
 
               <Box sx={{ flex: 1, borderRadius: "18px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, p: "16px" }}>
                 <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.5 }}>
-                  By Service
+                  แยกตามบริการ
                 </Typography>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
                   {stats.byService.map((s) => (
@@ -735,10 +729,10 @@ const AdminDashboardPage: React.FC = () => {
             <Box sx={{ borderRadius: "18px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, p: "16px" }}>
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
                 <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                  Recent Activity
+                  กิจกรรมล่าสุด
                 </Typography>
                 <Box onClick={() => navigate("/admin/audit-log")} sx={{ display: "flex", alignItems: "center", gap: 0.4, cursor: "pointer" }}>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, color: adminColor.muted }}>View all</Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, color: adminColor.muted }}>ดูทั้งหมด</Typography>
                   <ArrowRight size={13} color={adminColor.dim} />
                 </Box>
               </Box>
@@ -779,9 +773,9 @@ const AdminDashboardPage: React.FC = () => {
         <motion.div {...fadeUp(0.15)}>
           <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 1.5 }}>
             {[
-              { icon: <Users       size={16} weight="duotone" />, label: "Customers",   value: counts.users,      onClick: () => navigate("/admin/users") },
-              { icon: <UserCircle  size={16} weight="duotone" />, label: "Therapists",  value: counts.therapists, onClick: () => navigate("/admin/therapists") },
-              { icon: <Sparkle     size={16} weight="duotone" />, label: "Services",    value: counts.services,   onClick: () => navigate("/admin/pages-list") },
+              { icon: <Users       size={16} weight="duotone" />, label: "ลูกค้า",   value: counts.users,      onClick: () => navigate("/admin/users") },
+              { icon: <UserCircle  size={16} weight="duotone" />, label: "หมอนวด",   value: counts.therapists, onClick: () => navigate("/admin/therapists") },
+              { icon: <Sparkle     size={16} weight="duotone" />, label: "บริการ",   value: counts.services,   onClick: () => navigate("/admin/pages-list") },
             ].map((c) => (
               <Box
                 key={c.label}
@@ -808,14 +802,16 @@ const AdminDashboardPage: React.FC = () => {
         {/* ── quick action tiles ───────────────────────────────────────── */}
         <motion.div {...fadeUp(0.16)}>
           <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.25 }}>
-            Quick Actions
+            เมนูด่วน
           </Typography>
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(4,1fr)" }, gap: 1.25 }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(3,1fr)" }, gap: 1.25 }}>
             {[
-              { icon: <PlusCircle   size={22} weight="duotone" />, label: "New Booking",   path: "/admin/bookings/add",  accent: true  },
-              { icon: <ClipboardText size={22} weight="duotone" />, label: "Bookings",     path: "/admin/bookings",      accent: false },
-              { icon: <ChartBar     size={22} weight="duotone" />, label: "Reports",       path: "/admin/reports",       accent: false },
-              { icon: <Eye          size={22} weight="duotone" />, label: "View Website",  path: "/",                    accent: false, blank: true },
+              { icon: <PlusCircle    size={22} weight="duotone" />, label: "จองใหม่",      path: "/admin/bookings/add",   accent: true  },
+              { icon: <Coins         size={22} weight="duotone" />, label: "จ่ายเงินหมอ",   path: "/admin/pay-therapists", accent: false },
+              { icon: <Wallet        size={22} weight="duotone" />, label: "รายได้ร้าน",    path: "/admin/earnings",       accent: false },
+              { icon: <ClipboardText size={22} weight="duotone" />, label: "รายการจอง",     path: "/admin/bookings",       accent: false },
+              { icon: <ChartBar      size={22} weight="duotone" />, label: "รายงาน",        path: "/admin/reports",        accent: false },
+              { icon: <Eye           size={22} weight="duotone" />, label: "ดูเว็บไซต์",     path: "/",                     accent: false, blank: true },
             ].map((t) => (
               <motion.button
                 key={t.label}

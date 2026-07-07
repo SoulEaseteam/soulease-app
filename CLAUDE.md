@@ -3751,3 +3751,33 @@ source** so nothing depends on the overlay. Notable renames:
 Behaviour/math unchanged — labels only. tsc=0 + build clean (55 routes),
 deployed; grep confirms "รายได้ของร้าน (สุทธิ)" present and **zero** "Shop net"
 in the live earnings chunk.
+
+### 🆕 2026-07-07 — Dashboard: drop tonight banner, fix shop-cut, Thai + links (28s319)
+
+Founder: "เอา คืนนี้ — ห้องคุมงาน ออก และปรับเพิ่มฟังก์ชันที่ต้องมี." On
+AdminDashboardPage:
+
+- **Removed** the "🌙 คืนนี้ — ห้องคุมงาน" tonight-ops banner (28s232). The
+  Tonight page/route still exists; only the dashboard entry tile is gone.
+- **Money-accuracy fix (the important one):** the "Shop 40%" period card was
+  computing `periodShop = periodService * 0.4` / `periodWorker = *0.6` — a
+  **stale flat split** that disagreed with the tier-based Earnings/Pay-Therapists
+  math (since 28r27). Now accumulates per-booking via the shared
+  `therapistPayoutFor({serviceId, servicePrice, discountAmount})`:
+  `worker += payout; shop += max(0, service − payout)`. Label "Shop 40%" →
+  **"รายได้ร้าน"** (no longer a fixed %). Dashboard shop cut now reconciles with
+  Earnings. Added `discountAmount` to the local BookingRow.
+- **New must-have links** in เมนูด่วน (Quick Actions), now a 6-tile 3-col grid:
+  จองใหม่ · **จ่ายเงินหมอ** (→/admin/pay-therapists, Coins icon) · **รายได้ร้าน**
+  (→/admin/earnings, Wallet icon) · รายการจอง · รายงาน · ดูเว็บไซต์. (phosphor-react
+  1.4.1 has no `HandCoins`; used `Coins`.)
+- **Thai-ified the whole page** (same overlay-mangling reason as 28s318): title
+  "หน้าหลัก", today strip (วันนี้/รายได้วันนี้/รอยืนยัน), รอยืนยัน pending header +
+  ยืนยัน button, ช่วงเวลา filter + status options (ทุกสถานะ/รอยืนยัน/…) + หมอทุกคน,
+  สรุปช่วงเวลา cards (งานทั้งหมด/ค่าบริการรวม/รายได้ร้าน/ยกเลิก), รายได้รายเดือน chart,
+  อัตราจบงาน, งานวันนี้, แยกตามหมอ/บริการ, กิจกรรมล่าสุด, ลูกค้า/หมอนวด/บริการ,
+  ดูทั้งหมด. Chart tooltip labels too.
+
+tsc=0 + build clean (55 routes), deployed; bundle grep confirms หน้าหลัก /
+รายได้ร้าน / จ่ายเงินหมอ / เมนูด่วน present, `pay-therapists` link present, and
+**no** "ห้องคุมงาน" / no flat `*0.4` split remaining.
