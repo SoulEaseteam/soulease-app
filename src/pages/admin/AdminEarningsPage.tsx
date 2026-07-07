@@ -37,9 +37,6 @@ import {
   query,
   where,
   Timestamp,
-  doc,
-  setDoc,
-  serverTimestamp,
   type DocumentData,
 } from "firebase/firestore";
 import dayjs, { type Dayjs } from "dayjs";
@@ -48,9 +45,9 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 // 🆕 Round 28s245 (founder: "ลองเปลี่ยนดีไซน์ ให้สวยขึ้น") — icons for the
 //   Dashboard-style (28s241) widget treatment.
-import { ChartBar, UserCircle, Receipt, XCircle, Medal, CaretDown } from "phosphor-react";
+import { ChartBar, UserCircle, Receipt, XCircle, Medal } from "phosphor-react";
 
-import { db, auth } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { formatTHB } from "@/utils/servicePricing";
 import { getServiceLabel } from "@/utils/serviceCatalog";
 // 🆕 Round 28s234 (Phase 4 — Payout tracking) — Control Room tokens for the
@@ -58,7 +55,6 @@ import { getServiceLabel } from "@/utils/serviceCatalog";
 // 🆕 Round 28s246 (founder: "ปรับตัวเลข ให้ดูง่าย") — adminFigureSx for every
 //   money/count figure; Hoefler's old-style digits stay on titles only.
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
-import { logAdminAction } from "@/utils/auditLog";
 // 🆕 Round 28s247 (audit of /admin/reports) — the tier-split + excluded-status
 //   logic moved to a shared util so Earnings and Reports can't drift apart
 //   (they had: Reports was still flat 60/40 over full price). Same values as
@@ -100,24 +96,8 @@ interface BookingRow {
   //   earnings calc can show how much discount the shop absorbed.
   discountAmount?: number | null;
   discountCode?: string | null;
-}
-
-// 🆕 Round 28s311 (founder: "ถ้าจ่ายแล้วจะบันทึกและจัดเก็บไปไม่ขึ้นโชว์
-//   และโชว์แบบรายเดือน") — a paid payout doc, read straight from the
-//   `payouts` collection for the monthly archive. All display fields are
-//   snapshotted at pay time (amount/jobs/name), so the archive renders
-//   without re-reading bookings and stays correct even if a booking is
-//   later edited.
-interface PaidRecord {
-  id: string;
-  therapistId: string;
-  therapistName: string;
-  amount: number;
-  jobs: number;
-  weekKey: string;
-  weekStart: string;
-  weekEnd: string;
-  paidAt?: Timestamp | null;
+  // 🆕 Round 28s312 — surfaced in the per-job shop-revenue list.
+  customerName?: string | null;
 }
 
 // 🆕 Round 28s244 (founder: "เพิ่มตัวกรอง" on AdminEarningsPage, same as the
@@ -413,27 +393,24 @@ const AdminEarningsPage: React.FC = () => {
     [stats.byDay, trendDates]
   );
 
-  // ── 🆕 Round 28s234 (Phase 4) — Payout tracker ────────────────────────
-  // Founder's original TODO on this page: "Track payouts (which therapist
-  // has been paid which week)". Independent of the `range` filter above
-  // (which is a rolling window and not a stable payout period) — this uses
-  // a fixed calendar week so "mark paid" persists against the SAME week
-  // every time the page loads. Stores one doc per therapist per week in a
-  // new `payouts` collection (admin-only, see firestore.rules).
-  const [payoutWeekStart, setPayoutWeekStart] = useState<Dayjs>(() => dayjs().startOf("week"));
-  const [payoutBookings, setPayoutBookings] = useState<BookingRow[]>([]);
-  const [payoutRecords, setPayoutRecords] = useState<Record<string, { paid: boolean; paidAt?: Timestamp | null }>>({});
-  const [payoutLoading, setPayoutLoading] = useState(true);
-  const [payoutBusy, setPayoutBusy] = useState<string | null>(null);
+  // ── 🆕 Round 28s312 (founder: "Payout tracker / Paid history เปลี่ยนเป็น
+  //   รายได้ของร้าน · โชว์เป็นเดือน · งานต่องาน") ─────────────────────────
+  //   Replaced the weekly therapist-payout tracker + monthly paid archive
+  //   with a monthly SHOP-REVENUE ledger: pick a month, see every completed
+  //   job in it and what the shop earned from each, plus the month totals.
+  //   Uses the SAME tier math as `stats`, so the month's shop total equals
+  //   the calculator's shop-gross over that window.
+  const [revenueMonth, setRevenueMonth] = useState<Dayjs>(() => dayjs().startOf("month"));
+  const [monthBookings, setMonthBookings] = useState<BookingRow[]>([]);
+  const [monthLoading, setMonthLoading] = useState(true);
 
-  const payoutWeekEnd = useMemo(() => payoutWeekStart.add(7, "day"), [payoutWeekStart]);
-  const payoutWeekKey = useMemo(() => payoutWeekStart.format("YYYY-MM-DD"), [payoutWeekStart]);
+  const revenueMonthEnd = useMemo(() => revenueMonth.add(1, "month"), [revenueMonth]);
 
-  // Bookings created within the selected week.
+  // Bookings created within the selected calendar month.
   useEffect(() => {
-    setPayoutLoading(true);
-    const s = Timestamp.fromDate(payoutWeekStart.toDate());
-    const e = Timestamp.fromDate(payoutWeekEnd.toDate());
+    setMonthLoading(true);
+    const s = Timestamp.fromDate(revenueMonth.toDate());
+    const e = Timestamp.fromDate(revenueMonthEnd.toDate());
     const q = query(
       collection(db, "bookings"),
       where("createdAt", ">=", s),
@@ -459,195 +436,73 @@ const AdminEarningsPage: React.FC = () => {
             createdAt: d.createdAt ?? null,
             discountAmount: d.discountAmount ?? null,
             discountCode: d.discountCode ?? null,
+            customerName: d.customerName ?? d.name ?? null,
           });
         });
-        setPayoutBookings(arr);
-        setPayoutLoading(false);
-      },
-      () => setPayoutLoading(false)
-    );
-    return () => unsub();
-  }, [payoutWeekStart, payoutWeekEnd]);
-
-  // Existing payout records for this week (paid/unpaid state).
-  useEffect(() => {
-    const q = query(collection(db, "payouts"), where("weekKey", "==", payoutWeekKey));
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const rec: Record<string, { paid: boolean; paidAt?: Timestamp | null }> = {};
-        snap.forEach((d) => {
-          const data = d.data() as DocumentData;
-          rec[data.therapistId ?? d.id] = { paid: !!data.paid, paidAt: data.paidAt ?? null };
-        });
-        setPayoutRecords(rec);
-      },
-      () => setPayoutRecords({})
-    );
-    return () => unsub();
-  }, [payoutWeekKey]);
-
-  // 🆕 Round 28s311 — Monthly paid archive. Once a payout is marked paid it
-  //   drops out of the weekly "to pay" list above (that list is now purely
-  //   what still needs paying) and lands here, grouped by month. Reads the
-  //   whole paid set in one index-free `paid == true` query, across all
-  //   weeks — independent of which week the tracker is viewing.
-  const [paidArchive, setPaidArchive] = useState<PaidRecord[]>([]);
-  const [expandedMonths, setExpandedMonths] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    const q = query(collection(db, "payouts"), where("paid", "==", true));
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const arr: PaidRecord[] = [];
-        snap.forEach((d) => {
-          const data = d.data() as DocumentData;
-          const weekStart = (data.weekStart as string) ?? (data.weekKey as string) ?? "";
-          arr.push({
-            id: d.id,
-            therapistId: (data.therapistId as string) ?? d.id,
-            therapistName: (data.therapistName as string) ?? (data.therapistId as string) ?? "—",
-            amount: (data.amount as number) ?? 0,
-            jobs: (data.jobs as number) ?? 0,
-            weekKey: (data.weekKey as string) ?? weekStart,
-            weekStart,
-            weekEnd: (data.weekEnd as string) ?? "",
-            paidAt: data.paidAt ?? null,
-          });
-        });
-        setPaidArchive(arr);
+        setMonthBookings(arr);
+        setMonthLoading(false);
       },
       (err) => {
-        console.error("[payout] archive snapshot error:", err);
-        setPaidArchive([]);
+        console.error("[revenue] month snapshot error:", err);
+        setMonthLoading(false);
       }
     );
     return () => unsub();
-  }, []);
+  }, [revenueMonth, revenueMonthEnd]);
 
-  // Group the paid archive by the calendar month of the pay period
-  // (weekStart's month — the work the payout represents). Months + the rows
-  // inside each are sorted newest-first.
-  const paidByMonth = useMemo(() => {
-    const map: Record<string, { total: number; jobs: number; records: PaidRecord[] }> = {};
-    for (const r of paidArchive) {
-      const basis = r.weekStart || r.weekKey;
-      const monthKey = basis ? dayjs(basis).format("YYYY-MM") : "unknown";
-      if (!map[monthKey]) map[monthKey] = { total: 0, jobs: 0, records: [] };
-      map[monthKey].total += r.amount;
-      map[monthKey].jobs += r.jobs;
-      map[monthKey].records.push(r);
-    }
-    return Object.entries(map)
-      .sort((a, b) => (a[0] < b[0] ? 1 : -1)) // month desc
-      .map(([monthKey, v]) => ({
-        monthKey,
-        label: monthKey === "unknown" ? "—" : dayjs(`${monthKey}-01`).format("MMMM YYYY"),
-        total: v.total,
-        jobs: v.jobs,
-        records: v.records.sort((a, b) =>
-          (a.weekStart || a.weekKey) < (b.weekStart || b.weekKey) ? 1 : -1
-        ),
-      }));
-  }, [paidArchive]);
+  // Per-job shop revenue for the selected month. The shop keeps what the
+  // customer paid MINUS the therapist's cut MINUS taxi (taxi is a
+  // pass-through to the driver, so it nets to zero for the shop). Same
+  // tier + discounted-base math as `stats`, so the month total reconciles
+  // with the calculator's shop-gross for the same window.
+  const monthRevenue = useMemo(() => {
+    const jobs: {
+      id: string;
+      date: Dayjs | null;
+      service: string;
+      therapist: string;
+      customer: string | null;
+      collected: number;
+      payout: number;
+      taxi: number;
+      shop: number;
+    }[] = [];
+    let shopTotal = 0;
+    let grossTotal = 0;
+    let payoutTotal = 0;
+    let cancelledCount = 0;
 
-  // Per-therapist payout for the selected week (same tier math as `stats`).
-  const payoutByTherapist = useMemo(() => {
-    const acc: Record<string, { name: string; jobs: number; payout: number }> = {};
-    for (const b of payoutBookings) {
-      if (b.status && EXCLUDED_STATUSES.has(b.status)) continue;
+    for (const b of monthBookings) {
+      if (b.status && EXCLUDED_STATUSES.has(b.status)) {
+        cancelledCount += 1;
+        continue;
+      }
       const service = b.servicePrice ?? 0;
+      const taxi = b.taxiFee ?? 0;
+      const collected = b.totalPrice ?? service + taxi;
       const discount = b.discountAmount ?? 0;
       const tPct = therapistPctFor(b.serviceId);
-      const commissionBase = Math.max(0, service - discount);
-      const payout = Math.round(commissionBase * tPct);
-      const tKey = b.therapistId ?? "(no therapist)";
-      const tName = b.therapistName ?? tKey;
-      if (!acc[tKey]) acc[tKey] = { name: tName, jobs: 0, payout: 0 };
-      acc[tKey].jobs += 1;
-      acc[tKey].payout += payout;
+      const payout = Math.round(Math.max(0, service - discount) * tPct);
+      const shop = collected - payout - taxi; // what the shop keeps
+      jobs.push({
+        id: b.id,
+        date: b.createdAt?.toDate ? dayjs(b.createdAt.toDate()) : null,
+        service: getServiceLabel(b.serviceId, b.serviceName),
+        therapist: b.therapistName ?? "—",
+        customer: b.customerName ?? null,
+        collected,
+        payout,
+        taxi,
+        shop,
+      });
+      shopTotal += shop;
+      grossTotal += collected;
+      payoutTotal += payout;
     }
-    return acc;
-  }, [payoutBookings]);
-
-  // 🆕 Round 28s311 — the weekly tracker now lists ONLY who still needs
-  //   paying; anyone already marked paid this week is filed into the monthly
-  //   archive below and no longer clutters the list.
-  const weeklyUnpaid = useMemo(
-    () =>
-      Object.entries(payoutByTherapist)
-        .filter(([tKey]) => !payoutRecords[tKey]?.paid)
-        .sort((a, b) => b[1].payout - a[1].payout),
-    [payoutByTherapist, payoutRecords]
-  );
-  const weeklyPaidCount = useMemo(
-    () => Object.keys(payoutByTherapist).filter((tKey) => !!payoutRecords[tKey]?.paid).length,
-    [payoutByTherapist, payoutRecords]
-  );
-  const weeklyTotalDue = useMemo(
-    () => weeklyUnpaid.reduce((sum, [, row]) => sum + row.payout, 0),
-    [weeklyUnpaid]
-  );
-
-  const markPayout = async (therapistId: string, name: string, amount: number, jobs: number, paid: boolean) => {
-    const payoutId = `${payoutWeekKey}__${therapistId}`;
-    setPayoutBusy(payoutId);
-    try {
-      await setDoc(doc(db, "payouts", payoutId), {
-        weekKey: payoutWeekKey,
-        weekStart: payoutWeekStart.format("YYYY-MM-DD"),
-        weekEnd: payoutWeekEnd.format("YYYY-MM-DD"),
-        therapistId,
-        therapistName: name,
-        amount,
-        jobs,
-        paid,
-        paidAt: paid ? serverTimestamp() : null,
-        paidBy: paid ? (auth.currentUser?.email ?? null) : null,
-      });
-      void logAdminAction(paid ? "payout.mark_paid" : "payout.mark_unpaid", {
-        therapistId, therapistName: name, amount, weekKey: payoutWeekKey,
-      });
-    } catch (e) {
-      console.error("[payout] mark failed", e);
-      window.alert("บันทึกไม่สำเร็จ ลองใหม่");
-    } finally {
-      setPayoutBusy(null);
-    }
-  };
-
-  // 🆕 Round 28s311 — Un-archive a paid payout (mistaken payment). Targets
-  //   the record's OWN week — not the tracker's currently-viewed week — so
-  //   undoing an old month's payout writes back to the right doc. Flipping
-  //   paid→false drops it from the archive and, if it belongs to the week
-  //   the tracker is showing, returns it to the "to pay" list.
-  const undoPaidRecord = async (r: PaidRecord) => {
-    const payoutId = `${r.weekKey}__${r.therapistId}`;
-    setPayoutBusy(payoutId);
-    try {
-      await setDoc(doc(db, "payouts", payoutId), {
-        weekKey: r.weekKey,
-        weekStart: r.weekStart,
-        weekEnd: r.weekEnd,
-        therapistId: r.therapistId,
-        therapistName: r.therapistName,
-        amount: r.amount,
-        jobs: r.jobs,
-        paid: false,
-        paidAt: null,
-        paidBy: null,
-      });
-      void logAdminAction("payout.mark_unpaid", {
-        therapistId: r.therapistId, therapistName: r.therapistName, amount: r.amount, weekKey: r.weekKey,
-      });
-    } catch (e) {
-      console.error("[payout] undo failed", e);
-      window.alert("บันทึกไม่สำเร็จ ลองใหม่");
-    } finally {
-      setPayoutBusy(null);
-    }
-  };
+    // newest job first
+    jobs.sort((a, b) => (b.date ? b.date.valueOf() : 0) - (a.date ? a.date.valueOf() : 0));
+    return { jobs, shopTotal, grossTotal, payoutTotal, cancelledCount };
+  }, [monthBookings]);
 
   const handleExportCSV = () => {
     const headers = [
@@ -837,261 +692,128 @@ const AdminEarningsPage: React.FC = () => {
         )}
       </Box>
 
-      {/* 🆕 Round 28s234 (Phase 4) — Payout Tracker. Independent of the range
-          filter above; tracks "paid this calendar week" per therapist. */}
+      {/* 🆕 Round 28s312 (founder: "Payout tracker / Paid history เปลี่ยนเป็น
+          รายได้ของร้าน · โชว์เป็นเดือน · งานต่องาน") — monthly shop-revenue
+          ledger, job by job. Replaced the weekly payout tracker + paid
+          archive. */}
       <Box
         sx={{
           mb: 3, borderRadius: "16px", background: adminColor.panel,
           border: `1px solid ${adminColor.line}`, p: "18px 20px",
         }}
       >
+        {/* header + month nav */}
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1, mb: 1.5 }}>
           <Box>
             <Typography sx={{ fontFamily: adminFont.serif, fontSize: 17, fontWeight: 600, color: adminColor.text }}>
-              Payout tracker
+              รายได้ของร้าน
             </Typography>
             <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted, mt: 0.25 }}>
-              Week of {payoutWeekStart.format("D MMM")} – {payoutWeekEnd.subtract(1, "day").format("D MMM YYYY")}
+              {revenueMonth.format("MMMM YYYY")} · ราคาบริการหักส่วนแบ่งหมอนวด (ไม่รวมค่าเดินทาง)
             </Typography>
           </Box>
           <Box sx={{ display: "flex", gap: 0.75 }}>
             <Button
               size="small"
-              onClick={() => setPayoutWeekStart((w) => w.subtract(7, "day"))}
+              onClick={() => setRevenueMonth((m) => m.subtract(1, "month"))}
               sx={{ minWidth: 0, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: "8px", textTransform: "none" }}
             >
-              ← Prev
+              ← ก่อน
             </Button>
             <Button
               size="small"
-              disabled={payoutWeekStart.isSame(dayjs().startOf("week"), "day")}
-              onClick={() => setPayoutWeekStart(dayjs().startOf("week"))}
+              disabled={revenueMonth.isSame(dayjs().startOf("month"), "month")}
+              onClick={() => setRevenueMonth(dayjs().startOf("month"))}
               sx={{ minWidth: 0, color: adminColor.highlight, border: `1px solid ${adminColor.line2}`, borderRadius: "8px", textTransform: "none" }}
             >
-              This week
+              เดือนนี้
             </Button>
             <Button
               size="small"
-              disabled={payoutWeekEnd.isAfter(dayjs())}
-              onClick={() => setPayoutWeekStart((w) => w.add(7, "day"))}
+              disabled={revenueMonthEnd.isAfter(dayjs())}
+              onClick={() => setRevenueMonth((m) => m.add(1, "month"))}
               sx={{ minWidth: 0, color: adminColor.text, border: `1px solid ${adminColor.line2}`, borderRadius: "8px", textTransform: "none" }}
             >
-              Next →
+              ถัดไป →
             </Button>
           </Box>
         </Box>
 
-        {payoutLoading ? (
+        {monthLoading ? (
           <Box sx={{ py: 3, textAlign: "center" }}>
             <CircularProgress size={22} sx={{ color: adminColor.accent }} />
           </Box>
-        ) : Object.keys(payoutByTherapist).length === 0 ? (
+        ) : monthRevenue.jobs.length === 0 ? (
           <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.dim }}>
-            No completed jobs this week.
+            ไม่มีงานในเดือนนี้
+            {monthRevenue.cancelledCount > 0 ? ` (ยกเลิก ${monthRevenue.cancelledCount} งาน)` : ""}
           </Typography>
-        ) : weeklyUnpaid.length === 0 ? (
-          // 🆕 Round 28s311 — everyone owed this week has been paid; the list
-          //   is cleared and the amounts live in the monthly archive below.
-          <Box
-            sx={{
-              display: "flex", alignItems: "center", gap: 1, p: "12px 14px", borderRadius: "12px",
-              background: "rgba(22,163,74,0.08)", border: "1px solid rgba(22,163,74,0.3)",
-            }}
-          >
-            <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: adminColor.green }}>
-              ✓ All {weeklyPaidCount} paid this week
-            </Typography>
-            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted }}>
-              · filed in the monthly archive below
-            </Typography>
-          </Box>
         ) : (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
-            {weeklyUnpaid.map(([tKey, row]) => {
-              const busyId = `${payoutWeekKey}__${tKey}`;
-              return (
+          <>
+            {/* month summary — the shop's take is the headline number */}
+            <Box
+              sx={{
+                display: "flex", flexWrap: "wrap", gap: 2, alignItems: "baseline",
+                mb: 1.5, pb: 1.5, borderBottom: `1px solid ${adminColor.line}`,
+              }}
+            >
+              <Box>
+                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.06em", color: adminColor.muted, fontWeight: 700 }}>
+                  ร้านได้เดือนนี้
+                </Typography>
+                <Typography sx={{ ...adminFigureSx, fontSize: 26, color: adminColor.text, lineHeight: 1.1 }}>
+                  {formatTHB(monthRevenue.shopTotal)}
+                </Typography>
+              </Box>
+              <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted }}>
+                {monthRevenue.jobs.length} งาน · ลูกค้าจ่าย {formatTHB(monthRevenue.grossTotal)} · หมอนวดได้ {formatTHB(monthRevenue.payoutTotal)}
+                {monthRevenue.cancelledCount > 0 && ` · ยกเลิก ${monthRevenue.cancelledCount}`}
+              </Typography>
+            </Box>
+
+            {/* job-by-job list */}
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+              {monthRevenue.jobs.map((j) => (
                 <Box
-                  key={tKey}
+                  key={j.id}
                   sx={{
                     display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5,
                     p: "10px 12px", borderRadius: "12px",
-                    background: adminColor.panel2,
-                    border: `1px solid ${adminColor.line}`,
+                    background: adminColor.panel2, border: `1px solid ${adminColor.line}`,
                   }}
                 >
                   <Box sx={{ minWidth: 0 }}>
-                    <Typography sx={{ fontFamily: SANS, fontSize: 13.5, fontWeight: 700, color: adminColor.text }}>
-                      {row.name}
-                    </Typography>
-                    <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.muted }}>
-                      {row.jobs} job{row.jobs === 1 ? "" : "s"}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
-                    <Typography sx={{ ...adminFigureSx, fontSize: 14.5, color: adminColor.highlight }}>
-                      {formatTHB(row.payout)}
-                    </Typography>
-                    <Button
-                      size="small"
-                      disabled={payoutBusy === busyId}
-                      onClick={() => void markPayout(tKey, row.name, row.payout, row.jobs, true)}
+                    <Typography
                       sx={{
-                        minWidth: 84, borderRadius: "8px", textTransform: "none", fontWeight: 700, fontSize: 12,
-                        background: adminColor.green,
-                        color: "#fff",
-                        border: "none",
-                        "&:hover": { background: adminColor.green },
+                        fontFamily: SANS, fontSize: 13.5, fontWeight: 700, color: adminColor.text,
+                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                       }}
                     >
-                      Mark paid
-                    </Button>
-                  </Box>
-                </Box>
-              );
-            })}
-            {/* footer — total still owed this week + how many already filed */}
-            <Box
-              sx={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                mt: 0.5, pt: 1, borderTop: `1px dashed ${adminColor.line2}`,
-              }}
-            >
-              <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.muted }}>
-                {weeklyUnpaid.length} to pay
-                {weeklyPaidCount > 0 && ` · ${weeklyPaidCount} already paid`}
-              </Typography>
-              <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted }}>
-                Due{" "}
-                <Box component="span" sx={{ ...adminFigureSx, fontSize: 13, color: adminColor.text }}>
-                  {formatTHB(weeklyTotalDue)}
-                </Box>
-              </Typography>
-            </Box>
-          </Box>
-        )}
-      </Box>
-
-      {/* 🆕 Round 28s311 (founder: "ถ้าจ่ายแล้วจะบันทึกและจัดเก็บไปไม่ขึ้นโชว์
-          และโชว์แบบรายเดือน") — Paid history, grouped by month. Everything
-          marked paid above is filed here; each month rolls up to a total and
-          expands to the per-therapist rows that made it up. */}
-      <Box
-        sx={{
-          mb: 3, borderRadius: "16px", background: adminColor.panel,
-          border: `1px solid ${adminColor.line}`, p: "18px 20px",
-        }}
-      >
-        <Box sx={{ mb: 1.5 }}>
-          <Typography sx={{ fontFamily: adminFont.serif, fontSize: 17, fontWeight: 600, color: adminColor.text }}>
-            Paid history
-          </Typography>
-          <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted, mt: 0.25 }}>
-            Archived payouts · grouped by month
-          </Typography>
-        </Box>
-
-        {paidByMonth.length === 0 ? (
-          <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.dim }}>
-            No payouts recorded yet.
-          </Typography>
-        ) : (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-            {paidByMonth.map((m, i) => {
-              const open = expandedMonths[m.monthKey] ?? i === 0;
-              return (
-                <Box
-                  key={m.monthKey}
-                  sx={{ borderRadius: "12px", border: `1px solid ${adminColor.line}`, overflow: "hidden" }}
-                >
-                  {/* month header — click to expand/collapse */}
-                  <Box
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setExpandedMonths((s) => ({ ...s, [m.monthKey]: !open }))}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setExpandedMonths((s) => ({ ...s, [m.monthKey]: !open }));
-                      }
-                    }}
-                    sx={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5,
-                      p: "11px 14px", cursor: "pointer", background: adminColor.panel2,
-                      "&:hover": { background: adminColor.panel3 },
-                      "&:focus-visible": { outline: `2px solid ${adminColor.accent}`, outlineOffset: -2 },
-                    }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
-                      <Box
-                        sx={{
-                          display: "flex", color: adminColor.muted,
-                          transform: open ? "rotate(0deg)" : "rotate(-90deg)",
-                          transition: "transform 0.15s ease",
-                        }}
-                      >
-                        <CaretDown size={14} weight="bold" />
-                      </Box>
-                      <Typography sx={{ fontFamily: SANS, fontSize: 13.5, fontWeight: 700, color: adminColor.text }}>
-                        {m.label}
-                      </Typography>
-                      <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.dim }}>
-                        · {m.records.length} payout{m.records.length === 1 ? "" : "s"} · {m.jobs} job{m.jobs === 1 ? "" : "s"}
-                      </Typography>
-                    </Box>
-                    <Typography sx={{ ...adminFigureSx, fontSize: 14.5, color: adminColor.highlight, flexShrink: 0 }}>
-                      {formatTHB(m.total)}
+                      {j.service}
+                      {j.customer && (
+                        <Box component="span" sx={{ fontWeight: 400, color: adminColor.muted }}>
+                          {" · "}{j.customer}
+                        </Box>
+                      )}
+                    </Typography>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.muted }}>
+                      {j.date ? j.date.format("D MMM · HH:mm") : "—"} · {j.therapist}
+                      {" · "}ลูกค้าจ่าย {formatTHB(j.collected)} · หมอนวด {formatTHB(j.payout)}
+                      {j.taxi > 0 && ` · เดินทาง ${formatTHB(j.taxi)}`}
                     </Typography>
                   </Box>
-
-                  {/* per-therapist rows for the month */}
-                  {open && (
-                    <Box sx={{ display: "flex", flexDirection: "column" }}>
-                      {m.records.map((r) => {
-                        const busyId = `${r.weekKey}__${r.therapistId}`;
-                        return (
-                          <Box
-                            key={r.id}
-                            sx={{
-                              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5,
-                              p: "9px 14px", borderTop: `1px solid ${adminColor.line}`,
-                            }}
-                          >
-                            <Box sx={{ minWidth: 0 }}>
-                              <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: adminColor.text }}>
-                                {r.therapistName}
-                              </Typography>
-                              <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim }}>
-                                {r.jobs} job{r.jobs === 1 ? "" : "s"}
-                                {r.weekStart && ` · wk ${dayjs(r.weekStart).format("D MMM")}`}
-                                {r.paidAt?.toDate && ` · paid ${dayjs(r.paidAt.toDate()).format("D MMM")}`}
-                              </Typography>
-                            </Box>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexShrink: 0 }}>
-                              <Typography sx={{ ...adminFigureSx, fontSize: 13.5, color: adminColor.text }}>
-                                {formatTHB(r.amount)}
-                              </Typography>
-                              <Button
-                                size="small"
-                                disabled={payoutBusy === busyId}
-                                onClick={() => void undoPaidRecord(r)}
-                                sx={{
-                                  minWidth: 0, px: 1, borderRadius: "8px", textTransform: "none",
-                                  fontWeight: 600, fontSize: 11, color: adminColor.muted,
-                                  "&:hover": { background: "rgba(220,38,38,0.08)", color: adminColor.red },
-                                }}
-                              >
-                                Undo
-                              </Button>
-                            </Box>
-                          </Box>
-                        );
-                      })}
-                    </Box>
-                  )}
+                  <Box sx={{ textAlign: "right", flexShrink: 0 }}>
+                    <Typography sx={{ ...adminFigureSx, fontSize: 14.5, color: adminColor.highlight, lineHeight: 1.1 }}>
+                      {formatTHB(j.shop)}
+                    </Typography>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim }}>
+                      ร้านได้
+                    </Typography>
+                  </Box>
                 </Box>
-              );
-            })}
-          </Box>
+              ))}
+            </Box>
+          </>
         )}
       </Box>
 
