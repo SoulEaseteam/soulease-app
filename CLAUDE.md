@@ -1816,6 +1816,37 @@ been applied to the working tree; folding it in here (tsc + build clean)
 completes the dedup. **Therapist Add + Edit are now fully unified on the
 kit — future field/design changes touch `therapistFormKit.tsx` once.**
 
+### 🆕 2026-07-07 — Customer Insights CRM audit + fix + polish (28s285)
+
+Founder: "ปรับ แก้ Customer Insights". Audited the CRM panel on
+`AdminUsersPage` and fixed 4 real correctness bugs + polished it:
+
+- **Phone normalization** (biggest fix): the same guest booking as
+  "+66812345678" (customer flow / E.164) vs "0812345678" (admin-add)
+  split into two rows on a phone-keyed CRM. New `normPhone` strips
+  formatting + maps Thai +66 → local 0-prefix so they merge; foreign
+  numbers kept distinct as raw digits.
+- **VIP by served visits, not all orders**: old code did
+  `totalBookings += 1` for EVERY booking incl. cancelled, contradicting
+  its own "5+ completed" comment. Now VIP = 5+ delivered (status
+  completed/done).
+- **Last visit** = the booking's service date (startAt/date), not
+  `createdAt` (when booked).
+- **Total spent** = sum of served bookings only (realized revenue), not
+  pending/confirmed orders never delivered.
+
+Columns split **Visits** (served, VIP basis) from **Orders** (all). Added
+guest/phone search, tap-to-call links, icon-circle stat pills (Unique /
+Repeat 2+ / VIP / With no-shows / Realized revenue) matching Dashboard/
+Earnings, `adminFigureSx` numbers.
+
+**Definitions chosen (change if founder wants):** VIP = 5+ delivered
+visits · revenue = totalPrice summed over completed/done only.
+**Known cost note:** the panel still does one unbounded
+`getDocs(bookings)` per page load (inherent to lifetime per-guest
+aggregation) — fine at current volume, revisit if the collection grows
+large.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
