@@ -1897,6 +1897,20 @@ date/time · phone · location · service·duration · therapist · payment+paid
 rotates, spinner while loading, "ไม่พบข้อมูล" if deleted. Only present
 fields render.
 
+### 🆕 2026-07-07 — guest profile drawer polish (28s289)
+
+Founder: "ปรับแก้ และ สวยงาม". The 28s288 history rows rendered cramped/
+clipped (service+therapist+date+amount+status+caret all inline on one
+squeezed row, worse at browser zoom), and the stat pills wrapped unevenly
+(the "Since last" pill ballooned to a full-width bar).
+
+- Stat pills: flex-wrap → even CSS grid (3-col desktop / 2 mobile), no
+  pill balloons; reordered Visits/Orders/Since-last on the top row.
+- Favorites: same grid, ellipsis on long names.
+- History rows: service = title on its own line, therapist+date on a
+  subline, amount+status stacked right-aligned in their own column, row
+  min-height + vertical centering — no clipping/crowding at any zoom.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
