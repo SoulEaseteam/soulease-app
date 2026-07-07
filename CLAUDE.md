@@ -3571,3 +3571,43 @@ Paid-history archive are gone.
 tsc=0 + build clean (55 routes), deployed to prod; "รายได้ของร้าน" /
 "ร้านได้เดือนนี้" present and "Payout tracker" / "Paid history" / "Mark paid"
 absent in the live `AdminEarningsPage` chunk.
+
+### 🆕 2026-07-07 — New menu: Pay Therapists queue (28s313)
+
+Founder: "เพิ่มเมนู ระบบ กดจ่ายเงินหมอ · ดึงบุคกิ้งจาก ลูกค้าจ่ายแบบโอน." A
+dedicated queue for paying therapists their cut, sourced from **non-cash**
+bookings (money that landed with the shop). Filter confirmed via prompt =
+**"ทุกแบบที่ไม่ใช่เงินสด"** (transfer / PromptPay / WeChat / Alipay / card —
+everything but cash; cash is collected in hand by the therapist so nothing is
+owed). Note: this is a NEW, separate concept from the payout tracker removed
+in 28s312 — that was per-therapist-per-week in a `payouts` collection; this is
+per-JOB on the booking doc, scoped to non-cash.
+
+- **New nav item "Pay Therapists"** (AdminLayout `menuItems`, after Earnings,
+  `PaymentsIcon`) + route `pay-therapists` (App.tsx) →
+  `src/pages/admin/AdminTherapistPayoutsPage.tsx`.
+- **Source:** `bookings` where `createdAt >= now−120d` (bounded read, wide
+  enough nothing owed slips off). Client-side drops `isPayrollExcluded(status)`
+  and cash. **`isCashPayment(payment, paymentMethodId)`** handles the messy
+  `payment` field — customer flow writes a LABEL ("Cash"/"PromptPay"/"WeChat
+  Pay"), admin add/edit writes a raw VALUE ("cash"/"transfer"/…); cash =
+  `methodId==="cash" || payment lowercased ==="cash" || starts with "เงินสด"`.
+  Everything else = non-cash.
+- **Payout amount** = shared `therapistPayoutFor` (tier % on post-discount
+  base) — identical to Earnings/Reports.
+- **UI:** summary (ค้างจ่ายหมอรวม · N งาน · N หมอ · toggle จ่ายแล้ว).
+  Outstanding grouped **by therapist**: card with subtotal + **"จ่ายหมด"**
+  (writeBatch marks all their unpaid jobs), each job row = service · customer ·
+  date · a customer-paid chip (ลูกค้าโอนแล้ว/ยังไม่จ่าย, so she doesn't pay
+  before the money's in) · payout · **"กดจ่าย"**. Collapsible "จ่ายแล้ว"
+  list with per-job **"ยกเลิก"** (undo).
+- **Storage:** flag on the booking doc — `therapistPaid` / `therapistPaidAt` /
+  `therapistPaidBy`. **No new collection, no rules change** (`bookings` already
+  `allow update: if isAdmin()`, `allow list: if isAdmin()`). New audit actions
+  `therapist_payout.mark_paid` / `_unpaid` / `_paid_batch` added to
+  `AuditAction`.
+
+Known scope: 120-day window (older unpaid would drop off — flagged, revisit if
+she clears less often than that). tsc=0 + build clean (55 routes), deployed;
+"ค้างจ่ายหมอ" / "กดจ่าย" / "บุคกิ้งที่ลูกค้าจ่ายแบบโอน" in the new chunk and
+"Pay Therapists" in the nav bundle, confirmed live.
