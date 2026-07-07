@@ -3233,3 +3233,39 @@ Cinzel weights 400-800 loaded; Italiana + Federo single-weight.
   below the cards, NOT a separate detail page.
 - Detail page `/services/:id` is still reachable via direct URL
   (SEO / share), but no card UI links there.
+
+### 🆕 2026-07-07 — Analytics: visitor counter, sources, peak hours (28s303)
+
+Founder asked "เราดูจำนวนคนมาเข้าดูเว็บเราได้ที่ไหน" (where do I see visitor
+counts). Answer: `/admin/analytics` (menu "Analytics") — the self-hosted
+funnel page reading `analytics_events` (from Round 28r13). It already had
+a funnel + daily trend but no plain "how many people" number and no
+source/time breakdown. Offered daily totals / traffic sources / peak
+hours → she said "ทำครบ". Built all three, all on the existing data (the
+`referrer` and `ts` fields were already captured) — **no new writes, no
+rules change, no schema change**:
+
+1. **Headline visitor tiles** (`HeroStat`) — unique `home_view` sessions
+   for the selected range + today + yesterday, with a ▲/▼ vs-yesterday
+   hint. This is the direct answer to "คนเข้าเว็บกี่คน". Unique = counts
+   1 per session (session id rotates on tab close, same as before).
+2. **Traffic sources** — per-session referrer, bucketed by
+   `classifyReferrer()` into LINE / Google / Instagram / Facebook / X /
+   TikTok / WhatsApp / Telegram / YouTube / etc. A known source *upgrades*
+   a "Direct" placeholder (visitor lands via LINE then navigates
+   internally → still counts as LINE). null / own-domain = Direct.
+   Unknown hosts fall through to the raw hostname (nothing dropped).
+3. **Peak hours** — 24-slot histogram of `home_view` by **BKK hour**
+   (`(getUTCHours()+7)%24`, matching analytics.ts's mode logic, so it's
+   correct regardless of where View views it from), busiest hour
+   highlighted + labelled "HH:00–HH:00".
+
+All three respect the page's existing date-range / concierge-mode /
+language filters (they read `stats` off `filteredEvents`). Verified: tsc
++ build clean, isolated node logic test (referrer 15/15, BKK-hour 6/6,
+session-upgrade PASS, daily-unique dedup PASS), deployed, new strings
+confirmed live in `AdminAnalyticsPage-*.js`.
+
+Known non-issue: GA is NOT wired — index.html has a dead `dns-prefetch`
+to google-analytics only. This self-hosted counter is the source of
+truth; there's no second dashboard/invoice to manage.
