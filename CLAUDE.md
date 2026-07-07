@@ -1911,6 +1911,39 @@ squeezed row, worse at browser zoom), and the stat pills wrapped unevenly
   subline, amount+status stacked right-aligned in their own column, row
   min-height + vertical centering — no clipping/crowding at any zoom.
 
+### 🆕 2026-07-07 — history row clipping actually fixed this time (28s290)
+
+Founder screenshot showed the exact same broken booking-history rows
+(text collapsed, amount pushed to the edge) that 28s289's "polish" pass
+was supposed to fix — meaning that round shipped a guess that didn't
+address the real cause.
+
+**This round root-caused it BEFORE touching code**: built an isolated
+Artifact (plain HTML/CSS replica of the exact row markup, no auth needed
+since AdminUsersPage sits behind Firebase Auth and the sandboxed preview
+can't log in), screenshotted it at a simulated 2.4× text scale, and
+reproduced the exact broken look. Root cause: MUI's `sx` `fontSize` (a
+raw number) resolves through `theme.typography.pxToRem`, so it scales
+with the device's OS/browser accessibility text-size setting — but the
+row's padding used fixed `px`. Combined with `whiteSpace: nowrap` +
+ellipsis on the title, a phone with "larger text" on collapses the title
+to 2-3 characters while the amount/status (unclipped) keep full size and
+crowd the edge.
+
+**Fix:** swapped single-line ellipsis-truncation for WRAP — service name
++ amount on one `flexWrap` line, therapist/date + status/caret on a
+second, `wordBreak: "break-word"` throughout. At normal scale it's
+visually identical (one line each); under heavy text-scaling it reflows
+onto more lines instead of clipping/overlapping — confirmed via the same
+mockup at 2.4× before shipping.
+
+**Process lesson:** for a page the preview tools can't reach (behind
+auth), don't ship a second visual guess without independent verification
+— build an isolated Artifact/mockup replicating the exact markup first,
+stress-test it, and only port the confirmed-working version into the
+real file. Two prior rounds (28s288, 28s289) shipped plausible-looking
+fixes for this same complaint that didn't actually hold up.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
