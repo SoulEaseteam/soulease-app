@@ -53,6 +53,10 @@ type DispatchState =
   | "in_session"
   | "done";
 
+// 🆕 Round 28r45 — bilingual dispatch chips + buttons (English primary,
+//   Thai after "·"). Same operator-scan-language reasoning as Dashboard
+//   (28r35): English reads faster mid-dispatch, Thai stays for
+//   unambiguity. Filter labels are the only English-ONLY zone (r43).
 const FLOW: {
   key: DispatchState;
   label: string;
@@ -60,11 +64,11 @@ const FLOW: {
   btn: string | null;
   tone: string;
 }[] = [
-  { key: "assigned",   label: "รับงานแล้ว", next: "enroute",    btn: "🚗 ส่งหมอนวด", tone: adminColor.dim },
-  { key: "enroute",    label: "กำลังเดินทาง", next: "arrived",   btn: "📍 ถึงแล้ว",   tone: adminColor.blue },
-  { key: "arrived",    label: "ถึงแล้ว",    next: "in_session", btn: "▶️ เริ่มนวด",  tone: adminColor.amber },
-  { key: "in_session", label: "กำลังนวด",   next: "done",       btn: "✅ จบงาน",     tone: adminColor.green },
-  { key: "done",       label: "เสร็จแล้ว",  next: null,         btn: null,            tone: adminColor.green },
+  { key: "assigned",   label: "Assigned · รับงานแล้ว",   next: "enroute",    btn: "🚗 Send · ส่งหมอนวด",    tone: adminColor.dim },
+  { key: "enroute",    label: "En route · กำลังเดินทาง", next: "arrived",    btn: "📍 Arrived · ถึงแล้ว",   tone: adminColor.blue },
+  { key: "arrived",    label: "Arrived · ถึงแล้ว",       next: "in_session", btn: "▶️ Start · เริ่มนวด",    tone: adminColor.amber },
+  { key: "in_session", label: "In session · กำลังนวด",   next: "done",       btn: "✅ Complete · จบงาน",    tone: adminColor.green },
+  { key: "done",       label: "Done · เสร็จแล้ว",        next: null,         btn: null,                     tone: adminColor.green },
 ];
 const STEP = (s?: string) => FLOW.find((f) => f.key === ((s as DispatchState) || "assigned")) ?? FLOW[0];
 
@@ -184,17 +188,24 @@ const AdminTonightPage: React.FC = () => {
         </Button>
       </Box>
 
-      <Typography sx={{ fontFamily: adminFont.serif, fontWeight: 600, fontSize: 22, color: adminColor.text, mb: 0.5 }}>
-        🌙 คืนนี้ — ห้องคุมงาน
-      </Typography>
+      {/* 🆕 Round 28r45 — bilingual page header (English primary + tiny
+          Thai subtitle), matches Dashboard/Bookings pattern (28r35/r40). */}
+      <Box sx={{ mb: 1.5 }}>
+        <Typography sx={{ fontFamily: adminFont.serif, fontWeight: 600, fontSize: 22, color: adminColor.text, lineHeight: 1 }}>
+          🌙 Tonight · Control Room
+        </Typography>
+        <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.4, letterSpacing: "0.02em" }}>
+          คืนนี้ · ห้องคุมงาน
+        </Typography>
+      </Box>
 
-      {/* live counters */}
+      {/* live counters — 28r45 bilingual chips */}
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
-        <Chip label={`งานคืนนี้ ${counts.total}`} sx={{ fontWeight: 700, background: adminColor.panel, color: adminColor.text }} />
-        <Chip label={`กำลังไป/ถึง ${counts.enroute}`} sx={{ fontWeight: 700, background: "rgba(37,99,235,0.14)", color: adminColor.blue }} />
-        <Chip label={`กำลังนวด ${counts.in_session}`} sx={{ fontWeight: 700, background: "rgba(22,163,74,0.14)", color: adminColor.green }} />
+        <Chip label={`Tonight ${counts.total} · งาน`} sx={{ fontWeight: 700, background: adminColor.panel, color: adminColor.text, border: `1px solid ${adminColor.line}` }} />
+        <Chip label={`En route ${counts.enroute} · กำลังไป/ถึง`} sx={{ fontWeight: 700, background: `${adminColor.blue}1F`, color: adminColor.blue }} />
+        <Chip label={`In session ${counts.in_session} · กำลังนวด`} sx={{ fontWeight: 700, background: `${adminColor.green}1F`, color: adminColor.green }} />
         {counts.overdue > 0 && (
-          <Chip label={`⚠️ เกินเวลา ${counts.overdue}`} sx={{ fontWeight: 800, background: "rgba(220,38,38,0.16)", color: adminColor.red }} />
+          <Chip label={`⚠️ Overdue ${counts.overdue} · เกินเวลา`} sx={{ fontWeight: 800, background: `${adminColor.red}22`, color: adminColor.red }} />
         )}
       </Box>
 
@@ -204,7 +215,10 @@ const AdminTonightPage: React.FC = () => {
         </Box>
       ) : jobs.length === 0 ? (
         <Box sx={{ textAlign: "center", mt: 6, color: adminColor.muted, fontFamily: SANS }}>
-          ยังไม่มีงานที่ยืนยันแล้วในคิว — งานที่กด Confirm จะมาโผล่ที่นี่
+          <Box sx={{ fontWeight: 600, mb: 0.5 }}>No confirmed jobs in queue</Box>
+          <Box sx={{ fontSize: 12.5, color: adminColor.dim }}>
+            ยังไม่มีงานที่ยืนยันแล้ว — งานที่กด Confirm จะมาโผล่ที่นี่
+          </Box>
         </Box>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
@@ -221,15 +235,31 @@ const AdminTonightPage: React.FC = () => {
                     b.locationName || b.address || ""
                   )}`
                 : "");
+            const isTerminal = step.key === "done";
             return (
               <Box
                 key={b.id}
                 sx={{
-                  borderRadius: 2,
+                  // 🆕 Round 28r45 — light polish: bump radius (16→18), soft
+                  //   ink-tinted depth shadow (matches Bookings/Earnings
+                  //   28r44/28s245 lesson: don't leave old dark-mode
+                  //   rgba(0,0,0,X) shadows on the light theme), + hover
+                  //   lift on active (non-done) cards so the affordance
+                  //   reads.
+                  borderRadius: "18px",
                   border: overdue ? `1.5px solid ${adminColor.red}` : `1px solid ${adminColor.line}`,
-                  background: overdue ? "rgba(220,38,38,0.06)" : adminColor.panel,
+                  background: overdue ? `${adminColor.red}0F` : adminColor.panel,
                   p: 1.5,
                   borderLeft: `4px solid ${step.tone}`,
+                  boxShadow: "0 2px 10px rgba(31,41,51,0.04)",
+                  transition: "transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease",
+                  ...(!isTerminal && {
+                    "&:hover": {
+                      transform: "translateY(-1px)",
+                      background: overdue ? `${adminColor.red}14` : `${step.tone}0A`,
+                      boxShadow: `0 4px 14px rgba(31,41,51,0.06), 0 2px 6px ${step.tone}22`,
+                    },
+                  }),
                 }}
               >
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, mb: 0.5 }}>
@@ -268,8 +298,8 @@ const AdminTonightPage: React.FC = () => {
                       {mapUrl && (
                         <>
                           {"  "}
-                          <Box component="a" href={mapUrl} target="_blank" rel="noopener noreferrer" sx={{ color: adminColor.highlight, fontWeight: 700, textDecoration: "none" }}>
-                            แผนที่
+                          <Box component="a" href={mapUrl} target="_blank" rel="noopener noreferrer" sx={{ color: adminColor.accent, fontWeight: 700, textDecoration: "none" }}>
+                            Map · แผนที่
                           </Box>
                         </>
                       )}
@@ -279,16 +309,16 @@ const AdminTonightPage: React.FC = () => {
 
                 {b.needsAdminReview && (
                   <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: adminColor.red, mt: 0.5 }}>
-                    ⚠️ เช็คก่อน — หมอนวดอาจไม่ว่าง{b.reviewReason ? ` · ${b.reviewReason}` : ""}
+                    ⚠️ Review first · เช็คก่อน — หมอนวดอาจไม่ว่าง{b.reviewReason ? ` · ${b.reviewReason}` : ""}
                   </Typography>
                 )}
 
-                {/* session timing / overdue */}
+                {/* session timing / overdue — 28r45 bilingual */}
                 {inSession && exp && (
                   <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, mt: 0.5, color: overdue ? adminColor.red : adminColor.muted }}>
                     {overdue
-                      ? `⚠️ เกินเวลา (คาดจบ ${dayjs(exp).format("HH:mm")}) · เช็กความปลอดภัยหมอนวด`
-                      : `⏱️ คาดจบ ${dayjs(exp).format("HH:mm")}`}
+                      ? `⚠️ Overdue · เกินเวลา (expected ${dayjs(exp).format("HH:mm")}) — เช็กความปลอดภัยหมอนวด`
+                      : `⏱️ Ends ${dayjs(exp).format("HH:mm")} · คาดจบ`}
                   </Typography>
                 )}
 

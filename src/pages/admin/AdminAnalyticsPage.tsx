@@ -107,7 +107,7 @@ function classifyReferrer(ref?: string | null): string {
 }
 
 const REF_LABEL: Record<string, string> = {
-  Direct: "🔗 ตรง / พิมพ์เอง",
+  Direct: "🔗 Direct · เข้าตรง",
   Google: "🔍 Google",
   Bing: "🔍 Bing",
   DuckDuckGo: "🔍 DuckDuckGo",
@@ -127,20 +127,23 @@ const REF_LABEL: Record<string, string> = {
 //   The `area` prop rides on home_view when a visitor arrived via one of
 //   these pages; absent = they opened the home URL directly.
 const AREA_LABEL: Record<string, string> = {
-  sukhumvit: "🏙 สุขุมวิท",
-  silom: "🏙 สีลม",
-  asok: "🏙 อโศก",
-  thonglor: "🏙 ทองหล่อ",
-  "near-me": "📍 Near me / ใกล้ฉัน",
-  __direct__: "🔗 เข้าหน้าแรกตรง",
+  sukhumvit: "🏙 Sukhumvit · สุขุมวิท",
+  silom: "🏙 Silom · สีลม",
+  asok: "🏙 Asok · อโศก",
+  thonglor: "🏙 Thonglor · ทองหล่อ",
+  "near-me": "📍 Near me · ใกล้ฉัน",
+  __direct__: "🔗 Direct to homepage · เข้าตรง",
 };
 
 const selectSx = {
   minWidth: 150, fontSize: 13,
   "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 },
 };
+// 🆕 Round 28r45 — soft ink-tinted popover shadow (was dark-theme
+//   rgba(0,0,0,0.4), overly heavy on the light Ocean Study surface —
+//   same lesson as AdminEarningsPage 28s245).
 const selectMenuProps = {
-  PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" } },
+  PaperProps: { sx: { background: adminColor.panel, color: adminColor.text, borderRadius: "12px", boxShadow: "0 8px 24px rgba(31,41,51,0.10)" } },
 };
 
 const AdminAnalyticsPage: React.FC = () => {
@@ -392,7 +395,8 @@ const AdminAnalyticsPage: React.FC = () => {
 
   return (
     <Box sx={{ padding: { xs: 2, md: 3 }, maxWidth: 1200, margin: "0 auto" }}>
-      {/* Header */}
+      {/* Header — 🆕 Round 28r45 bilingual (English primary + Thai
+          subtitle). Same operator-scan pattern as Dashboard (28r35). */}
       <Box sx={{ mb: 3 }}>
         <Typography
           sx={{
@@ -401,17 +405,21 @@ const AdminAnalyticsPage: React.FC = () => {
             fontWeight: 600,
             color: adminColor.text,
             letterSpacing: "-0.02em",
+            lineHeight: 1,
             "& em": { fontStyle: "italic", color: adminColor.accent },
           }}
         >
           Funnel <em>Analytics</em>
+        </Typography>
+        <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.5, letterSpacing: "0.02em" }}>
+          การวิเคราะห์เส้นทางลูกค้า
         </Typography>
         <Typography
           sx={{
             fontFamily: SANS,
             fontSize: 13,
             color: adminColor.muted,
-            marginTop: "4px",
+            marginTop: "10px",
           }}
         >
           Self-hosted event tracking · 100% privacy-friendly · refreshes
@@ -496,12 +504,13 @@ const AdminAnalyticsPage: React.FC = () => {
           >
             {events.length === 0 ? (
               <>
-                No events yet. Make sure <code>firestore.rules</code> have
-                been published with the <code>analytics_events</code> rule,
-                and that the site is being viewed on a non-localhost domain.
+                No events yet · ยังไม่มีข้อมูล. Make sure{" "}
+                <code>firestore.rules</code> have been published with the{" "}
+                <code>analytics_events</code> rule, and that the site is
+                being viewed on a non-localhost domain.
               </>
             ) : (
-              "No events match this mode/language filter for the selected range."
+              "No events match this mode/language filter for the selected range · ไม่มีข้อมูลตรงกับตัวกรอง"
             )}
           </Typography>
         </Card>
@@ -519,22 +528,25 @@ const AdminAnalyticsPage: React.FC = () => {
           }}
         >
           <HeroStat
-            label="คนเข้าเว็บ (ช่วงที่เลือก)"
+            label="Visitors · Selected Range"
+            sub="คนเข้าเว็บ · ช่วงที่เลือก"
             value={stats.sessionsHome}
-            hint="นับ 1 ต่อ 1 คน (unique session)"
+            hint="Unique sessions · นับ 1 ต่อ 1 คน"
             big
           />
           <HeroStat
-            label="วันนี้"
+            label="Today"
+            sub="วันนี้"
             value={visitorsToday}
             hint={visitorsYesterday > 0
-              ? `${visitorsToday >= visitorsYesterday ? "▲" : "▼"} เทียบเมื่อวาน ${visitorsYesterday}`
-              : "เทียบเมื่อวาน —"}
+              ? `${visitorsToday >= visitorsYesterday ? "▲" : "▼"} vs yesterday ${visitorsYesterday}`
+              : "vs yesterday —"}
           />
           <HeroStat
-            label="เมื่อวาน"
+            label="Yesterday"
+            sub="เมื่อวาน"
             value={visitorsYesterday}
-            hint={`ยอดจอง ${stats.byEvent.booking_complete ?? 0} · ช่วงที่เลือก`}
+            hint={`Bookings ${stats.byEvent.booking_complete ?? 0} · ยอดจอง · ช่วงที่เลือก`}
           />
         </Box>
 
@@ -554,10 +566,14 @@ const AdminAnalyticsPage: React.FC = () => {
                 fontSize: 18,
                 fontWeight: 600,
                 color: adminColor.text,
-                mb: 2,
+                mb: 0.25,
+                lineHeight: 1.2,
               }}
             >
               Where guests go
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mb: 2 }}>
+              เส้นทางลูกค้า
             </Typography>
             <FunnelStep
               label="Home views"
@@ -598,10 +614,14 @@ const AdminAnalyticsPage: React.FC = () => {
                 fontSize: 18,
                 fontWeight: 600,
                 color: adminColor.text,
-                mb: 2,
+                mb: 0.25,
+                lineHeight: 1.2,
               }}
             >
               When guests book most
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mb: 2 }}>
+              แยกตามช่วงเวลา
             </Typography>
             {(["prime", "evening", "day", "off"] as const).map((m) => {
               const row = stats.modeConv[m];
@@ -626,16 +646,20 @@ const AdminAnalyticsPage: React.FC = () => {
                 fontSize: 18,
                 fontWeight: 600,
                 color: adminColor.text,
-                mb: 2,
+                mb: 0.25,
+                lineHeight: 1.2,
               }}
             >
               Top services viewed
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mb: 2 }}>
+              บริการที่ถูกดูมากสุด
             </Typography>
             <RankedList
               entries={Object.entries(stats.serviceViews)
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 6)}
-              emptyHint="No service_view events yet."
+              emptyHint="No service_view events yet · ยังไม่มีข้อมูล"
             />
           </Card>
 
@@ -648,16 +672,20 @@ const AdminAnalyticsPage: React.FC = () => {
                 fontSize: 18,
                 fontWeight: 600,
                 color: adminColor.text,
-                mb: 2,
+                mb: 0.25,
+                lineHeight: 1.2,
               }}
             >
               Where guests reach out
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mb: 2 }}>
+              การกดติดต่อ
             </Typography>
             <RankedList
               entries={Object.entries(stats.channels)
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 8)}
-              emptyHint="No concierge_chat_open events yet."
+              emptyHint="No concierge_chat_open events yet · ยังไม่มีข้อมูล"
             />
           </Card>
 
@@ -670,9 +698,13 @@ const AdminAnalyticsPage: React.FC = () => {
                 fontSize: 18,
                 fontWeight: 600,
                 color: adminColor.text,
-                mb: 2,
+                mb: 0.25,
+                lineHeight: 1.2,
               }}
             >
+              Where visitors came from
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mb: 2 }}>
               คนมาจากไหน
             </Typography>
             <RankedList
@@ -680,60 +712,68 @@ const AdminAnalyticsPage: React.FC = () => {
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 8)
                 .map(([k, v]) => [REF_LABEL[k] ?? k, v] as [string, number])}
-              emptyHint="ยังไม่มีข้อมูลที่มา"
+              emptyHint="No traffic source data yet · ยังไม่มีข้อมูลที่มา"
             />
           </Card>
 
           {/* 🆕 Round 28s304 — District SEO landing pages */}
           <Card>
-            <Eyebrow>SEO landing · หน้า keyword</Eyebrow>
+            <Eyebrow>SEO landing pages</Eyebrow>
             <Typography
               sx={{
                 fontFamily: SERIF,
                 fontSize: 18,
                 fontWeight: 600,
                 color: adminColor.text,
-                mb: 0.5,
+                mb: 0.25,
+                lineHeight: 1.2,
               }}
             >
+              Which landing page pulled visitors
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mb: 1 }}>
               คนมาจากหน้าไหน
             </Typography>
-            <Box sx={{ mb: 1.5, fontFamily: SANS, fontSize: 11.5, color: adminColor.dim }}>
-              proxy ของคำค้น — คำที่พิมพ์ใน Google จริงดูที่ Search Console
+            <Box sx={{ mb: 1.5, fontFamily: SANS, fontSize: 11.5, color: adminColor.dim, fontStyle: "italic" }}>
+              proxy for search terms — actual Google queries live in Search Console · proxy ของคำค้น
             </Box>
             <RankedList
               entries={Object.entries(stats.landingAreas)
                 .sort((a, b) => b[1] - a[1])
                 .map(([k, v]) => [AREA_LABEL[k] ?? k, v] as [string, number])}
-              emptyHint="ยังไม่มีข้อมูล (เก็บเฉพาะคนใหม่ตั้งแต่รอบนี้)"
+              emptyHint="No data yet · ยังไม่มีข้อมูล (forward-only; new sessions since 28s304)"
             />
           </Card>
 
           {/* 🆕 Round 28s303 — Peak hours (24-slot BKK-hour histogram) */}
           <Card>
-            <Eyebrow>Peak hours · เวลา BKK</Eyebrow>
+            <Eyebrow>Peak hours · BKK time</Eyebrow>
             <Typography
               sx={{
                 fontFamily: SERIF,
                 fontSize: 18,
                 fontWeight: 600,
                 color: adminColor.text,
-                mb: 0.5,
+                mb: 0.25,
+                lineHeight: 1.2,
               }}
             >
-              คนเข้าเยอะช่วงไหน
+              Busiest time of day
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mb: 1 }}>
+              คนเข้าเยอะช่วงไหน · เวลาไทย
             </Typography>
             <Box sx={{ mb: 1.5, fontFamily: SANS, fontSize: 12, color: adminColor.muted }}>
               {stats.peakHourCount > 0 ? (
                 <>
-                  พีคสุด{" "}
+                  Peak{" "}
                   <Box component="span" sx={{ fontWeight: 700, color: adminColor.accent }}>
                     {peakHourLabel}
                   </Box>{" "}
-                  ({stats.peakHourCount.toLocaleString()} เข้าชม)
+                  ({stats.peakHourCount.toLocaleString()} views · เข้าชม)
                 </>
               ) : (
-                "ยังไม่มีข้อมูลรายชั่วโมง"
+                "No hourly data yet · ยังไม่มีข้อมูล"
               )}
             </Box>
             <Box
@@ -795,10 +835,14 @@ const AdminAnalyticsPage: React.FC = () => {
                 fontSize: 18,
                 fontWeight: 600,
                 color: adminColor.text,
-                mb: 2,
+                mb: 0.25,
+                lineHeight: 1.2,
               }}
             >
               Home views vs Bookings · {trendDates.length} days
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mb: 2 }}>
+              แนวโน้มรายวัน
             </Typography>
             <Box
               sx={{
@@ -873,8 +917,8 @@ const AdminAnalyticsPage: React.FC = () => {
                 color: adminColor.muted,
               }}
             >
-              <Legend color={adminColor.panel3} label="Home views" />
-              <Legend color={adminColor.accent} label="Bookings completed" />
+              <Legend color={adminColor.panel3} label="Home views · เข้าชม" />
+              <Legend color={adminColor.accent} label="Bookings completed · จองสำเร็จ" />
             </Box>
           </Card>
         </Box>
@@ -887,33 +931,53 @@ const AdminAnalyticsPage: React.FC = () => {
 // ─── Subcomponents ─────────────────────────────────────────────────────
 
 // 🆕 Round 28s303 — headline number tile for the visitor counter.
+// 🆕 Round 28r45 — added Thai `sub` slot (bilingual pattern) + soft
+//   ink-tinted depth shadow (was dark-theme rgba(0,0,0,0.25) — same
+//   light-theme lesson as Earnings 28s245).
 const HeroStat: React.FC<{
   label: string;
+  sub?: string;
   value: number;
   hint?: string;
   big?: boolean;
-}> = ({ label, value, hint, big }) => (
+}> = ({ label, sub, value, hint, big }) => (
   <Box
     sx={{
       padding: "18px 20px",
       borderRadius: "16px",
       background: big ? adminColor.accent : adminColor.panel,
       border: `1px solid ${big ? adminColor.accent : adminColor.line}`,
-      boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
+      boxShadow: big
+        ? `0 8px 22px ${adminColor.accent}33, 0 2px 6px rgba(31,41,51,0.06)`
+        : "0 2px 10px rgba(31,41,51,0.05)",
     }}
   >
     <Box
       sx={{
         fontFamily: SANS,
         fontSize: 11,
-        fontWeight: 700,
-        letterSpacing: "0.06em",
-        color: big ? "rgba(255,255,255,0.85)" : adminColor.muted,
-        mb: 0.5,
+        fontWeight: 800,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+        color: big ? "rgba(255,255,255,0.9)" : adminColor.muted,
+        mb: 0.3,
       }}
     >
       {label}
     </Box>
+    {sub && (
+      <Box
+        sx={{
+          fontFamily: SANS,
+          fontSize: 10,
+          fontWeight: 600,
+          color: big ? "rgba(255,255,255,0.72)" : adminColor.dim,
+          mb: 0.7,
+        }}
+      >
+        {sub}
+      </Box>
+    )}
     <Box
       sx={{
         fontFamily: SERIF,
@@ -921,7 +985,7 @@ const HeroStat: React.FC<{
         fontWeight: 700,
         lineHeight: 1,
         color: big ? "#fff" : adminColor.text,
-        fontVariantNumeric: "tabular-nums",
+        fontVariantNumeric: "lining-nums tabular-nums",
       }}
     >
       {value.toLocaleString()}
@@ -931,7 +995,7 @@ const HeroStat: React.FC<{
         sx={{
           fontFamily: SANS,
           fontSize: 11.5,
-          color: big ? "rgba(255,255,255,0.8)" : adminColor.dim,
+          color: big ? "rgba(255,255,255,0.85)" : adminColor.dim,
           mt: 0.75,
         }}
       >
@@ -941,6 +1005,10 @@ const HeroStat: React.FC<{
   </Box>
 );
 
+// 🆕 Round 28r45 — soft ink-tinted depth shadow (was dark-theme
+//   rgba(0,0,0,0.25); on the light Ocean Study palette that read as a
+//   near-black smudge — same fix pattern as Earnings 28s245's Card
+//   subcomponent). Radius bumped 16→18 to match Bookings/Dashboard cards.
 const Card: React.FC<{
   children: React.ReactNode;
   sx?: React.ComponentProps<typeof Box>["sx"];
@@ -948,10 +1016,10 @@ const Card: React.FC<{
   <Box
     sx={{
       padding: "20px 22px",
-      borderRadius: "16px",
+      borderRadius: "18px",
       background: adminColor.panel,
       border: `1px solid ${adminColor.line}`,
-      boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
+      boxShadow: "0 2px 10px rgba(31,41,51,0.05)",
       ...sx,
     }}
   >

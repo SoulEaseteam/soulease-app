@@ -553,27 +553,61 @@ const AdminUsersPage: React.FC = () => {
   return (
     <Box p={3} sx={{ fontFamily: SANS }}>
       {/* ── Customer Insights (CRM) ─────────────────────────────────── */}
-      <Typography sx={{ fontFamily: adminFont.serif, fontSize: 22, fontWeight: 600, color: adminColor.text, mb: 0.5 }}>
-        Customer Insights
-      </Typography>
-      <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mb: 1.5 }}>
-        รวมจากเบอร์โทรในออเดอร์ทั้งหมด (รวมเบอร์ +66/0 ให้เป็นคนเดียว) — VIP = มารับบริการจริง {VIP_THRESHOLD}+ ครั้ง
-      </Typography>
+      {/* 🆕 Round 28r45 — bilingual header (English primary + Thai
+          subtitle). Same operator-scan pattern as Dashboard (28r35). */}
+      <Box sx={{ mb: 1.5 }}>
+        <Typography sx={{ fontFamily: adminFont.serif, fontSize: 22, fontWeight: 600, color: adminColor.text, lineHeight: 1 }}>
+          Customer Insights
+        </Typography>
+        <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.4, letterSpacing: "0.02em" }}>
+          ข้อมูลลูกค้า · CRM
+        </Typography>
+        <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: adminColor.muted, mt: 1 }}>
+          Grouped by phone across all bookings (merges +66/0 variants) · VIP = {VIP_THRESHOLD}+ delivered visits
+        </Typography>
+      </Box>
 
-      {/* 🆕 Round 28s285 — icon-circle stat pills, matching Dashboard/Earnings. */}
+      {/* 🆕 Round 28s285 — icon-circle stat pills, matching Dashboard/Earnings.
+          🆕 Round 28r45 — bilingual labels (English primary + tiny Thai
+          sub) + hover lift + soft ink-tinted depth shadow (was flat
+          hairline), + inner highlight shadow on icon plate (matches
+          Bookings 28r44 pattern). */}
       <Box sx={{ display: "flex", gap: 1.25, mb: 2, flexWrap: "wrap" }}>
         {([
-          { icon: <UsersThree size={16} color="#fff" weight="fill" />, grad: `radial-gradient(circle at 35% 30%, #6FA0AD, ${adminColor.accent})`, num: insights.length, label: "Unique guests", color: adminColor.text },
-          { icon: <Repeat size={16} color="#fff" weight="bold" />, grad: `radial-gradient(circle at 35% 30%, #3B82F6, ${adminColor.blue})`, num: repeatCount, label: "Repeat (2+)", color: adminColor.blue },
-          { icon: <Crown size={16} color="#fff" weight="fill" />, grad: `radial-gradient(circle at 35% 30%, #F59E0B, ${adminColor.amber})`, num: vipCount, label: `VIP (${VIP_THRESHOLD}+)`, color: adminColor.amber },
-          { icon: <Warning size={16} color="#fff" weight="fill" />, grad: `radial-gradient(circle at 35% 30%, #EF4444, ${adminColor.red})`, num: withNoShow, label: "With no-shows", color: adminColor.red },
-          { icon: <CurrencyCircleDollar size={16} color="#fff" weight="fill" />, grad: `radial-gradient(circle at 35% 30%, #22C55E, ${adminColor.green})`, num: `฿${totalRevenue.toLocaleString()}`, label: "Realized revenue", color: adminColor.green },
+          { icon: <UsersThree size={16} color="#fff" weight="fill" />, grad: `radial-gradient(circle at 35% 30%, #6FA0AD, ${adminColor.accent})`, num: insights.length, label: "Unique guests", labelTh: "ลูกค้าไม่ซ้ำ", color: adminColor.text, tone: adminColor.accent },
+          { icon: <Repeat size={16} color="#fff" weight="bold" />, grad: `radial-gradient(circle at 35% 30%, #3B82F6, ${adminColor.blue})`, num: repeatCount, label: "Repeat (2+)", labelTh: "กลับมาซ้ำ", color: adminColor.blue, tone: adminColor.blue },
+          { icon: <Crown size={16} color="#fff" weight="fill" />, grad: `radial-gradient(circle at 35% 30%, #F59E0B, ${adminColor.amber})`, num: vipCount, label: `VIP (${VIP_THRESHOLD}+)`, labelTh: "ลูกค้า VIP", color: adminColor.amber, tone: adminColor.amber },
+          { icon: <Warning size={16} color="#fff" weight="fill" />, grad: `radial-gradient(circle at 35% 30%, #EF4444, ${adminColor.red})`, num: withNoShow, label: "With no-shows", labelTh: "มีเบี้ยวนัด", color: adminColor.red, tone: adminColor.red },
+          { icon: <CurrencyCircleDollar size={16} color="#fff" weight="fill" />, grad: `radial-gradient(circle at 35% 30%, #22C55E, ${adminColor.green})`, num: `฿${totalRevenue.toLocaleString()}`, label: "Realized revenue", labelTh: "รายได้จริง", color: adminColor.green, tone: adminColor.green },
         ]).map((c, i) => (
-          <Box key={i} sx={{ display: "flex", alignItems: "center", gap: "10px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "15px", p: "8px 15px 8px 8px", boxShadow: "0 1px 3px rgba(31,41,51,0.04)" }}>
-            <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: c.grad, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{c.icon}</Box>
+          <Box
+            key={i}
+            sx={{
+              display: "flex", alignItems: "center", gap: "10px",
+              background: adminColor.panel, border: `1px solid ${adminColor.line}`,
+              borderRadius: "15px", p: "8px 15px 8px 8px",
+              boxShadow: "0 2px 10px rgba(31,41,51,0.04)",
+              transition: "transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease",
+              "&:hover": {
+                transform: "translateY(-1px)",
+                background: `${c.tone}0A`,
+                boxShadow: `0 4px 14px rgba(31,41,51,0.06), 0 2px 6px ${c.tone}22`,
+              },
+            }}
+          >
+            <Box
+              sx={{
+                width: 32, height: 32, borderRadius: "50%", background: c.grad,
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 6px ${c.tone}33`,
+              }}
+            >
+              {c.icon}
+            </Box>
             <Box>
               <Typography sx={{ ...adminFigureSx, fontSize: 17, color: c.color, lineHeight: 1.1 }}>{c.num}</Typography>
-              <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>{c.label}</Typography>
+              <Typography sx={{ fontSize: 10, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 800, lineHeight: 1.1, mt: 0.15 }}>{c.label}</Typography>
+              <Typography sx={{ fontSize: 9, color: adminColor.dim, fontWeight: 600, lineHeight: 1 }}>{c.labelTh}</Typography>
             </Box>
           </Box>
         ))}
@@ -583,27 +617,30 @@ const AdminUsersPage: React.FC = () => {
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 1.5, alignItems: "center" }}>
         <Box sx={{ flex: 1, minWidth: 220, maxWidth: 360, display: "flex", alignItems: "center", gap: 1, background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "12px", p: "9px 13px" }}>
           <MagnifyingGlass size={15} color={adminColor.dim} />
+          {/* 🆕 Round 28r45 — filter placeholder is English-only per the
+              r43 founder rule ("ตรงตัวกรองไม่ต้อง"). */}
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="ค้นหาชื่อ / เบอร์โทร…"
+            placeholder="Search name or phone…"
             style={{ border: "none", outline: "none", background: "transparent", fontSize: 13.5, color: adminColor.text, width: "100%", fontFamily: SANS }}
           />
         </Box>
         {/* 🆕 Round 28s287c (founder: "ทำเป็นดรอปดาว ดีกว่า") — country filter
-            as a dropdown; each option shows flag + name + guest count. */}
+            as a dropdown; each option shows flag + name + guest count.
+            🆕 Round 28r45 — filter label English-only (r43). */}
         <TextField
-          select size="small" label="ประเทศ"
+          select size="small" label="Country"
           value={countryFilter ?? "__all__"}
           onChange={(e) => setCountryFilter(e.target.value === "__all__" ? null : e.target.value)}
           sx={{ minWidth: 220, "& .MuiOutlinedInput-root": { borderRadius: "12px", background: adminColor.panel } }}
-          SelectProps={{ MenuProps: { PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px", maxHeight: 380 } } } }}
+          SelectProps={{ MenuProps: { PaperProps: { sx: { background: adminColor.panel, color: adminColor.text, borderRadius: "12px", maxHeight: 380, boxShadow: "0 8px 24px rgba(31,41,51,0.10)" } } } }}
         >
-          <MenuItem value="__all__">🌏 ทั้งหมด ({insights.length})</MenuItem>
+          <MenuItem value="__all__">🌏 All ({insights.length})</MenuItem>
           {countryBreakdown.list.map(({ country, count }) => (
             <MenuItem key={country.code} value={country.code}>{country.flag} {country.name} ({count})</MenuItem>
           ))}
-          {countryBreakdown.unknown > 0 && <MenuItem value="__none__">❔ ไม่ทราบ ({countryBreakdown.unknown})</MenuItem>}
+          {countryBreakdown.unknown > 0 && <MenuItem value="__none__">❔ Unknown ({countryBreakdown.unknown})</MenuItem>}
         </TextField>
       </Box>
 
@@ -621,9 +658,15 @@ const AdminUsersPage: React.FC = () => {
       </Paper>
 
       {/* ── Registered accounts ──────────────────────────────────────── */}
-      <Typography sx={{ fontFamily: adminFont.serif, fontSize: 20, fontWeight: 600, color: adminColor.text, mb: 1.5 }}>
-        Accounts
-      </Typography>
+      {/* 🆕 Round 28r45 — bilingual section header. */}
+      <Box sx={{ mb: 1.5 }}>
+        <Typography sx={{ fontFamily: adminFont.serif, fontSize: 20, fontWeight: 600, color: adminColor.text, lineHeight: 1 }}>
+          Accounts
+        </Typography>
+        <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 0.35, letterSpacing: "0.02em" }}>
+          บัญชีผู้ใช้ · signed-up users only
+        </Typography>
+      </Box>
 
       <Paper
         sx={{
@@ -685,18 +728,25 @@ const AdminUsersPage: React.FC = () => {
                 ))}
               </Box>
 
-              {/* favorites */}
+              {/* favorites — 🆕 Round 28r45 bilingual labels */}
               <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1, mb: 2 }}>
-                {[["หมอนวดที่ชอบ", guestStats.favTherapist], ["บริการที่ชอบ", guestStats.favService]].map(([label, val], i) => (
+                {[
+                  { label: "Favorite therapist", sub: "หมอนวดที่ชอบ", val: guestStats.favTherapist },
+                  { label: "Favorite service",   sub: "บริการที่ชอบ", val: guestStats.favService   },
+                ].map((f, i) => (
                   <Box key={i} sx={{ background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "12px", p: "10px 13px" }}>
-                    <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>{label}</Typography>
-                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: adminColor.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{val || "—"}</Typography>
+                    <Typography sx={{ fontSize: 10, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 800, lineHeight: 1.15 }}>{f.label}</Typography>
+                    <Typography sx={{ fontSize: 9, color: adminColor.dim, fontWeight: 600, mb: 0.4 }}>{f.sub}</Typography>
+                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: adminColor.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{f.val || "—"}</Typography>
                   </Box>
                 ))}
               </Box>
 
-              {/* history */}
-              <Typography sx={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.07em", color: adminColor.dim, mb: 1 }}>ประวัติการจอง ({selectedGuest.bookings.length})</Typography>
+              {/* history — 🆕 Round 28r45 bilingual header */}
+              <Typography sx={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.07em", color: adminColor.muted, mb: 0.15 }}>
+                Booking history ({selectedGuest.bookings.length})
+              </Typography>
+              <Typography sx={{ fontSize: 10, color: adminColor.dim, fontWeight: 600, mb: 1 }}>ประวัติการจอง</Typography>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, maxHeight: 340, overflowY: "auto", pr: 0.5 }}>
                 {selectedGuest.bookings.map((b) => {
                   const isOpen = openBooking?.id === b.id;
@@ -738,7 +788,7 @@ const AdminUsersPage: React.FC = () => {
                         <Box sx={{ borderTop: `1px solid ${adminColor.line}`, p: "11px 13px", background: adminColor.panel2 }}>
                           {openBooking?.loading ? (
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: adminColor.dim, fontSize: 12.5, "@keyframes spinU": { to: { transform: "rotate(360deg)" } } }}>
-                              <CircleNotch size={15} style={{ animation: "spinU .8s linear infinite" }} /> กำลังโหลด…
+                              <CircleNotch size={15} style={{ animation: "spinU .8s linear infinite" }} /> Loading… · กำลังโหลด
                             </Box>
                           ) : openBooking?.data ? (
                             <Box sx={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -751,7 +801,7 @@ const AdminUsersPage: React.FC = () => {
                               <Typography sx={{ fontSize: 10.5, color: adminColor.dim, mt: "2px" }}>ID: {b.id}</Typography>
                             </Box>
                           ) : (
-                            <Typography sx={{ fontSize: 12.5, color: adminColor.dim }}>ไม่พบข้อมูลการจอง (อาจถูกลบ)</Typography>
+                            <Typography sx={{ fontSize: 12.5, color: adminColor.dim }}>Booking not found · ไม่พบข้อมูล (อาจถูกลบ)</Typography>
                           )}
                         </Box>
                       )}
@@ -759,14 +809,15 @@ const AdminUsersPage: React.FC = () => {
                   );
                 })}
               </Box>
-              {/* 🆕 Round 28s293 — block flow, inline (no nested Dialog). */}
+              {/* 🆕 Round 28s293 — block flow, inline (no nested Dialog).
+                  🆕 Round 28r45 — bilingual copy on all admin controls. */}
               {blockFlow && (
                 <Box sx={{ mt: 2, p: "12px 13px", background: adminColor.panel, border: `1px solid ${adminColor.red}55`, borderRadius: "12px" }}>
                   <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: adminColor.red, mb: "6px" }}>
-                    บล็อกเบอร์ {selectedGuest.phone} — จะไม่สามารถจองผ่านเว็บได้อีก
+                    Block {selectedGuest.phone} · บล็อกเบอร์นี้ — will no longer be able to book · จะจองผ่านเว็บไม่ได้อีก
                   </Typography>
                   <TextField
-                    fullWidth size="small" placeholder="เหตุผล (เช่น เบี้ยวนัดหลายครั้ง)"
+                    fullWidth size="small" placeholder="Reason · เหตุผล (e.g. เบี้ยวนัดหลายครั้ง)"
                     value={blockReason} onChange={(e) => setBlockReason(e.target.value)}
                     sx={{ mb: "8px", "& .MuiOutlinedInput-root": { background: adminColor.bg } }}
                   />
@@ -776,10 +827,10 @@ const AdminUsersPage: React.FC = () => {
                       onClick={() => void handleBlockGuest()}
                       sx={{ background: adminColor.red, textTransform: "none", fontWeight: 700, "&:hover": { background: "#B91C1C" } }}
                     >
-                      ยืนยันบล็อก
+                      Confirm block · ยืนยัน
                     </Button>
                     <Button size="small" onClick={() => { setBlockFlow(false); setBlockReason(""); }} sx={{ color: adminColor.muted, textTransform: "none" }}>
-                      ยกเลิก
+                      Cancel · ยกเลิก
                     </Button>
                   </Stack>
                 </Box>
@@ -793,7 +844,7 @@ const AdminUsersPage: React.FC = () => {
                   startIcon={<ProhibitInset size={15} />}
                   sx={{ color: adminColor.red, textTransform: "none", fontWeight: 700 }}
                 >
-                  ปลดบล็อกเบอร์นี้
+                  Unblock · ปลดบล็อก
                 </Button>
               ) : (
                 !blockFlow && (
@@ -802,12 +853,12 @@ const AdminUsersPage: React.FC = () => {
                     startIcon={<ProhibitInset size={15} />}
                     sx={{ color: adminColor.red, textTransform: "none", fontWeight: 700 }}
                   >
-                    บล็อกเบอร์นี้
+                    Block · บล็อก
                   </Button>
                 )
               )}
               <Box sx={{ flex: 1 }} />
-              <Button onClick={closeGuest} sx={{ color: adminColor.muted, textTransform: "none", fontWeight: 700 }}>ปิด</Button>
+              <Button onClick={closeGuest} sx={{ color: adminColor.muted, textTransform: "none", fontWeight: 700 }}>Close · ปิด</Button>
             </DialogActions>
           </>
         )}
