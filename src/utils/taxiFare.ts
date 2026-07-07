@@ -46,8 +46,22 @@
 
 import { getCachedRainStatus, type RainStatus } from "@/utils/weather";
 
-/** Beyond this requires admin quote + deposit confirm. */
-export const ADMIN_QUOTE_KM = 40;
+/**
+ * Beyond this requires admin quote + deposit confirm.
+ *
+ * 🆕 Round 28s296 (founder: "เชื่อมให้แก้ราคาได้จริงจากหน้านี้") — this and
+ * the 3 constants below were `const` (hardcoded) and the
+ * AdminAdvancedSettingsPage fields that LOOKED like they controlled them
+ * didn't actually connect to anything. Switched to `export let` +
+ * `applyLiveFareConfig()` below so a live Firestore value (read once at
+ * app boot by MaintenanceGate.tsx, off the public `adminSettings/
+ * publicRules` doc) can override the default without changing any of
+ * the 8 files that import these — ES module named exports are LIVE
+ * bindings, so every existing caller sees the override automatically.
+ * Defaults are UNCHANGED from before this round, so a founder who never
+ * saves new values in Settings sees zero behavior change.
+ */
+export let ADMIN_QUOTE_KM = 40;
 
 /**
  * 🆕 Round 28s231 (FIX — taxi fare was too cheap) — Bangkok road-circuity
@@ -100,13 +114,54 @@ const TIER_4_PER_KM = 10;    // applies to km 40+
  *   • Total:     F × 1.6
  *   • Grab DIY:  F × 2.0             (the customer would pay full both ways)
  *   • Saves:     F × 0.4             (20 % of full Grab round-trip)
+ *
+ * 🆕 Round 28s296 — `let` + live-overridable (see ADMIN_QUOTE_KM comment
+ * above). RETURN_LEG_DISCOUNT_PCT/CHARGE_PCT stay derived from whatever
+ * the current value is via the functions below, rather than being
+ * frozen at module-load time, so customer-facing "40% off" copy that
+ * reads them stays correct if the founder ever changes the multiplier.
  */
-const ROUND_TRIP_MULTIPLIER = 1.6;
-/** Return-leg discount (40 % off the meter) — kept as a separate
- *  constant so UI copy can reference the "40 %" number directly. */
+export let ROUND_TRIP_MULTIPLIER = 1.6;
+/** Return-leg discount as a fraction (e.g. 0.4 = "40% off the meter"). */
+export function returnLegDiscountPct(): number {
+  return Math.max(0, 2 - ROUND_TRIP_MULTIPLIER);
+}
+/** Return-leg charge as a fraction of the one-way meter. */
+export function returnLegChargePct(): number {
+  return 1 - returnLegDiscountPct();
+}
+/** @deprecated Round 28s296 — frozen at module load; use returnLegDiscountPct(). */
 export const RETURN_LEG_DISCOUNT_PCT = 0.4;
-/** Return-leg charge as a fraction of the one-way meter (60 %). */
+/** @deprecated Round 28s296 — frozen at module load; use returnLegChargePct(). */
 export const RETURN_LEG_CHARGE_PCT = 1 - RETURN_LEG_DISCOUNT_PCT;
+
+/**
+ * 🆕 Round 28s296 — moved from a local copy in DistanceDepositDialog.tsx
+ * so the informational "why a deposit" dialog and this settings-editable
+ * config share ONE source instead of two independently hardcoded
+ * numbers. IMPORTANT: this deposit is currently INFORMATIONAL ONLY —
+ * grep confirms BookingFlowPage.tsx never actually charges a separate
+ * deposit; the real distance-based cost customers pay is the round-trip
+ * travel fare below. Editing this changes what the dialog TELLS
+ * customers, not a real second charge.
+ */
+export let FREE_RADIUS_KM = 25;
+export let DEPOSIT_THB = 500;
+
+/** Apply live Firestore-sourced overrides (called once at boot + on every
+ *  live update — see MaintenanceGate.tsx). Ignores non-positive values so
+ *  a bad write can't zero out real pricing. */
+export function applyLiveFareConfig(cfg: {
+  adminQuoteKm?: number;
+  roundTripMultiplier?: number;
+  freeRadiusKm?: number;
+  depositThb?: number;
+}): void {
+  if (typeof cfg.adminQuoteKm === "number" && cfg.adminQuoteKm > 0) ADMIN_QUOTE_KM = cfg.adminQuoteKm;
+  if (typeof cfg.roundTripMultiplier === "number" && cfg.roundTripMultiplier > 1) ROUND_TRIP_MULTIPLIER = cfg.roundTripMultiplier;
+  if (typeof cfg.freeRadiusKm === "number" && cfg.freeRadiusKm > 0) FREE_RADIUS_KM = cfg.freeRadiusKm;
+  if (typeof cfg.depositThb === "number" && cfg.depositThb >= 0) DEPOSIT_THB = cfg.depositThb;
+}
 
 // ─────────────────────────────────────────────────────────────────────
 // Distance utility — Haversine fallback when Directions API not wired.

@@ -16,15 +16,29 @@ import React, { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
+import { applyLiveFareConfig } from "@/utils/taxiFare";
 
 const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { role, loading: authLoading } = useAuth();
   const [maintenanceOn, setMaintenanceOn] = useState(false);
 
   useEffect(() => {
+    // 🆕 Round 28s296 — this component already subscribes to the ONLY
+    //   public app-config doc, so the live pricing override (deposit,
+    //   admin-quote distance, round-trip multiplier — see taxiFare.ts)
+    //   piggybacks on the same listener instead of opening a second one.
     const unsub = onSnapshot(
       doc(db, "adminSettings", "publicRules"),
-      (snap) => setMaintenanceOn(snap.data()?.maintenanceMode === true),
+      (snap) => {
+        const data = snap.data();
+        setMaintenanceOn(data?.maintenanceMode === true);
+        applyLiveFareConfig({
+          adminQuoteKm: data?.maxDistance,
+          roundTripMultiplier: data?.roundTripMultiplier,
+          freeRadiusKm: data?.freeRadiusKm,
+          depositThb: data?.depositAmount,
+        });
+      },
       () => setMaintenanceOn(false), // fail open — never let a read error lock everyone out
     );
     return () => unsub();

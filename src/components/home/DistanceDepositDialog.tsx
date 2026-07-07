@@ -35,16 +35,16 @@ import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import { useTranslation } from "react-i18next";
 
 import { useUserLocation } from "@/hooks/useUserLocation";
-import { haversineKm } from "@/utils/taxiFare";
+// 🆕 Round 28s296 — FREE_RADIUS_KM/DEPOSIT_THB moved to taxiFare.ts (were
+//   a second hardcoded copy of the same policy) and are now live-
+//   overridable from AdminAdvancedSettingsPage — see taxiFare.ts's
+//   comment on why "deposit" here is informational, not a real charge.
+import { haversineKm, FREE_RADIUS_KM, DEPOSIT_THB } from "@/utils/taxiFare";
 import { brand, fonts } from "@/theme";
 
 // Reference point: Siam BTS (central BKK landmark, neutral midpoint
 // of all major hotel zones we serve).
 const BKK_CENTER = { lat: 13.7456, lng: 100.5346 };
-
-// Founder-confirmed thresholds (matches ServiceDurationSheet.SERVICE_NOTES).
-const FREE_RADIUS_KM = 25;
-const DEPOSIT_THB = 500;
 
 interface Props {
   open: boolean;

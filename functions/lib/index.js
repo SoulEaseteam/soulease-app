@@ -85,6 +85,45 @@ async function sendTelegram(token, chatId, text) {
         return { ok: false, body: String(err) };
     }
 }
+// 🆕 Round 28s297 (founder, asked directly: "เชื่อม Telegram ให้คุมได้จริง
+//   จากหน้านี้") — AdminAdvancedSettingsPage's "Enable Telegram
+//   Notifications" toggle used to save to Firestore with nothing here
+//   ever reading it back. This is the real check: a wrapper around
+//   `sendTelegram` used ONLY at actual notification call sites (booking
+//   alerts, negative-review alerts, overdue-session nudges, abandoned-
+//   cart recovery) — NOT `telegramWebhook`'s reply-to-a-command handler,
+//   since a therapist typing /myid to link their chat ID isn't a
+//   "notification" this toggle should be able to silently break.
+//
+// Default TRUE if the field is missing/undefined so a doc that's never
+// been saved (or a fresh deploy) doesn't go silent. Read via the Admin
+// SDK, which bypasses Firestore rules entirely — no rules change needed.
+//
+// A deliberate skip returns `{ ok: true }`, not `{ ok: false }` — two
+// callers (alertOverdueSessions, recoverAbandonedBookings) gate retry/
+// terminal state on `.ok`, and treating "paused" as "failed" would make
+// them loop-retry forever or permanently mark abandoned carts
+// "alert-failed" while the toggle is off.
+async function isTelegramEnabled() {
+    try {
+        const snap = await (0, firestore_2.getFirestore)()
+            .collection("adminSettings")
+            .doc("advanced")
+            .get();
+        return snap.data()?.telegramEnabled !== false;
+    }
+    catch (err) {
+        v2_1.logger.warn("[isTelegramEnabled] check failed, defaulting to enabled", err);
+        return true; // fail open — never let a settings-read hiccup swallow a real alert
+    }
+}
+async function sendTelegramIfEnabled(token, chatId, text) {
+    if (!(await isTelegramEnabled())) {
+        v2_1.logger.info("[sendTelegramIfEnabled] skipped — telegramEnabled=false");
+        return { ok: true, body: "skipped: telegramEnabled=false" };
+    }
+    return sendTelegram(token, chatId, text);
+}
 exports.notifyBooking = (0, https_1.onCall)({
     secrets: [TELEGRAM_BOT_TOKEN],
     region: "asia-southeast1",
@@ -115,7 +154,7 @@ exports.notifyBooking = (0, https_1.onCall)({
         uid: request.auth?.uid ?? "guest",
         messageLen: message.length,
     });
-    const { ok, body } = await sendTelegram(token, TELEGRAM_CHAT_ID, message);
+    const { ok, body } = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, message);
     if (!ok) {
         v2_1.logger.error("[notifyBooking] Telegram error", { body: body.slice(0, 500) });
         throw new https_1.HttpsError("internal", `Telegram error: ${body.slice(0, 200)}`);
@@ -157,7 +196,7 @@ exports.onReviewCreate = (0, firestore_1.onDocumentCreated)({
         "",
         `⚠️ จัดการก่อน user post Google review!`,
     ].join("\n");
-    const { ok, body } = await sendTelegram(token, TELEGRAM_CHAT_ID, message);
+    const { ok, body } = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, message);
     if (!ok) {
         v2_1.logger.error("[onReviewCreate] Telegram error", { body: body.slice(0, 500) });
     }
@@ -532,7 +571,7 @@ exports.onBookingCreate = (0, firestore_1.onDocumentCreated)({
             v2_1.logger.error("[onBookingCreate] flag write failed", err);
         }
         const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
-        await sendTelegram(token, TELEGRAM_CHAT_ID, [
+        await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, [
             `⚠️ NEEDS REVIEW · ${refCode}`,
             ``,
             `Reason: therapist unavailable (${rejectReason})`,
@@ -554,7 +593,7 @@ exports.onBookingCreate = (0, firestore_1.onDocumentCreated)({
     }
     // ── 1. Send to ADMIN group (existing behavior) ────────────────
     const adminText = formatBookingForAdmin(bookingId, data);
-    const adminResult = await sendTelegram(token, TELEGRAM_CHAT_ID, adminText);
+    const adminResult = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, adminText);
     try {
         await (0, firestore_2.getFirestore)()
             .collection("telegramLogs")
@@ -586,7 +625,7 @@ exports.onBookingCreate = (0, firestore_1.onDocumentCreated)({
             const chatId = therapist?.telegramChatId;
             if (chatId) {
                 const therapistText = formatBookingForTherapist(bookingId, data);
-                const therapistResult = await sendTelegram(token, String(chatId), therapistText);
+                const therapistResult = await sendTelegramIfEnabled(token, String(chatId), therapistText);
                 await (0, firestore_2.getFirestore)()
                     .collection("telegramLogs")
                     .add({
@@ -689,7 +728,7 @@ exports.alertOverdueSessions = (0, scheduler_1.onSchedule)({
             `เริ่มนวดแล้วและเลยเวลาคาดจบเกิน 20 นาที — ยังไม่กด "จบงาน".`,
             `โทรเช็กความปลอดภัยหมอนวด 🙏`,
         ].join("\n");
-        const r = await sendTelegram(token, TELEGRAM_CHAT_ID, text);
+        const r = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, text);
         if (r.ok) {
             await d.ref.update({ overdueAlertedAt: firestore_2.FieldValue.serverTimestamp() });
             sent += 1;
@@ -739,7 +778,7 @@ exports.recoverAbandonedBookings = (0, scheduler_1.onSchedule)({
             `Customer started checkout 15+ min ago and never confirmed.`,
             `Consider sending a gentle LINE/WhatsApp follow-up.`,
         ].join("\n");
-        const r = await sendTelegram(token, TELEGRAM_CHAT_ID, text);
+        const r = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, text);
         await d.ref.update({
             status: r.ok ? "alerted" : "alert-failed",
             alertedAt: firestore_2.FieldValue.serverTimestamp(),

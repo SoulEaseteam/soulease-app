@@ -6,79 +6,81 @@
 //   field name across the whole repo (src + functions) returned ONLY
 //   this file. Nothing ever read `adminSettings/advanced` back —
 //   flipping any switch here changed nothing about how the site behaves.
-//   The real systems these fields SOUND like they control already exist
-//   elsewhere, hardcoded, and working:
-//     • Telegram — a real Cloud Functions bot (functions/src/telegram-*)
-//       sources its token from Functions config/secrets, not this doc.
-//     • LINE Notify — no implementation anywhere. Nothing to enable.
-//     • PromptPay / deposit — real, but hardcoded (DEPOSIT_THB=500 in
-//       DistanceDepositDialog.tsx; "promptpay" is a real payment METHOD
-//       option in PaymentMethodsPage.tsx, not a feature flag).
-//     • Distance / round-trip pricing — real, hardcoded in
-//       src/utils/taxiFare.ts (ADMIN_QUOTE_KM=40, ROUND_TRIP_MULTIPLIER
-//       =1.6, founder-confirmed business model, round 28b23).
-//     • Blocked IPs — structurally impossible in this stack: a static
-//       SPA + client Firestore SDK has no way to learn a visitor's real
-//       IP, and Firestore rules can't inspect request IP either. Left
-//       in, this would give a false sense of a control that can never
-//       work — same lesson as the "blockedDevices" cleanup (28s293).
+//   Wired maintenanceMode + minAdvanceMins/maxFutureDays for real (see
+//   MaintenanceGate.tsx + BookingFlowPage.tsx), removed blockedIps
+//   outright (structurally impossible in this stack — no server to read
+//   a visitor's real IP from).
 //
-// This round actually wires the two fields that had NOTHING competing
-// with them (maintenanceMode, minAdvanceMins, maxFutureDays — see
-// MaintenanceGate.tsx + BookingFlowPage.tsx's submit guard) and removes
-// blockedIps outright. The rest (Notifications, Payment & Distance) are
-// kept editable and saved, but visibly marked "not yet connected" so the
-// page is honest about what actually does something — wiring THOSE up
-// for real means touching live pricing/payment math or a separate Cloud
-// Functions deploy, which is a bigger, riskier call than a settings-page
-// polish pass, so that's flagged back to the founder rather than done
-// unilaterally.
+// 🆕 Round 28s297 (founder, asked directly: "เชื่อม Telegram ให้คุมได้จริง"
+//   + "เชื่อมให้แก้ราคาได้จริงจากหน้านี้") — the two remaining categories
+//   she said yes to:
+//   • Telegram — token stays in Firebase Secret Manager (that's the
+//     correct place for a real secret; moving it into an admin-editable
+//     Firestore doc would be a security downgrade, not an upgrade), but
+//     the ENABLE toggle is now real: functions/src/index.ts checks
+//     `adminSettings/advanced.telegramEnabled` (Admin SDK, bypasses
+//     rules) before sending a booking/review/overdue/abandoned alert.
+//     LINE Notify wasn't part of what she approved (no real system
+//     backs it, building one from scratch is a different-sized ask) —
+//     removed rather than left decorative.
+//   • Deposit & Distance pricing — now genuinely live: taxiFare.ts's
+//     hardcoded ADMIN_QUOTE_KM/ROUND_TRIP_MULTIPLIER and
+//     DistanceDepositDialog.tsx's FREE_RADIUS_KM/DEPOSIT_THB are all
+//     `export let` + overridden from the public `adminSettings/
+//     publicRules` doc (see MaintenanceGate.tsx, which already listens
+//     on that doc for maintenanceMode and now applies fare config too).
+//     IMPORTANT nuance surfaced to the founder: the "deposit" here is
+//     informational-only today — grep confirms BookingFlowPage.tsx never
+//     actually charges a separate deposit; the real distance-based cost
+//     customers pay is the round-trip travel fare. Editing "Deposit
+//     Amount" changes what the FAQ dialog tells customers, not a second
+//     real charge.
+//   PromptPay/Stripe ENABLE toggles were NOT part of either answer (the
+//   question was scoped to pricing, not payment-method availability) —
+//   left honestly marked "not yet connected" pending a separate call.
 
 import React, { useEffect, useState } from "react";
 import { Box, Typography, Switch, TextField, Button, Snackbar, Alert, CircularProgress } from "@mui/material";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { Clock, BellRinging, CreditCard, FloppyDisk, Warning, CheckCircle, MoonStars } from "phosphor-react";
+import { Clock, BellRinging, CreditCard, Wallet, FloppyDisk, Warning, CheckCircle, MoonStars } from "phosphor-react";
 import { adminColor, adminFont } from "@/theme/adminTheme";
 import { SectionCard, fieldSx } from "./therapistFormKit";
 import { logAdminAction } from "@/utils/auditLog";
 
 const SANS = adminFont.sans;
 
-// Real, enforced — see MaintenanceGate.tsx + BookingFlowPage.tsx.
+// Real, enforced — see MaintenanceGate.tsx + BookingFlowPage.tsx + taxiFare.ts.
 interface PublicRules {
   maintenanceMode: boolean;
   minAdvanceMins: number;
   maxFutureDays: number;
+  depositAmount: number;
+  freeRadiusKm: number;
+  maxDistance: number; // = ADMIN_QUOTE_KM, the manual-quote threshold
+  roundTripMultiplier: number;
 }
 const defaultPublicRules: PublicRules = {
   maintenanceMode: false,
   minAdvanceMins: 0,
   maxFutureDays: 0,
+  depositAmount: 500,
+  freeRadiusKm: 25,
+  maxDistance: 40,
+  roundTripMultiplier: 1.6,
 };
 
-// Saved, but NOT yet read by anything — see the header comment.
+// telegramEnabled is real (see functions/src/index.ts). The rest is
+// saved but NOT yet read by anything — see header comment.
 interface AdvancedSettings {
   telegramEnabled: boolean;
-  lineEnabled: boolean;
-  telegramToken: string;
-  lineToken: string;
   promptPayEnabled: boolean;
   stripeEnabled: boolean;
-  depositAmount: number;
-  maxDistance: number;
-  roundTrip: boolean;
 }
 const defaultSettings: AdvancedSettings = {
   telegramEnabled: true,
-  lineEnabled: false,
-  telegramToken: "",
-  lineToken: "",
   promptPayEnabled: true,
   stripeEnabled: false,
-  depositAmount: 0,
-  maxDistance: 20,
-  roundTrip: true,
 };
 
 const switchSx = {
@@ -135,6 +137,10 @@ const AdminAdvancedSettingsPage: React.FC = () => {
           rules.maintenanceMode ? "maintenanceMode: ON" : null,
           rules.minAdvanceMins ? `minAdvanceMins: ${rules.minAdvanceMins}` : null,
           rules.maxFutureDays ? `maxFutureDays: ${rules.maxFutureDays}` : null,
+          `depositAmount: ${rules.depositAmount}`,
+          `maxDistance: ${rules.maxDistance}`,
+          `roundTripMultiplier: ${rules.roundTripMultiplier}`,
+          `telegramEnabled: ${settings.telegramEnabled}`,
         ].filter((v): v is string => !!v),
       });
       setSnackbar({ open: true, message: "บันทึกการตั้งค่าแล้ว", severity: "success" });
@@ -193,31 +199,42 @@ const AdminAdvancedSettingsPage: React.FC = () => {
           />
         </SectionCard>
 
-        {/* 🔔 Notifications — NOT YET CONNECTED */}
+        {/* 🔔 Notifications — Telegram REAL, LINE removed */}
         <SectionCard icon={<BellRinging size={13} weight="bold" />} title="การแจ้งเตือน">
-          <Box sx={{ mb: 1 }}><NotConnectedBadge /></Box>
+          <Box sx={{ mb: 1 }}><LiveBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
-            บอท Telegram จริงทำงานอยู่แล้วผ่าน Cloud Functions (คนละที่กับ token ด้านล่าง) ส่วน LINE Notify ยังไม่มีระบบจริงเลย — ต้องคุยกันก่อนว่าจะต่อสายไหน
+            Token เก็บใน Firebase Secret Manager (แก้ตรงนี้ไม่ได้ และไม่ควรเก็บใน Firestore เพื่อความปลอดภัย) — สวิตช์นี้แค่หยุด/เปิดการส่งข้อความจริง
           </Typography>
           <Row>
             <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>Enable Telegram Notifications</Typography>
             <Switch checked={settings.telegramEnabled} onChange={(e) => setSettings((p) => ({ ...p, telegramEnabled: e.target.checked }))} sx={switchSx} />
           </Row>
-          <Row>
-            <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>Enable LINE Notify</Typography>
-            <Switch checked={settings.lineEnabled} onChange={(e) => setSettings((p) => ({ ...p, lineEnabled: e.target.checked }))} sx={switchSx} />
-          </Row>
-          <TextField label="Telegram Bot Token" fullWidth margin="dense" sx={fieldSx}
-            value={settings.telegramToken} onChange={(e) => setSettings((p) => ({ ...p, telegramToken: e.target.value }))} />
-          <TextField label="LINE Notify Token" fullWidth margin="dense" sx={fieldSx}
-            value={settings.lineToken} onChange={(e) => setSettings((p) => ({ ...p, lineToken: e.target.value }))} />
         </SectionCard>
 
-        {/* 💳 Payment & Distance — NOT YET CONNECTED */}
-        <SectionCard icon={<CreditCard size={13} weight="bold" />} title="การชำระเงิน & ระยะทาง">
+        {/* 📍 Deposit & Distance — REAL */}
+        <SectionCard icon={<CreditCard size={13} weight="bold" />} title="ค่ามัดจำ & ระยะทาง">
+          <Box sx={{ mb: 1 }}><LiveBadge /></Box>
+          <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
+            ค่ามัดจำเป็นข้อความแจ้งลูกค้าในหน้า FAQ เท่านั้น (ยังไม่ได้เก็บเป็นค่าใช้จ่ายแยกจริงตอนจอง) — ค่าที่ลูกค้าจ่ายจริงตามระยะทางคือค่าเดินทาง round-trip ด้านล่าง
+          </Typography>
+          <TextField label="ค่ามัดจำ (บาท)" fullWidth type="number" margin="dense" sx={fieldSx}
+            value={rules.depositAmount} onChange={(e) => setRules((p) => ({ ...p, depositAmount: Math.max(0, Number(e.target.value)) }))} />
+          <TextField label="ระยะที่เริ่มมัดจำ (กม.)" fullWidth type="number" margin="dense" sx={fieldSx}
+            value={rules.freeRadiusKm} onChange={(e) => setRules((p) => ({ ...p, freeRadiusKm: Math.max(1, Number(e.target.value)) }))} />
+          <TextField label="ระยะทางสูงสุดก่อนต้องขอราคาแยก (กม.)" fullWidth type="number" margin="dense" sx={fieldSx}
+            helperText="เกินระยะนี้ระบบจะให้ติดต่อแอดมินขอราคาแทนคิดราคาอัตโนมัติ"
+            value={rules.maxDistance} onChange={(e) => setRules((p) => ({ ...p, maxDistance: Math.max(1, Number(e.target.value)) }))} />
+          <TextField label="ตัวคูณค่าเดินทางไป-กลับ" fullWidth type="number" margin="dense" sx={fieldSx}
+            helperText="1.6 = ไปเต็มราคา + กลับ 60% (ส่วนลด 40%) ต้องมากกว่า 1"
+            value={rules.roundTripMultiplier}
+            onChange={(e) => setRules((p) => ({ ...p, roundTripMultiplier: Math.max(1.01, Number(e.target.value)) }))} />
+        </SectionCard>
+
+        {/* 💳 Payment Methods — NOT YET CONNECTED */}
+        <SectionCard icon={<Wallet size={13} weight="bold" />} title="ช่องทางชำระเงิน">
           <Box sx={{ mb: 1 }}><NotConnectedBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
-            ค่ามัดจำ (฿500) และค่าเดินทาง (round-trip ×1.6, admin quote เกิน 40 กม.) เป็นค่าจริงที่ล็อกไว้ในโค้ดแล้ว คนละที่กับตัวเลขด้านล่าง — ทำให้แก้ตรงนี้ได้จริงหมายถึงแก้ราคาได้โดยไม่ผ่านการรีวิวโค้ด จึงยังไม่เชื่อมให้จนกว่าจะคุยกันก่อน
+            PromptPay เป็นตัวเลือกที่เปิดใช้อยู่แล้วในหน้าชำระเงินจริง (ล็อกไว้ในโค้ด) Stripe ยังไม่มีระบบเลย — สวิตช์นี้ยังไม่ได้คุมว่าลูกค้าจะเห็นช่องทางไหนบ้าง
           </Typography>
           <Row>
             <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>Enable PromptPay QR</Typography>
@@ -226,14 +243,6 @@ const AdminAdvancedSettingsPage: React.FC = () => {
           <Row>
             <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>Enable Stripe Payments</Typography>
             <Switch checked={settings.stripeEnabled} onChange={(e) => setSettings((p) => ({ ...p, stripeEnabled: e.target.checked }))} sx={switchSx} />
-          </Row>
-          <TextField label="Deposit Amount (THB)" fullWidth type="number" margin="dense" sx={fieldSx}
-            value={settings.depositAmount} onChange={(e) => setSettings((p) => ({ ...p, depositAmount: Number(e.target.value) }))} />
-          <TextField label="Maximum Distance (KM)" fullWidth type="number" margin="dense" sx={fieldSx}
-            value={settings.maxDistance} onChange={(e) => setSettings((p) => ({ ...p, maxDistance: Number(e.target.value) }))} />
-          <Row>
-            <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>Multiply Distance ×2 (Round Trip)</Typography>
-            <Switch checked={settings.roundTrip} onChange={(e) => setSettings((p) => ({ ...p, roundTrip: e.target.checked }))} sx={switchSx} />
           </Row>
         </SectionCard>
       </Box>
