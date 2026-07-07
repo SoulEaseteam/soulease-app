@@ -1,25 +1,40 @@
 // src/pages/admin/AdminTherapistPayoutsPage.tsx
 //
 // 🆕 Round 28s313 (founder: "เพิ่มเมนู ระบบ กดจ่ายเงินหมอ · ดึงบุคกิ้งจาก
-//   ลูกค้าจ่ายแบบโอน") — a dedicated "pay the therapist" queue. It sources
-//   every completed booking the customer paid NON-CASH (transfer / PromptPay
-//   / WeChat / Alipay / card — anything but cash). That money went to the
-//   shop's account, so the shop owes the therapist their cut; cash is
-//   collected in hand by the therapist so nothing is owed. Founder picked
-//   "ทุกแบบที่ไม่ใช่เงินสด" for the filter.
+//   ลูกค้าจ่ายแบบโอน") — a "pay the therapist" queue sourced from every
+//   completed booking the customer paid NON-CASH (transfer / PromptPay /
+//   WeChat / Alipay / card). That money went to the shop's account, so the
+//   shop owes the therapist their cut; cash is collected in hand so nothing
+//   is owed. Filter = "ทุกแบบที่ไม่ใช่เงินสด".
 //
-// Storage: the paid flag lives on the booking doc itself — `therapistPaid`,
-// `therapistPaidAt`, `therapistPaidBy`. Admin already has full write on
-// bookings (firestore.rules `allow update: if isAdmin()`), so no new
-// collection or rule is needed, and the mark is per-job (survives any period
-// view). Payout amount uses the shared `therapistPayoutFor` so it matches
-// Earnings / Reports exactly.
+// 🆕 Round 28s314 (founder: "เพิ่มตัวกรอง และวันที่ · เพิ่มพังชั่นโอนเงิน
+//   พร้อมผูกเลขบัญชีของพนักงานแต่ละคน · ทุกยอดกดดูรายละเอียดได้จริงจาก
+//   admin/bookings") — added a date-range + therapist + customer-paid filter,
+//   surfaced each therapist's bound bank account with a copy button for the
+//   transfer, and made every job's amount deep-link into the real booking
+//   detail at /admin/bookings?open=<id>.
+//
+// Storage: the paid flag lives on the booking doc (`therapistPaid`,
+// `therapistPaidAt`, `therapistPaidBy`). Bank details live on the therapist
+// doc (`bankName`, `bankAccount`, `bankAccountName`, editable on the
+// therapist detail page). Admin already has full read/write on both — no new
+// collection or rule.
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Box, Typography, CircularProgress, Button } from "@mui/material";
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Button,
+  Select,
+  MenuItem,
+  ToggleButton,
+  ToggleButtonGroup,
+} from "@mui/material";
 import {
   collection,
   onSnapshot,
+  getDocs,
   query,
   where,
   Timestamp,
@@ -29,8 +44,12 @@ import {
   writeBatch,
   type DocumentData,
 } from "firebase/firestore";
-import dayjs from "dayjs";
-import { CurrencyCircleDollar } from "phosphor-react";
+import { useNavigate } from "react-router-dom";
+import dayjs, { type Dayjs } from "dayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { CurrencyCircleDollar, Bank, Copy, Check } from "phosphor-react";
 
 import { db, auth } from "@/lib/firebase";
 import { formatTHB } from "@/utils/servicePricing";
@@ -42,10 +61,20 @@ import { therapistPayoutFor, isPayrollExcluded } from "@/utils/commission";
 const SERIF = adminFont.serif;
 const SANS = adminFont.sans;
 
-// Look back far enough that nothing still owed slips off the list, while
-// keeping the read bounded. A small studio clears payouts weekly/monthly, so
-// 120 days is a wide safety margin.
-const WINDOW_DAYS = 120;
+type Preset = "d7" | "d30" | "d90" | "custom";
+const PRESET_LABEL: Record<Preset, string> = {
+  d7: "7 วัน",
+  d30: "30 วัน",
+  d90: "90 วัน",
+  custom: "กำหนดเอง",
+};
+const PRESET_DAYS: Record<Exclude<Preset, "custom">, number> = { d7: 7, d30: 30, d90: 90 };
+
+interface BankInfo {
+  bankName: string;
+  bankAccount: string;
+  bankAccountName: string;
+}
 
 interface Job {
   id: string;
@@ -79,18 +108,71 @@ function isCashPayment(payment?: string | null, methodId?: string | null): boole
 const millis = (t?: Timestamp | null): number =>
   t && typeof t.toMillis === "function" ? t.toMillis() : 0;
 
+const selectSx = {
+  minWidth: 150,
+  fontSize: 13,
+  "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 },
+  color: adminColor.text,
+};
+const selectMenuProps = {
+  PaperProps: {
+    sx: {
+      background: adminColor.panel2,
+      color: adminColor.text,
+      borderRadius: "12px",
+      boxShadow: "0 8px 24px rgba(31,41,51,0.15)",
+    },
+  },
+};
+
 const AdminTherapistPayoutsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [showPaid, setShowPaid] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
 
+  // Filters
+  const [range, setRange] = useState<Preset>("d90");
+  const [customStart, setCustomStart] = useState<Dayjs>(() => dayjs().subtract(30, "day").startOf("day"));
+  const [customEnd, setCustomEnd] = useState<Dayjs>(() => dayjs());
+  const [therapistFilter, setTherapistFilter] = useState("__ALL__");
+  const [paidOnly, setPaidOnly] = useState(false);
+
+  // Therapist bank details (therapistId → account), loaded once from the
+  // ADMIN-ONLY `payoutAccounts` collection (NOT the world-readable therapist
+  // doc — bank numbers must never sit on a `read: if true` collection).
+  const [bankMap, setBankMap] = useState<Record<string, BankInfo>>({});
+  useEffect(() => {
+    void getDocs(collection(db, "payoutAccounts")).then((snap) => {
+      const m: Record<string, BankInfo> = {};
+      snap.forEach((d) => {
+        const data = d.data() as DocumentData;
+        m[d.id] = {
+          bankName: (data.bankName as string) || "",
+          bankAccount: (data.bankAccount as string) || "",
+          bankAccountName: (data.bankAccountName as string) || "",
+        };
+      });
+      setBankMap(m);
+    });
+  }, []);
+
+  // Bookings for the selected date range.
   useEffect(() => {
     setLoading(true);
-    const cutoff = Timestamp.fromDate(
-      dayjs().subtract(WINDOW_DAYS, "day").startOf("day").toDate()
-    );
-    const q = query(collection(db, "bookings"), where("createdAt", ">=", cutoff));
+    let start: Dayjs;
+    let end: Dayjs | null = null;
+    if (range === "custom") {
+      start = customStart.startOf("day");
+      end = customEnd.endOf("day");
+    } else {
+      start = dayjs().subtract(PRESET_DAYS[range], "day").startOf("day");
+    }
+    const constraints = [where("createdAt", ">=", Timestamp.fromDate(start.toDate()))];
+    if (end) constraints.push(where("createdAt", "<=", Timestamp.fromDate(end.toDate())));
+    const q = query(collection(db, "bookings"), ...constraints);
     const unsub = onSnapshot(
       q,
       (snap) => {
@@ -131,11 +213,28 @@ const AdminTherapistPayoutsPage: React.FC = () => {
       }
     );
     return () => unsub();
-  }, []);
+  }, [range, customStart, customEnd]);
+
+  // Therapist filter options come from the date-filtered set only.
+  const therapistOptions = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const j of jobs) m.set(j.therapistId, j.therapistName);
+    return [...m.entries()];
+  }, [jobs]);
+
+  const filtered = useMemo(
+    () =>
+      jobs.filter((j) => {
+        if (therapistFilter !== "__ALL__" && j.therapistId !== therapistFilter) return false;
+        if (paidOnly && !j.customerPaid) return false;
+        return true;
+      }),
+    [jobs, therapistFilter, paidOnly]
+  );
 
   const { groups, unpaidTotal, unpaidJobCount, paidJobs, paidTotal } = useMemo(() => {
-    const unpaid = jobs.filter((j) => !j.therapistPaid);
-    const paid = jobs.filter((j) => j.therapistPaid);
+    const unpaid = filtered.filter((j) => !j.therapistPaid);
+    const paid = filtered.filter((j) => j.therapistPaid);
     const byT: Record<string, UnpaidGroup> = {};
     for (const j of unpaid) {
       if (!byT[j.therapistId]) {
@@ -145,10 +244,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
       byT[j.therapistId].subtotal += j.payout;
     }
     const grouped = Object.values(byT)
-      .map((g) => ({
-        ...g,
-        jobs: g.jobs.sort((a, b) => millis(b.createdAt) - millis(a.createdAt)),
-      }))
+      .map((g) => ({ ...g, jobs: g.jobs.sort((a, b) => millis(b.createdAt) - millis(a.createdAt)) }))
       .sort((a, b) => b.subtotal - a.subtotal);
     paid.sort((a, b) => millis(b.therapistPaidAt) - millis(a.therapistPaidAt));
     return {
@@ -158,7 +254,23 @@ const AdminTherapistPayoutsPage: React.FC = () => {
       paidJobs: paid,
       paidTotal: paid.reduce((s, j) => s + j.payout, 0),
     };
-  }, [jobs]);
+  }, [filtered]);
+
+  const copy = (text: string, key: string) => {
+    const done = () => {
+      setCopied(key);
+      window.setTimeout(() => setCopied((c) => (c === key ? null : c)), 1600);
+    };
+    try {
+      if (navigator.clipboard?.writeText) {
+        void navigator.clipboard.writeText(text).then(done).catch(() => done());
+      } else {
+        done();
+      }
+    } catch {
+      done();
+    }
+  };
 
   const setPaid = async (job: Job, paid: boolean) => {
     setBusy(job.id);
@@ -204,6 +316,30 @@ const AdminTherapistPayoutsPage: React.FC = () => {
     }
   };
 
+  // A tabular amount that deep-links into the real booking detail.
+  const AmountLink: React.FC<{ id: string; value: number; strong?: boolean }> = ({ id, value, strong }) => (
+    <Box
+      component="button"
+      onClick={() => navigate(`/admin/bookings?open=${id}`)}
+      title="ดูรายละเอียดใน admin/bookings"
+      sx={{
+        ...adminFigureSx,
+        fontSize: strong ? 14 : 13.5,
+        color: adminColor.highlight,
+        background: "none", border: "none", cursor: "pointer", p: 0,
+        borderBottom: `1px dashed ${adminColor.highlight}66`,
+        "&:hover": { color: adminColor.accentDeep, borderBottomColor: adminColor.accentDeep },
+      }}
+    >
+      {formatTHB(value)}
+    </Box>
+  );
+
+  const rangeNote =
+    range === "custom"
+      ? `${customStart.format("D MMM")} – ${customEnd.format("D MMM YYYY")}`
+      : `${PRESET_DAYS[range]} วันล่าสุด`;
+
   return (
     <Box sx={{ padding: { xs: 2, md: 3 }, maxWidth: 900, margin: "0 auto" }}>
       {/* Header */}
@@ -220,6 +356,64 @@ const AdminTherapistPayoutsPage: React.FC = () => {
         <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.muted, mt: "4px" }}>
           บุคกิ้งที่ลูกค้าจ่ายแบบโอน (ไม่ใช่เงินสด) · กดจ่ายเมื่อโอนส่วนแบ่งให้หมอแล้ว
         </Typography>
+      </Box>
+
+      {/* Filters */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, alignItems: "center", mb: 2.5 }}>
+        <ToggleButtonGroup
+          value={range}
+          exclusive
+          size="small"
+          onChange={(_, v) => v && setRange(v as Preset)}
+          sx={{
+            "& .MuiToggleButton-root": {
+              color: adminColor.muted, borderColor: adminColor.line2, fontFamily: SANS, textTransform: "none",
+              "&.Mui-selected": { color: "#fff", background: adminColor.accent, "&:hover": { background: adminColor.accentDeep } },
+            },
+          }}
+        >
+          {(Object.keys(PRESET_LABEL) as Preset[]).map((p) => (
+            <ToggleButton key={p} value={p}>{PRESET_LABEL[p]}</ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+
+        {range === "custom" && (
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DatePicker
+              label="จาก" value={customStart} maxDate={customEnd}
+              onChange={(v) => v && setCustomStart(v)}
+              slotProps={{ textField: { size: "small", sx: { width: 130, "& .MuiInputBase-root": { color: adminColor.text }, "& .MuiInputLabel-root": { color: adminColor.muted }, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 }, "& .MuiSvgIcon-root": { color: adminColor.muted } } } }}
+            />
+            <DatePicker
+              label="ถึง" value={customEnd} minDate={customStart} maxDate={dayjs()}
+              onChange={(v) => v && setCustomEnd(v)}
+              slotProps={{ textField: { size: "small", sx: { width: 130, "& .MuiInputBase-root": { color: adminColor.text }, "& .MuiInputLabel-root": { color: adminColor.muted }, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 }, "& .MuiSvgIcon-root": { color: adminColor.muted } } } }}
+            />
+          </LocalizationProvider>
+        )}
+
+        {therapistOptions.length > 0 && (
+          <Select size="small" value={therapistFilter} onChange={(e) => setTherapistFilter(e.target.value)} sx={selectSx} MenuProps={selectMenuProps}>
+            <MenuItem value="__ALL__">หมอทุกคน</MenuItem>
+            {therapistOptions.map(([id, name]) => (
+              <MenuItem key={id} value={id}>{name}</MenuItem>
+            ))}
+          </Select>
+        )}
+
+        <Box
+          onClick={() => setPaidOnly((v) => !v)}
+          sx={{
+            display: "inline-flex", alignItems: "center", gap: "6px", cursor: "pointer",
+            fontFamily: SANS, fontSize: 12.5, fontWeight: 700, borderRadius: "8px", padding: "6px 12px",
+            border: `1px solid ${paidOnly ? adminColor.green : adminColor.line2}`,
+            background: paidOnly ? "rgba(22,163,74,0.10)" : "transparent",
+            color: paidOnly ? adminColor.green : adminColor.muted,
+          }}
+        >
+          {paidOnly ? <Check size={14} weight="bold" /> : null}
+          เฉพาะลูกค้าจ่ายแล้ว
+        </Box>
       </Box>
 
       {/* Summary strip */}
@@ -270,7 +464,6 @@ const AdminTherapistPayoutsPage: React.FC = () => {
         </Box>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {/* ── Outstanding, grouped by therapist ── */}
           {groups.length === 0 ? (
             <Box
               sx={{
@@ -282,12 +475,14 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                 ✓ ไม่มีค้างจ่าย
               </Typography>
               <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: adminColor.muted, mt: 0.25 }}>
-                จ่ายหมอครบทุกงานที่ลูกค้าโอนมาแล้ว (ช่วง {WINDOW_DAYS} วันล่าสุด)
+                จ่ายหมอครบทุกงานที่ลูกค้าโอนมาแล้ว ({rangeNote})
               </Typography>
             </Box>
           ) : (
             groups.map((g) => {
               const batchKey = `T:${g.id}`;
+              const bank = bankMap[g.id];
+              const hasAccount = !!bank?.bankAccount;
               return (
                 <Box
                   key={g.id}
@@ -300,7 +495,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                   <Box
                     sx={{
                       display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5,
-                      p: "14px 18px", background: adminColor.panel2, borderBottom: `1px solid ${adminColor.line}`,
+                      p: "14px 18px 12px", background: adminColor.panel2,
                     }}
                   >
                     <Box sx={{ minWidth: 0 }}>
@@ -331,6 +526,68 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                     </Box>
                   </Box>
 
+                  {/* bound bank account + copy (the "transfer" info) */}
+                  <Box
+                    sx={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1,
+                      px: "18px", py: "9px", background: adminColor.panel2,
+                      borderTop: `1px dashed ${adminColor.line2}`, borderBottom: `1px solid ${adminColor.line}`,
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, minWidth: 0 }}>
+                      <Bank size={15} weight="duotone" color={adminColor.accent} style={{ flexShrink: 0 }} />
+                      {hasAccount ? (
+                        <Typography
+                          sx={{
+                            fontFamily: SANS, fontSize: 12, color: adminColor.text,
+                            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                          }}
+                        >
+                          {bank!.bankName && (
+                            <Box component="span" sx={{ color: adminColor.muted }}>{bank!.bankName} · </Box>
+                          )}
+                          <Box component="span" sx={{ ...adminFigureSx, fontWeight: 700 }}>{bank!.bankAccount}</Box>
+                          {bank!.bankAccountName && (
+                            <Box component="span" sx={{ color: adminColor.muted }}> · {bank!.bankAccountName}</Box>
+                          )}
+                        </Typography>
+                      ) : (
+                        <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.amber }}>
+                          ยังไม่ผูกบัญชี
+                        </Typography>
+                      )}
+                    </Box>
+                    {hasAccount ? (
+                      <Button
+                        size="small"
+                        onClick={() => copy(bank!.bankAccount, batchKey)}
+                        startIcon={
+                          copied === batchKey ? <Check size={13} weight="bold" /> : <Copy size={13} />
+                        }
+                        sx={{
+                          flexShrink: 0, minWidth: 0, borderRadius: "8px", textTransform: "none",
+                          fontFamily: SANS, fontSize: 11.5, fontWeight: 700,
+                          color: copied === batchKey ? adminColor.green : adminColor.highlight,
+                          "&:hover": { background: "rgba(78,126,140,0.10)" },
+                        }}
+                      >
+                        {copied === batchKey ? "คัดลอกแล้ว" : "คัดลอกเลขบัญชี"}
+                      </Button>
+                    ) : (
+                      <Button
+                        size="small"
+                        onClick={() => navigate(`/admin/therapists/${g.id}?edit=1`)}
+                        sx={{
+                          flexShrink: 0, minWidth: 0, borderRadius: "8px", textTransform: "none",
+                          fontFamily: SANS, fontSize: 11.5, fontWeight: 700, color: adminColor.highlight,
+                          "&:hover": { background: "rgba(78,126,140,0.10)" },
+                        }}
+                      >
+                        ตั้งค่าบัญชี
+                      </Button>
+                    )}
+                  </Box>
+
                   {/* per-job rows */}
                   <Box sx={{ display: "flex", flexDirection: "column" }}>
                     {g.jobs.map((j) => (
@@ -359,7 +616,6 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                             <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim }}>
                               {j.createdAt?.toDate ? dayjs(j.createdAt.toDate()).format("D MMM · HH:mm") : "—"}
                             </Typography>
-                            {/* customer-paid signal — don't pay the therapist before the money's in */}
                             <Box
                               component="span"
                               sx={{
@@ -373,9 +629,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                           </Box>
                         </Box>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexShrink: 0 }}>
-                          <Typography sx={{ ...adminFigureSx, fontSize: 13.5, color: adminColor.highlight }}>
-                            {formatTHB(j.payout)}
-                          </Typography>
+                          <AmountLink id={j.id} value={j.payout} />
                           <Button
                             size="small"
                             disabled={busy === j.id}
@@ -397,7 +651,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
             })
           )}
 
-          {/* ── Paid history (collapsible) ── */}
+          {/* Paid history (collapsible) */}
           {showPaid && (
             <Box
               sx={{
@@ -406,7 +660,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
               }}
             >
               <Typography sx={{ fontFamily: SERIF, fontSize: 16, fontWeight: 600, color: adminColor.text, mb: 1 }}>
-                จ่ายแล้ว · {WINDOW_DAYS} วันล่าสุด
+                จ่ายแล้ว · {rangeNote}
               </Typography>
               {paidJobs.length === 0 ? (
                 <Typography sx={{ fontFamily: SANS, fontSize: 13, color: adminColor.dim }}>
@@ -435,9 +689,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
                         </Typography>
                       </Box>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexShrink: 0 }}>
-                        <Typography sx={{ ...adminFigureSx, fontSize: 13, color: adminColor.text }}>
-                          {formatTHB(j.payout)}
-                        </Typography>
+                        <AmountLink id={j.id} value={j.payout} />
                         <Button
                           size="small"
                           disabled={busy === j.id}
@@ -459,7 +711,7 @@ const AdminTherapistPayoutsPage: React.FC = () => {
           )}
 
           <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, textAlign: "center", mt: 0.5 }}>
-            แสดงบุคกิ้ง {WINDOW_DAYS} วันล่าสุดที่ลูกค้าจ่ายแบบไม่ใช่เงินสด · ยอด = ส่วนแบ่งหมอ (ตาม tier · หักส่วนลด)
+            บุคกิ้ง {rangeNote} ที่ลูกค้าจ่ายแบบไม่ใช่เงินสด · ยอด = ส่วนแบ่งหมอ (ตาม tier · หักส่วนลด) · กดยอดเพื่อดูรายละเอียดใน admin/bookings
           </Typography>
         </Box>
       )}

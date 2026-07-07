@@ -26,6 +26,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   doc,
   getDoc,
+  setDoc,
   collection,
   query,
   where,
@@ -40,7 +41,7 @@ import {
   ArrowLeft, PencilSimple, FloppyDisk, X, Eye,
   Star, ChatCircleText, Clock, MapPin, Medal, EyeSlash, Prohibit, Umbrella,
   Calendar, ChartBar, ClockCounterClockwise, TelegramLogo, IdentificationCard, Image as ImageIcon, Sparkle,
-  Check, Warning, Globe, Notebook, UserFocus, MapPinLine, Info,
+  Check, Warning, Globe, Notebook, UserFocus, MapPinLine, Info, Bank,
 } from "phosphor-react";
 import type { Credential, LanguageSkill } from "@/types/therapist";
 import { calculateTherapistStatus, isOverrideExpired } from "@/utils/calculateTherapistStatus";
@@ -177,6 +178,12 @@ const AdminTherapistDetailPage: React.FC = () => {
   const [editing, setEditing] = useState(() => searchParams.get("edit") === "1");
   const [formData, setFormData] = useState<FormState>(EMPTY_FORM);
   const originalRef = useRef<FormState>(EMPTY_FORM);
+  // 🆕 Round 28s314 — bank details live in the ADMIN-ONLY `payoutAccounts`
+  //   collection, NOT on the therapist doc (which is `allow read: if true`,
+  //   i.e. world-readable — bank numbers must never land there). Loaded +
+  //   saved separately from the main form, keyed by the therapist doc id.
+  const EMPTY_BANK = { bankName: "", bankAccount: "", bankAccountName: "" };
+  const [bankForm, setBankForm] = useState(EMPTY_BANK);
   // 🆕 Round 28s272 (founder: "กดปากกาแล้วไม่มีข้อมูล") — the onSnapshot
   // callback below reads `editing` to avoid clobbering in-progress edits
   // on a live update, but it's created once inside a `[id]`-only effect,
@@ -314,6 +321,24 @@ const AdminTherapistDetailPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // 🆕 Round 28s314 — load the admin-only bank account for this therapist.
+  useEffect(() => {
+    if (!docId) return;
+    let alive = true;
+    void getDoc(doc(db, "payoutAccounts", docId)).then((snap) => {
+      if (!alive) return;
+      const d = snap.exists() ? (snap.data() as Record<string, unknown>) : {};
+      setBankForm({
+        bankName: (d.bankName as string) || "",
+        bankAccount: (d.bankAccount as string) || "",
+        bankAccountName: (d.bankAccountName as string) || "",
+      });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [docId]);
+
   const engineInput = rawDoc
     ? { ...(rawDoc as any), activeBooking: !!activeBooking, busyUntil: activeBooking?.endAt ?? null }
     : null;
@@ -428,6 +453,19 @@ const AdminTherapistDetailPage: React.FC = () => {
 
     try {
       await updateDoc(doc(db, "therapists", docId), patch);
+      // 🆕 Round 28s314 — bank details go to the admin-only payoutAccounts doc,
+      //   NOT the world-readable therapist doc.
+      await setDoc(
+        doc(db, "payoutAccounts", docId),
+        {
+          bankName: bankForm.bankName.trim(),
+          bankAccount: bankForm.bankAccount.trim(),
+          bankAccountName: bankForm.bankAccountName.trim(),
+          therapistName: formData.name,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
       if (changedFields.length) {
         void logAdminAction("therapist.update", {
           therapistId: docId,
@@ -604,6 +642,16 @@ const AdminTherapistDetailPage: React.FC = () => {
                       editable field that never did anything. */}
                   <ReadRow icon={<IdentificationCard size={14} />} label="รหัส (URL)" value={docId || "—"} />
                   <ReadRow icon={<TelegramLogo size={14} />} label="Telegram" value={formData.telegramChatId || "ยังไม่ผูก"} />
+                  <ReadRow
+                    icon={<Bank size={14} />}
+                    label="บัญชีโอนเงิน"
+                    value={
+                      bankForm.bankAccount
+                        ? `${bankForm.bankName ? `${bankForm.bankName} · ` : ""}${bankForm.bankAccount}${bankForm.bankAccountName ? ` (${bankForm.bankAccountName})` : ""}`
+                        : "ยังไม่ผูกบัญชี"
+                    }
+                    alert={!bankForm.bankAccount}
+                  />
                   <ReadRow icon={<EyeSlash size={14} />} label="Hidden" value={formData.hidden ? "ซ่อนจากหน้าเว็บ" : "แสดงปกติ"} alert={formData.hidden} />
                   <ReadRow icon={<Prohibit size={14} />} label="Blocked" value={formData.blocked ? "ปิดใช้งาน" : "ใช้งานปกติ"} alert={formData.blocked} />
                   <ReadRow icon={<Umbrella size={14} />} label="Holiday" value={formData.isHoliday ? "วันหยุดวันนี้" : "ไม่ได้หยุด"} alert={formData.isHoliday} />
@@ -832,6 +880,33 @@ const AdminTherapistDetailPage: React.FC = () => {
                 placeholder="e.g. 123456789"
                 inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               />
+            </SectionCard>
+
+            {/* 🆕 Round 28s314 — bank account for the Pay-Therapists transfer
+                flow. The number shows on the payout card with a copy button so
+                the admin can transfer the therapist's cut. */}
+            <SectionCard icon={<Bank size={13} />} title="บัญชีธนาคาร (สำหรับโอนเงินหมอ)">
+              <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <TextField
+                  label="ธนาคาร" fullWidth size="small" sx={fieldSx}
+                  value={bankForm.bankName}
+                  onChange={(e) => setBankForm((f) => ({ ...f, bankName: e.target.value }))}
+                  placeholder="เช่น กสิกรไทย · SCB · พร้อมเพย์"
+                />
+                <TextField
+                  label="เลขบัญชี / พร้อมเพย์" fullWidth size="small" sx={fieldSx}
+                  value={bankForm.bankAccount}
+                  onChange={(e) => setBankForm((f) => ({ ...f, bankAccount: e.target.value }))}
+                  placeholder="เช่น 123-4-56789-0"
+                  inputProps={{ inputMode: "numeric" }}
+                />
+                <TextField
+                  label="ชื่อบัญชี" fullWidth size="small" sx={fieldSx}
+                  value={bankForm.bankAccountName}
+                  onChange={(e) => setBankForm((f) => ({ ...f, bankAccountName: e.target.value }))}
+                  placeholder="ชื่อ-นามสกุลเจ้าของบัญชี"
+                />
+              </Box>
             </SectionCard>
           </Box>
         )}

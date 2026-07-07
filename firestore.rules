@@ -321,6 +321,15 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // ── payoutAccounts (28s314 — therapists' bank details for the
+    //   Pay-Therapists transfer flow). Admin-only: these hold private
+    //   bank/account numbers and must NEVER be world-readable like the
+    //   `therapists` collection is (allow read: if true). Keyed by the
+    //   therapist doc id.
+    match /payoutAccounts/{therapistId} {
+      allow read, write: if isAdmin();
+    }
+
     // 🆕 Round 28b21 (founder 2026-05-04) — Phase 3 of conversion plan.
     // ── adminPresence (heartbeat doc for "Admin online" badge) ────
     // Single doc `adminPresence/global` written by AdminLayout every

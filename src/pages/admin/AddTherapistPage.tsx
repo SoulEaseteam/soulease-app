@@ -16,7 +16,7 @@ import { adminColor, adminFont } from "@/theme/adminTheme";
 import type { Credential, LanguageSkill } from "@/types/therapist";
 import {
   ArrowLeft, FloppyDisk, X, Sparkle, Clock, MapPinLine, UserFocus, Globe,
-  Info, Notebook, Image as ImageIcon, EyeSlash, TelegramLogo, Umbrella, Prohibit, IdentificationCard,
+  Info, Notebook, Image as ImageIcon, EyeSlash, TelegramLogo, Umbrella, Prohibit, IdentificationCard, Bank,
 } from "phosphor-react";
 import {
   SectionCard, LocationPicker, FeaturesEditor, LanguagesEditor, ServicesEditor,
@@ -30,6 +30,9 @@ interface AddForm {
   name: string;
   email: string;
   telegramChatId: string;
+  bankName: string;
+  bankAccount: string;
+  bankAccountName: string;
   image: string;
   specialty: string;
   badge: string;
@@ -51,7 +54,7 @@ interface AddForm {
 }
 
 const EMPTY: AddForm = {
-  id: "", name: "", email: "", telegramChatId: "", image: "", specialty: "", badge: "",
+  id: "", name: "", email: "", telegramChatId: "", bankName: "", bankAccount: "", bankAccountName: "", image: "", specialty: "", badge: "",
   startTime: "10:00", endTime: "04:00", statusOverride: "Auto", isHoliday: false,
   area: "", homeAddress: "", currentLocation: "", features: {}, languageSkills: [],
   servicesAvailable: [], credentials: [], gallery: [], bios: {}, hidden: false, blocked: false,
@@ -132,6 +135,17 @@ const AddTherapistPage: React.FC = () => {
       };
 
       await setDoc(ref, payload);
+      // 🆕 Round 28s314 — bank details go to the ADMIN-ONLY payoutAccounts doc,
+      //   never the world-readable therapist doc. Only write if provided.
+      if (form.bankName.trim() || form.bankAccount.trim() || form.bankAccountName.trim()) {
+        await setDoc(doc(db, "payoutAccounts", id), {
+          bankName: form.bankName.trim(),
+          bankAccount: form.bankAccount.trim(),
+          bankAccountName: form.bankAccountName.trim(),
+          therapistName: form.name.trim(),
+          updatedAt: serverTimestamp(),
+        });
+      }
       void logAdminAction("therapist.create", { therapistId: id, therapistName: form.name.trim() });
       setSnackbar({ msg: `เพิ่ม "${form.name.trim()}" เรียบร้อย`, sev: "success" });
       setTimeout(() => navigate(`/admin/therapists/${id}`), 900);
@@ -275,6 +289,15 @@ const AddTherapistPage: React.FC = () => {
                 helperText="ให้หมอนวดส่ง /myid ไปที่ @SunRedBot เพื่อรับรหัสนี้ · ไม่มีก็เว้นว่างได้"
                 placeholder="เช่น 123456789" inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               />
+            </Box>
+          </SectionCard>
+
+          {/* 🆕 Round 28s314 — bank account for the Pay-Therapists transfer flow. */}
+          <SectionCard icon={<Bank size={13} />} title="บัญชีธนาคาร (สำหรับโอนเงินหมอ)">
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+              <TextField label="ธนาคาร" fullWidth size="small" sx={fieldSx} value={form.bankName} onChange={(e) => set("bankName", e.target.value)} placeholder="เช่น กสิกรไทย · SCB · พร้อมเพย์" />
+              <TextField label="เลขบัญชี / พร้อมเพย์" fullWidth size="small" sx={fieldSx} value={form.bankAccount} onChange={(e) => set("bankAccount", e.target.value)} placeholder="เช่น 123-4-56789-0" inputProps={{ inputMode: "numeric" }} />
+              <TextField label="ชื่อบัญชี" fullWidth size="small" sx={fieldSx} value={form.bankAccountName} onChange={(e) => set("bankAccountName", e.target.value)} placeholder="ชื่อ-นามสกุลเจ้าของบัญชี" />
             </Box>
           </SectionCard>
         </Box>

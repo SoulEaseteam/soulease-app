@@ -69,6 +69,7 @@ import {
   collection,
   onSnapshot,
   getDocs,
+  getDoc,
   updateDoc,
   doc,
   query,
@@ -77,6 +78,7 @@ import {
   limit,
   Timestamp,
 } from "firebase/firestore";
+import { useSearchParams } from "react-router-dom";
 import dayjs, { type Dayjs } from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -239,6 +241,16 @@ const AdminBookingListPage: React.FC = () => {
   const [search,      setSearch]      = useState("");
   const [toast,       setToast]       = useState<{ msg: string; ok: boolean } | null>(null);
   const [detailId,    setDetailId]    = useState<string | null>(null);
+  // 🆕 Round 28s314 — deep-link: /admin/bookings?open=<id> opens that booking's
+  //   detail drawer directly (used by the Pay-Therapists page's clickable
+  //   amounts). If the target isn't in the current date-filtered feed, fall
+  //   back to a one-doc fetch so the drawer still shows the real details.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [fallbackBooking, setFallbackBooking] = useState<Booking | null>(null);
+  useEffect(() => {
+    const openId = searchParams.get("open");
+    if (openId) setDetailId(openId);
+  }, [searchParams]);
 
   // 🆕 28s259 (founder audit: "เพิ่มการเปลี่ยนหมอนวดได้ภายในใบจองเดิม") —
   //   the full therapist roster, so the detail drawer's edit form can offer
@@ -467,7 +479,35 @@ const AdminBookingListPage: React.FC = () => {
     await ExportToExcel(rows, `bookings-${Date.now()}.xlsx`);
   };
 
-  const detailBooking = bookings.find((b) => b.id === detailId) ?? null;
+  const inFeed = bookings.find((b) => b.id === detailId) ?? null;
+  const detailBooking =
+    inFeed ?? (fallbackBooking && fallbackBooking.id === detailId ? fallbackBooking : null);
+
+  // 🆕 Round 28s314 — when the deep-linked booking isn't in the current feed
+  //   (outside the date filter / not yet paged in), fetch it directly so the
+  //   drawer isn't blank. Cleared when the drawer closes.
+  useEffect(() => {
+    if (!detailId || inFeed) return;
+    if (fallbackBooking?.id === detailId) return;
+    let alive = true;
+    void getDoc(doc(db, "bookings", detailId)).then((snap) => {
+      if (alive && snap.exists()) {
+        setFallbackBooking({ id: snap.id, ...snap.data() } as Booking);
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, [detailId, inFeed, fallbackBooking]);
+
+  const closeDetail = () => {
+    setDetailId(null);
+    setFallbackBooking(null);
+    if (searchParams.get("open")) {
+      searchParams.delete("open");
+      setSearchParams(searchParams, { replace: true });
+    }
+  };
 
   return (
     <Box sx={{ fontFamily: SANS, minHeight: "100vh", background: adminColor.bg, pb: 10 }}>
@@ -783,7 +823,7 @@ const AdminBookingListPage: React.FC = () => {
       <Drawer
         anchor="right"
         open={!!detailId}
-        onClose={() => setDetailId(null)}
+        onClose={closeDetail}
         PaperProps={{
           sx: {
             width: { xs: "100vw", sm: 420 },
@@ -796,7 +836,7 @@ const AdminBookingListPage: React.FC = () => {
           <DetailPanel
             booking={detailBooking}
             therapists={therapists}
-            onClose={() => setDetailId(null)}
+            onClose={closeDetail}
             onConfirm={() => { void setStatus(detailBooking.id, "confirmed"); }}
             onComplete={() => { void setStatus(detailBooking.id, "completed"); }}
             onCancel={() => cancelBooking(detailBooking.id)}
