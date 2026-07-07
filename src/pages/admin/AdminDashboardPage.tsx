@@ -21,7 +21,6 @@ import {
   onSnapshot,
   orderBy,
   query,
-  limit,
   Timestamp,
   where,
   getDocs,
@@ -61,7 +60,6 @@ import {
   Eye,
   TrendUp,
   TrendDown,
-  ClockCounterClockwise,
   Medal,
   Wallet,
   Coins,
@@ -83,30 +81,6 @@ dayjs.extend(relativeTime);
 const SANS  = adminFont.sans;
 const SERIF = adminFont.serif;
 
-// 🆕 Round 28s241 (founder: "Dashboard แบบนี้" — reference screenshot of a
-//   widget-rich SaaS admin template) — same labels used by AdminAuditLogPage,
-//   duplicated here (not imported) since it's just a tiny display map for a
-//   5-row dashboard widget, not shared logic.
-const ACTIVITY_LABEL: Record<string, { label: string; color: string }> = {
-  "booking.confirm":       { label: "ยืนยันออเดอร์",       color: adminColor.green },
-  "booking.cancel":        { label: "ยกเลิกออเดอร์",       color: adminColor.red },
-  "booking.complete":      { label: "ปิดงานเสร็จ",         color: adminColor.green },
-  "payout.mark_paid":      { label: "จ่ายค่าตอบแทนแล้ว",    color: adminColor.highlight },
-  "payout.mark_unpaid":    { label: "ยกเลิกสถานะจ่ายแล้ว",  color: adminColor.dim },
-  "therapist.relight_all": { label: "เปิดร้านทั้งหมด",      color: adminColor.green },
-  "therapist.reset_auto":  { label: "รีเซ็ตเป็น Auto",      color: adminColor.blue },
-  "user.block":            { label: "บล็อกผู้ใช้",         color: adminColor.red },
-  "user.unblock":          { label: "ปลดบล็อกผู้ใช้",      color: adminColor.green },
-};
-
-function activityDetailLine(detail?: Record<string, unknown>): string {
-  if (!detail) return "";
-  const parts: string[] = [];
-  if (detail.therapistName) parts.push(String(detail.therapistName));
-  if (typeof detail.amount === "number") parts.push(`฿${detail.amount.toLocaleString()}`);
-  if (detail.bookingId) parts.push(`#${String(detail.bookingId).slice(0, 6)}`);
-  return parts.join(" · ");
-}
 
 /** Lightweight CSS conic-gradient ring — no chart-library overhead for a single %. */
 const DonutRing: React.FC<{ percent: number; color: string; size?: number; thickness?: number }> = ({
@@ -205,20 +179,30 @@ const AdminDashboardPage: React.FC = () => {
   const [pendingBookings,  setPendingBookings] = useState<BookingRow[]>([]);
   const [counts,           setCounts]          = useState({ users: 0, therapists: 0, services: 0 });
   const [therapistOptions, setTherapistOptions] = useState<string[]>([]);
-  // 🆕 Round 28s241 — "Recent Activity" widget, live from the auditLogs
-  //   collection (built 28s234, previously only surfaced on /admin/audit-log).
-  const [recentActivity, setRecentActivity] = useState<
-    { id: string; action: string; actorEmail?: string | null; detail?: Record<string, unknown>; at?: Timestamp | null }[]
-  >([]);
+  // 🆕 Round 28s323 — lifetime totals (all bookings, no date filter), computed
+  //   with the same rules as every other page: 60/40 split, promo applied,
+  //   cancelled/refunded excluded. Loaded once.
+  const [lifetime, setLifetime] = useState({ jobs: 0, service: 0, shop: 0 });
 
   const todayStart = useMemo(() => dayjs().startOf("day").toDate(), []);
 
-  // ── recent admin activity (dashboard widget) ─────────────────────
+  // ── lifetime cumulative revenue (all-time, one-shot read) ────────
   useEffect(() => {
-    const q = query(collection(db, "auditLogs"), orderBy("at", "desc"), limit(6));
-    return onSnapshot(q, (snap) => {
-      setRecentActivity(snap.docs.map((d) => ({ id: d.id, ...d.data() } as any)));
-    });
+    (async () => {
+      const snap = await getDocs(collection(db, "bookings"));
+      let jobs = 0, service = 0, shop = 0;
+      snap.forEach((d) => {
+        const b = d.data() as BookingRow;
+        if (isPayrollExcluded(b.status)) return;         // exclude cancelled/refunded/no-show
+        const svc = b.servicePrice || 0;
+        const worker = therapistPayoutFor({ serviceId: b.serviceId, servicePrice: svc, discountAmount: b.discountAmount }); // 60%
+        const base   = commissionBaseFor({ servicePrice: svc, discountAmount: b.discountAmount });                          // service − promo
+        jobs += 1;
+        service += svc;
+        shop += Math.max(0, base - worker);              // shop's 40% after promo
+      });
+      setLifetime({ jobs, service, shop });
+    })();
   }, []);
 
   // ── collection counts ────────────────────────────────────────────
@@ -334,8 +318,16 @@ const AdminDashboardPage: React.FC = () => {
         byTherapistMap[tName].bookings++;
         byTherapistMap[tName].revenue += service;
 
-        const sKey = r.serviceId || r.serviceName || "other";
-        if (!byServiceMap[sKey]) byServiceMap[sKey] = { name: getServiceLabel(r.serviceId, r.serviceName), bookings: 0, revenue: 0 };
+        // 🆕 Round 28s323 — key by the RESOLVED display label, normalized
+        //   (letters+digits only, case-folded), not the raw serviceId/
+        //   serviceName. This stops the same service splitting into two rows
+        //   when one booking carries a serviceId and another only a
+        //   serviceName, or when the label differs by punctuation/spacing
+        //   (e.g. a straight ' vs a curly ' apostrophe in "Gentleman's
+        //   Signature Therapy" → was ฿734,000 AND ฿8,800, now merged).
+        const sName = getServiceLabel(r.serviceId, r.serviceName);
+        const sKey = sName.replace(/[^\p{L}\p{N}]+/gu, "").toLowerCase() || "other";
+        if (!byServiceMap[sKey]) byServiceMap[sKey] = { name: sName, bookings: 0, revenue: 0 };
         byServiceMap[sKey].bookings++;
         byServiceMap[sKey].revenue += service;
       }
@@ -354,8 +346,10 @@ const AdminDashboardPage: React.FC = () => {
       if (prev.revenue  > 0) momRevenueChange  = Math.round(((last.revenue  - prev.revenue)  / prev.revenue)  * 100);
     }
 
-    const byTherapist = Object.values(byTherapistMap).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
-    const byService   = Object.values(byServiceMap).sort((a, b) => b.revenue - a.revenue).slice(0, 6);
+    // 🆕 Round 28s323 — show ALL therapists / services (no top-N slice) so the
+    //   yearly breakdown pulls everything and reconciles with the totals.
+    const byTherapist = Object.values(byTherapistMap).sort((a, b) => b.revenue - a.revenue);
+    const byService   = Object.values(byServiceMap).sort((a, b) => b.revenue - a.revenue);
     const completionRate = periodBookings > 0
       ? Math.round(((periodBookings - periodCancelled) / periodBookings) * 100)
       : 0;
@@ -625,6 +619,51 @@ const AdminDashboardPage: React.FC = () => {
           </Box>
         </motion.div>
 
+        {/* ── 🆕 Round 28s323 — lifetime cumulative revenue (all-time, not
+             date-filtered). Shop take = 40% after promo, cancelled excluded. */}
+        <motion.div {...fadeUp(0.11)}>
+          <Box
+            sx={{
+              borderRadius: "18px",
+              background: `linear-gradient(135deg, ${adminColor.accent}14, ${adminColor.panel})`,
+              border: `1px solid ${adminColor.accent}33`,
+              p: "18px 20px",
+            }}
+          >
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.5 }}>
+              รายได้สะสมทั้งหมด · ตั้งแต่เปิดร้าน
+            </Typography>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1.4fr 1fr 1fr" }, gap: 2, alignItems: "center" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: `${adminColor.accent}22`, color: adminColor.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Wallet size={22} weight="duotone" />
+                </Box>
+                <Box>
+                  <Typography sx={{ ...adminFigureSx, fontSize: 28, color: adminColor.text, lineHeight: 1 }}>
+                    {money(lifetime.shop)}
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.muted, mt: 0.3 }}>
+                    รายได้ร้านสะสม (40% · หักโปรฯ · ไม่รวมยกเลิก)
+                  </Typography>
+                </Box>
+              </Box>
+              {[
+                { label: "ค่าบริการสะสม", value: money(lifetime.service) },
+                { label: "งานสำเร็จสะสม", value: `${lifetime.jobs.toLocaleString()} งาน` },
+              ].map((c) => (
+                <Box key={c.label} sx={{ textAlign: { xs: "left", sm: "center" } }}>
+                  <Typography sx={{ ...adminFigureSx, fontSize: 18, color: adminColor.text, lineHeight: 1 }}>
+                    {c.value}
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.muted, mt: 0.3, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    {c.label}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          </Box>
+        </motion.div>
+
         {/* ── revenue chart + completion ring + orders — 🆕 Round 28s241,
              mirrors the reference's "Revenue Report / Budget / Orders" row */}
         {stats.monthlyData.length > 0 && (
@@ -742,53 +781,6 @@ const AdminDashboardPage: React.FC = () => {
                     </Box>
                   ))}
                 </Box>
-              </Box>
-            </Box>
-          </motion.div>
-        )}
-
-        {/* ── recent activity — 🆕 Round 28s241, Transactions-style feed
-             pulled live from the auditLogs collection (built 28s234) ───── */}
-        {recentActivity.length > 0 && (
-          <motion.div {...fadeUp(0.14)}>
-            <Box sx={{ borderRadius: "18px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, p: "16px" }}>
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
-                <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.muted, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                  กิจกรรมล่าสุด
-                </Typography>
-                <Box onClick={() => navigate("/admin/audit-log")} sx={{ display: "flex", alignItems: "center", gap: 0.4, cursor: "pointer" }}>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, color: adminColor.muted }}>ดูทั้งหมด</Typography>
-                  <ArrowRight size={13} color={adminColor.dim} />
-                </Box>
-              </Box>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                {recentActivity.map((r) => {
-                  const cfg = ACTIVITY_LABEL[r.action] ?? { label: r.action, color: adminColor.muted };
-                  const detail = activityDetailLine(r.detail);
-                  const at = r.at?.toDate ? r.at.toDate() : null;
-                  return (
-                    <Box key={r.id} sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
-                      <Box sx={{ width: 30, height: 30, borderRadius: "50%", background: `${cfg.color}1A`, color: cfg.color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <ClockCounterClockwise size={14} weight="bold" />
-                      </Box>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: adminColor.text }}>
-                          {cfg.label}
-                        </Typography>
-                        {detail && (
-                          <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim }}>
-                            {detail}
-                          </Typography>
-                        )}
-                      </Box>
-                      {at && (
-                        <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, flexShrink: 0 }}>
-                          {dayjs(at).fromNow()}
-                        </Typography>
-                      )}
-                    </Box>
-                  );
-                })}
               </Box>
             </Box>
           </motion.div>
