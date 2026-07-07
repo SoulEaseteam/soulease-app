@@ -1911,6 +1911,52 @@ squeezed row, worse at browser zoom), and the stat pills wrapped unevenly
   subline, amount+status stacked right-aligned in their own column, row
   min-height + vertical centering — no clipping/crowding at any zoom.
 
+### 🆕 2026-07-07 — admin/blocked-devices → real, enforced phone block (28s293)
+
+Founder: "admin/blocked-devices ปรับแก้ และ ตกแต่งสวยงาม แนะนำ ที่ใช้ได้จริง"
+(fix + make it pretty + recommend something ACTUALLY usable). Audit turned
+up a bigger problem than styling: `grep -rn "deviceId" src` returned
+exactly one file — this page itself. Nothing anywhere in the codebase
+ever generated a "deviceId" to block, and even if admin hand-typed an
+arbitrary string, nothing at booking time ever checked `blockedDevices`.
+The entire feature was a shell: it wrote to a Firestore collection
+nothing else read, so "blocking" a device never stopped a single
+booking.
+
+**Rebuilt around phone number** — already on every booking, already the
+CRM's identity key (`normPhone()` in Customer Insights):
+- `BookingFlowPage.tsx` now checks `blockedPhones` before accepting a
+  submit (admin-initiated bookings bypass, same as the other guards in
+  that function) — this is the enforcement that was completely missing
+  before. Fails open on a check error so a Firestore hiccup can't block
+  a legitimate guest.
+- `firestore.rules`: new `blockedPhones/{phone}` — `read: if true` (guest
+  checkout has no auth at all to gate the pre-submit check on),
+  `write: if isAdmin()`. Old `blockedDevices` rule left in place
+  (harmless) but nothing reads/writes it anymore.
+- `AdminBlockedDevicesPage.tsx` rebuilt on Ocean Study: add/remove a
+  blocked phone with a reason, search, stat pill.
+- **The "actually usable" part:** Customer Insights (`AdminUsersPage.tsx`)
+  guest profile drawer got a one-click Block/Unblock button + a "Blocked"
+  flag in both the drawer and the guest list — because in practice she'll
+  spot a problem guest (no-shows, abuse) IN the CRM, not by copying a
+  phone number into a separate page.
+- `normPhone()` moved out of a local copy in AdminUsersPage.tsx into
+  `src/utils/phoneCountry.ts` so BookingFlowPage / AdminUsersPage /
+  AdminBlockedDevicesPage all normalize the same way.
+- `phone.block` / `phone.unblock` added to `AuditAction` (distinct from
+  the existing `user.block`/`unblock`, which toggles a signed-up `users`
+  account, not a phone).
+
+Verified live: deployed firestore.rules FIRST (so the client code
+wouldn't hit permission-denied on first load), confirmed with an
+unauthenticated REST read against `blockedPhones` (404 not-found, not
+403 permission-denied — public read is live). Then curled all three
+deployed chunks (AdminBlockedDevicesPage, AdminUsersPage, BookingFlowPage)
+and grep-confirmed `blockedPhones`, the audit action strings, the Thai
+block/unblock button labels, and the booking-guard error message are all
+present in production.
+
 ### 🆕 2026-07-07 — admin/seed-reviews: could silently overwrite real reviews (28s292)
 
 Founder: "admin/seed-reviews ปรับแก้ และ ตกแต่งสวยงาม". Auditing the seed
