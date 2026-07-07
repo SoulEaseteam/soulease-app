@@ -41,6 +41,7 @@ const ACTION_LABEL: Record<string, { label: string; color: string }> = {
   "payout.mark_unpaid":      { label: "ยกเลิกสถานะจ่ายแล้ว",   color: adminColor.dim },
   "therapist.relight_all":   { label: "เปิดร้านทั้งหมด",       color: adminColor.green },
   "therapist.reset_auto":    { label: "รีเซ็ตเป็น Auto",       color: adminColor.blue },
+  "therapist.create":        { label: "เพิ่มหมอนวดใหม่",       color: adminColor.green },
   "therapist.update":        { label: "แก้ไขข้อมูลหมอนวด",     color: adminColor.blue },
   "therapist.delete":        { label: "ลบหมอนวด",             color: adminColor.red },
   "user.block":              { label: "บล็อกผู้ใช้",          color: adminColor.red },

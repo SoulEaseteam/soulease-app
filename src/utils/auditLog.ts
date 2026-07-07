@@ -35,6 +35,7 @@ export type AuditAction =
   // 🆕 Round 28s267 — individual roster edits (holiday/override/session/
   //   working hours) and deletion had zero audit trail before, unlike
   //   every other consequential admin action this session.
+  | "therapist.create"
   | "therapist.update"
   | "therapist.delete"
   | "user.block"
