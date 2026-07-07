@@ -32,8 +32,8 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { Crown, Warning } from "phosphor-react";
-import { adminColor, adminFont } from "@/theme/adminTheme";
+import { Crown, Warning, MagnifyingGlass, UsersThree, Repeat, CurrencyCircleDollar } from "phosphor-react";
+import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 
 const SANS = adminFont.sans;
 
@@ -48,17 +48,44 @@ interface User {
 }
 
 interface CustomerInsight {
-  phone: string;
+  phone: string;        // normalized display key
   name: string;
-  totalBookings: number;
+  orders: number;       // all bookings placed (incl. cancelled)
+  served: number;       // actually-delivered (completed/done) — the VIP basis
   noShowCount: number;
-  totalSpent: number;
-  lastVisit: Date | null;
+  totalSpent: number;   // revenue from served bookings only
+  lastVisit: Date | null; // service date of the most recent served booking
 }
 
 const VIP_THRESHOLD = 5;
-const NO_SHOW_STATUSES = new Set(["no_show"]);
-const EXCLUDED_FROM_SPEND = new Set(["cancelled", "canceled", "refunded", "failed", "rejected", "pending"]);
+const NO_SHOW_STATUSES = new Set(["no_show", "no-show", "noshow"]);
+// 🆕 Round 28s285 — a booking counts as a real "visit" + realized revenue
+//   only once it's actually been delivered. Everything else (cancelled,
+//   still-pending, refunded, etc.) is an order but not a served visit.
+const SERVED_STATUSES = new Set(["completed", "done"]);
+
+// 🆕 Round 28s285 — normalize a phone so the SAME guest booking as
+//   "+66 81 234 5678" (customer flow, E.164) and "0812345678" (admin-add)
+//   collapse into ONE CRM row instead of two. Strips formatting and maps a
+//   Thai +66 prefix back to the local 0-prefix; leaves foreign numbers as
+//   their raw digits (kept distinct).
+function normPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("66") && digits.length >= 11) return "0" + digits.slice(2);
+  return digits;
+}
+
+function serviceDate(b: { startAt?: { toDate?: () => Date }; date?: string }): Date | null {
+  if (b.startAt?.toDate) {
+    const d = b.startAt.toDate();
+    if (d && !isNaN(d.getTime())) return d;
+  }
+  if (typeof b.date === "string") {
+    const d = new Date(b.date);
+    if (!isNaN(d.getTime())) return d;
+  }
+  return null;
+}
 
 const AdminUsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -110,27 +137,36 @@ const AdminUsersPage: React.FC = () => {
           const b = d.data() as {
             phone?: string; contactName?: string; customerName?: string;
             status?: string; totalPrice?: number; servicePrice?: number;
-            createdAt?: { toDate?: () => Date };
+            startAt?: { toDate?: () => Date }; date?: string;
           };
-          const phone = b.phone?.trim();
+          const raw = b.phone?.trim();
+          if (!raw) return;
+          const phone = normPhone(raw);
           if (!phone) return;
           if (!byPhone[phone]) {
             byPhone[phone] = {
               phone,
               name: b.contactName || b.customerName || phone,
-              totalBookings: 0, noShowCount: 0, totalSpent: 0, lastVisit: null,
+              orders: 0, served: 0, noShowCount: 0, totalSpent: 0, lastVisit: null,
             };
           }
           const row = byPhone[phone];
-          row.totalBookings += 1;
-          if (b.status && NO_SHOW_STATUSES.has(b.status)) row.noShowCount += 1;
-          if (!(b.status && EXCLUDED_FROM_SPEND.has(b.status))) {
+          // Prefer a real name over the phone-as-name placeholder.
+          const nm = (b.contactName || b.customerName || "").trim();
+          if (nm && (row.name === row.phone || !row.name)) row.name = nm;
+
+          row.orders += 1;
+          const status = b.status ?? "";
+          if (NO_SHOW_STATUSES.has(status)) row.noShowCount += 1;
+          if (SERVED_STATUSES.has(status)) {
+            row.served += 1;
             row.totalSpent += b.totalPrice ?? b.servicePrice ?? 0;
+            const visit = serviceDate(b);
+            if (visit && (!row.lastVisit || visit > row.lastVisit)) row.lastVisit = visit;
           }
-          const created = b.createdAt?.toDate?.();
-          if (created && (!row.lastVisit || created > row.lastVisit)) row.lastVisit = created;
         });
-        setInsights(Object.values(byPhone).sort((a, b) => b.totalBookings - a.totalBookings));
+        // Sort by realized value (served visits), then lifetime spend.
+        setInsights(Object.values(byPhone).sort((a, b) => b.served - a.served || b.totalSpent - a.totalSpent));
       } catch (err) {
         console.error("[customer insights] fetch failed:", err);
       } finally {
@@ -139,8 +175,20 @@ const AdminUsersPage: React.FC = () => {
     })();
   }, []);
 
-  const vipCount = useMemo(() => insights.filter((i) => i.totalBookings >= VIP_THRESHOLD).length, [insights]);
-  const noShowCount = useMemo(() => insights.filter((i) => i.noShowCount > 0).length, [insights]);
+  const [query, setQuery] = useState("");
+  const filteredInsights = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return insights;
+    const qd = q.replace(/\D/g, "");
+    return insights.filter(
+      (i) => i.name.toLowerCase().includes(q) || (qd && i.phone.includes(qd))
+    );
+  }, [insights, query]);
+
+  const vipCount = useMemo(() => insights.filter((i) => i.served >= VIP_THRESHOLD).length, [insights]);
+  const repeatCount = useMemo(() => insights.filter((i) => i.served >= 2).length, [insights]);
+  const withNoShow = useMemo(() => insights.filter((i) => i.noShowCount > 0).length, [insights]);
+  const totalRevenue = useMemo(() => insights.reduce((s, i) => s + i.totalSpent, 0), [insights]);
 
   // --------------------------------------------------------------------
   // Edit functions
@@ -245,13 +293,32 @@ const AdminUsersPage: React.FC = () => {
       field: "name", headerName: "Guest", flex: 1.1,
       renderCell: (p) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, height: "100%" }}>
-          {p.row.totalBookings >= VIP_THRESHOLD && <Crown size={14} weight="fill" color={adminColor.highlight} />}
-          <span>{p.row.name}</span>
+          {p.row.served >= VIP_THRESHOLD && <Crown size={14} weight="fill" color={adminColor.amber} />}
+          <span style={{ fontWeight: p.row.served >= VIP_THRESHOLD ? 700 : 400 }}>{p.row.name}</span>
         </Box>
       ),
     },
-    { field: "phone", headerName: "Phone", flex: 1 },
-    { field: "totalBookings", headerName: "Bookings", flex: 0.6, type: "number" },
+    {
+      field: "phone", headerName: "Phone", flex: 1,
+      // 🆕 Round 28s285 — tap-to-call, matching the booking-list convention.
+      renderCell: (p) => (
+        <Box sx={{ display: "flex", alignItems: "center", height: "100%" }}>
+          <a href={`tel:${p.row.phone}`} style={{ color: adminColor.accent, textDecoration: "none", fontWeight: 600 }} onClick={(e) => e.stopPropagation()}>
+            {p.row.phone}
+          </a>
+        </Box>
+      ),
+    },
+    {
+      field: "served", headerName: "Visits", flex: 0.6, type: "number",
+      description: "จำนวนครั้งที่มารับบริการจริง (completed) — เกณฑ์ VIP",
+      renderCell: (p) => <span style={{ ...(adminFigureSx as object), fontWeight: 700 }}>{p.row.served}</span>,
+    },
+    {
+      field: "orders", headerName: "Orders", flex: 0.6, type: "number",
+      description: "จำนวนออเดอร์ทั้งหมด (รวมยกเลิก)",
+      renderCell: (p) => <span style={{ ...(adminFigureSx as object), color: adminColor.dim }}>{p.row.orders}</span>,
+    },
     {
       field: "noShowCount", headerName: "No-shows", flex: 0.7, type: "number",
       renderCell: (p) => p.row.noShowCount > 0 ? (
@@ -293,32 +360,47 @@ const AdminUsersPage: React.FC = () => {
         Customer Insights
       </Typography>
       <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mb: 1.5 }}>
-        รวมจากเบอร์โทรในออเดอร์ทั้งหมด — VIP = จอง {VIP_THRESHOLD}+ ครั้ง
+        รวมจากเบอร์โทรในออเดอร์ทั้งหมด (รวมเบอร์ +66/0 ให้เป็นคนเดียว) — VIP = มารับบริการจริง {VIP_THRESHOLD}+ ครั้ง
       </Typography>
 
-      <Box sx={{ display: "flex", gap: 1.5, mb: 2, flexWrap: "wrap" }}>
-        <Box sx={{ px: 2, py: 1, borderRadius: 2, background: adminColor.panel, border: `1px solid ${adminColor.line}` }}>
-          <Typography sx={{ fontSize: 20, fontWeight: 700, color: adminColor.text, fontFamily: adminFont.serif }}>{insights.length}</Typography>
-          <Typography sx={{ fontSize: 10.5, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>Unique guests</Typography>
-        </Box>
-        <Box sx={{ px: 2, py: 1, borderRadius: 2, background: adminColor.panel, border: `1px solid ${adminColor.highlight}44` }}>
-          <Typography sx={{ fontSize: 20, fontWeight: 700, color: adminColor.highlight, fontFamily: adminFont.serif }}>{vipCount}</Typography>
-          <Typography sx={{ fontSize: 10.5, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>VIP guests</Typography>
-        </Box>
-        <Box sx={{ px: 2, py: 1, borderRadius: 2, background: adminColor.panel, border: `1px solid ${adminColor.red}44` }}>
-          <Typography sx={{ fontSize: 20, fontWeight: 700, color: adminColor.red, fontFamily: adminFont.serif }}>{noShowCount}</Typography>
-          <Typography sx={{ fontSize: 10.5, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>With no-shows</Typography>
-        </Box>
+      {/* 🆕 Round 28s285 — icon-circle stat pills, matching Dashboard/Earnings. */}
+      <Box sx={{ display: "flex", gap: 1.25, mb: 2, flexWrap: "wrap" }}>
+        {([
+          { icon: <UsersThree size={16} color="#fff" weight="fill" />, grad: `radial-gradient(circle at 35% 30%, #6FA0AD, ${adminColor.accent})`, num: insights.length, label: "Unique guests", color: adminColor.text },
+          { icon: <Repeat size={16} color="#fff" weight="bold" />, grad: `radial-gradient(circle at 35% 30%, #3B82F6, ${adminColor.blue})`, num: repeatCount, label: "Repeat (2+)", color: adminColor.blue },
+          { icon: <Crown size={16} color="#fff" weight="fill" />, grad: `radial-gradient(circle at 35% 30%, #F59E0B, ${adminColor.amber})`, num: vipCount, label: `VIP (${VIP_THRESHOLD}+)`, color: adminColor.amber },
+          { icon: <Warning size={16} color="#fff" weight="fill" />, grad: `radial-gradient(circle at 35% 30%, #EF4444, ${adminColor.red})`, num: withNoShow, label: "With no-shows", color: adminColor.red },
+          { icon: <CurrencyCircleDollar size={16} color="#fff" weight="fill" />, grad: `radial-gradient(circle at 35% 30%, #22C55E, ${adminColor.green})`, num: `฿${totalRevenue.toLocaleString()}`, label: "Realized revenue", color: adminColor.green },
+        ]).map((c, i) => (
+          <Box key={i} sx={{ display: "flex", alignItems: "center", gap: "10px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "15px", p: "8px 15px 8px 8px", boxShadow: "0 1px 3px rgba(31,41,51,0.04)" }}>
+            <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: c.grad, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{c.icon}</Box>
+            <Box>
+              <Typography sx={{ ...adminFigureSx, fontSize: 17, color: c.color, lineHeight: 1.1 }}>{c.num}</Typography>
+              <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>{c.label}</Typography>
+            </Box>
+          </Box>
+        ))}
       </Box>
 
-      <Paper sx={{ height: 420, p: 0, borderRadius: 3, background: adminColor.panel2, mb: 4, overflow: "hidden" }}>
+      {/* 🆕 Round 28s285 — search guests by name or phone. */}
+      <Box sx={{ mb: 1.5, maxWidth: 360, display: "flex", alignItems: "center", gap: 1, background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "12px", p: "9px 13px" }}>
+        <MagnifyingGlass size={15} color={adminColor.dim} />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="ค้นหาชื่อ / เบอร์โทร…"
+          style={{ border: "none", outline: "none", background: "transparent", fontSize: 13.5, color: adminColor.text, width: "100%", fontFamily: SANS }}
+        />
+      </Box>
+
+      <Paper sx={{ height: 440, p: 0, borderRadius: 3, background: adminColor.panel2, mb: 4, overflow: "hidden" }}>
         <DataGrid
-          rows={insights}
+          rows={filteredInsights}
           columns={insightColumns}
           loading={insightsLoading}
           getRowId={(row) => row.phone}
           disableRowSelectionOnClick
-          initialState={{ sorting: { sortModel: [{ field: "totalBookings", sort: "desc" }] } }}
+          initialState={{ sorting: { sortModel: [{ field: "served", sort: "desc" }] } }}
           sx={gridSx}
         />
       </Paper>
