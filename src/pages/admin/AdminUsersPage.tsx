@@ -478,44 +478,32 @@ const AdminUsersPage: React.FC = () => {
         ))}
       </Box>
 
-      {/* 🆕 Round 28s287b — country breakdown that doubles as a filter.
-          Tap a country to show only those guests; tap "ทั้งหมด" to clear. */}
-      {countryBreakdown.list.length > 0 && (
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, mb: 1.5, alignItems: "center" }}>
-          <Typography sx={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: adminColor.dim, mr: 0.5 }}>ตามประเทศ</Typography>
-          {(() => {
-            const chip = (key: string | null, content: React.ReactNode) => {
-              const active = countryFilter === key || (key === null && countryFilter === null);
-              return (
-                <Box key={String(key)} onClick={() => setCountryFilter(key)}
-                  sx={{ display: "flex", alignItems: "center", gap: "5px", cursor: "pointer", fontSize: 12.5, fontWeight: 700, borderRadius: "999px", p: "5px 11px",
-                    border: `1px solid ${active ? adminColor.accent : adminColor.line}`, background: active ? "rgba(78,126,140,0.12)" : adminColor.panel, color: active ? adminColor.accent : adminColor.muted }}>
-                  {content}
-                </Box>
-              );
-            };
-            return (
-              <>
-                {chip(null, <>ทั้งหมด <span style={{ opacity: 0.7 }}>{insights.length}</span></>)}
-                {countryBreakdown.list.map(({ country, count }) =>
-                  chip(country.code, <><span style={{ fontSize: 14 }}>{country.flag}</span> {country.code} <span style={{ opacity: 0.7 }}>{count}</span></>)
-                )}
-                {countryBreakdown.unknown > 0 && chip("__none__", <>ไม่ทราบ <span style={{ opacity: 0.7 }}>{countryBreakdown.unknown}</span></>)}
-              </>
-            );
-          })()}
+      {/* 🆕 Round 28s285 search + 28s287c country dropdown filter. */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 1.5, alignItems: "center" }}>
+        <Box sx={{ flex: 1, minWidth: 220, maxWidth: 360, display: "flex", alignItems: "center", gap: 1, background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "12px", p: "9px 13px" }}>
+          <MagnifyingGlass size={15} color={adminColor.dim} />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="ค้นหาชื่อ / เบอร์โทร…"
+            style={{ border: "none", outline: "none", background: "transparent", fontSize: 13.5, color: adminColor.text, width: "100%", fontFamily: SANS }}
+          />
         </Box>
-      )}
-
-      {/* 🆕 Round 28s285 — search guests by name or phone. */}
-      <Box sx={{ mb: 1.5, maxWidth: 360, display: "flex", alignItems: "center", gap: 1, background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "12px", p: "9px 13px" }}>
-        <MagnifyingGlass size={15} color={adminColor.dim} />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="ค้นหาชื่อ / เบอร์โทร…"
-          style={{ border: "none", outline: "none", background: "transparent", fontSize: 13.5, color: adminColor.text, width: "100%", fontFamily: SANS }}
-        />
+        {/* 🆕 Round 28s287c (founder: "ทำเป็นดรอปดาว ดีกว่า") — country filter
+            as a dropdown; each option shows flag + name + guest count. */}
+        <TextField
+          select size="small" label="ประเทศ"
+          value={countryFilter ?? "__all__"}
+          onChange={(e) => setCountryFilter(e.target.value === "__all__" ? null : e.target.value)}
+          sx={{ minWidth: 220, "& .MuiOutlinedInput-root": { borderRadius: "12px", background: adminColor.panel } }}
+          SelectProps={{ MenuProps: { PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px", maxHeight: 380 } } } }}
+        >
+          <MenuItem value="__all__">🌏 ทั้งหมด ({insights.length})</MenuItem>
+          {countryBreakdown.list.map(({ country, count }) => (
+            <MenuItem key={country.code} value={country.code}>{country.flag} {country.name} ({count})</MenuItem>
+          ))}
+          {countryBreakdown.unknown > 0 && <MenuItem value="__none__">❔ ไม่ทราบ ({countryBreakdown.unknown})</MenuItem>}
+        </TextField>
       </Box>
 
       <Paper sx={{ height: 440, p: 0, borderRadius: 3, background: adminColor.panel2, mb: 4, overflow: "hidden" }}>
