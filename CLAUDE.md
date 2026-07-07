@@ -1911,6 +1911,38 @@ squeezed row, worse at browser zoom), and the stat pills wrapped unevenly
   subline, amount+status stacked right-aligned in their own column, row
   min-height + vertical centering — no clipping/crowding at any zoom.
 
+### 🆕 2026-07-07 — admin/reviews: missing-rating reviews were invisible (28s291)
+
+Founder: "admin/reviews ปรับแก้". Audited the page (last untouched admin
+list this session) and found the same class of bug 28s276 already fixed
+once: the query was `where("rating",">=",1)` plus a client-side
+`if (rating < 1) return`, so any booking with `reviewText` but NO
+`rating` field never showed up here — even though `ReviewListPage.tsx`
+(the public review wall) filters on `reviewText`, not `rating`, so real
+customers could already see those reviews while admin had zero ability
+to edit or hide them.
+
+**Fix:** query switched to `where("reviewText","!=","")` (this page has
+full admin Firestore access, so the anon-visitor privacy constraint that
+forces `rating>=1` on the public-facing hook doesn't apply here); missing
+`rating` now defaults to 5, matching the established convention in
+`ReviewListPage.tsx` / `AdminUsersPage.tsx`.
+
+**Also this round:**
+- Ocean Study restyle — this was the last admin page still on the
+  pre-28s235 (`#B4000A`/`#1A2B2E`/`#F4F6F5`) theme.
+- `review.edit` / `review.hide` added to `AuditAction` + `ACTION_LABEL`
+  in AdminAuditLogPage; Edit/Hide now call `logAdminAction` (previously
+  the only consequential admin write this session with no trail).
+- Search box (therapist name / review text) + ★ rating filter +
+  language filter, matching every other admin list page.
+- `Timestamp.now()` → `serverTimestamp()` for the edited/hidden
+  timestamps, consistent with the rest of the codebase.
+
+Verified live: curled the deployed `AdminReviewListPage-*.js` chunk and
+grep-confirmed `reviewText","!=`, `review.edit`, `review.hide`, and the
+new Thai filter/stat-pill strings are present in production.
+
 ### 🆕 2026-07-07 — history row clipping actually fixed this time (28s290)
 
 Founder screenshot showed the exact same broken booking-history rows
