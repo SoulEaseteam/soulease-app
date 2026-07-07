@@ -1911,6 +1911,56 @@ squeezed row, worse at browser zoom), and the stat pills wrapped unevenly
   subline, amount+status stacked right-aligned in their own column, row
   min-height + vertical centering — no clipping/crowding at any zoom.
 
+### 🆕 2026-07-07 — Promotions: live price + service management (28s300)
+
+Founder: "admin/promotions สามารถ จัดการราคา และ บริการ ได้" (make it able
+to manage price + service). Service prices were hardcoded in
+`src/data/services.ts`; made them admin-editable live from the
+Promotions page.
+
+**Why this was low-risk despite touching customer pricing** (the highest-
+stakes change of the session): (1) every customer price display funnels
+through `priceForDuration()` / `startingPrice()` — verified the `.price`
+reads in HomeTherapistGrid/TherapistProfileCard are THERAPIST prices,
+unrelated — so one injection point reaches every surface; (2) bookings
+snapshot their price at booking time (serviceCatalog.ts's stated
+principle), so an edit only affects NEW orders, never a historical one;
+(3) with an empty override map every pricing fn is byte-identical to the
+hardcoded catalog (the override is only consulted when a field is
+explicitly present). Verified (3) + the override math + Firestore's
+string-keyed prices object (accessed with a numeric key) via an isolated
+node logic check: default→1200/1800/2400, string-key override→applies,
+base-only override→multiplier off new base, other services unaffected.
+
+**Reused the session's live-override pattern, no new infra:**
+- `servicePricing.ts`: `LiveServiceOverride` cache + `applyLiveServiceConfig`,
+  `isServiceEnabled`, `liveServiceName/Desc`, `withLiveServiceOverrides`.
+  `priceForDuration` now checks live per-duration → static override →
+  multiplier × (live-or-catalog base).
+- `serviceCatalog.getServiceById` merges live name/desc/price so every
+  label lookup reflects a rename.
+- `MaintenanceGate` applies `serviceOverrides` from the SAME existing
+  `publicRules` listener — no new listener, and `publicRules` is already
+  public-read + admin-write so NO firestore.rules change either.
+- `StepService` hides disabled services from the booking menu and carries
+  live overrides into the card + duration sheet. `BookingFlowPage` submit
+  rejects a disabled service (admin bypasses) — covers stale-form /
+  direct-URL cases.
+- `AdminPromotionsPage` gained a "ราคา & บริการ" editor: per-service name,
+  enable toggle, and 60/90/120 prices, seeded ONCE via getDoc (not the
+  live listener, so typing isn't clobbered by a snapshot). `service.update`
+  audit action + "บริการ" category.
+
+**Deliberately out of scope (flagged to founder):** adding a brand-NEW
+service — needs a new SKU, image asset, and prerendered SEO route, a
+bigger change than editing the existing four. Editing existing services'
+prices/names/availability is the safe, contained part shipped here.
+
+Verified live: tsc/build clean, isolated pricing logic check (above),
+homepage 200 (customer pricing default-path regression), curled the live
+main bundle for `serviceOverrides` and the Promotions chunk for the
+"ราคา & บริการ" editor.
+
 ### 🆕 2026-07-07 — Promotions: caps, scheduling, min-spend, share/QR (28s299)
 
 Founder asked "หน้า Promotions ควรมีอะไรบ้าง" — offered 4 additions via
