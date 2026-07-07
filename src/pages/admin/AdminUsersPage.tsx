@@ -47,6 +47,17 @@ interface User {
   role?: Role | null;
 }
 
+// 🆕 Round 28s286 — a compact per-booking row kept on each guest so the
+//   profile drawer can show their full history.
+interface BookingLite {
+  id: string;
+  date: Date | null;
+  serviceName: string;
+  therapistName: string;
+  amount: number;
+  status: string;
+}
+
 interface CustomerInsight {
   phone: string;        // normalized display key
   name: string;
@@ -55,6 +66,20 @@ interface CustomerInsight {
   noShowCount: number;
   totalSpent: number;   // revenue from served bookings only
   lastVisit: Date | null; // service date of the most recent served booking
+  bookings: BookingLite[]; // full history, newest first (built at aggregation)
+}
+
+// mode of a string list — used for "favorite therapist / service".
+function modeOf(arr: string[]): string | null {
+  const counts: Record<string, number> = {};
+  let best: string | null = null;
+  let bestN = 0;
+  for (const x of arr) {
+    if (!x) continue;
+    counts[x] = (counts[x] || 0) + 1;
+    if (counts[x] > bestN) { bestN = counts[x]; best = x; }
+  }
+  return best;
 }
 
 const VIP_THRESHOLD = 5;
@@ -73,6 +98,14 @@ function normPhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
   if (digits.startsWith("66") && digits.length >= 11) return "0" + digits.slice(2);
   return digits;
+}
+
+// 🆕 Round 28s286 — colour a booking's status chip in the profile drawer.
+function statusColor(status: string): string {
+  if (SERVED_STATUSES.has(status)) return adminColor.green;
+  if (NO_SHOW_STATUSES.has(status)) return adminColor.red;
+  if (["cancelled", "canceled", "refunded", "failed", "rejected"].includes(status)) return adminColor.dim;
+  return adminColor.blue; // confirmed / paid / pending / in_progress
 }
 
 function serviceDate(b: { startAt?: { toDate?: () => Date }; date?: string }): Date | null {
@@ -138,6 +171,7 @@ const AdminUsersPage: React.FC = () => {
             phone?: string; contactName?: string; customerName?: string;
             status?: string; totalPrice?: number; servicePrice?: number;
             startAt?: { toDate?: () => Date }; date?: string;
+            serviceName?: string; therapistName?: string;
           };
           const raw = b.phone?.trim();
           if (!raw) return;
@@ -147,7 +181,7 @@ const AdminUsersPage: React.FC = () => {
             byPhone[phone] = {
               phone,
               name: b.contactName || b.customerName || phone,
-              orders: 0, served: 0, noShowCount: 0, totalSpent: 0, lastVisit: null,
+              orders: 0, served: 0, noShowCount: 0, totalSpent: 0, lastVisit: null, bookings: [],
             };
           }
           const row = byPhone[phone];
@@ -155,17 +189,28 @@ const AdminUsersPage: React.FC = () => {
           const nm = (b.contactName || b.customerName || "").trim();
           if (nm && (row.name === row.phone || !row.name)) row.name = nm;
 
-          row.orders += 1;
           const status = b.status ?? "";
+          const amount = b.totalPrice ?? b.servicePrice ?? 0;
+          const visit = serviceDate(b);
+          row.orders += 1;
+          row.bookings.push({
+            id: d.id,
+            date: visit,
+            serviceName: b.serviceName ?? "",
+            therapistName: b.therapistName ?? "",
+            amount,
+            status,
+          });
           if (NO_SHOW_STATUSES.has(status)) row.noShowCount += 1;
           if (SERVED_STATUSES.has(status)) {
             row.served += 1;
-            row.totalSpent += b.totalPrice ?? b.servicePrice ?? 0;
-            const visit = serviceDate(b);
+            row.totalSpent += amount;
             if (visit && (!row.lastVisit || visit > row.lastVisit)) row.lastVisit = visit;
           }
         });
-        // Sort by realized value (served visits), then lifetime spend.
+        // Newest booking first within each guest.
+        Object.values(byPhone).forEach((r) => r.bookings.sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0)));
+        // Sort guests by realized value (served visits), then lifetime spend.
         setInsights(Object.values(byPhone).sort((a, b) => b.served - a.served || b.totalSpent - a.totalSpent));
       } catch (err) {
         console.error("[customer insights] fetch failed:", err);
@@ -176,6 +221,7 @@ const AdminUsersPage: React.FC = () => {
   }, []);
 
   const [query, setQuery] = useState("");
+  const [selectedGuest, setSelectedGuest] = useState<CustomerInsight | null>(null);
   const filteredInsights = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return insights;
@@ -189,6 +235,19 @@ const AdminUsersPage: React.FC = () => {
   const repeatCount = useMemo(() => insights.filter((i) => i.served >= 2).length, [insights]);
   const withNoShow = useMemo(() => insights.filter((i) => i.noShowCount > 0).length, [insights]);
   const totalRevenue = useMemo(() => insights.reduce((s, i) => s + i.totalSpent, 0), [insights]);
+
+  // 🆕 Round 28s286 — derived facts for the selected guest's profile drawer.
+  const guestStats = useMemo(() => {
+    const g = selectedGuest;
+    if (!g) return null;
+    const served = g.bookings.filter((b) => SERVED_STATUSES.has(b.status));
+    return {
+      favTherapist: modeOf(served.map((b) => b.therapistName)),
+      favService: modeOf(served.map((b) => b.serviceName)),
+      avgSpend: g.served ? Math.round(g.totalSpent / g.served) : 0,
+      daysSince: g.lastVisit ? Math.floor((Date.now() - g.lastVisit.getTime()) / 86_400_000) : null,
+    };
+  }, [selectedGuest]);
 
   // --------------------------------------------------------------------
   // Edit functions
@@ -400,8 +459,9 @@ const AdminUsersPage: React.FC = () => {
           loading={insightsLoading}
           getRowId={(row) => row.phone}
           disableRowSelectionOnClick
+          onRowClick={(p) => setSelectedGuest(p.row as CustomerInsight)}
           initialState={{ sorting: { sortModel: [{ field: "served", sort: "desc" }] } }}
-          sx={gridSx}
+          sx={{ ...gridSx, "& .MuiDataGrid-row": { cursor: "pointer" } }}
         />
       </Paper>
 
@@ -428,6 +488,72 @@ const AdminUsersPage: React.FC = () => {
           sx={gridSx}
         />
       </Paper>
+
+      {/* ── Guest profile drawer (28s286) ─────────────────────────────── */}
+      <Dialog open={!!selectedGuest} onClose={() => setSelectedGuest(null)} fullWidth maxWidth="sm"
+        slotProps={{ paper: { sx: { background: adminColor.bg, borderRadius: "18px" } } }}>
+        {selectedGuest && guestStats && (
+          <>
+            <DialogTitle sx={{ pb: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                {selectedGuest.served >= VIP_THRESHOLD && <Crown size={18} weight="fill" color={adminColor.amber} />}
+                <Typography sx={{ fontFamily: adminFont.serif, fontSize: 20, fontWeight: 700, color: adminColor.text }}>{selectedGuest.name}</Typography>
+              </Box>
+              <a href={`tel:${selectedGuest.phone}`} style={{ color: adminColor.accent, textDecoration: "none", fontWeight: 600, fontSize: 13 }}>{selectedGuest.phone}</a>
+            </DialogTitle>
+            <DialogContent>
+              {/* stat pills */}
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
+                {[
+                  { n: selectedGuest.served, l: "Visits" },
+                  { n: selectedGuest.orders, l: "Orders" },
+                  { n: `฿${selectedGuest.totalSpent.toLocaleString()}`, l: "Spent" },
+                  { n: `฿${guestStats.avgSpend.toLocaleString()}`, l: "Avg / visit" },
+                  { n: selectedGuest.noShowCount, l: "No-shows", danger: selectedGuest.noShowCount > 0 },
+                  { n: guestStats.daysSince == null ? "—" : `${guestStats.daysSince}d`, l: "Since last" },
+                ].map((s, i) => (
+                  <Box key={i} sx={{ flex: "1 1 90px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "11px", p: "8px 10px" }}>
+                    <Typography sx={{ ...adminFigureSx, fontSize: 15, color: s.danger ? adminColor.red : adminColor.text }}>{s.n}</Typography>
+                    <Typography sx={{ fontSize: 9.5, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>{s.l}</Typography>
+                  </Box>
+                ))}
+              </Box>
+
+              {/* favorites */}
+              <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
+                <Box sx={{ flex: 1, minWidth: 140, background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "11px", p: "9px 12px" }}>
+                  <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>หมอนวดที่ชอบ</Typography>
+                  <Typography sx={{ fontSize: 14, fontWeight: 600, color: adminColor.text }}>{guestStats.favTherapist || "—"}</Typography>
+                </Box>
+                <Box sx={{ flex: 1, minWidth: 140, background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "11px", p: "9px 12px" }}>
+                  <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>บริการที่ชอบ</Typography>
+                  <Typography sx={{ fontSize: 14, fontWeight: 600, color: adminColor.text }}>{guestStats.favService || "—"}</Typography>
+                </Box>
+              </Box>
+
+              {/* history */}
+              <Typography sx={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.07em", color: adminColor.dim, mb: 1 }}>ประวัติการจอง ({selectedGuest.bookings.length})</Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, maxHeight: 280, overflowY: "auto" }}>
+                {selectedGuest.bookings.map((b) => (
+                  <Box key={b.id} sx={{ display: "flex", alignItems: "center", gap: 1, background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "10px", p: "9px 12px" }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: adminColor.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {b.serviceName || "—"}{b.therapistName ? ` · ${b.therapistName}` : ""}
+                      </Typography>
+                      <Typography sx={{ fontSize: 11, color: adminColor.dim }}>{b.date ? b.date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}</Typography>
+                    </Box>
+                    <Typography sx={{ ...adminFigureSx, fontSize: 13, color: adminColor.text }}>฿{b.amount.toLocaleString()}</Typography>
+                    <Box sx={{ fontSize: 9.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em", color: statusColor(b.status), background: `${statusColor(b.status)}1F`, borderRadius: "6px", px: "6px", py: "2px", whiteSpace: "nowrap" }}>{b.status || "—"}</Box>
+                  </Box>
+                ))}
+              </Box>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setSelectedGuest(null)} sx={{ color: adminColor.muted, textTransform: "none", fontWeight: 700 }}>ปิด</Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
 
       {/* ------------------ EDIT DIALOG ------------------ */}
       <Dialog open={!!editingUser} onClose={handleCloseEdit} fullWidth maxWidth="sm">
