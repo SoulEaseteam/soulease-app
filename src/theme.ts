@@ -1,5 +1,9 @@
 
 import { createTheme } from "@mui/material/styles";
+// 🆕 Round 28s306 — teach createTheme about the X date-pickers component
+//   keys (MuiPickersPopper etc.) so the popover-paper override below
+//   type-checks.
+import type {} from "@mui/x-date-pickers/themeAugmentation";
 
 // ─────────────────────────────────────────────────────────────────────
 // 🎨 BRAND tokens — Round 28s150 palette swap
@@ -254,6 +258,28 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: "none",
+        },
+      },
+    },
+    // 🆕 Round 28s306 (founder: date-picker calendar shows through on every
+    //   admin page — "พื้นหลังจาง ไม่เห็นเลย ปรับแก้ทั้งหมด"). Root cause:
+    //   the X DatePicker's calendar popover uses the theme's default
+    //   `background.paper`, which is a translucent rgba(255,255,255,0.65)
+    //   (kept translucent on purpose for the frosted-glass cards). The
+    //   calendar sitting over dense page content bleeds through and becomes
+    //   unreadable. Admin cards don't hit this because they set an opaque
+    //   #FFFFFF panel themselves — the pickers don't. Fix once, globally:
+    //   give the picker popover an opaque surface + border + shadow. Solid
+    //   white keeps the existing dark-text calendar perfectly legible.
+    MuiPickersPopper: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: "#FFFFFF",
+          backgroundImage: "none",
+          color: brand.text,
+          border: "1px solid rgba(31,41,51,0.12)",
+          borderRadius: 16,
+          boxShadow: "0 14px 44px rgba(15,23,42,0.20)",
         },
       },
     },
