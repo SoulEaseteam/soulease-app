@@ -1639,6 +1639,41 @@ and edit mode is its own soft panel (grouped cards, not a flat stack).
 files, sidestepping the file-count limit. Use `--archive=tgz` as the
 default deploy flag going forward on heavy-iteration days.
 
+### 🆕 2026-07-07 — Vercel upload trim: dead files + ignore content (28s279)
+
+Founder: "Vercel ฟรีจำกัดจำนวนไฟล์อัปโหลด ลบไฟล์เก่าที่ไม่ได้ใช้ได้ไหม" —
+follow-up to the 28s278 `api-upload-free` limit. That limit counts
+uploaded FILES, so fewer files = slower to hit it.
+
+**Deleted from the repo** (verified 0 references repo-wide first):
+- `public/badges/` — 24 files, ~4.4MB (GIFs/PNGs/SVGs). The
+  `badgeConfig.ts` that used them was removed in 28s223; grep across src,
+  index.html, manifest, and configs confirms nothing points at `/badges/`
+  anymore. Was uploading on every deploy for nothing.
+- `lint-after-fix.txt` (stray `npm run lint` output),
+  `README สำเนา.md` (dup of the default Vite README).
+
+**`.vercelignore` expanded** to stop UPLOADING (not delete) non-build
+content — Vite only needs index.html + src/ + public/ + config +
+scripts/prerender-routes.mjs. Now excluded: `docs/`, `Brand/`,
+`SEO_Blog_Pack/`, `Expansion/`, `.github/`, `.claude/`, and all `*.md`
+(CLAUDE.md, ROADMAP, HANDOFF, DEPLOYMENT_STATUS, marketing decks).
+Verified no markdown is imported by src, so the `*.md` glob is safe.
+These stay in git — they just no longer ride every prod deploy.
+
+**Did NOT delete images** — therapist/service photos are referenced
+dynamically from Firestore (`image`/`gallery` fields) + static
+`data/therapists.ts`, so "looks unused" is unsafe without a full
+Firestore audit. **Open perf item (not done):** several therapist JPGs
+are huge/unoptimized — `public/images/jinny/IMG_7120.JPG` is 9.5MB,
+`public/images/jinny/` is 23MB total. Resizing them in place (not
+deleting) is a real LCP/bandwidth win worth a dedicated round; needs
+care since the paths are referenced.
+
+Tracked files 495 → 468. Deploy cmd going forward: **`vercel --prod
+--yes --archive=tgz`** (28s278) — one tarball upload, so file count no
+longer gates deploys regardless.
+
 ### 🆕 2026-07-06 — dead-code / junk cleanup (28s250-251)
 
 Founder: "เครียข้อมูลเก่า และ ข้อมูลขยะที่ไม่ได้ใช้แล้ว" → "จัดการทั้งหมด".
