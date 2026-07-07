@@ -413,7 +413,8 @@ const AdminSeedReviewsPage: React.FC = () => {
   // ─── Render ───────────────────────────────────────────────────
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, fontFamily: SANS }}>
-      {/* Title bar */}
+      {/* 🆕 Round 28r47 (bilingual pass) — English page title + Thai
+          subtitle, matching r35 pattern across admin. */}
       <Box
         sx={{
           display: "flex",
@@ -425,10 +426,13 @@ const AdminSeedReviewsPage: React.FC = () => {
         }}
       >
         <Box>
-          <Typography sx={{ fontFamily: SERIF, fontSize: 22, fontWeight: 600, color: adminColor.text, lineHeight: 1.1 }}>
+          <Typography sx={{ fontFamily: SERIF, fontSize: 22, fontWeight: 600, color: adminColor.text, lineHeight: 1 }}>
             Seed Reviews
           </Typography>
-          <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mt: "4px", maxWidth: 560 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.4, letterSpacing: "0.02em" }}>
+            เพิ่มรีวิว
+          </Typography>
+          <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mt: 1, maxWidth: 560 }}>
             บุ๊กกิ้งที่จบแล้วแต่ลูกค้าไม่ได้รีวิว · เลือก template ภาษา + rating
             แล้วบันทึก · จะขึ้นเป็นรีวิวบนหน้า practitioner ทันที (anonymous)
           </Typography>
@@ -443,36 +447,49 @@ const AdminSeedReviewsPage: React.FC = () => {
         </IconButton>
       </Box>
 
-      {/* 🆕 Round 28s292 — icon-circle stat pills, matching AdminReviewListPage. */}
+      {/* 🆕 Round 28s292 → r47 — stat plates: icon 32 → 46, inner-highlight
+          shadow, hover lift, English label + Thai subtitle. */}
       <Box sx={{ display: "flex", gap: 1.25, mb: 2, flexWrap: "wrap" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: "10px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "15px", p: "8px 15px 8px 8px", boxShadow: "0 1px 3px rgba(31,41,51,0.04)" }}>
-          <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #6FA0AD, ${adminColor.accent})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <ClockCounterClockwise size={16} color="#fff" weight="fill" />
+        {[
+          { icon: <ClockCounterClockwise size={20} weight="duotone" />, num: rows.length,          en: "Pending Seed",   th: "รอเพิ่มรีวิว",   color: adminColor.accent, figColor: adminColor.text },
+          { icon: <UsersThree           size={20} weight="duotone" />, num: practitionerCount,   en: "Practitioners",  th: "หมอนวด",         color: adminColor.blue,   figColor: adminColor.blue },
+        ].map((c) => (
+          <Box
+            key={c.en}
+            sx={{
+              display: "flex", alignItems: "center", gap: "12px",
+              background: adminColor.panel, border: `1px solid ${adminColor.line}`,
+              borderRadius: "18px", p: "10px 18px 10px 10px",
+              boxShadow: "0 2px 10px rgba(31,41,51,0.04)",
+              transition: "transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease",
+              "&:hover": {
+                transform: "translateY(-1px)",
+                background: `${c.color}0A`,
+                boxShadow: `0 4px 14px rgba(31,41,51,0.06), 0 2px 6px ${c.color}18`,
+              },
+            }}
+          >
+            <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: `${c.color}1A`, color: c.color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 6px ${c.color}22` }}>
+              {c.icon}
+            </Box>
+            <Box>
+              <Typography sx={{ ...adminFigureSx, fontSize: 20, color: c.figColor, lineHeight: 1.05 }}>{c.num}</Typography>
+              <Typography sx={{ fontSize: 10.5, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 800, lineHeight: 1 }}>{c.en}</Typography>
+              <Typography sx={{ fontSize: 9.5, color: adminColor.dim, fontWeight: 600, lineHeight: 1 }}>{c.th}</Typography>
+            </Box>
           </Box>
-          <Box>
-            <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.text, lineHeight: 1.1 }}>{rows.length}</Typography>
-            <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>รอ seed</Typography>
-          </Box>
-        </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: "10px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "15px", p: "8px 15px 8px 8px", boxShadow: "0 1px 3px rgba(31,41,51,0.04)" }}>
-          <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #3B82F6, ${adminColor.blue})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <UsersThree size={16} color="#fff" weight="fill" />
-          </Box>
-          <Box>
-            <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.blue, lineHeight: 1.1 }}>{practitionerCount}</Typography>
-            <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>Practitioners</Typography>
-          </Box>
-        </Box>
+        ))}
       </Box>
 
-      {/* Search + window + therapist filter + bulk toggle */}
+      {/* Search + window + therapist filter + bulk toggle.
+          🆕 Round 28r47 — per r43, filter labels are English-only. */}
       <Stack direction="row" spacing={1} sx={{ mb: 1.5, flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
         <Box sx={{ flex: 1, minWidth: 180, maxWidth: 280, display: "flex", alignItems: "center", gap: 1, background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "12px", p: "8px 12px" }}>
           <MagnifyingGlass size={15} color={adminColor.dim} />
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="ค้นหาบริการ / practitioner…"
+            placeholder="Search service or practitioner…"
             style={{ border: "none", outline: "none", background: "transparent", fontSize: 13, color: adminColor.text, width: "100%", fontFamily: SANS }}
           />
         </Box>
@@ -497,10 +514,10 @@ const AdminSeedReviewsPage: React.FC = () => {
             },
           }}
         >
-          <ToggleButton value="30d">30 วัน</ToggleButton>
-          <ToggleButton value="60d">60 วัน</ToggleButton>
-          <ToggleButton value="90d">90 วัน</ToggleButton>
-          <ToggleButton value="all">ทั้งหมด</ToggleButton>
+          <ToggleButton value="30d">30d</ToggleButton>
+          <ToggleButton value="60d">60d</ToggleButton>
+          <ToggleButton value="90d">90d</ToggleButton>
+          <ToggleButton value="all">All</ToggleButton>
         </ToggleButtonGroup>
         {/* 🆕 Round 28s265 (audit: dropdowns app-wide inheriting the global
             theme's translucent Paper background) — MenuProps forces an
@@ -509,10 +526,10 @@ const AdminSeedReviewsPage: React.FC = () => {
           value={therapistFilter}
           onChange={(e) => setTherapistFilter(e.target.value)}
           size="small"
-          sx={{ fontFamily: SANS, fontSize: 12, minWidth: 180, borderRadius: "10px", background: adminColor.panel }}
-          MenuProps={{ PaperProps: { sx: { background: adminColor.panel } } }}
+          sx={{ fontFamily: SANS, fontSize: 12, minWidth: 200, borderRadius: "10px", background: adminColor.panel }}
+          MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
         >
-          <MenuItem value="__all__">ทุก practitioner</MenuItem>
+          <MenuItem value="__all__">All Practitioners</MenuItem>
           {therapistOptions.map((o) => (
             <MenuItem key={o.id} value={o.id}>
               {o.name} · {o.count}
@@ -536,7 +553,7 @@ const AdminSeedReviewsPage: React.FC = () => {
               : { borderColor: adminColor.line2, color: adminColor.text }),
           }}
         >
-          {bulkMode ? "Bulk on" : "Bulk mode"}
+          {bulkMode ? "Bulk On" : "Bulk Mode"}
         </Button>
       </Stack>
 
@@ -558,21 +575,21 @@ const AdminSeedReviewsPage: React.FC = () => {
         >
           <Stack direction="row" spacing={1.5} alignItems="center">
             <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 700 }}>
-              เลือก {bulkSelected.size} / {visibleRows.length}
+              Selected {bulkSelected.size} / {visibleRows.length}
             </Typography>
             <Button
               size="small"
               onClick={selectAllVisible}
               sx={{ color: "#fff", textTransform: "none", fontSize: 12, fontWeight: 700 }}
             >
-              เลือกทั้งหมด
+              Select all · เลือกทั้งหมด
             </Button>
             <Button
               size="small"
               onClick={clearBulkSelect}
               sx={{ color: "rgba(255,255,255,0.7)", textTransform: "none", fontSize: 12 }}
             >
-              ล้าง
+              Clear · ล้าง
             </Button>
           </Stack>
           <Stack direction="row" spacing={1.5} alignItems="center">
@@ -599,7 +616,7 @@ const AdminSeedReviewsPage: React.FC = () => {
               {bulkSubmitting ? (
                 <CircularProgress size={18} sx={{ color: "#fff" }} />
               ) : (
-                `Seed ★${bulkRating} (${bulkSelected.size})`
+                `Seed · ★${bulkRating} (${bulkSelected.size})`
               )}
             </Button>
           </Stack>
@@ -612,7 +629,7 @@ const AdminSeedReviewsPage: React.FC = () => {
           <CircularProgress sx={{ color: adminColor.accent }} />
         </Box>
       ) : visibleRows.length === 0 ? (
-        <Box sx={{ padding: "40px 16px", textAlign: "center", background: adminColor.panel, borderRadius: "14px", border: `1px solid ${adminColor.line}` }}>
+        <Box sx={{ padding: "40px 16px", textAlign: "center", background: adminColor.panel, borderRadius: "18px", border: `1px solid ${adminColor.line}`, boxShadow: "0 2px 10px rgba(31,41,51,0.04)" }}>
           <Typography sx={{ color: adminColor.muted, fontSize: 13 }}>
             🎉 ทุก booking ในช่วงนี้มีรีวิวครบแล้ว
           </Typography>
@@ -620,7 +637,7 @@ const AdminSeedReviewsPage: React.FC = () => {
       ) : (
         <Stack spacing={1.5}>
           <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: adminColor.muted }}>
-            {visibleRows.length} booking{visibleRows.length === 1 ? "" : "s"} รอ seed
+            {visibleRows.length} booking{visibleRows.length === 1 ? "" : "s"} pending · รอเพิ่มรีวิว
           </Typography>
           {visibleRows.map((row) => (
             <SeedRow
@@ -888,14 +905,14 @@ const SeedRow: React.FC<{
                 "&:hover": { background: adminColor.accentDeep },
               }}
             >
-              {submitting ? <CircularProgress size={20} sx={{ color: "#fff" }} /> : `บันทึกรีวิว · ★${rating}`}
+              {submitting ? <CircularProgress size={20} sx={{ color: "#fff" }} /> : `Save · บันทึกรีวิว · ★${rating}`}
             </Button>
             <Button
               variant="outlined"
               onClick={onToggle}
               sx={{ fontFamily: SANS, fontWeight: 700, textTransform: "none", color: adminColor.text, borderColor: adminColor.line2, borderRadius: "10px" }}
             >
-              ยกเลิก
+              Cancel · ยกเลิก
             </Button>
           </Stack>
         </Box>

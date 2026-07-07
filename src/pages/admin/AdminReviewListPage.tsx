@@ -423,46 +423,36 @@ const AdminReviewListPage: React.FC = () => {
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, fontFamily: SANS }}>
+      {/* 🆕 Round 28r47 (bilingual pass) — English page title + Thai
+          subtitle, matching r35 pattern; "Seed Reviews" button pulled out
+          into its own row above the stats so the header block stays clean. */}
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          mb: 0.5,
+          mb: 1.5,
           gap: "12px",
           flexWrap: "wrap",
         }}
       >
-        <Typography sx={{ fontFamily: adminFont.serif, fontSize: 22, fontWeight: 600, color: adminColor.text }}>
-          Reviews
-        </Typography>
-      </Box>
-      <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mb: 1.5 }}>
-        รีวิวทุกอันในระบบ ดึงจาก booking ที่มี reviewText — แก้ไข/ซ่อนได้ที่นี่
-      </Typography>
-
-      {/* 🆕 Round 28s291 — icon-circle stat pills, matching Users/Dashboard. */}
-      <Box sx={{ display: "flex", gap: 1.25, mb: 2, flexWrap: "wrap", alignItems: "center" }}>
-        {([
-          { icon: <ChatCircleText size={16} color="#fff" weight="fill" />, grad: `radial-gradient(circle at 35% 30%, #6FA0AD, ${adminColor.accent})`, num: rows.length, label: "Total reviews", color: adminColor.text },
-          { icon: <Star size={16} color="#fff" weight="fill" />, grad: `radial-gradient(circle at 35% 30%, #F59E0B, ${adminColor.amber})`, num: rows.length ? totalRating : "—", label: "Avg rating", color: adminColor.amber },
-          { icon: <Warning size={16} color="#fff" weight="fill" />, grad: `radial-gradient(circle at 35% 30%, #EF4444, ${adminColor.red})`, num: lowRatingCount, label: "★1-2 ต้องดู", color: adminColor.red },
-        ]).map((c, i) => (
-          <Box key={i} sx={{ display: "flex", alignItems: "center", gap: "10px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "15px", p: "8px 15px 8px 8px", boxShadow: "0 1px 3px rgba(31,41,51,0.04)" }}>
-            <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: c.grad, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{c.icon}</Box>
-            <Box>
-              <Typography sx={{ ...adminFigureSx, fontSize: 17, color: c.color, lineHeight: 1.1 }}>{c.num}</Typography>
-              <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>{c.label}</Typography>
-            </Box>
-          </Box>
-        ))}
+        <Box>
+          <Typography sx={{ fontFamily: adminFont.serif, fontSize: 22, fontWeight: 600, color: adminColor.text, lineHeight: 1 }}>
+            Reviews
+          </Typography>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.4, letterSpacing: "0.02em" }}>
+            รีวิว
+          </Typography>
+          <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mt: 1 }}>
+            รีวิวทุกอันในระบบ ดึงจาก booking ที่มี reviewText — แก้ไข/ซ่อนได้ที่นี่
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           component={RouterLink}
           to="/admin/seed-reviews"
           startIcon={<ChatCenteredText size={16} />}
           sx={{
-            ml: "auto",
             background: adminColor.accent,
             textTransform: "none",
             fontWeight: 700,
@@ -470,18 +460,57 @@ const AdminReviewListPage: React.FC = () => {
             "&:hover": { background: adminColor.accentDeep },
           }}
         >
-          Seed Reviews
+          Seed Reviews · เพิ่มรีวิว
         </Button>
       </Box>
 
-      {/* 🆕 Round 28s291 — search + rating + language filters. */}
+      {/* 🆕 Round 28s291 → r47 — stat plates: icon 32 → 46, inner-highlight
+          shadow, hover lift, English label + Thai subtitle. */}
+      <Box sx={{ display: "flex", gap: 1.25, mb: 2, flexWrap: "wrap", alignItems: "center" }}>
+        {([
+          { icon: <ChatCircleText size={20} weight="duotone" />, num: rows.length,                            en: "Total Reviews", th: "รีวิวทั้งหมด",  color: adminColor.accent,   figColor: adminColor.text  },
+          { icon: <Star           size={20} weight="duotone" />, num: rows.length ? totalRating : "—",         en: "Avg Rating",    th: "คะแนนเฉลี่ย",   color: adminColor.amber,    figColor: adminColor.amber },
+          { icon: <Warning        size={20} weight="duotone" />, num: lowRatingCount,                          en: "★1-2 to Review", th: "★1-2 ต้องดู",   color: adminColor.red,      figColor: adminColor.red   },
+        ]).map((c, i) => (
+          <Box
+            key={i}
+            sx={{
+              display: "flex", alignItems: "center", gap: "12px",
+              background: adminColor.panel, border: `1px solid ${adminColor.line}`,
+              borderRadius: "18px", p: "10px 18px 10px 10px",
+              boxShadow: "0 2px 10px rgba(31,41,51,0.04)",
+              transition: "transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease",
+              "&:hover": {
+                transform: "translateY(-1px)",
+                background: `${c.color}0A`,
+                boxShadow: `0 4px 14px rgba(31,41,51,0.06), 0 2px 6px ${c.color}18`,
+              },
+            }}
+          >
+            <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: `${c.color}1A`, color: c.color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 6px ${c.color}22` }}>
+              {c.icon}
+            </Box>
+            <Box>
+              <Typography sx={{ ...adminFigureSx, fontSize: 20, color: c.figColor, lineHeight: 1.05 }}>{c.num}</Typography>
+              <Typography sx={{ fontSize: 10.5, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 800, lineHeight: 1 }}>{c.en}</Typography>
+              <Typography sx={{ fontSize: 9.5, color: adminColor.dim, fontWeight: 600, lineHeight: 1 }}>{c.th}</Typography>
+            </Box>
+          </Box>
+        ))}
+      </Box>
+
+      {/* 🆕 Round 28s291 → r47 — search + rating + language filters. Per
+          r43 rule: filter labels English-only.
+          🆕 Round 28r47 audit: both Rating + Lang TextField-selects were
+          missing MenuProps.PaperProps (same 28s265 transparency class of
+          bug — global theme's translucent Paper leaked through). Added. */}
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 1.5, alignItems: "center" }}>
         <Box sx={{ flex: 1, minWidth: 220, maxWidth: 360, display: "flex", alignItems: "center", gap: 1, background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "12px", p: "9px 13px" }}>
           <MagnifyingGlass size={15} color={adminColor.dim} />
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="ค้นหาชื่อหมอนวด / ข้อความรีวิว…"
+            placeholder="Search practitioner or review text…"
             style={{ border: "none", outline: "none", background: "transparent", fontSize: 13.5, color: adminColor.text, width: "100%", fontFamily: SANS }}
           />
         </Box>
@@ -492,22 +521,24 @@ const AdminReviewListPage: React.FC = () => {
           value={ratingFilter ?? "__all__"}
           onChange={(e) => setRatingFilter(e.target.value === "__all__" ? null : Number(e.target.value))}
           sx={{ minWidth: 130, "& .MuiOutlinedInput-root": { borderRadius: "12px", background: adminColor.panel } }}
+          SelectProps={{ MenuProps: { PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } } }}
         >
-          <MenuItem value="__all__">ทั้งหมด</MenuItem>
+          <MenuItem value="__all__">All</MenuItem>
           {[5, 4, 3, 2, 1].map((n) => (
-            <MenuItem key={n} value={n}>★{n}</MenuItem>
+            <MenuItem key={n} value={n}>{n} stars</MenuItem>
           ))}
         </TextField>
         {langOptions.length > 0 && (
           <TextField
             select
             size="small"
-            label="Lang"
+            label="Language"
             value={langFilter ?? "__all__"}
             onChange={(e) => setLangFilter(e.target.value === "__all__" ? null : e.target.value)}
-            sx={{ minWidth: 110, "& .MuiOutlinedInput-root": { borderRadius: "12px", background: adminColor.panel } }}
+            sx={{ minWidth: 120, "& .MuiOutlinedInput-root": { borderRadius: "12px", background: adminColor.panel } }}
+            SelectProps={{ MenuProps: { PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } } }}
           >
-            <MenuItem value="__all__">ทุกภาษา</MenuItem>
+            <MenuItem value="__all__">All</MenuItem>
             {langOptions.map((l) => (
               <MenuItem key={l} value={l}>{l.toUpperCase()}</MenuItem>
             ))}
@@ -520,7 +551,7 @@ const AdminReviewListPage: React.FC = () => {
           <CircularProgress sx={{ color: adminColor.accent }} />
         </Box>
       ) : rows.length === 0 ? (
-        <Box sx={{ p: "40px 16px", textAlign: "center", background: adminColor.panel, borderRadius: "16px", border: `1px solid ${adminColor.line}` }}>
+        <Box sx={{ p: "40px 16px", textAlign: "center", background: adminColor.panel, borderRadius: "18px", border: `1px solid ${adminColor.line}`, boxShadow: "0 2px 10px rgba(31,41,51,0.04)" }}>
           <Typography sx={{ color: adminColor.muted, mb: "12px" }}>
             ยังไม่มีรีวิวในระบบ · ใช้ Seed Reviews เพื่อ backfill จาก booking ที่
             completed แล้ว
@@ -532,15 +563,15 @@ const AdminReviewListPage: React.FC = () => {
             startIcon={<ArrowSquareOut size={16} />}
             sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, borderRadius: "12px", "&:hover": { background: adminColor.accentDeep } }}
           >
-            Go to Seed Reviews
+            Go to Seed Reviews · เพิ่มรีวิว
           </Button>
         </Box>
       ) : filteredRows.length === 0 ? (
-        <Box sx={{ p: "40px 16px", textAlign: "center", background: adminColor.panel, borderRadius: "16px", border: `1px solid ${adminColor.line}` }}>
-          <Typography sx={{ color: adminColor.muted }}>ไม่พบรีวิวที่ตรงกับตัวกรอง</Typography>
+        <Box sx={{ p: "40px 16px", textAlign: "center", background: adminColor.panel, borderRadius: "18px", border: `1px solid ${adminColor.line}`, boxShadow: "0 2px 10px rgba(31,41,51,0.04)" }}>
+          <Typography sx={{ color: adminColor.muted }}>ไม่พบรีวิวที่ตรงกับตัวกรอง · No reviews match this filter</Typography>
         </Box>
       ) : (
-        <Box sx={{ background: adminColor.panel, borderRadius: "16px", border: `1px solid ${adminColor.line}`, overflow: "hidden" }}>
+        <Box sx={{ background: adminColor.panel, borderRadius: "18px", border: `1px solid ${adminColor.line}`, overflow: "hidden", boxShadow: "0 2px 10px rgba(31,41,51,0.04)" }}>
           <DataGrid
             rows={filteredRows}
             columns={columns}
@@ -605,14 +636,14 @@ const AdminReviewListPage: React.FC = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditDialog(false)}>Cancel</Button>
+          <Button onClick={() => setEditDialog(false)}>Cancel · ยกเลิก</Button>
           <Button
             onClick={() => void handleSaveEdit()}
             variant="contained"
             disabled={!editedText.trim()}
             sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, "&:hover": { background: adminColor.accentDeep } }}
           >
-            Save
+            Save · บันทึก
           </Button>
         </DialogActions>
       </Dialog>
@@ -634,13 +665,13 @@ const AdminReviewListPage: React.FC = () => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setHideDialog(false)}>Cancel</Button>
+          <Button onClick={() => setHideDialog(false)}>Cancel · ยกเลิก</Button>
           <Button
             onClick={() => void handleConfirmHide()}
             variant="contained"
             sx={{ background: adminColor.red, textTransform: "none", fontWeight: 700, "&:hover": { background: "#B91C1C" } }}
           >
-            Hide review
+            Hide · ซ่อน
           </Button>
         </DialogActions>
       </Dialog>

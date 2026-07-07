@@ -147,44 +147,56 @@ const AdminBlockedDevicesPage: React.FC = () => {
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, fontFamily: SANS }}>
+      {/* 🆕 Round 28r47 (bilingual pass) — English-primary header with a small
+          Thai subtitle, matching AdminDashboardPage/AdminBookingListPage r35
+          convention: English for fast operator scan, Thai to keep meaning
+          unambiguous. */}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 0.5, gap: "12px", flexWrap: "wrap" }}>
-        <Typography sx={{ fontFamily: adminFont.serif, fontSize: 22, fontWeight: 600, color: adminColor.text }}>
-          Blocked Phone Numbers
-        </Typography>
+        <Box>
+          <Typography sx={{ fontFamily: adminFont.serif, fontSize: 22, fontWeight: 600, color: adminColor.text, lineHeight: 1 }}>
+            Blocked Phones
+          </Typography>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.4, letterSpacing: "0.02em" }}>
+            เบอร์ที่บล็อก
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           startIcon={<Plus size={16} weight="bold" />}
           onClick={() => setAddOpen(true)}
           sx={{ background: adminColor.red, textTransform: "none", fontWeight: 700, borderRadius: "10px", "&:hover": { background: "#B91C1C" } }}
         >
-          บล็อกเบอร์ใหม่
+          Block New · บล็อกเบอร์
         </Button>
       </Box>
-      <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mb: 1.5, maxWidth: 640 }}>
+      <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mt: 1.25, mb: 1.5, maxWidth: 640 }}>
         เบอร์ในลิสต์นี้จะจองผ่านเว็บไม่ได้อีก (เช็คตอนกดยืนยันจอง) · บล็อก/ปลดบล็อกได้จากหน้านี้ หรือกดจากโปรไฟล์ลูกค้าใน Customer Insights โดยตรง
       </Typography>
 
-      {/* stat pill */}
+      {/* 🆕 Round 28r47 — icon-circle 32 → 46 + inner-highlight shadow,
+          matching r35 stat-plate polish across admin. Value + English label
+          + Thai subtitle. */}
       <Box sx={{ display: "flex", gap: 1.25, mb: 2, flexWrap: "wrap" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: "10px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "15px", p: "8px 15px 8px 8px", boxShadow: "0 1px 3px rgba(31,41,51,0.04)" }}>
-          <Box sx={{ width: 32, height: 32, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #EF4444, ${adminColor.red})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <ShieldWarning size={16} color="#fff" weight="fill" />
+        <Box sx={{ display: "flex", alignItems: "center", gap: "12px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "18px", p: "10px 18px 10px 10px", boxShadow: "0 2px 10px rgba(31,41,51,0.04)", transition: "transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease", "&:hover": { transform: "translateY(-1px)", background: `${adminColor.red}0A`, boxShadow: `0 4px 14px rgba(31,41,51,0.06), 0 2px 6px ${adminColor.red}18` } }}>
+          <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: `${adminColor.red}1A`, color: adminColor.red, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 6px ${adminColor.red}22` }}>
+            <ShieldWarning size={20} weight="duotone" />
           </Box>
           <Box>
-            <Typography sx={{ ...adminFigureSx, fontSize: 17, color: adminColor.red, lineHeight: 1.1 }}>{rows.length}</Typography>
-            <Typography sx={{ fontSize: 10, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>เบอร์ที่บล็อก</Typography>
+            <Typography sx={{ ...adminFigureSx, fontSize: 20, color: adminColor.red, lineHeight: 1.05 }}>{rows.length}</Typography>
+            <Typography sx={{ fontSize: 10.5, color: adminColor.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 800, lineHeight: 1 }}>Blocked</Typography>
+            <Typography sx={{ fontSize: 9.5, color: adminColor.dim, fontWeight: 600, lineHeight: 1 }}>เบอร์ที่บล็อก</Typography>
           </Box>
         </Box>
       </Box>
 
-      {/* search */}
+      {/* search — English-only per r43 filter rule */}
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 1.5 }}>
         <Box sx={{ flex: 1, minWidth: 220, maxWidth: 360, display: "flex", alignItems: "center", gap: 1, background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "12px", p: "9px 13px" }}>
           <MagnifyingGlass size={15} color={adminColor.dim} />
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="ค้นหาเบอร์โทร / เหตุผล…"
+            placeholder="Search phones or reasons…"
             style={{ border: "none", outline: "none", background: "transparent", fontSize: 13.5, color: adminColor.text, width: "100%", fontFamily: SANS }}
           />
         </Box>
@@ -207,7 +219,21 @@ const AdminBlockedDevicesPage: React.FC = () => {
           {filteredRows.map((r) => (
             <Box
               key={r.id}
-              sx={{ display: "flex", alignItems: "center", gap: 1.5, p: "12px 14px", background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "12px", flexWrap: "wrap" }}
+              sx={{
+                display: "flex", alignItems: "center", gap: 1.5,
+                p: "12px 14px",
+                background: adminColor.panel,
+                border: `1px solid ${adminColor.line}`,
+                borderRadius: "14px",
+                flexWrap: "wrap",
+                boxShadow: "0 1px 3px rgba(31,41,51,0.04)",
+                transition: "transform 0.16s ease, background 0.16s ease, box-shadow 0.16s ease",
+                "&:hover": {
+                  transform: "translateY(-1px)",
+                  background: `${adminColor.red}08`,
+                  boxShadow: `0 3px 10px rgba(31,41,51,0.06)`,
+                },
+              }}
             >
               <Box sx={{ width: 30, height: 30, borderRadius: "50%", background: `${adminColor.red}1A`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <ProhibitInset size={15} color={adminColor.red} weight="fill" />
@@ -223,7 +249,7 @@ const AdminBlockedDevicesPage: React.FC = () => {
                 onClick={() => setUnblockTarget(r)}
                 sx={{ color: adminColor.green, textTransform: "none", fontWeight: 700, flexShrink: 0 }}
               >
-                ปลดบล็อก
+                Unblock · ปลดบล็อก
               </Button>
             </Box>
           ))}
@@ -252,7 +278,7 @@ const AdminBlockedDevicesPage: React.FC = () => {
             disabled={addSubmitting || !addPhone.trim()}
             sx={{ background: adminColor.red, textTransform: "none", fontWeight: 700, "&:hover": { background: "#B91C1C" } }}
           >
-            {addSubmitting ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "บล็อก"}
+            {addSubmitting ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "Block · บล็อก"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -273,7 +299,7 @@ const AdminBlockedDevicesPage: React.FC = () => {
             disabled={unblockSubmitting}
             sx={{ background: adminColor.green, textTransform: "none", fontWeight: 700 }}
           >
-            ปลดบล็อก
+            {unblockSubmitting ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "Unblock · ปลดบล็อก"}
           </Button>
         </DialogActions>
       </Dialog>
