@@ -3,7 +3,7 @@
 // (ไม่ใช่ secret — security จริงอยู่ที่ Firestore rules + App Check)
 
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, getFirestore, type Firestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
@@ -20,7 +20,24 @@ const firebaseConfig = {
 // prerender so we never double-initialize Firebase.
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-export const db = getFirestore(app);
+// 🆕 Round 28s325 — auto-detect long-polling.
+//   The founder hit "FIRESTORE INTERNAL ASSERTION FAILED: Unexpected state
+//   (ID: b815)" — a known firebase-js-sdk bug in the WebChannel streaming
+//   transport: a flaky network / proxy / ad-blocker (or a long Vite-HMR dev
+//   session) corrupts the listener target-state machine and every subsequent
+//   Firestore op throws, crashing the whole app via the error boundary.
+//   Auto-detecting long-polling sidesteps that WebChannel state machine.
+//   `initializeFirestore` can only run once per app, so on HMR / repeat import
+//   we fall back to the already-configured instance.
+function makeDb(): Firestore {
+  try {
+    return initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
+  } catch {
+    return getFirestore(app); // already initialized (HMR / repeat import)
+  }
+}
+
+export const db = makeDb();
 export const auth = getAuth(app);
 // NOTE: storage export removed (Round 28s105) — it had zero consumers,
 // so dropping it trims firebase/storage out of the customer bundle and
