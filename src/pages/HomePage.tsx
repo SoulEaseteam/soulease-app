@@ -26,6 +26,14 @@ import HomeTherapistGrid from "@/components/home/HomeTherapistGrid";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell replaces the old
 //   maxWidth: 430px cage so the home widens on tablet/desktop.
 import { responsiveShell } from "@/theme/breakpoints";
+// 🆕 Round 28r53 — Phase 3.2 responsive typography helpers used by
+//   the desktop-only hero band (below).
+import { responsiveType } from "@/theme/typography";
+// 🆕 Round 28r53 — same time-aware concierge mode the therapist grid
+//   header + Hero pill use, so the desktop hero band's mode chip
+//   never disagrees with the grid header.
+import { useConciergeMode } from "@/utils/conciergeMode";
+import { brand, fonts } from "@/theme";
 // 🆕 Round 28s148 — PromiseStrip dropped (founder: "ลบทิ้งไป"). Value
 //   was low — price anchor duplicated each card, "5 Languages" already
 //   shown by TopNav pill, "Licensed · Ministry-verified" was an
@@ -49,6 +57,11 @@ import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 
 const HomePage: React.FC = () => {
   const { t, i18n } = useTranslation();
+  // 🆕 Round 28r53 — Phase 3.2 desktop hero band uses the same
+  //   concierge-mode payload as the therapist grid header so the
+  //   two never disagree ("Prime hours" chip + "On standby tonight"
+  //   sub-copy always come from one source).
+  const concierge = useConciergeMode();
 
   // 🆕 Round 28r7 — Capture referral code from URL on mount.
   //   Idempotent + fully no-op when no `?ref=` is present.
@@ -132,6 +145,154 @@ const HomePage: React.FC = () => {
             • Service menu → ServicesPage (/services) + BottomNav
             • Promo banner → ServicesPage detail callouts
             • Language switch → TopNav lang pill (always visible) */}
+      {/* 🆕 Round 28r53 — Phase 3.2 desktop-only hero band. Hidden on
+          xs/sm (mobile look preserved 100% — TopNav → PromoStrip →
+          therapist grid, same as today). From md+ the top-of-fold on
+          desktop was mostly empty gray gutters above the grid — this
+          band fills that space with a bilingual eyebrow, concierge
+          CTA, and a live mode chip. Falls back cleanly if any string
+          is missing from i18n. */}
+      <Box
+        component="section"
+        aria-label="SunRed hero band"
+        sx={{
+          display: { xs: "none", md: "flex" },
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 3,
+          minHeight: { md: 200, lg: 260 },
+          padding: { md: "28px 24px", lg: "36px 32px" },
+          margin: { md: "20px 12px 8px" },
+          borderRadius: "24px",
+          // Warm brand-red → coral gradient, matching the customer
+          // site's ReserveCTA + tonight-special banner vocabulary.
+          background: `linear-gradient(135deg, ${brand.red} 0%, #C61B2A 55%, #E14B3B 100%)`,
+          color: "#fff",
+          boxShadow: "0 18px 44px rgba(180, 0, 10, 0.20)",
+          overflow: "hidden",
+          position: "relative",
+        }}
+      >
+        {/* Left column — eyebrow, headline, sub-copy. */}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "5px 12px",
+              borderRadius: 999,
+              background: "rgba(255,255,255,0.14)",
+              backdropFilter: "blur(3px)",
+              marginBottom: "14px",
+            }}
+          >
+            <Box
+              component="span"
+              sx={{
+                width: 7,
+                height: 7,
+                borderRadius: "50%",
+                background: "#fff",
+                boxShadow: "0 0 0 3px rgba(255,255,255,0.28)",
+                flexShrink: 0,
+              }}
+            />
+            <Box
+              component="span"
+              sx={{
+                fontFamily: fonts.body,
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+              }}
+            >
+              {concierge.pillLabel} · Bangkok
+            </Box>
+          </Box>
+          <Box
+            component="h2"
+            sx={{
+              ...responsiveType.h3,
+              fontFamily: fonts.heading,
+              fontWeight: 600,
+              lineHeight: 1.15,
+              margin: 0,
+              letterSpacing: "0.005em",
+            }}
+          >
+            {t(
+              "home.desktopHero.title",
+              "Bangkok Outcall Massage · Delivered to Your Hotel"
+            )}
+          </Box>
+          <Box
+            sx={{
+              ...responsiveType.body,
+              fontFamily: fonts.body,
+              fontWeight: 500,
+              opacity: 0.88,
+              marginTop: "10px",
+              maxWidth: 620,
+            }}
+          >
+            {t(
+              "home.desktopHero.sub",
+              "Verified practitioners on standby — English, 中文, 日本語, 한국어. Concierge replies in minutes."
+            )}
+          </Box>
+        </Box>
+
+        {/* Right column — concierge CTA. Falls back cleanly on very
+            narrow md-widths by keeping wraps predictable. */}
+        <Box
+          component="a"
+          href={`https://wa.me/66634350987?text=${encodeURIComponent(
+            "Hi SunRed concierge, I'd like to reserve a session tonight — who's available?"
+          )}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          sx={{
+            flexShrink: 0,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "10px",
+            padding: { md: "12px 22px", lg: "14px 28px" },
+            borderRadius: 999,
+            background: "#fff",
+            color: brand.red,
+            fontFamily: fonts.body,
+            fontSize: { md: 14, lg: 15 },
+            fontWeight: 700,
+            letterSpacing: "0.01em",
+            textDecoration: "none",
+            boxShadow:
+              "0 10px 24px rgba(15, 23, 42, 0.18), 0 2px 4px rgba(15, 23, 42, 0.10)",
+            whiteSpace: "nowrap",
+            transition: "transform 0.16s ease, box-shadow 0.16s ease",
+            "&:hover": {
+              transform: "translateY(-1px)",
+              boxShadow:
+                "0 14px 30px rgba(15, 23, 42, 0.22), 0 3px 6px rgba(15, 23, 42, 0.12)",
+            },
+            "&:focus-visible": {
+              outline: "2px solid #fff",
+              outlineOffset: 3,
+            },
+          }}
+        >
+          {t("home.desktopHero.cta", "Chat with concierge")}
+          <Box
+            component="span"
+            aria-hidden
+            sx={{ fontSize: 16, lineHeight: 1 }}
+          >
+            →
+          </Box>
+        </Box>
+      </Box>
+
       {/* 🆕 Round 28s148 — PromiseStrip removed entirely (founder:
           "ลบทิ้งไป"). Home now ends at the therapist list, app-style
           (Grab / Booking / Klook close the same way). 32px bottom

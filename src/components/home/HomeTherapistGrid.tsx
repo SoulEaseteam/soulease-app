@@ -24,6 +24,8 @@ import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import { priceForDuration } from "@/utils/servicePricing";
 import staticServices from "@/data/services";
 import { brand, fonts, glass, gradients } from "@/theme";
+// 🆕 Round 28r53 — Phase 3.2 responsive typography helpers.
+import { responsiveType } from "@/theme/typography";
 import type { MassageService } from "@/data/services";
 // 🆕 Round 28r4 — same time-aware mode the Hero uses, so the grid
 //   header phrase ("On standby · Bangkok Tonight" / "Concierge resumes
@@ -390,15 +392,15 @@ const HomeTherapistGrid: React.FC = () => {
           component="h2"
           sx={{
             fontFamily: fonts.heading,
-            fontSize: { xs: 15, sm: 16 },
+            // 🆕 Round 28r53 — responsive scale (was xs 15 / sm 16).
+            //   On desktop the tagline sat tiny in a wide column; now
+            //   bumps through the responsiveType.h6 stack (16/17/18).
+            ...responsiveType.h6,
             fontWeight: 500,
             color: brand.text,
             letterSpacing: "0.005em",
-            lineHeight: 1.4,
             textWrap: "balance",
-            // Cap width slightly under the 430px phone shell so the
-            // line never crowds the edges.
-            maxWidth: 380,
+            maxWidth: { xs: 380, md: 560 },
             margin: "0 auto",
             "& em": {
               fontStyle: "italic",
@@ -575,9 +577,28 @@ const HomeTherapistGrid: React.FC = () => {
           return (
             <Box
               sx={{
-                display: "flex",
-                flexDirection: "column",
-                padding: "0 14px 16px",
+                // 🆕 Round 28r53 — Phase 3.2 responsive grid. Previous
+                //   single-column flex list stayed 1-wide at every
+                //   viewport (dead space on tablet/desktop). Grid now
+                //   scales 2 (phone) → 3 (small tablet) → 3 (tablet)
+                //   → 4 (desktop) → 5 (wide desktop). Card is a
+                //   vertical portrait card (28r53 restack), aspect
+                //   3/4 photo on top, so each column reflows
+                //   proportionately as the column width scales.
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "repeat(2, 1fr)",
+                  sm: "repeat(3, 1fr)",
+                  md: "repeat(3, 1fr)",
+                  lg: "repeat(4, 1fr)",
+                  xl: "repeat(5, 1fr)",
+                },
+                gap: { xs: 1.5, md: 2 },
+                padding: {
+                  xs: "0 14px 16px",
+                  sm: "0 8px 20px",
+                  md: "0 12px 24px",
+                },
               }}
             >
               {visible.map((t, i) => (

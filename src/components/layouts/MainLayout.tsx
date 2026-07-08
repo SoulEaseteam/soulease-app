@@ -13,6 +13,13 @@ import RoleViewBanner from "@/components/common/RoleViewBanner";
 //   1200 across sm/md/lg while preserving the 430px look on <600px.
 import { responsiveShell, pageSurface } from "@/theme/breakpoints";
 import { brand } from "@/theme";
+// 🆕 Round 28r53 — Phase 3.2. PromoStrip (built in r51) mounted in-flow
+//   directly below TopNav (NOT sticky — TopNav auto-hides on mobile
+//   scroll, so a sticky strip below it would create an orphan gap).
+//   The component self-hides when no active promos, when PROMOS_ENABLED
+//   is false, or when the current offer has been per-session dismissed,
+//   so unconditional mounting has zero layout cost in the "off" case.
+import PromoStrip from "@/components/common/PromoStrip";
 
 /**
  * 🎨 Page surface — Phase 1 redesign defers all styling to the MUI theme's
@@ -73,6 +80,14 @@ const MainLayout: React.FC = () => {
       >
         <RoleViewBanner />
         <TopNav />
+      </Box>
+
+      {/* 🆕 Round 28r53 — Phase 3.2 PromoStrip mount. In-flow (not sticky)
+          per audit r51 recommendation: TopNav auto-hides on scroll so a
+          sticky strip would leave a floating orphan. Sits inside the same
+          responsive shell as TopNav so it lines up on desktop widths. */}
+      <Box sx={{ ...responsiveShell }}>
+        <PromoStrip />
       </Box>
 
       <Outlet />

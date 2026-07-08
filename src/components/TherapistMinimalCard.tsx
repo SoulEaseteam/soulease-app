@@ -162,25 +162,25 @@ const TherapistMinimalCard: React.FC<Props> = ({
       }}
       aria-label={`View ${therapist.name}`}
       sx={{
-        // 🆕 Round 28s129 — Founder swap: portrait on LEFT, info on RIGHT.
-        //   Visual punch first (face), then the read.
+        // 🆕 Round 28r53 — Phase 3.2 responsive grid. Card restacked
+        //   from horizontal (row-reverse, fixed 150×190) to vertical
+        //   portrait so it scales cleanly from a 2-col 375px mobile
+        //   grid (~180px wide) all the way up to a 5-col 1200px
+        //   desktop grid (~220px wide). Photo on TOP with
+        //   aspect-ratio 3/4, info stacked BELOW. Every info element
+        //   from the horizontal design is preserved.
         display: "flex",
-        flexDirection: "row-reverse",
+        flexDirection: "column",
         background: "#fff",
-        borderRadius: "22px",
+        borderRadius: "18px",
         overflow: "hidden",
         boxShadow:
           "0 6px 20px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04)",
-        marginBottom: "14px",
-        // 🆕 Round 28s139 — Card is always tappable for info. Only the
-        //   Book Now button is gated when off-duty.
+        // 🆕 Round 28r53 — margin dropped: parent grid supplies gap.
+        // marginBottom left at 0 (was 14px for the flex-column list).
         cursor: "pointer",
         position: "relative",
         transition: "transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, filter 0.18s ease",
-        // 🆕 Round 28s139 — Softer off-duty treatment (was opacity 0.55
-        //   + grayscale 0.5). Light dim + slight desaturation still
-        //   signals "not bookable now" without making the card look
-        //   broken or unreachable.
         opacity: isOffDuty ? 0.82 : 1,
         filter: isOffDuty ? "grayscale(0.25)" : "none",
         "&:hover": {
@@ -192,11 +192,9 @@ const TherapistMinimalCard: React.FC<Props> = ({
           outline: `2px solid ${oceanAccent}`,
           outlineOffset: 2,
         },
-        // 🆕 Round 28s130 — Fixed card height so the list reads as a
-        //   uniform grid regardless of how long each therapist's bio /
-        //   language list is. minHeight was letting card height drift
-        //   based on content.
-        height: 190,
+        // Height drives itself now — photo aspect 3/4 + info block.
+        // No fixed row height (was 190). Uniform across cards because
+        // the info block is stable content (name + 4 meta rows + CTA).
       }}
     >
       {/* 🆕 Round 28s135 — Status pill moved OUT of the portrait box
@@ -244,12 +242,83 @@ const TherapistMinimalCard: React.FC<Props> = ({
           </Typography>
         </Box>
       )}
-      {/* ── Right: info column (rendered RIGHT via row-reverse) ──── */}
+      {/* ── Portrait on TOP (Round 28r53 vertical portrait card) ──── */}
+      <Box
+        sx={{
+          width: "100%",
+          // 🆕 Round 28r53 — Photo container is aspect-ratio 3/4
+          //   (portrait). Height scales with width so the card
+          //   remains proportionate across every column width.
+          aspectRatio: "3 / 4",
+          position: "relative",
+          background: "#fafafa",
+          flexShrink: 0,
+        }}
+      >
+        {portrait && (
+          <Box
+            component="img"
+            src={portrait}
+            alt={therapist.name}
+            /* 🆕 Round 28s227 — explicit intrinsic dims (3:4 portrait
+               aspect ratio at 2× for retina) reserve layout space
+               before the image loads → eliminates CLS on slow networks
+               even without aspect-ratio CSS. The CSS below stretches
+               it to 100% width/height of the parent. */
+            width={300}
+            height={400}
+            loading={eager ? "eager" : "lazy"}
+            fetchPriority={eager ? "high" : "auto"}
+            decoding={eager ? "sync" : "async"}
+            sx={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+              // Holiday → soft blur (28s141 pattern preserved).
+              filter: isOnHoliday ? "blur(3px) saturate(0.85)" : "none",
+              transform: isOnHoliday ? "scale(1.04)" : "none",
+              transition: "filter 0.25s ease, transform 0.25s ease",
+            }}
+          />
+        )}
+        {isOnHoliday && (
+          <Box
+            sx={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              pointerEvents: "none",
+            }}
+          >
+            <Box
+              sx={{
+                fontFamily: fonts.body,
+                fontSize: "9.5px",
+                fontWeight: 700,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+                color: "#fff",
+                background: "rgba(0,0,0,0.42)",
+                padding: "4px 9px",
+                borderRadius: "999px",
+                backdropFilter: "blur(2px)",
+              }}
+            >
+              {t("holiday", "Holiday")}
+            </Box>
+          </Box>
+        )}
+      </Box>
+
+      {/* ── Info column (rendered BELOW the portrait) ──── */}
       <Box
         sx={{
           flex: 1,
           minWidth: 0,
-          padding: "16px 18px 14px 18px",
+          padding: "12px 14px 12px 14px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
@@ -268,11 +337,16 @@ const TherapistMinimalCard: React.FC<Props> = ({
             sx={{
               fontFamily:
                 '"Cinzel", "Federo", "Italiana", "Fraunces", Georgia, serif',
-              fontSize: "19px",
+              // 🆕 Round 28r53 — smaller than the old 19px flat because
+              //   cards are now narrower per column at md+. Scales up
+              //   only slightly on desktop where columns are wider.
+              fontSize: { xs: "15px", sm: "16px", md: "17px" },
               fontWeight: 800,
               color: brand.text,
               lineHeight: 1.1,
-              letterSpacing: "0.18em",
+              // Tighten tracking on the smaller size to keep
+              //   proportion legible.
+              letterSpacing: "0.14em",
               textTransform: "uppercase",
               marginBottom: "6px",
               overflow: "hidden",
@@ -534,81 +608,11 @@ const TherapistMinimalCard: React.FC<Props> = ({
         </Box>
       </Box>
 
-      {/* ── Right: portrait ───────────────────────────────── */}
-      <Box
-        sx={{
-          width: 150,
-          flexShrink: 0,
-          position: "relative",
-          background: "#fafafa",
-        }}
-      >
-        {portrait && (
-          <Box
-            component="img"
-            src={portrait}
-            alt={therapist.name}
-            /* 🆕 Round 28s227 — explicit intrinsic dims (3:4 portrait
-               aspect ratio at 2× for retina) reserve layout space
-               before the image loads → eliminates CLS on slow networks
-               even without aspect-ratio CSS. The CSS below stretches
-               it to 100% width/height of the parent. */
-            width={300}
-            height={400}
-            loading={eager ? "eager" : "lazy"}
-            fetchPriority={eager ? "high" : "auto"}
-            decoding={eager ? "sync" : "async"}
-            sx={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: "block",
-              // 🆕 Round 28s141 — Holiday → soft blur (founder:
-              //   "blur รูปจางๆ พอเห็นนิดๆ"). Face is still legible,
-              //   but the practitioner clearly reads as off today.
-              //   Resting keeps the lighter card-level dim only.
-              filter: isOnHoliday ? "blur(3px) saturate(0.85)" : "none",
-              transform: isOnHoliday ? "scale(1.04)" : "none", // hide blur edge
-              transition: "filter 0.25s ease, transform 0.25s ease",
-            }}
-          />
-        )}
-        {/* 🆕 Round 28s141 — Soft "Holiday" badge over the blurred
-            portrait (founder: "blur จางๆ พอเห็นนิดๆ"). No dark
-            gradient — the face stays visible, the chip just whispers
-            "off today". */}
-        {isOnHoliday && (
-          <Box
-            sx={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              pointerEvents: "none",
-            }}
-          >
-            <Box
-              sx={{
-                fontFamily: fonts.body,
-                fontSize: "9.5px",
-                fontWeight: 700,
-                letterSpacing: "0.16em",
-                textTransform: "uppercase",
-                color: "#fff",
-                background: "rgba(0,0,0,0.42)",
-                padding: "4px 9px",
-                borderRadius: "999px",
-                backdropFilter: "blur(2px)",
-              }}
-            >
-              {t("holiday", "Holiday")}
-            </Box>
-          </Box>
-        )}
-        {/* Status pill now lives at the card root (top-right) — see
-            Round 28s135 above. Portrait area kept clean. */}
-      </Box>
+      {/* Portrait block moved to TOP of card (28r53 vertical portrait
+          restack). Original tail portrait removed to avoid duplicate
+          rendering. Status pill still sits at card root (top-right)
+          — see the Box above the portrait — so it overlays the
+          portrait's upper-right corner as before. */}
     </Box>
   );
 };
