@@ -9,6 +9,7 @@ import {
   TextField,
   InputAdornment,
   Fade,
+  CircularProgress,
 } from "@mui/material";
 import LocalOfferRoundedIcon from "@mui/icons-material/LocalOfferRounded";
 import {
@@ -127,6 +128,7 @@ import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
 import services from "@/data/services";
 import { getServiceById } from "@/utils/serviceCatalog";
 import therapistsData from "@/data/therapists";
+import type { Therapist } from "@/types/therapist";
 // 🆕 Round 28b7 — Cloudinary helper for the rounded therapist photo.
 import { enhanceImage } from "@/utils/cloudinary";
 // 🆕 Round 28r49 (founder 2026-07-08 — "Add-ons · บริการเสริม เอาออกจาก
@@ -406,10 +408,92 @@ const BookingFlowPage: React.FC = () => {
   };
 
   // ── Resolved entities
-  const therapist = useMemo(
-    () => therapistsData.find((tt) => tt.id === form.therapistId) ?? null,
+  // 🚨 Round 28r68 HOTFIX — Firestore fallback so admin-created
+  //   practitioners (e.g. PareSunRed, MiloSunRed) don't show as a
+  //   generic "Practitioner" placeholder on Order Details. Same
+  //   pattern as r66 TherapistDetailPage.tsx: hardcoded lookup wins
+  //   fast for the 12 originals (zero extra reads); Firestore falls
+  //   through only when the hardcoded lookup misses. Founder:
+  //   "Order Details ไม่เชื่อมต่อ" — was reading Pare's booking URL
+  //   and rendering blank name/photo/rating.
+  const hardcodedTherapist = useMemo(
+    () =>
+      form.therapistId
+        ? therapistsData.find((tt) => tt.id === form.therapistId) ?? null
+        : null,
     [form.therapistId]
   );
+  const [firestoreTherapist, setFirestoreTherapist] =
+    useState<Therapist | null>(null);
+  const [firestoreTherapistLoading, setFirestoreTherapistLoading] =
+    useState(false);
+  useEffect(() => {
+    // Only reach Firestore when the hardcoded lookup missed. Fast-path
+    //   exit for the 12 originals means zero extra read on the paths
+    //   customers hit today.
+    const tid = form.therapistId;
+    if (!tid || hardcodedTherapist) {
+      setFirestoreTherapist(null);
+      setFirestoreTherapistLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setFirestoreTherapistLoading(true);
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, "therapists", tid));
+        if (cancelled) return;
+        if (snap.exists()) {
+          const data = snap.data() as Partial<Therapist> &
+            Record<string, unknown>;
+          // Safe defaults for required Therapist fields — the JS spread
+          //   below only overwrites keys that are actually present on
+          //   `data`, so defaults survive for any field the Firestore
+          //   doc simply doesn't have.
+          const defaults: Omit<Therapist, "id"> = {
+            name: tid,
+            image: "",
+            rating: 0,
+            reviews: 0,
+            startTime: "10:00",
+            endTime: "22:00",
+            gallery: [],
+            features: {
+              age: "",
+              height: "",
+              weight: "",
+              bodyType: "",
+              language: "",
+            },
+          };
+          const rec = {
+            ...defaults,
+            ...data,
+            id: tid,
+          } as Therapist;
+          setFirestoreTherapist(rec);
+        } else {
+          setFirestoreTherapist(null);
+        }
+      } catch (err) {
+        // Fail closed → treat as not-found rather than crash. Rules
+        //   allow `read: if true` on therapists so the only way this
+        //   throws in production is a network hiccup.
+        console.warn(
+          "[BookingFlowPage] Firestore therapist fallback failed:",
+          err
+        );
+        if (!cancelled) setFirestoreTherapist(null);
+      } finally {
+        if (!cancelled) setFirestoreTherapistLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [form.therapistId, hardcodedTherapist]);
+  const therapist: Therapist | null =
+    hardcodedTherapist ?? firestoreTherapist;
   // 🆕 Round 28b35 — Live Firestore status overlay. Without this, the
   //   submit guard below would let a customer book a therapist whom
   //   admin had marked Holiday (since static data has no isHoliday).
@@ -1630,7 +1714,32 @@ const BookingFlowPage: React.FC = () => {
                   lineHeight: 1.2,
                 }}
               >
-                {therapist?.name ?? t("booking.therapist.fallback", "Practitioner")}
+                {therapist?.name ??
+                  (firestoreTherapistLoading ? (
+                    <Box
+                      component="span"
+                      sx={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <CircularProgress size={12} thickness={5} sx={{ color: "#B4000A" }} />
+                      <Box
+                        component="span"
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: "13px",
+                          fontWeight: 500,
+                          color: "rgba(15, 23, 42, 0.55)",
+                        }}
+                      >
+                        {t("booking.therapist.loading", "Loading practitioner…")}
+                      </Box>
+                    </Box>
+                  ) : (
+                    t("booking.therapist.fallback", "Practitioner")
+                  ))}
               </Typography>
               <Box
                 sx={{
