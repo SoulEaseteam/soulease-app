@@ -3915,3 +3915,31 @@ re-init Firestore and clear the corrupted in-memory session. Checked: the
 by unique `t.id`, so this occurrence was the transport bug, not a new dup key.
 NB: the prerender writes **59** static route files (static `ROUTES` array —
 earlier "55" logs were a mis-read of truncated output). tsc=0, deployed.
+
+### 🆕 2026-07-08 — Home hero rebuilt to "Simple · Pure · Balanced" mockup (28s326)
+
+Founder sent a spa-mockup screenshot: "**ปรับหน้าโฮม แบบนี้**" — clean warm-ivory
+hero, big serif "Simple. / Pure. / Balanced." headline, small Thai subtitle,
+serene spa image on the right, **Book Now / View Services** pills, • • • carousel
+dots. Built **`src/components/home/HomeHero.tsx`** (new) and swapped it into
+`HomePage.tsx`, replacing the r70/r76 inline Nordic-gray hero band (that text-only
+"Delivered to Your Hotel" band + its `useConciergeMode`/`whatsappDeepLink`/
+`responsiveType` imports are gone from HomePage).
+
+- **Editorial split** on every viewport: Playfair headline + Thai subtitle
+  (`ความเรียบง่าย ที่ทำให้คุณรู้สึกดีที่สุด`) left; a serene image that bleeds into
+  the card's rounded top-right corner, right. Warm ivory ground
+  (`linear-gradient #F6F2EC→#EFE9E0`) — a hair warmer than the cool Nordic page,
+  matching the Aesop/Muji mockup mood.
+- **Image carousel** = 3 on-brand studio frames from `public/images/Service`,
+  auto-crossfade every 5.2s, clickable dark dots on the ivory (the mockup's • • •).
+  Picked the **no-face / no-watermark** frames: `IMG_5089` (candles + botanical
+  vase), `IMG_1593` (robe relax), `IMG_1591` (hands-on-back). Skipped `IMG_5056`/
+  `IMG_5050` (Xiaohongshu watermark) and `IMG_1595` (baked-in "OPEN TODAY" text).
+  Auto-rotate + mount fade both honor `prefers-reduced-motion`.
+- **CTAs**: "Book Now" (filled taupe `#6B5F54`, AA on white) smooth-scrolls to
+  `#therapist-grid` (same proven pattern as QuickNavRow); "View Services" (outline)
+  → `/services`.
+- **Left alone on purpose**: the red `#2D2D2B` TopNav wordmark (founder-locked
+  28s163–172) and QuickNavRow (already the mockup's Massage·Therapists·Locations·
+  Reviews card). tsc=0, build=59 routes, verified render on mobile + desktop.
