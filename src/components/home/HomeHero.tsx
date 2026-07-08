@@ -24,7 +24,6 @@
 import React from "react";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { fonts } from "@/theme";
 // 🆕 28s332 — time-aware pill label (DAYTIME / PRIME HOURS / …) shared with
 //   the therapist grid + TopNav so the hero never disagrees on the mode.
@@ -41,7 +40,6 @@ const HERO_IMG = "/images/hero/hero.jpg";
 
 const HomeHero: React.FC = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const concierge = useConciergeMode();
 
   const scrollToTherapistGrid = () => {
@@ -76,6 +74,17 @@ const HomeHero: React.FC = () => {
           // On a narrow phone the crop hugs the right so the vase/candle
           // stay in frame; on wide viewports the whole scene shows.
           backgroundPosition: { xs: "72% center", md: "right center" },
+          // 🆕 28s333 — gentle "breathing" Ken Burns drift (founder: calm,
+          //   spa-like motion). Very slow so it reads as ambient, not busy.
+          //   Starts at scale 1 (always visible — never JS/opacity-gated);
+          //   overflow:hidden on the card clips the slight overscale.
+          transformOrigin: "68% 42%",
+          animation: "heroKenBurns 26s ease-in-out infinite alternate",
+          "@keyframes heroKenBurns": {
+            from: { transform: "scale(1) translate3d(0, 0, 0)" },
+            to: { transform: "scale(1.07) translate3d(-1.2%, -1%, 0)" },
+          },
+          "@media (prefers-reduced-motion: reduce)": { animation: "none" },
         }}
       />
 
@@ -102,10 +111,13 @@ const HomeHero: React.FC = () => {
           flexDirection: "column",
           justifyContent: "center",
           gap: { xs: "12px", md: "16px" },
+          // 🆕 28s333 — extra bottom padding pushes the vertically-centred
+          //   content UP (founder: "ขยับข้อความขึ้น") and clears the icon
+          //   card that now overlaps deeper into the hero's lower edge.
           padding: {
-            xs: "26px 18px",
-            sm: "30px 26px",
-            md: "42px 48px",
+            xs: "24px 18px 62px",
+            sm: "28px 26px 68px",
+            md: "40px 48px 80px",
           },
           maxWidth: { xs: "94%", sm: "82%", md: "66%", lg: "60%" },
         }}
@@ -134,8 +146,17 @@ const HomeHero: React.FC = () => {
               height: 7,
               borderRadius: "50%",
               background: "#A2846A",
-              boxShadow: "0 0 0 3px rgba(162,132,106,0.22)",
               flexShrink: 0,
+              // 🆕 28s333 — soft "live" pulse, slow + calm (spa breathing).
+              animation: "heroDotPulse 3.4s ease-in-out infinite",
+              "@keyframes heroDotPulse": {
+                "0%, 100%": { boxShadow: "0 0 0 3px rgba(162,132,106,0.22)" },
+                "50%": { boxShadow: "0 0 0 5px rgba(162,132,106,0.08)" },
+              },
+              "@media (prefers-reduced-motion: reduce)": {
+                animation: "none",
+                boxShadow: "0 0 0 3px rgba(162,132,106,0.22)",
+              },
             }}
           />
           <Box
@@ -198,8 +219,8 @@ const HomeHero: React.FC = () => {
             maxWidth: 470,
           }}
         >
-          Verified practitioners on standby — ภาษาไทย, English, 中文, 日本語,
-          한국어. Concierge replies in minutes.
+          Verified practitioners on standby ภาษาไทย, English, 中文, 日本語, 한국어.
+          Concierge replies in minutes.
         </Box>
 
         {/* CTAs */}
@@ -248,53 +269,6 @@ const HomeHero: React.FC = () => {
             }}
           >
             {t("home.hero.book", "Book Now")}
-            <Box
-              component="span"
-              aria-hidden="true"
-              sx={{ fontSize: 15, lineHeight: 1 }}
-            >
-              →
-            </Box>
-          </Box>
-
-          {/* Secondary — View Services → /services */}
-          <Box
-            component="button"
-            type="button"
-            onClick={() => navigate("/services")}
-            sx={{
-              all: "unset",
-              boxSizing: "border-box",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              minHeight: 48,
-              padding: { xs: "0 22px", md: "0 30px" },
-              borderRadius: 999,
-              background: "rgba(255,255,255,0.55)",
-              color: INK,
-              border: `1.5px solid ${INK}`,
-              backdropFilter: "blur(2px)",
-              WebkitBackdropFilter: "blur(2px)",
-              fontFamily: fonts.body,
-              fontSize: { xs: 14, md: 15 },
-              fontWeight: 600,
-              letterSpacing: "0.01em",
-              transition:
-                "background 0.16s ease, color 0.16s ease, transform 0.16s ease",
-              "&:hover": {
-                background: INK,
-                color: "#FFFFFF",
-                transform: "translateY(-1px)",
-              },
-              "&:focus-visible": {
-                outline: `2px solid ${INK}`,
-                outlineOffset: 3,
-              },
-            }}
-          >
-            {t("home.hero.services", "View Services")}
           </Box>
         </Box>
       </Box>

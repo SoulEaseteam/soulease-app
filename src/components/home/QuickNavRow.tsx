@@ -89,9 +89,12 @@ const QuickNavRow: React.FC = () => {
         //   the premium floating look in the mockup.
         display: "grid",
         gridTemplateColumns: "repeat(4, 1fr)",
+        alignItems: "center",
         gap: "8px",
         padding: { xs: "18px 10px", md: "22px 18px" },
-        margin: { xs: "-26px 16px 10px", md: "-32px 20px 14px" },
+        // 🆕 28s333 — pull the card further up into the hero's lower edge
+        //   (founder: "ขยับแถบ 4 ไอคอน ขึ้นมา…"). More overlap = more floating.
+        margin: { xs: "-46px 16px 10px", md: "-56px 20px 14px" },
         background: "#FFFFFF",
         borderRadius: { xs: "22px", md: "24px" },
         border: "1px solid #F1EDE6",

@@ -4001,3 +4001,22 @@ tagline for the informative copy:
 Tuned for the denser copy: headline 27→52px, tighter gap, wider content column,
 stronger xs cream scrim, min-height 470-560. tsc=0, build=59, verified mobile +
 desktop, deployed.
+
+### 🆕 2026-07-08 — Hero polish: single CTA, deeper icon card, calm motion (28s333)
+
+Founder feedback batch on the hero:
+- **Sub-copy**: dropped the "— " before ภาษาไทย ("Verified practitioners on
+  standby ภาษาไทย, English, 中文, 日本語, 한국어. Concierge replies in minutes.").
+- **Book Now**: removed the "→" arrow.
+- **View Services**: deleted entirely (hero now has ONE CTA). Removed the now-unused
+  `useNavigate` import/hook.
+- **Text position**: extra bottom padding on the content column pushes the
+  vertically-centred text UP ("ขยับข้อความขึ้น") and clears the icon card.
+- **Icon card** (`QuickNavRow.tsx`): pulled further up into the hero's lower edge
+  (margin-top `-26`→`-46` xs / `-32`→`-56` md) so it floats more; `alignItems:center`.
+- **Calm spa motion** ("อนิเมชั่นเบาๆ เหมือนร้านนวด"): a slow 26s Ken-Burns
+  "breathing" drift on the hero photo + a 3.4s soft pulse on the pill's live dot.
+  Both **pure CSS keyframes** (NOT JS/rAF-gated — the photo starts at scale 1 so it's
+  never invisible; cf. the 28s331 rAF-fade bug) and both honor
+  `prefers-reduced-motion`.
+tsc=0, build=59, verified mobile + desktop, deployed.
