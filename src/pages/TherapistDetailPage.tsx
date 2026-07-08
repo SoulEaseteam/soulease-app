@@ -974,25 +974,25 @@ const TherapistDetailPage: React.FC = () => {
   //   from external channels (TG, share sheet, etc.) still land
   //   inside the correct section. 220ms settle covers the Firestore
   //   fallback profile flash — see r66 hotfix note.
+  // 🆕 28s343 — URL hash opens a TAB (was: scroll to a section). #services
+  //   → Services tab (Book Now deep-links here), #photos/#gallery/#about →
+  //   Photos tab (About lives there), #reviews → Reviews tab.
   useEffect(() => {
     if (!therapistFromReal) return;
     if (typeof window === "undefined") return;
     const raw = window.location.hash;
     if (!raw) return;
-    const targetId =
-      raw === "#gallery" || raw === "#photos"
-        ? "photos"
-        : raw === "#services"
-          ? "services"
-          : raw === "#about"
-            ? "about"
+    const targetTab: "photos" | "services" | "reviews" | null =
+      raw === "#services"
+        ? "services"
+        : raw === "#reviews"
+          ? "reviews"
+          : raw === "#gallery" ||
+              raw === "#photos" ||
+              raw === "#about"
+            ? "photos"
             : null;
-    if (!targetId) return;
-    const timer = window.setTimeout(() => {
-      const el = document.getElementById(targetId);
-      el?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 220);
-    return () => window.clearTimeout(timer);
+    if (targetTab) setDetailTab(targetTab);
   }, [therapistFromReal]);
 
   // 🆕 Round 28r88 — IntersectionObserver useEffect (r87) removed.

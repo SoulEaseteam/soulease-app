@@ -100,7 +100,9 @@ const TherapistMinimalCard: React.FC<Props> = ({
     e.stopPropagation();
     if (isOffDuty) return; // booking blocked when resting/holiday
     if (onBook) onBook(therapist);
-    else navigate(`/therapists/${therapist.id}`);
+    // 🆕 28s343 — Book Now lands on the detail page's Services tab (founder
+    //   "กด book now ต้องไปที่แท็บ Services") so the guest sees the picker.
+    else navigate(`/therapists/${therapist.id}#services`);
   };
 
   const status = computedStatus ?? "bookable";
