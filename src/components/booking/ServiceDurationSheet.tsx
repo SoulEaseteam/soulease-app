@@ -172,6 +172,15 @@ const ServiceDurationSheet: React.FC<Props> = ({
       onClose={onClose}
       fullWidth
       maxWidth={false}
+      // 🚨 Round 28r65 HOTFIX — Dialog default zIndex (theme.zIndex.modal
+      //   = 1300) sits UNDER BottomNavGlass (zIndex 2000). The Paper
+      //   ends 16px above the viewport bottom, exactly where the nav
+      //   sits (~64px + iOS safe-area 34px = ~98px), so the nav paints
+      //   over the entire bottom ~98px of the sheet — including the
+      //   Confirm CTA. Founder screenshot: only a red sliver peeks out
+      //   above the nav. Raise Dialog above BottomNavGlass so its Paper
+      //   + backdrop layer over the nav on mobile.
+      sx={{ zIndex: 2100 }}
       slotProps={{
         backdrop: {
           sx: {

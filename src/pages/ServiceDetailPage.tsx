@@ -715,18 +715,26 @@ const ServiceDetailPage: React.FC = () => {
 
       {/* ── Sticky bottom CTA (mobile only) ────────────────────────
           🆕 Round 28r54 (Phase 3.3) — hidden on md+; the inline
-          Reserve CTA in the left rail above takes over on desktop. */}
+          Reserve CTA in the left rail above takes over on desktop.
+          🚨 Round 28r65 HOTFIX — was `bottom: 70, zIndex: 10`; that
+          put the button INSIDE BottomNavGlass's footprint (nav ≈ 64px
+          paper + iOS safe-area 34px = ~98px tall), and zIndex 10 <<
+          BottomNavGlass zIndex 2000 meant the nav painted over it.
+          Founder screenshot: only a red sliver visible above the nav.
+          Fix: use the global `--cta-bottom-offset` (64 + 16 + safe-
+          area) so we clear the nav on every device, and raise zIndex
+          above the nav. */}
       <Box
         sx={{
           position: "fixed",
-          bottom: 70, // sit above BottomNavGlass
+          bottom: "var(--cta-bottom-offset)",
           left: 0,
           right: 0,
           display: { xs: "flex", md: "none" },
           justifyContent: "center",
           padding: "0 18px",
           pointerEvents: "none",
-          zIndex: 10,
+          zIndex: 2100,
         }}
       >
         <Box

@@ -54,6 +54,11 @@ const TherapistInfoSheet: React.FC<Props> = ({
       onClose={onClose}
       fullWidth
       maxWidth={false}
+      // 🚨 Round 28r65 HOTFIX — same class as ServiceDurationSheet:
+      //   MUI Dialog default zIndex (1300) is under BottomNavGlass
+      //   (2000), so the bottom of the sheet gets covered by the nav
+      //   on mobile. Raise Dialog above the nav.
+      sx={{ zIndex: 2100 }}
       slotProps={{
         backdrop: {
           sx: {

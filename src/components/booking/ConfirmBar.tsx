@@ -66,7 +66,15 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
         width: "100%",
         // 🆕 Round 28r52 — narrow shell matches BookingFlowPage above.
         ...responsiveShellNarrow,
-        zIndex: 50,
+        // 🚨 Round 28r65 HOTFIX — was zIndex 50, well below BottomNav-
+        //   Glass's 2000. Position math (bottom = --cta-bottom-offset =
+        //   64 + 16 + safe-area = ~114px on iPhone; nav footprint ~98px)
+        //   normally clears the nav by ~16px, but any device that
+        //   computes the nav taller (e.g. if the tab labels wrap on
+        //   narrow viewports) would silently be painted over. Belt-and-
+        //   suspenders: raise above BottomNavGlass so even a marginal
+        //   overlap on some device can't hide the primary Confirm CTA.
+        zIndex: 2100,
         background: "rgba(244, 246, 245, 0.92)",
         backdropFilter: "blur(30px) saturate(180%)",
         WebkitBackdropFilter: "blur(30px) saturate(180%)",
