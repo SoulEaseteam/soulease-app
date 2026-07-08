@@ -416,21 +416,11 @@ const HomeTherapistGrid: React.FC = () => {
               "Bangkok's most discreet outcall massage, <em>delivered to you.</em>",
           }}
         />
-        {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle line
-            under the tagline. Bangkok mall-signage feel. */}
-        <Typography
-          sx={{
-            fontFamily: fonts.body,
-            fontSize: 11,
-            fontWeight: 500,
-            color: brand.textMuted,
-            letterSpacing: "0.02em",
-            marginTop: "6px",
-            opacity: 0.8,
-          }}
-        >
-          หมอนวด · นวดถึงห้อง กรุงเทพฯ
-        </Typography>
+        {/* 🆕 Round 28r75 (founder 2026-07-08) — Thai subtitle line
+            removed per direction "ลบ" · English editorial headline
+            reads on its own; the "on standby" line below carries the
+            practical read. r61 bilingual pattern reversal on this
+            specific surface only — other headers still bilingual. */}
         {/* On-standby line kept compact, below the tagline. */}
         {!loading && therapists.length > 0 && (
           <Box

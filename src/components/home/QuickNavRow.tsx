@@ -1,11 +1,13 @@
 // src/components/home/QuickNavRow.tsx
 //
 // 🆕 Round 28r74 · Nordic sections build (2026-07-08)
+// 🆕 Round 28r75 (founder 2026-07-08) — 3 tweaks per feedback:
+//   • Removed the icon-circle border ("เอาขอบวงกลม ออก")
+//   • Bumped label font-weight 500 → 600 slightly ("ปรับตัวหนังสือหนา นิดหน่อย")
+//   • Dropped the Thai subtitle line ("ลบภาษาไทย")
 // ─────────────────────────────────────────────────────────────────────
-// 4 outlined icon-circles below the desktop hero band / above BundleSection:
+// 4 icon columns below the desktop hero band / above BundleSection:
 //   Massage · Therapists · Locations · Reviews
-// Bilingual (English label + Sarabun Thai subtitle) — matches mockup
-// phone-1 "quick-nav" row (outputs/sunred-nordic-gray-mockup.html:220-262).
 //
 // Handlers:
 //   Massage    → /services (full catalog)
@@ -14,11 +16,8 @@
 //   Reviews    → /services?tab=how (no top-level /reviews route yet; fallback
 //                per r74 spec)
 //
-// Palette: Nordic Gray tokens from theme.ts (NEUTRAL_300 border, GRAY_600
-// text, GRAY_800 heading — no crimson, no gradients).
-//
-// Tap targets are 44px+ (WCAG) — the whole column is clickable, the 44px
-// icon circle is only the visual anchor.
+// Palette: Nordic Gray tokens from theme.ts (GRAY_800 icon + text).
+// Tap targets remain 44px+ (WCAG) — the whole column is clickable.
 // ─────────────────────────────────────────────────────────────────────
 
 import React from "react";
@@ -37,7 +36,6 @@ type QuickNavItem = {
   key: string;
   Icon: typeof FlowerLotus;
   labelEn: string;
-  labelTh: string;
   onTap: () => void;
 };
 
@@ -57,28 +55,24 @@ const QuickNavRow: React.FC = () => {
       key: "massage",
       Icon: FlowerLotus,
       labelEn: t("home.quickNav.massage", "Massage"),
-      labelTh: "นวด",
       onTap: () => navigate("/services"),
     },
     {
       key: "therapists",
       Icon: Users,
       labelEn: t("home.quickNav.therapists", "Therapists"),
-      labelTh: "หมอนวด",
       onTap: scrollToTherapistGrid,
     },
     {
       key: "locations",
       Icon: MapPin,
       labelEn: t("home.quickNav.locations", "Locations"),
-      labelTh: "สถานที่",
       onTap: () => navigate("/services?tab=how"),
     },
     {
       key: "reviews",
       Icon: Star,
       labelEn: t("home.quickNav.reviews", "Reviews"),
-      labelTh: "รีวิว",
       onTap: () => navigate("/services?tab=how"),
     },
   ];
@@ -97,13 +91,13 @@ const QuickNavRow: React.FC = () => {
         borderBottom: "1px solid #E2E0DD", // NEUTRAL_200
       }}
     >
-      {items.map(({ key, Icon, labelEn, labelTh, onTap }) => (
+      {items.map(({ key, Icon, labelEn, onTap }) => (
         <Box
           key={key}
           component="button"
           type="button"
           onClick={onTap}
-          aria-label={`${labelEn} · ${labelTh}`}
+          aria-label={labelEn}
           sx={{
             all: "unset",
             cursor: "pointer",
@@ -138,39 +132,30 @@ const QuickNavRow: React.FC = () => {
               height: 44,
               borderRadius: "50%",
               background: "transparent",
-              border: "1px solid #CFCFCB", // NEUTRAL_300
+              // 🆕 Round 28r75 — border removed per founder direction
+              //   "เอาขอบวงกลม ออก" — cleaner Muji / Aesop feel.
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               color: "#4B4B48", // GRAY_800
-              transition: "background 0.18s ease, border-color 0.18s ease, color 0.18s ease",
+              transition: "background 0.18s ease, color 0.18s ease",
             }}
           >
-            <Icon size={20} weight="regular" />
+            <Icon size={22} weight="regular" />
           </Box>
           <Box
             sx={{
               fontFamily: fonts.body,
-              fontSize: 11,
-              fontWeight: 500,
+              // 🆕 Round 28r75 — bumped weight 500 → 600 per founder
+              //   direction "ปรับตัวหนังสือหนา นิดหน่อย".
+              fontSize: 11.5,
+              fontWeight: 600,
               letterSpacing: "0.01em",
               color: "#4B4B48", // GRAY_800
               lineHeight: 1.2,
             }}
           >
             {labelEn}
-          </Box>
-          <Box
-            sx={{
-              fontFamily: fonts.body,
-              fontSize: 9.5,
-              fontWeight: 400,
-              color: "#6E6E6A", // GRAY_600
-              marginTop: "-4px",
-              lineHeight: 1.2,
-            }}
-          >
-            {labelTh}
           </Box>
         </Box>
       ))}
