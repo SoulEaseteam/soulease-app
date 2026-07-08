@@ -103,16 +103,15 @@ const StatsCard: React.FC<Props> = ({
         }
       : undefined;
 
+  // 🆕 Round 28r88 — Stat cell order changed to Sessions · Rebook ·
+  //    Reviews (left→right) per founder reference screenshot
+  //    (2026-07-08). Previous order was Reviews · Sessions · Rebook.
+  //    The onTap prop names (onTapProfile / onTapLoyalty / onTapRating)
+  //    are unchanged; only their visual position rotates. The three
+  //    cells now function as scroll-nav anchors in the caller: Sessions
+  //    → Services section · Rebook → About section · Reviews → Photos
+  //    section.
   const stats: Stat[] = [
-    {
-      num: (
-        <>
-          <Box component="span" sx={{ color: "#4B4B48" }}>★</Box> {rating}
-        </>
-      ),
-      label: t("detail.stats.reviews", "{{count}} reviews", { count: reviewCount }),
-      onTap: wrap(onTapRating),
-    },
     {
       // 🆕 Round 28ak — replace "X yrs experience" with real lifetime
       //    Sessions count. Years was a hardcoded mock; sessions is a
@@ -139,6 +138,15 @@ const StatsCard: React.FC<Props> = ({
       num: rebookRate,
       label: t("detail.stats.rebook", "Rebook rate"),
       onTap: wrap(onTapLoyalty),
+    },
+    {
+      num: (
+        <>
+          <Box component="span" sx={{ color: "#4B4B48" }}>★</Box> {rating}
+        </>
+      ),
+      label: t("detail.stats.reviews", "{{count}} reviews", { count: reviewCount }),
+      onTap: wrap(onTapRating),
     },
   ];
 

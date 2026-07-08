@@ -24,13 +24,10 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 // 🆕 Round 28r85 — Icon-first tab bar (Photos · Services · About)
-//   per founder reference screenshot. Photo = ImageRounded, Grid =
-//   GridViewRounded, Star = StarRounded. Active tab underlines in
-//   teal #2EC4B0 (accents.teal from r81); inactive icons in warm
-//   taupe #8F8474 (matches Reserve rail).
-import ImageRoundedIcon from "@mui/icons-material/ImageRounded";
-import GridViewRoundedIcon from "@mui/icons-material/GridViewRounded";
-import StarRoundedIcon from "@mui/icons-material/StarRounded";
+//   introduced icons ImageRounded / GridViewRounded / StarRounded.
+// 🆕 Round 28r88 — Tab bar removed; StatsCard (below hero) now
+//   carries scroll-nav duty from the r85/r87 icon tabs. Icon imports
+//   dropped along with the tab bar block.
 
 import DetailHero from "@/components/therapist/detail/DetailHero";
 import StatsCard from "@/components/therapist/detail/StatsCard";
@@ -58,7 +55,11 @@ import LocalFloristRoundedIcon from "@mui/icons-material/LocalFloristRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import SchoolRoundedIcon from "@mui/icons-material/SchoolRounded";
 import ShieldRoundedIcon from "@mui/icons-material/ShieldRounded";
-import TherapistInfoSheet from "@/components/therapist/detail/TherapistInfoSheet";
+// 🆕 Round 28r88 — TherapistInfoSheet mount dropped. Founder
+//   "ไม่ต้องป๊อปอัพ": the stats-cell tap now smooth-scrolls to a
+//   section (Services / About / Photos) instead of opening the info
+//   sheet popup. Component file stays on disk in case we ever
+//   need to reintroduce a deep-dive tab.
 import StatusPill from "@/components/therapist/detail/StatusPill";
 // 🆕 Round 28s220 — Rolodex-style profile features card (ref: founder
 //   ROLADEX competitor screenshot).
@@ -772,44 +773,17 @@ const TherapistDetailPage: React.FC = () => {
     time: null,
   });
 
-  // 🆕 Phase 4 — Stats cells now open this sheet (Reviews tab from the
-  //    rating cell, Profile tab from years/rebook cells). Lets us drop
-  //    the always-visible TherapistProfileTabs section to save space.
-  // 🆕 Round 28s210 — Restored after founder feedback "กดดูไม่ได้":
-  //   StatsCard cells are tappable again and open the InfoSheet
-  //   modal (reviews / profile / loyalty deep dives).
-  const [infoSheet, setInfoSheet] = useState<
-    "profile" | "reviews" | "loyalty" | null
-  >(null);
-
   // 🆕 Round 28s221 — Show/Hide details toggle removed (founder
   //   "ปรับ แก้ ทั้ง tab About"). FEATURES + Credentials + Specialties
   //   + Languages now render always-visible under the About card.
 
-  // Round 28s42 — Underline-tab state (founder ref: a hotel
-  // overview screen with "ภาพรวม / นโยบายและเงื่อนไข" tabs).
-  // Round 28r85 — expanded to 3 tabs (Photos / Services / About)
-  // per founder reference screenshot.
-  // 🆕 Round 28r87 — semantics changed from tab-SWITCH (hide/show one
-  //   panel at a time) to scroll-ANCHOR navigation (Airbnb / LinkedIn
-  //   profile pattern). All 3 sections render stacked simultaneously
-  //   on mobile; the underline just tracks which section is currently
-  //   in the viewport (via IntersectionObserver below). Default is
-  //   "photos" since photos is the FIRST section in the stack (the
-  //   viewport lands there on mount). Initial URL hash overrides so a
-  //   deep-link to `#services` or `#about` starts with the correct
-  //   underline before the scroll-into-view animation resolves.
-  const [detailTab, setDetailTab] = useState<"photos" | "services" | "about">(
-    () => {
-      if (typeof window === "undefined") return "photos";
-      const h = window.location.hash;
-      if (h === "#services") return "services";
-      if (h === "#about") return "about";
-      // Everything else — no hash, `#photos`, or legacy `#gallery`
-      //   (from r84 card PHOTOS pill) — starts on photos.
-      return "photos";
-    },
-  );
+  // 🆕 Round 28r88 — `detailTab` state + `infoSheet` state both
+  //   deleted. The r85/r87 icon tab bar is gone (replaced by the
+  //   scroll-nav stats bar below the hero) so nothing needs to track
+  //   which section is "active"; the r87 IntersectionObserver
+  //   underline is likewise obsolete. Stats-cell taps smooth-scroll
+  //   to the target section directly — no popup, no active-tab
+  //   marker to maintain.
 
   // 🆕 Round 28r84 — Gallery lightbox index (null = closed).
   //   The #gallery section renders a responsive photo grid; tapping
@@ -962,13 +936,15 @@ const TherapistDetailPage: React.FC = () => {
     void navigate(`/booking/${therapist.id}?${params.toString()}`);
   };
 
-  // 🆕 Round 28r84 → 28r87 — Hash-scroll into the target section on
-  //   mount. r84 handled only `#gallery` (the card's PHOTOS pill);
-  //   r87 extends coverage to every section id and treats `#gallery`
-  //   as a legacy alias for `#photos`. Smooth-scroll runs after a
-  //   220ms settle so the DOM has finished laying out the sections
-  //   (Firestore fallback profiles otherwise land before the layout
-  //   is measured).
+  // 🆕 Round 28r84 → 28r87 → 28r88 — Hash-scroll into the target
+  //   section on mount. r84 handled only `#gallery` (the card's
+  //   PHOTOS pill); r87 extended coverage to every section id and
+  //   treats `#gallery` as a legacy alias for `#photos`; r88 drops
+  //   the `setDetailTab` call (state deleted along with the icon
+  //   tab bar) but keeps the smooth-scroll unchanged so deep-links
+  //   from external channels (TG, share sheet, etc.) still land
+  //   inside the correct section. 220ms settle covers the Firestore
+  //   fallback profile flash — see r66 hotfix note.
   useEffect(() => {
     if (!therapistFromReal) return;
     if (typeof window === "undefined") return;
@@ -983,7 +959,6 @@ const TherapistDetailPage: React.FC = () => {
             ? "about"
             : null;
     if (!targetId) return;
-    setDetailTab(targetId as "photos" | "services" | "about");
     const timer = window.setTimeout(() => {
       const el = document.getElementById(targetId);
       el?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -991,49 +966,12 @@ const TherapistDetailPage: React.FC = () => {
     return () => window.clearTimeout(timer);
   }, [therapistFromReal]);
 
-  // 🆕 Round 28r87 — IntersectionObserver keeps `detailTab` (the
-  //   sticky tab bar's active underline) in sync with whichever
-  //   section is currently in the viewport as the guest scrolls.
-  //   rootMargin `-100px` at top offsets the sticky bar height so
-  //   the tab flips just as a section's title clears the bar;
-  //   `-40%` at bottom means the underline moves to a new section
-  //   only once ~60% of the viewport is dedicated to it, not the
-  //   instant it peeks in from below (feels natural — the label
-  //   matches the section the user is READING, not the one about
-  //   to enter). A 100ms setup delay lets the initial hash-scroll
-  //   effect above win the race on first mount, so a `#services`
-  //   deep-link doesn't briefly get overwritten by "photos".
-  useEffect(() => {
-    if (!therapistFromReal) return;
-    if (typeof window === "undefined") return;
-    let observer: IntersectionObserver | null = null;
-    const timer = window.setTimeout(() => {
-      const sections = ["photos", "services", "about"]
-        .map((id) => document.getElementById(id))
-        .filter(Boolean) as HTMLElement[];
-      if (sections.length === 0) return;
-      observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting && entry.intersectionRatio > 0.4) {
-              setDetailTab(
-                entry.target.id as "photos" | "services" | "about",
-              );
-            }
-          });
-        },
-        {
-          rootMargin: "-100px 0px -40% 0px",
-          threshold: [0.4, 0.6],
-        },
-      );
-      sections.forEach((s) => observer?.observe(s));
-    }, 100);
-    return () => {
-      window.clearTimeout(timer);
-      observer?.disconnect();
-    };
-  }, [therapistFromReal]);
+  // 🆕 Round 28r88 — IntersectionObserver useEffect (r87) removed.
+  //   The observer's only job was syncing the icon tab bar's active
+  //   underline to the section currently in the viewport. With the
+  //   tab bar deleted, there's no consumer for that signal — the
+  //   stats-cell scroll-nav is one-way (tap → scroll) and doesn't
+  //   need a return trip.
 
   // Round 28s34 — Memoised Bayesian rating. Previously recomputed
   // on every parent render, even when reviews didn't change.
@@ -1225,16 +1163,20 @@ const TherapistDetailPage: React.FC = () => {
         />
       </Box>
 
-      {/* ── GRID CHILD 2 — StatusPill (col 2 row 1 on md+; mobile
-             order 2 · immediately below hero)
-             🆕 Round 28r85 — StatsCard MOVED into the About tab.
-             🆕 Round 28r87 — Tab bar split OUT of this child into
-             its own top-level grid child below, so `position: sticky`
-             can measure against the whole page column instead of
-             the tight StatusPill wrapper (previously the sticky
-             tab bar would detach the moment Grid Child 2's bottom
-             passed the viewport top, which was the entire point of
-             the r87 scroll-anchor pattern). ── */}
+      {/* ── GRID CHILD 2 — StatusPill + StatsCard (col 2 row 1 on md+;
+             mobile order 2 · immediately below hero)
+             🆕 Round 28r85 — StatsCard was moved INTO the About tab.
+             🆕 Round 28r87 — StatsCard stayed in About tab; a separate
+                Grid Child 2b hosted a sticky icon tab bar for scroll-nav.
+             🆕 Round 28r88 — StatsCard moved BACK to its previous
+                position (below the hero photo, above the section
+                stack) per founder direction (2026-07-08 reference
+                screenshot). Cells now trigger smooth-scroll to a
+                target section — no InfoSheet popup ("ไม่ต้องป๊อปอัพ").
+                The r85/r87 icon tab bar (Grid Child 2b) was deleted;
+                its scroll-nav role transfers to the three stats cells:
+                Sessions (leftmost) → Services · Rebook (middle) →
+                About · Reviews (rightmost) → Photos. ── */}
       <Box
         sx={{
           gridColumn: { md: "2" },
@@ -1242,8 +1184,6 @@ const TherapistDetailPage: React.FC = () => {
           order: { xs: 2 },
         }}
       >
-        {/* Round 28s42 — StatusPill rendered ABOVE the tabs so the
-            status signal stays visible whichever panel is active. */}
         <Box sx={{ marginTop: "4px" }}>
           <StatusPill
             nextBookingAt={
@@ -1253,154 +1193,41 @@ const TherapistDetailPage: React.FC = () => {
             nextAvailable={liveNextAvailable}
           />
         </Box>
+
+        {/* 🆕 Round 28r88 — StatsCard scroll-nav bar. Cell order
+            (Sessions · Rebook · Reviews) is set in the component
+            itself; here we only wire the three tap props to
+            document.getElementById(id).scrollIntoView. */}
+        <StatsCard
+          rating={displayRating}
+          reviewCount={therapist.reviewCount}
+          yearsExp={therapist.yearsExp}
+          totalSessions={therapist.totalSessions}
+          rebookRate={therapist.rebookRate}
+          onTapProfile={() => {
+            if (typeof document !== "undefined") {
+              document
+                .getElementById("services")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          }}
+          onTapLoyalty={() => {
+            if (typeof document !== "undefined") {
+              document
+                .getElementById("about")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          }}
+          onTapRating={() => {
+            if (typeof document !== "undefined") {
+              document
+                .getElementById("photos")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          }}
+        />
       </Box>
       {/* ── END GRID CHILD 2 ────────────────────────────────────── */}
-
-      {/* ── GRID CHILD 2b — Sticky scroll-nav tab bar (mobile only)
-             🆕 Round 28r87 — was previously a tab-SWITCH bar
-             (setDetailTab hides/shows one panel). Now a sticky
-             SCROLL-ANCHOR bar (Airbnb / LinkedIn profile pattern):
-             tapping a tab smooth-scrolls the page to the matching
-             `<section id=...>` below, and the active underline is
-             driven by IntersectionObserver as the guest scrolls
-             through the sections. Hidden on md+ since the desktop
-             grid renders all sections simultaneously. Round 28s42
-             icon-first layout preserved (Photo · Grid · Star icons
-             stacked above 11.5px labels; teal underline #2EC4B0 on
-             active, warm-taupe #8F8474 icons + slate labels on
-             inactive). ── */}
-      <Box
-        role="tablist"
-        aria-label={t(
-          "detail.tabsAria",
-          "Practitioner overview tabs",
-        )}
-        sx={{
-          order: { xs: 3 },
-          display: { xs: "grid", md: "none" },
-          gridTemplateColumns: "1fr 1fr 1fr",
-          marginTop: "12px",
-          padding: "0 18px",
-          borderBottom: "1px solid rgba(184, 92, 60, 0.18)",
-          background: "#F4F6F5",
-          position: "sticky",
-          top: 0,
-          zIndex: 5,
-        }}
-      >
-        {(
-          [
-            {
-              id: "photos" as const,
-              icon: <ImageRoundedIcon sx={{ fontSize: 22 }} />,
-              label: t("detail.tabs.photos", "Photos"),
-            },
-            {
-              id: "services" as const,
-              icon: <GridViewRoundedIcon sx={{ fontSize: 22 }} />,
-              label: t("detail.tabs.services", "Services"),
-            },
-            {
-              id: "about" as const,
-              icon: <StarRoundedIcon sx={{ fontSize: 22 }} />,
-              // 🆕 Round 28s207 (audit #5) — Was "About {name}".
-              //   Trimmed to just "About" so the label doesn't go
-              //   awkward when the name is long.
-              label: t("detail.tabs.about", "About"),
-            },
-          ]
-        ).map((tab) => {
-          const isActive = detailTab === tab.id;
-          return (
-            <Box
-              key={tab.id}
-              component="button"
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => {
-                // 🆕 Round 28r87 — Scroll-anchor navigation: instead
-                //   of toggling `detailTab` (tab-switch), smooth-
-                //   scroll to the target section. The
-                //   IntersectionObserver above updates the underline
-                //   as the section enters the viewport. Setting
-                //   `detailTab` optimistically here gives an instant
-                //   underline response before the scroll animation
-                //   catches up.
-                setDetailTab(tab.id);
-                if (typeof document !== "undefined") {
-                  document
-                    .getElementById(tab.id)
-                    ?.scrollIntoView({
-                      behavior: "smooth",
-                      block: "start",
-                    });
-                }
-              }}
-              sx={{
-                position: "relative",
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                padding: "10px 6px 12px",
-                fontFamily: SANS,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "4px",
-                textAlign: "center",
-                transition: "color 0.18s ease",
-                color: isActive ? "#1A2B2E" : "#4B4B48",
-                "& .tab-icon": {
-                  color: isActive ? "#2EC4B0" : "#8F8474",
-                  transition: "color 0.18s ease",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                },
-                "&:hover": {
-                  color: isActive ? "#1A2B2E" : "#1A2B2E",
-                  "& .tab-icon": {
-                    color: isActive ? "#2EC4B0" : "#4B4B48",
-                  },
-                },
-                "&:focus-visible": {
-                  outline: "2px solid #2EC4B0",
-                  outlineOffset: 2,
-                  borderRadius: "6px",
-                },
-                "&::after": {
-                  content: '""',
-                  position: "absolute",
-                  left: 12,
-                  right: 12,
-                  bottom: -1,
-                  height: 3,
-                  borderRadius: 3,
-                  background: isActive ? "#2EC4B0" : "transparent",
-                  transition: "background 0.18s ease",
-                },
-              }}
-            >
-              <Box className="tab-icon" aria-hidden="true">
-                {tab.icon}
-              </Box>
-              <Box
-                component="span"
-                sx={{
-                  fontSize: "11.5px",
-                  fontWeight: 700,
-                  letterSpacing: "0.02em",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {tab.label}
-              </Box>
-            </Box>
-          );
-        })}
-      </Box>
-      {/* ── END GRID CHILD 2b (sticky tab bar) ──────────────────── */}
 
       {/* ── GRID CHILD 4 — About section (col 2 row 2 on md+)
              🆕 Round 28r55 (Phase 3.4) — was `{detailTab === "about"
@@ -1419,27 +1246,19 @@ const TherapistDetailPage: React.FC = () => {
         sx={{
           gridColumn: { md: "2" },
           gridRow: { md: "2" },
-          order: { xs: 6 },
+          // 🆕 Round 28r88 — Mobile stack reordered per founder
+          //   direction (2026-07-08): About → Services → Photos
+          //   ("เอา about ขึ้นก่อน เลื่อน เจอ Photos"). Was `order: 6`
+          //   (bottom of stack) in r87.
+          order: { xs: 3 },
           paddingTop: { xs: "24px", md: "16px" },
-          scrollMarginTop: { xs: "90px", md: "24px" },
+          scrollMarginTop: { xs: "24px", md: "24px" },
         }}
       >
-          {/* 🆕 Round 28r85 — StatsCard relocated here from above the
-              tabs. Founder direction (2026-07-08 reference screenshot):
-              rating · sessions · rebook rate consolidate INSIDE the
-              About tab instead of sitting as a standalone bar above
-              the tabs. Same three tappable cells → same InfoSheet
-              deep-dive (reviews · profile · loyalty). */}
-          <StatsCard
-            rating={displayRating}
-            reviewCount={therapist.reviewCount}
-            yearsExp={therapist.yearsExp}
-            totalSessions={therapist.totalSessions}
-            rebookRate={therapist.rebookRate}
-            onTapRating={() => setInfoSheet("reviews")}
-            onTapProfile={() => setInfoSheet("profile")}
-            onTapLoyalty={() => setInfoSheet("loyalty")}
-          />
+          {/* 🆕 Round 28r88 — StatsCard removed from here; moved back
+              above the section stack (below hero) per founder direction
+              2026-07-08 ("เอาแถบนี้ ไปยุที่เดิม ซ้อนอยู่ใต้รูป"). Cell
+              taps now scroll-nav instead of opening InfoSheet. */}
 
           {/* 🆕 Round 28s221 — Drop the 3 fact-chip rows (info now lives
               in FeaturesPanel below) + drop the embedded gallery (hero
@@ -1786,11 +1605,13 @@ const TherapistDetailPage: React.FC = () => {
         sx={{
           gridColumn: { md: "1" },
           gridRow: { md: "2" },
-          order: { xs: 5 },
+          // 🆕 Round 28r88 — Mobile stack reordered: About(3) →
+          //   Services(4) → Photos(5). Was `order: 5` under r87.
+          order: { xs: 4 },
           position: { md: "sticky" },
           top: { md: 24 },
           padding: { xs: "24px 20px 20px", md: "20px 0 24px" },
-          scrollMarginTop: { xs: "90px", md: "24px" },
+          scrollMarginTop: { xs: "24px", md: "24px" },
         }}
       >
         <Typography
@@ -1876,12 +1697,17 @@ const TherapistDetailPage: React.FC = () => {
         sx={{
           gridColumn: { md: "1 / -1" },
           gridRow: { md: "3" },
-          order: { xs: 4 },
+          // 🆕 Round 28r88 — Mobile stack reordered: About(3) →
+          //   Services(4) → Photos(5). Photos now bottom of the mobile
+          //   stack per founder: "reviews= Photos · about (เอา about
+          //   ขึ้นก่อน เลื่อน เจอ Photos)". Was `order: 4` under r87
+          //   (top of stack).
+          order: { xs: 5 },
           padding: {
             xs: "24px 20px 8px",
             md: "32px 18px 12px",
           },
-          scrollMarginTop: { xs: "90px", md: "24px" },
+          scrollMarginTop: { xs: "24px", md: "24px" },
         }}
       >
         <Typography
@@ -2175,73 +2001,12 @@ const TherapistDetailPage: React.FC = () => {
           component file is kept around in case we need a manual confirm
           fallback later. */}
 
-      {/* 🆕 Round 28s210 — TherapistInfoSheet restored after founder
-          feedback "กดดูไม่ได้". StatsCard cells reopen this sheet
-          for the per-tab deep dive (reviews · profile · loyalty). */}
-      <TherapistInfoSheet
-        open={infoSheet !== null}
-        onClose={() => setInfoSheet(null)}
-        initialTab={
-          infoSheet === "reviews"
-            ? "reviews"
-            : infoSheet === "loyalty"
-              ? "loyalty"
-              : "profile"
-        }
-        data={{
-          yearsExp: therapist.yearsExp,
-          totalSessions: therapist.totalSessions,
-          todayBookings: loyaltyStats.todayBookings,
-          rebookRate: therapist.rebookRate,
-          hasLicense: therapist.creds.some((c) =>
-            /licen[cs]e|ผ\.พ\./i.test(c.label)
-          ),
-          creds: therapist.creds.map((c) => ({
-            icon: c.icon,
-            title: c.label,
-            sub: c.meta,
-          })),
-          specs: therapist.specs.map((s) => ({
-            icon: s.icon,
-            name: s.name,
-            sub: s.yrs,
-          })),
-          langs: therapist.langs,
-          rating: displayRating,
-          reviewCount: liveReviews.reviewCount,
-          // Live reviews → mapped to the InfoSheet Review type
-          //   { bookingId, rating, service, body, ago, verified }.
-          // Round 28s212 — restored from e9480f6 after the 28s210
-          //   "restore" passed wrong shape and crashed the page.
-          reviewBuckets:
-            liveReviews.reviewCount > 0
-              ? liveReviews.buckets.map((b) => ({
-                  stars: b.stars,
-                  pct: b.pct,
-                  count: b.count,
-                }))
-              : [],
-          reviews:
-            liveReviews.reviewCount > 0
-              ? liveReviews.reviews.map((r) => ({
-                  bookingId: r.bookingId,
-                  rating: r.rating,
-                  service: r.service,
-                  body: r.body,
-                  ago: r.ago,
-                  verified: r.verified,
-                }))
-              : [],
-          loyaltyStats: {
-            totalCompleted: loyaltyStats.totalCompleted,
-            uniqueCustomers: loyaltyStats.uniqueCustomers,
-            repeatCustomers: loyaltyStats.repeatCustomers,
-            repeatPct: loyaltyStats.repeatPct,
-            avgSessions: loyaltyStats.avgSessions,
-            timingBuckets: loyaltyStats.timingBuckets,
-          },
-        }}
-      />
+      {/* 🆕 Round 28r88 — TherapistInfoSheet mount dropped along with
+          the InfoSheet state. Founder "ไม่ต้องป๊อปอัพ": stats-cell
+          taps now smooth-scroll to Services / About / Photos sections
+          directly instead of opening the sheet. Component file stays
+          on disk in case we ever want to reintroduce a deep-dive tab
+          from another entry point. */}
 
       </Box>
 
