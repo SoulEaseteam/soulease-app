@@ -4,6 +4,15 @@
 //   flow) — surfaces active Bundle Packages as visually-rich cards on
 //   the customer site.
 //
+// 🆕 Round 28r60 (founder — "Bundle UI polish · photo + category tags")
+//   — cards now paint a hero image (16:9) at the top when the bundle
+//   carries an `imageUrl`, with the discount and category pills overlaid.
+//   Falls back to the r58 text-only layout when no image is set (a
+//   broken-URL onError flip also resets to text-only so the guest never
+//   sees a broken img icon). Category tag pill + subtitle line render on
+//   BOTH variants when present. Zero regression: an old bundle with none
+//   of the new fields renders exactly as r58.
+//
 // Data: reads via `useActivePromos()` (r51) — enabled + in-window
 //   bundles only. When zero bundles are active the component renders
 //   nothing (safe to mount unconditionally on any surface).
@@ -31,7 +40,7 @@
 //
 // Zero data-logic side-effects: everything below is a display read.
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import { Gift } from "phosphor-react";
 import { useTranslation } from "react-i18next";
@@ -62,6 +71,28 @@ function whatsappHrefForBundle(bundle: Bundle): string {
   return `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
 }
 
+/**
+ * 🆕 Round 28r60 — soft palette tint for the category tag pill, keyed
+ * off the canonical `BUNDLE_CATEGORY_TAGS` suggestions. Custom tags
+ * (freeSolo) fall through to a neutral slate tint.
+ * fg = pill text/icon · bg = fill · border = ring.
+ */
+function categoryTagPalette(tag?: string): { fg: string; bg: string; border: string } {
+  const key = (tag ?? "").toLowerCase();
+  if (key === "premium")           return { fg: "#8A5A00", bg: "rgba(245,166,35,0.14)", border: "rgba(245,166,35,0.32)" };  // amber
+  if (key === "first-time")        return { fg: "#08588A", bg: "rgba(56,169,240,0.14)", border: "rgba(56,169,240,0.30)" };  // sky-blue
+  if (key === "weekly ritual")     return { fg: "#B4000A", bg: "rgba(180,0,10,0.08)",   border: "rgba(180,0,10,0.20)" };    // brand-red muted
+  if (key === "wellness package")  return { fg: "#14532D", bg: "rgba(22,163,74,0.10)",  border: "rgba(22,163,74,0.24)" };   // sage
+  if (key === "long-stay")         return { fg: "#4C1D95", bg: "rgba(139,92,246,0.10)", border: "rgba(139,92,246,0.24)" };  // violet
+  if (key === "corporate retreat") return { fg: "#334155", bg: "rgba(51,65,85,0.08)",   border: "rgba(51,65,85,0.18)" };    // slate
+  return { fg: "rgba(15,23,42,0.75)", bg: "rgba(15,23,42,0.06)", border: "rgba(15,23,42,0.14)" }; // neutral
+}
+
+/** Slugify a category tag for the i18n key: "Weekly Ritual" → "weekly-ritual". */
+function categorySlug(tag: string): string {
+  return tag.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+}
+
 /** Human-readable expiry (locale-independent short form). Null when open-ended. */
 function expiryLabel(bundle: Bundle, tFn: ReturnType<typeof useTranslation>["t"]): string {
   if (bundle.expiresAt) {
@@ -83,6 +114,17 @@ function expiryLabel(bundle: Bundle, tFn: ReturnType<typeof useTranslation>["t"]
 const BundleSection: React.FC = () => {
   const { t } = useTranslation();
   const { activeBundles } = useActivePromos();
+
+  // 🆕 Round 28r60 — bundles whose hero image failed to load. Falls the
+  // card back to text-only (no broken img icon shown to guests).
+  const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set());
+  const markImageBroken = (id: string) =>
+    setBrokenImages((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
 
   // Effective catalog: hardcoded 4 services + any admin-created custom
   // services (r301). Fall back to the raw catalog so this never no-ops
@@ -204,6 +246,17 @@ const BundleSection: React.FC = () => {
           const waHref = whatsappHrefForBundle(b);
           const expLabel = expiryLabel(b, t);
 
+          // 🆕 Round 28r60 — hero-image variant guards on both `imageUrl`
+          // being set AND the image not having failed to load already.
+          const showHeroImage = !!b.imageUrl && !brokenImages.has(b.id);
+          const catPalette = categoryTagPalette(b.categoryTag);
+          const catI18nKey = b.categoryTag
+            ? `bundle.category.${categorySlug(b.categoryTag)}`
+            : "";
+          const catLabel = b.categoryTag
+            ? t(catI18nKey, b.categoryTag)
+            : "";
+
           return (
             <Box
               key={b.id}
@@ -211,10 +264,10 @@ const BundleSection: React.FC = () => {
                 position: "relative",
                 display: "flex",
                 flexDirection: "column",
+                overflow: "hidden", // 🆕 Round 28r60 — clip the hero image to the rounded corners.
                 background: "#FFFFFF",
                 border: "1px solid rgba(15, 23, 42, 0.08)",
-                borderRadius: "18px",
-                padding: { xs: "16px 16px 14px", md: "18px 18px 16px" },
+                borderRadius: "20px", // 🆕 Round 28r60 — slightly rounder (18→20).
                 boxShadow:
                   "0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 18px rgba(15, 23, 42, 0.05)",
                 transition:
@@ -227,36 +280,124 @@ const BundleSection: React.FC = () => {
                 },
               }}
             >
-              {/* Discount pill — amber to differentiate from single-
-                  booking promos (which use brand red). */}
+              {/* 🆕 Round 28r60 — Hero image variant. When `imageUrl` is
+                  set (and hasn't failed), paint a 16:9 photo up top with
+                  the category tag pill and discount pill overlaid. */}
+              {showHeroImage && (
+                <Box
+                  sx={{
+                    position: "relative",
+                    width: "100%",
+                    aspectRatio: "16 / 9",
+                    background:
+                      "linear-gradient(180deg, rgba(15,23,42,0.02), rgba(15,23,42,0.06))",
+                    overflow: "hidden",
+                  }}
+                >
+                  <Box
+                    component="img"
+                    src={b.imageUrl}
+                    alt=""
+                    loading="lazy"
+                    onError={() => markImageBroken(b.id)}
+                    sx={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      display: "block",
+                    }}
+                  />
+                  {/* Category tag pill — overlaid top-left */}
+                  {catLabel && (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 10,
+                        left: 10,
+                        padding: "4px 10px",
+                        borderRadius: 999,
+                        background: "rgba(255,255,255,0.94)",
+                        color: catPalette.fg,
+                        border: `1px solid ${catPalette.border}`,
+                        fontFamily: SANS,
+                        fontSize: 10.5,
+                        fontWeight: 800,
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        boxShadow: "0 1px 3px rgba(15,23,42,0.10)",
+                      }}
+                    >
+                      {catLabel}
+                    </Box>
+                  )}
+                  {/* Discount pill — overlaid top-right (matches text-only variant) */}
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 10,
+                      right: 10,
+                      padding: "4px 10px",
+                      borderRadius: 999,
+                      background:
+                        "linear-gradient(135deg, #F5A623 0%, #E8951A 100%)",
+                      color: "#FFFFFF",
+                      fontFamily: SANS,
+                      fontSize: 11,
+                      fontWeight: 800,
+                      letterSpacing: "0.02em",
+                      boxShadow: "0 2px 6px rgba(245, 166, 35, 0.28)",
+                    }}
+                  >
+                    -{b.discountPct}%
+                  </Box>
+                </Box>
+              )}
+
               <Box
                 sx={{
-                  position: "absolute",
-                  top: 12,
-                  right: 12,
-                  padding: "4px 10px",
-                  borderRadius: 999,
-                  background:
-                    "linear-gradient(135deg, #F5A623 0%, #E8951A 100%)",
-                  color: "#FFFFFF",
-                  fontFamily: SANS,
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: "0.02em",
-                  boxShadow: "0 2px 6px rgba(245, 166, 35, 0.28)",
+                  position: "relative",
+                  display: "flex",
+                  flexDirection: "column",
+                  flex: 1,
+                  padding: { xs: "16px 16px 14px", md: "18px 18px 16px" },
                 }}
               >
-                -{b.discountPct}%
-              </Box>
+              {/* Discount pill — only when NOT in hero-image mode (it's
+                  overlaid on the image in that variant). Amber to
+                  differentiate from single-booking promos (brand red). */}
+              {!showHeroImage && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 12,
+                    right: 12,
+                    padding: "4px 10px",
+                    borderRadius: 999,
+                    background:
+                      "linear-gradient(135deg, #F5A623 0%, #E8951A 100%)",
+                    color: "#FFFFFF",
+                    fontFamily: SANS,
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: "0.02em",
+                    boxShadow: "0 2px 6px rgba(245, 166, 35, 0.28)",
+                  }}
+                >
+                  -{b.discountPct}%
+                </Box>
+              )}
 
-              {/* Bundle name + session count badge */}
+              {/* Header row: session-count badge, plus category tag pill
+                  (text-only variant only — hero variant already has it
+                  overlaid on the image). */}
               <Box
                 sx={{
                   display: "flex",
                   alignItems: "center",
                   gap: 1,
+                  flexWrap: "wrap",
                   mb: 0.5,
-                  pr: 6, // clear the discount pill
+                  pr: showHeroImage ? 0 : 6, // clear the discount pill in text-only mode
                 }}
               >
                 <Gift
@@ -280,6 +421,26 @@ const BundleSection: React.FC = () => {
                     count: b.sessionCount,
                   })}
                 </Box>
+                {/* Category tag pill — text-only variant only. */}
+                {!showHeroImage && catLabel && (
+                  <Box
+                    component="span"
+                    sx={{
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      background: catPalette.bg,
+                      color: catPalette.fg,
+                      border: `1px solid ${catPalette.border}`,
+                      fontFamily: SANS,
+                      fontSize: 9.5,
+                      fontWeight: 800,
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {catLabel}
+                  </Box>
+                )}
               </Box>
 
               <Typography
@@ -290,11 +451,27 @@ const BundleSection: React.FC = () => {
                   color: "#1A2B2E",
                   lineHeight: 1.25,
                   letterSpacing: "-0.005em",
-                  mb: 1.25,
+                  mb: b.subtitle ? 0.25 : 1.25,
                 }}
               >
                 {b.name}
               </Typography>
+
+              {/* 🆕 Round 28r60 — Subtitle line under the name. */}
+              {b.subtitle && (
+                <Typography
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: 12,
+                    fontStyle: "italic",
+                    color: "rgba(15, 23, 42, 0.6)",
+                    lineHeight: 1.4,
+                    mb: 1.25,
+                  }}
+                >
+                  {b.subtitle}
+                </Typography>
+              )}
 
               {/* Savings preview — only renders if catalog resolved */}
               {preview && (
@@ -474,6 +651,7 @@ const BundleSection: React.FC = () => {
               >
                 {t("bundle.card.lineCta", "Chat on LINE instead")}
               </Box>
+              </Box>{/* /padded content wrapper (28r60) */}
             </Box>
           );
         })}

@@ -20,6 +20,16 @@
 //   cards. Delegates to `priceForDuration` (single source of truth for
 //   pricing across every surface) so an admin price edit — or a scheduled
 //   price change — reflects on bundle previews without any extra wiring.
+//
+// 🆕 Round 28r60 (founder — "Bundle UI polish · photo + category tags")
+//   — added three OPTIONAL presentation fields (`imageUrl`, `categoryTag`,
+//   `subtitle`). Default-empty state is byte-identical to r58 — a bundle
+//   without any of these renders exactly as before. `imageUrl` points at a
+//   Firebase Storage object under `bundles/{bundleId}/…jpg` (uploaded via
+//   the admin editor with the same `downscaleImage` pipeline the therapist
+//   avatar uses). `categoryTag` is a free-form label the admin can pick
+//   from `BUNDLE_CATEGORY_TAGS` (Autocomplete freeSolo) or type themselves.
+//   `subtitle` is a short descriptor line ("3 sessions over 30 days").
 
 import type { MassageService } from "@/data/services";
 import { priceForDuration } from "@/utils/servicePricing";
@@ -42,7 +52,27 @@ export interface Bundle {
   /** Optional short sub-label for display. */
   label?: string;
   createdAt?: number;
+  // 🆕 Round 28r60 — optional presentation fields (Bundle UI polish).
+  /** Firebase Storage URL for a hero image shown on the customer card. */
+  imageUrl?: string;
+  /** Free-form category tag, e.g. "Weekly Ritual" / "Premium" / "First-Time".
+   *  Suggested values in BUNDLE_CATEGORY_TAGS; admin can type custom. */
+  categoryTag?: string;
+  /** Short descriptor shown under the name, e.g. "3 sessions over 30 days". */
+  subtitle?: string;
 }
+
+/** Suggested category tags for the admin Autocomplete (freeSolo — the
+ *  admin can also type a custom tag). Kept lean; extend as marketing needs
+ *  emerge. Used by AdminPromotionsPage + BundleSection color mapping. */
+export const BUNDLE_CATEGORY_TAGS: string[] = [
+  "Weekly Ritual",     // 3-4 sessions in a month
+  "Wellness Package",  // 5-8 sessions
+  "Premium",           // High-tier services (Gentleman, B2B)
+  "First-Time",        // Discovery / trial
+  "Long-Stay",         // For extended-stay guests
+  "Corporate Retreat", // Multi-guest / event
+];
 
 // Module-level cache populated by MaintenanceGate on every publicRules
 // snapshot. Empty = no bundles configured, byte-identical to pre-r50 (no
@@ -69,6 +99,10 @@ export function applyLiveBundles(map: Record<string, Bundle> | null | undefined)
         expiresAt: b.expiresAt ?? null,
         label: b.label,
         createdAt: b.createdAt,
+        // 🆕 Round 28r60 — presentation fields (undefined-safe).
+        imageUrl: typeof b.imageUrl === "string" && b.imageUrl.trim() ? b.imageUrl : undefined,
+        categoryTag: typeof b.categoryTag === "string" && b.categoryTag.trim() ? b.categoryTag : undefined,
+        subtitle: typeof b.subtitle === "string" && b.subtitle.trim() ? b.subtitle : undefined,
       };
     }
   }

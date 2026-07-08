@@ -170,6 +170,10 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
             expiresAt?: { toMillis?: () => number } | null;
             label?: string;
             createdAt?: { toMillis?: () => number } | null;
+            // 🆕 Round 28r60 — presentation fields carried straight through.
+            imageUrl?: string;
+            categoryTag?: string;
+            subtitle?: string;
           }
         >;
         const bundleMap: Record<string, Bundle> = {};
@@ -187,6 +191,10 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
             expiresAt: v.expiresAt?.toMillis?.() ?? null,
             label: typeof v.label === "string" ? v.label : undefined,
             createdAt: v.createdAt?.toMillis?.() ?? undefined,
+            // 🆕 Round 28r60 — presentation fields.
+            imageUrl: typeof v.imageUrl === "string" && v.imageUrl.trim() ? v.imageUrl : undefined,
+            categoryTag: typeof v.categoryTag === "string" && v.categoryTag.trim() ? v.categoryTag : undefined,
+            subtitle: typeof v.subtitle === "string" && v.subtitle.trim() ? v.subtitle : undefined,
           };
         }
         applyLiveBundles(bundleMap);

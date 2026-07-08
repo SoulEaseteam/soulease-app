@@ -47,6 +47,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box, Typography, Switch, TextField, MenuItem, Button, Stack,
   Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, Checkbox,
+  Autocomplete, Avatar,
 } from "@mui/material";
 import { app, db } from "@/lib/firebase";
 import {
@@ -63,7 +64,8 @@ import services from "@/data/services";
 import { priceForDuration, type LiveServiceOverride, type CustomServiceInput } from "@/utils/servicePricing";
 import { therapistPctFor } from "@/utils/commission";
 // 🆕 Round 28r50 (Promotions Phase 1) — Bundle Packages helpers.
-import { bundleSavings, type Bundle } from "@/utils/bundles";
+// 🆕 Round 28r60 — + BUNDLE_CATEGORY_TAGS for the Autocomplete freeSolo picker.
+import { bundleSavings, BUNDLE_CATEGORY_TAGS, type Bundle } from "@/utils/bundles";
 // 🆕 Round 28r59 (Phase 4 feature #5 "Discount validator preview") — debug
 //   variant of the discount validator + tier helper for feature #6 UI.
 import { validateDiscountDebug, type ReferralTier } from "@/utils/discount";
@@ -143,6 +145,8 @@ interface PromoDoc {
 
 // 🆕 Round 28r50 — Firestore-side shape for bundle docs (Timestamps land as
 //   Timestamps here; the utils/bundles.ts Bundle type carries them as ms).
+// 🆕 Round 28r60 — + optional imageUrl / categoryTag / subtitle presentation
+//   fields. All optional so pre-r60 docs render byte-identical to before.
 interface BundleDoc {
   name: string;
   sessionCount: number;
@@ -152,6 +156,9 @@ interface BundleDoc {
   expiresAt?: Timestamp | null;
   label?: string;
   createdAt?: Timestamp | null;
+  imageUrl?: string;
+  categoryTag?: string;
+  subtitle?: string;
 }
 
 // 🆕 Round 28r50 — bulk adjustment shape.
@@ -333,6 +340,18 @@ const AdminPromotionsPage: React.FC = () => {
   const [bundleLabel, setBundleLabel] = useState<string>("");
   const [bundleSubmitting, setBundleSubmitting] = useState(false);
   const [bundleDeleteId, setBundleDeleteId] = useState<string | null>(null);
+  // 🆕 Round 28r60 — polish fields on the create/edit dialog.
+  const [bundleImageUrl, setBundleImageUrl] = useState<string>("");
+  const [bundleCategoryTag, setBundleCategoryTag] = useState<string>("");
+  const [bundleSubtitle, setBundleSubtitle] = useState<string>("");
+  const [bundleImageUploading, setBundleImageUploading] = useState(false);
+  const bundleImageInputRef = useRef<HTMLInputElement | null>(null);
+  /** Pre-minted stable id used ONLY for the create flow's storage path so
+   *  the uploaded file lives at `bundles/{id}/…` even before the doc has
+   *  been saved. Not swapped into `editingBundleId` because that would
+   *  flip the dialog title from "Add" to "Edit" mid-way. Consumed by
+   *  handleSaveBundle when the CREATE finalises. */
+  const bundlePendingIdRef = useRef<string | null>(null);
 
   // 🆕 Round 28r50 (feature #3 "Bulk Service Edits") — dialog state.
   //   Multi-select of standard + custom services; apply-mode; duration
@@ -1105,6 +1124,12 @@ const AdminPromotionsPage: React.FC = () => {
     setBundleServiceId("");
     setBundleExpiresAt("");
     setBundleLabel("");
+    // 🆕 Round 28r60 — reset the new polish fields on create + clear any
+    //   leftover pre-minted id from a previous cancelled create.
+    setBundleImageUrl("");
+    setBundleCategoryTag("Weekly Ritual");
+    setBundleSubtitle("");
+    bundlePendingIdRef.current = null;
     setBundleDialogOpen(true);
   };
   const openBundleEdit = (id: string) => {
@@ -1117,8 +1142,53 @@ const AdminPromotionsPage: React.FC = () => {
     setBundleServiceId(b.serviceId ?? "");
     setBundleExpiresAt(b.expiresAt?.toDate ? tsToInputDT(b.expiresAt).slice(0, 10) : "");
     setBundleLabel(b.label ?? "");
+    // 🆕 Round 28r60 — hydrate polish fields (undefined → empty string).
+    setBundleImageUrl(b.imageUrl ?? "");
+    setBundleCategoryTag(b.categoryTag ?? "");
+    setBundleSubtitle(b.subtitle ?? "");
     setBundleDialogOpen(true);
   };
+
+  // 🆕 Round 28r60 — bundle hero image upload. Same lazy firebase/storage +
+  //   downscaleImage pattern the AvatarUploader in therapistFormKit uses
+  //   (28s280-281). Stored at `bundles/{bundleId}/{ts}.jpg` — storage.rules
+  //   grants authenticated write on `bundles/**` with the same image-only +
+  //   15MB caps as the therapist path.
+  const handleBundleImageUpload = async (file: File | null | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("ไฟล์ต้องเป็นรูปภาพ"); return; }
+    // Resolve a stable id BEFORE upload — for new bundles we mint one now
+    // (same base36 shape used at save-time) so the storage path is
+    // deterministic; on edit, reuse the existing bundle id. Pinning it in
+    // a ref (not editingBundleId) keeps the dialog title on "Add" even
+    // after the image lands.
+    let targetId: string;
+    if (editingBundleId) {
+      targetId = editingBundleId;
+    } else {
+      targetId = bundlePendingIdRef.current
+        ?? `SR-BUNDLE-${Date.now().toString(36).toUpperCase()}`;
+      bundlePendingIdRef.current = targetId;
+    }
+    setBundleImageUploading(true);
+    try {
+      const { getStorage, ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
+      const storage = getStorage(app);
+      const blob = await downscaleImage(file, 1600, 0.85);
+      const path = `bundles/${targetId}/${Date.now()}.jpg`;
+      const snap = await uploadBytes(ref(storage, path), blob, { contentType: "image/jpeg" });
+      const url = await getDownloadURL(snap.ref);
+      setBundleImageUrl(url);
+    } catch (err) {
+      console.error("[bundle image upload]", err);
+      const msg = String((err as { code?: string })?.code ?? err ?? "");
+      toast.error(msg.includes("unauthorized") ? "อัปโหลดไม่ได้ — สิทธิ์ไม่พอ" : "อัปโหลดรูปไม่สำเร็จ");
+    } finally {
+      setBundleImageUploading(false);
+      if (bundleImageInputRef.current) bundleImageInputRef.current.value = "";
+    }
+  };
+
   const handleSaveBundle = async () => {
     const nm = bundleName.trim();
     if (!nm) { toast.error("ใส่ชื่อแพ็คเกจก่อน"); return; }
@@ -1126,7 +1196,12 @@ const AdminPromotionsPage: React.FC = () => {
     if (bundleDiscountPct < 0 || bundleDiscountPct > 100) { toast.error("ส่วนลดต้องอยู่ระหว่าง 0–100%"); return; }
     setBundleSubmitting(true);
     try {
-      const id = editingBundleId ?? `SR-BUNDLE-${Date.now().toString(36).toUpperCase()}`;
+      // On CREATE: reuse the pre-minted id if a hero image was uploaded
+      // during this dialog session (so the doc id matches the storage
+      // folder). Otherwise mint a fresh one.
+      const id = editingBundleId
+        ?? bundlePendingIdRef.current
+        ?? `SR-BUNDLE-${Date.now().toString(36).toUpperCase()}`;
       const patch: Record<string, unknown> = {
         name: nm,
         sessionCount: Math.round(bundleSessionCount),
@@ -1135,6 +1210,11 @@ const AdminPromotionsPage: React.FC = () => {
         enabled: bundles[id]?.enabled !== false, // preserve existing on edit
         expiresAt: bundleExpiresAt ? Timestamp.fromDate(new Date(`${bundleExpiresAt}T23:59:59`)) : null,
         label: bundleLabel.trim() || null,
+        // 🆕 Round 28r60 — presentation fields. Empty string → null so
+        //   pre-r60 docs don't get polluted with empty defaults.
+        imageUrl: bundleImageUrl.trim() || null,
+        categoryTag: bundleCategoryTag.trim() || null,
+        subtitle: bundleSubtitle.trim() || null,
       };
       if (!editingBundleId) patch.createdAt = serverTimestamp();
       await setDoc(
@@ -1146,6 +1226,10 @@ const AdminPromotionsPage: React.FC = () => {
         bundleId: id, name: nm, sessionCount: patch.sessionCount, discountPct: patch.discountPct,
       });
       setBundleDialogOpen(false);
+      // 🆕 Round 28r60 — release the pre-minted id now that the CREATE doc
+      //   has landed at that same id (the storage folder is now bound to
+      //   a real bundle doc).
+      bundlePendingIdRef.current = null;
       toast.success(editingBundleId ? "อัปเดตแพ็คเกจแล้ว" : "สร้างแพ็คเกจแล้ว");
     } catch (err) {
       console.error(err);
@@ -1732,11 +1816,35 @@ const AdminPromotionsPage: React.FC = () => {
                 return (
                   <Box key={id} sx={{ p: "9px 11px", borderRadius: "10px", background: adminColor.panel2, opacity: expired || !b.enabled ? 0.55 : 1 }}>
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5 }}>
+                      {/* 🆕 Round 28r60 — tiny image thumbnail when set. */}
+                      {b.imageUrl && (
+                        <Avatar
+                          src={b.imageUrl} variant="rounded"
+                          sx={{ width: 42, height: 42, borderRadius: "8px", flexShrink: 0, border: `1px solid ${adminColor.line}` }}
+                        />
+                      )}
                       <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography sx={{ fontSize: 13, fontWeight: 700, color: adminColor.text }}>
-                          {b.name}
-                          {expired && <span style={{ color: adminColor.red, fontWeight: 700 }}> · หมดอายุ</span>}
-                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
+                          <Typography sx={{ fontSize: 13, fontWeight: 700, color: adminColor.text }}>
+                            {b.name}
+                            {expired && <span style={{ color: adminColor.red, fontWeight: 700 }}> · หมดอายุ</span>}
+                          </Typography>
+                          {/* 🆕 Round 28r60 — category tag pill (neutral tint on admin). */}
+                          {b.categoryTag && (
+                            <Box component="span" sx={{
+                              fontSize: 9.5, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase",
+                              color: adminColor.accent, background: `${adminColor.accent}14`,
+                              border: `1px solid ${adminColor.accent}33`, borderRadius: 999, padding: "1px 8px",
+                            }}>
+                              {b.categoryTag}
+                            </Box>
+                          )}
+                        </Box>
+                        {b.subtitle && (
+                          <Typography sx={{ fontSize: 11, color: adminColor.dim, fontStyle: "italic" }}>
+                            {b.subtitle}
+                          </Typography>
+                        )}
                         <Typography sx={{ fontSize: 11.5, color: adminColor.muted }}>
                           {b.sessionCount} sessions · {b.discountPct}% off · {svcName}
                           {b.expiresAt && ` · ถึง ${b.expiresAt.toDate().toLocaleDateString("th-TH")}`}
@@ -2483,12 +2591,88 @@ const AdminPromotionsPage: React.FC = () => {
           {editingBundleId ? "Edit Bundle · แก้ไขแพ็คเกจ" : "Add Bundle · เพิ่มแพ็คเกจ"}
         </DialogTitle>
         <DialogContent>
+          {/* 🆕 Round 28r60 — hero image uploader. Same downscale + lazy
+              firebase/storage pattern as the therapist AvatarUploader
+              (28s280-281). Optional — skipping renders the text-only
+              customer card variant. */}
+          <input
+            ref={bundleImageInputRef} type="file" accept="image/*"
+            style={{ display: "none" }}
+            onChange={(e) => void handleBundleImageUpload(e.target.files?.[0])}
+          />
+          <Box
+            onClick={() => !bundleImageUploading && bundleImageInputRef.current?.click()}
+            sx={{
+              display: "flex", alignItems: "center", gap: 1.25, mt: 1, mb: 1.5,
+              p: "10px 12px", borderRadius: "12px", cursor: bundleImageUploading ? "wait" : "pointer",
+              background: adminColor.panel2, border: `1px dashed ${adminColor.line2}`,
+              transition: "border-color .15s ease, background .15s ease",
+              "&:hover": bundleImageUploading ? {} : { borderColor: adminColor.accent, background: `${adminColor.accent}0A` },
+            }}
+          >
+            {bundleImageUrl ? (
+              <Avatar src={bundleImageUrl} variant="rounded" sx={{ width: 58, height: 58, borderRadius: "10px", border: `1px solid ${adminColor.line}` }} />
+            ) : (
+              <Box sx={{ width: 58, height: 58, borderRadius: "10px", background: adminColor.panel3, display: "flex", alignItems: "center", justifyContent: "center", color: adminColor.dim }}>
+                <Camera size={22} weight="fill" />
+              </Box>
+            )}
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: adminColor.text }}>
+                {bundleImageUploading ? "กำลังอัปโหลด…" : bundleImageUrl ? "รูปหน้าปกแพ็คเกจ" : "อัปโหลดรูปหน้าปก · Hero image"}
+              </Typography>
+              <Typography sx={{ fontSize: 11, color: adminColor.dim }}>
+                {bundleImageUrl ? "แตะเพื่อเปลี่ยน" : "อัตราส่วน 16:9 · ไม่บังคับ (จะแสดง card แบบข้อความอย่างเดียว)"}
+              </Typography>
+            </Box>
+            {bundleImageUrl && !bundleImageUploading && (
+              <Button
+                size="small" variant="text"
+                onClick={(e) => { e.stopPropagation(); setBundleImageUrl(""); }}
+                sx={{ color: adminColor.red, fontWeight: 700, textTransform: "none", minWidth: "auto" }}
+              >
+                Remove
+              </Button>
+            )}
+            {bundleImageUploading && <CircularProgress size={18} sx={{ color: adminColor.accent }} />}
+          </Box>
+
           <TextField
             fullWidth autoFocus label="Bundle name · ชื่อแพ็คเกจ"
             placeholder="เช่น Weekly Ritual · 3 sessions"
             value={bundleName} onChange={(e) => setBundleName(e.target.value)}
-            sx={{ ...fieldSx, mb: 1.5, mt: 1 }}
+            sx={{ ...fieldSx, mb: 1.5 }}
           />
+
+          {/* 🆕 Round 28r60 — Category tag: Autocomplete freeSolo backed by
+              BUNDLE_CATEGORY_TAGS. Admin can pick a suggestion OR type any
+              custom label; the pill it renders on the customer card is
+              i18n-passthrough. */}
+          <Autocomplete
+            freeSolo fullWidth
+            options={BUNDLE_CATEGORY_TAGS}
+            value={bundleCategoryTag}
+            onChange={(_, v) => setBundleCategoryTag(v ?? "")}
+            onInputChange={(_, v) => setBundleCategoryTag(v)}
+            renderInput={(params) => (
+              <TextField
+                {...params} label="Category tag · หมวดหมู่ (ไม่บังคับ)"
+                placeholder="เช่น Weekly Ritual"
+                sx={{ ...fieldSx, mb: 1.5 }}
+              />
+            )}
+            componentsProps={{ paper: { sx: { background: adminColor.panel, border: `1px solid ${adminColor.line}` } } }}
+          />
+
+          {/* 🆕 Round 28r60 — Subtitle: short descriptor line shown under
+              the name on the customer card. */}
+          <TextField
+            fullWidth label="Subtitle · คำโปรย (ไม่บังคับ)"
+            placeholder="เช่น 3 sessions over 30 days"
+            value={bundleSubtitle} onChange={(e) => setBundleSubtitle(e.target.value)}
+            sx={{ ...fieldSx, mb: 1.5 }}
+          />
+
           <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
             <TextField
               select fullWidth label="จำนวนครั้ง · Sessions"
@@ -2515,7 +2699,8 @@ const AdminPromotionsPage: React.FC = () => {
             {customSvcRows.map((r) => <MenuItem key={r.id} value={r.id}>{r.name} · custom</MenuItem>)}
           </TextField>
           <TextField
-            fullWidth label="Sub-label (optional) · คำอธิบายสั้น"
+            fullWidth label="Sub-label (optional) · badge/แท็ก"
+            placeholder="เช่น POPULAR / NEW"
             value={bundleLabel} onChange={(e) => setBundleLabel(e.target.value)}
             sx={{ ...fieldSx, mb: 1.5 }}
           />
