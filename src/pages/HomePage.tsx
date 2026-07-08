@@ -32,6 +32,16 @@ import HomeTherapistGrid from "@/components/home/HomeTherapistGrid";
 //   Self-hides when no active bundles, so safe to mount unconditionally
 //   between the desktop hero band and the therapist grid.
 import BundleSection from "@/components/common/BundleSection";
+// 🆕 Round 28r74 (Nordic sections build) — 5 new marketing / navigation
+//   sections built to match the Nordic Gray mockup founder approved on
+//   2026-07-08. Reverses the 28s20 "app-shell home" call — founder now
+//   wants richer content back ("มีแค่นี้ หรอ" · 2026-07-08 · live site
+//   feedback). See individual component files for per-section notes.
+import QuickNavRow from "@/components/home/QuickNavRow";
+import MembershipCard from "@/components/home/MembershipCard";
+import WhySunRedSection from "@/components/home/WhySunRedSection";
+import EditorialBanner from "@/components/home/EditorialBanner";
+import HomeFooterV2 from "@/components/home/HomeFooterV2";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell replaces the old
 //   maxWidth: 430px cage so the home widens on tablet/desktop.
 import { responsiveShell } from "@/theme/breakpoints";
@@ -392,6 +402,14 @@ const HomePage: React.FC = () => {
         </Box>
       </Box>
 
+      {/* 🆕 Round 28r74 — QuickNavRow (Massage · Therapists · Locations
+          · Reviews). Bilingual outlined icon-circles that give the
+          home page a quick way in to the 4 primary content surfaces.
+          Renders at every viewport (mobile-first — the same row is
+          just as useful as breadcrumbs on desktop). Therapists tap
+          scrolls to the `#therapist-grid` wrapper below. */}
+      <QuickNavRow />
+
       {/* 🆕 Round 28r58 — Bundle Packages between the desktop hero
           band and the therapist grid. Self-hides on empty, so no
           layout impact until admin ships a bundle via
@@ -399,12 +417,30 @@ const HomePage: React.FC = () => {
           above therapist grid (hero band is md-only). */}
       <BundleSection />
 
-      {/* 🆕 Round 28s148 — PromiseStrip removed entirely (founder:
-          "ลบทิ้งไป"). Home now ends at the therapist list, app-style
-          (Grab / Booking / Klook close the same way). 32px bottom
-          spacer keeps the last card off BottomNav. */}
-      <HomeTherapistGrid />
-      <Box sx={{ height: "32px" }} aria-hidden="true" />
+      {/* 🆕 Round 28r74 — Therapist grid wrapped in an id="therapist-grid"
+          anchor so QuickNavRow's "Therapists" tap can scroll here. The
+          shared HomeTherapistGrid component intentionally does NOT
+          carry the id itself (removed in 28b61 · founder direction);
+          scoping the anchor to HomePage keeps that decision intact. */}
+      <Box id="therapist-grid" sx={{ scrollMarginTop: "12px" }}>
+        <HomeTherapistGrid />
+      </Box>
+
+      {/* 🆕 Round 28r74 — 4 Nordic marketing sections in the order
+          approved in the mockup (outputs/sunred-nordic-gray-mockup.html
+          phone 2): Membership benefits → Why SunRed → Editorial banner
+          → Footer. Each carries its own vertical rhythm (24-36px) so
+          the scroll reads as a calm editorial column, not a stack of
+          equally-weighted marketing tiles. */}
+      <MembershipCard />
+      <WhySunRedSection />
+      <EditorialBanner />
+      <HomeFooterV2 />
+
+      {/* Bottom spacer keeps the footer above MainLayout's
+          BottomNavGlass (which reserves 90-110px on its own, so 24
+          here is just breathing room). */}
+      <Box sx={{ height: "24px" }} aria-hidden="true" />
     </Box>
   );
 };
