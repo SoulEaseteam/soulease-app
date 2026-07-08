@@ -195,18 +195,27 @@ const HomePage: React.FC = () => {
             • Secondary CTA "View Pricing" — outlined dark border →
               routes to /pricing (Phase 2 will build the full page)
           Hidden on xs/sm (mobile look preserved — TopNav → grid). */}
+      {/* 🆕 Round 28r76 (founder 2026-07-08) — Hero band now renders
+          on mobile too per direction "ให้ในมือถือ ดีไซต์เดียวกับจอใหญ่".
+          Was md+ only (r70) — a purely-editorial desktop hero. Now
+          shows on every viewport with a column-stack layout on
+          mobile (headline → Thai → body → CTAs full-width) and the
+          original side-by-side row on desktop. Same visual language,
+          smaller paddings/typography on mobile so it doesn't eat the
+          whole phone-shell above the therapist grid. */}
       <Box
         component="section"
         aria-label="SunRed hero band"
         sx={{
-          display: { xs: "none", md: "flex" },
-          alignItems: "center",
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          alignItems: { xs: "flex-start", md: "center" },
           justifyContent: "space-between",
-          gap: { md: 3, lg: 4 },
-          minHeight: { md: 220, lg: 280 },
-          padding: { md: "32px 28px", lg: "44px 40px" },
-          margin: { md: "20px 12px 12px" },
-          borderRadius: "24px",
+          gap: { xs: 2.5, md: 3, lg: 4 },
+          minHeight: { xs: 0, md: 220, lg: 280 },
+          padding: { xs: "22px 20px 24px", md: "32px 28px", lg: "44px 40px" },
+          margin: { xs: "12px 12px 8px", md: "20px 12px 12px" },
+          borderRadius: { xs: "20px", md: "24px" },
           background: "#ECEBE8", // NEUTRAL_100 — Nordic card surface
           color: "#4B4B48",       // GRAY_800 heading ink
           boxShadow: "0 8px 24px rgba(45, 45, 43, 0.06)",
@@ -292,10 +301,10 @@ const HomePage: React.FC = () => {
             sx={{
               ...responsiveType.body,
               fontFamily: fonts.body,
-              fontSize: { md: 14, lg: 15 },
+              fontSize: { xs: 13, md: 14, lg: 15 },
               fontWeight: 400,
               color: "#6E6E6A", // GRAY_600
-              marginTop: "16px",
+              marginTop: { xs: "12px", md: "16px" },
               maxWidth: 620,
               lineHeight: 1.6,
             }}
@@ -307,15 +316,17 @@ const HomePage: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Right column — two CTAs stacked. Falls back cleanly on
-            narrow md-widths by keeping wraps predictable. */}
+        {/* Right column — two CTAs stacked. Full-width on mobile so
+            they align with the text column; auto-width row on desktop. */}
         <Box
           sx={{
             flexShrink: 0,
             display: "flex",
             flexDirection: "column",
-            gap: "10px",
+            gap: { xs: "8px", md: "10px" },
             minWidth: { md: 200, lg: 220 },
+            width: { xs: "100%", md: "auto" },
+            marginTop: { xs: "4px", md: 0 },
           }}
         >
           {/* Primary CTA — Contact Us (WhatsApp/LINE concierge). */}
@@ -329,12 +340,12 @@ const HomePage: React.FC = () => {
               alignItems: "center",
               justifyContent: "center",
               gap: "10px",
-              padding: { md: "13px 24px", lg: "15px 28px" },
+              padding: { xs: "12px 20px", md: "13px 24px", lg: "15px 28px" },
               borderRadius: 999,
               background: "#2D2D2B", // GRAY_900 primary ink
               color: "#FFFFFF",
               fontFamily: fonts.body,
-              fontSize: { md: 14, lg: 15 },
+              fontSize: { xs: 13.5, md: 14, lg: 15 },
               fontWeight: 600,
               letterSpacing: "0.005em",
               textDecoration: "none",
@@ -372,12 +383,12 @@ const HomePage: React.FC = () => {
               alignItems: "center",
               justifyContent: "center",
               gap: "10px",
-              padding: { md: "13px 24px", lg: "15px 28px" },
+              padding: { xs: "12px 20px", md: "13px 24px", lg: "15px 28px" },
               borderRadius: 999,
               background: "transparent",
               color: "#2D2D2B", // GRAY_900
               fontFamily: fonts.body,
-              fontSize: { md: 14, lg: 15 },
+              fontSize: { xs: 13.5, md: 14, lg: 15 },
               fontWeight: 600,
               letterSpacing: "0.005em",
               cursor: "pointer",
