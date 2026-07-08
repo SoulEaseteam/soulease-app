@@ -66,7 +66,9 @@ import { db } from "@/lib/firebase";
 import { brand, fonts } from "@/theme";
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell.
-import { responsiveShell } from "@/theme/breakpoints";
+// 🆕 Round 28r54 (Phase 3.3) — responsiveType scales the h1 name +
+//   description with viewport width.
+import { responsiveShell, responsiveType } from "@/theme/breakpoints";
 
 const WHATSAPP_URL = "https://wa.me/66634350987";
 
@@ -229,10 +231,13 @@ const ServiceDetailPage: React.FC = () => {
           "#F4F6F5",
         minHeight: "100vh",
         position: "relative",
-        paddingBottom: "120px",
+        // 🆕 Round 28r54 (Phase 3.3) — on md+ the Reserve CTA moves
+        //   inline into the left column; no need for 120px of sticky-
+        //   footer clearance.
+        paddingBottom: { xs: "120px", md: "48px" },
       }}
     >
-      {/* ── Back button + hero icon ─────────────────────────────────── */}
+      {/* ── Back button — always at top, spans full width ─────────── */}
       <Box sx={{ padding: "16px 18px 0" }}>
         <IconButton
           onClick={() => navigate(-1)}
@@ -241,77 +246,111 @@ const ServiceDetailPage: React.FC = () => {
             background: "rgba(255,255,255,0.8)",
             backdropFilter: "blur(8px)",
             "&:hover": { background: "#fff" },
-            marginBottom: "20px",
+            marginBottom: { xs: "20px", md: "12px" },
           }}
         >
           <ArrowBackRoundedIcon sx={{ color: brand.text }} />
         </IconButton>
-
-        <Box
-          component={motion.div}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          sx={{
-            width: "100%",
-            height: 140,
-            borderRadius: "20px",
-            background: "#FFF1E5",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: "20px",
-          }}
-        >
-          <Icon sx={{ fontSize: 64, color: config.swatchIcon }} />
-        </Box>
-
-        {/* Title block */}
-        <Typography
-          component="p"
-          sx={{
-            fontFamily: fonts.body,
-            fontSize: "11px",
-            fontWeight: 800,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: brand.accent,
-            marginBottom: "6px",
-          }}
-        >
-          {config.tier}
-        </Typography>
-        <Typography
-          component="h1"
-          sx={{
-            fontFamily: fonts.heading,
-            fontSize: "26px",
-            fontWeight: 600,
-            color: brand.text,
-            letterSpacing: "-0.015em",
-            lineHeight: 1.1,
-            marginBottom: "8px",
-          }}
-        >
-          {service.name}
-        </Typography>
-        <Typography
-          component="p"
-          sx={{
-            fontFamily: fonts.body,
-            fontSize: "14px",
-            fontWeight: 500,
-            color: brand.textMuted,
-            lineHeight: 1.5,
-            marginBottom: "24px",
-          }}
-        >
-          {service.desc}
-        </Typography>
       </Box>
 
-      {/* ── Duration tiles ─────────────────────────────────────────── */}
-      <Box sx={{ padding: "0 18px", marginBottom: "24px" }}>
+      {/* ── 🆕 Round 28r54 (Phase 3.3) — Responsive columns ──────────
+          Mobile: single-column stack (unchanged). Tablet+ (md+):
+          left rail sticks with hero + title + duration tiles + a
+          Reserve CTA; right rail scrolls with What's included +
+          Reviews. Sticky-bottom mobile CTA is hidden on md+. */}
+      <Box
+        sx={{
+          display: { md: "grid" },
+          gridTemplateColumns: { md: "5fr 7fr" },
+          columnGap: { md: 4 },
+          rowGap: 0,
+          alignItems: { md: "start" },
+          padding: { xs: 0, md: "0 18px" },
+        }}
+      >
+        {/* ── LEFT COLUMN — sticky rail on md+ ────────────────────── */}
+        <Box
+          sx={{
+            position: { md: "sticky" },
+            top: { md: 24 },
+          }}
+        >
+          {/* Hero + title block — matches original padding on xs */}
+          <Box sx={{ padding: { xs: "0 18px", md: 0 } }}>
+            <Box
+              component={motion.div}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              sx={{
+                width: "100%",
+                // 🆕 Round 28r54 (Phase 3.3) — hero grows a bit on md+
+                //   to match the wider left rail.
+                height: { xs: 140, md: 180 },
+                borderRadius: "20px",
+                background: "#FFF1E5",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: "20px",
+              }}
+            >
+              <Icon
+                sx={{
+                  fontSize: { xs: 64, md: 80 },
+                  color: config.swatchIcon,
+                }}
+              />
+            </Box>
+
+            {/* Title block */}
+            <Typography
+              component="p"
+              sx={{
+                fontFamily: fonts.body,
+                fontSize: "11px",
+                fontWeight: 800,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                color: brand.accent,
+                marginBottom: "6px",
+              }}
+            >
+              {config.tier}
+            </Typography>
+            {/* 🆕 Round 28r54 (Phase 3.3) — responsiveType.h3 scales
+                the service name 22→28→34 with viewport. */}
+            <Typography
+              component="h1"
+              sx={{
+                fontFamily: fonts.heading,
+                ...responsiveType.h3,
+                fontWeight: 600,
+                color: brand.text,
+                letterSpacing: "-0.015em",
+                marginBottom: "8px",
+              }}
+            >
+              {service.name}
+            </Typography>
+            {/* 🆕 Round 28r54 (Phase 3.3) — responsiveType.body scales
+                the description 14→15→16 with viewport. */}
+            <Typography
+              component="p"
+              sx={{
+                fontFamily: fonts.body,
+                ...responsiveType.body,
+                fontWeight: 500,
+                color: brand.textMuted,
+                marginBottom: "24px",
+              }}
+            >
+              {service.desc}
+            </Typography>
+          </Box>
+
+          {/* ── Duration tiles (inside left rail on md+) ─────────── */}
+          <Box sx={{ padding: { xs: "0 18px", md: 0 }, marginBottom: "24px" }}>
         <Typography
           component="p"
           sx={{
@@ -421,10 +460,59 @@ const ServiceDetailPage: React.FC = () => {
             );
           })}
         </Box>
-      </Box>
+          </Box>
+
+          {/* ── 🆕 Round 28r54 (Phase 3.3) — Inline Reserve CTA ──────
+              Desktop-only sibling of the sticky-bottom mobile CTA
+              below. Same handler, same label — just placed in the
+              left rail so the visitor sees pricing + call-to-action
+              while scrolling reviews on the right. */}
+          <Box
+            sx={{
+              display: { xs: "none", md: "block" },
+              marginBottom: "16px",
+            }}
+          >
+            <Button
+              fullWidth
+              onClick={handleBook}
+              aria-label={t(
+                "serviceDetail.bookAria",
+                "Chat to book {{name}}",
+                { name: service.name }
+              )}
+              startIcon={
+                <WhatsAppIcon sx={{ fontSize: "20px !important" }} />
+              }
+              sx={{
+                padding: "14px 20px",
+                borderRadius: "16px",
+                background: "#B4000A",
+                color: "#fff",
+                fontFamily: fonts.body,
+                fontWeight: 700,
+                fontSize: "15px",
+                textTransform: "none",
+                boxShadow:
+                  "0 12px 32px rgba(15, 23, 42, 0.28), inset 0 1px 0 rgba(255,255,255,0.20)",
+                "&:hover": {
+                  background: "#B4000A",
+                  boxShadow: "0 16px 40px rgba(15, 23, 42, 0.34)",
+                },
+              }}
+            >
+              {t("serviceDetail.bookCta", "Chat to book")} ·{" "}
+              {formatTHB(currentPrice)}
+            </Button>
+          </Box>
+        </Box>
+        {/* ── LEFT COLUMN END ─────────────────────────────────────── */}
+
+        {/* ── RIGHT COLUMN — scrollable body ──────────────────────── */}
+        <Box>
 
       {/* ── What's included ────────────────────────────────────────── */}
-      <Box sx={{ padding: "0 18px", marginBottom: "28px" }}>
+      <Box sx={{ padding: { xs: "0 18px", md: 0 }, marginBottom: "28px" }}>
         <Typography
           component="p"
           sx={{
@@ -498,7 +586,7 @@ const ServiceDetailPage: React.FC = () => {
           <Typography
             component="p"
             sx={{
-              padding: "0 18px",
+              padding: { xs: "0 18px", md: 0 },
               fontFamily: fonts.body,
               fontSize: "11px",
               fontWeight: 800,
@@ -515,7 +603,7 @@ const ServiceDetailPage: React.FC = () => {
               display: "flex",
               gap: "10px",
               overflowX: "auto",
-              padding: "4px 18px",
+              padding: { xs: "4px 18px", md: "4px 0" },
               scrollbarWidth: "none",
               "&::-webkit-scrollbar": { display: "none" },
               scrollSnapType: "x mandatory",
@@ -571,15 +659,21 @@ const ServiceDetailPage: React.FC = () => {
           </Box>
         </Box>
       )}
+        </Box>
+        {/* ── RIGHT COLUMN END ────────────────────────────────────── */}
+      </Box>
+      {/* ── Responsive columns wrapper END ─────────────────────────── */}
 
-      {/* ── Sticky bottom CTA ──────────────────────────────────────── */}
+      {/* ── Sticky bottom CTA (mobile only) ────────────────────────
+          🆕 Round 28r54 (Phase 3.3) — hidden on md+; the inline
+          Reserve CTA in the left rail above takes over on desktop. */}
       <Box
         sx={{
           position: "fixed",
           bottom: 70, // sit above BottomNavGlass
           left: 0,
           right: 0,
-          display: "flex",
+          display: { xs: "flex", md: "none" },
           justifyContent: "center",
           padding: "0 18px",
           pointerEvents: "none",

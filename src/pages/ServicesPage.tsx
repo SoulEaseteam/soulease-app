@@ -60,7 +60,9 @@ import { useDocumentMeta } from "@/utils/useDocumentMeta";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell replaces the old
 //   maxWidth: 430 phone-shell so the Services lobby widens on tablet
 //   and desktop instead of sitting as a narrow strip.
-import { responsiveShell } from "@/theme/breakpoints";
+// 🆕 Round 28r54 (Phase 3.3) — responsiveType scales the About us
+//   tagline heading with viewport width.
+import { responsiveShell, responsiveType } from "@/theme/breakpoints";
 
 const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -412,6 +414,16 @@ const ServicesPage: React.FC = () => {
             <Box
               ref={(node: HTMLDivElement | null) => {
                 if (!node) return;
+                // 🆕 Round 28r54 (Phase 3.3) — auto-scroll only makes
+                //   sense for the mobile horizontal snap-scroll row.
+                //   On md+ the container is a static 4-col grid —
+                //   nothing to scroll to; skip the read.
+                if (
+                  typeof window !== "undefined" &&
+                  window.matchMedia("(min-width: 900px)").matches
+                ) {
+                  return;
+                }
                 // Defer one frame so children have laid out + widths
                 // are measurable.
                 window.requestAnimationFrame(() => {
@@ -426,18 +438,24 @@ const ServicesPage: React.FC = () => {
                 });
               }}
               sx={{
-                display: "flex",
+                // 🆕 Round 28r54 (Phase 3.3) — mobile keeps the
+                //   horizontal snap-scroll ROLADEX (works well at
+                //   phone widths); tablet+ (md+) switches to a
+                //   4-column grid so cards fill the wider viewport
+                //   instead of hugging the left edge.
+                display: { xs: "flex", md: "grid" },
                 flexDirection: "row",
+                gridTemplateColumns: { md: "repeat(4, 1fr)" },
                 // 🆕 Round 28s192 — Wider gap (16px → 28px) so the
                 //   bestseller's 1.06× scale doesn't nibble into the
                 //   neighbour cards.
+                gap: { xs: 3.5, md: 3 },
                 // 🆕 Round 28s200 — Extra top padding so the lifted
                 //   "Most Recommended" ribbon (top: -28) doesn't
                 //   collide with the RATES & SERVICES bar above.
-                gap: 3.5,
                 padding: "40px 0 24px",
-                margin: "0 -16px",
-                overflowX: "auto",
+                margin: { xs: "0 -16px", md: 0 },
+                overflowX: { xs: "auto", md: "visible" },
                 scrollSnapType: "x mandatory",
                 scrollPaddingInline: "calc((100% - 290px) / 2)",
                 scrollbarWidth: "none",
@@ -447,6 +465,15 @@ const ServicesPage: React.FC = () => {
                   content: '""',
                   flexShrink: 0,
                   width: "calc((100% - 290px) / 2)",
+                },
+                // 🆕 Round 28r54 (Phase 3.3) — on md+ the container
+                //   is a grid; the ::before/::after pseudos would
+                //   occupy two grid cells and starve the 4 real
+                //   cards. Hide them explicitly.
+                "@media (min-width: 900px)": {
+                  "&::before, &::after": {
+                    display: "none",
+                  },
                 },
               }}
             >
@@ -464,8 +491,9 @@ const ServicesPage: React.FC = () => {
                 svc.id === "SR-HJ2200" || svc.id === "SR-B2B3200";
               const tierLabel = isPremium ? "Premium" : "Signature";
               return (
-                <motion.div
+                <Box
                   key={svc.name}
+                  component={motion.div}
                   initial={{ opacity: 0, y: 14 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{
@@ -473,9 +501,12 @@ const ServicesPage: React.FC = () => {
                     duration: 0.4,
                     ease: "easeOut",
                   }}
-                  style={{
+                  sx={{
                     flexShrink: 0,
-                    width: 290,
+                    // 🆕 Round 28r54 (Phase 3.3) — fixed 290px in the
+                    //   mobile snap-scroll row; `auto` inside the md+
+                    //   4-col grid so each card fills its own cell.
+                    width: { xs: 290, md: "auto" },
                     scrollSnapAlign: "center",
                     position: "relative",
                   }}
@@ -814,7 +845,7 @@ const ServicesPage: React.FC = () => {
                         Reservation happens through TopNav drawer ·
                         BottomNav · or therapist detail page. */}
                   </Box>
-                </motion.div>
+                </Box>
               );
             })}
             </Box>
@@ -1251,15 +1282,17 @@ const ServicesPage: React.FC = () => {
               {/* 🆕 Round 28s216 (About audit #2) — SERIF → SANS 700
                   for the hero claim, matching Services + How-to-book
                   audits (28s199 / 28s202). Italic accent kept in
-                  brand red for visual punctuation. */}
+                  brand red for visual punctuation.
+                  🆕 Round 28r54 (Phase 3.3) — responsiveType.h5
+                  scales the tagline 17→20→22 as the About-us panel
+                  widens with the shell. */}
               <Typography
                 sx={{
                   fontFamily: SANS,
-                  fontSize: 17,
+                  ...responsiveType.h5,
                   fontWeight: 700,
                   color: "#1A2B2E",
                   letterSpacing: "-0.01em",
-                  lineHeight: 1.35,
                   mb: 1,
                   "& em": {
                     color: "#B4000A",
@@ -1272,10 +1305,12 @@ const ServicesPage: React.FC = () => {
                 Bangkok&apos;s most discreet outcall massage,{" "}
                 <em>delivered to you.</em>
               </Typography>
+              {/* 🆕 Round 28r54 (Phase 3.3) — responsiveType.body
+                  scales body copy 14→15→16 with viewport. */}
               <Typography
                 sx={{
                   fontFamily: SANS,
-                  fontSize: 13.5,
+                  ...responsiveType.body,
                   lineHeight: 1.65,
                   color: "rgba(15, 23, 42,0.78)",
                 }}
