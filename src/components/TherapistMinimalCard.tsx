@@ -321,39 +321,39 @@ const TherapistMinimalCard: React.FC<Props> = ({
         )}
 
         {/* Round 28r84 — Status pill at bottom-center of the photo.
-            Founder direction (2026-07-08 reference screenshots): the
-            AVAILABLE pill becomes the dominant status indicator,
-            hanging on the bottom edge of the portrait. Solid teal +
-            white for `available`; warm-neutral fills for the other
-            states so the visual hierarchy stays clear. Holiday cards
-            still suppress the pill (the Holiday badge above already
-            says it). */}
+            🆕 Round 28r86 (founder 2026-07-08 · live screenshot) —
+            three tweaks on the pill:
+              • Uniform SMALL size across every state (was: Available
+                bigger than Bookable/Offline). Matches the Offline chip
+                size from the reference — compact, doesn't overwhelm
+                the photo.
+              • Nudged up so it sits fully INSIDE the photo instead of
+                straddling the bottom edge (was bottom:-14 → now 10).
+              • Bookable fill switched from GRAY_800 #4B4B48 to amber
+                #F5A623 — matches the amber "next slot open" register
+                that the star rating uses. */}
         {!isOnHoliday && (
           <Box
             sx={{
               position: "absolute",
               left: "50%",
-              bottom: "-14px",
+              bottom: "10px",
               transform: "translateX(-50%)",
               zIndex: 2,
               display: "inline-flex",
               alignItems: "center",
-              gap: "6px",
-              padding:
-                status === "available" ? "8px 20px" : "6px 16px",
+              gap: "5px",
+              padding: "5px 14px",
               borderRadius: "999px",
               background:
                 status === "available"
                   ? accents.teal
                   : status === "bookable"
-                    ? "#4B4B48"
+                    ? "#F5A623"
                     : "#8F8474",
               color: "#fff",
               border: "none",
-              boxShadow:
-                status === "available"
-                  ? "0 8px 20px rgba(46, 196, 176, 0.30), 0 2px 5px rgba(46, 196, 176, 0.18)"
-                  : "0 4px 10px rgba(15, 23, 42, 0.20)",
+              boxShadow: "0 4px 10px rgba(15, 23, 42, 0.20)",
               whiteSpace: "nowrap",
             }}
             aria-label={statusLabel}
@@ -361,8 +361,8 @@ const TherapistMinimalCard: React.FC<Props> = ({
             {status !== "available" && (
               <Box
                 sx={{
-                  width: 6,
-                  height: 6,
+                  width: 5,
+                  height: 5,
                   borderRadius: "50%",
                   background: "#fff",
                   opacity: 0.9,
@@ -372,10 +372,10 @@ const TherapistMinimalCard: React.FC<Props> = ({
             <Typography
               sx={{
                 fontFamily: fonts.body,
-                fontSize: status === "available" ? "11px" : "10px",
+                fontSize: "10px",
                 fontWeight: 700,
                 color: "#fff",
-                letterSpacing: "0.08em",
+                letterSpacing: "0.06em",
                 textTransform: "uppercase",
                 lineHeight: 1,
               }}
