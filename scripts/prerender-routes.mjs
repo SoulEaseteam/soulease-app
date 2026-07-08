@@ -874,11 +874,162 @@ ${SERVICES.map(
   return routes;
 }
 
+// ── /pricing (Round 28r70 · Rebrand Phase 1) ───────────────────────────────
+// New "Core Experiences" money page introduced with the Nordic rebrand.
+// Phase 1 ships a Nordic-styled placeholder (see src/pages/PricingPage.tsx);
+// Phase 2 will populate a real rate card. This prerendered shell exists so
+// external / social / crawler visits hit a titled page with correct hreflang
+// and a crawlable body listing the current pricing anchors — even before the
+// full page is built.
+const PRICING_COPY = {
+  en: {
+    title: "Core Experiences · Outcall Massage Pricing in Bangkok | SunRed",
+    description:
+      "SunRed Core Experiences — full pricing for our Bangkok outcall massage menu (Traditional Thai, Aromatherapy, Gentleman's Signature, Therapeutic). Verified practitioners, delivered to your hotel. 24/7 concierge in EN/中文/日本語/한국어.",
+    ogTitle: "Core Experiences — Outcall Massage Pricing | SunRed",
+    ogDescription:
+      "Full service pricing for SunRed's Bangkok outcall massage menu. Delivered to your hotel, verified practitioners, 24/7 concierge.",
+    h1: "Core Experiences · Service Pricing",
+    intro:
+      "SunRed's Core Experiences menu delivers our full outcall massage catalogue to your Bangkok hotel, residence or villa — verified Thai practitioners, discreet arrival, multilingual concierge (English, 中文, 日本語, 한국어), 24/7.",
+    menuHeading: "Service menu & starting prices",
+    reserveHeading: "Ask the concierge",
+    homeLink: "Home — live availability",
+    allServices: "All services",
+    contactLine:
+      "The full rate card is being finalised as part of the SunRed brand refresh. Our concierge can answer any question about services, session lengths, and rates — usually within a few minutes.",
+  },
+  zh: {
+    title: "尊享体验 · 曼谷上门按摩价格 | SunRed",
+    description:
+      "SunRed 尊享体验 — 曼谷上门按摩全套服务与价格（泰式、芳疗、尊享男士理疗、尊享理疗体验）。认证技师、上门送达酒店、全天候24小时多语言客服。",
+    ogTitle: "尊享体验 — 上门按摩价格 | SunRed",
+    ogDescription:
+      "SunRed 曼谷上门按摩全套服务与价格。认证技师、上门送达、24 小时客服。",
+    h1: "尊享体验 · 服务价格",
+    intro:
+      "SunRed 尊享体验菜单，将全套上门按摩服务送达您在曼谷的酒店、公寓或别墅——认证泰国女性技师、私密上门、多语言客服（English / 中文 / 日本語 / 한국어），全天候24小时。",
+    menuHeading: "服务菜单与起始价格",
+    reserveHeading: "咨询礼宾",
+    homeLink: "首页 — 实时空闲",
+    allServices: "全部服务",
+    contactLine:
+      "完整的价目表将随 SunRed 品牌焕新一并推出。如需咨询服务、时长与价格，我们的礼宾团队通常在几分钟内回复。",
+  },
+  ja: {
+    title:
+      "コア・エクスペリエンス · バンコク出張マッサージ料金 | SunRed",
+    description:
+      "SunRed コア・エクスペリエンス — バンコク出張マッサージ全メニューの料金（タイ古式・アロマ・メンズ シグネチャー・セラピー）。認定セラピスト、ホテルへ出張、24 時間多言語コンシェルジュ。",
+    ogTitle: "コア・エクスペリエンス — 出張マッサージ料金 | SunRed",
+    ogDescription:
+      "SunRed バンコク出張マッサージの全メニューと料金。認定セラピスト、ホテルへ出張、24 時間コンシェルジュ。",
+    h1: "コア・エクスペリエンス · サービス料金",
+    intro:
+      "SunRed コア・エクスペリエンスは、バンコクのホテル・ご滞在先へ全メニューを出張でお届けします。認定タイ人女性セラピスト、プライベートな訪問、多言語コンシェルジュ（English / 中文 / 日本語 / 한국어）、24 時間対応。",
+    menuHeading: "サービスメニューと料金（〜から）",
+    reserveHeading: "コンシェルジュへ相談",
+    homeLink: "ホーム — リアルタイム空き状況",
+    allServices: "すべてのサービス",
+    contactLine:
+      "完全な料金表は SunRed のブランドリニューアルに合わせて公開予定です。サービス内容・時間・料金についてのご質問は、コンシェルジュへお気軽にどうぞ（通常数分でご返信）。",
+  },
+  ko: {
+    title: "코어 익스피리언스 · 방콕 출장 마사지 가격 | SunRed",
+    description:
+      "SunRed 코어 익스피리언스 — 방콕 출장 마사지 전체 메뉴 가격 (타이, 아로마, 젠틀맨 시그니처, 테라퓨틱). 인증 테라피스트, 호텔로 방문, 24시간 다국어 컨시어지.",
+    ogTitle: "코어 익스피리언스 — 출장 마사지 가격 | SunRed",
+    ogDescription:
+      "SunRed 방콕 출장 마사지 전체 메뉴와 가격. 인증 테라피스트, 호텔 방문, 24시간 컨시어지.",
+    h1: "코어 익스피리언스 · 서비스 가격",
+    intro:
+      "SunRed 코어 익스피리언스 메뉴는 방콕 호텔·레지던스·빌라로 전체 출장 마사지 카탈로그를 제공합니다 — 인증 태국 여성 테라피스트, 프라이빗 방문, 다국어 컨시어지 (English / 中文 / 日本語 / 한국어), 24시간 운영.",
+    menuHeading: "서비스 메뉴 & 시작 가격",
+    reserveHeading: "컨시어지 문의",
+    homeLink: "홈 — 실시간 예약 가능",
+    allServices: "전체 서비스",
+    contactLine:
+      "전체 가격표는 SunRed 브랜드 리뉴얼에 맞춰 공개됩니다. 서비스·시간·요금 문의는 컨시어지에게 부탁드리며, 보통 몇 분 안에 답변드립니다.",
+  },
+};
+
+function pricingRoutes() {
+  return LOCALES.map((lang) => {
+    const L = LOC[lang];
+    const P = PRICING_COPY[lang];
+    const pfx = localePrefix(lang);
+    const path = `${pfx}/pricing`;
+    const url = `${ORIGIN}${path}`;
+    return {
+      path,
+      canonicalPath: path,
+      hreflangBase: "/pricing", // shared base across all 4 langs
+      htmlLang: L.htmlLang,
+      ogLocale: L.ogLocale,
+      title: P.title,
+      description: P.description,
+      ogTitle: P.ogTitle,
+      ogDescription: P.ogDescription,
+      jsonLd: [
+        breadcrumbJsonLd([
+          { name: L.brand, url: `${ORIGIN}/` },
+          { name: "Pricing", url },
+        ]),
+        {
+          "@context": "https://schema.org",
+          "@type": "OfferCatalog",
+          "@id": `${url}#offers`,
+          name: P.h1,
+          itemListElement: SERVICES.map((s) => ({
+            "@type": "Offer",
+            url: `${ORIGIN}${pfx}/services/${s.slug}`,
+            itemOffered: {
+              "@type": "Service",
+              name: s[lang].name,
+              serviceType: "Outcall massage",
+              provider: { "@id": BUSINESS_ID },
+            },
+            priceCurrency: "THB",
+            price: String(s.price),
+            priceSpecification: {
+              "@type": "PriceSpecification",
+              priceCurrency: "THB",
+              minPrice: String(s.price),
+            },
+          })),
+        },
+      ],
+      noscript: `
+        <h1>${P.h1}</h1>
+        <p>${P.intro}</p>
+        <h2>${P.menuHeading}</h2>
+        <ul>
+${SERVICES.map(
+  (s) =>
+    `          <li><a href="${ORIGIN}${pfx}/services/${s.slug}">${s[lang].name}</a> — ${L.fromPrice(
+      s.price
+    )} (${L.durations})</li>`
+).join("\n")}
+        </ul>
+        <p>${P.contactLine}</p>
+        <h2>${P.reserveHeading}</h2>
+        <ul>
+          <li><a href="${ORIGIN}${pfx}/">${P.homeLink}</a></li>
+          <li><a href="${ORIGIN}${pfx}/services">${P.allServices}</a></li>
+          <li><a href="https://lin.ee/uqvdwWt">LINE</a></li>
+          <li><a href="https://t.me/SunRedvip_bkk">Telegram</a></li>
+          <li><a href="https://wa.me/66634350987">WhatsApp</a></li>
+        </ul>`,
+    };
+  });
+}
+
 const ROUTES = [
   ...serviceRoutes(),
   ...therapistRoutes(),
   ...homeRoutes(),
   ...districtRoutes(),
+  ...pricingRoutes(),
 ];
 
 // ── Replacement helpers (assert every swap fires) ──────────────────────────

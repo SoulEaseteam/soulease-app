@@ -64,6 +64,12 @@ const WeChatScanPage = React.lazy(() => import("@/pages/WeChatScanPage"));
 const HomePage = React.lazy(() => import("@/pages/HomePage"));
 const ServicesPage = React.lazy(() => import("@/pages/ServicesPage"));
 const ServiceDetailPage = React.lazy(() => import("@/pages/ServiceDetailPage"));
+// 🆕 Round 28r70 (Rebrand Phase 1) — new /pricing route (currently a
+//   Nordic-styled placeholder; Phase 2 will build the full page). The
+//   route is prerendered as SEO shells in scripts/prerender-routes.mjs
+//   for /pricing + /{zh,ja,ko}/pricing so external links land on
+//   something even before the real page ships.
+const PricingPage = React.lazy(() => import("@/pages/PricingPage"));
 const TherapistDetailPage = React.lazy(
   () => import("@/pages/TherapistDetailPage")
 );
@@ -263,6 +269,14 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/services/:id" element={<ServiceDetailPage />} />
+          {/* 🆕 Round 28r70 (Rebrand Phase 1) — new pricing route.
+              Currently renders a Nordic-styled stub with two escape
+              hatches (Contact Concierge / Back to Home). Phase 2 will
+              swap in the full rate card. Localized crawler entry
+              points (/zh/pricing etc.) are handled by the
+              LocaleEntryRedirect route above (redirects to /pricing
+              after switching i18n language). */}
+          <Route path="/pricing" element={<PricingPage />} />
 
           {/* 🃏 Phase 2 — Browse + Detail */}
           {/* 🆕 Round 25c: full therapist list is now on HomePage

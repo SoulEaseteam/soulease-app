@@ -6,91 +6,147 @@ import { createTheme } from "@mui/material/styles";
 import type {} from "@mui/x-date-pickers/themeAugmentation";
 
 // ─────────────────────────────────────────────────────────────────────
-// 🎨 BRAND tokens — Round 28s150 palette swap
+// 🎨 BRAND tokens — Round 28r70 · Rebrand Phase 1 (2026-07-08)
 //
-// Source references:
-//   • Red base: DOT Podcast brand book (#B4000A — deep crimson, not
-//     the old hot #B4000A). Cleaner, more "editorial premium".
-//   • Neutrals + status: extracted from competitor (cbody.vip) palette,
-//     EXCLUDING their signature mint-teal CTA (#2EC4B0) so SunRed
-//     doesn't read as a clone. SunRed's primary action stays red.
+// Founder direction: "ลุยเต็มระบบ" (go all-in) — sitewide switch from
+// Sunred Red / Cool Slate to **Nordic Gray Neutrals + Playfair Display**.
+// This is Phase 1 (foundation only): palette + font stacks + hero copy +
+// pricing route. Phase 2 will build a real /pricing page. Phase 3 will
+// sweep per-page polish. Phase 4 will audit.
 //
-// Founder direction (2026-XX): "เปลี่ยนสีธีมทั้งโปรเจค สีแดงตามนี้
-//   สีอื่นๆ ตามนี้ ยกเว้นเขียวแบบ cbody."
+// Blast-radius discipline: every existing token export
+// (brand.red, brand.text, brand.textMuted, fonts.heading, gradients.*)
+// is PRESERVED so downstream imports don't break — only the VALUES are
+// changed. Where a name like `brand.red` no longer makes semantic sense,
+// the export still resolves — it points at GRAY_900, the new primary
+// CTA colour. Sunred crimson is gone; Nordic dark ink takes its role.
+//
+// The 3 fresh token trees (`neutrals`, `grays`, `warmAccents`, `sage`)
+// are added ALONGSIDE the legacy ones so new work can consume the
+// intended tokens directly without needing the legacy alias trick.
 // ─────────────────────────────────────────────────────────────────────
-// 🆕 Round 28s152 — Founder pushback on 28s151: "สีเขาเรา ดูเศร้าไปนะ
-//   พื้นหลัง สีแดง ok ละ แต่ไม่เอา เรืองแสง". Translation: bg + red
-//   are fine, but the page looks dead — bring some accent life back
-//   (stars · NEW badge · tag chips · soft favourite). No glow shadows
-//   though. Result: red CTA stays flat, plus 3 accents used SPARINGLY.
+
+// ── Palette anchors (from founder spec — use EXACT hex values) ──────
+// Neutrals (page / card / border)
+const NEUTRAL_50  = "#F7F7F6";  // page bg
+const NEUTRAL_100 = "#ECEBE8";  // card / section bg
+const NEUTRAL_200 = "#E2E0DD";  // softer surface / hover
+const NEUTRAL_300 = "#CFCFCB";  // borders
+const NEUTRAL_400 = "#B6B6B1";  // dim borders
+
+// Grays (ink)
+const GRAY_400 = "#A7A7A2";     // dim / disabled
+const GRAY_500 = "#8E8E89";     // muted body
+const GRAY_600 = "#6E6E6A";     // body text
+const GRAY_800 = "#4B4B48";     // heading
+const GRAY_900 = "#2D2D2B";     // primary CTA / darkest ink
+
+// Warm accents
+const WARM_100 = "#C9B9A7";     // warm sand light
+const WARM_200 = "#B7A896";     // warm sand
+const SAGE_400 = "#A2BF7A";     // sage (success / online dot / check mark)
+
+// ── New named token trees (preferred going forward) ────────────────
+export const neutrals = {
+  n50: NEUTRAL_50,
+  n100: NEUTRAL_100,
+  n200: NEUTRAL_200,
+  n300: NEUTRAL_300,
+  n400: NEUTRAL_400,
+} as const;
+
+export const grays = {
+  g400: GRAY_400,
+  g500: GRAY_500,
+  g600: GRAY_600,
+  g800: GRAY_800,
+  g900: GRAY_900,
+} as const;
+
+export const warmAccents = {
+  w100: WARM_100,
+  w200: WARM_200,
+} as const;
+
+export const sage = SAGE_400;
+
+// ── Legacy `brand` tree — VALUES swapped, names preserved ──────────
+//   `brand.red` no longer holds crimson. It now points at GRAY_900,
+//   which is the Nordic direction's primary-CTA/dark-ink colour, so
+//   every existing `background: brand.red` becomes a solid dark button
+//   (correct visual role · wrong variable name). Phase 3 will do the
+//   name-cleanup sweep across the ~40 files that reference `brand.red`
+//   / `brand.coral` etc.
 export const brand = {
-  // ── Primary (kept from 28s151)
-  red: "#B4000A",            // CTA · brand wordmark · accent (flat)
-  text: "#1A2B2E",           // headings + dark surfaces
-  textMuted: "#4A5568",      // body copy + subtitles
-  bg1: "#F4F6F5",            // page background
-  bg2: "#F4F6F5",            // alias = bg1
-  green: "#16A34A",          // online dot ONLY
+  // ── Primary
+  red: GRAY_900,               // PRIMARY CTA / dark ink (was crimson)
+  text: GRAY_800,              // headings
+  textMuted: GRAY_600,         // body copy + subtitles
+  bg1: NEUTRAL_50,             // page background
+  bg2: NEUTRAL_100,            // card / section background
+  green: SAGE_400,             // online dot / success (was #16A34A)
 
-  // ── Small accent palette (28s152 restoration · use sparingly)
-  amber: "#F5A623",          // ★ star ratings · NEW / TOP-RATED badge
-  pink: "#FFE5EC",           // favourite heart bg · subtle highlight
-  tagBlue: "#E0E7FF",        // tag chip bg "Natural" etc.
-  tagPeach: "#FFE7D6",       // tag chip bg "Fair-skin" etc.
+  // ── Small accent palette (surfaces re-mapped to Nordic warm accents)
+  amber: WARM_200,             // ★ star ratings · badges (was #F5A623)
+  pink: NEUTRAL_100,           // favourite bg · soft highlight
+  tagBlue: NEUTRAL_100,        // tag chip bg
+  tagPeach: NEUTRAL_200,       // tag chip bg (warmer variant)
 
-  // ── Legacy aliases — fewer aliases collapse onto red now
-  //   (peach + cream re-route to the amber/pink restoration above).
-  coral: "#B4000A",          // legacy gradient pair → solid red
-  peach: "#F5A623",          // legacy urgency badge → AMBER (restored)
-  cream: "#FFE5EC",          // legacy soft accent → PINK (restored)
-  accent: "#4A5568",         // eyebrow labels (cool gray)
-  burgundy: "#B4000A",       // dark accent → solid red
-  bg1Legacy: "#F4F6F5",
-  bg2Legacy: "#F4F6F5",
-  bg1Warm: "#F4F6F5",
-  bg2Warm: "#F4F6F5",
-  greenSoft: "#E8F8F5",      // available pill bg (soft mint)
-  ink: "#1A2B2E",
+  // ── Legacy aliases — every prior colour collapses onto the Nordic
+  //   equivalent so downstream `sx={{ color: brand.coral }}` still
+  //   compiles + renders consistently with the new palette.
+  coral: GRAY_800,             // legacy 2ndary red → heading ink
+  peach: WARM_200,             // legacy urgency → warm sand
+  cream: NEUTRAL_100,          // legacy soft accent → neutral 100
+  accent: GRAY_600,            // eyebrow labels → muted body
+  burgundy: GRAY_900,          // dark accent → primary ink
+  bg1Legacy: NEUTRAL_50,
+  bg2Legacy: NEUTRAL_100,
+  bg1Warm: NEUTRAL_50,
+  bg2Warm: NEUTRAL_100,
+  greenSoft: "#E9F0DE",        // available pill bg (soft sage tint of SAGE_400)
+  ink: GRAY_900,
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────
-// 🌈 "Gradients" — Round 28s151: founder direction "ไม่ต้องไล่สี".
-//   Every token below is now a flat solid colour expressed as a CSS
-//   gradient string so existing call sites (background: gradients.X)
-//   keep compiling. No more red→coral sunset · no more cream wash ·
-//   just clean editorial reds + neutral bg.
+// 🌈 Gradient tokens — Nordic direction is flat; every string below is
+//   a solid colour value expressed as a CSS "gradient" string so
+//   `background: gradients.X` call sites keep compiling. Where a
+//   Sunred-red gradient used to sit, a flat dark-ink surface takes over.
 // ─────────────────────────────────────────────────────────────────────
 export const gradients = {
-  /** Primary CTA — flat brand red */
-  primary: brand.red,
+  /** Primary CTA — flat dark ink */
+  primary: GRAY_900,
   /** Section background — flat off-white */
-  surface: brand.bg1,
-  /** Final hero CTA — flat brand red (was sunset) */
-  finalCta: brand.red,
+  surface: NEUTRAL_50,
+  /** Final hero CTA — flat dark ink */
+  finalCta: GRAY_900,
 
   // legacy aliases
-  primaryHover: "#7C0007", // single darker shade for hover state only
+  primaryHover: GRAY_800,      // single darker shade for hover state
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────
-// 🔤 Font stacks — Fraunces (serif headlines + italic accent) + Inter (body).
-//    Both already loaded by Google Fonts <link> in index.html.
+// 🔤 Font stacks — Round 28r70 · Playfair Display + Sarabun/Inter
+//
+// Founder spec:
+//   • Heading serif — Playfair Display
+//   • Body — Sarabun / Prompt (Thai) · Inter (Latin fallback)
+//   • UI / Buttons — Sarabun / Prompt / Inter
+//
+// Fraunces / Federo / Italiana / Cinzel / Cormorant are OUT (removed
+// from Google Fonts loading in index.html). They remain in these
+// fallback strings only as a graceful defensive layer in case a
+// downstream component still ships a literal that lands on a system
+// browser without Playfair loaded — the OS will skip to the next
+// available serif.
 // ─────────────────────────────────────────────────────────────────────
-// 🆕 Round 28s155 — Heading font swapped Cinzel → Italiana
-//   (founder reference image: "3. HOW WE MAY COLLECT YOUR
-//   PERSONAL INFORMATION" rendered in classical tall-narrow
-//   Roman caps). Cinzel kept as fallback for graceful degradation
-//   while Italiana streams in. Inter stays for body.
 const FONT_BODY =
-  '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-// 🆕 Round 28s156 — Heading font: Federo (Art Deco Roman caps).
-//   Founder reference image showed even-stroke geometric letters
-//   with flat-top A, straight-stroke W, angled-leg R. Italiana
-//   and Cinzel retained as fallbacks while Federo streams in.
+  '"Sarabun", "Inter", "Prompt", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const FONT_HEADING =
-  '"Federo", "Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
+  '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const FONT_BRAND_SERIF =
-  '"Federo", "Federo", "Italiana", "Cinzel", "Fraunces", "Chonburi", serif';
+  '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 
 export const fonts = {
   body: FONT_BODY,
@@ -176,25 +232,25 @@ const theme = createTheme({
   palette: {
     mode: "light",
     primary: {
-      main: brand.red,
-      light: brand.coral,
-      dark: brand.burgundy,
+      main: GRAY_900,
+      light: GRAY_800,
+      dark: GRAY_900,
       contrastText: "#ffffff",
     },
     secondary: {
-      main: brand.coral,
-      light: brand.peach,
-      dark: brand.red,
+      main: WARM_200,
+      light: WARM_100,
+      dark: GRAY_800,
       contrastText: "#ffffff",
     },
-    success: { main: brand.green },
+    success: { main: SAGE_400 },
     background: {
-      default: brand.bg1,
+      default: NEUTRAL_50,
       paper: "rgba(255, 255, 255, 0.65)",
     },
     text: {
-      primary: brand.text,
-      secondary: brand.textMuted,
+      primary: GRAY_800,
+      secondary: GRAY_600,
     },
   },
 
@@ -208,20 +264,20 @@ const theme = createTheme({
 
   typography: {
     fontFamily: FONT_BODY,
-    h1: { fontFamily: FONT_HEADING, fontWeight: 400, lineHeight: 1.05 },
-    h2: { fontFamily: FONT_HEADING, fontWeight: 400, lineHeight: 1.1 },
+    h1: { fontFamily: FONT_HEADING, fontWeight: 500, lineHeight: 1.05 },
+    h2: { fontFamily: FONT_HEADING, fontWeight: 500, lineHeight: 1.1 },
     h3: { fontFamily: FONT_HEADING, fontWeight: 500, lineHeight: 1.15 },
     h4: { fontFamily: FONT_HEADING, fontWeight: 500 },
     h5: { fontFamily: FONT_HEADING, fontWeight: 500 },
     h6: { fontFamily: FONT_HEADING, fontWeight: 600 },
     button: {
       fontFamily: FONT_BODY,
-      fontWeight: 700,
+      fontWeight: 600,
       textTransform: "none",
-      letterSpacing: "-0.01em",
+      letterSpacing: "0.005em",
     },
-    body1: { fontFamily: FONT_BODY, fontWeight: 500 },
-    body2: { fontFamily: FONT_BODY, fontWeight: 500 },
+    body1: { fontFamily: FONT_BODY, fontWeight: 400 },
+    body2: { fontFamily: FONT_BODY, fontWeight: 400 },
   },
 
   components: {
@@ -241,15 +297,15 @@ const theme = createTheme({
         root: {
           borderRadius: 99,
           textTransform: "none",
-          fontWeight: 700,
+          fontWeight: 600,
         },
         containedPrimary: {
           background: gradients.primary,
           boxShadow:
-            "0 8px 24px rgba(15, 23, 42, 0.30), inset 0 1px 0 rgba(255,255,255,0.30)",
+            "0 6px 18px rgba(45, 45, 43, 0.20), inset 0 1px 0 rgba(255,255,255,0.10)",
           "&:hover": {
             background: gradients.primaryHover,
-            boxShadow: "0 10px 28px rgba(15, 23, 42, 0.36)",
+            boxShadow: "0 8px 22px rgba(45, 45, 43, 0.26)",
           },
         },
       },

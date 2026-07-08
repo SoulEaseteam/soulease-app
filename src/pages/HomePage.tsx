@@ -3,6 +3,11 @@
 import React, { useEffect } from "react";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
+// 🆕 Round 28r70 (Rebrand Phase 1) — "View Pricing" secondary CTA on
+//   the desktop hero band routes to the new /pricing stub page (real
+//   page ships in Phase 2). Falls back through react-router so no
+//   full page reload on the SPA.
+import { useNavigate } from "react-router-dom";
 
 // 🆕 Round 28s145 — HeroSection fully dropped from home (founder:
 //   "ลบ ค่ะ" — pointing at the entire Hero block, greeting + 4-card
@@ -37,7 +42,7 @@ import { responsiveType } from "@/theme/typography";
 //   header + Hero pill use, so the desktop hero band's mode chip
 //   never disagrees with the grid header.
 import { useConciergeMode } from "@/utils/conciergeMode";
-import { brand, fonts } from "@/theme";
+import { fonts } from "@/theme";
 // 🆕 Round 28s148 — PromiseStrip dropped (founder: "ลบทิ้งไป"). Value
 //   was low — price anchor duplicated each card, "5 Languages" already
 //   shown by TopNav pill, "Licensed · Ministry-verified" was an
@@ -59,8 +64,17 @@ import { brand, fonts } from "@/theme";
 
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 
+// 🆕 Round 28r70 — Concierge WhatsApp deep-link used by the primary hero
+//   CTA below. Matches the shared number used across BundleSection /
+//   ServicesPage / ServiceDetailPage / BookingSuccessPage /
+//   HomeTherapistGrid / AdminFloatingChat / ProfilePage.
+const HERO_WHATSAPP = `https://wa.me/66634350987?text=${encodeURIComponent(
+  "Hi SunRed concierge, I'd like to reserve a session — who's available tonight?"
+)}`;
+
 const HomePage: React.FC = () => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   // 🆕 Round 28r53 — Phase 3.2 desktop hero band uses the same
   //   concierge-mode payload as the therapist grid header so the
   //   two never disagree ("Prime hours" chip + "On standby tonight"
@@ -104,7 +118,9 @@ const HomePage: React.FC = () => {
         //   desktop 1200 so wide viewports fill their column instead of
         //   showing a narrow phone strip in gray gutters.
         ...responsiveShell,
-        background: "#F4F6F5",
+        // 🆕 Round 28r70 (Rebrand Phase 1) — NEUTRAL_50 page bg replaces
+        //   the old cool-slate #F4F6F5 per Nordic palette.
+        background: "#F7F7F6",
         // Round the shell edges on true mobile only; on wider viewports
         // the shell reaches viewport edges (MainLayout paints the page
         // surface) so the borderRadius reads as a stray floating card.
@@ -151,13 +167,22 @@ const HomePage: React.FC = () => {
             • Service menu → ServicesPage (/services) + BottomNav
             • Promo banner → ServicesPage detail callouts
             • Language switch → TopNav lang pill (always visible) */}
-      {/* 🆕 Round 28r53 — Phase 3.2 desktop-only hero band. Hidden on
-          xs/sm (mobile look preserved 100% — TopNav → PromoStrip →
-          therapist grid, same as today). From md+ the top-of-fold on
-          desktop was mostly empty gray gutters above the grid — this
-          band fills that space with a bilingual eyebrow, concierge
-          CTA, and a live mode chip. Falls back cleanly if any string
-          is missing from i18n. */}
+      {/* 🆕 Round 28r70 (Rebrand Phase 1) — desktop hero band rebuilt on
+          the Nordic Gray Neutrals + Playfair Display palette per founder
+          spec (2026-07-08). Copy is preserved verbatim from r61 (already
+          matched the founder's approved wording); the visual system is
+          fully swapped:
+            • Card surface: NEUTRAL_100 on NEUTRAL_50 page (no crimson
+              gradient, no white ink)
+            • Ink: GRAY_800 headline · GRAY_600 body · GRAY_500 eyebrow
+            • Headline set in Playfair 40-48px desktop / 28-32px mobile
+              via responsiveType.hero
+            • Primary CTA "Contact Us · ติดต่อ" — dark ink pill (GRAY_900
+              bg / white text) → shared WhatsApp deep-link (reuses
+              wa.me/66634350987, same as BundleSection r58/r60)
+            • Secondary CTA "View Pricing" — outlined dark border →
+              routes to /pricing (Phase 2 will build the full page)
+          Hidden on xs/sm (mobile look preserved — TopNav → grid). */}
       <Box
         component="section"
         aria-label="SunRed hero band"
@@ -165,22 +190,20 @@ const HomePage: React.FC = () => {
           display: { xs: "none", md: "flex" },
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 3,
-          minHeight: { md: 200, lg: 260 },
-          padding: { md: "28px 24px", lg: "36px 32px" },
-          margin: { md: "20px 12px 8px" },
+          gap: { md: 3, lg: 4 },
+          minHeight: { md: 220, lg: 280 },
+          padding: { md: "32px 28px", lg: "44px 40px" },
+          margin: { md: "20px 12px 12px" },
           borderRadius: "24px",
-          // 🆕 Round 28r57 · Phase 3.6 — Single-direction (top→bottom)
-          //   gradient replaces the diagonal, single-layer shadow. Modern
-          //   flat-tinted-red instead of the multi-hue mid stop.
-          background: `linear-gradient(180deg, ${brand.red} 0%, #9C0009 100%)`,
-          color: "#fff",
-          boxShadow: "0 16px 36px rgba(180, 0, 10, 0.24)",
+          background: "#ECEBE8", // NEUTRAL_100 — Nordic card surface
+          color: "#4B4B48",       // GRAY_800 heading ink
+          boxShadow: "0 8px 24px rgba(45, 45, 43, 0.06)",
+          border: "1px solid #E2E0DD", // NEUTRAL_200
           overflow: "hidden",
           position: "relative",
         }}
       >
-        {/* Left column — eyebrow, headline, sub-copy. */}
+        {/* Left column — eyebrow, headline, Thai subline, sub-copy. */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Box
             sx={{
@@ -189,9 +212,9 @@ const HomePage: React.FC = () => {
               gap: "8px",
               padding: "5px 12px",
               borderRadius: 999,
-              background: "rgba(255,255,255,0.14)",
-              backdropFilter: "blur(3px)",
-              marginBottom: "14px",
+              background: "#F7F7F6", // NEUTRAL_50
+              border: "1px solid #E2E0DD",
+              marginBottom: "18px",
             }}
           >
             <Box
@@ -200,8 +223,8 @@ const HomePage: React.FC = () => {
                 width: 7,
                 height: 7,
                 borderRadius: "50%",
-                background: "#fff",
-                boxShadow: "0 0 0 3px rgba(255,255,255,0.28)",
+                background: "#A2BF7A", // SAGE — soft "live" dot
+                boxShadow: "0 0 0 3px rgba(162, 191, 122, 0.24)",
                 flexShrink: 0,
               }}
             />
@@ -210,9 +233,10 @@ const HomePage: React.FC = () => {
               sx={{
                 fontFamily: fonts.body,
                 fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: "0.16em",
+                fontWeight: 600,
+                letterSpacing: "0.18em",
                 textTransform: "uppercase",
+                color: "#6E6E6A", // GRAY_600
               }}
             >
               {concierge.pillLabel} · Bangkok
@@ -221,12 +245,16 @@ const HomePage: React.FC = () => {
           <Box
             component="h2"
             sx={{
-              ...responsiveType.h3,
+              // 🆕 Round 28r70 — Playfair Display serif, 28-32px mobile
+              //   (though hero band is md+ only) / 40-48px desktop per
+              //   founder spec.
+              fontSize: { xs: 28, sm: 32, md: 40, lg: 48 },
+              lineHeight: 1.12,
               fontFamily: fonts.heading,
-              fontWeight: 600,
-              lineHeight: 1.15,
+              fontWeight: 500,
               margin: 0,
-              letterSpacing: "0.005em",
+              letterSpacing: "-0.005em",
+              color: "#2D2D2B", // GRAY_900 for maximum ink weight
             }}
           >
             {t(
@@ -234,18 +262,16 @@ const HomePage: React.FC = () => {
               "Bangkok Outcall Massage · Delivered to Your Hotel"
             )}
           </Box>
-          {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle line
-              under the English hero H2. Renders regardless of picked
-              locale, so Thai locals immediately feel welcomed. Bangkok
-              mall-signage style. */}
+          {/* Thai subtitle — Sarabun. Renders regardless of picked
+              locale, so Thai locals immediately feel welcomed. */}
           <Box
             sx={{
               fontFamily: fonts.body,
-              fontSize: { md: 12, lg: 13 },
-              fontWeight: 500,
-              color: "rgba(255,255,255,0.75)",
-              letterSpacing: "0.02em",
-              marginTop: "6px",
+              fontSize: { md: 14, lg: 16 },
+              fontWeight: 400,
+              color: "#6E6E6A", // GRAY_600
+              letterSpacing: "0.01em",
+              marginTop: "10px",
             }}
           >
             นวดถึงห้อง กรุงเทพฯ · จัดส่งถึงโรงแรม
@@ -254,10 +280,12 @@ const HomePage: React.FC = () => {
             sx={{
               ...responsiveType.body,
               fontFamily: fonts.body,
-              fontWeight: 500,
-              opacity: 0.88,
-              marginTop: "10px",
+              fontSize: { md: 14, lg: 15 },
+              fontWeight: 400,
+              color: "#6E6E6A", // GRAY_600
+              marginTop: "16px",
               maxWidth: 620,
+              lineHeight: 1.6,
             }}
           >
             {t(
@@ -267,50 +295,97 @@ const HomePage: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Right column — concierge CTA. Falls back cleanly on very
+        {/* Right column — two CTAs stacked. Falls back cleanly on
             narrow md-widths by keeping wraps predictable. */}
         <Box
-          component="a"
-          href={`https://wa.me/66634350987?text=${encodeURIComponent(
-            "Hi SunRed concierge, I'd like to reserve a session tonight — who's available?"
-          )}`}
-          target="_blank"
-          rel="noopener noreferrer"
           sx={{
             flexShrink: 0,
-            display: "inline-flex",
-            alignItems: "center",
+            display: "flex",
+            flexDirection: "column",
             gap: "10px",
-            padding: { md: "12px 22px", lg: "14px 28px" },
-            borderRadius: 999,
-            background: "#fff",
-            color: brand.red,
-            fontFamily: fonts.body,
-            fontSize: { md: 14, lg: 15 },
-            fontWeight: 700,
-            letterSpacing: "0.01em",
-            textDecoration: "none",
-            boxShadow: "0 10px 24px rgba(15, 23, 42, 0.18)",
-            whiteSpace: "nowrap",
-            transition: "transform 0.16s ease, box-shadow 0.16s ease",
-            minHeight: 44,
-            "&:hover": {
-              transform: "translateY(-1px)",
-              boxShadow: "0 14px 30px rgba(15, 23, 42, 0.22)",
-            },
-            "&:focus-visible": {
-              outline: "2px solid #fff",
-              outlineOffset: 3,
-            },
+            minWidth: { md: 200, lg: 220 },
           }}
         >
-          {t("home.desktopHero.cta", "Chat with concierge")}
+          {/* Primary CTA — Contact Us (WhatsApp/LINE concierge). */}
           <Box
-            component="span"
-            aria-hidden
-            sx={{ fontSize: 16, lineHeight: 1 }}
+            component="a"
+            href={HERO_WHATSAPP}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px",
+              padding: { md: "13px 24px", lg: "15px 28px" },
+              borderRadius: 999,
+              background: "#2D2D2B", // GRAY_900 primary ink
+              color: "#FFFFFF",
+              fontFamily: fonts.body,
+              fontSize: { md: 14, lg: 15 },
+              fontWeight: 600,
+              letterSpacing: "0.005em",
+              textDecoration: "none",
+              boxShadow: "0 6px 18px rgba(45, 45, 43, 0.24)",
+              whiteSpace: "nowrap",
+              transition: "transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease",
+              minHeight: 46,
+              "&:hover": {
+                background: "#4B4B48", // GRAY_800
+                transform: "translateY(-1px)",
+                boxShadow: "0 8px 22px rgba(45, 45, 43, 0.30)",
+              },
+              "&:focus-visible": {
+                outline: "2px solid #2D2D2B",
+                outlineOffset: 3,
+              },
+            }}
           >
-            →
+            {t("home.desktopHero.cta", "Contact Us · ติดต่อ")}
+            <Box
+              component="span"
+              aria-hidden
+              sx={{ fontSize: 15, lineHeight: 1 }}
+            >
+              →
+            </Box>
+          </Box>
+          {/* Secondary CTA — View Pricing → /pricing (Phase 2 stub). */}
+          <Box
+            component="button"
+            type="button"
+            onClick={() => navigate("/pricing")}
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px",
+              padding: { md: "13px 24px", lg: "15px 28px" },
+              borderRadius: 999,
+              background: "transparent",
+              color: "#2D2D2B", // GRAY_900
+              fontFamily: fonts.body,
+              fontSize: { md: 14, lg: 15 },
+              fontWeight: 600,
+              letterSpacing: "0.005em",
+              cursor: "pointer",
+              border: "1.5px solid #2D2D2B",
+              whiteSpace: "nowrap",
+              transition:
+                "transform 0.16s ease, background 0.16s ease, color 0.16s ease",
+              minHeight: 46,
+              "&:hover": {
+                background: "#2D2D2B",
+                color: "#FFFFFF",
+                transform: "translateY(-1px)",
+              },
+              "&:focus-visible": {
+                outline: "2px solid #2D2D2B",
+                outlineOffset: 3,
+              },
+            }}
+          >
+            {t("home.desktopHero.ctaSecondary", "View Pricing")}
           </Box>
         </Box>
       </Box>
