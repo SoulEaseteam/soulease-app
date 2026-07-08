@@ -254,7 +254,7 @@ const PromoStrip: React.FC<PromoStripProps> = ({
               }
             : {}),
           // Slim brand-red gradient — matches customer site (NOT admin teal).
-          background: "linear-gradient(135deg, #FE0944, #FE7A52)",
+          background: "linear-gradient(135deg, #2D2D2B, #B7A896)",
           color: "#ffffff",
           minHeight: { xs: 40, md: 44 },
           // Room for the copy row + dismiss button.

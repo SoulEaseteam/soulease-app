@@ -115,7 +115,7 @@ const MEETING_POINTS: {
     label: "Come to my room",
     icon: <MeetingRoomRoundedIcon sx={{ fontSize: 22 }} />,
     iconBg: "rgba(15, 23, 42, 0.10)",
-    iconFg: "#B4000A",
+    iconFg: "#2D2D2B",
   },
   {
     id: "other",
@@ -909,7 +909,7 @@ const SelectLocationPage: React.FC = () => {
             boxShadow: "0 2px 8px rgba(15, 23, 42, 0.06)",
             "&:hover": { background: "#fff" },
             "&:focus-visible": {
-              outline: "2px solid #B4000A",
+              outline: "2px solid #2D2D2B",
               outlineOffset: 2,
             },
           }}
@@ -1116,7 +1116,7 @@ const SelectLocationPage: React.FC = () => {
               minWidth: 0,
               padding: "12px 14px",
               borderRadius: "14px",
-              background: "rgba(180, 0, 10, 0.06)",
+              background: "rgba(45, 45, 43, 0.06)",
               border: "1px solid rgba(15, 23, 42, 0.28)",
               display: "flex",
               alignItems: "flex-start",
@@ -1124,7 +1124,7 @@ const SelectLocationPage: React.FC = () => {
             }}
           >
             <MyLocationRoundedIcon
-              sx={{ fontSize: 20, color: "#B4000A", flexShrink: 0, marginTop: "1px" }}
+              sx={{ fontSize: 20, color: "#2D2D2B", flexShrink: 0, marginTop: "1px" }}
             />
             <Typography
               sx={{
@@ -1210,7 +1210,7 @@ const SelectLocationPage: React.FC = () => {
               borderRadius: "18px",
               background: "#fff",
               border: "1px solid rgba(15, 23, 42, 0.16)",
-              boxShadow: "0 6px 18px rgba(180, 0, 10, 0.08)",
+              boxShadow: "0 6px 18px rgba(45, 45, 43, 0.08)",
               display: "flex",
               gap: "12px",
               alignItems: "flex-start",
@@ -1223,7 +1223,7 @@ const SelectLocationPage: React.FC = () => {
                 flexShrink: 0,
                 borderRadius: "12px",
                 background:
-                  "#B4000A",
+                  "#2D2D2B",
                 color: "#fff",
                 display: "flex",
                 alignItems: "center",
@@ -1503,7 +1503,7 @@ const SelectLocationPage: React.FC = () => {
               fontSize: "12px",
               color:
                 form.meetingPoint === "direct"
-                  ? "#B4000A"
+                  ? "#2D2D2B"
                   : "rgba(15, 23, 42, 0.6)",
               marginTop: "-4px",
               marginBottom: "8px",
@@ -1599,16 +1599,16 @@ const SelectLocationPage: React.FC = () => {
                         ? "none"
                         : "1px solid rgba(0, 0, 0, 0.06)",
                     background: isActive
-                      ? "rgba(180, 0, 10, 0.05)"
+                      ? "rgba(45, 45, 43, 0.05)"
                       : "transparent",
                     transition: "background 0.15s ease",
                     "&:hover": {
                       background: isActive
-                        ? "rgba(180, 0, 10, 0.08)"
+                        ? "rgba(45, 45, 43, 0.08)"
                         : "rgba(0, 0, 0, 0.02)",
                     },
                     "&:focus-visible": {
-                      outline: "2px solid #B4000A",
+                      outline: "2px solid #2D2D2B",
                       outlineOffset: "-2px",
                     },
                   }}
@@ -1649,7 +1649,7 @@ const SelectLocationPage: React.FC = () => {
                       flexShrink: 0,
                       borderRadius: "50%",
                       border: isActive
-                        ? "6px solid #B4000A"
+                        ? "6px solid #2D2D2B"
                         : "2px solid rgba(0, 0, 0, 0.25)",
                       background: isActive ? "#fff" : "transparent",
                       transition: "all 0.15s ease",
@@ -1729,7 +1729,7 @@ const SelectLocationPage: React.FC = () => {
           sx={{
             height: 46,
             borderRadius: "999px",
-            background: "#B4000A",
+            background: "#2D2D2B",
             color: "#fff",
             fontFamily: SANS,
             fontSize: "14.5px",
@@ -1740,7 +1740,7 @@ const SelectLocationPage: React.FC = () => {
               "0 8px 20px rgba(15, 23, 42, 0.32), 0 3px 8px rgba(214, 40, 40, 0.15)",
             transition: "transform 0.15s ease, box-shadow 0.15s ease",
             "&:hover": {
-              background: "#B4000A",
+              background: "#2D2D2B",
               transform: "translateY(-1px)",
               boxShadow:
                 "0 12px 24px rgba(15, 23, 42, 0.38), 0 4px 10px rgba(214, 40, 40, 0.20)",
@@ -1861,7 +1861,7 @@ const FieldLabel: React.FC<{
             fontFamily: SANS,
             fontSize: "13px",
             fontWeight: 700,
-            color: "#B4000A",
+            color: "#2D2D2B",
             marginLeft: "-2px",
           }}
         >

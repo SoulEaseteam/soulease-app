@@ -604,7 +604,7 @@ const AdminFloatingChat: React.FC = () => {
                 height: 60,
                 borderRadius: "50%",
                 background:
-                  "radial-gradient(circle, rgba(180, 0, 10, 0.42) 0%, rgba(180, 0, 10, 0) 70%)",
+                  "radial-gradient(circle, rgba(45, 45, 43, 0.42) 0%, rgba(45, 45, 43, 0) 70%)",
                 pointerEvents: "none",
                 "@media (max-width: 500px)": {
                   bottom: 88,
@@ -669,18 +669,18 @@ const AdminFloatingChat: React.FC = () => {
           //   red disc. Conic sheen on hover gives a subtle "rotate
           //   the light" hover affordance.
           background:
-            "radial-gradient(circle at 30% 30%, #DC1B26 0%, #B4000A 55%, #7C0007 100%)",
+            "radial-gradient(circle at 30% 30%, #4B4B48 0%, #2D2D2B 55%, #2D2D2B 100%)",
           color: "#fff",
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           boxShadow:
-            "0 16px 36px rgba(180, 0, 10, 0.42), 0 4px 10px rgba(15, 23, 42, 0.14)",
+            "0 16px 36px rgba(45, 45, 43, 0.42), 0 4px 10px rgba(15, 23, 42, 0.14)",
           transition: "box-shadow 0.22s ease",
           "&:hover": {
             boxShadow:
-              "0 20px 44px rgba(180, 0, 10, 0.50), 0 6px 14px rgba(15, 23, 42, 0.18)",
+              "0 20px 44px rgba(45, 45, 43, 0.50), 0 6px 14px rgba(15, 23, 42, 0.18)",
           },
           "&:focus-visible": {
             outline: `3px solid ${brand.red}`,

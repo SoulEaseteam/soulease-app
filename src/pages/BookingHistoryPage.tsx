@@ -57,8 +57,8 @@ interface Booking {
 }
 
 const STATUS_META: Record<string, { label: string; bg: string; fg: string; bucket: TabKey }> = {
-  upcoming:  { label: "Upcoming",  bg: "rgba(15, 23, 42, 0.12)",   fg: "#B4000A",             bucket: "upcoming"  },
-  pending:   { label: "Pending",   bg: "rgba(15, 23, 42, 0.12)",   fg: "#B4000A",             bucket: "upcoming"  },
+  upcoming:  { label: "Upcoming",  bg: "rgba(15, 23, 42, 0.12)",   fg: "#2D2D2B",             bucket: "upcoming"  },
+  pending:   { label: "Pending",   bg: "rgba(15, 23, 42, 0.12)",   fg: "#2D2D2B",             bucket: "upcoming"  },
   confirmed: { label: "Confirmed", bg: "rgba(22,163,74,0.12)",  fg: "#16a34a",             bucket: "upcoming"  },
   completed: { label: "Completed", bg: "rgba(15, 23, 42,0.08)",   fg: "rgba(15, 23, 42,0.65)", bucket: "completed" },
   cancelled: { label: "Cancelled", bg: "rgba(0,0,0,0.06)",      fg: "rgba(15, 23, 42,0.45)", bucket: "cancelled" },
@@ -268,7 +268,7 @@ const BookingHistoryPage: React.FC = () => {
                   left: 0,
                   width: pillW,
                   borderRadius: 999,
-                  background: "#B4000A",
+                  background: "#2D2D2B",
                   boxShadow: "0 4px 14px rgba(15, 23, 42, 0.30)",
                   pointerEvents: "none",
                   zIndex: 0,
@@ -423,7 +423,7 @@ const BookingCard: React.FC<{
         sx={{
           height: 3,
           background: status.bucket === "upcoming"
-            ? "#B4000A"
+            ? "#2D2D2B"
             : status.bucket === "completed"
             ? "#16a34a"
             : "rgba(15, 23, 42,0.12)",
@@ -439,7 +439,7 @@ const BookingCard: React.FC<{
               width: 46,
               height: 46,
               borderRadius: "50%",
-              background: "#B4000A",
+              background: "#2D2D2B",
               p: "2px",
               flexShrink: 0,
               boxShadow: "0 4px 12px rgba(15, 23, 42, 0.20)",
@@ -467,7 +467,7 @@ const BookingCard: React.FC<{
             </Typography>
             {therapist && (
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.4 }}>
-                <Star size={11} color="#B4000A" weight="fill" />
+                <Star size={11} color="#2D2D2B" weight="fill" />
                 <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "rgba(15, 23, 42,0.55)" }}>
                   {formatRating(bayesianRatingFromAggregate(
                     therapist.rating * (therapist.reviews ?? 0),
@@ -536,7 +536,7 @@ const BookingCard: React.FC<{
             <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
               Total
             </Typography>
-            <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: "#B4000A", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+            <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: "#2D2D2B", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
               {formatTHB(total)}
             </Typography>
           </Box>
@@ -550,8 +550,8 @@ const BookingCard: React.FC<{
                   height: 38,
                   padding: "0 16px",
                   borderRadius: 999,
-                  background: "rgba(180,0,10,0.08)",
-                  color: "#B4000A",
+                  background: "rgba(45,45,43,0.08)",
+                  color: "#2D2D2B",
                   fontFamily: SANS,
                   fontSize: 13,
                   fontWeight: 700,
@@ -574,7 +574,7 @@ const BookingCard: React.FC<{
                   height: 38,
                   padding: "0 16px",
                   borderRadius: 999,
-                  background: "#B4000A",
+                  background: "#2D2D2B",
                   color: "#fff",
                   fontFamily: SANS,
                   fontSize: 13,
@@ -621,7 +621,7 @@ const EmptySlate: React.FC<{
         width: 64,
         height: 64,
         borderRadius: "50%",
-        background: "#B4000A",
+        background: "#2D2D2B",
         color: "#fff",
         display: "flex",
         alignItems: "center",
@@ -647,7 +647,7 @@ const EmptySlate: React.FC<{
           height: 44,
           padding: "0 28px",
           borderRadius: 999,
-          background: "#B4000A",
+          background: "#2D2D2B",
           color: "#fff",
           fontFamily: SANS,
           fontSize: 14,
@@ -679,7 +679,7 @@ const LoadingShimmer: React.FC = () => (
           opacity: 1 - i * 0.2,
         }}
       >
-        <Box sx={{ height: 3, background: "rgba(180,0,10,0.08)" }} />
+        <Box sx={{ height: 3, background: "rgba(45,45,43,0.08)" }} />
         <Box sx={{ p: "14px 16px", display: "flex", flexDirection: "column", gap: 1.5 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: "rgba(15, 23, 42,0.06)" }} />
@@ -693,7 +693,7 @@ const LoadingShimmer: React.FC = () => (
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Box>
               <Box sx={{ height: 9, width: 32, borderRadius: 4, background: "rgba(15, 23, 42,0.05)", mb: 0.6 }} />
-              <Box sx={{ height: 20, width: 64, borderRadius: 6, background: "rgba(180,0,10,0.08)" }} />
+              <Box sx={{ height: 20, width: 64, borderRadius: 6, background: "rgba(45,45,43,0.08)" }} />
             </Box>
             <Box sx={{ height: 38, width: 80, borderRadius: 999, background: "rgba(15, 23, 42,0.06)" }} />
           </Box>

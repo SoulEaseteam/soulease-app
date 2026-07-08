@@ -209,7 +209,7 @@ const TherapistLocationPage: React.FC = () => {
         position="static"
         elevation={0}
         sx={{
-          background: "#B4000A",
+          background: "#2D2D2B",
           boxShadow: "0 4px 12px rgba(15, 23, 42, 0.22)",
         }}
       >
@@ -267,7 +267,7 @@ const TherapistLocationPage: React.FC = () => {
           fullWidth
           onClick={handleReturnHome}
           sx={{
-            background: "#B4000A",
+            background: "#2D2D2B",
             color: "#fff",
             fontSize: 14,
             fontWeight: 800,
@@ -277,7 +277,7 @@ const TherapistLocationPage: React.FC = () => {
             boxShadow: "0 6px 16px rgba(15, 23, 42, 0.26)",
             textTransform: "none",
             "&:hover": {
-              background: "#B4000A",
+              background: "#2D2D2B",
               boxShadow: "0 8px 20px rgba(15, 23, 42, 0.36)",
             },
           }}

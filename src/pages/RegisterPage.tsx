@@ -55,7 +55,7 @@ const RegisterPage: React.FC = () => {
     <>
       <Box sx={{
         minHeight: '100vh',
-        background: "#B4000A",
+        background: "#2D2D2B",
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -81,7 +81,7 @@ const RegisterPage: React.FC = () => {
           </Box>
 
           <Typography variant="h6" fontWeight="bold" mt={3} mb={4}
-            sx={{ fontFamily: 'Chonburi, serif', fontSize: '2rem', color: "#B4000A" }}>
+            sx={{ fontFamily: 'Chonburi, serif', fontSize: '2rem', color: "#2D2D2B" }}>
             Sign Up
           </Typography>
 
@@ -98,8 +98,8 @@ const RegisterPage: React.FC = () => {
               '& .MuiOutlinedInput-root': {
                 borderRadius: '16px',
                 '& fieldset': { borderColor: '#f5a6a6' },
-                '&:hover fieldset': { borderColor: '#B4000A' },
-                '&.Mui-focused fieldset': { borderColor: '#B4000A' }
+                '&:hover fieldset': { borderColor: '#2D2D2B' },
+                '&.Mui-focused fieldset': { borderColor: '#2D2D2B' }
               }
             }}
           />
@@ -116,8 +116,8 @@ const RegisterPage: React.FC = () => {
               '& .MuiOutlinedInput-root': {
                 borderRadius: '16px',
                 '& fieldset': { borderColor: '#f5a6a6' },
-                '&:hover fieldset': { borderColor: '#B4000A' },
-                '&.Mui-focused fieldset': { borderColor: '#B4000A' }
+                '&:hover fieldset': { borderColor: '#2D2D2B' },
+                '&.Mui-focused fieldset': { borderColor: '#2D2D2B' }
               }
             }}
           />
@@ -134,8 +134,8 @@ const RegisterPage: React.FC = () => {
               '& .MuiOutlinedInput-root': {
                 borderRadius: '16px',
                 '& fieldset': { borderColor: '#f5a6a6' },
-                '&:hover fieldset': { borderColor: '#B4000A' },
-                '&.Mui-focused fieldset': { borderColor: '#B4000A' }
+                '&:hover fieldset': { borderColor: '#2D2D2B' },
+                '&.Mui-focused fieldset': { borderColor: '#2D2D2B' }
               }
             }}
           />
@@ -146,7 +146,7 @@ const RegisterPage: React.FC = () => {
               mt: 1, py: 1.2, px: 5, fontWeight: 'bold', fontSize: 14,
               borderRadius: '20px', color: '#fff', textTransform: 'uppercase',
               maxWidth: 150, width: '100%',
-              background: '#B4000A',
+              background: '#2D2D2B',
               boxShadow: '0 4px 20px rgba(15, 23, 42, 0.40)',
               '&:hover': { background: '#FEAE96', transform: 'scale(1.05)' },
               transition: '0.2s ease-in-out'
@@ -156,7 +156,7 @@ const RegisterPage: React.FC = () => {
 
           <Typography mt={3} fontSize={14}>
             Already have an account?{' '}
-            <Link component={RouterLink} to="/login" underline="always" color="#B4000A" fontWeight="bold">
+            <Link component={RouterLink} to="/login" underline="always" color="#2D2D2B" fontWeight="bold">
               Login
             </Link>
           </Typography>

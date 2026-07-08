@@ -107,7 +107,7 @@ const StatsCard: React.FC<Props> = ({
     {
       num: (
         <>
-          <Box component="span" sx={{ color: "#B4000A" }}>★</Box> {rating}
+          <Box component="span" sx={{ color: "#2D2D2B" }}>★</Box> {rating}
         </>
       ),
       label: t("detail.stats.reviews", "{{count}} reviews", { count: reviewCount }),
@@ -183,7 +183,7 @@ const StatsCard: React.FC<Props> = ({
             sx={{
               padding: "8px 14px",
               borderRadius: "999px",
-              background: "#B4000A",
+              background: "#2D2D2B",
               color: "#fff",
               fontFamily: '"Inter", system-ui, -apple-system, sans-serif',
               fontSize: "12px",
@@ -219,7 +219,7 @@ const StatsCard: React.FC<Props> = ({
               transform: "translateX(-50%) rotate(45deg)",
               width: 10,
               height: 10,
-              background: "#B4000A",
+              background: "#2D2D2B",
               boxShadow: "3px 3px 8px rgba(15, 23, 42, 0.25)",
             }}
           />
@@ -287,14 +287,14 @@ const StatsCard: React.FC<Props> = ({
               // relies on the brief :active scale alone.
               "@media (hover: hover)": {
                 "&:hover": {
-                  background: "rgba(180, 0, 10, 0.04)",
+                  background: "rgba(45, 45, 43, 0.04)",
                 },
               },
               "&:active": {
                 transform: "scale(0.97)",
               },
               "&:focus-visible": {
-                outline: "2px solid #B4000A",
+                outline: "2px solid #2D2D2B",
                 outlineOffset: "2px",
               },
             }),
@@ -337,7 +337,7 @@ const StatsCard: React.FC<Props> = ({
                   // Static red chevron now; the cell's own hover/active
                   // states still signal it's tappable.
                   fontSize: "12px",
-                  color: "#B4000A",
+                  color: "#2D2D2B",
                   fontWeight: 800,
                   marginLeft: "1px",
                   lineHeight: 1,

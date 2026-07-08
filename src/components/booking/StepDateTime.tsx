@@ -478,7 +478,7 @@ const StepDateTime: React.FC<Props> = ({
                   // hairline clay border at rest, no shadow. Only
                   // the active pill carries the gradient + glow.
                   background: isActive
-                    ? "#B4000A"
+                    ? "#2D2D2B"
                     : "#fff",
                   color: isActive ? "#fff" : "#1A2B2E",
                   border: isActive
@@ -491,7 +491,7 @@ const StepDateTime: React.FC<Props> = ({
                   transition:
                     "background 0.2s ease, border-color 0.2s ease",
                   "&:focus-visible": {
-                    outline: "2px solid #B4000A",
+                    outline: "2px solid #2D2D2B",
                     outlineOffset: "2px",
                   },
                 }}
@@ -868,7 +868,7 @@ const StepDateTime: React.FC<Props> = ({
                             background: taken
                               ? "transparent"
                               : isActive
-                                ? "#B4000A"
+                                ? "#2D2D2B"
                                 : "#fff",
                             color: taken
                               ? "rgba(15, 23, 42, 0.3)"
@@ -898,11 +898,11 @@ const StepDateTime: React.FC<Props> = ({
                                   ? {}
                                   : {
                                       borderColor: "rgba(15, 23, 42, 0.40)",
-                                      background: "rgba(180, 0, 10, 0.03)",
+                                      background: "rgba(45, 45, 43, 0.03)",
                                     },
                             },
                             "&:focus-visible": {
-                              outline: "2px solid #B4000A",
+                              outline: "2px solid #2D2D2B",
                               outlineOffset: "2px",
                             },
                           }}

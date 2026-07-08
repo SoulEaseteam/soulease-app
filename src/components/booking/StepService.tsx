@@ -202,9 +202,9 @@ const StepService: React.FC<Props> = ({
               cursor: "pointer",
               userSelect: "none",
               boxShadow: isSelected
-                ? "0 0 0 2.5px #B4000A, 0 14px 32px rgba(15, 23, 42, 0.26)"
+                ? "0 0 0 2.5px #2D2D2B, 0 14px 32px rgba(15, 23, 42, 0.26)"
                 : isTrending
-                  ? "0 0 0 2px #B4000A, 0 12px 28px rgba(15, 23, 42, 0.16)"
+                  ? "0 0 0 2px #2D2D2B, 0 12px 28px rgba(15, 23, 42, 0.16)"
                   : "0 8px 22px rgba(15, 23, 42, 0.12)",
               transition: "transform 0.2s ease, box-shadow 0.2s ease",
               "@media (hover: hover)": {
@@ -212,7 +212,7 @@ const StepService: React.FC<Props> = ({
                 "&:hover .svc-img": { transform: "scale(1.05)" },
               },
               "&:focus-visible": {
-                outline: "2px solid #B4000A",
+                outline: "2px solid #2D2D2B",
                 outlineOffset: "2px",
               },
               // 🆕 Round 28s88 (founder "ตรง •TRENDING เป็นกรอบ และมี
@@ -225,11 +225,11 @@ const StepService: React.FC<Props> = ({
                     "@keyframes sunredTrendFrame": {
                       "0%, 100%": {
                         boxShadow:
-                          "0 0 0 2px #B4000A, 0 0 0 4px rgba(15, 23, 42, 0.10), 0 10px 26px rgba(15, 23, 42, 0.22)",
+                          "0 0 0 2px #2D2D2B, 0 0 0 4px rgba(15, 23, 42, 0.10), 0 10px 26px rgba(15, 23, 42, 0.22)",
                       },
                       "50%": {
                         boxShadow:
-                          "0 0 0 2px #B4000A, 0 0 0 9px rgba(15, 23, 42, 0.30), 0 16px 38px rgba(15, 23, 42, 0.40)",
+                          "0 0 0 2px #2D2D2B, 0 0 0 9px rgba(15, 23, 42, 0.30), 0 16px 38px rgba(15, 23, 42, 0.40)",
                       },
                     },
                     "@media (prefers-reduced-motion: reduce)": {
@@ -300,14 +300,14 @@ const StepService: React.FC<Props> = ({
                     gap: "4px",
                     padding: "3px 9px 3px 7px",
                     borderRadius: 999,
-                    background: "#B4000A",
+                    background: "#2D2D2B",
                     color: "#fff",
                     fontFamily: SANS,
                     fontSize: "9.5px",
                     fontWeight: 800,
                     letterSpacing: "0.10em",
                     textTransform: "uppercase",
-                    boxShadow: "0 8px 18px rgba(180, 0, 10, 0.34)",
+                    boxShadow: "0 8px 18px rgba(45, 45, 43, 0.34)",
                     whiteSpace: "nowrap",
                   }}
                 >
@@ -348,7 +348,7 @@ const StepService: React.FC<Props> = ({
                   marginTop: isTrending ? "26px" : 0,
                   padding: "3px 9px",
                   borderRadius: 999,
-                  background: "#B4000A",
+                  background: "#2D2D2B",
                   color: "#fff",
                   fontFamily: SANS,
                   fontSize: "10px",

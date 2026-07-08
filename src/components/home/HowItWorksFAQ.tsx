@@ -169,7 +169,7 @@ const FAQRow: React.FC<FAQRowProps> = ({ qa, open, onToggle }) => (
         cursor: "pointer",
         textAlign: "left",
         "&:focus-visible": {
-          outline: "2px solid #B4000A",
+          outline: "2px solid #2D2D2B",
           outlineOffset: 2,
           borderRadius: 4,
         },
@@ -195,7 +195,7 @@ const FAQRow: React.FC<FAQRowProps> = ({ qa, open, onToggle }) => (
       <ExpandMoreRoundedIcon
         sx={{
           fontSize: 20,
-          color: open ? "#B4000A" : "rgba(15, 23, 42, 0.45)",
+          color: open ? "#2D2D2B" : "rgba(15, 23, 42, 0.45)",
           transform: open ? "rotate(180deg)" : "rotate(0deg)",
           transition: "transform 0.25s ease, color 0.2s ease",
           marginTop: "1px",
@@ -273,7 +273,7 @@ export const HowItWorksFAQ: React.FC = () => {
               fontFamily: SERIF,
               fontStyle: "italic",
               fontWeight: 500,
-              color: "#B4000A",
+              color: "#2D2D2B",
             },
           }}
           dangerouslySetInnerHTML={{
@@ -345,14 +345,14 @@ export const HowItWorksFAQ: React.FC = () => {
               gap: 0.75,
               transition:
                 "transform 0.15s ease, border-color 0.15s ease, background 0.15s ease",
-              "& svg": { fontSize: 14, color: "#B4000A" },
+              "& svg": { fontSize: 14, color: "#2D2D2B" },
               "&:hover": {
                 transform: "translateY(-1px)",
-                borderColor: "#B4000A",
-                background: "rgba(180, 0, 10, 0.04)",
+                borderColor: "#2D2D2B",
+                background: "rgba(45, 45, 43, 0.04)",
               },
               "&:focus-visible": {
-                outline: "2px solid #B4000A",
+                outline: "2px solid #2D2D2B",
                 outlineOffset: 2,
               },
             }}
@@ -393,7 +393,7 @@ export const HowItWorksFAQ: React.FC = () => {
                 flexShrink: 0,
                 borderRadius: "9px",
                 background: "rgba(15, 23, 42, 0.10)",
-                color: "#B4000A",
+                color: "#2D2D2B",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",

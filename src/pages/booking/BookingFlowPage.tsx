@@ -1519,7 +1519,7 @@ const BookingFlowPage: React.FC = () => {
             color: "#1A2B2E",
             "&:hover": { background: "rgba(255, 255, 255, 0.95)" },
             "&:focus-visible": {
-              outline: "2px solid #B4000A",
+              outline: "2px solid #2D2D2B",
               outlineOffset: 2,
             },
           }}
@@ -1624,7 +1624,7 @@ const BookingFlowPage: React.FC = () => {
                 width: 22,
                 height: 22,
                 borderRadius: "50%",
-                background: "#B4000A",
+                background: "#2D2D2B",
                 color: "#fff",
                 display: "inline-flex",
                 alignItems: "center",
@@ -1697,8 +1697,8 @@ const BookingFlowPage: React.FC = () => {
                   ? `center / cover no-repeat url("${enhanceImage(
                       therapist.image,
                       { variant: "card" }
-                    )}"), #B4000A`
-                  : "#B4000A",
+                    )}"), #2D2D2B`
+                  : "#2D2D2B",
                 border: "1px solid rgba(15, 23, 42, 0.06)",
                 boxShadow:
                   "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 10px rgba(15, 23, 42, 0.06)",
@@ -1724,7 +1724,7 @@ const BookingFlowPage: React.FC = () => {
                         gap: "6px",
                       }}
                     >
-                      <CircularProgress size={12} thickness={5} sx={{ color: "#B4000A" }} />
+                      <CircularProgress size={12} thickness={5} sx={{ color: "#2D2D2B" }} />
                       <Box
                         component="span"
                         sx={{
@@ -1755,7 +1755,7 @@ const BookingFlowPage: React.FC = () => {
                     fontFamily: SANS,
                     fontSize: "12px",
                     fontWeight: 700,
-                    color: "#B4000A",
+                    color: "#2D2D2B",
                   }}
                 >
                   ★{" "}
@@ -1804,10 +1804,10 @@ const BookingFlowPage: React.FC = () => {
                 fontFamily: SANS,
                 fontSize: "11px",
                 fontWeight: 800,
-                color: "#B4000A",
+                color: "#2D2D2B",
                 letterSpacing: "0.06em",
                 textTransform: "uppercase",
-                background: "rgba(180, 0, 10, 0.08)",
+                background: "rgba(45, 45, 43, 0.08)",
                 borderRadius: "10px",
                 padding: "4px 10px",
                 "&:hover": { background: "rgba(15, 23, 42, 0.14)" },
@@ -2173,7 +2173,7 @@ const BookingFlowPage: React.FC = () => {
                   sx={{
                     fontSize: 14,
                     color: travelTipOpen
-                      ? "#B4000A"
+                      ? "#2D2D2B"
                       : "rgba(15, 23, 42, 0.5)",
                     cursor: "help",
                     transition: "color 0.3s ease, transform 0.3s ease",
@@ -2269,7 +2269,7 @@ const BookingFlowPage: React.FC = () => {
                 startAdornment: (
                   <InputAdornment position="start">
                     <LocalOfferRoundedIcon
-                      sx={{ fontSize: 16, color: "#B4000A" }}
+                      sx={{ fontSize: 16, color: "#2D2D2B" }}
                     />
                   </InputAdornment>
                 ),
@@ -2287,7 +2287,7 @@ const BookingFlowPage: React.FC = () => {
                     borderColor: "rgba(15, 23, 42, 0.40)",
                   },
                   "&.Mui-focused fieldset": {
-                    borderColor: "#B4000A",
+                    borderColor: "#2D2D2B",
                     borderWidth: "1.5px",
                   },
                 },
@@ -2640,7 +2640,7 @@ const BookingFlowPage: React.FC = () => {
                   fontFamily: SERIF,
                   fontSize: "24px",
                   fontWeight: 700,
-                  color: "#B4000A",
+                  color: "#2D2D2B",
                   letterSpacing: "-0.02em",
                   lineHeight: 1,
                   fontVariantNumeric: "tabular-nums",
@@ -2655,7 +2655,7 @@ const BookingFlowPage: React.FC = () => {
                     "0%": {
                       transform: "scale(0.96)",
                       filter:
-                        "drop-shadow(0 0 0 rgba(180, 0, 10, 0))",
+                        "drop-shadow(0 0 0 rgba(45, 45, 43, 0))",
                     },
                     "40%": {
                       transform: "scale(1.04)",
@@ -2665,7 +2665,7 @@ const BookingFlowPage: React.FC = () => {
                     "100%": {
                       transform: "scale(1)",
                       filter:
-                        "drop-shadow(0 0 0 rgba(180, 0, 10, 0))",
+                        "drop-shadow(0 0 0 rgba(45, 45, 43, 0))",
                     },
                   },
                 }}
@@ -2700,7 +2700,7 @@ const BookingFlowPage: React.FC = () => {
                 padding: "12px",
                 borderRadius: "12px",
                 background:
-                  "rgba(180, 0, 10, 0.05)",
+                  "rgba(45, 45, 43, 0.05)",
                 border: "1px dashed rgba(15, 23, 42, 0.40)",
               }}
             >
@@ -2787,17 +2787,17 @@ const BookingFlowPage: React.FC = () => {
             display: { xs: "none", md: "flex" },
             height: 52,
             borderRadius: "999px",
-            background: "#B4000A",
+            background: "#2D2D2B",
             color: "#fff",
             fontFamily: SANS,
             fontSize: "15px",
             fontWeight: 700,
             letterSpacing: "0.02em",
             textTransform: "none",
-            boxShadow: "0 6px 20px rgba(180, 0, 10, 0.28)",
+            boxShadow: "0 6px 20px rgba(45, 45, 43, 0.28)",
             "&:hover": {
-              background: "#B4000A",
-              boxShadow: "0 10px 26px rgba(180, 0, 10, 0.36)",
+              background: "#2D2D2B",
+              boxShadow: "0 10px 26px rgba(45, 45, 43, 0.36)",
             },
             "&.Mui-disabled": {
               background: "rgba(0, 0, 0, 0.12)",
@@ -2844,7 +2844,7 @@ const BookingFlowPage: React.FC = () => {
             transition: "background 0.15s ease",
             "&:hover": { background: "rgba(255, 255, 255, 0.9)" },
             "&:focus-visible": {
-              outline: "2px solid #B4000A",
+              outline: "2px solid #2D2D2B",
               outlineOffset: "2px",
             },
           }}
@@ -2857,7 +2857,7 @@ const BookingFlowPage: React.FC = () => {
               flexShrink: 0,
               borderRadius: "10px",
               background: "rgba(15, 23, 42, 0.10)",
-              color: "#B4000A",
+              color: "#2D2D2B",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

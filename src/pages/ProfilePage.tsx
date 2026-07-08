@@ -79,12 +79,12 @@ const Row: React.FC<RowProps> = ({ icon, label, sub, onClick, danger }) => (
         width: 36,
         height: 36,
         borderRadius: "12px",
-        background: danger ? "rgba(180,0,10,0.08)" : "rgba(15, 23, 42,0.06)",
+        background: danger ? "rgba(45,45,43,0.08)" : "rgba(15, 23, 42,0.06)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         flexShrink: 0,
-        color: danger ? "#B4000A" : "rgba(15, 23, 42,0.75)",
+        color: danger ? "#2D2D2B" : "rgba(15, 23, 42,0.75)",
       }}
     >
       {icon}
@@ -95,7 +95,7 @@ const Row: React.FC<RowProps> = ({ icon, label, sub, onClick, danger }) => (
           fontFamily: SANS,
           fontSize: 14,
           fontWeight: 600,
-          color: danger ? "#B4000A" : "#1a0805",
+          color: danger ? "#2D2D2B" : "#1a0805",
           lineHeight: 1.2,
         }}
       >
@@ -108,7 +108,7 @@ const Row: React.FC<RowProps> = ({ icon, label, sub, onClick, danger }) => (
       )}
     </Box>
     {onClick && (
-      <CaretRight size={16} color={danger ? "#B4000A" : "rgba(15, 23, 42,0.35)"} />
+      <CaretRight size={16} color={danger ? "#2D2D2B" : "rgba(15, 23, 42,0.35)"} />
     )}
   </Box>
 );
@@ -194,7 +194,7 @@ const ProfilePage: React.FC = () => {
           <Box
             onClick={() => navigate("/login")}
             sx={{
-              background: "#B4000A",
+              background: "#2D2D2B",
               color: "#fff",
               borderRadius: 999,
               py: 1.6,
@@ -257,7 +257,7 @@ const ProfilePage: React.FC = () => {
                 width: 90,
                 height: 90,
                 borderRadius: "50%",
-                background: "#B4000A",
+                background: "#2D2D2B",
                 p: "2.5px",
                 boxShadow: "0 0 0 3px rgba(15, 23, 42, 0.18), 0 8px 32px rgba(0,0,0,0.35)",
               }}
@@ -285,7 +285,7 @@ const ProfilePage: React.FC = () => {
               <Typography sx={{ fontFamily: SERIF, fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
                 {user.displayName || "Guest"}
               </Typography>
-              <CheckCircle size={18} color="#B4000A" weight="fill" />
+              <CheckCircle size={18} color="#2D2D2B" weight="fill" />
             </Box>
             <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(255,255,255,0.50)", mt: 0.4 }}>
               {user.email}

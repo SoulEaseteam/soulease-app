@@ -82,7 +82,7 @@ function categoryTagPalette(tag?: string): { fg: string; bg: string; border: str
   const key = (tag ?? "").toLowerCase();
   if (key === "premium")           return { fg: "#8A5A00", bg: "rgba(245,166,35,0.14)", border: "rgba(245,166,35,0.32)" };  // amber
   if (key === "first-time")        return { fg: "#08588A", bg: "rgba(56,169,240,0.14)", border: "rgba(56,169,240,0.30)" };  // sky-blue
-  if (key === "weekly ritual")     return { fg: "#B4000A", bg: "rgba(180,0,10,0.08)",   border: "rgba(180,0,10,0.20)" };    // brand-red muted
+  if (key === "weekly ritual")     return { fg: "#2D2D2B", bg: "rgba(45,45,43,0.08)",   border: "rgba(45,45,43,0.20)" };    // brand-red muted
   if (key === "wellness package")  return { fg: "#14532D", bg: "rgba(22,163,74,0.10)",  border: "rgba(22,163,74,0.24)" };   // sage
   if (key === "long-stay")         return { fg: "#4C1D95", bg: "rgba(139,92,246,0.10)", border: "rgba(139,92,246,0.24)" };  // violet
   if (key === "corporate retreat") return { fg: "#334155", bg: "rgba(51,65,85,0.08)",   border: "rgba(51,65,85,0.18)" };    // slate
@@ -175,7 +175,7 @@ const BundleSection: React.FC = () => {
           sx={{
             width: 22,
             height: 1,
-            background: "rgba(180, 0, 10, 0.45)",
+            background: "rgba(45, 45, 43, 0.45)",
           }}
         />
         <Typography
@@ -186,7 +186,7 @@ const BundleSection: React.FC = () => {
             fontWeight: 800,
             letterSpacing: "0.18em",
             textTransform: "uppercase",
-            color: "#B4000A",
+            color: "#2D2D2B",
             m: 0,
           }}
         >
@@ -404,7 +404,7 @@ const BundleSection: React.FC = () => {
                 <Gift
                   size={18}
                   weight="fill"
-                  color="#B4000A"
+                  color="#2D2D2B"
                   aria-hidden
                 />
                 <Box
@@ -415,7 +415,7 @@ const BundleSection: React.FC = () => {
                     fontWeight: 800,
                     letterSpacing: "0.18em",
                     textTransform: "uppercase",
-                    color: "#B4000A",
+                    color: "#2D2D2B",
                   }}
                 >
                   {t("bundle.card.sessionCount", "{{count}} sessions", {
@@ -478,8 +478,8 @@ const BundleSection: React.FC = () => {
               {preview && (
                 <Box
                   sx={{
-                    background: "rgba(180, 0, 10, 0.04)",
-                    border: "1px dashed rgba(180, 0, 10, 0.18)",
+                    background: "rgba(45, 45, 43, 0.04)",
+                    border: "1px dashed rgba(45, 45, 43, 0.18)",
                     borderRadius: "12px",
                     padding: "10px 12px",
                     mb: 1.25,
@@ -524,7 +524,7 @@ const BundleSection: React.FC = () => {
                         fontFamily: SANS,
                         fontSize: 16,
                         fontWeight: 800,
-                        color: "#B4000A",
+                        color: "#2D2D2B",
                         letterSpacing: "-0.01em",
                       }}
                     >
@@ -584,7 +584,7 @@ const BundleSection: React.FC = () => {
                   gap: "8px",
                   padding: "11px 14px",
                   borderRadius: "12px",
-                  background: "#B4000A",
+                  background: "#2D2D2B",
                   color: "#FFFFFF",
                   textDecoration: "none",
                   fontFamily: SANS,
@@ -592,16 +592,16 @@ const BundleSection: React.FC = () => {
                   fontWeight: 700,
                   letterSpacing: "0.01em",
                   minHeight: 44,
-                  boxShadow: "0 4px 12px rgba(180, 0, 10, 0.22)",
+                  boxShadow: "0 4px 12px rgba(45, 45, 43, 0.22)",
                   transition:
                     "transform 160ms ease, box-shadow 160ms ease, background 160ms ease",
                   "&:hover": {
-                    background: "#9C0009",
+                    background: "#2D2D2B",
                     transform: "translateY(-1px)",
-                    boxShadow: "0 6px 16px rgba(180, 0, 10, 0.28)",
+                    boxShadow: "0 6px 16px rgba(45, 45, 43, 0.28)",
                   },
                   "&:focus-visible": {
-                    outline: "2px solid #B4000A",
+                    outline: "2px solid #2D2D2B",
                     outlineOffset: 2,
                   },
                 }}

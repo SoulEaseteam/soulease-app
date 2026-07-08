@@ -154,7 +154,7 @@ const BottomNavGlass: React.FC = () => {
                 left: 0,
                 width: pillW,
                 borderRadius: 999,
-                background: "#B4000A",
+                background: "#2D2D2B",
                 boxShadow: "0 4px 14px rgba(15, 23, 42, 0.30)",
                 zIndex: 0,
                 pointerEvents: "none",

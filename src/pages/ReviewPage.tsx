@@ -210,7 +210,7 @@ const ReviewPage: React.FC = () => {
             width: 44,
             height: 44,
             "&:focus-visible": {
-              outline: "2px solid #B4000A",
+              outline: "2px solid #2D2D2B",
               outlineOffset: 2,
             },
           }}

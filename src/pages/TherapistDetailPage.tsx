@@ -210,7 +210,7 @@ const SERVICE_DISPLAY: Record<
     short: "Thai Traditional",
   },
   "SR-Aroma": {
-    icon: <LocalFloristRoundedIcon sx={{ fontSize: 18, color: "#B4000A" }} />,
+    icon: <LocalFloristRoundedIcon sx={{ fontSize: 18, color: "#2D2D2B" }} />,
     short: "Aromatherapy",
   },
   "SR-HJ2200": {
@@ -218,7 +218,7 @@ const SERVICE_DISPLAY: Record<
     short: "Gentleman's Signature",
   },
   "SR-B2B3200": {
-    icon: <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#B4000A" }} />,
+    icon: <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#2D2D2B" }} />,
     short: "SunRed Therapeutic",
   },
 };
@@ -317,7 +317,7 @@ function buildFromReal(real: Therapist, lang?: string): DemoTherapist {
       const display = SERVICE_DISPLAY[sid];
       return {
         icon: display?.icon ?? (
-          <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#B4000A" }} />
+          <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#2D2D2B" }} />
         ),
         name: display?.short ?? sid,
         yrs: "", // empty → UI hides subtext line
@@ -954,7 +954,7 @@ const TherapistDetailPage: React.FC = () => {
           padding: "60px 24px",
         }}
       >
-        <CircularProgress size={28} sx={{ color: "#B4000A" }} />
+        <CircularProgress size={28} sx={{ color: "#2D2D2B" }} />
       </Box>
     );
   }
@@ -1210,7 +1210,7 @@ const TherapistDetailPage: React.FC = () => {
                 fontWeight: 700,
                 letterSpacing: "0.005em",
                 color: isActive
-                  ? "#B4000A"
+                  ? "#2D2D2B"
                   : "rgba(15, 23, 42, 0.55)",
                 textAlign: "center",
                 transition: "color 0.18s ease",
@@ -1218,10 +1218,10 @@ const TherapistDetailPage: React.FC = () => {
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 "&:hover": {
-                  color: isActive ? "#B4000A" : "#1A2B2E",
+                  color: isActive ? "#2D2D2B" : "#1A2B2E",
                 },
                 "&:focus-visible": {
-                  outline: "2px solid #B4000A",
+                  outline: "2px solid #2D2D2B",
                   outlineOffset: 2,
                   borderRadius: "6px",
                 },
@@ -1234,7 +1234,7 @@ const TherapistDetailPage: React.FC = () => {
                   height: 3,
                   borderRadius: 3,
                   background: isActive
-                    ? "#B4000A"
+                    ? "#2D2D2B"
                     : "transparent",
                   transition: "background 0.18s ease",
                 },
@@ -1307,7 +1307,7 @@ const TherapistDetailPage: React.FC = () => {
                 sx={{
                   fontSize: 22,
                   lineHeight: 1,
-                  color: "#B4000A",
+                  color: "#2D2D2B",
                   marginTop: "1px",
                 }}
               >
@@ -1563,7 +1563,7 @@ const TherapistDetailPage: React.FC = () => {
                             fontWeight: 800,
                             letterSpacing: "0.08em",
                             color: isNative
-                              ? "#B4000A"
+                              ? "#2D2D2B"
                               : "rgba(15, 23, 42, 0.55)",
                             textTransform: "uppercase",
                           }}
@@ -1623,7 +1623,7 @@ const TherapistDetailPage: React.FC = () => {
             fontWeight: 800,
             letterSpacing: "0.18em",
             textTransform: "uppercase",
-            color: "#B4000A",
+            color: "#2D2D2B",
             marginBottom: "2px",
           }}
         >
@@ -1789,7 +1789,7 @@ const PickerSection: React.FC<{
         marginBottom: subtitle ? "4px" : "16px",
         "& em": {
           fontStyle: "italic",
-          color: "#B4000A",
+          color: "#2D2D2B",
           fontWeight: 500,
         },
       }}

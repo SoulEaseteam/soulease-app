@@ -139,7 +139,7 @@ const HowItWorks: React.FC = () => {
               fontFamily: SERIF,
               fontStyle: "italic",
               fontWeight: 500,
-              color: "#B4000A",
+              color: "#2D2D2B",
             },
           }}
         >
@@ -203,14 +203,14 @@ const HowItWorks: React.FC = () => {
                 border: "1px solid rgba(255, 255, 255, 0.7)",
                 borderRadius: "18px",
                 boxShadow:
-                  "0 1px 2px rgba(180, 0, 10, 0.04), 0 8px 24px rgba(180, 0, 10, 0.06)",
+                  "0 1px 2px rgba(45, 45, 43, 0.04), 0 8px 24px rgba(45, 45, 43, 0.06)",
                 transition:
                   "transform 220ms ease, box-shadow 220ms ease, background 220ms ease",
                 "&:hover": {
                   transform: "translateY(-1px)",
                   background: "rgba(255, 255, 255, 0.82)",
                   boxShadow:
-                    "0 2px 4px rgba(180, 0, 10, 0.06), 0 14px 32px rgba(180, 0, 10, 0.08)",
+                    "0 2px 4px rgba(45, 45, 43, 0.06), 0 14px 32px rgba(45, 45, 43, 0.08)",
                 },
               }}
             >
@@ -222,7 +222,7 @@ const HowItWorks: React.FC = () => {
                   flexShrink: 0,
                   borderRadius: "50%",
                   background:
-                    "#B4000A",
+                    "#2D2D2B",
                   color: "#fff",
                   display: "flex",
                   alignItems: "center",
@@ -231,7 +231,7 @@ const HowItWorks: React.FC = () => {
                   fontWeight: 500,
                   fontSize: "15px",
                   letterSpacing: "0.04em",
-                  boxShadow: "0 6px 16px rgba(180, 0, 10, 0.32)",
+                  boxShadow: "0 6px 16px rgba(45, 45, 43, 0.32)",
                   "&::before": {
                     content: '""',
                     position: "absolute",
@@ -333,7 +333,7 @@ const HowItWorks: React.FC = () => {
               transform: "translateY(-1px)",
               borderColor: "rgba(15, 23, 42, 0.18)",
               boxShadow:
-                "0 1px 2px rgba(180, 0, 10, 0.05), 0 8px 22px rgba(180, 0, 10, 0.06)",
+                "0 1px 2px rgba(45, 45, 43, 0.05), 0 8px 22px rgba(45, 45, 43, 0.06)",
             },
           }}
         >

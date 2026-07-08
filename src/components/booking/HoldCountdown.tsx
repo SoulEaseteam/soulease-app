@@ -173,7 +173,7 @@ export const HoldCountdown: React.FC<HoldCountdownProps> = ({
           : "none",
         "@keyframes holdPulse": {
           "0%, 100%": {
-            boxShadow: "0 0 0 0 rgba(180, 0, 10, 0.0)",
+            boxShadow: "0 0 0 0 rgba(45, 45, 43, 0.0)",
           },
           "50%": {
             boxShadow: "0 0 0 6px rgba(15, 23, 42, 0.18)",
@@ -244,7 +244,7 @@ export const HoldCountdown: React.FC<HoldCountdownProps> = ({
             height: 30,
             paddingX: "12px",
             borderRadius: "999px",
-            background: "#B4000A",
+            background: "#2D2D2B",
             color: "#fff",
             fontFamily: SANS,
             fontWeight: 700,

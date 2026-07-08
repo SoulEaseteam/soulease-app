@@ -75,7 +75,7 @@ const RoleViewBanner: React.FC = () => {
     }
   };
 
-  const accent = isAdmin ? "#B4000A" : "#16a34a";
+  const accent = isAdmin ? "#2D2D2B" : "#16a34a";
   const accentSoft = isAdmin
     ? "rgba(15, 23, 42, 0.10)"
     : "rgba(22, 163, 74, 0.10)";

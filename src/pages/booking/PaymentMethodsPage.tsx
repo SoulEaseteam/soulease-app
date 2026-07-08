@@ -146,7 +146,7 @@ const ADD_METHODS: PaymentOption[] = [
     sub: "Visa / Mastercard / JCB",
     icon: <CreditCardRoundedIcon />,
     iconBg: "rgba(15, 23, 42, 0.10)",
-    iconFg: "#B4000A",
+    iconFg: "#2D2D2B",
     badge: "not available",
     comingSoon: true,
   },
@@ -339,7 +339,7 @@ const PaymentMethodsPage: React.FC = () => {
             boxShadow: "0 2px 8px rgba(15, 23, 42, 0.06)",
             "&:hover": { background: "#fff" },
             "&:focus-visible": {
-              outline: "2px solid #B4000A",
+              outline: "2px solid #2D2D2B",
               outlineOffset: 2,
             },
           }}
@@ -562,7 +562,7 @@ const PaymentMethodsPage: React.FC = () => {
               color: "#1A2B2E",
               letterSpacing: "-0.02em",
               lineHeight: 1.2,
-              "& em": { fontStyle: "italic", color: "#B4000A" },
+              "& em": { fontStyle: "italic", color: "#2D2D2B" },
             }}
           >
             {t("pay.policy.title", "What you should know")}
@@ -642,7 +642,7 @@ const PaymentRow: React.FC<{
         ? {}
         : { background: elevated ? "#fff" : "rgba(0, 0, 0, 0.02)" },
       "&:focus-visible": {
-        outline: "2px solid #B4000A",
+        outline: "2px solid #2D2D2B",
         outlineOffset: "-2px",
       },
     }}
@@ -755,7 +755,7 @@ const PaymentRow: React.FC<{
         borderRadius: "50%",
         border: isActive ? "none" : "2px solid rgba(0, 0, 0, 0.2)",
         background: isActive
-          ? "#B4000A"
+          ? "#2D2D2B"
           : "transparent",
         color: "#fff",
         display: "flex",
@@ -807,7 +807,7 @@ const AddMethodRow: React.FC<{
           ? {}
           : { background: "rgba(0, 0, 0, 0.02)" },
         "&:focus-visible": {
-          outline: "2px solid #B4000A",
+          outline: "2px solid #2D2D2B",
           outlineOffset: "-2px",
         },
       }}
@@ -940,7 +940,7 @@ const FaqRow: React.FC<{ item: FaqItem }> = ({ item }) => {
         top: "12%",
         bottom: "12%",
         width: "2px",
-        background: "#B4000A",
+        background: "#2D2D2B",
         borderRadius: "2px",
         opacity: 0,
         transition: "opacity 220ms ease",
@@ -948,7 +948,7 @@ const FaqRow: React.FC<{ item: FaqItem }> = ({ item }) => {
       "&.Mui-expanded": {
         borderColor: "rgba(15, 23, 42, 0.18)",
         boxShadow:
-          "0 1px 2px rgba(180, 0, 10, 0.06), 0 8px 22px rgba(180, 0, 10, 0.06)",
+          "0 1px 2px rgba(45, 45, 43, 0.06), 0 8px 22px rgba(45, 45, 43, 0.06)",
         "&::after": { opacity: 1 },
       },
     }}

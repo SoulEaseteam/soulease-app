@@ -60,7 +60,7 @@ export const AddressTile: React.FC<AddressTileProps> = ({ location, onTap }) => 
         cursor: "pointer",
         background: "rgba(255, 255, 255, 0.85)",
         border: fullySet
-          ? "1.5px solid #B4000A"
+          ? "1.5px solid #2D2D2B"
           : "1px solid rgba(0, 0, 0, 0.06)",
         transition: "all 0.15s ease",
         "&:hover": { background: "rgba(255, 255, 255, 0.95)" },
@@ -78,7 +78,7 @@ export const AddressTile: React.FC<AddressTileProps> = ({ location, onTap }) => 
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "#B4000A",
+          color: "#2D2D2B",
         }}
       >
         <LocationOnRoundedIcon fontSize="small" />
@@ -141,7 +141,7 @@ export const AddressTile: React.FC<AddressTileProps> = ({ location, onTap }) => 
                 sx={{
                   fontFamily: SANS,
                   fontSize: "11px",
-                  color: "#B4000A",
+                  color: "#2D2D2B",
                   fontWeight: 600,
                   marginTop: "3px",
                   display: "flex",
@@ -172,7 +172,7 @@ export const AddressTile: React.FC<AddressTileProps> = ({ location, onTap }) => 
         aria-hidden
         sx={{
           fontSize: "20px",
-          color: fullySet ? "#B4000A" : "rgba(15, 23, 42, 0.35)",
+          color: fullySet ? "#2D2D2B" : "rgba(15, 23, 42, 0.35)",
           flexShrink: 0,
           fontWeight: 800,
         }}

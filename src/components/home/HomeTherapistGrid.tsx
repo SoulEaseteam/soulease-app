@@ -495,7 +495,7 @@ const HomeTherapistGrid: React.FC = () => {
             alignItems: "center",
           }}
         >
-          <CircularProgress size={28} sx={{ color: "#B4000A" }} />
+          <CircularProgress size={28} sx={{ color: "#2D2D2B" }} />
         </Box>
       ) : visible.length === 0 ? (
         <Box

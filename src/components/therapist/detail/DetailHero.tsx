@@ -340,11 +340,11 @@ const DetailHero: React.FC<Props> = ({
                         padding: "5px 14px",
                         borderRadius: "999px",
                         background:
-                          "#B4000A",
+                          "#2D2D2B",
                         fontSize: "12px",
                         fontWeight: 800,
                         letterSpacing: "0.04em",
-                        boxShadow: "0 6px 16px rgba(180, 0, 10, 0.34)",
+                        boxShadow: "0 6px 16px rgba(45, 45, 43, 0.34)",
                       }}
                     >
                       {t("detail.gallery.viewAll", "View all")}
@@ -801,7 +801,7 @@ const DetailHero: React.FC<Props> = ({
           <ListItemIcon>
             <FavoriteBorderRoundedIcon
               fontSize="small"
-              sx={{ color: "#B4000A" }}
+              sx={{ color: "#2D2D2B" }}
             />
           </ListItemIcon>
           <ListItemText

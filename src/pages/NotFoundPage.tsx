@@ -33,7 +33,7 @@ const NotFoundPage: React.FC = () => {
           sx={{
             height: 160,
             background:
-              "#B4000A",
+              "#2D2D2B",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -83,11 +83,11 @@ const NotFoundPage: React.FC = () => {
               py: 1.3,
               borderRadius: 3,
               fontWeight: "bold",
-              background: "#B4000A",
+              background: "#2D2D2B",
               boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
               textTransform: "none",
               "&:hover": {
-                background: "#7C0007",
+                background: "#2D2D2B",
               },
             }}
           >

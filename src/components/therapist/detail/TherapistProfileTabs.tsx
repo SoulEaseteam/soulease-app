@@ -174,10 +174,10 @@ const TherapistProfileTabs: React.FC<Props> = ({
               gap: "4px",
               padding: "0 8px",
               minWidth: "auto",
-              "&.Mui-selected": { color: "#B4000A" },
+              "&.Mui-selected": { color: "#2D2D2B" },
             },
             "& .MuiTabs-indicator": {
-              background: "#B4000A",
+              background: "#2D2D2B",
               height: "3px",
               borderRadius: "2px 2px 0 0",
             },
@@ -282,7 +282,7 @@ const ProfileTab: React.FC<{
   if (totalSessions > 0) {
     trustCells.push({
       icon: <SpaRoundedIcon sx={{ fontSize: 18 }} />,
-      color: "#B4000A",
+      color: "#2D2D2B",
       value:
         totalSessions >= 1000
           ? `${Math.round(totalSessions / 100) / 10}k`
@@ -294,7 +294,7 @@ const ProfileTab: React.FC<{
   if (todayBookings > 0) {
     trustCells.push({
       icon: <LocalFireDepartmentRoundedIcon sx={{ fontSize: 18 }} />,
-      color: "#B4000A",
+      color: "#2D2D2B",
       value: `${todayBookings}`,
       label: "Today",
     });
@@ -473,7 +473,7 @@ const ProfileTab: React.FC<{
                     fontSize: "9.5px",
                     fontWeight: 800,
                     letterSpacing: "0.06em",
-                    color: isNative ? "#B4000A" : "rgba(15, 23, 42, 0.55)",
+                    color: isNative ? "#2D2D2B" : "rgba(15, 23, 42, 0.55)",
                     textTransform: "uppercase",
                   }}
                 >
@@ -591,7 +591,7 @@ const ReviewsTab: React.FC<{
               fontFamily: SERIF,
               fontSize: "36px",
               fontWeight: 700,
-              color: "#B4000A",
+              color: "#2D2D2B",
               lineHeight: 1,
               letterSpacing: "-0.02em",
             }}
@@ -645,7 +645,7 @@ const ReviewsTab: React.FC<{
                     width: `${b.pct}%`,
                     height: "100%",
                     background:
-                      "#B4000A",
+                      "#2D2D2B",
                     transition: "width 0.4s ease",
                   }}
                 />
@@ -866,7 +866,7 @@ const LoyaltyTab: React.FC<{
               "#F4F6F5",
             marginBottom: "14px",
             fontSize: "22px",
-            color: "#B4000A",
+            color: "#2D2D2B",
           }}
         >
           ✦
@@ -924,7 +924,7 @@ const LoyaltyTab: React.FC<{
               fontFamily: SERIF,
               fontSize: "36px",
               fontWeight: 700,
-              color: "#B4000A",
+              color: "#2D2D2B",
               letterSpacing: "-0.02em",
               lineHeight: 1,
             }}
@@ -1009,7 +1009,7 @@ const LoyaltyTab: React.FC<{
         <BenchmarkBar
           label="This therapist"
           pct={headlinePct}
-          color="#B4000A"
+          color="#2D2D2B"
           highlight
         />
         <BenchmarkBar
@@ -1047,7 +1047,7 @@ const LoyaltyTab: React.FC<{
           <Box
             sx={{
               width: `${repeatPct}%`,
-              background: "#B4000A",
+              background: "#2D2D2B",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -1117,7 +1117,7 @@ const LoyaltyTab: React.FC<{
             key={b.label}
             label={b.label}
             pct={b.pct}
-            color="#B4000A"
+            color="#2D2D2B"
           />
         ))}
       </Box>
@@ -1181,7 +1181,7 @@ const BenchmarkBar: React.FC<{
           fontFamily: SANS,
           fontSize: "11.5px",
           fontWeight: 700,
-          color: highlight ? "#B4000A" : "rgba(15, 23, 42, 0.7)",
+          color: highlight ? "#2D2D2B" : "rgba(15, 23, 42, 0.7)",
         }}
       >
         {pct}%

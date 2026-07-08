@@ -295,10 +295,10 @@ const TopNav: React.FC = () => {
           //   scrolled (was rgba(255,248,240) = old #F4F6F5). Matches
           //   the new flat palette and stops the dour warm-tint
           //   from creeping over the top of the page.
-          // 🆕 Round 28s163 — Founder: TopNav bg = brand red #B4000A
+          // 🆕 Round 28s163 — Founder: TopNav bg = brand red #2D2D2B
           //   (ROLADEX reference). Always solid, both at rest and on
           //   scroll. White text + icons ride on top.
-          background: "#B4000A",
+          background: "#2D2D2B",
           color: "#ffffff",
           boxShadow: scrolled ? "0 2px 8px rgba(15,23,42,0.20)" : "none",
           borderBottom: "none",
@@ -354,7 +354,7 @@ const TopNav: React.FC = () => {
             //   layout unchanged (space-between still centers it).
             marginRight: { md: "auto" },
             "&:focus-visible": {
-              outline: "2px solid #B4000A",
+              outline: "2px solid #2D2D2B",
               outlineOffset: 2,
             },
           }}
@@ -466,7 +466,7 @@ const TopNav: React.FC = () => {
             gap: "8px",
             background: "#ffffff",
             border: "none",
-            color: "#B4000A",
+            color: "#2D2D2B",
             fontFamily: SANS,
             fontSize: "13px",
             fontWeight: 700,
@@ -539,7 +539,7 @@ const TopNav: React.FC = () => {
               width: 44,
               height: 44,
               "&:focus-visible": {
-                outline: "2px solid #B4000A",
+                outline: "2px solid #2D2D2B",
                 outlineOffset: 2,
               },
             }}
@@ -597,7 +597,7 @@ const TopNav: React.FC = () => {
               "&:hover": { transform: "translateY(-1px)" },
               transition: "transform 0.15s ease",
               "&:focus-visible": {
-                outline: "2px solid #B4000A",
+                outline: "2px solid #2D2D2B",
                 outlineOffset: 2,
               },
             }}
@@ -608,7 +608,7 @@ const TopNav: React.FC = () => {
                 width: 36,
                 height: 36,
                 borderRadius: "50%",
-                background: isAdmin ? "#B4000A" : "#16a34a",
+                background: isAdmin ? "#2D2D2B" : "#16a34a",
                 color: "#fff",
                 display: "inline-flex",
                 alignItems: "center",
@@ -631,7 +631,7 @@ const TopNav: React.FC = () => {
                   fontWeight: 800,
                   letterSpacing: "0.10em",
                   textTransform: "uppercase",
-                  color: isAdmin ? "#B4000A" : "#15803d",
+                  color: isAdmin ? "#2D2D2B" : "#15803d",
                 }}
               >
                 {t("nav.signedInAs", "Signed in as")}{" "}
@@ -656,7 +656,7 @@ const TopNav: React.FC = () => {
               aria-hidden
               sx={{
                 fontSize: 18,
-                color: isAdmin ? "#B4000A" : "#15803d",
+                color: isAdmin ? "#2D2D2B" : "#15803d",
                 fontWeight: 800,
                 flexShrink: 0,
               }}
@@ -737,7 +737,7 @@ const TopNav: React.FC = () => {
                 cursor: "pointer",
                 "&:hover": { background: "rgba(255, 255, 255, 0.55)" },
                 "&:focus-visible": {
-                  outline: "2px solid #B4000A",
+                  outline: "2px solid #2D2D2B",
                   outlineOffset: 2,
                 },
               }}
@@ -760,7 +760,7 @@ const TopNav: React.FC = () => {
                 padding: "12px 14px",
                 borderRadius: "12px",
                 background:
-                  "#B4000A",
+                  "#2D2D2B",
                 border: "none",
                 color: "#fff",
                 fontFamily: SANS,
@@ -773,7 +773,7 @@ const TopNav: React.FC = () => {
                   boxShadow: "0 8px 20px rgba(15, 23, 42, 0.36)",
                 },
                 "&:focus-visible": {
-                  outline: "2px solid #B4000A",
+                  outline: "2px solid #2D2D2B",
                   outlineOffset: 2,
                 },
               }}
@@ -847,7 +847,7 @@ function renderNavRow(
             ? "linear-gradient(135deg, rgba(15, 23, 42, 0.10), rgba(214, 40, 40, 0.08))"
             : "transparent",
           border: "none",
-          color: active ? "#B4000A" : "#1A2B2E",
+          color: active ? "#2D2D2B" : "#1A2B2E",
           fontFamily: SANS,
           fontSize: 14,
           fontWeight: active ? 700 : 600,
@@ -860,7 +860,7 @@ function renderNavRow(
               : "rgba(255, 255, 255, 0.55)",
           },
           "&:focus-visible": {
-            outline: "2px solid #B4000A",
+            outline: "2px solid #2D2D2B",
             outlineOffset: 2,
           },
         }}
@@ -868,7 +868,7 @@ function renderNavRow(
         <ListItemIcon
           sx={{
             minWidth: 0,
-            color: active ? "#B4000A" : "#4A5568",
+            color: active ? "#2D2D2B" : "#4A5568",
           }}
         >
           {item.icon}

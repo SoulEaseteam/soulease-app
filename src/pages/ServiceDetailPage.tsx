@@ -87,12 +87,12 @@ const ICON_BY_ID: Record<string, IconConfig> = {
   },
   "SR-Aroma": {
     icon: LocalFloristRoundedIcon,
-    swatchIcon: "#B4000A",
+    swatchIcon: "#2D2D2B",
     tier: "PREMIUM",
   },
   "SR-HJ2200": {
     icon: DiamondRoundedIcon,
-    swatchIcon: "#B4000A",
+    swatchIcon: "#2D2D2B",
     tier: "PREMIUM",
   },
   "SR-B2B3200": {
@@ -418,11 +418,11 @@ const ServiceDetailPage: React.FC = () => {
                     ? "1px solid transparent"
                     : "1px solid rgba(184, 92, 60, 0.18)",
                   background: isActive
-                    ? "#B4000A"
+                    ? "#2D2D2B"
                     : "#fff",
                   color: isActive ? "#fff" : brand.text,
                   boxShadow: isActive
-                    ? "0 10px 24px rgba(180, 0, 10, 0.22)"
+                    ? "0 10px 24px rgba(45, 45, 43, 0.22)"
                     : "0 1px 3px rgba(15, 23, 42, 0.05)",
                   transition:
                     "background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease",
@@ -510,16 +510,16 @@ const ServiceDetailPage: React.FC = () => {
               sx={{
                 padding: "14px 20px",
                 borderRadius: "16px",
-                background: "#B4000A",
+                background: "#2D2D2B",
                 color: "#fff",
                 fontFamily: fonts.body,
                 fontWeight: 700,
                 fontSize: "15px",
                 textTransform: "none",
-                boxShadow: "0 12px 28px rgba(180, 0, 10, 0.28)",
+                boxShadow: "0 12px 28px rgba(45, 45, 43, 0.28)",
                 "&:hover": {
-                  background: "#B4000A",
-                  boxShadow: "0 16px 36px rgba(180, 0, 10, 0.34)",
+                  background: "#2D2D2B",
+                  boxShadow: "0 16px 36px rgba(45, 45, 43, 0.34)",
                 },
               }}
             >
@@ -759,16 +759,16 @@ const ServiceDetailPage: React.FC = () => {
             sx={{
               padding: "14px 20px",
               borderRadius: "16px",
-              background: "#B4000A",
+              background: "#2D2D2B",
               color: "#fff",
               fontFamily: fonts.body,
               fontWeight: 700,
               fontSize: "15px",
               textTransform: "none",
-              boxShadow: "0 14px 32px rgba(180, 0, 10, 0.32)",
+              boxShadow: "0 14px 32px rgba(45, 45, 43, 0.32)",
               "&:hover": {
-                background: "#B4000A",
-                boxShadow: "0 18px 40px rgba(180, 0, 10, 0.38)",
+                background: "#2D2D2B",
+                boxShadow: "0 18px 40px rgba(45, 45, 43, 0.38)",
               },
             }}
           >

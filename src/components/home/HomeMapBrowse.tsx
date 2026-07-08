@@ -574,7 +574,7 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
                 // 🆕 Round 28b1 — fallback gradient swapped from
                 //   warm tan/brown to brand red→coral so the
                 //   missing-photo case still feels SunRed.
-                background: `#B4000A`,
+                background: `#2D2D2B`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",

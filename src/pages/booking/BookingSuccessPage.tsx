@@ -104,12 +104,12 @@ const BookingSuccessPage: React.FC = () => {
   const concierge = useConciergeMode();
   const modeTint =
     concierge.mode === "prime"
-      ? "#B4000A"
+      ? "#2D2D2B"
       : concierge.mode === "evening"
       ? "#F59E0B"
       : concierge.mode === "off"
       ? "rgba(15, 23, 42,0.55)"
-      : "#B4000A";
+      : "#2D2D2B";
 
   useEffect(() => {
     if (!id) {
@@ -252,7 +252,7 @@ const BookingSuccessPage: React.FC = () => {
             paddingTop: "120px",
           }}
         >
-          <CircularProgress sx={{ color: "#B4000A" }} />
+          <CircularProgress sx={{ color: "#2D2D2B" }} />
         </Box>
       ) : error ? (
         <Box sx={{ textAlign: "center", paddingTop: "60px" }}>
@@ -268,7 +268,7 @@ const BookingSuccessPage: React.FC = () => {
           </Typography>
           <Button
             onClick={() => void navigate("/")}
-            sx={{ color: "#B4000A", textTransform: "none" }}
+            sx={{ color: "#2D2D2B", textTransform: "none" }}
           >
             {t("success.backHome", "Back to home")}
           </Button>
@@ -303,7 +303,7 @@ const BookingSuccessPage: React.FC = () => {
                 width: 96,
                 height: 96,
                 borderRadius: "50%",
-                background: "#B4000A",
+                background: "#2D2D2B",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -319,7 +319,7 @@ const BookingSuccessPage: React.FC = () => {
                   "50%": {
                     transform: "scale(1.06)",
                     boxShadow:
-                      "0 18px 48px rgba(15, 23, 42, 0.45), 0 0 0 14px rgba(180, 0, 10, 0)",
+                      "0 18px 48px rgba(15, 23, 42, 0.45), 0 0 0 14px rgba(45, 45, 43, 0)",
                   },
                 },
                 "@media (prefers-reduced-motion: reduce)": {
@@ -379,12 +379,12 @@ const BookingSuccessPage: React.FC = () => {
                   alignItems: "center",
                   padding: "5px 14px",
                   borderRadius: "999px",
-                  background: "rgba(180, 0, 10, 0.08)",
+                  background: "rgba(45, 45, 43, 0.08)",
                   border: "1px solid rgba(15, 23, 42, 0.18)",
                   fontFamily: SANS,
                   fontSize: "12px",
                   fontWeight: 700,
-                  color: "#B4000A",
+                  color: "#2D2D2B",
                   letterSpacing: "0.06em",
                   fontVariantNumeric: "tabular-nums",
                 }}
@@ -716,7 +716,7 @@ const BookingSuccessPage: React.FC = () => {
                   fontFamily: SERIF,
                   fontSize: "16px",
                   fontWeight: 600,
-                  color: "#B4000A",
+                  color: "#2D2D2B",
                   fontStyle: "italic",
                   marginBottom: "2px",
                 }}
@@ -880,7 +880,7 @@ const BookingSuccessPage: React.FC = () => {
                     sx={{
                       fontFamily: SERIF,
                       fontWeight: 700,
-                      color: "#B4000A",
+                      color: "#2D2D2B",
                       fontSize: "16px",
                     }}
                   >
@@ -924,7 +924,7 @@ const BookingSuccessPage: React.FC = () => {
                       fontFamily: SERIF,
                       fontSize: "16px",
                       fontWeight: 600,
-                      color: "#B4000A",
+                      color: "#2D2D2B",
                       fontStyle: "italic",
                       lineHeight: 1.2,
                     }}
@@ -1267,7 +1267,7 @@ const ActionCard: React.FC<{
               boxShadow: "0 6px 16px rgba(15, 23, 42, 0.08)",
             },
             "&:focus-visible": {
-              outline: "2px solid #B4000A",
+              outline: "2px solid #2D2D2B",
               outlineOffset: "2px",
             },
           }),
@@ -1281,7 +1281,7 @@ const ActionCard: React.FC<{
         borderRadius: "50%",
         background: disabled
           ? "#64748b"
-          : "#B4000A",
+          : "#2D2D2B",
         color: "#fff",
         display: "flex",
         alignItems: "center",

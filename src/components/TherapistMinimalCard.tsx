@@ -115,7 +115,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
   > = {
     TOP_RATED: { label: "TOP RATED", bg: "#F5A623", color: "#1A1200" },
     VIP:       { label: "VIP",        bg: "#1A2B2E", color: "#FFE5EC" },
-    HOT:       { label: "HOT",        bg: "#B4000A", color: "#fff"    },
+    HOT:       { label: "HOT",        bg: "#2D2D2B", color: "#fff"    },
     NEW:       { label: "NEW",        bg: "#16a34a", color: "#fff"    },
   };
   const badgeKey =

@@ -122,7 +122,7 @@ const LoginPage: React.FC = () => {
       <Box
         sx={{
           minHeight: "100vh",
-          background: "#B4000A",
+          background: "#2D2D2B",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
@@ -171,7 +171,7 @@ const LoginPage: React.FC = () => {
             sx={{
               fontFamily: "Chonburi, serif",
               fontSize: "2rem",
-              color: "#B4000A",
+              color: "#2D2D2B",
             }}
           >
             Login
@@ -215,7 +215,7 @@ const LoginPage: React.FC = () => {
               py: 1.2,
               fontWeight: "bold",
               borderRadius: "20px",
-              background: "#B4000A",
+              background: "#2D2D2B",
               color: "#fff",
               "&:hover": { background: "#FEAE96" },
             }}
@@ -232,7 +232,7 @@ const LoginPage: React.FC = () => {
           {/* Register */}
           <Typography mt={3} fontSize={14}>
             Don&apos;t have an account?{" "}
-            <Link to="/register" style={{ color: "#B4000A", fontWeight: "bold" }}>
+            <Link to="/register" style={{ color: "#2D2D2B", fontWeight: "bold" }}>
               Sign up
             </Link>
           </Typography>

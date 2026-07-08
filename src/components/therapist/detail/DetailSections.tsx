@@ -77,7 +77,7 @@ const DSectionH2: React.FC<{ children: React.ReactNode; em?: string }> = ({
       color: "#1A2B2E",
       marginBottom: "8px",
       letterSpacing: "-0.01em",
-      "& em": { fontStyle: "italic", color: "#B4000A", fontWeight: 500 },
+      "& em": { fontStyle: "italic", color: "#2D2D2B", fontWeight: 500 },
     }}
   >
     {children}
@@ -132,7 +132,7 @@ const TONE_STYLES: Record<
   },
   body: {
     iconBg: "rgba(15, 23, 42, 0.10)",
-    iconColor: "#B4000A",
+    iconColor: "#2D2D2B",
   },
   language: {
     iconBg: "rgba(14, 165, 233, 0.10)",
@@ -675,7 +675,7 @@ export const GalleryTile: React.FC<{
                 boxShadow: "0 6px 18px rgba(15, 23, 42, 0.12)",
               },
               "&:focus-visible": {
-                outline: "2px solid #B4000A",
+                outline: "2px solid #2D2D2B",
                 outlineOffset: 2,
               },
             }}
@@ -821,7 +821,7 @@ export const GalleryTile: React.FC<{
                   cursor: "pointer",
                   border:
                     i === openIdx
-                      ? "2px solid #B4000A"
+                      ? "2px solid #2D2D2B"
                       : "2px solid transparent",
                   opacity: i === openIdx ? 1 : 0.55,
                   transition: "opacity 0.15s ease, border-color 0.15s ease",
@@ -969,8 +969,8 @@ export const Specialties: React.FC<{ specs: Spec[] }> = ({ specs }) => {
                 height: 32,
                 borderRadius: "50%",
                 background:
-                  "rgba(180, 0, 10, 0.09)",
-                color: "#B4000A",
+                  "rgba(45, 45, 43, 0.09)",
+                color: "#2D2D2B",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -1054,7 +1054,7 @@ export const Languages: React.FC<{ langs: Lang[] }> = ({ langs }) => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "#B4000A",
+                background: "#2D2D2B",
                 color: "#fff",
                 fontFamily: SANS,
                 fontSize: "11px",
@@ -1147,7 +1147,7 @@ export const Pricing: React.FC<{ items: Price[] }> = ({ items }) => {
                 fontFamily: SERIF,
                 fontWeight: 600,
                 fontSize: "14px",
-                color: "#B4000A",
+                color: "#2D2D2B",
                 letterSpacing: "-0.02em",
               }}
             >
@@ -1204,7 +1204,7 @@ export const Calendar: React.FC<CalendarProps> = ({ days, slots }) => {
                 padding: "8px 10px",
                 borderRadius: "12px",
                 background: active
-                  ? "#B4000A"
+                  ? "#2D2D2B"
                   : "#FFFFFF",
                 border: active
                   ? "1px solid rgba(255, 255, 255, 0.4)"
@@ -1266,7 +1266,7 @@ export const Calendar: React.FC<CalendarProps> = ({ days, slots }) => {
                 padding: "8px 4px",
                 borderRadius: "10px",
                 background: active
-                  ? "#B4000A"
+                  ? "#2D2D2B"
                   : "#FFFFFF",
                 border: active
                   ? "1px solid rgba(255, 255, 255, 0.4)"
@@ -1365,7 +1365,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
               fontFamily: SERIF,
               fontWeight: 600,
               fontSize: "32px",
-              color: "#B4000A",
+              color: "#2D2D2B",
               letterSpacing: "-0.03em",
               lineHeight: 1,
             }}
@@ -1414,7 +1414,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
                   sx={{
                     height: "100%",
                     width: `${b.pct}%`,
-                    background: "#B4000A",
+                    background: "#2D2D2B",
                     borderRadius: "2px",
                   }}
                 />
@@ -1452,7 +1452,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
                 width: "32px",
                 height: "32px",
                 borderRadius: "50%",
-                background: "#B4000A",
+                background: "#2D2D2B",
                 color: "#fff",
                 display: "flex",
                 alignItems: "center",

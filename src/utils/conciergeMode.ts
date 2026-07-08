@@ -66,11 +66,11 @@ export interface ConciergeModeInfo {
 //     • off      → slate dawn → muted clay (cool, resting)
 // ─────────────────────────────────────────────────────────────────────
 const GRADIENT_PRIME =
-  "#B4000A";
+  "#2D2D2B";
 const GRADIENT_EVENING =
-  "#B4000A";
+  "#2D2D2B";
 const GRADIENT_DAY =
-  "#B4000A";
+  "#2D2D2B";
 const GRADIENT_OFF =
   "#475569";
 
