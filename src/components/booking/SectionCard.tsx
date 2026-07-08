@@ -14,6 +14,11 @@ const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New R
 
 export interface SectionCardProps {
   label: string;
+  /** 🆕 Round 28r61 — optional Thai subtitle rendered below the primary
+   *  label ("English primary + tiny Thai underneath" bilingual pass,
+   *  Bangkok-mall-signage style). Falls back to no subtitle when omitted
+   *  so existing (admin) usages are unaffected. */
+  sublabel?: string;
   /** MUI icon node (preferred) — rendered inside a soft pink rounded box
    *  matching the address tile. Plain string emoji is still accepted for
    *  back-compat. */
@@ -24,6 +29,7 @@ export interface SectionCardProps {
 
 export const SectionCard: React.FC<SectionCardProps> = ({
   label,
+  sublabel,
   icon,
   tight,
   children,
@@ -64,16 +70,34 @@ export const SectionCard: React.FC<SectionCardProps> = ({
           {icon}
         </Box>
       )}
-      <Typography
-        sx={{
-          fontFamily: SERIF,
-          fontSize: "15px",
-          fontWeight: 600,
-          color: "#1A2B2E",
-        }}
-      >
-        {label}
-      </Typography>
+      <Box sx={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+        <Typography
+          sx={{
+            fontFamily: SERIF,
+            fontSize: "15px",
+            fontWeight: 600,
+            color: "#1A2B2E",
+            lineHeight: 1.2,
+          }}
+        >
+          {label}
+        </Typography>
+        {sublabel && (
+          <Typography
+            sx={{
+              fontFamily:
+                '"Inter", system-ui, -apple-system, sans-serif',
+              fontSize: "10.5px",
+              fontWeight: 500,
+              color: "rgba(15, 23, 42, 0.5)",
+              letterSpacing: "0.01em",
+              marginTop: "2px",
+            }}
+          >
+            {sublabel}
+          </Typography>
+        )}
+      </Box>
     </Box>
     {children}
   </Box>

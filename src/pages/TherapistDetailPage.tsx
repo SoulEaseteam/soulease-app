@@ -1509,10 +1509,23 @@ const TherapistDetailPage: React.FC = () => {
             letterSpacing: "0.18em",
             textTransform: "uppercase",
             color: "#B4000A",
-            marginBottom: "10px",
+            marginBottom: "2px",
           }}
         >
           {t("detail.picker.eyebrow", "Reserve a ritual")}
+        </Typography>
+        {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle. */}
+        <Typography
+          sx={{
+            fontFamily: SANS,
+            fontSize: 10,
+            fontWeight: 500,
+            color: "rgba(15, 23, 42, 0.55)",
+            letterSpacing: "0.02em",
+            marginBottom: "10px",
+          }}
+        >
+          จองบริการ
         </Typography>
 
         <StepService

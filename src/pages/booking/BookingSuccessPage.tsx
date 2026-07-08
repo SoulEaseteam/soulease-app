@@ -346,6 +346,23 @@ const BookingSuccessPage: React.FC = () => {
               {t("success.title", "You're all set.")}
             </Typography>
 
+            {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle
+                under the headline. Renders regardless of picked
+                locale so Thai locals feel welcomed. */}
+            <Typography
+              sx={{
+                fontFamily: SANS,
+                fontSize: "11px",
+                fontWeight: 500,
+                color: "rgba(15, 23, 42, 0.5)",
+                textAlign: "center",
+                letterSpacing: "0.02em",
+                marginTop: "4px",
+              }}
+            >
+              รับคำสั่งจองเรียบร้อย
+            </Typography>
+
             {/* Booking ref pill */}
             <Box
               sx={{
@@ -699,10 +716,23 @@ const BookingSuccessPage: React.FC = () => {
                   fontWeight: 600,
                   color: "#B4000A",
                   fontStyle: "italic",
-                  marginBottom: "10px",
+                  marginBottom: "2px",
                 }}
               >
                 {t("success.summary.title", "Your reservation")}
+              </Typography>
+              {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle. */}
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "10.5px",
+                  fontWeight: 500,
+                  color: "rgba(15, 23, 42, 0.5)",
+                  letterSpacing: "0.02em",
+                  marginBottom: "10px",
+                }}
+              >
+                รายละเอียดการจอง
               </Typography>
               <SummaryLine
                 label={t("success.summary.practitioner", "Practitioner")}
@@ -885,18 +915,34 @@ const BookingSuccessPage: React.FC = () => {
                   marginBottom: "10px",
                 }}
               >
-                <Typography
-                  component="h2"
-                  sx={{
-                    fontFamily: SERIF,
-                    fontSize: "16px",
-                    fontWeight: 600,
-                    color: "#B4000A",
-                    fontStyle: "italic",
-                  }}
-                >
-                  {t("success.prep.title", "What to prepare")}
-                </Typography>
+                <Box sx={{ display: "flex", flexDirection: "column" }}>
+                  <Typography
+                    component="h2"
+                    sx={{
+                      fontFamily: SERIF,
+                      fontSize: "16px",
+                      fontWeight: 600,
+                      color: "#B4000A",
+                      fontStyle: "italic",
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {t("success.prep.title", "What to prepare")}
+                  </Typography>
+                  {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle. */}
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: "10.5px",
+                      fontWeight: 500,
+                      color: "rgba(15, 23, 42, 0.5)",
+                      letterSpacing: "0.02em",
+                      marginTop: "1px",
+                    }}
+                  >
+                    สิ่งที่ต้องเตรียม
+                  </Typography>
+                </Box>
                 <Typography
                   sx={{
                     fontFamily: SANS,
@@ -1011,6 +1057,20 @@ const BookingSuccessPage: React.FC = () => {
                 }}
               >
                 {t("success.confirmHeading", "Confirm with concierge")}
+              </Typography>
+              {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle. */}
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "10px",
+                  fontWeight: 500,
+                  color: "rgba(15, 23, 42, 0.42)",
+                  letterSpacing: "0.02em",
+                  textAlign: "center",
+                  marginBottom: "6px",
+                }}
+              >
+                ยืนยันกับ concierge
               </Typography>
               <Box
                 sx={{

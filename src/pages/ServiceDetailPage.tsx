@@ -367,10 +367,24 @@ const ServiceDetailPage: React.FC = () => {
             letterSpacing: "0.14em",
             textTransform: "uppercase",
             color: brand.accent,
-            marginBottom: "10px",
+            marginBottom: "4px",
           }}
         >
           {t("serviceDetail.choose", "Choose duration")}
+        </Typography>
+        {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle. */}
+        <Typography
+          sx={{
+            fontFamily: fonts.body,
+            fontSize: "10px",
+            fontWeight: 500,
+            color: brand.textMuted,
+            letterSpacing: "0.02em",
+            marginBottom: "10px",
+            opacity: 0.75,
+          }}
+        >
+          เลือกระยะเวลา
         </Typography>
         <Box
           role="group"
@@ -528,10 +542,24 @@ const ServiceDetailPage: React.FC = () => {
             letterSpacing: "0.14em",
             textTransform: "uppercase",
             color: brand.accent,
-            marginBottom: "12px",
+            marginBottom: "4px",
           }}
         >
           {t("serviceDetail.included", "What's included")}
+        </Typography>
+        {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle. */}
+        <Typography
+          sx={{
+            fontFamily: fonts.body,
+            fontSize: "10px",
+            fontWeight: 500,
+            color: brand.textMuted,
+            letterSpacing: "0.02em",
+            marginBottom: "12px",
+            opacity: 0.75,
+          }}
+        >
+          สิ่งที่รวมในบริการ
         </Typography>
         <Box
           component="ul"
@@ -599,10 +627,25 @@ const ServiceDetailPage: React.FC = () => {
               letterSpacing: "0.14em",
               textTransform: "uppercase",
               color: brand.accent,
-              marginBottom: "10px",
+              marginBottom: "2px",
             }}
           >
             {t("serviceDetail.reviews", "Guest reviews")}
+          </Typography>
+          {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle. */}
+          <Typography
+            sx={{
+              padding: { xs: "0 18px", md: 0 },
+              fontFamily: fonts.body,
+              fontSize: "10px",
+              fontWeight: 500,
+              color: brand.textMuted,
+              letterSpacing: "0.02em",
+              marginBottom: "10px",
+              opacity: 0.75,
+            }}
+          >
+            รีวิวจากลูกค้า
           </Typography>
           <Box
             sx={{

@@ -382,19 +382,36 @@ const ServicesPage: React.FC = () => {
                 justifyContent: "space-between",
               }}
             >
-              <Typography
-                component="h2"
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: 13,
-                  fontWeight: 700,
-                  letterSpacing: "0.16em",
-                  textTransform: "uppercase",
-                  color: "#FFFFFF",
-                }}
-              >
-                Rates &amp; Services
-              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column" }}>
+                <Typography
+                  component="h2"
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
+                    color: "#FFFFFF",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  Rates &amp; Services
+                </Typography>
+                {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle. */}
+                <Typography
+                  component="span"
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: 10,
+                    fontWeight: 500,
+                    color: "rgba(255,255,255,0.72)",
+                    letterSpacing: "0.02em",
+                    marginTop: "2px",
+                  }}
+                >
+                  ราคา และ บริการ
+                </Typography>
+              </Box>
               <Typography
                 component="span"
                 sx={{
@@ -884,18 +901,34 @@ const ServicesPage: React.FC = () => {
                     background: "rgba(180, 0, 10, 0.45)",
                   }}
                 />
-                <Typography
-                  sx={{
-                    fontFamily: SANS,
-                    fontSize: 10,
-                    fontWeight: 800,
-                    letterSpacing: "0.22em",
-                    textTransform: "uppercase",
-                    color: "#B4000A",
-                  }}
-                >
-                  Areas &amp; Timing
-                </Typography>
+                <Box sx={{ display: "flex", flexDirection: "column" }}>
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: 10,
+                      fontWeight: 800,
+                      letterSpacing: "0.22em",
+                      textTransform: "uppercase",
+                      color: "#B4000A",
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    Areas &amp; Timing
+                  </Typography>
+                  {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle. */}
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: 9.5,
+                      fontWeight: 500,
+                      color: "rgba(15, 23, 42, 0.55)",
+                      letterSpacing: "0.02em",
+                      marginTop: "1px",
+                    }}
+                  >
+                    พื้นที่ และ เวลา
+                  </Typography>
+                </Box>
                 <Box
                   aria-hidden
                   sx={{
@@ -1038,18 +1071,34 @@ const ServicesPage: React.FC = () => {
                     background: "rgba(180, 0, 10, 0.45)",
                   }}
                 />
-                <Typography
-                  sx={{
-                    fontFamily: SANS,
-                    fontSize: 10,
-                    fontWeight: 800,
-                    letterSpacing: "0.22em",
-                    textTransform: "uppercase",
-                    color: "#B4000A",
-                  }}
-                >
-                  Reserve
-                </Typography>
+                <Box sx={{ display: "flex", flexDirection: "column" }}>
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: 10,
+                      fontWeight: 800,
+                      letterSpacing: "0.22em",
+                      textTransform: "uppercase",
+                      color: "#B4000A",
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    Reserve
+                  </Typography>
+                  {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle. */}
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: 9.5,
+                      fontWeight: 500,
+                      color: "rgba(15, 23, 42, 0.55)",
+                      letterSpacing: "0.02em",
+                      marginTop: "1px",
+                    }}
+                  >
+                    จองบริการ
+                  </Typography>
+                </Box>
                 <Box
                   aria-hidden
                   sx={{
@@ -1264,19 +1313,34 @@ const ServicesPage: React.FC = () => {
             {/* 🆕 Round 28s216 (About audit #1) — Added eyebrow
                 section header to match Services + How-to-book visual
                 rhythm ("RATES & SERVICES" / "AREAS & TIMING"). */}
-            <Typography
-              sx={{
-                fontFamily: SANS,
-                fontSize: 11,
-                fontWeight: 800,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: "#B4000A",
-                marginLeft: "2px",
-              }}
-            >
-              About · Our Promise
-            </Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", marginLeft: "2px" }}>
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  color: "#B4000A",
+                  lineHeight: 1.1,
+                }}
+              >
+                About · Our Promise
+              </Typography>
+              {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle. */}
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: 10,
+                  fontWeight: 500,
+                  color: "rgba(15, 23, 42, 0.55)",
+                  letterSpacing: "0.02em",
+                  marginTop: "2px",
+                }}
+              >
+                เกี่ยวกับเรา
+              </Typography>
+            </Box>
 
             <Box
               sx={{

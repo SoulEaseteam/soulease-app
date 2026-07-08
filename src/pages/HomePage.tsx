@@ -234,6 +234,22 @@ const HomePage: React.FC = () => {
               "Bangkok Outcall Massage · Delivered to Your Hotel"
             )}
           </Box>
+          {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle line
+              under the English hero H2. Renders regardless of picked
+              locale, so Thai locals immediately feel welcomed. Bangkok
+              mall-signage style. */}
+          <Box
+            sx={{
+              fontFamily: fonts.body,
+              fontSize: { md: 12, lg: 13 },
+              fontWeight: 500,
+              color: "rgba(255,255,255,0.75)",
+              letterSpacing: "0.02em",
+              marginTop: "6px",
+            }}
+          >
+            นวดถึงห้อง กรุงเทพฯ · จัดส่งถึงโรงแรม
+          </Box>
           <Box
             sx={{
               ...responsiveType.body,

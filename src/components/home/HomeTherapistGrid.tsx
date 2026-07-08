@@ -414,6 +414,21 @@ const HomeTherapistGrid: React.FC = () => {
               "Bangkok's most discreet outcall massage, <em>delivered to you.</em>",
           }}
         />
+        {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle line
+            under the tagline. Bangkok mall-signage feel. */}
+        <Typography
+          sx={{
+            fontFamily: fonts.body,
+            fontSize: 11,
+            fontWeight: 500,
+            color: brand.textMuted,
+            letterSpacing: "0.02em",
+            marginTop: "6px",
+            opacity: 0.8,
+          }}
+        >
+          หมอนวด · นวดถึงห้อง กรุงเทพฯ
+        </Typography>
         {/* On-standby line kept compact, below the tagline. */}
         {!loading && therapists.length > 0 && (
           <Box

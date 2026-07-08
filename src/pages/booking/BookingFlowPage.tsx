@@ -1498,6 +1498,7 @@ const BookingFlowPage: React.FC = () => {
         <Box sx={{ gridArea: "orderDetails", minWidth: 0 }}>
         <SectionCard
           label={t("booking.section.orderDetails", "Order Details")}
+          sublabel="รายละเอียดคำสั่งซื้อ"
           icon={<ReceiptLongRoundedIcon />}
         >
           {/* Therapist row + EDIT */}
@@ -1705,6 +1706,7 @@ const BookingFlowPage: React.FC = () => {
         >
         <SectionCard
           label={t("booking.section.pricing", "Pricing")}
+          sublabel="ราคา"
           icon={<PaidRoundedIcon />}
         >
           <PriceRow
@@ -2577,9 +2579,28 @@ const BookingFlowPage: React.FC = () => {
             },
           }}
         >
-          {submitting
-            ? t("booking.placing", "Placing…")
-            : t("booking.placeOrder", "Confirm Reservation")}
+          <Box sx={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
+            <Box component="span" sx={{ fontSize: "15px", fontWeight: 700 }}>
+              {submitting
+                ? t("booking.placing", "Placing…")
+                : t("booking.placeOrder", "Confirm Reservation")}
+            </Box>
+            {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle. */}
+            {!submitting && (
+              <Box
+                component="span"
+                sx={{
+                  fontSize: "10px",
+                  fontWeight: 500,
+                  letterSpacing: "0.04em",
+                  color: "rgba(255,255,255,0.75)",
+                  marginTop: "1px",
+                }}
+              >
+                ยืนยันจอง
+              </Box>
+            )}
+          </Box>
         </Button>
         </Box>{/* end pricing sticky sidebar */}
 
@@ -2646,6 +2667,19 @@ const BookingFlowPage: React.FC = () => {
               }}
             >
               {t("booking.paymentDetail", "Payment detail")}
+              {/* 🆕 Round 28r61 — bilingual pass: tiny Thai inline. */}
+              <Box
+                component="span"
+                sx={{
+                  fontWeight: 500,
+                  color: "rgba(15, 23, 42, 0.4)",
+                  marginLeft: "6px",
+                  letterSpacing: "0.02em",
+                  textTransform: "none",
+                }}
+              >
+                · การชำระเงิน
+              </Box>
             </Typography>
             <Typography
               sx={{
