@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import ChatBubbleOutlineRoundedIcon from "@mui/icons-material/ChatBubbleOutlineRounded";
 
-import { brand, fonts, accents } from "@/theme";
+import { fonts, accents } from "@/theme";
 
 // 🆕 Round 28s238 (founder: "Ocean Study" trial on the customer-facing
 //   browse card — scoped to THIS file only, not the global `brand` theme).
@@ -240,63 +240,16 @@ const TherapistMinimalCard: React.FC<Props> = ({
           {badgeMeta.label}
         </Box>
       )}
-      {/* 🆕 Round 28s135 — Status pill moved OUT of the portrait box
-          (founder feedback "บังรูป") and pinned to the top-right
-          corner of the WHOLE card so it sits on the info side, not
-          over the face.
-          🆕 Round 28s146 (audit #5) — Suppress the pill on holiday
-          cards. The "Holiday" badge that floats on the blurred
-          portrait already says it; rendering both was redundant. */}
-      {!isOnHoliday && (
-        <Box
-          sx={{
-            position: "absolute",
-            top: 12,
-            right: 12,
-            zIndex: 2,
-            display: "flex",
-            alignItems: "center",
-            gap: "5px",
-            // 🆕 Round 28r81 — mint-green tint + hairline teal border
-            //   for the `available` pill; plain white for the rest.
-            background:
-              status === "available"
-                ? accents.availableBg
-                : "rgba(255,255,255,0.95)",
-            border:
-              status === "available"
-                ? "1px solid rgba(46, 196, 176, 0.24)"
-                : "1px solid transparent",
-            padding: "4px 9px",
-            borderRadius: "999px",
-            boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
-          }}
-          aria-label={statusLabel}
-        >
-          <Box
-            sx={{
-              width: 7,
-              height: 7,
-              borderRadius: "50%",
-              background: statusMeta.color,
-            }}
-          />
-          <Typography
-            sx={{
-              fontFamily: fonts.body,
-              fontSize: "10px",
-              fontWeight: 700,
-              // 🆕 Round 28r81 — darker green text on the mint bg for
-              //   AA-legibility. Non-available pills keep brand.text.
-              color:
-                status === "available" ? accents.availableText : brand.text,
-              letterSpacing: "0.02em",
-            }}
-          >
-            {statusLabel}
-          </Typography>
-        </Box>
-      )}
+      {/* Round 28r84 — Status pill relocated to bottom-center of the
+          photo (founder direction 2026-07-08 reference screenshots).
+          Was top-right of the card (r81 light-green tint). Now the
+          dominant status indicator at the bottom edge of the photo:
+          solid teal mint (#2EC4B0) fill + white text + larger padding
+          when `available`, so it reads as the primary "greenlight,
+          book now" signal. Bookable / offline states keep the same
+          bottom-center location but with warm neutral fills.
+          Holiday cards still suppress the pill (the Holiday badge on
+          the blurred portrait carries the meaning — 28s146). */}
       {/* ── Portrait on TOP (Round 28r53 vertical portrait card) ──── */}
       <Box
         sx={{
@@ -366,6 +319,71 @@ const TherapistMinimalCard: React.FC<Props> = ({
             </Box>
           </Box>
         )}
+
+        {/* Round 28r84 — Status pill at bottom-center of the photo.
+            Founder direction (2026-07-08 reference screenshots): the
+            AVAILABLE pill becomes the dominant status indicator,
+            hanging on the bottom edge of the portrait. Solid teal +
+            white for `available`; warm-neutral fills for the other
+            states so the visual hierarchy stays clear. Holiday cards
+            still suppress the pill (the Holiday badge above already
+            says it). */}
+        {!isOnHoliday && (
+          <Box
+            sx={{
+              position: "absolute",
+              left: "50%",
+              bottom: "-14px",
+              transform: "translateX(-50%)",
+              zIndex: 2,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding:
+                status === "available" ? "8px 20px" : "6px 16px",
+              borderRadius: "999px",
+              background:
+                status === "available"
+                  ? accents.teal
+                  : status === "bookable"
+                    ? "#4B4B48"
+                    : "#8F8474",
+              color: "#fff",
+              border: "none",
+              boxShadow:
+                status === "available"
+                  ? "0 8px 20px rgba(46, 196, 176, 0.30), 0 2px 5px rgba(46, 196, 176, 0.18)"
+                  : "0 4px 10px rgba(15, 23, 42, 0.20)",
+              whiteSpace: "nowrap",
+            }}
+            aria-label={statusLabel}
+          >
+            {status !== "available" && (
+              <Box
+                sx={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "#fff",
+                  opacity: 0.9,
+                }}
+              />
+            )}
+            <Typography
+              sx={{
+                fontFamily: fonts.body,
+                fontSize: status === "available" ? "11px" : "10px",
+                fontWeight: 700,
+                color: "#fff",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                lineHeight: 1,
+              }}
+            >
+              {statusLabel}
+            </Typography>
+          </Box>
+        )}
       </Box>
 
       {/* ── Info column (rendered BELOW the portrait) ──── */}
@@ -427,22 +445,27 @@ const TherapistMinimalCard: React.FC<Props> = ({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                // Founder direction: opens photo gallery when one
-                //   exists. Gallery view lives on the detail page,
-                //   so we route there. Analytics no-op otherwise.
-                if (therapist.gallery && therapist.gallery.length > 0) {
-                  navigate(`/therapists/${therapist.id}#gallery`);
-                }
+                // Round 28r84 — Photos pill always routes to the
+                //   detail page's #gallery anchor. When the
+                //   practitioner has gallery photos, the section
+                //   scrolls into view; when she doesn't, the section
+                //   still renders an empty-state card so guests
+                //   understand there just isn't more to show yet.
+                navigate(`/therapists/${therapist.id}#gallery`);
               }}
               aria-label={`Photos of ${therapist.name}`}
               sx={{
+                // Round 28r84 — Outline recolored from #4B4B48 to warm
+                //   taupe #8F8474 per founder direction (2026-07-08 —
+                //   'warm taupe on PHOTOS pill outline'). Text stays at
+                //   #4B4B48 (sitewide card text color).
                 flexShrink: 0,
                 display: "inline-flex",
                 alignItems: "center",
                 padding: "4px 10px",
                 borderRadius: "999px",
                 background: "transparent",
-                border: "1.5px solid #4B4B48",
+                border: "1.5px solid #8F8474",
                 color: "#4B4B48",
                 fontFamily: fonts.body,
                 fontSize: "10.5px",
@@ -454,10 +477,10 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 lineHeight: 1,
                 transition: "background 0.15s ease, color 0.15s ease",
                 "&:hover": {
-                  background: "rgba(75, 75, 72, 0.06)",
+                  background: "rgba(143, 132, 116, 0.08)",
                 },
                 "&:focus-visible": {
-                  outline: "2px solid #4B4B48",
+                  outline: "2px solid #8F8474",
                   outlineOffset: 2,
                 },
               }}
@@ -473,15 +496,18 @@ const TherapistMinimalCard: React.FC<Props> = ({
               (name · rating · chat · price · CTA). All the trimmed
               detail is still available on the therapist detail page. */}
 
-          {/* Rating row — pink star + "N.N | K served" + chat chip
-              🆕 Round 28r82 — Founder direction (reference screenshot):
-                • Star swaps from amber → soft pink #EF9AA1 for the
-                  warmer/friendlier register on the browse card. Amber
-                  stays elsewhere on the site (detail page, admin).
-                • Rating text format changes from "4.5 (N reviews)" →
-                  "4.5 | N served" (served = totalSessions ?? reviews).
-                • A pink speech-bubble chip is appended on the same
-                  row with the comment count = review count. */}
+          {/* Rating row — amber star + "N.N | K reviews" + chat chip
+              Round 28r84 — Founder direction (reference screenshots
+              2026-07-08):
+                • Star reverts from r82 pink #EF9AA1 back to amber
+                  #F5A623 (accents.amber). Amber is the canonical
+                  star tone across the site (detail page, admin).
+                • Rating text reverts from "N served" (r82 wording) to
+                  "N reviews" — reviews are the honest count guests
+                  care about; totalSessions can hide behind detail.
+                • Chat speech-bubble chip glyph reverts from r82 coral
+                  #D66B70 to warm taupe #8F8474 to shed the coral
+                  overspill; chip bg uses a soft warm-taupe tint. */}
           {therapist.rating && therapist.rating > 0 ? (
             <Box
               sx={{
@@ -498,7 +524,9 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   gap: "5px",
                 }}
               >
-                <StarRoundedIcon sx={{ fontSize: 16, color: "#EF9AA1" }} />
+                <StarRoundedIcon
+                  sx={{ fontSize: 16, color: accents.amber }}
+                />
                 <Typography
                   sx={{
                     fontFamily: fonts.body,
@@ -508,28 +536,19 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   }}
                 >
                   {therapist.rating.toFixed(1)}
-                  {(() => {
-                    const served =
-                      (typeof therapist.totalSessions === "number"
-                        ? therapist.totalSessions
-                        : undefined) ??
-                      (typeof therapist.reviews === "number"
-                        ? therapist.reviews
-                        : undefined);
-                    if (!served) return null;
-                    return (
-                      <Box
-                        component="span"
-                        sx={{
-                          fontWeight: 500,
-                          color: "#4B4B48",
-                          marginLeft: "6px",
-                        }}
-                      >
-                        | {served} {t("therapistCard.served", "served")}
-                      </Box>
-                    );
-                  })()}
+                  {therapist.reviews && therapist.reviews > 0 ? (
+                    <Box
+                      component="span"
+                      sx={{
+                        fontWeight: 500,
+                        color: "#4B4B48",
+                        marginLeft: "6px",
+                      }}
+                    >
+                      | {therapist.reviews}{" "}
+                      {t("therapistCard.reviews", "reviews")}
+                    </Box>
+                  ) : null}
                 </Typography>
               </Box>
               {therapist.reviews && therapist.reviews > 0 ? (
@@ -540,12 +559,12 @@ const TherapistMinimalCard: React.FC<Props> = ({
                     gap: "4px",
                     padding: "3px 8px",
                     borderRadius: "999px",
-                    background: "#FFE5E7",
+                    background: "rgba(143, 132, 116, 0.10)",
                   }}
                   aria-label={`${therapist.reviews} comments`}
                 >
                   <ChatBubbleOutlineRoundedIcon
-                    sx={{ fontSize: 13, color: "#D66B70" }}
+                    sx={{ fontSize: 13, color: "#8F8474" }}
                   />
                   <Typography
                     sx={{
@@ -609,16 +628,16 @@ const TherapistMinimalCard: React.FC<Props> = ({
             onClick={handleBookTap}
             disabled={isOffDuty}
             sx={{
-              // 🆕 Round 28r82 — Coral CTA for the therapist browse
-              //   card (founder reference screenshot 2026-07-08).
-              //   Warmer/friendlier than the sitewide taupe primary,
-              //   scoped to THIS card only (see r80 · sitewide primary
-              //   stays warm taupe #8F8474 on hero/booking/checkout).
+              // Round 28r84 — CTA reverts from r82 coral #E88585 back
+              //   to sitewide warm taupe #8F8474 (r80 primary). One
+              //   CTA colour across hero, booking, checkout, and now
+              //   the browse card — the coral experiment cast the
+              //   rest of the palette in a warmer light than intended.
               padding: "10px 20px",
               borderRadius: "999px",
               background: isOffDuty
                 ? "rgba(0,0,0,0.18)"
-                : "#E88585",
+                : "#8F8474",
               color: "#fff",
               border: "none",
               cursor: isOffDuty ? "not-allowed" : "pointer",
@@ -630,15 +649,15 @@ const TherapistMinimalCard: React.FC<Props> = ({
               whiteSpace: "nowrap",
               boxShadow: isOffDuty
                 ? "none"
-                : "0 6px 14px rgba(232, 133, 133, 0.32), 0 1px 3px rgba(232, 133, 133, 0.18)",
+                : "0 6px 14px rgba(143, 132, 116, 0.32), 0 1px 3px rgba(143, 132, 116, 0.18)",
               transition: "transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease",
               "&:hover": isOffDuty
                 ? {}
                 : {
-                    background: "#D67373",
+                    background: "#7A7060",
                     transform: "translateY(-1px)",
                     boxShadow:
-                      "0 10px 22px rgba(214, 115, 115, 0.36), 0 2px 5px rgba(214, 115, 115, 0.20)",
+                      "0 10px 22px rgba(122, 112, 96, 0.36), 0 2px 5px rgba(122, 112, 96, 0.20)",
                   },
               "&:focus-visible": {
                 outline: "2px solid #fff",

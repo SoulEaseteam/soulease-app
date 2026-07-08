@@ -16,6 +16,13 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+// 🆕 Round 28r84 — Icons for the #gallery section lightbox controls
+//   (fullscreen photo viewer with prev/next/close). Warm-taupe glyphs
+//   over the dim backdrop so they stay legible without adding a
+//   fourth accent colour to the palette.
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
+import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 
 import DetailHero from "@/components/therapist/detail/DetailHero";
 import StatsCard from "@/components/therapist/detail/StatsCard";
@@ -779,6 +786,11 @@ const TherapistDetailPage: React.FC = () => {
     "services",
   );
 
+  // 🆕 Round 28r84 — Gallery lightbox index (null = closed).
+  //   The #gallery section renders a responsive photo grid; tapping
+  //   any tile opens the fullscreen viewer with prev/next/close.
+  const [galleryIdx, setGalleryIdx] = useState<number | null>(null);
+
   // Round 28s55 — `liveBookings` now comes from the shared
   // useTherapistBookingFeed above (one listener for bookings + stats).
   // Only the therapists-doc live-status listener remains separate.
@@ -924,6 +936,22 @@ const TherapistDetailPage: React.FC = () => {
     params.set("time", time);
     void navigate(`/booking/${therapist.id}?${params.toString()}`);
   };
+
+  // 🆕 Round 28r84 — Hash-scroll into the #gallery section. Card's
+  //   PHOTOS pill routes to `/therapists/:id#gallery`; smooth-scroll
+  //   here so the guest lands directly on the photo grid instead of
+  //   at the top of the page. Runs once when the therapist resolves
+  //   (id change or Firestore fallback lands).
+  useEffect(() => {
+    if (!therapistFromReal) return;
+    if (typeof window === "undefined") return;
+    if (window.location.hash !== "#gallery") return;
+    const timer = window.setTimeout(() => {
+      const el = document.getElementById("gallery");
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 220);
+    return () => window.clearTimeout(timer);
+  }, [therapistFromReal]);
 
   // Round 28s34 — Memoised Bayesian rating. Previously recomputed
   // on every parent render, even when reviews didn't change.
@@ -1678,6 +1706,307 @@ const TherapistDetailPage: React.FC = () => {
       {/* ── END responsive 2-col grid wrapper ───────────────────── */}
 
       {/* (Reviews moved into TherapistProfileTabs as Tab 2.) */}
+
+      {/* 🆕 Round 28r84 — #gallery anchor section. Founder direction
+          (2026-07-08 reference screenshots): the card's PHOTOS pill
+          routes here (`/therapists/:id#gallery`). Responsive grid —
+          2 col mobile · 3 col tablet · 4 col desktop — of the
+          therapist's Cloudinary-enhanced gallery photos (see
+          buildFromReal → `images`, which sources `therapist.gallery`
+          on the underlying data record). Tapping any tile opens the
+          full-screen lightbox below. Empty state renders a Nordic
+          neutral card so guests understand there simply isn't more
+          content yet (no bug / no broken link). */}
+      <Box
+        id="gallery"
+        sx={{
+          padding: {
+            xs: "24px 20px 8px",
+            md: "32px 18px 12px",
+          },
+          scrollMarginTop: "18px",
+        }}
+      >
+        <Typography
+          component="h2"
+          sx={{
+            fontFamily: SANS,
+            fontSize: 11,
+            fontWeight: 800,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: "#4B4B48",
+            marginBottom: "14px",
+          }}
+        >
+          {t("detail.gallery.title", "Photos")}
+        </Typography>
+
+        {(therapist.images ?? []).length === 0 ? (
+          <Box
+            sx={{
+              padding: "40px 20px",
+              background: "#F7F7F6",
+              borderRadius: "16px",
+              textAlign: "center",
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: SANS,
+                fontSize: "13px",
+                fontWeight: 500,
+                color: "#4B4B48",
+              }}
+            >
+              {t(
+                "detail.gallery.empty",
+                "No additional photos yet"
+              )}
+            </Typography>
+          </Box>
+        ) : (
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "repeat(2, 1fr)",
+                sm: "repeat(3, 1fr)",
+                md: "repeat(4, 1fr)",
+              },
+              gap: { xs: "8px", md: "12px" },
+            }}
+          >
+            {(therapist.images ?? []).map((src, idx) => (
+              <Box
+                key={`${src}-${idx}`}
+                component="button"
+                type="button"
+                onClick={() => setGalleryIdx(idx)}
+                aria-label={t(
+                  "detail.gallery.tileAria",
+                  "Open photo {{n}} of {{total}}",
+                  {
+                    n: idx + 1,
+                    total: (therapist.images ?? []).length,
+                  }
+                )}
+                sx={{
+                  width: "100%",
+                  aspectRatio: "1 / 1",
+                  border: "none",
+                  padding: 0,
+                  cursor: "zoom-in",
+                  borderRadius: "12px",
+                  overflow: "hidden",
+                  background: "#F7F7F6",
+                  transition:
+                    "transform 0.15s ease, box-shadow 0.15s ease",
+                  "&:hover": {
+                    transform: "translateY(-1px)",
+                    boxShadow:
+                      "0 6px 14px rgba(15, 23, 42, 0.10)",
+                  },
+                  "&:focus-visible": {
+                    outline: "2px solid #8F8474",
+                    outlineOffset: 2,
+                  },
+                }}
+              >
+                <Box
+                  component="img"
+                  src={src}
+                  alt={`${therapist.name} photo ${idx + 1}`}
+                  loading="lazy"
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    display: "block",
+                  }}
+                />
+              </Box>
+            ))}
+          </Box>
+        )}
+      </Box>
+
+      {/* Lightbox — fullscreen photo viewer with prev/next/close.
+          Backdrop dim + tap-to-close · warm-taupe glyphs · fixed z 9999
+          so it floats above every other page chrome (sticky nav,
+          detail hero, InfoSheet). Only mounted while `galleryIdx`
+          is a number. */}
+      {galleryIdx !== null &&
+        (therapist.images ?? []).length > 0 && (
+          <Box
+            role="dialog"
+            aria-modal="true"
+            aria-label={t(
+              "detail.gallery.lightboxAria",
+              "Photo viewer"
+            )}
+            onClick={() => setGalleryIdx(null)}
+            sx={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 9999,
+              background: "rgba(0, 0, 0, 0.90)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "20px",
+            }}
+          >
+            <Box
+              component="button"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setGalleryIdx(null);
+              }}
+              aria-label={t("detail.gallery.close", "Close")}
+              sx={{
+                position: "absolute",
+                top: 20,
+                right: 20,
+                background: "rgba(255,255,255,0.10)",
+                border: "none",
+                borderRadius: "999px",
+                width: 44,
+                height: 44,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                transition: "background 0.15s ease",
+                "&:hover": {
+                  background: "rgba(255,255,255,0.20)",
+                },
+              }}
+            >
+              <CloseRoundedIcon
+                sx={{ color: "#8F8474", fontSize: 26 }}
+              />
+            </Box>
+
+            {(therapist.images ?? []).length > 1 && (
+              <Box
+                component="button"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const total = (therapist.images ?? []).length;
+                  setGalleryIdx(
+                    (galleryIdx - 1 + total) % total
+                  );
+                }}
+                aria-label={t(
+                  "detail.gallery.prev",
+                  "Previous photo"
+                )}
+                sx={{
+                  position: "absolute",
+                  left: { xs: 12, md: 32 },
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "rgba(255,255,255,0.10)",
+                  border: "none",
+                  borderRadius: "999px",
+                  width: 44,
+                  height: 44,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  transition: "background 0.15s ease",
+                  "&:hover": {
+                    background: "rgba(255,255,255,0.20)",
+                  },
+                }}
+              >
+                <ChevronLeftRoundedIcon
+                  sx={{ color: "#8F8474", fontSize: 28 }}
+                />
+              </Box>
+            )}
+
+            <Box
+              component="img"
+              src={(therapist.images ?? [])[galleryIdx]}
+              alt={`${therapist.name} photo ${galleryIdx + 1}`}
+              onClick={(e) => e.stopPropagation()}
+              sx={{
+                maxWidth: "92vw",
+                maxHeight: "86vh",
+                objectFit: "contain",
+                borderRadius: "10px",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.50)",
+              }}
+            />
+
+            {(therapist.images ?? []).length > 1 && (
+              <Box
+                component="button"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const total = (therapist.images ?? []).length;
+                  setGalleryIdx((galleryIdx + 1) % total);
+                }}
+                aria-label={t(
+                  "detail.gallery.next",
+                  "Next photo"
+                )}
+                sx={{
+                  position: "absolute",
+                  right: { xs: 12, md: 32 },
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "rgba(255,255,255,0.10)",
+                  border: "none",
+                  borderRadius: "999px",
+                  width: 44,
+                  height: 44,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  transition: "background 0.15s ease",
+                  "&:hover": {
+                    background: "rgba(255,255,255,0.20)",
+                  },
+                }}
+              >
+                <ChevronRightRoundedIcon
+                  sx={{ color: "#8F8474", fontSize: 28 }}
+                />
+              </Box>
+            )}
+
+            {/* Photo counter — bottom-center hairline. */}
+            {(therapist.images ?? []).length > 1 && (
+              <Typography
+                sx={{
+                  position: "absolute",
+                  bottom: 24,
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  fontFamily: SANS,
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.75)",
+                  background: "rgba(0,0,0,0.32)",
+                  padding: "4px 10px",
+                  borderRadius: "999px",
+                }}
+              >
+                {galleryIdx + 1} / {(therapist.images ?? []).length}
+              </Typography>
+            )}
+          </Box>
+        )}
 
       {/* Phase 5 — StickyBookCTA removed (founder feedback 2026-05-01).
           Auto-navigate in goConfirmOrder() forwards the user to
