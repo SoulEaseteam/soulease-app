@@ -82,13 +82,22 @@ const QuickNavRow: React.FC = () => {
       component="nav"
       aria-label="Quick navigation"
       sx={{
+        // 🆕 Round 28s328 (founder 2026-07-08) — floating white card,
+        //   "ตรงแถบ ไอคอน ให้เป็นแบบนี้". Was a transparent grid with a
+        //   bottom hairline; now an elevated rounded card that pulls up
+        //   to overlap the hero's lower edge (negative top margin) for
+        //   the premium floating look in the mockup.
         display: "grid",
         gridTemplateColumns: "repeat(4, 1fr)",
         gap: "8px",
-        padding: { xs: "18px 16px 20px", md: "22px 20px 24px" },
-        margin: { xs: "8px 12px 0", md: "12px 12px 0" },
-        background: "transparent",
-        borderBottom: "1px solid #E2E0DD", // NEUTRAL_200
+        padding: { xs: "18px 10px", md: "22px 18px" },
+        margin: { xs: "-26px 16px 10px", md: "-32px 20px 14px" },
+        background: "#FFFFFF",
+        borderRadius: { xs: "22px", md: "24px" },
+        border: "1px solid #F1EDE6",
+        boxShadow: "0 14px 34px rgba(43, 38, 32, 0.12)",
+        position: "relative",
+        zIndex: 2, // float above the hero it overlaps
       }}
     >
       {items.map(({ key, Icon, labelEn, onTap }) => (

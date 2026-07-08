@@ -3962,3 +3962,14 @@ so the hero rendered stuck at **opacity ~0.07** (near-invisible). Removed the JS
 fade entirely — the hero is now `opacity:1` by default (bulletproof; never
 JS-dependent to be visible). tsc=0, build=59, `hero.jpg` copied into dist, verified
 render mobile + desktop, deployed.
+
+### 🆕 2026-07-08 — QuickNavRow → floating white card (28s328)
+
+Founder: "**ตรงแถบ ไอคอน ให้เป็นแบบนี้**" (mockup: the Massage·Therapists·Locations·
+Reviews bar as an elevated white card). `QuickNavRow.tsx` container was a
+transparent grid with a bottom hairline; now a **floating white rounded card**
+(`#FFFFFF`, radius 22-24, `box-shadow 0 14px 34px rgba(43,38,32,0.12)`, 1px
+`#F1EDE6` border) that **pulls up to overlap the hero's lower edge** (negative top
+margin `-26px` xs / `-32px` md, `zIndex:2`). Icons/labels unchanged (lotus/users/
+pin/star — star is the right semantic for Reviews). tsc=0, build=59, verified
+mobile + desktop, deployed.
