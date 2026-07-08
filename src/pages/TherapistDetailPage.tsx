@@ -98,7 +98,9 @@ import { formatDistanceEta } from "@/utils/formatDistanceEta";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell replaces the internal
 //   maxWidth: 430 caps used across this page's inner sections so the
 //   detail widens on tablet/desktop.
-import { responsiveShell } from "@/theme/breakpoints";
+// 🆕 Round 28r55 (Phase 3.4) — responsiveType scales the 404 title +
+//   About/Discovery body text through xs/sm/md so desktop breathes.
+import { responsiveShell, responsiveType } from "@/theme/breakpoints";
 
 const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -856,8 +858,8 @@ const TherapistDetailPage: React.FC = () => {
       >
         <Typography
           sx={{
+            ...responsiveType.h3,
             fontFamily: SERIF,
-            fontSize: "22px",
             fontWeight: 600,
             color: "#1A2B2E",
             marginBottom: "8px",
@@ -930,42 +932,80 @@ const TherapistDetailPage: React.FC = () => {
           ...responsiveShell,
           background: "transparent",
           position: "relative",
+          // 🆕 Round 28r55 (Phase 3.4) — desktop needs breathing room
+          //   at the bottom since the mobile sticky CTA doesn't apply.
+          paddingBottom: { xs: 0, md: "48px" },
         }}
       >
-      <DetailHero
-        name={therapist.name}
-        age={therapist.age}
-        area={therapist.area}
-        // Round 28s53 — real GPS distance label (null until the
-        // guest grants location). Tapping the "Allow location"
-        // chip fires requestLocation; geoStatus drives the
-        // pending/denied prompt copy inside DetailHero.
-        distanceLabel={distanceLabel}
-        onRequestLocation={requestLocation}
-        geoStatus={geoStatus}
-        // 🆕 Round 28aq — pass full 3-state status from the real engine
-        //   so the hero dot/label reads "Online" (green) / "Busy" (orange)
-        //   / "Offline" (gray) consistently with the StatusPill below.
-        online={livePillStatus}
-        photoBg={therapist.photoBg}
-        images={therapist.images}
-        // 🆕 Round 28s207 (audit #6) — Working hours formatted as
-        //   12-hour AM/PM (was 24h "19:00–05:00"). Matches the
-        //   TherapistMinimalCard format on the home page so guests
-        //   see one register everywhere ("7 PM – 5 AM (overnight)").
-        workingHours={
-          realRecord?.startTime && realRecord?.endTime
-            ? `${toAmPm(realRecord.startTime)} – ${toAmPm(
-                realRecord.endTime,
-              )}${
-                realRecord.startTime > realRecord.endTime
-                  ? " (overnight)"
-                  : ""
-              }`
-            : null
-        }
-      />
+      {/* 🆕 Round 28r55 (Phase 3.4) — 2-column grid at md+.
+          Mobile: flex-block stack in original source order
+          (DetailHero → StatsCard → StatusPill → Tabs → Panel).
+          Desktop: left rail (DetailHero row 1 · Services picker row 2,
+          sticky top) · right column (StatsCard + StatusPill row 1 ·
+          About content row 2, scrolls independently). Tabs bar is
+          hidden on md+ since both panels render simultaneously.
+          Grid children below use explicit gridColumn/gridRow so the
+          mobile source order and desktop 2-col layout can diverge
+          without duplicating any component. */}
+      <Box
+        sx={{
+          display: { xs: "block", md: "grid" },
+          gridTemplateColumns: { md: "5fr 7fr" },
+          columnGap: { md: 4 },
+          alignItems: { md: "start" },
+          padding: { xs: 0, md: "0 18px" },
+        }}
+      >
+      {/* ── GRID CHILD 1 — DetailHero (col 1 row 1 on md+) ─────── */}
+      <Box
+        sx={{
+          gridColumn: { md: "1" },
+          gridRow: { md: "1" },
+        }}
+      >
+        <DetailHero
+          name={therapist.name}
+          age={therapist.age}
+          area={therapist.area}
+          // Round 28s53 — real GPS distance label (null until the
+          // guest grants location). Tapping the "Allow location"
+          // chip fires requestLocation; geoStatus drives the
+          // pending/denied prompt copy inside DetailHero.
+          distanceLabel={distanceLabel}
+          onRequestLocation={requestLocation}
+          geoStatus={geoStatus}
+          // 🆕 Round 28aq — pass full 3-state status from the real engine
+          //   so the hero dot/label reads "Online" (green) / "Busy" (orange)
+          //   / "Offline" (gray) consistently with the StatusPill below.
+          online={livePillStatus}
+          photoBg={therapist.photoBg}
+          images={therapist.images}
+          // 🆕 Round 28s207 (audit #6) — Working hours formatted as
+          //   12-hour AM/PM (was 24h "19:00–05:00"). Matches the
+          //   TherapistMinimalCard format on the home page so guests
+          //   see one register everywhere ("7 PM – 5 AM (overnight)").
+          workingHours={
+            realRecord?.startTime && realRecord?.endTime
+              ? `${toAmPm(realRecord.startTime)} – ${toAmPm(
+                  realRecord.endTime,
+                )}${
+                  realRecord.startTime > realRecord.endTime
+                    ? " (overnight)"
+                    : ""
+                }`
+              : null
+          }
+        />
+      </Box>
 
+      {/* ── GRID CHILD 2 — StatsCard + StatusPill + Tabs
+             (col 2 row 1 on md+; mobile: immediately below hero) ── */}
+      <Box
+        sx={{
+          gridColumn: { md: "2" },
+          gridRow: { md: "1" },
+        }}
+      >
       {/* 🆕 Round 28s210 — Founder: "กดดูไม่ได้". StatsCard tap
           interactions restored. Cells open the InfoSheet deep-dive
           (reviews · profile · loyalty) — guests rely on tapping. */}
@@ -1002,7 +1042,10 @@ const TherapistDetailPage: React.FC = () => {
       {/* Round 28s42 — Underline tabs (Services / About {name}).
           Modelled on the founder-supplied hotel "ภาพรวม /
           นโยบายและเงื่อนไข" reference. Defaults to Services since
-          that's the conversion surface; About is one tap away. */}
+          that's the conversion surface; About is one tap away.
+          🆕 Round 28r55 (Phase 3.4) — hidden on md+ since the grid
+          shows both panels simultaneously; the mobile UX still
+          swaps between them via tab. */}
       <Box
         role="tablist"
         aria-label={t(
@@ -1010,11 +1053,9 @@ const TherapistDetailPage: React.FC = () => {
           "Practitioner overview tabs",
         )}
         sx={{
-          // 🆕 Round 28r52 — responsiveShell + top margin preserved.
-          ...responsiveShell,
           marginTop: "12px",
           padding: "0 18px",
-          display: "grid",
+          display: { xs: "grid", md: "none" },
           gridTemplateColumns: "1fr 1fr",
           borderBottom: "1px solid rgba(184, 92, 60, 0.18)",
         }}
@@ -1089,10 +1130,28 @@ const TherapistDetailPage: React.FC = () => {
           );
         })}
       </Box>
+      </Box>
+      {/* ── END GRID CHILD 2 ────────────────────────────────────── */}
 
-      {/* ── About panel ─────────────────────────────────────────── */}
-      {detailTab === "about" && (
-        <Box role="tabpanel" sx={{ paddingTop: "12px" }}>
+      {/* ── GRID CHILD 4 — About panel content
+             (col 2 row 2 on md+; mobile: tab-controlled visibility)
+             🆕 Round 28r55 (Phase 3.4) — was `{detailTab === "about"
+             && (...)}`. Now rendered unconditionally with display
+             toggled by breakpoint + tab state so the desktop grid can
+             always show About in the right column while mobile keeps
+             the tab flow. Same panel content, same handlers. ── */}
+      <Box
+        role="tabpanel"
+        sx={{
+          gridColumn: { md: "2" },
+          gridRow: { md: "2" },
+          display: {
+            xs: detailTab === "about" ? "block" : "none",
+            md: "block",
+          },
+          paddingTop: { xs: "12px", md: "16px" },
+        }}
+      >
           {/* 🆕 Round 28s221 — Drop the 3 fact-chip rows (info now lives
               in FeaturesPanel below) + drop the embedded gallery (hero
               handles photos). About card now renders only header + bio
@@ -1160,11 +1219,14 @@ const TherapistDetailPage: React.FC = () => {
                 <Typography
                   component="p"
                   sx={{
+                    // 🆕 Round 28r55 (Phase 3.4) — responsiveType.body
+                    //   scales the Discovery blurb from 13.5px (xs) up
+                    //   to 15/16px on tablet/desktop so it reads
+                    //   comfortably in the wider right column.
+                    ...responsiveType.body,
                     fontFamily: SERIF,
-                    fontSize: "13.5px",
                     fontWeight: 500,
                     color: "#1A2B2E",
-                    lineHeight: 1.4,
                   }}
                 >
                   {t(
@@ -1406,9 +1468,16 @@ const TherapistDetailPage: React.FC = () => {
                 section. */}
           </Box>
         </Box>
-      )}
+      {/* ── END GRID CHILD 4 (About panel) ──────────────────────── */}
 
-      {/* ── Services panel ─────────────────────────────────────── */}
+      {/* ── GRID CHILD 3 — Services picker / Reserve rail
+             (col 1 row 2 on md+; mobile: tab-controlled visibility)
+             🆕 Round 28r55 (Phase 3.4) — was `{detailTab === "services"
+             && (...)}`. Now a permanent grid child with display toggled
+             by breakpoint + tab state. On desktop this sits under the
+             DetailHero in the left rail and is `position: sticky` so
+             the Reserve action stays anchored while the About column
+             scrolls independently on the right. ── */}
       {/* 🆕 Round 28s222 — Services tab redesign (founder "tab service
           ปรับแก้"): SERIF title → SANS 700 for legibility consistency
           (matches Services / How-to-book / About / Admin audits).
@@ -1416,14 +1485,19 @@ const TherapistDetailPage: React.FC = () => {
           (the cards already announce "Services" visually). Hint text
           tightened from a chatty two-line nudge to a single concierge
           line. */}
-      {detailTab === "services" && (
       <Box
         id="tdp-service-picker"
         role="tabpanel"
         sx={{
-          // 🆕 Round 28r52 — responsiveShell for the Services tab panel.
-          ...responsiveShell,
-          padding: "16px 20px 20px",
+          gridColumn: { md: "1" },
+          gridRow: { md: "2" },
+          display: {
+            xs: detailTab === "services" ? "block" : "none",
+            md: "block",
+          },
+          position: { md: "sticky" },
+          top: { md: 24 },
+          padding: { xs: "16px 20px 20px", md: "20px 0 24px" },
         }}
       >
         <Typography
@@ -1471,7 +1545,9 @@ const TherapistDetailPage: React.FC = () => {
           )}
         </Typography>
       </Box>
-      )}
+      {/* ── END GRID CHILD 3 (Services picker) ──────────────────── */}
+      </Box>
+      {/* ── END responsive 2-col grid wrapper ───────────────────── */}
 
       {/* (Reviews moved into TherapistProfileTabs as Tab 2.) */}
 
