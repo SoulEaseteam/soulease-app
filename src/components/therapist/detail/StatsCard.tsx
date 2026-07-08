@@ -147,7 +147,13 @@ const StatsCard: React.FC<Props> = ({
       sx={{
         // Wrapper — same outer geometry as the card itself, hosts the
         // floating hint popover (absolute) so it tracks the card.
-        margin: "-30px 14px 18px",
+        // Round 28r64 — negative top margin was designed to overlap
+        // the DetailHero photo above on MOBILE. On desktop (r55 2-col
+        // layout) StatsCard sits in the RIGHT column while DetailHero
+        // is in the LEFT column, so the overlap bleeds off the top of
+        // the column and makes the card look cramped/floating. Reset
+        // the margin on md+ so it starts clean at the column top.
+        margin: { xs: "-30px 14px 18px", md: "0 0 24px" },
         position: "relative",
         zIndex: 5,
       }}
@@ -241,7 +247,7 @@ const StatsCard: React.FC<Props> = ({
         sx={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr 1fr",
-          gap: "8px",
+          gap: { xs: "8px", md: "16px" },
         }}
       >
       {stats.map((s, i) => (
@@ -298,7 +304,7 @@ const StatsCard: React.FC<Props> = ({
             sx={{
               fontFamily: SERIF,
               fontWeight: 600,
-              fontSize: "18px",
+              fontSize: { xs: "18px", md: "22px" },
               color: "#1A2B2E",
               letterSpacing: "-0.02em",
             }}
@@ -308,7 +314,7 @@ const StatsCard: React.FC<Props> = ({
           <Box
             sx={{
               fontFamily: SANS,
-              fontSize: "9px",
+              fontSize: { xs: "9px", md: "10.5px" },
               color: "rgba(15, 23, 42, 0.72)",
               textTransform: "uppercase",
               letterSpacing: "0.08em",
