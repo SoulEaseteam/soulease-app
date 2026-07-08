@@ -3982,3 +3982,22 @@ Founder saw the 28s329 cool/muted grey-pastel hero and said "**ไม่สว�
 taupe, warm cream scrim, no photo desaturation. **Design note for future rounds:
 the founder prefers the WARM cream tone for this hero — do NOT re-try cool/grey
 pastel.** tsc=0, build=59, redeployed.
+
+### 🆕 2026-07-08 — Hero copy → informative headline + pill + languages (28s332)
+
+Founder: "**เปลี่ยน ใส่ข้อความ แบบนี้**" (with a red-banner mockup). Kept the
+warm full-bleed photo hero (28s327) but swapped the "Simple. Pure. Balanced."
+tagline for the informative copy:
+- **Eyebrow pill**: live dot + `{concierge.pillLabel} · Bangkok` (time-aware —
+  DAYTIME / TONIGHT OPENING / PRIME HOURS — via `useConciergeMode`, reused so the
+  hero agrees with the grid header + TopNav). Founder wrote "DAYTIME · BANGKOK";
+  kept it dynamic rather than hardcoding so it's never wrong at night.
+- **Headline**: "Bangkok Outcall Massage · Delivered to Your Hotel" (Playfair,
+  hardcoded — NOT `t()` — so the exact wording always shows).
+- **Thai**: "นวดถึงห้อง กรุงเทพฯ · จัดส่งถึงโรงแรม".
+- **Sub-copy**: "Verified practitioners on standby — ภาษาไทย, English, 中文, 日本語,
+  한국어. Concierge replies in minutes." (added **ภาษาไทย** to the language list per
+  her note). Also hardcoded.
+Tuned for the denser copy: headline 27→52px, tighter gap, wider content column,
+stronger xs cream scrim, min-height 470-560. tsc=0, build=59, verified mobile +
+desktop, deployed.

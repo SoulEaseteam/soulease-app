@@ -26,6 +26,9 @@ import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { fonts } from "@/theme";
+// 🆕 28s332 — time-aware pill label (DAYTIME / PRIME HOURS / …) shared with
+//   the therapist grid + TopNav so the hero never disagrees on the mode.
+import { useConciergeMode } from "@/utils/conciergeMode";
 
 // Warm quiet-luxury palette — matched to the cream photo, not the cool
 // Nordic page grays.
@@ -39,6 +42,7 @@ const HERO_IMG = "/images/hero/hero.jpg";
 const HomeHero: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const concierge = useConciergeMode();
 
   const scrollToTherapistGrid = () => {
     const el = document.getElementById("therapist-grid");
@@ -56,7 +60,7 @@ const HomeHero: React.FC = () => {
         borderRadius: { xs: "22px", md: "26px" },
         border: "1px solid #E7E0D5",
         boxShadow: "0 10px 30px rgba(43, 38, 32, 0.08)",
-        minHeight: { xs: 430, sm: 470, md: 500, lg: 540 },
+        minHeight: { xs: 470, sm: 500, md: 520, lg: 560 },
         display: "flex",
       }}
     >
@@ -83,8 +87,8 @@ const HomeHero: React.FC = () => {
           position: "absolute",
           inset: 0,
           background: {
-            xs: "linear-gradient(90deg, rgba(244,239,232,0.96) 0%, rgba(244,239,232,0.88) 42%, rgba(244,239,232,0.45) 64%, rgba(244,239,232,0) 88%)",
-            md: "linear-gradient(90deg, rgba(244,239,232,0.94) 0%, rgba(244,239,232,0.72) 30%, rgba(244,239,232,0.24) 52%, rgba(244,239,232,0) 68%)",
+            xs: "linear-gradient(90deg, rgba(244,239,232,0.97) 0%, rgba(244,239,232,0.92) 50%, rgba(244,239,232,0.6) 72%, rgba(244,239,232,0) 95%)",
+            md: "linear-gradient(90deg, rgba(244,239,232,0.95) 0%, rgba(244,239,232,0.78) 34%, rgba(244,239,232,0.3) 56%, rgba(244,239,232,0) 72%)",
           },
         }}
       />
@@ -97,15 +101,60 @@ const HomeHero: React.FC = () => {
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          gap: { xs: "16px", md: "22px" },
+          gap: { xs: "12px", md: "16px" },
           padding: {
-            xs: "28px 18px",
-            sm: "32px 26px",
-            md: "44px 48px",
+            xs: "26px 18px",
+            sm: "30px 26px",
+            md: "42px 48px",
           },
-          maxWidth: { xs: "88%", sm: "78%", md: "62%", lg: "56%" },
+          maxWidth: { xs: "94%", sm: "82%", md: "66%", lg: "60%" },
         }}
       >
+        {/* 🆕 28s332 — eyebrow pill: time-aware mode + Bangkok (founder copy
+            "DAYTIME · BANGKOK"). Live dot + soft pill so it reads on the photo. */}
+        <Box
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            alignSelf: "flex-start",
+            gap: "8px",
+            padding: "5px 12px",
+            borderRadius: 999,
+            background: "rgba(255,255,255,0.62)",
+            border: "1px solid rgba(43,38,32,0.14)",
+            backdropFilter: "blur(2px)",
+            WebkitBackdropFilter: "blur(2px)",
+          }}
+        >
+          <Box
+            component="span"
+            aria-hidden="true"
+            sx={{
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: "#A2846A",
+              boxShadow: "0 0 0 3px rgba(162,132,106,0.22)",
+              flexShrink: 0,
+            }}
+          />
+          <Box
+            component="span"
+            sx={{
+              fontFamily: fonts.body,
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.16em",
+              textTransform: "uppercase",
+              color: BODY,
+            }}
+          >
+            {concierge.pillLabel} · Bangkok
+          </Box>
+        </Box>
+
+        {/* Headline — founder copy (28s332), hardcoded so the exact wording
+            always shows regardless of the i18n bundle. */}
         <Box
           component="h2"
           sx={{
@@ -113,24 +162,17 @@ const HomeHero: React.FC = () => {
             fontFamily: fonts.heading,
             fontWeight: 500,
             color: INK,
-            lineHeight: 1.04,
-            letterSpacing: "-0.01em",
-            fontSize: { xs: 34, sm: 42, md: 56, lg: 64 },
+            lineHeight: 1.12,
+            letterSpacing: "-0.005em",
+            fontSize: { xs: 27, sm: 34, md: 44, lg: 52 },
             textWrap: "balance",
+            maxWidth: 560,
           }}
         >
-          <Box component="span" sx={{ display: "block" }}>
-            Simple.
-          </Box>
-          <Box component="span" sx={{ display: "block" }}>
-            Pure.
-          </Box>
-          <Box component="span" sx={{ display: "block" }}>
-            Balanced.
-          </Box>
+          Bangkok Outcall Massage · Delivered to Your Hotel
         </Box>
 
-        {/* Thai subtitle — always shown so Thai guests feel welcomed. */}
+        {/* Thai subtitle */}
         <Box
           sx={{
             fontFamily: fonts.body,
@@ -138,11 +180,26 @@ const HomeHero: React.FC = () => {
             color: BODY,
             lineHeight: 1.5,
             letterSpacing: "0.01em",
-            fontSize: { xs: 13, sm: 14, md: 16.5 },
-            maxWidth: 360,
+            fontSize: { xs: 13, sm: 14, md: 16 },
+            maxWidth: 420,
           }}
         >
-          ความเรียบง่าย ที่ทำให้คุณรู้สึกดีที่สุด
+          นวดถึงห้อง กรุงเทพฯ · จัดส่งถึงโรงแรม
+        </Box>
+
+        {/* Sub-copy — standby + languages (ไทย/EN/中文/日本語/한국어) + promise */}
+        <Box
+          sx={{
+            fontFamily: fonts.body,
+            fontWeight: 400,
+            color: BODY,
+            lineHeight: 1.55,
+            fontSize: { xs: 12.5, sm: 13, md: 14.5 },
+            maxWidth: 470,
+          }}
+        >
+          Verified practitioners on standby — ภาษาไทย, English, 中文, 日本語,
+          한국어. Concierge replies in minutes.
         </Box>
 
         {/* CTAs */}
