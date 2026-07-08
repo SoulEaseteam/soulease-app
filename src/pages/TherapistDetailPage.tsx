@@ -1328,7 +1328,22 @@ const TherapistDetailPage: React.FC = () => {
           />
 
           <Box sx={{ ...responsiveShell, padding: "8px 20px 24px" }}>
-            {therapist.reviews.length === 0 ? (
+            {/* 🆕 28s339 — Reviews render DIRECTLY from the live hook
+                (useTherapistReviews → rated bookings), founder "ดึงข้อมูลจริง".
+                Shows a loading spinner, a real empty state, or the real
+                review list with per-review star rating + service·time +
+                verified badge. No mock fallback. */}
+            {liveReviews.loading ? (
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  padding: "24px 0",
+                }}
+              >
+                <CircularProgress size={22} />
+              </Box>
+            ) : liveReviews.reviewCount === 0 ? (
               <Typography
                 sx={{
                   fontFamily: SANS,
@@ -1344,9 +1359,57 @@ const TherapistDetailPage: React.FC = () => {
               <Box
                 sx={{ display: "flex", flexDirection: "column", gap: "12px" }}
               >
-                {therapist.reviews.map((rv, i) => (
+                {/* Rating summary — real average + count */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    marginBottom: "4px",
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontFamily: SERIF,
+                      fontSize: 30,
+                      fontWeight: 600,
+                      color: "#1A2B2E",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {liveReviews.avgRating.toFixed(1)}
+                  </Typography>
+                  <Box sx={{ display: "flex" }} aria-hidden="true">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <StarRoundedIcon
+                        key={n}
+                        sx={{
+                          fontSize: 17,
+                          color:
+                            n <= Math.round(liveReviews.avgRating)
+                              ? "#E0A82E"
+                              : "rgba(15,23,42,0.18)",
+                        }}
+                      />
+                    ))}
+                  </Box>
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: 12,
+                      color: "rgba(15,23,42,0.55)",
+                    }}
+                  >
+                    {t("detail.reviews.count", "{{n}} reviews", {
+                      n: liveReviews.reviewCount,
+                    })}
+                  </Typography>
+                </Box>
+
+                {/* Real review cards */}
+                {liveReviews.reviews.map((r) => (
                   <Box
-                    key={`${rv.name}-${i}`}
+                    key={r.bookingId}
                     sx={{
                       padding: "14px 16px",
                       background: "#FFFFFF",
@@ -1363,20 +1426,34 @@ const TherapistDetailPage: React.FC = () => {
                         marginBottom: "6px",
                       }}
                     >
-                      <Typography
-                        sx={{
-                          fontFamily: SANS,
-                          fontSize: 12.5,
-                          fontWeight: 700,
-                          color: "#1A2B2E",
-                        }}
-                      >
-                        {rv.name}
-                      </Typography>
-                      <StarRoundedIcon
-                        sx={{ fontSize: 15, color: "#E0A82E" }}
-                        aria-hidden="true"
-                      />
+                      <Box sx={{ display: "flex" }} aria-hidden="true">
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <StarRoundedIcon
+                            key={n}
+                            sx={{
+                              fontSize: 14,
+                              color:
+                                n <= Math.round(r.rating)
+                                  ? "#E0A82E"
+                                  : "rgba(15,23,42,0.18)",
+                            }}
+                          />
+                        ))}
+                      </Box>
+                      {r.verified && (
+                        <Typography
+                          sx={{
+                            fontFamily: SANS,
+                            fontSize: 9.5,
+                            fontWeight: 800,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            color: "#2E7D5B",
+                          }}
+                        >
+                          {t("detail.reviews.verified", "Verified")}
+                        </Typography>
+                      )}
                     </Box>
                     <Typography
                       sx={{
@@ -1386,9 +1463,9 @@ const TherapistDetailPage: React.FC = () => {
                         color: "#3C3A36",
                       }}
                     >
-                      {rv.quote}
+                      {r.body}
                     </Typography>
-                    {rv.meta && (
+                    {(r.service || r.ago) && (
                       <Typography
                         sx={{
                           fontFamily: SANS,
@@ -1399,7 +1476,7 @@ const TherapistDetailPage: React.FC = () => {
                           marginTop: "8px",
                         }}
                       >
-                        {rv.meta}
+                        {[r.service, r.ago].filter(Boolean).join(" · ")}
                       </Typography>
                     )}
                   </Box>
