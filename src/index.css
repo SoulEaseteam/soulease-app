@@ -4,14 +4,20 @@ html, body, #root {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden !important;
-  /* 🆕 Round 28r57 · Phase 3.6 — was overscroll-behavior-x only.
-     Adding y-axis "contain" prevents the iOS rubber-band scroll
-     from bouncing the whole page under the fixed BottomNavGlass,
-     while still allowing individual scrollable containers inside
-     the app to scroll normally. */
-  overscroll-behavior: contain;
+  /* 🚨 Round 28r62 HOTFIX — r57 changed this from `overscroll-behavior-x`
+     to full-axis `overscroll-behavior: contain` AND added
+     `-webkit-overflow-scrolling: touch` on html/body/#root at the same
+     time. On iOS Safari the combination (contain both axes + legacy
+     momentum-scroll flag on the root scroll frame + pre-existing
+     `touch-action: pan-y` + `overflow-x: hidden`) creates an inconsistent
+     scroll context and the entire customer site locked
+     ("เลื่อนขึ้นลงไม่ได้ เหมือนล๊อคไว้"). Reverted to r56's exact rule
+     (x-axis only, no `-webkit-overflow-scrolling` on the root — that
+     property belongs on scroll CONTAINERS, not on html/body). Vertical
+     rubber-band under BottomNavGlass returns; individual per-page fixed
+     shells can add `overscroll-behavior-y: contain` themselves if needed. */
+  overscroll-behavior-x: none; /* block horizontal drift only */
   touch-action: pan-y;
-  -webkit-overflow-scrolling: touch;
 }
 
 /* 🆕 Round 28r57 · Phase 3.6 — Global reduced-motion respect.
