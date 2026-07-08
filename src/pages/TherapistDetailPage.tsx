@@ -23,6 +23,14 @@ import { useTranslation } from "react-i18next";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
+// 🆕 Round 28r85 — Icon-first tab bar (Photos · Services · About)
+//   per founder reference screenshot. Photo = ImageRounded, Grid =
+//   GridViewRounded, Star = StarRounded. Active tab underlines in
+//   teal #2EC4B0 (accents.teal from r81); inactive icons in warm
+//   taupe #8F8474 (matches Reserve rail).
+import ImageRoundedIcon from "@mui/icons-material/ImageRounded";
+import GridViewRoundedIcon from "@mui/icons-material/GridViewRounded";
+import StarRoundedIcon from "@mui/icons-material/StarRounded";
 
 import DetailHero from "@/components/therapist/detail/DetailHero";
 import StatsCard from "@/components/therapist/detail/StatsCard";
@@ -780,10 +788,15 @@ const TherapistDetailPage: React.FC = () => {
 
   // Round 28s42 — Underline-tab state (founder ref: a hotel
   // overview screen with "ภาพรวม / นโยบายและเงื่อนไข" tabs).
-  // Defaults to Services since the page's whole point is converting
-  // browsing → booking; About sits one tap away.
-  const [detailTab, setDetailTab] = useState<"services" | "about">(
-    "services",
+  // Round 28r85 — expanded to 3 tabs (Photos / Services / About)
+  // per founder reference screenshot. Photos is default when the
+  // guest lands via `#gallery` (card PHOTOS pill); otherwise Services
+  // stays default since the page's whole point is converting browsing
+  // → booking.
+  const [detailTab, setDetailTab] = useState<"photos" | "services" | "about">(
+    typeof window !== "undefined" && window.location.hash === "#gallery"
+      ? "photos"
+      : "services",
   );
 
   // 🆕 Round 28r84 — Gallery lightbox index (null = closed).
@@ -942,10 +955,14 @@ const TherapistDetailPage: React.FC = () => {
   //   here so the guest lands directly on the photo grid instead of
   //   at the top of the page. Runs once when the therapist resolves
   //   (id change or Firestore fallback lands).
+  // 🆕 Round 28r85 — also switch to the Photos tab so the guest sees
+  //   the full gallery immediately on mobile (previously an anchor
+  //   section; now a proper tab panel).
   useEffect(() => {
     if (!therapistFromReal) return;
     if (typeof window === "undefined") return;
     if (window.location.hash !== "#gallery") return;
+    setDetailTab("photos");
     const timer = window.setTimeout(() => {
       const el = document.getElementById("gallery");
       el?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1149,19 +1166,13 @@ const TherapistDetailPage: React.FC = () => {
           gridRow: { md: "1" },
         }}
       >
-      {/* 🆕 Round 28s210 — Founder: "กดดูไม่ได้". StatsCard tap
-          interactions restored. Cells open the InfoSheet deep-dive
-          (reviews · profile · loyalty) — guests rely on tapping. */}
-      <StatsCard
-        rating={displayRating}
-        reviewCount={therapist.reviewCount}
-        yearsExp={therapist.yearsExp}
-        totalSessions={therapist.totalSessions}
-        rebookRate={therapist.rebookRate}
-        onTapRating={() => setInfoSheet("reviews")}
-        onTapProfile={() => setInfoSheet("profile")}
-        onTapLoyalty={() => setInfoSheet("loyalty")}
-      />
+      {/* 🆕 Round 28r85 — StatsCard MOVED into the About tab (below).
+          Founder direction (2026-07-08 · reference screenshot): the
+          standalone stats bar (★ rating · sessions · rebook rate)
+          consolidates INSIDE the About tab so the tabs sit closer
+          to the hero and the stats live next to the practitioner's
+          identity content. Same three tappable cells / same
+          InfoSheet handlers — just relocated. */}
 
       {/* 🆕 Round 28s207 (audit #1) — Working hours line removed.
           The same hours render inside DetailHero's overlay already
@@ -1182,13 +1193,15 @@ const TherapistDetailPage: React.FC = () => {
         />
       </Box>
 
-      {/* Round 28s42 — Underline tabs (Services / About {name}).
-          Modelled on the founder-supplied hotel "ภาพรวม /
-          นโยบายและเงื่อนไข" reference. Defaults to Services since
-          that's the conversion surface; About is one tap away.
-          🆕 Round 28r55 (Phase 3.4) — hidden on md+ since the grid
-          shows both panels simultaneously; the mobile UX still
-          swaps between them via tab. */}
+      {/* Round 28s42 — Underline tabs.
+          🆕 Round 28r85 — expanded from 2 tabs (Services · About) to
+          3 tabs (Photos · Services · About) per founder reference
+          screenshot. Icon-first layout: Image / GridView / Star
+          glyphs stacked above small labels. Active tab underlines in
+          teal #2EC4B0 (accents.teal from r81) with GRAY_900 label;
+          inactive icons in warm taupe #8F8474, labels #4B4B48.
+          Hidden on md+ since the grid shows the panels simultaneously
+          on desktop; mobile keeps the tab flow. */}
       <Box
         role="tablist"
         aria-label={t(
@@ -1199,18 +1212,25 @@ const TherapistDetailPage: React.FC = () => {
           marginTop: "12px",
           padding: "0 18px",
           display: { xs: "grid", md: "none" },
-          gridTemplateColumns: "1fr 1fr",
+          gridTemplateColumns: "1fr 1fr 1fr",
           borderBottom: "1px solid rgba(184, 92, 60, 0.18)",
         }}
       >
         {(
           [
             {
+              id: "photos" as const,
+              icon: <ImageRoundedIcon sx={{ fontSize: 22 }} />,
+              label: t("detail.tabs.photos", "Photos"),
+            },
+            {
               id: "services" as const,
+              icon: <GridViewRoundedIcon sx={{ fontSize: 22 }} />,
               label: t("detail.tabs.services", "Services"),
             },
             {
               id: "about" as const,
+              icon: <StarRoundedIcon sx={{ fontSize: 22 }} />,
               // 🆕 Round 28s207 (audit #5) — Was "About {name}".
               //   Trimmed to just "About" so the label doesn't go
               //   awkward when the name is long.
@@ -1232,24 +1252,30 @@ const TherapistDetailPage: React.FC = () => {
                 background: "transparent",
                 border: "none",
                 cursor: "pointer",
-                padding: "14px 8px",
+                padding: "10px 6px 12px",
                 fontFamily: SANS,
-                fontSize: "13.5px",
-                fontWeight: 700,
-                letterSpacing: "0.005em",
-                color: isActive
-                  ? "#2D2D2B"
-                  : "rgba(15, 23, 42, 0.55)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "4px",
                 textAlign: "center",
                 transition: "color 0.18s ease",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
+                color: isActive ? "#1A2B2E" : "#4B4B48",
+                "& .tab-icon": {
+                  color: isActive ? "#2EC4B0" : "#8F8474",
+                  transition: "color 0.18s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                },
                 "&:hover": {
-                  color: isActive ? "#2D2D2B" : "#1A2B2E",
+                  color: isActive ? "#1A2B2E" : "#1A2B2E",
+                  "& .tab-icon": {
+                    color: isActive ? "#2EC4B0" : "#4B4B48",
+                  },
                 },
                 "&:focus-visible": {
-                  outline: "2px solid #2D2D2B",
+                  outline: "2px solid #2EC4B0",
                   outlineOffset: 2,
                   borderRadius: "6px",
                 },
@@ -1261,14 +1287,25 @@ const TherapistDetailPage: React.FC = () => {
                   bottom: -1,
                   height: 3,
                   borderRadius: 3,
-                  background: isActive
-                    ? "#2D2D2B"
-                    : "transparent",
+                  background: isActive ? "#2EC4B0" : "transparent",
                   transition: "background 0.18s ease",
                 },
               }}
             >
-              {tab.label}
+              <Box className="tab-icon" aria-hidden="true">
+                {tab.icon}
+              </Box>
+              <Box
+                component="span"
+                sx={{
+                  fontSize: "11.5px",
+                  fontWeight: 700,
+                  letterSpacing: "0.02em",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {tab.label}
+              </Box>
             </Box>
           );
         })}
@@ -1295,6 +1332,23 @@ const TherapistDetailPage: React.FC = () => {
           paddingTop: { xs: "12px", md: "16px" },
         }}
       >
+          {/* 🆕 Round 28r85 — StatsCard relocated here from above the
+              tabs. Founder direction (2026-07-08 reference screenshot):
+              rating · sessions · rebook rate consolidate INSIDE the
+              About tab instead of sitting as a standalone bar above
+              the tabs. Same three tappable cells → same InfoSheet
+              deep-dive (reviews · profile · loyalty). */}
+          <StatsCard
+            rating={displayRating}
+            reviewCount={therapist.reviewCount}
+            yearsExp={therapist.yearsExp}
+            totalSessions={therapist.totalSessions}
+            rebookRate={therapist.rebookRate}
+            onTapRating={() => setInfoSheet("reviews")}
+            onTapProfile={() => setInfoSheet("profile")}
+            onTapLoyalty={() => setInfoSheet("loyalty")}
+          />
+
           {/* 🆕 Round 28s221 — Drop the 3 fact-chip rows (info now lives
               in FeaturesPanel below) + drop the embedded gallery (hero
               handles photos). About card now renders only header + bio
@@ -1716,10 +1770,19 @@ const TherapistDetailPage: React.FC = () => {
           on the underlying data record). Tapping any tile opens the
           full-screen lightbox below. Empty state renders a Nordic
           neutral card so guests understand there simply isn't more
-          content yet (no bug / no broken link). */}
+          content yet (no bug / no broken link).
+          🆕 Round 28r85 — this is now the Photos TAB content on
+          mobile (tab id `photos`). Visibility toggles with
+          `detailTab === "photos"` on xs; always visible on md+ since
+          the desktop grid shows all sections simultaneously. */}
       <Box
         id="gallery"
+        role="tabpanel"
         sx={{
+          display: {
+            xs: detailTab === "photos" ? "block" : "none",
+            md: "block",
+          },
           padding: {
             xs: "24px 20px 8px",
             md: "32px 18px 12px",
