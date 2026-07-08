@@ -54,6 +54,10 @@ import services from "../data/services";
 //   removed Compare dialog).
 import { startingPrice, durationsFor, formatTHB, priceForDuration } from "../utils/servicePricing";
 import HowItWorks from "@/components/home/HowItWorks";
+// 🆕 Round 28r58 (Phase 2) — customer-facing Bundle Packages surface.
+//   Mounted between the ROLADEX rate cards and the "Areas & Timing"
+//   card on the Services tab. Self-hides when no active bundles.
+import BundleSection from "@/components/common/BundleSection";
 // 🆕 Round 28s179 — useServiceUsageStats no longer consumed
 //   (Compare dialog drove the live counts).
 import { useDocumentMeta } from "@/utils/useDocumentMeta";
@@ -848,6 +852,13 @@ const ServicesPage: React.FC = () => {
             })}
             </Box>
 
+            {/* 🆕 Round 28r58 — Bundle Packages surface between the
+                ROLADEX rate cards and the "Areas & Timing" logistics
+                card. Self-hides when no active bundles are configured
+                — safe to mount unconditionally. Reads from the shared
+                useActivePromos hook (r51) so this and PromoStrip are
+                always in sync. */}
+            <BundleSection />
 
             {/* 🆕 Round 28s206 — Founder: "Services tab จัดให้สวย
                 ขึ้น". Service area + Typical arrival window combined

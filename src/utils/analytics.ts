@@ -38,7 +38,14 @@ export type FunnelEvent =
   | "service_view"
   | "booking_start"
   | "booking_complete"
-  | "concierge_chat_open";
+  | "concierge_chat_open"
+  // 🆕 Round 28r58 — Bundle Packages customer surface. `bundle_view`
+  //   fires ONCE per session (per bundle set) when BundleSection first
+  //   mounts with at least one active bundle. `bundle_reserve_click`
+  //   fires every time a guest taps a bundle CTA — the founder needs
+  //   to see interest per bundle, not just per session.
+  | "bundle_view"
+  | "bundle_reserve_click";
 
 const SESSION_KEY = "sunred.analytics.sid";
 const FIRED_KEY = "sunred.analytics.fired";
@@ -119,7 +126,12 @@ function dedupKeyFor(
     return `service_view:${(props?.serviceId as string) ?? "_"}`;
   if (event === "booking_start")
     return `booking_start:${(props?.therapistId as string) ?? "_"}`;
-  // booking_complete + concierge_chat_open: no dedup
+  // 🆕 Round 28r58 — bundle_view fires on every BundleSection mount
+  //   (Home + Services), so dedupe per session GLOBALLY to keep the
+  //   write count sane. bundle_reserve_click is a real CTA action —
+  //   never dedupe (like booking_complete/concierge_chat_open).
+  if (event === "bundle_view") return "bundle_view";
+  // booking_complete + concierge_chat_open + bundle_reserve_click: no dedup
   return null;
 }
 
@@ -242,3 +254,21 @@ export const trackBookingComplete = (
   trackEvent("booking_complete", { serviceId, durationMin, total });
 export const trackConciergeOpen = (channel: string): void =>
   trackEvent("concierge_chat_open", { channel });
+
+// 🆕 Round 28r58 — Bundle Packages funnel events. Payload is
+//   non-PII by design: bundleId is a stable admin-set key
+//   ("SR-BUNDLE-<base36>"), sessionCount + discountPct are display
+//   numbers already on the guest's screen. See `analytics_events`
+//   dashboard on /admin/analytics for aggregation.
+export const trackBundleView = (
+  bundleId: string,
+  sessionCount: number,
+  discountPct: number
+): void =>
+  trackEvent("bundle_view", { bundleId, sessionCount, discountPct });
+export const trackBundleReserveClick = (
+  bundleId: string,
+  sessionCount: number,
+  discountPct: number
+): void =>
+  trackEvent("bundle_reserve_click", { bundleId, sessionCount, discountPct });

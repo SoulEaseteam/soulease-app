@@ -23,6 +23,10 @@ import { capturePromoFromURL } from "@/utils/discount";
 import { trackHomeView, consumeLandingArea } from "@/utils/analytics";
 
 import HomeTherapistGrid from "@/components/home/HomeTherapistGrid";
+// 🆕 Round 28r58 (Phase 2) — customer-facing Bundle Packages surface.
+//   Self-hides when no active bundles, so safe to mount unconditionally
+//   between the desktop hero band and the therapist grid.
+import BundleSection from "@/components/common/BundleSection";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell replaces the old
 //   maxWidth: 430px cage so the home widens on tablet/desktop.
 import { responsiveShell } from "@/theme/breakpoints";
@@ -294,6 +298,13 @@ const HomePage: React.FC = () => {
           </Box>
         </Box>
       </Box>
+
+      {/* 🆕 Round 28r58 — Bundle Packages between the desktop hero
+          band and the therapist grid. Self-hides on empty, so no
+          layout impact until admin ships a bundle via
+          /admin/promotions. Mobile: shows below TopNav+PromoStrip,
+          above therapist grid (hero band is md-only). */}
+      <BundleSection />
 
       {/* 🆕 Round 28s148 — PromiseStrip removed entirely (founder:
           "ลบทิ้งไป"). Home now ends at the therapist list, app-style

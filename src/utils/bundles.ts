@@ -14,8 +14,15 @@
 // — a single doc (`adminSettings/publicRules.bundles`, already admin-write
 // + public-read, so NO firestore.rules change) drives every render. See
 // MaintenanceGate.tsx for the wiring.
+//
+// 🆕 Round 28r58 (Phase 2 customer surface) — added `bundleSavingsPreview`
+//   helper: computes the "3 × 60min = ฿A → ฿B" copy shown on BundleSection
+//   cards. Delegates to `priceForDuration` (single source of truth for
+//   pricing across every surface) so an admin price edit — or a scheduled
+//   price change — reflects on bundle previews without any extra wiring.
 
 import type { MassageService } from "@/data/services";
+import { priceForDuration } from "@/utils/servicePricing";
 
 export interface Bundle {
   /** Stable id, e.g. "SR-BUNDLE-<base36>". Used as the Firestore map key. */
@@ -113,4 +120,66 @@ export function bundleSavingsForService(
   service: Pick<MassageService, "price">,
 ): { gross: number; discountAmt: number; net: number } {
   return bundleSavings(bundle, service.price);
+}
+
+/**
+ * 🆕 Round 28r58 — customer-surface savings preview: picks a concrete
+ * service (either the bundle's own `serviceId`, or the CHEAPEST 60-min
+ * service in the passed catalog when the bundle is "any service"), then
+ * returns the display fields the BundleSection card renders directly.
+ *
+ * Pricing is resolved via `priceForDuration` — the same funnel every
+ * customer surface uses — so admin price overrides / scheduled prices
+ * flow through automatically. Returns null when no service data is
+ * available (empty catalog), so the caller can safely fall back to a
+ * label-only card.
+ *
+ * NOTE: this is display-only. The final price a guest actually pays is
+ * agreed with concierge (this MVP has no online checkout for bundles).
+ */
+export function bundleSavingsPreview(
+  bundle: Pick<Bundle, "sessionCount" | "discountPct" | "serviceId">,
+  services: MassageService[],
+): {
+  serviceName: string;
+  singleSessionPrice: number;
+  totalWithoutBundle: number;
+  totalWithBundle: number;
+  savings: number;
+} | null {
+  if (!services || services.length === 0) return null;
+
+  // Resolve which service the preview is priced against:
+  //   • bundle.serviceId set    → find it in the catalog (falls back to
+  //     the cheapest 60m if the target service isn't in the passed catalog)
+  //   • bundle.serviceId null   → cheapest 60m (best "starts from" anchor)
+  let target: MassageService | undefined;
+  if (bundle.serviceId) {
+    target = services.find((s) => s.id === bundle.serviceId);
+  }
+  if (!target) {
+    // Pick the cheapest 60-min price via the SAME source of truth.
+    let cheapest = services[0];
+    let cheapestPrice = priceForDuration(cheapest, 60);
+    for (const s of services) {
+      const p = priceForDuration(s, 60);
+      if (p < cheapestPrice) {
+        cheapest = s;
+        cheapestPrice = p;
+      }
+    }
+    target = cheapest;
+  }
+  if (!target) return null;
+
+  const singleSessionPrice = priceForDuration(target, 60);
+  const { gross, discountAmt, net } = bundleSavings(bundle, singleSessionPrice);
+
+  return {
+    serviceName: target.name,
+    singleSessionPrice,
+    totalWithoutBundle: gross,
+    totalWithBundle: net,
+    savings: discountAmt,
+  };
 }
