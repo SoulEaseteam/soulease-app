@@ -789,14 +789,26 @@ const TherapistDetailPage: React.FC = () => {
   // Round 28s42 — Underline-tab state (founder ref: a hotel
   // overview screen with "ภาพรวม / นโยบายและเงื่อนไข" tabs).
   // Round 28r85 — expanded to 3 tabs (Photos / Services / About)
-  // per founder reference screenshot. Photos is default when the
-  // guest lands via `#gallery` (card PHOTOS pill); otherwise Services
-  // stays default since the page's whole point is converting browsing
-  // → booking.
+  // per founder reference screenshot.
+  // 🆕 Round 28r87 — semantics changed from tab-SWITCH (hide/show one
+  //   panel at a time) to scroll-ANCHOR navigation (Airbnb / LinkedIn
+  //   profile pattern). All 3 sections render stacked simultaneously
+  //   on mobile; the underline just tracks which section is currently
+  //   in the viewport (via IntersectionObserver below). Default is
+  //   "photos" since photos is the FIRST section in the stack (the
+  //   viewport lands there on mount). Initial URL hash overrides so a
+  //   deep-link to `#services` or `#about` starts with the correct
+  //   underline before the scroll-into-view animation resolves.
   const [detailTab, setDetailTab] = useState<"photos" | "services" | "about">(
-    typeof window !== "undefined" && window.location.hash === "#gallery"
-      ? "photos"
-      : "services",
+    () => {
+      if (typeof window === "undefined") return "photos";
+      const h = window.location.hash;
+      if (h === "#services") return "services";
+      if (h === "#about") return "about";
+      // Everything else — no hash, `#photos`, or legacy `#gallery`
+      //   (from r84 card PHOTOS pill) — starts on photos.
+      return "photos";
+    },
   );
 
   // 🆕 Round 28r84 — Gallery lightbox index (null = closed).
@@ -950,24 +962,77 @@ const TherapistDetailPage: React.FC = () => {
     void navigate(`/booking/${therapist.id}?${params.toString()}`);
   };
 
-  // 🆕 Round 28r84 — Hash-scroll into the #gallery section. Card's
-  //   PHOTOS pill routes to `/therapists/:id#gallery`; smooth-scroll
-  //   here so the guest lands directly on the photo grid instead of
-  //   at the top of the page. Runs once when the therapist resolves
-  //   (id change or Firestore fallback lands).
-  // 🆕 Round 28r85 — also switch to the Photos tab so the guest sees
-  //   the full gallery immediately on mobile (previously an anchor
-  //   section; now a proper tab panel).
+  // 🆕 Round 28r84 → 28r87 — Hash-scroll into the target section on
+  //   mount. r84 handled only `#gallery` (the card's PHOTOS pill);
+  //   r87 extends coverage to every section id and treats `#gallery`
+  //   as a legacy alias for `#photos`. Smooth-scroll runs after a
+  //   220ms settle so the DOM has finished laying out the sections
+  //   (Firestore fallback profiles otherwise land before the layout
+  //   is measured).
   useEffect(() => {
     if (!therapistFromReal) return;
     if (typeof window === "undefined") return;
-    if (window.location.hash !== "#gallery") return;
-    setDetailTab("photos");
+    const raw = window.location.hash;
+    if (!raw) return;
+    const targetId =
+      raw === "#gallery" || raw === "#photos"
+        ? "photos"
+        : raw === "#services"
+          ? "services"
+          : raw === "#about"
+            ? "about"
+            : null;
+    if (!targetId) return;
+    setDetailTab(targetId as "photos" | "services" | "about");
     const timer = window.setTimeout(() => {
-      const el = document.getElementById("gallery");
+      const el = document.getElementById(targetId);
       el?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 220);
     return () => window.clearTimeout(timer);
+  }, [therapistFromReal]);
+
+  // 🆕 Round 28r87 — IntersectionObserver keeps `detailTab` (the
+  //   sticky tab bar's active underline) in sync with whichever
+  //   section is currently in the viewport as the guest scrolls.
+  //   rootMargin `-100px` at top offsets the sticky bar height so
+  //   the tab flips just as a section's title clears the bar;
+  //   `-40%` at bottom means the underline moves to a new section
+  //   only once ~60% of the viewport is dedicated to it, not the
+  //   instant it peeks in from below (feels natural — the label
+  //   matches the section the user is READING, not the one about
+  //   to enter). A 100ms setup delay lets the initial hash-scroll
+  //   effect above win the race on first mount, so a `#services`
+  //   deep-link doesn't briefly get overwritten by "photos".
+  useEffect(() => {
+    if (!therapistFromReal) return;
+    if (typeof window === "undefined") return;
+    let observer: IntersectionObserver | null = null;
+    const timer = window.setTimeout(() => {
+      const sections = ["photos", "services", "about"]
+        .map((id) => document.getElementById(id))
+        .filter(Boolean) as HTMLElement[];
+      if (sections.length === 0) return;
+      observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && entry.intersectionRatio > 0.4) {
+              setDetailTab(
+                entry.target.id as "photos" | "services" | "about",
+              );
+            }
+          });
+        },
+        {
+          rootMargin: "-100px 0px -40% 0px",
+          threshold: [0.4, 0.6],
+        },
+      );
+      sections.forEach((s) => observer?.observe(s));
+    }, 100);
+    return () => {
+      window.clearTimeout(timer);
+      observer?.disconnect();
+    };
   }, [therapistFromReal]);
 
   // Round 28s34 — Memoised Bayesian rating. Previously recomputed
@@ -1098,18 +1163,19 @@ const TherapistDetailPage: React.FC = () => {
         }}
       >
       {/* 🆕 Round 28r55 (Phase 3.4) — 2-column grid at md+.
-          Mobile: flex-block stack in original source order
-          (DetailHero → StatsCard → StatusPill → Tabs → Panel).
+          Mobile: flex-column stack in the r87 scroll-anchor order
+          (DetailHero → StatusPill → sticky TabBar → Photos → Services
+          → About). Uses CSS `order` on children so we can decouple
+          mobile source-order concerns from the desktop grid layout.
           Desktop: left rail (DetailHero row 1 · Services picker row 2,
-          sticky top) · right column (StatsCard + StatusPill row 1 ·
-          About content row 2, scrolls independently). Tabs bar is
-          hidden on md+ since both panels render simultaneously.
-          Grid children below use explicit gridColumn/gridRow so the
-          mobile source order and desktop 2-col layout can diverge
-          without duplicating any component. */}
+          sticky top) · right column (StatusPill row 1 · About row 2,
+          scrolls independently) · Photos row 3 spans both columns.
+          Tab bar hidden on md+ since all sections render
+          simultaneously in the grid. */}
       <Box
         sx={{
-          display: { xs: "block", md: "grid" },
+          display: { xs: "flex", md: "grid" },
+          flexDirection: { xs: "column" },
           gridTemplateColumns: { md: "5fr 7fr" },
           columnGap: { md: 4 },
           alignItems: { md: "start" },
@@ -1121,6 +1187,7 @@ const TherapistDetailPage: React.FC = () => {
         sx={{
           gridColumn: { md: "1" },
           gridRow: { md: "1" },
+          order: { xs: 1 },
         }}
       >
         <DetailHero
@@ -1158,50 +1225,50 @@ const TherapistDetailPage: React.FC = () => {
         />
       </Box>
 
-      {/* ── GRID CHILD 2 — StatsCard + StatusPill + Tabs
-             (col 2 row 1 on md+; mobile: immediately below hero) ── */}
+      {/* ── GRID CHILD 2 — StatusPill (col 2 row 1 on md+; mobile
+             order 2 · immediately below hero)
+             🆕 Round 28r85 — StatsCard MOVED into the About tab.
+             🆕 Round 28r87 — Tab bar split OUT of this child into
+             its own top-level grid child below, so `position: sticky`
+             can measure against the whole page column instead of
+             the tight StatusPill wrapper (previously the sticky
+             tab bar would detach the moment Grid Child 2's bottom
+             passed the viewport top, which was the entire point of
+             the r87 scroll-anchor pattern). ── */}
       <Box
         sx={{
           gridColumn: { md: "2" },
           gridRow: { md: "1" },
+          order: { xs: 2 },
         }}
       >
-      {/* 🆕 Round 28r85 — StatsCard MOVED into the About tab (below).
-          Founder direction (2026-07-08 · reference screenshot): the
-          standalone stats bar (★ rating · sessions · rebook rate)
-          consolidates INSIDE the About tab so the tabs sit closer
-          to the hero and the stats live next to the practitioner's
-          identity content. Same three tappable cells / same
-          InfoSheet handlers — just relocated. */}
-
-      {/* 🆕 Round 28s207 (audit #1) — Working hours line removed.
-          The same hours render inside DetailHero's overlay already
-          (workingHours prop on the hero); a second copy here was
-          redundant and added vertical drift before the StatusPill. */}
-
-      {/* Round 28s42 — StatusPill rendered ABOVE the tabs so the
-          status signal stays visible whichever panel is active.
-          About + Services panels themselves move inside the tabs
-          below. */}
-      <Box sx={{ marginTop: "4px" }}>
-        <StatusPill
-          nextBookingAt={
-            livePillStatus === "online" ? nextBookingAt : null
-          }
-          status={livePillStatus}
-          nextAvailable={liveNextAvailable}
-        />
+        {/* Round 28s42 — StatusPill rendered ABOVE the tabs so the
+            status signal stays visible whichever panel is active. */}
+        <Box sx={{ marginTop: "4px" }}>
+          <StatusPill
+            nextBookingAt={
+              livePillStatus === "online" ? nextBookingAt : null
+            }
+            status={livePillStatus}
+            nextAvailable={liveNextAvailable}
+          />
+        </Box>
       </Box>
+      {/* ── END GRID CHILD 2 ────────────────────────────────────── */}
 
-      {/* Round 28s42 — Underline tabs.
-          🆕 Round 28r85 — expanded from 2 tabs (Services · About) to
-          3 tabs (Photos · Services · About) per founder reference
-          screenshot. Icon-first layout: Image / GridView / Star
-          glyphs stacked above small labels. Active tab underlines in
-          teal #2EC4B0 (accents.teal from r81) with GRAY_900 label;
-          inactive icons in warm taupe #8F8474, labels #4B4B48.
-          Hidden on md+ since the grid shows the panels simultaneously
-          on desktop; mobile keeps the tab flow. */}
+      {/* ── GRID CHILD 2b — Sticky scroll-nav tab bar (mobile only)
+             🆕 Round 28r87 — was previously a tab-SWITCH bar
+             (setDetailTab hides/shows one panel). Now a sticky
+             SCROLL-ANCHOR bar (Airbnb / LinkedIn profile pattern):
+             tapping a tab smooth-scrolls the page to the matching
+             `<section id=...>` below, and the active underline is
+             driven by IntersectionObserver as the guest scrolls
+             through the sections. Hidden on md+ since the desktop
+             grid renders all sections simultaneously. Round 28s42
+             icon-first layout preserved (Photo · Grid · Star icons
+             stacked above 11.5px labels; teal underline #2EC4B0 on
+             active, warm-taupe #8F8474 icons + slate labels on
+             inactive). ── */}
       <Box
         role="tablist"
         aria-label={t(
@@ -1209,11 +1276,16 @@ const TherapistDetailPage: React.FC = () => {
           "Practitioner overview tabs",
         )}
         sx={{
-          marginTop: "12px",
-          padding: "0 18px",
+          order: { xs: 3 },
           display: { xs: "grid", md: "none" },
           gridTemplateColumns: "1fr 1fr 1fr",
+          marginTop: "12px",
+          padding: "0 18px",
           borderBottom: "1px solid rgba(184, 92, 60, 0.18)",
+          background: "#F4F6F5",
+          position: "sticky",
+          top: 0,
+          zIndex: 5,
         }}
       >
         {(
@@ -1246,7 +1318,25 @@ const TherapistDetailPage: React.FC = () => {
               type="button"
               role="tab"
               aria-selected={isActive}
-              onClick={() => setDetailTab(tab.id)}
+              onClick={() => {
+                // 🆕 Round 28r87 — Scroll-anchor navigation: instead
+                //   of toggling `detailTab` (tab-switch), smooth-
+                //   scroll to the target section. The
+                //   IntersectionObserver above updates the underline
+                //   as the section enters the viewport. Setting
+                //   `detailTab` optimistically here gives an instant
+                //   underline response before the scroll animation
+                //   catches up.
+                setDetailTab(tab.id);
+                if (typeof document !== "undefined") {
+                  document
+                    .getElementById(tab.id)
+                    ?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
+                }
+              }}
               sx={{
                 position: "relative",
                 background: "transparent",
@@ -1310,26 +1400,28 @@ const TherapistDetailPage: React.FC = () => {
           );
         })}
       </Box>
-      </Box>
-      {/* ── END GRID CHILD 2 ────────────────────────────────────── */}
+      {/* ── END GRID CHILD 2b (sticky tab bar) ──────────────────── */}
 
-      {/* ── GRID CHILD 4 — About panel content
-             (col 2 row 2 on md+; mobile: tab-controlled visibility)
+      {/* ── GRID CHILD 4 — About section (col 2 row 2 on md+)
              🆕 Round 28r55 (Phase 3.4) — was `{detailTab === "about"
              && (...)}`. Now rendered unconditionally with display
-             toggled by breakpoint + tab state so the desktop grid can
-             always show About in the right column while mobile keeps
-             the tab flow. Same panel content, same handlers. ── */}
+             toggled by breakpoint + tab state.
+             🆕 Round 28r87 — display-conditional dropped: sections
+             now render stacked simultaneously on mobile and the
+             sticky tab bar smooth-scrolls between them. `id="about"`
+             is the IntersectionObserver + hash-scroll anchor;
+             `scrollMarginTop: 90px` lands the section BELOW the
+             sticky tab bar when scrolled to. Same panel content,
+             same handlers. ── */}
       <Box
+        id="about"
         role="tabpanel"
         sx={{
           gridColumn: { md: "2" },
           gridRow: { md: "2" },
-          display: {
-            xs: detailTab === "about" ? "block" : "none",
-            md: "block",
-          },
-          paddingTop: { xs: "12px", md: "16px" },
+          order: { xs: 6 },
+          paddingTop: { xs: "24px", md: "16px" },
+          scrollMarginTop: { xs: "90px", md: "24px" },
         }}
       >
           {/* 🆕 Round 28r85 — StatsCard relocated here from above the
@@ -1668,13 +1760,19 @@ const TherapistDetailPage: React.FC = () => {
       {/* ── END GRID CHILD 4 (About panel) ──────────────────────── */}
 
       {/* ── GRID CHILD 3 — Services picker / Reserve rail
-             (col 1 row 2 on md+; mobile: tab-controlled visibility)
+             (col 1 row 2 on md+; mobile: order 5, always visible)
              🆕 Round 28r55 (Phase 3.4) — was `{detailTab === "services"
-             && (...)}`. Now a permanent grid child with display toggled
-             by breakpoint + tab state. On desktop this sits under the
-             DetailHero in the left rail and is `position: sticky` so
-             the Reserve action stays anchored while the About column
-             scrolls independently on the right. ── */}
+             && (...)}`. Now a permanent grid child. On desktop this
+             sits under the DetailHero in the left rail and is
+             `position: sticky` so the Reserve action stays anchored
+             while the About column scrolls independently on the right.
+             🆕 Round 28r87 — display-conditional dropped: sections
+             now render stacked simultaneously on mobile and the sticky
+             tab bar smooth-scrolls between them. `id` renamed from the
+             internal `tdp-service-picker` to `services` to match the
+             tab bar's scroll-anchor id and the URL hash `#services`.
+             `scrollMarginTop: 90px` on mobile drops the section BELOW
+             the sticky tab bar when smooth-scrolled to. ── */}
       {/* 🆕 Round 28s222 — Services tab redesign (founder "tab service
           ปรับแก้"): SERIF title → SANS 700 for legibility consistency
           (matches Services / How-to-book / About / Admin audits).
@@ -1683,18 +1781,16 @@ const TherapistDetailPage: React.FC = () => {
           tightened from a chatty two-line nudge to a single concierge
           line. */}
       <Box
-        id="tdp-service-picker"
+        id="services"
         role="tabpanel"
         sx={{
           gridColumn: { md: "1" },
           gridRow: { md: "2" },
-          display: {
-            xs: detailTab === "services" ? "block" : "none",
-            md: "block",
-          },
+          order: { xs: 5 },
           position: { md: "sticky" },
           top: { md: 24 },
-          padding: { xs: "16px 20px 20px", md: "20px 0 24px" },
+          padding: { xs: "24px 20px 20px", md: "20px 0 24px" },
+          scrollMarginTop: { xs: "90px", md: "24px" },
         }}
       >
         <Typography
@@ -1756,38 +1852,36 @@ const TherapistDetailPage: React.FC = () => {
         </Typography>
       </Box>
       {/* ── END GRID CHILD 3 (Services picker) ──────────────────── */}
-      </Box>
-      {/* ── END responsive 2-col grid wrapper ───────────────────── */}
 
-      {/* (Reviews moved into TherapistProfileTabs as Tab 2.) */}
-
-      {/* 🆕 Round 28r84 — #gallery anchor section. Founder direction
-          (2026-07-08 reference screenshots): the card's PHOTOS pill
-          routes here (`/therapists/:id#gallery`). Responsive grid —
-          2 col mobile · 3 col tablet · 4 col desktop — of the
-          therapist's Cloudinary-enhanced gallery photos (see
-          buildFromReal → `images`, which sources `therapist.gallery`
-          on the underlying data record). Tapping any tile opens the
-          full-screen lightbox below. Empty state renders a Nordic
-          neutral card so guests understand there simply isn't more
-          content yet (no bug / no broken link).
-          🆕 Round 28r85 — this is now the Photos TAB content on
-          mobile (tab id `photos`). Visibility toggles with
-          `detailTab === "photos"` on xs; always visible on md+ since
-          the desktop grid shows all sections simultaneously. */}
+      {/* ── GRID CHILD 4 — Photos section (col span-all row 3 on
+             md+; mobile order 4: FIRST of the stacked scroll-anchor
+             sections)
+             🆕 Round 28r84 — Card PHOTOS pill routes here. Responsive
+             grid (2 col mobile · 3 col tablet · 4 col desktop) of the
+             practitioner's Cloudinary-enhanced gallery. Tapping any
+             tile opens the full-screen lightbox below. Empty state
+             renders a Nordic neutral card so guests understand there
+             just isn't more content yet (no broken link).
+             🆕 Round 28r85 — Was the Photos TAB content (hide/show).
+             🆕 Round 28r87 — MOVED into the responsive grid as a
+             proper grid child (previously sat below the grid, outside
+             the mobile flex reorder). Same content, same lightbox.
+             `id` renamed from `gallery` → `photos` to match the sticky
+             tab bar's scroll-anchor id and the URL hash `#photos`;
+             legacy `#gallery` still works because the hash-scroll
+             useEffect above aliases it to the `photos` element. ── */}
       <Box
-        id="gallery"
+        id="photos"
         role="tabpanel"
         sx={{
-          display: {
-            xs: detailTab === "photos" ? "block" : "none",
-            md: "block",
-          },
+          gridColumn: { md: "1 / -1" },
+          gridRow: { md: "3" },
+          order: { xs: 4 },
           padding: {
             xs: "24px 20px 8px",
             md: "32px 18px 12px",
           },
-          scrollMarginTop: "18px",
+          scrollMarginTop: { xs: "90px", md: "24px" },
         }}
       >
         <Typography
@@ -1893,6 +1987,9 @@ const TherapistDetailPage: React.FC = () => {
           </Box>
         )}
       </Box>
+      {/* ── END GRID CHILD 4 (Photos) ──────────────────────────── */}
+      </Box>
+      {/* ── END responsive 2-col grid wrapper ───────────────────── */}
 
       {/* Lightbox — fullscreen photo viewer with prev/next/close.
           Backdrop dim + tap-to-close · warm-taupe glyphs · fixed z 9999
