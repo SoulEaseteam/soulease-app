@@ -52,7 +52,7 @@ const HomeHero: React.FC = () => {
   return (
     <Box
       component="section"
-      aria-label="SunRed — Simple. Pure. Balanced."
+      aria-label="SunRed — Bangkok outcall massage, delivered to your hotel"
       sx={{
         position: "relative",
         overflow: "hidden",
