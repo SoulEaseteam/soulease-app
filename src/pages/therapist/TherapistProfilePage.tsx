@@ -57,6 +57,8 @@ import { signOut } from "firebase/auth";
 
 import ProfileSummaryCard from "@/components/therapist/ProfileSummaryCard";
 import type { Therapist, Avail, StatusOverride } from "@/types/therapist";
+// 🆕 Round 28r52 — Phase 3.1 responsive shell.
+import { responsiveShell } from "@/theme/breakpoints";
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
 import { enhanceImage } from "@/utils/cloudinary";
 
@@ -324,8 +326,8 @@ const TherapistProfilePage: React.FC = () => {
     return (
       <Box
         sx={{
-          maxWidth: 430,
-          margin: "0 auto",
+          // 🆕 Round 28r52 — responsiveShell replaces the 430 cap.
+          ...responsiveShell,
           padding: "40px 24px",
           textAlign: "center",
         }}
@@ -373,8 +375,9 @@ const TherapistProfilePage: React.FC = () => {
     <Box
       sx={{
         // Phone-shell wrapper — match brand pattern
-        maxWidth: 430,
-        margin: "0 auto",
+        // 🆕 Round 28r52 — responsiveShell widens the shell on tablet/
+        //   desktop instead of pinning to 430.
+        ...responsiveShell,
         minHeight: "100vh",
         background: "#F4F6F5",
         paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))",

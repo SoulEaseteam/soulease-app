@@ -65,6 +65,8 @@ import { trackServiceView, trackConciergeOpen } from "@/utils/analytics";
 import { db } from "@/lib/firebase";
 import { brand, fonts } from "@/theme";
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
+// 🆕 Round 28r52 — Phase 3.1 responsive shell.
+import { responsiveShell } from "@/theme/breakpoints";
 
 const WHATSAPP_URL = "https://wa.me/66634350987";
 
@@ -179,8 +181,8 @@ const ServiceDetailPage: React.FC = () => {
     return (
       <Box
         sx={{
-          maxWidth: 430,
-          margin: "0 auto",
+          // 🆕 Round 28r52 — responsiveShell replaces the fixed 430 cap.
+          ...responsiveShell,
           padding: "60px 24px",
           textAlign: "center",
         }}
@@ -221,8 +223,8 @@ const ServiceDetailPage: React.FC = () => {
   return (
     <Box
       sx={{
-        maxWidth: 430,
-        margin: "0 auto",
+        // 🆕 Round 28r52 — responsiveShell widens through sm/md/lg.
+        ...responsiveShell,
         background:
           "#F4F6F5",
         minHeight: "100vh",
@@ -587,7 +589,8 @@ const ServiceDetailPage: React.FC = () => {
         <Box
           sx={{
             width: "100%",
-            maxWidth: 430,
+            // 🆕 Round 28r52 — sticky bottom CTA matches the shell.
+            ...responsiveShell,
             pointerEvents: "auto",
           }}
         >

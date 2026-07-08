@@ -34,6 +34,8 @@ import MeetingRoomRoundedIcon from "@mui/icons-material/MeetingRoomRounded";
 import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
 
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
+// 🆕 Round 28r52 — Phase 3.1 responsive shell.
+import { responsiveShellNarrow } from "@/theme/breakpoints";
 
 const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -849,13 +851,18 @@ const SelectLocationPage: React.FC = () => {
         //    ทั้งเว็บ') so the address page matches BookingFlowPage and
         //    BookingHistoryPage rhythm on desktop instead of stretching
         //    full-bleed across a wide viewport.
-        maxWidth: "430px",
-        margin: "0 auto",
+        // 🆕 Round 28r52 — narrow responsive shell so the form doesn't
+        //   stretch wildly on desktop (map + form fields read best in a
+        //   comfortable column).
+        ...responsiveShellNarrow,
         minHeight: "100vh",
         background: "#F4F6F5",
-        borderRadius: "28px",
+        borderRadius: { xs: "28px", md: 0 },
         overflow: "hidden",
-        boxShadow: "0 20px 60px rgba(15, 23, 42, 0.15)",
+        boxShadow: {
+          xs: "0 20px 60px rgba(15, 23, 42, 0.15)",
+          md: "none",
+        },
         position: "relative",
         // 🆕 Round 28b43 — bumped from 120px to 180px so the form bottom
         //   isn't covered by the lifted CTA + bottom nav stack.

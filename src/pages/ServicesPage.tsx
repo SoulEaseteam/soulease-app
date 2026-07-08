@@ -57,6 +57,10 @@ import HowItWorks from "@/components/home/HowItWorks";
 // 🆕 Round 28s179 — useServiceUsageStats no longer consumed
 //   (Compare dialog drove the live counts).
 import { useDocumentMeta } from "@/utils/useDocumentMeta";
+// 🆕 Round 28r52 — Phase 3.1 responsive shell replaces the old
+//   maxWidth: 430 phone-shell so the Services lobby widens on tablet
+//   and desktop instead of sitting as a narrow strip.
+import { responsiveShell } from "@/theme/breakpoints";
 
 const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -202,13 +206,16 @@ const ServicesPage: React.FC = () => {
     <Box
       sx={{
         // Round 28b10 — Clean v3 cool-neutral phone shell
-        maxWidth: 430,
-        margin: "0 auto",
+        // 🆕 Round 28r52 — responsiveShell widens through sm/md/lg.
+        ...responsiveShell,
         minHeight: "100vh",
         background: "#F4F6F5",
-        borderRadius: "28px",
+        borderRadius: { xs: "28px", md: 0 },
         overflow: "hidden",
-        boxShadow: "0 20px 60px rgba(15, 23, 42, 0.08)",
+        boxShadow: {
+          xs: "0 20px 60px rgba(15, 23, 42, 0.08)",
+          md: "none",
+        },
         position: "relative",
         pb: 10,
         fontFamily: SANS,

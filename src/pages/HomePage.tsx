@@ -23,6 +23,9 @@ import { capturePromoFromURL } from "@/utils/discount";
 import { trackHomeView, consumeLandingArea } from "@/utils/analytics";
 
 import HomeTherapistGrid from "@/components/home/HomeTherapistGrid";
+// 🆕 Round 28r52 — Phase 3.1 responsive shell replaces the old
+//   maxWidth: 430px cage so the home widens on tablet/desktop.
+import { responsiveShell } from "@/theme/breakpoints";
 // 🆕 Round 28s148 — PromiseStrip dropped (founder: "ลบทิ้งไป"). Value
 //   was low — price anchor duplicated each card, "5 Languages" already
 //   shown by TopNav pill, "Licensed · Ministry-verified" was an
@@ -79,12 +82,21 @@ const HomePage: React.FC = () => {
     <Box
       sx={{
         // .phone — Round 28b0 cleaner palette
-        maxWidth: "430px",
-        margin: "0 auto",
+        // 🆕 Round 28r52 — Widens through sm/md/lg via responsiveShell.
+        //   Mobile keeps the 430px phone-shell feel; tablet 600, md 768,
+        //   desktop 1200 so wide viewports fill their column instead of
+        //   showing a narrow phone strip in gray gutters.
+        ...responsiveShell,
         background: "#F4F6F5",
-        borderRadius: "28px",
+        // Round the shell edges on true mobile only; on wider viewports
+        // the shell reaches viewport edges (MainLayout paints the page
+        // surface) so the borderRadius reads as a stray floating card.
+        borderRadius: { xs: "28px", md: 0 },
         overflow: "hidden",
-        boxShadow: "0 20px 60px rgba(15, 23, 42, 0.10)",
+        boxShadow: {
+          xs: "0 20px 60px rgba(15, 23, 42, 0.10)",
+          md: "none",
+        },
         position: "relative",
       }}
     >

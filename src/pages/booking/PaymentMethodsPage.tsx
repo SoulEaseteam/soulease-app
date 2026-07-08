@@ -25,6 +25,8 @@ import {
   SURCHARGE_FLAT,
 } from "@/utils/paymentSurcharge";
 import { useDocumentMeta } from "@/utils/useDocumentMeta";
+// 🆕 Round 28r52 — Phase 3.1 responsive shell.
+import { responsiveShellNarrow } from "@/theme/breakpoints";
 // 🆕 Round 28b7 — `fonts` import was unused (default-import shape was
 //   also wrong: the theme module exports `fonts` as a named export,
 //   not default). Removed to silence the warning.
@@ -283,13 +285,18 @@ const PaymentMethodsPage: React.FC = () => {
     <Box
       sx={{
         // Phone-shell wrapper — Round 28b1 Clean v3 cool-neutral palette
-        maxWidth: "430px",
-        margin: "0 auto",
+        // 🆕 Round 28r52 — narrow variant: this page is dense policy
+        //   copy that reads best in a comfortable reading column even
+        //   on wide desktops (768px max, not 1200).
+        ...responsiveShellNarrow,
         minHeight: "100vh",
         background: "#F4F6F5",
-        borderRadius: "28px",
+        borderRadius: { xs: "28px", md: 0 },
         overflow: "hidden",
-        boxShadow: "0 20px 60px rgba(15, 23, 42, 0.08)",
+        boxShadow: {
+          xs: "0 20px 60px rgba(15, 23, 42, 0.08)",
+          md: "none",
+        },
         position: "relative",
         paddingBottom: "calc(40px + env(safe-area-inset-bottom, 0px))",
         fontFamily: SANS,

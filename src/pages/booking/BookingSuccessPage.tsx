@@ -81,6 +81,8 @@ import { useConciergeMode } from "@/utils/conciergeMode";
 import ConciergeModeIcon from "@/components/common/ConciergeModeIcon";
 
 import { db } from "@/lib/firebase";
+// 🆕 Round 28r52 — Phase 3.1 responsive shell.
+import { responsiveShellNarrow } from "@/theme/breakpoints";
 
 const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -214,13 +216,17 @@ const BookingSuccessPage: React.FC = () => {
     <Box
       sx={{
         // Phone-shell wrapper
-        maxWidth: "430px",
-        margin: "0 auto",
+        // 🆕 Round 28r52 — narrow responsive shell so the success page
+        //   stays readable on desktop rather than stretching to 1200.
+        ...responsiveShellNarrow,
         minHeight: "100vh",
         background: "#F4F6F5",
-        borderRadius: "28px",
+        borderRadius: { xs: "28px", md: 0 },
         overflow: "hidden",
-        boxShadow: "0 20px 60px rgba(15, 23, 42, 0.15)",
+        boxShadow: {
+          xs: "0 20px 60px rgba(15, 23, 42, 0.15)",
+          md: "none",
+        },
         position: "relative",
         padding: "32px 20px 40px",
         fontFamily: SANS,

@@ -19,6 +19,11 @@ import { Box, Typography, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { formatTHB } from "@/utils/servicePricing";
 import useTweenedNumber from "@/hooks/useTweenedNumber";
+// 🆕 Round 28r52 — Phase 3.1 responsive shell. The sticky bottom
+//   ConfirmBar tracks the same narrow content column as the booking
+//   page above it, so on desktop it widens to 600/768 instead of
+//   sitting as a tiny 430px strip in the middle of the viewport.
+import { responsiveShellNarrow } from "@/theme/breakpoints";
 
 const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -59,7 +64,8 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
         left: "50%",
         transform: "translateX(-50%)",
         width: "100%",
-        maxWidth: "430px",
+        // 🆕 Round 28r52 — narrow shell matches BookingFlowPage above.
+        ...responsiveShellNarrow,
         zIndex: 50,
         background: "rgba(244, 246, 245, 0.92)",
         backdropFilter: "blur(30px) saturate(180%)",

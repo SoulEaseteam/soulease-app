@@ -95,6 +95,10 @@ import { enhanceImage } from "@/utils/cloudinary";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { haversineKm } from "@/utils/taxiFare";
 import { formatDistanceEta } from "@/utils/formatDistanceEta";
+// 🆕 Round 28r52 — Phase 3.1 responsive shell replaces the internal
+//   maxWidth: 430 caps used across this page's inner sections so the
+//   detail widens on tablet/desktop.
+import { responsiveShell } from "@/theme/breakpoints";
 
 const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -841,8 +845,9 @@ const TherapistDetailPage: React.FC = () => {
     return (
       <Box
         sx={{
-          maxWidth: 430,
-          margin: "0 auto",
+          // 🆕 Round 28r52 — responsiveShell replaces the fixed 430
+          //   phone-shell cap.
+          ...responsiveShell,
           minHeight: "100vh",
           padding: "60px 24px",
           textAlign: "center",
@@ -919,8 +924,10 @@ const TherapistDetailPage: React.FC = () => {
 
       <Box
         sx={{
-          maxWidth: 430,
-          margin: "0 auto",
+          // 🆕 Round 28r52 — responsiveShell replaces the 430 inner
+          //   column so DetailHero + StatsCard + tabs widen with the
+          //   viewport instead of clumping in the middle of desktop.
+          ...responsiveShell,
           background: "transparent",
           position: "relative",
         }}
@@ -1003,8 +1010,9 @@ const TherapistDetailPage: React.FC = () => {
           "Practitioner overview tabs",
         )}
         sx={{
-          maxWidth: 430,
-          margin: "12px auto 0",
+          // 🆕 Round 28r52 — responsiveShell + top margin preserved.
+          ...responsiveShell,
+          marginTop: "12px",
           padding: "0 18px",
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
@@ -1107,8 +1115,9 @@ const TherapistDetailPage: React.FC = () => {
           {therapist.id !== "YuriSunRed" && (
             <Box
               sx={{
-                maxWidth: 430,
-                margin: "10px auto 0",
+                // 🆕 Round 28r52 — responsiveShell + top margin.
+                ...responsiveShell,
+                marginTop: "10px",
                 padding: "14px 18px",
                 borderRadius: "16px",
                 background:
@@ -1175,8 +1184,9 @@ const TherapistDetailPage: React.FC = () => {
               progressive disclosure. */}
           <Box
             sx={{
-              maxWidth: 430,
-              margin: "0 auto",
+              // 🆕 Round 28r52 — responsiveShell for the About sub-
+              //   sections (features, credentials, langs, specialties).
+              ...responsiveShell,
               padding: "16px 20px 24px",
               display: "flex",
               flexDirection: "column",
@@ -1411,9 +1421,9 @@ const TherapistDetailPage: React.FC = () => {
         id="tdp-service-picker"
         role="tabpanel"
         sx={{
+          // 🆕 Round 28r52 — responsiveShell for the Services tab panel.
+          ...responsiveShell,
           padding: "16px 20px 20px",
-          maxWidth: 430,
-          margin: "0 auto",
         }}
       >
         <Typography

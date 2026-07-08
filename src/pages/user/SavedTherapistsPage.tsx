@@ -15,6 +15,8 @@ import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import BottomNav from "@/components/layouts/BottomNavGlass";
 import type { Therapist } from "@/types/therapist";
+// 🆕 Round 28r52 — Phase 3.1 responsive shell.
+import { responsiveShell } from "@/theme/breakpoints";
 
 interface FavoriteTherapist {
   id: string;
@@ -93,7 +95,8 @@ const SavedTherapistsPage: React.FC = () => {
   // ========================================================
   return (
     <Box sx={{ minHeight: "100vh", background: "#fefcf9", pb: 10 }}>
-      <Box sx={{ maxWidth: 430, mx: "auto", px: 2 }}>
+      {/* 🆕 Round 28r52 — responsiveShell replaces the 430 cap. */}
+      <Box sx={{ ...responsiveShell, px: 2 }}>
         <Typography
           variant="h5"
           fontWeight="bold"

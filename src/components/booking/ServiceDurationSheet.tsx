@@ -185,7 +185,9 @@ const ServiceDurationSheet: React.FC<Props> = ({
           background:
             "#F4F6F5",
           borderRadius: "24px",
-          maxWidth: "430px",
+          // 🆕 Round 28r52 — Dialog paper widens on tablet/desktop so
+          //   the picker sheet feels app-native at larger viewports.
+          maxWidth: { xs: "430px", sm: "560px", md: "640px" },
           width: "calc(100% - 32px)",
           margin: "16px auto",
           maxHeight: "calc(100vh - 32px)",

@@ -14,6 +14,10 @@ import { useAuth } from "@/providers/AuthProvider";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
+// 🆕 Round 28r52 — Phase 3.1 responsive card cap. This is a narrow
+//   form card, not a phone-shell page — it stays comfortable at
+//   ~500px on tablet+ instead of the wider content column.
+import { containerMax } from "@/theme/breakpoints";
 
 const EditProfilePage: React.FC = () => {
   const { user } = useAuth();
@@ -99,7 +103,14 @@ const EditProfilePage: React.FC = () => {
         elevation={2}
         sx={{
           width: "100%",
-          maxWidth: 430,
+          // 🆕 Round 28r52 — Widen slightly on tablet+ so the form
+          //   doesn't feel cramped, but keep it a card, not a full-
+          //   width shell. 430 → 500 → 500 on md/lg.
+          maxWidth: {
+            xs: containerMax.mobile,
+            sm: "500px",
+            md: "500px",
+          },
           borderRadius: 6,
           p: 2,
           textAlign: "center",

@@ -37,6 +37,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/layouts/BottomNavGlass";
 import type { Therapist, Location as TherapistLocation } from "@/types/therapist";
+// 🆕 Round 28r52 — Phase 3.1 responsive shell replaces the 430 cap.
+import { responsiveShell } from "@/theme/breakpoints";
 
 const containerStyle = { width: "100%", height: "100%" };
 const defaultCenter = { lat: 13.736717, lng: 100.523186 };
@@ -194,10 +196,10 @@ const TherapistLocationPage: React.FC = () => {
   return (
     <Box
       sx={{
+        // 🆕 Round 28r52 — responsiveShell replaces the fixed 430 cap.
+        ...responsiveShell,
         width: "100%",
-        maxWidth: 430,
         height: "100vh",
-        mx: "auto",
         position: "relative",
         pb: 8,
       }}
@@ -249,9 +251,11 @@ const TherapistLocationPage: React.FC = () => {
           bottom: 220,
           left: 0,
           right: 0,
-          px: 2,
-          maxWidth: 430,
-          mx: "auto",
+          // 🆕 Round 28r52 — inner button rail follows the shell too.
+          //   The shell brings its own px scale; place it AFTER `px: 2`
+          //   would silently overwrite the shell padding, so we skip
+          //   the manual px and let responsiveShell own the spacing.
+          ...responsiveShell,
           display: "flex",
           flexDirection: "column",
           gap: 1.5,

@@ -165,6 +165,8 @@ import {
 import { validateDiscount, getInitialDiscountCode, getCustomPromoLimits } from "@/utils/discount";
 // 🆕 Round 28s84 — shared promo kill-switch (home banner + discount field).
 import { PROMOS_ENABLED } from "@/config/featureFlags";
+// 🆕 Round 28r52 — Phase 3.1 responsive shell.
+import { responsiveShellNarrow } from "@/theme/breakpoints";
 // 🆕 Round 28s77 — WeChat/Alipay transfer surcharge (5% + ฿200).
 import {
   paymentSurcharge,
@@ -1218,8 +1220,9 @@ const BookingFlowPage: React.FC = () => {
         // 🆕 Phase 5 — Match the rest of the site (HomePage / TherapistDetailPage
         //   / TherapistsBrowsePage all use a 430px max-width 'phone' shell on
         //   desktop). Without this, the booking page rendered full-width.
-        maxWidth: "430px",
-        margin: "0 auto",
+        // 🆕 Round 28r52 — narrow responsive shell so the checkout form
+        //   stays readable on desktop instead of stretching to 1200.
+        ...responsiveShellNarrow,
         minHeight: "100vh",
         background: "#F4F6F5",
         paddingBottom: "210px",

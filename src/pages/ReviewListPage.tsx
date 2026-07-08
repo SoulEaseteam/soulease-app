@@ -26,6 +26,8 @@ import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+// 🆕 Round 28r52 — Phase 3.1 responsive shell.
+import { responsiveShell } from "@/theme/breakpoints";
 
 // 🆕 Round 19 (founder 2026-05-01): human-friendly review timestamps
 //    via dayjs.fromNow() — '2 days ago' beats '2025-11-22 01:30'.
@@ -204,13 +206,16 @@ const ReviewListPage: React.FC = () => {
     <Box
       sx={{
         // 🆕 Round 19: phone-shell wrapper for site rhythm consistency.
-        maxWidth: 430,
-        margin: "0 auto",
+        // 🆕 Round 28r52 — responsiveShell widens through sm/md/lg.
+        ...responsiveShell,
         minHeight: "100vh",
         background: "#F4F6F5",
-        borderRadius: "28px",
+        borderRadius: { xs: "28px", md: 0 },
         overflow: "hidden",
-        boxShadow: "0 20px 60px rgba(15, 23, 42, 0.15)",
+        boxShadow: {
+          xs: "0 20px 60px rgba(15, 23, 42, 0.15)",
+          md: "none",
+        },
         position: "relative",
         pb: 10,
         fontFamily: SANS,
@@ -296,9 +301,10 @@ const ReviewListPage: React.FC = () => {
       </Box>
 
       {/* 🆕 Round 19: rating summary card with 5-bar distribution.
-          Trust signal — visitors can size up the rating shape at a glance. */}
+          Trust signal — visitors can size up the rating shape at a glance.
+          🆕 Round 28r52 — responsiveShell replaces the 430 cap. */}
       {total > 0 && (
-        <Box sx={{ maxWidth: 430, mx: "auto", px: 3, mt: 3 }}>
+        <Box sx={{ ...responsiveShell, px: 3, mt: 3 }}>
           <Box
             sx={{
               p: 2.5,

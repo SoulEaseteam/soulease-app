@@ -40,6 +40,8 @@ import relativeTime from "dayjs/plugin/relativeTime";
 
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
+// 🆕 Round 28r52 — Phase 3.1 responsive shell.
+import { responsiveShell } from "@/theme/breakpoints";
 
 dayjs.extend(relativeTime);
 
@@ -126,13 +128,16 @@ const NotificationsPage: React.FC = () => {
     <Box
       sx={{
         // Phone-shell wrapper
-        maxWidth: "430px",
-        margin: "0 auto",
+        // 🆕 Round 28r52 — responsiveShell widens on tablet/desktop.
+        ...responsiveShell,
         minHeight: "100vh",
         background: "#F4F6F5",
-        borderRadius: "28px",
+        borderRadius: { xs: "28px", md: 0 },
         overflow: "hidden",
-        boxShadow: "0 20px 60px rgba(15, 23, 42, 0.15)",
+        boxShadow: {
+          xs: "0 20px 60px rgba(15, 23, 42, 0.15)",
+          md: "none",
+        },
         position: "relative",
         paddingBottom: "calc(40px + env(safe-area-inset-bottom, 0px))",
         fontFamily: SANS,

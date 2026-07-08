@@ -57,6 +57,12 @@ import { useConciergeMode } from "@/utils/conciergeMode";
 //   component still ships for other surfaces (Hero greeting).
 // import ConciergeModeIcon from "@/components/common/ConciergeModeIcon";
 import { brand, fonts } from "@/theme";
+// 🆕 Round 28r52 — Phase 3.1 responsive foundation. Desktop nav bar
+//   uses MUI's useMediaQuery to swap in a horizontal nav row on md+
+//   viewports. Founder direction 2026-07-08: the site should feel
+//   like a real web app on desktop, not a phone shell in a gutter.
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 
 // Wordmark uses fonts.heading via theme; SANS kept locally for drawer
 // items only.
@@ -185,6 +191,12 @@ const TopNav: React.FC = () => {
   const isAdmin = role === "admin";
   const isTherapist = role === "therapist";
 
+  // 🆕 Round 28r52 — Desktop mode: md+ (>= 900px) gets a horizontal
+  //   nav row with real link buttons + concierge CTA. Mobile (<900px)
+  //   keeps the hamburger drawer pattern verbatim from prior rounds.
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
+
   const [drawerOpen, setDrawerOpen] = useState(false);
   // 🆕 Round 28r7 — Refer & earn dialog state.
   const [referralOpen, setReferralOpen] = useState(false);
@@ -193,6 +205,14 @@ const TopNav: React.FC = () => {
   const prevY = useRef(0);
 
   useEffect(() => {
+    // 🆕 Round 28r52 — Auto-hide-on-scroll is a mobile-only affordance
+    //   (protecting scarce phone vertical real estate). On desktop the
+    //   nav stays pinned so users can hop between pages any time.
+    if (isDesktop) {
+      setHidden(false);
+      setScrolled(false);
+      return;
+    }
     const onScroll = () => {
       const y = window.scrollY;
       setScrolled(y > 30);
@@ -201,7 +221,7 @@ const TopNav: React.FC = () => {
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [isDesktop]);
 
   const goto = (path: string) => {
     setDrawerOpen(false);
@@ -226,6 +246,25 @@ const TopNav: React.FC = () => {
     if (location.pathname !== "/") void navigate("/");
   };
 
+  // 🆕 Round 28r52 — Desktop horizontal nav rows. Each item is a real
+  //   link button (accessible focus outline + brand-red hover). On
+  //   mobile these are hidden and the drawer NAV_ITEMS list remains
+  //   the source of navigation.
+  const DESKTOP_NAV = [
+    { labelKey: "nav.home", defaultLabel: "Home", path: "/" },
+    { labelKey: "nav.services", defaultLabel: "Services", path: "/services" },
+    {
+      labelKey: "nav.therapists",
+      defaultLabel: "Therapists",
+      path: "/",
+    },
+    {
+      labelKey: "nav.howToBook",
+      defaultLabel: "How to Book",
+      path: "/services?tab=how",
+    },
+  ];
+
   return (
     <>
       <Box
@@ -234,7 +273,12 @@ const TopNav: React.FC = () => {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "8px 18px 14px",
+          // 🆕 Round 28r52 — Wider horizontal padding on desktop so the
+          //   nav row breathes at 1200px. Mobile spacing unchanged.
+          padding: {
+            xs: "8px 18px 14px",
+            md: "12px 32px",
+          },
           position: "relative",
           zIndex: 10,
           transform: hidden ? "translateY(-100%)" : "translateY(0)",
@@ -250,9 +294,14 @@ const TopNav: React.FC = () => {
           color: "#ffffff",
           boxShadow: scrolled ? "0 2px 8px rgba(15,23,42,0.20)" : "none",
           borderBottom: "none",
+          // 🆕 Round 28r52 — subtle backdrop blur on desktop to hint at
+          //   depth when the sticky bar overlays scrolling content.
+          backdropFilter: { xs: "none", md: "blur(8px) saturate(140%)" },
+          WebkitBackdropFilter: { xs: "none", md: "blur(8px) saturate(140%)" },
         }}
       >
-        {/* Menu button — opens drawer */}
+        {/* Menu button — opens drawer. Hidden on desktop where the
+            inline horizontal nav takes over. */}
         <IconButton
           aria-label={t("nav.openMenu", "Open menu")}
           onClick={() => setDrawerOpen(true)}
@@ -260,6 +309,7 @@ const TopNav: React.FC = () => {
             width: "40px",
             height: "40px",
             borderRadius: "50%",
+            display: { xs: "inline-flex", md: "none" },
             // 🆕 Round 28s170 — Founder: "3 แทบ เอากรอบ ออก".
             //   Drop the white ring around the hamburger; the 3
             //   bars alone on the red bg are plenty of affordance.
@@ -289,6 +339,10 @@ const TopNav: React.FC = () => {
             padding: "4px 8px",
             cursor: "pointer",
             borderRadius: "8px",
+            // 🆕 Round 28r52 — Wordmark left-aligns on desktop so the
+            //   center slot is free for the horizontal nav row. Mobile
+            //   layout unchanged (space-between still centers it).
+            marginRight: { md: "auto" },
             "&:focus-visible": {
               outline: "2px solid #B4000A",
               outlineOffset: 2,
@@ -307,7 +361,7 @@ const TopNav: React.FC = () => {
               gap: "10px",
             }}
           >
-     
+
             <Typography
               component="span"
               sx={{
@@ -316,7 +370,7 @@ const TopNav: React.FC = () => {
                 //   700/800 weights) leads; weight bumped 500 → 700.
                 fontFamily:
                   '"Cinzel", "Federo", "Italiana", "Fraunces", Georgia, serif',
-                fontSize: "17px",
+                fontSize: { xs: "17px", md: "19px" },
                 fontWeight: 700,
                 letterSpacing: "0.22em",
                 textTransform: "uppercase",
@@ -329,14 +383,116 @@ const TopNav: React.FC = () => {
           </Box>
         </Box>
 
+        {/* 🆕 Round 28r52 — Desktop-only horizontal nav row. Center of
+            the bar. Mobile skips this entirely and falls back to the
+            drawer. */}
+        <Box
+          component="ul"
+          sx={{
+            display: { xs: "none", md: "flex" },
+            listStyle: "none",
+            margin: 0,
+            padding: 0,
+            alignItems: "center",
+            gap: "6px",
+            // Center the nav between the wordmark (marginRight:auto
+            // above) and the concierge CTA (marginLeft:auto below).
+            marginLeft: "auto",
+            marginRight: "auto",
+          }}
+        >
+          {DESKTOP_NAV.map((item) => {
+            const active =
+              location.pathname + location.search === item.path ||
+              (item.path === "/" && location.pathname === "/");
+            return (
+              <Box component="li" key={item.path} sx={{ listStyle: "none" }}>
+                <Box
+                  component="button"
+                  type="button"
+                  onClick={() => goto(item.path)}
+                  sx={{
+                    background: active
+                      ? "rgba(255, 255, 255, 0.12)"
+                      : "transparent",
+                    border: "none",
+                    padding: "8px 14px",
+                    borderRadius: "999px",
+                    cursor: "pointer",
+                    color: "#ffffff",
+                    fontFamily: SANS,
+                    fontSize: "14px",
+                    fontWeight: active ? 700 : 500,
+                    letterSpacing: "0.02em",
+                    transition: "background 0.15s ease, transform 0.15s ease",
+                    "&:hover": {
+                      background: "rgba(255, 255, 255, 0.16)",
+                      transform: "translateY(-1px)",
+                    },
+                    "&:focus-visible": {
+                      outline: "2px solid #ffffff",
+                      outlineOffset: 2,
+                    },
+                  }}
+                >
+                  {t(item.labelKey, item.defaultLabel)}
+                </Box>
+              </Box>
+            );
+          })}
+        </Box>
+
+        {/* 🆕 Round 28r52 — Desktop concierge CTA (opens Refer & earn
+            dialog for now; matches the drawer's featured action).
+            Mobile keeps the balanced 40px spacer so the wordmark stays
+            centred between hamburger + spacer. */}
+        <Box
+          component="button"
+          type="button"
+          onClick={() => setReferralOpen(true)}
+          sx={{
+            display: { xs: "none", md: "inline-flex" },
+            alignItems: "center",
+            gap: "8px",
+            background: "#ffffff",
+            border: "none",
+            color: "#B4000A",
+            fontFamily: SANS,
+            fontSize: "13px",
+            fontWeight: 700,
+            letterSpacing: "0.03em",
+            padding: "9px 18px",
+            borderRadius: "999px",
+            cursor: "pointer",
+            boxShadow: "0 4px 12px rgba(15, 23, 42, 0.18)",
+            transition: "transform 0.15s ease, box-shadow 0.15s ease",
+            "&:hover": {
+              transform: "translateY(-1px)",
+              boxShadow: "0 6px 16px rgba(15, 23, 42, 0.28)",
+            },
+            "&:focus-visible": {
+              outline: "2px solid #ffffff",
+              outlineOffset: 2,
+            },
+          }}
+          aria-label={t("nav.conciergeCta", "Concierge")}
+        >
+          <RedeemRoundedIcon sx={{ fontSize: 18 }} />
+          {t("nav.concierge", "Concierge")}
+        </Box>
+
         {/* 🆕 Round 28s168 — Language pill removed (founder: "เอา
             แปลภาษา ออก · เราแปลจากการตั้งค่ามือถือลูกค้าอยู่แล้ว").
             i18next LanguageDetector already pulls navigator/htmlTag
             so EN/TH/ZH/JA/KO auto-switch by device locale. Manual
             switcher was redundant + crowded the red TopNav.
             Placeholder Box keeps the flex layout balanced so the
-            wordmark stays centred between menu + this slot. */}
-        <Box sx={{ width: 40 }} aria-hidden="true" />
+            wordmark stays centred between menu + this slot on mobile.
+            Hidden on desktop where the concierge CTA fills the slot. */}
+        <Box
+          sx={{ width: 40, display: { xs: "block", md: "none" } }}
+          aria-hidden="true"
+        />
       </Box>
 
       {/* ───────── Navigation drawer ───────── */}

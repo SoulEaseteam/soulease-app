@@ -29,6 +29,8 @@ import {
 } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import { toast } from "react-toastify";
+// 🆕 Round 28r52 — Phase 3.1 responsive shell.
+import { responsiveShell } from "@/theme/breakpoints";
 
 type TherapistLite = {
   id: string;
@@ -211,7 +213,8 @@ const ReviewPage: React.FC = () => {
         <Box sx={{ width: 32 }} />
       </Box>
 
-      <Box sx={{ maxWidth: 430, mx: "auto", p: 2 }}>
+      {/* 🆕 Round 28r52 — responsiveShell replaces the 430 cap. */}
+      <Box sx={{ ...responsiveShell, p: 2 }}>
         {/* Therapist info */}
         {therapist ? (
           <Stack direction="row" spacing={2} alignItems="center" mb={2}>
