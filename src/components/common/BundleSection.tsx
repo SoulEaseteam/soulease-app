@@ -605,10 +605,11 @@ const BundleSection: React.FC = () => {
                   },
                 }}
               >
-                {t(
-                  "bundle.card.reserveCta",
-                  "Reserve via Concierge · ติดต่อคอนเซียร์จ",
-                )}
+                {/* 🚨 Round 28r69 — Founder direction "ทุกอย่างที่เป็น
+                    ปุ่ม ให้เอาภาษาไทยออก" (2026-07-08). Thai suffix
+                    removed from CTA; button label English-only. Section
+                    headers/eyebrows keep their Thai subtitle. */}
+                {t("bundle.card.reserveCta", "Reserve via Concierge")}
               </Box>
 
               {/* Secondary CTA — LINE fallback. Small, low-contrast so

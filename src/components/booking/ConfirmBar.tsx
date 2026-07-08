@@ -144,28 +144,13 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
           },
         }}
       >
-        <Box sx={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
-          <Box component="span" sx={{ fontSize: "15px", fontWeight: 700 }}>
-            {submitting
-              ? t("booking.placing", "Placing…")
-              : t("booking.placeOrder", "Confirm Reservation")}
-          </Box>
-          {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle. */}
-          {!submitting && (
-            <Box
-              component="span"
-              sx={{
-                fontSize: "9.5px",
-                fontWeight: 500,
-                letterSpacing: "0.04em",
-                color: "rgba(255,255,255,0.72)",
-                marginTop: "1px",
-              }}
-            >
-              ยืนยันจอง
-            </Box>
-          )}
-        </Box>
+        {/* 🚨 Round 28r69 — Founder direction "ทุกอย่างที่เป็นปุ่ม ให้เอา
+            ภาษาไทยออก" (2026-07-08). r61 bilingual Thai subtitle removed
+            from every primary CTA button sitewide; button label English-
+            only. Section headers/eyebrows keep their Thai subtitle. */}
+        {submitting
+          ? t("booking.placing", "Placing…")
+          : t("booking.placeOrder", "Confirm Reservation")}
       </Button>
     </Box>
   );
