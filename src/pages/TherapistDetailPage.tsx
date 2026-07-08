@@ -1216,6 +1216,18 @@ const TherapistDetailPage: React.FC = () => {
           order: { xs: 2 },
         }}
       >
+        {/* 🆕 28s341 — StatsCard moved UP here (always visible; its -30px
+            mobile margin floats it over the hero photo's lower edge) per
+            founder "ย้าย stats ไปแทนรูปบางส่วน · ดึงรูปโปรไฟล์มาโชว์ก็พอ".
+            Was inside the Reviews tab (28s338). */}
+        <StatsCard
+          rating={displayRating}
+          reviewCount={therapist.reviewCount}
+          yearsExp={therapist.yearsExp}
+          totalSessions={therapist.totalSessions}
+          rebookRate={therapist.rebookRate}
+        />
+
         <Box sx={{ marginTop: "4px" }}>
           <StatusPill
             nextBookingAt={
@@ -1329,19 +1341,10 @@ const TherapistDetailPage: React.FC = () => {
           })}
         </Box>
 
-        {/* 🆕 28s338 — Reviews panel: StatsCard (Sessions · Rebook · rating)
-            + the review list, combined ("review = Sessions rebook review
-            รวมกัน"). StatsCard cells are display-only here (no scroll-nav). */}
+        {/* 🆕 28s341 — Reviews panel = the review list only. StatsCard moved
+            up to the hero region (always visible). */}
         <Box sx={{ display: detailTab === "reviews" ? "block" : "none" }}>
-          <StatsCard
-            rating={displayRating}
-            reviewCount={therapist.reviewCount}
-            yearsExp={therapist.yearsExp}
-            totalSessions={therapist.totalSessions}
-            rebookRate={therapist.rebookRate}
-          />
-
-          <Box sx={{ ...responsiveShell, padding: "8px 20px 24px" }}>
+          <Box sx={{ ...responsiveShell, padding: "16px 20px 24px" }}>
             {/* 🆕 28s339 — Reviews render DIRECTLY from the live hook
                 (useTherapistReviews → rated bookings), founder "ดึงข้อมูลจริง".
                 Shows a loading spinner, a real empty state, or the real

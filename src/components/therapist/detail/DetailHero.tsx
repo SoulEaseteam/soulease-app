@@ -211,7 +211,10 @@ const DetailHero: React.FC<Props> = ({
   //   "+N ดูทั้งหมด" overlay when more than 5 photos exist.
   //   Reference: founder-supplied resort booking screenshot
   //   ("P4 · 4 photos visible · +4 more").
-  const previewCells = [0, 1, 2, 3, 4].map((i) => images[i] ?? null);
+  // 🆕 28s341 (founder) — hero now shows ONLY the profile (cover) photo;
+  //   the full gallery moved to the Photos tab so the 5-cell collage +
+  //   "View all" is redundant ("เรามีในแถบโพโต้แล้ว · ดึงรูปโปรไฟล์มาโชว์ก็พอ").
+  const previewCells = [images[0] ?? null];
   const remaining = Math.max(0, images.length - 5);
 
   return (
@@ -243,8 +246,8 @@ const DetailHero: React.FC<Props> = ({
             position: "absolute",
             inset: 0,
             display: "grid",
-            gridTemplateColumns: "2fr 1fr 1fr",
-            gridTemplateRows: "1fr 1fr",
+            gridTemplateColumns: "1fr",
+            gridTemplateRows: "1fr",
             gap: "7px",
             padding: "7px",
             background: "#fff",
@@ -266,7 +269,7 @@ const DetailHero: React.FC<Props> = ({
                 sx={{
                   position: "relative",
                   ...(isBig
-                    ? { gridColumn: "1", gridRow: "1 / span 2" }
+                    ? { gridColumn: "1", gridRow: "1" }
                     : {}),
                   background: src
                     ? `center / cover no-repeat url("${src}")`
@@ -451,7 +454,9 @@ const DetailHero: React.FC<Props> = ({
             zIndex: 3,
           }}
         >
-          {Array.from({ length: photoCount }).map((_, i) => (
+          {/* 🆕 28s341 — hero shows a single cover photo now, so the
+              multi-photo progress bar is hidden (no paging in the hero). */}
+          {Array.from({ length: previewCells.length > 1 ? photoCount : 0 }).map((_, i) => (
             <Box
               key={i}
               sx={{
