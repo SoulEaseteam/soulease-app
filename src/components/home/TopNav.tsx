@@ -257,6 +257,17 @@ const TopNav: React.FC = () => {
   //   Pricing is the transparent-rates money page (the founder's r70
   //   ask). Placed between Services and Therapists so pricing is one
   //   discoverable click from anywhere on the site.
+  // 🆕 Round 28r77 (founder 2026-07-08) — Bugfix: Therapists item
+  //   used to share `path: "/"` with Home, and line 419's
+  //   `key={item.path}` produced two React children with the same
+  //   key "/" → duplicate-key warning → repeated remount cascade →
+  //   Firestore's internal onSnapshot state machine got confused and
+  //   threw INTERNAL ASSERTION FAILED (ID: b815/ca9). Two fixes:
+  //     1. Therapists path → "/#therapist-grid" so clicking scrolls
+  //        to the grid on the home page (matches QuickNavRow r74).
+  //     2. `key` in the .map below switched to `item.labelKey` so
+  //        even if two items ever share a path again, keys stay
+  //        unique.
   const DESKTOP_NAV = [
     { labelKey: "nav.home", defaultLabel: "Home", path: "/" },
     { labelKey: "nav.services", defaultLabel: "Services", path: "/services" },
@@ -264,7 +275,7 @@ const TopNav: React.FC = () => {
     {
       labelKey: "nav.therapists",
       defaultLabel: "Therapists",
-      path: "/",
+      path: "/#therapist-grid",
     },
     {
       labelKey: "nav.howToBook",
@@ -416,7 +427,7 @@ const TopNav: React.FC = () => {
               location.pathname + location.search === item.path ||
               (item.path === "/" && location.pathname === "/");
             return (
-              <Box component="li" key={item.path} sx={{ listStyle: "none" }}>
+              <Box component="li" key={item.labelKey} sx={{ listStyle: "none" }}>
                 <Box
                   component="button"
                   type="button"
