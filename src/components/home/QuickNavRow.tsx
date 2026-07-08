@@ -122,6 +122,20 @@ const QuickNavRow: React.FC = () => {
             minHeight: 66, // ≥ 44px combined tap target with label
             textAlign: "center",
             transition: "transform 0.18s ease",
+            // 🆕 28s334 — thin vertical divider between columns
+            //   (founder: "ขีดกลาง แบ่งช่อง"). Short + centred in the gap,
+            //   skipped after the last item so there's no trailing line.
+            position: "relative",
+            "&:not(:last-of-type)::after": {
+              content: '""',
+              position: "absolute",
+              top: "50%",
+              right: "-4px",
+              transform: "translateY(-50%)",
+              width: "1px",
+              height: 34,
+              background: "#EAE5DD",
+            },
             "&:hover .qn-icon": {
               background: "#ECEBE8", // NEUTRAL_100
               borderColor: "#6E6E6A", // GRAY_600

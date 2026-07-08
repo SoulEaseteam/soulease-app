@@ -4020,3 +4020,11 @@ Founder feedback batch on the hero:
   never invisible; cf. the 28s331 rAF-fade bug) and both honor
   `prefers-reduced-motion`.
 tsc=0, build=59, verified mobile + desktop, deployed.
+
+### 🆕 2026-07-08 — Icon card: vertical dividers between columns (28s334)
+
+Founder: "**แถบ 4 ไอคอน ขีดกลาง แบ่งช่อง**". Added a thin vertical divider between
+each QuickNavRow column (Massage | Therapists | Locations | Reviews) via a
+`&:not(:last-of-type)::after` pseudo on each button — 34px tall, 1px `#EAE5DD`,
+centred in the grid gap, skipped after the last item (no trailing line). tsc=0,
+build=59, verified mobile, deployed.
