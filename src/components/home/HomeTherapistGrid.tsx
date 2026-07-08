@@ -52,7 +52,13 @@ interface Therapist extends TherapistType {
 //   supply covers those zones, hide the geographic gap rather than
 //   advertise it. Roster filter (All / Available now / Express) stays.
 
-const HomeTherapistGrid: React.FC = () => {
+// 🆕 28s335 — `mapOnly` renders JUST the "OR BROWSE BY LOCATION" map
+//   (reusing this component's live therapist/price/location loading) so the
+//   new /near-me page can host it without duplicating any data logic. The
+//   home page renders the default (grid, no map — the map moved to /near-me).
+const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
+  mapOnly = false,
+}) => {
   const [therapists, setTherapists] = useState<Therapist[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQ, setSearchQ] = useState("");
@@ -334,6 +340,34 @@ const HomeTherapistGrid: React.FC = () => {
     return m;
   }, [visible, servicesById]);
 
+  // 🆕 28s335 — /near-me page: render ONLY the location map, reusing all the
+  //   live data loaded above. Placed after every hook so the rules of hooks
+  //   hold regardless of this branch.
+  if (mapOnly) {
+    return (
+      <Box component="section" aria-label="browse by location">
+        {loading ? (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              minHeight: 320,
+            }}
+          >
+            <CircularProgress size={28} />
+          </Box>
+        ) : visible.length > 0 ? (
+          <HomeMapBrowse
+            therapists={visible}
+            priceById={priceById}
+            userLocation={userLocation}
+          />
+        ) : null}
+      </Box>
+    );
+  }
+
   return (
     <Box
       component="section"
@@ -547,20 +581,10 @@ const HomeTherapistGrid: React.FC = () => {
         })()
       )}
 
-      {/* 🆕 Round 28s149 — HomeMapBrowse restored (founder pushback
-          on 28s146 removal: "โลเคชั่นหายลบไปทำไม"). For SunRed the
-          map is a real differentiator: tourists glance at which
-          practitioner is near their hotel before tapping a card,
-          and TG-channel competitors don't surface this. Removing
-          it was a generic-web-audit call that didn't apply to this
-          vertical. */}
-      {!loading && visible.length > 0 && (
-        <HomeMapBrowse
-          therapists={visible}
-          priceById={priceById}
-          userLocation={userLocation}
-        />
-      )}
+      {/* 🆕 28s335 — HomeMapBrowse moved OFF the home grid to the new
+          /near-me page (founder: "ย้าย Or browse by location ไปหน้าใหม่").
+          It now renders via the `mapOnly` branch above, reached from the
+          "Near Me" quick-nav tile. */}
     </Box>
   );
 };

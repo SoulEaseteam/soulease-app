@@ -109,15 +109,15 @@ const HomeHero: React.FC = () => {
           zIndex: 1,
           display: "flex",
           flexDirection: "column",
-          justifyContent: "center",
-          gap: { xs: "12px", md: "16px" },
-          // 🆕 28s333 — extra bottom padding pushes the vertically-centred
-          //   content UP (founder: "ขยับข้อความขึ้น") and clears the icon
-          //   card that now overlaps deeper into the hero's lower edge.
+          // 🆕 28s335 — top-aligned so the copy flows from the top like the
+          //   founder's ref (image 2), sitting high in the hero rather than
+          //   floating in the vertical centre ("ขยับข้อความขึ้น + บาลาน").
+          justifyContent: "flex-start",
+          gap: { xs: "12px", md: "15px" },
           padding: {
-            xs: "24px 18px 62px",
-            sm: "28px 26px 68px",
-            md: "40px 48px 80px",
+            xs: "34px 18px 70px",
+            sm: "40px 26px 74px",
+            md: "52px 48px 88px",
           },
           maxWidth: { xs: "94%", sm: "82%", md: "66%", lg: "60%" },
         }}

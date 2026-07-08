@@ -66,8 +66,10 @@ const QuickNavRow: React.FC = () => {
     {
       key: "locations",
       Icon: MapPin,
-      labelEn: t("home.quickNav.locations", "Locations"),
-      onTap: () => navigate("/services?tab=how"),
+      // 🆕 28s335 — "Locations" → "Near Me"; routes to the new /near-me
+      //   page that hosts the "OR BROWSE BY LOCATION" map (moved off home).
+      labelEn: t("home.quickNav.nearme", "Near Me"),
+      onTap: () => navigate("/near-me"),
     },
     {
       key: "reviews",

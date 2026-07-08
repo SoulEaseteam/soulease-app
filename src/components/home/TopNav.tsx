@@ -284,6 +284,18 @@ const TopNav: React.FC = () => {
     },
   ];
 
+  // 🆕 28s335 — on the home hero the nav goes transparent to blend into the
+  //   cream hero (founder: "navbar โปร่งใส กลืนไปกับฮีโร"); a soft cream blur
+  //   fades in on scroll so it stays legible over content below. Other pages
+  //   keep the solid dark bar. Foreground ink flips dark↔white to match.
+  const isHome = location.pathname === "/";
+  const navBg = isHome
+    ? scrolled
+      ? "rgba(247, 244, 238, 0.86)"
+      : "transparent"
+    : "#2D2D2B";
+  const fg = isHome ? "#2B2620" : "#ffffff";
+
   return (
     <>
       <Box
@@ -309,14 +321,23 @@ const TopNav: React.FC = () => {
           // 🆕 Round 28s163 — Founder: TopNav bg = brand red #2D2D2B
           //   (ROLADEX reference). Always solid, both at rest and on
           //   scroll. White text + icons ride on top.
-          background: "#2D2D2B",
-          color: "#ffffff",
-          boxShadow: scrolled ? "0 2px 8px rgba(15,23,42,0.20)" : "none",
+          // 🆕 28s335 — transparent over the home hero (see consts above);
+          //   solid dark bar elsewhere.
+          background: navBg,
+          color: fg,
+          boxShadow:
+            isHome && !scrolled
+              ? "none"
+              : scrolled
+              ? "0 2px 10px rgba(43,38,32,0.14)"
+              : "none",
           borderBottom: "none",
-          // 🆕 Round 28r52 — subtle backdrop blur on desktop to hint at
-          //   depth when the sticky bar overlays scrolling content.
-          backdropFilter: { xs: "none", md: "blur(8px) saturate(140%)" },
-          WebkitBackdropFilter: { xs: "none", md: "blur(8px) saturate(140%)" },
+          // Blur only when there's a surface to blur (solid bar, or the
+          //   home bar after it fades in on scroll) — never over the hero.
+          backdropFilter:
+            isHome && !scrolled ? "none" : "blur(10px) saturate(140%)",
+          WebkitBackdropFilter:
+            isHome && !scrolled ? "none" : "blur(10px) saturate(140%)",
         }}
       >
         {/* Menu button — opens drawer. Hidden on desktop where the
@@ -337,10 +358,14 @@ const TopNav: React.FC = () => {
             background: "transparent",
             border: "none",
             boxShadow: "none",
-            color: "#ffffff",
-            "&:hover": { background: "rgba(255, 255, 255, 0.12)" },
+            color: fg,
+            "&:hover": {
+              background: isHome
+                ? "rgba(43, 38, 32, 0.08)"
+                : "rgba(255, 255, 255, 0.12)",
+            },
             "&:focus-visible": {
-              outline: "2px solid #ffffff",
+              outline: `2px solid ${fg}`,
               outlineOffset: 2,
             },
           }}
@@ -383,23 +408,26 @@ const TopNav: React.FC = () => {
             }}
           >
 
+            {/* 🆕 28s335 — two-tone SUN·RED wordmark (founder ref image 2):
+                "SUN" flips dark↔white with the nav, "RED" stays brand red. */}
             <Typography
               component="span"
               sx={{
-                // 🆕 Round 28s172 — Founder: "TopNav ตัวหนังสือ
-                //   หนาขึ้น". Stack reordered so Cinzel (real
-                //   700/800 weights) leads; weight bumped 500 → 700.
                 fontFamily:
                   '"Playfair Display", "Fraunces", Georgia, serif',
                 fontSize: { xs: "17px", md: "19px" },
                 fontWeight: 700,
                 letterSpacing: "0.22em",
                 textTransform: "uppercase",
-                color: "#ffffff",
                 whiteSpace: "nowrap",
               }}
             >
-              SunRed
+              <Box component="span" sx={{ color: fg }}>
+                SUN
+              </Box>
+              <Box component="span" sx={{ color: "#D62828" }}>
+                RED
+              </Box>
             </Typography>
           </Box>
         </Box>
@@ -434,24 +462,28 @@ const TopNav: React.FC = () => {
                   onClick={() => goto(item.path)}
                   sx={{
                     background: active
-                      ? "rgba(255, 255, 255, 0.12)"
+                      ? isHome
+                        ? "rgba(43, 38, 32, 0.08)"
+                        : "rgba(255, 255, 255, 0.12)"
                       : "transparent",
                     border: "none",
                     padding: "8px 14px",
                     borderRadius: "999px",
                     cursor: "pointer",
-                    color: "#ffffff",
+                    color: fg,
                     fontFamily: SANS,
                     fontSize: "14px",
                     fontWeight: active ? 700 : 500,
                     letterSpacing: "0.02em",
                     transition: "background 0.15s ease, transform 0.15s ease",
                     "&:hover": {
-                      background: "rgba(255, 255, 255, 0.16)",
+                      background: isHome
+                        ? "rgba(43, 38, 32, 0.12)"
+                        : "rgba(255, 255, 255, 0.16)",
                       transform: "translateY(-1px)",
                     },
                     "&:focus-visible": {
-                      outline: "2px solid #ffffff",
+                      outline: `2px solid ${fg}`,
                       outlineOffset: 2,
                     },
                   }}
@@ -475,9 +507,11 @@ const TopNav: React.FC = () => {
             display: { xs: "none", md: "inline-flex" },
             alignItems: "center",
             gap: "8px",
-            background: "#ffffff",
+            // 🆕 28s335 — dark pill on the transparent home nav (stands out
+            //   on cream); white pill on the solid dark bar elsewhere.
+            background: isHome ? "#2B2620" : "#ffffff",
             border: "none",
-            color: "#2D2D2B",
+            color: isHome ? "#ffffff" : "#2D2D2B",
             fontFamily: SANS,
             fontSize: "13px",
             fontWeight: 700,

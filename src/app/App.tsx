@@ -70,6 +70,8 @@ const ServiceDetailPage = React.lazy(() => import("@/pages/ServiceDetailPage"));
 //   for /pricing + /{zh,ja,ko}/pricing so external links land on
 //   something even before the real page ships.
 const PricingPage = React.lazy(() => import("@/pages/PricingPage"));
+// 🆕 28s335 — /near-me hosts the "OR BROWSE BY LOCATION" map moved off home.
+const NearMePage = React.lazy(() => import("@/pages/NearMePage"));
 const TherapistDetailPage = React.lazy(
   () => import("@/pages/TherapistDetailPage")
 );
@@ -267,6 +269,7 @@ export default function App() {
         {/* ================= MAIN LAYOUT ================= */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/near-me" element={<NearMePage />} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/services/:id" element={<ServiceDetailPage />} />
           {/* 🆕 Round 28r70 (Rebrand Phase 1) — new pricing route.

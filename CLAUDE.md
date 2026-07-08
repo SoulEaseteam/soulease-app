@@ -4028,3 +4028,27 @@ each QuickNavRow column (Massage | Therapists | Locations | Reviews) via a
 `&:not(:last-of-type)::after` pseudo on each button — 34px tall, 1px `#EAE5DD`,
 centred in the grid gap, skipped after the last item (no trailing line). tsc=0,
 build=59, verified mobile, deployed.
+
+### 🆕 2026-07-08 — Near Me page, transparent home nav, two-tone logo (28s335)
+
+Batch (founder, with ref image 2):
+- **QuickNavRow "Locations" → "Near Me"**, routes to the new **/near-me** page.
+- **Map moved off home**: `HomeMapBrowse` ("OR BROWSE BY LOCATION") is no longer
+  at the bottom of the home grid. Added a `mapOnly?: boolean` prop to
+  `HomeTherapistGrid` — when set it renders ONLY the map, reusing all the grid's
+  live therapist / price / geolocation loading (zero duplication; branch placed
+  after every hook to keep the rules of hooks). New `NearMePage.tsx` renders
+  `<HomeTherapistGrid mapOnly />`; route `/near-me` added in App.tsx (lazy). Not
+  prerendered — the SPA catch-all rewrite serves it.
+- **Hero text moved up**: content column `justifyContent: center → flex-start`
+  (top-aligned, flows from the top like image 2), padding retuned.
+- **Two-tone wordmark**: TopNav "SunRed" → **SUN·RED** — "SUN" flips dark↔white
+  with the nav state, "RED" is always brand red `#D62828`.
+- **Transparent home nav**: on `/` the TopNav is transparent (blends into the
+  cream hero, "navbar โปร่งใส กลืนไปกับฮีโร") with **dark** ink; a soft cream blur
+  fades in on scroll. Every other route keeps the solid `#2D2D2B` bar with white
+  ink. Foreground colour computed once (`fg`) and applied to hamburger, wordmark
+  SUN, desktop nav links, and the concierge CTA (dark pill on home / white pill
+  elsewhere). Scoped by `location.pathname === "/"` so other pages are untouched
+  (verified /near-me still solid). tsc=0, build=59, verified home + /near-me on
+  mobile + desktop, deployed.
