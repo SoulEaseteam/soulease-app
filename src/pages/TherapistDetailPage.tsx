@@ -46,6 +46,10 @@ import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
 import WcRoundedIcon from "@mui/icons-material/WcRounded";
 // 🆕 Round 28am — selective Specialty icons (Phase 2.5)
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
+// 🆕 28s338 — icons for the restored Photos · Services · Reviews tab bar.
+import ImageRoundedIcon from "@mui/icons-material/ImageRounded";
+import GridViewRoundedIcon from "@mui/icons-material/GridViewRounded";
+import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import FitnessCenterRoundedIcon from "@mui/icons-material/FitnessCenterRounded";
 // Round 28s34 — Legacy-slug icons (Whatshot / SelfImprovement /
 // DirectionsRun / PregnantWoman / EmojiNature / Psychology /
@@ -577,6 +581,17 @@ const TherapistDetailPage: React.FC = () => {
   //   Same source as ReviewListPage — keeps detail-page sheet and the
   //   full review list in lock-step. Subscribes when id is present.
   const liveReviews = useTherapistReviews(id ?? null);
+
+  // 🆕 28s338 (founder 2026-07-08) — real tab bar restored (r85 style),
+  //   replacing the r88 StatsCard scroll-nav ("แยกแถบหน้าใครหน้ามัน ไม่ต้อง
+  //   กดแล้วเลื่อนลงมา"). Three tabs:
+  //     • photos   — About (bio + features) then the gallery grid
+  //     • services — the services picker
+  //     • reviews  — StatsCard (Sessions · Rebook · rating) + review list
+  //   Default = photos (its panel leads with About: "เอา about ขึ้นก่อน").
+  const [detailTab, setDetailTab] = useState<
+    "photos" | "services" | "reviews"
+  >("photos");
 
   // Round 28s55 — Single shared bookings listener. Returns BOTH the
   // active-booking list (for the availability engine) and the loyalty
@@ -1112,11 +1127,14 @@ const TherapistDetailPage: React.FC = () => {
           simultaneously in the grid. */}
       <Box
         sx={{
-          display: { xs: "flex", md: "grid" },
-          flexDirection: { xs: "column" },
-          gridTemplateColumns: { md: "5fr 7fr" },
-          columnGap: { md: 4 },
-          alignItems: { md: "start" },
+          // 🆕 28s338 — single-column tabbed layout (was a 2-col md grid
+          //   that showed every section at once). With real tabs only one
+          //   panel shows, so the grid is dropped; children keep their
+          //   `order` props → Hero → StatusPill+tabs → active panel.
+          display: "flex",
+          flexDirection: "column",
+          maxWidth: { md: 760 },
+          marginInline: { md: "auto" },
           padding: { xs: 0, md: "0 18px" },
         }}
       >
@@ -1194,38 +1212,202 @@ const TherapistDetailPage: React.FC = () => {
           />
         </Box>
 
-        {/* 🆕 Round 28r88 — StatsCard scroll-nav bar. Cell order
-            (Sessions · Rebook · Reviews) is set in the component
-            itself; here we only wire the three tap props to
-            document.getElementById(id).scrollIntoView. */}
-        <StatsCard
-          rating={displayRating}
-          reviewCount={therapist.reviewCount}
-          yearsExp={therapist.yearsExp}
-          totalSessions={therapist.totalSessions}
-          rebookRate={therapist.rebookRate}
-          onTapProfile={() => {
-            if (typeof document !== "undefined") {
-              document
-                .getElementById("services")
-                ?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }
+        {/* 🆕 28s338 — real tab bar (Photos · Services · Reviews). Clicking
+            switches the panel below (no scroll-nav). Shown on every
+            viewport now that the layout is single-column. */}
+        <Box
+          role="tablist"
+          aria-label={t("detail.tabsAria", "Practitioner overview tabs")}
+          sx={{
+            marginTop: "12px",
+            padding: "0 18px",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            borderBottom: "1px solid rgba(184, 92, 60, 0.18)",
           }}
-          onTapLoyalty={() => {
-            if (typeof document !== "undefined") {
-              document
-                .getElementById("about")
-                ?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }
-          }}
-          onTapRating={() => {
-            if (typeof document !== "undefined") {
-              document
-                .getElementById("photos")
-                ?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }
-          }}
-        />
+        >
+          {(
+            [
+              {
+                id: "photos" as const,
+                icon: <ImageRoundedIcon sx={{ fontSize: 22 }} />,
+                label: t("detail.tabs.photos", "Photos"),
+              },
+              {
+                id: "services" as const,
+                icon: <GridViewRoundedIcon sx={{ fontSize: 22 }} />,
+                label: t("detail.tabs.services", "Services"),
+              },
+              {
+                id: "reviews" as const,
+                icon: <StarRoundedIcon sx={{ fontSize: 22 }} />,
+                label: t("detail.tabs.reviews", "Reviews"),
+              },
+            ]
+          ).map((tab) => {
+            const isActive = detailTab === tab.id;
+            return (
+              <Box
+                key={tab.id}
+                component="button"
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setDetailTab(tab.id)}
+                sx={{
+                  position: "relative",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "10px 6px 12px",
+                  fontFamily: SANS,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "4px",
+                  textAlign: "center",
+                  transition: "color 0.18s ease",
+                  color: isActive ? "#1A2B2E" : "#4B4B48",
+                  "& .tab-icon": {
+                    color: isActive ? "#2EC4B0" : "#8F8474",
+                    transition: "color 0.18s ease",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  },
+                  "&:hover .tab-icon": {
+                    color: isActive ? "#2EC4B0" : "#4B4B48",
+                  },
+                  "&:focus-visible": {
+                    outline: "2px solid #2EC4B0",
+                    outlineOffset: 2,
+                    borderRadius: "6px",
+                  },
+                  "&::after": {
+                    content: '""',
+                    position: "absolute",
+                    left: 12,
+                    right: 12,
+                    bottom: -1,
+                    height: 3,
+                    borderRadius: 3,
+                    background: isActive ? "#2EC4B0" : "transparent",
+                    transition: "background 0.18s ease",
+                  },
+                }}
+              >
+                <Box className="tab-icon" aria-hidden="true">
+                  {tab.icon}
+                </Box>
+                <Box
+                  component="span"
+                  sx={{
+                    fontSize: "11.5px",
+                    fontWeight: 700,
+                    letterSpacing: "0.02em",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {tab.label}
+                </Box>
+              </Box>
+            );
+          })}
+        </Box>
+
+        {/* 🆕 28s338 — Reviews panel: StatsCard (Sessions · Rebook · rating)
+            + the review list, combined ("review = Sessions rebook review
+            รวมกัน"). StatsCard cells are display-only here (no scroll-nav). */}
+        <Box sx={{ display: detailTab === "reviews" ? "block" : "none" }}>
+          <StatsCard
+            rating={displayRating}
+            reviewCount={therapist.reviewCount}
+            yearsExp={therapist.yearsExp}
+            totalSessions={therapist.totalSessions}
+            rebookRate={therapist.rebookRate}
+          />
+
+          <Box sx={{ ...responsiveShell, padding: "8px 20px 24px" }}>
+            {therapist.reviews.length === 0 ? (
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: 13,
+                  color: "rgba(15,23,42,0.55)",
+                  textAlign: "center",
+                  padding: "24px 0",
+                }}
+              >
+                {t("detail.reviews.empty", "No reviews yet.")}
+              </Typography>
+            ) : (
+              <Box
+                sx={{ display: "flex", flexDirection: "column", gap: "12px" }}
+              >
+                {therapist.reviews.map((rv, i) => (
+                  <Box
+                    key={`${rv.name}-${i}`}
+                    sx={{
+                      padding: "14px 16px",
+                      background: "#FFFFFF",
+                      border: "1px solid #E7E0D5",
+                      borderRadius: "14px",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "8px",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: 12.5,
+                          fontWeight: 700,
+                          color: "#1A2B2E",
+                        }}
+                      >
+                        {rv.name}
+                      </Typography>
+                      <StarRoundedIcon
+                        sx={{ fontSize: 15, color: "#E0A82E" }}
+                        aria-hidden="true"
+                      />
+                    </Box>
+                    <Typography
+                      sx={{
+                        fontFamily: SERIF,
+                        fontSize: 13.5,
+                        lineHeight: 1.5,
+                        color: "#3C3A36",
+                      }}
+                    >
+                      {rv.quote}
+                    </Typography>
+                    {rv.meta && (
+                      <Typography
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: 10.5,
+                          letterSpacing: "0.04em",
+                          textTransform: "uppercase",
+                          color: "rgba(15,23,42,0.45)",
+                          marginTop: "8px",
+                        }}
+                      >
+                        {rv.meta}
+                      </Typography>
+                    )}
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Box>
+        </Box>
       </Box>
       {/* ── END GRID CHILD 2 ────────────────────────────────────── */}
 
@@ -1244,6 +1426,9 @@ const TherapistDetailPage: React.FC = () => {
         id="about"
         role="tabpanel"
         sx={{
+          // 🆕 28s338 — About lives in the Photos tab (shown above the
+          //   gallery). Hidden on other tabs.
+          display: detailTab === "photos" ? "block" : "none",
           gridColumn: { md: "2" },
           gridRow: { md: "2" },
           // 🆕 Round 28r88 — Mobile stack reordered per founder
@@ -1603,6 +1788,8 @@ const TherapistDetailPage: React.FC = () => {
         id="services"
         role="tabpanel"
         sx={{
+          // 🆕 28s338 — Services tab.
+          display: detailTab === "services" ? "block" : "none",
           gridColumn: { md: "1" },
           gridRow: { md: "2" },
           // 🆕 Round 28r88 — Mobile stack reordered: About(3) →
@@ -1695,6 +1882,8 @@ const TherapistDetailPage: React.FC = () => {
         id="photos"
         role="tabpanel"
         sx={{
+          // 🆕 28s338 — gallery lives in the Photos tab, below About.
+          display: detailTab === "photos" ? "block" : "none",
           gridColumn: { md: "1 / -1" },
           gridRow: { md: "3" },
           // 🆕 Round 28r88 — Mobile stack reordered: About(3) →
