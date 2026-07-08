@@ -711,12 +711,26 @@ const TherapistDetailPage: React.FC = () => {
     if (!therapistFromReal) return null;
     let t = therapistFromReal;
     if (loyaltyStats.totalCompleted > 0) {
+      // 🆕 28s340 (founder "ทำเหมือน rebook rate เก่า · คำนวณจากยอดบุคกิ้งรวม")
+      //   — rebook rate = share of TOTAL bookings that are repeat bookings
+      //   = (totalBookings − uniqueCustomers) / totalBookings. Every booking
+      //   carries a phone so uniqueCustomers is reliable; each customer's
+      //   first booking is "new", the rest are rebookings. Populates from
+      //   total booking volume (not just completed-status repeat customers).
       t = {
         ...t,
         totalSessions: loyaltyStats.totalCompleted,
         rebookRate:
-          loyaltyStats.uniqueCustomers >= 1
-            ? `${loyaltyStats.repeatPct}%`
+          loyaltyStats.uniqueCustomers > 0
+            ? `${Math.max(
+                0,
+                Math.round(
+                  ((loyaltyStats.totalCompleted -
+                    loyaltyStats.uniqueCustomers) /
+                    loyaltyStats.totalCompleted) *
+                    100
+                )
+              )}%`
             : t.rebookRate,
       };
     }
