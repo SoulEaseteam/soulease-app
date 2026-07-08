@@ -4064,3 +4064,13 @@ scrimmed left — same background+scrim pattern as the home hero. Committed
 `member.png` (now referenced by code) and the founder's re-optimised `hero.jpg`
 (1.68MB → 48KB) so git matches what's deployed. tsc=0, build=59, verified mobile,
 deployed.
+
+### 🆕 2026-07-08 — Membership section → warm taupe monochrome (28s337)
+
+Founder mobile mockup ("ตัวอย่าง จอมือถือ"): the section should be all warm
+taupe, matching the card's engraved tone. `MembershipCard.tsx`: heading
+`#2B2620`→`#6F6556`, subtitle→`#776D5F`, perk text→`#6B6153`; **tick marks**
+sage-green `CheckCircle` → a taupe `#A79D8D` chip with a white `Check`; **CTA**
+espresso fill → taupe `#8F8474` (white 14px/700 text — AA-large on the taupe).
+Bigger heading (25/29) + roomier vertical rhythm to match the mockup. tsc=0,
+build=59, verified mobile, deployed.

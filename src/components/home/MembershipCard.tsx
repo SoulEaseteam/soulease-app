@@ -1,13 +1,15 @@
 // src/components/home/MembershipCard.tsx
 //
 // 🆕 Round 28r74 · Nordic sections build (2026-07-08)
-// 🆕 Round 28s336 (founder 2026-07-08) — "Membership Benefits ใช้พื้นหลัง
-//   รูปนี้": swapped the flat cream card + CSS mock-card graphic for the
-//   founder-supplied member-card photo (public/images/hero/member.png — a
-//   "SUNRED MEMBER" card on cream with olive branches, card on the RIGHT,
-//   empty cream on the LEFT). The photo is now the section's full-bleed
-//   background; the copy + perks + CTA sit over the empty left third with a
-//   soft cream scrim for legibility — same pattern as the home hero.
+// 🆕 Round 28s336 (founder 2026-07-08) — full-bleed member-card photo bg.
+// 🆕 Round 28s337 (founder 2026-07-08) — mobile mockup tune: shift the
+//   section to the warm taupe monochrome of the card (heading, tick chips
+//   and CTA all taupe instead of the old espresso ink + sage-green ticks).
+//   Bigger heading + roomier rhythm to match "ตัวอย่าง จอมือถือ".
+//
+// The founder-supplied member-card photo (public/images/hero/member.png —
+// "SUNRED MEMBER" card on cream with olive branches) is the section's
+// full-bleed background; copy + perks + CTA sit over the scrimmed left.
 //
 // CTA "สมัครสมาชิก" → /pricing (canonical membership-tier surface).
 // ─────────────────────────────────────────────────────────────────────
@@ -16,10 +18,18 @@ import React from "react";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle } from "phosphor-react";
+import { Check } from "phosphor-react";
 import { fonts } from "@/theme";
 
 const MEMBER_IMG = "/images/hero/member.png";
+
+// Warm taupe monochrome — matched to the card's engraved tone (mockup).
+const TAUPE_HEAD = "#6F6556"; // heading
+const TAUPE_SUB = "#776D5F"; // subtitle
+const TAUPE_PERK = "#6B6153"; // perk text
+const TAUPE_CHIP = "#A79D8D"; // tick circle
+const BTN_BG = "#8F8474"; // CTA fill
+const BTN_BG_HOVER = "#7A7060";
 
 const MembershipCard: React.FC = () => {
   const { t } = useTranslation();
@@ -43,7 +53,7 @@ const MembershipCard: React.FC = () => {
         border: "1px solid #E7E0D5",
         boxShadow:
           "0 1px 3px rgba(45,45,43,0.04), 0 6px 20px rgba(45,45,43,0.05)",
-        minHeight: { xs: 300, md: 300 },
+        minHeight: { xs: 320, md: 320 },
         display: "flex",
       }}
     >
@@ -81,7 +91,7 @@ const MembershipCard: React.FC = () => {
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          padding: { xs: "22px 18px", md: "28px 34px" },
+          padding: { xs: "24px 20px", md: "30px 36px" },
           maxWidth: { xs: "84%", sm: "72%", md: "60%" },
         }}
       >
@@ -89,12 +99,12 @@ const MembershipCard: React.FC = () => {
           component="h3"
           sx={{
             fontFamily: fonts.heading,
-            fontSize: { xs: 21, md: 24 },
+            fontSize: { xs: 25, md: 29 },
             fontWeight: 500,
-            color: "#2B2620",
+            color: TAUPE_HEAD,
             letterSpacing: "-0.01em",
             margin: 0,
-            lineHeight: 1.15,
+            lineHeight: 1.12,
           }}
         >
           {t("home.membership.title", "Membership Benefits")}
@@ -102,10 +112,11 @@ const MembershipCard: React.FC = () => {
         <Box
           sx={{
             fontFamily: fonts.body,
-            fontSize: 12,
-            color: "#6E6459",
-            marginTop: "5px",
+            fontSize: { xs: 13, md: 14 },
+            color: TAUPE_SUB,
+            marginTop: "7px",
             lineHeight: 1.5,
+            maxWidth: 240,
           }}
         >
           รับสิทธิพิเศษมากมาย สำหรับสมาชิก SunRed
@@ -116,10 +127,10 @@ const MembershipCard: React.FC = () => {
           sx={{
             listStyle: "none",
             padding: 0,
-            margin: "14px 0 18px",
+            margin: "18px 0 20px",
             display: "flex",
             flexDirection: "column",
-            gap: "9px",
+            gap: "12px",
           }}
         >
           {perks.map((perk) => (
@@ -129,20 +140,30 @@ const MembershipCard: React.FC = () => {
               sx={{
                 display: "flex",
                 alignItems: "center",
-                gap: "8px",
+                gap: "11px",
                 fontFamily: fonts.body,
-                fontSize: 12.5,
+                fontSize: 13.5,
                 fontWeight: 400,
-                color: "#4B443C",
-                lineHeight: 1.5,
+                color: TAUPE_PERK,
+                lineHeight: 1.4,
               }}
             >
-              <CheckCircle
-                size={16}
-                weight="fill"
-                color="#A2BF7A" // SAGE_400
-                style={{ flexShrink: 0 }}
-              />
+              {/* Taupe tick chip (mockup): filled circle + white check. */}
+              <Box
+                aria-hidden="true"
+                sx={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: "50%",
+                  background: TAUPE_CHIP,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Check size={13} weight="bold" color="#FFFFFF" />
+              </Box>
               {perk}
             </Box>
           ))}
@@ -157,25 +178,25 @@ const MembershipCard: React.FC = () => {
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: "11px 24px",
-            background: "#2B2620",
+            padding: "12px 30px",
+            background: BTN_BG,
             color: "#FFFFFF",
             border: "none",
             borderRadius: 999,
             fontFamily: fonts.body,
-            fontSize: 12.5,
-            fontWeight: 600,
+            fontSize: 14,
+            fontWeight: 700,
             letterSpacing: "0.01em",
             cursor: "pointer",
-            minHeight: 42,
-            boxShadow: "0 6px 16px rgba(43,38,32,0.18)",
+            minHeight: 44,
+            boxShadow: "0 6px 16px rgba(111,101,86,0.22)",
             transition: "background 0.18s ease, transform 0.18s ease",
             "&:hover": {
-              background: "#453E36",
+              background: BTN_BG_HOVER,
               transform: "translateY(-1px)",
             },
             "&:focus-visible": {
-              outline: "2px solid #2B2620",
+              outline: `2px solid ${TAUPE_HEAD}`,
               outlineOffset: 3,
             },
           }}
