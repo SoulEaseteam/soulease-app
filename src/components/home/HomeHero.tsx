@@ -27,15 +27,12 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { fonts } from "@/theme";
 
-// 🆕 Round 28s329 (founder 2026-07-08) — "ทำไงให้สีมาหม่นๆ เทาๆ พาสเทล
-//   แบบนี้": shift the hero from a WARM cream/taupe palette to a COOL,
-//   desaturated grey-pastel to match the mockup. The photo is warm, so
-//   it's muted via a CSS filter + a cool grey overlay (below); the tokens
-//   here move ink/body/buttons from espresso+taupe to cool charcoal+greige.
-const INK = "#3A3A3C"; // cool charcoal — serif headline ink
-const BODY = "#6E6E73"; // cool grey — Thai subtitle (AA over the scrim)
-const CTA_FILL = "#726F6B"; // muted greige — primary "Book Now" (AA on white)
-const CTA_FILL_HOVER = "#5B5854";
+// Warm quiet-luxury palette — matched to the cream photo, not the cool
+// Nordic page grays.
+const INK = "#2B2620"; // espresso — serif headline ink
+const BODY = "#5E554C"; // warm gray — Thai subtitle (AA over cream)
+const CTA_FILL = "#6B5F54"; // taupe — primary "Book Now" (AA on white)
+const CTA_FILL_HOVER = "#574C43";
 
 const HERO_IMG = "/images/hero/hero.jpg";
 
@@ -57,8 +54,8 @@ const HomeHero: React.FC = () => {
         overflow: "hidden",
         margin: { xs: "12px 12px 8px", md: "20px 12px 12px" },
         borderRadius: { xs: "22px", md: "26px" },
-        border: "1px solid #E2E3E6", // 🆕 28s329 — cool grey (was warm #E7E0D5)
-        boxShadow: "0 10px 30px rgba(58, 58, 60, 0.08)",
+        border: "1px solid #E7E0D5",
+        boxShadow: "0 10px 30px rgba(43, 38, 32, 0.08)",
         minHeight: { xs: 430, sm: 470, md: 500, lg: 540 },
         display: "flex",
       }}
@@ -75,35 +72,19 @@ const HomeHero: React.FC = () => {
           // On a narrow phone the crop hugs the right so the vase/candle
           // stay in frame; on wide viewports the whole scene shows.
           backgroundPosition: { xs: "72% center", md: "right center" },
-          // 🆕 28s329 — mute + brighten the warm photo toward the mockup's
-          //   soft grey pastel (less saturation, a touch airier, softer
-          //   contrast). The cool overlay below finishes the temperature shift.
-          filter: "saturate(0.6) brightness(1.04) contrast(0.95)",
         }}
       />
 
-      {/* 🆕 28s329 — cool grey wash over the whole photo to pull the warm
-          cream/wood tones toward the muted grey-pastel of the mockup. */}
-      <Box
-        aria-hidden="true"
-        sx={{
-          position: "absolute",
-          inset: 0,
-          background: "rgba(226, 228, 233, 0.30)",
-        }}
-      />
-
-      {/* Cool grey scrim — heavier on small screens so the overlaid text
-          always reads. 🆕 28s329 — swapped from warm cream to cool light
-          grey so the left reads muted/pastel, matching the mockup. */}
+      {/* Cream scrim — heavier on small screens so the overlaid text always
+          reads; the photo is cream so this blends seamlessly. */}
       <Box
         aria-hidden="true"
         sx={{
           position: "absolute",
           inset: 0,
           background: {
-            xs: "linear-gradient(90deg, rgba(233,234,238,0.97) 0%, rgba(233,234,238,0.90) 42%, rgba(233,234,238,0.48) 64%, rgba(233,234,238,0) 88%)",
-            md: "linear-gradient(90deg, rgba(233,234,238,0.95) 0%, rgba(233,234,238,0.74) 30%, rgba(233,234,238,0.26) 52%, rgba(233,234,238,0) 68%)",
+            xs: "linear-gradient(90deg, rgba(244,239,232,0.96) 0%, rgba(244,239,232,0.88) 42%, rgba(244,239,232,0.45) 64%, rgba(244,239,232,0) 88%)",
+            md: "linear-gradient(90deg, rgba(244,239,232,0.94) 0%, rgba(244,239,232,0.72) 30%, rgba(244,239,232,0.24) 52%, rgba(244,239,232,0) 68%)",
           },
         }}
       />
@@ -234,7 +215,7 @@ const HomeHero: React.FC = () => {
               minHeight: 48,
               padding: { xs: "0 22px", md: "0 30px" },
               borderRadius: 999,
-              background: "rgba(245,246,248,0.6)",
+              background: "rgba(255,255,255,0.55)",
               color: INK,
               border: `1.5px solid ${INK}`,
               backdropFilter: "blur(2px)",
