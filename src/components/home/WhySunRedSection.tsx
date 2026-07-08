@@ -72,7 +72,7 @@ const WhySunRedSection: React.FC = () => {
           fontFamily: fonts.heading,
           fontSize: { xs: 22, md: 26 },
           fontWeight: 500,
-          color: "#2D2D2B", // GRAY_900
+          color: "#4B4B48", // GRAY_900
           margin: 0,
           letterSpacing: "-0.005em",
           lineHeight: 1.15,

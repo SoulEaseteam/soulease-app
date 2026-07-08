@@ -31,10 +31,10 @@ import { useConciergeMode } from "@/utils/conciergeMode";
 
 // Warm quiet-luxury palette — matched to the cream photo, not the cool
 // Nordic page grays.
-const INK = "#2B2620"; // espresso — serif headline ink
-const BODY = "#5E554C"; // warm gray — Thai subtitle (AA over cream)
-const CTA_FILL = "#6B5F54"; // taupe — primary "Book Now" (AA on white)
-const CTA_FILL_HOVER = "#574C43";
+const INK = "#2B2620"; // espresso — serif headline ink (hero only)
+const BODY = "#4B4B48"; // GRAY_800 — Thai subtitle unified w/ site body (r80)
+const CTA_FILL = "#8F8474"; // WARM_TAUPE — matches sitewide primary CTA (r80)
+const CTA_FILL_HOVER = "#7A7060"; // WARM_TAUPE_HOVER
 
 const HERO_IMG = "/images/hero/hero.jpg";
 

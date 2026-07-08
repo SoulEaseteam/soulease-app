@@ -78,7 +78,7 @@ export const AddressTile: React.FC<AddressTileProps> = ({ location, onTap }) => 
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "#2D2D2B",
+          color: "#4B4B48",
         }}
       >
         <LocationOnRoundedIcon fontSize="small" />
@@ -141,7 +141,7 @@ export const AddressTile: React.FC<AddressTileProps> = ({ location, onTap }) => 
                 sx={{
                   fontFamily: SANS,
                   fontSize: "11px",
-                  color: "#2D2D2B",
+                  color: "#4B4B48",
                   fontWeight: 600,
                   marginTop: "3px",
                   display: "flex",

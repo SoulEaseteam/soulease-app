@@ -273,7 +273,7 @@ export const HowItWorksFAQ: React.FC = () => {
               fontFamily: SERIF,
               fontStyle: "italic",
               fontWeight: 500,
-              color: "#2D2D2B",
+              color: "#4B4B48",
             },
           }}
           dangerouslySetInnerHTML={{
@@ -345,7 +345,7 @@ export const HowItWorksFAQ: React.FC = () => {
               gap: 0.75,
               transition:
                 "transform 0.15s ease, border-color 0.15s ease, background 0.15s ease",
-              "& svg": { fontSize: 14, color: "#2D2D2B" },
+              "& svg": { fontSize: 14, color: "#4B4B48" },
               "&:hover": {
                 transform: "translateY(-1px)",
                 borderColor: "#2D2D2B",
@@ -393,7 +393,7 @@ export const HowItWorksFAQ: React.FC = () => {
                 flexShrink: 0,
                 borderRadius: "9px",
                 background: "rgba(15, 23, 42, 0.10)",
-                color: "#2D2D2B",
+                color: "#4B4B48",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",

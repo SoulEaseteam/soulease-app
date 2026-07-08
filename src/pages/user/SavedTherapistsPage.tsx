@@ -104,7 +104,7 @@ const SavedTherapistsPage: React.FC = () => {
           fontWeight="bold"
           mt={2}
           mb={3}
-          sx={{ color: "#2D2D2B" }}
+          sx={{ color: "#4B4B48" }}
         >
           💖 Saved Therapists
         </Typography>

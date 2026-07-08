@@ -75,11 +75,11 @@ const NotFoundPage: React.FC = () => {
               py: 1.3,
               borderRadius: 3,
               fontWeight: "bold",
-              background: "#2D2D2B",
+              background: "#8F8474",
               boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
               textTransform: "none",
               "&:hover": {
-                background: "#2D2D2B",
+                background: "#7A7060",
               },
             }}
           >

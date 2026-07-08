@@ -308,7 +308,7 @@ const ServicesPage: React.FC = () => {
                     "color 0.25s ease, transform 0.18s ease",
                   "&:hover": isActive
                     ? {}
-                    : { color: "#2D2D2B", transform: "translateY(-1px)" },
+                    : { color: "#4B4B48", transform: "translateY(-1px)" },
                   "&:active": { transform: "scale(0.96)" },
                   "&:focus-visible": {
                     outline: "2px solid rgba(15, 23, 42, 0.50)",
@@ -377,7 +377,7 @@ const ServicesPage: React.FC = () => {
                 //   neither title nor count hugs the edge.
                 margin: "0 -16px 12px",
                 padding: "12px 28px",
-                background: "#2D2D2B",
+                background: "#8F8474",
                 color: "#FFFFFF",
                 display: "flex",
                 alignItems: "center",
@@ -584,7 +584,7 @@ const ServicesPage: React.FC = () => {
                           fontSize: 12,
                           lineHeight: 1,
                           mr: -0.5,
-                          color: "#2D2D2B",
+                          color: "#4B4B48",
                         }}
                         aria-hidden
                       >
@@ -669,7 +669,7 @@ const ServicesPage: React.FC = () => {
                           fontWeight: 800,
                           letterSpacing: "0.18em",
                           textTransform: "uppercase",
-                          color: "#2D2D2B",
+                          color: "#4B4B48",
                         }}
                       >
                         <Icon sx={{ fontSize: 11, mr: 0.5, verticalAlign: "middle" }} />
@@ -784,7 +784,7 @@ const ServicesPage: React.FC = () => {
                           fontWeight: 800,
                           letterSpacing: "0.18em",
                           textTransform: "uppercase",
-                          color: "#2D2D2B",
+                          color: "#4B4B48",
                           mb: 1,
                         }}
                       >
@@ -813,7 +813,7 @@ const ServicesPage: React.FC = () => {
                             fontWeight: 800,
                             letterSpacing: "0.18em",
                             textTransform: "uppercase",
-                            color: "#2D2D2B",
+                            color: "#4B4B48",
                             mb: 1.25,
                           }}
                         >
@@ -911,7 +911,7 @@ const ServicesPage: React.FC = () => {
                       fontWeight: 800,
                       letterSpacing: "0.22em",
                       textTransform: "uppercase",
-                      color: "#2D2D2B",
+                      color: "#4B4B48",
                       lineHeight: 1.1,
                     }}
                   >
@@ -961,7 +961,7 @@ const ServicesPage: React.FC = () => {
                     }}
                   >
                     <LocationOnRoundedIcon
-                      sx={{ color: "#2D2D2B", fontSize: 18 }}
+                      sx={{ color: "#4B4B48", fontSize: 18 }}
                     />
                     <Typography
                       sx={{
@@ -1011,7 +1011,7 @@ const ServicesPage: React.FC = () => {
                     }}
                   >
                     <AccessTimeRoundedIcon
-                      sx={{ color: "#2D2D2B", fontSize: 18 }}
+                      sx={{ color: "#4B4B48", fontSize: 18 }}
                     />
                     <Typography
                       sx={{
@@ -1081,7 +1081,7 @@ const ServicesPage: React.FC = () => {
                       fontWeight: 800,
                       letterSpacing: "0.22em",
                       textTransform: "uppercase",
-                      color: "#2D2D2B",
+                      color: "#4B4B48",
                       lineHeight: 1.1,
                     }}
                   >
@@ -1151,7 +1151,7 @@ const ServicesPage: React.FC = () => {
                   letterSpacing: "-0.01em",
                   lineHeight: 1.3,
                   mb: 0.5,
-                  "& em": { fontStyle: "italic", color: "#2D2D2B" },
+                  "& em": { fontStyle: "italic", color: "#4B4B48" },
                 }}
               >
                 At your <em>service</em>
@@ -1298,7 +1298,7 @@ const ServicesPage: React.FC = () => {
                   alignItems: "center",
                   gap: 0.5,
                   py: 0.5,
-                  "&:hover": { color: "#2D2D2B" },
+                  "&:hover": { color: "#4B4B48" },
                 }}
               >
                 Subscribe to our Telegram channel for updates
@@ -1323,7 +1323,7 @@ const ServicesPage: React.FC = () => {
                   fontWeight: 800,
                   letterSpacing: "0.18em",
                   textTransform: "uppercase",
-                  color: "#2D2D2B",
+                  color: "#4B4B48",
                   lineHeight: 1.1,
                 }}
               >
@@ -1370,7 +1370,7 @@ const ServicesPage: React.FC = () => {
                   letterSpacing: "-0.01em",
                   mb: 1,
                   "& em": {
-                    color: "#2D2D2B",
+                    color: "#4B4B48",
                     fontStyle: "italic",
                     fontFamily: SERIF,
                     fontWeight: 500,

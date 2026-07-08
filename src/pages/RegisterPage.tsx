@@ -55,7 +55,7 @@ const RegisterPage: React.FC = () => {
     <>
       <Box sx={{
         minHeight: '100vh',
-        background: "#2D2D2B",
+        background: "#8F8474",
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -81,7 +81,7 @@ const RegisterPage: React.FC = () => {
           </Box>
 
           <Typography variant="h6" fontWeight="bold" mt={3} mb={4}
-            sx={{ fontFamily: 'Chonburi, serif', fontSize: '2rem', color: "#2D2D2B" }}>
+            sx={{ fontFamily: 'Chonburi, serif', fontSize: '2rem', color: "#4B4B48" }}>
             Sign Up
           </Typography>
 
@@ -147,7 +147,7 @@ const RegisterPage: React.FC = () => {
               mt: 1, py: 1.2, px: 5, fontWeight: 'bold', fontSize: 14,
               borderRadius: '20px', color: '#fff', textTransform: 'uppercase',
               maxWidth: 150, width: '100%',
-              background: '#2D2D2B',
+              background: '#8F8474',
               boxShadow: '0 4px 20px rgba(15, 23, 42, 0.40)',
               // 🎨 Round 28r79 — Nordic sweep · was #FEAE96 coral.
               '&:hover': { background: '#4B4B48', transform: 'scale(1.05)' },

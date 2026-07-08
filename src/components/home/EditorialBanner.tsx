@@ -49,7 +49,7 @@ const EditorialBanner: React.FC = () => {
             fontFamily: fonts.heading,
             fontSize: { xs: 22, md: 30 },
             fontWeight: 400,
-            color: "#2D2D2B", // GRAY_900
+            color: "#4B4B48", // GRAY_900
             lineHeight: 1.15,
             letterSpacing: "-0.02em",
             margin: 0,
@@ -78,25 +78,26 @@ const EditorialBanner: React.FC = () => {
             alignItems: "center",
             justifyContent: "center",
             gap: "6px",
-            padding: "9px 20px",
-            background: "transparent",
-            color: "#2D2D2B", // GRAY_900
-            border: "1px solid #2D2D2B",
+            padding: "10px 24px",
+            background: "#8F8474", // WARM_TAUPE (r80)
+            color: "#FFFFFF",
+            border: "none",
             borderRadius: 999,
             fontFamily: fonts.body,
-            fontSize: 11.5,
-            fontWeight: 500,
-            letterSpacing: "0.02em",
+            fontSize: 13,
+            fontWeight: 600,
+            letterSpacing: "0.005em",
             cursor: "pointer",
             minHeight: 40,
-            transition: "background 0.18s ease, color 0.18s ease, transform 0.18s ease",
+            boxShadow: "0 4px 12px rgba(143, 132, 116, 0.22)",
+            transition: "background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease",
             "&:hover": {
-              background: "#2D2D2B",
-              color: "#FFFFFF",
+              background: "#7A7060",
+              boxShadow: "0 6px 16px rgba(122, 112, 96, 0.28)",
               transform: "translateY(-1px)",
             },
             "&:focus-visible": {
-              outline: "2px solid #2D2D2B",
+              outline: "2px solid #4B4B48",
               outlineOffset: 3,
             },
           }}

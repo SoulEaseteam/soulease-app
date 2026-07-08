@@ -38,13 +38,22 @@ const NEUTRAL_400 = "#B6B6B1";  // dim borders
 const GRAY_400 = "#A7A7A2";     // dim / disabled
 const GRAY_500 = "#8E8E89";     // muted body
 const GRAY_600 = "#6E6E6A";     // body text
-const GRAY_800 = "#4B4B48";     // heading
-const GRAY_900 = "#2D2D2B";     // primary CTA / darkest ink
+const GRAY_800 = "#4B4B48";     // heading + primary TEXT (post-r80)
+const GRAY_900 = "#2D2D2B";     // deepest ink · hero headlines only
 
 // Warm accents
 const WARM_100 = "#C9B9A7";     // warm sand light
 const WARM_200 = "#B7A896";     // warm sand
 const SAGE_400 = "#A2BF7A";     // sage (success / online dot / check mark)
+
+// ── Round 28r80 (2026-07-08) — WARM TAUPE primary CTA ──────────────
+// Founder direction: primary CTAs sitewide should adopt the warm-taupe
+// tone the MembershipCard button already uses ("ใช้สีนี้เป็นสีปุ่ม
+// ทั้งหมด"). Softer + more hospitality-brand than the previous
+// GRAY_900 dark-ink CTAs from r70 Nordic rebrand.
+// Hex values below are pulled EXACTLY from MembershipCard.tsx r74.
+const WARM_TAUPE       = "#8F8474"; // primary CTA fill (MembershipCard BTN_BG)
+const WARM_TAUPE_HOVER = "#7A7060"; // primary CTA hover (MembershipCard BTN_BG_HOVER)
 
 // ── New named token trees (preferred going forward) ────────────────
 export const neutrals = {
@@ -70,6 +79,13 @@ export const warmAccents = {
 
 export const sage = SAGE_400;
 
+/** Round 28r80 — warm-taupe primary CTA token. Use for buttons, pills,
+ *  focus rings on customer-facing surfaces. */
+export const warmTaupe = {
+  base: WARM_TAUPE,
+  hover: WARM_TAUPE_HOVER,
+} as const;
+
 // ── Legacy `brand` tree — VALUES swapped, names preserved ──────────
 //   `brand.red` no longer holds crimson. It now points at GRAY_900,
 //   which is the Nordic direction's primary-CTA/dark-ink colour, so
@@ -79,8 +95,8 @@ export const sage = SAGE_400;
 //   / `brand.coral` etc.
 export const brand = {
   // ── Primary
-  red: GRAY_900,               // PRIMARY CTA / dark ink (was crimson)
-  text: GRAY_800,              // headings
+  red: WARM_TAUPE,             // PRIMARY CTA — warm taupe (r80, was GRAY_900)
+  text: GRAY_800,              // headings + body TEXT (unified 4B4B48)
   textMuted: GRAY_600,         // body copy + subtitles
   bg1: NEUTRAL_50,             // page background
   bg2: NEUTRAL_100,            // card / section background
@@ -99,13 +115,13 @@ export const brand = {
   peach: WARM_200,             // legacy urgency → warm sand
   cream: NEUTRAL_100,          // legacy soft accent → neutral 100
   accent: GRAY_600,            // eyebrow labels → muted body
-  burgundy: GRAY_900,          // dark accent → primary ink
+  burgundy: WARM_TAUPE,        // dark accent → warm taupe (r80)
   bg1Legacy: NEUTRAL_50,
   bg2Legacy: NEUTRAL_100,
   bg1Warm: NEUTRAL_50,
   bg2Warm: NEUTRAL_100,
   greenSoft: "#E9F0DE",        // available pill bg (soft sage tint of SAGE_400)
-  ink: GRAY_900,
+  ink: GRAY_900,               // deepest ink — hero headlines only
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────
@@ -115,15 +131,15 @@ export const brand = {
 //   Sunred-red gradient used to sit, a flat dark-ink surface takes over.
 // ─────────────────────────────────────────────────────────────────────
 export const gradients = {
-  /** Primary CTA — flat dark ink */
-  primary: GRAY_900,
+  /** Primary CTA — flat warm taupe (r80, was GRAY_900) */
+  primary: WARM_TAUPE,
   /** Section background — flat off-white */
   surface: NEUTRAL_50,
-  /** Final hero CTA — flat dark ink */
-  finalCta: GRAY_900,
+  /** Final hero CTA — flat warm taupe (r80) */
+  finalCta: WARM_TAUPE,
 
   // legacy aliases
-  primaryHover: GRAY_800,      // single darker shade for hover state
+  primaryHover: WARM_TAUPE_HOVER, // darker taupe on hover
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────
@@ -232,9 +248,9 @@ const theme = createTheme({
   palette: {
     mode: "light",
     primary: {
-      main: GRAY_900,
-      light: GRAY_800,
-      dark: GRAY_900,
+      main: WARM_TAUPE,
+      light: WARM_TAUPE,
+      dark: WARM_TAUPE_HOVER,
       contrastText: "#ffffff",
     },
     secondary: {
@@ -295,17 +311,18 @@ const theme = createTheme({
       defaultProps: { disableElevation: true },
       styleOverrides: {
         root: {
-          borderRadius: 99,
+          borderRadius: 999,
           textTransform: "none",
           fontWeight: 600,
+          minHeight: 46,
         },
         containedPrimary: {
           background: gradients.primary,
           boxShadow:
-            "0 6px 18px rgba(45, 45, 43, 0.20), inset 0 1px 0 rgba(255,255,255,0.10)",
+            "0 6px 18px rgba(143, 132, 116, 0.24), inset 0 1px 0 rgba(255,255,255,0.10)",
           "&:hover": {
             background: gradients.primaryHover,
-            boxShadow: "0 8px 22px rgba(45, 45, 43, 0.26)",
+            boxShadow: "0 8px 22px rgba(122, 112, 96, 0.30)",
           },
         },
       },

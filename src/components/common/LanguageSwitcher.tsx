@@ -183,14 +183,14 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           }}
         >
           <AutoAwesomeRoundedIcon
-            sx={{ fontSize: 16, color: "#2D2D2B" }}
+            sx={{ fontSize: 16, color: "#4B4B48" }}
           />
           <Box sx={{ flex: 1 }}>
             {t("language.auto", "Auto (device)")}
           </Box>
           {isAuto && (
             <CheckRoundedIcon
-              sx={{ fontSize: 16, color: "#2D2D2B" }}
+              sx={{ fontSize: 16, color: "#4B4B48" }}
               aria-label="current"
             />
           )}
@@ -232,7 +232,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
               <Box sx={{ flex: 1 }}>{l.label}</Box>
               {selected && (
                 <CheckRoundedIcon
-                  sx={{ fontSize: 16, color: "#2D2D2B" }}
+                  sx={{ fontSize: 16, color: "#4B4B48" }}
                   aria-label="current"
                 />
               )}

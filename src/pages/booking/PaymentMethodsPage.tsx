@@ -562,7 +562,7 @@ const PaymentMethodsPage: React.FC = () => {
               color: "#1A2B2E",
               letterSpacing: "-0.02em",
               lineHeight: 1.2,
-              "& em": { fontStyle: "italic", color: "#2D2D2B" },
+              "& em": { fontStyle: "italic", color: "#4B4B48" },
             }}
           >
             {t("pay.policy.title", "What you should know")}
@@ -940,7 +940,7 @@ const FaqRow: React.FC<{ item: FaqItem }> = ({ item }) => {
         top: "12%",
         bottom: "12%",
         width: "2px",
-        background: "#2D2D2B",
+        background: "#8F8474",
         borderRadius: "2px",
         opacity: 0,
         transition: "opacity 220ms ease",

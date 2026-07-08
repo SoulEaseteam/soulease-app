@@ -122,7 +122,7 @@ const LoginPage: React.FC = () => {
       <Box
         sx={{
           minHeight: "100vh",
-          background: "#2D2D2B",
+          background: "#8F8474",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
@@ -171,7 +171,7 @@ const LoginPage: React.FC = () => {
             sx={{
               fontFamily: "Chonburi, serif",
               fontSize: "2rem",
-              color: "#2D2D2B",
+              color: "#4B4B48",
             }}
           >
             Login
@@ -215,7 +215,7 @@ const LoginPage: React.FC = () => {
               py: 1.2,
               fontWeight: "bold",
               borderRadius: "20px",
-              background: "#2D2D2B",
+              background: "#8F8474",
               color: "#fff",
               // 🎨 Round 28r79 — Nordic sweep · was #FEAE96 coral.
               "&:hover": { background: "#4B4B48" },
@@ -233,7 +233,7 @@ const LoginPage: React.FC = () => {
           {/* Register */}
           <Typography mt={3} fontSize={14}>
             Don&apos;t have an account?{" "}
-            <Link to="/register" style={{ color: "#2D2D2B", fontWeight: "bold" }}>
+            <Link to="/register" style={{ color: "#4B4B48", fontWeight: "bold" }}>
               Sign up
             </Link>
           </Typography>

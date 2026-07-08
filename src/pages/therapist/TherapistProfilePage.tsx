@@ -317,7 +317,7 @@ const TherapistProfilePage: React.FC = () => {
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-        <CircularProgress sx={{ color: "#2D2D2B" }} />
+        <CircularProgress sx={{ color: "#4B4B48" }} />
       </Box>
     );
   }
@@ -389,7 +389,7 @@ const TherapistProfilePage: React.FC = () => {
         sx={{
           position: "relative",
           padding: "24px 20px 28px",
-          background: "#2D2D2B",
+          background: "#8F8474",
           borderBottomLeftRadius: 28,
           borderBottomRightRadius: 28,
           color: "#fff",
@@ -654,10 +654,10 @@ const TherapistProfilePage: React.FC = () => {
               onChange={(_, checked) => void updateHoliday(checked)}
               sx={{
                 "& .MuiSwitch-switchBase.Mui-checked": {
-                  color: "#2D2D2B",
+                  color: "#8F8474",
                 },
                 "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-                  backgroundColor: "#2D2D2B",
+                  backgroundColor: "#8F8474",
                 },
               }}
             />
@@ -761,7 +761,7 @@ const MenuTile: React.FC<MenuTileProps> = ({ label, Icon, onClick }) => (
         width: 40,
         height: 40,
         borderRadius: "50%",
-        background: "#2D2D2B",
+        background: "#8F8474",
         color: "#fff",
         display: "flex",
         alignItems: "center",

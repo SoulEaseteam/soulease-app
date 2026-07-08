@@ -194,7 +194,7 @@ const ProfilePage: React.FC = () => {
           <Box
             onClick={() => navigate("/login")}
             sx={{
-              background: "#2D2D2B",
+              background: "#8F8474",
               color: "#fff",
               borderRadius: 999,
               py: 1.6,
@@ -257,7 +257,7 @@ const ProfilePage: React.FC = () => {
                 width: 90,
                 height: 90,
                 borderRadius: "50%",
-                background: "#2D2D2B",
+                background: "#8F8474",
                 p: "2.5px",
                 boxShadow: "0 0 0 3px rgba(15, 23, 42, 0.18), 0 8px 32px rgba(0,0,0,0.35)",
               }}

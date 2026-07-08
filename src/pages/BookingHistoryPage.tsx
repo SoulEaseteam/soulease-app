@@ -275,7 +275,7 @@ const BookingHistoryPage: React.FC = () => {
                   left: 0,
                   width: pillW,
                   borderRadius: 999,
-                  background: "#2D2D2B",
+                  background: "#8F8474",
                   boxShadow: "0 4px 14px rgba(15, 23, 42, 0.30)",
                   pointerEvents: "none",
                   zIndex: 0,
@@ -465,7 +465,7 @@ const BookingCard: React.FC<{
               width: 46,
               height: 46,
               borderRadius: "50%",
-              background: "#2D2D2B",
+              background: "#8F8474",
               p: "2px",
               flexShrink: 0,
               boxShadow: "0 4px 12px rgba(15, 23, 42, 0.20)",
@@ -489,7 +489,7 @@ const BookingCard: React.FC<{
           </Box>
 
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: "#2D2D2B", lineHeight: 1.2, mb: 0.25 }}>
+            <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: "#4B4B48", lineHeight: 1.2, mb: 0.25 }}>
               {booking.therapistName ?? therapist?.name ?? "Therapist"}
             </Typography>
             {therapist && (
@@ -533,7 +533,7 @@ const BookingCard: React.FC<{
             mb: 1.5,
           }}
         >
-          <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 600, color: "#2D2D2B", lineHeight: 1.3 }}>
+          <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 600, color: "#4B4B48", lineHeight: 1.3 }}>
             {getServiceLabel(booking.serviceId, booking.serviceName)}
             {booking.duration && (
               <Box component="span" sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 500, color: "rgba(15, 23, 42,0.55)", ml: 1 }}>
@@ -563,7 +563,7 @@ const BookingCard: React.FC<{
             <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
               Total
             </Typography>
-            <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: "#2D2D2B", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+            <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: "#4B4B48", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
               {formatTHB(total)}
             </Typography>
           </Box>
@@ -578,7 +578,7 @@ const BookingCard: React.FC<{
                   padding: "0 16px",
                   borderRadius: 999,
                   background: "rgba(45,45,43,0.08)",
-                  color: "#2D2D2B",
+                  color: "#4B4B48",
                   fontFamily: SANS,
                   fontSize: 13,
                   fontWeight: 700,
@@ -601,7 +601,7 @@ const BookingCard: React.FC<{
                   height: 38,
                   padding: "0 16px",
                   borderRadius: 999,
-                  background: "#2D2D2B",
+                  background: "#8F8474",
                   color: "#fff",
                   fontFamily: SANS,
                   fontSize: 13,
@@ -648,7 +648,7 @@ const EmptySlate: React.FC<{
         width: 64,
         height: 64,
         borderRadius: "50%",
-        background: "#2D2D2B",
+        background: "#8F8474",
         color: "#fff",
         display: "flex",
         alignItems: "center",
@@ -659,7 +659,7 @@ const EmptySlate: React.FC<{
     >
       {icon}
     </Box>
-    <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: "#2D2D2B", letterSpacing: "-0.01em" }}>
+    <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: "#4B4B48", letterSpacing: "-0.01em" }}>
       {title}
     </Typography>
     <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(15, 23, 42,0.55)", lineHeight: 1.6, maxWidth: 260 }}>
@@ -674,7 +674,7 @@ const EmptySlate: React.FC<{
           height: 44,
           padding: "0 28px",
           borderRadius: 999,
-          background: "#2D2D2B",
+          background: "#8F8474",
           color: "#fff",
           fontFamily: SANS,
           fontSize: 14,

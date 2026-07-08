@@ -107,7 +107,7 @@ const StatsCard: React.FC<Props> = ({
     {
       num: (
         <>
-          <Box component="span" sx={{ color: "#2D2D2B" }}>★</Box> {rating}
+          <Box component="span" sx={{ color: "#4B4B48" }}>★</Box> {rating}
         </>
       ),
       label: t("detail.stats.reviews", "{{count}} reviews", { count: reviewCount }),
@@ -183,7 +183,7 @@ const StatsCard: React.FC<Props> = ({
             sx={{
               padding: "8px 14px",
               borderRadius: "999px",
-              background: "#2D2D2B",
+              background: "#8F8474",
               color: "#fff",
               fontFamily: '"Inter", system-ui, -apple-system, sans-serif',
               fontSize: "12px",
@@ -219,7 +219,7 @@ const StatsCard: React.FC<Props> = ({
               transform: "translateX(-50%) rotate(45deg)",
               width: 10,
               height: 10,
-              background: "#2D2D2B",
+              background: "#8F8474",
               boxShadow: "3px 3px 8px rgba(15, 23, 42, 0.25)",
             }}
           />
@@ -337,7 +337,7 @@ const StatsCard: React.FC<Props> = ({
                   // Static red chevron now; the cell's own hover/active
                   // states still signal it's tappable.
                   fontSize: "12px",
-                  color: "#2D2D2B",
+                  color: "#4B4B48",
                   fontWeight: 800,
                   marginLeft: "1px",
                   lineHeight: 1,

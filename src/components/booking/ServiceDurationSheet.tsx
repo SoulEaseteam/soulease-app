@@ -281,7 +281,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                 fontFamily: SERIF,
                 fontSize: "18px",
                 fontWeight: 700,
-                color: "#2D2D2B",
+                color: "#4B4B48",
                 letterSpacing: "-0.01em",
               }}
             >
@@ -537,7 +537,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
             gap: "5px",
           }}
         >
-          <GpsFixedRoundedIcon sx={{ fontSize: 13, color: "#2D2D2B" }} />
+          <GpsFixedRoundedIcon sx={{ fontSize: 13, color: "#4B4B48" }} />
           {t("sheet.chooseDuration", "Choose duration")}
         </Typography>
         <Box
@@ -795,7 +795,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
           sx={{
             height: 50,
             borderRadius: "999px",
-            background: "#2D2D2B",
+            background: "#8F8474",
             color: "#fff",
             fontFamily: SANS,
             fontSize: "15px",
@@ -804,7 +804,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
             textTransform: "none",
             boxShadow: "0 10px 26px rgba(15, 23, 42, 0.40)",
             "&:hover": {
-              background: "#2D2D2B",
+              background: "#7A7060",
               boxShadow: "0 12px 30px rgba(15, 23, 42, 0.45)",
             },
             "&.Mui-disabled": {

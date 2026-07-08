@@ -146,7 +146,7 @@ const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
       <Box
         sx={{
           padding: "20px 22px 18px",
-          background: "#2D2D2B",
+          background: "#8F8474",
           color: "#fff",
           position: "relative",
           overflow: "hidden",
@@ -323,7 +323,7 @@ const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
           startIcon={<IosShareRoundedIcon />}
           onClick={() => void handleShare()}
           sx={{
-            background: "#2D2D2B",
+            background: "#8F8474",
             textTransform: "none",
             fontFamily: fonts.body,
             fontWeight: 700,
@@ -332,7 +332,7 @@ const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
             borderRadius: "12px",
             boxShadow: "0 6px 18px rgba(15, 23, 42, 0.28)",
             "&:hover": {
-              background: "#2D2D2B",
+              background: "#7A7060",
               boxShadow: "0 8px 22px rgba(15, 23, 42, 0.36)",
             },
           }}

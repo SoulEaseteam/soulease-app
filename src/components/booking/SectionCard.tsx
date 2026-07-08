@@ -60,7 +60,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
             flexShrink: 0,
             borderRadius: "9px",
             background: "rgba(15, 23, 42, 0.10)",
-            color: "#2D2D2B",
+            color: "#4B4B48",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

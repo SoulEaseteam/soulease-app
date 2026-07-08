@@ -801,7 +801,7 @@ const DetailHero: React.FC<Props> = ({
           <ListItemIcon>
             <FavoriteBorderRoundedIcon
               fontSize="small"
-              sx={{ color: "#2D2D2B" }}
+              sx={{ color: "#4B4B48" }}
             />
           </ListItemIcon>
           <ListItemText

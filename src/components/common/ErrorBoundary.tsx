@@ -60,7 +60,7 @@ class ErrorBoundary extends React.Component<Props, State> {
           alignItems: "center",
           justifyContent: "center",
           padding: "32px",
-          background: "#2D2D2B",
+          background: "#8F8474",
           color: "#fff",
           fontFamily:
             "'Trebuchet MS', system-ui, -apple-system, Segoe UI, sans-serif",
@@ -78,7 +78,7 @@ class ErrorBoundary extends React.Component<Props, State> {
           }}
         >
           <div style={{ fontSize: 48, marginBottom: 8 }}>😵‍💫</div>
-          <h1 style={{ margin: "0 0 8px", fontSize: 22, color: "#2D2D2B" }}>
+          <h1 style={{ margin: "0 0 8px", fontSize: 22, color: "#4B4B48" }}>
             Something went wrong
           </h1>
           <p style={{ margin: "0 0 16px", fontSize: 14, opacity: 0.8 }}>
@@ -108,7 +108,7 @@ class ErrorBoundary extends React.Component<Props, State> {
                 padding: "10px 18px",
                 borderRadius: 999,
                 border: "none",
-                background: "#2D2D2B",
+                background: "#8F8474",
                 color: "#fff",
                 fontWeight: 700,
                 cursor: "pointer",
@@ -126,7 +126,7 @@ class ErrorBoundary extends React.Component<Props, State> {
                 borderRadius: 999,
                 border: "1px solid #2D2D2B",
                 background: "transparent",
-                color: "#2D2D2B",
+                color: "#4B4B48",
                 fontWeight: 700,
                 cursor: "pointer",
               }}

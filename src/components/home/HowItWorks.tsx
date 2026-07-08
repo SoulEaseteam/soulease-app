@@ -139,7 +139,7 @@ const HowItWorks: React.FC = () => {
               fontFamily: SERIF,
               fontStyle: "italic",
               fontWeight: 500,
-              color: "#2D2D2B",
+              color: "#4B4B48",
             },
           }}
         >

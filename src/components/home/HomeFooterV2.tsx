@@ -124,7 +124,7 @@ const HomeFooterV2: React.FC = () => {
               fontFamily: fonts.heading,
               fontSize: 17,
               fontWeight: 500,
-              color: "#2D2D2B", // GRAY_900
+              color: "#4B4B48", // GRAY_900
               letterSpacing: "0.02em",
               lineHeight: 1,
             }}
@@ -178,7 +178,7 @@ const HomeFooterV2: React.FC = () => {
                 fontFamily: fonts.body,
                 fontSize: 11.5,
                 fontWeight: 600,
-                color: "#2D2D2B", // GRAY_900
+                color: "#4B4B48", // GRAY_900
                 marginBottom: "10px",
               }}
             >
@@ -223,7 +223,7 @@ const HomeFooterV2: React.FC = () => {
                         color: "inherit",
                         textDecoration: "none",
                         transition: "color 0.16s ease",
-                        "&:hover": { color: "#2D2D2B" },
+                        "&:hover": { color: "#4B4B48" },
                         "&:focus-visible": {
                           outline: "2px solid #2D2D2B",
                           outlineOffset: 2,
@@ -243,7 +243,7 @@ const HomeFooterV2: React.FC = () => {
                         cursor: "pointer",
                         color: "inherit",
                         transition: "color 0.16s ease",
-                        "&:hover": { color: "#2D2D2B" },
+                        "&:hover": { color: "#4B4B48" },
                         "&:focus-visible": {
                           outline: "2px solid #2D2D2B",
                           outlineOffset: 2,

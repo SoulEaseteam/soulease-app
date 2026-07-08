@@ -95,7 +95,7 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
             fontFamily: SERIF,
             fontSize: "22px",
             fontWeight: 700,
-            color: "#2D2D2B",
+            color: "#4B4B48",
             letterSpacing: "-0.02em",
             lineHeight: 1,
             marginTop: "2px",
@@ -121,7 +121,7 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
           height: 50,
           minHeight: 50,
           borderRadius: "999px",
-          background: "#2D2D2B",
+          background: "#8F8474",
           color: "#fff",
           fontFamily: SANS,
           fontSize: "15px",
@@ -130,7 +130,7 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
           textTransform: "none",
           boxShadow: "0 10px 24px rgba(45, 45, 43, 0.32)",
           "&:hover": {
-            background: "#2D2D2B",
+            background: "#7A7060",
             boxShadow: "0 14px 30px rgba(45, 45, 43, 0.38)",
           },
           "&:focus-visible": {

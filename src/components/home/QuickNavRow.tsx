@@ -141,7 +141,7 @@ const QuickNavRow: React.FC = () => {
             "&:hover .qn-icon": {
               background: "#ECEBE8", // NEUTRAL_100
               borderColor: "#6E6E6A", // GRAY_600
-              color: "#2D2D2B", // GRAY_900
+              color: "#4B4B48", // GRAY_900
             },
             "&:hover": {
               transform: "translateY(-1px)",

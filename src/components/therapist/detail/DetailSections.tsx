@@ -77,7 +77,7 @@ const DSectionH2: React.FC<{ children: React.ReactNode; em?: string }> = ({
       color: "#1A2B2E",
       marginBottom: "8px",
       letterSpacing: "-0.01em",
-      "& em": { fontStyle: "italic", color: "#2D2D2B", fontWeight: 500 },
+      "& em": { fontStyle: "italic", color: "#4B4B48", fontWeight: 500 },
     }}
   >
     {children}
@@ -972,7 +972,7 @@ export const Specialties: React.FC<{ specs: Spec[] }> = ({ specs }) => {
                 borderRadius: "50%",
                 background:
                   "rgba(45, 45, 43, 0.09)",
-                color: "#2D2D2B",
+                color: "#4B4B48",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -1056,7 +1056,7 @@ export const Languages: React.FC<{ langs: Lang[] }> = ({ langs }) => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "#2D2D2B",
+                background: "#8F8474",
                 color: "#fff",
                 fontFamily: SANS,
                 fontSize: "11px",
@@ -1149,7 +1149,7 @@ export const Pricing: React.FC<{ items: Price[] }> = ({ items }) => {
                 fontFamily: SERIF,
                 fontWeight: 600,
                 fontSize: "14px",
-                color: "#2D2D2B",
+                color: "#4B4B48",
                 letterSpacing: "-0.02em",
               }}
             >
@@ -1367,7 +1367,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
               fontFamily: SERIF,
               fontWeight: 600,
               fontSize: "32px",
-              color: "#2D2D2B",
+              color: "#4B4B48",
               letterSpacing: "-0.03em",
               lineHeight: 1,
             }}
@@ -1416,7 +1416,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
                   sx={{
                     height: "100%",
                     width: `${b.pct}%`,
-                    background: "#2D2D2B",
+                    background: "#8F8474",
                     borderRadius: "2px",
                   }}
                 />
@@ -1454,7 +1454,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
                 width: "32px",
                 height: "32px",
                 borderRadius: "50%",
-                background: "#2D2D2B",
+                background: "#8F8474",
                 color: "#fff",
                 display: "flex",
                 alignItems: "center",

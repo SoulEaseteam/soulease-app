@@ -1124,7 +1124,7 @@ const SelectLocationPage: React.FC = () => {
             }}
           >
             <MyLocationRoundedIcon
-              sx={{ fontSize: 20, color: "#2D2D2B", flexShrink: 0, marginTop: "1px" }}
+              sx={{ fontSize: 20, color: "#4B4B48", flexShrink: 0, marginTop: "1px" }}
             />
             <Typography
               sx={{
@@ -1729,7 +1729,7 @@ const SelectLocationPage: React.FC = () => {
           sx={{
             height: 46,
             borderRadius: "999px",
-            background: "#2D2D2B",
+            background: "#8F8474",
             color: "#fff",
             fontFamily: SANS,
             fontSize: "14.5px",
@@ -1740,7 +1740,7 @@ const SelectLocationPage: React.FC = () => {
               "0 8px 20px rgba(15, 23, 42, 0.32), 0 3px 8px rgba(214, 40, 40, 0.15)",
             transition: "transform 0.15s ease, box-shadow 0.15s ease",
             "&:hover": {
-              background: "#2D2D2B",
+              background: "#7A7060",
               transform: "translateY(-1px)",
               boxShadow:
                 "0 12px 24px rgba(15, 23, 42, 0.38), 0 4px 10px rgba(214, 40, 40, 0.20)",
@@ -1861,7 +1861,7 @@ const FieldLabel: React.FC<{
             fontFamily: SANS,
             fontSize: "13px",
             fontWeight: 700,
-            color: "#2D2D2B",
+            color: "#4B4B48",
             marginLeft: "-2px",
           }}
         >

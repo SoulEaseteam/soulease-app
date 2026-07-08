@@ -186,7 +186,7 @@ const BundleSection: React.FC = () => {
             fontWeight: 800,
             letterSpacing: "0.18em",
             textTransform: "uppercase",
-            color: "#2D2D2B",
+            color: "#4B4B48",
             m: 0,
           }}
         >
@@ -415,7 +415,7 @@ const BundleSection: React.FC = () => {
                     fontWeight: 800,
                     letterSpacing: "0.18em",
                     textTransform: "uppercase",
-                    color: "#2D2D2B",
+                    color: "#4B4B48",
                   }}
                 >
                   {t("bundle.card.sessionCount", "{{count}} sessions", {
@@ -524,7 +524,7 @@ const BundleSection: React.FC = () => {
                         fontFamily: SANS,
                         fontSize: 16,
                         fontWeight: 800,
-                        color: "#2D2D2B",
+                        color: "#4B4B48",
                         letterSpacing: "-0.01em",
                       }}
                     >
@@ -584,7 +584,7 @@ const BundleSection: React.FC = () => {
                   gap: "8px",
                   padding: "11px 14px",
                   borderRadius: "12px",
-                  background: "#2D2D2B",
+                  background: "#8F8474",
                   color: "#FFFFFF",
                   textDecoration: "none",
                   fontFamily: SANS,
@@ -596,7 +596,7 @@ const BundleSection: React.FC = () => {
                   transition:
                     "transform 160ms ease, box-shadow 160ms ease, background 160ms ease",
                   "&:hover": {
-                    background: "#2D2D2B",
+                    background: "#7A7060",
                     transform: "translateY(-1px)",
                     boxShadow: "0 6px 16px rgba(45, 45, 43, 0.28)",
                   },

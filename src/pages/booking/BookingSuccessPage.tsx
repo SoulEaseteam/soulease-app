@@ -252,7 +252,7 @@ const BookingSuccessPage: React.FC = () => {
             paddingTop: "120px",
           }}
         >
-          <CircularProgress sx={{ color: "#2D2D2B" }} />
+          <CircularProgress sx={{ color: "#4B4B48" }} />
         </Box>
       ) : error ? (
         <Box sx={{ textAlign: "center", paddingTop: "60px" }}>
@@ -268,7 +268,7 @@ const BookingSuccessPage: React.FC = () => {
           </Typography>
           <Button
             onClick={() => void navigate("/")}
-            sx={{ color: "#2D2D2B", textTransform: "none" }}
+            sx={{ color: "#4B4B48", textTransform: "none" }}
           >
             {t("success.backHome", "Back to home")}
           </Button>
@@ -303,7 +303,7 @@ const BookingSuccessPage: React.FC = () => {
                 width: 96,
                 height: 96,
                 borderRadius: "50%",
-                background: "#2D2D2B",
+                background: "#8F8474",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -384,7 +384,7 @@ const BookingSuccessPage: React.FC = () => {
                   fontFamily: SANS,
                   fontSize: "12px",
                   fontWeight: 700,
-                  color: "#2D2D2B",
+                  color: "#4B4B48",
                   letterSpacing: "0.06em",
                   fontVariantNumeric: "tabular-nums",
                 }}
@@ -716,7 +716,7 @@ const BookingSuccessPage: React.FC = () => {
                   fontFamily: SERIF,
                   fontSize: "16px",
                   fontWeight: 600,
-                  color: "#2D2D2B",
+                  color: "#4B4B48",
                   fontStyle: "italic",
                   marginBottom: "2px",
                 }}
@@ -880,7 +880,7 @@ const BookingSuccessPage: React.FC = () => {
                     sx={{
                       fontFamily: SERIF,
                       fontWeight: 700,
-                      color: "#2D2D2B",
+                      color: "#4B4B48",
                       fontSize: "16px",
                     }}
                   >
@@ -924,7 +924,7 @@ const BookingSuccessPage: React.FC = () => {
                       fontFamily: SERIF,
                       fontSize: "16px",
                       fontWeight: 600,
-                      color: "#2D2D2B",
+                      color: "#4B4B48",
                       fontStyle: "italic",
                       lineHeight: 1.2,
                     }}

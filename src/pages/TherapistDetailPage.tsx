@@ -210,7 +210,7 @@ const SERVICE_DISPLAY: Record<
     short: "Thai Traditional",
   },
   "SR-Aroma": {
-    icon: <LocalFloristRoundedIcon sx={{ fontSize: 18, color: "#2D2D2B" }} />,
+    icon: <LocalFloristRoundedIcon sx={{ fontSize: 18, color: "#4B4B48" }} />,
     short: "Aromatherapy",
   },
   "SR-HJ2200": {
@@ -218,7 +218,7 @@ const SERVICE_DISPLAY: Record<
     short: "Gentleman's Signature",
   },
   "SR-B2B3200": {
-    icon: <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#2D2D2B" }} />,
+    icon: <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#4B4B48" }} />,
     short: "SunRed Therapeutic",
   },
 };
@@ -317,7 +317,7 @@ function buildFromReal(real: Therapist, lang?: string): DemoTherapist {
       const display = SERVICE_DISPLAY[sid];
       return {
         icon: display?.icon ?? (
-          <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#2D2D2B" }} />
+          <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#4B4B48" }} />
         ),
         name: display?.short ?? sid,
         yrs: "", // empty → UI hides subtext line
@@ -954,7 +954,7 @@ const TherapistDetailPage: React.FC = () => {
           padding: "60px 24px",
         }}
       >
-        <CircularProgress size={28} sx={{ color: "#2D2D2B" }} />
+        <CircularProgress size={28} sx={{ color: "#4B4B48" }} />
       </Box>
     );
   }
@@ -1307,7 +1307,7 @@ const TherapistDetailPage: React.FC = () => {
                 sx={{
                   fontSize: 22,
                   lineHeight: 1,
-                  color: "#2D2D2B",
+                  color: "#4B4B48",
                   marginTop: "1px",
                 }}
               >
@@ -1623,7 +1623,7 @@ const TherapistDetailPage: React.FC = () => {
             fontWeight: 800,
             letterSpacing: "0.18em",
             textTransform: "uppercase",
-            color: "#2D2D2B",
+            color: "#4B4B48",
             marginBottom: "2px",
           }}
         >
@@ -1789,7 +1789,7 @@ const PickerSection: React.FC<{
         marginBottom: subtitle ? "4px" : "16px",
         "& em": {
           fontStyle: "italic",
-          color: "#2D2D2B",
+          color: "#4B4B48",
           fontWeight: 500,
         },
       }}

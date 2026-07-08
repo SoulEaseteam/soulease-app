@@ -197,7 +197,7 @@ const NotificationsPage: React.FC = () => {
               paddingTop: "80px",
             }}
           >
-            <CircularProgress sx={{ color: "#2D2D2B" }} />
+            <CircularProgress sx={{ color: "#4B4B48" }} />
           </Box>
         ) : items.length === 0 ? (
           <EmptyState />
@@ -343,7 +343,7 @@ const NotificationRow: React.FC<{
             width: 8,
             height: 8,
             borderRadius: "50%",
-            background: "#2D2D2B",
+            background: "#8F8474",
             boxShadow: "0 0 0 3px rgba(15, 23, 42, 0.18)",
           }}
         />
@@ -367,7 +367,7 @@ const EmptyState: React.FC = () => (
         height: 64,
         borderRadius: "50%",
         background: "rgba(45, 45, 43, 0.08)",
-        color: "#2D2D2B",
+        color: "#4B4B48",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

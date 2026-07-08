@@ -513,7 +513,7 @@ const ServiceDetailPage: React.FC = () => {
               sx={{
                 padding: "14px 20px",
                 borderRadius: "16px",
-                background: "#2D2D2B",
+                background: "#8F8474",
                 color: "#fff",
                 fontFamily: fonts.body,
                 fontWeight: 700,
@@ -521,7 +521,7 @@ const ServiceDetailPage: React.FC = () => {
                 textTransform: "none",
                 boxShadow: "0 12px 28px rgba(45, 45, 43, 0.28)",
                 "&:hover": {
-                  background: "#2D2D2B",
+                  background: "#7A7060",
                   boxShadow: "0 16px 36px rgba(45, 45, 43, 0.34)",
                 },
               }}
@@ -762,7 +762,7 @@ const ServiceDetailPage: React.FC = () => {
             sx={{
               padding: "14px 20px",
               borderRadius: "16px",
-              background: "#2D2D2B",
+              background: "#8F8474",
               color: "#fff",
               fontFamily: fonts.body,
               fontWeight: 700,
@@ -770,7 +770,7 @@ const ServiceDetailPage: React.FC = () => {
               textTransform: "none",
               boxShadow: "0 14px 32px rgba(45, 45, 43, 0.32)",
               "&:hover": {
-                background: "#2D2D2B",
+                background: "#7A7060",
                 boxShadow: "0 18px 40px rgba(45, 45, 43, 0.38)",
               },
             }}

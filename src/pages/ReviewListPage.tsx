@@ -194,7 +194,7 @@ const ReviewListPage: React.FC = () => {
   if (loading) {
     return (
       <Box minHeight="80vh" display="flex" justifyContent="center" alignItems="center">
-        <CircularProgress sx={{ color: "#2D2D2B" }} />
+        <CircularProgress sx={{ color: "#4B4B48" }} />
       </Box>
     );
   }
@@ -225,7 +225,7 @@ const ReviewListPage: React.FC = () => {
       <Box
         sx={{
           height: 110,
-          background: "#2D2D2B",
+          background: "#8F8474",
           position: "relative",
         }}
       >
@@ -323,7 +323,7 @@ const ReviewListPage: React.FC = () => {
                 fontFamily={SERIF}
                 fontWeight={700}
                 fontSize={36}
-                sx={{ color: "#2D2D2B", letterSpacing: "-0.02em", lineHeight: 1 }}
+                sx={{ color: "#4B4B48", letterSpacing: "-0.02em", lineHeight: 1 }}
               >
                 {avgRating.toFixed(1)}
               </Typography>
