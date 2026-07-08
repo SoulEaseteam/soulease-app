@@ -27,7 +27,7 @@ import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
 import { getServiceLabel } from "@/utils/serviceCatalog";
 import therapistsData from "@/data/therapists";
 
-const SERIF = '"Fraunces", Georgia, serif';
+const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS  = '"Inter", system-ui, sans-serif';
 
 // ── types ────────────────────────────────────────────────────────────

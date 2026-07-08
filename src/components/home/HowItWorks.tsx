@@ -37,7 +37,7 @@ import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 //   bloating this component.
 import HowItWorksFAQ from "@/components/home/HowItWorksFAQ";
 
-const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // ─── Three-movement ritual data ───────────────────────────────────────

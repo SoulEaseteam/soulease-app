@@ -390,7 +390,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
             noWrap
             sx={{
               fontFamily:
-                '"Cinzel", "Federo", "Italiana", "Fraunces", Georgia, serif',
+                '"Playfair Display", "Fraunces", Georgia, serif',
               // 🆕 Round 28r53 — smaller than the old 19px flat because
               //   cards are now narrower per column at md+. Scales up
               //   only slightly on desktop where columns are wider.

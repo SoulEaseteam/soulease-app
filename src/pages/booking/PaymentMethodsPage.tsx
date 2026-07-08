@@ -32,7 +32,7 @@ import { responsiveShellNarrow, responsiveType } from "@/theme/breakpoints";
 //   also wrong: the theme module exports `fonts` as a named export,
 //   not default). Removed to silence the warning.
 
-const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 const STORAGE_KEY = "sunred.paymentMethod";

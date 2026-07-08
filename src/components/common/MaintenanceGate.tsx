@@ -376,7 +376,7 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
         }}
       >
         <div style={{ fontSize: 40 }}>🌙</div>
-        <div style={{ fontFamily: '"Federo","Italiana","Cinzel",Georgia,serif', fontSize: 22, fontWeight: 700 }}>
+        <div style={{ fontFamily: '"Playfair Display","Fraunces",Georgia,serif', fontSize: 22, fontWeight: 700 }}>
           SunRed
         </div>
         <div style={{ fontSize: 15, color: "rgba(255,255,255,0.85)", maxWidth: 380 }}>

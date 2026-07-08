@@ -379,7 +379,7 @@ const TopNav: React.FC = () => {
                 //   หนาขึ้น". Stack reordered so Cinzel (real
                 //   700/800 weights) leads; weight bumped 500 → 700.
                 fontFamily:
-                  '"Cinzel", "Federo", "Italiana", "Fraunces", Georgia, serif',
+                  '"Playfair Display", "Fraunces", Georgia, serif',
                 fontSize: { xs: "17px", md: "19px" },
                 fontWeight: 700,
                 letterSpacing: "0.22em",

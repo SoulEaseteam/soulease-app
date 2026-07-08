@@ -223,7 +223,7 @@ const TherapistLocationPage: React.FC = () => {
               flexGrow: 1,
               textAlign: "center",
               mr: 5,
-              fontFamily: '"Fraunces", Georgia, serif',
+              fontFamily: '"Playfair Display", "Fraunces", Georgia, serif',
               fontWeight: 600,
               letterSpacing: "-0.01em",
             }}

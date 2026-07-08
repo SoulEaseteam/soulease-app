@@ -50,7 +50,7 @@ import SpaRoundedIcon from "@mui/icons-material/SpaRounded";
 import LocalFireDepartmentRoundedIcon from "@mui/icons-material/LocalFireDepartmentRounded";
 import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
 
-const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // ── shared types (kept loose to match existing DemoTherapist shape)

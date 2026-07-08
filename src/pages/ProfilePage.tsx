@@ -28,7 +28,7 @@ import { fonts } from "@/theme";
 // 🆕 Round 28r71 — shared concierge endpoints (r71 rebrand phase 2).
 import { CONCIERGE } from "@/config/concierge";
 
-const SERIF = '"Fraunces", Georgia, serif';
+const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS  = '"Inter", system-ui, sans-serif';
 
 // ── helpers ─────────────────────────────────────────────────────────

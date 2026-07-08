@@ -35,7 +35,7 @@ import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import NearMeRoundedIcon from "@mui/icons-material/NearMeRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 
-const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 /** 3-state availability — drives the colored status dot in the hero

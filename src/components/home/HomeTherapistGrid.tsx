@@ -38,7 +38,7 @@ import { nowBKK } from "@/utils/time";
 // 🆕 Round 28r71 — shared concierge endpoints (r71 rebrand phase 2).
 import { whatsappDeepLink } from "@/config/concierge";
 
-const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 interface Therapist extends TherapistType {

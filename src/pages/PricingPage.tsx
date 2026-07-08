@@ -61,25 +61,28 @@ const SERVICE_COPY: Record<
   string,
   { thai: string; teaser: string }
 > = {
+  // 🆕 Round 28r73 · Nordic minimal polish — spare, editorial phrasing.
+  //   Every euphemism from CLAUDE.md §3 preserved verbatim; only rhythm
+  //   refined. No new claims, no factual change.
   "SR-Aroma": {
     thai: "การนวดอโรมา · Aromatherapy",
     teaser:
-      "A gentle oil massage in the privacy of your room · premium aromatic blends for calm sleep.",
+      "A quiet oil ritual in the privacy of your room · premium aromatic blends for restorative sleep.",
   },
   "xSR-Thai": {
     thai: "การนวดไทย · Traditional Thai",
     teaser:
-      "Time-honoured Thai stretch and pressure work · restores flexibility and eases travel tension.",
+      "Time-honoured stretch and pressure work · flexibility restored, travel tension eased.",
   },
   "SR-HJ2200": {
     thai: "Gentleman's Signature · การนวดสุภาพบุรุษ",
     teaser:
-      "Warming aromatic oil ritual for men · attentive tension-release work and a personalised finishing ritual.",
+      "A warming aromatic oil ritual for men · attentive tension-release work and a personalised finishing ritual.",
   },
   "SR-B2B3200": {
     thai: "SunRed Therapeutic · การนวดสายเงียบขั้นสูง",
     teaser:
-      "Our most refined ritual · flowing whole-body oil ceremony reserved for specialised practitioners.",
+      "Our most refined ritual · a flowing whole-body oil ceremony reserved for specialised practitioners.",
   },
 };
 
@@ -277,9 +280,12 @@ const PricingPage: React.FC = () => {
             marginRight: { xs: 0, md: "auto" },
           }}
         >
+          {/* 🆕 Round 28r73 — Nordic minimal tone: shorter sentences,
+              editorial rhythm. Facts preserved verbatim; only cadence
+              refined. */}
           {t(
             "pricing.intro",
-            "Every ritual is delivered to your hotel or residence in Bangkok — choose your duration, and our concierge handles the rest. All rates are in Thai Baht (THB) and reflect the base session; travel, extensions, or add-ons are quoted separately.",
+            "Each ritual delivered to your hotel or residence in Bangkok. Choose your duration; the concierge handles the rest. Rates in Thai Baht (THB) reflect the base session — travel, extensions, and add-ons are quoted separately.",
           )}
         </Box>
       </Box>

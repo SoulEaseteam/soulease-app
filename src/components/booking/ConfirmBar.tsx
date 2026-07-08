@@ -24,7 +24,7 @@ import { useTranslation } from "react-i18next";
 import { formatTHB } from "@/utils/servicePricing";
 import useTweenedNumber from "@/hooks/useTweenedNumber";
 
-const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 export interface ConfirmBarProps {

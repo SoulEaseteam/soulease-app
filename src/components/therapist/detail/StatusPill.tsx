@@ -26,7 +26,7 @@ import { useTranslation } from "react-i18next";
 //   alongside 24h to remove ambiguity for tourist visitors.
 import { nowBKK, parseHHMMatBKK, prettyHHMM } from "@/utils/time";
 
-const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 /** Build a "in 2 hours" / "in 35 min" / "tomorrow" hint relative to now-BKK. */

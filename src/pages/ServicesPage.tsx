@@ -70,7 +70,7 @@ import { responsiveShell, responsiveType } from "@/theme/breakpoints";
 // 🆕 Round 28r71 — shared concierge endpoints (r71 rebrand phase 2).
 import { CONCIERGE } from "@/config/concierge";
 
-const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // ─── About pillars — factual only, no fake metrics ────────────────────
@@ -298,7 +298,7 @@ const ServicesPage: React.FC = () => {
                   //   "SUNRED BANGKOK" wordmark: Cinzel-led serif,
                   //   uppercase, wide letter-spacing, weight 700.
                   fontFamily:
-                    '"Cinzel", "Federo", "Italiana", "Fraunces", Georgia, serif',
+                    '"Playfair Display", "Fraunces", Georgia, serif',
                   fontSize: 11,
                   fontWeight: 700,
                   letterSpacing: "0.18em",

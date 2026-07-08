@@ -31,7 +31,7 @@ import LockRoundedIcon from "@mui/icons-material/LockRounded";
 // 🆕 Round 28s202 — HelpOutlineRoundedIcon dropped along with the
 //   trimmed "Common questions" FAQ section.
 
-const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 interface QA {

@@ -107,7 +107,7 @@ import { formatDistanceEta } from "@/utils/formatDistanceEta";
 //   About/Discovery body text through xs/sm/md so desktop breathes.
 import { responsiveShell, responsiveType } from "@/theme/breakpoints";
 
-const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // 🆕 Round 28s207 (audit #6) — 24h "HH:mm" → "h AM/PM" so the working

@@ -62,7 +62,7 @@ import { responsiveShell } from "@/theme/breakpoints";
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
 import { enhanceImage } from "@/utils/cloudinary";
 
-const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 /** Narrow shape of a booking record we read from Firestore. */

@@ -53,7 +53,10 @@ const services: MassageService[] = [
   {
     id: 'xSR-Thai',
     name: 'Thai Massage',
-    desc: 'Relieve deep muscle tension and restore body balance.',
+    // 🆕 Round 28r73 · Nordic minimal tone — spare, editorial.
+    //   Facts preserved; SaaS "relieve / restore" verbs replaced with
+    //   quieter cadence.
+    desc: 'A time-honoured ritual · muscle tension eased, body balance restored.',
     price: 1200,
     duration: 60,
     // Founder confirmed prices 2026-05-01:
@@ -78,7 +81,8 @@ const services: MassageService[] = [
   {
     id: 'SR-Aroma',
     name: 'Aromatherapy Massage',
-    desc: 'Aromatic oil massage for deep body and mind relaxation.',
+    // 🆕 Round 28r73 · Nordic minimal tone.
+    desc: 'A quiet oil ritual · premium aromatic blends for deep, restorative rest.',
     price: 1600,
     duration: 60,
     // 60: ฿1,600 · 90: ฿2,400 · 120: ฿3,200
@@ -98,7 +102,8 @@ const services: MassageService[] = [
   {
     id: 'SR-HJ2200',
     name: "Gentleman's Signature Therapy",
-    desc: 'Deep-tissue therapy tailored for active men.',
+    // 🆕 Round 28r73 · Nordic minimal tone.
+    desc: 'A warming ritual for men · attentive tension-release work, unhurried.',
     price: 2200,
     duration: 60,
     // 60: ฿2,200 · 90: ฿3,300 · 120: ฿4,400
@@ -116,11 +121,15 @@ const services: MassageService[] = [
     badge: 'RECOMMEND',
   },
 
-  // ⭐⭐⭐ EXCLUSIVE — Senior licensed practitioners only ⭐⭐⭐
+  // 🆕 Round 28r73 · CLAUDE.md §3 euphemism-table fix — "senior" (age)
+  //   and "licensed" (unverifiable claim) both banned by brand voice.
+  //   Replaced with "specialised practitioners" per the euphemism table.
+  //   ⭐⭐⭐ EXCLUSIVE — Reserved for specialised practitioners ⭐⭐⭐
   {
     id: 'SR-B2B3200',
     name: 'SunRed Therapeutic Experience',
-    desc: 'Premium ritual by senior licensed therapists.',
+    // 🆕 Round 28r73 · Nordic minimal tone + euphemism-table compliance.
+    desc: 'Our most refined ritual · reserved for specialised practitioners.',
     price: 3200,
     duration: 60,
     // 60: ฿3,200 · 90: ฿4,800 · 120: ฿6,400

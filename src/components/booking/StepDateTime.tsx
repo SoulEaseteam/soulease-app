@@ -45,7 +45,7 @@ import {
   isSlotTaken,
 } from "@/utils/useTherapistBookings";
 
-const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 const SLOT_INCREMENT_MIN = 30;

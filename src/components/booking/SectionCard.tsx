@@ -10,7 +10,7 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
 
-const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 
 export interface SectionCardProps {
   label: string;

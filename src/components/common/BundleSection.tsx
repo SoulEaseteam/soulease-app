@@ -61,7 +61,7 @@ import { CONCIERGE, whatsappDeepLink } from "@/config/concierge";
 
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 const SERIF =
-  '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
+  '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 
 const LINE_URL = CONCIERGE.lineUrl;
 

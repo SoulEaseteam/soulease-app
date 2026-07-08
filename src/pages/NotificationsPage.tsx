@@ -45,7 +45,7 @@ import { responsiveShell } from "@/theme/breakpoints";
 
 dayjs.extend(relativeTime);
 
-const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 interface Notification {

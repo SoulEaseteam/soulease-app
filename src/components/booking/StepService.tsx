@@ -39,7 +39,7 @@ import {
 } from "@/utils/servicePricing";
 import ServiceDurationSheet from "@/components/booking/ServiceDurationSheet";
 
-const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
+const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 interface Props {
