@@ -375,94 +375,15 @@ const HomeTherapistGrid: React.FC = () => {
           single-color Fraunces serif title, a clean live-status
           pill, and the concierge headline as a quiet italic line —
           all in the same hierarchy register the hero now uses. */}
-      {/* 🆕 Round 28s165 — Founder: drop the "TONIGHT · BANGKOK"
-          eyebrow + "Our Therapists" H2. Header replaced with a
-          single centred tagline beneath TopNav.
-          "delivered to you." kept as italic accent in brand red,
-          matching the founder's original about-us card composition. */}
-      <Box
-        sx={{
-          margin: "8px 18px 18px",
-          textAlign: "center",
-        }}
-      >
-        {/* 🆕 Round 28s172 — Founder: "จัดให้พอดีกับจอ". Shrink size
-            + tighter line-height + force balanced two-line wrap via
-            CSS `text-wrap: balance` so the comma never strands a
-            single "delivered to you." word on its own line. */}
-        <Typography
-          component="h2"
-          sx={{
-            fontFamily: fonts.heading,
-            // 🆕 Round 28r53 — responsive scale (was xs 15 / sm 16).
-            //   On desktop the tagline sat tiny in a wide column; now
-            //   bumps through the responsiveType.h6 stack (16/17/18).
-            ...responsiveType.h6,
-            fontWeight: 500,
-            color: brand.text,
-            letterSpacing: "0.005em",
-            textWrap: "balance",
-            maxWidth: { xs: 380, md: 560 },
-            margin: "0 auto",
-            "& em": {
-              fontStyle: "italic",
-              fontWeight: 500,
-              color: brand.red,
-              whiteSpace: "nowrap",
-            },
-          }}
-          dangerouslySetInnerHTML={{
-            __html:
-              "Bangkok's most discreet outcall massage, <em>delivered to you.</em>",
-          }}
-        />
-        {/* 🆕 Round 28r75 (founder 2026-07-08) — Thai subtitle line
-            removed per direction "ลบ" · English editorial headline
-            reads on its own; the "on standby" line below carries the
-            practical read. r61 bilingual pattern reversal on this
-            specific surface only — other headers still bilingual. */}
-        {/* On-standby line kept compact, below the tagline. */}
-        {!loading && therapists.length > 0 && (
-          <Box
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              marginTop: "10px",
-            }}
-          >
-            <Box
-              component="span"
-              sx={{
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                background: availableNow > 0 ? brand.green : "#f59e0b",
-                boxShadow: `0 0 0 3px ${
-                  availableNow > 0 ? brand.green : "#f59e0b"
-                }22`,
-                flexShrink: 0,
-              }}
-            />
-            <Typography
-              component="span"
-              sx={{
-                fontFamily: fonts.body,
-                fontSize: "12px",
-                fontWeight: 600,
-                color: brand.textMuted,
-                letterSpacing: "0.005em",
-              }}
-            >
-              {availableNow > 0
-                ? `${availableNow} practitioners on standby`
-                : onHolidayCount > 0
-                  ? `All ${workingTodayCount} working tonight are with guests · ${onHolidayCount} off today — message concierge to be next`
-                  : `All ${workingTodayCount} with guests — message concierge to be next`}
-            </Typography>
-          </Box>
-        )}
-      </Box>
+      {/* 🆕 Round 28r75 (founder 2026-07-08) — Editorial tagline
+          "Bangkok's most discreet outcall massage, delivered to you."
+          + "N practitioners on standby" both removed per founder
+          direction "ลบ". The desktop hero band (r70, HomePage.tsx) +
+          QuickNavRow (r74) now carry the top-of-fold context; this
+          section jumped straight to the therapist grid without an
+          extra editorial header.
+          Historical: was added in 28s165, Thai subtitle in r61 (removed
+          in prior r75 edit), full block removed in this round. */}
 
       {/* 🆕 Round 28s166 — Founder: "เอาตัวกรอง ออก". Roster filter
           chip strip (All / Available now / Express ≤5km) removed
