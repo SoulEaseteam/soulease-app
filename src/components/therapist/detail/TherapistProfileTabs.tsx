@@ -768,7 +768,10 @@ const ReviewsTab: React.FC<{
 const INDUSTRY_REBOOK_AVG = 35; // Bangkok outcall avg (founder estimate)
 const TOP_5_PCT_THRESHOLD = 75; // ≥ this = top 5% in market
 
-const LoyaltyTab: React.FC<{
+// 🆕 28s344 — exported so the TherapistDetailPage Reviews tab can reuse
+//   this rich rebook/loyalty panel (founder ref: the "16% · 14 of 90 …"
+//   benchmark + customer-mix + rebook-timing card).
+export const LoyaltyTab: React.FC<{
   rebookPct: number;
   totalSessions: number;
   loyaltyStats?: {

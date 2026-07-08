@@ -31,6 +31,9 @@ import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 
 import DetailHero from "@/components/therapist/detail/DetailHero";
 import StatsCard from "@/components/therapist/detail/StatsCard";
+// 🆕 28s344 — reuse the rich rebook/loyalty panel (benchmark · customer mix ·
+//   rebook timing) inside the Reviews tab.
+import { LoyaltyTab } from "@/components/therapist/detail/TherapistProfileTabs";
 import {
   About,
   type AboutFact,
@@ -711,26 +714,16 @@ const TherapistDetailPage: React.FC = () => {
     if (!therapistFromReal) return null;
     let t = therapistFromReal;
     if (loyaltyStats.totalCompleted > 0) {
-      // 🆕 28s340 (founder "ทำเหมือน rebook rate เก่า · คำนวณจากยอดบุคกิ้งรวม")
-      //   — rebook rate = share of TOTAL bookings that are repeat bookings
-      //   = (totalBookings − uniqueCustomers) / totalBookings. Every booking
-      //   carries a phone so uniqueCustomers is reliable; each customer's
-      //   first booking is "new", the rest are rebookings. Populates from
-      //   total booking volume (not just completed-status repeat customers).
+      // 🆕 28s344 — rebook rate = repeatPct (repeat customers ÷ unique
+      //   customers), matching the loyalty panel headline ("14 of 90
+      //   customers booked again → 16%"). Reverts the 28s340 total-bookings
+      //   formula so the top StatsCard and the Reviews-tab panel agree.
       t = {
         ...t,
         totalSessions: loyaltyStats.totalCompleted,
         rebookRate:
           loyaltyStats.uniqueCustomers > 0
-            ? `${Math.max(
-                0,
-                Math.round(
-                  ((loyaltyStats.totalCompleted -
-                    loyaltyStats.uniqueCustomers) /
-                    loyaltyStats.totalCompleted) *
-                    100
-                )
-              )}%`
+            ? `${loyaltyStats.repeatPct}%`
             : t.rebookRate,
       };
     }
@@ -1345,60 +1338,18 @@ const TherapistDetailPage: React.FC = () => {
             up to the hero region (always visible). */}
         <Box sx={{ display: detailTab === "reviews" ? "block" : "none" }}>
           <Box sx={{ ...responsiveShell, padding: "16px 20px 24px" }}>
-            {/* 🆕 28s342 (founder "Rebook rate โชว์ข้อมูลในแท็บ Reviews") —
-                surface the real rebook rate inside the Reviews tab too, with
-                a loyalty-context label. Hidden when there's no data ("—"). */}
-            {therapist.rebookRate && therapist.rebookRate !== "—" && (
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  padding: "14px 16px",
-                  marginBottom: "16px",
-                  background: "#F4F1EC",
-                  border: "1px solid #E7E0D5",
-                  borderRadius: "14px",
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontFamily: SERIF,
-                    fontSize: 28,
-                    fontWeight: 600,
-                    color: "#1A2B2E",
-                    lineHeight: 1,
-                  }}
-                >
-                  {therapist.rebookRate}
-                </Typography>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography
-                    sx={{
-                      fontFamily: SANS,
-                      fontSize: 12.5,
-                      fontWeight: 700,
-                      color: "#1A2B2E",
-                    }}
-                  >
-                    {t("detail.stats.rebook", "Rebook rate")}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: SANS,
-                      fontSize: 11,
-                      color: "rgba(15,23,42,0.55)",
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {t(
-                      "detail.reviews.rebookHint",
-                      "Share of bookings from returning guests"
-                    )}
-                  </Typography>
-                </Box>
-              </Box>
-            )}
+            {/* 🆕 28s344 (founder ref image) — the rich rebook/loyalty panel
+                at the top of the Reviews tab: "16% · 14 of 90 …" headline,
+                Bangkok-avg benchmark, customer mix, and rebook-timing bars.
+                Reused from TherapistProfileTabs (LoyaltyTab) wired to the
+                live loyaltyStats. */}
+            <Box sx={{ marginBottom: "20px" }}>
+              <LoyaltyTab
+                rebookPct={loyaltyStats.repeatPct}
+                totalSessions={loyaltyStats.totalCompleted}
+                loyaltyStats={loyaltyStats}
+              />
+            </Box>
 
             {/* 🆕 28s339 — Reviews render DIRECTLY from the live hook
                 (useTherapistReviews → rated bookings), founder "ดึงข้อมูลจริง".
