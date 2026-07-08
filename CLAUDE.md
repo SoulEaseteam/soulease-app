@@ -307,13 +307,14 @@ You'll have ALL context. No re-explanation needed.
 
 ### ⛔ Anti-patterns to NOT repeat (lessons learned)
 
-- **PromiseStrip belongs at the BOTTOM of HomePage** (closing
-  reassurance), not at the top. View established this Round 28s99
-  ("เอาไปไว้ล่างสุด"). SunRed traffic is pre-warmed (TG channel,
-  referrals, taxi cards) — guests want to see practitioners on open,
-  not a marketing trust pillar strip. Claude moved it up in 28s146
-  citing "trust above the fold" — wrong playbook for this vertical.
-  Reverted in 28s147.
+- **PromiseStrip was retired 28s148 — do not resurrect.** Original
+  rule (28s99): closing reassurance belonged at the BOTTOM of HomePage,
+  never the top, because SunRed traffic is pre-warmed (TG channel,
+  referrals, taxi cards). By 28s148 the component was removed entirely
+  (not just unmounted — the file is deleted). The generalisable lesson
+  survives: pre-warmed traffic doesn't need above-the-fold trust
+  selling. If a future session is tempted to add ANY new "trust
+  pillar strip" component, remember the reason.
 - **HomePage above-the-fold = the actual product (therapist list)**,
   not pre-product chrome. Removed in session 28s140-145: Hero
   (greeting + service strip), DAYTIME pill, OUR SERVICES eyebrow,
@@ -321,13 +322,22 @@ You'll have ALL context. No re-explanation needed.
 - **Don't add visible status indicators twice for the same state**
   (e.g., Holiday badge on photo + "Offline" pill in card corner).
   Pick one. Audit #5, fixed 28s146.
-- **HomeMapBrowse stays on home.** Tourists in Bangkok glance at
-  who's near their hotel before tapping; the map is a real
-  differentiator vs TG-channel competitors who don't surface it.
-  Claude removed it in 28s146 citing "no analytics confirmation" —
-  that's generic-web-audit thinking, not SunRed-vertical thinking.
-  Restored in 28s149. Default: don't remove product surfaces just
-  because we lack engagement data; ask View first.
+- **HomeMapBrowse now lives on /near-me (moved 28s335) — don't try
+  to restore it to home.** The original rule (28s149) was "map stays
+  on home." That direction flipped in 28s335: the map is behind the
+  QuickNavRow tile → `/near-me` page. Guests still get it in one tap
+  (which was the point), while the home page stays product-first
+  (therapist list). The generalisable lesson survives: don't remove
+  product surfaces just because we lack engagement data — ask View
+  first. But the specific claim that the map belongs on `/` is stale.
+- **React key duplication cascade → Firestore INTERNAL ASSERTION
+  (r77).** Never key a `.map()` on a field that can accidentally
+  coincide across items (e.g. `item.path` in a nav array — two
+  sibling nav items both anchored to `/services` blow up React's
+  child reconciler, which in dev+StrictMode then corrupts the
+  Firestore listener registry and surfaces as "INTERNAL ASSERTION
+  FAILED"). Prefer `item.labelKey` or a UUID that's guaranteed
+  unique regardless of downstream edits to the array.
 
 ### 🚫 Google Business Profile — DO NOT verify
 

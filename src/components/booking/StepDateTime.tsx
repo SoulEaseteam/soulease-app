@@ -31,7 +31,14 @@ import { useTranslation } from "react-i18next";
 // banner (CLAUDE.md §3 no-emoji rule).
 import FlashOnRoundedIcon from "@mui/icons-material/FlashOnRounded";
 import dayjs from "dayjs";
-import therapistsData from "@/data/therapists";
+// 🆕 Round 28r79 — r68 pattern (hardcoded fast-path + Firestore
+//   fallback) so admin-added therapists surface their real working
+//   hours instead of the 09:00–22:00 default.
+import {
+  findHardcodedTherapist,
+  findTherapistOrFetch,
+} from "@/utils/therapistLookup";
+import type { Therapist } from "@/types/therapist";
 // 🆕 Round 28an — anchor all "now" / "today" comparisons to BKK so the
 //    time picker filters past slots correctly even if the user's phone
 //    is on a different timezone or has clock drift.
@@ -347,10 +354,26 @@ const StepDateTime: React.FC<Props> = ({
     return () => window.clearInterval(id);
   }, []);
 
-  const therapist = useMemo(
-    () => therapistsData.find((t) => t.id === therapistId),
-    [therapistId]
+  // 🆕 Round 28r79 — r68 fallback so admin-added therapists surface
+  //   their real working-hours window (not the default 09:00–22:00).
+  //   Sync seed for the 12 originals means slot grid renders on the
+  //   first paint; the effect only fires for admin-added ids.
+  const [therapist, setTherapist] = useState<Therapist | null>(() =>
+    findHardcodedTherapist(therapistId),
   );
+  useEffect(() => {
+    let cancelled = false;
+    const local = findHardcodedTherapist(therapistId);
+    if (local) {
+      setTherapist(local);
+      return;
+    }
+    (async () => {
+      const t = await findTherapistOrFetch(therapistId);
+      if (!cancelled) setTherapist(t);
+    })();
+    return () => { cancelled = true; };
+  }, [therapistId]);
 
   const startTime = therapist?.startTime || "09:00";
   const endTime = therapist?.endTime || "22:00";

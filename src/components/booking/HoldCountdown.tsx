@@ -250,7 +250,10 @@ export const HoldCountdown: React.FC<HoldCountdownProps> = ({
             fontWeight: 700,
             fontSize: "12px",
             textTransform: "none",
-            "&:hover": { background: "#dc0a3d" },
+            // 🎨 Round 28r79 — Nordic sweep · was #dc0a3d crimson. This
+            //   is the Re-book button after hold expiry (post-lockout),
+            //   not the live countdown flash — decorative, not semantic.
+            "&:hover": { background: "#4B4B48" },
           }}
         >
           Re-book

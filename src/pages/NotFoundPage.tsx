@@ -13,8 +13,12 @@ const NotFoundPage: React.FC = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        bgcolor:
-          theme.palette.mode === "dark" ? "#1d1d1d" : "linear-gradient(#fff6f6, #ffecec)",
+        // 🎨 Round 28r79 — Nordic sweep · was
+        //   `bgcolor: "linear-gradient(#fff6f6, #ffecec)"` which MUI
+        //   silently drops (bgcolor doesn't accept gradients). Swapped
+        //   to a flat Nordic neutral via `background`.
+        background:
+          theme.palette.mode === "dark" ? "#1d1d1d" : "#F7F7F6",
         px: 2,
       }}
     >
@@ -57,23 +61,11 @@ const NotFoundPage: React.FC = () => {
             The page you are trying to access doesn’t exist or may have been moved.
           </Typography>
 
-          <Box
-            component="img"
-            src="https://i.ibb.co/vZpPKkX/sad-cat-404.png"
-            alt="not found"
-            width={140}
-            height={140}
-            loading="lazy"
-            decoding="async"
-            sx={{
-              width: 140,
-              height: 140,
-              mx: "auto",
-              mt: 1,
-              opacity: 0.95,
-              filter: "drop-shadow(0 3px 6px rgba(15, 23, 42, 0.12))",
-            }}
-          />
+          {/* 🆕 Round 28r79 — external i.ibb.co image removed. Loading
+              an image from a third-party host when the user has already
+              hit a broken URL is both a privacy leak (external network
+              call) and a SPOF (ibb goes dark → 404 page also breaks).
+              Keeping the page copy-forward instead. */}
 
           <Button
             onClick={() => navigate("/")}

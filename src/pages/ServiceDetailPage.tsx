@@ -82,7 +82,8 @@ interface IconConfig {
 const ICON_BY_ID: Record<string, IconConfig> = {
   "xSR-Thai": {
     icon: SpaRoundedIcon,
-    swatchIcon: "#E07A4F",
+    // 🎨 Round 28r79 — Nordic sweep · was #E07A4F warm clay.
+    swatchIcon: "#B7A896",
     tier: "SIGNATURE",
   },
   "SR-Aroma": {
@@ -97,7 +98,8 @@ const ICON_BY_ID: Record<string, IconConfig> = {
   },
   "SR-B2B3200": {
     icon: AutoAwesomeRoundedIcon,
-    swatchIcon: "#831843",
+    // 🎨 Round 28r79 — Nordic sweep · was #831843 deep magenta.
+    swatchIcon: "#2D2D2B",
     tier: "PREMIUM",
   },
 };
@@ -297,7 +299,8 @@ const ServiceDetailPage: React.FC = () => {
                 //   to match the wider left rail.
                 height: { xs: 140, md: 180 },
                 borderRadius: "20px",
-                background: "#FFF1E5",
+                // 🎨 Round 28r79 — Nordic sweep · was #FFF1E5 warm peach.
+                background: "#ECEBE8",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",

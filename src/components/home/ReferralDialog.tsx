@@ -247,7 +247,9 @@ const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
         >
           {t(
             "referral.intro",
-            "Share your code with friends. They get a discount on their first booking, and you get the same credit when they complete it."
+            // 🆕 Round 28r79 — CLAUDE.md §3 euphemism: "discount"
+            //   → "complimentary credit". Same math, brand-safe copy.
+            "Share your code with friends. They receive a complimentary credit on their first reservation, and you receive the same credit once they complete it."
           )}
         </Typography>
 

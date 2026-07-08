@@ -25,7 +25,14 @@ import { formatTHB } from "@/utils/servicePricing";
 import { fmtBKK } from "@/utils/time";
 import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
 import { getServiceLabel } from "@/utils/serviceCatalog";
-import therapistsData from "@/data/therapists";
+// 🆕 Round 28r79 — admin-created practitioners live only in Firestore
+//   `therapists/{id}`. The r68 pattern (hardcoded fast-path + Firestore
+//   fallback) now runs through this shared helper.
+import {
+  findHardcodedTherapist,
+  findTherapistOrFetch,
+} from "@/utils/therapistLookup";
+import type { Therapist } from "@/types/therapist";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS  = '"Inter", system-ui, sans-serif';
@@ -396,7 +403,26 @@ const BookingCard: React.FC<{
   onReview: () => void;
 }> = ({ booking, onRebook, onReview }) => {
   const status     = STATUS_META[booking.status] ?? STATUS_META.pending;
-  const therapist  = therapistsData.find((t) => t.id === booking.therapistId);
+  // 🆕 Round 28r79 — r68 Firestore fallback for admin-added therapists.
+  //   Sync fast-path for the 12 originals (zero I/O); Firestore falls
+  //   through when it misses so admin-created practitioners render
+  //   their name/photo/rating instead of a blank card.
+  const [therapist, setTherapist] = useState<Therapist | null>(() =>
+    findHardcodedTherapist(booking.therapistId),
+  );
+  useEffect(() => {
+    let cancelled = false;
+    const local = findHardcodedTherapist(booking.therapistId);
+    if (local) {
+      setTherapist(local);
+      return;
+    }
+    (async () => {
+      const t = await findTherapistOrFetch(booking.therapistId);
+      if (!cancelled) setTherapist(t);
+    })();
+    return () => { cancelled = true; };
+  }, [booking.therapistId]);
   const total      = booking.totalPrice ?? booking.total ?? 0;
   const isUpcoming = status.bucket === "upcoming";
   const isCompleted = status.bucket === "completed";
@@ -450,7 +476,8 @@ const BookingCard: React.FC<{
               sx={{
                 width: "100%",
                 height: "100%",
-                background: "linear-gradient(135deg,#2d0909,#5c1c1c)",
+                // 🎨 Round 28r79 — Nordic sweep · was burgundy gradient.
+                background: "linear-gradient(135deg, #4B4B48, #2D2D2B)",
                 fontSize: 16,
                 fontWeight: 700,
                 fontFamily: SERIF,
@@ -462,7 +489,7 @@ const BookingCard: React.FC<{
           </Box>
 
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: "#1a0805", lineHeight: 1.2, mb: 0.25 }}>
+            <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: "#2D2D2B", lineHeight: 1.2, mb: 0.25 }}>
               {booking.therapistName ?? therapist?.name ?? "Therapist"}
             </Typography>
             {therapist && (
@@ -506,7 +533,7 @@ const BookingCard: React.FC<{
             mb: 1.5,
           }}
         >
-          <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 600, color: "#1a0805", lineHeight: 1.3 }}>
+          <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 600, color: "#2D2D2B", lineHeight: 1.3 }}>
             {getServiceLabel(booking.serviceId, booking.serviceName)}
             {booking.duration && (
               <Box component="span" sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 500, color: "rgba(15, 23, 42,0.55)", ml: 1 }}>
@@ -632,7 +659,7 @@ const EmptySlate: React.FC<{
     >
       {icon}
     </Box>
-    <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: "#1a0805", letterSpacing: "-0.01em" }}>
+    <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: "#2D2D2B", letterSpacing: "-0.01em" }}>
       {title}
     </Typography>
     <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(15, 23, 42,0.55)", lineHeight: 1.6, maxWidth: 260 }}>

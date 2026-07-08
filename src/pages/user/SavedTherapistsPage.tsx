@@ -94,15 +94,17 @@ const SavedTherapistsPage: React.FC = () => {
   // PAGE UI
   // ========================================================
   return (
-    <Box sx={{ minHeight: "100vh", background: "#fefcf9", pb: 10 }}>
+    <Box sx={{ minHeight: "100vh", background: "#F7F7F6", pb: 10 }}>
       {/* 🆕 Round 28r52 — responsiveShell replaces the 430 cap. */}
+      {/* 🎨 Round 28r79 — Nordic sweep · bg was #fefcf9 warm-cream,
+                             heading was #C62828 crimson. */}
       <Box sx={{ ...responsiveShell, px: 2 }}>
         <Typography
           variant="h5"
           fontWeight="bold"
           mt={2}
           mb={3}
-          sx={{ color: "#C62828" }}
+          sx={{ color: "#2D2D2B" }}
         >
           💖 Saved Therapists
         </Typography>

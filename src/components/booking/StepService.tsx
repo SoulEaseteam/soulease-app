@@ -24,10 +24,17 @@
 //   • Outer wrapper is `role="radiogroup"`
 //   • Keyboard: Space/Enter selects
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import services, { type MassageService } from "@/data/services";
-import therapistsData from "@/data/therapists";
+// 🆕 Round 28r79 — r68 pattern (hardcoded fast-path + Firestore
+//   fallback) so admin-added therapists show the services they
+//   actually offer, not the fallback catalog.
+import {
+  findHardcodedTherapist,
+  findTherapistOrFetch,
+} from "@/utils/therapistLookup";
+import type { Therapist } from "@/types/therapist";
 import {
   startingPrice,
   durationsFor,
@@ -111,6 +118,26 @@ const StepService: React.FC<Props> = ({
   onConfirm,
   therapistId,
 }) => {
+  // 🆕 Round 28r79 — resolve therapist via r68 fallback (Firestore when
+  //   hardcoded misses). Sync seed for the 12 originals means no
+  //   flicker; the effect only fires for admin-added ids.
+  const [therapist, setTherapist] = useState<Therapist | null>(() =>
+    findHardcodedTherapist(therapistId),
+  );
+  useEffect(() => {
+    let cancelled = false;
+    const local = findHardcodedTherapist(therapistId);
+    if (local) {
+      setTherapist(local);
+      return;
+    }
+    (async () => {
+      const t = await findTherapistOrFetch(therapistId);
+      if (!cancelled) setTherapist(t);
+    })();
+    return () => { cancelled = true; };
+  }, [therapistId]);
+
   // Filter to therapist's offered services if a therapist is preselected.
   // Falls back to ALL services if therapist has no `servicesAvailable` set
   // (legacy data) or therapist not found. Then apply the editorial sort
@@ -129,7 +156,6 @@ const StepService: React.FC<Props> = ({
     if (!therapistId) {
       pool = [...catalog, ...custom];
     } else {
-      const therapist = therapistsData.find((t) => t.id === therapistId);
       const offered = therapist?.servicesAvailable ?? therapist?.services;
       if (!offered || offered.length === 0) {
         pool = [...catalog, ...custom];
@@ -141,7 +167,7 @@ const StepService: React.FC<Props> = ({
     return [...pool]
       .sort((a, b) => orderIdx(a.id) - orderIdx(b.id))
       .map(withLiveServiceOverrides);
-  }, [therapistId]);
+  }, [therapistId, therapist]);
 
   // Bottom-sheet state — opens when a card is tapped, closes on backdrop
   // dismiss or Confirm. Only one service is "in flight" at a time.

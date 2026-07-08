@@ -23,7 +23,9 @@ import NearMeRoundedIcon from "@mui/icons-material/NearMeRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import { priceForDuration } from "@/utils/servicePricing";
 import staticServices from "@/data/services";
-import { brand, fonts, glass, gradients } from "@/theme";
+// 🆕 Round 28r79 — dead imports (brand, glass) removed. Only
+//   fonts.heading + gradients.primary are consumed downstream.
+import { fonts, gradients } from "@/theme";
 // 🆕 Round 28r53 — Phase 3.2 responsive typography helpers.
 import { responsiveType } from "@/theme/typography";
 import type { MassageService } from "@/data/services";

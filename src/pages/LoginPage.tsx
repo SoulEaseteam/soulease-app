@@ -217,7 +217,8 @@ const LoginPage: React.FC = () => {
               borderRadius: "20px",
               background: "#2D2D2B",
               color: "#fff",
-              "&:hover": { background: "#FEAE96" },
+              // 🎨 Round 28r79 — Nordic sweep · was #FEAE96 coral.
+              "&:hover": { background: "#4B4B48" },
             }}
             onClick={handleLogin}
             disabled={loading}

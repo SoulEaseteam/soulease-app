@@ -95,7 +95,7 @@ const Row: React.FC<RowProps> = ({ icon, label, sub, onClick, danger }) => (
           fontFamily: SANS,
           fontSize: 14,
           fontWeight: 600,
-          color: danger ? "#2D2D2B" : "#1a0805",
+          color: danger ? "#2D2D2B" : "#2D2D2B",
           lineHeight: 1.2,
         }}
       >
@@ -267,7 +267,8 @@ const ProfilePage: React.FC = () => {
                 sx={{
                   width: "100%",
                   height: "100%",
-                  background: "linear-gradient(135deg,#2d0909,#5c1c1c)",
+                  // 🎨 Round 28r79 — Nordic sweep · was burgundy gradient.
+                  background: "linear-gradient(135deg, #4B4B48, #2D2D2B)",
                   fontSize: 30,
                   fontWeight: 700,
                   fontFamily: SERIF,

@@ -297,7 +297,9 @@ export const About: React.FC<{
             aria-label={`${gender} therapist`}
             sx={{
               fontSize: 18,
-              color: g.startsWith("m") ? "#1d9bf0" : "#FE5A8C",
+              // 🎨 Round 28r79 — Nordic sweep · female was #FE5A8C bright
+              //   pink → WARM_200 (still visually differentiates from blue).
+              color: g.startsWith("m") ? "#1d9bf0" : "#B7A896",
               marginBottom: "6px",
               flexShrink: 0,
             }}

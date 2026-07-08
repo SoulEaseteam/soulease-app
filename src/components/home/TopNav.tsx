@@ -47,16 +47,11 @@ import { useAuth } from "@/providers/AuthProvider";
 import ReferralDialog from "@/components/home/ReferralDialog";
 import SunRedWordmark from "@/components/common/SunRedWordmark";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
-// 🆕 Round 28r6 (founder 2026-05-06) — TopNav now mirrors the Hero
-//   pill so the page mood stays consistent after the Hero scrolls out
-//   of view. A guest scrolling through the therapist grid still sees
-//   "🌙 Prime hours" pinned to the navbar.
-import { useConciergeMode } from "@/utils/conciergeMode";
-// 🆕 Round 28s142 — ConciergeModeIcon import dropped; the mode chip
-//   that used it was removed (founder: "เอาออก มันแกะกะ"). The icon
-//   component still ships for other surfaces (Hero greeting).
-// import ConciergeModeIcon from "@/components/common/ConciergeModeIcon";
-import { brand, fonts } from "@/theme";
+// 🆕 Round 28r79 — dead imports removed. `useConciergeMode`, `brand`,
+//   and `fonts` were only referenced in the commented-out mode-chip
+//   block (28s142 removed the visible chip). Ripping them out shrinks
+//   the bundle by a hair and removes the temptation to reintroduce the
+//   chip on the next TopNav edit. The mode chip lives on Hero now.
 // 🆕 Round 28r52 — Phase 3.1 responsive foundation. Desktop nav bar
 //   uses MUI's useMediaQuery to swap in a horizontal nav row on md+
 //   viewports. Founder direction 2026-07-08: the site should feel

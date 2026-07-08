@@ -97,7 +97,8 @@ const RegisterPage: React.FC = () => {
               mb: 2, input: { color: '#333' },
               '& .MuiOutlinedInput-root': {
                 borderRadius: '16px',
-                '& fieldset': { borderColor: '#f5a6a6' },
+                // 🎨 Round 28r79 — Nordic sweep · was #f5a6a6 salmon.
+                '& fieldset': { borderColor: '#ECEBE8' },
                 '&:hover fieldset': { borderColor: '#2D2D2B' },
                 '&.Mui-focused fieldset': { borderColor: '#2D2D2B' }
               }
@@ -115,7 +116,7 @@ const RegisterPage: React.FC = () => {
               mb: 2, input: { color: '#333' },
               '& .MuiOutlinedInput-root': {
                 borderRadius: '16px',
-                '& fieldset': { borderColor: '#f5a6a6' },
+                '& fieldset': { borderColor: '#ECEBE8' },
                 '&:hover fieldset': { borderColor: '#2D2D2B' },
                 '&.Mui-focused fieldset': { borderColor: '#2D2D2B' }
               }
@@ -133,7 +134,7 @@ const RegisterPage: React.FC = () => {
               mb: 2, input: { color: '#333' },
               '& .MuiOutlinedInput-root': {
                 borderRadius: '16px',
-                '& fieldset': { borderColor: '#f5a6a6' },
+                '& fieldset': { borderColor: '#ECEBE8' },
                 '&:hover fieldset': { borderColor: '#2D2D2B' },
                 '&.Mui-focused fieldset': { borderColor: '#2D2D2B' }
               }
@@ -148,7 +149,8 @@ const RegisterPage: React.FC = () => {
               maxWidth: 150, width: '100%',
               background: '#2D2D2B',
               boxShadow: '0 4px 20px rgba(15, 23, 42, 0.40)',
-              '&:hover': { background: '#FEAE96', transform: 'scale(1.05)' },
+              // 🎨 Round 28r79 — Nordic sweep · was #FEAE96 coral.
+              '&:hover': { background: '#4B4B48', transform: 'scale(1.05)' },
               transition: '0.2s ease-in-out'
             }}>
             SIGN UP
