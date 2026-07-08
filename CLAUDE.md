@@ -3973,3 +3973,19 @@ transparent grid with a bottom hairline; now a **floating white rounded card**
 margin `-26px` xs / `-32px` md, `zIndex:2`). Icons/labels unchanged (lotus/users/
 pin/star — star is the right semantic for Reviews). tsc=0, build=59, verified
 mobile + desktop, deployed.
+
+### 🆕 2026-07-08 — Hero re-toned warm→cool muted grey-pastel (28s329)
+
+Founder: "**ทำไงให้สีมาหม่นๆ เทาๆ พาสเทลแบบนี้**" — the live hero read too warm
+(cream/wood/taupe) vs the mockup's cool desaturated grey-pastel. The supplied
+photo (`hero.jpg`) IS warm, so `HomeHero.tsx` now mutes + cools it rather than
+needing a new image:
+- Photo `filter: saturate(0.6) brightness(1.04) contrast(0.95)` — softer/airier.
+- A flat `rgba(226,228,233,0.30)` cool-grey wash over the whole photo shifts the
+  warm cream/wood temperature toward grey.
+- Scrim swapped warm cream `rgba(244,239,232)` → cool `rgba(233,234,238)`; card
+  border `#E7E0D5`→`#E2E3E6`; View Services fill → cool white.
+- Tokens: INK `#2B2620`→`#3A3A3C` (cool charcoal), BODY `#5E554C`→`#6E6E73`,
+  Book Now `#6B5F54` taupe → `#726F6B` muted greige (still AA on white).
+tsc=0, build=59, verified mobile + desktop, deployed. If she wants it lighter/
+airier still, drop the cool-wash opacity and raise brightness.
