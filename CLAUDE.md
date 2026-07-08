@@ -3973,3 +3973,12 @@ transparent grid with a bottom hairline; now a **floating white rounded card**
 margin `-26px` xs / `-32px` md, `zIndex:2`). Icons/labels unchanged (lotus/users/
 pin/star — star is the right semantic for Reviews). tsc=0, build=59, verified
 mobile + desktop, deployed.
+
+### 🆕 2026-07-08 — Reverted the cool grey-pastel re-tone (28s330)
+
+Founder saw the 28s329 cool/muted grey-pastel hero and said "**ไม่สวย เอาอก**"
+(not pretty, take it out). `git revert` of 28s329 → the hero is back to the
+**warm cream + taupe** look (28s327): INK `#2B2620` espresso, Book Now `#6B5F54`
+taupe, warm cream scrim, no photo desaturation. **Design note for future rounds:
+the founder prefers the WARM cream tone for this hero — do NOT re-try cool/grey
+pastel.** tsc=0, build=59, redeployed.
