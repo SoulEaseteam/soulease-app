@@ -34,6 +34,9 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import NearMeRoundedIcon from "@mui/icons-material/NearMeRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
+// 🆕 Round 28r81 — accent tokens (favorite-pink glyph in the "Add to
+//   favourites" menu item).
+import { accents } from "@/theme";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -799,9 +802,11 @@ const DetailHero: React.FC<Props> = ({
           }}
         >
           <ListItemIcon>
+            {/* 🆕 Round 28r81 — glyph tinted with the favourite-pink
+                text accent so the heart reads as heart, not chrome. */}
             <FavoriteBorderRoundedIcon
               fontSize="small"
-              sx={{ color: "#4B4B48" }}
+              sx={{ color: accents.favoriteText }}
             />
           </ListItemIcon>
           <ListItemText

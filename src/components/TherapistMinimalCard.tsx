@@ -19,7 +19,7 @@ import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 
-import { brand, fonts } from "@/theme";
+import { brand, fonts, accents } from "@/theme";
 
 // 🆕 Round 28s238 (founder: "Ocean Study" trial on the customer-facing
 //   browse card — scoped to THIS file only, not the global `brand` theme).
@@ -69,6 +69,14 @@ const STATUS_DOT: Record<
   holiday:   { color: "#9ca3af", i18nKey: "offline",   fallback: "Offline"   },
 };
 
+// 🆕 Round 28r81 — When the therapist is `available` (free right now),
+//   the pill switches from the default translucent-white background to
+//   a soft mint-green tint (accents.availableBg) with darker green text
+//   (accents.availableText) and a hairline teal border. Signals
+//   "greenlight, book now" more strongly than a lonely status dot.
+//   Other statuses keep the neutral pill treatment (their coloured dot
+//   already carries the meaning).
+
 const TherapistMinimalCard: React.FC<Props> = ({
   therapist,
   computedStatus,
@@ -109,14 +117,18 @@ const TherapistMinimalCard: React.FC<Props> = ({
   //   all surface without redesigning the composition. Suppressed on
   //   holiday cards so the blurred "Holiday" pill stays the singular
   //   attention grabber (mirrors the status-pill suppression above).
+  // 🆕 Round 28r81 — NEW badge switched from green (#16a34a) to teal
+  //   mint (accents.teal = #2EC4B0). Founder direction: teal is the
+  //   Nordic-accent tone for signal-highlight moments — NEW is the
+  //   canonical "look at me" chip on a therapist card.
   const BADGE_STYLE: Record<
     "TOP_RATED" | "VIP" | "HOT" | "NEW",
     { label: string; bg: string; color: string }
   > = {
-    TOP_RATED: { label: "TOP RATED", bg: "#F5A623", color: "#1A1200" },
-    VIP:       { label: "VIP",        bg: "#1A2B2E", color: "#FFE5EC" },
-    HOT:       { label: "HOT",        bg: "#2D2D2B", color: "#fff"    },
-    NEW:       { label: "NEW",        bg: "#16a34a", color: "#fff"    },
+    TOP_RATED: { label: "TOP RATED", bg: accents.amber, color: "#1A1200" },
+    VIP:       { label: "VIP",        bg: "#1A2B2E",     color: "#FFE5EC" },
+    HOT:       { label: "HOT",        bg: "#2D2D2B",     color: "#fff"    },
+    NEW:       { label: "NEW",        bg: accents.teal,  color: "#fff"    },
   };
   const badgeKey =
     (therapist.badgeKey as keyof typeof BADGE_STYLE | null | undefined) ?? null;
@@ -268,7 +280,16 @@ const TherapistMinimalCard: React.FC<Props> = ({
             display: "flex",
             alignItems: "center",
             gap: "5px",
-            background: "rgba(255,255,255,0.95)",
+            // 🆕 Round 28r81 — mint-green tint + hairline teal border
+            //   for the `available` pill; plain white for the rest.
+            background:
+              status === "available"
+                ? accents.availableBg
+                : "rgba(255,255,255,0.95)",
+            border:
+              status === "available"
+                ? "1px solid rgba(46, 196, 176, 0.24)"
+                : "1px solid transparent",
             padding: "4px 9px",
             borderRadius: "999px",
             boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
@@ -288,7 +309,10 @@ const TherapistMinimalCard: React.FC<Props> = ({
               fontFamily: fonts.body,
               fontSize: "10px",
               fontWeight: 700,
-              color: brand.text,
+              // 🆕 Round 28r81 — darker green text on the mint bg for
+              //   AA-legibility. Non-available pills keep brand.text.
+              color:
+                status === "available" ? accents.availableText : brand.text,
               letterSpacing: "0.02em",
             }}
           >
@@ -510,7 +534,11 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 marginBottom: "5px",
               }}
             >
-              <StarRoundedIcon sx={{ fontSize: 15, color: brand.amber }} />
+              {/* 🆕 Round 28r81 — star colour anchored on accents.amber
+                  (#F5A623) rather than brand.amber (which now points at
+                  the WARM_200 sand tone from r70). Founder direction: star
+                  ratings across the site should be a single true amber. */}
+              <StarRoundedIcon sx={{ fontSize: 15, color: accents.amber }} />
               <Typography
                 sx={{
                   fontFamily: fonts.body,

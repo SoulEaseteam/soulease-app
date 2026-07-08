@@ -43,7 +43,7 @@ import {
   priceForDuration,
   formatTHB,
 } from "@/utils/servicePricing";
-import { fonts, neutrals, grays, warmAccents } from "@/theme";
+import { fonts, neutrals, grays, warmAccents, accents } from "@/theme";
 import { responsiveShell } from "@/theme/breakpoints";
 import { useDocumentMeta } from "@/utils/useDocumentMeta";
 import { whatsappDeepLink } from "@/config/concierge";
@@ -139,6 +139,13 @@ const PAYMENT_METHODS = [
 
 // ─── Small presentational atoms (kept local — page-specific) ──────────
 
+// 🆕 Round 28r81 — Section eyebrows bumped from muted gray to the
+//   teal-mint accent (accents.teal = #2EC4B0). The eyebrow is the
+//   perfect "signal highlight" surface — one word per section, in
+//   uppercase, already visually distinct. Teal there draws the eye
+//   without over-shouting, and there's only ONE eyebrow per section
+//   so the "max 2-3 accent hits per screen" rule is respected even
+//   when a guest scrolls past several sections.
 const Eyebrow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <Box
     component="span"
@@ -146,10 +153,10 @@ const Eyebrow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       display: "inline-block",
       fontFamily: fonts.body,
       fontSize: 11,
-      fontWeight: 600,
+      fontWeight: 700,
       letterSpacing: "0.20em",
       textTransform: "uppercase",
-      color: grays.g500,
+      color: accents.teal,
     }}
   >
     {children}

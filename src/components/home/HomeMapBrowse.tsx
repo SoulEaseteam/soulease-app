@@ -24,7 +24,7 @@ import { motion } from "framer-motion";
 
 import type { Therapist } from "@/types/therapist";
 import { enhanceImage } from "@/utils/cloudinary";
-import { brand, fonts } from "@/theme";
+import { brand, fonts, accents } from "@/theme";
 import type { LiveLocation } from "@/hooks/useUserLocation";
 // 🆕 Round 28b3 — wire to real live data, same engines used by
 //   TherapistProfileCard so map + grid never disagree.
@@ -672,7 +672,8 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
                 gap: "2px",
               }}
             >
-              <StarRoundedIcon sx={{ fontSize: 12, color: "#FBBF24" }} />
+              {/* 🆕 Round 28r81 — accent amber (#F5A623). */}
+              <StarRoundedIcon sx={{ fontSize: 12, color: accents.amber }} />
               {activeRatingLabel}
               {activeReviewCount > 0 && (
                 <Box component="span" sx={{ opacity: 0.7 }}>

@@ -86,7 +86,7 @@ import {
 } from "@/utils/servicePricing";
 import staticServices from "@/data/services";
 import type { MassageService } from "@/data/services";
-import { brand, fonts } from "@/theme";
+import { brand, fonts, accents } from "@/theme";
 import type { LiveLocation } from "@/hooks/useUserLocation";
 
 /** ---------------- Utility ---------------- */
@@ -793,7 +793,9 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
               sx={{ mt: 0.4 }}
             >
               <Stack direction="row" alignItems="center" spacing={0.4}>
-                <StarRoundedIcon sx={{ fontSize: 12, color: "#FBBF24" }} />
+                {/* 🆕 Round 28r81 — one true amber for stars sitewide
+                    (accents.amber = #F5A623). */}
+                <StarRoundedIcon sx={{ fontSize: 12, color: accents.amber }} />
                 <Typography
                   sx={{
                     fontFamily: fonts.body,

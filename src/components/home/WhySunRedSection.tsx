@@ -23,7 +23,7 @@ import {
   Clock,
   Headphones,
 } from "phosphor-react";
-import { fonts } from "@/theme";
+import { fonts, accents } from "@/theme";
 
 type Feature = {
   key: string;
@@ -112,6 +112,10 @@ const WhySunRedSection: React.FC = () => {
               gap: "10px",
             }}
           >
+            {/* 🆕 Round 28r81 — icon glyphs tinted to the teal-mint
+                accent (accents.teal = #2EC4B0) for a bit of Nordic
+                energy on an otherwise all-gray section. Circle border
+                stays neutral so the accent is subtle, not shouty. */}
             <Box
               sx={{
                 width: 42,
@@ -122,7 +126,7 @@ const WhySunRedSection: React.FC = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#4B4B48", // GRAY_800
+                color: accents.teal,
               }}
             >
               <Icon size={20} weight="regular" />

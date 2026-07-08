@@ -63,7 +63,7 @@ import {
 } from "@/utils/servicePricing";
 import { trackServiceView, trackConciergeOpen } from "@/utils/analytics";
 import { db } from "@/lib/firebase";
-import { brand, fonts } from "@/theme";
+import { brand, fonts, accents } from "@/theme";
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell.
 // 🆕 Round 28r54 (Phase 3.3) — responsiveType scales the h1 name +
@@ -685,10 +685,13 @@ const ServiceDetailPage: React.FC = () => {
                     marginBottom: "8px",
                   }}
                 >
+                  {/* 🆕 Round 28r81 — star colour anchored on the
+                      accents.amber (#F5A623) token per founder direction:
+                      one true amber sitewide. */}
                   {Array.from({ length: r.rating }).map((_, i) => (
                     <StarRoundedIcon
                       key={i}
-                      sx={{ fontSize: 14, color: "#FFA726" }}
+                      sx={{ fontSize: 14, color: accents.amber }}
                     />
                   ))}
                 </Box>

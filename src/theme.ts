@@ -55,6 +55,21 @@ const SAGE_400 = "#A2BF7A";     // sage (success / online dot / check mark)
 const WARM_TAUPE       = "#8F8474"; // primary CTA fill (MembershipCard BTN_BG)
 const WARM_TAUPE_HOVER = "#7A7060"; // primary CTA hover (MembershipCard BTN_BG_HOVER)
 
+// ── Round 28r81 (2026-07-08) — ACCENT PALETTE ──────────────────────
+// Founder direction: layer these signal-highlight accents onto the
+// existing Nordic palette. They are used SPARINGLY (max 2-3 hits per
+// screen) for the small moments where the eye needs to be drawn —
+// NEW badges, availability, favorites, ratings, key highlights.
+// The sage `#A2BF7A` (r70) stays semantically "success / online dot".
+// The new `AVAILABLE_GREEN` (`#e8f8f5`) is a different, lighter tint
+// specifically for the "Available" badge BG per founder spec.
+const TEAL_MINT           = "#2EC4B0"; // primary accent — NEW badge, highlights, icons
+const AVAILABLE_GREEN     = "#e8f8f5"; // "Available" badge bg (light green tint)
+const AVAILABLE_GREEN_TEXT = "#0E6E5A"; // darker green for text on the light bg
+const FAVORITE_PINK       = "#fff0f0"; // heart / favorite icon bg
+const FAVORITE_PINK_TEXT  = "#B54747"; // darker red for the heart icon glyph
+const AMBER_STAR          = "#F5A623"; // star rating (kept from prior rounds) + urgency
+
 // ── New named token trees (preferred going forward) ────────────────
 export const neutrals = {
   n50: NEUTRAL_50,
@@ -84,6 +99,19 @@ export const sage = SAGE_400;
 export const warmTaupe = {
   base: WARM_TAUPE,
   hover: WARM_TAUPE_HOVER,
+} as const;
+
+/** Round 28r81 — accent palette. Sparingly-used signal-highlight tokens
+ *  for NEW badges, availability, favorites, star ratings, and key
+ *  highlights. Rule: max 2-3 accent touches per screen — the Nordic
+ *  Gray voice stays primary. */
+export const accents = {
+  teal: TEAL_MINT,
+  availableBg: AVAILABLE_GREEN,
+  availableText: AVAILABLE_GREEN_TEXT,
+  favoriteBg: FAVORITE_PINK,
+  favoriteText: FAVORITE_PINK_TEXT,
+  amber: AMBER_STAR,
 } as const;
 
 // ── Legacy `brand` tree — VALUES swapped, names preserved ──────────

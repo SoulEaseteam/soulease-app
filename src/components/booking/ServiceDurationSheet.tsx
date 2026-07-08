@@ -43,6 +43,8 @@ import { Dialog, Box, Typography, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
+// 🆕 Round 28r81 — accent amber for the "popular" star badges.
+import { accents } from "@/theme";
 import type { MassageService } from "@/data/services";
 import {
   priceForDuration,
@@ -315,7 +317,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
               >
                 ·{" "}
                 <StarRoundedIcon
-                  sx={{ fontSize: 13, color: "#FFA726" }}
+                  sx={{ fontSize: 13, color: accents.amber }}
                 />
                 {t("sheet.used", "{{count}} used", {
                   count: service.count,
@@ -666,7 +668,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   >
                     {isPopular && (
                       <StarRoundedIcon
-                        sx={{ fontSize: 12, color: "#FFA726" }}
+                        sx={{ fontSize: 12, color: accents.amber }}
                       />
                     )}
                     {tagText}

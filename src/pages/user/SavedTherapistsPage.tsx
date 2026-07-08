@@ -9,6 +9,7 @@ import {
   Button,
   CircularProgress,
 } from "@mui/material";
+import FavoriteRoundedIcon from "@mui/icons-material/FavoriteRounded";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
@@ -17,6 +18,8 @@ import BottomNav from "@/components/layouts/BottomNavGlass";
 import type { Therapist } from "@/types/therapist";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell.
 import { responsiveShell } from "@/theme/breakpoints";
+// 🆕 Round 28r81 — accent tokens (favorite pink chip).
+import { accents } from "@/theme";
 
 interface FavoriteTherapist {
   id: string;
@@ -99,15 +102,45 @@ const SavedTherapistsPage: React.FC = () => {
       {/* 🎨 Round 28r79 — Nordic sweep · bg was #fefcf9 warm-cream,
                              heading was #C62828 crimson. */}
       <Box sx={{ ...responsiveShell, px: 2 }}>
-        <Typography
-          variant="h5"
-          fontWeight="bold"
-          mt={2}
-          mb={3}
-          sx={{ color: "#4B4B48" }}
+        {/* 🎨 Round 28r81 — 💖 emoji swapped for a proper heart icon
+            sitting in a soft pink chip (accents.favoriteBg / favoriteText).
+            Matches the founder direction that heart-favorite surfaces
+            use pink #fff0f0 bg + darker glyph #B54747 with a subtle
+            hairline pink border. */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.25,
+            mt: 2,
+            mb: 3,
+          }}
         >
-          💖 Saved Therapists
-        </Typography>
+          <Box
+            sx={{
+              width: 30,
+              height: 30,
+              borderRadius: "50%",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: accents.favoriteBg,
+              border: "1px solid rgba(212, 75, 106, 0.12)",
+              flexShrink: 0,
+            }}
+          >
+            <FavoriteRoundedIcon
+              sx={{ fontSize: 17, color: accents.favoriteText }}
+            />
+          </Box>
+          <Typography
+            variant="h5"
+            fontWeight="bold"
+            sx={{ color: "#4B4B48" }}
+          >
+            Saved Therapists
+          </Typography>
+        </Box>
 
         {loading ? (
           <Box display="flex" justifyContent="center" mt={4}>

@@ -80,11 +80,15 @@ const VARIANTS: Record<
     // Round 28s61 — `title` kept as the English fallback; the
     // rendered label now goes through t("detail.status.*") so
     // ZH/JA/KO/TH visitors see their language.
+    // 🆕 Round 28r81 — Shifted from sage-tint bg (rgba(22,163,74,x))
+    //   to the accent mint tint (#e8f8f5) + teal border for the
+    //   "available now" state. Text/icon fg kept sage green for the
+    //   ONLINE dot semantic (r70 rule) — mint is bg-only.
     title: "Currently Available!",
     titleKey: "detail.status.available",
-    bg: "rgba(22, 163, 74, 0.08)",
-    border: "rgba(22, 163, 74, 0.25)",
-    fg: "#16a34a",
+    bg: "#e8f8f5",
+    border: "rgba(46, 196, 176, 0.24)",
+    fg: "#0E6E5A",
     iconBg: "#16a34a",
   },
   busy: {
