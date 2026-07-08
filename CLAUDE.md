@@ -3895,3 +3895,23 @@ unique so a name-key never collides two real people but merges every variant;
 
 Verified: 10 mixed booking variants → 6 distinct therapists, canonical casing
 wins, removed staff kept separate. tsc=0 + build clean (55 routes), deployed.
+
+### 🆕 2026-07-07 — Firestore "INTERNAL ASSERTION FAILED" crash fix (28s325)
+
+Founder hit **"FIRESTORE (12.12.1) INTERNAL ASSERTION FAILED: Unexpected state
+(ID: b815)"** — full white-screen error boundary on the home page. Known
+firebase-js-sdk bug in the **WebChannel streaming transport**: a flaky network /
+proxy / ad-blocker, or a long Vite-HMR dev session, corrupts the listener
+target-state machine → every later Firestore op throws → whole app crashes. This
+app has hit this class before (`28r77` hotfixed one trigger, a duplicate React
+key that churned listeners).
+
+Fix (`src/lib/firebase.ts`): initialize Firestore via `initializeFirestore(app,
+{ experimentalAutoDetectLongPolling: true })` — sidesteps the WebChannel state
+machine. HMR-safe: `initializeFirestore` runs once, else fall back to
+`getFirestore(app)`. **For local dev, restart the dev server** (not just HMR) to
+re-init Firestore and clear the corrupted in-memory session. Checked: the
+`therapists` collection has NO duplicate ids/names and `HomeTherapistGrid` keys
+by unique `t.id`, so this occurrence was the transport bug, not a new dup key.
+NB: the prerender writes **59** static route files (static `ROUTES` array —
+earlier "55" logs were a mis-read of truncated output). tsc=0, deployed.
