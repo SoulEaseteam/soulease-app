@@ -1243,6 +1243,10 @@ const TherapistDetailPage: React.FC = () => {
             display: "grid",
             gridTemplateColumns: "1fr 1fr 1fr",
             borderBottom: "1px solid rgba(184, 92, 60, 0.18)",
+            // 🆕 28s345 — sit above the StatsCard (zIndex 5) so nothing can
+            //   ever intercept tab taps ("แท็บ กดไม่ได้ทั้ง 3").
+            position: "relative",
+            zIndex: 10,
           }}
         >
           {(
@@ -1275,6 +1279,10 @@ const TherapistDetailPage: React.FC = () => {
                 onClick={() => setDetailTab(tab.id)}
                 sx={{
                   position: "relative",
+                  // 🆕 28s345 — immediate taps on mobile (no double-tap-zoom
+                  //   delay / gesture ambiguity that can eat the first tap).
+                  touchAction: "manipulation",
+                  WebkitTapHighlightColor: "transparent",
                   background: "transparent",
                   border: "none",
                   cursor: "pointer",
