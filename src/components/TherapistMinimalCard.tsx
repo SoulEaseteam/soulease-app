@@ -15,9 +15,6 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
-import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
-import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
-import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import ChatBubbleOutlineRoundedIcon from "@mui/icons-material/ChatBubbleOutlineRounded";
 
 import { brand, fonts, accents } from "@/theme";
@@ -150,28 +147,6 @@ const TherapistMinimalCard: React.FC<Props> = ({
   const isOffDuty = status === "resting" || status === "holiday";
   const isOnHoliday = status === "holiday";
 
-  // Languages from languageSkills (preferred) or features.language fallback.
-  const langTag =
-    therapist.languageSkills && therapist.languageSkills.length > 0
-      ? therapist.languageSkills
-          .map((l) => l.code.toUpperCase())
-          .slice(0, 3)
-          .join(" · ")
-      : therapist.features?.language?.split(/[,/]/)[0]?.trim();
-
-  const formatTime = (hhmm: string): string => {
-    if (!hhmm) return "";
-    const [hStr, mStr] = hhmm.split(":");
-    const h = Number(hStr);
-    const m = Number(mStr);
-    if (Number.isNaN(h) || Number.isNaN(m)) return hhmm;
-    const period = h >= 12 ? "PM" : "AM";
-    const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-    return m === 0
-      ? `${hour12} ${period}`
-      : `${hour12}:${m.toString().padStart(2, "0")} ${period}`;
-  };
-
   // 🆕 Round 28s132 — Lowest 60-min base price across servicesAvailable.
   //   Falls back to ฿1,200 (Thai base) when the therapist has no
   //   services attached.
@@ -230,7 +205,8 @@ const TherapistMinimalCard: React.FC<Props> = ({
         },
         // Height drives itself now — photo aspect 3/4 + info block.
         // No fixed row height (was 190). Uniform across cards because
-        // the info block is stable content (name + 4 meta rows + CTA).
+        // the info block is stable content (name + rating row + CTA).
+        // 🆕 Round 28r83 — trimmed from 4 meta rows to 1 (rating only).
       }}
     >
       {/* 🚨 Round 28r66 HOTFIX — NEW/HOT/VIP/TOP_RATED badge (see the
@@ -489,98 +465,15 @@ const TherapistMinimalCard: React.FC<Props> = ({
               Photos
             </Box>
           </Box>
-          {/* 🆕 Round 28s174 — Restored to founder's prescribed 4-row
-              layout (28s158): Hours · AGE/VERIFIED · ★ rating ·
-              📍 location. 28s173 trim was wrong — View wanted to
-              ADD the rating, not drop the other rows. */}
+          {/* 🆕 Round 28r83 — Founder direction (2026-07-08 live
+              screenshot: "ข้อมูลมัน รกไป"). Dropped Hours row,
+              AGE/VERIFIED row, and Location row. Only the rating +
+              comment-count row remains between the name and the
+              price/CTA — matches the r82 reference silhouette
+              (name · rating · chat · price · CTA). All the trimmed
+              detail is still available on the therapist detail page. */}
 
-          {/* Row 1 — Hours */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: "5px",
-              marginBottom: "5px",
-            }}
-          >
-            <AccessTimeRoundedIcon
-              sx={{ fontSize: 15, color: brand.textMuted }}
-            />
-            <Typography
-              sx={{
-                fontFamily: fonts.body,
-                fontSize: "12.5px",
-                fontWeight: 500,
-                color: brand.textMuted,
-              }}
-            >
-              {formatTime(therapist.startTime)} – {formatTime(therapist.endTime)}
-            </Typography>
-          </Box>
-
-          {/* Row 2 — AGE · VERIFIED */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              marginBottom: "5px",
-            }}
-          >
-            {therapist.features?.age && (
-              <>
-                <Typography
-                  component="span"
-                  sx={{
-                    fontFamily: fonts.body,
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    letterSpacing: "0.10em",
-                    textTransform: "uppercase",
-                    color: brand.textMuted,
-                  }}
-                >
-                  Age:
-                </Typography>
-                <Typography
-                  component="span"
-                  sx={{
-                    fontFamily: fonts.body,
-                    fontSize: "12.5px",
-                    fontWeight: 700,
-                    color: brand.text,
-                  }}
-                >
-                  {therapist.features.age}
-                </Typography>
-                <Typography
-                  component="span"
-                  sx={{ color: brand.textMuted, fontSize: "10px" }}
-                >
-                  ·
-                </Typography>
-              </>
-            )}
-            <VerifiedRoundedIcon
-              sx={{ fontSize: 14, color: "#1D9BF0" }}
-              aria-label="Verified practitioner"
-            />
-            <Typography
-              component="span"
-              sx={{
-                fontFamily: fonts.body,
-                fontSize: "10px",
-                fontWeight: 700,
-                letterSpacing: "0.10em",
-                textTransform: "uppercase",
-                color: brand.textMuted,
-              }}
-            >
-              Verified
-            </Typography>
-          </Box>
-
-          {/* Row 3 — Rating + comment count chip
+          {/* Rating row — pink star + "N.N | K served" + chat chip
               🆕 Round 28r82 — Founder direction (reference screenshot):
                 • Star swaps from amber → soft pink #EF9AA1 for the
                   warmer/friendlier register on the browse card. Amber
@@ -595,7 +488,6 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 display: "flex",
                 alignItems: "center",
                 gap: "8px",
-                marginBottom: "5px",
                 flexWrap: "wrap",
               }}
             >
@@ -671,50 +563,6 @@ const TherapistMinimalCard: React.FC<Props> = ({
             </Box>
           ) : null}
 
-          {/* Row 4 — Location (founder format: "RATCHADA · BANGKOK") */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: "5px",
-            }}
-          >
-            <PlaceRoundedIcon sx={{ fontSize: 15, color: brand.textMuted }} />
-            <Typography
-              noWrap
-              sx={{
-                fontFamily: fonts.body,
-                fontSize: "12px",
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                color: brand.textMuted,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {(() => {
-                const raw = therapist.area?.trim();
-                if (!raw) return "Bangkok";
-                // 🆕 Round 28s164 — Founder format:
-                //   "SUKHUMVIT · BANGKOK", "SILOM · BANGKOK",
-                //   "ASOK · BANGKOK", "THONGLOR · BANGKOK".
-                //   Always 2 parts: neighbourhood (most specific) +
-                //   Bangkok. Data is "เขต · neighbourhood" so the
-                //   LAST segment is the recognisable neighbourhood
-                //   the guest knows.
-                //   "Huai Khwang · RCA" → "RCA · BANGKOK"
-                //   "Rama 4 · Silom" → "SILOM · BANGKOK"
-                //   "Huai Khwang" → "HUAI KHWANG · BANGKOK"
-                const segments = raw
-                  .split(/\s*·\s*|\s*,\s*/)
-                  .map((s) => s.trim())
-                  .filter(Boolean);
-                const neighbourhood = segments[segments.length - 1] ?? "Bangkok";
-                return `${neighbourhood} · Bangkok`;
-              })()}
-            </Typography>
-          </Box>
         </Box>
 
         {/* 🆕 Round 28s132 — Bottom row: price label LEFT + Book Now
