@@ -1345,6 +1345,61 @@ const TherapistDetailPage: React.FC = () => {
             up to the hero region (always visible). */}
         <Box sx={{ display: detailTab === "reviews" ? "block" : "none" }}>
           <Box sx={{ ...responsiveShell, padding: "16px 20px 24px" }}>
+            {/* 🆕 28s342 (founder "Rebook rate โชว์ข้อมูลในแท็บ Reviews") —
+                surface the real rebook rate inside the Reviews tab too, with
+                a loyalty-context label. Hidden when there's no data ("—"). */}
+            {therapist.rebookRate && therapist.rebookRate !== "—" && (
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "14px 16px",
+                  marginBottom: "16px",
+                  background: "#F4F1EC",
+                  border: "1px solid #E7E0D5",
+                  borderRadius: "14px",
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontFamily: SERIF,
+                    fontSize: 28,
+                    fontWeight: 600,
+                    color: "#1A2B2E",
+                    lineHeight: 1,
+                  }}
+                >
+                  {therapist.rebookRate}
+                </Typography>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      color: "#1A2B2E",
+                    }}
+                  >
+                    {t("detail.stats.rebook", "Rebook rate")}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: 11,
+                      color: "rgba(15,23,42,0.55)",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {t(
+                      "detail.reviews.rebookHint",
+                      "Share of bookings from returning guests"
+                    )}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+
             {/* 🆕 28s339 — Reviews render DIRECTLY from the live hook
                 (useTherapistReviews → rated bookings), founder "ดึงข้อมูลจริง".
                 Shows a loading spinner, a real empty state, or the real
