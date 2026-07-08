@@ -120,11 +120,23 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
             expiryDate?: { toMillis?: () => number } | null;
             // 🆕 Round 28r50 — schedules the OVERRIDE's activation.
             scheduledFor?: { toMillis?: () => number } | null;
+            // 🆕 Round 28r59 (Phase 4 feature #6 "Referral tier system")
+            //   — only surfaced on the "REFERRAL" pseudo-key override.
+            tiers?: Array<{ minRedeems?: number; amount?: number; label?: string }> | null;
           }
         >;
         const builtinOverrides: Record<string, BuiltinPromoOverride> = {};
         for (const [k, v] of Object.entries(rawBuiltins)) {
           if (!v || typeof v !== "object") continue;
+          const cleanTiers = Array.isArray(v.tiers)
+            ? v.tiers
+                .filter((t) => t && typeof t.minRedeems === "number" && typeof t.amount === "number")
+                .map((t) => ({
+                  minRedeems: t.minRedeems as number,
+                  amount: t.amount as number,
+                  ...(typeof t.label === "string" && t.label ? { label: t.label } : {}),
+                }))
+            : undefined;
           builtinOverrides[k] = {
             deleted: v.deleted === true,
             amount: typeof v.amount === "number" ? v.amount : undefined,
@@ -135,6 +147,7 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
             startsAt: v.startsAt?.toMillis?.() ?? null,
             expiryDate: v.expiryDate?.toMillis?.() ?? null,
             scheduledFor: v.scheduledFor?.toMillis?.() ?? null,
+            tiers: cleanTiers,
           };
         }
         applyLiveBuiltinOverrides(builtinOverrides);
@@ -293,11 +306,22 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
           startsAt?: { toMillis?: () => number } | null;
           expiryDate?: { toMillis?: () => number } | null;
           scheduledFor?: { toMillis?: () => number } | null;
+          // 🆕 Round 28r59 (Phase 4 feature #6 "Referral tier system")
+          tiers?: Array<{ minRedeems?: number; amount?: number; label?: string }> | null;
         }
       >;
       const builtinOverrides: Record<string, BuiltinPromoOverride> = {};
       for (const [k, v] of Object.entries(rawBuiltins)) {
         if (!v || typeof v !== "object") continue;
+        const cleanTiers = Array.isArray(v.tiers)
+          ? v.tiers
+              .filter((t) => t && typeof t.minRedeems === "number" && typeof t.amount === "number")
+              .map((t) => ({
+                minRedeems: t.minRedeems as number,
+                amount: t.amount as number,
+                ...(typeof t.label === "string" && t.label ? { label: t.label } : {}),
+              }))
+          : undefined;
         builtinOverrides[k] = {
           deleted: v.deleted === true,
           amount: typeof v.amount === "number" ? v.amount : undefined,
@@ -308,6 +332,7 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
           startsAt: v.startsAt?.toMillis?.() ?? null,
           expiryDate: v.expiryDate?.toMillis?.() ?? null,
           scheduledFor: v.scheduledFor?.toMillis?.() ?? null,
+          tiers: cleanTiers,
         };
       }
       applyLiveBuiltinOverrides(builtinOverrides);

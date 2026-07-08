@@ -957,6 +957,59 @@ const BookingFlowPage: React.FC = () => {
         }
       }
 
+      // 🆕 Round 28r59 (Phase 4 feature #1 "FIRST10 first-time enforcement")
+      //   — FIRST10 was trust-based: no phone check, so a tourist could
+      //   reuse it session-to-session. Now, if the guest's phone already
+      //   has a non-cancelled booking, FIRST10 gets silently invalidated
+      //   at submit (discount amount → 0, code kept in `discountCode` for
+      //   admin visibility with a `first10Abused: true` flag). Admin can
+      //   still hand-apply the discount via concierge if she chooses.
+      //
+      //   Fails OPEN: any query error → let the discount ride. A permission
+      //   or index hiccup shouldn't block a legitimate booking on the
+      //   customer's most-common promo. Admin bypass, same as every guard
+      //   above. Only fires when the code passed validateDiscount, so an
+      //   invalidated / mistyped code never touches this loop.
+      let first10Abused = false;
+      if (
+        !isAdminBooking &&
+        PROMOS_ENABLED &&
+        discount.valid &&
+        discount.code === "FIRST10"
+      ) {
+        try {
+          const myPhone = normPhone(form.customerPhone);
+          if (myPhone) {
+            const priorSnap = await getDocs(
+              query(
+                collection(db, "bookings"),
+                where("phone", "==", form.customerPhone),
+                fbLimit(3),
+              ),
+            );
+            const priorNonCancelled = priorSnap.docs.some((d) => {
+              const s = String(
+                (d.data() as { status?: string }).status ?? "",
+              ).toLowerCase();
+              return (
+                s !== "cancelled" &&
+                s !== "canceled" &&
+                s !== "refunded" &&
+                s !== "no_show" &&
+                s !== "rejected" &&
+                s !== "failed" &&
+                s !== ""
+              );
+            });
+            if (priorNonCancelled) first10Abused = true;
+          }
+        } catch (err) {
+          // fail open — never block a legitimate booking on a permission
+          // or index blip.
+          console.warn("[booking] FIRST10 first-time check failed:", err);
+        }
+      }
+
       // 🆕 Round 28s299 — redemption caps on admin-created promo codes.
       //   Enforced here (not in the pure validateDiscount) because it
       //   needs a live count of how many times the code was already
@@ -1005,6 +1058,21 @@ const BookingFlowPage: React.FC = () => {
       }
 
       const attribution = getAttribution();
+      // 🆕 Round 28r59 (feature #1) — if FIRST10 was first-time-abused,
+      //   silently zero the discount at the booking-doc level: the
+      //   customer sees no error and the booking still writes, but the
+      //   total no longer reflects the abused discount. Admin gets a
+      //   `first10Abused` flag on the doc so she can see what happened.
+      //   For any other code, `effectiveDiscountAmount === discountAmount`
+      //   so this is byte-identical to pre-r59 behaviour.
+      const effectiveDiscountAmount = first10Abused ? 0 : (discount.valid ? discountAmount : null);
+      const effectiveDiscountCode = first10Abused ? null : (discount.valid ? discount.code : (form.discountCode || null));
+      const effectiveDiscountLabel = first10Abused ? null : (discount.valid ? discount.label : null);
+      // When abused, add the discount back into the total so nothing is
+      // silently under-charged. `total` was memoized with the discount
+      // applied; adding `discountAmount` back mirrors "as if the code
+      // wasn't valid".
+      const effectiveTotalPrice = first10Abused ? Math.round(total + discountAmount) : total;
       const ref = await addDoc(collection(db, "bookings"), {
         userId: user?.uid ?? null,
         therapistId: form.therapistId,
@@ -1039,14 +1107,25 @@ const BookingFlowPage: React.FC = () => {
         //   the uppercase code) and the Promotions usage stats can't
         //   miss a booking on a case mismatch. Invalid/absent → keep raw
         //   input (or null) so admin can still see what was typed.
-        discountCode: discount.valid ? discount.code : (form.discountCode || null),
+        discountCode: effectiveDiscountCode,
         // 🆕 Round 28r14 — Discount apply logic: store the validated
         //   amount + label on the booking doc so historical bookings
         //   stay reconstructable even if the FIRST10 / referral code
         //   schemas change in the future. Subtotal is the
         //   pre-discount baseline; total stays AFTER discount.
-        discountAmount: discount.valid ? discountAmount : null,
-        discountLabel: discount.valid ? discount.label : null,
+        // 🆕 Round 28r59 (feature #1) — `effective*` fields reflect the
+        //   FIRST10-abuse silent-zero when applicable; identical to
+        //   pre-r59 values in every other case.
+        discountAmount: effectiveDiscountAmount,
+        discountLabel: effectiveDiscountLabel,
+        // 🆕 Round 28r59 (feature #1) — surfaces the abuse attempt to
+        //   admin without customer-side friction. Cloud Function's
+        //   Telegram formatter can key off this if founder wants the
+        //   admin ping to call it out; for now, the flag on the doc is
+        //   enough to make the pattern visible in the admin dashboard.
+        ...(first10Abused
+          ? { first10Abused: true, first10AttemptCode: "FIRST10" }
+          : {}),
         subtotalPrice: subtotal,
         // 🆕 Round 14: customer-selected payment method label (admin still
         // confirms via Telegram, but we capture intent here).
@@ -1061,7 +1140,7 @@ const BookingFlowPage: React.FC = () => {
         rainTier: taxiResult?.rain.tier ?? "none",
         rainSurchargePct: taxiResult?.rain.surchargePct ?? 0,
         distanceKm,
-        totalPrice: total,
+        totalPrice: effectiveTotalPrice,
         // 🆕 Round 28s227 (FIX — orders were invisible) — customer bookings
         //   must land as "pending" so they surface in the admin dashboard's
         //   "Needs Confirmation" panel (AdminDashboardPage queries

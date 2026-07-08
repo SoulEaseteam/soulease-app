@@ -56,6 +56,26 @@ const TONIGHT_HOUR_START = 22;
 const TONIGHT_HOUR_END = 4;
 
 const REFERRAL_CODE_RE = /^SUN-[A-Z0-9]{4,8}$/;
+
+/** 🆕 Round 28r59 (Phase 4 feature #6 "Referral tier system") — pure
+ *  helper: given a tier list + a prior-redemption count, return the
+ *  HIGHEST tier whose minRedeems <= count, or null if none match / no
+ *  list. Exported so the admin test-code sandbox can reason about which
+ *  tier a given `referralRedeemCount` would unlock. */
+export function pickReferralTier(
+  tiers: ReferralTier[] | undefined | null,
+  count: number | undefined,
+): ReferralTier | null {
+  if (!Array.isArray(tiers) || tiers.length === 0) return null;
+  if (typeof count !== "number" || !Number.isFinite(count) || count < 0) return null;
+  let best: ReferralTier | null = null;
+  for (const t of tiers) {
+    if (typeof t?.minRedeems !== "number" || typeof t?.amount !== "number") continue;
+    if (t.minRedeems > count) continue;
+    if (!best || t.minRedeems > best.minRedeems) best = t;
+  }
+  return best;
+}
 const FIRST_TIME_CODE = "FIRST10";
 const WELCOME_CODE = "WELCOME20";
 const TONIGHT_CODE = "TONIGHT500";
@@ -155,6 +175,25 @@ export interface BuiltinPromoOverride {
   //   validateDiscount stays byte-identical to pre-r50 while a scheduled
   //   edit sits queued.
   scheduledFor?: number | null;
+  // 🆕 Round 28r59 (Phase 4 feature #6 "Referral tier system") — only
+  //   used on the "REFERRAL" pseudo-key. Each tier says: "if the SAME
+  //   SUN-XXXX code has been used ≥ minRedeems times (across all
+  //   guests), award this amount." Highest matching tier wins. Empty /
+  //   absent = flat REFERRAL_FIXED_THB (or the `amount` override). The
+  //   count-lookup itself is done by validateDiscountDebug's caller
+  //   (validateDiscount can't be async), so validateDiscount uses this
+  //   as a lookup table given a passed-in `referralRedeemCount` in ctx. */
+  tiers?: ReferralTier[];
+}
+
+export interface ReferralTier {
+  /** The minimum number of prior redemptions of the SAME code required
+   *  for this tier to unlock. */
+  minRedeems: number;
+  /** Discount amount awarded, in THB. */
+  amount: number;
+  /** Optional display label. Empty/absent → generated from amount. */
+  label?: string;
 }
 
 let disabledBuiltinCodes = new Set<string>();
@@ -274,6 +313,14 @@ export interface DiscountValidationContext {
   serviceId?: string | null;
   /** 🆕 Round 28r28 — Travel fee in THB (for FREETAXI logic). */
   taxiFareTHB?: number;
+  /** 🆕 Round 28r59 (Phase 4 feature #6 "Referral tier system") — number
+   *  of prior redemptions of THIS EXACT SUN-XXXX code across all guests.
+   *  Only consulted for referral codes when `builtinOverrides["REFERRAL"]
+   *  .tiers` is set. Optional so validateDiscount stays a sync,
+   *  no-DB-lookup function; the CALLER (BookingFlowPage submit + admin
+   *  test-code sandbox) is responsible for running a bounded count
+   *  query on `bookings.discountCode == code` and passing it in. */
+  referralRedeemCount?: number;
 }
 
 // 🆕 Round 28r27 — Per-tier eligibility. Entry tier accepts all
@@ -486,12 +533,25 @@ export function validateDiscount(
     if (isBuiltinDeleted("REFERRAL")) return { ...NULL_RESULT, code };
     if (builtinOverrideRejects("REFERRAL", subtotalTHB)) return { ...NULL_RESULT, code };
     const ov = builtinOverrides["REFERRAL"];
-    const amount = typeof ov?.amount === "number" && ov.amount >= 0 ? ov.amount : REFERRAL_FIXED_THB;
+    // 🆕 Round 28r59 (Phase 4 feature #6 "Referral tier system") — if the
+    //   REFERRAL override carries a `tiers` list, look up the highest tier
+    //   the referring code's prior-redemption count qualifies for. Any
+    //   validated referral must have `referralRedeemCount` in ctx (caller
+    //   duty). Empty/undefined tiers → fall through to flat amount as
+    //   before. No tier match (count below every minRedeems) → fall
+    //   through to the base amount too, so a new-user referral gets at
+    //   least the entry reward.
+    const baseAmount = typeof ov?.amount === "number" && ov.amount >= 0 ? ov.amount : REFERRAL_FIXED_THB;
+    const tier = pickReferralTier(ov?.tiers, ctx?.referralRedeemCount);
+    const amount = tier ? tier.amount : baseAmount;
+    const label = tier
+      ? (tier.label?.trim() || `Referral tier · ฿${amount} off`)
+      : (ov?.label?.trim() || `Referral · ฿${amount} off`);
     return {
       valid: true,
       code,
       amount,
-      label: ov?.label?.trim() || `Referral · ฿${amount} off`,
+      label,
       type: "fixed",
     };
   }
@@ -565,6 +625,124 @@ export function capturePromoFromURL(): string | null {
  *      so the booking flow can pre-fill it without re-typing.
  *   4. Empty otherwise.
  */
+// 🆕 Round 28r59 (Phase 4 feature #5 "Discount validator preview") — a
+// debug variant used ONLY by the admin Promotions "Test a Code" sandbox.
+// Behaves IDENTICALLY to validateDiscount for the returned DiscountResult
+// (so what the sandbox previews is exactly what a real booking would see),
+// but also returns a `reason` string explaining which check tripped when
+// `.valid === false`. Never called from the customer booking flow, so it
+// can't leak "code exists but you don't qualify" hints back to guests —
+// the sandbox is behind PrivateRoute admin auth.
+export interface DiscountDebugResult extends DiscountResult {
+  reason: string;
+}
+
+const REJECT_MSG = {
+  EMPTY: "empty code",
+  DISABLED_BUILTIN: "built-in code is disabled by admin",
+  DELETED_BUILTIN: "built-in code is deleted by admin",
+  PREMIUM_BLOCKED: "premium-tier service — only VIP100 / FREETAXI allowed",
+  VIP_NOT_PREMIUM: "VIP100 only applies to premium (Gentleman / B2B)",
+  FREETAXI_NOT_PREMIUM: "FREETAXI only applies to premium (Gentleman / B2B)",
+  FREETAXI_NO_FARE: "FREETAXI needs a real taxi fare — set an address",
+  TONIGHT_HOURS: "TONIGHT500 only valid 22:00–04:00 BKK",
+  BUILTIN_STARTS_AT: "code hasn't started yet (admin override)",
+  BUILTIN_EXPIRED: "code has expired (admin override)",
+  BUILTIN_MIN_SPEND: "subtotal below minimum spend (admin override)",
+  CUSTOM_STARTS_AT: "code hasn't started yet",
+  CUSTOM_EXPIRED: "code has expired",
+  CUSTOM_MIN_SPEND: "subtotal below minimum spend",
+  UNKNOWN: "code not recognised",
+} as const;
+
+export function validateDiscountDebug(
+  raw: string | null | undefined,
+  subtotalTHB: number,
+  ctx?: DiscountValidationContext,
+): DiscountDebugResult {
+  const attach = (r: DiscountResult, reason: string): DiscountDebugResult => ({ ...r, reason });
+  if (!raw) return attach(NULL_RESULT, REJECT_MSG.EMPTY);
+  const code = raw.trim().toUpperCase();
+  if (!code) return attach(NULL_RESULT, REJECT_MSG.EMPTY);
+
+  // Duplicate the reject checks so we can attach a reason. The last step
+  // delegates to the real validateDiscount when nothing failed, so the
+  // pass-through result is guaranteed to match production behaviour.
+  if (disabledBuiltinCodes.has(code)) return attach({ ...NULL_RESULT, code }, REJECT_MSG.DISABLED_BUILTIN);
+  if (isBuiltinDeleted(code)) return attach({ ...NULL_RESULT, code }, REJECT_MSG.DELETED_BUILTIN);
+
+  const isPremiumOk = PREMIUM_OK_CODES.has(code);
+  if (!isPremiumOk && ctx?.serviceId && PROMO_BLOCKED_SERVICES.has(ctx.serviceId)) {
+    return attach({ ...NULL_RESULT, code }, REJECT_MSG.PREMIUM_BLOCKED);
+  }
+
+  if (code === "VIP100") {
+    if (!ctx?.serviceId || !PROMO_BLOCKED_SERVICES.has(ctx.serviceId)) {
+      return attach({ ...NULL_RESULT, code }, REJECT_MSG.VIP_NOT_PREMIUM);
+    }
+    if (builtinOverrideRejects(code, subtotalTHB)) {
+      return attach({ ...NULL_RESULT, code }, builtinRejectReason(code, subtotalTHB));
+    }
+  } else if (code === "FREETAXI") {
+    if (!ctx?.serviceId || !PROMO_BLOCKED_SERVICES.has(ctx.serviceId)) {
+      return attach({ ...NULL_RESULT, code }, REJECT_MSG.FREETAXI_NOT_PREMIUM);
+    }
+    if ((ctx.taxiFareTHB ?? 0) <= 0) {
+      return attach({ ...NULL_RESULT, code }, REJECT_MSG.FREETAXI_NO_FARE);
+    }
+    if (builtinOverrideRejects(code, subtotalTHB)) {
+      return attach({ ...NULL_RESULT, code }, builtinRejectReason(code, subtotalTHB));
+    }
+  } else if (code === TONIGHT_CODE) {
+    const hour = ctx?.bookingHourBKK;
+    const isPrime =
+      typeof hour === "number" && (hour >= TONIGHT_HOUR_START || hour < TONIGHT_HOUR_END);
+    if (!isPrime) return attach({ ...NULL_RESULT, code }, REJECT_MSG.TONIGHT_HOURS);
+    if (builtinOverrideRejects(code, subtotalTHB)) {
+      return attach({ ...NULL_RESULT, code }, builtinRejectReason(code, subtotalTHB));
+    }
+  } else if (code === FIRST_TIME_CODE || code === WELCOME_CODE || code === SAMMY_CODE) {
+    if (builtinOverrideRejects(code, subtotalTHB)) {
+      return attach({ ...NULL_RESULT, code }, builtinRejectReason(code, subtotalTHB));
+    }
+  } else if (REFERRAL_CODE_RE.test(code)) {
+    if (disabledBuiltinCodes.has("REFERRAL")) return attach({ ...NULL_RESULT, code }, REJECT_MSG.DISABLED_BUILTIN);
+    if (isBuiltinDeleted("REFERRAL")) return attach({ ...NULL_RESULT, code }, REJECT_MSG.DELETED_BUILTIN);
+    if (builtinOverrideRejects("REFERRAL", subtotalTHB)) {
+      return attach({ ...NULL_RESULT, code }, builtinRejectReason("REFERRAL", subtotalTHB));
+    }
+  } else {
+    const custom = customCodes[code];
+    if (custom) {
+      if (custom.startsAt && Date.now() < custom.startsAt) {
+        return attach({ ...NULL_RESULT, code }, REJECT_MSG.CUSTOM_STARTS_AT);
+      }
+      if (custom.expiresAt && Date.now() > custom.expiresAt) {
+        return attach({ ...NULL_RESULT, code }, REJECT_MSG.CUSTOM_EXPIRED);
+      }
+      if (custom.minSpendThb && subtotalTHB < custom.minSpendThb) {
+        return attach({ ...NULL_RESULT, code }, REJECT_MSG.CUSTOM_MIN_SPEND);
+      }
+    } else {
+      return attach({ ...NULL_RESULT, code }, REJECT_MSG.UNKNOWN);
+    }
+  }
+
+  // If we're here, no reject fired — the real validateDiscount is
+  // authoritative. Reason for a successful code = a positive-toned "ok".
+  const real = validateDiscount(raw, subtotalTHB, ctx);
+  return attach(real, real.valid ? "valid" : REJECT_MSG.UNKNOWN);
+}
+
+function builtinRejectReason(code: string, subtotalTHB: number): string {
+  const ov = builtinOverrides[code];
+  if (!ov) return REJECT_MSG.UNKNOWN;
+  if (ov.startsAt && Date.now() < ov.startsAt) return REJECT_MSG.BUILTIN_STARTS_AT;
+  if (ov.expiryDate && Date.now() > ov.expiryDate) return REJECT_MSG.BUILTIN_EXPIRED;
+  if (ov.minSpend && subtotalTHB < ov.minSpend) return REJECT_MSG.BUILTIN_MIN_SPEND;
+  return REJECT_MSG.UNKNOWN;
+}
+
 export function getInitialDiscountCode(): string {
   const ref = getActiveReferralCode();
   if (ref) return ref;

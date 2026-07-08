@@ -51,10 +51,10 @@ import {
 import { app, db } from "@/lib/firebase";
 import {
   collection, doc, getDoc, onSnapshot, setDoc, deleteDoc, getDocs, query, where,
-  limit as fbLimit, serverTimestamp, Timestamp,
+  limit as fbLimit, orderBy, serverTimestamp, Timestamp,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { Tag, Percent, Ticket, ChartBar, Plus, Trash, Warning, ShareNetwork, Copy, Storefront, FloppyDisk, Camera, CaretUp, CaretDown, NotePencil, PencilSimple, ArrowCounterClockwise, Package, Calendar, Printer, Sliders } from "phosphor-react";
+import { Tag, Percent, Ticket, ChartBar, Plus, Trash, Warning, ShareNetwork, Copy, Storefront, FloppyDisk, Camera, CaretUp, CaretDown, NotePencil, PencilSimple, ArrowCounterClockwise, Package, Calendar, Printer, Sliders, ClockCounterClockwise, Flask, ShieldCheck, TrendUp, MagnifyingGlass } from "phosphor-react";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { SectionCard, fieldSx, downscaleImage } from "./therapistFormKit";
 import { logAdminAction } from "@/utils/auditLog";
@@ -64,6 +64,9 @@ import { priceForDuration, type LiveServiceOverride, type CustomServiceInput } f
 import { therapistPctFor } from "@/utils/commission";
 // 🆕 Round 28r50 (Promotions Phase 1) — Bundle Packages helpers.
 import { bundleSavings, type Bundle } from "@/utils/bundles";
+// 🆕 Round 28r59 (Phase 4 feature #5 "Discount validator preview") — debug
+//   variant of the discount validator + tier helper for feature #6 UI.
+import { validateDiscountDebug, type ReferralTier } from "@/utils/discount";
 
 const BADGE_OPTIONS: MassageService["badge"][] = ["SIGNATURE", "POPULAR", "RECOMMEND", "EXCLUSIVE"];
 
@@ -115,6 +118,10 @@ interface BuiltinOverrideDoc {
   expiryDate?: Timestamp | null;
   // 🆕 Round 28r50 — schedule the OVERRIDE's activation (feature #2).
   scheduledFor?: Timestamp | null;
+  // 🆕 Round 28r59 (Phase 4 feature #6 "Referral tier system") — only
+  //   set on the "REFERRAL" pseudo-key override. Empty/absent = flat
+  //   referral discount. Each tier: { minRedeems, amount, label? }.
+  tiers?: ReferralTier[] | null;
 }
 
 interface PromoDoc {
@@ -345,6 +352,56 @@ const AdminPromotionsPage: React.FC = () => {
   const [printFormat, setPrintFormat] = useState<"a6" | "card" | "square">("a6");
   const printCardRef = useRef<HTMLDivElement | null>(null);
 
+  // 🆕 Round 28r59 (Phase 4 feature #3 "Historical price log") — a
+  //   filtered view over `auditLogs`. Reuses the collection already
+  //   populated by every service/promo/bundle write since 28s234.
+  interface AuditRow {
+    id: string;
+    action: string;
+    actorEmail: string | null;
+    detail: Record<string, unknown>;
+    at: Timestamp | null;
+  }
+  const [auditRows, setAuditRows] = useState<AuditRow[]>([]);
+  const [auditLoading, setAuditLoading] = useState(true);
+  const [auditSearch, setAuditSearch] = useState("");
+
+  // 🆕 Round 28r59 (Phase 4 feature #5 "Discount validator preview")
+  //   — sandbox state. Never touches customer bookings; runs the debug
+  //   variant of validateDiscount to surface the reason string.
+  const [testCode, setTestCode] = useState("");
+  const [testServiceId, setTestServiceId] = useState<string>("");
+  const [testDuration, setTestDuration] = useState<60 | 90 | 120>(60);
+  const [testTaxiKm, setTestTaxiKm] = useState<number>(0);
+  const [testHour, setTestHour] = useState<number>(22);
+  const [testReferralRedeems, setTestReferralRedeems] = useState<number>(0);
+
+  // 🆕 Round 28r59 (Phase 4 feature #2 "Revenue impact preview") —
+  //   baseline stats from the last 30 days of completed bookings, used
+  //   by the Edit / Create dialogs' Projected Impact panel. Kept as a
+  //   one-time compute on mount (matches the usage-stats fetch above).
+  interface BaselineStats {
+    days: number;
+    completedCount: number;
+    avgServicePrice: number;
+    bookingsPerDay: number;
+  }
+  const [baseline, setBaseline] = useState<BaselineStats | null>(null);
+
+  // 🆕 Round 28r59 (feature #4 A/B analytics) — sitewide baseline avg
+  //   booking total (with vs without discount). One-time compute.
+  interface AbStats {
+    avgWithoutDiscount: number;
+    avgWithDiscount: number;
+  }
+  const [abStats, setAbStats] = useState<AbStats | null>(null);
+
+  // 🆕 Round 28r59 (feature #6 "Referral tier system") — editable tier
+  //   list on the REFERRAL built-in edit dialog. Loaded from the
+  //   override, held here so add/remove/edit doesn't roundtrip to
+  //   Firestore per keystroke. Saved on the same Save button.
+  const [builtinEditTiers, setBuiltinEditTiers] = useState<ReferralTier[]>([]);
+
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "adminSettings", "publicRules"), (snap) => {
       const data = snap.data();
@@ -397,6 +454,109 @@ const AdminPromotionsPage: React.FC = () => {
       setPromoDocs(map);
     });
     return () => unsub();
+  }, []);
+
+  // 🆕 Round 28r59 (Phase 4 feature #3 "Historical price log") —
+  //   filtered onSnapshot on auditLogs. Only the actions that touched
+  //   pricing / promotions / bundles / services. Bounded to 200 most
+  //   recent so this page doesn't stream the whole audit history.
+  useEffect(() => {
+    let cancelled = false;
+    const unsub = onSnapshot(
+      query(collection(db, "auditLogs"), orderBy("at", "desc"), fbLimit(200)),
+      (snap) => {
+        if (cancelled) return;
+        const rows: AuditRow[] = [];
+        snap.forEach((d) => {
+          const data = d.data() as {
+            action?: string;
+            actorEmail?: string | null;
+            detail?: Record<string, unknown>;
+            at?: Timestamp | null;
+          };
+          if (typeof data.action !== "string") return;
+          const a = data.action;
+          // Only surface pricing/promo/bundle/service audit trails.
+          if (
+            !a.startsWith("service.") &&
+            !a.startsWith("promo.") &&
+            !a.startsWith("bundle.") &&
+            !a.startsWith("promo.builtin_")
+          ) return;
+          rows.push({
+            id: d.id,
+            action: a,
+            actorEmail: data.actorEmail ?? null,
+            detail: data.detail ?? {},
+            at: data.at ?? null,
+          });
+        });
+        setAuditRows(rows);
+        setAuditLoading(false);
+      },
+      (err) => {
+        console.warn("[promotions] audit log fetch failed:", err);
+        setAuditLoading(false);
+      },
+    );
+    return () => { cancelled = true; unsub(); };
+  }, []);
+
+  // 🆕 Round 28r59 (feature #2 "Revenue impact preview") — one-time
+  //   baseline: last 30 days of completed bookings. Bounded to 500
+  //   docs. Fails soft — panel just hides if the read errors.
+  useEffect(() => {
+    void (async () => {
+      try {
+        const cutoff = Timestamp.fromMillis(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const snap = await getDocs(
+          query(
+            collection(db, "bookings"),
+            where("createdAt", ">=", cutoff),
+            fbLimit(500),
+          ),
+        );
+        let completedCount = 0;
+        let totalService = 0;
+        let discountedTotal = 0;
+        let discountedCount = 0;
+        let nonDiscountedTotal = 0;
+        let nonDiscountedCount = 0;
+        snap.forEach((d) => {
+          const data = d.data() as {
+            status?: string;
+            servicePrice?: number;
+            totalPrice?: number;
+            discountAmount?: number | null;
+          };
+          const s = String(data.status ?? "").toLowerCase();
+          if (s !== "completed" && s !== "done") return;
+          completedCount += 1;
+          const svc = typeof data.servicePrice === "number" ? data.servicePrice : 0;
+          totalService += svc;
+          const total = typeof data.totalPrice === "number" ? data.totalPrice : svc;
+          if (typeof data.discountAmount === "number" && data.discountAmount > 0) {
+            discountedTotal += total;
+            discountedCount += 1;
+          } else {
+            nonDiscountedTotal += total;
+            nonDiscountedCount += 1;
+          }
+        });
+        setBaseline({
+          days: 30,
+          completedCount,
+          avgServicePrice: completedCount > 0 ? Math.round(totalService / completedCount) : 0,
+          bookingsPerDay: completedCount / 30,
+        });
+        setAbStats({
+          avgWithDiscount: discountedCount > 0 ? Math.round(discountedTotal / discountedCount) : 0,
+          avgWithoutDiscount: nonDiscountedCount > 0 ? Math.round(nonDiscountedTotal / nonDiscountedCount) : 0,
+        });
+      } catch (err) {
+        console.warn("[promotions] baseline stats fetch failed:", err);
+      }
+    })();
   }, []);
 
   // Usage stats — one-time fetch (not live; a moderately-stale count of
@@ -732,6 +892,24 @@ const AdminPromotionsPage: React.FC = () => {
     //   day-only pickers above, so the founder can hit e.g. 22:00 sharp
     //   for a night-only promo.
     setBuiltinEditScheduledFor(tsToInputDT(ov.scheduledFor));
+    // 🆕 Round 28r59 (Phase 4 feature #6 "Referral tier system") — only
+    //   the REFERRAL pseudo-code exposes tiers in the UI; everything else
+    //   resets to an empty list so a stale add doesn't leak into the
+    //   next dialog opening.
+    const raw = (ov as unknown as { tiers?: unknown }).tiers;
+    const clean: ReferralTier[] = [];
+    if (Array.isArray(raw)) {
+      for (const t of raw) {
+        if (t && typeof (t as ReferralTier).minRedeems === "number" && typeof (t as ReferralTier).amount === "number") {
+          clean.push({
+            minRedeems: (t as ReferralTier).minRedeems,
+            amount: (t as ReferralTier).amount,
+            label: (t as ReferralTier).label,
+          });
+        }
+      }
+    }
+    setBuiltinEditTiers(code === "REFERRAL" ? clean : []);
     setBuiltinEditCode(code);
   };
 
@@ -774,6 +952,23 @@ const AdminPromotionsPage: React.FC = () => {
       //   override. While in the future, MaintenanceGate drops this
       //   override entirely; the hardcoded default remains live.
       patch.scheduledFor = inputDTToTimestamp(builtinEditScheduledFor);
+      // 🆕 Round 28r59 (Phase 4 feature #6 "Referral tier system") — only
+      //   write tiers when editing REFERRAL; on every other code, clear
+      //   the field so a stale array can't be inherited if a code was
+      //   renamed via override.
+      if (code === "REFERRAL") {
+        const cleanTiers = builtinEditTiers
+          .filter((t) => Number.isFinite(t.minRedeems) && Number.isFinite(t.amount) && t.minRedeems >= 0 && t.amount >= 0)
+          .map((t) => ({
+            minRedeems: Math.round(t.minRedeems),
+            amount: Math.round(t.amount),
+            ...(t.label?.trim() ? { label: t.label.trim() } : {}),
+          }))
+          .sort((a, b) => a.minRedeems - b.minRedeems);
+        patch.tiers = cleanTiers;
+      } else {
+        patch.tiers = null;
+      }
       await setDoc(
         doc(db, "adminSettings", "publicRules"),
         { builtinCodeOverrides: { [code]: patch }, updatedAt: serverTimestamp() },
@@ -1575,25 +1770,229 @@ const AdminPromotionsPage: React.FC = () => {
           </Button>
         </SectionCard>
 
-        {/* Usage stats */}
+        {/* 🆕 Round 28r59 (Phase 4 feature #4 "A/B analytics") — Usage
+            stats table now includes redemption count, total discount ฿
+            granted, avg ticket, and a simple "drives N/mo · ฿X ticket"
+            line so admin can compare active codes at a glance. */}
         <SectionCard icon={<ChartBar size={13} weight="bold" />} title="Usage Stats · สถิติการใช้งาน">
           <Typography sx={{ fontSize: 11.5, color: adminColor.muted, mb: 1 }}>
-            จากออเดอร์จริงล่าสุด (สูงสุด 1,000 รายการ)
+            จากออเดอร์จริงล่าสุด (สูงสุด 1,000 รายการ) — เทียบกับค่าเฉลี่ยทั้งเว็บ
           </Typography>
+          {abStats && (
+            <Box sx={{ p: "8px 10px", mb: 1, borderRadius: "8px", background: adminColor.panel2, display: "flex", gap: 3, flexWrap: "wrap" }}>
+              <Box>
+                <Typography sx={{ fontSize: 10.5, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.08em" }}>Baseline · ไม่มีโค้ด</Typography>
+                <Typography sx={{ ...adminFigureSx, fontSize: 13, fontWeight: 700, color: adminColor.text }}>฿{abStats.avgWithoutDiscount.toLocaleString()}</Typography>
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: 10.5, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.08em" }}>With code · เฉลี่ย</Typography>
+                <Typography sx={{ ...adminFigureSx, fontSize: 13, fontWeight: 700, color: adminColor.text }}>฿{abStats.avgWithDiscount.toLocaleString()}</Typography>
+              </Box>
+            </Box>
+          )}
           {usageLoading ? (
             <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}><CircularProgress size={20} sx={{ color: adminColor.accent }} /></Box>
           ) : Object.keys(usage).length === 0 ? (
             <Typography sx={{ fontSize: 12.5, color: adminColor.muted }}>ยังไม่มีออเดอร์ที่ใช้โค้ดส่วนลด</Typography>
           ) : (
-            <Stack spacing={0.75}>
-              {Object.entries(usage).sort((a, b) => b[1].count - a[1].count).map(([code, s]) => (
-                <Box key={code} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, p: "7px 10px", borderRadius: "8px", background: adminColor.panel2 }}>
-                  <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: adminColor.text }}>{code}</Typography>
-                  <Typography sx={{ ...adminFigureSx, fontSize: 12.5, color: adminColor.muted }}>
-                    {s.count} ครั้ง · รวมลด ฿{s.totalDiscount.toLocaleString()}
-                  </Typography>
+            <Box sx={{ overflow: "auto" }}>
+              <Box component="table" sx={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <Box component="thead">
+                  <Box component="tr" sx={{ "& th": { textAlign: "left", py: 0.75, px: 1, color: adminColor.dim, fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.08em", borderBottom: `1px solid ${adminColor.line}` } }}>
+                    <Box component="th">Code</Box>
+                    <Box component="th" sx={{ textAlign: "right !important" }}>Redeems</Box>
+                    <Box component="th" sx={{ textAlign: "right !important" }}>Total ลด</Box>
+                    <Box component="th" sx={{ textAlign: "right !important" }}>Avg / order</Box>
+                  </Box>
                 </Box>
-              ))}
+                <Box component="tbody">
+                  {Object.entries(usage).sort((a, b) => b[1].count - a[1].count).map(([code, s]) => {
+                    const avgPer = s.count > 0 ? Math.round(s.totalDiscount / s.count) : 0;
+                    return (
+                      <Box key={code} component="tr" sx={{ "& td": { py: 0.75, px: 1, borderBottom: `1px solid ${adminColor.line}` } }}>
+                        <Box component="td" sx={{ fontWeight: 700, color: adminColor.text }}>{code}</Box>
+                        <Box component="td" sx={{ ...adminFigureSx, textAlign: "right !important", color: adminColor.text }}>{s.count}</Box>
+                        <Box component="td" sx={{ ...adminFigureSx, textAlign: "right !important", color: adminColor.muted }}>฿{s.totalDiscount.toLocaleString()}</Box>
+                        <Box component="td" sx={{ ...adminFigureSx, textAlign: "right !important", color: adminColor.muted }}>฿{avgPer.toLocaleString()}</Box>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </Box>
+            </Box>
+          )}
+        </SectionCard>
+
+        {/* 🆕 Round 28r59 (Phase 4 feature #5 "Discount validator preview")
+            — sandbox for verifying a code before sharing. Uses the debug
+            variant of validateDiscount so failed attempts return a reason
+            string, not just a silent NULL_RESULT. */}
+        <SectionCard icon={<Flask size={13} weight="bold" />} title="Test a Code · ทดสอบโค้ด">
+          <Typography sx={{ fontSize: 11.5, color: adminColor.muted, mb: 1 }}>
+            ทดสอบว่าโค้ดจะใช้ได้กับบริการ/ช่วงเวลาไหน โดยไม่ต้องเปิดหน้าจอง
+          </Typography>
+          <TextField
+            fullWidth label="Code · โค้ด" placeholder="FIRST10 · SUN-ABCD · WELCOME20…"
+            value={testCode}
+            onChange={(e) => setTestCode(e.target.value)}
+            sx={{ ...fieldSx, mb: 1.5 }}
+          />
+          <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+            <TextField
+              select fullWidth label="Service · บริการ"
+              value={testServiceId}
+              onChange={(e) => setTestServiceId(e.target.value)}
+              sx={fieldSx} SelectProps={selectMenuProps}
+            >
+              <MenuItem value="">(ไม่ระบุ · any)</MenuItem>
+              {services.map((s) => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
+              {customSvcRows.map((r) => <MenuItem key={r.id} value={r.id}>{r.name} · custom</MenuItem>)}
+            </TextField>
+            <TextField
+              select fullWidth label="Duration · ช่วงเวลา"
+              value={testDuration} onChange={(e) => setTestDuration(Number(e.target.value) as 60 | 90 | 120)}
+              sx={fieldSx} SelectProps={selectMenuProps}
+            >
+              {[60, 90, 120].map((d) => <MenuItem key={d} value={d}>{d} min</MenuItem>)}
+            </TextField>
+          </Stack>
+          <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+            <TextField
+              fullWidth type="number" label="Taxi (km) · ระยะทาง"
+              value={testTaxiKm}
+              onChange={(e) => setTestTaxiKm(Math.max(0, Number(e.target.value)))}
+              sx={fieldSx}
+              helperText="ใช้กับ FREETAXI เท่านั้น"
+            />
+            <TextField
+              fullWidth type="number" label="Hour (BKK) · ชั่วโมง"
+              value={testHour}
+              onChange={(e) => setTestHour(Math.max(0, Math.min(23, Number(e.target.value))))}
+              sx={fieldSx}
+              helperText="0–23 · ใช้กับ TONIGHT500"
+            />
+          </Stack>
+          <TextField
+            fullWidth type="number" label="Referral redeems · จำนวนการใช้ก่อนหน้า"
+            value={testReferralRedeems}
+            onChange={(e) => setTestReferralRedeems(Math.max(0, Number(e.target.value)))}
+            sx={{ ...fieldSx, mb: 1.5 }}
+            helperText="ใช้กับ SUN-XXXX + tiers เท่านั้น (จำลอง N ครั้งที่โค้ดถูกใช้)"
+          />
+          {(() => {
+            const svc = [...services, ...customSvcRows].find((s) => s.id === testServiceId);
+            const basePrice = svc ? (
+              testDuration === 60 ? (svcRows.find((r) => r.id === svc.id)?.p60 ?? customSvcRows.find((r) => r.id === svc.id)?.p60 ?? priceForDuration(svc as MassageService, 60))
+              : testDuration === 90 ? (svcRows.find((r) => r.id === svc.id)?.p90 ?? customSvcRows.find((r) => r.id === svc.id)?.p90 ?? priceForDuration(svc as MassageService, 90))
+              : (svcRows.find((r) => r.id === svc.id)?.p120 ?? customSvcRows.find((r) => r.id === svc.id)?.p120 ?? priceForDuration(svc as MassageService, 120))
+            ) : 2000;
+            // rough taxi baseline: 45 base + 10/km
+            const taxi = testTaxiKm > 0 ? Math.round(45 + testTaxiKm * 10) : 0;
+            const debug = validateDiscountDebug(testCode, basePrice, {
+              bookingHourBKK: testHour,
+              serviceId: testServiceId || null,
+              taxiFareTHB: taxi,
+              referralRedeemCount: testReferralRedeems,
+            });
+            return (
+              <Box sx={{
+                p: "10px 12px", borderRadius: "10px",
+                background: debug.valid ? `${adminColor.green}12` : `${adminColor.red}12`,
+                border: `1px solid ${debug.valid ? adminColor.green : adminColor.red}55`,
+              }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                  <ShieldCheck size={14} weight="bold" color={debug.valid ? adminColor.green : adminColor.red} />
+                  <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: debug.valid ? adminColor.green : adminColor.red }}>
+                    {debug.valid ? "VALID" : "INVALID"}
+                  </Typography>
+                  {debug.code && (
+                    <Typography sx={{ fontSize: 11.5, color: adminColor.dim, fontFamily: "monospace" }}>· {debug.code}</Typography>
+                  )}
+                </Box>
+                {debug.valid ? (
+                  <>
+                    <Typography sx={{ ...adminFigureSx, fontSize: 14, color: adminColor.text }}>
+                      −฿{debug.amount.toLocaleString()} <span style={{ fontSize: 11.5, color: adminColor.dim, fontWeight: 400 }}>· {debug.label}</span>
+                    </Typography>
+                    <Typography sx={{ fontSize: 10.5, color: adminColor.dim, mt: 0.5 }}>
+                      Base ฿{basePrice.toLocaleString()} · taxi ฿{taxi.toLocaleString()} · type {debug.type}
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography sx={{ fontSize: 12, color: adminColor.muted }}>
+                    เหตุผล: {debug.reason}
+                  </Typography>
+                )}
+              </Box>
+            );
+          })()}
+        </SectionCard>
+
+        {/* 🆕 Round 28r59 (Phase 4 feature #3 "Historical price log") —
+            filtered auditLogs view. Reuses the collection already
+            populated by logAdminAction on every service / promo /
+            bundle write since 28s234. */}
+        <SectionCard icon={<ClockCounterClockwise size={13} weight="bold" />} title="Change History · ประวัติการแก้ไข">
+          <Typography sx={{ fontSize: 11.5, color: adminColor.muted, mb: 1 }}>
+            การแก้ราคา / โค้ด / บริการ / bundle 200 รายการล่าสุด
+          </Typography>
+          <TextField
+            fullWidth size="small" placeholder="ค้นหา (code, actor, action)…"
+            value={auditSearch}
+            onChange={(e) => setAuditSearch(e.target.value)}
+            sx={{ ...fieldSx, mb: 1.5 }}
+            InputProps={{
+              startAdornment: (
+                <MagnifyingGlass size={14} color={adminColor.dim} style={{ marginRight: 6 }} />
+              ),
+            }}
+          />
+          {auditLoading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}><CircularProgress size={20} sx={{ color: adminColor.accent }} /></Box>
+          ) : auditRows.length === 0 ? (
+            <Typography sx={{ fontSize: 12.5, color: adminColor.muted }}>ยังไม่มีประวัติการแก้ไข</Typography>
+          ) : (
+            <Stack spacing={0.5} sx={{ maxHeight: 320, overflow: "auto" }}>
+              {auditRows
+                .filter((r) => {
+                  const q = auditSearch.trim().toLowerCase();
+                  if (!q) return true;
+                  const detailStr = JSON.stringify(r.detail).toLowerCase();
+                  return (
+                    r.action.toLowerCase().includes(q) ||
+                    (r.actorEmail ?? "").toLowerCase().includes(q) ||
+                    detailStr.includes(q)
+                  );
+                })
+                .map((r) => {
+                  const when = r.at?.toDate?.().toLocaleString("th-TH", { dateStyle: "short", timeStyle: "short" }) ?? "—";
+                  const detailSummary = Object.entries(r.detail)
+                    .filter(([k]) => k !== "changedFields")
+                    .slice(0, 2)
+                    .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`)
+                    .join(" · ");
+                  const changed = Array.isArray((r.detail as { changedFields?: unknown }).changedFields)
+                    ? ((r.detail as { changedFields: unknown[] }).changedFields).slice(0, 3).join(", ")
+                    : null;
+                  return (
+                    <Box key={r.id} sx={{ p: "6px 10px", borderRadius: "6px", background: adminColor.panel2 }}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1, alignItems: "flex-start" }}>
+                        <Typography sx={{ fontSize: 12, fontWeight: 700, color: adminColor.text, fontFamily: "monospace" }}>
+                          {r.action}
+                        </Typography>
+                        <Typography sx={{ fontSize: 10.5, color: adminColor.dim, flexShrink: 0 }}>{when}</Typography>
+                      </Box>
+                      {(detailSummary || changed) && (
+                        <Typography sx={{ fontSize: 11, color: adminColor.muted, mt: 0.25, wordBreak: "break-word" }}>
+                          {changed ? `changed: ${changed}` : detailSummary}
+                        </Typography>
+                      )}
+                      {r.actorEmail && (
+                        <Typography sx={{ fontSize: 10.5, color: adminColor.dim, mt: 0.25 }}>{r.actorEmail}</Typography>
+                      )}
+                    </Box>
+                  );
+                })}
             </Stack>
           )}
         </SectionCard>
@@ -1653,6 +2052,39 @@ const AdminPromotionsPage: React.FC = () => {
             sx={{ ...fieldSx, mt: 0.5 }}
             helperText="ว่าง = เปิดทันที · ตั้งเวลาแล้วจะเปิดโดยอัตโนมัติภายใน ~1 นาทีของเวลาที่ตั้ง"
           />
+
+          {/* 🆕 Round 28r59 (Phase 4 feature #2 "Revenue impact preview")
+              — projected monthly cost + upside based on last-30-day
+              baseline. Attach rate hardcoded 20% (MVP). Shows only when
+              baseline stats have loaded. */}
+          {baseline && baseline.completedCount > 0 && (
+            <Box sx={{ mt: 2, p: "10px 12px", borderRadius: "10px", background: `${adminColor.accent}0F`, border: `1px solid ${adminColor.accent}33` }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
+                <TrendUp size={13} weight="bold" color={adminColor.accent} />
+                <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: adminColor.accent }}>
+                  Projected impact · ผลกระทบต่อรายได้
+                </Typography>
+              </Box>
+              {(() => {
+                const attach = 0.20;
+                const monthly = Math.round(baseline.bookingsPerDay * 30 * attach);
+                const perOrder =
+                  addType === "percent"
+                    ? Math.min(addCap, Math.round((baseline.avgServicePrice * addAmount) / 100))
+                    : addAmount;
+                const cost = Math.round(monthly * perOrder);
+                return (
+                  <Typography sx={{ fontSize: 12, color: adminColor.text, lineHeight: 1.5 }}>
+                    ประเมิน <strong>{monthly} จอง/เดือน</strong> ใช้โค้ดนี้ (สมมติ 20% attach) → ลด ~<strong>฿{cost.toLocaleString()}</strong> รวม
+                    <br />
+                    <span style={{ fontSize: 10.5, color: adminColor.dim }}>
+                      อ้างอิงงานเสร็จ 30 วันล่าสุด · avg ฿{baseline.avgServicePrice.toLocaleString()} · {baseline.completedCount} orders
+                    </span>
+                  </Typography>
+                );
+              })()}
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAddOpen(false)}>Cancel · ยกเลิก</Button>
@@ -1923,6 +2355,91 @@ const AdminPromotionsPage: React.FC = () => {
                 sx={fieldSx}
                 helperText="ว่าง = เปิดทันที · ตั้งเวลาแล้วจะเปิดโดยอัตโนมัติภายใน ~1 นาที"
               />
+
+              {/* 🆕 Round 28r59 (Phase 4 feature #6 "Referral tier system")
+                  — only shown on the REFERRAL pseudo-code. Each tier says:
+                  "if the SAME SUN-XXXX has been used ≥ minRedeems times,
+                  award this amount." Highest matching tier wins in
+                  validateDiscount. Empty list → flat referral discount. */}
+              {meta.code === "REFERRAL" && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: adminColor.dim, mb: 0.5 }}>
+                    Tiers · ระดับตามจำนวนแนะนำ
+                  </Typography>
+                  <Typography sx={{ fontSize: 11, color: adminColor.muted, mb: 1 }}>
+                    ยิ่งโค้ดของคนแนะนำถูกใช้มาก ยิ่งได้ลดมาก · ถ้าไม่ตั้ง = ลดคงที่ตามค่าเริ่มต้น
+                  </Typography>
+                  <Stack spacing={1}>
+                    {builtinEditTiers.map((t, i) => (
+                      <Stack key={i} direction="row" spacing={1} alignItems="center">
+                        <TextField
+                          type="number" size="small" label="ครั้งขั้นต่ำ" value={t.minRedeems}
+                          onChange={(e) => setBuiltinEditTiers((rows) => rows.map((r, idx) => idx === i ? { ...r, minRedeems: Math.max(0, Number(e.target.value)) } : r))}
+                          sx={{ ...fieldSx, flex: 1 }}
+                        />
+                        <TextField
+                          type="number" size="small" label="ลด (฿)" value={t.amount}
+                          onChange={(e) => setBuiltinEditTiers((rows) => rows.map((r, idx) => idx === i ? { ...r, amount: Math.max(0, Number(e.target.value)) } : r))}
+                          sx={{ ...fieldSx, flex: 1 }}
+                        />
+                        <TextField
+                          size="small" label="ข้อความ (ไม่บังคับ)" value={t.label ?? ""}
+                          onChange={(e) => setBuiltinEditTiers((rows) => rows.map((r, idx) => idx === i ? { ...r, label: e.target.value } : r))}
+                          sx={{ ...fieldSx, flex: 1.4 }}
+                        />
+                        <Button
+                          size="small" onClick={() => setBuiltinEditTiers((rows) => rows.filter((_, idx) => idx !== i))}
+                          sx={{ color: adminColor.red, minWidth: "auto", p: "4px" }} aria-label="Remove tier"
+                        >
+                          <Trash size={15} />
+                        </Button>
+                      </Stack>
+                    ))}
+                    <Button
+                      size="small" variant="outlined" startIcon={<Plus size={13} weight="bold" />}
+                      onClick={() => setBuiltinEditTiers((rows) => [...rows, { minRedeems: rows.length === 0 ? 3 : (rows[rows.length - 1].minRedeems + 3), amount: rows.length === 0 ? 300 : (rows[rows.length - 1].amount + 100) }])}
+                      sx={{ textTransform: "none", fontWeight: 700, borderColor: adminColor.line2, color: adminColor.accent, borderRadius: "8px", alignSelf: "flex-start" }}
+                    >
+                      Add tier · เพิ่มระดับ
+                    </Button>
+                  </Stack>
+                </Box>
+              )}
+
+              {/* 🆕 Round 28r59 (feature #2 "Revenue impact preview") —
+                  same 20%-attach model as the create dialog. Uses the
+                  effective per-order amount (percent × avg or fixed). */}
+              {baseline && baseline.completedCount > 0 && (
+                <Box sx={{ mt: 2, p: "10px 12px", borderRadius: "10px", background: `${adminColor.accent}0F`, border: `1px solid ${adminColor.accent}33` }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
+                    <TrendUp size={13} weight="bold" color={adminColor.accent} />
+                    <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: adminColor.accent }}>
+                      Projected impact · ผลกระทบต่อรายได้
+                    </Typography>
+                  </Box>
+                  {(() => {
+                    const attach = 0.20;
+                    const monthly = Math.round(baseline.bookingsPerDay * 30 * attach);
+                    const amt = Number(builtinEditAmount);
+                    const cap = Number(builtinEditCap);
+                    const perOrder = meta.kind === "percent" && Number.isFinite(amt)
+                      ? Math.min(Number.isFinite(cap) && cap > 0 ? cap : Infinity, Math.round((baseline.avgServicePrice * amt) / 100))
+                      : meta.kind === "fixed" && Number.isFinite(amt)
+                        ? amt
+                        : 0;
+                    const cost = Math.round(monthly * perOrder);
+                    return (
+                      <Typography sx={{ fontSize: 12, color: adminColor.text, lineHeight: 1.5 }}>
+                        ประเมิน <strong>{monthly} จอง/เดือน</strong> ใช้โค้ดนี้ (สมมติ 20% attach) → ลด ~<strong>฿{cost.toLocaleString()}</strong> รวม
+                        <br />
+                        <span style={{ fontSize: 10.5, color: adminColor.dim }}>
+                          อ้างอิงงานเสร็จ 30 วันล่าสุด · avg ฿{baseline.avgServicePrice.toLocaleString()} · {baseline.completedCount} orders
+                        </span>
+                      </Typography>
+                    );
+                  })()}
+                </Box>
+              )}
             </DialogContent>
           );
         })()}
