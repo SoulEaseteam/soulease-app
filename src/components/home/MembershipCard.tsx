@@ -1,17 +1,15 @@
 // src/components/home/MembershipCard.tsx
 //
 // 🆕 Round 28r74 · Nordic sections build (2026-07-08)
-// ─────────────────────────────────────────────────────────────────────
-// Membership Benefits — cream card with 3 perks + sage-tinted "SUNRED
-// MEMBER" mock card graphic. Matches mockup phone-2 "member-card"
-// (outputs/sunred-nordic-gray-mockup.html:370-460).
+// 🆕 Round 28s336 (founder 2026-07-08) — "Membership Benefits ใช้พื้นหลัง
+//   รูปนี้": swapped the flat cream card + CSS mock-card graphic for the
+//   founder-supplied member-card photo (public/images/hero/member.png — a
+//   "SUNRED MEMBER" card on cream with olive branches, card on the RIGHT,
+//   empty cream on the LEFT). The photo is now the section's full-bleed
+//   background; the copy + perks + CTA sit over the empty left third with a
+//   soft cream scrim for legibility — same pattern as the home hero.
 //
-// Responsive: mobile stacks 1-column (perks over card graphic);
-// tablet+/desktop shows 2-column (perks left, card graphic right).
-//
-// CTA "สมัครสมาชิก" → /pricing (Phase 2 pricing page is the canonical
-// membership-tier surface; sending would-be members there beats opening
-// concierge chat cold).
+// CTA "สมัครสมาชิก" → /pricing (canonical membership-tier surface).
 // ─────────────────────────────────────────────────────────────────────
 
 import React from "react";
@@ -20,6 +18,8 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { CheckCircle } from "phosphor-react";
 import { fonts } from "@/theme";
+
+const MEMBER_IMG = "/images/hero/member.png";
 
 const MembershipCard: React.FC = () => {
   const { t } = useTranslation();
@@ -36,27 +36,62 @@ const MembershipCard: React.FC = () => {
       component="section"
       aria-label="Membership benefits"
       sx={{
+        position: "relative",
+        overflow: "hidden",
         margin: { xs: "24px 12px 0", md: "28px 12px 0" },
-        padding: { xs: "20px", md: "26px 28px" },
-        background: "#ECEBE8", // NEUTRAL_100 cream
-        border: "1px solid #E2E0DD", // NEUTRAL_200
         borderRadius: "20px",
-        display: "grid",
-        gridTemplateColumns: { xs: "1fr", sm: "1fr 110px", md: "1fr 130px" },
-        gap: { xs: "18px", md: "22px" },
-        alignItems: "center",
-        boxShadow: "0 1px 3px rgba(45,45,43,0.04), 0 6px 20px rgba(45,45,43,0.05)",
+        border: "1px solid #E7E0D5",
+        boxShadow:
+          "0 1px 3px rgba(45,45,43,0.04), 0 6px 20px rgba(45,45,43,0.05)",
+        minHeight: { xs: 300, md: 300 },
+        display: "flex",
       }}
     >
-      {/* Left column — copy + perks + CTA */}
-      <Box>
+      {/* Full-bleed member-card photo — card kept on the right. */}
+      <Box
+        aria-hidden="true"
+        sx={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `url("${MEMBER_IMG}")`,
+          backgroundSize: "cover",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: { xs: "80% center", md: "right center" },
+        }}
+      />
+      {/* Cream scrim so the overlaid copy always reads; the photo is cream
+          so this blends seamlessly. */}
+      <Box
+        aria-hidden="true"
+        sx={{
+          position: "absolute",
+          inset: 0,
+          background: {
+            xs: "linear-gradient(90deg, rgba(244,241,236,0.96) 0%, rgba(244,241,236,0.9) 46%, rgba(244,241,236,0.5) 68%, rgba(244,241,236,0) 92%)",
+            md: "linear-gradient(90deg, rgba(244,241,236,0.94) 0%, rgba(244,241,236,0.72) 32%, rgba(244,241,236,0.25) 54%, rgba(244,241,236,0) 70%)",
+          },
+        }}
+      />
+
+      {/* Content — copy + perks + CTA over the empty left. */}
+      <Box
+        sx={{
+          position: "relative",
+          zIndex: 1,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          padding: { xs: "22px 18px", md: "28px 34px" },
+          maxWidth: { xs: "84%", sm: "72%", md: "60%" },
+        }}
+      >
         <Box
           component="h3"
           sx={{
             fontFamily: fonts.heading,
-            fontSize: { xs: 20, md: 22 },
+            fontSize: { xs: 21, md: 24 },
             fontWeight: 500,
-            color: "#2D2D2B", // GRAY_900
+            color: "#2B2620",
             letterSpacing: "-0.01em",
             margin: 0,
             lineHeight: 1.15,
@@ -67,9 +102,9 @@ const MembershipCard: React.FC = () => {
         <Box
           sx={{
             fontFamily: fonts.body,
-            fontSize: 11.5,
-            color: "#6E6E6A", // GRAY_600
-            marginTop: "4px",
+            fontSize: 12,
+            color: "#6E6459",
+            marginTop: "5px",
             lineHeight: 1.5,
           }}
         >
@@ -81,10 +116,10 @@ const MembershipCard: React.FC = () => {
           sx={{
             listStyle: "none",
             padding: 0,
-            margin: "14px 0 16px",
+            margin: "14px 0 18px",
             display: "flex",
             flexDirection: "column",
-            gap: "8px",
+            gap: "9px",
           }}
         >
           {perks.map((perk) => (
@@ -96,9 +131,9 @@ const MembershipCard: React.FC = () => {
                 alignItems: "center",
                 gap: "8px",
                 fontFamily: fonts.body,
-                fontSize: 12,
+                fontSize: 12.5,
                 fontWeight: 400,
-                color: "#4B4B48", // GRAY_800
+                color: "#4B443C",
                 lineHeight: 1.5,
               }}
             >
@@ -118,105 +153,34 @@ const MembershipCard: React.FC = () => {
           type="button"
           onClick={() => navigate("/pricing")}
           sx={{
+            alignSelf: "flex-start",
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: "10px 22px",
-            background: "#2D2D2B", // GRAY_900
+            padding: "11px 24px",
+            background: "#2B2620",
             color: "#FFFFFF",
             border: "none",
             borderRadius: 999,
             fontFamily: fonts.body,
-            fontSize: 12,
+            fontSize: 12.5,
             fontWeight: 600,
             letterSpacing: "0.01em",
             cursor: "pointer",
-            minHeight: 40,
+            minHeight: 42,
+            boxShadow: "0 6px 16px rgba(43,38,32,0.18)",
             transition: "background 0.18s ease, transform 0.18s ease",
             "&:hover": {
-              background: "#4B4B48", // GRAY_800
+              background: "#453E36",
               transform: "translateY(-1px)",
             },
             "&:focus-visible": {
-              outline: "2px solid #2D2D2B",
+              outline: "2px solid #2B2620",
               outlineOffset: 3,
             },
           }}
         >
           สมัครสมาชิก
-        </Box>
-      </Box>
-
-      {/* Right column — sage-tinted mock card graphic */}
-      <Box
-        aria-hidden
-        sx={{
-          aspectRatio: "5 / 8",
-          borderRadius: "12px",
-          background: "linear-gradient(135deg, #C4CDBF 0%, #949E8B 100%)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "14px 10px",
-          textAlign: "center",
-          position: "relative",
-          overflow: "hidden",
-          boxShadow: "0 6px 18px rgba(148,158,139,0.35)",
-          // Subtle radial highlight for a soft "card" gleam
-          "&::before": {
-            content: '""',
-            position: "absolute",
-            inset: 0,
-            background:
-              "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.22), transparent 60%)",
-          },
-        }}
-      >
-        <Box
-          sx={{
-            width: 26,
-            height: 26,
-            borderRadius: "50%",
-            background: "rgba(255,255,255,0.42)",
-            marginBottom: "8px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#FFFFFF",
-            fontSize: 14,
-            lineHeight: 1,
-            zIndex: 1,
-          }}
-        >
-          ✦
-        </Box>
-        <Box
-          sx={{
-            fontFamily: fonts.heading,
-            fontSize: 13,
-            fontWeight: 600,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: "#FFFFFF",
-            zIndex: 1,
-          }}
-        >
-          SUNRED
-        </Box>
-        <Box
-          sx={{
-            fontFamily: fonts.body,
-            fontSize: 8,
-            fontWeight: 600,
-            letterSpacing: "0.22em",
-            textTransform: "uppercase",
-            color: "rgba(255,255,255,0.78)",
-            marginTop: "3px",
-            zIndex: 1,
-          }}
-        >
-          MEMBER
         </Box>
       </Box>
     </Box>

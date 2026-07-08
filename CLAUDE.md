@@ -4052,3 +4052,15 @@ Batch (founder, with ref image 2):
   elsewhere). Scoped by `location.pathname === "/"` so other pages are untouched
   (verified /near-me still solid). tsc=0, build=59, verified home + /near-me on
   mobile + desktop, deployed.
+
+### 🆕 2026-07-08 — Membership Benefits → founder's member-card photo (28s336)
+
+Founder: "Membership Benefits ใช้พื้นหลังรูปนี้" + supplied
+`public/images/hero/member.png` (a "SUNRED MEMBER" card on cream with olive
+branches, card RIGHT / empty cream LEFT). `MembershipCard.tsx` reworked: dropped
+the flat cream card + CSS mock-card graphic; the photo is now the section's
+full-bleed background with the title + 3 perks + "สมัครสมาชิก" CTA overlaid on the
+scrimmed left — same background+scrim pattern as the home hero. Committed
+`member.png` (now referenced by code) and the founder's re-optimised `hero.jpg`
+(1.68MB → 48KB) so git matches what's deployed. tsc=0, build=59, verified mobile,
+deployed.
