@@ -875,7 +875,16 @@ const SelectLocationPage: React.FC = () => {
         position: "relative",
         // 🆕 Round 28b43 — bumped from 120px to 180px so the form bottom
         //   isn't covered by the lifted CTA + bottom nav stack.
-        paddingBottom: "calc(180px + env(safe-area-inset-bottom, 0px))",
+        // 🚨 Round 28r66 HOTFIX — switched to the shared
+        //   `--cta-bottom-offset` CSS var (defined in index.css) so this
+        //   page reserves clear space the same way BookingFlow does after
+        //   its own r66 bump. Founder saw the "Fill contact details to
+        //   continue" bar covering the address card just above it.
+        //   Formula: cta-bottom-offset (~114 incl. safe-area) + CTA
+        //   height ~46 + safety ~40 = ~200. The var carries safe-area,
+        //   so `env(safe-area-inset-bottom)` no longer needs adding
+        //   directly.
+        paddingBottom: "calc(var(--cta-bottom-offset) + 100px)",
         fontFamily: SANS,
       }}
     >

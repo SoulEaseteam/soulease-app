@@ -12,8 +12,8 @@
 // to match Phase 2 design. Real data integration via `therapistsData` lookup
 // + Firestore live status in Task 7 (i18n sweep / data wiring).
 
-import React, { useState, useMemo } from "react";
-import { Box, Typography } from "@mui/material";
+import React, { useState, useMemo, useEffect } from "react";
+import { Box, Typography, CircularProgress } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -87,6 +87,11 @@ import { useTherapistReviews } from "@/hooks/useTherapistReviews";
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 import therapistsData from "@/data/therapists";
 import type { Therapist } from "@/types/therapist";
+// 🚨 Round 28r66 HOTFIX — Firestore fallback for admin-added
+//   therapists that never got hardcoded into src/data/therapists.ts.
+//   See the merged-lookup block inside the component below.
+import { db } from "@/lib/firebase";
+import { doc as fsDoc, getDoc as fsGetDoc } from "firebase/firestore";
 import { enhanceImage } from "@/utils/cloudinary";
 // Round 28s53 — real GPS distance. The DetailHero "Allow location"
 // prompt now triggers an actual geolocation request and the
@@ -569,7 +574,97 @@ const TherapistDetailPage: React.FC = () => {
   // MAI) chain was a hangover from Round 28r demo data; with the
   // demo map empty, the only real path was `therapistsData`. An
   // unknown :id now returns null → explicit 404 below.
-  const realRow = id ? therapistsData.find((tt) => tt.id === id) : null;
+  // 🚨 Round 28r66 HOTFIX — added Firestore fallback. Founder:
+  //   "พนักงานใหม่ที่เพิ่มโปรไฟล์ผ่านแอดมิน โชว์ได้แค่หน้าเว็บ
+  //   แต่ไม่มีหน้าดีเทลแกด้วย". HomeTherapistGrid already subscribes
+  //   to the Firestore `therapists` collection, so admin-added
+  //   practitioners appear on home — but the detail page only ever
+  //   consulted the hardcoded array, so tapping their card 404'd.
+  //   Merge: hardcoded wins fast for the 12 originals (rich static
+  //   bios + gallery paths + fixed language keys, zero perf hit,
+  //   zero regression risk); Firestore falls through only when the
+  //   hardcoded lookup MISSES. All 12 hardcoded profiles behave
+  //   exactly as before this round.
+  const hardcodedRow = id ? therapistsData.find((tt) => tt.id === id) : null;
+  const [firestoreRow, setFirestoreRow] = useState<Therapist | null>(null);
+  const [firestoreLoading, setFirestoreLoading] = useState(false);
+
+  useEffect(() => {
+    // Only reach Firestore when hardcoded missed. Fast-path exit
+    //   for the 12 originals means zero extra read on the paths
+    //   customers hit today.
+    if (!id || hardcodedRow) {
+      setFirestoreRow(null);
+      setFirestoreLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setFirestoreLoading(true);
+    (async () => {
+      try {
+        const snap = await fsGetDoc(fsDoc(db, "therapists", id));
+        if (cancelled) return;
+        if (snap.exists()) {
+          const data = snap.data() as Partial<Therapist> & Record<string, unknown>;
+          // Coerce Firestore doc into the shape `buildFromReal`
+          //   consumes. Firestore therapist docs (written by
+          //   AdminTherapistDetailPage / AddTherapistPage /
+          //   therapistFormKit) already carry name/image/gallery/
+          //   features/bios/languageSkills/servicesAvailable, so
+          //   we just spread the doc and defensively fill the
+          //   required-but-possibly-missing fields with safe
+          //   defaults. `buildFromReal` handles the rest.
+          // Safe defaults for required Therapist fields. Spread the
+          //   Firestore payload OVER defaults so anything the doc
+          //   actually has wins; then force `id` back to the URL
+          //   param at the end since `data.id` may be stale/missing.
+          const defaults: Omit<Therapist, "id"> = {
+            name: id,
+            image: "",
+            rating: 0,
+            reviews: 0,
+            startTime: "10:00",
+            endTime: "22:00",
+            gallery: [],
+            features: {
+              age: "",
+              height: "",
+              weight: "",
+              bodyType: "",
+              language: "",
+            },
+          };
+          // `Partial<Therapist>` has string|undefined shapes, so a
+          //   spread would let `undefined` fields blow away the
+          //   defaults. Cast to Therapist — at runtime the JS spread
+          //   only overwrites keys that are present on `data`, so
+          //   defaults survive for any field the Firestore doc
+          //   simply doesn't have.
+          const rec = {
+            ...defaults,
+            ...data,
+            id,
+          } as Therapist;
+          setFirestoreRow(rec);
+        } else {
+          setFirestoreRow(null);
+        }
+      } catch (err) {
+        // Fail closed → treat as not-found rather than crash. Rules
+        //   allow `read: if true` on therapists so the only way this
+        //   throws in production is a network hiccup.
+        console.warn("[TherapistDetailPage] Firestore fallback failed:", err);
+        if (!cancelled) setFirestoreRow(null);
+      } finally {
+        if (!cancelled) setFirestoreLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, hardcodedRow]);
+
+  const realRow = hardcodedRow ?? firestoreRow;
   // 🆕 Round 28s113 — pass the active i18n locale so buildFromReal can
   //   surface the matching `bios[lang]` translation as the About body.
   //   Slice to 2 chars so "en-US" / "zh-CN" both resolve to "en" / "zh".
@@ -843,6 +938,26 @@ const TherapistDetailPage: React.FC = () => {
   // ── 404 — explicit not-found branch (was previously masked by
   // the EMPTY_THERAPIST shell, which silently rendered a blank
   // profile with 0 reviews for any stale /therapists/:id link). */
+  // 🚨 Round 28r66 HOTFIX — hold the 404 while the Firestore
+  //   fallback is still in flight; otherwise an admin-added
+  //   practitioner would flash "not found" for a beat before the
+  //   real doc lands (jarring, and looks broken to the founder).
+  if (!therapist && firestoreLoading) {
+    return (
+      <Box
+        sx={{
+          ...responsiveShell,
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "60px 24px",
+        }}
+      >
+        <CircularProgress size={28} sx={{ color: "#B4000A" }} />
+      </Box>
+    );
+  }
   if (!therapist) {
     return (
       <Box

@@ -99,6 +99,29 @@ const TherapistMinimalCard: React.FC<Props> = ({
 
   const status = computedStatus ?? "bookable";
   const statusMeta = STATUS_DOT[status];
+
+  // 🚨 Round 28r66 HOTFIX — Bug 2b. Founder set `badgeKey: "NEW"` on a
+  //   Firestore therapist doc via /admin/* but the card never rendered
+  //   it. `badgeKey` is computed on the therapist object in
+  //   HomeTherapistGrid (getBadgeForTherapist + TOP_RATED override) and
+  //   set on the Firestore doc from admin; this card just wasn't wired
+  //   to display it. Simple corner chip so NEW / HOT / VIP / TOP_RATED
+  //   all surface without redesigning the composition. Suppressed on
+  //   holiday cards so the blurred "Holiday" pill stays the singular
+  //   attention grabber (mirrors the status-pill suppression above).
+  const BADGE_STYLE: Record<
+    "TOP_RATED" | "VIP" | "HOT" | "NEW",
+    { label: string; bg: string; color: string }
+  > = {
+    TOP_RATED: { label: "TOP RATED", bg: "#F5A623", color: "#1A1200" },
+    VIP:       { label: "VIP",        bg: "#1A2B2E", color: "#FFE5EC" },
+    HOT:       { label: "HOT",        bg: "#B4000A", color: "#fff"    },
+    NEW:       { label: "NEW",        bg: "#16a34a", color: "#fff"    },
+  };
+  const badgeKey =
+    (therapist.badgeKey as keyof typeof BADGE_STYLE | null | undefined) ?? null;
+  const badgeMeta =
+    badgeKey && badgeKey in BADGE_STYLE ? BADGE_STYLE[badgeKey] : null;
   // 🆕 Round 28s138 — Label flows through i18n so the pill speaks
   //   the visitor's language (EN/TH/ZH/JA/KO). Falls back to English
   //   if the bundle hasn't loaded yet.
@@ -197,6 +220,37 @@ const TherapistMinimalCard: React.FC<Props> = ({
         // the info block is stable content (name + 4 meta rows + CTA).
       }}
     >
+      {/* 🚨 Round 28r66 HOTFIX — NEW/HOT/VIP/TOP_RATED badge (see the
+          BADGE_STYLE block above). Anchored to the TOP-LEFT corner so
+          it never collides with the status pill at TOP-RIGHT.
+          Suppressed on holiday cards for the same reason as the status
+          pill — the Holiday tag on the blurred portrait is the only
+          thing that should draw the eye. */}
+      {badgeMeta && !isOnHoliday && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: 12,
+            left: 12,
+            zIndex: 2,
+            display: "inline-flex",
+            alignItems: "center",
+            padding: "4px 9px",
+            borderRadius: "999px",
+            background: badgeMeta.bg,
+            color: badgeMeta.color,
+            fontFamily: fonts.body,
+            fontSize: "10px",
+            fontWeight: 800,
+            letterSpacing: "0.10em",
+            textTransform: "uppercase",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.14)",
+          }}
+          aria-label={badgeMeta.label}
+        >
+          {badgeMeta.label}
+        </Box>
+      )}
       {/* 🆕 Round 28s135 — Status pill moved OUT of the portrait box
           (founder feedback "บังรูป") and pinned to the top-right
           corner of the WHOLE card so it sits on the info side, not
