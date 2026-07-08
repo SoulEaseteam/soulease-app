@@ -73,7 +73,11 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
         borderTop: "1px solid rgba(0, 0, 0, 0.06)",
         borderRadius: "20px 20px 0 0",
         padding: "12px 16px",
-        display: "flex",
+        // 🆕 Round 28r56 (Phase 3.5) — hidden on desktop. On md+ the
+        //   Place Order button lives inside the sticky pricing sidebar
+        //   on BookingFlowPage (in-flow, not fixed). The fixed bottom
+        //   bar only makes sense on the mobile checkout form.
+        display: { xs: "flex", md: "none" },
         alignItems: "center",
         gap: "12px",
         boxShadow: "0 -8px 24px rgba(15, 23, 42, 0.08)",

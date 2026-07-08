@@ -26,7 +26,8 @@ import {
 } from "@/utils/paymentSurcharge";
 import { useDocumentMeta } from "@/utils/useDocumentMeta";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell.
-import { responsiveShellNarrow } from "@/theme/breakpoints";
+// 🆕 Round 28r56 — Phase 3.5 responsive typography for headings.
+import { responsiveShellNarrow, responsiveType } from "@/theme/breakpoints";
 // 🆕 Round 28b7 — `fonts` import was unused (default-import shape was
 //   also wrong: the theme module exports `fonts` as a named export,
 //   not default). Removed to silence the warning.
@@ -288,7 +289,16 @@ const PaymentMethodsPage: React.FC = () => {
         // 🆕 Round 28r52 — narrow variant: this page is dense policy
         //   copy that reads best in a comfortable reading column even
         //   on wide desktops (768px max, not 1200).
+        // 🆕 Round 28r56 (Phase 3.5) — widened at lg+ so the payment
+        //   options + FAQ policy can sit side-by-side in a 2-column
+        //   grid on desktop. Mobile shell unchanged.
         ...responsiveShellNarrow,
+        maxWidth: {
+          xs: "430px",
+          sm: "600px",
+          md: "768px",
+          lg: "1100px",
+        },
         minHeight: "100vh",
         background: "#F4F6F5",
         borderRadius: { xs: "28px", md: 0 },
@@ -338,7 +348,8 @@ const PaymentMethodsPage: React.FC = () => {
             flex: 1,
             textAlign: "center",
             fontFamily: SERIF,
-            fontSize: "18px",
+            // 🆕 Round 28r56 — responsive heading (18→20→22).
+            ...responsiveType.h5,
             fontWeight: 600,
             color: "#1A2B2E",
             letterSpacing: "-0.01em",
@@ -349,14 +360,35 @@ const PaymentMethodsPage: React.FC = () => {
         </Typography>
       </Box>
 
+      {/* 🆕 Round 28r56 (Phase 3.5) — content grid.
+          Mobile (xs-md): single-column stack (unchanged).
+          Desktop (lg+): 2-column grid — payment options in the left
+          column and the Payment & Policy FAQ in the right, so guests
+          on a wide viewport can compare methods against the policy
+          without scrolling back and forth. */}
       <Box
         sx={{
           padding: "16px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "20px",
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            lg: "minmax(0, 1fr) minmax(320px, 460px)",
+          },
+          gap: { xs: "20px", lg: "20px 32px" },
+          alignItems: "start",
         }}
       >
+        {/* Left column: payment method sections. On mobile they render
+            in a normal flex-column; on desktop they stack inside one
+            grid cell. */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "20px",
+            minWidth: 0,
+          }}
+        >
         {/* Recommended cashless banner */}
         <Box
           sx={{
@@ -491,9 +523,10 @@ const PaymentMethodsPage: React.FC = () => {
             "Your concierge will verify and process your payment once confirmed via our official contact channels."
           )}
         </Typography>
+        </Box>{/* end left column */}
 
         {/* ─── Payment & Policy FAQ — refined editorial accordion ─── */}
-        <Box sx={{ mt: 3 }}>
+        <Box sx={{ mt: { xs: 3, lg: 0 }, minWidth: 0 }}>
           {/* Eyebrow + serif title with italic em accent */}
           <Box
             sx={{

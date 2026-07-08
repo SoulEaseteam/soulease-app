@@ -166,7 +166,8 @@ import { validateDiscount, getInitialDiscountCode, getCustomPromoLimits } from "
 // 🆕 Round 28s84 — shared promo kill-switch (home banner + discount field).
 import { PROMOS_ENABLED } from "@/config/featureFlags";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell.
-import { responsiveShellNarrow } from "@/theme/breakpoints";
+// 🆕 Round 28r56 — Phase 3.5 responsive typography for headings.
+import { responsiveShellNarrow, responsiveType } from "@/theme/breakpoints";
 // 🆕 Round 28s77 — WeChat/Alipay transfer surcharge (5% + ฿200).
 import {
   paymentSurcharge,
@@ -1222,10 +1223,21 @@ const BookingFlowPage: React.FC = () => {
         //   desktop). Without this, the booking page rendered full-width.
         // 🆕 Round 28r52 — narrow responsive shell so the checkout form
         //   stays readable on desktop instead of stretching to 1200.
+        // 🆕 Round 28r56 — Phase 3.5 desktop redesign: widen the shell at
+        //   md+ so the 2-column layout (form left / sticky pricing right)
+        //   has real room to breathe. Mobile shell width unchanged.
         ...responsiveShellNarrow,
+        maxWidth: {
+          xs: "430px",
+          sm: "600px",
+          md: "900px",
+          lg: "1200px",
+        },
         minHeight: "100vh",
         background: "#F4F6F5",
-        paddingBottom: "210px",
+        // 🆕 Round 28r56 — no fixed ConfirmBar on desktop, so drop the
+        //   210px bottom padding reserved for it. Mobile keeps 210px.
+        paddingBottom: { xs: "210px", md: "48px" },
         fontFamily: SANS,
         position: "relative",
       }}
@@ -1260,14 +1272,16 @@ const BookingFlowPage: React.FC = () => {
           <ArrowBackRoundedIcon fontSize="small" />
         </IconButton>
         {/* 🆕 Round 28s211 — Page title sans-serif for legibility,
-            matching Services / How-to-book audit (28s199 / 28s202). */}
+            matching Services / How-to-book audit (28s199 / 28s202).
+            🆕 Round 28r56 — bumps at md+ via responsiveType.h6 so the
+            desktop header reads as a real page title, not a phone chip. */}
         <Typography
           component="h1"
           sx={{
             flex: 1,
             textAlign: "center",
             fontFamily: SANS,
-            fontSize: "16px",
+            ...responsiveType.h6,
             fontWeight: 700,
             color: "#1A2B2E",
             letterSpacing: "-0.005em",
@@ -1278,15 +1292,45 @@ const BookingFlowPage: React.FC = () => {
         </Typography>
       </Box>
 
+      {/* 🆕 Round 28r56 (Phase 3.5 desktop redesign) — content grid.
+          Mobile (xs–sm): single-column flex-column stack, ordering
+          preserved 100% (tile → banner → orderDetails → pricing →
+          payment → policy → discreet). Desktop (md+): 2-column CSS
+          grid with a sticky pricing sidebar on the right and the
+          form sections stacked in the left column. Uses gridTemplate-
+          Areas so the same JSX renders both layouts with no duplicate
+          mounts (Pricing is a single React subtree either way — no
+          state duplication risk). Sticky sidebar top offset accounts
+          for the sticky page header above (~64px + a small buffer). */}
       <Box
         sx={{
           padding: "16px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "14px",
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            md: "minmax(0, 1fr) minmax(320px, 380px)",
+          },
+          gridTemplateAreas: {
+            xs: `"tile"
+                 "banner"
+                 "orderDetails"
+                 "pricing"
+                 "payment"
+                 "policy"
+                 "discreet"`,
+            md: `"tile pricing"
+                 "banner pricing"
+                 "orderDetails pricing"
+                 "payment pricing"
+                 "policy pricing"
+                 "discreet pricing"`,
+          },
+          gap: { xs: "14px", md: "16px 24px" },
+          alignItems: "start",
         }}
       >
         {/* ─────────── Address tile (tap → /booking/:id/address) ─────────── */}
+        <Box sx={{ gridArea: "tile", minWidth: 0 }}>
         <AddressTile
           location={{
             name: form.locationName,
@@ -1298,6 +1342,7 @@ const BookingFlowPage: React.FC = () => {
           }}
           onTap={goEditAddress}
         />
+        </Box>
 
         {/* 🆕 Round 28r24 (founder 2026-05-07) — Admin override banner.
             Shows ONLY when an admin is booking through the customer
@@ -1306,6 +1351,8 @@ const BookingFlowPage: React.FC = () => {
         {isAdminBooking && (
           <Box
             sx={{
+              gridArea: "banner",
+              minWidth: 0,
               mb: 1.5,
               p: "10px 12px",
               borderRadius: "12px",
@@ -1365,6 +1412,7 @@ const BookingFlowPage: React.FC = () => {
         )}
 
         {/* ─────────── Order Details card (pattern 4A) ─────────── */}
+        <Box sx={{ gridArea: "orderDetails", minWidth: 0 }}>
         <SectionCard
           label={t("booking.section.orderDetails", "Order Details")}
           icon={<ReceiptLongRoundedIcon />}
@@ -1537,6 +1585,7 @@ const BookingFlowPage: React.FC = () => {
             </Typography>
           </Box>
         </SectionCard>
+        </Box>{/* end orderDetails grid area */}
 
         {/* 🆕 Round 28r49 (founder 2026-07-08 — "Add-ons · บริการเสริม
             เอาออกจากทุกที่ที่มี") — the add-ons customer picker (28s302)
@@ -1551,7 +1600,26 @@ const BookingFlowPage: React.FC = () => {
               must-do (location). Special requests go via admin chat.
             (add-ons re-added above as a real picker, round 28s302) */}
 
-        {/* ─────────── Pricing card (pattern 5A) ─────────── */}
+        {/* ─────────── Pricing card (pattern 5A) + sticky desktop sidebar ───────────
+            🆕 Round 28r56 — on md+ this Box pins to the right column and
+            becomes sticky so guests always see the running total while
+            they fill in details on the left. The desktop-only Place
+            Order button lives directly below the Pricing card here. */}
+        <Box
+          sx={{
+            gridArea: "pricing",
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: "14px",
+            position: { md: "sticky" },
+            top: { md: "76px" },
+            // Cap the sidebar so long guests-on-a-tall-screen still see
+            // the button without needing to scroll the sidebar itself.
+            maxHeight: { md: "calc(100vh - 96px)" },
+            overflowY: { md: "auto" },
+          }}
+        >
         <SectionCard
           label={t("booking.section.pricing", "Pricing")}
           icon={<PaidRoundedIcon />}
@@ -2394,6 +2462,44 @@ const BookingFlowPage: React.FC = () => {
           )}
         </SectionCard>
 
+        {/* 🆕 Round 28r56 — Desktop-only in-flow Place Order button.
+            On mobile the sticky bottom ConfirmBar is the primary CTA
+            (see below, hidden on md+). On desktop the ConfirmBar is
+            hidden and THIS button in the sticky sidebar becomes the
+            primary submit surface — same onClick / disabled logic as
+            ConfirmBar so behavior stays identical across breakpoints. */}
+        <Button
+          onClick={() => void handleSubmit()}
+          disabled={!canPlaceOrder || submitting}
+          sx={{
+            display: { xs: "none", md: "flex" },
+            height: 52,
+            borderRadius: "999px",
+            background: "#B4000A",
+            color: "#fff",
+            fontFamily: SANS,
+            fontSize: "15px",
+            fontWeight: 700,
+            letterSpacing: "0.02em",
+            textTransform: "none",
+            boxShadow: "0 6px 20px rgba(180, 0, 10, 0.28)",
+            "&:hover": {
+              background: "#B4000A",
+              boxShadow: "0 10px 26px rgba(180, 0, 10, 0.36)",
+            },
+            "&.Mui-disabled": {
+              background: "rgba(0, 0, 0, 0.12)",
+              color: "rgba(0, 0, 0, 0.35)",
+              boxShadow: "none",
+            },
+          }}
+        >
+          {submitting
+            ? t("booking.placing", "Placing…")
+            : t("booking.placeOrder", "Confirm Reservation")}
+        </Button>
+        </Box>{/* end pricing sticky sidebar */}
+
         {/* 🆕 Round 14 (founder 2026-05-01): Payment detail cell —
             tap → navigate to /payment-methods to pick the method.
             Mirrors the AddressTile pattern for visual consistency. */}
@@ -2408,6 +2514,8 @@ const BookingFlowPage: React.FC = () => {
             }
           }}
           sx={{
+            gridArea: "payment",
+            minWidth: 0,
             display: "flex",
             alignItems: "center",
             gap: "12px",
@@ -2476,6 +2584,8 @@ const BookingFlowPage: React.FC = () => {
         {/* ─────────── Cancellation policy ─────────── */}
         <Typography
           sx={{
+            gridArea: "policy",
+            minWidth: 0,
             fontFamily: SANS,
             fontSize: "10.5px",
             color: "rgba(15, 23, 42, 0.55)",
@@ -2495,6 +2605,8 @@ const BookingFlowPage: React.FC = () => {
             decision moment; trust is everything for this guest. */}
         <Typography
           sx={{
+            gridArea: "discreet",
+            minWidth: 0,
             fontFamily: SANS,
             fontSize: "10.5px",
             color: "rgba(22, 163, 74, 0.85)",

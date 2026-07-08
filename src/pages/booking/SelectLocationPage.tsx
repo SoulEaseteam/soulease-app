@@ -35,7 +35,8 @@ import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
 
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell.
-import { responsiveShellNarrow } from "@/theme/breakpoints";
+// 🆕 Round 28r56 — Phase 3.5 responsive typography for headings.
+import { responsiveShellNarrow, responsiveType } from "@/theme/breakpoints";
 
 const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -854,7 +855,15 @@ const SelectLocationPage: React.FC = () => {
         // 🆕 Round 28r52 — narrow responsive shell so the form doesn't
         //   stretch wildly on desktop (map + form fields read best in a
         //   comfortable column).
+        // 🆕 Round 28r56 (Phase 3.5) — widen at md+ so the map + form
+        //   can sit comfortably side-by-side. Mobile shell unchanged.
         ...responsiveShellNarrow,
+        maxWidth: {
+          xs: "430px",
+          sm: "600px",
+          md: "900px",
+          lg: "1200px",
+        },
         minHeight: "100vh",
         background: "#F4F6F5",
         borderRadius: { xs: "28px", md: 0 },
@@ -911,7 +920,8 @@ const SelectLocationPage: React.FC = () => {
             component="h1"
             sx={{
               fontFamily: SERIF,
-              fontSize: "18px",
+              // 🆕 Round 28r56 — responsive heading; base 18 → md 20 → lg 22.
+              ...responsiveType.h5,
               fontWeight: 600,
               color: "#1A2B2E",
               letterSpacing: "-0.01em",
@@ -933,10 +943,45 @@ const SelectLocationPage: React.FC = () => {
         </Box>
       </Box>
 
-      <Box sx={{ padding: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
+      {/* 🆕 Round 28r56 (Phase 3.5 desktop redesign) — content grid.
+          Mobile: single-column stack, ordering preserved (search → map
+          → GPS button → banners → picked place → form card → DRA).
+          Desktop (md+): 2-column CSS grid with map + banners on the
+          left (sticky) and the contact-details form on the right. The
+          form card and DRA info move into the right column via
+          gridTemplateAreas so mobile ordering stays 100% intact. */}
+      <Box
+        sx={{
+          padding: "16px",
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            md: "minmax(0, 1fr) minmax(320px, 420px)",
+          },
+          gridTemplateAreas: {
+            xs: `"search"
+                 "map"
+                 "gps"
+                 "geoErr"
+                 "gpsHint"
+                 "picked"
+                 "form"`,
+            md: `"search form"
+                 "map form"
+                 "gps form"
+                 "geoErr form"
+                 "gpsHint form"
+                 "picked form"`,
+          },
+          gap: { xs: "16px", md: "16px 24px" },
+          alignItems: "start",
+        }}
+      >
         {/* Search — soft white pill with subtle shadow + mint focus accent */}
         <Box
           sx={{
+            gridArea: "search",
+            minWidth: 0,
             position: "relative",
             "&:focus-within input": {
               borderColor: "#14b8a6",
@@ -998,9 +1043,15 @@ const SelectLocationPage: React.FC = () => {
         <Box
           ref={mapContainerRef}
           sx={{
+            gridArea: "map",
+            minWidth: 0,
             width: "100%",
-            height: "42vh",
+            // 🆕 Round 28r56 — desktop gets a taller map (55vh) since it
+            //   shares the left column with the form on the right. Mobile
+            //   keeps 42vh so the form scrolls up quickly.
+            height: { xs: "42vh", md: "55vh" },
             minHeight: 280,
+            maxHeight: { md: 560 },
             borderRadius: "20px",
             overflow: "hidden",
             background: "rgba(0, 0, 0, 0.04)",
@@ -1016,6 +1067,8 @@ const SelectLocationPage: React.FC = () => {
           disabled={geoLoading}
           startIcon={<MyLocationRoundedIcon />}
           sx={{
+            gridArea: "gps",
+            minWidth: 0,
             alignSelf: "stretch",
             height: 48,
             borderRadius: "999px",
@@ -1052,6 +1105,8 @@ const SelectLocationPage: React.FC = () => {
             role="alert"
             aria-live="assertive"
             sx={{
+              gridArea: "geoErr",
+              minWidth: 0,
               padding: "12px 14px",
               borderRadius: "14px",
               background: "rgba(180, 0, 10, 0.06)",
@@ -1091,6 +1146,8 @@ const SelectLocationPage: React.FC = () => {
             role="status"
             aria-live="polite"
             sx={{
+              gridArea: "gpsHint",
+              minWidth: 0,
               padding: "12px 14px",
               borderRadius: "14px",
               background:
@@ -1140,6 +1197,8 @@ const SelectLocationPage: React.FC = () => {
         {form.lat != null && (
           <Box
             sx={{
+              gridArea: "picked",
+              minWidth: 0,
               padding: "16px",
               borderRadius: "18px",
               background: "#fff",
@@ -1245,7 +1304,9 @@ const SelectLocationPage: React.FC = () => {
         {/* "Your details" form card — wraps Contact / Phone / Note + chips */}
         <Box
           sx={{
-            marginTop: "4px",
+            gridArea: "form",
+            minWidth: 0,
+            marginTop: { xs: "4px", md: 0 },
             padding: "18px 16px 16px",
             borderRadius: "20px",
             background: "rgba(255, 255, 255, 0.85)",

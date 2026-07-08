@@ -82,7 +82,8 @@ import ConciergeModeIcon from "@/components/common/ConciergeModeIcon";
 
 import { db } from "@/lib/firebase";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell.
-import { responsiveShellNarrow } from "@/theme/breakpoints";
+// 🆕 Round 28r56 — Phase 3.5 responsive typography for headings.
+import { responsiveShellNarrow, responsiveType } from "@/theme/breakpoints";
 
 const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -218,7 +219,16 @@ const BookingSuccessPage: React.FC = () => {
         // Phone-shell wrapper
         // 🆕 Round 28r52 — narrow responsive shell so the success page
         //   stays readable on desktop rather than stretching to 1200.
+        // 🆕 Round 28r56 (Phase 3.5) — widened at md+ so the hero can
+        //   sit next to the 2×2 action grid instead of stacking on the
+        //   whole viewport. Mobile shell unchanged.
         ...responsiveShellNarrow,
+        maxWidth: {
+          xs: "430px",
+          sm: "600px",
+          md: "900px",
+          lg: "1100px",
+        },
         minHeight: "100vh",
         background: "#F4F6F5",
         borderRadius: { xs: "28px", md: 0 },
@@ -228,7 +238,7 @@ const BookingSuccessPage: React.FC = () => {
           md: "none",
         },
         position: "relative",
-        padding: "32px 20px 40px",
+        padding: { xs: "32px 20px 40px", md: "40px 32px 56px" },
         fontFamily: SANS,
       }}
     >
@@ -264,6 +274,27 @@ const BookingSuccessPage: React.FC = () => {
       ) : (
         booking && (
           <>
+            {/* 🆕 Round 28r56 (Phase 3.5) — desktop top-cluster grid.
+                Mobile: everything stacks (hero, concierge chip, hold
+                countdown, live status banner, 2×2 action grid — same
+                ordering as before). Desktop (md+): 2-column CSS grid —
+                the hero cluster on the LEFT (title, ref, subtitle,
+                concierge chip, hold countdown, live status banner) and
+                the 2×2 action tiles on the RIGHT. Everything below
+                (receipt, prep, CTAs) stays full-width one column. */}
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  md: "minmax(0, 1fr) minmax(280px, 380px)",
+                },
+                gap: { xs: 0, md: "24px 32px" },
+                alignItems: "start",
+              }}
+            >
+              {/* Hero cluster — gridArea 'hero' on desktop */}
+              <Box sx={{ minWidth: 0 }}>
             {/* Pulsing check disc */}
             <Box
               sx={{
@@ -302,7 +333,9 @@ const BookingSuccessPage: React.FC = () => {
               component="h1"
               sx={{
                 fontFamily: SERIF,
-                fontSize: "30px",
+                // 🆕 Round 28r56 — responsive hero (24→32→40 at md+).
+                //   Was fixed 30px — now scales up nicely on desktop.
+                ...responsiveType.h2,
                 fontWeight: 500,
                 letterSpacing: "-0.02em",
                 color: "#1A2B2E",
@@ -507,6 +540,7 @@ const BookingSuccessPage: React.FC = () => {
                 </Typography>
               </Box>
             </Box>
+              </Box>{/* end hero cluster */}
 
             {/* 🆕 Round 28r10 (founder 2026-05-06) — Action cards
                 un-locked. All four now do something useful in the
@@ -526,7 +560,12 @@ const BookingSuccessPage: React.FC = () => {
                 padding 12/10) per founder feedback "ย่อขนาดลง · ดูรก". */}
             <Box
               sx={{
-                marginTop: "16px",
+                // 🆕 Round 28r56 — on mobile, keeps the 16px top spacing
+                //   inside the stacked flow. On desktop, this Box lives
+                //   in the right column of the top-cluster grid so
+                //   marginTop is dropped (the grid gap handles spacing).
+                marginTop: { xs: "16px", md: 0 },
+                minWidth: 0,
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
                 gap: "8px",
@@ -634,6 +673,7 @@ const BookingSuccessPage: React.FC = () => {
                 }}
               />
             </Box>
+            </Box>{/* end top-cluster 2-col grid */}
 
             {/* Your booking summary */}
             <Box
