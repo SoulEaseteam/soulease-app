@@ -2,7 +2,7 @@
 //
 // 🆕 Round 28r10 (founder 2026-05-06) — Extracted from BookingFlowPage.
 //
-// Sticky bottom bar — shows the running Total on the left and the
+// Bottom confirm bar — shows the running Total on the left and the
 // brand-gradient Place Order button on the right (pattern 7A).
 //
 // The Total tweens via useTweenedNumber so price changes feel cohesive
@@ -10,20 +10,19 @@
 // small "totalPulse" keyframe animation fires once via React's `key`
 // prop trick.
 //
-// Vertical position is controlled site-wide via the
-// --cta-bottom-offset CSS variable (defined in index.css), so this
-// CTA aligns with every other sticky CTA in the app.
+// 🚨 Round 28r67 HOTFIX — was position:fixed on mobile (r65/r66 stack:
+//   zIndex bump + paddingBottom bump), but the floating bar STILL
+//   overlapped content at some scroll positions. Founder direction
+//   (2026-07-08): "ย้ายไปไว้ล่างสุด พอ ไม่ต้องลอย" — move to bottom,
+//   no floating. Now renders as a normal in-flow Box at the natural
+//   end of the page content on mobile (desktop unchanged: display:none
+//   because r56 puts the desktop CTA inside the sticky pricing sidebar).
 
 import React, { useRef } from "react";
 import { Box, Typography, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { formatTHB } from "@/utils/servicePricing";
 import useTweenedNumber from "@/hooks/useTweenedNumber";
-// 🆕 Round 28r52 — Phase 3.1 responsive shell. The sticky bottom
-//   ConfirmBar tracks the same narrow content column as the booking
-//   page above it, so on desktop it widens to 600/768 instead of
-//   sitting as a tiny 430px strip in the middle of the viewport.
-import { responsiveShellNarrow } from "@/theme/breakpoints";
 
 const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -54,41 +53,27 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
   return (
     <Box
       sx={{
-        position: "fixed",
-        // 🆕 Round 28b43 (founder 2026-05-05) — Switched from hardcoded
-        //   100px to global --cta-bottom-offset (defined in index.css)
-        //   so EVERY confirm CTA across the app sits at the same height
-        //   above the bottom nav. Was 100px to clear the nav (~64px) +
-        //   small gap; now centralized via CSS variable.
-        bottom: "var(--cta-bottom-offset)",
-        left: "50%",
-        transform: "translateX(-50%)",
-        width: "100%",
-        // 🆕 Round 28r52 — narrow shell matches BookingFlowPage above.
-        ...responsiveShellNarrow,
-        // 🚨 Round 28r65 HOTFIX — was zIndex 50, well below BottomNav-
-        //   Glass's 2000. Position math (bottom = --cta-bottom-offset =
-        //   64 + 16 + safe-area = ~114px on iPhone; nav footprint ~98px)
-        //   normally clears the nav by ~16px, but any device that
-        //   computes the nav taller (e.g. if the tab labels wrap on
-        //   narrow viewports) would silently be painted over. Belt-and-
-        //   suspenders: raise above BottomNavGlass so even a marginal
-        //   overlap on some device can't hide the primary Confirm CTA.
-        zIndex: 2100,
+        // 🚨 Round 28r67 HOTFIX — was position:"fixed" with
+        //   bottom/left/transform/zIndex 2100. Now in-flow: the bar sits
+        //   at the natural end of the page content on mobile, no
+        //   overlap possible. Rounded pill container preserved so it
+        //   visually reads as a bottom bar. Small top margin gives it
+        //   breathing room from the pricing card above.
+        // 🆕 Round 28r56 (Phase 3.5) — hidden on desktop. On md+ the
+        //   Place Order button lives inside the sticky pricing sidebar
+        //   on BookingFlowPage (in-flow, not fixed). The bottom bar
+        //   only makes sense on the mobile checkout form.
+        display: { xs: "flex", md: "none" },
+        marginTop: "16px",
         background: "rgba(244, 246, 245, 0.92)",
         backdropFilter: "blur(30px) saturate(180%)",
         WebkitBackdropFilter: "blur(30px) saturate(180%)",
-        borderTop: "1px solid rgba(0, 0, 0, 0.06)",
-        borderRadius: "20px 20px 0 0",
+        border: "1px solid rgba(0, 0, 0, 0.06)",
+        borderRadius: "20px",
         padding: "12px 16px",
-        // 🆕 Round 28r56 (Phase 3.5) — hidden on desktop. On md+ the
-        //   Place Order button lives inside the sticky pricing sidebar
-        //   on BookingFlowPage (in-flow, not fixed). The fixed bottom
-        //   bar only makes sense on the mobile checkout form.
-        display: { xs: "flex", md: "none" },
         alignItems: "center",
         gap: "12px",
-        boxShadow: "0 -8px 22px rgba(15, 23, 42, 0.10)",
+        boxShadow: "0 8px 22px rgba(15, 23, 42, 0.10)",
       }}
     >
       <Box>

@@ -1395,20 +1395,14 @@ const BookingFlowPage: React.FC = () => {
         },
         minHeight: "100vh",
         background: "#F4F6F5",
-        // 🆕 Round 28r56 — no fixed ConfirmBar on desktop, so drop the
-        //   bottom padding reserved for it. Mobile keeps a generous reserve.
-        // 🚨 Round 28r66 HOTFIX — bumped from 210px to
-        //   `calc(--cta-bottom-offset + 130px)`. r65 raised ConfirmBar to
-        //   zIndex 2100 so it now paints ON TOP of every scrolled content
-        //   line, and the "Total updates when address is set." helper was
-        //   getting hidden behind the opaque backdrop-blur CTA on some
-        //   viewports (founder: "คอนเฟิม บัง ข้อมูล"). Formula now:
-        //     --cta-bottom-offset (~114) + CTA visible ~74 + safety ~40
-        //   The var already carries safe-area-inset-bottom so we don't
-        //   double-count it. Desktop (md+) unchanged since ConfirmBar
-        //   is display:none there.
+        // 🚨 Round 28r67 HOTFIX — ConfirmBar is no longer position:fixed
+        //   on mobile (renders in-flow at the natural end of content), so
+        //   we no longer reserve space for a floating CTA. Mobile just
+        //   needs enough padding to clear BottomNavGlass (~64px + safe
+        //   area). Desktop (md+) unchanged since ConfirmBar is
+        //   display:none there.
         paddingBottom: {
-          xs: "calc(var(--cta-bottom-offset) + 130px)",
+          xs: "100px",
           md: "48px",
         },
         fontFamily: SANS,

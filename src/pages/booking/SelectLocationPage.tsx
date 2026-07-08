@@ -873,18 +873,12 @@ const SelectLocationPage: React.FC = () => {
           md: "none",
         },
         position: "relative",
-        // 🆕 Round 28b43 — bumped from 120px to 180px so the form bottom
-        //   isn't covered by the lifted CTA + bottom nav stack.
-        // 🚨 Round 28r66 HOTFIX — switched to the shared
-        //   `--cta-bottom-offset` CSS var (defined in index.css) so this
-        //   page reserves clear space the same way BookingFlow does after
-        //   its own r66 bump. Founder saw the "Fill contact details to
-        //   continue" bar covering the address card just above it.
-        //   Formula: cta-bottom-offset (~114 incl. safe-area) + CTA
-        //   height ~46 + safety ~40 = ~200. The var carries safe-area,
-        //   so `env(safe-area-inset-bottom)` no longer needs adding
-        //   directly.
-        paddingBottom: "calc(var(--cta-bottom-offset) + 100px)",
+        // 🚨 Round 28r67 HOTFIX — Confirm Location CTA is no longer
+        //   position:fixed (renders in-flow at the natural end of the
+        //   form). Just need enough padding to clear BottomNavGlass
+        //   (~64px + safe area). Founder direction: "ย้ายไปไว้ล่างสุด
+        //   พอ ไม่ต้องลอย".
+        paddingBottom: "100px",
         fontFamily: SANS,
       }}
     >
@@ -1708,24 +1702,24 @@ const SelectLocationPage: React.FC = () => {
         {/* end "Your details" form card */}
       </Box>
 
-      {/* Sticky bottom CTA */}
-      {/* 🆕 Round 28b43 (founder 2026-05-05) — Lifted above the bottom
-          nav so "Confirm Address" never sits behind the BottomNavGlass.
-          Uses --cta-bottom-offset = nav height + 16px + safe-area. */}
-      {/* 🆕 Round 28b60 (founder 2026-05-05) — Slimmed CTA per founder
-          feedback: "ปุ่มคอนเฟิม เล็กลงอีกหน่อย". Was width 92% / height
-          54 / fontSize 15.5; now 84% / 46 / 14.5 with softer shadow.
-          Still tappable (>= 44pt min for iOS HIG) but visually less
-          aggressive — gives the form fields more visual weight. */}
+      {/* Bottom CTA — in-flow */}
+      {/* 🚨 Round 28r67 HOTFIX — was position:"fixed" with
+          bottom/left/transform/zIndex tricks; the floating bar overlapped
+          content in some scroll positions. Founder direction
+          (2026-07-08): "ย้ายไปไว้ล่างสุด พอ ไม่ต้องลอย" — move to bottom,
+          no floating. Now renders in-flow at the natural end of the form,
+          centered inside a wrapper. */}
       <Box
         sx={{
-          position: "fixed",
-          bottom: "var(--cta-bottom-offset)",
-          left: "50%",
-          transform: "translateX(-50%)",
+          display: "flex",
+          justifyContent: "center",
+          padding: "16px 16px 0",
+        }}
+      >
+      <Box
+        sx={{
           width: "84%",
           maxWidth: "380px",
-          zIndex: 50,
         }}
       >
         <Button
@@ -1769,6 +1763,7 @@ const SelectLocationPage: React.FC = () => {
                 ? t("loc.cta.needPin", "Pin a location to continue")
                 : t("loc.cta.needContact", "Fill contact details to continue")}
         </Button>
+      </Box>
       </Box>
     </Box>
   );
