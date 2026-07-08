@@ -64,13 +64,15 @@ import { fonts } from "@/theme";
 
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 
-// 🆕 Round 28r70 — Concierge WhatsApp deep-link used by the primary hero
-//   CTA below. Matches the shared number used across BundleSection /
-//   ServicesPage / ServiceDetailPage / BookingSuccessPage /
-//   HomeTherapistGrid / AdminFloatingChat / ProfilePage.
-const HERO_WHATSAPP = `https://wa.me/66634350987?text=${encodeURIComponent(
+// 🆕 Round 28r71 — Concierge endpoints moved to src/config/concierge.ts
+//   (single source of truth for wa.me / LINE / Telegram). Message text
+//   stays local to each surface — the WhatsApp prompt on this hero is
+//   about tonight's availability, not a generic "help me" ask.
+import { whatsappDeepLink } from "@/config/concierge";
+
+const HERO_WHATSAPP = whatsappDeepLink(
   "Hi SunRed concierge, I'd like to reserve a session — who's available tonight?"
-)}`;
+);
 
 const HomePage: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -178,8 +180,8 @@ const HomePage: React.FC = () => {
             • Headline set in Playfair 40-48px desktop / 28-32px mobile
               via responsiveType.hero
             • Primary CTA "Contact Us · ติดต่อ" — dark ink pill (GRAY_900
-              bg / white text) → shared WhatsApp deep-link (reuses
-              wa.me/66634350987, same as BundleSection r58/r60)
+              bg / white text) → shared WhatsApp deep-link (endpoint from
+              src/config/concierge.ts, same as BundleSection r58/r60)
             • Secondary CTA "View Pricing" — outlined dark border →
               routes to /pricing (Phase 2 will build the full page)
           Hidden on xs/sm (mobile look preserved — TopNav → grid). */}

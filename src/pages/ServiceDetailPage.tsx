@@ -69,8 +69,10 @@ import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 // 🆕 Round 28r54 (Phase 3.3) — responsiveType scales the h1 name +
 //   description with viewport width.
 import { responsiveShell, responsiveType } from "@/theme/breakpoints";
+// 🆕 Round 28r71 — shared concierge endpoints (r71 rebrand phase 2).
+import { CONCIERGE } from "@/config/concierge";
 
-const WHATSAPP_URL = "https://wa.me/66634350987";
+const WHATSAPP_URL = CONCIERGE.whatsappUrl;
 
 interface IconConfig {
   icon: SvgIconComponent;

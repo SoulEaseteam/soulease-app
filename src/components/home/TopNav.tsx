@@ -250,9 +250,17 @@ const TopNav: React.FC = () => {
   //   link button (accessible focus outline + brand-red hover). On
   //   mobile these are hidden and the drawer NAV_ITEMS list remains
   //   the source of navigation.
+  // 🆕 Round 28r71 · Rebrand Phase 2 — "Pricing" surfaces the new
+  //   Core Experiences money page (/pricing) alongside the existing
+  //   Services link (routes to the ROLADEX rate cards at /services).
+  //   Both intentionally kept: Services is the browse-and-tap gallery,
+  //   Pricing is the transparent-rates money page (the founder's r70
+  //   ask). Placed between Services and Therapists so pricing is one
+  //   discoverable click from anywhere on the site.
   const DESKTOP_NAV = [
     { labelKey: "nav.home", defaultLabel: "Home", path: "/" },
     { labelKey: "nav.services", defaultLabel: "Services", path: "/services" },
+    { labelKey: "nav.pricing", defaultLabel: "Pricing", path: "/pricing" },
     {
       labelKey: "nav.therapists",
       defaultLabel: "Therapists",

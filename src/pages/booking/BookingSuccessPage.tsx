@@ -78,6 +78,8 @@ import HoldCountdown from "@/components/booking/HoldCountdown";
 //   Once an AdminLayout heartbeat writer ships, we can re-introduce
 //   the live badge.
 import { useConciergeMode } from "@/utils/conciergeMode";
+// 🆕 Round 28r71 — shared concierge endpoints (r71 rebrand phase 2).
+import { CONCIERGE } from "@/config/concierge";
 import ConciergeModeIcon from "@/components/common/ConciergeModeIcon";
 
 import { db } from "@/lib/firebase";
@@ -1099,7 +1101,7 @@ const BookingSuccessPage: React.FC = () => {
                     {
                       name: t("success.channel.whatsapp", "WhatsApp"),
                       Icon: FaWhatsapp,
-                      href: `https://wa.me/66634350987?text=${message}`,
+                      href: `${CONCIERGE.whatsappUrl}?text=${message}`,
                       external: true,
                       fg: "#25D366",
                       bg: "rgba(37, 211, 102, 0.10)",

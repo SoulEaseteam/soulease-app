@@ -1,52 +1,229 @@
 // src/pages/PricingPage.tsx
 //
-// 🆕 Round 28r70 · Rebrand Phase 1 (2026-07-08) — stub placeholder page.
+// 🆕 Round 28r71 · Rebrand Phase 2 (2026-07-08) — Core Experiences.
 //
-// The founder wants a dedicated /pricing money page as part of the full
-// Nordic-Gray rebrand. Phase 2 will build the real page (rate tables,
-// service ordering, session-length pricing, concierge callouts, likely
-// a per-service anchor for SEO). This round only ships:
-//   • the route + a prerendered SEO shell (EN + zh/ja/ko) so external
-//     links land on something
-//   • a minimal Nordic-styled landing card with the intent clearly
-//     signposted + two escape hatches (Back to Home / Contact Concierge)
+// Replaces the r70 Nordic-styled stub with the real service pricing
+// menu the founder asked for. Reads prices from `priceForDuration()`
+// (single source of truth — same math the booking flow uses), so a
+// price change in `src/data/services.ts` (or an admin override via
+// /admin/promotions) propagates here with no code change.
 //
-// Zero data-logic. No Firestore reads. No i18n key dependencies —
-// copy is inlined so a missing translation namespace can't blank the
-// page during the rebrand transition.
+// Structure:
+//   1. Page header — eyebrow · Playfair H1 · Sarabun bilingual
+//      subtitle · body intro
+//   2. Rate menu grid — one card per service (4 total). Each carries
+//      a Playfair name + Thai transliteration + euphemism-compliant
+//      description + 60/90/120 price table + Reserve button
+//   3. Enhancements section — the r28c26 Plan A add-on list
+//      (concierge-quoted, not priced)
+//   4. Areas & Timing — pill row
+//   5. Payment methods — cash · PromptPay · WeChat + Alipay
+//      (+5%+฿200 surcharge)
+//   6. Cancellation & Discretion — brief bullets
+//   7. Bottom CTA band — Playfair headline · WhatsApp + Home
 //
-// Concierge WhatsApp URL is the same shared number every other CTA on
-// the site uses (BundleSection r58/r60, HomePage r70, ServicesPage,
-// ServiceDetailPage, HomeTherapistGrid, AdminFloatingChat, ProfilePage).
+// Nordic Gray palette (r70) preserved: neutrals + grays + warmAccents
+// tokens from theme.ts. Playfair for headlines, Sarabun for body.
+//
+// i18n: defaults inline via t("pricing.<key>", "English default").
+// Locale JSON coverage (th/zh/ja/ko) can be filled in a later round —
+// i18next falls back gracefully to the English default meanwhile.
+//
+// Zero data-logic side-effects. No Firestore reads. No add-ons picker
+// (add-ons were removed from the customer flow in r28r49 — this page
+// only mentions them at the "ask concierge for details" register).
 
 import React from "react";
 import { Box } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
-import { fonts, neutrals, grays } from "@/theme";
+import services from "@/data/services";
+import {
+  priceForDuration,
+  formatTHB,
+} from "@/utils/servicePricing";
+import { fonts, neutrals, grays, warmAccents } from "@/theme";
 import { responsiveShell } from "@/theme/breakpoints";
 import { useDocumentMeta } from "@/utils/useDocumentMeta";
+import { whatsappDeepLink } from "@/config/concierge";
 
-const HERO_WHATSAPP = `https://wa.me/66634350987?text=${encodeURIComponent(
-  "Hi SunRed concierge, I'd like to ask about your service pricing."
-)}`;
+// ─── Content data ─────────────────────────────────────────────────────
+//
+// The per-service Thai transliteration + euphemism-compliant SEO copy
+// lives here so the render body stays clean. Every phrase honours the
+// CLAUDE.md §3 brand-voice table (quiet luxury · never crude · concierge
+// register). Do NOT introduce medical claims or explicit terminology.
+//
+// The `id` fields MUST match src/data/services.ts SKU ids so
+// `priceForDuration()` resolves the right service.
+const SERVICE_COPY: Record<
+  string,
+  { thai: string; teaser: string }
+> = {
+  "SR-Aroma": {
+    thai: "การนวดอโรมา · Aromatherapy",
+    teaser:
+      "A gentle oil massage in the privacy of your room · premium aromatic blends for calm sleep.",
+  },
+  "xSR-Thai": {
+    thai: "การนวดไทย · Traditional Thai",
+    teaser:
+      "Time-honoured Thai stretch and pressure work · restores flexibility and eases travel tension.",
+  },
+  "SR-HJ2200": {
+    thai: "Gentleman's Signature · การนวดสุภาพบุรุษ",
+    teaser:
+      "Warming aromatic oil ritual for men · attentive tension-release work and a personalised finishing ritual.",
+  },
+  "SR-B2B3200": {
+    thai: "SunRed Therapeutic · การนวดสายเงียบขั้นสูง",
+    teaser:
+      "Our most refined ritual · flowing whole-body oil ceremony reserved for specialised practitioners.",
+  },
+};
+
+// Editorial order — flagship first, then the two entry-level rituals,
+// then the exclusive tier. Matches the founder-approved order on the
+// Services tab (Round 28c series).
+const SERVICE_ORDER = [
+  "SR-HJ2200",
+  "SR-B2B3200",
+  "SR-Aroma",
+  "xSR-Thai",
+];
+
+// Enhancements from r28c26 Plan A — concierge-quoted, no explicit prices.
+// Kept intentionally light — this menu page is not the booking form.
+const ENHANCEMENTS = [
+  {
+    icon: "🚗",
+    labelKey: "pricing.addons.travel",
+    label: "Beyond-central travel",
+    hint: "Extra travel fare quoted for areas beyond central Bangkok.",
+  },
+  {
+    icon: "⏳",
+    labelKey: "pricing.addons.extend",
+    label: "Extend session",
+    hint: "Add 30 or 60 minutes on request · tier-priced.",
+  },
+  {
+    icon: "💎",
+    labelKey: "pricing.addons.oil",
+    label: "Premium aromatic oil",
+    hint: "Small upgrade for a signature scent · ask concierge.",
+  },
+  {
+    icon: "👥",
+    labelKey: "pricing.addons.duo",
+    label: "Duo experience",
+    hint: "Two practitioners for two guests · quoted per session.",
+  },
+];
+
+const AREAS = ["Sukhumvit", "Silom", "Asok", "Thonglor"];
+
+const PAYMENT_METHODS = [
+  { label: "Cash on arrival", note: "" },
+  { label: "PromptPay", note: "" },
+  {
+    label: "WeChat Pay · Alipay",
+    // Surcharge value in servicePricing/paymentSurcharge — 5% + ฿200.
+    note: "+ 5% + ฿200 handling",
+  },
+];
+
+// ─── Small presentational atoms (kept local — page-specific) ──────────
+
+const Eyebrow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Box
+    component="span"
+    sx={{
+      display: "inline-block",
+      fontFamily: fonts.body,
+      fontSize: 11,
+      fontWeight: 600,
+      letterSpacing: "0.20em",
+      textTransform: "uppercase",
+      color: grays.g500,
+    }}
+  >
+    {children}
+  </Box>
+);
+
+const SectionTitle: React.FC<{
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+}> = ({ eyebrow, title, subtitle }) => (
+  <Box sx={{ mb: 3 }}>
+    {eyebrow && (
+      <Box sx={{ mb: 1 }}>
+        <Eyebrow>{eyebrow}</Eyebrow>
+      </Box>
+    )}
+    <Box
+      component="h2"
+      sx={{
+        fontFamily: fonts.heading,
+        fontSize: { xs: 22, md: 28 },
+        fontWeight: 500,
+        lineHeight: 1.2,
+        letterSpacing: "-0.005em",
+        color: grays.g900,
+        margin: 0,
+      }}
+    >
+      {title}
+    </Box>
+    {subtitle && (
+      <Box
+        sx={{
+          fontFamily: fonts.body,
+          fontSize: { xs: 13, md: 14 },
+          fontWeight: 400,
+          color: grays.g600,
+          marginTop: "6px",
+          letterSpacing: "0.01em",
+        }}
+      >
+        {subtitle}
+      </Box>
+    )}
+  </Box>
+);
+
+// ─── Page ─────────────────────────────────────────────────────────────
 
 const PricingPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   useDocumentMeta({
     title: "Core Experiences · Service Pricing | SunRed",
     description:
-      "SunRed Core Experiences — full service pricing for our Bangkok outcall massage menu. Verified practitioners, delivered to your hotel. Detailed rate card coming soon; contact the concierge for immediate assistance.",
+      "SunRed Core Experiences — full service pricing menu. Verified practitioners delivered to your Bangkok hotel. Aromatherapy, Traditional Thai, Gentleman's Signature, and SunRed Therapeutic — 60/90/120 min tiers with transparent rates.",
     url: "https://sunred.vip/pricing",
     type: "website",
   });
+
+  // Ordered list of services (falls back to catalog order if a SKU is
+  // ever missing — this page won't blank out mid-launch of a new SKU).
+  const orderedServices = React.useMemo(() => {
+    const byId = new Map(services.map((s) => [s.id, s]));
+    const first = SERVICE_ORDER.map((id) => byId.get(id)).filter(
+      (s): s is (typeof services)[number] => Boolean(s),
+    );
+    const rest = services.filter((s) => !SERVICE_ORDER.includes(s.id));
+    return [...first, ...rest];
+  }, []);
 
   return (
     <Box
       sx={{
         ...responsiveShell,
-        // Nordic page bg — same as HomePage r70.
         background: neutrals.n50,
         borderRadius: { xs: "28px", md: 0 },
         overflow: "hidden",
@@ -55,59 +232,26 @@ const PricingPage: React.FC = () => {
           md: "none",
         },
         position: "relative",
-        minHeight: "70vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: { xs: "48px 20px", md: "80px 40px" },
+        padding: { xs: "32px 20px 48px", md: "64px 40px 80px" },
       }}
     >
-      <Box
-        sx={{
-          width: "100%",
-          maxWidth: 640,
-          background: "#FFFFFF",
-          borderRadius: "24px",
-          border: `1px solid ${neutrals.n200}`,
-          boxShadow: "0 8px 24px rgba(45, 45, 43, 0.06)",
-          padding: { xs: "32px 24px", md: "56px 48px" },
-          textAlign: "center",
-        }}
-      >
-        {/* Eyebrow */}
-        <Box
-          component="span"
-          sx={{
-            display: "inline-block",
-            fontFamily: fonts.body,
-            fontSize: 11,
-            fontWeight: 600,
-            letterSpacing: "0.20em",
-            textTransform: "uppercase",
-            color: grays.g500,
-            marginBottom: "18px",
-          }}
-        >
-          SunRed · Bangkok
-        </Box>
-
-        {/* Headline — Playfair Display serif */}
+      {/* ── 1. Page header ─────────────────────────────────────────── */}
+      <Box sx={{ textAlign: { xs: "left", md: "center" }, mb: { xs: 4, md: 6 } }}>
+        <Eyebrow>SunRed · Bangkok</Eyebrow>
         <Box
           component="h1"
           sx={{
             fontFamily: fonts.heading,
-            fontSize: { xs: 28, md: 40 },
+            fontSize: { xs: 32, md: 48 },
             fontWeight: 500,
-            lineHeight: 1.15,
-            letterSpacing: "-0.005em",
+            lineHeight: 1.1,
+            letterSpacing: "-0.01em",
             color: grays.g900,
-            margin: 0,
+            margin: "12px 0 0",
           }}
         >
-          Core Experiences
+          {t("pricing.title", "Core Experiences")}
         </Box>
-
-        {/* Bilingual subtitle */}
         <Box
           sx={{
             fontFamily: fonts.body,
@@ -118,10 +262,8 @@ const PricingPage: React.FC = () => {
             letterSpacing: "0.01em",
           }}
         >
-          Service Pricing · ราคาบริการ
+          {t("pricing.subtitle", "Service Pricing · ราคาบริการ")}
         </Box>
-
-        {/* Body copy */}
         <Box
           sx={{
             fontFamily: fonts.body,
@@ -129,19 +271,451 @@ const PricingPage: React.FC = () => {
             fontWeight: 400,
             color: grays.g600,
             lineHeight: 1.7,
-            marginTop: "28px",
-            maxWidth: 480,
+            marginTop: "24px",
+            maxWidth: 640,
+            marginLeft: { xs: 0, md: "auto" },
+            marginRight: { xs: 0, md: "auto" },
+          }}
+        >
+          {t(
+            "pricing.intro",
+            "Every ritual is delivered to your hotel or residence in Bangkok — choose your duration, and our concierge handles the rest. All rates are in Thai Baht (THB) and reflect the base session; travel, extensions, or add-ons are quoted separately.",
+          )}
+        </Box>
+      </Box>
+
+      {/* ── 2. Rate menu grid ─────────────────────────────────────── */}
+      <Box
+        component="section"
+        aria-label={t("pricing.menu.aria", "Service menu")}
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+          gap: { xs: 2.5, md: 3 },
+          marginBottom: { xs: 5, md: 7 },
+        }}
+      >
+        {orderedServices.map((s) => {
+          const copy = SERVICE_COPY[s.id] ?? { thai: "", teaser: s.desc };
+          const durations = [60, 90, 120];
+          const priceAt = (min: number) => priceForDuration(s, min);
+          const conciergeMsg = `Hi SunRed, I'd like to reserve ${s.name} · 60 min. When can you fit me in?`;
+          return (
+            <Box
+              key={s.id}
+              component="article"
+              sx={{
+                background: "#FFFFFF",
+                borderRadius: "24px",
+                border: `1px solid ${neutrals.n200}`,
+                padding: { xs: "24px 20px", md: "32px 28px" },
+                display: "flex",
+                flexDirection: "column",
+                gap: "18px",
+              }}
+            >
+              {/* Service name — Playfair, generous */}
+              <Box>
+                <Box
+                  component="h3"
+                  sx={{
+                    fontFamily: fonts.heading,
+                    fontSize: { xs: 22, md: 28 },
+                    fontWeight: 500,
+                    lineHeight: 1.2,
+                    letterSpacing: "-0.005em",
+                    color: grays.g900,
+                    margin: 0,
+                  }}
+                >
+                  {s.name}
+                </Box>
+                {copy.thai && (
+                  <Box
+                    sx={{
+                      fontFamily: fonts.body,
+                      fontSize: { xs: 12, md: 13 },
+                      fontWeight: 500,
+                      color: grays.g500,
+                      letterSpacing: "0.03em",
+                      marginTop: "6px",
+                    }}
+                  >
+                    {copy.thai}
+                  </Box>
+                )}
+                <Box
+                  sx={{
+                    fontFamily: fonts.body,
+                    fontSize: { xs: 13, md: 14 },
+                    fontWeight: 400,
+                    color: grays.g600,
+                    lineHeight: 1.6,
+                    marginTop: "12px",
+                  }}
+                >
+                  {copy.teaser}
+                </Box>
+              </Box>
+
+              {/* Price table — 60/90/120 rows */}
+              <Box
+                sx={{
+                  background: neutrals.n50,
+                  border: `1px solid ${neutrals.n200}`,
+                  borderRadius: "14px",
+                  padding: "10px 14px",
+                }}
+              >
+                {durations.map((d, idx) => (
+                  <Box
+                    key={d}
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "baseline",
+                      padding: "8px 0",
+                      borderTop:
+                        idx === 0 ? "none" : `1px solid ${neutrals.n200}`,
+                    }}
+                  >
+                    <Box
+                      component="span"
+                      sx={{
+                        fontFamily: fonts.body,
+                        fontSize: 13,
+                        fontWeight: 500,
+                        color: grays.g600,
+                        letterSpacing: "0.02em",
+                      }}
+                    >
+                      {d} min
+                    </Box>
+                    <Box
+                      component="span"
+                      sx={{
+                        fontFamily: fonts.heading,
+                        fontSize: { xs: 17, md: 18 },
+                        fontWeight: 500,
+                        color: grays.g900,
+                        letterSpacing: "-0.005em",
+                      }}
+                    >
+                      {formatTHB(priceAt(d))}
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+
+              {/* Reserve — WhatsApp with per-service prefilled message */}
+              <Box
+                component="a"
+                href={whatsappDeepLink(conciergeMsg)}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  alignSelf: "flex-start",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "10px 20px",
+                  borderRadius: 999,
+                  background: grays.g900,
+                  color: "#FFFFFF",
+                  fontFamily: fonts.body,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  letterSpacing: "0.005em",
+                  textDecoration: "none",
+                  boxShadow: "0 6px 16px rgba(45, 45, 43, 0.20)",
+                  transition:
+                    "transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease",
+                  "&:hover": {
+                    background: grays.g800,
+                    transform: "translateY(-1px)",
+                    boxShadow: "0 8px 20px rgba(45, 45, 43, 0.28)",
+                  },
+                  "&:focus-visible": {
+                    outline: `2px solid ${grays.g900}`,
+                    outlineOffset: 3,
+                  },
+                }}
+              >
+                {t("pricing.reserve", "Reserve")}
+                <Box component="span" aria-hidden sx={{ fontSize: 14, lineHeight: 1 }}>
+                  →
+                </Box>
+              </Box>
+            </Box>
+          );
+        })}
+      </Box>
+
+      {/* ── 3. Enhancements ────────────────────────────────────────── */}
+      <Box component="section" sx={{ marginBottom: { xs: 5, md: 7 } }}>
+        <SectionTitle
+          eyebrow={t("pricing.addons.eyebrow", "Enhancements")}
+          title={t("pricing.addons.title", "Optional additions")}
+          subtitle={t(
+            "pricing.addons.subtitle",
+            "Ask concierge for a quote on any of the following · not included in the base rate above.",
+          )}
+        />
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+            gap: 2,
+          }}
+        >
+          {ENHANCEMENTS.map((a) => (
+            <Box
+              key={a.label}
+              sx={{
+                display: "flex",
+                gap: "14px",
+                padding: "16px 18px",
+                borderRadius: "16px",
+                background: "#FFFFFF",
+                border: `1px solid ${neutrals.n200}`,
+              }}
+            >
+              <Box
+                aria-hidden
+                sx={{
+                  fontSize: 22,
+                  lineHeight: 1,
+                  flexShrink: 0,
+                }}
+              >
+                {a.icon}
+              </Box>
+              <Box sx={{ minWidth: 0 }}>
+                <Box
+                  sx={{
+                    fontFamily: fonts.body,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: grays.g900,
+                    marginBottom: "3px",
+                  }}
+                >
+                  {t(a.labelKey, a.label)}
+                </Box>
+                <Box
+                  sx={{
+                    fontFamily: fonts.body,
+                    fontSize: 13,
+                    fontWeight: 400,
+                    color: grays.g600,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {a.hint}
+                </Box>
+              </Box>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+
+      {/* ── 4. Areas & Timing ─────────────────────────────────────── */}
+      <Box component="section" sx={{ marginBottom: { xs: 5, md: 7 } }}>
+        <SectionTitle
+          eyebrow={t("pricing.areas.eyebrow", "Where & When")}
+          title={t("pricing.areas.title", "Areas & Timing")}
+        />
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "8px",
+            marginBottom: "12px",
+          }}
+        >
+          {AREAS.map((a) => (
+            <Box
+              key={a}
+              sx={{
+                padding: "6px 14px",
+                borderRadius: 999,
+                background: warmAccents.w100,
+                color: grays.g900,
+                fontFamily: fonts.body,
+                fontSize: 12,
+                fontWeight: 600,
+                letterSpacing: "0.04em",
+              }}
+            >
+              {a}
+            </Box>
+          ))}
+        </Box>
+        <Box
+          sx={{
+            fontFamily: fonts.body,
+            fontSize: 13,
+            color: grays.g600,
+            lineHeight: 1.6,
+          }}
+        >
+          {t(
+            "pricing.areas.body",
+            "Prime hours 22:00 – 04:00 · Concierge on standby 24/7 · Beyond-central areas quoted per trip.",
+          )}
+        </Box>
+      </Box>
+
+      {/* ── 5. Payment methods ────────────────────────────────────── */}
+      <Box component="section" sx={{ marginBottom: { xs: 5, md: 7 } }}>
+        <SectionTitle
+          eyebrow={t("pricing.payment.eyebrow", "Payment")}
+          title={t("pricing.payment.title", "Accepted methods")}
+        />
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+            background: "#FFFFFF",
+            border: `1px solid ${neutrals.n200}`,
+            borderRadius: "16px",
+            padding: "16px 20px",
+          }}
+        >
+          {PAYMENT_METHODS.map((p, idx) => (
+            <Box
+              key={p.label}
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                padding: "6px 0",
+                borderTop: idx === 0 ? "none" : `1px solid ${neutrals.n200}`,
+              }}
+            >
+              <Box
+                component="span"
+                sx={{
+                  fontFamily: fonts.body,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: grays.g900,
+                }}
+              >
+                {p.label}
+              </Box>
+              {p.note && (
+                <Box
+                  component="span"
+                  sx={{
+                    fontFamily: fonts.body,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: grays.g500,
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  {p.note}
+                </Box>
+              )}
+            </Box>
+          ))}
+        </Box>
+      </Box>
+
+      {/* ── 6. Cancellation & Discretion ──────────────────────────── */}
+      <Box component="section" sx={{ marginBottom: { xs: 5, md: 8 } }}>
+        <SectionTitle
+          eyebrow={t("pricing.notes.eyebrow", "Notes")}
+          title={t("pricing.notes.title", "Cancellation & Discretion")}
+        />
+        <Box
+          component="ul"
+          sx={{
+            listStyle: "none",
+            margin: 0,
+            padding: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+          }}
+        >
+          {[
+            t(
+              "pricing.notes.cancel",
+              "Cancellations more than one hour before the session are complimentary · shorter notice may incur the travel fee.",
+            ),
+            t(
+              "pricing.notes.privacy",
+              "Every booking is confidential · practitioners arrive discreetly and never carry visible branding.",
+            ),
+          ].map((line, idx) => (
+            <Box
+              component="li"
+              key={idx}
+              sx={{
+                display: "flex",
+                gap: "10px",
+                fontFamily: fonts.body,
+                fontSize: 13,
+                fontWeight: 400,
+                color: grays.g600,
+                lineHeight: 1.6,
+              }}
+            >
+              <Box component="span" aria-hidden sx={{ color: grays.g400 }}>
+                ·
+              </Box>
+              <Box component="span">{line}</Box>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+
+      {/* ── 7. Bottom CTA band ────────────────────────────────────── */}
+      <Box
+        component="section"
+        sx={{
+          background: neutrals.n100,
+          border: `1px solid ${neutrals.n200}`,
+          borderRadius: "24px",
+          padding: { xs: "32px 24px", md: "48px 40px" },
+          textAlign: "center",
+        }}
+      >
+        <Box
+          component="h2"
+          sx={{
+            fontFamily: fonts.heading,
+            fontSize: { xs: 26, md: 36 },
+            fontWeight: 500,
+            lineHeight: 1.15,
+            letterSpacing: "-0.005em",
+            color: grays.g900,
+            margin: 0,
+          }}
+        >
+          {t("pricing.finalCta.title", "Ready when you are")}
+        </Box>
+        <Box
+          sx={{
+            fontFamily: fonts.body,
+            fontSize: { xs: 13, md: 14 },
+            fontWeight: 400,
+            color: grays.g600,
+            lineHeight: 1.6,
+            marginTop: "10px",
+            maxWidth: 500,
             marginLeft: "auto",
             marginRight: "auto",
           }}
         >
-          Our full pricing page is being finalised as part of the SunRed
-          brand refresh. In the meantime, our concierge can answer any
-          question about our services, session lengths, and rates — usually
-          within a few minutes.
+          {t(
+            "pricing.finalCta.body",
+            "Message the concierge with your preferred time and room number · we confirm your booking in minutes.",
+          )}
         </Box>
-
-        {/* CTAs */}
         <Box
           sx={{
             display: "flex",
@@ -149,12 +723,14 @@ const PricingPage: React.FC = () => {
             alignItems: "center",
             justifyContent: "center",
             gap: "12px",
-            marginTop: "36px",
+            marginTop: "28px",
           }}
         >
           <Box
             component="a"
-            href={HERO_WHATSAPP}
+            href={whatsappDeepLink(
+              "Hi SunRed concierge, I'd like to reserve a session tonight.",
+            )}
             target="_blank"
             rel="noopener noreferrer"
             sx={{
@@ -162,7 +738,7 @@ const PricingPage: React.FC = () => {
               alignItems: "center",
               justifyContent: "center",
               gap: "10px",
-              padding: { xs: "12px 22px", md: "14px 28px" },
+              padding: { xs: "12px 24px", md: "14px 30px" },
               borderRadius: 999,
               background: grays.g900,
               color: "#FFFFFF",
@@ -173,10 +749,10 @@ const PricingPage: React.FC = () => {
               textDecoration: "none",
               boxShadow: "0 6px 18px rgba(45, 45, 43, 0.24)",
               whiteSpace: "nowrap",
-              transition:
-                "transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease",
               minHeight: 46,
               minWidth: 200,
+              transition:
+                "transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease",
               "&:hover": {
                 background: grays.g800,
                 transform: "translateY(-1px)",
@@ -187,7 +763,7 @@ const PricingPage: React.FC = () => {
               },
             }}
           >
-            Contact Concierge
+            {t("pricing.finalCta.contact", "Contact Concierge")}
             <Box component="span" aria-hidden sx={{ fontSize: 15, lineHeight: 1 }}>
               →
             </Box>
@@ -200,8 +776,7 @@ const PricingPage: React.FC = () => {
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "10px",
-              padding: { xs: "12px 22px", md: "14px 28px" },
+              padding: { xs: "12px 24px", md: "14px 30px" },
               borderRadius: 999,
               background: "transparent",
               color: grays.g900,
@@ -212,10 +787,10 @@ const PricingPage: React.FC = () => {
               cursor: "pointer",
               border: `1.5px solid ${grays.g900}`,
               whiteSpace: "nowrap",
-              transition:
-                "transform 0.16s ease, background 0.16s ease, color 0.16s ease",
               minHeight: 46,
               minWidth: 200,
+              transition:
+                "transform 0.16s ease, background 0.16s ease, color 0.16s ease",
               "&:hover": {
                 background: grays.g900,
                 color: "#FFFFFF",
@@ -227,22 +802,8 @@ const PricingPage: React.FC = () => {
               },
             }}
           >
-            Back to Home
+            {t("pricing.finalCta.home", "Back to Home")}
           </Box>
-        </Box>
-
-        {/* Footer hint */}
-        <Box
-          sx={{
-            fontFamily: fonts.body,
-            fontSize: 12,
-            fontWeight: 400,
-            color: grays.g500,
-            marginTop: "28px",
-            letterSpacing: "0.01em",
-          }}
-        >
-          Live availability on the home page · Concierge replies in minutes
         </Box>
       </Box>
     </Box>

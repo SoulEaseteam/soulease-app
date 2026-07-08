@@ -25,6 +25,8 @@ import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import { fonts } from "@/theme";
+// 🆕 Round 28r71 — shared concierge endpoints (r71 rebrand phase 2).
+import { CONCIERGE } from "@/config/concierge";
 
 const SERIF = '"Fraunces", Georgia, serif';
 const SANS  = '"Inter", system-ui, sans-serif';
@@ -412,7 +414,7 @@ const ProfilePage: React.FC = () => {
               icon={<ChatsCircle size={18} />}
               label="Contact Concierge"
               sub="Available 24 hours a day"
-              onClick={() => window.open("https://wa.me/66634350987", "_blank")}
+              onClick={() => window.open(CONCIERGE.whatsappUrl, "_blank")}
             />
           </Section>
         </motion.div>

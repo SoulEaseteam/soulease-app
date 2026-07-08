@@ -54,21 +54,22 @@ import {
   trackBundleView,
   trackBundleReserveClick,
 } from "@/utils/analytics";
+// 🆕 Round 28r71 — shared concierge endpoints (r71 rebrand phase 2). The
+//   old local WHATSAPP_PHONE / LINE_URL consts were 2 of the 9 spots
+//   that duplicated the founder handle — now consumed from one file.
+import { CONCIERGE, whatsappDeepLink } from "@/config/concierge";
 
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 const SERIF =
   '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 
-// Shared concierge phone (WhatsApp) — matches the other 7 wa.me/…
-// references in the app (see HomePage / ServicesPage / ServiceDetailPage
-// / BookingSuccessPage / AdminFloatingChat).
-const WHATSAPP_PHONE = "66634350987";
-const LINE_URL = "https://lin.ee/uqvdwWt";
+const LINE_URL = CONCIERGE.lineUrl;
 
 /** Build the WhatsApp deep-link with a bundle-specific pre-filled message. */
 function whatsappHrefForBundle(bundle: Bundle): string {
-  const msg = `Hi SunRed, I'd like to reserve the "${bundle.name}" bundle (${bundle.sessionCount} sessions).`;
-  return `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
+  return whatsappDeepLink(
+    `Hi SunRed, I'd like to reserve the "${bundle.name}" bundle (${bundle.sessionCount} sessions).`
+  );
 }
 
 /**

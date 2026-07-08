@@ -35,6 +35,8 @@ import { useConciergeMode } from "@/utils/conciergeMode";
 //   default to "available_now" so late-night guests see actionable
 //   cards first.
 import { nowBKK } from "@/utils/time";
+// 🆕 Round 28r71 — shared concierge endpoints (r71 rebrand phase 2).
+import { whatsappDeepLink } from "@/config/concierge";
 
 const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -538,9 +540,9 @@ const HomeTherapistGrid: React.FC = () => {
               "try a different keyword" line; the CTA still helps either way. */}
           <Box
             component="a"
-            href={`https://wa.me/66634350987?text=${encodeURIComponent(
+            href={whatsappDeepLink(
               "Hi SunRed concierge, I'd like to book an outcall massage tonight — who's available?",
-            )}`}
+            )}
             target="_blank"
             rel="noopener noreferrer"
             sx={{

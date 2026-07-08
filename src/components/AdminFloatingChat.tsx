@@ -43,6 +43,8 @@ import { trackConciergeOpen } from "@/utils/analytics";
 //   prefilled concierge message so the chat doesn't open empty.
 import therapistsData from "@/data/therapists";
 import services from "@/data/services";
+// 🆕 Round 28r71 — shared concierge endpoints (r71 rebrand phase 2).
+import { CONCIERGE } from "@/config/concierge";
 
 /** Build a context-aware concierge opener from the current path. */
 function conciergeContextMessage(pathname: string): string {
@@ -87,7 +89,7 @@ const CHAT_OPTIONS: ChatOption[] = [
   },
   {
     title: "WhatsApp",
-    href: "https://wa.me/66634350987",
+    href: CONCIERGE.whatsappUrl,
     // 🆕 Round 28s103 (perf) — was Whatsapp.gif (10MB) loaded on the
     //   global concierge widget; swapped to the 42KB PNG.
     src: "/images/profli/whatsapp.png",

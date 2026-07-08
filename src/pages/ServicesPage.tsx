@@ -67,6 +67,8 @@ import { useDocumentMeta } from "@/utils/useDocumentMeta";
 // 🆕 Round 28r54 (Phase 3.3) — responsiveType scales the About us
 //   tagline heading with viewport width.
 import { responsiveShell, responsiveType } from "@/theme/breakpoints";
+// 🆕 Round 28r71 — shared concierge endpoints (r71 rebrand phase 2).
+import { CONCIERGE } from "@/config/concierge";
 
 const SERIF = '"Federo", "Italiana", "Cinzel", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -1177,8 +1179,8 @@ const ServicesPage: React.FC = () => {
                   {
                     Icon: FaWhatsapp,
                     name: "WhatsApp",
-                    handle: "+66 63 435 0987",
-                    href: "https://wa.me/66634350987",
+                    handle: CONCIERGE.displayPhone,
+                    href: CONCIERGE.whatsappUrl,
                     external: true,
                     tone: { bg: "rgba(37, 211, 102, 0.10)", fg: "#25D366" },
                   },
@@ -1194,7 +1196,7 @@ const ServicesPage: React.FC = () => {
                     Icon: FaLine,
                     name: "LINE",
                     handle: "Add friend",
-                    href: "https://lin.ee/uqvdwWt",
+                    href: CONCIERGE.lineUrl,
                     external: true,
                     tone: { bg: "rgba(6, 199, 85, 0.10)", fg: "#06C755" },
                   },
