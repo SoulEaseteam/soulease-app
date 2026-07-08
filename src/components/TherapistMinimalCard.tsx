@@ -18,6 +18,7 @@ import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
+import ChatBubbleOutlineRoundedIcon from "@mui/icons-material/ChatBubbleOutlineRounded";
 
 import { brand, fonts, accents } from "@/theme";
 
@@ -405,34 +406,89 @@ const TherapistMinimalCard: React.FC<Props> = ({
         }}
       >
         <Box sx={{ minWidth: 0 }}>
-          {/* 🆕 Round 28s171 — Founder: "ชื่อหนาขึ้น". Stack reordered
-              so Cinzel (which has real 700/800 weights) leads for the
-              name only — Federo/Italiana fall back if Cinzel hasn't
-              streamed in yet. Weight bumped 500 → 800 + size 18 → 19. */}
-          <Typography
-            component="h3"
-            noWrap
+          {/* 🆕 Round 28r82 — Founder direction (2026-07-08 reference
+              screenshot): name typography swaps from Playfair-serif ALL
+              CAPS to Inter/Sarabun sans-heavy for a warmer, friendlier
+              register. Deepest ink #2D2D2B for high contrast against
+              the white card. Rendered on the same row as an outlined
+              PHOTOS pill (right-aligned) which opens the therapist's
+              photo gallery in a future dialog — for now it routes to
+              the detail page since the gallery view lives there. */}
+          <Box
             sx={{
-              fontFamily:
-                '"Playfair Display", "Fraunces", Georgia, serif',
-              // 🆕 Round 28r53 — smaller than the old 19px flat because
-              //   cards are now narrower per column at md+. Scales up
-              //   only slightly on desktop where columns are wider.
-              fontSize: { xs: "15px", sm: "16px", md: "17px" },
-              fontWeight: 800,
-              color: brand.text,
-              lineHeight: 1.1,
-              // Tighten tracking on the smaller size to keep
-              //   proportion legible.
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "8px",
               marginBottom: "6px",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
+              minWidth: 0,
             }}
           >
-            {therapist.name}
-          </Typography>
+            <Typography
+              component="h3"
+              noWrap
+              sx={{
+                fontFamily:
+                  '"Inter", "Sarabun", system-ui, sans-serif',
+                // Sans-heavy · sized larger than the previous
+                //   serif-caps treatment for stronger visual weight
+                //   as the primary card headline.
+                fontSize: { xs: "20px", sm: "22px", md: "23px" },
+                fontWeight: 800,
+                color: "#2D2D2B",
+                lineHeight: 1.15,
+                letterSpacing: "-0.01em",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
+              {therapist.name}
+            </Typography>
+            <Box
+              component="button"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                // Founder direction: opens photo gallery when one
+                //   exists. Gallery view lives on the detail page,
+                //   so we route there. Analytics no-op otherwise.
+                if (therapist.gallery && therapist.gallery.length > 0) {
+                  navigate(`/therapists/${therapist.id}#gallery`);
+                }
+              }}
+              aria-label={`Photos of ${therapist.name}`}
+              sx={{
+                flexShrink: 0,
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "4px 10px",
+                borderRadius: "999px",
+                background: "transparent",
+                border: "1.5px solid #4B4B48",
+                color: "#4B4B48",
+                fontFamily: fonts.body,
+                fontSize: "10.5px",
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                lineHeight: 1,
+                transition: "background 0.15s ease, color 0.15s ease",
+                "&:hover": {
+                  background: "rgba(75, 75, 72, 0.06)",
+                },
+                "&:focus-visible": {
+                  outline: "2px solid #4B4B48",
+                  outlineOffset: 2,
+                },
+              }}
+            >
+              Photos
+            </Box>
+          </Box>
           {/* 🆕 Round 28s174 — Restored to founder's prescribed 4-row
               layout (28s158): Hours · AGE/VERIFIED · ★ rating ·
               📍 location. 28s173 trim was wrong — View wanted to
@@ -524,43 +580,94 @@ const TherapistMinimalCard: React.FC<Props> = ({
             </Typography>
           </Box>
 
-          {/* Row 3 — Rating */}
+          {/* Row 3 — Rating + comment count chip
+              🆕 Round 28r82 — Founder direction (reference screenshot):
+                • Star swaps from amber → soft pink #EF9AA1 for the
+                  warmer/friendlier register on the browse card. Amber
+                  stays elsewhere on the site (detail page, admin).
+                • Rating text format changes from "4.5 (N reviews)" →
+                  "4.5 | N served" (served = totalSessions ?? reviews).
+                • A pink speech-bubble chip is appended on the same
+                  row with the comment count = review count. */}
           {therapist.rating && therapist.rating > 0 ? (
             <Box
               sx={{
                 display: "flex",
                 alignItems: "center",
-                gap: "5px",
+                gap: "8px",
                 marginBottom: "5px",
+                flexWrap: "wrap",
               }}
             >
-              {/* 🆕 Round 28r81 — star colour anchored on accents.amber
-                  (#F5A623) rather than brand.amber (which now points at
-                  the WARM_200 sand tone from r70). Founder direction: star
-                  ratings across the site should be a single true amber. */}
-              <StarRoundedIcon sx={{ fontSize: 15, color: accents.amber }} />
-              <Typography
+              <Box
                 sx={{
-                  fontFamily: fonts.body,
-                  fontSize: "12.5px",
-                  fontWeight: 600,
-                  color: brand.text,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
                 }}
               >
-                {therapist.rating.toFixed(1)}
-                {therapist.reviews ? (
-                  <Box
-                    component="span"
+                <StarRoundedIcon sx={{ fontSize: 16, color: "#EF9AA1" }} />
+                <Typography
+                  sx={{
+                    fontFamily: fonts.body,
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#4B4B48",
+                  }}
+                >
+                  {therapist.rating.toFixed(1)}
+                  {(() => {
+                    const served =
+                      (typeof therapist.totalSessions === "number"
+                        ? therapist.totalSessions
+                        : undefined) ??
+                      (typeof therapist.reviews === "number"
+                        ? therapist.reviews
+                        : undefined);
+                    if (!served) return null;
+                    return (
+                      <Box
+                        component="span"
+                        sx={{
+                          fontWeight: 500,
+                          color: "#4B4B48",
+                          marginLeft: "6px",
+                        }}
+                      >
+                        | {served} {t("therapistCard.served", "served")}
+                      </Box>
+                    );
+                  })()}
+                </Typography>
+              </Box>
+              {therapist.reviews && therapist.reviews > 0 ? (
+                <Box
+                  sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "3px 8px",
+                    borderRadius: "999px",
+                    background: "#FFE5E7",
+                  }}
+                  aria-label={`${therapist.reviews} comments`}
+                >
+                  <ChatBubbleOutlineRoundedIcon
+                    sx={{ fontSize: 13, color: "#D66B70" }}
+                  />
+                  <Typography
                     sx={{
-                      fontWeight: 500,
-                      color: brand.textMuted,
-                      marginLeft: "4px",
+                      fontFamily: fonts.body,
+                      fontSize: "11.5px",
+                      fontWeight: 700,
+                      color: "#4B4B48",
+                      lineHeight: 1,
                     }}
                   >
-                    ({therapist.reviews} reviews)
-                  </Box>
-                ) : null}
-              </Typography>
+                    {therapist.reviews}
+                  </Typography>
+                </Box>
+              ) : null}
             </Box>
           ) : null}
 
@@ -654,30 +761,36 @@ const TherapistMinimalCard: React.FC<Props> = ({
             onClick={handleBookTap}
             disabled={isOffDuty}
             sx={{
-              padding: "9px 18px",
+              // 🆕 Round 28r82 — Coral CTA for the therapist browse
+              //   card (founder reference screenshot 2026-07-08).
+              //   Warmer/friendlier than the sitewide taupe primary,
+              //   scoped to THIS card only (see r80 · sitewide primary
+              //   stays warm taupe #8F8474 on hero/booking/checkout).
+              padding: "10px 20px",
               borderRadius: "999px",
-              // 🆕 Round 28s136 — Disabled visual when off-duty.
               background: isOffDuty
                 ? "rgba(0,0,0,0.18)"
-                : oceanAccent,
+                : "#E88585",
               color: "#fff",
               border: "none",
               cursor: isOffDuty ? "not-allowed" : "pointer",
               fontFamily: fonts.body,
-              fontSize: "13px",
-              fontWeight: 600,
-              letterSpacing: "0.005em",
+              fontSize: "13.5px",
+              fontWeight: 700,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
               whiteSpace: "nowrap",
               boxShadow: isOffDuty
                 ? "none"
-                : "0 6px 14px rgba(15, 23, 42, 0.22), 0 1px 3px rgba(15, 23, 42, 0.14)",
-              transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                : "0 6px 14px rgba(232, 133, 133, 0.32), 0 1px 3px rgba(232, 133, 133, 0.18)",
+              transition: "transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease",
               "&:hover": isOffDuty
                 ? {}
                 : {
+                    background: "#D67373",
                     transform: "translateY(-1px)",
                     boxShadow:
-                      "0 10px 20px rgba(15, 23, 42, 0.28), 0 2px 5px rgba(15, 23, 42, 0.16)",
+                      "0 10px 22px rgba(214, 115, 115, 0.36), 0 2px 5px rgba(214, 115, 115, 0.20)",
                   },
               "&:focus-visible": {
                 outline: "2px solid #fff",
