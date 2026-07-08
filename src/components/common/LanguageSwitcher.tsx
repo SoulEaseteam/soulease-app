@@ -126,7 +126,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           backdropFilter: "blur(20px) saturate(180%)",
           WebkitBackdropFilter: "blur(20px) saturate(180%)",
           border: "1px solid rgba(255, 255, 255, 0.7)",
-          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.6)",
+          boxShadow: "0 2px 8px rgba(15, 23, 42, 0.06)",
           color: "#1A2B2E",
           fontSize: `${fontSize}px`,
           fontWeight: 700,

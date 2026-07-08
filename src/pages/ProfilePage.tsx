@@ -174,6 +174,11 @@ const ProfilePage: React.FC = () => {
           <Box
             component="img"
             src="/images/icon/sunred-logo.png"
+            alt="SunRed"
+            width={72}
+            height={72}
+            loading="lazy"
+            decoding="async"
             sx={{ width: 72, height: 72, borderRadius: "50%", mb: 2, opacity: 0.9 }}
           />
           <Typography sx={{ fontFamily: SERIF, fontSize: 26, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>

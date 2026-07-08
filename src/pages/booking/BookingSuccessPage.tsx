@@ -502,6 +502,9 @@ const BookingSuccessPage: React.FC = () => {
                     "0%, 100%": { opacity: 1 },
                     "50%": { opacity: 0.5 },
                   },
+                  "@media (prefers-reduced-motion: reduce)": {
+                    animation: "none",
+                  },
                 }}
               />
               <Box sx={{ flex: 1, minWidth: 0 }}>

@@ -331,13 +331,17 @@ const PaymentMethodsPage: React.FC = () => {
           aria-label={t("common.back", "Back")}
           onClick={() => void navigate(-1)}
           sx={{
-            width: 38,
-            height: 38,
+            width: 44,
+            height: 44,
             background: "rgba(255, 255, 255, 0.85)",
-            border: "1px solid rgba(0, 0, 0, 0.06)",
+            border: "1px solid rgba(15, 23, 42, 0.06)",
             color: "#1A2B2E",
             boxShadow: "0 2px 8px rgba(15, 23, 42, 0.06)",
             "&:hover": { background: "#fff" },
+            "&:focus-visible": {
+              outline: "2px solid #B4000A",
+              outlineOffset: 2,
+            },
           }}
         >
           <ArrowBackRoundedIcon fontSize="small" />

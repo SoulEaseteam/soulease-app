@@ -344,8 +344,7 @@ const DetailHero: React.FC<Props> = ({
                         fontSize: "12px",
                         fontWeight: 800,
                         letterSpacing: "0.04em",
-                        boxShadow:
-                          "0 4px 12px rgba(15, 23, 42, 0.40), inset 0 1px 0 rgba(255,255,255,0.25)",
+                        boxShadow: "0 6px 16px rgba(180, 0, 10, 0.34)",
                       }}
                     >
                       {t("detail.gallery.viewAll", "View all")}

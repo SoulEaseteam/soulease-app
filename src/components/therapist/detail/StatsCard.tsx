@@ -229,8 +229,7 @@ const StatsCard: React.FC<Props> = ({
           backdropFilter: "blur(30px) saturate(180%)",
           WebkitBackdropFilter: "blur(30px) saturate(180%)",
           border: "1px solid rgba(255, 255, 255, 0.7)",
-          boxShadow:
-            "0 12px 32px rgba(15, 23, 42, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.7)",
+          boxShadow: "0 12px 28px rgba(15, 23, 42, 0.12)",
         }}
       >
       {/* Round 28s41 — Persistent "Tap any stat for full profile ↗"

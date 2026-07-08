@@ -327,8 +327,7 @@ const ServicesPage: React.FC = () => {
                       borderRadius: 999,
                       background:
                         "#B4000A",
-                      boxShadow:
-                        "0 4px 14px rgba(15, 23, 42, 0.32), inset 0 1px 0 rgba(255,255,255,0.18)",
+                      boxShadow: "0 4px 14px rgba(180, 0, 10, 0.28)",
                       zIndex: 0,
                     }}
                   />
@@ -543,8 +542,7 @@ const ServicesPage: React.FC = () => {
                         fontWeight: 800,
                         letterSpacing: "0.22em",
                         textTransform: "uppercase",
-                        boxShadow:
-                          "0 8px 18px rgba(245, 166, 35, 0.46), 0 2px 4px rgba(15, 23, 42, 0.24), inset 0 1px 0 rgba(255,255,255,0.45)",
+                        boxShadow: "0 10px 22px rgba(245, 166, 35, 0.42)",
                         whiteSpace: "nowrap",
                         display: "inline-flex",
                         alignItems: "center",

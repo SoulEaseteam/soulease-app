@@ -196,7 +196,7 @@ const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.4)",
+              border: "1px solid rgba(255,255,255,0.3)",
             }}
           >
             <RedeemRoundedIcon sx={{ fontSize: 22 }} />

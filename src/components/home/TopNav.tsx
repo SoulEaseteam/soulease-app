@@ -306,8 +306,10 @@ const TopNav: React.FC = () => {
           aria-label={t("nav.openMenu", "Open menu")}
           onClick={() => setDrawerOpen(true)}
           sx={{
-            width: "40px",
-            height: "40px",
+            // 🆕 Round 28r57 · Phase 3.6 — 40→44 WCAG 2.1 AA min tap
+            //   target on mobile primary nav.
+            width: "44px",
+            height: "44px",
             borderRadius: "50%",
             display: { xs: "inline-flex", md: "none" },
             // 🆕 Round 28s170 — Founder: "3 แทบ เอากรอบ ออก".
@@ -317,9 +319,9 @@ const TopNav: React.FC = () => {
             border: "none",
             boxShadow: "none",
             color: "#ffffff",
-            "&:hover": { background: "rgba(255, 255, 255, 0.10)" },
+            "&:hover": { background: "rgba(255, 255, 255, 0.12)" },
             "&:focus-visible": {
-              outline: "2px solid #B4000A",
+              outline: "2px solid #ffffff",
               outlineOffset: 2,
             },
           }}
@@ -524,8 +526,15 @@ const TopNav: React.FC = () => {
           <IconButton
             aria-label={t("nav.closeMenu", "Close menu")}
             onClick={() => setDrawerOpen(false)}
-            size="small"
-            sx={{ color: "#1A2B2E" }}
+            sx={{
+              color: "#1A2B2E",
+              width: 44,
+              height: 44,
+              "&:focus-visible": {
+                outline: "2px solid #B4000A",
+                outlineOffset: 2,
+              },
+            }}
           >
             <CloseRoundedIcon />
           </IconButton>

@@ -231,8 +231,7 @@ const HowItWorks: React.FC = () => {
                   fontWeight: 500,
                   fontSize: "15px",
                   letterSpacing: "0.04em",
-                  boxShadow:
-                    "0 4px 14px rgba(15, 23, 42, 0.32), inset 0 1px 0 rgba(255,255,255,0.22)",
+                  boxShadow: "0 6px 16px rgba(180, 0, 10, 0.32)",
                   "&::before": {
                     content: '""',
                     position: "absolute",

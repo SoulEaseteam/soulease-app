@@ -4,8 +4,30 @@ html, body, #root {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden !important;
-  overscroll-behavior-x: none; /* block horizontal drift only */
+  /* 🆕 Round 28r57 · Phase 3.6 — was overscroll-behavior-x only.
+     Adding y-axis "contain" prevents the iOS rubber-band scroll
+     from bouncing the whole page under the fixed BottomNavGlass,
+     while still allowing individual scrollable containers inside
+     the app to scroll normally. */
+  overscroll-behavior: contain;
   touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 🆕 Round 28r57 · Phase 3.6 — Global reduced-motion respect.
+   Any consumer that doesn't already query prefers-reduced-motion
+   inherits this envelope. Framer-motion + JS-scheduled animations
+   are handled separately in their consumer code; this ensures every
+   CSS-driven transition/animation shrinks to ≤10ms in reduce mode. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ป้องกัน iOS zoom เวลา focus input/select/textarea

@@ -345,7 +345,10 @@ const PromoStrip: React.FC<PromoStripProps> = ({
           </Box>
         </Box>
 
-        {/* Dismiss — real button, keyboard-focusable. */}
+        {/* Dismiss — real button, keyboard-focusable.
+            🆕 Round 28r57 · Phase 3.6 — WCAG 2.1 AA minimum 44×44 tap
+            surface even in the compact strip. Icon stays small; the
+            padding does the work of the hit-target. */}
         <IconButton
           size="small"
           aria-label={t("promoStrip.dismiss", "Dismiss promotional banner")}
@@ -358,7 +361,9 @@ const PromoStrip: React.FC<PromoStripProps> = ({
           }}
           sx={{
             color: "rgba(255,255,255,0.9)",
-            padding: "6px",
+            padding: "10px",
+            minWidth: 44,
+            minHeight: 44,
             flexShrink: 0,
             "&:hover": { background: "rgba(255,255,255,0.14)" },
             "&:focus-visible": {

@@ -107,7 +107,9 @@ const HomePage: React.FC = () => {
         borderRadius: { xs: "28px", md: 0 },
         overflow: "hidden",
         boxShadow: {
-          xs: "0 20px 60px rgba(15, 23, 42, 0.10)",
+          // 🆕 Round 28r57 · Phase 3.6 — softer, single-layer surface
+          //   shadow. Was 60px blur which read as dated multi-stack.
+          xs: "0 16px 40px rgba(15, 23, 42, 0.08)",
           md: "none",
         },
         position: "relative",
@@ -164,11 +166,12 @@ const HomePage: React.FC = () => {
           padding: { md: "28px 24px", lg: "36px 32px" },
           margin: { md: "20px 12px 8px" },
           borderRadius: "24px",
-          // Warm brand-red → coral gradient, matching the customer
-          // site's ReserveCTA + tonight-special banner vocabulary.
-          background: `linear-gradient(135deg, ${brand.red} 0%, #C61B2A 55%, #E14B3B 100%)`,
+          // 🆕 Round 28r57 · Phase 3.6 — Single-direction (top→bottom)
+          //   gradient replaces the diagonal, single-layer shadow. Modern
+          //   flat-tinted-red instead of the multi-hue mid stop.
+          background: `linear-gradient(180deg, ${brand.red} 0%, #9C0009 100%)`,
           color: "#fff",
-          boxShadow: "0 18px 44px rgba(180, 0, 10, 0.20)",
+          boxShadow: "0 16px 36px rgba(180, 0, 10, 0.24)",
           overflow: "hidden",
           position: "relative",
         }}
@@ -267,14 +270,13 @@ const HomePage: React.FC = () => {
             fontWeight: 700,
             letterSpacing: "0.01em",
             textDecoration: "none",
-            boxShadow:
-              "0 10px 24px rgba(15, 23, 42, 0.18), 0 2px 4px rgba(15, 23, 42, 0.10)",
+            boxShadow: "0 10px 24px rgba(15, 23, 42, 0.18)",
             whiteSpace: "nowrap",
             transition: "transform 0.16s ease, box-shadow 0.16s ease",
+            minHeight: 44,
             "&:hover": {
               transform: "translateY(-1px)",
-              boxShadow:
-                "0 14px 30px rgba(15, 23, 42, 0.22), 0 3px 6px rgba(15, 23, 42, 0.12)",
+              boxShadow: "0 14px 30px rgba(15, 23, 42, 0.22)",
             },
             "&:focus-visible": {
               outline: "2px solid #fff",

@@ -80,7 +80,7 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
         display: { xs: "flex", md: "none" },
         alignItems: "center",
         gap: "12px",
-        boxShadow: "0 -8px 24px rgba(15, 23, 42, 0.08)",
+        boxShadow: "0 -8px 22px rgba(15, 23, 42, 0.10)",
       }}
     >
       <Box>
@@ -126,6 +126,7 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
         sx={{
           flex: 1,
           height: 50,
+          minHeight: 50,
           borderRadius: "999px",
           background: "#B4000A",
           color: "#fff",
@@ -134,13 +135,18 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
           fontWeight: 700,
           letterSpacing: "0.02em",
           textTransform: "none",
-          boxShadow: "0 6px 20px rgba(15, 23, 42, 0.35)",
+          boxShadow: "0 10px 24px rgba(180, 0, 10, 0.32)",
           "&:hover": {
             background: "#B4000A",
+            boxShadow: "0 14px 30px rgba(180, 0, 10, 0.38)",
+          },
+          "&:focus-visible": {
+            outline: "2px solid #fff",
+            outlineOffset: 2,
           },
           "&.Mui-disabled": {
-            background: "rgba(0, 0, 0, 0.12)",
-            color: "rgba(0, 0, 0, 0.35)",
+            background: "rgba(15, 23, 42, 0.12)",
+            color: "rgba(15, 23, 42, 0.35)",
             boxShadow: "none",
           },
         }}

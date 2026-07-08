@@ -203,7 +203,18 @@ const ReviewPage: React.FC = () => {
           zIndex: 10,
         }}
       >
-        <IconButton onClick={() => navigate(-1)}>
+        <IconButton
+          onClick={() => navigate(-1)}
+          aria-label="Back"
+          sx={{
+            width: 44,
+            height: 44,
+            "&:focus-visible": {
+              outline: "2px solid #B4000A",
+              outlineOffset: 2,
+            },
+          }}
+        >
           <ArrowBackIosNewIcon fontSize="small" />
         </IconButton>
         <Typography sx={{ flex: 1, textAlign: "center", fontWeight: 600 }}>

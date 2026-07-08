@@ -600,6 +600,10 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
                 { variant: "card" }
               )}
               alt={active.name}
+              width={56}
+              height={56}
+              loading="lazy"
+              decoding="async"
               onError={() =>
                 setImgErrorIds((prev) => new Set(prev).add(active.id))
               }
@@ -609,7 +613,7 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
                 borderRadius: "12px",
                 objectFit: "cover",
                 flexShrink: 0,
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                boxShadow: "0 4px 10px rgba(15, 23, 42, 0.10)",
               }}
             />
           )}
@@ -752,6 +756,9 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
                     "@keyframes hm-avail-pulse": {
                       "0%, 100%": { opacity: 1 },
                       "50%": { opacity: 0.45 },
+                    },
+                    "@media (prefers-reduced-motion: reduce)": {
+                      animation: "none",
                     },
                   },
                 }}

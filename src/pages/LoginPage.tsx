@@ -149,11 +149,15 @@ const LoginPage: React.FC = () => {
               component="img"
               src="/images/icon/User.webp"
               alt="User Icon"
+              width={120}
+              height={120}
+              loading="lazy"
+              decoding="async"
               sx={{
                 width: 120,
                 height: 120,
                 borderRadius: "50%",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                boxShadow: "0 6px 18px rgba(15, 23, 42, 0.20)",
               }}
             />
           </Box>

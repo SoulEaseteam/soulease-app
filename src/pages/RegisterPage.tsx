@@ -75,7 +75,9 @@ const RegisterPage: React.FC = () => {
         }}>
           <Box sx={{ textAlign: 'center', mt: -12 }}>
             <Box component="img" src="/images/icon/User.webp" alt="User Icon"
-              sx={{ width: 120, height: 120, borderRadius: '50%', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }} />
+              width={120} height={120}
+              loading="lazy" decoding="async"
+              sx={{ width: 120, height: 120, borderRadius: '50%', boxShadow: '0 6px 18px rgba(15, 23, 42, 0.20)' }} />
           </Box>
 
           <Typography variant="h6" fontWeight="bold" mt={3} mb={4}

@@ -416,13 +416,17 @@ const TherapistProfilePage: React.FC = () => {
             component="img"
             src={enhanceImage(resolvedImage, { variant: "card" })}
             alt={therapist.name}
+            width={96}
+            height={96}
+            loading="lazy"
+            decoding="async"
             sx={{
               width: 96,
               height: 96,
               borderRadius: "50%",
               objectFit: "cover",
               border: "3px solid rgba(255,255,255,0.85)",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
+              boxShadow: "0 6px 16px rgba(15, 23, 42, 0.14)",
               flexShrink: 0,
             }}
           />

@@ -780,12 +780,14 @@ export const GalleryTile: React.FC<{
               component="img"
               src={heroUrl(validImages[openIdx])}
               alt={`${altBase} ${openIdx + 1}`}
+              loading="lazy"
+              decoding="async"
               sx={{
                 maxWidth: "100%",
                 maxHeight: "100%",
                 objectFit: "contain",
                 borderRadius: "12px",
-                boxShadow: "0 12px 36px rgba(0,0,0,0.5)",
+                boxShadow: "0 16px 40px rgba(15, 23, 42, 0.36)",
               }}
             />
           )}
@@ -831,6 +833,8 @@ export const GalleryTile: React.FC<{
                   src={thumbUrl(src)}
                   alt=""
                   draggable={false}
+                  loading="lazy"
+                  decoding="async"
                   sx={{
                     width: "100%",
                     height: "100%",

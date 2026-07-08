@@ -417,6 +417,10 @@ const AdminFloatingChat: React.FC = () => {
                       component="img"
                       src={opt.src}
                       alt={opt.title}
+                      width={20}
+                      height={20}
+                      loading="lazy"
+                      decoding="async"
                       sx={{ width: 20, height: 20, objectFit: "contain" }}
                     />
                   </Box>
@@ -670,11 +674,11 @@ const AdminFloatingChat: React.FC = () => {
           alignItems: "center",
           justifyContent: "center",
           boxShadow:
-            "0 14px 32px rgba(180, 0, 10, 0.46), 0 4px 10px rgba(15, 23, 42, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.40), inset 0 -2px 6px rgba(0, 0, 0, 0.16)",
+            "0 16px 36px rgba(180, 0, 10, 0.42), 0 4px 10px rgba(15, 23, 42, 0.14)",
           transition: "box-shadow 0.22s ease",
           "&:hover": {
             boxShadow:
-              "0 18px 40px rgba(180, 0, 10, 0.55), 0 6px 14px rgba(15, 23, 42, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.50), inset 0 -2px 6px rgba(0, 0, 0, 0.16)",
+              "0 20px 44px rgba(180, 0, 10, 0.50), 0 6px 14px rgba(15, 23, 42, 0.18)",
           },
           "&:focus-visible": {
             outline: `3px solid ${brand.red}`,

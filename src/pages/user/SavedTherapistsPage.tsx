@@ -135,9 +135,10 @@ const SavedTherapistsPage: React.FC = () => {
               >
                 <CardMedia
                   component="img"
-                  sx={{ width: 100, objectFit: "cover" }}
+                  sx={{ width: 100, height: 130, objectFit: "cover" }}
                   image={img}
                   alt={t.name}
+                  loading="lazy"
                 />
                 <CardContent sx={{ flex: 1 }}>
                   <Typography fontWeight="bold">{t.name}</Typography>

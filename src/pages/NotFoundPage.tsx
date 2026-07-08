@@ -61,12 +61,17 @@ const NotFoundPage: React.FC = () => {
             component="img"
             src="https://i.ibb.co/vZpPKkX/sad-cat-404.png"
             alt="not found"
+            width={140}
+            height={140}
+            loading="lazy"
+            decoding="async"
             sx={{
               width: 140,
+              height: 140,
               mx: "auto",
               mt: 1,
               opacity: 0.95,
-              filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.15))",
+              filter: "drop-shadow(0 3px 6px rgba(15, 23, 42, 0.12))",
             }}
           />
 

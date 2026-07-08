@@ -1261,12 +1261,16 @@ const BookingFlowPage: React.FC = () => {
           aria-label={t("common.back", "Back")}
           onClick={() => void navigate(-1)}
           sx={{
-            width: 36,
-            height: 36,
-            background: "rgba(255, 255, 255, 0.7)",
-            border: "1px solid rgba(0, 0, 0, 0.06)",
+            width: 44,
+            height: 44,
+            background: "rgba(255, 255, 255, 0.8)",
+            border: "1px solid rgba(15, 23, 42, 0.06)",
             color: "#1A2B2E",
-            "&:hover": { background: "rgba(255, 255, 255, 0.9)" },
+            "&:hover": { background: "rgba(255, 255, 255, 0.95)" },
+            "&:focus-visible": {
+              outline: "2px solid #B4000A",
+              outlineOffset: 2,
+            },
           }}
         >
           <ArrowBackRoundedIcon fontSize="small" />

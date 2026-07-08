@@ -307,8 +307,7 @@ const StepService: React.FC<Props> = ({
                     fontWeight: 800,
                     letterSpacing: "0.10em",
                     textTransform: "uppercase",
-                    boxShadow:
-                      "0 6px 14px rgba(15, 23, 42, 0.36), inset 0 1px 0 rgba(255,255,255,0.30)",
+                    boxShadow: "0 8px 18px rgba(180, 0, 10, 0.34)",
                     whiteSpace: "nowrap",
                   }}
                 >
@@ -326,6 +325,9 @@ const StepService: React.FC<Props> = ({
                       "@keyframes sunredTrendingPulse": {
                         "0%, 100%": { opacity: 1 },
                         "50%": { opacity: 0.45 },
+                      },
+                      "@media (prefers-reduced-motion: reduce)": {
+                        animation: "none",
                       },
                     }}
                   />

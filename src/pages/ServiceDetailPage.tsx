@@ -243,9 +243,16 @@ const ServiceDetailPage: React.FC = () => {
           onClick={() => navigate(-1)}
           aria-label={t("common.back", "Back")}
           sx={{
+            width: 44,
+            height: 44,
             background: "rgba(255,255,255,0.8)",
-            backdropFilter: "blur(8px)",
+            backdropFilter: "blur(10px)",
+            border: "1px solid rgba(15, 23, 42, 0.06)",
             "&:hover": { background: "#fff" },
+            "&:focus-visible": {
+              outline: `2px solid ${brand.red}`,
+              outlineOffset: 2,
+            },
             marginBottom: { xs: "20px", md: "12px" },
           }}
         >
@@ -399,7 +406,7 @@ const ServiceDetailPage: React.FC = () => {
                     : "#fff",
                   color: isActive ? "#fff" : brand.text,
                   boxShadow: isActive
-                    ? "0 8px 22px rgba(15, 23, 42, 0.28), inset 0 1px 0 rgba(255,255,255,0.25)"
+                    ? "0 10px 24px rgba(180, 0, 10, 0.22)"
                     : "0 1px 3px rgba(15, 23, 42, 0.05)",
                   transition:
                     "background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease",
@@ -493,11 +500,10 @@ const ServiceDetailPage: React.FC = () => {
                 fontWeight: 700,
                 fontSize: "15px",
                 textTransform: "none",
-                boxShadow:
-                  "0 12px 32px rgba(15, 23, 42, 0.28), inset 0 1px 0 rgba(255,255,255,0.20)",
+                boxShadow: "0 12px 28px rgba(180, 0, 10, 0.28)",
                 "&:hover": {
                   background: "#B4000A",
-                  boxShadow: "0 16px 40px rgba(15, 23, 42, 0.34)",
+                  boxShadow: "0 16px 36px rgba(180, 0, 10, 0.34)",
                 },
               }}
             >
@@ -706,11 +712,10 @@ const ServiceDetailPage: React.FC = () => {
               fontWeight: 700,
               fontSize: "15px",
               textTransform: "none",
-              boxShadow:
-                "0 12px 32px rgba(15, 23, 42, 0.34), inset 0 1px 0 rgba(255,255,255,0.20)",
+              boxShadow: "0 14px 32px rgba(180, 0, 10, 0.32)",
               "&:hover": {
                 background: "#B4000A",
-                boxShadow: "0 16px 40px rgba(15, 23, 42, 0.40)",
+                boxShadow: "0 18px 40px rgba(180, 0, 10, 0.38)",
               },
             }}
           >
