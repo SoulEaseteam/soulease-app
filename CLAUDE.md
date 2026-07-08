@@ -3943,3 +3943,22 @@ dots. Built **`src/components/home/HomeHero.tsx`** (new) and swapped it into
 - **Left alone on purpose**: the red `#2D2D2B` TopNav wordmark (founder-locked
   28s163–172) and QuickNavRow (already the mockup's Massage·Therapists·Locations·
   Reviews card). tsc=0, build=59 routes, verified render on mobile + desktop.
+
+### 🆕 2026-07-08 — Hero → founder's full-bleed background photo (28s327)
+
+Founder sent a bright cream still-life (ceramic vase + eucalyptus + lit candle +
+pebbles on a wood tray, subject RIGHT, empty cream wall LEFT) and said "**ใช้พื้นหลัง
+อันนี้**". Saved to **`public/images/hero/hero.jpg`** (she dropped the file in — a
+chat-pasted image isn't a file on disk, so I can't grab it; had her save it, then
+wired it up). Reworked `HomeHero.tsx`: **dropped the 3-image carousel**, hero is now
+a **single full-bleed background photo** with the headline + Thai subtitle + CTAs
+overlaid on the empty left third. A soft left→right cream scrim (heavier on xs)
+keeps the overlaid text crisp on every crop; `backgroundPosition` hugs right on
+phones (`72% center`) so the vase stays in frame.
+
+⚠️ **Bug fixed same round**: the mount fade used `requestAnimationFrame` to flip a
+`mounted` flag → opacity 0→1. rAF **doesn't fire in a backgrounded/headless tab**,
+so the hero rendered stuck at **opacity ~0.07** (near-invisible). Removed the JS-gated
+fade entirely — the hero is now `opacity:1` by default (bulletproof; never
+JS-dependent to be visible). tsc=0, build=59, `hero.jpg` copied into dist, verified
+render mobile + desktop, deployed.
