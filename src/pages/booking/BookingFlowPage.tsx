@@ -155,14 +155,31 @@ import AddressTile from "@/components/booking/AddressTile";
 import ConfirmBar from "@/components/booking/ConfirmBar";
 // 🆕 Round 28r13 — Funnel analytics: booking_start (page open) +
 //   booking_complete (addDoc success).
+// 🆕 Round 28r63 — trackReferralTierApplied (referral tier unlocked).
 import {
   trackBookingStart,
   trackBookingComplete,
+  trackReferralTierApplied,
 } from "@/utils/analytics";
 // 🆕 Round 28r14 — Discount validator (FIRST10 + SUN-XXXX referral).
 //   Pure function; client-side validation only. Admin still
 //   confirms / overrides via Telegram before payment.
-import { validateDiscount, getInitialDiscountCode, getCustomPromoLimits } from "@/utils/discount";
+import {
+  validateDiscount,
+  getInitialDiscountCode,
+  getCustomPromoLimits,
+  // 🆕 Round 28r63 — resolves the exact tier that fired for the
+  //   current count + live REFERRAL override, so the analytics event
+  //   logs a real tierMinRedeems (not a heuristic) and the tier chip
+  //   shows the admin-set label.
+  getActiveReferralTier,
+} from "@/utils/discount";
+// 🆕 Round 28r63 (r59 follow-up) — customer-flow wiring for the
+//   referral tier system built in r59. Populates ctx.referralRedeemCount
+//   so tiers actually activate at checkout instead of always defaulting
+//   to the base amount. Fails open (permission blip / rules gate on
+//   unsigned guest → count 0 → base tier still applies).
+import { useReferralRedeemCount } from "@/hooks/useReferralRedeemCount";
 // 🆕 Round 28s84 — shared promo kill-switch (home banner + discount field).
 import { PROMOS_ENABLED } from "@/config/featureFlags";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell.
@@ -655,6 +672,18 @@ const BookingFlowPage: React.FC = () => {
   const bookingHourBKK = form.time
     ? parseInt(form.time.split(":")[0], 10)
     : undefined;
+  // 🆕 Round 28r63 (r59 follow-up) — referral tier count. Bounded
+  //   getCountFromServer, cached per-code in a module Map, fails open
+  //   on permission errors so a rules blip can't block a real referral.
+  //   Non-referral codes (FIRST10 / WELCOME20 / etc.) return count=0
+  //   from the hook and validateDiscount just ignores the field.
+  //   `isTierEligible` from the hook isn't consumed here — we resolve
+  //   the exact active tier below via `getActiveReferralTier` instead,
+  //   which is truthy only when a tier's minRedeems actually matched.
+  const { count: referralRedeemCount } = useReferralRedeemCount(
+    form.discountCode
+  );
+
   // 🆕 Round 28s71 (audit perf) — memoized. validateDiscount used to
   //   re-run on EVERY render, including all ~30 frames of the total's
   //   count-up tween (useTweenedNumber below), on every keystroke, and
@@ -668,9 +697,61 @@ const BookingFlowPage: React.FC = () => {
         // 🆕 Round 28r28 — FREETAXI needs the taxi fare to compute its
         //   discount amount. Other codes ignore it.
         taxiFareTHB: taxiFare,
+        // 🆕 Round 28r63 — SUN-XXXX referral tiers. When the REFERRAL
+        //   override carries a `tiers` list, validateDiscount picks the
+        //   highest tier whose minRedeems<=count. Ignored for every
+        //   non-referral code.
+        referralRedeemCount,
       }),
-    [form.discountCode, discountableBase, bookingHourBKK, form.serviceId, taxiFare]
+    [
+      form.discountCode,
+      discountableBase,
+      bookingHourBKK,
+      form.serviceId,
+      taxiFare,
+      referralRedeemCount,
+    ]
   );
+  // 🆕 Round 28r63 (r59 follow-up) — resolve which tier (if any)
+  //   fired for the current SUN-XXXX code + count, so we can (a) show
+  //   the tier label chip in the "You saved" pill and (b) log a
+  //   truthful referral_tier_applied analytics event. Returns null on
+  //   non-referral codes / codes with no configured tiers / counts
+  //   that don't cross any threshold.
+  const isReferralCode =
+    discount.valid && /^SUN-[A-Z0-9]{4,8}$/.test(discount.code);
+  const activeReferralTier = useMemo(
+    () => (isReferralCode ? getActiveReferralTier(referralRedeemCount) : null),
+    [isReferralCode, referralRedeemCount]
+  );
+
+  // Fire the referral_tier_applied event when a tier is actually
+  // active AND the code is currently valid. Deduped in trackEvent per
+  // (code, tierMinRedeems) so the ~30 tween frames + every keystroke
+  // can't fire it repeatedly. Only fires in production (analytics.ts
+  // skips dev/localhost/preview builds).
+  useEffect(() => {
+    if (
+      PROMOS_ENABLED &&
+      discount.valid &&
+      isReferralCode &&
+      activeReferralTier
+    ) {
+      trackReferralTierApplied(
+        discount.code,
+        referralRedeemCount,
+        activeReferralTier.minRedeems,
+        activeReferralTier.amount,
+      );
+    }
+  }, [
+    discount.valid,
+    discount.code,
+    isReferralCode,
+    referralRedeemCount,
+    activeReferralTier,
+  ]);
+
   // 🆕 Round 28s83 — promos OFF: force ฿0 discount regardless of code.
   const discountAmount =
     PROMOS_ENABLED && discount.valid ? discount.amount : 0;
@@ -2324,6 +2405,7 @@ const BookingFlowPage: React.FC = () => {
                       display: "inline-flex",
                       alignItems: "center",
                       gap: "5px",
+                      flexWrap: "wrap",
                     }}
                   >
                     <LocalOfferRoundedIcon sx={{ fontSize: 13 }} />
@@ -2331,6 +2413,35 @@ const BookingFlowPage: React.FC = () => {
                       label: discount.label,
                       amount: formatTHB(Math.round(savingsDiscount)),
                     })}
+                    {/* 🆕 Round 28r63 (r59 follow-up) — active tier chip.
+                        `discount.label` already reflects the tier's
+                        admin-set label (validateDiscount picks it), but a
+                        small "tier · N+ redeems" pill adds the earned
+                        context so the guest sees WHY they're getting
+                        more than the base referral amount. */}
+                    {activeReferralTier && (
+                      <Box
+                        component="span"
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: 9.5,
+                          fontWeight: 800,
+                          letterSpacing: "0.06em",
+                          textTransform: "uppercase",
+                          padding: "2px 7px",
+                          borderRadius: "999px",
+                          background: "rgba(22, 163, 74, 0.18)",
+                          color: "#15803d",
+                          border: "1px solid rgba(22, 163, 74, 0.35)",
+                        }}
+                      >
+                        {t(
+                          "booking.referralTierBadge",
+                          "Tier · {{count}}+ redeems",
+                          { count: activeReferralTier.minRedeems }
+                        )}
+                      </Box>
+                    )}
                   </Box>
                 )}
               </Box>

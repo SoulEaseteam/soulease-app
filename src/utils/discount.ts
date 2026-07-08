@@ -76,6 +76,21 @@ export function pickReferralTier(
   }
   return best;
 }
+
+/** 🆕 Round 28r63 (r59 follow-up) — resolve the currently-active
+ *  referral tier by consulting the live REFERRAL builtinOverride's
+ *  tier list. Returns null when no tier list is configured, no tier
+ *  matches, or the caller has no valid count. BookingFlowPage uses
+ *  this to know EXACTLY which tier (if any) fired at checkout, so it
+ *  can log a truthful analytics event (`referral_tier_applied` with a
+ *  real `tierMinRedeems`) instead of a heuristic. Pure/sync; reads
+ *  the module-level cache MaintenanceGate keeps warm. */
+export function getActiveReferralTier(
+  count: number | undefined,
+): ReferralTier | null {
+  const ov = builtinOverrides["REFERRAL"];
+  return pickReferralTier(ov?.tiers, count);
+}
 const FIRST_TIME_CODE = "FIRST10";
 const WELCOME_CODE = "WELCOME20";
 const TONIGHT_CODE = "TONIGHT500";

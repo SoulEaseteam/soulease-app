@@ -45,7 +45,14 @@ export type FunnelEvent =
   //   fires every time a guest taps a bundle CTA — the founder needs
   //   to see interest per bundle, not just per session.
   | "bundle_view"
-  | "bundle_reserve_click";
+  | "bundle_reserve_click"
+  // 🆕 Round 28r63 (r59 follow-up) — referral tier activated at
+  //   checkout. Payload = { code, count, tierMinRedeems, amount }.
+  //   Deduped per (code + tier) tuple within a session so the ~30
+  //   render-frames of the total tween can't fire it repeatedly.
+  //   Lets the founder see how many bookings actually unlock a tier
+  //   vs. just hit the base referral reward.
+  | "referral_tier_applied";
 
 const SESSION_KEY = "sunred.analytics.sid";
 const FIRED_KEY = "sunred.analytics.fired";
@@ -131,6 +138,16 @@ function dedupKeyFor(
   //   write count sane. bundle_reserve_click is a real CTA action —
   //   never dedupe (like booking_complete/concierge_chat_open).
   if (event === "bundle_view") return "bundle_view";
+  // 🆕 Round 28r63 — referral tier activation. Dedupe per (code,
+  //   tierMinRedeems) so the ~30 render frames of the total's
+  //   count-up tween can't fire N events per pageview. The event is
+  //   still fired again if the guest tries a DIFFERENT referral code
+  //   or the count crosses into a NEW tier.
+  if (event === "referral_tier_applied") {
+    const code = (props?.code as string) ?? "_";
+    const tier = (props?.tierMinRedeems as number) ?? -1;
+    return `referral_tier_applied:${code}:${tier}`;
+  }
   // booking_complete + concierge_chat_open + bundle_reserve_click: no dedup
   return null;
 }
@@ -272,3 +289,23 @@ export const trackBundleReserveClick = (
   discountPct: number
 ): void =>
   trackEvent("bundle_reserve_click", { bundleId, sessionCount, discountPct });
+
+// 🆕 Round 28r63 (r59 follow-up) — fires when a SUN-XXXX referral
+//   code unlocks a tier at checkout (count crossed the tier's
+//   minRedeems threshold). Deduped in trackEvent per (code, tier).
+//   `amount` is what the guest actually got vs. the base referral
+//   amount — the founder can see e.g. "50% of tier-eligible codes
+//   converted this month" over time. Non-PII: code is admin-shaped
+//   (SUN-XXXXXX), count/minRedeems/amount are numbers.
+export const trackReferralTierApplied = (
+  code: string,
+  count: number,
+  tierMinRedeems: number,
+  amount: number,
+): void =>
+  trackEvent("referral_tier_applied", {
+    code,
+    count,
+    tierMinRedeems,
+    amount,
+  });
