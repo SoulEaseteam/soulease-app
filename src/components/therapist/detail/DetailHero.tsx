@@ -226,11 +226,11 @@ const DetailHero: React.FC<Props> = ({
           // floats as a rounded card: side + top margin, 22px radius,
           // soft warm shadow. Reads premium (Airbnb listing hero)
           // instead of edge-to-edge.
-          // 🆕 Round 28s360 — reduce hero height so tabs/stats are
-          //   visible without scrolling ("ลดขนาดรูปให้พอดีจอ").
-          //   16:9 saves ~70px on 390px wide phones vs. the old 4:3.
+          // 🆕 Round 28s363 — portrait "half-body" crop (3:4) so the
+          //   face + upper body is visible, like a standard profile
+          //   photo. Was 16:9 (too wide, showed torso only).
           position: "relative",
-          aspectRatio: "16 / 9",
+          aspectRatio: "3 / 4",
           overflow: "hidden",
           margin: "8px 12px 0",
           borderRadius: "22px",

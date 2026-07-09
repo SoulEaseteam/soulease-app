@@ -1224,86 +1224,9 @@ const TherapistDetailPage: React.FC = () => {
           order: { xs: 2 },
         }}
       >
-        {/* 🆕 Round 28s362 — Replace big 3-col StatsCard with compact
-            chip badges (★rating · sessions · rebook). Matches competitor
-            "Lily 22" reference where stats appear as small pill badges
-            next to/below the name, not as a large floating card. */}
-        <Box
-          sx={{
-            display: "flex",
-            gap: "7px",
-            margin: "10px 14px 0",
-            flexWrap: "wrap",
-            alignItems: "center",
-          }}
-        >
-          {/* ★ Rating chip */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-              background: "#FFF8E8",
-              border: "1px solid rgba(245,166,35,0.35)",
-              borderRadius: "999px",
-              padding: "5px 13px",
-              fontFamily: '"Inter", system-ui, sans-serif',
-              fontSize: "13px",
-              fontWeight: 700,
-              color: "#1A2B2E",
-              lineHeight: 1.2,
-            }}
-          >
-            <Box component="span" sx={{ color: "#F5A623", fontSize: "14px", lineHeight: 1 }}>★</Box>
-            {displayRating}
-            {therapist.reviewCount > 0 && (
-              <Box component="span" sx={{ color: "#4A5568", fontWeight: 400, fontSize: "11px" }}>
-                ({therapist.reviewCount})
-              </Box>
-            )}
-          </Box>
-
-          {/* Sessions chip */}
-          {(therapist.totalSessions ?? 0) > 0 && (
-            <Box
-              sx={{
-                background: "rgba(26,43,46,0.05)",
-                border: "1px solid rgba(26,43,46,0.10)",
-                borderRadius: "999px",
-                padding: "5px 13px",
-                fontFamily: '"Inter", system-ui, sans-serif',
-                fontSize: "13px",
-                fontWeight: 600,
-                color: "#1A2B2E",
-                lineHeight: 1.2,
-              }}
-            >
-              {(therapist.totalSessions ?? 0) >= 1000
-                ? `${Math.round((therapist.totalSessions ?? 0) / 100) / 10}k`
-                : therapist.totalSessions}{" "}
-              sessions
-            </Box>
-          )}
-
-          {/* Rebook chip */}
-          {therapist.rebookRate && therapist.rebookRate !== "0%" && (
-            <Box
-              sx={{
-                background: "rgba(26,43,46,0.05)",
-                border: "1px solid rgba(26,43,46,0.10)",
-                borderRadius: "999px",
-                padding: "5px 13px",
-                fontFamily: '"Inter", system-ui, sans-serif',
-                fontSize: "13px",
-                fontWeight: 600,
-                color: "#1A2B2E",
-                lineHeight: 1.2,
-              }}
-            >
-              {therapist.rebookRate} rebook
-            </Box>
-          )}
-        </Box>
+        {/* 🆕 Round 28s363 — Removed stat chips (★rating · sessions · rebook).
+            BioStatsBar (sex/height/style/language) is now the primary
+            info block below the photo — no numeric stats above the fold. */}
 
         {/* 🆕 Round 28s361 — BioStatsBar promoted from Photos-tab
             content to always-visible section (between StatsCard and
