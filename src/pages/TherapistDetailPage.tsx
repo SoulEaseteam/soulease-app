@@ -70,6 +70,9 @@ import ShieldRoundedIcon from "@mui/icons-material/ShieldRounded";
 import StatusPill from "@/components/therapist/detail/StatusPill";
 // 🗑️ 28s350 — FeaturesPanel (Rolodex physical-descriptor table) retired
 //   per founder ("Features ไม่ใช้แล้ว ลบ"). Component file kept on disk.
+// 🆕 28s351 — replaced by BioStatsBar: horizontal sex · height/weight ·
+//   style · language strip (founder ref: competitor "Wawa" detail).
+import BioStatsBar from "@/components/therapist/detail/BioStatsBar";
 // StickyBookCTA — kept on disk but no longer mounted (Phase 5 auto-nav).
 
 // 🆕 Phase 5 — Service + Duration + Date + Time picker now lives in ONE
@@ -481,7 +484,10 @@ function buildFromReal(real: Therapist, lang?: string): DemoTherapist {
   if (f.height) bodyChipParts.push(f.height);
   if (f.bodyType) bodyChipParts.push(`${f.bodyType} build`);
   if (bodyChipParts.length > 0) {
-    aboutBits.push(...bodyChipParts);
+    // 🆕 28s351 — physical stats (height · build) now live in the
+    //   BioStatsBar, so keep them OUT of the About prose fallback to avoid
+    //   a duplicated facts line. aboutFacts (legacy InfoSheet API) keeps
+    //   the full detail so that surface is unchanged.
     aboutFacts.push({
       icon: <StraightenRoundedIcon />,
       text: bodyChipParts.join(" · "),
@@ -489,7 +495,8 @@ function buildFromReal(real: Therapist, lang?: string): DemoTherapist {
     });
   }
   if (langText) {
-    aboutBits.push(`Speaks ${langText}`);
+    // 🆕 28s351 — language also lives in the BioStatsBar now; omit from the
+    //   About prose fallback (kept in aboutFacts for InfoSheet).
     aboutFacts.push({
       icon: <TranslateRoundedIcon />,
       text: langText,
@@ -1229,7 +1236,21 @@ const TherapistDetailPage: React.FC = () => {
           rebookRate={therapist.rebookRate}
         />
 
-        <Box sx={{ marginTop: "4px" }}>
+        {/* 🆕 Round 28s361 — BioStatsBar promoted from Photos-tab
+            content to always-visible section (between StatsCard and
+            StatusPill). Matches competitor "Lily 22" reference layout:
+            photo strip → bio bar → stats/status → tabs.
+            Removed from Photos-tab About panel (was line ~1678). */}
+        {realRecord?.features && (
+          <Box sx={{ margin: "10px 14px 0" }}>
+            <BioStatsBar
+              features={realRecord.features}
+              languageText={therapist.langs.map((l) => l.name).join(" · ")}
+            />
+          </Box>
+        )}
+
+        <Box sx={{ marginTop: "10px" }}>
           <StatusPill
             nextBookingAt={
               livePillStatus === "online" ? nextBookingAt : null
@@ -1664,9 +1685,8 @@ const TherapistDetailPage: React.FC = () => {
               gap: "16px",
             }}
           >
-            {/* 🗑️ 28s350 — Features panel removed (founder: "Features
-                ไม่ใช้แล้ว ลบ"). About body + credentials + specialties +
-                languages carry the profile now. */}
+            {/* BioStatsBar moved to always-visible section (Round 28s361)
+                above the tab bar — no longer rendered here. */}
 
             {therapist.creds.length > 0 && (
               <Box>
