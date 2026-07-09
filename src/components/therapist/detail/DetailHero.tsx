@@ -274,8 +274,11 @@ const DetailHero: React.FC<Props> = ({
                   ...(isBig
                     ? { gridColumn: "1", gridRow: "1" }
                     : {}),
+                  // 🆕 Round 28s362 — objectPosition "top" so the
+                  //   face shows in the 16:9 crop (was "center" which
+                  //   showed torso only on portrait shots).
                   background: src
-                    ? `center / cover no-repeat url("${src}")`
+                    ? `top / cover no-repeat url("${src}")`
                     : "rgba(184, 92, 60, 0.08)",
                   cursor: images.length > 0 ? "zoom-in" : "default",
                   overflow: "hidden",
