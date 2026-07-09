@@ -1189,6 +1189,9 @@ const TherapistDetailPage: React.FC = () => {
           // 🆕 Round 28s365 — rating chip next to name in hero
           rating={displayRating !== "—" ? displayRating : undefined}
           reviewCount={therapist.reviewCount > 0 ? therapist.reviewCount : undefined}
+          // 🆕 Round 28s366 — stat chips under name
+          totalSessions={therapist.totalSessions > 0 ? therapist.totalSessions : undefined}
+          rebookRate={therapist.rebookRate || undefined}
           photoBg={therapist.photoBg}
           images={therapist.images}
           // 🆕 Round 28s207 (audit #6) — Working hours formatted as
@@ -1254,17 +1257,11 @@ const TherapistDetailPage: React.FC = () => {
           const bust = (f.bustSize ?? "").trim();
           const looksMeasurement = /\d\s*[-–/]\s*\d/.test(bt);
           const style = looksMeasurement ? bt : bust || bt;
-          const language = (
-            therapist.langs.length > 0
-              ? therapist.langs.map((l) => l.name).join(" · ")
-              : f.language ?? ""
-          ).trim().replace(/\s*,\s*/g, " · ");
-
+          // 🆕 Round 28s366 — 3 cols only; language moved below trust badges
           const bioCells = [
             { value: sex, label: "sex" },
             { value: heightWeight, label: "height / weight" },
             { value: style, label: "style" },
-            { value: language, label: "language" },
           ].filter((c) => c.value);
 
           if (bioCells.length === 0) return null;
@@ -1367,6 +1364,75 @@ const TherapistDetailPage: React.FC = () => {
             </Box>
           )}
         </Box>
+
+        {/* 🆕 Round 28s366 — About bio + Languages moved here (above tab bar).
+            Replaces the same content previously shown inside the Photos tab. */}
+        <Box sx={{ margin: "14px 14px 0" }}>
+          <About
+            name={therapist.name}
+            rows={[]}
+            facts={[]}
+            body={therapist.about}
+            gender={therapist.gender}
+          />
+        </Box>
+
+        {/* Languages row — flag · name · level pills */}
+        {therapist.langs.length > 0 && (
+          <Box sx={{ margin: "10px 14px 0" }}>
+            <Typography
+              component="p"
+              sx={{
+                fontFamily: SANS,
+                fontSize: "10px",
+                fontWeight: 800,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+                color: "#4A5568",
+                marginBottom: "8px",
+              }}
+            >
+              Languages
+            </Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: "6px 16px" }}>
+              {therapist.langs.map((l) => {
+                const isNative = l.level.toUpperCase().includes("NATIVE");
+                return (
+                  <Box
+                    key={l.name}
+                    sx={{ display: "flex", alignItems: "center", gap: "6px" }}
+                  >
+                    <Box sx={{ fontSize: "14px" }}>{l.flag}</Box>
+                    <Typography
+                      component="span"
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "#1A2B2E",
+                      }}
+                    >
+                      {l.name}
+                    </Typography>
+                    <Typography
+                      component="span"
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: "9.5px",
+                        fontWeight: 800,
+                        letterSpacing: "0.08em",
+                        color: isNative ? "#2D2D2B" : "rgba(15,23,42,0.55)",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {l.level}
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+          </Box>
+        )}
 
         <Box sx={{ marginTop: "10px" }}>
           <StatusPill
@@ -1700,17 +1766,8 @@ const TherapistDetailPage: React.FC = () => {
               2026-07-08 ("เอาแถบนี้ ไปยุที่เดิม ซ้อนอยู่ใต้รูป"). Cell
               taps now scroll-nav instead of opening InfoSheet. */}
 
-          {/* 🆕 Round 28s221 — Drop the 3 fact-chip rows (info now lives
-              in FeaturesPanel below) + drop the embedded gallery (hero
-              handles photos). About card now renders only header + bio
-              quote — clean intro, no duplicate facts. */}
-          <About
-            name={therapist.name}
-            rows={[]}
-            facts={[]}
-            body={therapist.about}
-            gender={therapist.gender}
-          />
+          {/* 🆕 Round 28s366 — About moved above tab bar (below trust badges).
+              Not rendered here anymore. */}
 
           {/* 🆕 Round 28s114 — Discovery Reservation callout (Phase 2 of
               docs/discovery-offer.md). Shown for every non-star therapist
@@ -1870,141 +1927,9 @@ const TherapistDetailPage: React.FC = () => {
               </Box>
             )}
 
-            {therapist.specs.length > 0 && (
-              <Box>
-                <Typography
-                  component="p"
-                  sx={{
-                    fontFamily: SANS,
-                    fontSize: "11px",
-                    fontWeight: 800,
-                    letterSpacing: "0.14em",
-                    textTransform: "uppercase",
-                    color: "#4A5568",
-                    marginBottom: "10px",
-                  }}
-                >
-                  {t("detail.about.specialties", "Specialties")}
-                </Typography>
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "10px",
-                  }}
-                >
-                  {therapist.specs.map((s) => (
-                    <Box
-                      key={s.name}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                      }}
-                    >
-                      <Box sx={{ fontSize: "20px", flexShrink: 0 }}>
-                        {s.icon}
-                      </Box>
-                      <Box>
-                        <Typography
-                          sx={{
-                            fontFamily: SERIF,
-                            fontSize: "14px",
-                            fontWeight: 600,
-                            color: "#1A2B2E",
-                            lineHeight: 1.15,
-                          }}
-                        >
-                          {s.name}
-                        </Typography>
-                        {s.yrs && (
-                          <Typography
-                            sx={{
-                              fontFamily: SANS,
-                              fontSize: "11px",
-                              color: "rgba(15, 23, 42, 0.55)",
-                              marginTop: "1px",
-                            }}
-                          >
-                            {s.yrs}
-                          </Typography>
-                        )}
-                      </Box>
-                    </Box>
-                  ))}
-                </Box>
-              </Box>
-            )}
-
-            {therapist.langs.length > 0 && (
-              <Box>
-                <Typography
-                  component="p"
-                  sx={{
-                    fontFamily: SANS,
-                    fontSize: "11px",
-                    fontWeight: 800,
-                    letterSpacing: "0.14em",
-                    textTransform: "uppercase",
-                    color: "#4A5568",
-                    marginBottom: "10px",
-                  }}
-                >
-                  {t("detail.about.languages", "Languages")}
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: "6px 18px",
-                  }}
-                >
-                  {therapist.langs.map((l) => {
-                    const isNative = l.level
-                      .toUpperCase()
-                      .includes("NATIVE");
-                    return (
-                      <Box
-                        key={l.name}
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <Box sx={{ fontSize: "14px" }}>{l.flag}</Box>
-                        <Typography
-                          component="span"
-                          sx={{
-                            fontFamily: SANS,
-                            fontSize: "13px",
-                            fontWeight: 600,
-                            color: "#1A2B2E",
-                          }}
-                        >
-                          {l.name}
-                        </Typography>
-                        <Typography
-                          component="span"
-                          sx={{
-                            fontFamily: SANS,
-                            fontSize: "9.5px",
-                            fontWeight: 800,
-                            letterSpacing: "0.08em",
-                            color: isNative
-                              ? "#2D2D2B"
-                              : "rgba(15, 23, 42, 0.55)",
-                            textTransform: "uppercase",
-                          }}
-                        >
-                          {l.level}
-                        </Typography>
-                      </Box>
-                    );
-                  })}
-                </Box>
-              </Box>
-            )}
+            {/* Round 28s366 — Specialties + Languages removed from Photos tab.
+                Languages moved to below trust badges (above tab bar).
+                Specialties removed per founder request. */}
 
             {/* Round 28s52 — Working hours moved to the DetailHero
                 info overlay (next to Allow location + status pill)

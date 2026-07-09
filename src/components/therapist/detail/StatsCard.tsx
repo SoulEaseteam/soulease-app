@@ -201,12 +201,12 @@ const StatsCard: React.FC<Props> = ({
                   borderLeft: i > 0 ? "1px solid rgba(26,43,46,0.10)" : "none",
                 }}
               >
-                {/* Value — smaller on mobile for 4-col fit */}
+                {/* Value — bigger/bolder (Round 28s366) */}
                 <Box
                   sx={{
                     fontFamily: SERIF,
-                    fontWeight: 700,
-                    fontSize: { xs: "11px", md: "15px" },
+                    fontWeight: 800,
+                    fontSize: { xs: "14px", md: "17px" },
                     color: "#1A2B2E",
                     letterSpacing: "-0.01em",
                     lineHeight: 1.25,

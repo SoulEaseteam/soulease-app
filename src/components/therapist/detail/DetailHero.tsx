@@ -93,6 +93,13 @@ interface Props {
    */
   rating?: string;
   reviewCount?: number;
+  /**
+   * 🆕 Round 28s366 — stat chips below the name line.
+   * Sessions count, rebook rate %, and rating are shown as
+   * small frosted chips in a row under the name.
+   */
+  totalSessions?: number;
+  rebookRate?: string;
 }
 
 const STATUS_COLORS: Record<AvailabilityStatus, { dot: string; label: string }> = {
@@ -120,6 +127,8 @@ const DetailHero: React.FC<Props> = ({
   geoStatus = "idle",
   rating,
   reviewCount,
+  totalSessions,
+  rebookRate,
 }) => {
   // 🆕 Round 28s219 — i18n for hardcoded Thai "ดูทั้งหมด" overlay
   //   (founder: "ทำไมเป็นภาษาไทย").
@@ -569,6 +578,91 @@ const DetailHero: React.FC<Props> = ({
               </Box>
             )}
           </Box>
+
+          {/* 🆕 Round 28s366 — stat chips below name: Sessions · % Rebook · ★ rating */}
+          {(totalSessions != null && totalSessions > 0) || rebookRate || (rating && rating !== "—") ? (
+            <Box
+              sx={{
+                display: "flex",
+                gap: "6px",
+                flexWrap: "wrap",
+                marginBottom: "6px",
+              }}
+            >
+              {totalSessions != null && totalSessions > 0 && (
+                <Box
+                  sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    background: "rgba(255,255,255,0.18)",
+                    backdropFilter: "blur(8px)",
+                    border: "1px solid rgba(255,255,255,0.28)",
+                    borderRadius: "999px",
+                    padding: "3px 10px",
+                    fontFamily: SANS,
+                    fontSize: "11.5px",
+                    fontWeight: 700,
+                    color: "#fff",
+                    letterSpacing: "0.01em",
+                  }}
+                >
+                  {totalSessions >= 1000
+                    ? `${Math.round(totalSessions / 100) / 10}k`
+                    : totalSessions}{" "}
+                  sessions
+                </Box>
+              )}
+              {rebookRate && rebookRate !== "—" && (
+                <Box
+                  sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    background: "rgba(255,255,255,0.18)",
+                    backdropFilter: "blur(8px)",
+                    border: "1px solid rgba(255,255,255,0.28)",
+                    borderRadius: "999px",
+                    padding: "3px 10px",
+                    fontFamily: SANS,
+                    fontSize: "11.5px",
+                    fontWeight: 700,
+                    color: "#fff",
+                    letterSpacing: "0.01em",
+                  }}
+                >
+                  {rebookRate} rebook
+                </Box>
+              )}
+              {rating && rating !== "—" && (
+                <Box
+                  sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "3px",
+                    background: "rgba(255,255,255,0.18)",
+                    backdropFilter: "blur(8px)",
+                    border: "1px solid rgba(255,255,255,0.28)",
+                    borderRadius: "999px",
+                    padding: "3px 10px",
+                    fontFamily: SANS,
+                    fontSize: "11.5px",
+                    fontWeight: 700,
+                    color: "#fff",
+                    letterSpacing: "0.01em",
+                  }}
+                >
+                  <Box component="span" sx={{ color: "#F5A623", fontSize: "12px" }}>★</Box>
+                  {rating}
+                  {reviewCount != null && reviewCount > 0 && (
+                    <Box component="span" sx={{ fontWeight: 400, opacity: 0.85 }}>
+                      {" "}· {reviewCount} reviews
+                    </Box>
+                  )}
+                </Box>
+              )}
+            </Box>
+          ) : null}
+
           {/* .quick-meta */}
           <Box
             sx={{
