@@ -18,8 +18,9 @@ import {
   CaretRight,
   CheckCircle,
   Gauge,
+  IdentificationCard,
 } from "phosphor-react";
-import { collection, query, where, getCountFromServer } from "firebase/firestore";
+import { collection, query, where, getCountFromServer, doc, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 
 import { auth, db } from "@/lib/firebase";
@@ -137,6 +138,8 @@ const ProfilePage: React.FC = () => {
   const { user, role } = useAuth();
   const navigate  = useNavigate();
   const [bookingCount, setBookingCount] = useState<number | null>(null);
+  // Round 28s369 — therapist name from Firestore (Firebase Auth displayName is null for therapist accounts)
+  const [therapistName, setTherapistName] = useState<string | null>(null);
 
   // pull total booking count for this user
   useEffect(() => {
@@ -150,6 +153,19 @@ const ProfilePage: React.FC = () => {
       .then((snap) => setBookingCount(snap.data().count))
       .catch(() => setBookingCount(null));
   }, [user]);
+
+  // Round 28s369 — fetch therapist name from Firestore when Auth displayName is null
+  useEffect(() => {
+    if (!user || role !== "therapist" || user.displayName) return;
+    getDoc(doc(db, "therapists", user.uid))
+      .then((snap) => {
+        if (snap.exists()) {
+          const data = snap.data() as { name?: string; displayName?: string };
+          setTherapistName(data.name || data.displayName || null);
+        }
+      })
+      .catch(() => { /* silent fallback */ });
+  }, [user, role]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -275,7 +291,7 @@ const ProfilePage: React.FC = () => {
                   color: "#fff",
                 }}
               >
-                {!user.photoURL && initials(user.displayName, user.email)}
+                {!user.photoURL && initials(therapistName || user.displayName, user.email)}
               </Avatar>
             </Box>
           </Box>
@@ -284,7 +300,8 @@ const ProfilePage: React.FC = () => {
           <Box sx={{ textAlign: "center" }}>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.75 }}>
               <Typography sx={{ fontFamily: SERIF, fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
-                {user.displayName || "Guest"}
+                {/* Round 28s369 — therapistName fallback for null Firebase Auth displayName */}
+                {therapistName || user.displayName || "Guest"}
               </Typography>
               <CheckCircle size={18} color="#2D2D2B" weight="fill" />
             </Box>
@@ -358,6 +375,23 @@ const ProfilePage: React.FC = () => {
                 label="Admin Dashboard"
                 sub="Bookings · Therapists · Reports"
                 onClick={() => navigate("/admin/dashboard")}
+              />
+            </Section>
+          </motion.div>
+        )}
+
+        {/* Round 28s369 — Therapist panel shortcut — only visible to therapists */}
+        {role === "therapist" && (
+          <motion.div {...fadeUp(0.12)}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
+              Practitioner
+            </Typography>
+            <Section>
+              <Row
+                icon={<IdentificationCard size={18} weight="duotone" />}
+                label="My Practitioner Profile"
+                sub="Availability · services · earnings"
+                onClick={() => navigate("/therapist/profile")}
               />
             </Section>
           </motion.div>
