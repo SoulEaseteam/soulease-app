@@ -845,9 +845,14 @@ export const LoyaltyTab: React.FC<{
   // "this looks like the system is broken". Show a single quiet
   // placeholder instead until at least one real customer is
   // measurable.
-  const hasAnyData =
-    useReal || rebookPct > 0 || totalSessions > 0;
-  if (!hasAnyData) {
+  // 🆕 28s346 (founder "ทำไมได้ 100 หรอ") — a rebook rate from 1–2 customers
+  //   is misleading (1 of 1 = 100% + a bogus "Top 5%" badge). Require a
+  //   minimum real sample before showing the panel; below it, show the
+  //   "building history" placeholder instead of an inflated number.
+  const MIN_SAMPLE = 5;
+  const enoughData =
+    useReal && (loyaltyStats?.uniqueCustomers ?? 0) >= MIN_SAMPLE;
+  if (!enoughData) {
     return (
       <Box
         sx={{
@@ -895,8 +900,9 @@ export const LoyaltyTab: React.FC<{
             margin: "0 auto",
           }}
         >
-          Rebook rate, customer mix, and timing breakdowns appear
-          here once this practitioner has completed bookings.
+          Rebook rate, customer mix, and timing appear here once this
+          practitioner has at least 5 unique guests — so the numbers
+          are reliable, not a one-off.
         </Typography>
       </Box>
     );
