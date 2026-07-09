@@ -68,9 +68,8 @@ import ShieldRoundedIcon from "@mui/icons-material/ShieldRounded";
 //   sheet popup. Component file stays on disk in case we ever
 //   need to reintroduce a deep-dive tab.
 import StatusPill from "@/components/therapist/detail/StatusPill";
-// 🆕 Round 28s220 — Rolodex-style profile features card (ref: founder
-//   ROLADEX competitor screenshot).
-import FeaturesPanel from "@/components/therapist/detail/FeaturesPanel";
+// 🗑️ 28s350 — FeaturesPanel (Rolodex physical-descriptor table) retired
+//   per founder ("Features ไม่ใช้แล้ว ลบ"). Component file kept on disk.
 // StickyBookCTA — kept on disk but no longer mounted (Phase 5 auto-nav).
 
 // 🆕 Phase 5 — Service + Duration + Date + Time picker now lives in ONE
@@ -842,13 +841,13 @@ const TherapistDetailPage: React.FC = () => {
     [upcomingBooking],
   );
 
-  const realRecord = useMemo(
-    () =>
-      therapist?.id
-        ? therapistsData.find((tt) => tt.id === therapist.id) ?? null
-        : null,
-    [therapist?.id],
-  );
+  // 🆕 28s350 (founder "ดึงจาก Firestore แบบ Milo") — realRecord now mirrors
+  //   realRow (Firestore-preferred) instead of reading the static
+  //   @/data/therapists file, so distance / hours / live-status resolve from
+  //   the SAME live doc that drives the rest of the profile. Firestore-only
+  //   practitioners (Milo, Pare) now populate here too; the 12 static ones
+  //   still fall back to @/data only if they're missing from Firestore.
+  const realRecord = realRow ?? null;
 
   // Round 28s53 — Real GPS distance. autoStart:false so we never
   // prompt without a user gesture; the DetailHero "Allow location"
@@ -1665,12 +1664,9 @@ const TherapistDetailPage: React.FC = () => {
               gap: "16px",
             }}
           >
-            {/* 🆕 Round 28s220 — Rolodex-style features panel (founder
-                ref: ROLADEX competitor). Shows physical + personality
-                descriptors in a clean info-table. Brand-voice compliant. */}
-            {realRecord?.features && (
-              <FeaturesPanel features={realRecord.features} />
-            )}
+            {/* 🗑️ 28s350 — Features panel removed (founder: "Features
+                ไม่ใช้แล้ว ลบ"). About body + credentials + specialties +
+                languages carry the profile now. */}
 
             {therapist.creds.length > 0 && (
               <Box>
