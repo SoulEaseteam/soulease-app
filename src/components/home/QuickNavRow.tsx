@@ -28,7 +28,7 @@ import {
   FlowerLotus,
   Users,
   MapPin,
-  Star,
+  Tag,
 } from "phosphor-react";
 import { fonts } from "@/theme";
 
@@ -72,10 +72,10 @@ const QuickNavRow: React.FC = () => {
       onTap: () => navigate("/near-me"),
     },
     {
-      key: "reviews",
-      Icon: Star,
-      labelEn: t("home.quickNav.reviews", "Reviews"),
-      onTap: () => navigate("/services?tab=how"),
+      key: "pricing",
+      Icon: Tag,
+      labelEn: t("home.quickNav.pricing", "Pricing"),
+      onTap: () => navigate("/pricing"),
     },
   ];
 
