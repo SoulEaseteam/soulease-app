@@ -546,37 +546,8 @@ const DetailHero: React.FC<Props> = ({
                 filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.45))",
               }}
             />
-            {/* 🆕 Round 28s365 — ★ rating chip next to name.
-                Amber pill, white text; only shown when rating is
-                provided and non-empty (e.g. "4.5"). */}
-            {rating && rating !== "—" && (
-              <Box
-                sx={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "3px",
-                  background: "rgba(245,166,35,0.90)",
-                  backdropFilter: "blur(4px)",
-                  borderRadius: "999px",
-                  padding: "3px 10px 3px 8px",
-                  fontFamily: SANS,
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  color: "#fff",
-                  letterSpacing: "0.01em",
-                  lineHeight: 1,
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
-                }}
-              >
-                <Box component="span" sx={{ fontSize: "14px", lineHeight: 1 }}>★</Box>
-                {rating}
-                {reviewCount != null && reviewCount > 0 && (
-                  <Box component="span" sx={{ fontWeight: 400, fontSize: "11px", opacity: 0.9 }}>
-                    ({reviewCount})
-                  </Box>
-                )}
-              </Box>
-            )}
+            {/* Round 28s367 — ★ rating chip removed from name line;
+                moved to frosted chip row (row 3) below the name. */}
           </Box>
 
           {/* 🆕 Round 28s366 — stat chips below name: Sessions · % Rebook · ★ rating */}
