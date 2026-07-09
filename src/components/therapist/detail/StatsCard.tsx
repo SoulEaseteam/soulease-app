@@ -142,7 +142,7 @@ const StatsCard: React.FC<Props> = ({
     {
       num: (
         <>
-          <Box component="span" sx={{ color: "#4B4B48" }}>★</Box> {rating}
+          <Box component="span" sx={{ color: "#F5A623" }}>★</Box> {rating}
         </>
       ),
       label: t("detail.stats.reviews", "{{count}} reviews", { count: reviewCount }),
@@ -234,28 +234,25 @@ const StatsCard: React.FC<Props> = ({
         </Box>
       )}
 
+      {/* 🆕 Round 28s360 — redesigned stats card
+          Solid white card (vs. frosted glass) for better legibility
+          on any hero photo color. Numbers larger (24/28px serif),
+          labels cleaner (9px SANS caps). ★ is amber (#F5A623) per
+          CLAUDE.md palette. Cell padding increased for breathing room. */}
       <Box
         sx={{
-          // .stats-card — verbatim
-          padding: "14px 16px",
+          padding: { xs: "16px 8px", md: "18px 16px" },
           borderRadius: "18px",
-          background: "rgba(255, 255, 255, 0.65)",
-          backdropFilter: "blur(30px) saturate(180%)",
-          WebkitBackdropFilter: "blur(30px) saturate(180%)",
-          border: "1px solid rgba(255, 255, 255, 0.7)",
-          boxShadow: "0 12px 28px rgba(15, 23, 42, 0.12)",
+          background: "#FFFFFF",
+          border: "1px solid rgba(26,43,46,0.08)",
+          boxShadow:
+            "0 4px 16px rgba(15,23,42,0.08), 0 1px 3px rgba(15,23,42,0.06)",
         }}
       >
-      {/* Round 28s41 — Persistent "Tap any stat for full profile ↗"
-          footer removed (founder request). The per-cell chevron
-          pulse + first-visit popover (already in this component)
-          carry the affordance signal. */}
-
       <Box
         sx={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr 1fr",
-          gap: { xs: "8px", md: "16px" },
         }}
       >
       {stats.map((s, i) => (
@@ -275,59 +272,55 @@ const StatsCard: React.FC<Props> = ({
               }
             : {})}
           sx={{
-            // .stat-cell — verbatim
             textAlign: "center",
-            padding: "4px 0",
+            paddingY: { xs: "6px", md: "8px" },
+            paddingX: { xs: "8px", md: "12px" },
             position: "relative",
             cursor: s.onTap ? "pointer" : "default",
             borderRadius: "10px",
             transition: "background 0.15s ease, transform 0.15s ease",
             ...(i > 0 && {
-              borderLeft: "1px solid rgba(184, 92, 60, 0.18)",
+              borderLeft: "1px solid rgba(26,43,46,0.10)",
             }),
             ...(s.onTap && {
-              // Round 28s60 (founder "พริบเลือก เหมือนตอนเลือก
-              // กริ้งไปมา") — gate the pink hover tint behind
-              // @media (hover: hover). On touch screens the :hover
-              // state STICKS after a tap, so each cell stayed
-              // highlighted (looked auto-selected, cycling). Now it
-              // only paints on real mouse-hover devices; touch
-              // relies on the brief :active scale alone.
               "@media (hover: hover)": {
                 "&:hover": {
-                  background: "rgba(45, 45, 43, 0.04)",
+                  background: "rgba(180,0,10,0.04)",
                 },
               },
               "&:active": {
                 transform: "scale(0.97)",
               },
               "&:focus-visible": {
-                outline: "2px solid #2D2D2B",
+                outline: "2px solid #B4000A",
                 outlineOffset: "2px",
               },
             }),
           }}
         >
+          {/* Number value */}
           <Box
             sx={{
               fontFamily: SERIF,
-              fontWeight: 600,
-              fontSize: { xs: "18px", md: "22px" },
+              fontWeight: 700,
+              fontSize: { xs: "22px", md: "26px" },
               color: "#1A2B2E",
-              letterSpacing: "-0.02em",
+              letterSpacing: "-0.03em",
+              lineHeight: 1.1,
             }}
           >
             {s.num}
           </Box>
+          {/* Label */}
           <Box
             sx={{
               fontFamily: SANS,
-              fontSize: { xs: "9px", md: "10.5px" },
-              color: "rgba(15, 23, 42, 0.72)",
+              fontSize: { xs: "9px", md: "10px" },
+              color: "#4A5568",
               textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              fontWeight: 700,
-              marginTop: "2px",
+              letterSpacing: "0.07em",
+              fontWeight: 600,
+              marginTop: "5px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -340,17 +333,13 @@ const StatsCard: React.FC<Props> = ({
                 component="span"
                 aria-hidden
                 sx={{
-                  // Round 28s58 (founder "กระพริบ กลิ้งไปมา") — the
-                  // looping translateX + opacity pulse was distracting.
-                  // Static red chevron now; the cell's own hover/active
-                  // states still signal it's tappable.
-                  fontSize: "12px",
-                  color: "#4B4B48",
+                  fontSize: "11px",
+                  color: "#B4000A",
                   fontWeight: 800,
                   marginLeft: "1px",
                   lineHeight: 1,
                   display: "inline-block",
-                  opacity: 0.85,
+                  opacity: 0.7,
                 }}
               >
                 ›
