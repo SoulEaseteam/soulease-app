@@ -1015,12 +1015,14 @@ const TherapistDetailPage: React.FC = () => {
 
   // Round 28s34 — Memoised Bayesian rating. Previously recomputed
   // on every parent render, even when reviews didn't change.
+  // Round 28s371 — only show a real Bayesian rating; hide chip when
+  // no Firestore reviews exist (was falling back to static "0.0").
   const displayRating = useMemo(
     () =>
       liveReviews.reviewCount > 0
         ? formatRating(bayesianRating(liveReviews.reviews))
-        : therapist?.rating ?? "0.0",
-    [liveReviews.reviewCount, liveReviews.reviews, therapist?.rating],
+        : "—",
+    [liveReviews.reviewCount, liveReviews.reviews],
   );
 
   // ── 404 — explicit not-found branch (was previously masked by
