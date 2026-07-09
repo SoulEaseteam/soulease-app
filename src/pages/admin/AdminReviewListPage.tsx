@@ -273,7 +273,7 @@ const AdminReviewListPage: React.FC = () => {
       minWidth: 140,
       renderCell: (params) => (
         <RouterLink
-          to={`/therapists/${params.row.therapistId}`}
+          to={`/admin/therapist/${params.row.therapistId}`}
           target="_blank"
           rel="noopener noreferrer"
           style={{
