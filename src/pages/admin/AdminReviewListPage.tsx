@@ -68,7 +68,7 @@ import {
 } from "firebase/firestore";
 import dayjs from "dayjs";
 import { Link as RouterLink } from "react-router-dom";
-import { Star, ChatCircleText, Warning, MagnifyingGlass, PencilSimple, EyeSlash, ArrowSquareOut, ChatCenteredText } from "phosphor-react";
+import { Star, ChatCircleText, Warning, MagnifyingGlass, PencilSimple, EyeSlash, ArrowSquareOut, ChatCenteredText, ArrowCounterClockwise, Eye } from "phosphor-react";
 import { therapists as THERAPIST_DATA } from "@/data/therapists";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { logAdminAction } from "@/utils/auditLog";
@@ -95,6 +95,11 @@ interface ReviewRow {
   reviewLang?: string;
   createdAt?: Timestamp | null;
   startAt?: Timestamp | null;
+  /** true when viewing the "hidden reviews" mode */
+  hidden?: boolean;
+  /** preserved text for hidden reviews (to allow restore) */
+  hiddenText?: string;
+  hiddenRating?: number;
 }
 
 const AdminReviewListPage: React.FC = () => {
@@ -113,25 +118,40 @@ const AdminReviewListPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [ratingFilter, setRatingFilter] = useState<number | null>(null);
   const [langFilter, setLangFilter] = useState<string | null>(null);
+  // 🆕 Round 28s373 — therapist filter + hidden reviews toggle
+  const [therapistFilter, setTherapistFilter] = useState<string | null>(null);
+  const [showHidden, setShowHidden] = useState(false);
 
-  // 🆕 Round 28s291 — query on `reviewText` (what actually makes a booking
-  //   a "review"), not `rating` (which some real reviews don't have). See
-  //   header comment for the full story. Single-field inequality, still
-  //   auto-indexed, still sorted client-side to dodge a composite index.
+  // 🆕 Round 28s291 — query on `reviewText` / `hiddenText` depending on
+  //   showHidden toggle. Single-field inequality, still auto-indexed.
+  //   🆕 Round 28s373 — showHidden switches between two queries: visible
+  //   reviews (`reviewText != ""`) and hidden reviews (`hiddenText != ""`).
   useEffect(() => {
-    const q = query(collection(db, "bookings"), where("reviewText", "!=", ""));
+    setLoading(true);
+    const fieldName = showHidden ? "hiddenText" : "reviewText";
+    const q = query(collection(db, "bookings"), where(fieldName, "!=", ""));
     const unsub = onSnapshot(
       q,
       (snap) => {
         const list: ReviewRow[] = [];
         snap.forEach((d) => {
           const data = d.data() as Record<string, unknown>;
-          const text = ((data.reviewText as string) ?? "").trim();
-          if (!text) return; // defensive — query already guarantees this
-          // 🆕 Round 28s291 — missing rating defaults to 5 instead of being
-          //   excluded, matching ReviewListPage.tsx / AdminUsersPage.tsx.
-          const rating =
-            typeof data.rating === "number" ? (data.rating as number) : 5;
+          let text: string;
+          let rating: number;
+          if (showHidden) {
+            text = ((data.hiddenText as string) ?? "").trim();
+            rating =
+              typeof data.hiddenRating === "number"
+                ? (data.hiddenRating as number)
+                : 5;
+          } else {
+            text = ((data.reviewText as string) ?? "").trim();
+            // 🆕 Round 28s291 — missing rating defaults to 5 instead of
+            //   being excluded, matching ReviewListPage.tsx / AdminUsersPage.tsx.
+            rating =
+              typeof data.rating === "number" ? (data.rating as number) : 5;
+          }
+          if (!text) return; // defensive
           const therapistId = (data.therapistId as string) ?? "";
           list.push({
             id: d.id,
@@ -151,6 +171,9 @@ const AdminReviewListPage: React.FC = () => {
             reviewLang: (data.reviewLang as string) ?? undefined,
             createdAt: (data.createdAt as Timestamp) ?? null,
             startAt: (data.startAt as Timestamp) ?? null,
+            hidden: showHidden,
+            hiddenText: showHidden ? text : undefined,
+            hiddenRating: showHidden ? rating : undefined,
           });
         });
         // Sort newest first by createdAt (fallback startAt)
@@ -171,7 +194,7 @@ const AdminReviewListPage: React.FC = () => {
       },
     );
     return () => unsub();
-  }, []);
+  }, [showHidden]);
 
   const totalRating = useMemo(() => {
     if (rows.length === 0) return 0;
@@ -192,11 +215,26 @@ const AdminReviewListPage: React.FC = () => {
     [rows],
   );
 
+  // 🆕 Round 28s373 — unique therapists from current row set
+  const therapistOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    rows.forEach((r) => {
+      if (r.therapistId && !seen.has(r.therapistId))
+        seen.set(r.therapistId, r.therapistName);
+    });
+    return Array.from(seen.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [rows]);
+
   const filteredRows = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return rows.filter((r) => {
       if (ratingFilter != null && r.rating !== ratingFilter) return false;
       if (langFilter != null && r.reviewLang !== langFilter) return false;
+      // 🆕 Round 28s373 — therapist filter
+      if (therapistFilter != null && r.therapistId !== therapistFilter)
+        return false;
       if (
         q &&
         !r.therapistName.toLowerCase().includes(q) &&
@@ -205,7 +243,7 @@ const AdminReviewListPage: React.FC = () => {
         return false;
       return true;
     });
-  }, [rows, searchQuery, ratingFilter, langFilter]);
+  }, [rows, searchQuery, ratingFilter, langFilter, therapistFilter]);
 
   const handleOpenEdit = (row: ReviewRow) => {
     setEditRow(row);
@@ -245,9 +283,12 @@ const AdminReviewListPage: React.FC = () => {
   const handleConfirmHide = async () => {
     if (!hideRow) return;
     try {
-      // Clear review fields but preserve the booking doc itself (so
-      // session history + payment record stay intact).
+      // 🆕 Round 28s373 — save hiddenText + hiddenRating BEFORE clearing
+      //   rating/reviewText so admin can restore later via the "Hidden" toggle.
+      //   booking doc stays intact (session history + payment record safe).
       await updateDoc(doc(db, "bookings", hideRow.id), {
+        hiddenText: hideRow.reviewText,
+        hiddenRating: hideRow.rating,
         rating: deleteField(),
         reviewText: deleteField(),
         reviewLang: deleteField(),
@@ -262,6 +303,27 @@ const AdminReviewListPage: React.FC = () => {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Error hiding review:", err);
+    }
+  };
+
+  // 🆕 Round 28s373 — restore a hidden review back to public
+  const handleRestore = async (row: ReviewRow) => {
+    if (!row.hiddenText) return;
+    try {
+      await updateDoc(doc(db, "bookings", row.id), {
+        reviewText: row.hiddenText,
+        rating: row.hiddenRating ?? 5,
+        reviewHiddenAt: deleteField(),
+        hiddenText: deleteField(),
+        hiddenRating: deleteField(),
+      });
+      void logAdminAction("review.restore", {
+        therapistName: row.therapistName,
+        bookingId: row.id,
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("Error restoring review:", err);
     }
   };
 
@@ -377,22 +439,36 @@ const AdminReviewListPage: React.FC = () => {
       sortable: false,
       renderCell: (params) => (
         <Stack direction="row" spacing={0.5}>
-          <IconButton
-            size="small"
-            onClick={() => handleOpenEdit(params.row)}
-            sx={{ color: adminColor.text }}
-            aria-label="Edit"
-          >
-            <PencilSimple size={16} />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={() => handleOpenHide(params.row)}
-            sx={{ color: adminColor.red }}
-            aria-label="Hide"
-          >
-            <EyeSlash size={16} />
-          </IconButton>
+          {!params.row.hidden && (
+            <IconButton
+              size="small"
+              onClick={() => handleOpenEdit(params.row)}
+              sx={{ color: adminColor.text }}
+              aria-label="Edit"
+            >
+              <PencilSimple size={16} />
+            </IconButton>
+          )}
+          {params.row.hidden ? (
+            <IconButton
+              size="small"
+              onClick={() => void handleRestore(params.row)}
+              sx={{ color: "#16A34A" }}
+              aria-label="Restore review"
+              title="Restore · คืนรีวิว"
+            >
+              <ArrowCounterClockwise size={16} />
+            </IconButton>
+          ) : (
+            <IconButton
+              size="small"
+              onClick={() => handleOpenHide(params.row)}
+              sx={{ color: adminColor.red }}
+              aria-label="Hide"
+            >
+              <EyeSlash size={16} />
+            </IconButton>
+          )}
         </Stack>
       ),
     },
@@ -417,6 +493,8 @@ const AdminReviewListPage: React.FC = () => {
       paddingBottom: "12px",
     },
     "& .MuiDataGrid-row:hover": { background: adminColor.panel2 },
+    "& .hidden-review-row": { opacity: 0.5, fontStyle: "italic" },
+    "& .hidden-review-row:hover": { opacity: 0.7 },
     "& .MuiDataGrid-footerContainer": { borderColor: adminColor.line, color: adminColor.muted },
     "& .MuiTablePagination-root": { color: adminColor.muted },
   } as const;
@@ -544,6 +622,55 @@ const AdminReviewListPage: React.FC = () => {
             ))}
           </TextField>
         )}
+
+        {/* 🆕 Round 28s373 — Practitioner filter */}
+        {therapistOptions.length > 1 && (
+          <TextField
+            select
+            size="small"
+            label="Practitioner · พนักงาน"
+            value={therapistFilter ?? "__all__"}
+            onChange={(e) =>
+              setTherapistFilter(
+                e.target.value === "__all__" ? null : e.target.value,
+              )
+            }
+            sx={{ minWidth: 160, "& .MuiOutlinedInput-root": { borderRadius: "12px", background: adminColor.panel } }}
+            SelectProps={{ MenuProps: { PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } } }}
+          >
+            <MenuItem value="__all__">All Practitioners</MenuItem>
+            {therapistOptions.map((t) => (
+              <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
+            ))}
+          </TextField>
+        )}
+
+        {/* 🆕 Round 28s373 — Hidden reviews toggle */}
+        <Button
+          variant={showHidden ? "contained" : "outlined"}
+          size="small"
+          onClick={() => {
+            setShowHidden((v) => !v);
+            setTherapistFilter(null); // reset therapist filter on mode switch
+          }}
+          startIcon={showHidden ? <Eye size={15} /> : <EyeSlash size={15} />}
+          sx={{
+            borderRadius: "12px",
+            textTransform: "none",
+            fontWeight: 700,
+            fontSize: 13,
+            borderColor: adminColor.line2,
+            color: showHidden ? "#fff" : adminColor.muted,
+            background: showHidden ? adminColor.red : "transparent",
+            "&:hover": {
+              background: showHidden ? "#B91C1C" : `${adminColor.red}18`,
+              borderColor: adminColor.red,
+              color: showHidden ? "#fff" : adminColor.red,
+            },
+          }}
+        >
+          {showHidden ? "Hidden · ซ่อนอยู่" : "Show Hidden · ดูที่ซ่อน"}
+        </Button>
       </Box>
 
       {loading ? (
@@ -578,6 +705,9 @@ const AdminReviewListPage: React.FC = () => {
             getRowId={(row) => row.id}
             disableRowSelectionOnClick
             getRowHeight={() => "auto"}
+            getRowClassName={(params) =>
+              params.row.hidden ? "hidden-review-row" : ""
+            }
             initialState={{
               pagination: { paginationModel: { pageSize: 25 } },
             }}

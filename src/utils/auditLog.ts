@@ -51,6 +51,7 @@ export type AuditAction =
   //   unlike every other consequential admin write this session.
   | "review.edit"
   | "review.hide"
+  | "review.restore"
   // 🆕 Round 28s293 — blocking a phone number now actually enforces
   //   something (BookingFlowPage submit guard), so it needs a trail like
   //   every other consequential admin action. Distinct from user.block/
