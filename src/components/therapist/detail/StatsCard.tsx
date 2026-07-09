@@ -38,6 +38,13 @@ interface Props {
   onTapProfile?: () => void;
   /** Optional — opens an info sheet on the Loyalty tab (rebook stats). */
   onTapLoyalty?: () => void;
+  /**
+   * 🆕 Round 28s364 — bio mode.
+   * When provided, renders these cells instead of the numeric stats
+   * (sessions · rebook · ★ rating). Supports 2, 3, or 4 cells;
+   * on mobile a 4-cell layout collapses to 2×2.
+   */
+  bioCells?: Array<{ value: React.ReactNode; label: string }>;
 }
 
 const StatsCard: React.FC<Props> = ({
@@ -49,6 +56,7 @@ const StatsCard: React.FC<Props> = ({
   onTapRating,
   onTapProfile,
   onTapLoyalty,
+  bioCells,
 }) => {
   const { t } = useTranslation();
 
@@ -149,6 +157,93 @@ const StatsCard: React.FC<Props> = ({
       onTap: wrap(onTapRating),
     },
   ];
+
+  // ── Bio mode ────────────────────────────────────────────────────────────
+  // 🆕 Round 28s364 — when bioCells is supplied, render bio data
+  //   (sex · height/weight · style · language) in the same white-card
+  //   visual as the numeric stats card. 4 cells collapse to 2×2 on mobile.
+  if (bioCells && bioCells.length > 0) {
+    const cols = bioCells.filter((c) => c.value && String(c.value).trim() !== "");
+    const isFour = cols.length === 4;
+    return (
+      <Box
+        sx={{
+          margin: { xs: "-30px 14px 18px", md: "0 0 24px" },
+          position: "relative",
+          zIndex: 5,
+        }}
+      >
+        <Box
+          sx={{
+            padding: { xs: "16px 8px", md: "18px 16px" },
+            borderRadius: "18px",
+            background: "#FFFFFF",
+            border: "1px solid rgba(26,43,46,0.08)",
+            boxShadow:
+              "0 4px 16px rgba(15,23,42,0.08), 0 1px 3px rgba(15,23,42,0.06)",
+          }}
+        >
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: isFour
+                ? { xs: "1fr 1fr", md: "1fr 1fr 1fr 1fr" }
+                : `repeat(${cols.length}, 1fr)`,
+            }}
+          >
+            {cols.map((c, i) => (
+              <Box
+                key={i}
+                sx={{
+                  textAlign: "center",
+                  paddingY: { xs: "6px", md: "8px" },
+                  paddingX: { xs: "8px", md: "12px" },
+                  // Vertical + horizontal hairlines for 2×2 mobile grid
+                  borderLeft: {
+                    xs: i % 2 === 1 ? "1px solid rgba(26,43,46,0.10)" : "none",
+                    md: i > 0 ? "1px solid rgba(26,43,46,0.10)" : "none",
+                  },
+                  borderTop: {
+                    xs: isFour && i >= 2 ? "1px solid rgba(26,43,46,0.10)" : "none",
+                    md: "none",
+                  },
+                }}
+              >
+                {/* Value */}
+                <Box
+                  sx={{
+                    fontFamily: SERIF,
+                    fontWeight: 700,
+                    fontSize: { xs: "14px", md: "16px" },
+                    color: "#1A2B2E",
+                    letterSpacing: "-0.01em",
+                    lineHeight: 1.25,
+                  }}
+                >
+                  {c.value}
+                </Box>
+                {/* Label */}
+                <Box
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: { xs: "9px", md: "10px" },
+                    color: "#4A5568",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.07em",
+                    fontWeight: 600,
+                    marginTop: "5px",
+                  }}
+                >
+                  {c.label}
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      </Box>
+    );
+  }
+  // ── End bio mode ─────────────────────────────────────────────────────────
 
   return (
     <Box

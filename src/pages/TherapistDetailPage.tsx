@@ -70,9 +70,12 @@ import ShieldRoundedIcon from "@mui/icons-material/ShieldRounded";
 import StatusPill from "@/components/therapist/detail/StatusPill";
 // 🗑️ 28s350 — FeaturesPanel (Rolodex physical-descriptor table) retired
 //   per founder ("Features ไม่ใช้แล้ว ลบ"). Component file kept on disk.
-// 🆕 28s351 — replaced by BioStatsBar: horizontal sex · height/weight ·
-//   style · language strip (founder ref: competitor "Wawa" detail).
+// 🆕 28s351 — BioStatsBar: sex · height/weight · style · language
+//   28s364 — BioStatsBar data now fed into StatsCard bioCells prop
+//   (white card style). BioStatsBar import kept for possible reuse.
 import BioStatsBar from "@/components/therapist/detail/BioStatsBar";
+// 🆕 Round 28s364 — StatsCard re-imported with bioCells bio mode
+import StatsCard from "@/components/therapist/detail/StatsCard";
 // StickyBookCTA — kept on disk but no longer mounted (Phase 5 auto-nav).
 
 // 🆕 Phase 5 — Service + Duration + Date + Time picker now lives in ONE
@@ -1224,23 +1227,55 @@ const TherapistDetailPage: React.FC = () => {
           order: { xs: 2 },
         }}
       >
-        {/* 🆕 Round 28s363 — Removed stat chips (★rating · sessions · rebook).
-            BioStatsBar (sex/height/style/language) is now the primary
-            info block below the photo — no numeric stats above the fold. */}
+        {/* 🆕 Round 28s364 — StatsCard with bioCells (bio mode).
+            White floating card (negative top overlap) with bio data:
+            sex · height/weight · style · language.
+            Replaces the pink BioStatsBar strip (28s363) at founder request:
+            "กลับไปใช้ StatsCard เดิม เอา 238/16%/★4.5 ออก ใส่ sex/height/style/language แทน" */}
+        {(() => {
+          if (!realRecord?.features) return null;
+          const f = realRecord.features;
 
-        {/* 🆕 Round 28s361 — BioStatsBar promoted from Photos-tab
-            content to always-visible section (between StatsCard and
-            StatusPill). Matches competitor "Lily 22" reference layout:
-            photo strip → bio bar → stats/status → tabs.
-            Removed from Photos-tab About panel (was line ~1678). */}
-        {realRecord?.features && (
-          <Box sx={{ margin: "10px 14px 0" }}>
-            <BioStatsBar
-              features={realRecord.features}
-              languageText={therapist.langs.map((l) => l.name).join(" · ")}
+          /** Append unit only when stored value is a bare number */
+          const withUnit = (v: string | undefined | null, unit: string) => {
+            const s = (v ?? "").trim();
+            if (!s) return "";
+            return /[a-zA-Z฀-๿]/.test(s) ? s : `${s} ${unit}`;
+          };
+
+          const sex = (f.gender ?? "").trim();
+          const h = withUnit(f.height, "cm");
+          const w = withUnit(f.weight, "kg");
+          const heightWeight = [h, w].filter(Boolean).join(" / ");
+          const bt = (f.bodyType ?? "").trim();
+          const bust = (f.bustSize ?? "").trim();
+          const looksMeasurement = /\d\s*[-–/]\s*\d/.test(bt);
+          const style = looksMeasurement ? bt : bust || bt;
+          const language = (
+            therapist.langs.length > 0
+              ? therapist.langs.map((l) => l.name).join(" · ")
+              : f.language ?? ""
+          ).trim().replace(/\s*,\s*/g, " · ");
+
+          const bioCells = [
+            { value: sex, label: "sex" },
+            { value: heightWeight, label: "height / weight" },
+            { value: style, label: "style" },
+            { value: language, label: "language" },
+          ].filter((c) => c.value);
+
+          if (bioCells.length === 0) return null;
+          return (
+            <StatsCard
+              rating={displayRating}
+              reviewCount={therapist.reviewCount}
+              yearsExp={therapist.yearsExp}
+              totalSessions={therapist.totalSessions}
+              rebookRate={therapist.rebookRate ?? ""}
+              bioCells={bioCells}
             />
-          </Box>
-        )}
+          );
+        })()}
 
         <Box sx={{ marginTop: "10px" }}>
           <StatusPill
