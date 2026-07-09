@@ -550,14 +550,81 @@ const DetailHero: React.FC<Props> = ({
                 moved to frosted chip row (row 3) below the name. */}
           </Box>
 
-          {/* 🆕 Round 28s366 — stat chips below name: Sessions · % Rebook · ★ rating */}
+          {/* .quick-meta — location row (Round 28s368: moved above chip row) */}
+          <Box
+            sx={{
+              display: "flex",
+              gap: "12px",
+              fontSize: "11.5px",
+              opacity: 0.95,
+              fontWeight: 500,
+              fontFamily: SANS,
+              marginBottom: "6px",
+            }}
+          >
+            <Box
+              role={
+                resolvedLabel?.trim() && resolvedLabel !== "—"
+                  ? undefined
+                  : "button"
+              }
+              tabIndex={
+                resolvedLabel?.trim() && resolvedLabel !== "—"
+                  ? undefined
+                  : 0
+              }
+              onClick={(e) => {
+                if (resolvedLabel?.trim() && resolvedLabel !== "—") return;
+                if (geoStatus === "denied") return;
+                e.stopPropagation();
+                onRequestLocation?.();
+              }}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter" && e.key !== " ") return;
+                if (resolvedLabel?.trim() && resolvedLabel !== "—") return;
+                if (geoStatus === "denied") return;
+                e.preventDefault();
+                e.stopPropagation();
+                onRequestLocation?.();
+              }}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                cursor:
+                  resolvedLabel?.trim() && resolvedLabel !== "—"
+                    ? "default"
+                    : geoStatus === "denied"
+                      ? "default"
+                      : "pointer",
+              }}
+            >
+              {resolvedLabel?.trim() && resolvedLabel !== "—" ? (
+                <>
+                  <LocationOnRoundedIcon sx={{ fontSize: 14 }} />
+                  {resolvedLabel}
+                </>
+              ) : (
+                <>
+                  <NearMeRoundedIcon sx={{ fontSize: 14 }} />
+                  {geoStatus === "prompt"
+                    ? "Locating…"
+                    : geoStatus === "denied"
+                      ? "Location off"
+                      : "Allow location"}
+                </>
+              )}
+            </Box>
+          </Box>
+
+          {/* 🆕 Round 28s366 — stat chips (Sessions · % Rebook · ★ rating)
+              Round 28s368 — moved BELOW location row (quick-meta above). */}
           {(totalSessions != null && totalSessions > 0) || rebookRate || (rating && rating !== "—") ? (
             <Box
               sx={{
                 display: "flex",
                 gap: "6px",
                 flexWrap: "wrap",
-                marginBottom: "6px",
               }}
             >
               {totalSessions != null && totalSessions > 0 && (
@@ -633,94 +700,6 @@ const DetailHero: React.FC<Props> = ({
               )}
             </Box>
           ) : null}
-
-          {/* .quick-meta */}
-          <Box
-            sx={{
-              display: "flex",
-              gap: "12px",
-              fontSize: "11.5px",
-              opacity: 0.95,
-              fontWeight: 500,
-              fontFamily: SANS,
-            }}
-          >
-            {/* Round 28au — privacy: show only distance, never the area
-                name. Exposing standby area indirectly leaks therapist
-                home info. Distance ("1.2 km") gives the customer enough
-                signal without the safety risk. */}
-            {/* Round 28aw — always render the distance row. Falls back
-                to "Allow location" prompt when GPS hasn't resolved yet
-                so the customer knows the field exists + how to enable
-                it. Privacy: still no area name, distance only. */}
-            {/* Round 28s53 — Real GPS distance. When resolved, show
-                "4 min • 1.2 km". When not yet granted, the chip is
-                tappable and fires onRequestLocation; copy reflects
-                geoStatus (Allow location / Locating… / Location off). */}
-            <Box
-              role={
-                resolvedLabel?.trim() && resolvedLabel !== "—"
-                  ? undefined
-                  : "button"
-              }
-              tabIndex={
-                resolvedLabel?.trim() && resolvedLabel !== "—"
-                  ? undefined
-                  : 0
-              }
-              onClick={(e) => {
-                if (resolvedLabel?.trim() && resolvedLabel !== "—") return;
-                if (geoStatus === "denied") return;
-                e.stopPropagation();
-                onRequestLocation?.();
-              }}
-              onKeyDown={(e) => {
-                if (e.key !== "Enter" && e.key !== " ") return;
-                if (resolvedLabel?.trim() && resolvedLabel !== "—") return;
-                if (geoStatus === "denied") return;
-                e.preventDefault();
-                e.stopPropagation();
-                onRequestLocation?.();
-              }}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-                cursor:
-                  resolvedLabel?.trim() && resolvedLabel !== "—"
-                    ? "default"
-                    : geoStatus === "denied"
-                      ? "default"
-                      : "pointer",
-              }}
-            >
-              {resolvedLabel?.trim() && resolvedLabel !== "—" ? (
-                <>
-                  <LocationOnRoundedIcon sx={{ fontSize: 14 }} />
-                  {resolvedLabel}
-                </>
-              ) : (
-                <>
-                  <NearMeRoundedIcon sx={{ fontSize: 14 }} />
-                  {geoStatus === "prompt"
-                    ? "Locating…"
-                    : geoStatus === "denied"
-                      ? "Location off"
-                      : "Allow location"}
-                </>
-              )}
-            </Box>
-            {/* 🆕 Round 28s207 (audit #4) — Status dot removed from
-                hero overlay. The StatusPill rendered below the
-                StatsCard is the single source of truth for live
-                status (Online/Busy/Offline + Next available). */}
-            {/* Round 28s57 — Working hours moved OUT of the photo
-                overlay (founder "ย้ายลงมาข้างล่าง"); it now renders
-                below the StatsCard in TherapistDetailPage so the
-                overlay row stays uncrowded (Allow location · status
-                only). `workingHours` prop kept for back-compat but
-                no longer rendered here. */}
-          </Box>
         </Box>
       </Box>
 
