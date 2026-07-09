@@ -47,6 +47,7 @@ import type { Credential, LanguageSkill } from "@/types/therapist";
 import { calculateTherapistStatus, isOverrideExpired } from "@/utils/calculateTherapistStatus";
 import { endOfTodayBKK, fmtBKKTimeShort } from "@/utils/time";
 import { useTherapistBookings, findActiveBooking } from "@/utils/useTherapistBookings";
+import { computeBookingStats, type TherapistBookingStats, EMPTY_BOOKING_STATS } from "@/hooks/useTherapistBookingStats";
 import { logAdminAction } from "@/utils/auditLog";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { resolveServiceId, getServiceLabel } from "@/utils/serviceCatalog";
@@ -172,6 +173,12 @@ const AdminTherapistDetailPage: React.FC = () => {
   //   hook needs for its anonymous-visitor security-rule constraint).
   const [reviewCount, setReviewCount] = useState(0);
   const [avgRating, setAvgRating] = useState(0);
+  // Round 28s372 — computed from admin bookings listener; written to
+  // therapist doc via "Sync Stats" so the public detail page can read
+  // them without a restricted bookings query.
+  const [computedStats, setComputedStats] = useState<TherapistBookingStats>(EMPTY_BOOKING_STATS);
+  const [syncing, setSyncing] = useState(false);
+  const [syncedAt, setSyncedAt] = useState<Date | null>(null);
   const [saving, setSaving] = useState(false);
 
   // 🆕 opening the roster's Pencil icon lands here with ?edit=1 pre-armed.
@@ -306,6 +313,8 @@ const AdminTherapistDetailPage: React.FC = () => {
           setLastBookingAt(last);
           setReviewCount(ratings.length);
           setAvgRating(ratings.length ? ratings.reduce((s, r) => s + r, 0) / ratings.length : 0);
+          // Round 28s372 — derive loyalty stats for the Sync Stats button.
+          setComputedStats(computeBookingStats(snap));
         }
       );
 
@@ -356,6 +365,30 @@ const AdminTherapistDetailPage: React.FC = () => {
       default: return "";
     }
   })();
+
+  // Round 28s372 — Sync computed booking stats to the therapist doc so the
+  // public detail page (which can't query bookings directly) can show chips.
+  const handleSyncStats = async () => {
+    if (!docId || computedStats.loading) return;
+    setSyncing(true);
+    try {
+      await updateDoc(doc(db, "therapists", docId), {
+        totalSessions: computedStats.totalCompleted,
+        rebookRate: computedStats.repeatPct,
+        statsUpdatedAt: serverTimestamp(),
+      });
+      await logAdminAction("sync_therapist_stats" as Parameters<typeof logAdminAction>[0], {
+        therapistId: docId,
+        totalSessions: computedStats.totalCompleted,
+        rebookRate: computedStats.repeatPct,
+      });
+      setSyncedAt(new Date());
+    } catch (err) {
+      console.error("[AdminTherapistDetailPage] sync stats failed:", err);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const startEditing = () => {
     setFormData(originalRef.current);
@@ -622,6 +655,26 @@ const AdminTherapistDetailPage: React.FC = () => {
               {lastBookingAt ? dayjs(lastBookingAt).format("YYYY-MM-DD HH:mm") : "No bookings yet · ยังไม่เคยมีงาน"}
             </Typography>
           </Box>
+          {/* Round 28s372 — Sync computed stats to therapist doc so public chips work */}
+          <Tooltip title={syncedAt ? `Last synced ${dayjs(syncedAt).format("HH:mm")}` : "Write totalSessions + rebookRate to therapist doc → public chips"}>
+            <Box>
+              <Button
+                onClick={() => void handleSyncStats()}
+                disabled={syncing || computedStats.loading}
+                size="small"
+                startIcon={<Sparkle size={13} weight="bold" />}
+                sx={{
+                  background: syncedAt ? adminColor.green : adminColor.accent,
+                  color: "#fff", textTransform: "none", fontWeight: 700,
+                  borderRadius: "10px", fontSize: 12, px: "12px", py: "7px",
+                  "&:hover": { background: adminColor.accentDeep },
+                  "&:disabled": { opacity: 0.5 },
+                }}
+              >
+                {syncing ? "Syncing…" : syncedAt ? `Synced ✓ (${computedStats.totalCompleted} sessions · ${computedStats.repeatPct}% rebook)` : `Sync Stats (${computedStats.totalCompleted} sessions · ${computedStats.repeatPct}% rebook)`}
+              </Button>
+            </Box>
+          </Tooltip>
         </Box>
 
         {!editing ? (
