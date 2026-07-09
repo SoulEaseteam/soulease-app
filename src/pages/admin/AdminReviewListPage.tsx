@@ -68,12 +68,51 @@ import {
 } from "firebase/firestore";
 import dayjs from "dayjs";
 import { Link as RouterLink } from "react-router-dom";
-import { Star, ChatCircleText, Warning, MagnifyingGlass, PencilSimple, EyeSlash, ArrowSquareOut, ChatCenteredText, ArrowCounterClockwise, Eye } from "phosphor-react";
+import { Star, ChatCircleText, Warning, MagnifyingGlass, PencilSimple, EyeSlash, ArrowSquareOut, ChatCenteredText, ArrowCounterClockwise, Eye, CheckCircle, Circle } from "phosphor-react";
 import { therapists as THERAPIST_DATA } from "@/data/therapists";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { logAdminAction } from "@/utils/auditLog";
 
 const SANS = adminFont.sans;
+
+// 🆕 Round 28s373 — Language detection helpers
+// Priority: explicit reviewLang > phone country code > text Unicode heuristic
+
+const PHONE_LANG_MAP: Array<[string, string]> = [
+  ["+66", "th"],  // Thailand
+  ["+86", "zh"],  // China
+  ["+852","zh"],  // Hong Kong
+  ["+853","zh"],  // Macau
+  ["+886","zh"],  // Taiwan
+  ["+81", "ja"],  // Japan
+  ["+82", "ko"],  // Korea
+  ["+65", "en"],  // Singapore (English dominant)
+  ["+60", "en"],  // Malaysia
+  ["+44", "en"],  // UK
+  ["+61", "en"],  // Australia
+  ["+64", "en"],  // New Zealand
+  ["+1",  "en"],  // US / Canada
+  ["+49", "de"],  // Germany
+  ["+33", "fr"],  // France
+  ["+7",  "ru"],  // Russia
+];
+
+function detectLangFromPhone(phone: string): string | null {
+  if (!phone) return null;
+  const cleaned = phone.replace(/[\s\-()]/g, "");
+  for (const [prefix, lang] of PHONE_LANG_MAP) {
+    if (cleaned.startsWith(prefix)) return lang;
+  }
+  return null;
+}
+
+function detectLangFromText(text: string): string {
+  if (/[฀-๿]/.test(text)) return "th";
+  if (/[぀-ゟ゠-ヿ]/.test(text)) return "ja"; // hiragana / katakana
+  if (/[가-힯ᄀ-ᇿ]/.test(text)) return "ko";
+  if (/[一-鿿㐀-䶿]/.test(text)) return "zh";
+  return "en";
+}
 
 const THERAPIST_NAME_MAP: Record<string, string> = THERAPIST_DATA.reduce(
   (acc, t) => {
@@ -93,6 +132,13 @@ interface ReviewRow {
   rating: number;
   reviewText: string;
   reviewLang?: string;
+  /** resolved lang: explicit reviewLang → phone prefix → text heuristic */
+  detectedLang: string;
+  /** true = lang came from reviewLang field; false = auto-inferred */
+  langIsExplicit: boolean;
+  phone?: string;
+  /** admin has checked/acknowledged this review */
+  checked?: boolean;
   createdAt?: Timestamp | null;
   startAt?: Timestamp | null;
   /** true when viewing the "hidden reviews" mode */
@@ -153,6 +199,11 @@ const AdminReviewListPage: React.FC = () => {
           }
           if (!text) return; // defensive
           const therapistId = (data.therapistId as string) ?? "";
+          const phone = (data.phone as string) ?? "";
+          const explicitLang = (data.reviewLang as string) ?? undefined;
+          const phoneLang = detectLangFromPhone(phone);
+          const detectedLang =
+            explicitLang ?? phoneLang ?? detectLangFromText(text);
           list.push({
             id: d.id,
             therapistId,
@@ -168,7 +219,11 @@ const AdminReviewListPage: React.FC = () => {
                 : undefined,
             rating,
             reviewText: text,
-            reviewLang: (data.reviewLang as string) ?? undefined,
+            reviewLang: explicitLang,
+            detectedLang,
+            langIsExplicit: !!explicitLang,
+            phone,
+            checked: (data.reviewChecked as boolean) === true,
             createdAt: (data.createdAt as Timestamp) ?? null,
             startAt: (data.startAt as Timestamp) ?? null,
             hidden: showHidden,
@@ -327,6 +382,24 @@ const AdminReviewListPage: React.FC = () => {
     }
   };
 
+  // 🆕 Round 28s373 — toggle "admin has checked this review" flag
+  const handleToggleCheck = async (row: ReviewRow) => {
+    const next = !row.checked;
+    try {
+      await updateDoc(doc(db, "bookings", row.id), {
+        reviewChecked: next,
+      });
+      void logAdminAction("review.check", {
+        bookingId: row.id,
+        therapistName: row.therapistName,
+        checked: next,
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("Error toggling review check:", err);
+    }
+  };
+
   const columns: GridColDef<ReviewRow>[] = [
     {
       field: "therapistName",
@@ -396,27 +469,39 @@ const AdminReviewListPage: React.FC = () => {
     {
       field: "reviewLang",
       headerName: "Lang",
-      width: 70,
-      renderCell: (params) =>
-        params.row.reviewLang ? (
+      width: 80,
+      // 🆕 Round 28s373 — show detectedLang always; dim inferred langs
+      renderCell: (params) => {
+        const lang = params.row.detectedLang;
+        const explicit = params.row.langIsExplicit;
+        return (
           <Box
+            title={
+              explicit
+                ? `Explicit: ${lang}`
+                : `Auto-detected from ${params.row.phone ? "phone" : "text"}: ${lang}`
+            }
             sx={{
               fontSize: 10,
               fontWeight: 800,
               textTransform: "uppercase",
               letterSpacing: "0.04em",
-              color: adminColor.accent,
-              background: `${adminColor.accent}1F`,
+              color: explicit ? adminColor.accent : adminColor.muted,
+              background: explicit
+                ? `${adminColor.accent}1F`
+                : `${adminColor.muted}18`,
               borderRadius: "5px",
               px: "6px",
               py: "2px",
+              opacity: explicit ? 1 : 0.7,
+              fontStyle: explicit ? "normal" : "italic",
             }}
           >
-            {params.row.reviewLang}
+            {lang}
+            {!explicit && "~"}
           </Box>
-        ) : (
-          <Typography sx={{ fontSize: 11, color: adminColor.dim }}>—</Typography>
-        ),
+        );
+      },
     },
     {
       field: "createdAt",
@@ -435,10 +520,33 @@ const AdminReviewListPage: React.FC = () => {
     {
       field: "actions",
       headerName: "Actions",
-      width: 110,
+      width: 130,
       sortable: false,
       renderCell: (params) => (
-        <Stack direction="row" spacing={0.5}>
+        <Stack direction="row" spacing={0.5} alignItems="center">
+          {/* 🆕 Round 28s373 — Check/verified toggle */}
+          {!params.row.hidden && (
+            <IconButton
+              size="small"
+              onClick={() => void handleToggleCheck(params.row)}
+              sx={{
+                color: params.row.checked ? "#16A34A" : adminColor.dim,
+                transition: "color 0.18s",
+              }}
+              aria-label={params.row.checked ? "Uncheck" : "Mark checked"}
+              title={
+                params.row.checked
+                  ? "ตรวจสอบแล้ว — คลิกเพื่อยกเลิก"
+                  : "ยังไม่ได้ตรวจสอบ — คลิกเพื่อ mark"
+              }
+            >
+              {params.row.checked ? (
+                <CheckCircle size={18} weight="fill" />
+              ) : (
+                <Circle size={18} />
+              )}
+            </IconButton>
+          )}
           {!params.row.hidden && (
             <IconButton
               size="small"
