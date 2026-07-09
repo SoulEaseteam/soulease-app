@@ -1186,6 +1186,9 @@ const TherapistDetailPage: React.FC = () => {
           //   so the hero dot/label reads "Online" (green) / "Busy" (orange)
           //   / "Offline" (gray) consistently with the StatusPill below.
           online={livePillStatus}
+          // 🆕 Round 28s365 — rating chip next to name in hero
+          rating={displayRating !== "—" ? displayRating : undefined}
+          reviewCount={therapist.reviewCount > 0 ? therapist.reviewCount : undefined}
           photoBg={therapist.photoBg}
           images={therapist.images}
           // 🆕 Round 28s207 (audit #6) — Working hours formatted as
@@ -1276,6 +1279,94 @@ const TherapistDetailPage: React.FC = () => {
             />
           );
         })()}
+
+        {/* 🆕 Round 28s365 — Trust badges row.
+            Small frosted pill chips: ✓ Verified (always) ·
+            ✓ Vaccinated (if features.vaccinated = Yes) ·
+            ● Available (if online).
+            Inspired by competitor reference (Ayla card trust signals). */}
+        <Box
+          sx={{
+            display: "flex",
+            gap: "6px",
+            flexWrap: "wrap",
+            margin: "10px 14px 0",
+          }}
+        >
+          {/* Always: Verified */}
+          <Box
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              background: "rgba(29,155,240,0.08)",
+              border: "1px solid rgba(29,155,240,0.22)",
+              borderRadius: "999px",
+              padding: "4px 11px",
+              fontFamily: '"Inter", system-ui, sans-serif',
+              fontSize: "11px",
+              fontWeight: 600,
+              color: "#1d7fbf",
+              letterSpacing: "0.01em",
+            }}
+          >
+            <Box component="span" sx={{ fontSize: "12px", lineHeight: 1 }}>✓</Box>
+            Data verified
+          </Box>
+          {/* Vaccinated — from features */}
+          {realRecord?.features?.vaccinated === "Yes" && (
+            <Box
+              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                background: "rgba(22,163,74,0.07)",
+                border: "1px solid rgba(22,163,74,0.20)",
+                borderRadius: "999px",
+                padding: "4px 11px",
+                fontFamily: '"Inter", system-ui, sans-serif',
+                fontSize: "11px",
+                fontWeight: 600,
+                color: "#16a34a",
+                letterSpacing: "0.01em",
+              }}
+            >
+              <Box component="span" sx={{ fontSize: "12px", lineHeight: 1 }}>✓</Box>
+              Vaccinated
+            </Box>
+          )}
+          {/* Available — if online */}
+          {livePillStatus === "online" && (
+            <Box
+              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+                background: "rgba(22,163,74,0.07)",
+                border: "1px solid rgba(22,163,74,0.20)",
+                borderRadius: "999px",
+                padding: "4px 11px",
+                fontFamily: '"Inter", system-ui, sans-serif',
+                fontSize: "11px",
+                fontWeight: 600,
+                color: "#16a34a",
+                letterSpacing: "0.01em",
+              }}
+            >
+              <Box
+                component="span"
+                sx={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "#16a34a",
+                  flexShrink: 0,
+                }}
+              />
+              Available Now
+            </Box>
+          )}
+        </Box>
 
         <Box sx={{ marginTop: "10px" }}>
           <StatusPill

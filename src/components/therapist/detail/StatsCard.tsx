@@ -186,9 +186,9 @@ const StatsCard: React.FC<Props> = ({
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: isFour
-                ? { xs: "1fr 1fr", md: "1fr 1fr 1fr 1fr" }
-                : `repeat(${cols.length}, 1fr)`,
+              // 🆕 Round 28s365 — always 4 cols on every viewport (founder:
+              //   "StatsCard มี 4บาร์ เรียงเสมอ ทุกจอ"). Was 2×2 on mobile.
+              gridTemplateColumns: `repeat(${cols.length}, 1fr)`,
             }}
           >
             {cols.map((c, i) => (
@@ -196,28 +196,22 @@ const StatsCard: React.FC<Props> = ({
                 key={i}
                 sx={{
                   textAlign: "center",
-                  paddingY: { xs: "6px", md: "8px" },
-                  paddingX: { xs: "8px", md: "12px" },
-                  // Vertical + horizontal hairlines for 2×2 mobile grid
-                  borderLeft: {
-                    xs: i % 2 === 1 ? "1px solid rgba(26,43,46,0.10)" : "none",
-                    md: i > 0 ? "1px solid rgba(26,43,46,0.10)" : "none",
-                  },
-                  borderTop: {
-                    xs: isFour && i >= 2 ? "1px solid rgba(26,43,46,0.10)" : "none",
-                    md: "none",
-                  },
+                  paddingY: { xs: "8px", md: "10px" },
+                  paddingX: { xs: "4px", md: "10px" },
+                  borderLeft: i > 0 ? "1px solid rgba(26,43,46,0.10)" : "none",
                 }}
               >
-                {/* Value */}
+                {/* Value — smaller on mobile for 4-col fit */}
                 <Box
                   sx={{
                     fontFamily: SERIF,
                     fontWeight: 700,
-                    fontSize: { xs: "14px", md: "16px" },
+                    fontSize: { xs: "11px", md: "15px" },
                     color: "#1A2B2E",
                     letterSpacing: "-0.01em",
                     lineHeight: 1.25,
+                    wordBreak: "break-word",
+                    overflowWrap: "anywhere",
                   }}
                 >
                   {c.value}
@@ -226,12 +220,12 @@ const StatsCard: React.FC<Props> = ({
                 <Box
                   sx={{
                     fontFamily: SANS,
-                    fontSize: { xs: "9px", md: "10px" },
+                    fontSize: { xs: "8px", md: "9px" },
                     color: "#4A5568",
                     textTransform: "uppercase",
-                    letterSpacing: "0.07em",
+                    letterSpacing: "0.06em",
                     fontWeight: 600,
-                    marginTop: "5px",
+                    marginTop: "4px",
                   }}
                 >
                   {c.label}

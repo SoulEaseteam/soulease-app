@@ -86,6 +86,13 @@ interface Props {
    *  idle/prompt → "Allow location", "prompt" while pending →
    *  "Locating…", "denied" → "Location off". */
   geoStatus?: "idle" | "prompt" | "ready" | "denied" | "unsupported";
+  /**
+   * 🆕 Round 28s365 — ★ rating chip next to the name.
+   * Rendered as a soft amber pill e.g. "★ 4.5 (16)".
+   * Omit to hide the chip.
+   */
+  rating?: string;
+  reviewCount?: number;
 }
 
 const STATUS_COLORS: Record<AvailabilityStatus, { dot: string; label: string }> = {
@@ -111,6 +118,8 @@ const DetailHero: React.FC<Props> = ({
   workingHours,
   onRequestLocation,
   geoStatus = "idle",
+  rating,
+  reviewCount,
 }) => {
   // 🆕 Round 28s219 — i18n for hardcoded Thai "ดูทั้งหมด" overlay
   //   (founder: "ทำไมเป็นภาษาไทย").
@@ -518,9 +527,7 @@ const DetailHero: React.FC<Props> = ({
             >
               {name} <em>{age}</em>
             </Typography>
-            {/* 🆕 Round 28b3 — verified badge: white circle frame
-                + Unicode tick → bare Twitter-blue checkmark icon
-                with drop-shadow for separation from the photo. */}
+            {/* 🆕 Round 28b3 — verified badge */}
             <VerifiedRoundedIcon
               aria-label="verified"
               titleAccess="Verified by SunRed"
@@ -530,6 +537,37 @@ const DetailHero: React.FC<Props> = ({
                 filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.45))",
               }}
             />
+            {/* 🆕 Round 28s365 — ★ rating chip next to name.
+                Amber pill, white text; only shown when rating is
+                provided and non-empty (e.g. "4.5"). */}
+            {rating && rating !== "—" && (
+              <Box
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "3px",
+                  background: "rgba(245,166,35,0.90)",
+                  backdropFilter: "blur(4px)",
+                  borderRadius: "999px",
+                  padding: "3px 10px 3px 8px",
+                  fontFamily: SANS,
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  color: "#fff",
+                  letterSpacing: "0.01em",
+                  lineHeight: 1,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+                }}
+              >
+                <Box component="span" sx={{ fontSize: "14px", lineHeight: 1 }}>★</Box>
+                {rating}
+                {reviewCount != null && reviewCount > 0 && (
+                  <Box component="span" sx={{ fontWeight: 400, fontSize: "11px", opacity: 0.9 }}>
+                    ({reviewCount})
+                  </Box>
+                )}
+              </Box>
+            )}
           </Box>
           {/* .quick-meta */}
           <Box
