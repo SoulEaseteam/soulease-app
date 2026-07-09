@@ -157,6 +157,7 @@ const AdminReviewListPage: React.FC = () => {
   // 🆕 Round 28s218 — Founder: "ดาว แก้ไม่ได้". Added rating to the
   //   Edit dialog so admin can adjust ★ in the same flow.
   const [editedRating, setEditedRating] = useState<number>(5);
+  const [editedLang, setEditedLang] = useState<string>("en");
   const [hideDialog, setHideDialog] = useState(false);
   const [hideRow, setHideRow] = useState<ReviewRow | null>(null);
 
@@ -304,6 +305,7 @@ const AdminReviewListPage: React.FC = () => {
     setEditRow(row);
     setEditedText(row.reviewText);
     setEditedRating(row.rating);
+    setEditedLang(row.reviewLang ?? row.detectedLang);
     setEditDialog(true);
   };
 
@@ -314,12 +316,14 @@ const AdminReviewListPage: React.FC = () => {
       await updateDoc(doc(db, "bookings", editRow.id), {
         reviewText: editedText.trim(),
         rating: clampedRating,
+        reviewLang: editedLang,
         reviewEditedAt: serverTimestamp(),
       });
       void logAdminAction("review.edit", {
         therapistName: editRow.therapistName,
         bookingId: editRow.id,
         rating: clampedRating,
+        lang: editedLang,
       });
       setEditDialog(false);
       setEditRow(null);
@@ -831,17 +835,18 @@ const AdminReviewListPage: React.FC = () => {
         onClose={() => setEditDialog(false)}
         fullWidth
         maxWidth="sm"
+        PaperProps={{ sx: { background: adminColor.panel2, backdropFilter: "none", color: adminColor.text } }}
       >
-        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>
+        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text, background: adminColor.panel2 }}>
           Edit Review · {editRow?.therapistName}
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ background: adminColor.panel2 }}>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: "12px" }}>
             Booking ID: {editRow?.id?.slice(0, 8).toUpperCase()} · original ★
             {editRow?.rating}
           </Typography>
 
-          {/* 🆕 Round 28s218 — Rating editor (founder: "ดาว แก้ไม่ได้"). */}
+          {/* Rating */}
           <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: adminColor.muted, mb: "4px" }}>
             Rating
           </Typography>
@@ -862,6 +867,7 @@ const AdminReviewListPage: React.FC = () => {
             </Typography>
           </Stack>
 
+          {/* Review text */}
           <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: adminColor.muted, mb: "4px" }}>
             Review text
           </Typography>
@@ -871,10 +877,42 @@ const AdminReviewListPage: React.FC = () => {
             minRows={4}
             value={editedText}
             onChange={(e) => setEditedText(e.target.value)}
+            sx={{ mb: "16px", "& .MuiOutlinedInput-root": { background: adminColor.panel, color: adminColor.text }, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 } }}
           />
+
+          {/* Language — explicit override */}
+          <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: adminColor.muted, mb: "4px" }}>
+            Language · ภาษา
+          </Typography>
+          <TextField
+            select
+            size="small"
+            value={editedLang}
+            onChange={(e) => setEditedLang(e.target.value)}
+            sx={{ minWidth: 180, "& .MuiOutlinedInput-root": { borderRadius: "10px", background: adminColor.panel, color: adminColor.text }, "& .MuiOutlinedInput-notchedOutline": { borderColor: adminColor.line2 } }}
+            SelectProps={{ MenuProps: { PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } } }}
+          >
+            {[
+              { code: "en", label: "EN · English" },
+              { code: "th", label: "TH · ภาษาไทย" },
+              { code: "zh", label: "ZH · 中文" },
+              { code: "ja", label: "JA · 日本語" },
+              { code: "ko", label: "KO · 한국어" },
+              { code: "de", label: "DE · Deutsch" },
+              { code: "fr", label: "FR · Français" },
+              { code: "ru", label: "RU · Русский" },
+            ].map((l) => (
+              <MenuItem key={l.code} value={l.code}>{l.label}</MenuItem>
+            ))}
+          </TextField>
+          {!editRow?.langIsExplicit && (
+            <Typography sx={{ fontSize: 11, color: adminColor.muted, mt: "6px", fontStyle: "italic" }}>
+              ตอนนี้ auto-detected ({editRow?.detectedLang ?? "?"}) · การบันทึกจะ set explicit lang
+            </Typography>
+          )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditDialog(false)}>Cancel · ยกเลิก</Button>
+        <DialogActions sx={{ background: adminColor.panel2, borderTop: `1px solid ${adminColor.line}` }}>
+          <Button onClick={() => setEditDialog(false)} sx={{ color: adminColor.muted }}>Cancel · ยกเลิก</Button>
           <Button
             onClick={() => void handleSaveEdit()}
             variant="contained"
