@@ -43,14 +43,40 @@ function pack(key: BadgeKey | null, opts: { stored?: boolean } = {}): BadgeConfi
   };
 }
 
+// 🆕 28s349 — coerce Firestore createdAt (Timestamp / Date / ISO string /
+//   epoch ms / {seconds}) to epoch ms; 0 when absent/unparseable.
+function toMs(v: unknown): number {
+  if (v == null) return 0;
+  if (typeof v === "number") return v;
+  if (typeof v === "string") {
+    const t = Date.parse(v);
+    return Number.isFinite(t) ? t : 0;
+  }
+  if (typeof v === "object") {
+    const o = v as {
+      toMillis?: () => number;
+      getTime?: () => number;
+      seconds?: number;
+      _seconds?: number;
+    };
+    if (typeof o.toMillis === "function") return o.toMillis();
+    if (typeof o.getTime === "function") return o.getTime();
+    if (typeof o.seconds === "number") return o.seconds * 1000;
+    if (typeof o._seconds === "number") return o._seconds * 1000;
+  }
+  return 0;
+}
+
 export function getBadgeForTherapist(t: {
   todayBookings?: number;
   totalBookings?: number;
+  /** 🆕 28s349 — Firestore createdAt (Timestamp/Date/string/number). Drives
+   *  the NEW badge by roster age instead of booking count. */
+  createdAt?: unknown;
   badgeKey?: string | null;
   badgeUpdatedAt?: number | null;
 }): BadgeConfig {
   const today = t.todayBookings ?? 0;
-  const total = t.totalBookings ?? 0;
 
   const storedKey = (t.badgeKey ?? null) as BadgeKey | null;
   const storedAt = t.badgeUpdatedAt ?? null;
@@ -73,10 +99,20 @@ export function getBadgeForTherapist(t: {
   // 2) คำนวณ badge ใหม่ (สำหรับเงื่อนไข lifetime/threshold)
   //    TOP_RATED ไม่ตัดสินใจที่นี่ — assignTopRated() จัดการ
   //    เพราะต้องเทียบทั้ง roster.
+  // 🆕 28s349 — NEW = "recently added to the roster" (createdAt within
+  //   NEW_WINDOW), NOT "totalBookings < 50". The old rule tagged EVERY
+  //   therapist NEW because totalBookings is usually 0/absent for this new
+  //   business — so NEW was meaningless (founder: "ทำไม new ทุกคน"). Now only
+  //   genuinely-new practitioners wear it; established ones (or any without a
+  //   createdAt) get no NEW badge.
+  const NEW_WINDOW_MS = 21 * BADGE_TTL; // 21 days (BADGE_TTL = 1 day in ms)
   let newKey: BadgeKey | null = null;
   if (today >= 5) newKey = "VIP";
   else if (today >= 3) newKey = "HOT";
-  else if (total < 50) newKey = "NEW";
+  else {
+    const createdMs = toMs(t.createdAt);
+    if (createdMs > 0 && now - createdMs < NEW_WINDOW_MS) newKey = "NEW";
+  }
 
   return pack(newKey);
 }

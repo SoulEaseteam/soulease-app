@@ -187,6 +187,8 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
         const badge = getBadgeForTherapist({
           totalBookings: t.totalBookings ?? 0,
           todayBookings: t.todayBookings ?? 0,
+          // 🆕 28s349 — NEW badge now keys off roster age, not booking count.
+          createdAt: (t as { createdAt?: unknown }).createdAt,
           badgeKey: t.badgeKey,
           badgeUpdatedAt: t.badgeUpdatedAt,
         });
