@@ -627,7 +627,10 @@ const TherapistDetailPage: React.FC = () => {
     // Only reach Firestore when hardcoded missed. Fast-path exit
     //   for the 12 originals means zero extra read on the paths
     //   customers hit today.
-    if (!id || hardcodedRow) {
+    // 🆕 28s347 — always load the LIVE Firestore row (even for therapists in
+    //   the static @/data file) so the detail photo can match the home card,
+    //   which always uses the Firestore image ("ยูริใช้คนละโปรไฟล์").
+    if (!id) {
       setFirestoreRow(null);
       setFirestoreLoading(false);
       return;
@@ -698,7 +701,20 @@ const TherapistDetailPage: React.FC = () => {
     };
   }, [id, hardcodedRow]);
 
-  const realRow = hardcodedRow ?? firestoreRow;
+  // 🆕 28s347 — keep the curated static record as the base (bio, features…),
+  //   but override image + gallery with the LIVE Firestore values when present
+  //   so the profile photo always matches the home card (both use Firestore).
+  const baseRow = hardcodedRow ?? firestoreRow;
+  const realRow =
+    baseRow && firestoreRow
+      ? {
+          ...baseRow,
+          ...(firestoreRow.image ? { image: firestoreRow.image } : {}),
+          ...(firestoreRow.gallery && firestoreRow.gallery.length > 0
+            ? { gallery: firestoreRow.gallery }
+            : {}),
+        }
+      : baseRow;
   // 🆕 Round 28s113 — pass the active i18n locale so buildFromReal can
   //   surface the matching `bios[lang]` translation as the About body.
   //   Slice to 2 chars so "en-US" / "zh-CN" both resolve to "en" / "zh".
