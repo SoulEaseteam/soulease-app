@@ -116,12 +116,26 @@ const TherapistProfilePage: React.FC = () => {
 
       let resolvedId: string | null = null;
 
-      // Try direct lookup by uid
+      // Step 1: direct lookup by uid as doc ID.
+      // Round 28s370 — if the uid-keyed doc exists and has:
+      //   (a) `linkedTherapistId` → redirect to the named profile doc (preferred)
+      //   (b) `name` field       → it IS the profile doc (uid === profile doc id)
+      //   (c) exists but empty   → role-only stub; skip to fallbacks below
       const directRef = doc(db, "therapists", user.uid);
       const directSnap = await getDoc(directRef);
-      if (directSnap.exists()) resolvedId = directSnap.id;
+      if (directSnap.exists()) {
+        const d = directSnap.data() as Record<string, unknown>;
+        if (typeof d.linkedTherapistId === "string" && d.linkedTherapistId) {
+          // Pointer pattern: therapists/{uid} = { linkedTherapistId: "XingXingSunRed" }
+          resolvedId = d.linkedTherapistId;
+        } else if (typeof d.name === "string" && d.name) {
+          // Profile stored directly under the uid doc
+          resolvedId = directSnap.id;
+        }
+        // else: empty role-check stub → fall through to field queries
+      }
 
-      // Fallback: query by uid field
+      // Step 2: Fallback — query by uid field on named profile docs
       if (!resolvedId) {
         const q = query(
           collection(db, "therapists"),
@@ -131,7 +145,7 @@ const TherapistProfilePage: React.FC = () => {
         if (!snap.empty) resolvedId = snap.docs[0].id;
       }
 
-      // Fallback: query by email field
+      // Step 3: Fallback — query by email field on named profile docs
       if (!resolvedId && user.email) {
         const q = query(
           collection(db, "therapists"),
