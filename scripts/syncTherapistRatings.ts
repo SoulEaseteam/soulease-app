@@ -29,6 +29,16 @@ const db = getFirestore();
 const COMMIT = process.argv.includes("--commit");
 const SERVED = new Set(["completed", "done"]);
 
+// 🆕 28s388 — Bayesian (confidence-weighted) rating so a lucky single-review
+//   5.0 can't outrank a proven 7-review 4.9 (founder: "4.9 ดูน้อยกว่า 5.0").
+//   adjusted = (n·avg + m·C) / (n + m). A practitioner's own average only
+//   dominates once they pass ~m reviews; below that it's pulled toward C.
+//   Tuned so Yuri (7 reviews) is the clear top and single 5.0s sit below her.
+//   Standard method (IMDb Top 250); endorsed in CLAUDE.md §🔐 "Bayesian aggregate".
+const PRIOR_MEAN = 4.6; // C — assumed baseline for an unproven practitioner
+const PRIOR_WEIGHT = 3; // m — review count at which own avg ≈ dominates
+const round1 = (x: number) => Math.round(x * 10) / 10;
+
 async function main() {
   // Aggregate real bookings once.
   const bSnap = await db.collection("bookings").get();
@@ -50,22 +60,29 @@ async function main() {
   console.log(`\n${COMMIT ? "✍️  COMMITTING" : "🔎 DRY RUN"} — ${tSnap.size} therapist docs\n`);
   console.log(
     "name".padEnd(14),
-    "rating".padEnd(8),
+    "raw→shown".padEnd(12),
     "reviews".padEnd(9),
     "totalSessions"
   );
 
   let writes = 0;
   for (const doc of tSnap.docs) {
-    const cur = doc.data() as { name?: string; rating?: number; reviews?: number; totalSessions?: number };
+    const cur = doc.data() as { name?: string; rating?: number; ratingRaw?: number; reviews?: number; totalSessions?: number };
     const tid = doc.id;
     const rServed = served.get(tid) ?? 0;
     const rRated = ratedCount.get(tid) ?? 0;
-    const rating = rRated ? Math.round((ratingSum.get(tid)! / rRated) * 10) / 10 : 0;
+    const rawAvg = rRated ? ratingSum.get(tid)! / rRated : 0;
+    // Bayesian-weighted rating = what the card shows; ratingRaw = true average.
+    const weighted = rRated
+      ? (rRated * rawAvg + PRIOR_WEIGHT * PRIOR_MEAN) / (rRated + PRIOR_WEIGHT)
+      : 0;
+    const rating = round1(weighted);
+    const ratingRaw = round1(rawAvg);
 
-    const next = { rating, reviews: rRated, totalSessions: rServed };
+    const next = { rating, ratingRaw, reviews: rRated, totalSessions: rServed };
     const changed =
       (cur.rating ?? 0) !== next.rating ||
+      (cur.ratingRaw ?? 0) !== next.ratingRaw ||
       (cur.reviews ?? 0) !== next.reviews ||
       (cur.totalSessions ?? 0) !== next.totalSessions;
 
@@ -73,7 +90,7 @@ async function main() {
       from === to ? String(to) : `${from ?? 0}→${to}`;
     console.log(
       String(cur.name ?? tid).padEnd(14),
-      fmt(cur.rating, next.rating).padEnd(8),
+      `${ratingRaw}→${rating}`.padEnd(12),
       fmt(cur.reviews, next.reviews).padEnd(9),
       fmt(cur.totalSessions, next.totalSessions),
       changed ? "" : "  (no change)"

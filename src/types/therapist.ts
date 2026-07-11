@@ -54,8 +54,10 @@ export interface Therapist {
    *  Lets `firestore.rules` match doc owner without docId magic. */
   uid?: string;
 
-  /** rating */
+  /** rating — Bayesian confidence-weighted value shown in UI (28s388) */
   rating: number;
+  /** true unweighted average, for reference/admin (28s388) */
+  ratingRaw?: number;
   reviews: number;     // review count
 
   /** experience */
