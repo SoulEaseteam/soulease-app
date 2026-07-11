@@ -128,7 +128,8 @@ const TherapistMinimalCard: React.FC<Props> = ({
     TOP_RATED: { label: "TOP RATED", bg: accents.amber, color: "#1A1200" },
     VIP:       { label: "VIP",        bg: "#1A2B2E",     color: "#FFE5EC" },
     HOT:       { label: "HOT",        bg: "#2D2D2B",     color: "#fff"    },
-    NEW:       { label: "NEW",        bg: accents.teal,  color: "#fff"    },
+    // 🆕 28s380 — Moko NEW badge = orange→pink gradient (ref Lily 22). Was teal.
+    NEW:       { label: "NEW",        bg: "linear-gradient(135deg,#FFB020 0%,#EC4899 100%)", color: "#fff" },
   };
   const badgeKey =
     (therapist.badgeKey as keyof typeof BADGE_STYLE | null | undefined) ?? null;
@@ -352,7 +353,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
               borderRadius: "999px",
               background:
                 status === "available"
-                  ? accents.teal
+                  ? "#16A34A" // 🆕 28s380 — Moko green "Available" (was teal)
                   : status === "bookable"
                     ? "#F5A623"
                     : "#8F8474",
@@ -620,7 +621,8 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 fontFamily: fonts.heading,
                 fontSize: "16px",
                 fontWeight: 700,
-                color: oceanHighlight,
+                // 🆕 28s380 — Moko red price (ref Lily 22 ฿2800 in red).
+                color: "#E4002B",
                 lineHeight: 1,
               }}
             >
@@ -633,16 +635,14 @@ const TherapistMinimalCard: React.FC<Props> = ({
             onClick={handleBookTap}
             disabled={isOffDuty}
             sx={{
-              // Round 28r84 — CTA reverts from r82 coral #E88585 back
-              //   to sitewide warm taupe #8F8474 (r80 primary). One
-              //   CTA colour across hero, booking, checkout, and now
-              //   the browse card — the coral experiment cast the
-              //   rest of the palette in a warmer light than intended.
+              // 🆕 28s380 — Moko primary CTA: hot-pink MAGENTA gradient
+              //   (founder "Moko แท้", ref Lily 22 "make an appointment").
+              //   Was warm taupe #8F8474.
               padding: "10px 20px",
               borderRadius: "999px",
               background: isOffDuty
                 ? "rgba(0,0,0,0.18)"
-                : "#8F8474",
+                : "linear-gradient(135deg,#F050A0 0%,#E6197E 100%)",
               color: "#fff",
               border: "none",
               cursor: isOffDuty ? "not-allowed" : "pointer",
@@ -654,15 +654,15 @@ const TherapistMinimalCard: React.FC<Props> = ({
               whiteSpace: "nowrap",
               boxShadow: isOffDuty
                 ? "none"
-                : "0 6px 14px rgba(143, 132, 116, 0.32), 0 1px 3px rgba(143, 132, 116, 0.18)",
+                : "0 6px 16px rgba(230, 25, 126, 0.34), 0 1px 3px rgba(230, 25, 126, 0.20)",
               transition: "transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease",
               "&:hover": isOffDuty
                 ? {}
                 : {
-                    background: "#7A7060",
+                    background: "linear-gradient(135deg,#E6197E 0%,#C2185B 100%)",
                     transform: "translateY(-1px)",
                     boxShadow:
-                      "0 10px 22px rgba(122, 112, 96, 0.36), 0 2px 5px rgba(122, 112, 96, 0.20)",
+                      "0 10px 22px rgba(230, 25, 126, 0.38), 0 2px 5px rgba(230, 25, 126, 0.22)",
                   },
               "&:focus-visible": {
                 outline: "2px solid #fff",
