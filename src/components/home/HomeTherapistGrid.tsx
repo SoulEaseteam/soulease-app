@@ -16,6 +16,7 @@ import TherapistProfileCard from "@/components/TherapistProfileCard";
 //   feedback ("หน้าเว็บรกมาก"). Old card kept for other surfaces.
 import TherapistMinimalCard from "@/components/TherapistMinimalCard";
 import TherapistSearchBar from "@/components/TherapistSearchBar";
+import MokoDiscoveryHeader from "@/components/home/MokoDiscoveryHeader";
 import HomeMapBrowse from "@/components/home/HomeMapBrowse";
 import { matchesQuery } from "@/utils/therapistSearch";
 import { useUserLocation } from "@/hooks/useUserLocation";
@@ -433,6 +434,19 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
           chronically read "0", actively driving bounces). */}
 
       <TherapistSearchBar value={searchQ} onChange={setSearchQ} m="0 14px 12px" />
+
+      {/* 🆕 28s378 — Moko-style discovery header (location · concierge notice ·
+          category filter tabs), wired to the existing rosterFilter state.
+          Counts are the UNFILTERED totals so each tab shows its own size. */}
+      <MokoDiscoveryHeader
+        value={rosterFilter}
+        onChange={setRosterFilter}
+        counts={{
+          all: sorted.length,
+          availableNow: totalAvailable,
+          express: totalExpress,
+        }}
+      />
 
       {/* Body */}
       {loading ? (
