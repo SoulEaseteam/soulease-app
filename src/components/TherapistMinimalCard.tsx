@@ -376,9 +376,10 @@ const TherapistMinimalCard: React.FC<Props> = ({
           <Box
             sx={{
               position: "absolute",
-              left: "50%",
+              // 🆕 28s393 — status pill moved from centered to LEFT
+              //   (founder "ขยับสถานะมาไว้ด้านซ้าย").
+              left: "10px",
               bottom: "10px",
-              transform: "translateX(-50%)",
               zIndex: 2,
               display: "inline-flex",
               alignItems: "center",
