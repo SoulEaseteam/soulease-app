@@ -15,9 +15,9 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
-import ChatBubbleOutlineRoundedIcon from "@mui/icons-material/ChatBubbleOutlineRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 
 import { fonts, accents } from "@/theme";
 
@@ -580,7 +580,9 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   ) : null}
                 </Typography>
               </Box>
-              {therapist.reviews && therapist.reviews > 0 ? (
+              {/* 🆕 28s390 — comment chip replaced by the 👁 view count
+                  (founder "เอากล่องข้อความออก เปลี่ยนเป็น view count"). */}
+              {viewCount > 0 ? (
                 <Box
                   sx={{
                     display: "inline-flex",
@@ -590,9 +592,9 @@ const TherapistMinimalCard: React.FC<Props> = ({
                     borderRadius: "999px",
                     background: "rgba(143, 132, 116, 0.10)",
                   }}
-                  aria-label={`${therapist.reviews} comments`}
+                  aria-label={`${viewCount} profile views`}
                 >
-                  <ChatBubbleOutlineRoundedIcon
+                  <VisibilityRoundedIcon
                     sx={{ fontSize: 13, color: "#8F8474" }}
                   />
                   <Typography
@@ -604,7 +606,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                       lineHeight: 1,
                     }}
                   >
-                    {therapist.reviews}
+                    {viewCount.toLocaleString("en-US")}
                   </Typography>
                 </Box>
               ) : null}
@@ -613,12 +615,13 @@ const TherapistMinimalCard: React.FC<Props> = ({
 
           {/* 🆕 28s386 — tag pills removed (founder "เอาออก"). */}
 
-          {/* 🆕 28s389 — real engagement numbers (founder wants a Moko-style
-              browse number). No historical browse data exists, so the honest
-              substantial figure is completed sessions; the view count (28s387)
-              rides along as a secondary once it accrues. Nothing fabricated —
-              0 stays hidden (Milo/Pare read clean). No 💋 emoji (brand §3). */}
-          {(sessionCount > 0 || viewCount > 0) && (
+          {/* 🆕 28s389 — real completed-session count (Moko-style engagement
+              number, honest — real bookings, not fabricated views).
+              🆕 28s390 — the 👁 view count moved up beside the rating; this
+              line now carries the practitioner's standby AREA instead
+              (founder "เอาโลเคชั่นพนักงานมาใส่ แทน view count"). Area is the
+              display-safe district (full address stays admin-only per CLAUDE). */}
+          {(sessionCount > 0 || therapist.area) && (
             <Box
               sx={{
                 display: "flex",
@@ -650,12 +653,17 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   </Typography>
                 </Box>
               )}
-              {viewCount > 0 && (
+              {therapist.area && (
                 <Box
-                  sx={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
-                  aria-label={`${viewCount} profile views`}
+                  sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "3px",
+                    minWidth: 0,
+                  }}
+                  aria-label={`Standby area ${therapist.area}`}
                 >
-                  <VisibilityRoundedIcon sx={{ fontSize: 14, color: "#9b8b80" }} />
+                  <LocationOnRoundedIcon sx={{ fontSize: 14, color: "#9b8b80" }} />
                   <Typography
                     sx={{
                       fontFamily: fonts.body,
@@ -663,9 +671,13 @@ const TherapistMinimalCard: React.FC<Props> = ({
                       fontWeight: 600,
                       color: "#9b8b80",
                       lineHeight: 1,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      maxWidth: "140px",
                     }}
                   >
-                    {viewCount.toLocaleString("en-US")}
+                    {therapist.area}
                   </Typography>
                 </Box>
               )}
