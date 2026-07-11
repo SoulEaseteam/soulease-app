@@ -3,14 +3,14 @@
 // 🆕 28s378 — "เปลี่ยนธีมใหม่ เหมือน mokofans" (home first). The Moko home
 //   opens with a discovery band the SunRed home lacked: a location/standby
 //   line, a scrolling concierge notice, and a horizontal category-filter tab
-//   row (Moko: header · distance/local · noticebar · tab-list). This wires
-//   the tab row to the grid's EXISTING rosterFilter state (the filter UI was
-//   removed in 28s166 — this reintroduces it in Moko dress) so it filters
-//   live, not just for show.
+//   row (Moko: header · distance/local · noticebar · tab-list). Wired to the
+//   grid's EXISTING rosterFilter state (the filter UI was removed in 28s166 —
+//   this reintroduces it in Moko dress) so it filters live, not just for show.
 //
-//   Rendered in SunRed's quiet-luxury register, not Moko's crude one: white
-//   cards, teal #2EC4B0 active (matches the detail tabs), warm blush accent,
-//   plum label — the look, not the wording.
+// 🆕 28s379 — recoloured to the REAL Moko palette (founder ref: Lily 22
+//   detail): white cards + hot-pink/MAGENTA primary for active/selected +
+//   GREEN "available" status + warm blush accent + plum label. (v1 used teal —
+//   wrong accent.) The look, not Moko's crude wording.
 
 import React from "react";
 import { Box } from "@mui/material";
@@ -19,7 +19,9 @@ import { fonts } from "@/theme";
 
 export type RosterFilter = "all" | "available_now" | "express";
 
-const TEAL = "#2EC4B0";
+const MAGENTA = "#E6197E"; // Moko primary — hot pink (active / selected)
+const MAGENTA_TXT = "#C2185B"; // readable magenta for text on light
+const GREEN = "#16A34A"; // available / on-standby status
 const PLUM = "#5A2733";
 const TEXT = "#1A2B2E";
 const MUTED = "#6B6560";
@@ -28,7 +30,7 @@ interface TabDef {
   key: RosterFilter;
   label: string;
   count: number;
-  /** live dot on the "available now" tab */
+  /** live availability dot */
   live?: boolean;
 }
 
@@ -64,7 +66,7 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
           padding: "2px 2px 10px",
         }}
       >
-        <MapPin size={16} weight="fill" color={PLUM} />
+        <MapPin size={16} weight="fill" color={MAGENTA} />
         <Box
           sx={{
             fontFamily: fonts.body,
@@ -79,21 +81,21 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
         <Box sx={{ fontFamily: fonts.body, fontSize: "12.5px", color: MUTED }}>
           · Bangkok outcall
         </Box>
-        {/* live standby pill */}
+        {/* live standby pill — green, like Moko's "● Available" */}
         <Box
           sx={{
             marginLeft: "auto",
             display: "inline-flex",
             alignItems: "center",
             gap: "5px",
-            background: "rgba(46,196,176,0.10)",
-            border: "1px solid rgba(46,196,176,0.30)",
+            background: "rgba(22,163,74,0.10)",
+            border: "1px solid rgba(22,163,74,0.28)",
             borderRadius: "999px",
             padding: "3px 10px",
             fontFamily: fonts.body,
             fontSize: "11px",
             fontWeight: 700,
-            color: "#158a7b",
+            color: "#15803d",
           }}
         >
           <Box
@@ -102,13 +104,12 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
               width: 6,
               height: 6,
               borderRadius: "50%",
-              background: TEAL,
-              boxShadow: "0 0 0 0 rgba(46,196,176,0.6)",
+              background: GREEN,
               animation: "moko-pulse 2s ease-out infinite",
               "@keyframes moko-pulse": {
-                "0%": { boxShadow: "0 0 0 0 rgba(46,196,176,0.5)" },
-                "70%": { boxShadow: "0 0 0 6px rgba(46,196,176,0)" },
-                "100%": { boxShadow: "0 0 0 0 rgba(46,196,176,0)" },
+                "0%": { boxShadow: "0 0 0 0 rgba(22,163,74,0.5)" },
+                "70%": { boxShadow: "0 0 0 6px rgba(22,163,74,0)" },
+                "100%": { boxShadow: "0 0 0 0 rgba(22,163,74,0)" },
               },
               "@media (prefers-reduced-motion: reduce)": { animation: "none" },
             }}
@@ -117,20 +118,20 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
         </Box>
       </Box>
 
-      {/* ── Scrolling concierge notice bar ──────────────────────── */}
+      {/* ── Scrolling concierge notice bar (blush, Moko accent) ── */}
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
           gap: "8px",
-          background: "linear-gradient(180deg,#FCEFF2 0%,#F8E6EC 100%)",
-          border: "1px solid rgba(90,39,51,0.08)",
+          background: "linear-gradient(180deg,#FCEAF2 0%,#F7E0EC 100%)",
+          border: "1px solid rgba(230,25,126,0.10)",
           borderRadius: "12px",
           padding: "8px 12px",
           overflow: "hidden",
         }}
       >
-        <ShieldCheck size={15} weight="fill" color={PLUM} style={{ flexShrink: 0 }} />
+        <ShieldCheck size={15} weight="fill" color={MAGENTA} style={{ flexShrink: 0 }} />
         <Box sx={{ overflow: "hidden", flex: 1, whiteSpace: "nowrap" }}>
           <Box
             sx={{
@@ -174,7 +175,7 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
         </Box>
       </Box>
 
-      {/* ── Category filter tabs (horizontal scroll) ────────────── */}
+      {/* ── Category filter tabs (horizontal scroll, magenta active) ─ */}
       <Box
         role="tablist"
         aria-label="Filter practitioners"
@@ -207,21 +208,22 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
                 touchAction: "manipulation",
                 WebkitTapHighlightColor: "transparent",
                 border: active
-                  ? `1.5px solid ${TEAL}`
+                  ? `1.5px solid ${MAGENTA}`
                   : "1.5px solid rgba(15,23,42,0.12)",
-                background: active ? "rgba(46,196,176,0.10)" : "#FFFFFF",
+                background: active ? "rgba(230,25,126,0.08)" : "#FFFFFF",
                 borderRadius: "999px",
                 padding: "7px 14px",
                 fontFamily: fonts.body,
                 fontSize: "12.5px",
                 fontWeight: 700,
-                color: active ? "#137e70" : TEXT,
-                transition: "background 0.16s ease, border-color 0.16s ease, color 0.16s ease",
-                "&:focus-visible": { outline: `2px solid ${TEAL}`, outlineOffset: 2 },
+                color: active ? MAGENTA_TXT : TEXT,
+                transition:
+                  "background 0.16s ease, border-color 0.16s ease, color 0.16s ease",
+                "&:focus-visible": { outline: `2px solid ${MAGENTA}`, outlineOffset: 2 },
               }}
             >
               {tab.key === "express" && (
-                <Lightning size={13} weight="fill" color={active ? "#137e70" : MUTED} />
+                <Lightning size={13} weight="fill" color={active ? MAGENTA_TXT : MUTED} />
               )}
               {tab.live && (
                 <Box
@@ -230,7 +232,7 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
                     width: 6,
                     height: 6,
                     borderRadius: "50%",
-                    background: tab.count > 0 ? TEAL : "#C7C2BC",
+                    background: tab.count > 0 ? GREEN : "#C7C2BC",
                     flexShrink: 0,
                   }}
                 />
@@ -242,8 +244,8 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
                   fontFamily: fonts.body,
                   fontSize: "11px",
                   fontWeight: 800,
-                  color: active ? "#137e70" : MUTED,
-                  background: active ? "rgba(46,196,176,0.16)" : "#F1EEEA",
+                  color: active ? MAGENTA_TXT : MUTED,
+                  background: active ? "rgba(230,25,126,0.14)" : "#F1EEEA",
                   borderRadius: "999px",
                   padding: "1px 7px",
                   minWidth: 18,
