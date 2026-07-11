@@ -39,6 +39,7 @@ import BundleSection from "@/components/common/BundleSection";
 //   wants richer content back ("มีแค่นี้ หรอ" · 2026-07-08 · live site
 //   feedback). See individual component files for per-section notes.
 import QuickNavRow from "@/components/home/QuickNavRow";
+import MokoPromoBanner from "@/components/home/MokoPromoBanner";
 import MembershipCard from "@/components/home/MembershipCard";
 import WhySunRedSection from "@/components/home/WhySunRedSection";
 import EditorialBanner from "@/components/home/EditorialBanner";
@@ -142,6 +143,11 @@ const HomePage: React.FC = () => {
           just as useful as breadcrumbs on desktop). Therapists tap
           scrolls to the `#therapist-grid` wrapper below. */}
       <QuickNavRow />
+
+      {/* 🆕 28s383 — Moko-style pink promo banner (founder "จัดเต็ม
+          เหมือน mokofans"). Magenta→violet gradient, discreet welcome-offer
+          copy, taps through to the practitioner list. */}
+      <MokoPromoBanner />
 
       {/* 🆕 Round 28r58 — Bundle Packages between the hero and the
           therapist grid. Self-hides on empty, so no layout impact
