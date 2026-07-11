@@ -602,7 +602,21 @@ const TherapistDetailPage: React.FC = () => {
   //   Default = photos (its panel leads with About: "เอา about ขึ้นก่อน").
   const [detailTab, setDetailTab] = useState<
     "photos" | "services" | "reviews"
-  >("photos");
+  >(() => {
+    // 🆕 28s377 — initialise straight from the deep-link hash so a
+    //   #services / #reviews link lands on the right tab WITHOUT an effect
+    //   that re-runs on every render. That effect (dep: therapistFromReal,
+    //   which is rebuilt fresh each render) was re-firing on every live-data
+    //   tick and reverting the user's tab taps back to the hash's tab —
+    //   founder "แท็บ บางทีกดได้บางทีกดไม่ได้". #photos/#gallery/#about + no
+    //   hash all default to photos.
+    if (typeof window !== "undefined") {
+      const h = window.location.hash;
+      if (h === "#services") return "services";
+      if (h === "#reviews") return "reviews";
+    }
+    return "photos";
+  });
 
   // Round 28s55 — Single shared bookings listener. Returns BOTH the
   // active-booking list (for the availability engine) and the loyalty
@@ -987,23 +1001,26 @@ const TherapistDetailPage: React.FC = () => {
   // 🆕 28s343 — URL hash opens a TAB (was: scroll to a section). #services
   //   → Services tab (Book Now deep-links here), #photos/#gallery/#about →
   //   Photos tab (About lives there), #reviews → Reviews tab.
+  // 🆕 28s377 — after mount, react ONLY to real hashchange events (browser
+  //   back/forward to a #tab), never to render churn. Tapping a tab doesn't
+  //   change the URL hash, so this can never fight the user's taps. The
+  //   initial deep-link hash is handled by the useState initializer above.
   useEffect(() => {
-    if (!therapistFromReal) return;
-    if (typeof window === "undefined") return;
-    const raw = window.location.hash;
-    if (!raw) return;
-    const targetTab: "photos" | "services" | "reviews" | null =
-      raw === "#services"
-        ? "services"
-        : raw === "#reviews"
-          ? "reviews"
-          : raw === "#gallery" ||
-              raw === "#photos" ||
-              raw === "#about"
-            ? "photos"
-            : null;
-    if (targetTab) setDetailTab(targetTab);
-  }, [therapistFromReal]);
+    const applyHash = () => {
+      const h = window.location.hash;
+      const target: "photos" | "services" | "reviews" | null =
+        h === "#services"
+          ? "services"
+          : h === "#reviews"
+            ? "reviews"
+            : h === "#gallery" || h === "#photos" || h === "#about"
+              ? "photos"
+              : null;
+      if (target) setDetailTab(target);
+    };
+    window.addEventListener("hashchange", applyHash);
+    return () => window.removeEventListener("hashchange", applyHash);
+  }, []);
 
   // 🆕 Round 28r88 — IntersectionObserver useEffect (r87) removed.
   //   The observer's only job was syncing the icon tab bar's active
