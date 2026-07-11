@@ -883,11 +883,15 @@ function renderNavRow(
           gap: "12px",
           padding: "12px 14px",
           borderRadius: "12px",
+          /* 🆕 28s384 — drawer active row shifted from the old brand-red
+             tint to the Moko magenta accent so the nav ties into the new
+             pink home theme (matches MokoDiscoveryHeader's active tabs).
+             Drawer bg is the light #F4F6F5, so magenta text stays legible. */
           background: active
-            ? "linear-gradient(135deg, rgba(15, 23, 42, 0.10), rgba(214, 40, 40, 0.08))"
+            ? "linear-gradient(135deg, rgba(230, 25, 126, 0.12), rgba(230, 25, 126, 0.05))"
             : "transparent",
           border: "none",
-          color: active ? "#2D2D2B" : "#1A2B2E",
+          color: active ? "#C2185B" : "#1A2B2E",
           fontFamily: SANS,
           fontSize: 14,
           fontWeight: active ? 700 : 600,
@@ -896,11 +900,11 @@ function renderNavRow(
           transition: "background 0.2s ease",
           "&:hover": {
             background: active
-              ? "linear-gradient(135deg, rgba(15, 23, 42, 0.14), rgba(214, 40, 40, 0.12))"
+              ? "linear-gradient(135deg, rgba(230, 25, 126, 0.18), rgba(230, 25, 126, 0.08))"
               : "rgba(255, 255, 255, 0.55)",
           },
           "&:focus-visible": {
-            outline: "2px solid #2D2D2B",
+            outline: "2px solid #E6197E",
             outlineOffset: 2,
           },
         }}
@@ -908,7 +912,7 @@ function renderNavRow(
         <ListItemIcon
           sx={{
             minWidth: 0,
-            color: active ? "#2D2D2B" : "#4A5568",
+            color: active ? "#C2185B" : "#4A5568",
           }}
         >
           {item.icon}

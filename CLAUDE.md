@@ -426,7 +426,37 @@ more customers?":**
 When proposing any new acquisition idea, **first verify it keeps
 guests anonymous**. If it can't, drop it.
 
-### 🎨 Theme palette (Round 28s150-152, current)
+### 🎨 Theme palette — MOKO restyle (Round 28s378-384, CURRENT on home)
+
+Founder direction 2026-07-11: "อยากเปลี่ยนธีมใหม่ เหมือน mokofans.com …
+จัดเต็มรวม banner + header · Moko แท้ (มาเจนต้า/ชมพู)". The home surface
+(banner + discovery header + therapist cards + nav drawer active state)
+now uses the Moko magenta/pink palette **with gradients** — this
+deliberately supersedes the flat-red "no gradients" rule below for the
+customer home. Quiet-luxury COPY is unchanged (Moko's look, not its
+crude wording).
+
+```
+Magenta       #E6197E   Moko primary — active tabs · book CTA · accents
+Magenta txt   #C2185B   readable magenta for text/icons on light
+Price red     #E4002B   ราคาเริ่มต้น price numerals
+Green         #16A34A   ว่าง / on-standby status
+Blush pill    #FCE7F0 / #FCEAF2   tag pills · rating chip bg
+Plum          #5A2733   notice-marquee text
+NEW badge     linear-gradient(135deg,#FFB020,#EC4899)
+Book button   linear-gradient(135deg,#F050A0,#E6197E)
+Promo banner  linear-gradient(120deg,#EC4899,#B052C4,#8B5CF6)
+```
+
+Moko components: `MokoDiscoveryHeader` (location + notice + filter tabs =
+the Moko "header band"), `MokoPromoBanner`, `TherapistMinimalCard`
+(magenta CTA · red price · tag pills · rating chip). NOTE: the top-nav
+was NOT structurally Moko-cloned — search lives in the grid, location in
+the discovery band, and the manual language switcher was removed in
+28s168 (device-locale auto-detect); only the drawer active accent was
+shifted to magenta (28s384) for coherence.
+
+<details><summary>Pre-Moko flat palette (Round 28s150-152) — superseded on home, still used elsewhere</summary>
 
 ```
 Primary red   #B4000A   CTA · brand wordmark · accents
@@ -440,6 +470,7 @@ Pink accent   #FFE5EC   favourite heart · highlights · sparingly
 
 Flat colours, no `linear-gradient(...)` for brand surfaces. Status
 pill rgba tints kept (functional). Photo scrims kept (legibility).
+</details>
 
 ### 🔤 Type system (Round 28s154-156, current)
 
