@@ -164,18 +164,8 @@ const TherapistMinimalCard: React.FC<Props> = ({
     return Math.min(...prices);
   })();
 
-  // 🆕 28s381 — Moko-style tag pills (ref Moko home: 真胸·中国·天然). SunRed
-  //   discreet version, built from REAL data: nationality · Verified ·
-  //   first language. No explicit/anatomy tags (brand voice §3).
-  const cardTags = [
-    (therapist.features?.ethnicity || "Thai").trim(),
-    "Verified",
-    ...(therapist.features?.language
-      ? [therapist.features.language.split(/[,·/]/)[0].trim()]
-      : []),
-  ]
-    .filter((tg) => tg && tg.length > 0)
-    .slice(0, 3);
+  // 🆕 28s386 — tag pills (Thai/Verified/English) removed (founder: "เอาออก").
+  //   Nationality/language still live on the detail page; the card is cleaner.
 
   return (
     <Box
@@ -607,37 +597,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
             </Box>
           ) : null}
 
-          {/* 🆕 28s381 — Moko tag pills (blush/magenta), under the name/rating
-              like the Moko home cards. */}
-          {cardTags.length > 0 && (
-            <Box
-              sx={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "5px",
-                marginTop: "7px",
-              }}
-            >
-              {cardTags.map((tg, i) => (
-                <Box
-                  key={i}
-                  sx={{
-                    fontFamily: fonts.body,
-                    fontSize: "10.5px",
-                    fontWeight: 700,
-                    color: "#C2185B",
-                    background: "#FCE7F0",
-                    borderRadius: "6px",
-                    padding: "2px 8px",
-                    lineHeight: 1.45,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {tg}
-                </Box>
-              ))}
-            </Box>
-          )}
+          {/* 🆕 28s386 — tag pills removed (founder "เอาออก"). */}
 
         </Box>
 
@@ -703,17 +663,15 @@ const TherapistMinimalCard: React.FC<Props> = ({
               letterSpacing: "0.04em",
               textTransform: "uppercase",
               whiteSpace: "nowrap",
-              boxShadow: isOffDuty
-                ? "none"
-                : "0 6px 16px rgba(230, 25, 126, 0.34), 0 1px 3px rgba(230, 25, 126, 0.20)",
-              transition: "transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease",
+              // 🆕 28s386 — glow removed (founder "ไม่ต้องเรืองแสง"): drop the
+              //   magenta box-shadow so the button reads flat, not lit-up.
+              boxShadow: "none",
+              transition: "transform 0.15s ease, background 0.15s ease",
               "&:hover": isOffDuty
                 ? {}
                 : {
                     background: "linear-gradient(135deg,#E6197E 0%,#C2185B 100%)",
                     transform: "translateY(-1px)",
-                    boxShadow:
-                      "0 10px 22px rgba(230, 25, 126, 0.38), 0 2px 5px rgba(230, 25, 126, 0.22)",
                   },
               "&:focus-visible": {
                 outline: "2px solid #fff",
