@@ -115,6 +115,30 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
     };
   }, [locationStatus, requestLocation]);
 
+  // 🆕 28s392 — live guest↔practitioner distance for each card's "📍 2.4km"
+  //   chip. undefined until the guest grants location (distance-only; the
+  //   card never shows the standby area — privacy).
+  const liveDistanceKm = (t: Therapist): number | undefined => {
+    if (!userLocation) return undefined;
+    // Validate each candidate — currentLocation can be an empty string "" on
+    // some docs, which `??` would NOT skip (only null/undefined). Fall through
+    // to homeLocation, then top-level lat/lng.
+    const asCoord = (c: unknown): { lat: number; lng: number } | null =>
+      c && typeof c === "object" &&
+      typeof (c as { lat?: unknown }).lat === "number" &&
+      typeof (c as { lng?: unknown }).lng === "number"
+        ? { lat: (c as { lat: number }).lat, lng: (c as { lng: number }).lng }
+        : null;
+    const target =
+      asCoord(t.currentLocation) ??
+      asCoord(t.homeLocation) ??
+      (typeof t.lat === "number" && typeof t.lng === "number"
+        ? { lat: t.lat, lng: t.lng }
+        : null);
+    if (!target) return undefined;
+    return haversineKm(userLocation.lat, userLocation.lng, target.lat, target.lng);
+  };
+
   // ── Single `services` collection subscription — every card reads from
   //    the same Map. Falls back to static services when Firestore is empty
   //    (e.g., before admin has populated the collection).
@@ -586,6 +610,7 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
                   key={t.id}
                   therapist={t}
                   computedStatus={t.computedStatus}
+                  distanceKm={liveDistanceKm(t)}
                   // 🆕 Round 28s227 — First card is the LCP element
                   //   on the home page (and the LCP target Search
                   //   Console grades for Core Web Vitals). Pass

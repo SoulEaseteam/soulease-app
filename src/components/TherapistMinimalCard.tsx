@@ -39,6 +39,11 @@ import staticServices from "@/data/services";
 interface Props {
   therapist: Therapist;
   computedStatus?: Avail;
+  /** 🆕 28s392 — live guest↔practitioner distance in km (from the grid's GPS
+   *  watcher). Shown as "📍 2.4km" on the meta line; undefined until the guest
+   *  grants location. Distance-only by design — the standby area is never
+   *  shown (privacy). */
+  distanceKm?: number;
   /** Optional click → routes to booking flow with the therapist pre-picked. */
   onBook?: (therapist: Therapist) => void;
   /**
@@ -80,6 +85,7 @@ const STATUS_DOT: Record<
 const TherapistMinimalCard: React.FC<Props> = ({
   therapist,
   computedStatus,
+  distanceKm,
   onBook,
   eager = false,
 }) => {
@@ -180,6 +186,16 @@ const TherapistMinimalCard: React.FC<Props> = ({
   //   ("N sessions completed" trust chip). 0 => hidden (Milo/Pare stay clean).
   const sessionCount =
     typeof therapist.totalSessions === "number" ? therapist.totalSessions : 0;
+
+  // 🆕 28s392 — live guest↔practitioner distance (founder "ใส่เลขระยะทาง
+  //   ...แทน · 📍2.4km"). Distance-only by design — the standby area is never
+  //   shown (privacy). undefined until the guest grants location.
+  const hasDistance = typeof distanceKm === "number" && isFinite(distanceKm);
+  const distanceLabel = !hasDistance
+    ? null
+    : distanceKm >= 0.1
+      ? `${distanceKm.toFixed(1)}km`
+      : "<0.1km";
 
   return (
     <Box
@@ -622,11 +638,11 @@ const TherapistMinimalCard: React.FC<Props> = ({
 
           {/* 🆕 28s389 — real completed-session count (Moko-style engagement
               number, honest — real bookings, not fabricated views).
-              🆕 28s390 — the 👁 view count moved up beside the rating; this
-              line now carries the practitioner's standby AREA instead
-              (founder "เอาโลเคชั่นพนักงานมาใส่ แทน view count"). Area is the
-              display-safe district (full address stays admin-only per CLAUDE). */}
-          {(sessionCount > 0 || therapist.area) && (
+              🆕 28s392 — meta line now carries the live guest↔practitioner
+              DISTANCE (📍 2.4km) instead of the area name (founder "ใส่เลข
+              ระยะทาง...แทน"). Distance-only is also the privacy-correct choice
+              — the standby district is never exposed. */}
+          {(sessionCount > 0 || hasDistance) && (
             <Box
               sx={{
                 display: "flex",
@@ -658,7 +674,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   </Typography>
                 </Box>
               )}
-              {therapist.area && (
+              {distanceLabel && (
                 <Box
                   sx={{
                     display: "inline-flex",
@@ -666,7 +682,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                     gap: "3px",
                     minWidth: 0,
                   }}
-                  aria-label={`Standby area ${therapist.area}`}
+                  aria-label={`${distanceLabel} away`}
                 >
                   <LocationOnRoundedIcon sx={{ fontSize: 14, color: "#9b8b80" }} />
                   <Typography
@@ -676,13 +692,10 @@ const TherapistMinimalCard: React.FC<Props> = ({
                       fontWeight: 600,
                       color: "#9b8b80",
                       lineHeight: 1,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
-                      maxWidth: "140px",
                     }}
                   >
-                    {therapist.area}
+                    {distanceLabel}
                   </Typography>
                 </Box>
               )}
