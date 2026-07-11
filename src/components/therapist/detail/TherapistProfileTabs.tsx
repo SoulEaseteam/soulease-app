@@ -850,8 +850,19 @@ export const LoyaltyTab: React.FC<{
   //   minimum real sample before showing the panel; below it, show the
   //   "building history" placeholder instead of an inflated number.
   const MIN_SAMPLE = 5;
+  // 🆕 28s375 — also render (in estimate mode, which carries its own
+  //   "Estimate — accumulates real data…" disclaimer below) when the
+  //   therapist doc has a reliable denormalized session count synced by
+  //   admin ("Sync Stats"). Anonymous guests can read that aggregate on the
+  //   world-readable therapists doc but NOT the raw bookings (PII-gated), so
+  //   without this they saw "coming soon" while the hero chips already showed
+  //   "N sessions · X% rebook" — an inconsistency (audit #1). The tiny-live-
+  //   sample real path (the 28s346 "1 of 1 = 100%" concern) stays gated by
+  //   MIN_SAMPLE; this only opens the honest aggregate-estimate path.
+  const MIN_SYNCED_SESSIONS = 10;
   const enoughData =
-    useReal && (loyaltyStats?.uniqueCustomers ?? 0) >= MIN_SAMPLE;
+    (useReal && (loyaltyStats?.uniqueCustomers ?? 0) >= MIN_SAMPLE) ||
+    (totalSessions >= MIN_SYNCED_SESSIONS && rebookPct > 0);
   if (!enoughData) {
     return (
       <Box

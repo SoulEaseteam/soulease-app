@@ -278,7 +278,10 @@ const TherapistMinimalCard: React.FC<Props> = ({
             width={300}
             height={400}
             loading={eager ? "eager" : "lazy"}
-            fetchPriority={eager ? "high" : "auto"}
+            /* 🆕 28s375 — lowercase `fetchpriority` (valid HTML attr) so React
+               18 doesn't warn about an unknown `fetchPriority` DOM prop on
+               every card render. Matches TherapistProfileCard. */
+            {...(eager ? { fetchpriority: "high" as const } : {})}
             decoding={eager ? "sync" : "async"}
             sx={{
               width: "100%",

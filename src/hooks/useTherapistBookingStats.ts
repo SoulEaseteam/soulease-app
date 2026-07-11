@@ -217,8 +217,14 @@ export function useTherapistBookingStats(
       q,
       (snap) => setStats(computeBookingStats(snap)),
       (err) => {
-        // eslint-disable-next-line no-console
-        console.error("[useTherapistBookingStats] snapshot error:", err);
+        // 🆕 28s375 — anonymous guests can't list a therapist's un-rated
+        //   bookings (PII-gated by firestore.rules); that permission-denied
+        //   is expected, not a fault. Loyalty falls back to the denormalized
+        //   doc aggregate in that case. Only surface genuine errors.
+        if ((err as { code?: string })?.code !== "permission-denied") {
+          // eslint-disable-next-line no-console
+          console.warn("[useTherapistBookingStats] snapshot error:", err);
+        }
         setStats({ ...EMPTY, loading: false });
       },
     );

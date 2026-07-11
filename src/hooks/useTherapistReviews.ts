@@ -160,8 +160,14 @@ export function useTherapistReviews(
         setLoading(false);
       },
       (err) => {
-        // eslint-disable-next-line no-console
-        console.error("[useTherapistReviews] snapshot error:", err);
+        // 🆕 28s375 — a permission-denied here is expected in some contexts
+        //   (e.g. a missing composite index falls back, or rules deny an
+        //   edge query); it's not a crash and the UI shows an empty state.
+        //   Don't spam the console with an error for the expected case.
+        if ((err as { code?: string })?.code !== "permission-denied") {
+          // eslint-disable-next-line no-console
+          console.warn("[useTherapistReviews] snapshot error:", err);
+        }
         setReviews([]);
         setLoading(false);
       }

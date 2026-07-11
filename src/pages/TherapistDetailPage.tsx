@@ -70,11 +70,10 @@ import ShieldRoundedIcon from "@mui/icons-material/ShieldRounded";
 import StatusPill from "@/components/therapist/detail/StatusPill";
 // 🗑️ 28s350 — FeaturesPanel (Rolodex physical-descriptor table) retired
 //   per founder ("Features ไม่ใช้แล้ว ลบ"). Component file kept on disk.
-// 🆕 28s351 — BioStatsBar: sex · height/weight · style · language
-//   28s364 — BioStatsBar data now fed into StatsCard bioCells prop
-//   (white card style). BioStatsBar import kept for possible reuse.
-import BioStatsBar from "@/components/therapist/detail/BioStatsBar";
-// 🆕 Round 28s364 — StatsCard re-imported with bioCells bio mode
+// 🗑️ 28s375 — BioStatsBar (28s351 pink strip) removed: 28s364 moved the
+//   sex/height/weight/style data into StatsCard's bioCells prop, so the
+//   standalone import was dead. StatsCard is the single bio surface now.
+// 🆕 Round 28s364 — StatsCard renders bio data via bioCells prop
 import StatsCard from "@/components/therapist/detail/StatsCard";
 // StickyBookCTA — kept on disk but no longer mounted (Phase 5 auto-nav).
 
@@ -1139,7 +1138,9 @@ const TherapistDetailPage: React.FC = () => {
           position: "relative",
           // 🆕 Round 28r55 (Phase 3.4) — desktop needs breathing room
           //   at the bottom since the mobile sticky CTA doesn't apply.
-          paddingBottom: { xs: 0, md: "48px" },
+          // 🆕 28s375 — mobile clearance so the floating chat button + the
+          //   fixed bottom nav don't cover the last content row (audit #3).
+          paddingBottom: { xs: "88px", md: "48px" },
         }}
       >
       {/* 🆕 Round 28r55 (Phase 3.4) — 2-column grid at md+.
@@ -1334,37 +1335,13 @@ const TherapistDetailPage: React.FC = () => {
               Vaccinated
             </Box>
           )}
-          {/* Available — if online */}
-          {livePillStatus === "online" && (
-            <Box
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-                background: "rgba(22,163,74,0.07)",
-                border: "1px solid rgba(22,163,74,0.20)",
-                borderRadius: "999px",
-                padding: "4px 11px",
-                fontFamily: '"Inter", system-ui, sans-serif',
-                fontSize: "11px",
-                fontWeight: 600,
-                color: "#16a34a",
-                letterSpacing: "0.01em",
-              }}
-            >
-              <Box
-                component="span"
-                sx={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  background: "#16a34a",
-                  flexShrink: 0,
-                }}
-              />
-              Available Now
-            </Box>
-          )}
+          {/* 🗑️ 28s375 — "Available Now" trust badge removed. Live
+              availability is already shown twice below (the green
+              "พร้อมให้บริการ" status card WITH an arrival ETA, plus the
+              hero status dot). Three indicators for one state violated the
+              founder's own "don't show status twice" guardrail; the status
+              card wins because it carries the arrival window. Trust badges
+              now read Data verified · Vaccinated — matching the reference. */}
         </Box>
 
         {/* 🆕 Round 28s366 — About bio + Languages moved here (above tab bar).
@@ -1567,9 +1544,17 @@ const TherapistDetailPage: React.FC = () => {
                 Reused from TherapistProfileTabs (LoyaltyTab) wired to the
                 live loyaltyStats. */}
             <Box sx={{ marginBottom: "20px" }}>
+              {/* 🆕 28s375 — feed the DENORMALIZED doc stats (same source as
+                  the hero "238 sessions · 16% rebook" chips) so the panel
+                  stays consistent for anonymous guests, who can read the
+                  world-readable therapists doc but NOT the PII-gated raw
+                  bookings (audit #1). Live loyaltyStats still overrides with
+                  the rich breakdown once an authenticated read succeeds. */}
               <LoyaltyTab
-                rebookPct={loyaltyStats.repeatPct}
-                totalSessions={loyaltyStats.totalCompleted}
+                rebookPct={
+                  parseFloat(String(therapist.rebookRate).replace("%", "")) || 0
+                }
+                totalSessions={therapist.totalSessions}
                 loyaltyStats={loyaltyStats}
               />
             </Box>
