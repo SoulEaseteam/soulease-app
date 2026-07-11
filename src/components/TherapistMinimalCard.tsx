@@ -541,18 +541,23 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "5px",
+                  gap: "4px",
+                  // 🆕 28s382 — Moko rating chip: pink star + number in a
+                  //   blush box (ref Moko home ⭐5.0).
+                  background: "#FCE7F0",
+                  borderRadius: "8px",
+                  padding: "2px 8px",
                 }}
               >
                 <StarRoundedIcon
-                  sx={{ fontSize: 16, color: accents.amber }}
+                  sx={{ fontSize: 15, color: "#EC4899" }}
                 />
                 <Typography
                   sx={{
                     fontFamily: fonts.body,
                     fontSize: "13px",
-                    fontWeight: 600,
-                    color: "#4B4B48",
+                    fontWeight: 700,
+                    color: "#C2185B",
                   }}
                 >
                   {therapist.rating.toFixed(1)}
