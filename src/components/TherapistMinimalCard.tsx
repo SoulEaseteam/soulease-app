@@ -125,7 +125,8 @@ const TherapistMinimalCard: React.FC<Props> = ({
     "TOP_RATED" | "VIP" | "HOT" | "NEW",
     { label: string; bg: string; color: string }
   > = {
-    TOP_RATED: { label: "TOP RATED", bg: accents.amber, color: "#1A1200" },
+    // 🆕 28s381 — Moko "TOP STAR" magenta gradient (was amber "TOP RATED").
+    TOP_RATED: { label: "TOP STAR", bg: "linear-gradient(135deg,#F050A0 0%,#E6197E 100%)", color: "#fff" },
     VIP:       { label: "VIP",        bg: "#1A2B2E",     color: "#FFE5EC" },
     HOT:       { label: "HOT",        bg: "#2D2D2B",     color: "#fff"    },
     // 🆕 28s380 — Moko NEW badge = orange→pink gradient (ref Lily 22). Was teal.
@@ -162,6 +163,19 @@ const TherapistMinimalCard: React.FC<Props> = ({
     if (prices.length === 0) return 1200;
     return Math.min(...prices);
   })();
+
+  // 🆕 28s381 — Moko-style tag pills (ref Moko home: 真胸·中国·天然). SunRed
+  //   discreet version, built from REAL data: nationality · Verified ·
+  //   first language. No explicit/anatomy tags (brand voice §3).
+  const cardTags = [
+    (therapist.features?.ethnicity || "Thai").trim(),
+    "Verified",
+    ...(therapist.features?.language
+      ? [therapist.features.language.split(/[,·/]/)[0].trim()]
+      : []),
+  ]
+    .filter((tg) => tg && tg.length > 0)
+    .slice(0, 3);
 
   return (
     <Box
@@ -587,6 +601,38 @@ const TherapistMinimalCard: React.FC<Props> = ({
               ) : null}
             </Box>
           ) : null}
+
+          {/* 🆕 28s381 — Moko tag pills (blush/magenta), under the name/rating
+              like the Moko home cards. */}
+          {cardTags.length > 0 && (
+            <Box
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "5px",
+                marginTop: "7px",
+              }}
+            >
+              {cardTags.map((tg, i) => (
+                <Box
+                  key={i}
+                  sx={{
+                    fontFamily: fonts.body,
+                    fontSize: "10.5px",
+                    fontWeight: 700,
+                    color: "#C2185B",
+                    background: "#FCE7F0",
+                    borderRadius: "6px",
+                    padding: "2px 8px",
+                    lineHeight: 1.45,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {tg}
+                </Box>
+              ))}
+            </Box>
+          )}
 
         </Box>
 
