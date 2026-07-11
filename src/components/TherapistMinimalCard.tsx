@@ -369,15 +369,20 @@ const TherapistMinimalCard: React.FC<Props> = ({
               gap: "5px",
               padding: "5px 14px",
               borderRadius: "999px",
+              // 🆕 28s391 — softer, more translucent status pill (founder
+              //   "ป้ายสถานะ ทำพื้นหลังจางลงหน่อย"). ~0.8 alpha + a light
+              //   backdrop blur keeps the white label legible over the photo.
               background:
                 status === "available"
-                  ? "#16A34A" // 🆕 28s380 — Moko green "Available" (was teal)
+                  ? "rgba(22, 163, 74, 0.80)" // Moko green "Available"
                   : status === "bookable"
-                    ? "#F5A623"
-                    : "#8F8474",
+                    ? "rgba(245, 166, 35, 0.80)"
+                    : "rgba(143, 132, 116, 0.80)",
+              backdropFilter: "blur(3px)",
+              WebkitBackdropFilter: "blur(3px)",
               color: "#fff",
               border: "none",
-              boxShadow: "0 4px 10px rgba(15, 23, 42, 0.20)",
+              boxShadow: "0 2px 8px rgba(15, 23, 42, 0.14)",
               whiteSpace: "nowrap",
             }}
             aria-label={statusLabel}
