@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import ChatBubbleOutlineRoundedIcon from "@mui/icons-material/ChatBubbleOutlineRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 
 import { fonts, accents } from "@/theme";
 
@@ -172,6 +173,13 @@ const TherapistMinimalCard: React.FC<Props> = ({
   //   once a practitioner has genuine views; never fabricated.
   const viewCount =
     typeof therapist.viewCount === "number" ? therapist.viewCount : 0;
+
+  // 🆕 28s389 — real completed-session count (founder wants a Moko-style
+  //   engagement number NOW; no historical browse data exists, so the honest
+  //   substantial number is real bookings). Endorsed by CLAUDE.md §🔐 #4/#6
+  //   ("N sessions completed" trust chip). 0 => hidden (Milo/Pare stay clean).
+  const sessionCount =
+    typeof therapist.totalSessions === "number" ? therapist.totalSessions : 0;
 
   return (
     <Box
@@ -605,32 +613,62 @@ const TherapistMinimalCard: React.FC<Props> = ({
 
           {/* 🆕 28s386 — tag pills removed (founder "เอาออก"). */}
 
-          {/* 🆕 28s387 — real anonymous view count (founder "สร้าง view-tracking
-              จริง"). Discreet eye + number; only appears once there are real
-              views. No 💋 emoji (brand rule §3). */}
-          {viewCount > 0 && (
+          {/* 🆕 28s389 — real engagement numbers (founder wants a Moko-style
+              browse number). No historical browse data exists, so the honest
+              substantial figure is completed sessions; the view count (28s387)
+              rides along as a secondary once it accrues. Nothing fabricated —
+              0 stays hidden (Milo/Pare read clean). No 💋 emoji (brand §3). */}
+          {(sessionCount > 0 || viewCount > 0) && (
             <Box
               sx={{
-                display: "inline-flex",
+                display: "flex",
                 alignItems: "center",
-                gap: "4px",
+                flexWrap: "wrap",
+                gap: "10px",
                 marginTop: therapist.rating && therapist.rating > 0 ? "7px" : "3px",
               }}
-              aria-label={`${viewCount} profile views`}
             >
-              <VisibilityRoundedIcon sx={{ fontSize: 14, color: "#9b8b80" }} />
-              <Typography
-                sx={{
-                  fontFamily: fonts.body,
-                  fontSize: "11.5px",
-                  fontWeight: 600,
-                  color: "#9b8b80",
-                  lineHeight: 1,
-                }}
-              >
-                {viewCount.toLocaleString("en-US")}{" "}
-                {t("therapistCard.views", "views")}
-              </Typography>
+              {sessionCount > 0 && (
+                <Box
+                  sx={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
+                  aria-label={`${sessionCount} completed sessions`}
+                >
+                  <CheckCircleRoundedIcon sx={{ fontSize: 14, color: "#16A34A" }} />
+                  <Typography
+                    sx={{
+                      fontFamily: fonts.body,
+                      fontSize: "11.5px",
+                      fontWeight: 700,
+                      color: "#4B4B48",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {sessionCount.toLocaleString("en-US")}{" "}
+                    <Box component="span" sx={{ fontWeight: 500, color: "#9b8b80" }}>
+                      {t("therapistCard.sessions", "sessions")}
+                    </Box>
+                  </Typography>
+                </Box>
+              )}
+              {viewCount > 0 && (
+                <Box
+                  sx={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
+                  aria-label={`${viewCount} profile views`}
+                >
+                  <VisibilityRoundedIcon sx={{ fontSize: 14, color: "#9b8b80" }} />
+                  <Typography
+                    sx={{
+                      fontFamily: fonts.body,
+                      fontSize: "11.5px",
+                      fontWeight: 600,
+                      color: "#9b8b80",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {viewCount.toLocaleString("en-US")}
+                  </Typography>
+                </Box>
+              )}
             </Box>
           )}
 
