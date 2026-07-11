@@ -88,6 +88,16 @@ service cloud.firestore {
         .hasOnly(therapistEditableKeys());
     }
 
+    // 🆕 28s387 — anonymous profile-view counter. Anyone may bump viewCount,
+    // but ONLY viewCount, and ONLY to the current value + 1 (missing => 0).
+    // Can't write arbitrary values or touch any other field, so it's safe to
+    // expose to unauthenticated visitors.
+    function isViewCountBump() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewCount'])
+        && request.resource.data.viewCount is int
+        && request.resource.data.viewCount == resource.data.get('viewCount', 0) + 1;
+    }
+
     // ── admins ─────────────────────────────────────────────────────
     // Self-read is allowed (so LoginPage can check isAdmin via direct
     // doc read without leaking other admins' info), peer-admin can
@@ -134,7 +144,8 @@ service cloud.firestore {
 
       allow update: if isAdmin() ||
                     (isTherapistOwner(therapistId) &&
-                     therapistUpdateIsSelfEditable());
+                     therapistUpdateIsSelfEditable()) ||
+                    isViewCountBump();
 
       allow delete: if isAdmin();
     }

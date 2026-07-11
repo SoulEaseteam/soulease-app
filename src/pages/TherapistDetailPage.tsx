@@ -119,6 +119,7 @@ import type { Therapist } from "@/types/therapist";
 //   See the merged-lookup block inside the component below.
 import { db } from "@/lib/firebase";
 import { doc as fsDoc, getDoc as fsGetDoc } from "firebase/firestore";
+import { recordTherapistView } from "@/utils/therapistViews";
 import { enhanceImage } from "@/utils/cloudinary";
 // Round 28s53 — real GPS distance. The DetailHero "Allow location"
 // prompt now triggers an actual geolocation request and the
@@ -644,6 +645,12 @@ const TherapistDetailPage: React.FC = () => {
   const hardcodedRow = id ? therapistsData.find((tt) => tt.id === id) : null;
   const [firestoreRow, setFirestoreRow] = useState<Therapist | null>(null);
   const [firestoreLoading, setFirestoreLoading] = useState(false);
+
+  // 🆕 28s387 — record an anonymous profile view (deduped per browser).
+  //   Best-effort; never blocks render. Fires once per id.
+  useEffect(() => {
+    recordTherapistView(id);
+  }, [id]);
 
   useEffect(() => {
     // Only reach Firestore when hardcoded missed. Fast-path exit

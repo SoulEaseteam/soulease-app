@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import ChatBubbleOutlineRoundedIcon from "@mui/icons-material/ChatBubbleOutlineRounded";
+import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 
 import { fonts, accents } from "@/theme";
 
@@ -166,6 +167,11 @@ const TherapistMinimalCard: React.FC<Props> = ({
 
   // 🆕 28s386 — tag pills (Thai/Verified/English) removed (founder: "เอาออก").
   //   Nationality/language still live on the detail page; the card is cleaner.
+
+  // 🆕 28s387 — anonymous profile-view count (real, grows from 0). Shown only
+  //   once a practitioner has genuine views; never fabricated.
+  const viewCount =
+    typeof therapist.viewCount === "number" ? therapist.viewCount : 0;
 
   return (
     <Box
@@ -598,6 +604,35 @@ const TherapistMinimalCard: React.FC<Props> = ({
           ) : null}
 
           {/* 🆕 28s386 — tag pills removed (founder "เอาออก"). */}
+
+          {/* 🆕 28s387 — real anonymous view count (founder "สร้าง view-tracking
+              จริง"). Discreet eye + number; only appears once there are real
+              views. No 💋 emoji (brand rule §3). */}
+          {viewCount > 0 && (
+            <Box
+              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                marginTop: therapist.rating && therapist.rating > 0 ? "7px" : "3px",
+              }}
+              aria-label={`${viewCount} profile views`}
+            >
+              <VisibilityRoundedIcon sx={{ fontSize: 14, color: "#9b8b80" }} />
+              <Typography
+                sx={{
+                  fontFamily: fonts.body,
+                  fontSize: "11.5px",
+                  fontWeight: 600,
+                  color: "#9b8b80",
+                  lineHeight: 1,
+                }}
+              >
+                {viewCount.toLocaleString("en-US")}{" "}
+                {t("therapistCard.views", "views")}
+              </Typography>
+            </Box>
+          )}
 
         </Box>
 

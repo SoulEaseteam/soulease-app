@@ -131,6 +131,8 @@ export interface Therapist {
   homeAddress?: string;
   rebookRate?: number;
   totalSessions?: number;
+  /** 🆕 28s387 — anonymous profile-open counter (see utils/therapistViews). */
+  viewCount?: number;
   credentials?: Credential[];
   serviceExperience?: ServiceExperience[];
   languageSkills?: LanguageSkill[];
