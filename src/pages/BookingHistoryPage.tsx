@@ -3,6 +3,19 @@
 // 🆕 Round 28c17 (founder 2026-05-06) — full SunRed theme redesign.
 //   Dark hero header + x-transform sliding pill tabs (3 buckets) +
 //   framer-motion staggered cards. Matches ProfilePage premium feel.
+// 🆕 Round 28w.1 (2026-07-13) — audit fixes:
+//   • P1 CRASH FIX: `visible` filter now guards `STATUS_META[b.status]`
+//     (was `.bucket` on undefined → white screen). STATUS_META also
+//     expanded to cover every real booking status the app writes —
+//     "done" (set on admin Complete), paid, in_progress, canceled (US),
+//     refunded, no_show, rejected, failed — each mapped to a bucket so
+//     completed/cancelled sessions actually appear instead of crashing.
+//   • Retheme: retired taupe #8F8474 + navy rgba(15,23,42) → rose
+//     #D97C95 accent on day/night var(--sr-*) tokens (matches detail
+//     page). Dark hero → rose-berry gradient (white text safe in both
+//     day + night, mode-independent).
+//   • a11y: aria-label on back button, role="tablist"/role="tab" +
+//     aria-selected on the pill tabs.
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Box, Avatar, Typography } from "@mui/material";
@@ -16,8 +29,14 @@ import {
   orderBy,
   Timestamp,
 } from "firebase/firestore";
-import { ArrowLeft, CalendarBlank, CheckCircle, XCircle, Star } from "phosphor-react";
-import { MapPin } from "phosphor-react";
+import {
+  ArrowLeft,
+  CalendarBlank,
+  CheckCircle,
+  XCircle,
+  Star,
+  MapPin,
+} from "phosphor-react";
 
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
@@ -37,8 +56,30 @@ import type { Therapist } from "@/types/therapist";
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS  = '"Inter", system-ui, sans-serif';
 
+// ── brand accents (fixed hex — day/night surfaces come from var(--sr-*)) ─
+const ROSE       = "#D97C95";
+const GREEN      = "#57B88B";
+const GREEN_TEXT = "#2E7D57";
+const AMBER_TEXT = "#C97A1F";
+// Rose-berry hero gradient: dark enough for white text in BOTH day + night.
+const HERO_GRADIENT = "linear-gradient(160deg, #B8567F 0%, #8A3A57 100%)";
+
 // ── types ────────────────────────────────────────────────────────────
-type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled" | "upcoming";
+type BookingStatus =
+  | "pending"
+  | "confirmed"
+  | "paid"
+  | "in_progress"
+  | "in_session"
+  | "completed"
+  | "done"
+  | "cancelled"
+  | "canceled"
+  | "refunded"
+  | "no_show"
+  | "rejected"
+  | "failed"
+  | "upcoming";
 type TabKey = "upcoming" | "completed" | "cancelled";
 
 interface Booking {
@@ -63,12 +104,29 @@ interface Booking {
   userId?: string;
 }
 
+// 🆕 28w.1 — every status the app actually writes to `bookings` is
+//   mapped here, so no live booking can slip through as `undefined`
+//   and crash the `visible` filter. Buckets: upcoming (active),
+//   completed (served), cancelled (dead). Surfaces use day/night vars;
+//   only the semantic status hues are fixed hex.
 const STATUS_META: Record<string, { label: string; bg: string; fg: string; bucket: TabKey }> = {
-  upcoming:  { label: "Upcoming",  bg: "rgba(15, 23, 42, 0.12)",   fg: "#2D2D2B",             bucket: "upcoming"  },
-  pending:   { label: "Pending",   bg: "rgba(15, 23, 42, 0.12)",   fg: "#2D2D2B",             bucket: "upcoming"  },
-  confirmed: { label: "Confirmed", bg: "rgba(22,163,74,0.12)",  fg: "#16a34a",             bucket: "upcoming"  },
-  completed: { label: "Completed", bg: "rgba(15, 23, 42,0.08)",   fg: "rgba(15, 23, 42,0.65)", bucket: "completed" },
-  cancelled: { label: "Cancelled", bg: "rgba(0,0,0,0.06)",      fg: "rgba(15, 23, 42,0.45)", bucket: "cancelled" },
+  // ── upcoming (active) ──
+  upcoming:    { label: "Upcoming",   bg: "rgba(217,124,149,0.12)", fg: ROSE,              bucket: "upcoming"  },
+  pending:     { label: "Pending",    bg: "var(--sr-panel-2)",      fg: "var(--sr-muted)", bucket: "upcoming"  },
+  confirmed:   { label: "Confirmed",  bg: "rgba(87,184,139,0.14)",  fg: GREEN_TEXT,        bucket: "upcoming"  },
+  paid:        { label: "Paid",       bg: "rgba(87,184,139,0.14)",  fg: GREEN_TEXT,        bucket: "upcoming"  },
+  in_progress: { label: "In session", bg: "rgba(242,157,56,0.14)",  fg: AMBER_TEXT,        bucket: "upcoming"  },
+  in_session:  { label: "In session", bg: "rgba(242,157,56,0.14)",  fg: AMBER_TEXT,        bucket: "upcoming"  },
+  // ── completed (served) ──
+  completed:   { label: "Completed",  bg: "var(--sr-panel-2)",      fg: "var(--sr-muted)", bucket: "completed" },
+  done:        { label: "Completed",  bg: "var(--sr-panel-2)",      fg: "var(--sr-muted)", bucket: "completed" },
+  // ── cancelled (dead) ──
+  cancelled:   { label: "Cancelled",  bg: "var(--sr-panel-2)",      fg: "var(--sr-dim)",   bucket: "cancelled" },
+  canceled:    { label: "Cancelled",  bg: "var(--sr-panel-2)",      fg: "var(--sr-dim)",   bucket: "cancelled" },
+  refunded:    { label: "Refunded",   bg: "var(--sr-panel-2)",      fg: "var(--sr-dim)",   bucket: "cancelled" },
+  no_show:     { label: "No-show",    bg: "var(--sr-panel-2)",      fg: "var(--sr-dim)",   bucket: "cancelled" },
+  rejected:    { label: "Cancelled",  bg: "var(--sr-panel-2)",      fg: "var(--sr-dim)",   bucket: "cancelled" },
+  failed:      { label: "Cancelled",  bg: "var(--sr-panel-2)",      fg: "var(--sr-dim)",   bucket: "cancelled" },
 };
 
 const TABS: { key: TabKey; label: string }[] = [
@@ -144,18 +202,20 @@ const BookingHistoryPage: React.FC = () => {
     return c;
   }, [bookings]);
 
+  // 🆕 28w.1 — guard `STATUS_META[b.status]` with `?.` so an unmapped
+  //   status can never throw here (it just falls out of every tab).
   const visible = useMemo(
-    () => bookings.filter((b) => STATUS_META[b.status].bucket === tab),
+    () => bookings.filter((b) => STATUS_META[b.status]?.bucket === tab),
     [bookings, tab],
   );
 
   return (
-    <Box sx={{ minHeight: "100vh", background: "#F4F6F5", pb: 14, fontFamily: SANS }}>
+    <Box sx={{ minHeight: "100vh", background: "var(--sr-bg)", pb: 14, fontFamily: SANS }}>
 
-      {/* ── Dark hero header ─────────────────────────────────────── */}
+      {/* ── Rose-berry hero header ───────────────────────────────── */}
       <Box
         sx={{
-          background: "#1A2B2E",
+          background: HERO_GRADIENT,
           pt: "env(safe-area-inset-top, 16px)",
           pb: 3.5,
           px: 2.5,
@@ -170,7 +230,7 @@ const BookingHistoryPage: React.FC = () => {
             width: 220,
             height: 64,
             borderRadius: "50%",
-            background: "rgba(15, 23, 42, 0.12)",
+            background: "rgba(255,255,255,0.14)",
             filter: "blur(28px)",
             pointerEvents: "none",
           },
@@ -180,6 +240,7 @@ const BookingHistoryPage: React.FC = () => {
         <Box
           component="button"
           onClick={() => void navigate(-1)}
+          aria-label="Go back"
           sx={{
             display: "flex",
             alignItems: "center",
@@ -187,8 +248,8 @@ const BookingHistoryPage: React.FC = () => {
             width: 36,
             height: 36,
             borderRadius: "50%",
-            background: "rgba(255,255,255,0.08)",
-            border: "1px solid rgba(255,255,255,0.12)",
+            background: "rgba(255,255,255,0.14)",
+            border: "1px solid rgba(255,255,255,0.22)",
             color: "#fff",
             cursor: "pointer",
             mb: 2.5,
@@ -202,7 +263,7 @@ const BookingHistoryPage: React.FC = () => {
           <Typography sx={{ fontFamily: SERIF, fontSize: 26, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
             My Bookings
           </Typography>
-          <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(255,255,255,0.45)", mt: 0.5 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(255,255,255,0.72)", mt: 0.5 }}>
             {counts.upcoming > 0
               ? `${counts.upcoming} upcoming session${counts.upcoming > 1 ? "s" : ""}`
               : "No upcoming sessions"}
@@ -218,8 +279,8 @@ const BookingHistoryPage: React.FC = () => {
               mt: 2.5,
               p: 1.5,
               borderRadius: "16px",
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(255,255,255,0.12)",
+              border: "1px solid rgba(255,255,255,0.16)",
             }}
           >
             {[
@@ -232,13 +293,13 @@ const BookingHistoryPage: React.FC = () => {
                 sx={{
                   flex: 1,
                   textAlign: "center",
-                  borderRight: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none",
+                  borderRight: i < 2 ? "1px solid rgba(255,255,255,0.16)" : "none",
                 }}
               >
                 <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1 }}>
                   {s.value}
                 </Typography>
-                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "rgba(255,255,255,0.40)", mt: 0.4, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "rgba(255,255,255,0.70)", mt: 0.4, letterSpacing: "0.06em", textTransform: "uppercase" }}>
                   {s.label}
                 </Typography>
               </Box>
@@ -252,13 +313,15 @@ const BookingHistoryPage: React.FC = () => {
         <motion.div {...fadeUp(0.12)}>
           <Box
             ref={trackRef}
+            role="tablist"
+            aria-label="Booking status"
             sx={{
               position: "relative",
               display: "flex",
               borderRadius: 999,
-              background: "#fff",
-              border: "1px solid rgba(15,23,42,0.07)",
-              boxShadow: "0 1px 4px rgba(15,23,42,0.05)",
+              background: "var(--sr-panel)",
+              border: "1px solid var(--sr-hairline)",
+              boxShadow: "var(--sr-card-shadow)",
               overflow: "hidden",
             }}
           >
@@ -275,8 +338,8 @@ const BookingHistoryPage: React.FC = () => {
                   left: 0,
                   width: pillW,
                   borderRadius: 999,
-                  background: "#8F8474",
-                  boxShadow: "0 4px 14px rgba(15, 23, 42, 0.30)",
+                  background: ROSE,
+                  boxShadow: "0 4px 14px rgba(138, 58, 87, 0.30)",
                   pointerEvents: "none",
                   zIndex: 0,
                 }}
@@ -289,6 +352,9 @@ const BookingHistoryPage: React.FC = () => {
                   key={t.key}
                   onClick={() => setTab(t.key)}
                   whileTap={{ scale: 0.97 }}
+                  role="tab"
+                  aria-selected={active}
+                  aria-label={t.label}
                   style={{
                     flex: 1,
                     position: "relative",
@@ -310,7 +376,7 @@ const BookingHistoryPage: React.FC = () => {
                       fontSize: 12,
                       fontWeight: 700,
                       letterSpacing: "0.03em",
-                      color: active ? "#fff" : "rgba(15, 23, 42,0.50)",
+                      color: active ? "#fff" : "var(--sr-muted)",
                       lineHeight: 1,
                       transition: "color 0.15s ease",
                     }}
@@ -323,7 +389,7 @@ const BookingHistoryPage: React.FC = () => {
                         fontFamily: SANS,
                         fontSize: 10,
                         fontWeight: 700,
-                        color: active ? "rgba(255,255,255,0.75)" : "rgba(15, 23, 42, 0.65)",
+                        color: active ? "rgba(255,255,255,0.85)" : "var(--sr-dim)",
                         lineHeight: 1,
                         transition: "color 0.15s ease",
                       }}
@@ -438,9 +504,9 @@ const BookingCard: React.FC<{
     <Box
       sx={{
         borderRadius: "20px",
-        background: "#fff",
-        border: "1px solid rgba(15,23,42,0.06)",
-        boxShadow: "0 2px 8px rgba(15,23,42,0.05), 0 8px 24px rgba(15,23,42,0.04)",
+        background: "var(--sr-panel)",
+        border: "1px solid var(--sr-hairline)",
+        boxShadow: "var(--sr-card-shadow)",
         overflow: "hidden",
       }}
     >
@@ -449,26 +515,26 @@ const BookingCard: React.FC<{
         sx={{
           height: 3,
           background: status.bucket === "upcoming"
-            ? "#2D2D2B"
+            ? ROSE
             : status.bucket === "completed"
-            ? "#16a34a"
-            : "rgba(15, 23, 42,0.12)",
+            ? GREEN
+            : "var(--sr-line)",
         }}
       />
 
       <Box sx={{ p: "14px 16px" }}>
         {/* top row: avatar + name + status pill */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
-          {/* avatar with gradient ring */}
+          {/* avatar with rose ring */}
           <Box
             sx={{
               width: 46,
               height: 46,
               borderRadius: "50%",
-              background: "#8F8474",
+              background: ROSE,
               p: "2px",
               flexShrink: 0,
-              boxShadow: "0 4px 12px rgba(15, 23, 42, 0.20)",
+              boxShadow: "0 4px 12px rgba(138, 58, 87, 0.20)",
             }}
           >
             <Avatar
@@ -476,8 +542,7 @@ const BookingCard: React.FC<{
               sx={{
                 width: "100%",
                 height: "100%",
-                // 🎨 Round 28r79 — Nordic sweep · was burgundy gradient.
-                background: "linear-gradient(135deg, #4B4B48, #2D2D2B)",
+                background: "linear-gradient(135deg, #E8B7C6, #D97C95)",
                 fontSize: 16,
                 fontWeight: 700,
                 fontFamily: SERIF,
@@ -489,13 +554,13 @@ const BookingCard: React.FC<{
           </Box>
 
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: "#4B4B48", lineHeight: 1.2, mb: 0.25 }}>
+            <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: "var(--sr-ink)", lineHeight: 1.2, mb: 0.25 }}>
               {booking.therapistName ?? therapist?.name ?? "Therapist"}
             </Typography>
             {therapist && (
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.4 }}>
-                <Star size={11} color="#2D2D2B" weight="fill" />
-                <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "rgba(15, 23, 42,0.55)" }}>
+                <Star size={11} color={ROSE} weight="fill" />
+                <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "var(--sr-muted)" }}>
                   {formatRating(bayesianRatingFromAggregate(
                     therapist.rating * (therapist.reviews ?? 0),
                     therapist.reviews ?? 0,
@@ -526,31 +591,31 @@ const BookingCard: React.FC<{
           sx={{
             p: "10px 12px",
             borderRadius: "12px",
-            background: "#EDE8E4",
+            background: "var(--sr-panel-2)",
             display: "flex",
             flexDirection: "column",
             gap: 0.6,
             mb: 1.5,
           }}
         >
-          <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 600, color: "#4B4B48", lineHeight: 1.3 }}>
+          <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 600, color: "var(--sr-ink)", lineHeight: 1.3 }}>
             {getServiceLabel(booking.serviceId, booking.serviceName)}
             {booking.duration && (
-              <Box component="span" sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 500, color: "rgba(15, 23, 42,0.55)", ml: 1 }}>
+              <Box component="span" sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 500, color: "var(--sr-muted)", ml: 1 }}>
                 · {booking.duration} min
               </Box>
             )}
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <CalendarBlank size={12} color="rgba(15, 23, 42,0.50)" />
-            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.60)" }}>
+            <CalendarBlank size={12} color="var(--sr-muted)" />
+            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "var(--sr-body)" }}>
               {dateLabel} · {timeLabel}
             </Typography>
           </Box>
           {(booking.locationName || booking.address) && (
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <MapPin size={12} color="rgba(15, 23, 42,0.50)" />
-              <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "rgba(15, 23, 42,0.60)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <MapPin size={12} color="var(--sr-muted)" />
+              <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "var(--sr-body)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {booking.locationName ?? booking.address}
               </Typography>
             </Box>
@@ -560,10 +625,10 @@ const BookingCard: React.FC<{
         {/* bottom row: total + actions */}
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
           <Box>
-            <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: "var(--sr-muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
               Total
             </Typography>
-            <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: "#4B4B48", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+            <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: "var(--sr-ink)", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
               {formatTHB(total)}
             </Typography>
           </Box>
@@ -573,12 +638,13 @@ const BookingCard: React.FC<{
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={onReview}
+                aria-label="Leave a review"
                 style={{
                   height: 38,
                   padding: "0 16px",
                   borderRadius: 999,
-                  background: "rgba(45,45,43,0.08)",
-                  color: "#4B4B48",
+                  background: "rgba(217, 124, 149, 0.12)",
+                  color: ROSE,
                   fontFamily: SANS,
                   fontSize: 13,
                   fontWeight: 700,
@@ -597,18 +663,19 @@ const BookingCard: React.FC<{
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={onRebook}
+                aria-label="Rebook this practitioner"
                 style={{
                   height: 38,
                   padding: "0 16px",
                   borderRadius: 999,
-                  background: "#8F8474",
+                  background: ROSE,
                   color: "#fff",
                   fontFamily: SANS,
                   fontSize: 13,
                   fontWeight: 700,
                   border: "none",
                   cursor: "pointer",
-                  boxShadow: "0 4px 12px rgba(15, 23, 42, 0.28)",
+                  boxShadow: "0 4px 12px rgba(138, 58, 87, 0.28)",
                 }}
               >
                 Rebook
@@ -648,21 +715,21 @@ const EmptySlate: React.FC<{
         width: 64,
         height: 64,
         borderRadius: "50%",
-        background: "#8F8474",
+        background: ROSE,
         color: "#fff",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        boxShadow: "0 8px 24px rgba(15, 23, 42, 0.28)",
+        boxShadow: "0 8px 24px rgba(138, 58, 87, 0.28)",
         mb: 0.5,
       }}
     >
       {icon}
     </Box>
-    <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: "#4B4B48", letterSpacing: "-0.01em" }}>
+    <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: "var(--sr-ink)", letterSpacing: "-0.01em" }}>
       {title}
     </Typography>
-    <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(15, 23, 42,0.55)", lineHeight: 1.6, maxWidth: 260 }}>
+    <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "var(--sr-muted)", lineHeight: 1.6, maxWidth: 260 }}>
       {body}
     </Typography>
     {cta && onCta && (
@@ -674,14 +741,14 @@ const EmptySlate: React.FC<{
           height: 44,
           padding: "0 28px",
           borderRadius: 999,
-          background: "#8F8474",
+          background: ROSE,
           color: "#fff",
           fontFamily: SANS,
           fontSize: 14,
           fontWeight: 700,
           border: "none",
           cursor: "pointer",
-          boxShadow: "0 6px 20px rgba(15, 23, 42, 0.30)",
+          boxShadow: "0 6px 20px rgba(138, 58, 87, 0.30)",
         }}
       >
         {cta}
@@ -700,29 +767,29 @@ const LoadingShimmer: React.FC = () => (
         key={i}
         sx={{
           borderRadius: "20px",
-          background: "#fff",
-          border: "1px solid rgba(15,23,42,0.05)",
+          background: "var(--sr-panel)",
+          border: "1px solid var(--sr-hairline)",
           overflow: "hidden",
           opacity: 1 - i * 0.2,
         }}
       >
-        <Box sx={{ height: 3, background: "rgba(45,45,43,0.08)" }} />
+        <Box sx={{ height: 3, background: "var(--sr-line)" }} />
         <Box sx={{ p: "14px 16px", display: "flex", flexDirection: "column", gap: 1.5 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: "rgba(15, 23, 42,0.06)" }} />
+            <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: "var(--sr-panel-2)" }} />
             <Box sx={{ flex: 1 }}>
-              <Box sx={{ height: 14, width: "55%", borderRadius: 6, background: "rgba(15, 23, 42,0.07)", mb: 0.8 }} />
-              <Box sx={{ height: 10, width: "30%", borderRadius: 6, background: "rgba(15, 23, 42,0.05)" }} />
+              <Box sx={{ height: 14, width: "55%", borderRadius: 6, background: "var(--sr-panel-2)", mb: 0.8 }} />
+              <Box sx={{ height: 10, width: "30%", borderRadius: 6, background: "var(--sr-panel-2)" }} />
             </Box>
-            <Box sx={{ height: 22, width: 72, borderRadius: 999, background: "rgba(15, 23, 42,0.05)" }} />
+            <Box sx={{ height: 22, width: 72, borderRadius: 999, background: "var(--sr-panel-2)" }} />
           </Box>
-          <Box sx={{ height: 68, borderRadius: 12, background: "rgba(15, 23, 42,0.04)" }} />
+          <Box sx={{ height: 68, borderRadius: 12, background: "var(--sr-panel-2)" }} />
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Box>
-              <Box sx={{ height: 9, width: 32, borderRadius: 4, background: "rgba(15, 23, 42,0.05)", mb: 0.6 }} />
-              <Box sx={{ height: 20, width: 64, borderRadius: 6, background: "rgba(45,45,43,0.08)" }} />
+              <Box sx={{ height: 9, width: 32, borderRadius: 4, background: "var(--sr-panel-2)", mb: 0.6 }} />
+              <Box sx={{ height: 20, width: 64, borderRadius: 6, background: "var(--sr-panel-2)" }} />
             </Box>
-            <Box sx={{ height: 38, width: 80, borderRadius: 999, background: "rgba(15, 23, 42,0.06)" }} />
+            <Box sx={{ height: 38, width: 80, borderRadius: 999, background: "var(--sr-panel-2)" }} />
           </Box>
         </Box>
       </Box>

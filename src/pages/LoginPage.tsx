@@ -1,4 +1,15 @@
 // src/pages/LoginPage.tsx
+//
+// 🆕 Round 28w.1 (2026-07-13) — audit fixes:
+//   • Retheme: retired taupe #8F8474 + brown #4B4B48 + Chonburi font +
+//     navy shadows → rose #D97C95 on day/night var(--sr-*) tokens
+//     (matches the rest of the app). White-on-taupe subtitle → var token
+//     so it stays legible in day mode.
+//   • Removed production emoji from snackbar copy (founder no-emoji rule).
+//   • Real <form>: Enter now submits; button is type="submit".
+//   • a11y / password-manager: labelled fields + type="email" +
+//     autoComplete="email" / "current-password".
+//   • Avatar (LCP image) → loading="eager".
 import React, { useState } from "react";
 import {
   Box,
@@ -21,9 +32,12 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import "@fontsource/chonburi";
 import BottomNav from '../components/layouts/BottomNavGlass';
 import { getErrorMessage } from "@/utils/getErrorMessage";
+
+const SERIF = '"Fraunces", "Playfair Display", Georgia, serif';
+const ROSE = "#D97C95";
+const ROSE_HOVER = "#C96F89";
 
 type LoginRole = "admin" | "therapist" | "user";
 
@@ -76,7 +90,7 @@ const LoginPage: React.FC = () => {
     if (!email || !password) {
       return setSnackbar({
         open: true,
-        message: "❌ Please enter email and password",
+        message: "Please enter email and password",
         severity: "error",
       });
     }
@@ -92,7 +106,7 @@ const LoginPage: React.FC = () => {
 
       setSnackbar({
         open: true,
-        message: "🎉 Login successful!",
+        message: "Login successful",
         severity: "success",
       });
 
@@ -106,7 +120,7 @@ const LoginPage: React.FC = () => {
     } catch (err: unknown) {
       setSnackbar({
         open: true,
-        message: `❌ Login failed: ${getErrorMessage(err)}`,
+        message: `Login failed: ${getErrorMessage(err)}`,
         severity: "error",
       });
     } finally {
@@ -122,7 +136,7 @@ const LoginPage: React.FC = () => {
       <Box
         sx={{
           minHeight: "100vh",
-          background: "#8F8474",
+          background: "var(--sr-bg)",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
@@ -131,16 +145,17 @@ const LoginPage: React.FC = () => {
         }}
       >
         <Paper
-          elevation={10}
+          elevation={0}
           sx={{
             width: "100%",
             maxWidth: 320,
             textAlign: "center",
             p: 4,
             borderRadius: 6,
-            background: "#fff",
-            color: "#3a3420",
-            boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
+            background: "var(--sr-panel)",
+            color: "var(--sr-ink)",
+            border: "1px solid var(--sr-hairline)",
+            boxShadow: "var(--sr-card-shadow)",
           }}
         >
           {/* Avatar */}
@@ -151,13 +166,13 @@ const LoginPage: React.FC = () => {
               alt="User Icon"
               width={120}
               height={120}
-              loading="lazy"
+              loading="eager"
               decoding="async"
               sx={{
                 width: 120,
                 height: 120,
                 borderRadius: "50%",
-                boxShadow: "0 6px 18px rgba(15, 23, 42, 0.20)",
+                boxShadow: "0 6px 18px rgba(138, 58, 87, 0.20)",
               }}
             />
           </Box>
@@ -169,78 +184,93 @@ const LoginPage: React.FC = () => {
             mt={3}
             mb={4}
             sx={{
-              fontFamily: "Chonburi, serif",
+              fontFamily: SERIF,
               fontSize: "2rem",
-              color: "#4B4B48",
+              color: "var(--sr-ink)",
             }}
           >
             Login
           </Typography>
 
-          {/* Inputs */}
-          <TextField
-            placeholder="Email"
-            fullWidth
-            size="small"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            sx={{
-              mb: 2,
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "16px",
-              },
+          {/* Form — Enter submits */}
+          <Box
+            component="form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!loading) void handleLogin();
             }}
-          />
-
-          <TextField
-            placeholder="Password"
-            type="password"
-            fullWidth
-            size="small"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            sx={{
-              mb: 2,
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "16px",
-              },
-            }}
-          />
-
-          {/* LOGIN BUTTON */}
-          <Button
-            fullWidth
-            sx={{
-              mt: 1,
-              py: 1.2,
-              fontWeight: "bold",
-              borderRadius: "20px",
-              background: "#8F8474",
-              color: "#fff",
-              // 🎨 Round 28r79 — Nordic sweep · was #FEAE96 coral.
-              "&:hover": { background: "#4B4B48" },
-            }}
-            onClick={handleLogin}
-            disabled={loading}
           >
-            {loading ? (
-              <CircularProgress size={22} sx={{ color: "#fff" }} />
-            ) : (
-              "LOGIN"
-            )}
-          </Button>
+            {/* Inputs */}
+            <TextField
+              label="Email"
+              type="email"
+              autoComplete="email"
+              fullWidth
+              size="small"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              sx={{
+                mb: 2,
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "16px",
+                  "&.Mui-focused fieldset": { borderColor: ROSE },
+                },
+                "& label.Mui-focused": { color: ROSE },
+              }}
+            />
+
+            <TextField
+              label="Password"
+              type="password"
+              autoComplete="current-password"
+              fullWidth
+              size="small"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              sx={{
+                mb: 2,
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "16px",
+                  "&.Mui-focused fieldset": { borderColor: ROSE },
+                },
+                "& label.Mui-focused": { color: ROSE },
+              }}
+            />
+
+            {/* LOGIN BUTTON */}
+            <Button
+              type="submit"
+              fullWidth
+              sx={{
+                mt: 1,
+                py: 1.2,
+                fontWeight: "bold",
+                borderRadius: "20px",
+                background: ROSE,
+                color: "#fff",
+                "&:hover": { background: ROSE_HOVER },
+              }}
+              disabled={loading}
+            >
+              {loading ? (
+                <CircularProgress size={22} sx={{ color: "#fff" }} />
+              ) : (
+                "LOGIN"
+              )}
+            </Button>
+          </Box>
 
           {/* Register */}
-          <Typography mt={3} fontSize={14}>
+          <Typography mt={3} fontSize={14} sx={{ color: "var(--sr-body)" }}>
             Don&apos;t have an account?{" "}
-            <Link to="/register" style={{ color: "#4B4B48", fontWeight: "bold" }}>
+            <Link to="/register" style={{ color: ROSE, fontWeight: "bold" }}>
               Sign up
             </Link>
           </Typography>
         </Paper>
-        <Typography mt={4} fontSize={14} color="#fff" textAlign="center">
-                  You may proceed with booking without an account.
-                </Typography>
+        <Typography mt={4} fontSize={14} sx={{ color: "var(--sr-muted)" }} textAlign="center">
+          You may proceed with booking without an account.
+        </Typography>
       </Box>
       <BottomNav />
       {/* Snackbar */}
@@ -256,4 +286,4 @@ const LoginPage: React.FC = () => {
   );
 };
 
-export default LoginPage; 
+export default LoginPage;
