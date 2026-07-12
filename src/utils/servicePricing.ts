@@ -60,6 +60,10 @@ export interface LiveServiceOverride {
   image?: string;
   detail?: string;
   benefit?: string[];
+  // 🆕 Round 28r103 (founder 2026-07-13 · "ป้าย ใช้งานไม่ได้ในหน้าแอดมิน") —
+  //   badge lives on the base MassageService but had no override channel;
+  //   without this, admin badge edits never reached the customer surface.
+  badge?: MassageService["badge"];
   // 🆕 Round 28r50 (feature #2 "Scheduled Pricing / Draft Mode") — epoch
   //   ms. While `scheduledFor > Date.now()`, the entire override is NOT
   //   applied (falls back to the hardcoded catalog price/name/etc.). Once
@@ -202,6 +206,8 @@ export function withLiveServiceOverrides(s: MassageService): MassageService {
     ...(typeof ov.image === "string" && ov.image.trim() ? { image: ov.image } : {}),
     ...(typeof ov.detail === "string" && ov.detail.trim() ? { detail: ov.detail } : {}),
     ...(Array.isArray(ov.benefit) && ov.benefit.length ? { benefit: ov.benefit } : {}),
+    // 🆕 28r103 — wire the badge override so admin edits reach the customer.
+    ...(typeof ov.badge === "string" && ov.badge ? { badge: ov.badge } : {}),
   };
 }
 

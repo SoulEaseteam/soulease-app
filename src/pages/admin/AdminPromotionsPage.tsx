@@ -182,6 +182,10 @@ interface SvcRow {
   image: string;
   detail: string;
   benefit: string; // newline-separated in the editor
+  // 🆕 Round 28r103 — badge editable for standard services too (was
+  //   custom-service-only). ServicesPage reads this to render the amber
+  //   BESTSELLER pill on the featured card + the rose pill on mini cards.
+  badge: MassageService["badge"];
   // 🆕 Round 28r50 — per-row schedule (feature #2). Epoch ms when the
   //   pending override should ACTIVATE for customers; null/undefined =
   //   active immediately. Row shows a "Scheduled" badge when set + future.
@@ -641,6 +645,8 @@ const AdminPromotionsPage: React.FC = () => {
           image: o.image ?? s.image,
           detail: o.detail ?? s.detail,
           benefit: (o.benefit ?? s.benefit ?? []).join("\n"),
+          // 🆕 28r103 — seed the badge from override → catalog default.
+          badge: (o.badge as MassageService["badge"]) ?? s.badge,
           scheduledForMs: rawSched?.toMillis?.() ?? null,
         };
       });
@@ -688,6 +694,8 @@ const AdminPromotionsPage: React.FC = () => {
         image: r.image,
         detail: r.detail,
         benefit: r.benefit.split("\n").map((b) => b.trim()).filter(Boolean),
+        // 🆕 28r103 — persist the badge override.
+        badge: r.badge,
         // 🆕 Round 28r50 — write the row's schedule as a Firestore
         //   Timestamp. `null` when the field's empty so an OLD schedule
         //   that's been cleared doesn't linger on the doc via merge.
@@ -2336,6 +2344,26 @@ const AdminPromotionsPage: React.FC = () => {
               onChange={(e) => setSvcField(detailsRow.id, { benefit: e.target.value })} sx={fieldSx}
               helperText="แต่ละบรรทัด = 1 bullet บนหน้าบริการ"
             />
+            {/* 🆕 Round 28r103 (founder 2026-07-13 — "ป้าย ใช้งานไม่ได้ใน
+                หน้าแอดมิน") — badge dropdown for standard services (was
+                only editable on custom services).  ServicesPage renders
+                the amber pill on the Bestseller featured card and the
+                rose pill on mini cards using this value. */}
+            <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: adminColor.dim, mt: 2, mb: 0.5 }}>
+              Badge · ป้าย
+            </Typography>
+            <TextField
+              select fullWidth label="ป้ายที่โชว์บนการ์ด"
+              value={detailsRow.badge ?? "SIGNATURE"}
+              onChange={(e) => setSvcField(detailsRow.id, { badge: e.target.value as MassageService["badge"] })}
+              sx={{ ...fieldSx, mb: 2 }}
+              helperText="เลือกป้ายที่จะโชว์บนการ์ด · SIGNATURE = amber bestseller pill · อื่นๆ = rose"
+            >
+              <MenuItem value="SIGNATURE">SIGNATURE (bestseller · amber)</MenuItem>
+              <MenuItem value="POPULAR">POPULAR</MenuItem>
+              <MenuItem value="RECOMMEND">RECOMMEND</MenuItem>
+              <MenuItem value="EXCLUSIVE">EXCLUSIVE</MenuItem>
+            </TextField>
             {/* 🆕 Round 28r50 (feature #2) — schedule this whole override
                 (image/detail/benefit AND the price fields typed in the
                 main list) to go live at a future time. Empty = live on

@@ -487,7 +487,11 @@ const ServicesPage: React.FC = () => {
                     },
                   }}
                 >
-                  {/* Floating amber BESTSELLER pill (top-right, over image) */}
+                  {/* Floating badge pill (top-right, over image)
+                      🆕 28r103 — badge label is now data-driven from
+                      `bestseller.badge` (admin editable). Falls back to
+                      "Bestseller" if unset. Amber tone reserved for the
+                      Signature/most-requested slot. */}
                   <Box
                     component={motion.div}
                     aria-hidden
@@ -512,7 +516,7 @@ const ServicesPage: React.FC = () => {
                       boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
                     }}
                   >
-                    {t("services.bestseller", "Bestseller")}
+                    {bestseller.badge ?? t("services.bestseller", "Bestseller")}
                   </Box>
 
                   {/* Hero image — full width, at the very TOP of the card
@@ -816,12 +820,13 @@ const ServicesPage: React.FC = () => {
                       },
                     }}
                   >
-                    {/* Square image on the LEFT — with PREMIUM badge
-                        floating top-left when the service is SunRed
-                        Therapeutic (SR-B2B3200).
-                        🆕 28r99 (founder 2026-07-12) — 'SunRed Therapeutic
-                        เพิ่ม ติดป้าย'.  Rose-toned pill differentiates
-                        from the amber BESTSELLER on Gentleman's. */}
+                    {/* Square image on the LEFT — with data-driven badge
+                        floating top-left, sourced from svc.badge (admin
+                        editable via /admin/promotions).
+                        🆕 28r103 — replaces the r99 hardcoded "PREMIUM on
+                        SR-B2B3200" branch with a generic renderer.  Any
+                        SIGNATURE / POPULAR / RECOMMEND / EXCLUSIVE badge
+                        set on a mini-card service now surfaces here. */}
                     {svc.image && (
                       <Box
                         aria-hidden
@@ -833,10 +838,10 @@ const ServicesPage: React.FC = () => {
                           background: `center / cover no-repeat url(${svc.image})`,
                         }}
                       >
-                        {svc.id === "SR-B2B3200" && (
+                        {svc.badge && (
                           <Box
                             component={motion.div}
-                            initial={{ opacity: 0, scale: 0.85 }}
+                            initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.85 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.4 }}
                             sx={{
@@ -856,7 +861,7 @@ const ServicesPage: React.FC = () => {
                               boxShadow: "0 2px 6px rgba(0,0,0,0.22)",
                             }}
                           >
-                            {t("services.premium", "Premium")}
+                            {svc.badge}
                           </Box>
                         )}
                       </Box>

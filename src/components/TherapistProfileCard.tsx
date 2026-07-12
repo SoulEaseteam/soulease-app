@@ -359,14 +359,7 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
           if (!nextEnd || end < nextEnd) nextEnd = end;
         }
 
-        // Future booking — track earliest upcoming start
-        // 🆕 Round 28b53 (founder 2026-05-05) — Filter by status so
-        //   cancelled / expired / completed bookings DON'T leak into
-        //   the home-card "→ HH:MM" pill. Without this guard, an
-        //   admin-cancelled booking at 2:00 AM tomorrow kept showing
-        //   on Yuri's card as `Avail · → 2:00 AM +1d` even though it
-        //   was no longer on the schedule. Only confirmed/pending/
-        //   paid/in_progress count as a real future commitment.
+
         const ACTIVE_FUTURE = new Set([
           "confirmed",
           "pending",
@@ -508,11 +501,7 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
         sx={{
           position: "relative",
           width: "100%",
-          // 🆕 Round 28b1 (Step B) — competitor-inspired crispness:
-          //   pure white card on cool-neutral bg makes photos pop.
-          //   Cool neutral border (was warm coral tint) + softer
-          //   larger-blur shadow so the card "lifts" instead of
-          //   anchoring with a heavy red drop-shadow.
+      
           background: "#FFFFFF",
           borderRadius: "18px",
           overflow: "hidden",
@@ -603,11 +592,7 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
                 height: "100%",
                 objectFit: "cover",
                 display: "block",
-                // 🆕 Round 28b3 — resting blur/saturate filter removed.
-                //   Founder feedback: photos should always look their
-                //   best. Status is communicated via the colored
-                //   pill (Avail Now / coral In session / gray Avail
-                //   HH:MM), no need to dim the photo too.
+              
                 transition: "opacity 0.3s ease",
                 opacity: imgLoaded ? (isHoliday ? 0.5 : 1) : 0,
                 filter: isHoliday ? "blur(6px) grayscale(0.6)" : "none",
@@ -627,17 +612,6 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
             }}
           />
 
-          {/* 🆕 Round 26d — Online dot moved from top-left → next to
-              the rating in the bottom overlay (see below). Top-left
-              corner now stays clean. */}
-
-          {/* 🆕 Round 28b2 (founder 2026-05-03) — Avail pill moved
-              from photo TOP-LEFT to the footer row, next to the
-              price. Frees the photo to be photo-only and keeps
-              the price + status info anchored together where the
-              eye lands when deciding "book or scroll on". */}
-
-          {/* TOP-RIGHT — language pills + verified badge */}
           <Stack
             direction="row"
             spacing={0.5}
@@ -744,20 +718,7 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
                     ({reviewCount})
                   </Box>
                 </Typography>
-                {/* 🆕 Round 26e — Online dot removed entirely per founder
-                    direction. Available status is communicated via the
-                    footer pill (●NOW + green tint). */}
               </Stack>
-              {/* Round 28aw — clickable "Allow location" prompt. When
-                  GPS resolved → render plain text. When not, render a
-                  button that invokes the parent's geolocation request,
-                  triggering the browser permission popup.
-                  🆕 Round 28b33 final (founder 2026-05-04) — Pipeline:
-                    Firestore lat/lng → haversineKm → estimateEta →
-                    formatDistanceEta → "6 min • 2.4 km"
-                  Parent can pre-compute the label (1 Distance Matrix
-                  call shared across the grid) OR let the card derive
-                  from liveDistanceKm + estimateEtaFromKm internally. */}
               {(() => {
                 const resolved =
                   distanceLabel ??
@@ -886,13 +847,7 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
             </Stack>
           )}
 
-          {/* 🆕 Round 28b2 (founder 2026-05-03) — price LEFT, Avail
-              pill RIGHT. State matrix:
-                • available           → green   "● Avail Now"  (white pulse dot)
-                • bookable + time     → coral   "Avail HH:MM"
-                • bookable + no time  → coral   "In session"
-                • resting   + time    → gray    "Avail HH:MM"
-                • resting   + no time → not rendered (avoid clutter) */}
+      
           <Stack
             direction="row"
             alignItems="center"

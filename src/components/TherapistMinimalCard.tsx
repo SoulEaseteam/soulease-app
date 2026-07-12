@@ -530,26 +530,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
               Photos
             </Box>
           </Box>
-          {/* 🆕 Round 28r83 — Founder direction (2026-07-08 live
-              screenshot: "ข้อมูลมัน รกไป"). Dropped Hours row,
-              AGE/VERIFIED row, and Location row. Only the rating +
-              comment-count row remains between the name and the
-              price/CTA — matches the r82 reference silhouette
-              (name · rating · chat · price · CTA). All the trimmed
-              detail is still available on the therapist detail page. */}
-
-          {/* Rating row — amber star + "N.N | K reviews" + chat chip
-              Round 28r84 — Founder direction (reference screenshots
-              2026-07-08):
-                • Star reverts from r82 pink #EF9AA1 back to amber
-                  #F5A623 (accents.amber). Amber is the canonical
-                  star tone across the site (detail page, admin).
-                • Rating text reverts from "N served" (r82 wording) to
-                  "N reviews" — reviews are the honest count guests
-                  care about; totalSessions can hide behind detail.
-                • Chat speech-bubble chip glyph reverts from r82 coral
-                  #D66B70 to warm taupe #8F8474 to shed the coral
-                  overspill; chip bg uses a soft warm-taupe tint. */}
+          
           {therapist.rating && therapist.rating > 0 ? (
             <Box
               sx={{
@@ -602,14 +583,6 @@ const TherapistMinimalCard: React.FC<Props> = ({
             </Box>
           ) : null}
 
-          {/* 🆕 28s386 — tag pills removed (founder "เอาออก"). */}
-
-          {/* 🆕 28s389 — real completed-session count (Moko-style engagement
-              number, honest — real bookings, not fabricated views).
-              🆕 28s392 — meta line now carries the live guest↔practitioner
-              DISTANCE (📍 2.4km) instead of the area name (founder "ใส่เลข
-              ระยะทาง...แทน"). Distance-only is also the privacy-correct choice
-              — the standby district is never exposed. */}
           {(sessionCount > 0 || hasDistance) && (
             <Box
               sx={{
@@ -718,8 +691,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
             onClick={handleBookTap}
             disabled={isOffDuty}
             sx={{
-              // 🕯️ 28t — dusty-rose gradient CTA (was Moko magenta). Flat,
-              //   no glow — the gradient alone carries the primary action.
+  
               padding: "10px 20px",
               borderRadius: "999px",
               background: isOffDuty
@@ -753,11 +725,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
         </Box>
       </Box>
 
-      {/* Portrait block moved to TOP of card (28r53 vertical portrait
-          restack). Original tail portrait removed to avoid duplicate
-          rendering. Status pill still sits at card root (top-right)
-          — see the Box above the portrait — so it overlays the
-          portrait's upper-right corner as before. */}
+
     </Box>
   );
 };

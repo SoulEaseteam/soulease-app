@@ -94,9 +94,9 @@ const QuickNavRow: React.FC = () => {
         alignItems: "center",
         gap: "8px",
         padding: { xs: "18px 10px", md: "22px 18px" },
-        // 🆕 28s333 — pull the card further up into the hero's lower edge
-        //   (founder: "ขยับแถบ 4 ไอคอน ขึ้นมา…"). More overlap = more floating.
-        margin: { xs: "-46px 16px 10px", md: "-56px 20px 14px" },
+        // 🆕 28u.2 — ลด overlap ลง (เดิม -46px) เพื่อไม่บังข้อความในรูป banner
+        //   แต่ยังลอยเหนือขอบล่างรูปอยู่.
+        margin: { xs: "-28px 16px 10px", md: "-36px 20px 14px" },
         background: "var(--sr-panel)", // CHOCOLATE panel on ESPRESSO home bg
         borderRadius: { xs: "22px", md: "24px" },
         border: "1px solid var(--sr-hairline)", // gold hairline (embroidery)
