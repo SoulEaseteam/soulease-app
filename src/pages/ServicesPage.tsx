@@ -616,172 +616,116 @@ const ServicesPage: React.FC = () => {
               <Box aria-hidden sx={{ flex: 1, height: 1, background: "var(--sr-hairline)" }} />
             </Box>
 
-            {/* ── Horizontal snap-scroll of remaining ritual mini-cards ──
-                🆕 Round 28r92 · Approach 3 · founder pick.
-                Was a vertical stack of full-detail cards (name + Thai tag +
-                desc + full rate table + rose CTA per row); now a compact
-                horizontal snap-scroll with image / eyebrow / name / "From
-                ฿n" price / outlined "Details →" CTA per card.  Reduces
-                page length dramatically and puts visual pressure on the
-                featured hero above. */}
-            <Box
-              sx={{
-                display: "flex",
-                gap: 1.5,
-                pb: 1,
-                mx: -2, // bleed edges of the surrounding px:2 gutter
-                px: 2,
-                overflowX: "auto",
-                scrollSnapType: "x mandatory",
-                WebkitOverflowScrolling: "touch",
-                scrollbarWidth: "none",
-                "&::-webkit-scrollbar": { display: "none" },
-                mb: 3,
-              }}
-            >
-              {restServices.map((svc, index) => (
-                <Box
-                  key={svc.id}
-                  component={motion.div}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.12 + index * 0.06, duration: 0.32, ease: "easeOut" }}
-                  sx={{
-                    flex: "0 0 auto",
-                    scrollSnapAlign: "start",
-                    width: 240,
-                    borderRadius: "18px",
-                    background: "var(--sr-panel)",
-                    border: "1px solid var(--sr-hairline)",
-                    boxShadow: "var(--sr-card-shadow)",
-                    overflow: "hidden",
-                    transition: "transform 0.18s ease, box-shadow 0.18s ease",
-                    "&:hover": {
-                      transform: "translateY(-2px)",
-                      boxShadow: "0 8px 28px rgba(0,0,0,0.28)",
-                    },
-                  }}
-                >
-                  {/* Mini image */}
-                  {svc.image && (
+            {/* ── Vertical stack of horizontal-layout ritual cards ──
+                🆕 Round 28r93 · founder screenshot pattern (2026-07-12)
+                "More Rituals เป็นแนวนอน ตาม แบบ" — cards laid out
+                horizontally *within themselves*: square image on the left,
+                text column on the right (bold name / "60 min · Type"
+                subtitle / bold from-price).  The list itself stacks
+                vertically — no snap-scroll.  Whole card is one <a> tag,
+                so tapping anywhere routes to the service detail page. */}
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mb: 3 }}>
+              {restServices.map((svc, index) => {
+                const firstDur = durationsFor(svc)[0];
+                return (
+                  <Box
+                    key={svc.id}
+                    component={motion.a}
+                    href={`/services/${svc.id}`}
+                    aria-label={t("services.detailsAria", "Details for {{name}}", { name: svc.name })}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.12 + index * 0.06, duration: 0.32, ease: "easeOut" }}
+                    sx={{
+                      display: "flex",
+                      alignItems: "stretch",
+                      gap: 0,
+                      textDecoration: "none",
+                      borderRadius: "16px",
+                      background: "var(--sr-panel)",
+                      border: "1px solid var(--sr-hairline)",
+                      boxShadow: "var(--sr-card-shadow)",
+                      overflow: "hidden",
+                      transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
+                      "&:hover": {
+                        transform: "translateY(-1px)",
+                        boxShadow: "0 8px 28px rgba(0,0,0,0.28)",
+                        borderColor: "rgba(217,124,149,0.4)",
+                      },
+                      "&:focus-visible": {
+                        outline: `2px solid ${ROSE}`,
+                        outlineOffset: 2,
+                      },
+                    }}
+                  >
+                    {/* Square image on the LEFT */}
+                    {svc.image && (
+                      <Box
+                        aria-hidden
+                        sx={{
+                          flex: "0 0 auto",
+                          width: 108,
+                          alignSelf: "stretch",
+                          background: `center / cover no-repeat url(${svc.image})`,
+                        }}
+                      />
+                    )}
+
+                    {/* Text column on the RIGHT */}
                     <Box
                       sx={{
-                        width: "100%",
-                        height: 130,
-                        background: `center / cover no-repeat url(${svc.image})`,
-                      }}
-                    />
-                  )}
-
-                  {/* Mini content */}
-                  <Box sx={{ p: "14px 14px 16px" }}>
-                    <Typography
-                      component="p"
-                      sx={{
-                        fontFamily: SANS,
-                        fontSize: 9.5,
-                        fontWeight: 800,
-                        letterSpacing: "0.16em",
-                        textTransform: "uppercase",
-                        color: "var(--sr-muted)",
-                        mb: 0.75,
-                        m: 0,
-                      }}
-                    >
-                      {t("services.ritualEyebrow", "Ritual · {{type}}", {
-                        type: SERVICE_TYPE_TAG[svc.id] ?? "Signature",
-                      })}
-                    </Typography>
-
-                    <Typography
-                      component="h3"
-                      sx={{
-                        fontFamily: SERIF,
-                        fontSize: 18,
-                        fontWeight: 500,
-                        color: "var(--sr-ink)",
-                        letterSpacing: "-0.005em",
-                        lineHeight: 1.15,
-                        minHeight: "2.3em",
-                        mt: 0.75,
-                        mb: 1.25,
-                      }}
-                    >
-                      {svc.name}
-                    </Typography>
-
-                    <Box
-                      sx={{
+                        flex: "1 1 auto",
                         display: "flex",
-                        alignItems: "baseline",
-                        gap: 0.5,
-                        mb: 1.5,
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        p: "14px 16px",
+                        minWidth: 0,
                       }}
                     >
                       <Typography
-                        component="span"
+                        component="h3"
                         sx={{
-                          fontFamily: SANS,
-                          fontSize: 10.5,
-                          color: "var(--sr-muted)",
-                          letterSpacing: "0.02em",
+                          fontFamily: SERIF,
+                          fontSize: 16.5,
+                          fontWeight: 700,
+                          color: "var(--sr-ink)",
+                          letterSpacing: "-0.005em",
+                          lineHeight: 1.2,
+                          mb: 0.5,
                         }}
                       >
-                        {t("services.fromPrice", "From ฿")}
+                        {svc.name}
                       </Typography>
+
+                      <Typography
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: 12,
+                          color: "var(--sr-muted)",
+                          letterSpacing: "0.01em",
+                          mb: 1,
+                        }}
+                      >
+                        {firstDur} min · {SERVICE_TYPE_TAG[svc.id] ?? "Signature"}
+                      </Typography>
+
                       <Typography
                         component="span"
                         sx={{
                           fontFamily: SERIF,
-                          fontSize: 20,
+                          fontSize: 17,
                           fontWeight: 700,
-                          color: "var(--sr-ink)",
+                          color: ROSE,
                           letterSpacing: "-0.01em",
+                          lineHeight: 1,
                         }}
                       >
-                        {new Intl.NumberFormat("en-US").format(
-                          priceForDuration(svc, durationsFor(svc)[0])
-                        )}
+                        {formatTHB(priceForDuration(svc, firstDur))}
                       </Typography>
                     </Box>
-
-                    <Box
-                      component="a"
-                      href={`/services/${svc.id}`}
-                      aria-label={t("services.detailsAria", "Details for {{name}}", { name: svc.name })}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: "100%",
-                        px: "14px",
-                        py: "10px",
-                        borderRadius: 999,
-                        background: "transparent",
-                        color: "var(--sr-ink)",
-                        border: "1.5px solid var(--sr-ink)",
-                        textDecoration: "none",
-                        fontFamily: SANS,
-                        fontSize: 12,
-                        fontWeight: 700,
-                        letterSpacing: "0.02em",
-                        transition: "background 0.18s ease, color 0.18s ease, border-color 0.18s ease",
-                        "&:hover": {
-                          background: ROSE,
-                          borderColor: ROSE,
-                          color: "#fff",
-                        },
-                        "&:focus-visible": {
-                          outline: `2px solid ${ROSE}`,
-                          outlineOffset: 3,
-                        },
-                      }}
-                    >
-                      {t("services.details", "Details")} →
-                    </Box>
                   </Box>
-                </Box>
-              ))}
+                );
+              })}
             </Box>
 
             <BundleSection />
