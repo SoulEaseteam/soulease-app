@@ -2319,56 +2319,92 @@ const AdminPromotionsPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* 🆕 Round 28s302 — edit a standard service's photo + detail-page copy */}
-      <Dialog open={!!detailsRow} onClose={() => setDetailsId(null)} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ fontWeight: 700, fontFamily: adminFont.serif, color: adminColor.text }}>
+      {/* 🆕 Round 28r104 (founder 2026-07-13 — "แก้ หน่อย ดูไม่ออกเลย") —
+          Details dialog was rendering on the app-level dark surface with
+          adminColor light-theme tokens, so every label + helper text
+          blended into black.  Fixes:
+            1. Force a light Paper background so the light-theme colors
+               come back into view.
+            2. Move Badge to the top (was buried below Activate On, off-
+               screen for many viewports).
+            3. Promote section eyebrows to rose accent + bigger type.
+            4. Add a horizontal divider between sections. */}
+      <Dialog
+        open={!!detailsRow}
+        onClose={() => setDetailsId(null)}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{
+          sx: {
+            background: adminColor.panel,          // #FFFFFF light surface
+            color: adminColor.text,
+            borderRadius: "16px",
+            boxShadow: "0 30px 80px rgba(0,0,0,0.35)",
+            border: `1px solid ${adminColor.line}`,
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: 700,
+            fontFamily: adminFont.serif,
+            color: adminColor.text,
+            borderBottom: `1px solid ${adminColor.line}`,
+            pb: 1.5,
+          }}
+        >
           Details · {detailsRow?.name}
         </DialogTitle>
         {detailsRow && (
-          <DialogContent>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2, mt: 0.5 }}>
+          <DialogContent sx={{ pt: 2.5, background: adminColor.panel }}>
+            {/* Photo row */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2.5 }}>
               <Box component="label" sx={{ width: 72, height: 72, borderRadius: "12px", flexShrink: 0, cursor: "pointer", overflow: "hidden", border: `1px dashed ${adminColor.line2}`, background: adminColor.panel2, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {detailsUploading ? <CircularProgress size={20} sx={{ color: adminColor.accent }} />
                   : detailsRow.image ? <img src={detailsRow.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   : <Camera size={22} color={adminColor.dim} />}
                 <input type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleUploadDetailsImage(f); }} />
               </Box>
-              <Typography sx={{ fontSize: 12, color: adminColor.muted }}>แตะเพื่อเปลี่ยนรูปบริการ</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: adminColor.text }}>แตะเพื่อเปลี่ยนรูปบริการ</Typography>
             </Box>
-            <TextField
-              fullWidth multiline minRows={3} label="รายละเอียด (โชว์หน้าบริการ)" value={detailsRow.detail}
-              onChange={(e) => setSvcField(detailsRow.id, { detail: e.target.value })} sx={{ ...fieldSx, mb: 2 }}
-            />
-            <TextField
-              fullWidth multiline minRows={4} label="จุดเด่น (บรรทัดละ 1 ข้อ)" value={detailsRow.benefit}
-              onChange={(e) => setSvcField(detailsRow.id, { benefit: e.target.value })} sx={fieldSx}
-              helperText="แต่ละบรรทัด = 1 bullet บนหน้าบริการ"
-            />
-            {/* 🆕 Round 28r103 (founder 2026-07-13 — "ป้าย ใช้งานไม่ได้ใน
-                หน้าแอดมิน") — badge dropdown for standard services (was
-                only editable on custom services).  ServicesPage renders
-                the amber pill on the Bestseller featured card and the
-                rose pill on mini cards using this value. */}
-            <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: adminColor.dim, mt: 2, mb: 0.5 }}>
+
+            {/* ── Badge (moved to top of copy sections, 28r104) ── */}
+            <Typography sx={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B85874", mb: 0.75 }}>
               Badge · ป้าย
             </Typography>
             <TextField
               select fullWidth label="ป้ายที่โชว์บนการ์ด"
               value={detailsRow.badge ?? "SIGNATURE"}
               onChange={(e) => setSvcField(detailsRow.id, { badge: e.target.value as MassageService["badge"] })}
-              sx={{ ...fieldSx, mb: 2 }}
-              helperText="เลือกป้ายที่จะโชว์บนการ์ด · SIGNATURE = amber bestseller pill · อื่นๆ = rose"
+              sx={{ ...fieldSx, mb: 2.5 }}
+              helperText="SIGNATURE = ป้าย BESTSELLER (amber) บน featured card · อื่นๆ = ป้ายชมพูบน mini card"
             >
-              <MenuItem value="SIGNATURE">SIGNATURE (bestseller · amber)</MenuItem>
+              <MenuItem value="SIGNATURE">SIGNATURE · Bestseller (amber)</MenuItem>
               <MenuItem value="POPULAR">POPULAR</MenuItem>
               <MenuItem value="RECOMMEND">RECOMMEND</MenuItem>
               <MenuItem value="EXCLUSIVE">EXCLUSIVE</MenuItem>
             </TextField>
-            {/* 🆕 Round 28r50 (feature #2) — schedule this whole override
-                (image/detail/benefit AND the price fields typed in the
-                main list) to go live at a future time. Empty = live on
-                the next Save. Row shows a SCHED badge while queued. */}
-            <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: adminColor.dim, mt: 2, mb: 0.5 }}>
+
+            <Box sx={{ height: 1, background: adminColor.line, mb: 2.5 }} />
+
+            {/* ── Copy ── */}
+            <Typography sx={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B85874", mb: 0.75 }}>
+              Copy · เนื้อหา
+            </Typography>
+            <TextField
+              fullWidth multiline minRows={3} label="รายละเอียด (โชว์หน้าบริการ)" value={detailsRow.detail}
+              onChange={(e) => setSvcField(detailsRow.id, { detail: e.target.value })} sx={{ ...fieldSx, mb: 2 }}
+            />
+            <TextField
+              fullWidth multiline minRows={4} label="จุดเด่น (บรรทัดละ 1 ข้อ)" value={detailsRow.benefit}
+              onChange={(e) => setSvcField(detailsRow.id, { benefit: e.target.value })} sx={{ ...fieldSx, mb: 2.5 }}
+              helperText="แต่ละบรรทัด = 1 bullet บนหน้าบริการ"
+            />
+
+            <Box sx={{ height: 1, background: adminColor.line, mb: 2.5 }} />
+
+            {/* ── Schedule ── */}
+            <Typography sx={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B85874", mb: 0.75 }}>
               Activate on · ตั้งเวลาเปิดใช้
             </Typography>
             <TextField
@@ -2385,10 +2421,16 @@ const AdminPromotionsPage: React.FC = () => {
             />
           </DialogContent>
         )}
-        <DialogActions>
-          <Button onClick={() => setDetailsId(null)} sx={{ color: adminColor.muted, textTransform: "none", fontWeight: 700 }}>Close · เสร็จ</Button>
+        <DialogActions
+          sx={{
+            background: adminColor.panel,
+            borderTop: `1px solid ${adminColor.line}`,
+            px: 3, py: 1.5,
+          }}
+        >
+          <Button onClick={() => setDetailsId(null)} sx={{ color: adminColor.text, textTransform: "none", fontWeight: 700 }}>Close · เสร็จ</Button>
           <Button onClick={() => { setDetailsId(null); void handleSaveServices(); }} variant="contained"
-            sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, "&:hover": { background: adminColor.accentDeep } }}>
+            sx={{ background: adminColor.accent, color: "#fff", textTransform: "none", fontWeight: 700, px: 2.5, "&:hover": { background: adminColor.accentDeep } }}>
             Save · บันทึก
           </Button>
         </DialogActions>
