@@ -360,26 +360,30 @@ const NearMePage: React.FC = () => {
         >
           {t("nearme.coverage.title", "Areas we cover")}
         </Typography>
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-          {AREAS.map((a) => (
-            <Box
-              key={a}
-              sx={{
-                px: "12px",
-                py: "6px",
-                borderRadius: "999px",
-                background: "var(--sr-panel-2)",
-                border: "1px solid var(--sr-hairline)",
-                fontFamily: SANS,
-                fontSize: 12.5,
-                fontWeight: 600,
-                color: "var(--sr-body)",
-              }}
-            >
+        {/* 🆕 28w.8 — founder "ทำเป็นข้อความสวยๆ": areas as elegant serif
+            prose with rose middot separators instead of chip pills. */}
+        <Typography
+          sx={{
+            fontFamily: SERIF,
+            fontSize: { xs: 15.5, md: 17 },
+            lineHeight: 1.9,
+            color: "var(--sr-ink)",
+            letterSpacing: "0.01em",
+            overflowWrap: "break-word",
+          }}
+        >
+          {AREAS.map((a, i) => (
+            <React.Fragment key={a}>
+              {i > 0 && (
+                // breaking spaces around the middot so the line wraps
+                <Box component="span" aria-hidden sx={{ color: ROSE, fontWeight: 700 }}>
+                  {" · "}
+                </Box>
+              )}
               {a}
-            </Box>
+            </React.Fragment>
           ))}
-        </Box>
+        </Typography>
         <Typography
           sx={{
             fontFamily: SANS,
