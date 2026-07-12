@@ -17,7 +17,8 @@ import { useTranslation } from "react-i18next";
 import HomeTherapistGrid from "@/components/home/HomeTherapistGrid";
 import { responsiveShell } from "@/theme/breakpoints";
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
-import { whatsappDeepLink } from "@/config/concierge";
+import { whatsappDeepLink, CONCIERGE } from "@/config/concierge";
+import { MapPin } from "phosphor-react";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
 import therapists from "@/data/therapists";
 import { estimateTaxiFare, travelBudgetForKm, haversineKm, BKK_ROAD_FACTOR } from "@/utils/taxiFare";
@@ -32,6 +33,84 @@ const AREAS = [
   "Sukhumvit", "Silom", "Sathorn", "Asok", "Nana", "Thonglor",
   "Phrom Phong", "Ploenchit", "Chidlom", "Ari", "Riverside", "Ratchada",
 ];
+
+// 🆕 28w.12 — concierge channel grid (founder: "ต่อด้วย คอนเทค แบบหน้า
+//   เซอร์วิส"), mirrors the ServicesPage "Reach us" tiles.
+const REACH_CHANNELS = [
+  { name: "WhatsApp", src: "/images/profli/whatsapp.png", href: CONCIERGE.whatsappUrl },
+  { name: "Telegram", src: "/images/profli/telegram.png", href: CONCIERGE.telegramChannelUrl },
+  { name: "LINE", src: "/images/profli/line.png", href: CONCIERGE.lineUrl },
+  { name: "WeChat", src: "/images/profli/wechat_2626283.png", href: "/wechat-scan" },
+];
+
+const ReachUs: React.FC<{ t: (k: string, d: string) => string }> = ({ t }) => (
+  <Box sx={{ mt: 3.5, px: 0.5 }}>
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.25 }}>
+      <Box sx={{ width: 3, height: 14, borderRadius: 2, background: ROSE }} />
+      <Typography
+        sx={{
+          fontFamily: SANS,
+          fontSize: 11,
+          fontWeight: 800,
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+          color: "var(--sr-gold-text)",
+        }}
+      >
+        {t("nearme.reach.title", "Reach us")}
+      </Typography>
+    </Box>
+    <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1 }}>
+      {REACH_CHANNELS.map((c) => (
+        <Box
+          key={c.name}
+          component="a"
+          href={c.href}
+          target={c.href.startsWith("http") ? "_blank" : undefined}
+          rel={c.href.startsWith("http") ? "noopener noreferrer" : undefined}
+          aria-label={`Contact via ${c.name}`}
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 0.75,
+            py: 1.75,
+            px: 0.5,
+            borderRadius: "16px",
+            background: "var(--sr-panel-2)",
+            border: "1px solid var(--sr-hairline)",
+            textDecoration: "none",
+            transition: "transform 0.15s ease",
+            "&:hover": { transform: "translateY(-2px)" },
+          }}
+        >
+          <Box component="img" src={c.src} alt="" width={26} height={26} loading="lazy" sx={{ width: 26, height: 26, objectFit: "contain" }} />
+          <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, color: "var(--sr-body)" }}>
+            {c.name}
+          </Typography>
+        </Box>
+      ))}
+    </Box>
+    <Box
+      component="a"
+      href={CONCIERGE.telegramChannelUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      sx={{
+        display: "block",
+        textAlign: "center",
+        mt: 1.5,
+        fontFamily: SANS,
+        fontSize: 12.5,
+        fontWeight: 600,
+        color: ROSE,
+        textDecoration: "none",
+      }}
+    >
+      {t("nearme.reach.subscribe", "Subscribe to our Telegram channel")}
+    </Box>
+  </Box>
+);
 
 // ── minimal Google Maps type shim (only what this component touches) ──
 type GLatLng = { lat: () => number; lng: () => number };
@@ -499,25 +578,35 @@ const NearMePage: React.FC = () => {
 
       {/* Coverage areas */}
       <Box sx={{ mt: 3, px: 0.5 }}>
-        <Typography
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1.25 }}>
+          <MapPin size={15} weight="fill" color={ROSE} />
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "var(--sr-gold-text)",
+            }}
+          >
+            {t("nearme.coverage.title", "Areas we cover")}
+          </Typography>
+        </Box>
+        {/* 28w.9 V2 prose · 28w.12 wrapped in a soft panel (decorate) */}
+        <Box
           sx={{
-            fontFamily: SANS,
-            fontSize: 11,
-            fontWeight: 800,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: "var(--sr-gold-text)",
-            mb: 1.25,
+            p: "14px 16px",
+            borderRadius: "16px",
+            background: "var(--sr-panel-2)",
+            border: "1px solid var(--sr-hairline)",
           }}
         >
-          {t("nearme.coverage.title", "Areas we cover")}
-        </Typography>
-        {/* 28w.9 — V2 editorial-prose treatment (pending founder pick vs V1 middots) */}
         <Typography
           sx={{
             fontFamily: SERIF,
-            fontSize: { xs: 16, md: 18 },
-            lineHeight: 1.95,
+            fontSize: { xs: 15.5, md: 17 },
+            lineHeight: 1.9,
             color: "var(--sr-ink)",
             letterSpacing: "0.01em",
             overflowWrap: "break-word",
@@ -539,6 +628,7 @@ const NearMePage: React.FC = () => {
           ))}
           <Box component="span" sx={{ color: "var(--sr-muted)" }}>.</Box>
         </Typography>
+        </Box>
         <Typography
           sx={{
             fontFamily: SANS,
@@ -588,6 +678,9 @@ const NearMePage: React.FC = () => {
           ›
         </Box>
       </Box>
+
+      {/* Reach us — concierge channel grid (founder: like the services page) */}
+      <ReachUs t={t} />
     </Box>
   );
 };

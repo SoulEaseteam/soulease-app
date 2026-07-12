@@ -127,8 +127,8 @@ function projectPin(
   //   rating pill (which sits below + wider than the avatar) always stays
   //   inside the framed map. Founder: "รูปพนักงานหลุดเฟรม".
   return {
-    top: Math.max(12, Math.min(52, top)),
-    left: Math.max(15, Math.min(85, left)),
+    top: Math.max(16, Math.min(50, top)),
+    left: Math.max(16, Math.min(84, left)),
   };
 }
 
@@ -231,8 +231,9 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
         .map((o) => Math.hypot(o.dxKm, o.dyKm))
     );
 
-    // Scale so the farthest therapist sits ~38% from center.
-    const scalePctPerKm = 38 / maxKm;
+    // Scale so the farthest therapist sits ~30% from center (28w — pulled in
+    //   from 38% so pins + their pills never reach the framed map edge).
+    const scalePctPerKm = 30 / maxKm;
 
     return top.map((t) => projectPin(t, userLocation, scalePctPerKm));
   }, [top, userLocation]);
@@ -346,7 +347,7 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
         sx={{
           position: "relative",
           height: 380,
-          background: "#F4F6F5",
+          background: "var(--sr-panel-2)",
           borderRadius: "18px",
           overflow: "hidden",
           border: "1px solid rgba(15, 23, 42, 0.06)",
@@ -550,8 +551,8 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
             // 🆕 Round 28b1 — solid white instead of glass blur (cleaner
             //   on cool slate map). Shadow loses red tint, gains slate
             //   depth so card "lifts" without warm cast.
-            background: "#FFFFFF",
-            border: "1px solid rgba(15, 23, 42, 0.06)",
+            background: "var(--sr-panel)",
+            border: "1px solid var(--sr-hairline)",
             borderRadius: "14px",
             boxShadow:
               "0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.12)",
@@ -643,7 +644,7 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
                   fontFamily: fonts.heading,
                   fontWeight: 600,
                   fontSize: 14,
-                  color: brand.text,
+                  color: "var(--sr-ink)",
                   letterSpacing: "-0.01em",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
@@ -666,7 +667,7 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
               sx={{
                 fontFamily: fonts.body,
                 fontSize: 10.5,
-                color: brand.textMuted,
+                color: "var(--sr-body)",
                 lineHeight: 1.3,
                 whiteSpace: "nowrap",
                 overflow: "hidden",
