@@ -177,10 +177,9 @@ const StatsCard: React.FC<Props> = ({
           sx={{
             padding: { xs: "16px 8px", md: "18px 16px" },
             borderRadius: "18px",
-            background: "#FFFFFF",
-            border: "1px solid rgba(26,43,46,0.08)",
-            boxShadow:
-              "0 4px 16px rgba(15,23,42,0.08), 0 1px 3px rgba(15,23,42,0.06)",
+            background: "var(--sr-panel)",
+            border: "1px solid var(--sr-hairline)",
+            boxShadow: "var(--sr-card-shadow)",
           }}
         >
           <Box
@@ -198,7 +197,7 @@ const StatsCard: React.FC<Props> = ({
                   textAlign: "center",
                   paddingY: { xs: "8px", md: "10px" },
                   paddingX: { xs: "4px", md: "10px" },
-                  borderLeft: i > 0 ? "1px solid rgba(26,43,46,0.10)" : "none",
+                  borderLeft: i > 0 ? "1px solid var(--sr-line)" : "none",
                 }}
               >
                 {/* Value — bigger/bolder (Round 28s366) */}
@@ -207,7 +206,7 @@ const StatsCard: React.FC<Props> = ({
                     fontFamily: SERIF,
                     fontWeight: 800,
                     fontSize: { xs: "14px", md: "17px" },
-                    color: "#1A2B2E",
+                    color: "var(--sr-ink)",
                     letterSpacing: "-0.01em",
                     lineHeight: 1.25,
                     wordBreak: "break-word",
@@ -221,7 +220,7 @@ const StatsCard: React.FC<Props> = ({
                   sx={{
                     fontFamily: SANS,
                     fontSize: { xs: "8px", md: "9px" },
-                    color: "#4A5568",
+                    color: "var(--sr-muted)",
                     textTransform: "uppercase",
                     letterSpacing: "0.06em",
                     fontWeight: 600,
@@ -332,10 +331,9 @@ const StatsCard: React.FC<Props> = ({
         sx={{
           padding: { xs: "16px 8px", md: "18px 16px" },
           borderRadius: "18px",
-          background: "#FFFFFF",
-          border: "1px solid rgba(26,43,46,0.08)",
-          boxShadow:
-            "0 4px 16px rgba(15,23,42,0.08), 0 1px 3px rgba(15,23,42,0.06)",
+          background: "var(--sr-panel)",
+          border: "1px solid var(--sr-hairline)",
+          boxShadow: "var(--sr-card-shadow)",
         }}
       >
       <Box
@@ -369,7 +367,7 @@ const StatsCard: React.FC<Props> = ({
             borderRadius: "10px",
             transition: "background 0.15s ease, transform 0.15s ease",
             ...(i > 0 && {
-              borderLeft: "1px solid rgba(26,43,46,0.10)",
+              borderLeft: "1px solid var(--sr-line)",
             }),
             ...(s.onTap && {
               "@media (hover: hover)": {
@@ -393,7 +391,7 @@ const StatsCard: React.FC<Props> = ({
               fontFamily: SERIF,
               fontWeight: 700,
               fontSize: { xs: "22px", md: "26px" },
-              color: "#1A2B2E",
+              color: "var(--sr-ink)",
               letterSpacing: "-0.03em",
               lineHeight: 1.1,
             }}
@@ -405,7 +403,7 @@ const StatsCard: React.FC<Props> = ({
             sx={{
               fontFamily: SANS,
               fontSize: { xs: "9px", md: "10px" },
-              color: "#4A5568",
+              color: "var(--sr-muted)",
               textTransform: "uppercase",
               letterSpacing: "0.07em",
               fontWeight: 600,

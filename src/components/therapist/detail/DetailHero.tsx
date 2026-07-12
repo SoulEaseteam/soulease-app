@@ -25,8 +25,6 @@ import {
 } from "@mui/material";
 import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
 import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
-import FavoriteBorderRoundedIcon from "@mui/icons-material/FavoriteBorderRounded";
-import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
@@ -34,9 +32,6 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import NearMeRoundedIcon from "@mui/icons-material/NearMeRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
-// 🆕 Round 28r81 — accent tokens (favorite-pink glyph in the "Add to
-//   favourites" menu item).
-import { accents } from "@/theme";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -542,7 +537,8 @@ const DetailHero: React.FC<Props> = ({
               titleAccess="Verified by SunRed"
               sx={{
                 fontSize: 26,
-                color: "#1d9bf0",
+                // 🆕 28t.19 — rose (was Twitter-blue #1d9bf0, off-brand).
+                color: "#D97C95",
                 filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.45))",
               }}
             />
@@ -651,7 +647,11 @@ const DetailHero: React.FC<Props> = ({
                   sessions
                 </Box>
               )}
-              {rebookRate && rebookRate !== "—" && (
+              {/* 🆕 28t.19 — hide until rebook data is meaningful. Showing
+                  "0% rebook" reads as "nobody rebooks" AND contradicts the
+                  Reviews tab, which gates loyalty stats until ≥5 unique
+                  guests. parseFloat("0%")===0 → hidden; "16%"→shown. */}
+              {rebookRate && rebookRate !== "—" && parseFloat(rebookRate) > 0 && (
                 <Box
                   sx={{
                     display: "inline-flex",
@@ -855,11 +855,11 @@ const DetailHero: React.FC<Props> = ({
             marginTop: "6px",
             minWidth: 180,
             borderRadius: "14px",
-            background: "rgba(244, 246, 245, 0.96)",
+            background: "var(--sr-panel)",
             backdropFilter: "blur(20px) saturate(180%)",
             WebkitBackdropFilter: "blur(20px) saturate(180%)",
-            border: "1px solid rgba(0, 0, 0, 0.06)",
-            boxShadow: "0 12px 32px rgba(15, 23, 42, 0.18)",
+            border: "1px solid var(--sr-hairline)",
+            boxShadow: "var(--sr-card-shadow)",
           },
         }}
       >
@@ -872,7 +872,7 @@ const DetailHero: React.FC<Props> = ({
           <ListItemIcon>
             <IosShareRoundedIcon
               fontSize="small"
-              sx={{ color: "#1A2B2E" }}
+              sx={{ color: "var(--sr-ink)" }}
             />
           </ListItemIcon>
           <ListItemText
@@ -881,65 +881,19 @@ const DetailHero: React.FC<Props> = ({
                 fontFamily: SANS,
                 fontSize: "13.5px",
                 fontWeight: 600,
-                color: "#1A2B2E",
+                color: "var(--sr-ink)",
               },
             }}
           >
             Share profile
           </ListItemText>
         </MenuItem>
-        <MenuItem
-          onClick={() => {
-            setMenuOpen(false);
-            // TODO Task 5 — wire to favoriteTherapists in users/{uid}
-          }}
-        >
-          <ListItemIcon>
-            {/* 🆕 Round 28r81 — glyph tinted with the favourite-pink
-                text accent so the heart reads as heart, not chrome. */}
-            <FavoriteBorderRoundedIcon
-              fontSize="small"
-              sx={{ color: accents.favoriteText }}
-            />
-          </ListItemIcon>
-          <ListItemText
-            primaryTypographyProps={{
-              sx: {
-                fontFamily: SANS,
-                fontSize: "13.5px",
-                fontWeight: 600,
-                color: "#1A2B2E",
-              },
-            }}
-          >
-            Save to favorites
-          </ListItemText>
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            setMenuOpen(false);
-            // TODO Task 6 — open ReportPage with therapistId pre-filled
-          }}
-        >
-          <ListItemIcon>
-            <FlagOutlinedIcon
-              fontSize="small"
-              sx={{ color: "rgba(15, 23, 42, 0.7)" }}
-            />
-          </ListItemIcon>
-          <ListItemText
-            primaryTypographyProps={{
-              sx: {
-                fontFamily: SANS,
-                fontSize: "13.5px",
-                fontWeight: 600,
-                color: "rgba(15, 23, 42, 0.7)",
-              },
-            }}
-          >
-            Report
-          </ListItemText>
-        </MenuItem>
+        {/* 🆕 28t.18 — "Save to favorites" + "Report" removed (were no-op
+            `TODO` stubs that looked active but did nothing). Favorites needs
+            a logged-in user (users/{uid}/favorites) but SunRed guests are
+            anonymous by design, and Report has no moderation backend — the
+            concierge chat FAB already covers "something's wrong". Re-add as a
+            real feature only if we build the write path. Menu = Share only. */}
       </Menu>
     </>
   );

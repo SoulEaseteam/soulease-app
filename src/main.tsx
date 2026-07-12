@@ -31,6 +31,8 @@ import { GoogleMapsProvider } from "@/context/GoogleMapsContext";
 // stays mounted so `<html lang>` follows i18n.language for SEO + a11y.
 import HtmlLangSync from "@/components/common/HtmlLangSync";
 import DevPrivacyToggle from "@/components/common/DevPrivacyToggle";
+// 🕯️ 28t — auto day/night theme switch (toggles html.sr-day by BKK hour).
+import DayNightSync from "@/components/common/DayNightSync";
 
 import "./app/i18n";
 import i18n from "i18next";
@@ -98,6 +100,8 @@ const Root = () => {
             <GoogleMapsProvider>
               <AuthProvider>
                 <App />
+                {/* 🕯️ 28t — flips html.sr-day by Bangkok hour (day/night). */}
+                <DayNightSync />
                 {/* Keeps <html lang="…"> in sync with i18n.language so
                     SEO + screen readers always see the correct locale.
                     The visible language pill lives in TopNav (home only). */}

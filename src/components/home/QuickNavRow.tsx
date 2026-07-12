@@ -97,10 +97,10 @@ const QuickNavRow: React.FC = () => {
         // 🆕 28s333 — pull the card further up into the hero's lower edge
         //   (founder: "ขยับแถบ 4 ไอคอน ขึ้นมา…"). More overlap = more floating.
         margin: { xs: "-46px 16px 10px", md: "-56px 20px 14px" },
-        background: "#FFFFFF",
+        background: "var(--sr-panel)", // CHOCOLATE panel on ESPRESSO home bg
         borderRadius: { xs: "22px", md: "24px" },
-        border: "1px solid #F1EDE6",
-        boxShadow: "0 14px 34px rgba(43, 38, 32, 0.12)",
+        border: "1px solid var(--sr-hairline)", // gold hairline (embroidery)
+        boxShadow: "var(--sr-card-shadow)", // card shadow on dark
         position: "relative",
         zIndex: 2, // float above the hero it overlaps
       }}
@@ -136,18 +136,18 @@ const QuickNavRow: React.FC = () => {
               transform: "translateY(-50%)",
               width: "1px",
               height: 34,
-              background: "#EAE5DD",
+              background: "var(--sr-line)", // subtle divider on dark
             },
             "&:hover .qn-icon": {
-              background: "#ECEBE8", // NEUTRAL_100
-              borderColor: "#6E6E6A", // GRAY_600
-              color: "#4B4B48", // GRAY_900
+              background: "var(--sr-panel-2)", // WALNUT hover-on-panel
+              borderColor: "#D2B67C", // GOLD hairline
+              color: "#D97C95", // ROSE icon accent
             },
             "&:hover": {
               transform: "translateY(-1px)",
             },
             "&:focus-visible": {
-              outline: "2px solid #2D2D2B",
+              outline: "2px solid #D97C95", // ROSE focus ring
               outlineOffset: 3,
               borderRadius: "8px",
             },
@@ -165,7 +165,7 @@ const QuickNavRow: React.FC = () => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#4B4B48", // GRAY_800
+              color: "var(--sr-muted)", // CHAMPAGNE icon at rest (light on dark)
               transition: "background 0.18s ease, color 0.18s ease",
             }}
           >
@@ -179,7 +179,7 @@ const QuickNavRow: React.FC = () => {
               fontSize: 11.5,
               fontWeight: 600,
               letterSpacing: "0.01em",
-              color: "#4B4B48", // GRAY_800
+              color: "var(--sr-body)", // CREAM label text (light on dark)
               lineHeight: 1.2,
             }}
           >

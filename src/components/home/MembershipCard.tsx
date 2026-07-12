@@ -23,13 +23,14 @@ import { fonts } from "@/theme";
 
 const MEMBER_IMG = "/images/hero/member.png";
 
-// Warm taupe monochrome — matched to the card's engraved tone (mockup).
-const TAUPE_HEAD = "#6F6556"; // heading
-const TAUPE_SUB = "#776D5F"; // subtitle
-const TAUPE_PERK = "#6B6153"; // perk text
-const TAUPE_CHIP = "#A79D8D"; // tick circle
-const BTN_BG = "#8F8474"; // CTA fill
-const BTN_BG_HOVER = "#7A7060";
+// Dark-luxury palette — IVORY/CREAM text on a rich chocolate panel with
+// gold "embroidery" accents and a rose-gradient CTA.
+const IVORY_HEAD = "var(--sr-ink)"; // heading
+const CHAMPAGNE_SUB = "var(--sr-muted)"; // subtitle (muted)
+const CREAM_PERK = "var(--sr-body)"; // perk text
+const GOLD_CHIP = "#57B88B"; // tick circle — green "included" (gold retired)
+const BTN_BG = "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)"; // ROSE CTA fill
+const BTN_BG_HOVER = "linear-gradient(135deg,#C96F89 0%,#B36079 100%)";
 
 const MembershipCard: React.FC = () => {
   const { t } = useTranslation();
@@ -50,9 +51,9 @@ const MembershipCard: React.FC = () => {
         overflow: "hidden",
         margin: { xs: "24px 12px 0", md: "28px 12px 0" },
         borderRadius: "20px",
-        border: "1px solid #E7E0D5",
-        boxShadow:
-          "0 1px 3px rgba(45,45,43,0.04), 0 6px 20px rgba(45,45,43,0.05)",
+        backgroundColor: "var(--sr-panel)",
+        border: "1px solid var(--sr-hairline)",
+        boxShadow: "var(--sr-card-shadow)",
         minHeight: { xs: 320, md: 320 },
         display: "flex",
       }}
@@ -69,16 +70,16 @@ const MembershipCard: React.FC = () => {
           backgroundPosition: { xs: "80% center", md: "right center" },
         }}
       />
-      {/* Cream scrim so the overlaid copy always reads; the photo is cream
-          so this blends seamlessly. */}
+      {/* Warm-espresso scrim so the overlaid light copy always reads; fades
+          out toward the right where the photo shows. */}
       <Box
         aria-hidden="true"
         sx={{
           position: "absolute",
           inset: 0,
           background: {
-            xs: "linear-gradient(90deg, rgba(244,241,236,0.96) 0%, rgba(244,241,236,0.9) 46%, rgba(244,241,236,0.5) 68%, rgba(244,241,236,0) 92%)",
-            md: "linear-gradient(90deg, rgba(244,241,236,0.94) 0%, rgba(244,241,236,0.72) 32%, rgba(244,241,236,0.25) 54%, rgba(244,241,236,0) 70%)",
+            xs: "linear-gradient(90deg, rgba(33,24,19,0.96) 0%, rgba(33,24,19,0.9) 46%, rgba(33,24,19,0.5) 68%, rgba(33,24,19,0) 92%)",
+            md: "linear-gradient(90deg, rgba(33,24,19,0.94) 0%, rgba(33,24,19,0.72) 32%, rgba(33,24,19,0.25) 54%, rgba(33,24,19,0) 70%)",
           },
         }}
       />
@@ -101,7 +102,7 @@ const MembershipCard: React.FC = () => {
             fontFamily: fonts.heading,
             fontSize: { xs: 25, md: 29 },
             fontWeight: 500,
-            color: TAUPE_HEAD,
+            color: IVORY_HEAD,
             letterSpacing: "-0.01em",
             margin: 0,
             lineHeight: 1.12,
@@ -113,7 +114,7 @@ const MembershipCard: React.FC = () => {
           sx={{
             fontFamily: fonts.body,
             fontSize: { xs: 13, md: 14 },
-            color: TAUPE_SUB,
+            color: CHAMPAGNE_SUB,
             marginTop: "7px",
             lineHeight: 1.5,
             maxWidth: 240,
@@ -144,18 +145,18 @@ const MembershipCard: React.FC = () => {
                 fontFamily: fonts.body,
                 fontSize: 13.5,
                 fontWeight: 400,
-                color: TAUPE_PERK,
+                color: CREAM_PERK,
                 lineHeight: 1.4,
               }}
             >
-              {/* Taupe tick chip (mockup): filled circle + white check. */}
+              {/* Gold tick chip: filled circle + dark check for contrast. */}
               <Box
                 aria-hidden="true"
                 sx={{
                   width: 22,
                   height: 22,
                   borderRadius: "50%",
-                  background: TAUPE_CHIP,
+                  background: GOLD_CHIP,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -189,14 +190,14 @@ const MembershipCard: React.FC = () => {
             letterSpacing: "0.01em",
             cursor: "pointer",
             minHeight: 44,
-            boxShadow: "0 6px 16px rgba(111,101,86,0.22)",
+            boxShadow: "0 6px 16px rgba(217,124,149,0.30)",
             transition: "background 0.18s ease, transform 0.18s ease",
             "&:hover": {
               background: BTN_BG_HOVER,
               transform: "translateY(-1px)",
             },
             "&:focus-visible": {
-              outline: `2px solid ${TAUPE_HEAD}`,
+              outline: "2px solid #D97C95",
               outlineOffset: 3,
             },
           }}

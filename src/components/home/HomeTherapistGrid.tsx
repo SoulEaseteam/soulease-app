@@ -482,7 +482,7 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
             alignItems: "center",
           }}
         >
-          <CircularProgress size={28} sx={{ color: "#4B4B48" }} />
+          <CircularProgress size={28} sx={{ color: "#D97C95" }} />
         </Box>
       ) : visible.length === 0 ? (
         <Box
@@ -491,15 +491,15 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
             textAlign: "center",
             padding: "40px 14px",
             borderRadius: "16px",
-            background: "rgba(255,255,255,0.5)",
-            border: "1px solid rgba(255,255,255,0.6)",
+            background: "var(--sr-panel)",
+            border: "1px solid var(--sr-hairline)",
           }}
         >
           <Typography
             sx={{
               fontFamily: fonts.heading,
               fontSize: "15px",
-              color: "#1A2B2E",
+              color: "var(--sr-ink)",
               fontWeight: 600,
             }}
           >
@@ -509,7 +509,7 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
             sx={{
               fontFamily: SANS,
               fontSize: "12px",
-              color: "rgba(15, 23, 42, 0.6)",
+              color: "var(--sr-muted)",
               marginTop: "4px",
             }}
           >
@@ -540,17 +540,17 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
               padding: "11px 22px",
               borderRadius: "999px",
               background: gradients.primary,
-              color: "#fff",
+              color: "var(--sr-ink)",
               fontFamily: SANS,
               fontSize: "13px",
               fontWeight: 700,
               letterSpacing: "0.01em",
               textDecoration: "none",
-              boxShadow: "0 8px 22px rgba(15, 23, 42, 0.28)",
+              boxShadow: "var(--sr-card-shadow)",
               transition: "transform 0.15s ease, box-shadow 0.15s ease",
               "&:hover": {
                 transform: "translateY(-1px)",
-                boxShadow: "0 10px 26px rgba(15, 23, 42, 0.34)",
+                boxShadow: "var(--sr-card-shadow)",
               },
             }}
           >

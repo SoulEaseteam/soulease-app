@@ -15,7 +15,6 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
-import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 
@@ -28,13 +27,16 @@ import { fonts, accents } from "@/theme";
 //   Scoped rather than touching theme.ts brand.red globally so the
 //   booking/checkout flow and every other page keep the existing brand
 //   red untouched while this one card style is trialed.
-const oceanAccent = "#4E7E8C";
-const oceanHighlight = "#1F2933";
+// 🕯️ 28t dark-luxury — focus ring is dusty rose; highlight ink is ivory.
+const oceanAccent = "#D97C95";
+const oceanHighlight = "#F3E6DB";
 import { enhanceImage } from "@/utils/cloudinary";
 import type { Therapist, Avail } from "@/types/therapist";
 // 🆕 Round 28s132 — Surface the therapist's lowest service price so
 //   guests see "ราคาเริ่มต้น ฿X" without opening the detail page.
 import staticServices from "@/data/services";
+// 🆕 28t.7 — bucketed session-count display (20+ · 100+ · 2.9k+).
+import { formatSessionCount } from "@/utils/formatCount";
 
 interface Props {
   therapist: Therapist;
@@ -68,10 +70,10 @@ const STATUS_DOT: Record<
   Avail,
   { color: string; i18nKey: string; fallback: string }
 > = {
-  available: { color: "#16a34a", i18nKey: "available", fallback: "Available" },
-  bookable:  { color: "#f59e0b", i18nKey: "bookable",  fallback: "Bookable"  },
-  resting:   { color: "#9ca3af", i18nKey: "offline",   fallback: "Offline"   },
-  holiday:   { color: "#9ca3af", i18nKey: "offline",   fallback: "Offline"   },
+  available: { color: "#57B88B", i18nKey: "available", fallback: "Available" }, // green
+  bookable:  { color: "#F29D38", i18nKey: "bookable",  fallback: "Bookable"  }, // busy — orange
+  resting:   { color: "#C8C8C8", i18nKey: "offline",   fallback: "Offline"   }, // offline — grey
+  holiday:   { color: "#C8C8C8", i18nKey: "offline",   fallback: "Offline"   },
 };
 
 // 🆕 Round 28r81 — When the therapist is `available` (free right now),
@@ -133,12 +135,12 @@ const TherapistMinimalCard: React.FC<Props> = ({
     "TOP_RATED" | "VIP" | "HOT" | "NEW",
     { label: string; bg: string; color: string }
   > = {
-    // 🆕 28s381 — Moko "TOP STAR" magenta gradient (was amber "TOP RATED").
-    TOP_RATED: { label: "TOP STAR", bg: "linear-gradient(135deg,#F050A0 0%,#E6197E 100%)", color: "#fff" },
-    VIP:       { label: "VIP",        bg: "#1A2B2E",     color: "#FFE5EC" },
-    HOT:       { label: "HOT",        bg: "#2D2D2B",     color: "#fff"    },
-    // 🆕 28s380 — Moko NEW badge = orange→pink gradient (ref Lily 22). Was teal.
-    NEW:       { label: "NEW",        bg: "linear-gradient(135deg,#FFB020 0%,#EC4899 100%)", color: "#fff" },
+    // 🕯️ 28t — founder badge spec: VIP gold+brown · NEW rose+white · HOT
+    //   #F56B6B+white · TOP STAR gold+brown.
+    TOP_RATED: { label: "TOP STAR", bg: "#F4C542",     color: "#232B36" },
+    VIP:       { label: "VIP",        bg: "#B8567F",     color: "#FFFFFF" },
+    HOT:       { label: "HOT",        bg: "#F56B6B",     color: "#FFFFFF" },
+    NEW:       { label: "NEW",        bg: "#D97C95",     color: "#FFFFFF" },
   };
   const badgeKey =
     (therapist.badgeKey as keyof typeof BADGE_STYLE | null | undefined) ?? null;
@@ -175,10 +177,8 @@ const TherapistMinimalCard: React.FC<Props> = ({
   // 🆕 28s386 — tag pills (Thai/Verified/English) removed (founder: "เอาออก").
   //   Nationality/language still live on the detail page; the card is cleaner.
 
-  // 🆕 28s387 — anonymous profile-view count (real, grows from 0). Shown only
-  //   once a practitioner has genuine views; never fabricated.
-  const viewCount =
-    typeof therapist.viewCount === "number" ? therapist.viewCount : 0;
+  // 🆕 28t.7 — profile-view count no longer shown on the card (founder will
+  //   relocate it). `therapist.viewCount` still tracked in Firestore.
 
   // 🆕 28s389 — real completed-session count (founder wants a Moko-style
   //   engagement number NOW; no historical browse data exists, so the honest
@@ -195,7 +195,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
     ? null
     : distanceKm >= 0.1
       ? `${distanceKm.toFixed(1)}km`
-      : "<0.1km";
+      : "0.1km";
 
   return (
     <Box
@@ -219,11 +219,12 @@ const TherapistMinimalCard: React.FC<Props> = ({
         //   from the horizontal design is preserved.
         display: "flex",
         flexDirection: "column",
-        background: "#fff",
+        // 🕯️ 28t — panel + gold "embroidery" hairline (flips day/night).
+        background: "var(--sr-panel)",
+        border: "1px solid var(--sr-hairline)",
         borderRadius: "18px",
         overflow: "hidden",
-        boxShadow:
-          "0 6px 20px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04)",
+        boxShadow: "var(--sr-card-shadow)",
         // 🆕 Round 28r53 — margin dropped: parent grid supplies gap.
         // marginBottom left at 0 (was 14px for the flex-column list).
         cursor: "pointer",
@@ -234,7 +235,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
         "&:hover": {
           transform: "translateY(-2px)",
           boxShadow:
-            "0 12px 28px rgba(15, 23, 42, 0.10), 0 2px 4px rgba(15, 23, 42, 0.05)",
+            "0 18px 40px rgba(0, 0, 0, 0.52), 0 2px 4px rgba(0, 0, 0, 0.34)",
         },
         "&:focus-visible": {
           outline: `2px solid ${oceanAccent}`,
@@ -296,7 +297,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
           //   remains proportionate across every column width.
           aspectRatio: "3 / 4",
           position: "relative",
-          background: "#fafafa",
+          background: "var(--sr-panel-deep)",
           flexShrink: 0,
         }}
       >
@@ -386,41 +387,37 @@ const TherapistMinimalCard: React.FC<Props> = ({
               gap: "5px",
               padding: "5px 14px",
               borderRadius: "999px",
-              // 🆕 28s391 — softer, more translucent status pill (founder
-              //   "ป้ายสถานะ ทำพื้นหลังจางลงหน่อย"). ~0.8 alpha + a light
-              //   backdrop blur keeps the white label legible over the photo.
-              background:
-                status === "available"
-                  ? "rgba(22, 163, 74, 0.80)" // Moko green "Available"
-                  : status === "bookable"
-                    ? "rgba(245, 166, 35, 0.80)"
-                    : "rgba(143, 132, 116, 0.80)",
+              // 🕯️ 28t — unified translucent espresso pill for every state;
+              //   a colour-coded dot (gold=available · rose=bookable) carries
+              //   the meaning while ivory text stays legible over any photo.
+              background: "rgba(22, 24, 30, 0.68)",
               backdropFilter: "blur(3px)",
               WebkitBackdropFilter: "blur(3px)",
-              color: "#fff",
-              border: "none",
-              boxShadow: "0 2px 8px rgba(15, 23, 42, 0.14)",
+              color: "#FFFFFF",
+              border: "1px solid rgba(255,255,255,0.16)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.32)",
               whiteSpace: "nowrap",
             }}
             aria-label={statusLabel}
           >
-            {status !== "available" && (
-              <Box
-                sx={{
-                  width: 5,
-                  height: 5,
-                  borderRadius: "50%",
-                  background: "#fff",
-                  opacity: 0.9,
-                }}
-              />
-            )}
+            <Box
+              sx={{
+                width: 5,
+                height: 5,
+                borderRadius: "50%",
+                background: statusMeta.color,
+                boxShadow:
+                  status === "available"
+                    ? "0 0 6px rgba(87,184,139,0.9)"
+                    : "none",
+              }}
+            />
             <Typography
               sx={{
                 fontFamily: fonts.body,
                 fontSize: "10px",
                 fontWeight: 700,
-                color: "#fff",
+                color: "#F3E6DB",
                 letterSpacing: "0.06em",
                 textTransform: "uppercase",
                 lineHeight: 1,
@@ -475,7 +472,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 //   as the primary card headline.
                 fontSize: { xs: "20px", sm: "22px", md: "23px" },
                 fontWeight: 800,
-                color: "#2D2D2B",
+                color: "var(--sr-ink)",
                 lineHeight: 1.15,
                 letterSpacing: "-0.01em",
                 overflow: "hidden",
@@ -511,8 +508,8 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 padding: "4px 10px",
                 borderRadius: "999px",
                 background: "transparent",
-                border: "1.5px solid #8F8474",
-                color: "#4B4B48",
+                border: "1.5px solid var(--sr-hairline)",
+                color: "var(--sr-body)",
                 fontFamily: fonts.body,
                 fontSize: "10.5px",
                 fontWeight: 700,
@@ -523,10 +520,10 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 lineHeight: 1,
                 transition: "background 0.15s ease, color 0.15s ease",
                 "&:hover": {
-                  background: "rgba(143, 132, 116, 0.08)",
+                  background: "rgba(210, 182, 124, 0.12)",
                 },
                 "&:focus-visible": {
-                  outline: "2px solid #8F8474",
+                  outline: "2px solid #D97C95",
                   outlineOffset: 2,
                 },
               }}
@@ -568,22 +565,21 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   display: "flex",
                   alignItems: "center",
                   gap: "4px",
-                  // 🆕 28s382 — Moko rating chip: pink star + number in a
-                  //   blush box (ref Moko home ⭐5.0).
-                  background: "#FCE7F0",
+                  // 🕯️ 28t — gold star + ivory number in a soft-gold chip.
+                  background: "rgba(162, 160, 160, 0.15)",
                   borderRadius: "8px",
                   padding: "2px 8px",
                 }}
               >
                 <StarRoundedIcon
-                  sx={{ fontSize: 15, color: "#EC4899" }}
+                  sx={{ fontSize: 15, color: "#ffc31e" }}
                 />
                 <Typography
                   sx={{
                     fontFamily: fonts.body,
                     fontSize: "13px",
                     fontWeight: 700,
-                    color: "#C2185B",
+                    color: "#ff651e",
                   }}
                 >
                   {therapist.rating.toFixed(1)}
@@ -592,7 +588,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                       component="span"
                       sx={{
                         fontWeight: 500,
-                        color: "#4B4B48",
+                        color: "var(--sr-muted)",
                         marginLeft: "6px",
                       }}
                     >
@@ -602,36 +598,8 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   ) : null}
                 </Typography>
               </Box>
-              {/* 🆕 28s390 — comment chip replaced by the 👁 view count
-                  (founder "เอากล่องข้อความออก เปลี่ยนเป็น view count"). */}
-              {viewCount > 0 ? (
-                <Box
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    padding: "3px 8px",
-                    borderRadius: "999px",
-                    background: "rgba(143, 132, 116, 0.10)",
-                  }}
-                  aria-label={`${viewCount} profile views`}
-                >
-                  <VisibilityRoundedIcon
-                    sx={{ fontSize: 13, color: "#8F8474" }}
-                  />
-                  <Typography
-                    sx={{
-                      fontFamily: fonts.body,
-                      fontSize: "11.5px",
-                      fontWeight: 700,
-                      color: "#4B4B48",
-                      lineHeight: 1,
-                    }}
-                  >
-                    {viewCount.toLocaleString("en-US")}
-                  </Typography>
-                </Box>
-              ) : null}
+              {/* 🆕 28t.7 — 👁 profile-view count removed from the card
+                  (founder will relocate it elsewhere). */}
             </Box>
           ) : null}
 
@@ -658,18 +626,18 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   sx={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
                   aria-label={`${sessionCount} completed sessions`}
                 >
-                  <CheckCircleRoundedIcon sx={{ fontSize: 14, color: "#16A34A" }} />
+                  <CheckCircleRoundedIcon sx={{ fontSize: 14, color: "#2fd4b3" }} />
                   <Typography
                     sx={{
                       fontFamily: fonts.body,
                       fontSize: "11.5px",
                       fontWeight: 700,
-                      color: "#4B4B48",
+                      color: "var(--sr-body)",
                       lineHeight: 1,
                     }}
                   >
-                    {sessionCount.toLocaleString("en-US")}{" "}
-                    <Box component="span" sx={{ fontWeight: 500, color: "#9b8b80" }}>
+                    {formatSessionCount(sessionCount)}{" "}
+                    <Box component="span" sx={{ fontWeight: 500, color: "var(--sr-dim)" }}>
                       {t("therapistCard.sessions", "sessions")}
                     </Box>
                   </Typography>
@@ -685,13 +653,13 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   }}
                   aria-label={`${distanceLabel} away`}
                 >
-                  <LocationOnRoundedIcon sx={{ fontSize: 14, color: "#9b8b80" }} />
+                  <LocationOnRoundedIcon sx={{ fontSize: 14, color: "var(--sr-muted)" }} />
                   <Typography
                     sx={{
                       fontFamily: fonts.body,
                       fontSize: "11.5px",
                       fontWeight: 600,
-                      color: "#9b8b80",
+                      color: "var(--sr-muted)",
                       lineHeight: 1,
                       whiteSpace: "nowrap",
                     }}
@@ -722,7 +690,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 fontFamily: fonts.body,
                 fontSize: "9.5px",
                 fontWeight: 700,
-                color: "#9b8b80",
+                color: "var(--sr-muted)",
                 letterSpacing: "0.12em",
                 textTransform: "uppercase",
                 lineHeight: 1,
@@ -736,8 +704,9 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 fontFamily: fonts.heading,
                 fontSize: "16px",
                 fontWeight: 700,
-                // 🆕 28s380 — Moko red price (ref Lily 22 ฿2800 in red).
-                color: "#E4002B",
+                // 🕯️ 28t.2 — price in dusty rose (founder: gold read "แก่"/dated).
+                //   Fresh, on-brand, reads young on both light + dark.
+                color: "#D97C95",
                 lineHeight: 1,
               }}
             >
@@ -750,15 +719,14 @@ const TherapistMinimalCard: React.FC<Props> = ({
             onClick={handleBookTap}
             disabled={isOffDuty}
             sx={{
-              // 🆕 28s380 — Moko primary CTA: hot-pink MAGENTA gradient
-              //   (founder "Moko แท้", ref Lily 22 "make an appointment").
-              //   Was warm taupe #8F8474.
+              // 🕯️ 28t — dusty-rose gradient CTA (was Moko magenta). Flat,
+              //   no glow — the gradient alone carries the primary action.
               padding: "10px 20px",
               borderRadius: "999px",
               background: isOffDuty
-                ? "rgba(0,0,0,0.18)"
-                : "linear-gradient(135deg,#F050A0 0%,#E6197E 100%)",
-              color: "#fff",
+                ? "var(--sr-panel-2)"
+                : "#D97C95",
+              color: isOffDuty ? "var(--sr-dim)" : "#ffffff",
               border: "none",
               cursor: isOffDuty ? "not-allowed" : "pointer",
               fontFamily: fonts.body,
@@ -767,18 +735,16 @@ const TherapistMinimalCard: React.FC<Props> = ({
               letterSpacing: "0.04em",
               textTransform: "uppercase",
               whiteSpace: "nowrap",
-              // 🆕 28s386 — glow removed (founder "ไม่ต้องเรืองแสง"): drop the
-              //   magenta box-shadow so the button reads flat, not lit-up.
               boxShadow: "none",
               transition: "transform 0.15s ease, background 0.15s ease",
               "&:hover": isOffDuty
                 ? {}
                 : {
-                    background: "linear-gradient(135deg,#E6197E 0%,#C2185B 100%)",
+                    background: "linear-gradient(135deg,#C96F89 0%,#B36079 100%)",
                     transform: "translateY(-1px)",
                   },
               "&:focus-visible": {
-                outline: "2px solid #fff",
+                outline: "2px solid #F3E6DB",
                 outlineOffset: 2,
               },
             }}

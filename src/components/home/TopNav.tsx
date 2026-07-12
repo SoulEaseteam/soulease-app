@@ -23,7 +23,6 @@ import {
   Drawer,
   ListItemIcon,
   ListItemText,
-  Divider,
   Typography,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -284,12 +283,15 @@ const TopNav: React.FC = () => {
   //   fades in on scroll so it stays legible over content below. Other pages
   //   keep the solid dark bar. Foreground ink flips dark↔white to match.
   const isHome = location.pathname === "/";
+  // 🕯️ 28t day/night — transparent over the hero, fading to a translucent
+  //   scrim on scroll; solid deep-panel bar elsewhere. Foreground ink flips
+  //   with the theme so it reads on both the light-day and dark-night bar.
   const navBg = isHome
     ? scrolled
-      ? "rgba(247, 244, 238, 0.86)"
+      ? "var(--sr-nav-scrim)"
       : "transparent"
-    : "#2D2D2B";
-  const fg = isHome ? "#2B2620" : "#ffffff";
+    : "var(--sr-panel-deep)";
+  const fg = "var(--sr-ink)";
 
   return (
     <>
@@ -324,7 +326,7 @@ const TopNav: React.FC = () => {
             isHome && !scrolled
               ? "none"
               : scrolled
-              ? "0 2px 10px rgba(43,38,32,0.14)"
+              ? "0 2px 10px rgba(0,0,0,0.34)"
               : "none",
           borderBottom: "none",
           // Blur only when there's a surface to blur (solid bar, or the
@@ -356,7 +358,7 @@ const TopNav: React.FC = () => {
             color: fg,
             "&:hover": {
               background: isHome
-                ? "rgba(43, 38, 32, 0.08)"
+                ? "rgba(243, 230, 219, 0.10)"
                 : "rgba(255, 255, 255, 0.12)",
             },
             "&:focus-visible": {
@@ -385,7 +387,7 @@ const TopNav: React.FC = () => {
             //   layout unchanged (space-between still centers it).
             marginRight: { md: "auto" },
             "&:focus-visible": {
-              outline: "2px solid #2D2D2B",
+              outline: "2px solid #D97C95",
               outlineOffset: 2,
             },
           }}
@@ -420,7 +422,7 @@ const TopNav: React.FC = () => {
               <Box component="span" sx={{ color: fg }}>
                 SUN
               </Box>
-              <Box component="span" sx={{ color: "#D62828" }}>
+              <Box component="span" sx={{ color: "#D97C95" }}>
                 RED
               </Box>
             </Typography>
@@ -458,7 +460,7 @@ const TopNav: React.FC = () => {
                   sx={{
                     background: active
                       ? isHome
-                        ? "rgba(43, 38, 32, 0.08)"
+                        ? "rgba(243, 230, 219, 0.10)"
                         : "rgba(255, 255, 255, 0.12)"
                       : "transparent",
                     border: "none",
@@ -473,7 +475,7 @@ const TopNav: React.FC = () => {
                     transition: "background 0.15s ease, transform 0.15s ease",
                     "&:hover": {
                       background: isHome
-                        ? "rgba(43, 38, 32, 0.12)"
+                        ? "rgba(243, 230, 219, 0.14)"
                         : "rgba(255, 255, 255, 0.16)",
                       transform: "translateY(-1px)",
                     },
@@ -502,11 +504,10 @@ const TopNav: React.FC = () => {
             display: { xs: "none", md: "inline-flex" },
             alignItems: "center",
             gap: "8px",
-            // 🆕 28s335 — dark pill on the transparent home nav (stands out
-            //   on cream); white pill on the solid dark bar elsewhere.
-            background: isHome ? "#2B2620" : "#ffffff",
+            // 🕯️ 28t — dusty-rose gradient concierge pill (both home + inner).
+            background: "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
             border: "none",
-            color: isHome ? "#ffffff" : "#2D2D2B",
+            color: "#FFF7F0",
             fontFamily: SANS,
             fontSize: "13px",
             fontWeight: 700,
@@ -514,14 +515,14 @@ const TopNav: React.FC = () => {
             padding: "9px 18px",
             borderRadius: "999px",
             cursor: "pointer",
-            boxShadow: "0 4px 12px rgba(15, 23, 42, 0.18)",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.32)",
             transition: "transform 0.15s ease, box-shadow 0.15s ease",
             "&:hover": {
               transform: "translateY(-1px)",
-              boxShadow: "0 6px 16px rgba(15, 23, 42, 0.28)",
+              boxShadow: "0 6px 16px rgba(0, 0, 0, 0.42)",
             },
             "&:focus-visible": {
-              outline: "2px solid #ffffff",
+              outline: "2px solid #F3E6DB",
               outlineOffset: 2,
             },
           }}
@@ -553,9 +554,9 @@ const TopNav: React.FC = () => {
         PaperProps={{
           sx: {
             width: 280,
-            background: "#F4F6F5",
-            borderRight: "1px solid rgba(255, 255, 255, 0.7)",
-            boxShadow: "0 24px 60px rgba(15, 23, 42, 0.2)",
+            background: "var(--sr-panel-deep)",
+            borderRight: "1px solid var(--sr-hairline)",
+            boxShadow: "0 24px 60px rgba(0, 0, 0, 0.5)",
           },
         }}
       >
@@ -575,11 +576,11 @@ const TopNav: React.FC = () => {
             aria-label={t("nav.closeMenu", "Close menu")}
             onClick={() => setDrawerOpen(false)}
             sx={{
-              color: "#1A2B2E",
+              color: "var(--sr-ink)",
               width: 44,
               height: 44,
               "&:focus-visible": {
-                outline: "2px solid #2D2D2B",
+                outline: "2px solid #D97C95",
                 outlineOffset: 2,
               },
             }}
@@ -588,7 +589,7 @@ const TopNav: React.FC = () => {
           </IconButton>
         </Box>
 
-        <Divider sx={{ borderColor: "rgba(184, 92, 60, 0.18)" }} />
+        <Box sx={{ height: "1px", background: "var(--sr-hairline)" }} />
 
         {/* 🆕 Round 28r21 (founder 2026-05-07) — Role banner +
             shortcut. When the signed-in user is admin or therapist,
@@ -626,18 +627,18 @@ const TopNav: React.FC = () => {
               padding: "12px 14px",
               borderRadius: "12px",
               background: isAdmin
-                ? "rgba(15, 23, 42, 0.11)"
-                : "linear-gradient(135deg, rgba(22, 163, 74, 0.12), rgba(22, 163, 74, 0.06))",
+                ? "rgba(243,230,219,0.06)"
+                : "linear-gradient(135deg, rgba(210,182,124,0.16), rgba(210,182,124,0.06))",
               border: isAdmin
-                ? "1px solid rgba(15, 23, 42, 0.28)"
-                : "1px solid rgba(22, 163, 74, 0.28)",
+                ? "1px solid rgba(210,182,124,0.22)"
+                : "1px solid rgba(210,182,124,0.28)",
               cursor: "pointer",
               fontFamily: SANS,
               textAlign: "left",
               "&:hover": { transform: "translateY(-1px)" },
               transition: "transform 0.15s ease",
               "&:focus-visible": {
-                outline: "2px solid #2D2D2B",
+                outline: "2px solid #D97C95",
                 outlineOffset: 2,
               },
             }}
@@ -648,8 +649,8 @@ const TopNav: React.FC = () => {
                 width: 36,
                 height: 36,
                 borderRadius: "50%",
-                background: isAdmin ? "#2D2D2B" : "#16a34a",
-                color: "#fff",
+                background: isAdmin ? "var(--sr-panel)" : "#D97C95",
+                color: isAdmin ? "var(--sr-ink)" : "#FFFFFF",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -671,7 +672,7 @@ const TopNav: React.FC = () => {
                   fontWeight: 800,
                   letterSpacing: "0.10em",
                   textTransform: "uppercase",
-                  color: isAdmin ? "#2D2D2B" : "#15803d",
+                  color: isAdmin ? "var(--sr-muted)" : "var(--sr-gold-text)",
                 }}
               >
                 {t("nav.signedInAs", "Signed in as")}{" "}
@@ -683,7 +684,7 @@ const TopNav: React.FC = () => {
                   display: "block",
                   fontSize: 14,
                   fontWeight: 700,
-                  color: "#1A2B2E",
+                  color: "var(--sr-ink)",
                   marginTop: "2px",
                 }}
               >
@@ -722,7 +723,7 @@ const TopNav: React.FC = () => {
           )}
         </Box>
 
-        <Divider sx={{ borderColor: "rgba(184, 92, 60, 0.18)", mx: 2 }} />
+        <Box sx={{ height: "1px", background: "var(--sr-hairline)", mx: 2 }} />
 
         {/* Info / onboarding group — How to book?, Payment, Distance.
             Section title sets expectation that these are help links,
@@ -735,7 +736,7 @@ const TopNav: React.FC = () => {
             fontFamily: SANS,
             fontSize: 9.5,
             fontWeight: 700,
-            color: "rgba(15, 23, 42, 0.55)",
+            color: "var(--sr-dim)",
             letterSpacing: "0.12em",
             textTransform: "uppercase",
           }}
@@ -751,7 +752,7 @@ const TopNav: React.FC = () => {
           )}
         </Box>
 
-        <Divider sx={{ borderColor: "rgba(184, 92, 60, 0.18)", mx: 2 }} />
+        <Box sx={{ height: "1px", background: "var(--sr-hairline)", mx: 2 }} />
 
         {/* Auth row — sign in or sign out */}
         <Box sx={{ padding: "8px" }}>
@@ -769,20 +770,20 @@ const TopNav: React.FC = () => {
                 borderRadius: "12px",
                 background: "transparent",
                 border: "none",
-                color: "#831843",
+                color: "#D97C95",
                 fontFamily: SANS,
                 fontSize: 14,
                 fontWeight: 600,
                 textAlign: "left",
                 cursor: "pointer",
-                "&:hover": { background: "rgba(255, 255, 255, 0.55)" },
+                "&:hover": { background: "rgba(243,230,219,0.07)" },
                 "&:focus-visible": {
-                  outline: "2px solid #2D2D2B",
+                  outline: "2px solid #D97C95",
                   outlineOffset: 2,
                 },
               }}
             >
-              <ListItemIcon sx={{ minWidth: 0, color: "#831843" }}>
+              <ListItemIcon sx={{ minWidth: 0, color: "#D97C95" }}>
                 <LogoutRoundedIcon />
               </ListItemIcon>
               {t("nav.signOut", "Sign out")}
@@ -800,20 +801,20 @@ const TopNav: React.FC = () => {
                 padding: "12px 14px",
                 borderRadius: "12px",
                 background:
-                  "#2D2D2B",
+                  "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
                 border: "none",
-                color: "#fff",
+                color: "#FFF7F0",
                 fontFamily: SANS,
                 fontSize: 14,
                 fontWeight: 700,
                 textAlign: "left",
                 cursor: "pointer",
-                boxShadow: "0 6px 16px rgba(15, 23, 42, 0.28)",
+                boxShadow: "0 6px 16px rgba(0, 0, 0, 0.4)",
                 "&:hover": {
-                  boxShadow: "0 8px 20px rgba(15, 23, 42, 0.36)",
+                  boxShadow: "0 8px 20px rgba(0, 0, 0, 0.5)",
                 },
                 "&:focus-visible": {
-                  outline: "2px solid #2D2D2B",
+                  outline: "2px solid #D97C95",
                   outlineOffset: 2,
                 },
               }}
@@ -833,7 +834,7 @@ const TopNav: React.FC = () => {
             padding: "16px 18px",
             fontSize: 10,
             fontWeight: 500,
-            color: "rgba(15, 23, 42, 0.55)",
+            color: "var(--sr-dim)",
             letterSpacing: "0.04em",
             textTransform: "uppercase",
             fontFamily: SANS,
@@ -883,15 +884,14 @@ function renderNavRow(
           gap: "12px",
           padding: "12px 14px",
           borderRadius: "12px",
-          /* 🆕 28s384 — drawer active row shifted from the old brand-red
-             tint to the Moko magenta accent so the nav ties into the new
-             pink home theme (matches MokoDiscoveryHeader's active tabs).
-             Drawer bg is the light #F4F6F5, so magenta text stays legible. */
+          /* 🕯️ 28t — drawer active row uses the dusty-rose accent on the
+             dark drawer (#2A1D16): a soft rose-tint fill + rose label with
+             a warm cream register for inactive rows. */
           background: active
-            ? "linear-gradient(135deg, rgba(230, 25, 126, 0.12), rgba(230, 25, 126, 0.05))"
+            ? "linear-gradient(135deg, rgba(217,124,149,0.22), rgba(217,124,149,0.10))"
             : "transparent",
           border: "none",
-          color: active ? "#C2185B" : "#1A2B2E",
+          color: active ? "#E7A9AB" : "var(--sr-body)",
           fontFamily: SANS,
           fontSize: 14,
           fontWeight: active ? 700 : 600,
@@ -900,11 +900,11 @@ function renderNavRow(
           transition: "background 0.2s ease",
           "&:hover": {
             background: active
-              ? "linear-gradient(135deg, rgba(230, 25, 126, 0.18), rgba(230, 25, 126, 0.08))"
-              : "rgba(255, 255, 255, 0.55)",
+              ? "linear-gradient(135deg, rgba(217,124,149,0.28), rgba(217,124,149,0.14))"
+              : "rgba(243,230,219,0.07)",
           },
           "&:focus-visible": {
-            outline: "2px solid #E6197E",
+            outline: "2px solid #D97C95",
             outlineOffset: 2,
           },
         }}
@@ -912,7 +912,7 @@ function renderNavRow(
         <ListItemIcon
           sx={{
             minWidth: 0,
-            color: active ? "#C2185B" : "#4A5568",
+            color: active ? "#D97C95" : "var(--sr-muted)",
           }}
         >
           {item.icon}
@@ -927,7 +927,7 @@ function renderNavRow(
           secondaryTypographyProps={{
             fontSize: 11,
             fontWeight: 500,
-            color: "rgba(15, 23, 42, 0.6)",
+            color: "var(--sr-muted)",
             sx: { mt: 0.25 },
           }}
         />

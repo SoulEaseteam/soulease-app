@@ -72,4 +72,63 @@ button,
   --cta-bottom-offset: calc(
     var(--bottom-nav-height) + 16px + env(safe-area-inset-bottom, 0px)
   );
+
+  /* ─────────────────────────────────────────────────────────────────
+     🕯️ 28t — SunRed DARK-LUXURY day/night theme tokens.
+     Founder direction 2026-07-12: auto-switch a warm light "day" look
+     (cream/ivory grounds) and a dark "night" look (espresso grounds).
+     ACCENTS (dusty rose #C56A6D, soft gold #D7B56D, tan) are identical
+     in both modes — ONLY surfaces + text-on-surface flip, so components
+     hardcode accents and read these vars for grounds/text/hairlines.
+
+     :root = NIGHT (default). `html.sr-day` overrides for daytime below.
+     A tiny runtime (DayNightSync) toggles `.sr-day` on <html> by BKK hour.
+     ───────────────────────────────────────────────────────────────── */
+  /* 🌙 NIGHT — clean dark charcoal + dusty-rose accent (balanced). Rose
+     #D97C95 comes from the components; these vars are grounds + text only.
+     surfaces (deep → raised) */
+  --sr-bg: #17181D;          /* page ground — deep charcoal */
+  --sr-panel: #20222B;       /* card / section panel */
+  --sr-panel-2: #2A2D38;     /* raised / inner / hover */
+  --sr-panel-deep: #121319;  /* footer / drawer / deep ground */
+  /* text on surfaces (clear hierarchy) */
+  --sr-ink: #F3F2F4;         /* headings / brightest */
+  --sr-body: #BCC0CA;        /* body */
+  --sr-muted: #878D99;       /* muted */
+  --sr-dim: #5E636E;         /* dim caption */
+  --sr-gold-text: #D97C95;   /* accent (was gold — retired as dated) → rose */
+  /* lines / shadow */
+  --sr-hairline: #31343F;    /* border */
+  --sr-line: #282B34;        /* divider */
+  --sr-card-shadow: 0 16px 44px rgba(0, 0, 0, 0.5);
+  /* nav + hero (mode-specific) */
+  --sr-nav-scrim: rgba(23, 24, 29, 0.86);
+  --sr-hero-border: #31343F;
+  --sr-hero-filter: brightness(0.70) saturate(1.04) contrast(1.03);
+  --sr-hero-vignette: linear-gradient(180deg, rgba(23,24,29,0) 38%, rgba(23,24,29,0.62) 100%);
+  --sr-hero-scrim-xs: linear-gradient(90deg, rgba(23,24,29,0.95) 0%, rgba(23,24,29,0.88) 48%, rgba(23,24,29,0.58) 72%, rgba(23,24,29,0.34) 100%);
+  --sr-hero-scrim-md: linear-gradient(90deg, rgba(23,24,29,0.93) 0%, rgba(23,24,29,0.74) 38%, rgba(23,24,29,0.42) 60%, rgba(23,24,29,0.18) 100%);
+}
+
+/* ☀️ DAY — High-Key Korean Wellness (Apple / Aesop / Laneige / Sulwhasoo).
+   Clean near-white grounds + near-black ink. Founder tokens. */
+html.sr-day {
+  --sr-bg: #FBF7F9;          /* faint rose-white page (so white cards pop) */
+  --sr-panel: #FFFFFF;       /* white cards */
+  --sr-panel-2: #FCEBF1;     /* soft blush — sections / chips */
+  --sr-panel-deep: #F8EEF2;  /* footer / drawer — soft rose */
+  --sr-ink: #232B36;         /* navy-charcoal headings */
+  --sr-body: #5C6573;        /* cool-gray body */
+  --sr-muted: #8B93A0;       /* muted */
+  --sr-dim: #AEB4BF;         /* dim caption */
+  --sr-gold-text: #D97C95;   /* accent (was gold — retired as dated) → rose */
+  --sr-hairline: #EFE3E8;    /* border */
+  --sr-line: #F2E9ED;        /* divider */
+  --sr-card-shadow: 0 12px 40px rgba(35, 43, 54, 0.08);
+  --sr-nav-scrim: rgba(251, 247, 249, 0.88);
+  --sr-hero-border: #EFE3E8;
+  --sr-hero-filter: none;
+  --sr-hero-vignette: none;
+  --sr-hero-scrim-xs: linear-gradient(90deg, rgba(251,247,249,0.96) 0%, rgba(251,247,249,0.90) 48%, rgba(251,247,249,0.55) 72%, rgba(251,247,249,0) 100%);
+  --sr-hero-scrim-md: linear-gradient(90deg, rgba(251,247,249,0.95) 0%, rgba(251,247,249,0.74) 38%, rgba(251,247,249,0.34) 60%, rgba(251,247,249,0) 78%);
 }

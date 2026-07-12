@@ -96,11 +96,13 @@ const DURATION_LABELS: Record<
   120: { tagKey: "sheet.duration.bestValue" },
 };
 
+// 🆕 28t.18 — match StepService's 28t.16 rose/berry badges (the two
+//   service surfaces were disagreeing: sheet still had retired navy).
 const BADGE_COLORS: Record<MassageService["badge"], { bg: string; fg: string }> = {
-  SIGNATURE: { bg: "rgba(15, 23, 42, 0.95)", fg: "#fff" },
+  SIGNATURE: { bg: "rgba(184, 86, 127, 0.95)", fg: "#fff" },
   POPULAR: { bg: "rgba(214, 40, 40, 0.95)", fg: "#fff" },
-  RECOMMEND: { bg: "rgba(184, 92, 60, 0.95)", fg: "#fff" },
-  EXCLUSIVE: { bg: "rgba(15, 23, 42, 0.95)", fg: "#FFF0F0" },
+  RECOMMEND: { bg: "rgba(217, 124, 149, 0.95)", fg: "#fff" },
+  EXCLUSIVE: { bg: "rgba(138, 58, 87, 0.96)", fg: "#FFF0F0" },
 };
 
 const ServiceDurationSheet: React.FC<Props> = ({
@@ -193,8 +195,9 @@ const ServiceDurationSheet: React.FC<Props> = ({
       }}
       PaperProps={{
         sx: {
-          background:
-            "#F4F6F5",
+          // 🆕 28t.18 — day/night panel (was hardcoded light #F4F6F5, which
+          //   rendered as a white island over the dark night page).
+          background: "var(--sr-panel)",
           borderRadius: "24px",
           // 🆕 Round 28r52 — Dialog paper widens on tablet/desktop so
           //   the picker sheet feels app-native at larger viewports.
@@ -228,7 +231,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
             maxHeight: "200px",
             borderRadius: "20px",
             overflow: "hidden",
-            background: `center / cover no-repeat url("${service.image}"), linear-gradient(135deg, #d4a574, #8b6f47)`,
+            background: `center / cover no-repeat url("${service.image}"), linear-gradient(135deg, #E8B7C6, #D97C95)`,
             boxShadow: "0 8px 24px rgba(15, 23, 42, 0.12)",
           }}
         >
@@ -261,7 +264,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
               fontFamily: SERIF,
               fontSize: "24px",
               fontWeight: 600,
-              color: "#1A2B2E",
+              color: "var(--sr-ink)",
               letterSpacing: "-0.02em",
               lineHeight: 1.1,
               marginBottom: "6px",
@@ -283,7 +286,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                 fontFamily: SERIF,
                 fontSize: "18px",
                 fontWeight: 700,
-                color: "#4B4B48",
+                color: "var(--sr-ink)",
                 letterSpacing: "-0.01em",
               }}
             >
@@ -294,7 +297,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
               sx={{
                 fontFamily: SANS,
                 fontSize: "13px",
-                color: "rgba(15, 23, 42, 0.6)",
+                color: "var(--sr-muted)",
               }}
             >
               ·{" "}
@@ -309,7 +312,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                 sx={{
                   fontFamily: SANS,
                   fontSize: "12px",
-                  color: "rgba(15, 23, 42, 0.55)",
+                  color: "var(--sr-muted)",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "2px",
@@ -367,19 +370,19 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   fontFamily: SANS,
                   fontSize: "14px",
                   fontWeight: 700,
-                  color: isOpen ? "#2D2D2B" : "rgba(15, 23, 42, 0.62)",
+                  color: isOpen ? "#D97C95" : "var(--sr-muted)",
                   background: isOpen
-                    ? "rgba(45, 45, 43, 0.08)"
-                    : "rgba(255, 255, 255, 0.7)",
+                    ? "rgba(217, 124, 149, 0.10)"
+                    : "var(--sr-panel-2)",
                   border: isOpen
-                    ? "2px solid #2D2D2B"
-                    : "1px solid rgba(0, 0, 0, 0.06)",
+                    ? "2px solid #D97C95"
+                    : "1px solid var(--sr-hairline)",
                   boxShadow: isOpen
-                    ? "0 4px 14px rgba(15, 23, 42, 0.12)"
-                    : "0 2px 6px rgba(15, 23, 42, 0.05)",
+                    ? "0 4px 14px rgba(217, 124, 149, 0.18)"
+                    : "0 2px 6px rgba(0, 0, 0, 0.05)",
                   transition: "all 0.15s ease",
                   "&:focus-visible": {
-                    outline: "2px solid #2D2D2B",
+                    outline: "2px solid #D97C95",
                     outlineOffset: "2px",
                   },
                 }}
@@ -393,7 +396,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   sx={{
                     fontSize: "10px",
                     display: "inline-block",
-                    color: isOpen ? "#2D2D2B" : "rgba(15, 23, 42, 0.45)",
+                    color: isOpen ? "#D97C95" : "var(--sr-muted)",
                     transform: isOpen ? "rotate(0deg)" : "rotate(-90deg)",
                     transition: "transform 0.2s ease",
                   }}
@@ -417,12 +420,10 @@ const ServiceDurationSheet: React.FC<Props> = ({
             marginTop: tab === null ? 0 : "10px",
             transition:
               "max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease",
-            background: "rgba(255, 255, 255, 0.7)",
-            backdropFilter: "blur(20px) saturate(180%)",
-            WebkitBackdropFilter: "blur(20px) saturate(180%)",
+            background: "var(--sr-panel-2)",
             borderRadius: tab === null ? 0 : "18px",
             boxShadow:
-              tab === null ? "none" : "0 4px 14px rgba(15, 23, 42, 0.06)",
+              tab === null ? "none" : "0 4px 14px rgba(0, 0, 0, 0.06)",
           }}
         >
           <Box sx={{ padding: tab === null ? 0 : "16px 18px 18px" }}>
@@ -433,7 +434,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   fontFamily: SANS,
                   fontSize: "10.5px",
                   fontWeight: 700,
-                  color: "rgba(15, 23, 42, 0.55)",
+                  color: "var(--sr-muted)",
                   textTransform: "uppercase",
                   letterSpacing: "0.1em",
                   marginBottom: "8px",
@@ -446,7 +447,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   fontFamily: SANS,
                   fontSize: "13px",
                   lineHeight: 1.6,
-                  color: "rgba(15, 23, 42, 0.78)",
+                  color: "var(--sr-body)",
                   textIndent: "16px",
                   marginBottom: "14px",
                 }}
@@ -459,7 +460,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   fontFamily: SANS,
                   fontSize: "10.5px",
                   fontWeight: 700,
-                  color: "rgba(15, 23, 42, 0.55)",
+                  color: "var(--sr-muted)",
                   textTransform: "uppercase",
                   letterSpacing: "0.1em",
                   marginBottom: "8px",
@@ -476,7 +477,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                       fontFamily: SANS,
                       fontSize: "13px",
                       lineHeight: 1.7,
-                      color: "rgba(15, 23, 42, 0.78)",
+                      color: "var(--sr-body)",
                     }}
                   >
                     {b}
@@ -491,7 +492,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   fontFamily: SERIF,
                   fontSize: "14px",
                   fontWeight: 600,
-                  color: "#1A2B2E",
+                  color: "var(--sr-ink)",
                   textAlign: "center",
                   marginBottom: "12px",
                 }}
@@ -505,7 +506,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                     fontFamily: SANS,
                     fontSize: "13px",
                     lineHeight: 1.6,
-                    color: "rgba(15, 23, 42, 0.78)",
+                    color: "var(--sr-body)",
                     marginBottom: "10px",
                     paddingLeft: "16px",
                     textIndent: "-16px",
@@ -528,7 +529,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
             fontFamily: SANS,
             fontSize: "10.5px",
             fontWeight: 700,
-            color: "rgba(15, 23, 42, 0.55)",
+            color: "var(--sr-muted)",
             textTransform: "uppercase",
             letterSpacing: "0.1em",
             margin: "20px 0 10px",
@@ -539,7 +540,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
             gap: "5px",
           }}
         >
-          <GpsFixedRoundedIcon sx={{ fontSize: 13, color: "#4B4B48" }} />
+          <GpsFixedRoundedIcon sx={{ fontSize: 13, color: "#D97C95" }} />
           {t("sheet.chooseDuration", "Choose duration")}
         </Typography>
         <Box
@@ -583,17 +584,15 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   borderRadius: "16px",
                   cursor: "pointer",
                   userSelect: "none",
-                  background: "rgba(255, 255, 255, 0.7)",
-                  backdropFilter: "blur(20px) saturate(180%)",
-                  WebkitBackdropFilter: "blur(20px) saturate(180%)",
+                  background: "var(--sr-panel-2)",
                   border: isActive
-                    ? "2px solid #2D2D2B"
+                    ? "2px solid #D97C95"
                     : isPopular
-                      ? "2px solid rgba(15, 23, 42, 0.55)"
-                      : "1px solid rgba(0, 0, 0, 0.06)",
+                      ? "2px solid rgba(217, 124, 149, 0.55)"
+                      : "1px solid var(--sr-hairline)",
                   boxShadow: isActive
-                    ? "0 6px 18px rgba(15, 23, 42, 0.15)"
-                    : "0 2px 6px rgba(15, 23, 42, 0.05)",
+                    ? "0 6px 18px rgba(217, 124, 149, 0.20)"
+                    : "0 2px 6px rgba(0, 0, 0, 0.05)",
                   transform: isPopular ? "scale(1.025)" : "scale(1)",
                   transformOrigin: "center",
                   transition:
@@ -604,17 +603,17 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   "@keyframes popularPulse": {
                     "0%, 100%": {
                       boxShadow:
-                        "0 2px 6px rgba(15, 23, 42, 0.05), 0 0 0 0 rgba(15, 23, 42, 0.45)",
+                        "0 2px 6px rgba(0, 0, 0, 0.05), 0 0 0 0 rgba(217, 124, 149, 0.45)",
                       transform: "scale(1.025)",
                     },
                     "50%": {
                       boxShadow:
-                        "0 8px 22px rgba(15, 23, 42, 0.22), 0 0 0 8px rgba(45, 45, 43, 0)",
+                        "0 8px 22px rgba(217, 124, 149, 0.22), 0 0 0 8px rgba(217, 124, 149, 0)",
                       transform: "scale(1.045)",
                     },
                   },
                   "&:focus-visible": {
-                    outline: "2px solid #2D2D2B",
+                    outline: "2px solid #D97C95",
                     outlineOffset: "2px",
                   },
                   // Respect reduced-motion preference
@@ -631,8 +630,8 @@ const ServiceDurationSheet: React.FC<Props> = ({
                     flexShrink: 0,
                     borderRadius: "50%",
                     border: isActive
-                      ? "5px solid #2D2D2B"
-                      : "2px solid rgba(0, 0, 0, 0.2)",
+                      ? "5px solid #D97C95"
+                      : "2px solid var(--sr-line)",
                     background: isActive ? "#fff" : "transparent",
                     transition: "all 0.15s ease",
                   }}
@@ -643,7 +642,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                       fontFamily: SERIF,
                       fontSize: "16px",
                       fontWeight: 600,
-                      color: "#1A2B2E",
+                      color: "var(--sr-ink)",
                       lineHeight: 1.1,
                       marginBottom: "2px",
                     }}
@@ -657,8 +656,8 @@ const ServiceDurationSheet: React.FC<Props> = ({
                       fontSize: "11px",
                       fontWeight: 700,
                       color: isPopular
-                        ? "#2D2D2B"
-                        : "rgba(15, 23, 42, 0.55)",
+                        ? "#D97C95"
+                        : "var(--sr-muted)",
                       textTransform: "uppercase",
                       letterSpacing: "0.06em",
                       display: "inline-flex",
@@ -679,7 +678,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                     fontFamily: SERIF,
                     fontSize: "18px",
                     fontWeight: 700,
-                    color: isActive ? "#2D2D2B" : "#1A2B2E",
+                    color: isActive ? "#D97C95" : "var(--sr-ink)",
                     letterSpacing: "-0.02em",
                     flexShrink: 0,
                   }}
@@ -699,12 +698,9 @@ const ServiceDurationSheet: React.FC<Props> = ({
             marginTop: "24px",
             padding: "18px 18px 16px",
             borderRadius: "20px",
-            background:
-              "linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(244, 246, 245, 0.85))",
-            backdropFilter: "blur(20px) saturate(180%)",
-            WebkitBackdropFilter: "blur(20px) saturate(180%)",
-            border: "1px solid rgba(214, 40, 40, 0.18)",
-            boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
+            background: "var(--sr-panel-2)",
+            border: "1px solid rgba(217, 124, 149, 0.22)",
+            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
           }}
         >
           <Box
@@ -725,10 +721,9 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  background:
-                    "#2D2D2B",
+                  background: "#D97C95",
                   color: "#fff",
-                  boxShadow: "0 4px 10px rgba(15, 23, 42, 0.25)",
+                  boxShadow: "0 4px 10px rgba(217, 124, 149, 0.30)",
                 }}
               >
                 <EventRoundedIcon sx={{ fontSize: 16 }} />
@@ -738,7 +733,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   fontFamily: SERIF,
                   fontSize: "16px",
                   fontWeight: 700,
-                  color: "#1A2B2E",
+                  color: "var(--sr-ink)",
                   letterSpacing: "-0.01em",
                 }}
               >
@@ -751,7 +746,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                   fontFamily: SANS,
                   fontSize: "11px",
                   fontWeight: 700,
-                  color: "#14b8a6",
+                  color: "#57B88B",
                   textTransform: "uppercase",
                   letterSpacing: "0.06em",
                 }}
@@ -797,21 +792,23 @@ const ServiceDurationSheet: React.FC<Props> = ({
           sx={{
             height: 50,
             borderRadius: "999px",
-            background: "#8F8474",
+            // 🆕 28t.18 — rose primary (was retired taupe #8F8474). This is
+            //   the most important button in the booking flow.
+            background: "#D97C95",
             color: "#fff",
             fontFamily: SANS,
             fontSize: "15px",
             fontWeight: 700,
             letterSpacing: "0.02em",
             textTransform: "none",
-            boxShadow: "0 10px 26px rgba(15, 23, 42, 0.40)",
+            boxShadow: "0 10px 26px rgba(217, 124, 149, 0.40)",
             "&:hover": {
-              background: "#7A7060",
-              boxShadow: "0 12px 30px rgba(15, 23, 42, 0.45)",
+              background: "#C96F89",
+              boxShadow: "0 12px 30px rgba(217, 124, 149, 0.46)",
             },
             "&.Mui-disabled": {
-              background: "rgba(0, 0, 0, 0.12)",
-              color: "rgba(0, 0, 0, 0.35)",
+              background: "var(--sr-panel-2)",
+              color: "var(--sr-muted)",
               boxShadow: "none",
             },
           }}

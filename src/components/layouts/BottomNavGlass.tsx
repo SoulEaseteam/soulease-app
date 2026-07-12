@@ -23,10 +23,10 @@ import { brand, fonts } from "@/theme";
 //   most-visible label in the app — was the loudest remaining brand
 //   violation after the title/meta rewrite.
 const TABS = [
-  { label: "Practitioners", value: "/",                icon: (a: boolean) => <FaRegHeart   size={18} color={a ? "#fff" : "rgba(15, 23, 42,0.50)"} /> },
-  { label: "Services",      value: "/services",        icon: (a: boolean) => <SpaOutlined  sx={{ fontSize: 20, color: a ? "#fff" : "rgba(15, 23, 42,0.50)" }} /> },
-  { label: "History",       value: "/booking/history", icon: (a: boolean) => <FaRegFileAlt size={18} color={a ? "#fff" : "rgba(15, 23, 42,0.50)"} /> },
-  { label: "Profile",       value: "/profile",         icon: (a: boolean) => <UserCircle   size={20} color={a ? "#fff" : "rgba(15, 23, 42,0.50)"} /> },
+  { label: "Practitioners", value: "/",                icon: (a: boolean) => <FaRegHeart   size={18} color={a ? "#fff" : "#9AA0AC"} /> },
+  { label: "Services",      value: "/services",        icon: (a: boolean) => <SpaOutlined  sx={{ fontSize: 20, color: a ? "#fff" : "#9AA0AC" }} /> },
+  { label: "History",       value: "/booking/history", icon: (a: boolean) => <FaRegFileAlt size={18} color={a ? "#fff" : "#9AA0AC"} /> },
+  { label: "Profile",       value: "/profile",         icon: (a: boolean) => <UserCircle   size={20} color={a ? "#fff" : "#9AA0AC"} /> },
 ] as const;
 
 const N    = TABS.length;  // 4
@@ -114,16 +114,16 @@ const BottomNavGlass: React.FC = () => {
         elevation={14}
         sx={{
           pointerEvents: "auto",
-          background:
-            "linear-gradient(180deg,rgba(255,251,248,0.95) 0%,rgba(255,245,240,0.95) 100%)",
+          // 🕯️ 28t — mode-aware glass bar (light glass by day, dark by night).
+          background: "var(--sr-nav-scrim)",
           backdropFilter: "blur(20px) saturate(180%)",
           WebkitBackdropFilter: "blur(20px) saturate(180%)",
-          borderTop:    `1px solid ${brand.red}20`,
-          borderLeft:   "1px solid rgba(255,255,255,0.6)",
-          borderRight:  "1px solid rgba(255,255,255,0.6)",
+          borderTop:    "1px solid var(--sr-hairline)",
+          borderLeft:   "1px solid var(--sr-hairline)",
+          borderRight:  "1px solid var(--sr-hairline)",
           borderBottom: "none",
           boxShadow:
-            "0 -10px 28px rgba(15, 23, 42, 0.10), 0 -2px 6px rgba(15, 23, 42,0.04)",
+            "0 -10px 28px rgba(0, 0, 0, 0.22), 0 -2px 6px rgba(0, 0, 0,0.12)",
           borderRadius: "22px 22px 0 0",
           px: 1, py: 0.75,
         }}
@@ -135,9 +135,9 @@ const BottomNavGlass: React.FC = () => {
             position: "relative",
             display: "flex",
             borderRadius: 999,
-            background: "#fff",
-            border: "1px solid rgba(15,23,42,0.06)",
-            boxShadow: "0 1px 3px rgba(15,23,42,0.04)",
+            background: "var(--sr-panel)",
+            border: "1px solid var(--sr-line)",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.14)",
             overflow: "hidden",
           }}
         >
@@ -154,8 +154,8 @@ const BottomNavGlass: React.FC = () => {
                 left: 0,
                 width: pillW,
                 borderRadius: 999,
-                background: "#8F8474",
-                boxShadow: "0 4px 14px rgba(15, 23, 42, 0.30)",
+                background: "#D97C95",
+                boxShadow: "0 4px 14px rgba(0, 0, 0, 0.30)",
                 zIndex: 0,
                 pointerEvents: "none",
               }}
@@ -231,7 +231,7 @@ const BottomNavGlass: React.FC = () => {
                       fontWeight: active ? 700 : 600,
                       letterSpacing: "0.05em",
                       textTransform: "uppercase",
-                      color: active ? "#fff" : "rgba(15, 23, 42,0.55)",
+                      color: active ? "#fff" : "var(--sr-muted)",
                       transition: "color 0.16s ease",
                       lineHeight: 1,
                     }}

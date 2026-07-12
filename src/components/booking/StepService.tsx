@@ -73,11 +73,15 @@ interface Props {
   therapistId: string | null;
 }
 
+// 🆕 28t.16 (founder "ให้เข้าธีม") — badge palette shifted off the old
+//   navy/clay (looked dark + off-brand) onto the rose family: berry for
+//   SIGNATURE, rose for RECOMMEND, deep berry for EXCLUSIVE. POPULAR keeps
+//   a punchy red — the universal "best-seller" signal.
 const BADGE_COLORS: Record<MassageService["badge"], { bg: string; fg: string }> = {
-  SIGNATURE: { bg: "rgba(15, 23, 42, 0.95)", fg: "#fff" },
+  SIGNATURE: { bg: "rgba(184, 86, 127, 0.95)", fg: "#fff" },
   POPULAR: { bg: "rgba(214, 40, 40, 0.95)", fg: "#fff" },
-  RECOMMEND: { bg: "rgba(184, 92, 60, 0.95)", fg: "#fff" },
-  EXCLUSIVE: { bg: "rgba(15, 23, 42, 0.95)", fg: "#FFF0F0" },
+  RECOMMEND: { bg: "rgba(217, 124, 149, 0.95)", fg: "#fff" },
+  EXCLUSIVE: { bg: "rgba(138, 58, 87, 0.96)", fg: "#FFF0F0" },
 };
 
 // Round 28s33 (founder 2026-05-31, "เอา เมนูขายดีขึ้นก่อน") —
@@ -97,7 +101,19 @@ const EDITORIAL_ORDER = [
   "xSR-Thai", // Thai Massage — ฿1,200
 ] as const;
 
+// 🆕 28t.16 — single source of truth for the pinned best-seller (matches
+//   CLAUDE.md §Services `BESTSELLER_SERVICE_ID`). Gentleman's Signature is
+//   the highest-converting SKU (100% of bookings per funnel analytics).
+const BESTSELLER_ID = "SR-HJ2200";
+
 function orderIdx(id: string): number {
+  // 🆕 28t.16 (founder "เอาเมนูขายดีไว้ข้างบน") — the best-seller is ALWAYS
+  //   pinned to the very top of the list, even when an admin-set live order
+  //   (from /admin/promotions) would otherwise sort it lower. This anchors
+  //   the premium tier at the top and lands the "Trending" ring (idx 0) on
+  //   the SKU that actually sells. Every other service keeps the live /
+  //   editorial order below it.
+  if (id === BESTSELLER_ID) return -1000;
   // 🆕 Round 28s302 — admin-set order (from /admin/promotions) wins; the
   //   hardcoded editorial order is the fallback for ids it doesn't list.
   const live = getLiveServiceOrder();
@@ -222,23 +238,24 @@ const StepService: React.FC<Props> = ({
               //   Services page. Selected = brand-red ring; trending =
               //   coral ring.
               position: "relative",
-              borderRadius: "20px",
+              borderRadius: "16px",
               overflow: "hidden",
-              aspectRatio: "16 / 10",
+              // 🆕 28t.12 — smaller service cards (founder "ทำการ์ดให้เล็กลง").
+              aspectRatio: "5 / 2",
               cursor: "pointer",
               userSelect: "none",
               boxShadow: isSelected
-                ? "0 0 0 2.5px #2D2D2B, 0 14px 32px rgba(15, 23, 42, 0.26)"
+                ? "0 0 0 2.5px #D97C95, 0 14px 32px rgba(0, 0, 0, 0.26)"
                 : isTrending
-                  ? "0 0 0 2px #2D2D2B, 0 12px 28px rgba(15, 23, 42, 0.16)"
-                  : "0 8px 22px rgba(15, 23, 42, 0.12)",
+                  ? "0 0 0 2px #D97C95, 0 12px 28px rgba(0, 0, 0, 0.16)"
+                  : "0 8px 22px rgba(0, 0, 0, 0.12)",
               transition: "transform 0.2s ease, box-shadow 0.2s ease",
               "@media (hover: hover)": {
                 "&:hover": { transform: "translateY(-2px)" },
                 "&:hover .svc-img": { transform: "scale(1.05)" },
               },
               "&:focus-visible": {
-                outline: "2px solid #2D2D2B",
+                outline: "2px solid #D97C95",
                 outlineOffset: "2px",
               },
               // 🆕 Round 28s88 (founder "ตรง •TRENDING เป็นกรอบ และมี
@@ -246,16 +263,19 @@ const StepService: React.FC<Props> = ({
               //   red→coral glow frame so it visibly stands out.
               ...(isTrending && !isSelected
                 ? {
+                    // 🆕 28t.16 — rose pulse frame (was dark navy #2D2D2B +
+                    //   rgba(15,23,42) — off-brand + reinforced the "too dark"
+                    //   read). Matches the rose selected-ring below.
                     animation:
                       "sunredTrendFrame 1.7s ease-in-out infinite",
                     "@keyframes sunredTrendFrame": {
                       "0%, 100%": {
                         boxShadow:
-                          "0 0 0 2px #2D2D2B, 0 0 0 4px rgba(15, 23, 42, 0.10), 0 10px 26px rgba(15, 23, 42, 0.22)",
+                          "0 0 0 2px #D97C95, 0 0 0 4px rgba(217, 124, 149, 0.14), 0 10px 26px rgba(217, 124, 149, 0.20)",
                       },
                       "50%": {
                         boxShadow:
-                          "0 0 0 2px #2D2D2B, 0 0 0 9px rgba(15, 23, 42, 0.30), 0 16px 38px rgba(15, 23, 42, 0.40)",
+                          "0 0 0 2px #D97C95, 0 0 0 9px rgba(217, 124, 149, 0.30), 0 16px 38px rgba(217, 124, 149, 0.38)",
                       },
                     },
                     "@media (prefers-reduced-motion: reduce)": {
@@ -272,18 +292,24 @@ const StepService: React.FC<Props> = ({
               sx={{
                 position: "absolute",
                 inset: 0,
-                background: `center / cover no-repeat url("${s.image}"), linear-gradient(135deg, #d4a574, #8b6f47)`,
+                // 🆕 28t.16 — rose placeholder (was tan/brown #d4a574→#8b6f47,
+                //   part of the retired "old" palette).
+                background: `center / cover no-repeat url("${s.image}"), linear-gradient(135deg, #E8B7C6, #D97C95)`,
                 transition: "transform 0.45s cubic-bezier(0.16,1,0.3,1)",
               }}
             />
-            {/* Legibility scrim */}
+            {/* Legibility scrim
+                🆕 28t.16 (founder "ดูมืดเกินไป") — lightened + de-browned.
+                Was an espresso wash (rgba(20,8,4) up to 0.88) that buried
+                the photo on the short 5:2 card; now a neutral near-black
+                just strong enough for the white caption to stay legible. */}
             <Box
               aria-hidden
               sx={{
                 position: "absolute",
                 inset: 0,
                 background:
-                  "linear-gradient(180deg, rgba(20,8,4,0.30) 0%, rgba(20,8,4,0) 28%, rgba(20,8,4,0.45) 55%, rgba(14,5,3,0.88) 100%)",
+                  "linear-gradient(180deg, rgba(12,8,12,0.20) 0%, rgba(12,8,12,0) 36%, rgba(12,8,12,0.30) 62%, rgba(8,5,9,0.76) 100%)",
               }}
             />
 
@@ -326,14 +352,15 @@ const StepService: React.FC<Props> = ({
                     gap: "4px",
                     padding: "3px 9px 3px 7px",
                     borderRadius: 999,
-                    background: "#8F8474",
+                    // 🆕 28t.16 — rose (was taupe #8F8474, retired palette).
+                    background: "#D97C95",
                     color: "#fff",
                     fontFamily: SANS,
                     fontSize: "9.5px",
                     fontWeight: 800,
                     letterSpacing: "0.10em",
                     textTransform: "uppercase",
-                    boxShadow: "0 8px 18px rgba(45, 45, 43, 0.34)",
+                    boxShadow: "0 8px 18px rgba(217, 124, 149, 0.42)",
                     whiteSpace: "nowrap",
                   }}
                 >
@@ -374,12 +401,13 @@ const StepService: React.FC<Props> = ({
                   marginTop: isTrending ? "26px" : 0,
                   padding: "3px 9px",
                   borderRadius: 999,
-                  background: "#8F8474",
+                  // 🆕 28t.16 — rose (was taupe #8F8474 / navy shadow).
+                  background: "#D97C95",
                   color: "#fff",
                   fontFamily: SANS,
                   fontSize: "10px",
                   fontWeight: 800,
-                  boxShadow: "0 4px 12px rgba(15, 23, 42, 0.40)",
+                  boxShadow: "0 4px 12px rgba(217, 124, 149, 0.44)",
                 }}
               >
                 {selectedDuration}m
@@ -504,7 +532,7 @@ const StepService: React.FC<Props> = ({
         <Typography
           sx={{
             fontFamily: SANS,
-            color: "rgba(15, 23, 42, 0.5)",
+            color: "var(--sr-muted)",
             textAlign: "center",
             padding: "40px 20px",
           }}

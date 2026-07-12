@@ -36,6 +36,14 @@ import { db } from "@/lib/firebase";
 export type FunnelEvent =
   | "home_view"
   | "service_view"
+  // 🆕 28t.14 (founder "เพิ่ม therapist_view") — a guest opened a
+  //   practitioner's detail page. Fills the funnel gap between
+  //   home_view (browse) and booking_start (picked a service): it tells
+  //   the founder WHICH practitioners pull profile opens, and how many
+  //   of those opens convert. Payload = { therapistId, name? } — non-PII
+  //   (practitioner display name, not a guest identity). Deduped per
+  //   therapistId per session so a re-open doesn't double-count.
+  | "therapist_view"
   | "booking_start"
   | "booking_complete"
   | "concierge_chat_open"
@@ -131,6 +139,11 @@ function dedupKeyFor(
   if (event === "home_view") return "home_view";
   if (event === "service_view")
     return `service_view:${(props?.serviceId as string) ?? "_"}`;
+  // 🆕 28t.14 — dedupe per therapistId (like service_view): opening 3
+  //   different profiles records 3 events, re-opening the same one in a
+  //   session records 1.
+  if (event === "therapist_view")
+    return `therapist_view:${(props?.therapistId as string) ?? "_"}`;
   if (event === "booking_start")
     return `booking_start:${(props?.therapistId as string) ?? "_"}`;
   // 🆕 Round 28r58 — bundle_view fires on every BundleSection mount
@@ -261,6 +274,13 @@ export const trackHomeView = (area?: string | null): void =>
   trackEvent("home_view", area ? { area } : undefined);
 export const trackServiceView = (serviceId: string): void =>
   trackEvent("service_view", { serviceId });
+// 🆕 28t.14 — a practitioner profile open. `name` is the display name
+//   (non-PII) so the admin dashboard reads "Milo" not "MiloSunRed".
+export const trackTherapistView = (
+  therapistId: string,
+  name?: string | null
+): void =>
+  trackEvent("therapist_view", name ? { therapistId, name } : { therapistId });
 export const trackBookingStart = (therapistId: string | null): void =>
   trackEvent("booking_start", { therapistId });
 export const trackBookingComplete = (

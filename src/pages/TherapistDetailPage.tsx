@@ -21,6 +21,8 @@ import { useTranslation } from "react-i18next";
 //   over the dim backdrop so they stay legible without adding a
 //   fourth accent colour to the palette.
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
+import { formatViews } from "@/utils/formatCount";
 import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 // 🆕 Round 28r85 — Icon-first tab bar (Photos · Services · About)
@@ -120,6 +122,7 @@ import type { Therapist } from "@/types/therapist";
 import { db } from "@/lib/firebase";
 import { doc as fsDoc, getDoc as fsGetDoc } from "firebase/firestore";
 import { recordTherapistView } from "@/utils/therapistViews";
+import { trackTherapistView } from "@/utils/analytics";
 import { enhanceImage } from "@/utils/cloudinary";
 // Round 28s53 — real GPS distance. The DetailHero "Allow location"
 // prompt now triggers an actual geolocation request and the
@@ -238,15 +241,15 @@ const SERVICE_DISPLAY: Record<
     short: "Thai Traditional",
   },
   "SR-Aroma": {
-    icon: <LocalFloristRoundedIcon sx={{ fontSize: 18, color: "#4B4B48" }} />,
+    icon: <LocalFloristRoundedIcon sx={{ fontSize: 18, color: "var(--sr-body)" }} />,
     short: "Aromatherapy",
   },
   "SR-HJ2200": {
-    icon: <FitnessCenterRoundedIcon sx={{ fontSize: 18, color: "#1A2B2E" }} />,
+    icon: <FitnessCenterRoundedIcon sx={{ fontSize: 18, color: "var(--sr-ink)" }} />,
     short: "Gentleman's Signature",
   },
   "SR-B2B3200": {
-    icon: <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#4B4B48" }} />,
+    icon: <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "var(--sr-body)" }} />,
     short: "SunRed Therapeutic",
   },
 };
@@ -345,7 +348,7 @@ function buildFromReal(real: Therapist, lang?: string): DemoTherapist {
       const display = SERVICE_DISPLAY[sid];
       return {
         icon: display?.icon ?? (
-          <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#4B4B48" }} />
+          <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "var(--sr-body)" }} />
         ),
         name: display?.short ?? sid,
         yrs: "", // empty → UI hides subtext line
@@ -817,6 +820,17 @@ const TherapistDetailPage: React.FC = () => {
     type: "profile",
   });
 
+  // 🆕 28t.14 (founder "เพิ่ม therapist_view") — funnel event: this
+  //   practitioner's profile was opened. Fires once the display name has
+  //   resolved (so the admin dashboard shows "Milo", not the raw id);
+  //   trackEvent dedupes per therapistId per session, so the name-resolve
+  //   re-render can't double-count. Separate from recordTherapistView
+  //   above (that bumps the public viewCount chip; this feeds /admin/analytics).
+  useEffect(() => {
+    if (!id || !therapist?.name) return;
+    trackTherapistView(id, therapist.name);
+  }, [id, therapist?.name]);
+
   // 🆕 Phase 4 — Inline picker state. The user picks service+duration+
   //    date+time on this page; StickyBookCTA forwards everything to
   //    /booking/:id via URL params and the booking flow opens directly
@@ -1067,7 +1081,7 @@ const TherapistDetailPage: React.FC = () => {
           padding: "60px 24px",
         }}
       >
-        <CircularProgress size={28} sx={{ color: "#4B4B48" }} />
+        <CircularProgress size={28} sx={{ color: "var(--sr-body)" }} />
       </Box>
     );
   }
@@ -1089,7 +1103,7 @@ const TherapistDetailPage: React.FC = () => {
             ...responsiveType.h3,
             fontFamily: SERIF,
             fontWeight: 600,
-            color: "#1A2B2E",
+            color: "var(--sr-ink)",
             marginBottom: "8px",
           }}
         >
@@ -1098,7 +1112,7 @@ const TherapistDetailPage: React.FC = () => {
         <Typography
           sx={{
             fontSize: "13.5px",
-            color: "rgba(15, 23, 42, 0.65)",
+            color: "var(--sr-body)",
             marginBottom: "20px",
           }}
         >
@@ -1113,10 +1127,10 @@ const TherapistDetailPage: React.FC = () => {
           onClick={() => navigate("/")}
           sx={{
             padding: "10px 22px",
-            border: "1px solid rgba(184, 92, 60, 0.20)",
+            border: "1px solid var(--sr-hairline)",
             borderRadius: 999,
-            background: "#fff",
-            color: "#1A2B2E",
+            background: "var(--sr-panel)",
+            color: "var(--sr-ink)",
             fontFamily: SANS,
             fontSize: "13px",
             fontWeight: 700,
@@ -1144,7 +1158,7 @@ const TherapistDetailPage: React.FC = () => {
         // Round 28s39 — paddingBottom removed; the sticky bottom
         // CTA moved inline after the About card.
         minHeight: "100vh",
-        background: "#F4F6F5",
+        background: "var(--sr-bg)",
         position: "relative",
       }}
     >
@@ -1304,69 +1318,13 @@ const TherapistDetailPage: React.FC = () => {
           );
         })()}
 
-        {/* 🆕 Round 28s365 — Trust badges row.
-            Small frosted pill chips: ✓ Verified (always) ·
-            ✓ Vaccinated (if features.vaccinated = Yes) ·
-            ● Available (if online).
-            Inspired by competitor reference (Ayla card trust signals). */}
-        <Box
-          sx={{
-            display: "flex",
-            gap: "6px",
-            flexWrap: "wrap",
-            margin: "10px 14px 0",
-          }}
-        >
-          {/* Always: Verified */}
-          <Box
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "4px",
-              background: "rgba(29,155,240,0.08)",
-              border: "1px solid rgba(29,155,240,0.22)",
-              borderRadius: "999px",
-              padding: "4px 11px",
-              fontFamily: '"Inter", system-ui, sans-serif',
-              fontSize: "11px",
-              fontWeight: 600,
-              color: "#1d7fbf",
-              letterSpacing: "0.01em",
-            }}
-          >
-            <Box component="span" sx={{ fontSize: "12px", lineHeight: 1 }}>✓</Box>
-            Data verified
-          </Box>
-          {/* Vaccinated — from features */}
-          {realRecord?.features?.vaccinated === "Yes" && (
-            <Box
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-                background: "rgba(22,163,74,0.07)",
-                border: "1px solid rgba(22,163,74,0.20)",
-                borderRadius: "999px",
-                padding: "4px 11px",
-                fontFamily: '"Inter", system-ui, sans-serif',
-                fontSize: "11px",
-                fontWeight: 600,
-                color: "#16a34a",
-                letterSpacing: "0.01em",
-              }}
-            >
-              <Box component="span" sx={{ fontSize: "12px", lineHeight: 1 }}>✓</Box>
-              Vaccinated
-            </Box>
-          )}
-          {/* 🗑️ 28s375 — "Available Now" trust badge removed. Live
-              availability is already shown twice below (the green
-              "พร้อมให้บริการ" status card WITH an arrival ETA, plus the
-              hero status dot). Three indicators for one state violated the
-              founder's own "don't show status twice" guardrail; the status
-              card wins because it carries the arrival window. Trust badges
-              now read Data verified · Vaccinated — matching the reference. */}
-        </Box>
+        {/* 🆕 28t.12 — Trust chips (Data verified · Vaccinated) removed
+            (founder "เอาออก"). Verification is conveyed by the Credentials
+            section below the gallery. */}
+
+        {/* 🆕 28t.10 — Credentials moved back INTO the Photos tab, below the
+            gallery (founder "ย้ายไป ด้านล่างรูป แถบ Photos"). See the About
+            panel in GRID CHILD 4. */}
 
         {/* 🆕 Round 28s366 — About bio + Languages moved here (above tab bar).
             Replaces the same content previously shown inside the Photos tab. */}
@@ -1377,65 +1335,165 @@ const TherapistDetailPage: React.FC = () => {
             facts={[]}
             body={therapist.about}
             gender={therapist.gender}
+            // 🆕 28t.13 — Languages + Credentials live INSIDE the About box,
+            //   revealed when it's expanded (founder "ไปใส่ไว้ข้างใน").
+            extra={
+              <>
+                {therapist.langs.length > 0 && (
+                  <Box>
+                    <Typography
+                      component="p"
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: "10px",
+                        fontWeight: 800,
+                        letterSpacing: "0.16em",
+                        textTransform: "uppercase",
+                        color: "var(--sr-muted)",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      Languages
+                    </Typography>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                      {therapist.langs.map((l) => {
+                        const isNative = l.level
+                          .toUpperCase()
+                          .includes("NATIVE");
+                        return (
+                          <Box
+                            key={l.name}
+                            sx={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "7px",
+                              padding: "6px 11px 6px 10px",
+                              borderRadius: "999px",
+                              background: "var(--sr-panel)",
+                              border: "1px solid var(--sr-hairline)",
+                              boxShadow: "0 2px 8px rgba(35,43,54,0.05)",
+                            }}
+                          >
+                            <Box sx={{ fontSize: "15px", lineHeight: 1 }}>
+                              {l.flag}
+                            </Box>
+                            <Typography
+                              component="span"
+                              sx={{
+                                fontFamily: SANS,
+                                fontSize: "13px",
+                                fontWeight: 700,
+                                color: "var(--sr-ink)",
+                                lineHeight: 1,
+                              }}
+                            >
+                              {l.name}
+                            </Typography>
+                            <Box
+                              component="span"
+                              sx={{
+                                fontFamily: SANS,
+                                fontSize: "8.5px",
+                                fontWeight: 800,
+                                letterSpacing: "0.06em",
+                                textTransform: "uppercase",
+                                color: isNative ? "#2E7D57" : "var(--sr-muted)",
+                                background: isNative
+                                  ? "rgba(87,184,139,0.14)"
+                                  : "rgba(139,147,160,0.14)",
+                                borderRadius: "999px",
+                                padding: "2px 7px",
+                                lineHeight: 1.3,
+                              }}
+                            >
+                              {l.level}
+                            </Box>
+                          </Box>
+                        );
+                      })}
+                    </Box>
+                  </Box>
+                )}
+                {therapist.creds.length > 0 && (
+                  <Box>
+                    <Typography
+                      component="p"
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: "10px",
+                        fontWeight: 800,
+                        letterSpacing: "0.16em",
+                        textTransform: "uppercase",
+                        color: "var(--sr-muted)",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      {t("detail.about.credentials", "Credentials")}
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "12px",
+                      }}
+                    >
+                      {therapist.creds.map((c) => (
+                        <Box
+                          key={c.label}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 36,
+                              height: 36,
+                              borderRadius: "11px",
+                              flexShrink: 0,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              background: "rgba(217,124,149,0.12)",
+                              color: "#D97C95",
+                              "& svg": { fontSize: 19 },
+                            }}
+                          >
+                            {c.icon}
+                          </Box>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography
+                              sx={{
+                                fontFamily: SANS,
+                                fontSize: "13.5px",
+                                fontWeight: 700,
+                                color: "var(--sr-ink)",
+                                lineHeight: 1.25,
+                              }}
+                            >
+                              {c.label}
+                            </Typography>
+                            <Typography
+                              sx={{
+                                fontFamily: SANS,
+                                fontSize: "11.5px",
+                                color: "var(--sr-muted)",
+                                marginTop: "2px",
+                              }}
+                            >
+                              {c.meta}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+              </>
+            }
           />
         </Box>
-
-        {/* Languages row — flag · name · level pills */}
-        {therapist.langs.length > 0 && (
-          <Box sx={{ margin: "10px 14px 0" }}>
-            <Typography
-              component="p"
-              sx={{
-                fontFamily: SANS,
-                fontSize: "10px",
-                fontWeight: 800,
-                letterSpacing: "0.16em",
-                textTransform: "uppercase",
-                color: "#4A5568",
-                marginBottom: "8px",
-              }}
-            >
-              Languages
-            </Typography>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: "6px 16px" }}>
-              {therapist.langs.map((l) => {
-                const isNative = l.level.toUpperCase().includes("NATIVE");
-                return (
-                  <Box
-                    key={l.name}
-                    sx={{ display: "flex", alignItems: "center", gap: "6px" }}
-                  >
-                    <Box sx={{ fontSize: "14px" }}>{l.flag}</Box>
-                    <Typography
-                      component="span"
-                      sx={{
-                        fontFamily: SANS,
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        color: "#1A2B2E",
-                      }}
-                    >
-                      {l.name}
-                    </Typography>
-                    <Typography
-                      component="span"
-                      sx={{
-                        fontFamily: SANS,
-                        fontSize: "9.5px",
-                        fontWeight: 800,
-                        letterSpacing: "0.08em",
-                        color: isNative ? "#2D2D2B" : "rgba(15,23,42,0.55)",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      {l.level}
-                    </Typography>
-                  </Box>
-                );
-              })}
-            </Box>
-          </Box>
-        )}
 
         <Box sx={{ marginTop: "10px" }}>
           <StatusPill
@@ -1444,6 +1502,15 @@ const TherapistDetailPage: React.FC = () => {
             }
             status={livePillStatus}
             nextAvailable={liveNextAvailable}
+            // 🆕 28t.9 — tapping the pill jumps to the Services tab (book flow).
+            onClick={() => {
+              setDetailTab("services");
+              requestAnimationFrame(() => {
+                document
+                  .getElementById("services")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+              });
+            }}
           />
         </Box>
 
@@ -1458,7 +1525,7 @@ const TherapistDetailPage: React.FC = () => {
             padding: "0 18px",
             display: "grid",
             gridTemplateColumns: "1fr 1fr 1fr",
-            borderBottom: "1px solid rgba(184, 92, 60, 0.18)",
+            borderBottom: "1px solid var(--sr-hairline)",
             // 🆕 28s345 — sit above the StatsCard (zIndex 5) so nothing can
             //   ever intercept tab taps ("แท็บ กดไม่ได้ทั้ง 3").
             position: "relative",
@@ -1510,21 +1577,25 @@ const TherapistDetailPage: React.FC = () => {
                   gap: "4px",
                   textAlign: "center",
                   transition: "color 0.18s ease",
-                  color: isActive ? "#1A2B2E" : "#4B4B48",
+                  color: isActive ? "var(--sr-ink)" : "var(--sr-body)",
                   "& .tab-icon": {
-                    color: isActive ? "#2EC4B0" : "#8F8474",
+                    color: isActive ? "#D97C95" : "var(--sr-muted)",
                     transition: "color 0.18s ease",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                   },
                   "&:hover .tab-icon": {
-                    color: isActive ? "#2EC4B0" : "#4B4B48",
+                    color: isActive ? "#D97C95" : "var(--sr-body)",
                   },
                   "&:focus-visible": {
-                    outline: "2px solid #2EC4B0",
-                    outlineOffset: 2,
-                    borderRadius: "6px",
+                    // 🆕 28t.22 (founder "เลยขอบ") — rose + INSET ring. Was
+                    //   teal #2EC4B0 with outlineOffset:2, which drew a box
+                    //   2px OUTSIDE the tab so it spilled past the tab-bar
+                    //   edge on tap. Negative offset keeps it inside.
+                    outline: "2px solid #D97C95",
+                    outlineOffset: "-3px",
+                    borderRadius: "10px",
                   },
                   "&::after": {
                     content: '""',
@@ -1534,7 +1605,7 @@ const TherapistDetailPage: React.FC = () => {
                     bottom: -1,
                     height: 3,
                     borderRadius: 3,
-                    background: isActive ? "#2EC4B0" : "transparent",
+                    background: isActive ? "#D97C95" : "transparent",
                     transition: "background 0.18s ease",
                   },
                 }}
@@ -1603,7 +1674,7 @@ const TherapistDetailPage: React.FC = () => {
                 sx={{
                   fontFamily: SANS,
                   fontSize: 13,
-                  color: "rgba(15,23,42,0.55)",
+                  color: "var(--sr-muted)",
                   textAlign: "center",
                   padding: "24px 0",
                 }}
@@ -1628,7 +1699,7 @@ const TherapistDetailPage: React.FC = () => {
                       fontFamily: SERIF,
                       fontSize: 30,
                       fontWeight: 600,
-                      color: "#1A2B2E",
+                      color: "var(--sr-ink)",
                       lineHeight: 1,
                     }}
                   >
@@ -1643,7 +1714,7 @@ const TherapistDetailPage: React.FC = () => {
                           color:
                             n <= Math.round(liveReviews.avgRating)
                               ? "#E0A82E"
-                              : "rgba(15,23,42,0.18)",
+                              : "var(--sr-dim)",
                         }}
                       />
                     ))}
@@ -1652,7 +1723,7 @@ const TherapistDetailPage: React.FC = () => {
                     sx={{
                       fontFamily: SANS,
                       fontSize: 12,
-                      color: "rgba(15,23,42,0.55)",
+                      color: "var(--sr-muted)",
                     }}
                   >
                     {t("detail.reviews.count", "{{n}} reviews", {
@@ -1667,8 +1738,8 @@ const TherapistDetailPage: React.FC = () => {
                     key={r.bookingId}
                     sx={{
                       padding: "14px 16px",
-                      background: "#FFFFFF",
-                      border: "1px solid #E7E0D5",
+                      background: "var(--sr-panel)",
+                      border: "1px solid var(--sr-hairline)",
                       borderRadius: "14px",
                     }}
                   >
@@ -1690,7 +1761,7 @@ const TherapistDetailPage: React.FC = () => {
                               color:
                                 n <= Math.round(r.rating)
                                   ? "#E0A82E"
-                                  : "rgba(15,23,42,0.18)",
+                                  : "var(--sr-dim)",
                             }}
                           />
                         ))}
@@ -1715,7 +1786,7 @@ const TherapistDetailPage: React.FC = () => {
                         fontFamily: SERIF,
                         fontSize: 13.5,
                         lineHeight: 1.5,
-                        color: "#3C3A36",
+                        color: "var(--sr-body)",
                       }}
                     >
                       {r.body}
@@ -1727,7 +1798,7 @@ const TherapistDetailPage: React.FC = () => {
                           fontSize: 10.5,
                           letterSpacing: "0.04em",
                           textTransform: "uppercase",
-                          color: "rgba(15,23,42,0.45)",
+                          color: "var(--sr-dim)",
                           marginTop: "8px",
                         }}
                       >
@@ -1743,212 +1814,16 @@ const TherapistDetailPage: React.FC = () => {
       </Box>
       {/* ── END GRID CHILD 2 ────────────────────────────────────── */}
 
-      {/* ── GRID CHILD 4 — About section (col 2 row 2 on md+)
-             🆕 Round 28r55 (Phase 3.4) — was `{detailTab === "about"
-             && (...)}`. Now rendered unconditionally with display
-             toggled by breakpoint + tab state.
-             🆕 Round 28r87 — display-conditional dropped: sections
-             now render stacked simultaneously on mobile and the
-             sticky tab bar smooth-scrolls between them. `id="about"`
-             is the IntersectionObserver + hash-scroll anchor;
-             `scrollMarginTop: 90px` lands the section BELOW the
-             sticky tab bar when scrolled to. Same panel content,
-             same handlers. ── */}
-      <Box
-        id="about"
-        role="tabpanel"
-        sx={{
-          // 🆕 28s338 — About lives in the Photos tab (shown above the
-          //   gallery). Hidden on other tabs.
-          display: detailTab === "photos" ? "block" : "none",
-          gridColumn: { md: "2" },
-          gridRow: { md: "2" },
-          // 🆕 Round 28r88 — Mobile stack reordered per founder
-          //   direction (2026-07-08): About → Services → Photos
-          //   ("เอา about ขึ้นก่อน เลื่อน เจอ Photos"). Was `order: 6`
-          //   (bottom of stack) in r87.
-          order: { xs: 3 },
-          paddingTop: { xs: "24px", md: "16px" },
-          scrollMarginTop: { xs: "24px", md: "24px" },
-        }}
-      >
-          {/* 🆕 Round 28r88 — StatsCard removed from here; moved back
-              above the section stack (below hero) per founder direction
-              2026-07-08 ("เอาแถบนี้ ไปยุที่เดิม ซ้อนอยู่ใต้รูป"). Cell
-              taps now scroll-nav instead of opening InfoSheet. */}
-
-          {/* 🆕 Round 28s366 — About moved above tab bar (below trust badges).
-              Not rendered here anymore. */}
-
-          {/* 🆕 Round 28s114 — Discovery Reservation callout (Phase 2 of
-              docs/discovery-offer.md). Shown for every non-star therapist
-              as a soft signal that trying a new practitioner carries an
-              extra welcome ritual. Concierge confirms eligibility at chat
-              time (lifetime 1× per returning guest × practitioner per the
-              policy doc). Excludes the star therapist by design to
-              protect her premium positioning. */}
-          {therapist.id !== "YuriSunRed" && (
-            <Box
-              sx={{
-                // 🆕 Round 28r52 — responsiveShell + top margin.
-                ...responsiveShell,
-                marginTop: "10px",
-                padding: "14px 18px",
-                borderRadius: "16px",
-                background:
-                  "#F4F6F5",
-                border: "1px solid rgba(184, 92, 60, 0.18)",
-                display: "flex",
-                gap: "12px",
-                alignItems: "flex-start",
-              }}
-            >
-              <Box
-                aria-hidden="true"
-                sx={{
-                  fontSize: 22,
-                  lineHeight: 1,
-                  color: "#4B4B48",
-                  marginTop: "1px",
-                }}
-              >
-                ✦
-              </Box>
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography
-                  component="p"
-                  sx={{
-                    fontFamily: SANS,
-                    fontSize: "10px",
-                    fontWeight: 800,
-                    letterSpacing: "0.18em",
-                    textTransform: "uppercase",
-                    color: "#4A5568",
-                    marginBottom: "4px",
-                  }}
-                >
-                  {t(
-                    "detail.discovery.eyebrow",
-                    "Discovery Reservation"
-                  )}
-                </Typography>
-                <Typography
-                  component="p"
-                  sx={{
-                    // 🆕 Round 28r55 (Phase 3.4) — responsiveType.body
-                    //   scales the Discovery blurb from 13.5px (xs) up
-                    //   to 15/16px on tablet/desktop so it reads
-                    //   comfortably in the wider right column.
-                    ...responsiveType.body,
-                    fontFamily: SERIF,
-                    fontWeight: 500,
-                    color: "#1A2B2E",
-                  }}
-                >
-                  {t(
-                    "detail.discovery.body",
-                    "First reservation with {{name}}? Ask the concierge — we may have a complimentary welcome gesture for you.",
-                    { name: therapist.name }
-                  )}
-                </Typography>
-              </Box>
-            </Box>
-          )}
-
-          {/* 🆕 Round 28s221 — Drop the "Show more details" toggle and
-              the embedded sub-sections. FEATURES + Credentials +
-              Specialties + Languages now always render below the About
-              card. Founder: "ปรับ แก้ ทั้ง tab About" — flatter, less
-              progressive disclosure. */}
-          <Box
-            sx={{
-              // 🆕 Round 28r52 — responsiveShell for the About sub-
-              //   sections (features, credentials, langs, specialties).
-              ...responsiveShell,
-              padding: "16px 20px 24px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "16px",
-            }}
-          >
-            {/* BioStatsBar moved to always-visible section (Round 28s361)
-                above the tab bar — no longer rendered here. */}
-
-            {therapist.creds.length > 0 && (
-              <Box>
-                <Typography
-                  component="p"
-                  sx={{
-                    fontFamily: SANS,
-                    fontSize: "11px",
-                    fontWeight: 800,
-                    letterSpacing: "0.14em",
-                    textTransform: "uppercase",
-                    color: "#4A5568",
-                    marginBottom: "10px",
-                  }}
-                >
-                  {t("detail.about.credentials", "Credentials")}
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "10px",
-                  }}
-                >
-                  {therapist.creds.map((c) => (
-                    <Box
-                      key={c.label}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                      }}
-                    >
-                      <Box sx={{ fontSize: "20px", color: "#1A2B2E" }}>
-                        {c.icon}
-                      </Box>
-                      <Box>
-                        <Typography
-                          sx={{
-                            fontFamily: SANS,
-                            fontSize: "13px",
-                            fontWeight: 700,
-                            color: "#1A2B2E",
-                            lineHeight: 1.2,
-                          }}
-                        >
-                          {c.label}
-                        </Typography>
-                        <Typography
-                          sx={{
-                            fontFamily: SANS,
-                            fontSize: "11.5px",
-                            color: "rgba(15, 23, 42, 0.6)",
-                            marginTop: "2px",
-                          }}
-                        >
-                          {c.meta}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  ))}
-                </Box>
-              </Box>
-            )}
-
-            {/* Round 28s366 — Specialties + Languages removed from Photos tab.
-                Languages moved to below trust badges (above tab bar).
-                Specialties removed per founder request. */}
-
-            {/* Round 28s52 — Working hours moved to the DetailHero
-                info overlay (next to Allow location + status pill)
-                per founder ask. No longer rendered as an About-tab
-                section. */}
-          </Box>
-        </Box>
-      {/* ── END GRID CHILD 4 (About panel) ──────────────────────── */}
+      {/* 🆕 28t.15 (founder "Photos ขยับขึ้น ให้บาลานซ์") — the old
+          GRID CHILD 4 (About panel) is GONE. Its content (bio +
+          Languages + Credentials) moved into the collapsible About box
+          above the tab bar (GRID CHILD 2, round 28t.13), so this panel
+          had become an EMPTY padded shell that rendered ~64px of dead
+          space between the tab bar and the Photos grid on the Photos
+          tab. Removing it lets the gallery sit right under the tabs.
+          The `#about` hash still routes to the Photos tab via the
+          hashchange handler (it keys off the string, never this
+          element), so nothing depends on the removed anchor. */}
 
       {/* ── GRID CHILD 3 — Services picker / Reserve rail
              (col 1 row 2 on md+; mobile: order 5, always visible)
@@ -1996,7 +1871,7 @@ const TherapistDetailPage: React.FC = () => {
             fontWeight: 800,
             letterSpacing: "0.18em",
             textTransform: "uppercase",
-            color: "#4B4B48",
+            color: "var(--sr-body)",
             marginBottom: "2px",
           }}
         >
@@ -2008,7 +1883,7 @@ const TherapistDetailPage: React.FC = () => {
             fontFamily: SANS,
             fontSize: 10,
             fontWeight: 500,
-            color: "rgba(15, 23, 42, 0.55)",
+            color: "var(--sr-muted)",
             letterSpacing: "0.02em",
             marginBottom: "10px",
           }}
@@ -2034,7 +1909,7 @@ const TherapistDetailPage: React.FC = () => {
           sx={{
             fontFamily: SANS,
             fontSize: 12,
-            color: "#4A5568",
+            color: "var(--sr-body)",
             textAlign: "center",
             marginTop: "14px",
             lineHeight: 1.5,
@@ -2094,7 +1969,7 @@ const TherapistDetailPage: React.FC = () => {
             fontWeight: 800,
             letterSpacing: "0.18em",
             textTransform: "uppercase",
-            color: "#4B4B48",
+            color: "var(--sr-body)",
             marginBottom: "14px",
           }}
         >
@@ -2105,7 +1980,7 @@ const TherapistDetailPage: React.FC = () => {
           <Box
             sx={{
               padding: "40px 20px",
-              background: "#F7F7F6",
+              background: "var(--sr-panel-2)",
               borderRadius: "16px",
               textAlign: "center",
             }}
@@ -2115,7 +1990,7 @@ const TherapistDetailPage: React.FC = () => {
                 fontFamily: SANS,
                 fontSize: "13px",
                 fontWeight: 500,
-                color: "#4B4B48",
+                color: "var(--sr-body)",
               }}
             >
               {t(
@@ -2128,12 +2003,12 @@ const TherapistDetailPage: React.FC = () => {
           <Box
             sx={{
               display: "grid",
+              // 🆕 28t.12 — 3 photos per row on mobile (founder ref).
               gridTemplateColumns: {
-                xs: "repeat(2, 1fr)",
-                sm: "repeat(3, 1fr)",
+                xs: "repeat(3, 1fr)",
                 md: "repeat(4, 1fr)",
               },
-              gap: { xs: "8px", md: "12px" },
+              gap: { xs: "6px", md: "10px" },
             }}
           >
             {(therapist.images ?? []).map((src, idx) => (
@@ -2151,23 +2026,23 @@ const TherapistDetailPage: React.FC = () => {
                   }
                 )}
                 sx={{
+                  position: "relative",
                   width: "100%",
-                  aspectRatio: "1 / 1",
+                  aspectRatio: "3 / 4",
                   border: "none",
                   padding: 0,
                   cursor: "zoom-in",
                   borderRadius: "12px",
                   overflow: "hidden",
-                  background: "#F7F7F6",
+                  background: "var(--sr-panel-2)",
                   transition:
                     "transform 0.15s ease, box-shadow 0.15s ease",
                   "&:hover": {
                     transform: "translateY(-1px)",
-                    boxShadow:
-                      "0 6px 14px rgba(15, 23, 42, 0.10)",
+                    boxShadow: "var(--sr-card-shadow)",
                   },
                   "&:focus-visible": {
-                    outline: "2px solid #8F8474",
+                    outline: "2px solid #D97C95",
                     outlineOffset: 2,
                   },
                 }}
@@ -2184,10 +2059,45 @@ const TherapistDetailPage: React.FC = () => {
                     display: "block",
                   }}
                 />
+                {/* 🆕 28t.12 — 👁 view count over each photo (founder ref). */}
+                {(realRecord?.viewCount ?? 0) > 0 && (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      padding: "18px 8px 6px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      background:
+                        "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.55) 100%)",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <VisibilityRoundedIcon sx={{ fontSize: 14, color: "#fff" }} />
+                    <Box
+                      component="span"
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        color: "#fff",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {formatViews(realRecord?.viewCount ?? 0)}
+                    </Box>
+                  </Box>
+                )}
               </Box>
             ))}
           </Box>
         )}
+
+        {/* 🆕 28t.13 — Credentials moved INTO the About box (revealed on
+            expand). No longer rendered under the gallery. */}
       </Box>
       {/* ── END GRID CHILD 4 (Photos) ──────────────────────────── */}
       </Box>
@@ -2247,7 +2157,7 @@ const TherapistDetailPage: React.FC = () => {
               }}
             >
               <CloseRoundedIcon
-                sx={{ color: "#8F8474", fontSize: 26 }}
+                sx={{ color: "#fff", fontSize: 26 }}
               />
             </Box>
 
@@ -2287,7 +2197,7 @@ const TherapistDetailPage: React.FC = () => {
                 }}
               >
                 <ChevronLeftRoundedIcon
-                  sx={{ color: "#8F8474", fontSize: 28 }}
+                  sx={{ color: "#fff", fontSize: 28 }}
                 />
               </Box>
             )}
@@ -2340,7 +2250,7 @@ const TherapistDetailPage: React.FC = () => {
                 }}
               >
                 <ChevronRightRoundedIcon
-                  sx={{ color: "#8F8474", fontSize: 28 }}
+                  sx={{ color: "#fff", fontSize: 28 }}
                 />
               </Box>
             )}
@@ -2393,53 +2303,7 @@ const TherapistDetailPage: React.FC = () => {
   );
 };
 
-// ─── Picker section wrapper — matches dSection style of legacy sections ───
-const PickerSection: React.FC<{
-  title: React.ReactNode;
-  subtitle?: string;
-  muted?: boolean;
-  children: React.ReactNode;
-}> = ({ title, subtitle, muted, children }) => (
-  <Box
-    sx={{
-      padding: "20px",
-      borderTop: "1px solid rgba(184, 92, 60, 0.12)",
-      opacity: muted ? 0.55 : 1,
-      transition: "opacity 0.2s ease",
-    }}
-  >
-    <Typography
-      component="h3"
-      sx={{
-        fontFamily: SERIF,
-        fontSize: "22px",
-        fontWeight: 500,
-        color: "#1A2B2E",
-        letterSpacing: "-0.02em",
-        marginBottom: subtitle ? "4px" : "16px",
-        "& em": {
-          fontStyle: "italic",
-          color: "#4B4B48",
-          fontWeight: 500,
-        },
-      }}
-    >
-      {title}
-    </Typography>
-    {subtitle && (
-      <Typography
-        sx={{
-          fontFamily: SANS,
-          fontSize: "12px",
-          color: "rgba(15, 23, 42, 0.6)",
-          marginBottom: "16px",
-        }}
-      >
-        {subtitle}
-      </Typography>
-    )}
-    {children}
-  </Box>
-);
+// 🆕 28t.21 — removed the unused `PickerSection` wrapper (defined, never
+//   rendered — dead since the tab refactor).
 
 export default TherapistDetailPage;

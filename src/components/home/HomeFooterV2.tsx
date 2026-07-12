@@ -86,9 +86,9 @@ const HomeFooterV2: React.FC = () => {
         marginTop: { xs: "36px", md: "48px" },
         marginX: { xs: "12px", md: "12px" },
         padding: { xs: "28px 20px 32px", md: "36px 32px 40px" },
-        background: "#ECEBE8", // NEUTRAL_100 — sits above BottomNav
+        background: "var(--sr-panel-deep)", // PANEL_DEEP — deepest ground, just above ESPRESSO bg
         borderRadius: "20px",
-        borderTop: "1px solid #E2E0DD", // NEUTRAL_200
+        borderTop: "1px solid var(--sr-hairline)", // GOLD hairline — embroidery
       }}
     >
       {/* Brand lockup */}
@@ -106,12 +106,12 @@ const HomeFooterV2: React.FC = () => {
             width: 36,
             height: 36,
             borderRadius: "50%",
-            background: "#F7F7F6", // NEUTRAL_50
-            border: "1px solid #E2E0DD",
+            background: "var(--sr-panel-2)", // WALNUT — inner chip
+            border: "1px solid var(--sr-hairline)", // GOLD hairline
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#4B4B48", // GRAY_800
+            color: "var(--sr-gold-text)", // GOLD — logo star
             fontSize: 15,
             lineHeight: 1,
           }}
@@ -124,7 +124,7 @@ const HomeFooterV2: React.FC = () => {
               fontFamily: fonts.heading,
               fontSize: 17,
               fontWeight: 500,
-              color: "#4B4B48", // GRAY_900
+              color: "var(--sr-ink)", // IVORY — brand heading
               letterSpacing: "0.02em",
               lineHeight: 1,
             }}
@@ -138,7 +138,7 @@ const HomeFooterV2: React.FC = () => {
               fontWeight: 600,
               letterSpacing: "0.28em",
               textTransform: "uppercase",
-              color: "#6E6E6A", // GRAY_600
+              color: "var(--sr-muted)", // CHAMPAGNE — muted eyebrow
               marginTop: "2px",
             }}
           >
@@ -152,7 +152,7 @@ const HomeFooterV2: React.FC = () => {
         sx={{
           fontFamily: fonts.body,
           fontSize: 12,
-          color: "#6E6E6A", // GRAY_600
+          color: "var(--sr-muted)", // CHAMPAGNE — muted tagline
           lineHeight: 1.6,
           marginBottom: "22px",
           maxWidth: 320,
@@ -168,7 +168,7 @@ const HomeFooterV2: React.FC = () => {
           gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(3, 1fr)" },
           gap: { xs: "18px 16px", md: "20px" },
           paddingTop: "20px",
-          borderTop: "1px solid #E2E0DD", // NEUTRAL_200 hairline
+          borderTop: "1px solid var(--sr-line)", // subtle divider on dark
         }}
       >
         {columns.map((col) => (
@@ -178,7 +178,7 @@ const HomeFooterV2: React.FC = () => {
                 fontFamily: fonts.body,
                 fontSize: 11.5,
                 fontWeight: 600,
-                color: "#4B4B48", // GRAY_900
+                color: "var(--sr-ink)", // IVORY — column heading
                 marginBottom: "10px",
               }}
             >
@@ -203,7 +203,7 @@ const HomeFooterV2: React.FC = () => {
                     fontFamily: fonts.body,
                     fontSize: 11,
                     fontWeight: 400,
-                    color: "#6E6E6A", // GRAY_600
+                    color: "var(--sr-body)", // CREAM — links
                     lineHeight: 1.5,
                   }}
                 >
@@ -223,9 +223,9 @@ const HomeFooterV2: React.FC = () => {
                         color: "inherit",
                         textDecoration: "none",
                         transition: "color 0.16s ease",
-                        "&:hover": { color: "#4B4B48" },
+                        "&:hover": { color: "#D97C95" }, // ROSE — link hover
                         "&:focus-visible": {
-                          outline: "2px solid #2D2D2B",
+                          outline: "2px solid #D97C95", // ROSE focus ring
                           outlineOffset: 2,
                           borderRadius: "3px",
                         },
@@ -243,9 +243,9 @@ const HomeFooterV2: React.FC = () => {
                         cursor: "pointer",
                         color: "inherit",
                         transition: "color 0.16s ease",
-                        "&:hover": { color: "#4B4B48" },
+                        "&:hover": { color: "#D97C95" }, // ROSE — link hover
                         "&:focus-visible": {
-                          outline: "2px solid #2D2D2B",
+                          outline: "2px solid #D97C95", // ROSE focus ring
                           outlineOffset: 2,
                           borderRadius: "3px",
                         },
@@ -266,10 +266,10 @@ const HomeFooterV2: React.FC = () => {
         sx={{
           marginTop: "22px",
           paddingTop: "16px",
-          borderTop: "1px solid #E2E0DD",
+          borderTop: "1px solid var(--sr-line)", // subtle divider on dark
           fontFamily: fonts.body,
           fontSize: 10.5,
-          color: "#8E8E89", // GRAY_500 dim
+          color: "var(--sr-dim)", // DIM — legal caption
           textAlign: "center",
           letterSpacing: "0.02em",
         }}
