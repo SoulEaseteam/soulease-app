@@ -23,119 +23,59 @@ import React, { useState } from "react";
 import { Box, Typography, Collapse } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
-import EventNoteRoundedIcon from "@mui/icons-material/EventNoteRounded";
-import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
-import LocalOfferRoundedIcon from "@mui/icons-material/LocalOfferRounded";
-import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
-import LockRoundedIcon from "@mui/icons-material/LockRounded";
-// 🆕 Round 28s202 — HelpOutlineRoundedIcon dropped along with the
-//   trimmed "Common questions" FAQ section.
+// 🆕 Round 28r107 — per-category icons dropped along with the category
+//   chip row + per-category cards.  Single flat accordion now.
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 interface QA {
+  id: string;
   q: string;
   a: string;
 }
-interface FAQSection {
-  id: string;
-  icon: React.ReactNode;
-  title: string;
-  items: QA[];
-}
 
-// 🆕 Round 28s202 — Founder audit: "ลดจำนวนลงหน่อย มีบางอย่าง
-//   เยอะไป". FAQ trimmed from 28 → 13 Q&As (roughly the top 2-3
-//   per category that the concierge actually answers most often).
-//   Full archive preserved in git history if a future round needs it.
-const FAQ_SECTIONS: FAQSection[] = [
+// 🆕 Round 28r107 — Founder audit: "หน้านี้ เขียนซ้ำ เขียน มั่ว
+//   เขียน งง". Trimmed 13 → 6 essential Q&A, dropped the category
+//   chip row + per-category card wrapper. Now a single flat accordion.
+//   Dropped items (still in git):
+//   · "Difference between 4 services" — Services tab already lists them
+//   · "Are photos real" — trust signal, belongs on About / therapist page
+//   · "Are there add-ons" — booking flow surfaces this at reserve time
+//   · "Where do you deliver" — Services tab Areas & Timing has it
+//   · "How is travel fee calculated" — booking flow handles it
+//   · "Payment methods" — /payment-methods CTA above owns this
+//   · Merged 2 discretion Qs (charge + arrival) into one
+const FAQ_ITEMS: QA[] = [
   {
-    id: "booking",
-    icon: <EventNoteRoundedIcon />,
-    title: "Booking",
-    items: [
-      {
-        q: "How do I make a reservation?",
-        a: "Open the Therapists tab, tap a practitioner, choose your service and time, then confirm. The concierge confirms within minutes via your preferred channel (LINE, WhatsApp, Telegram). No phone calls required.",
-      },
-      {
-        q: "How quickly can a practitioner arrive?",
-        a: "Most reservations land between 30–60 minutes after concierge confirmation. Express slots within the hour are flagged on each practitioner's card when she's already on standby in your district.",
-      },
-      {
-        q: "What's the cancellation policy?",
-        a: "Cancellation is complimentary up until the practitioner has been dispatched. Once she's en route, a travel reimbursement applies. The concierge will tell you transparently before charging anything.",
-      },
-    ],
+    id: "book",
+    q: "How do I book?",
+    a: "Open the Therapists tab, pick a practitioner, choose your service and time, then confirm. The concierge confirms within minutes on LINE, WhatsApp, or Telegram — no phone calls.",
   },
   {
-    id: "practitioners",
-    icon: <GroupsRoundedIcon />,
-    title: "Practitioners",
-    items: [
-      {
-        q: "Are all practitioners female?",
-        a: "Yes — 100% Thai, cisgender female. Verified roster only. If you require otherwise, Bangkok has many other options outside our service.",
-      },
-      {
-        q: "Are the photos real?",
-        a: "Every photo is taken in-house — no AI-generated images, no stock, no filtered-beyond-recognition retouching. The roster is small enough that we vet every photograph manually.",
-      },
-    ],
+    id: "arrive",
+    q: "How quickly can she arrive?",
+    a: "Most reservations land within 30–60 minutes of concierge confirmation. Express slots are flagged on the practitioner's card when she's already on standby in your district.",
   },
   {
-    id: "services",
-    icon: <LocalOfferRoundedIcon />,
-    title: "Services & Pricing",
-    items: [
-      {
-        q: "What's the difference between the four services?",
-        a: "Thai Massage is traditional dry-compression, fully clothed. Aromatherapy is oil-based whole-body relaxation. Gentleman's Signature is aromatherapy with a personalised finishing ritual. SunRed Therapeutic is our most refined ritual — a whole-body oil ceremony reserved for specialised practitioners. Tap any service for the full inclusions list.",
-      },
-      {
-        q: "Why are SunRed prices higher than other Bangkok options?",
-        a: "Each session price includes premium aromatic oil, in-suite delivery, a verified-roster practitioner, an unhurried 60–120 minute ritual, and a fixed concierge-confirmed total — no haggling, no surprise add-ons. Other places typically charge those separately.",
-      },
-      {
-        q: "Are there any add-ons or extras?",
-        a: "Premium aromatic oil upgrades, beyond-central-zone travel, session extension (60→90→120 min), and duo experiences are the formal enhancements. Anything outside the listed ritual is not part of our service.",
-      },
-    ],
+    id: "cancel",
+    q: "What's the cancellation policy?",
+    a: "Complimentary up until dispatch. Once she's en route, a travel reimbursement applies — the concierge tells you transparently before anything is charged.",
   },
   {
-    id: "areas",
-    icon: <LocationOnRoundedIcon />,
-    title: "Areas served",
-    items: [
-      {
-        q: "Where do you deliver?",
-        a: "Bangkok metro only — Sukhumvit, Silom, Asok, Thonglor, Riverside, Sathorn, and surrounding districts. We do not currently serve Phuket, Pattaya, Chiang Mai, or other provinces.",
-      },
-      {
-        q: "How is the travel fee calculated?",
-        a: "Travel within central Bangkok is included for most reservations. For locations beyond the dense central zone (typically beyond ~10km), a transparent surcharge is added at booking time — no hidden fees on arrival.",
-      },
-    ],
+    id: "female",
+    q: "Are all practitioners female?",
+    a: "Yes — 100% Thai, cisgender female. Verified roster only.",
   },
   {
-    id: "payment",
-    icon: <LockRoundedIcon />,
-    title: "Payment & Discretion",
-    items: [
-      {
-        q: "Which payment methods do you accept?",
-        a: "PromptPay (instant Thai bank transfer) and cash on arrival are the canonical methods. Credit-card payment is available via the concierge for trusted repeat guests.",
-      },
-      {
-        q: "Will the charge appear discreetly?",
-        a: "PromptPay transfers show only the receiving account name (a neutral entity). Cash payments leave no record at all. We don't issue branded receipts unless you specifically request one.",
-      },
-      {
-        q: "Is the practitioner's arrival hotel-discrete?",
-        a: "Yes. Practitioners arrive in everyday attire — nothing on their person signals 'massage service'. Hotel reception sees a guest visitor; nothing more.",
-      },
-    ],
+    id: "value",
+    q: "Why are SunRed prices higher than other Bangkok options?",
+    a: "Each price includes premium oil, in-suite delivery, a verified practitioner, an unhurried 60–120 minute ritual, and a fixed concierge-confirmed total. No haggling, no surprise add-ons.",
+  },
+  {
+    id: "discreet",
+    q: "How discreet is the visit?",
+    a: "Practitioners arrive in everyday attire — nothing signals 'massage service'. PromptPay transfers show only the neutral receiving account; cash leaves no record. No branded receipts unless you ask.",
   },
 ];
 
@@ -300,141 +240,33 @@ export const HowItWorksFAQ: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* 🆕 Round 28s201 — Category jump pills. Founder audit:
-          28 Q&A is a long scroll — guests should be able to skip to
-          the section they need. Horizontal snap row mirrors the
-          Services rate-card row's interaction model. */}
+      {/* 🆕 28r107 — single flat accordion (was 5 category cards +
+          horizontal jump-pill row). 6 essential Q&A only. */}
       <Box
         sx={{
-          display: "flex",
-          gap: 1,
-          padding: "4px 4px 6px",
-          margin: "-4px -4px 0",
-          overflowX: "auto",
-          scrollSnapType: "x proximity",
-          scrollbarWidth: "none",
-          "&::-webkit-scrollbar": { display: "none" },
+          borderRadius: "16px",
+          background: "var(--sr-panel)",
+          border: "1px solid var(--sr-hairline)",
+          boxShadow: "var(--sr-card-shadow)",
+          padding: "6px 18px",
         }}
       >
-        {FAQ_SECTIONS.map((section) => (
-          <Box
-            key={section.id}
-            component="button"
-            type="button"
-            onClick={() => {
-              const el = document.getElementById(`faq-${section.id}`);
-              if (el) {
-                el.scrollIntoView({ behavior: "smooth", block: "start" });
-              }
-            }}
-            sx={{
-              flexShrink: 0,
-              padding: "7px 14px",
-              borderRadius: 999,
-              border: "1px solid var(--sr-hairline)",
-              background: "var(--sr-panel)",
-              fontFamily: SANS,
-              fontSize: 11.5,
-              fontWeight: 700,
-              letterSpacing: "0.02em",
-              color: "var(--sr-ink)",
-              cursor: "pointer",
-              scrollSnapAlign: "start",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 0.75,
-              transition:
-                "transform 0.15s ease, border-color 0.15s ease, background 0.15s ease",
-              "& svg": { fontSize: 14, color: "#D97C95" },
-              "&:hover": {
-                transform: "translateY(-1px)",
-                borderColor: "rgba(217, 124, 149, 0.55)",
-                background: "var(--sr-panel-2)",
-              },
-              "&:focus-visible": {
-                outline: "2px solid #D97C95",
-                outlineOffset: 2,
-              },
-            }}
-          >
-            {section.icon}
-            {section.title}
-          </Box>
-        ))}
+        {FAQ_ITEMS.map((qa) => {
+          const localised = {
+            id: qa.id,
+            q: t(`home.faq2.${qa.id}.q`, qa.q),
+            a: t(`home.faq2.${qa.id}.a`, qa.a),
+          };
+          return (
+            <FAQRow
+              key={qa.id}
+              qa={localised}
+              open={openKey === qa.id}
+              onToggle={() => setOpenKey(openKey === qa.id ? null : qa.id)}
+            />
+          );
+        })}
       </Box>
-
-      {FAQ_SECTIONS.map((section) => (
-        <Box
-          key={section.id}
-          id={`faq-${section.id}`}
-          sx={{
-            scrollMarginTop: "80px",
-            borderRadius: "16px",
-            background: "var(--sr-panel)",
-            border: "1px solid var(--sr-hairline)",
-            boxShadow: "var(--sr-card-shadow)",
-            padding: "16px 18px 6px",
-          }}
-        >
-          {/* Section header */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              marginBottom: "8px",
-            }}
-          >
-            <Box
-              aria-hidden
-              sx={{
-                width: 30,
-                height: 30,
-                flexShrink: 0,
-                borderRadius: "9px",
-                background: "rgba(217, 124, 149, 0.14)",
-                color: "#D97C95",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                "& svg": { fontSize: 18 },
-              }}
-            >
-              {section.icon}
-            </Box>
-            <Typography
-              sx={{
-                fontFamily: SERIF,
-                fontSize: "16px",
-                fontWeight: 600,
-                color: "var(--sr-ink)",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              {/* 🆕 Round 28r16 — i18n keys. English defaults stay
-                  inline; non-English locales (starting with ZH) resolve
-                  via translation files. */}
-              {t(`home.faq2.${section.id}.title`, section.title)}
-            </Typography>
-          </Box>
-
-          {section.items.map((qa, idx) => {
-            const key = `${section.id}-${idx}`;
-            const localised = {
-              q: t(`home.faq2.${section.id}.${idx}.q`, qa.q),
-              a: t(`home.faq2.${section.id}.${idx}.a`, qa.a),
-            };
-            return (
-              <FAQRow
-                key={key}
-                qa={localised}
-                open={openKey === key}
-                onToggle={() => setOpenKey(openKey === key ? null : key)}
-              />
-            );
-          })}
-        </Box>
-      ))}
     </Box>
   );
 };

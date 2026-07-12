@@ -41,14 +41,15 @@ const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 // ─── Three-movement ritual data ───────────────────────────────────────
+// 🆕 28r107 (founder 2026-07-13 · "หน้านี้ เขียนซ้ำ เขียน มั่ว เขียน งง") —
+//   dropped the decorative meta lines under each step (Browse · Choose ·
+//   Confirm etc.) and tightened each body to a single sentence.
 type StepDef = {
   num: number;
   titleKey: string;
   titleFallback: string;
   bodyKey: string;
   bodyFallback: string;
-  metaKey: string;
-  metaFallback: string;
 };
 
 const STEPS: StepDef[] = [
@@ -58,9 +59,7 @@ const STEPS: StepDef[] = [
     titleFallback: "Select your practitioner",
     bodyKey: "home.howItWorks.step1.body",
     bodyFallback:
-      "Browse a curated roster of licensed practitioners. Filter by specialty, language, and who's available tonight.",
-    metaKey: "home.howItWorks.step1.meta",
-    metaFallback: "Browse · Choose · Confirm",
+      "Browse the curated roster. Filter by specialty, language, and who's available tonight.",
   },
   {
     num: 2,
@@ -68,9 +67,7 @@ const STEPS: StepDef[] = [
     titleFallback: "Schedule the appointment",
     bodyKey: "home.howItWorks.step2.body",
     bodyFallback:
-      "Hotel suite, private residence, or villa anywhere in central Bangkok. Sessions of 60 to 120 minutes, arranged with discretion.",
-    metaKey: "home.howItWorks.step2.meta",
-    metaFallback: "Time · Place · Discretion",
+      "Hotel suite, residence, or villa anywhere in central Bangkok — sessions of 60 to 120 minutes.",
   },
   {
     num: 3,
@@ -78,9 +75,7 @@ const STEPS: StepDef[] = [
     titleFallback: "Restore in your sanctuary",
     bodyKey: "home.howItWorks.step3.body",
     bodyFallback:
-      "Your practitioner arrives fully equipped. Settle the booking securely, share a private review, and request her again anytime through the concierge.",
-    metaKey: "home.howItWorks.step3.meta",
-    metaFallback: "Arrival · Service · Renewal",
+      "Your practitioner arrives fully equipped and discreet. Settle securely afterwards.",
   },
 ];
 
@@ -278,19 +273,9 @@ const HowItWorks: React.FC = () => {
                   {t(step.bodyKey, step.bodyFallback)}
                 </Box>
 
-                <Box
-                  sx={{
-                    mt: "10px",
-                    fontFamily: SANS,
-                    fontSize: "9.5px",
-                    fontWeight: 700,
-                    letterSpacing: "0.2em",
-                    textTransform: "uppercase",
-                    color: "var(--sr-muted)",
-                  }}
-                >
-                  {t(step.metaKey, step.metaFallback)}
-                </Box>
+                {/* 🆕 28r107 — meta line ("Browse · Choose · Confirm" etc.)
+                    removed per founder audit "หน้านี้ เขียนซ้ำ เขียน มั่ว
+                    เขียน งง". Kept in git if a future round wants it back. */}
               </Box>
             </Box>
           ))}
