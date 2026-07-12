@@ -500,21 +500,23 @@ const StepDateTime: React.FC<Props> = ({
                   // Round 28s65 — flat date pills: solid white +
                   // hairline clay border at rest, no shadow. Only
                   // the active pill carries the gradient + glow.
+                  // 🆕 28t.20 — day/night rose (was navy-active / white-rest,
+                  //   a light island on the now-dark sheet).
                   background: isActive
-                    ? "#2D2D2B"
-                    : "#fff",
-                  color: isActive ? "#fff" : "#1A2B2E",
+                    ? "#D97C95"
+                    : "var(--sr-panel-2)",
+                  color: isActive ? "#fff" : "var(--sr-ink)",
                   border: isActive
                     ? "1px solid transparent"
-                    : "1px solid rgba(184, 92, 60, 0.16)",
+                    : "1px solid var(--sr-hairline)",
                   boxShadow: isActive
-                    ? "0 6px 16px rgba(15, 23, 42, 0.26)"
+                    ? "0 6px 16px rgba(217, 124, 149, 0.28)"
                     : "none",
                   fontFamily: SANS,
                   transition:
                     "background 0.2s ease, border-color 0.2s ease",
                   "&:focus-visible": {
-                    outline: "2px solid #2D2D2B",
+                    outline: "2px solid #D97C95",
                     outlineOffset: "2px",
                   },
                 }}
@@ -550,7 +552,7 @@ const StepDateTime: React.FC<Props> = ({
             sx={{
               fontFamily: SANS,
               fontSize: "11.5px",
-              color: "rgba(15, 23, 42, 0.55)",
+              color: "var(--sr-muted)",
               marginTop: "10px",
               paddingLeft: "4px",
             }}
@@ -581,7 +583,7 @@ const StepDateTime: React.FC<Props> = ({
             sx={{
               width: 13,
               height: 13,
-              color: "rgba(15, 23, 42, 0.45)",
+              color: "var(--sr-muted)",
               flexShrink: 0,
             }}
           >
@@ -594,7 +596,7 @@ const StepDateTime: React.FC<Props> = ({
             sx={{
               fontFamily: SANS,
               fontSize: "10.5px",
-              color: "rgba(15, 23, 42, 0.5)",
+              color: "var(--sr-muted)",
               fontStyle: "italic",
               letterSpacing: "0.01em",
             }}
@@ -663,7 +665,7 @@ const StepDateTime: React.FC<Props> = ({
                 fontFamily: SERIF,
                 fontSize: "16px",
                 fontWeight: 700,
-                color: "#1A2B2E",
+                color: "var(--sr-ink)",
                 lineHeight: 1.2,
               }}
             >
@@ -678,8 +680,8 @@ const StepDateTime: React.FC<Props> = ({
                     marginLeft: "6px",
                     padding: "2px 6px",
                     borderRadius: "4px",
-                    background: "rgba(15, 23, 42, 0.08)",
-                    color: "rgba(15, 23, 42, 0.7)",
+                    background: "var(--sr-panel)",
+                    color: "var(--sr-body)",
                     verticalAlign: "middle",
                   }}
                 >
@@ -707,7 +709,7 @@ const StepDateTime: React.FC<Props> = ({
         <Typography
           sx={{
             fontFamily: SANS,
-            color: "rgba(15, 23, 42, 0.5)",
+            color: "var(--sr-muted)",
             textAlign: "center",
             padding: "40px 20px",
             fontStyle: "italic",
@@ -719,7 +721,7 @@ const StepDateTime: React.FC<Props> = ({
         Object.values(slotGroups).every((g) => g.length === 0) ? (
         <Box
           sx={{
-            background: "rgba(255, 255, 255, 0.5)",
+            background: "var(--sr-panel-2)",
             borderRadius: "16px",
             padding: "32px 20px",
             textAlign: "center",
@@ -729,7 +731,7 @@ const StepDateTime: React.FC<Props> = ({
             sx={{
               fontFamily: SERIF,
               fontSize: "16px",
-              color: "#1A2B2E",
+              color: "var(--sr-ink)",
               marginBottom: "4px",
             }}
           >
@@ -739,7 +741,7 @@ const StepDateTime: React.FC<Props> = ({
             sx={{
               fontFamily: SANS,
               fontSize: "12px",
-              color: "rgba(15, 23, 42, 0.6)",
+              color: "var(--sr-muted)",
             }}
           >
             {t("stepdt.noSlotsHint", "Try another day or another therapist.")}
@@ -891,18 +893,18 @@ const StepDateTime: React.FC<Props> = ({
                             background: taken
                               ? "transparent"
                               : isActive
-                                ? "#2D2D2B"
-                                : "#fff",
+                                ? "#D97C95"
+                                : "var(--sr-panel-2)",
                             color: taken
-                              ? "rgba(15, 23, 42, 0.3)"
+                              ? "var(--sr-dim)"
                               : isActive
                                 ? "#fff"
-                                : "#1A2B2E",
+                                : "var(--sr-ink)",
                             border: taken
-                              ? "1px solid rgba(15, 23, 42, 0.10)"
+                              ? "1px solid var(--sr-line)"
                               : isActive
                                 ? "1px solid transparent"
-                                : "1px solid rgba(184, 92, 60, 0.16)",
+                                : "1px solid var(--sr-hairline)",
                             fontFamily: SANS,
                             fontSize: "13.5px",
                             fontWeight: 600,
@@ -910,7 +912,7 @@ const StepDateTime: React.FC<Props> = ({
                             whiteSpace: "nowrap",
                             textDecoration: taken ? "line-through" : "none",
                             boxShadow: isActive
-                              ? "0 6px 16px rgba(15, 23, 42, 0.28)"
+                              ? "0 6px 16px rgba(217, 124, 149, 0.28)"
                               : "none",
                             transition:
                               "background 0.15s ease, border-color 0.15s ease, transform 0.12s ease",
@@ -920,12 +922,12 @@ const StepDateTime: React.FC<Props> = ({
                                 : isActive
                                   ? {}
                                   : {
-                                      borderColor: "rgba(15, 23, 42, 0.40)",
-                                      background: "rgba(45, 45, 43, 0.03)",
+                                      borderColor: "rgba(217, 124, 149, 0.45)",
+                                      background: "var(--sr-panel)",
                                     },
                             },
                             "&:focus-visible": {
-                              outline: "2px solid #2D2D2B",
+                              outline: "2px solid #D97C95",
                               outlineOffset: "2px",
                             },
                           }}
