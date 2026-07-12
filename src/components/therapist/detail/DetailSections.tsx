@@ -255,11 +255,15 @@ export const About: React.FC<{
   };
 
   // Hide the whole section when there's nothing real to show.
+  // 🆕 28t.21 — also keep it when `extra` (Languages + Credentials) exists:
+  //   a bio-less Firestore practitioner still has trust signals to show, and
+  //   the old guard hid them entirely.
   if (
     rows.length === 0 &&
     facts.length === 0 &&
     !body?.trim() &&
-    validImages.length === 0
+    validImages.length === 0 &&
+    !extra
   )
     return null;
 

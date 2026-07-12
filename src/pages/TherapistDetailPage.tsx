@@ -2299,53 +2299,7 @@ const TherapistDetailPage: React.FC = () => {
   );
 };
 
-// ─── Picker section wrapper — matches dSection style of legacy sections ───
-const PickerSection: React.FC<{
-  title: React.ReactNode;
-  subtitle?: string;
-  muted?: boolean;
-  children: React.ReactNode;
-}> = ({ title, subtitle, muted, children }) => (
-  <Box
-    sx={{
-      padding: "20px",
-      borderTop: "1px solid var(--sr-hairline)",
-      opacity: muted ? 0.55 : 1,
-      transition: "opacity 0.2s ease",
-    }}
-  >
-    <Typography
-      component="h3"
-      sx={{
-        fontFamily: SERIF,
-        fontSize: "22px",
-        fontWeight: 500,
-        color: "var(--sr-ink)",
-        letterSpacing: "-0.02em",
-        marginBottom: subtitle ? "4px" : "16px",
-        "& em": {
-          fontStyle: "italic",
-          color: "var(--sr-body)",
-          fontWeight: 500,
-        },
-      }}
-    >
-      {title}
-    </Typography>
-    {subtitle && (
-      <Typography
-        sx={{
-          fontFamily: SANS,
-          fontSize: "12px",
-          color: "var(--sr-muted)",
-          marginBottom: "16px",
-        }}
-      >
-        {subtitle}
-      </Typography>
-    )}
-    {children}
-  </Box>
-);
+// 🆕 28t.21 — removed the unused `PickerSection` wrapper (defined, never
+//   rendered — dead since the tab refactor).
 
 export default TherapistDetailPage;

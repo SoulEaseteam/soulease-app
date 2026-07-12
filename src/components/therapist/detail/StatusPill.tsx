@@ -20,6 +20,11 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
+// 🆕 28t.21 — MUI icons replace the ⏱ / 💤 status emoji (CLAUDE.md §3
+//   no-emoji production rule; the ✓ online glyph → CheckRounded too).
+import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
+import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import BedtimeRoundedIcon from "@mui/icons-material/BedtimeRounded";
 // 🆕 Round 28ap — BKK-anchored time, used to compute relative
 //   "in 2 hours" hint on the next-available subtitle.
 // 🆕 Round 28b15 — `prettyHHMM` adds the 12h reading "(7:30 PM)"
@@ -70,7 +75,7 @@ interface Props {
 const VARIANTS: Record<
   AvailabilityStatus,
   {
-    icon: string;
+    icon: React.ReactNode;
     title: string;
     titleKey: string;
     bg: string;
@@ -80,7 +85,7 @@ const VARIANTS: Record<
   }
 > = {
   online: {
-    icon: "✓",
+    icon: <CheckRoundedIcon sx={{ fontSize: 16 }} />,
     // Round 28s61 — `title` kept as the English fallback; the
     // rendered label now goes through t("detail.status.*") so
     // ZH/JA/KO/TH visitors see their language.
@@ -96,7 +101,7 @@ const VARIANTS: Record<
     iconBg: "#57B88B",
   },
   busy: {
-    icon: "⏱",
+    icon: <AccessTimeRoundedIcon sx={{ fontSize: 15 }} />,
     title: "Currently Busy",
     titleKey: "detail.status.busy",
     bg: "rgba(249, 115, 22, 0.08)",
@@ -105,7 +110,7 @@ const VARIANTS: Record<
     iconBg: "#f97316",
   },
   offline: {
-    icon: "💤",
+    icon: <BedtimeRoundedIcon sx={{ fontSize: 15 }} />,
     title: "Off duty",
     titleKey: "detail.status.offline",
     bg: "var(--sr-panel-2)",
