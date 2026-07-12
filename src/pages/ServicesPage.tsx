@@ -697,7 +697,7 @@ const ServicesPage: React.FC = () => {
                   hidden: { scaleX: 0, transformOrigin: "right" },
                   visible: { scaleX: 1, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
                 }}
-                sx={{ flex: 1, height: 1, background: "var(--sr-hairline)" }}
+                sx={{ flex: 1, height: 1, background: "rgba(217,124,149,0.45)" }}
               />
               <Box
                 component={motion.p}
@@ -711,7 +711,7 @@ const ServicesPage: React.FC = () => {
                   fontWeight: 800,
                   letterSpacing: "0.20em",
                   textTransform: "uppercase",
-                  color: "var(--sr-muted)",
+                  color: ROSE,
                   m: 0,
                 }}
               >
@@ -724,7 +724,7 @@ const ServicesPage: React.FC = () => {
                   hidden: { scaleX: 0, transformOrigin: "left" },
                   visible: { scaleX: 1, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
                 }}
-                sx={{ flex: 1, height: 1, background: "var(--sr-hairline)" }}
+                sx={{ flex: 1, height: 1, background: "rgba(217,124,149,0.45)" }}
               />
             </Box>
 
