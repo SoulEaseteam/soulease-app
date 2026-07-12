@@ -491,10 +491,12 @@ const ServicesPage: React.FC = () => {
                   }}
                 >
                   {/* Floating badge pill (top-right, over image)
-                      🆕 28r103 — badge label is now data-driven from
-                      `bestseller.badge` (admin editable). Falls back to
-                      "Bestseller" if unset. Amber tone reserved for the
-                      Signature/most-requested slot. */}
+                      🆕 28r103 — badge label is now data-driven.
+                      🆕 28r109 (founder "ขยับทุกป้ายให้บาล้าน กับรูป") —
+                      bumped size + padding + shadow so the badge reads
+                      as proportionate to the large hero image (was 9.5px
+                      lost against a 260px-tall photo). Corner offset also
+                      widened for a more premium, breathing composition. */}
                   <Box
                     component={motion.div}
                     aria-hidden
@@ -503,20 +505,20 @@ const ServicesPage: React.FC = () => {
                     transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.9 }}
                     sx={{
                       position: "absolute",
-                      top: 14,
-                      right: 14,
+                      top: 18,
+                      right: 18,
                       zIndex: 3,
-                      px: "12px",
-                      py: "5px",
+                      px: "16px",
+                      py: "8px",
                       borderRadius: 999,
                       background: accents.amber,
                       color: "#fff",
                       fontFamily: SANS,
-                      fontSize: 9.5,
+                      fontSize: 11.5,
                       fontWeight: 800,
-                      letterSpacing: "0.16em",
+                      letterSpacing: "0.18em",
                       textTransform: "uppercase",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
+                      boxShadow: "0 6px 18px rgba(0,0,0,0.28)",
                     }}
                   >
                     {bestseller.badge ?? t("services.bestseller", "Bestseller")}
@@ -848,20 +850,22 @@ const ServicesPage: React.FC = () => {
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.4 }}
                             sx={{
+                              // 🆕 28r109 — bump size + padding for balance
+                              //   with the 108px square image.
                               position: "absolute",
-                              top: 8,
-                              left: 8,
-                              px: "8px",
-                              py: "3px",
+                              top: 10,
+                              left: 10,
+                              px: "10px",
+                              py: "4.5px",
                               borderRadius: 999,
                               background: ROSE,
                               color: "#fff",
                               fontFamily: SANS,
-                              fontSize: 8.5,
+                              fontSize: 10,
                               fontWeight: 800,
                               letterSpacing: "0.16em",
                               textTransform: "uppercase",
-                              boxShadow: "0 2px 6px rgba(0,0,0,0.22)",
+                              boxShadow: "0 3px 8px rgba(0,0,0,0.28)",
                             }}
                           >
                             {svc.badge}
