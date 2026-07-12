@@ -43,7 +43,28 @@ import {
   priceForDuration,
   formatTHB,
 } from "@/utils/servicePricing";
-import { fonts, neutrals, grays, warmAccents, accents } from "@/theme";
+import { fonts } from "@/theme";
+
+// 🆕 28w.5 — the r70 "Nordic Gray" tokens were fixed light-only hexes, so
+//   this page's cards stayed white with near-invisible text in night mode.
+//   Remap the token shapes to day/night var(--sr-*) surfaces + a rose accent
+//   in ONE place — every `grays.g900` / `neutrals.n200` / `accents.teal`
+//   reference below now flips correctly with no per-usage edits. The Reserve
+//   button (was charcoal grays.g900) is rose-ed separately below.
+const grays = {
+  g900: "var(--sr-ink)",
+  g800: "var(--sr-ink)",
+  g600: "var(--sr-body)",
+  g500: "var(--sr-muted)",
+  g400: "var(--sr-dim)",
+};
+const neutrals = {
+  n50: "var(--sr-panel-2)",
+  n100: "var(--sr-panel-2)",
+  n200: "var(--sr-hairline)",
+};
+const warmAccents = { w100: "var(--sr-panel-2)" };
+const accents = { teal: "#D97C95" };
 import { responsiveShell } from "@/theme/breakpoints";
 import { useDocumentMeta } from "@/utils/useDocumentMeta";
 import { whatsappDeepLink } from "@/config/concierge";
@@ -318,7 +339,7 @@ const PricingPage: React.FC = () => {
               key={s.id}
               component="article"
               sx={{
-                background: "#FFFFFF",
+                background: "var(--sr-panel)",
                 borderRadius: "24px",
                 border: `1px solid ${neutrals.n200}`,
                 padding: { xs: "24px 20px", md: "32px 28px" },
@@ -433,7 +454,7 @@ const PricingPage: React.FC = () => {
                   gap: "8px",
                   padding: "10px 20px",
                   borderRadius: 999,
-                  background: grays.g900,
+                  background: "#D97C95",
                   color: "#FFFFFF",
                   fontFamily: fonts.body,
                   fontSize: 13,
@@ -444,7 +465,7 @@ const PricingPage: React.FC = () => {
                   transition:
                     "transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease",
                   "&:hover": {
-                    background: grays.g800,
+                    background: "#C96F89",
                     transform: "translateY(-1px)",
                     boxShadow: "0 8px 20px rgba(45, 45, 43, 0.28)",
                   },
@@ -489,7 +510,7 @@ const PricingPage: React.FC = () => {
                 gap: "14px",
                 padding: "16px 18px",
                 borderRadius: "16px",
-                background: "#FFFFFF",
+                background: "var(--sr-panel)",
                 border: `1px solid ${neutrals.n200}`,
               }}
             >
@@ -590,7 +611,7 @@ const PricingPage: React.FC = () => {
             display: "flex",
             flexDirection: "column",
             gap: "10px",
-            background: "#FFFFFF",
+            background: "var(--sr-panel)",
             border: `1px solid ${neutrals.n200}`,
             borderRadius: "16px",
             padding: "16px 20px",
@@ -753,7 +774,7 @@ const PricingPage: React.FC = () => {
               gap: "10px",
               padding: { xs: "12px 24px", md: "14px 30px" },
               borderRadius: 999,
-              background: grays.g900,
+              background: "#D97C95",
               color: "#FFFFFF",
               fontFamily: fonts.body,
               fontSize: 14,
@@ -767,7 +788,7 @@ const PricingPage: React.FC = () => {
               transition:
                 "transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease",
               "&:hover": {
-                background: grays.g800,
+                background: "#C96F89",
                 transform: "translateY(-1px)",
               },
               "&:focus-visible": {
@@ -805,7 +826,7 @@ const PricingPage: React.FC = () => {
               transition:
                 "transform 0.16s ease, background 0.16s ease, color 0.16s ease",
               "&:hover": {
-                background: grays.g900,
+                background: "#D97C95",
                 color: "#FFFFFF",
                 transform: "translateY(-1px)",
               },
