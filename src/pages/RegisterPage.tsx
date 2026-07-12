@@ -1,16 +1,40 @@
 // src/pages/RegisterPage.tsx
+//
+// 🆕 Round 28w.3 (2026-07-13) — audit retheme, mirrors LoginPage 28w.1/.2:
+//   retired taupe #8F8474 + Chonburi + navy → rose #D97C95 on day/night
+//   var(--sr-*); real <form> (Enter submits); type=email + autoComplete;
+//   labelled fields with a visible rose border (MUI's default computes
+//   white → invisible on the day panel); removed emoji from the toast;
+//   eager avatar.
 import React, { useState } from 'react';
 import {
   Box, TextField, Button, Typography, Paper, Link
 } from '@mui/material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import BottomNav from '../components/layouts/BottomNavGlass';
-import '@fontsource/chonburi';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from "../lib/firebase";
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { getErrorMessage } from "@/utils/getErrorMessage";
+
+const SERIF = '"Fraunces", "Playfair Display", Georgia, serif';
+const ROSE = "#D97C95";
+const ROSE_HOVER = "#C96F89";
+
+// Shared field styling — rose border visible in both day + night
+// (MUI's default outline computes to white on the day panel).
+const fieldSx = {
+  mb: 2,
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '16px',
+    '& fieldset': { borderColor: 'rgba(217, 124, 149, 0.55)' },
+    '&:hover fieldset': { borderColor: ROSE },
+    '&.Mui-focused fieldset': { borderColor: ROSE },
+  },
+  '& label': { color: 'var(--sr-muted)' },
+  '& label.Mui-focused': { color: ROSE },
+} as const;
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -44,7 +68,7 @@ const RegisterPage: React.FC = () => {
         createdAt: serverTimestamp(),
       });
 
-      toast.success('🎉 Register successful!');
+      toast.success('Register successful');
       void navigate('/login');
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, 'Registration failed.'));
@@ -55,116 +79,102 @@ const RegisterPage: React.FC = () => {
     <>
       <Box sx={{
         minHeight: '100vh',
-        background: "#8F8474",
+        background: "var(--sr-bg)",
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         flexDirection: 'column',
-        p: 0,
+        p: 2,
       }}>
-        <Paper elevation={8} sx={{
+        <Paper elevation={0} sx={{
           width: '100%',
           maxWidth: 320,
           textAlign: 'center',
           p: 4,
           borderRadius: 6,
-          background: "#fff",
-          color: '#3a3420',
+          background: "var(--sr-panel)",
+          color: 'var(--sr-ink)',
           position: 'relative',
-          boxShadow: '0 6px 20px rgba(0,0,0,0.15)'
+          border: '1px solid var(--sr-hairline)',
+          boxShadow: 'var(--sr-card-shadow)',
         }}>
           <Box sx={{ textAlign: 'center', mt: -12 }}>
             <Box component="img" src="/images/icon/User.webp" alt="User Icon"
               width={120} height={120}
-              loading="lazy" decoding="async"
-              sx={{ width: 120, height: 120, borderRadius: '50%', boxShadow: '0 6px 18px rgba(15, 23, 42, 0.20)' }} />
+              loading="eager" decoding="async"
+              sx={{ width: 120, height: 120, borderRadius: '50%', boxShadow: '0 6px 18px rgba(138, 58, 87, 0.20)' }} />
           </Box>
 
           <Typography variant="h6" fontWeight="bold" mt={3} mb={4}
-            sx={{ fontFamily: 'Chonburi, serif', fontSize: '2rem', color: "#4B4B48" }}>
+            sx={{ fontFamily: SERIF, fontSize: '2rem', color: "var(--sr-ink)" }}>
             Sign Up
           </Typography>
 
-          <TextField
-            placeholder="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            variant="outlined"
-            size="small"
-            fullWidth
-            sx={{
-              mb: 2, input: { color: '#333' },
-              '& .MuiOutlinedInput-root': {
-                borderRadius: '16px',
-                // 🎨 Round 28r79 — Nordic sweep · was #f5a6a6 salmon.
-                '& fieldset': { borderColor: '#ECEBE8' },
-                '&:hover fieldset': { borderColor: '#2D2D2B' },
-                '&.Mui-focused fieldset': { borderColor: '#2D2D2B' }
-              }
+          <Box
+            component="form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleRegister();
             }}
-          />
+          >
+            <TextField
+              label="Email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              variant="outlined"
+              size="small"
+              fullWidth
+              sx={fieldSx}
+            />
 
-          <TextField
-            placeholder="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            size="small"
-            fullWidth
-            sx={{
-              mb: 2, input: { color: '#333' },
-              '& .MuiOutlinedInput-root': {
-                borderRadius: '16px',
-                '& fieldset': { borderColor: '#ECEBE8' },
-                '&:hover fieldset': { borderColor: '#2D2D2B' },
-                '&.Mui-focused fieldset': { borderColor: '#2D2D2B' }
-              }
-            }}
-          />
+            <TextField
+              label="Password"
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              size="small"
+              fullWidth
+              sx={fieldSx}
+            />
 
-          <TextField
-            placeholder="Confirm Password"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            size="small"
-            fullWidth
-            sx={{
-              mb: 2, input: { color: '#333' },
-              '& .MuiOutlinedInput-root': {
-                borderRadius: '16px',
-                '& fieldset': { borderColor: '#ECEBE8' },
-                '&:hover fieldset': { borderColor: '#2D2D2B' },
-                '&.Mui-focused fieldset': { borderColor: '#2D2D2B' }
-              }
-            }}
-          />
+            <TextField
+              label="Confirm Password"
+              type="password"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              size="small"
+              fullWidth
+              sx={fieldSx}
+            />
 
-          <Button 
-            onClick={handleRegister}
-            sx={{
-              mt: 1, py: 1.2, px: 5, fontWeight: 'bold', fontSize: 14,
-              borderRadius: '20px', color: '#fff', textTransform: 'uppercase',
-              maxWidth: 150, width: '100%',
-              background: '#8F8474',
-              boxShadow: '0 4px 20px rgba(15, 23, 42, 0.40)',
-              // 🎨 Round 28r79 — Nordic sweep · was #FEAE96 coral.
-              '&:hover': { background: '#4B4B48', transform: 'scale(1.05)' },
-              transition: '0.2s ease-in-out'
-            }}>
-            SIGN UP
-          </Button>
+            <Button
+              type="submit"
+              fullWidth
+              sx={{
+                mt: 1, py: 1.2, fontWeight: 'bold', fontSize: 14,
+                borderRadius: '20px', color: '#fff', textTransform: 'uppercase',
+                background: ROSE,
+                boxShadow: '0 4px 16px rgba(138, 58, 87, 0.30)',
+                '&:hover': { background: ROSE_HOVER },
+                transition: '0.2s ease-in-out'
+              }}>
+              SIGN UP
+            </Button>
+          </Box>
 
-          <Typography mt={3} fontSize={14}>
+          <Typography mt={3} fontSize={14} sx={{ color: 'var(--sr-body)' }}>
             Already have an account?{' '}
-            <Link component={RouterLink} to="/login" underline="always" color="#2D2D2B" fontWeight="bold">
+            <Link component={RouterLink} to="/login" underline="always" sx={{ color: ROSE, fontWeight: 'bold' }}>
               Login
             </Link>
           </Typography>
         </Paper>
 
-        <Typography mt={4} fontSize={14} color="#fff" textAlign="center">
+        <Typography mt={4} fontSize={14} sx={{ color: 'var(--sr-muted)' }} textAlign="center">
           You may proceed with booking without an account.
         </Typography>
       </Box>

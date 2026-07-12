@@ -262,9 +262,11 @@ const AdminFloatingChat: React.FC = () => {
               width: 220,
               padding: "16px 14px 12px",
               borderRadius: "20px",
-              background: "#fff",
-              border: "1px solid rgba(15, 23, 42, 0.08)",
-              boxShadow: "0 8px 32px rgba(15, 23, 42, 0.14), 0 2px 8px rgba(0,0,0,0.06)",
+              // 🆕 28w.3 — day/night surface (was hardcoded #fff + navy),
+              //   so the popup isn't a bright-white card in night mode.
+              background: "var(--sr-panel)",
+              border: "1px solid var(--sr-hairline)",
+              boxShadow: "0 8px 32px rgba(138, 58, 87, 0.16), 0 2px 8px rgba(0,0,0,0.10)",
               transformOrigin: "bottom right",
               "@media (max-width: 500px)": {
                 bottom: 158,
@@ -282,7 +284,7 @@ const AdminFloatingChat: React.FC = () => {
                   fontFamily: fonts.body,
                   fontSize: "9.5px",
                   fontWeight: 700,
-                  color: brand.accent,
+                  color: "var(--sr-gold-text)",
                   letterSpacing: "0.18em",
                   textTransform: "uppercase",
                   marginBottom: "2px",
@@ -301,7 +303,7 @@ const AdminFloatingChat: React.FC = () => {
                   fontStyle: "italic",
                   fontWeight: 500,
                   fontSize: "16px",
-                  color: brand.text,
+                  color: "var(--sr-ink)",
                   letterSpacing: "-0.01em",
                   lineHeight: 1.1,
                   display: "flex",
@@ -389,12 +391,12 @@ const AdminFloatingChat: React.FC = () => {
                     gap: "10px",
                     padding: "8px 10px",
                     borderRadius: "12px",
-                    background: "#F4F6F5",
-                    border: "1px solid rgba(15, 23, 42, 0.06)",
+                    background: "var(--sr-panel-2)",
+                    border: "1px solid var(--sr-hairline)",
                     textDecoration: "none",
                     transition: "background 0.2s ease, transform 0.2s ease",
                     "&:hover": {
-                      background: "#F0EBE7",
+                      background: "rgba(217, 124, 149, 0.12)",
                     },
                     "&:focus-visible": {
                       outline: `2px solid ${brand.red}`,
@@ -431,7 +433,7 @@ const AdminFloatingChat: React.FC = () => {
                       fontFamily: fonts.body,
                       fontSize: 13,
                       fontWeight: 600,
-                      color: brand.text,
+                      color: "var(--sr-ink)",
                       letterSpacing: "-0.01em",
                     }}
                   >
@@ -479,9 +481,9 @@ const AdminFloatingChat: React.FC = () => {
               maxWidth: 220,
               padding: "10px 14px 10px 12px",
               borderRadius: "16px",
-              background: "#fff",
-              border: "1px solid rgba(15, 23, 42, 0.08)",
-              boxShadow: "0 8px 28px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(0,0,0,0.05)",
+              background: "var(--sr-panel)",
+              border: "1px solid var(--sr-hairline)",
+              boxShadow: "0 8px 28px rgba(138, 58, 87, 0.14), 0 2px 6px rgba(0,0,0,0.08)",
               cursor: "pointer",
               // Decorative tail pointing toward the FAB
               "&::after": {
@@ -491,9 +493,9 @@ const AdminFloatingChat: React.FC = () => {
                 right: -7,
                 width: 14,
                 height: 14,
-                background: "#fff",
-                borderRight: "1px solid rgba(15, 23, 42, 0.08)",
-                borderBottom: "1px solid rgba(15, 23, 42, 0.08)",
+                background: "var(--sr-panel)",
+                borderRight: "1px solid var(--sr-hairline)",
+                borderBottom: "1px solid var(--sr-hairline)",
                 transform: "rotate(-45deg)",
               },
               "@media (max-width: 500px)": {
@@ -520,7 +522,7 @@ const AdminFloatingChat: React.FC = () => {
                     fontFamily: fonts.body,
                     fontSize: "9.5px",
                     fontWeight: 700,
-                    color: brand.accent,
+                    color: "var(--sr-gold-text)",
                     letterSpacing: "0.12em",
                     textTransform: "uppercase",
                     marginBottom: "2px",
@@ -534,7 +536,7 @@ const AdminFloatingChat: React.FC = () => {
                     fontStyle: "italic",
                     fontSize: "13.5px",
                     fontWeight: 500,
-                    color: brand.text,
+                    color: "var(--sr-ink)",
                     lineHeight: 1.3,
                     letterSpacing: "-0.01em",
                   }}
@@ -545,7 +547,7 @@ const AdminFloatingChat: React.FC = () => {
                   sx={{
                     fontFamily: fonts.body,
                     fontSize: "11px",
-                    color: brand.textMuted,
+                    color: "var(--sr-muted)",
                     marginTop: "4px",
                     lineHeight: 1.4,
                   }}
@@ -563,7 +565,7 @@ const AdminFloatingChat: React.FC = () => {
                 sx={{
                   width: 22,
                   height: 22,
-                  color: brand.textMuted,
+                  color: "var(--sr-muted)",
                   marginTop: "-2px",
                   marginRight: "-4px",
                   "&:hover": { color: brand.red },
@@ -604,7 +606,7 @@ const AdminFloatingChat: React.FC = () => {
                 height: 60,
                 borderRadius: "50%",
                 background:
-                  "radial-gradient(circle, rgba(45, 45, 43, 0.42) 0%, rgba(45, 45, 43, 0) 70%)",
+                  "radial-gradient(circle, rgba(217, 124, 149, 0.45) 0%, rgba(217, 124, 149, 0) 70%)",
                 pointerEvents: "none",
                 "@media (max-width: 500px)": {
                   bottom: 88,
@@ -664,23 +666,23 @@ const AdminFloatingChat: React.FC = () => {
           height: 60,
           borderRadius: "50%",
           border: "2px solid rgba(255, 255, 255, 0.35)",
-          // 🆕 Round 28s194 — Radial-gradient FAB body with inset
-          //   highlight so the button has dimension instead of a flat
-          //   red disc. Conic sheen on hover gives a subtle "rotate
-          //   the light" hover affordance.
+          // 🆕 Round 28s194 — Radial-gradient FAB body with inset highlight
+          //   so the button has dimension instead of a flat disc.
+          // 🆕 28w.3 — was charcoal #4B4B48→#2D2D2B (off-brand); now the
+          //   dusty-rose brand gradient (matches the desktop Concierge CTA).
           background:
-            "radial-gradient(circle at 30% 30%, #4B4B48 0%, #2D2D2B 55%, #2D2D2B 100%)",
+            "radial-gradient(circle at 30% 30%, #E38EA5 0%, #D97C95 55%, #C96F89 100%)",
           color: "#fff",
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           boxShadow:
-            "0 16px 36px rgba(45, 45, 43, 0.42), 0 4px 10px rgba(15, 23, 42, 0.14)",
+            "0 16px 36px rgba(138, 58, 87, 0.40), 0 4px 10px rgba(138, 58, 87, 0.16)",
           transition: "box-shadow 0.22s ease",
           "&:hover": {
             boxShadow:
-              "0 20px 44px rgba(45, 45, 43, 0.50), 0 6px 14px rgba(15, 23, 42, 0.18)",
+              "0 20px 44px rgba(138, 58, 87, 0.50), 0 6px 14px rgba(138, 58, 87, 0.20)",
           },
           "&:focus-visible": {
             outline: `3px solid ${brand.red}`,

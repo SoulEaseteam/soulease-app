@@ -458,10 +458,12 @@ const TopNav: React.FC = () => {
                   type="button"
                   onClick={() => goto(item.path)}
                   sx={{
+                    // 🆕 28w.3 — rose-tint active/hover pill. Was white-
+                    //   translucent (rgba(255,255,255,.12)) → invisible on the
+                    //   light day bar; rose reads on cream, dark, and light-rose
+                    //   alike. Label stays `fg` (ink) for contrast.
                     background: active
-                      ? isHome
-                        ? "rgba(243, 230, 219, 0.10)"
-                        : "rgba(255, 255, 255, 0.12)"
+                      ? "rgba(217, 124, 149, 0.20)"
                       : "transparent",
                     border: "none",
                     padding: "8px 14px",
@@ -474,9 +476,9 @@ const TopNav: React.FC = () => {
                     letterSpacing: "0.02em",
                     transition: "background 0.15s ease, transform 0.15s ease",
                     "&:hover": {
-                      background: isHome
-                        ? "rgba(243, 230, 219, 0.14)"
-                        : "rgba(255, 255, 255, 0.16)",
+                      background: active
+                        ? "rgba(217, 124, 149, 0.26)"
+                        : "rgba(217, 124, 149, 0.10)",
                       transform: "translateY(-1px)",
                     },
                     "&:focus-visible": {
@@ -626,12 +628,11 @@ const TopNav: React.FC = () => {
               margin: "10px 8px",
               padding: "12px 14px",
               borderRadius: "12px",
-              background: isAdmin
-                ? "rgba(243,230,219,0.06)"
-                : "linear-gradient(135deg, rgba(210,182,124,0.16), rgba(210,182,124,0.06))",
-              border: isAdmin
-                ? "1px solid rgba(210,182,124,0.22)"
-                : "1px solid rgba(210,182,124,0.28)",
+              // 🆕 28w.3 — was faint cream + retired gold/tan (dated "แก่").
+              //   Unified rose card for both admin + therapist.
+              background:
+                "linear-gradient(135deg, rgba(217,124,149,0.18), rgba(217,124,149,0.06))",
+              border: "1px solid rgba(217,124,149,0.30)",
               cursor: "pointer",
               fontFamily: SANS,
               textAlign: "left",
@@ -649,8 +650,8 @@ const TopNav: React.FC = () => {
                 width: 36,
                 height: 36,
                 borderRadius: "50%",
-                background: isAdmin ? "var(--sr-panel)" : "#D97C95",
-                color: isAdmin ? "var(--sr-ink)" : "#FFFFFF",
+                background: "#D97C95",
+                color: "#FFFFFF",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -672,7 +673,7 @@ const TopNav: React.FC = () => {
                   fontWeight: 800,
                   letterSpacing: "0.10em",
                   textTransform: "uppercase",
-                  color: isAdmin ? "var(--sr-muted)" : "var(--sr-gold-text)",
+                  color: "var(--sr-gold-text)",
                 }}
               >
                 {t("nav.signedInAs", "Signed in as")}{" "}
@@ -697,7 +698,7 @@ const TopNav: React.FC = () => {
               aria-hidden
               sx={{
                 fontSize: 18,
-                color: isAdmin ? "#2D2D2B" : "#15803d",
+                color: "#D97C95",
                 fontWeight: 800,
                 flexShrink: 0,
               }}
