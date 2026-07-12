@@ -616,15 +616,30 @@ const ServicesPage: React.FC = () => {
               <Box aria-hidden sx={{ flex: 1, height: 1, background: "var(--sr-hairline)" }} />
             </Box>
 
-            {/* ── Vertical stack of horizontal-layout ritual cards ──
-                🆕 Round 28r93 · founder screenshot pattern (2026-07-12)
-                "More Rituals เป็นแนวนอน ตาม แบบ" — cards laid out
-                horizontally *within themselves*: square image on the left,
-                text column on the right (bold name / "60 min · Type"
-                subtitle / bold from-price).  The list itself stacks
-                vertically — no snap-scroll.  Whole card is one <a> tag,
-                so tapping anywhere routes to the service detail page. */}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mb: 3 }}>
+            {/* ── Horizontal snap-scroll of horizontal-layout ritual cards ──
+                🆕 Round 28r94 · founder clarification 2026-07-12
+                "Horizontal Scroll ไว้ข้างใต้ · More Rituals เป็นแนวนอน ตาม แบบ"
+                Combines r92's outer horizontal snap-scroll wrapper with
+                r93's horizontal-layout card design (image left + text
+                right).  Swipe sideways to browse — each card is
+                landscape-oriented per the founder's reference screenshot.
+                Whole card is one <a>, so tapping anywhere routes to
+                the service detail page. */}
+            <Box
+              sx={{
+                display: "flex",
+                gap: 1.5,
+                pb: 1,
+                mx: -2,
+                px: 2,
+                overflowX: "auto",
+                scrollSnapType: "x mandatory",
+                WebkitOverflowScrolling: "touch",
+                scrollbarWidth: "none",
+                "&::-webkit-scrollbar": { display: "none" },
+                mb: 3,
+              }}
+            >
               {restServices.map((svc, index) => {
                 const firstDur = durationsFor(svc)[0];
                 return (
@@ -637,6 +652,12 @@ const ServicesPage: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.12 + index * 0.06, duration: 0.32, ease: "easeOut" }}
                     sx={{
+                      // 🆕 28r94 — fixed-width snap child so the parent's
+                      //   horizontal scroll works; each card still lays out
+                      //   internally as image-left + text-right.
+                      flex: "0 0 auto",
+                      scrollSnapAlign: "start",
+                      width: 300,
                       display: "flex",
                       alignItems: "stretch",
                       gap: 0,
