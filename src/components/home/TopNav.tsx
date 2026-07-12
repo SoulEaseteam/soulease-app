@@ -387,7 +387,7 @@ const TopNav: React.FC = () => {
             //   layout unchanged (space-between still centers it).
             marginRight: { md: "auto" },
             "&:focus-visible": {
-              outline: "2px solid #C56A6D",
+              outline: "2px solid #D97C95",
               outlineOffset: 2,
             },
           }}
@@ -422,7 +422,7 @@ const TopNav: React.FC = () => {
               <Box component="span" sx={{ color: fg }}>
                 SUN
               </Box>
-              <Box component="span" sx={{ color: "#C56A6D" }}>
+              <Box component="span" sx={{ color: "#D97C95" }}>
                 RED
               </Box>
             </Typography>
@@ -505,7 +505,7 @@ const TopNav: React.FC = () => {
             alignItems: "center",
             gap: "8px",
             // 🕯️ 28t — dusty-rose gradient concierge pill (both home + inner).
-            background: "linear-gradient(135deg,#C56A6D 0%,#A16256 100%)",
+            background: "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
             border: "none",
             color: "#FFF7F0",
             fontFamily: SANS,
@@ -580,7 +580,7 @@ const TopNav: React.FC = () => {
               width: 44,
               height: 44,
               "&:focus-visible": {
-                outline: "2px solid #C56A6D",
+                outline: "2px solid #D97C95",
                 outlineOffset: 2,
               },
             }}
@@ -628,17 +628,17 @@ const TopNav: React.FC = () => {
               borderRadius: "12px",
               background: isAdmin
                 ? "rgba(243,230,219,0.06)"
-                : "linear-gradient(135deg, rgba(215,181,109,0.16), rgba(215,181,109,0.06))",
+                : "linear-gradient(135deg, rgba(210,182,124,0.16), rgba(210,182,124,0.06))",
               border: isAdmin
-                ? "1px solid rgba(215,181,109,0.22)"
-                : "1px solid rgba(215,181,109,0.28)",
+                ? "1px solid rgba(210,182,124,0.22)"
+                : "1px solid rgba(210,182,124,0.28)",
               cursor: "pointer",
               fontFamily: SANS,
               textAlign: "left",
               "&:hover": { transform: "translateY(-1px)" },
               transition: "transform 0.15s ease",
               "&:focus-visible": {
-                outline: "2px solid #C56A6D",
+                outline: "2px solid #D97C95",
                 outlineOffset: 2,
               },
             }}
@@ -649,7 +649,7 @@ const TopNav: React.FC = () => {
                 width: 36,
                 height: 36,
                 borderRadius: "50%",
-                background: isAdmin ? "var(--sr-panel)" : "#D7B56D",
+                background: isAdmin ? "var(--sr-panel)" : "#D2B67C",
                 color: isAdmin ? "var(--sr-ink)" : "#2A1B10",
                 display: "inline-flex",
                 alignItems: "center",
@@ -770,7 +770,7 @@ const TopNav: React.FC = () => {
                 borderRadius: "12px",
                 background: "transparent",
                 border: "none",
-                color: "#C56A6D",
+                color: "#D97C95",
                 fontFamily: SANS,
                 fontSize: 14,
                 fontWeight: 600,
@@ -778,12 +778,12 @@ const TopNav: React.FC = () => {
                 cursor: "pointer",
                 "&:hover": { background: "rgba(243,230,219,0.07)" },
                 "&:focus-visible": {
-                  outline: "2px solid #C56A6D",
+                  outline: "2px solid #D97C95",
                   outlineOffset: 2,
                 },
               }}
             >
-              <ListItemIcon sx={{ minWidth: 0, color: "#C56A6D" }}>
+              <ListItemIcon sx={{ minWidth: 0, color: "#D97C95" }}>
                 <LogoutRoundedIcon />
               </ListItemIcon>
               {t("nav.signOut", "Sign out")}
@@ -801,7 +801,7 @@ const TopNav: React.FC = () => {
                 padding: "12px 14px",
                 borderRadius: "12px",
                 background:
-                  "linear-gradient(135deg,#C56A6D 0%,#A16256 100%)",
+                  "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
                 border: "none",
                 color: "#FFF7F0",
                 fontFamily: SANS,
@@ -814,7 +814,7 @@ const TopNav: React.FC = () => {
                   boxShadow: "0 8px 20px rgba(0, 0, 0, 0.5)",
                 },
                 "&:focus-visible": {
-                  outline: "2px solid #C56A6D",
+                  outline: "2px solid #D97C95",
                   outlineOffset: 2,
                 },
               }}
@@ -888,7 +888,7 @@ function renderNavRow(
              dark drawer (#2A1D16): a soft rose-tint fill + rose label with
              a warm cream register for inactive rows. */
           background: active
-            ? "linear-gradient(135deg, rgba(197,106,109,0.22), rgba(197,106,109,0.10))"
+            ? "linear-gradient(135deg, rgba(217,124,149,0.22), rgba(217,124,149,0.10))"
             : "transparent",
           border: "none",
           color: active ? "#E7A9AB" : "var(--sr-body)",
@@ -900,11 +900,11 @@ function renderNavRow(
           transition: "background 0.2s ease",
           "&:hover": {
             background: active
-              ? "linear-gradient(135deg, rgba(197,106,109,0.28), rgba(197,106,109,0.14))"
+              ? "linear-gradient(135deg, rgba(217,124,149,0.28), rgba(217,124,149,0.14))"
               : "rgba(243,230,219,0.07)",
           },
           "&:focus-visible": {
-            outline: "2px solid #C56A6D",
+            outline: "2px solid #D97C95",
             outlineOffset: 2,
           },
         }}
@@ -912,7 +912,7 @@ function renderNavRow(
         <ListItemIcon
           sx={{
             minWidth: 0,
-            color: active ? "#C56A6D" : "var(--sr-muted)",
+            color: active ? "#D97C95" : "var(--sr-muted)",
           }}
         >
           {item.icon}

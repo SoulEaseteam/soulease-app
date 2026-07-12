@@ -223,9 +223,9 @@ const HomeFooterV2: React.FC = () => {
                         color: "inherit",
                         textDecoration: "none",
                         transition: "color 0.16s ease",
-                        "&:hover": { color: "#C56A6D" }, // ROSE — link hover
+                        "&:hover": { color: "#D97C95" }, // ROSE — link hover
                         "&:focus-visible": {
-                          outline: "2px solid #C56A6D", // ROSE focus ring
+                          outline: "2px solid #D97C95", // ROSE focus ring
                           outlineOffset: 2,
                           borderRadius: "3px",
                         },
@@ -243,9 +243,9 @@ const HomeFooterV2: React.FC = () => {
                         cursor: "pointer",
                         color: "inherit",
                         transition: "color 0.16s ease",
-                        "&:hover": { color: "#C56A6D" }, // ROSE — link hover
+                        "&:hover": { color: "#D97C95" }, // ROSE — link hover
                         "&:focus-visible": {
-                          outline: "2px solid #C56A6D", // ROSE focus ring
+                          outline: "2px solid #D97C95", // ROSE focus ring
                           outlineOffset: 2,
                           borderRadius: "3px",
                         },

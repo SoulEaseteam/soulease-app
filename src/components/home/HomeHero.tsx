@@ -35,8 +35,8 @@ import { useConciergeMode } from "@/utils/conciergeMode";
 // vars; the dusty-rose CTA is identical in both modes.
 const INK = "var(--sr-ink)"; // headline ink (ivory at night, espresso by day)
 const BODY = "var(--sr-body)"; // subtitle / sub-copy
-const CTA_FILL = "linear-gradient(135deg,#C56A6D 0%,#A16256 100%)"; // dusty-rose CTA
-const CTA_FILL_HOVER = "linear-gradient(135deg,#A16256 0%,#8E4F49 100%)";
+const CTA_FILL = "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)"; // dusty-rose CTA
+const CTA_FILL_HOVER = "linear-gradient(135deg,#C96F89 0%,#B36079 100%)";
 
 const HERO_IMG = "/images/hero/hero.jpg";
 

@@ -59,7 +59,7 @@ const MokoPromoBanner: React.FC = () => {
           width: 120,
           height: 120,
           borderRadius: "50%",
-          background: "rgba(215,181,109,0.10)",
+          background: "rgba(210,182,124,0.10)",
         }}
       />
       <Box
@@ -71,7 +71,7 @@ const MokoPromoBanner: React.FC = () => {
           width: 90,
           height: 90,
           borderRadius: "50%",
-          background: "rgba(215,181,109,0.06)",
+          background: "rgba(210,182,124,0.06)",
         }}
       />
 
@@ -93,7 +93,7 @@ const MokoPromoBanner: React.FC = () => {
               marginBottom: "6px",
             }}
           >
-            <Sparkle size={13} weight="fill" color="#D7B56D" />
+            <Sparkle size={13} weight="fill" color="#D2B67C" />
             <Box
               sx={{
                 fontFamily: fonts.body,
@@ -140,13 +140,13 @@ const MokoPromoBanner: React.FC = () => {
                 fontSize: "11.5px",
                 fontWeight: 700,
                 color: "var(--sr-ink)",
-                background: "rgba(215,181,109,0.16)",
-                border: "1px solid rgba(215,181,109,0.28)",
+                background: "rgba(210,182,124,0.16)",
+                border: "1px solid rgba(210,182,124,0.28)",
                 borderRadius: "999px",
                 padding: "3px 9px",
               }}
             >
-              <ShieldCheck size={13} weight="fill" color="#D7B56D" />
+              <ShieldCheck size={13} weight="fill" color="#D2B67C" />
               {t("home.promo.verified", "100% Verified")}
             </Box>
             <Box

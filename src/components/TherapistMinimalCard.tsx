@@ -29,7 +29,7 @@ import { fonts, accents } from "@/theme";
 //   booking/checkout flow and every other page keep the existing brand
 //   red untouched while this one card style is trialed.
 // 🕯️ 28t dark-luxury — focus ring is dusty rose; highlight ink is ivory.
-const oceanAccent = "#C56A6D";
+const oceanAccent = "#D97C95";
 const oceanHighlight = "#F3E6DB";
 import { enhanceImage } from "@/utils/cloudinary";
 import type { Therapist, Avail } from "@/types/therapist";
@@ -69,10 +69,10 @@ const STATUS_DOT: Record<
   Avail,
   { color: string; i18nKey: string; fallback: string }
 > = {
-  available: { color: "#D7B56D", i18nKey: "available", fallback: "Available" },
-  bookable:  { color: "#C56A6D", i18nKey: "bookable",  fallback: "Bookable"  },
-  resting:   { color: "#B0A090", i18nKey: "offline",   fallback: "Offline"   },
-  holiday:   { color: "#B0A090", i18nKey: "offline",   fallback: "Offline"   },
+  available: { color: "#57B88B", i18nKey: "available", fallback: "Available" }, // green
+  bookable:  { color: "#F29D38", i18nKey: "bookable",  fallback: "Bookable"  }, // busy — orange
+  resting:   { color: "#C8C8C8", i18nKey: "offline",   fallback: "Offline"   }, // offline — grey
+  holiday:   { color: "#C8C8C8", i18nKey: "offline",   fallback: "Offline"   },
 };
 
 // 🆕 Round 28r81 — When the therapist is `available` (free right now),
@@ -134,11 +134,12 @@ const TherapistMinimalCard: React.FC<Props> = ({
     "TOP_RATED" | "VIP" | "HOT" | "NEW",
     { label: string; bg: string; color: string }
   > = {
-    // 🕯️ 28t dark-luxury — Soft-Gold "TOP STAR", rose HOT, gold NEW.
-    TOP_RATED: { label: "TOP STAR", bg: "linear-gradient(135deg,#E4C888 0%,#C99A4E 100%)", color: "#2A1B10" },
-    VIP:       { label: "VIP",        bg: "#2A1D16",     color: "#D7B56D" },
-    HOT:       { label: "HOT",        bg: "#A16256",     color: "#F3E6DB" },
-    NEW:       { label: "NEW",        bg: "linear-gradient(135deg,#E4C888 0%,#C99A4E 100%)", color: "#2A1B10" },
+    // 🕯️ 28t — founder badge spec: VIP gold+brown · NEW rose+white · HOT
+    //   #F56B6B+white · TOP STAR gold+brown.
+    TOP_RATED: { label: "TOP STAR", bg: "#D2B67C",     color: "#4C3415" },
+    VIP:       { label: "VIP",        bg: "#D2B67C",     color: "#4C3415" },
+    HOT:       { label: "HOT",        bg: "#F56B6B",     color: "#FFFFFF" },
+    NEW:       { label: "NEW",        bg: "#D97C95",     color: "#FFFFFF" },
   };
   const badgeKey =
     (therapist.badgeKey as keyof typeof BADGE_STYLE | null | undefined) ?? null;
@@ -394,7 +395,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
               backdropFilter: "blur(3px)",
               WebkitBackdropFilter: "blur(3px)",
               color: "#F3E6DB",
-              border: "1px solid rgba(215,181,109,0.20)",
+              border: "1px solid rgba(210,182,124,0.20)",
               boxShadow: "0 2px 8px rgba(0, 0, 0, 0.34)",
               whiteSpace: "nowrap",
             }}
@@ -408,7 +409,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 background: statusMeta.color,
                 boxShadow:
                   status === "available"
-                    ? "0 0 6px rgba(215,181,109,0.9)"
+                    ? "0 0 6px rgba(87,184,139,0.9)"
                     : "none",
               }}
             />
@@ -520,10 +521,10 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 lineHeight: 1,
                 transition: "background 0.15s ease, color 0.15s ease",
                 "&:hover": {
-                  background: "rgba(215, 181, 109, 0.12)",
+                  background: "rgba(210, 182, 124, 0.12)",
                 },
                 "&:focus-visible": {
-                  outline: "2px solid #C56A6D",
+                  outline: "2px solid #D97C95",
                   outlineOffset: 2,
                 },
               }}
@@ -566,13 +567,13 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   alignItems: "center",
                   gap: "4px",
                   // 🕯️ 28t — gold star + ivory number in a soft-gold chip.
-                  background: "rgba(215,181,109,0.15)",
+                  background: "rgba(210,182,124,0.15)",
                   borderRadius: "8px",
                   padding: "2px 8px",
                 }}
               >
                 <StarRoundedIcon
-                  sx={{ fontSize: 15, color: "var(--sr-gold-text)" }}
+                  sx={{ fontSize: 15, color: "#F4C542" }}
                 />
                 <Typography
                   sx={{
@@ -608,7 +609,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                     gap: "4px",
                     padding: "3px 8px",
                     borderRadius: "999px",
-                    background: "rgba(215, 181, 109, 0.10)",
+                    background: "rgba(210, 182, 124, 0.10)",
                   }}
                   aria-label={`${viewCount} profile views`}
                 >
@@ -752,7 +753,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
               borderRadius: "999px",
               background: isOffDuty
                 ? "var(--sr-panel-2)"
-                : "linear-gradient(135deg,#C56A6D 0%,#A16256 100%)",
+                : "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
               color: isOffDuty ? "var(--sr-dim)" : "#FFF7F0",
               border: "none",
               cursor: isOffDuty ? "not-allowed" : "pointer",
@@ -767,7 +768,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
               "&:hover": isOffDuty
                 ? {}
                 : {
-                    background: "linear-gradient(135deg,#A16256 0%,#8E4F49 100%)",
+                    background: "linear-gradient(135deg,#C96F89 0%,#B36079 100%)",
                     transform: "translateY(-1px)",
                   },
               "&:focus-visible": {

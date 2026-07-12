@@ -140,14 +140,14 @@ const QuickNavRow: React.FC = () => {
             },
             "&:hover .qn-icon": {
               background: "var(--sr-panel-2)", // WALNUT hover-on-panel
-              borderColor: "#D7B56D", // GOLD hairline
-              color: "#C56A6D", // ROSE icon accent
+              borderColor: "#D2B67C", // GOLD hairline
+              color: "#D97C95", // ROSE icon accent
             },
             "&:hover": {
               transform: "translateY(-1px)",
             },
             "&:focus-visible": {
-              outline: "2px solid #C56A6D", // ROSE focus ring
+              outline: "2px solid #D97C95", // ROSE focus ring
               outlineOffset: 3,
               borderRadius: "8px",
             },

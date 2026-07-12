@@ -57,23 +57,23 @@ const GRAY_900 = "var(--sr-ink)";          // headline ink
 // Warm accents (FIXED both modes)
 const WARM_100 = "#D9A98A";     // warm tan light
 const WARM_200 = "#CA906F";     // Warm Tan (skin / secondary fill)
-const SAGE_400 = "var(--sr-gold-text)"; // success / online / "available" → gold (per mode)
+const SAGE_400 = "#57B88B"; // success / online / "available" → green (founder semantic)
 
 // ── Dusty-rose primary CTA (was WARM_TAUPE) ────────────────────────
-// Founder spec: Dusty Rose #C56A6D primary, Dusty Rose Brown #A16256
+// Founder spec: Dusty Rose #D97C95 primary, Dusty Rose Brown #C96F89
 // ribbon/hover. Names kept as WARM_TAUPE* so all CTA call-sites re-skin.
-const WARM_TAUPE       = "#C56A6D"; // primary CTA fill — Vintage Rose
-const WARM_TAUPE_HOVER = "#A16256"; // primary CTA hover — Dusty Rose Brown
+const WARM_TAUPE       = "#D97C95"; // primary CTA fill — Vintage Rose
+const WARM_TAUPE_HOVER = "#C96F89"; // primary CTA hover — Dusty Rose Brown
 
 // ── Signal-highlight accents (dark-luxury values) ──────────────────
 // Soft-gold is the single signature "embroidery" accent — NEW badges,
 // stars, price, availability, key highlights. Favorite = dusty rose.
 const TEAL_MINT           = "var(--sr-gold-text)"; // NEW badge / highlights → gold (per mode)
-const AVAILABLE_GREEN     = "rgba(215,181,109,0.16)"; // "Available" pill bg — gold tint (fixed)
-const AVAILABLE_GREEN_TEXT = "var(--sr-gold-text)"; // "Available" text → gold (per mode)
-const FAVORITE_PINK       = "rgba(197,106,109,0.16)"; // heart / favorite bg — rose tint (fixed)
-const FAVORITE_PINK_TEXT  = "#C56A6D"; // heart glyph — Vintage Rose (fixed)
-const AMBER_STAR          = "var(--sr-gold-text)"; // star rating + urgency → gold (per mode)
+const AVAILABLE_GREEN     = "rgba(87,184,139,0.14)"; // "Available" pill bg — green tint
+const AVAILABLE_GREEN_TEXT = "#57B88B"; // "Available" text — green
+const FAVORITE_PINK       = "rgba(217,124,149,0.16)"; // heart / favorite bg — rose tint (fixed)
+const FAVORITE_PINK_TEXT  = "#D97C95"; // heart glyph — Vintage Rose (fixed)
+const AMBER_STAR          = "#F4C542"; // star rating — bright gold-yellow (founder)
 
 // ── New named token trees (preferred going forward) ────────────────
 export const neutrals = {
@@ -137,7 +137,7 @@ export const brand = {
 
   // ── Small accent palette — dark-luxury signature is Soft Gold
   amber: "var(--sr-gold-text)", // ★ star ratings · badges — gold (per mode)
-  pink: "rgba(197,106,109,0.16)", // favourite bg · soft rose highlight
+  pink: "rgba(217,124,149,0.16)", // favourite bg · soft rose highlight
   tagBlue: NEUTRAL_100,        // tag chip bg
   tagPeach: NEUTRAL_200,       // tag chip bg (warmer variant)
 
@@ -153,7 +153,7 @@ export const brand = {
   bg2Legacy: NEUTRAL_100,
   bg1Warm: NEUTRAL_50,
   bg2Warm: NEUTRAL_100,
-  greenSoft: "rgba(215,181,109,0.16)", // available pill bg — soft gold tint
+  greenSoft: "rgba(210,182,124,0.16)", // available pill bg — soft gold tint
   ink: GRAY_900,               // deepest ink — hero headlines only
 } as const;
 
@@ -165,14 +165,14 @@ export const brand = {
 // ─────────────────────────────────────────────────────────────────────
 export const gradients = {
   /** Primary CTA — dusty-rose gradient (28t dark-luxury) */
-  primary: "linear-gradient(135deg,#C56A6D 0%,#A16256 100%)",
+  primary: "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
   /** Section background — flat espresso ground */
   surface: NEUTRAL_50,
   /** Final hero CTA — dusty-rose gradient */
-  finalCta: "linear-gradient(135deg,#C56A6D 0%,#A16256 100%)",
+  finalCta: "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
 
   // legacy aliases
-  primaryHover: "linear-gradient(135deg,#A16256 0%,#8E4F49 100%)", // deeper rose on hover
+  primaryHover: "linear-gradient(135deg,#C96F89 0%,#B36079 100%)", // deeper rose on hover
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────
@@ -282,18 +282,18 @@ const theme = createTheme({
     // 28t dark-luxury — espresso ground, dusty-rose primary, gold secondary.
     mode: "dark",
     primary: {
-      main: WARM_TAUPE,          // Vintage Rose #C56A6D
-      light: "#D48A8C",
-      dark: WARM_TAUPE_HOVER,    // Dusty Rose Brown #A16256
-      contrastText: "#FFF7F0",
+      main: WARM_TAUPE,          // Vintage Rose #D97C95
+      light: "#E38EA5",          // dark-mode hover tint
+      dark: WARM_TAUPE_HOVER,    // Dusty Rose Brown #C96F89
+      contrastText: "#FFFFFF",
     },
     secondary: {
-      main: "#D7B56D",           // Soft Gold
+      main: "#D2B67C",           // Luxury Gold
       light: "#E4C888",
       dark: WARM_200,            // Warm Tan
-      contrastText: "#2A1B10",
+      contrastText: "#4C3415",   // deep brown on gold
     },
-    success: { main: "#D7B56D" }, // Soft Gold (fixed hex — MUI augments this)
+    success: { main: "#57B88B" }, // Available green (founder semantic)
     background: {
       default: NEUTRAL_50,       // Espresso Black
       paper: NEUTRAL_100,        // Dark Chocolate panel
@@ -358,7 +358,7 @@ const theme = createTheme({
         containedPrimary: {
           background: gradients.primary,
           boxShadow:
-            "0 6px 18px rgba(197, 106, 109, 0.30), inset 0 1px 0 rgba(255,255,255,0.12)",
+            "0 6px 18px rgba(217, 124, 149, 0.30), inset 0 1px 0 rgba(255,255,255,0.12)",
           "&:hover": {
             background: gradients.primaryHover,
             boxShadow: "0 8px 22px rgba(161, 98, 86, 0.38)",

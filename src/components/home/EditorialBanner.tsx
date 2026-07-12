@@ -79,7 +79,7 @@ const EditorialBanner: React.FC = () => {
             justifyContent: "center",
             gap: "6px",
             padding: "10px 24px",
-            background: "linear-gradient(135deg, #C56A6D 0%, #A16256 100%)", // ROSE CTA gradient
+            background: "linear-gradient(135deg, #D97C95 0%, #C96F89 100%)", // ROSE CTA gradient
             color: "#F3E6DB", // IVORY
             border: "none",
             borderRadius: 999,
@@ -89,15 +89,15 @@ const EditorialBanner: React.FC = () => {
             letterSpacing: "0.005em",
             cursor: "pointer",
             minHeight: 40,
-            boxShadow: "0 4px 12px rgba(197, 106, 109, 0.30)",
+            boxShadow: "0 4px 12px rgba(217, 124, 149, 0.30)",
             transition: "background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease",
             "&:hover": {
-              background: "linear-gradient(135deg, #A16256 0%, #8E4F49 100%)",
+              background: "linear-gradient(135deg, #C96F89 0%, #B36079 100%)",
               boxShadow: "0 6px 16px rgba(161, 98, 86, 0.35)",
               transform: "translateY(-1px)",
             },
             "&:focus-visible": {
-              outline: "2px solid #C56A6D",
+              outline: "2px solid #D97C95",
               outlineOffset: 3,
             },
           }}
@@ -118,7 +118,7 @@ const EditorialBanner: React.FC = () => {
           position: "relative",
           overflow: "hidden",
           background: `
-            radial-gradient(circle at 30% 40%, rgba(215,181,109,0.25), transparent),
+            radial-gradient(circle at 30% 40%, rgba(210,182,124,0.25), transparent),
             linear-gradient(135deg, #513326 0%, #674835 100%)
           `,
           // Tall narrow vase — left
@@ -129,7 +129,7 @@ const EditorialBanner: React.FC = () => {
             left: "25%",
             width: "20%",
             height: "40%",
-            background: "linear-gradient(180deg, #D7B56D, #CA906F)",
+            background: "linear-gradient(180deg, #D2B67C, #CA906F)",
             borderRadius: "4px 4px 30% 30%",
           },
           // Squat vase — right
@@ -140,7 +140,7 @@ const EditorialBanner: React.FC = () => {
             right: "20%",
             width: "15%",
             height: "30%",
-            background: "linear-gradient(180deg, #CA906F, #A16256)",
+            background: "linear-gradient(180deg, #CA906F, #C96F89)",
             borderRadius: "40% 40% 6px 6px",
           },
         }}

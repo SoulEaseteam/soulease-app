@@ -28,9 +28,9 @@ const MEMBER_IMG = "/images/hero/member.png";
 const IVORY_HEAD = "var(--sr-ink)"; // heading
 const CHAMPAGNE_SUB = "var(--sr-muted)"; // subtitle (muted)
 const CREAM_PERK = "var(--sr-body)"; // perk text
-const GOLD_CHIP = "#D7B56D"; // tick circle (gold — accent fill, kept)
-const BTN_BG = "linear-gradient(135deg,#C56A6D 0%,#A16256 100%)"; // ROSE CTA fill
-const BTN_BG_HOVER = "linear-gradient(135deg,#A16256 0%,#8E4F49 100%)";
+const GOLD_CHIP = "#D2B67C"; // tick circle (gold — accent fill, kept)
+const BTN_BG = "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)"; // ROSE CTA fill
+const BTN_BG_HOVER = "linear-gradient(135deg,#C96F89 0%,#B36079 100%)";
 
 const MembershipCard: React.FC = () => {
   const { t } = useTranslation();
@@ -190,14 +190,14 @@ const MembershipCard: React.FC = () => {
             letterSpacing: "0.01em",
             cursor: "pointer",
             minHeight: 44,
-            boxShadow: "0 6px 16px rgba(197,106,109,0.30)",
+            boxShadow: "0 6px 16px rgba(217,124,149,0.30)",
             transition: "background 0.18s ease, transform 0.18s ease",
             "&:hover": {
               background: BTN_BG_HOVER,
               transform: "translateY(-1px)",
             },
             "&:focus-visible": {
-              outline: "2px solid #C56A6D",
+              outline: "2px solid #D97C95",
               outlineOffset: 3,
             },
           }}
