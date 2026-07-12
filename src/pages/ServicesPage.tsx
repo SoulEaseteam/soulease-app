@@ -229,9 +229,30 @@ const ServicesPage: React.FC = () => {
             (Services / About / How to Book) become sub-navigation
             underneath the always-visible page header.  Copy identical to
             r92 masthead. */}
-        <Box sx={{ textAlign: "center", mt: 3, mb: 2.5, px: 2 }}>
-          <Typography
-            component="p"
+        {/* 🆕 28r98 (founder 2026-07-12) — "เพิ่ม การเคลื่อนไหว สวยๆ".
+            Masthead fades up as a whole block with a slow ease-out, then
+            its 3 lines cascade in via variants.  Quiet luxury: no bounce,
+            slow durations, easing curves that ramp then settle. */}
+        <Box
+          component={motion.div}
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: {},
+            visible: { transition: { staggerChildren: 0.14, delayChildren: 0.05 } },
+          }}
+          sx={{ textAlign: "center", mt: 3, mb: 2.5, px: 2 }}
+        >
+          <Box
+            component={motion.p}
+            variants={{
+              hidden: { opacity: 0, y: 10 },
+              visible: {
+                opacity: 1,
+                y: 0,
+                transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+              },
+            }}
             sx={{
               fontFamily: SANS,
               fontSize: 11,
@@ -244,9 +265,17 @@ const ServicesPage: React.FC = () => {
             }}
           >
             {t("services.editorialEyebrow", "Rates & Rituals")}
-          </Typography>
-          <Typography
-            component="h1"
+          </Box>
+          <Box
+            component={motion.h1}
+            variants={{
+              hidden: { opacity: 0, y: 14 },
+              visible: {
+                opacity: 1,
+                y: 0,
+                transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
+              },
+            }}
             sx={{
               fontFamily: SERIF,
               fontSize: { xs: 32, md: 40 },
@@ -267,8 +296,17 @@ const ServicesPage: React.FC = () => {
             </Box>
             <Box component="br" />
             {t("services.editorialLine2", "Experiences")}
-          </Typography>
-          <Typography
+          </Box>
+          <Box
+            component={motion.p}
+            variants={{
+              hidden: { opacity: 0, y: 10 },
+              visible: {
+                opacity: 1,
+                y: 0,
+                transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+              },
+            }}
             sx={{
               fontFamily: SANS,
               fontSize: 13,
@@ -276,13 +314,15 @@ const ServicesPage: React.FC = () => {
               lineHeight: 1.5,
               maxWidth: 340,
               mx: "auto",
+              m: 0,
+              mt: 0.5,
             }}
           >
             {t(
               "services.editorialSub",
               "Every ritual is delivered to your Bangkok hotel · concierge confirms in minutes"
             )}
-          </Typography>
+          </Box>
         </Box>
 
         {/* ─── Tab strip (under masthead) ─────────────────────────── */}
@@ -359,7 +399,7 @@ const ServicesPage: React.FC = () => {
                     sx={{
                       position: "absolute", inset: 0, borderRadius: 999,
                       background: ROSE_GRADIENT,
-                      boxShadow: "0 4px 14px rgba(217,124,149,0.35)",
+                      // 🆕 28r98 (founder 2026-07-12) — no glow on buttons.
                       zIndex: 0,
                     }}
                   />
@@ -388,27 +428,43 @@ const ServicesPage: React.FC = () => {
               return (
                 <Box
                   component={motion.div}
-                  initial={{ opacity: 0, y: 14 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.38, ease: "easeOut" }}
+                  transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1], delay: 0.35 }}
+                  whileHover={{ y: -4 }}
                   sx={{
                     position: "relative",
                     mb: 2.5,
                     borderRadius: "22px",
                     background: "var(--sr-panel)",
                     border: `1.5px solid ${ROSE}`,
-                    boxShadow: `0 0 0 4px rgba(217,124,149,0.10), var(--sr-card-shadow)`,
+                    // 🆕 28r98 (founder 2026-07-12) — no rose glow ring;
+                    //   just the standard card shadow for depth.
+                    boxShadow: "var(--sr-card-shadow)",
                     overflow: "hidden",
-                    transition: "transform 0.18s ease, box-shadow 0.18s ease",
+                    transition: "box-shadow 0.4s ease",
                     "&:hover": {
-                      transform: "translateY(-2px)",
-                      boxShadow: `0 0 0 4px rgba(217,124,149,0.18), 0 10px 36px rgba(0,0,0,0.32)`,
+                      boxShadow: "0 18px 46px rgba(0,0,0,0.32)",
+                    },
+                    // Reveal children (image scale + badge float + eyebrow
+                    // fade) in sequence after the card lands.
+                    "& .fx-hero-img": {
+                      transform: "scale(1.04)",
+                      animation: "sr-kenburns 14s ease-in-out infinite alternate",
+                    },
+                    "@keyframes sr-kenburns": {
+                      "0%":   { transform: "scale(1.04) translate3d(0,0,0)" },
+                      "100%": { transform: "scale(1.10) translate3d(0,-2%,0)" },
                     },
                   }}
                 >
                   {/* Floating amber BESTSELLER pill (top-right, over the image) */}
                   <Box
+                    component={motion.div}
                     aria-hidden
+                    initial={{ opacity: 0, scale: 0.85, y: -6 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.9 }}
                     sx={{
                       position: "absolute",
                       top: 14,
@@ -431,17 +487,16 @@ const ServicesPage: React.FC = () => {
                   </Box>
 
                   {/* Hero image — full width, at the very TOP of the card
-                      🆕 Round 28r97 · founder 2026-07-12 — height now
-                      responsive: 180px on mobile (was 210px, felt too
-                      big) → 260px on desktop to balance the wider
-                      canvas.  Aspect stays wide-cinematic on all sizes. */}
+                      🆕 Round 28r97 · height responsive.  28r98 adds a
+                      slow Ken Burns loop (see .fx-hero-img keyframes on
+                      the parent card) for a subtle living-still quality. */}
                   {bestseller.image && (
                     <Box
                       sx={{
                         position: "relative",
                         width: "100%",
                         height: { xs: 180, sm: 210, md: 260 },
-                        background: `center / cover no-repeat url(${bestseller.image})`,
+                        overflow: "hidden",
                         "&::after": {
                           content: '""',
                           position: "absolute",
@@ -449,9 +504,20 @@ const ServicesPage: React.FC = () => {
                           background:
                             "linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(0,0,0,0.28) 100%)",
                           pointerEvents: "none",
+                          zIndex: 1,
                         },
                       }}
-                    />
+                    >
+                      <Box
+                        className="fx-hero-img"
+                        sx={{
+                          position: "absolute",
+                          inset: 0,
+                          background: `center / cover no-repeat url(${bestseller.image})`,
+                          willChange: "transform",
+                        }}
+                      />
+                    </Box>
                   )}
 
                   {/* Content section */}
@@ -585,11 +651,10 @@ const ServicesPage: React.FC = () => {
                         fontSize: 15,
                         fontWeight: 700,
                         letterSpacing: "0.01em",
-                        boxShadow: "0 6px 18px rgba(217,124,149,0.30)",
-                        transition: "background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease",
+                        // 🆕 28r98 (founder 2026-07-12) — no glow on the CTA.
+                        transition: "background 0.25s ease, transform 0.2s ease",
                         "&:hover": {
                           background: gradients.primaryHover,
-                          boxShadow: "0 8px 22px rgba(201,111,137,0.38)",
                           transform: "translateY(-1px)",
                         },
                         "&:focus-visible": {
@@ -598,7 +663,7 @@ const ServicesPage: React.FC = () => {
                         },
                       }}
                     >
-                      {t("services.reserve", "Unlock Executive Benefits")} →
+                      {t("services.reserve", "Unlock Executive Benefits")}
                     </Box>
                   </Box>
                 </Box>
@@ -609,7 +674,13 @@ const ServicesPage: React.FC = () => {
                 🆕 Round 28r92 · Approach 3 · founder pick 2026-07-12.
                 A quiet editorial divider before the horizontal snap-scroll
                 of the remaining 3 rituals — mirrors the mockup exactly. */}
+            {/* 🆕 28r98 · lines draw in from left/right, label fades up */}
             <Box
+              component={motion.div}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-40px" }}
+              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }}
               sx={{
                 display: "flex",
                 alignItems: "center",
@@ -619,9 +690,21 @@ const ServicesPage: React.FC = () => {
                 px: "4px",
               }}
             >
-              <Box aria-hidden sx={{ flex: 1, height: 1, background: "var(--sr-hairline)" }} />
-              <Typography
-                component="p"
+              <Box
+                component={motion.div}
+                aria-hidden
+                variants={{
+                  hidden: { scaleX: 0, transformOrigin: "right" },
+                  visible: { scaleX: 1, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
+                }}
+                sx={{ flex: 1, height: 1, background: "var(--sr-hairline)" }}
+              />
+              <Box
+                component={motion.p}
+                variants={{
+                  hidden: { opacity: 0, y: 4 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+                }}
                 sx={{
                   fontFamily: SANS,
                   fontSize: 10.5,
@@ -633,8 +716,16 @@ const ServicesPage: React.FC = () => {
                 }}
               >
                 {t("services.moreRituals", "More Rituals")}
-              </Typography>
-              <Box aria-hidden sx={{ flex: 1, height: 1, background: "var(--sr-hairline)" }} />
+              </Box>
+              <Box
+                component={motion.div}
+                aria-hidden
+                variants={{
+                  hidden: { scaleX: 0, transformOrigin: "left" },
+                  visible: { scaleX: 1, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
+                }}
+                sx={{ flex: 1, height: 1, background: "var(--sr-hairline)" }}
+              />
             </Box>
 
             {/* ── Vertical stack of horizontal-layout ritual cards ──
@@ -654,9 +745,15 @@ const ServicesPage: React.FC = () => {
                     component={motion.a}
                     href={`/services/${svc.id}`}
                     aria-label={t("services.detailsAria", "Details for {{name}}", { name: svc.name })}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.12 + index * 0.06, duration: 0.32, ease: "easeOut" }}
+                    initial={{ opacity: 0, y: 18 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-30px" }}
+                    transition={{
+                      delay: 0.15 + index * 0.10,
+                      duration: 0.65,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                    whileHover={{ y: -3 }}
                     sx={{
                       display: "flex",
                       alignItems: "stretch",
@@ -855,7 +952,7 @@ const ServicesPage: React.FC = () => {
                     "&:focus-visible": { outline: `2px solid ${ROSE}`, outlineOffset: 3 },
                   }}
                 >
-                  {t("services.subscribeTelegram", "Subscribe to our Telegram channel →")}
+                  {t("services.subscribeTelegram", "Subscribe to our Telegram channel")}
                 </Box>
               </Box>
             </Box>
