@@ -23,10 +23,10 @@ import { brand, fonts } from "@/theme";
 //   most-visible label in the app — was the loudest remaining brand
 //   violation after the title/meta rewrite.
 const TABS = [
-  { label: "Practitioners", value: "/",                icon: (a: boolean) => <FaRegHeart   size={18} color={a ? "#fff" : "#9A8672"} /> },
-  { label: "Services",      value: "/services",        icon: (a: boolean) => <SpaOutlined  sx={{ fontSize: 20, color: a ? "#fff" : "#9A8672" }} /> },
-  { label: "History",       value: "/booking/history", icon: (a: boolean) => <FaRegFileAlt size={18} color={a ? "#fff" : "#9A8672"} /> },
-  { label: "Profile",       value: "/profile",         icon: (a: boolean) => <UserCircle   size={20} color={a ? "#fff" : "#9A8672"} /> },
+  { label: "Practitioners", value: "/",                icon: (a: boolean) => <FaRegHeart   size={18} color={a ? "#fff" : "#9AA0AC"} /> },
+  { label: "Services",      value: "/services",        icon: (a: boolean) => <SpaOutlined  sx={{ fontSize: 20, color: a ? "#fff" : "#9AA0AC" }} /> },
+  { label: "History",       value: "/booking/history", icon: (a: boolean) => <FaRegFileAlt size={18} color={a ? "#fff" : "#9AA0AC"} /> },
+  { label: "Profile",       value: "/profile",         icon: (a: boolean) => <UserCircle   size={20} color={a ? "#fff" : "#9AA0AC"} /> },
 ] as const;
 
 const N    = TABS.length;  // 4

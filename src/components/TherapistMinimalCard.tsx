@@ -15,7 +15,6 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
-import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 
@@ -36,6 +35,8 @@ import type { Therapist, Avail } from "@/types/therapist";
 // 🆕 Round 28s132 — Surface the therapist's lowest service price so
 //   guests see "ราคาเริ่มต้น ฿X" without opening the detail page.
 import staticServices from "@/data/services";
+// 🆕 28t.7 — bucketed session-count display (20+ · 100+ · 2.9k+).
+import { formatSessionCount } from "@/utils/formatCount";
 
 interface Props {
   therapist: Therapist;
@@ -176,10 +177,8 @@ const TherapistMinimalCard: React.FC<Props> = ({
   // 🆕 28s386 — tag pills (Thai/Verified/English) removed (founder: "เอาออก").
   //   Nationality/language still live on the detail page; the card is cleaner.
 
-  // 🆕 28s387 — anonymous profile-view count (real, grows from 0). Shown only
-  //   once a practitioner has genuine views; never fabricated.
-  const viewCount =
-    typeof therapist.viewCount === "number" ? therapist.viewCount : 0;
+  // 🆕 28t.7 — profile-view count no longer shown on the card (founder will
+  //   relocate it). `therapist.viewCount` still tracked in Firestore.
 
   // 🆕 28s389 — real completed-session count (founder wants a Moko-style
   //   engagement number NOW; no historical browse data exists, so the honest
@@ -599,36 +598,8 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   ) : null}
                 </Typography>
               </Box>
-              {/* 🆕 28s390 — comment chip replaced by the 👁 view count
-                  (founder "เอากล่องข้อความออก เปลี่ยนเป็น view count"). */}
-              {viewCount > 0 ? (
-                <Box
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    padding: "3px 8px",
-                    borderRadius: "999px",
-                    background: "rgba(210, 182, 124, 0.10)",
-                  }}
-                  aria-label={`${viewCount} profile views`}
-                >
-                  <VisibilityRoundedIcon
-                    sx={{ fontSize: 13, color: "var(--sr-muted)" }}
-                  />
-                  <Typography
-                    sx={{
-                      fontFamily: fonts.body,
-                      fontSize: "11.5px",
-                      fontWeight: 700,
-                      color: "var(--sr-body)",
-                      lineHeight: 1,
-                    }}
-                  >
-                    {viewCount.toLocaleString("en-US")}
-                  </Typography>
-                </Box>
-              ) : null}
+              {/* 🆕 28t.7 — 👁 profile-view count removed from the card
+                  (founder will relocate it elsewhere). */}
             </Box>
           ) : null}
 
@@ -665,7 +636,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                       lineHeight: 1,
                     }}
                   >
-                    {sessionCount.toLocaleString("en-US")}{" "}
+                    {formatSessionCount(sessionCount)}{" "}
                     <Box component="span" sx={{ fontWeight: 500, color: "var(--sr-dim)" }}>
                       {t("therapistCard.sessions", "sessions")}
                     </Box>
