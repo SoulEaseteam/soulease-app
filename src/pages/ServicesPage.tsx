@@ -481,11 +481,14 @@ const ServicesPage: React.FC = () => {
                     "@media (prefers-reduced-motion: no-preference)": {
                       '& [data-sr-fx="hero"]': {
                         transform: "scale(1.04)",
-                        animation: "sr-kenburns 14s ease-in-out infinite alternate",
+                        animation: "sr-kenburns 16s ease-in-out infinite alternate",
                       },
+                      // 🆕 28r111 — Y-drift eased from -2% to +0.6% so the
+                      //   pan reveals more of the top (face area) rather
+                      //   than pushing it out of frame.
                       "@keyframes sr-kenburns": {
                         "0%":   { transform: "scale(1.04) translate3d(0,0,0)" },
-                        "100%": { transform: "scale(1.10) translate3d(0,-2%,0)" },
+                        "100%": { transform: "scale(1.10) translate3d(0,0.6%,0)" },
                       },
                     },
                   }}
@@ -549,9 +552,15 @@ const ServicesPage: React.FC = () => {
                       <Box
                         data-sr-fx="hero"
                         sx={{
+                          // 🆕 28r111 (founder 2026-07-13 · "ปรับให้
+                          //   เห็นรูป") — was `center` which cropped the
+                          //   therapist's face out on the Gentleman's
+                          //   hero.  Anchoring to `center top` keeps the
+                          //   upper composition (face) inside the frame
+                          //   on every service image.
                           position: "absolute",
                           inset: 0,
-                          background: `center / cover no-repeat url(${bestseller.image})`,
+                          background: `center top / cover no-repeat url(${bestseller.image})`,
                           willChange: "transform",
                         }}
                       />
@@ -828,10 +837,9 @@ const ServicesPage: React.FC = () => {
                     {/* Square image on the LEFT — with data-driven badge
                         floating top-left, sourced from svc.badge (admin
                         editable via /admin/promotions).
-                        🆕 28r103 — replaces the r99 hardcoded "PREMIUM on
-                        SR-B2B3200" branch with a generic renderer.  Any
-                        SIGNATURE / POPULAR / RECOMMEND / EXCLUSIVE badge
-                        set on a mini-card service now surfaces here. */}
+                        🆕 28r103 — generic badge renderer.
+                        🆕 28r111 — background-position anchored to
+                        `center top` so the face is retained on portraits. */}
                     {svc.image && (
                       <Box
                         aria-hidden
@@ -840,7 +848,7 @@ const ServicesPage: React.FC = () => {
                           flex: "0 0 auto",
                           width: 108,
                           alignSelf: "stretch",
-                          background: `center / cover no-repeat url(${svc.image})`,
+                          background: `center top / cover no-repeat url(${svc.image})`,
                         }}
                       >
                         {svc.badge && (
