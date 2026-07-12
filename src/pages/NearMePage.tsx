@@ -194,7 +194,7 @@ const TaxiEstimator: React.FC = () => {
           mb: 1.25,
         }}
       >
-        {t("nearme.taxi.title", "Estimate taxi to your hotel")}
+        {t("nearme.taxi.title", "Estimate taxi to your place")}
       </Typography>
 
       <Box
@@ -246,8 +246,8 @@ const TaxiEstimator: React.FC = () => {
         <Box
           component="input"
           ref={searchInputRef}
-          placeholder={t("nearme.taxi.search", "Search your hotel or address…")}
-          aria-label={t("nearme.taxi.search", "Search your hotel or address…")}
+          placeholder={t("nearme.taxi.search", "Search your address or place…")}
+          aria-label={t("nearme.taxi.search", "Search your address or place…")}
           sx={{
             width: "100%",
             boxSizing: "border-box",
@@ -464,7 +464,7 @@ const NearMePage: React.FC = () => {
             mt: 0.5,
           }}
         >
-          {t("nearme.title", "Practitioners near your hotel")}
+          {t("nearme.title", "Practitioners near you")}
         </Typography>
         <Typography
           sx={{
@@ -541,7 +541,7 @@ const NearMePage: React.FC = () => {
         >
           {t(
             "nearme.coverage.note",
-            "Delivered to your hotel or residence — typical arrival 30–45 min to central Bangkok."
+            "Delivered to your door — typical arrival 30–45 min to central Bangkok."
           )}
         </Typography>
       </Box>
@@ -550,7 +550,7 @@ const NearMePage: React.FC = () => {
       <Box
         component="a"
         href={whatsappDeepLink(
-          "Hi SunRed concierge, which practitioner is nearest my hotel tonight?"
+          "Hi SunRed concierge, which practitioner is nearest me tonight?"
         )}
         target="_blank"
         rel="noopener noreferrer"

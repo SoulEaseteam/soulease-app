@@ -79,10 +79,12 @@ function pickServiceTags(t: Therapist): string[] {
 // from the 48%/55% user-dot anchor so the eye reads four distinct
 // faces + one location anchor, not a cluster.
 const FALLBACK_POSITIONS = [
-  { top: 20, left: 26 }, // values in %
-  { top: 16, left: 72 },
-  { top: 46, left: 82 },
-  { top: 50, left: 16 },
+  // 🆕 28w — pulled the extremes inward so the active pin + its ★ pill
+  //   never touch the frame edge (founder "รูปพนักงานหลุดเฟรม").
+  { top: 22, left: 28 }, // values in %
+  { top: 20, left: 70 },
+  { top: 44, left: 74 },
+  { top: 48, left: 24 },
 ] as const;
 
 // "You are here" dot position — kept as % so projected pins can be
@@ -121,10 +123,12 @@ function projectPin(
 
   // 🆕 Round 28r2 — Clamp `top` so projected pins never tuck under the
   // floating card area (which sits roughly bottom 24% of the map).
-  // Left clamp stays generous so east/west spread feels natural.
+  // 🆕 28w — tightened (was 8-64 / 10-90) so the whole pin PLUS its ★
+  //   rating pill (which sits below + wider than the avatar) always stays
+  //   inside the framed map. Founder: "รูปพนักงานหลุดเฟรม".
   return {
-    top: Math.max(8, Math.min(64, top)),
-    left: Math.max(10, Math.min(90, left)),
+    top: Math.max(12, Math.min(52, top)),
+    left: Math.max(15, Math.min(85, left)),
   };
 }
 
