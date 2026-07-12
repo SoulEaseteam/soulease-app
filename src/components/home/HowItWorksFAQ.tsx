@@ -148,7 +148,7 @@ interface FAQRowProps {
 const FAQRow: React.FC<FAQRowProps> = ({ qa, open, onToggle }) => (
   <Box
     sx={{
-      borderBottom: "1px solid rgba(184, 92, 60, 0.10)",
+      borderBottom: "1px solid var(--sr-hairline)",
       "&:last-child": { borderBottom: "none" },
     }}
   >
@@ -169,7 +169,7 @@ const FAQRow: React.FC<FAQRowProps> = ({ qa, open, onToggle }) => (
         cursor: "pointer",
         textAlign: "left",
         "&:focus-visible": {
-          outline: "2px solid #2D2D2B",
+          outline: "2px solid #D97C95",
           outlineOffset: 2,
           borderRadius: 4,
         },
@@ -184,7 +184,7 @@ const FAQRow: React.FC<FAQRowProps> = ({ qa, open, onToggle }) => (
           fontFamily: SANS,
           fontSize: "13.5px",
           fontWeight: 600,
-          color: "#1A2B2E",
+          color: "var(--sr-ink)",
           lineHeight: 1.45,
           flex: 1,
           letterSpacing: "-0.005em",
@@ -195,7 +195,7 @@ const FAQRow: React.FC<FAQRowProps> = ({ qa, open, onToggle }) => (
       <ExpandMoreRoundedIcon
         sx={{
           fontSize: 20,
-          color: open ? "#2D2D2B" : "rgba(15, 23, 42, 0.45)",
+          color: open ? "var(--sr-ink)" : "var(--sr-muted)",
           transform: open ? "rotate(180deg)" : "rotate(0deg)",
           transition: "transform 0.25s ease, color 0.2s ease",
           marginTop: "1px",
@@ -208,7 +208,7 @@ const FAQRow: React.FC<FAQRowProps> = ({ qa, open, onToggle }) => (
         sx={{
           fontFamily: SANS,
           fontSize: "12.5px",
-          color: "rgba(15, 23, 42, 0.78)",
+          color: "var(--sr-body)",
           lineHeight: 1.65,
           paddingBottom: "14px",
           paddingRight: "8px",
@@ -245,7 +245,7 @@ export const HowItWorksFAQ: React.FC = () => {
             fontSize: 10,
             letterSpacing: "0.24em",
             textTransform: "uppercase",
-            color: "#4A5568",
+            color: "var(--sr-muted)",
             fontWeight: 700,
             mb: 1,
             fontFamily: SANS,
@@ -253,7 +253,7 @@ export const HowItWorksFAQ: React.FC = () => {
               content: '""',
               width: "22px",
               height: "1px",
-              background: "rgba(184, 92, 60, 0.55)",
+              background: "rgba(217, 124, 149, 0.65)",
             },
           }}
         >
@@ -266,14 +266,14 @@ export const HowItWorksFAQ: React.FC = () => {
             fontFamily: SANS,
             fontSize: "20px",
             fontWeight: 700,
-            color: "#1A2B2E",
+            color: "var(--sr-ink)",
             letterSpacing: "-0.015em",
             lineHeight: 1.25,
             "& em": {
               fontFamily: SERIF,
               fontStyle: "italic",
               fontWeight: 500,
-              color: "#4B4B48",
+              color: "#D97C95",
             },
           }}
           dangerouslySetInnerHTML={{
@@ -287,7 +287,7 @@ export const HowItWorksFAQ: React.FC = () => {
           sx={{
             fontFamily: SANS,
             fontSize: 12.5,
-            color: "rgba(15, 23, 42, 0.65)",
+            color: "var(--sr-muted)",
             lineHeight: 1.55,
             marginTop: "8px",
             fontStyle: "italic",
@@ -331,13 +331,13 @@ export const HowItWorksFAQ: React.FC = () => {
               flexShrink: 0,
               padding: "7px 14px",
               borderRadius: 999,
-              border: "1px solid rgba(15, 23, 42, 0.12)",
-              background: "#FFFFFF",
+              border: "1px solid var(--sr-hairline)",
+              background: "var(--sr-panel)",
               fontFamily: SANS,
               fontSize: 11.5,
               fontWeight: 700,
               letterSpacing: "0.02em",
-              color: "#1A2B2E",
+              color: "var(--sr-ink)",
               cursor: "pointer",
               scrollSnapAlign: "start",
               display: "inline-flex",
@@ -345,14 +345,14 @@ export const HowItWorksFAQ: React.FC = () => {
               gap: 0.75,
               transition:
                 "transform 0.15s ease, border-color 0.15s ease, background 0.15s ease",
-              "& svg": { fontSize: 14, color: "#4B4B48" },
+              "& svg": { fontSize: 14, color: "#D97C95" },
               "&:hover": {
                 transform: "translateY(-1px)",
-                borderColor: "#2D2D2B",
-                background: "rgba(45, 45, 43, 0.04)",
+                borderColor: "rgba(217, 124, 149, 0.55)",
+                background: "var(--sr-panel-2)",
               },
               "&:focus-visible": {
-                outline: "2px solid #2D2D2B",
+                outline: "2px solid #D97C95",
                 outlineOffset: 2,
               },
             }}
@@ -370,9 +370,9 @@ export const HowItWorksFAQ: React.FC = () => {
           sx={{
             scrollMarginTop: "80px",
             borderRadius: "16px",
-            background: "rgba(255, 255, 255, 0.7)",
-            border: "1px solid rgba(255, 255, 255, 0.6)",
-            boxShadow: "0 4px 14px rgba(15, 23, 42, 0.06)",
+            background: "var(--sr-panel)",
+            border: "1px solid var(--sr-hairline)",
+            boxShadow: "var(--sr-card-shadow)",
             padding: "16px 18px 6px",
           }}
         >
@@ -392,8 +392,8 @@ export const HowItWorksFAQ: React.FC = () => {
                 height: 30,
                 flexShrink: 0,
                 borderRadius: "9px",
-                background: "rgba(15, 23, 42, 0.10)",
-                color: "#4B4B48",
+                background: "rgba(217, 124, 149, 0.14)",
+                color: "#D97C95",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -407,7 +407,7 @@ export const HowItWorksFAQ: React.FC = () => {
                 fontFamily: SERIF,
                 fontSize: "16px",
                 fontWeight: 600,
-                color: "#1A2B2E",
+                color: "var(--sr-ink)",
                 letterSpacing: "-0.01em",
               }}
             >
