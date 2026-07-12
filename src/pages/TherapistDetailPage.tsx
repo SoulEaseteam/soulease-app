@@ -1589,9 +1589,13 @@ const TherapistDetailPage: React.FC = () => {
                     color: isActive ? "#D97C95" : "var(--sr-body)",
                   },
                   "&:focus-visible": {
-                    outline: "2px solid #2EC4B0",
-                    outlineOffset: 2,
-                    borderRadius: "6px",
+                    // 🆕 28t.22 (founder "เลยขอบ") — rose + INSET ring. Was
+                    //   teal #2EC4B0 with outlineOffset:2, which drew a box
+                    //   2px OUTSIDE the tab so it spilled past the tab-bar
+                    //   edge on tap. Negative offset keeps it inside.
+                    outline: "2px solid #D97C95",
+                    outlineOffset: "-3px",
+                    borderRadius: "10px",
                   },
                   "&::after": {
                     content: '""',
