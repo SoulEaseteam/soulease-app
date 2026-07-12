@@ -1371,6 +1371,75 @@ const TherapistDetailPage: React.FC = () => {
               now read Data verified · Vaccinated — matching the reference. */}
         </Box>
 
+        {/* 🆕 28t.9 — Credentials right under the hero (founder: "ย้ายไป
+            ด้านล่างรูป"). Each row: soft-rose rounded icon chip + label. */}
+        {therapist.creds.length > 0 && (
+          <Box sx={{ margin: "16px 14px 0" }}>
+            <Typography
+              component="p"
+              sx={{
+                fontFamily: SANS,
+                fontSize: "10px",
+                fontWeight: 800,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+                color: "#8B93A0",
+                marginBottom: "10px",
+              }}
+            >
+              {t("detail.about.credentials", "Credentials")}
+            </Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {therapist.creds.map((c) => (
+                <Box
+                  key={c.label}
+                  sx={{ display: "flex", alignItems: "center", gap: "11px" }}
+                >
+                  <Box
+                    sx={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: "10px",
+                      flexShrink: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "rgba(217,124,149,0.10)",
+                      color: "#D97C95",
+                      "& svg": { fontSize: 18 },
+                    }}
+                  >
+                    {c.icon}
+                  </Box>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        color: "#232B36",
+                        lineHeight: 1.25,
+                      }}
+                    >
+                      {c.label}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: "11.5px",
+                        color: "#8B93A0",
+                        marginTop: "2px",
+                      }}
+                    >
+                      {c.meta}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          </Box>
+        )}
+
         {/* 🆕 Round 28s366 — About bio + Languages moved here (above tab bar).
             Replaces the same content previously shown inside the Photos tab. */}
         <Box sx={{ margin: "14px 14px 0" }}>
@@ -1400,39 +1469,57 @@ const TherapistDetailPage: React.FC = () => {
             >
               Languages
             </Typography>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: "6px 16px" }}>
+            {/* 🆕 28t.9 — each language as a cute white pill card: flag ·
+                name · colour-coded level badge (green NATIVE / grey else). */}
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
               {therapist.langs.map((l) => {
                 const isNative = l.level.toUpperCase().includes("NATIVE");
                 return (
                   <Box
                     key={l.name}
-                    sx={{ display: "flex", alignItems: "center", gap: "6px" }}
+                    sx={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "7px",
+                      padding: "6px 11px 6px 10px",
+                      borderRadius: "999px",
+                      background: "#FFFFFF",
+                      border: "1px solid #EFE3E8",
+                      boxShadow: "0 2px 8px rgba(35,43,54,0.05)",
+                    }}
                   >
-                    <Box sx={{ fontSize: "14px" }}>{l.flag}</Box>
+                    <Box sx={{ fontSize: "15px", lineHeight: 1 }}>{l.flag}</Box>
                     <Typography
                       component="span"
                       sx={{
                         fontFamily: SANS,
                         fontSize: "13px",
-                        fontWeight: 600,
+                        fontWeight: 700,
                         color: "#232B36",
+                        lineHeight: 1,
                       }}
                     >
                       {l.name}
                     </Typography>
-                    <Typography
+                    <Box
                       component="span"
                       sx={{
                         fontFamily: SANS,
-                        fontSize: "9.5px",
+                        fontSize: "8.5px",
                         fontWeight: 800,
-                        letterSpacing: "0.08em",
-                        color: isNative ? "#3EA575" : "#9AA0AC",
+                        letterSpacing: "0.06em",
                         textTransform: "uppercase",
+                        color: isNative ? "#2E7D57" : "#8B93A0",
+                        background: isNative
+                          ? "rgba(87,184,139,0.14)"
+                          : "rgba(139,147,160,0.14)",
+                        borderRadius: "999px",
+                        padding: "2px 7px",
+                        lineHeight: 1.3,
                       }}
                     >
                       {l.level}
-                    </Typography>
+                    </Box>
                   </Box>
                 );
               })}
@@ -1447,6 +1534,15 @@ const TherapistDetailPage: React.FC = () => {
             }
             status={livePillStatus}
             nextAvailable={liveNextAvailable}
+            // 🆕 28t.9 — tapping the pill jumps to the Services tab (book flow).
+            onClick={() => {
+              setDetailTab("services");
+              requestAnimationFrame(() => {
+                document
+                  .getElementById("services")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+              });
+            }}
           />
         </Box>
 
@@ -1877,69 +1973,9 @@ const TherapistDetailPage: React.FC = () => {
             {/* BioStatsBar moved to always-visible section (Round 28s361)
                 above the tab bar — no longer rendered here. */}
 
-            {therapist.creds.length > 0 && (
-              <Box>
-                <Typography
-                  component="p"
-                  sx={{
-                    fontFamily: SANS,
-                    fontSize: "11px",
-                    fontWeight: 800,
-                    letterSpacing: "0.14em",
-                    textTransform: "uppercase",
-                    color: "#4A5568",
-                    marginBottom: "10px",
-                  }}
-                >
-                  {t("detail.about.credentials", "Credentials")}
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "10px",
-                  }}
-                >
-                  {therapist.creds.map((c) => (
-                    <Box
-                      key={c.label}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                      }}
-                    >
-                      <Box sx={{ fontSize: "20px", color: "#1A2B2E" }}>
-                        {c.icon}
-                      </Box>
-                      <Box>
-                        <Typography
-                          sx={{
-                            fontFamily: SANS,
-                            fontSize: "13px",
-                            fontWeight: 700,
-                            color: "#1A2B2E",
-                            lineHeight: 1.2,
-                          }}
-                        >
-                          {c.label}
-                        </Typography>
-                        <Typography
-                          sx={{
-                            fontFamily: SANS,
-                            fontSize: "11.5px",
-                            color: "rgba(15, 23, 42, 0.6)",
-                            marginTop: "2px",
-                          }}
-                        >
-                          {c.meta}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  ))}
-                </Box>
-              </Box>
-            )}
+            {/* 🆕 28t.9 — Credentials moved OUT of the Photos tab up to the
+                info column right below the hero photo (founder "Credentials
+                ย้ายไปด้านล่างรูป"). See GRID CHILD 2. */}
 
             {/* Round 28s366 — Specialties + Languages removed from Photos tab.
                 Languages moved to below trust badges (above tab bar).

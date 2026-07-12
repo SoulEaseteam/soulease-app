@@ -77,10 +77,10 @@ const DSectionH2: React.FC<{ children: React.ReactNode; em?: string }> = ({
       fontFamily: SERIF,
       fontWeight: 500,
       fontSize: "17px",
-      color: "#1A2B2E",
+      color: "#232B36",
       marginBottom: "8px",
       letterSpacing: "-0.01em",
-      "& em": { fontStyle: "italic", color: "#4B4B48", fontWeight: 500 },
+      "& em": { fontStyle: "italic", color: "#5C6573", fontWeight: 500 },
     }}
   >
     {children}
@@ -296,16 +296,31 @@ export const About: React.FC<{
       >
         <DSectionH2 em={name}>{t("detail.about.title", "About")}</DSectionH2>
         {GenderIcon && (
-          <GenderIcon
+          <Box
             aria-label={`${gender} therapist`}
             sx={{
-              fontSize: 18,
-              // 🕯️ 28t.8 — female → dusty rose, male → navy-grey (was tan).
-              color: g.startsWith("m") ? "#5B6473" : "#D97C95",
-              marginBottom: "6px",
+              // 🕯️ 28t.9 — gender glyph now sits in a cute round pill
+              //   (founder "เพิ่ม pill กลม ให้น่ารักขึ้น"). Soft rose tint.
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 26,
+              height: 26,
+              borderRadius: "50%",
               flexShrink: 0,
+              marginBottom: "4px",
+              background: g.startsWith("m")
+                ? "rgba(91,100,115,0.12)"
+                : "rgba(217,124,149,0.14)",
             }}
-          />
+          >
+            <GenderIcon
+              sx={{
+                fontSize: 15,
+                color: g.startsWith("m") ? "#5B6473" : "#D97C95",
+              }}
+            />
+          </Box>
         )}
       </Box>
 
@@ -464,9 +479,9 @@ export const About: React.FC<{
             component="p"
             sx={{
               fontFamily: SANS,
-              fontSize: "13px",
-              color: "rgba(15, 23, 42, 0.72)",
-              lineHeight: 1.55,
+              fontSize: "13.5px",
+              color: "#5C6573",
+              lineHeight: 1.6,
               margin: 0,
             }}
           >

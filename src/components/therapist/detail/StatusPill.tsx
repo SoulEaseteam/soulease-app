@@ -50,6 +50,10 @@ export type AvailabilityStatus = "online" | "busy" | "offline";
 
 interface Props {
   status: AvailabilityStatus;
+  /** 🆕 28t.9 — when provided, the whole pill becomes a tappable button
+   *  (founder: "กดได้ ให้เชื่อมต่อไปที่ แถบ services"). A trailing arrow +
+   *  bounce animation signal the affordance. */
+  onClick?: () => void;
   /** Optional therapist next-available HH:mm — used for busy/offline copy */
   nextAvailable?: string | null;
   /** 🆕 Round 28b9 — when status === "online" but the therapist has
@@ -86,10 +90,10 @@ const VARIANTS: Record<
     //   ONLINE dot semantic (r70 rule) — mint is bg-only.
     title: "Currently Available!",
     titleKey: "detail.status.available",
-    bg: "#e8f8f5",
-    border: "rgba(46, 196, 176, 0.24)",
-    fg: "#0E6E5A",
-    iconBg: "#16a34a",
+    bg: "rgba(87, 184, 139, 0.10)",
+    border: "rgba(87, 184, 139, 0.30)",
+    fg: "#2E7D57",
+    iconBg: "#57B88B",
   },
   busy: {
     icon: "⏱",
@@ -113,6 +117,7 @@ const VARIANTS: Record<
 
 const StatusPill: React.FC<Props> = ({
   status,
+  onClick,
   nextAvailable,
   nextBookingAt,
   arriveLowerBoundMin = 25,
@@ -158,25 +163,43 @@ const StatusPill: React.FC<Props> = ({
       : "Returns next shift.";
   }
 
+  // 🆕 28t.9 — compact, tappable pill with a gentle bounce affordance.
+  const clickable = typeof onClick === "function";
   return (
     <Box
+      component={clickable ? "button" : "div"}
+      type={clickable ? "button" : undefined}
+      onClick={onClick}
+      aria-label={clickable ? `${titleText} — see services` : undefined}
       sx={{
-        margin: "16px 14px 0",
-        padding: "12px 14px",
-        borderRadius: "14px",
+        all: clickable ? "unset" : undefined,
+        boxSizing: "border-box",
+        width: "auto",
+        margin: "12px 14px 0",
+        padding: "9px 12px",
+        borderRadius: "12px",
         background: v.bg,
-        borderLeft: `4px solid ${v.fg}`,
         border: `1px solid ${v.border}`,
-        borderLeftWidth: "4px",
+        borderLeft: `3px solid ${v.fg}`,
         display: "flex",
-        alignItems: "flex-start",
-        gap: "10px",
+        alignItems: "center",
+        gap: "9px",
+        cursor: clickable ? "pointer" : "default",
+        transition: "transform 0.16s ease, box-shadow 0.16s ease",
+        "&:hover": clickable
+          ? { transform: "translateY(-1px)", boxShadow: `0 6px 16px ${v.border}` }
+          : undefined,
+        "&:active": clickable ? { transform: "scale(0.99)" } : undefined,
+        "&:focus-visible": clickable
+          ? { outline: `2px solid ${v.fg}`, outlineOffset: 2 }
+          : undefined,
       }}
     >
+      {/* icon — gentle bounce */}
       <Box
         sx={{
-          width: 28,
-          height: 28,
+          width: 24,
+          height: 24,
           flexShrink: 0,
           borderRadius: "50%",
           background: v.iconBg,
@@ -184,22 +207,27 @@ const StatusPill: React.FC<Props> = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: "13px",
+          fontSize: "12px",
           fontWeight: 800,
-          marginTop: "1px",
+          animation:
+            status === "online" ? "srPillBounce 1.6s ease-in-out infinite" : "none",
+          "@keyframes srPillBounce": {
+            "0%, 100%": { transform: "translateY(0)" },
+            "50%": { transform: "translateY(-2.5px)" },
+          },
+          "@media (prefers-reduced-motion: reduce)": { animation: "none" },
         }}
       >
         {v.icon}
       </Box>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
+      <Box sx={{ flex: 1, minWidth: 0, textAlign: "left" }}>
         <Typography
           sx={{
             fontFamily: SERIF,
-            fontSize: "15px",
+            fontSize: "13px",
             fontWeight: 700,
-            color: "#1A2B2E",
+            color: "#232B36",
             lineHeight: 1.2,
-            marginBottom: "2px",
           }}
         >
           {titleText}
@@ -207,14 +235,37 @@ const StatusPill: React.FC<Props> = ({
         <Typography
           sx={{
             fontFamily: SANS,
-            fontSize: "11.5px",
-            color: "rgba(15, 23, 42, 0.7)",
-            lineHeight: 1.4,
+            fontSize: "10.5px",
+            color: "#5C6573",
+            lineHeight: 1.35,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
           }}
         >
           {subtitle}
         </Typography>
       </Box>
+      {/* tap affordance — nudging arrow */}
+      {clickable && (
+        <Box
+          aria-hidden
+          sx={{
+            flexShrink: 0,
+            color: v.fg,
+            fontSize: "16px",
+            fontWeight: 700,
+            animation: "srPillNudge 1.4s ease-in-out infinite",
+            "@keyframes srPillNudge": {
+              "0%, 100%": { transform: "translateX(0)" },
+              "50%": { transform: "translateX(3px)" },
+            },
+            "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+          }}
+        >
+          ›
+        </Box>
+      )}
     </Box>
   );
 };
