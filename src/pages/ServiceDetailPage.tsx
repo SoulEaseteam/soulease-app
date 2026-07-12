@@ -408,6 +408,11 @@ const ServiceDetailPage: React.FC = () => {
                 onClick={() => setDuration(d)}
                 aria-pressed={isActive}
                 sx={{
+                  // 🆕 28r110 (founder screenshot 2026-07-13 · "ปุ่ม
+                  //   ไม่ต้องลอย · ให้อยู่ท้ายสุด" + inactive-card text
+                  //   invisible) — was slate/#fff hardcoded, unreadable
+                  //   on dark app. Now theme-token aware: rose gradient
+                  //   for active, sr-panel + rose border for inactive.
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
@@ -416,14 +421,14 @@ const ServiceDetailPage: React.FC = () => {
                   cursor: "pointer",
                   border: isActive
                     ? "1px solid transparent"
-                    : "1px solid rgba(184, 92, 60, 0.18)",
+                    : "1px solid rgba(217, 124, 149, 0.30)",
                   background: isActive
-                    ? "#2D2D2B"
-                    : "#fff",
-                  color: isActive ? "#fff" : brand.text,
+                    ? gradients.primary
+                    : "var(--sr-panel)",
+                  color: isActive ? "#fff" : "var(--sr-ink)",
                   boxShadow: isActive
-                    ? "0 10px 24px rgba(45, 45, 43, 0.22)"
-                    : "0 1px 3px rgba(15, 23, 42, 0.05)",
+                    ? "0 10px 24px rgba(217, 124, 149, 0.30)"
+                    : "var(--sr-card-shadow)",
                   transition:
                     "background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease",
                   "&:hover": { transform: "translateY(-1px)" },
@@ -458,7 +463,9 @@ const ServiceDetailPage: React.FC = () => {
                         fontFamily: fonts.body,
                         fontSize: "11px",
                         fontWeight: 500,
-                        opacity: isActive ? 0.85 : 0.55,
+                        // 🆕 28r110 — use color tokens instead of opacity
+                        //   so both states stay readable.
+                        color: isActive ? "rgba(255,255,255,0.85)" : "var(--sr-muted)",
                         marginTop: "1px",
                       }}
                     >
@@ -485,53 +492,9 @@ const ServiceDetailPage: React.FC = () => {
         </Box>
           </Box>
 
-          {/* ── 🆕 Round 28r54 (Phase 3.3) — Inline Reserve CTA ──────
-              Desktop-only sibling of the sticky-bottom mobile CTA
-              below. Same handler, same label — just placed in the
-              left rail so the visitor sees pricing + call-to-action
-              while scrolling reviews on the right. */}
-          <Box
-            sx={{
-              display: { xs: "none", md: "block" },
-              marginBottom: "16px",
-            }}
-          >
-            <Button
-              fullWidth
-              onClick={handleBook}
-              aria-label={t(
-                "serviceDetail.bookAria",
-                "Chat to book {{name}}",
-                { name: service.name }
-              )}
-              startIcon={
-                <WhatsAppIcon sx={{ fontSize: "20px !important" }} />
-              }
-              sx={{
-                // 🆕 Round 28r90 (r89 audit finding #2) — CTA colour
-                //   unified to theme.gradients.primary (dusty rose,
-                //   28t primary). Was #8F8474 warm taupe; ServicesPage
-                //   was #1A2B2E slate. Now both sit on the single
-                //   theme primary, matching MUI containedPrimary.
-                padding: "14px 20px",
-                borderRadius: "16px",
-                background: gradients.primary,
-                color: "#fff",
-                fontFamily: fonts.body,
-                fontWeight: 700,
-                fontSize: "15px",
-                textTransform: "none",
-                boxShadow: "0 12px 28px rgba(217, 124, 149, 0.30)",
-                "&:hover": {
-                  background: gradients.primaryHover,
-                  boxShadow: "0 16px 36px rgba(201, 111, 137, 0.38)",
-                },
-              }}
-            >
-              {t("serviceDetail.bookCta", "Chat to book")} ·{" "}
-              {formatTHB(currentPrice)}
-            </Button>
-          </Box>
+          {/* 🆕 28r110 — Desktop-only rail CTA removed. Single unified
+              CTA now lives at the very END of the page (after reviews),
+              per founder "ปุ่ม ไม่ต้องลอย · ให้อยู่ท้ายสุด". */}
         </Box>
         {/* ── LEFT COLUMN END ─────────────────────────────────────── */}
 
@@ -723,70 +686,45 @@ const ServiceDetailPage: React.FC = () => {
       </Box>
       {/* ── Responsive columns wrapper END ─────────────────────────── */}
 
-      {/* ── Sticky bottom CTA (mobile only) ────────────────────────
-          🆕 Round 28r54 (Phase 3.3) — hidden on md+; the inline
-          Reserve CTA in the left rail above takes over on desktop.
-          🚨 Round 28r65 HOTFIX — was `bottom: 70, zIndex: 10`; that
-          put the button INSIDE BottomNavGlass's footprint (nav ≈ 64px
-          paper + iOS safe-area 34px = ~98px tall), and zIndex 10 <<
-          BottomNavGlass zIndex 2000 meant the nav painted over it.
-          Founder screenshot: only a red sliver visible above the nav.
-          Fix: use the global `--cta-bottom-offset` (64 + 16 + safe-
-          area) so we clear the nav on every device, and raise zIndex
-          above the nav. */}
-      <Box
-        sx={{
-          position: "fixed",
-          bottom: "var(--cta-bottom-offset)",
-          left: 0,
-          right: 0,
-          display: { xs: "flex", md: "none" },
-          justifyContent: "center",
-          padding: "0 18px",
-          pointerEvents: "none",
-          zIndex: 2100,
-        }}
-      >
-        <Box
+      {/* ── End-of-page CTA (inline, all breakpoints) ──────────────
+          🆕 28r110 (founder 2026-07-13 · "ปุ่ม ไม่ต้องลอย · ให้อยู่
+          ท้ายสุด") — the r54 sticky-bottom CTA + r54 desktop rail CTA
+          were both removed and replaced with this single inline
+          button that lives at the true end of the scrollable page,
+          after reviews.  No fixed positioning, no z-index wars with
+          BottomNavGlass, no viewport-height quirks. */}
+      <Box sx={{ padding: { xs: "8px 18px 24px", md: "8px 0 24px" }, ...responsiveShell, mx: "auto", width: "100%" }}>
+        <Button
+          fullWidth
+          onClick={handleBook}
+          aria-label={t(
+            "serviceDetail.bookAria",
+            "Chat to book {{name}}",
+            { name: service.name }
+          )}
+          startIcon={<WhatsAppIcon sx={{ fontSize: "20px !important" }} />}
           sx={{
-            width: "100%",
-            // 🆕 Round 28r52 — sticky bottom CTA matches the shell.
-            ...responsiveShell,
-            pointerEvents: "auto",
+            padding: "16px 20px",
+            borderRadius: "999px",
+            background: gradients.primary,
+            color: "#fff",
+            fontFamily: fonts.body,
+            fontWeight: 700,
+            fontSize: "15px",
+            textTransform: "none",
+            transition: "background 0.2s ease, transform 0.15s ease",
+            "&:hover": {
+              background: gradients.primaryHover,
+              transform: "translateY(-1px)",
+            },
+            "&:focus-visible": {
+              outline: `2px solid ${brand.red}`,
+              outlineOffset: 3,
+            },
           }}
         >
-          <Button
-            fullWidth
-            onClick={handleBook}
-            aria-label={t(
-              "serviceDetail.bookAria",
-              "Chat to book {{name}}",
-              { name: service.name }
-            )}
-            startIcon={<WhatsAppIcon sx={{ fontSize: "20px !important" }} />}
-            sx={{
-              // 🆕 Round 28r90 (r89 audit finding #2) — sticky mobile
-              //   CTA on the theme primary (dusty rose), matching the
-              //   inline desktop CTA above + ServicesPage cards.
-              padding: "14px 20px",
-              borderRadius: "16px",
-              background: gradients.primary,
-              color: "#fff",
-              fontFamily: fonts.body,
-              fontWeight: 700,
-              fontSize: "15px",
-              textTransform: "none",
-              boxShadow: "0 14px 32px rgba(217, 124, 149, 0.34)",
-              "&:hover": {
-                background: gradients.primaryHover,
-                boxShadow: "0 18px 40px rgba(201, 111, 137, 0.40)",
-              },
-            }}
-          >
-            {t("serviceDetail.bookCta", "Chat to book")} ·{" "}
-            {formatTHB(currentPrice)}
-          </Button>
-        </Box>
+          {t("serviceDetail.bookCta", "Chat to book")} · {formatTHB(currentPrice)}
+        </Button>
       </Box>
     </Box>
   );
