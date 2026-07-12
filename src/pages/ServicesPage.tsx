@@ -221,7 +221,71 @@ const ServicesPage: React.FC = () => {
     >
       <Box sx={{ width: "100%", pb: 12 }}>
 
-        {/* ─── Tab strip ─────────────────────────────────────────── */}
+        {/* ─── Editorial page-level masthead ─────────────────────────
+            🆕 Round 28r95 · founder direction 2026-07-12
+            "เอา แถบ ไปไว้ ใต้ Rates & Rituals · Our Signature Experiences"
+            The editorial masthead — moved OUT of the services-tab block
+            and up to page level, so it sits ABOVE the tab strip.  Tabs
+            (Services / About / How to Book) become sub-navigation
+            underneath the always-visible page header.  Copy identical to
+            r92 masthead. */}
+        <Box sx={{ textAlign: "center", mt: 3, mb: 2.5, px: 2 }}>
+          <Typography
+            component="p"
+            sx={{
+              fontFamily: SANS,
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.24em",
+              textTransform: "uppercase",
+              color: ROSE,
+              mb: 1.25,
+              m: 0,
+            }}
+          >
+            {t("services.editorialEyebrow", "Rates & Rituals")}
+          </Typography>
+          <Typography
+            component="h1"
+            sx={{
+              fontFamily: SERIF,
+              fontSize: { xs: 32, md: 40 },
+              fontWeight: 500,
+              color: "var(--sr-ink)",
+              letterSpacing: "-0.02em",
+              lineHeight: 1.05,
+              mt: 1.25,
+              mb: 1.75,
+            }}
+          >
+            {t("services.editorialLine1", "Our")}{" "}
+            <Box
+              component="em"
+              sx={{ fontStyle: "italic", color: ROSE, fontWeight: 500 }}
+            >
+              {t("services.editorialAccent", "Signature")}
+            </Box>
+            <Box component="br" />
+            {t("services.editorialLine2", "Experiences")}
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: 13,
+              color: "var(--sr-muted)",
+              lineHeight: 1.5,
+              maxWidth: 340,
+              mx: "auto",
+            }}
+          >
+            {t(
+              "services.editorialSub",
+              "Every ritual is delivered to your Bangkok hotel · concierge confirms in minutes"
+            )}
+          </Typography>
+        </Box>
+
+        {/* ─── Tab strip (under masthead) ─────────────────────────── */}
         <Box
           sx={{
             mt: 2.5, mx: 2, p: "4px",
@@ -293,71 +357,6 @@ const ServicesPage: React.FC = () => {
         ═══════════════════════════════════════════════════════════ */}
         {section === "services" && (
           <Box sx={{ display: "flex", flexDirection: "column", mt: 3, px: 2, gap: 0 }}>
-
-            {/* ── Editorial section header ───────────────────────────
-                🆕 Round 28r92 · Approach 3 mockup pick (founder 2026-07-12)
-                "แก้ จริง เลย · Rates & Rituals · Our Signature Experiences ·
-                Horizontal Scroll · Approach 3"
-                Replaces the utilitarian "Our Services · N rituals" strip
-                with a centred editorial masthead — small rose eyebrow,
-                big Playfair serif headline with italic rose accent on
-                "Signature", and a single-line concierge subhead.  Sets
-                the quiet-luxury tone before the first card. */}
-            <Box sx={{ textAlign: "center", mb: 3.5, mt: 1 }}>
-              <Typography
-                component="p"
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: "0.24em",
-                  textTransform: "uppercase",
-                  color: ROSE,
-                  mb: 1.25,
-                  m: 0,
-                }}
-              >
-                {t("services.editorialEyebrow", "Rates & Rituals")}
-              </Typography>
-              <Typography
-                component="h1"
-                sx={{
-                  fontFamily: SERIF,
-                  fontSize: { xs: 32, md: 40 },
-                  fontWeight: 500,
-                  color: "var(--sr-ink)",
-                  letterSpacing: "-0.02em",
-                  lineHeight: 1.05,
-                  mt: 1.25,
-                  mb: 1.75,
-                }}
-              >
-                {t("services.editorialLine1", "Our")}{" "}
-                <Box
-                  component="em"
-                  sx={{ fontStyle: "italic", color: ROSE, fontWeight: 500 }}
-                >
-                  {t("services.editorialAccent", "Signature")}
-                </Box>
-                <Box component="br" />
-                {t("services.editorialLine2", "Experiences")}
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: 13,
-                  color: "var(--sr-muted)",
-                  lineHeight: 1.5,
-                  maxWidth: 340,
-                  mx: "auto",
-                }}
-              >
-                {t(
-                  "services.editorialSub",
-                  "Every ritual is delivered to your Bangkok hotel · concierge confirms in minutes"
-                )}
-              </Typography>
-            </Box>
 
             {/* ── Featured hero card (Approach 3 · founder pick 28r92) ──
                 Full-width hero image at the very top of the card (gradient
