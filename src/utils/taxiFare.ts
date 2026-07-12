@@ -56,6 +56,26 @@ export const DISPATCH_BASE = { lat: 13.7548, lng: 100.5656 } as const;
  *  distance" never triggers; every trip is a paid trip. */
 export const FREE_DISTANCE_KM = 0;
 
+/**
+ * 🆕 Round 28w.11 (founder 2026-07-13) — SunRed's fixed dispatch TRAVEL
+ * BUDGET by real (road) distance. Founder-set flat bands, deliberately
+ * EXCLUDING weather + peak-traffic surcharges (the concierge quotes those
+ * live at booking). Used by the near-me taxi estimator instead of the
+ * GrabCar meter maths below. Returns null beyond 30 km (out of the standard
+ * table → concierge quotes the fare).
+ *
+ *   ≤5 km → ฿100 · ≤10 km → ฿200 · ≤15 km → ฿350 · ≤20 km → ฿600 · ≤30 km → ฿800
+ */
+export function travelBudgetForKm(km: number): number | null {
+  if (!Number.isFinite(km) || km < 0) return null;
+  if (km <= 5) return 100;
+  if (km <= 10) return 200;
+  if (km <= 15) return 350;
+  if (km <= 20) return 600;
+  if (km <= 30) return 800;
+  return null;
+}
+
 // ─── GrabCar Bangkok rate card ───────────────────────────────────────
 const BASE_FARE = 45;        // first km (≤ 1 km flag-fall)
 const TIER_2_PER_KM = 8;     // applies to km 1 → 6

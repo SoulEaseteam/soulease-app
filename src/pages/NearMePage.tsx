@@ -1,15 +1,14 @@
 // src/pages/NearMePage.tsx
 //
 // 🆕 Round 28s335 (founder 2026-07-08) — "ย้าย Or browse by location ไปหน้าใหม่".
-//   The "OR BROWSE BY LOCATION" map used to live at the bottom of the home
-//   therapist grid; it now has its own page, reached from the "Near Me"
-//   quick-nav tile. Renders <HomeTherapistGrid mapOnly /> which reuses all
-//   of the grid's live therapist / price / geolocation loading.
-// 🆕 Round 28w.5 (founder 2026-07-13) — "ปรับแก้หน้า near-me". Was a bare
-//   map floating in a hardcoded #F7F7F6 slab (broke in night mode) with no
-//   header and a lot of empty space below. Now: day/night var(--sr-bg),
-//   a proper themed header, plus a coverage-areas chip row + a concierge
-//   CTA under the map so the page reads as finished.
+//   Renders <HomeTherapistGrid mapOnly /> which reuses the grid's live
+//   therapist / price / geolocation loading.
+// 🆕 Round 28w.5 — day/night bg + header + coverage + concierge CTA.
+// 🆕 Round 28w.10 (founder 2026-07-13) — MAP variant of the taxi estimator:
+//   a real Google Map (search + tap-to-pin + drag + "use my current
+//   location") that measures distance + estimates the taxi fare to the
+//   picked practitioner. Reuses the same Google Maps loader + estimateTaxiFare
+//   the booking flow / SelectLocationPage use.
 // ─────────────────────────────────────────────────────────────────────
 
 import React from "react";
@@ -19,8 +18,9 @@ import HomeTherapistGrid from "@/components/home/HomeTherapistGrid";
 import { responsiveShell } from "@/theme/breakpoints";
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 import { whatsappDeepLink } from "@/config/concierge";
+import { useGoogleMaps } from "@/context/GoogleMapsContext";
 import therapists from "@/data/therapists";
-import { estimateTaxiFare } from "@/utils/taxiFare";
+import { estimateTaxiFare, travelBudgetForKm } from "@/utils/taxiFare";
 import { estimateEtaFromKm } from "@/utils/directionsApi";
 import { formatTHB } from "@/utils/servicePricing";
 
@@ -28,47 +28,113 @@ const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
 const ROSE = "#D97C95";
 
-// Central-Bangkok areas SunRed dispatches to (mirrors the ServicesPage
-// "Service area" row). Informational — reassures a guest their hotel is
-// in range before they even pick a practitioner.
 const AREAS = [
   "Sukhumvit", "Silom", "Sathorn", "Asok", "Nana", "Thonglor",
   "Phrom Phong", "Ploenchit", "Chidlom", "Ari", "Riverside", "Ratchada",
 ];
 
-// 🆕 28w.7 (founder 2026-07-13) — GPS taxi-fare estimator. Pick a
-//   practitioner, tap "use my current location", and we measure the
-//   distance (haversine × BKK road factor) and estimate the taxi fare via
-//   the same estimateTaxiFare() the booking flow uses. No map/search
-//   (founder chose the quick GPS-only variant); no Google API call.
+// ── minimal Google Maps type shim (only what this component touches) ──
+type GLatLng = { lat: () => number; lng: () => number };
+interface GMap {
+  addListener: (ev: string, cb: (e: { latLng?: GLatLng | null }) => void) => void;
+  panTo: (p: { lat: number; lng: number }) => void;
+  setZoom: (z: number) => void;
+}
+interface GMarker {
+  setPosition: (p: { lat: number; lng: number }) => void;
+  addListener: (ev: string, cb: (e: { latLng?: GLatLng | null }) => void) => void;
+}
+interface GMaps {
+  Map: new (el: HTMLElement, opts: unknown) => GMap;
+  Marker: new (opts: unknown) => GMarker;
+  places?: {
+    Autocomplete: new (
+      input: HTMLInputElement,
+      opts?: unknown
+    ) => {
+      addListener: (ev: string, cb: () => void) => void;
+      getPlace: () => { geometry?: { location?: GLatLng } };
+    };
+  };
+}
+const getMaps = (): GMaps | null =>
+  (window as unknown as { google?: { maps?: GMaps } }).google?.maps ?? null;
+
+// 🆕 28w.10 — MAP taxi-fare estimator (variant of the 28w.7 GPS-only one).
 const TaxiEstimator: React.FC = () => {
   const { t } = useTranslation();
+  const { ready, loadIfNeeded } = useGoogleMaps();
 
-  // Only practitioners that carry real coordinates can anchor a distance.
   const roster = React.useMemo(
     () => therapists.filter((p) => p.lat != null && p.lng != null),
     []
   );
-
   const [selectedId, setSelectedId] = React.useState(roster[0]?.id ?? "");
   const [coords, setCoords] = React.useState<{ lat: number; lng: number } | null>(null);
   const [status, setStatus] = React.useState<"idle" | "locating" | "error">("idle");
   const [errMsg, setErrMsg] = React.useState("");
 
+  const mapContainerRef = React.useRef<HTMLDivElement | null>(null);
+  const searchInputRef = React.useRef<HTMLInputElement | null>(null);
+  const mapRef = React.useRef<GMap | null>(null);
+  const markerRef = React.useRef<GMarker | null>(null);
+
   const selected = roster.find((p) => p.id === selectedId) ?? roster[0];
 
-  const estimate = React.useMemo(() => {
-    if (!selected || !coords) return null;
-    const { distanceKm, fare } = estimateTaxiFare({
-      therapistLat: selected.lat,
-      therapistLng: selected.lng,
-      customerLat: coords.lat,
-      customerLng: coords.lng,
-      durationMin: 60,
+  // Place / move the customer pin + record coords.
+  const setPin = React.useCallback((lat: number, lng: number) => {
+    setCoords({ lat, lng });
+    const G = getMaps();
+    const map = mapRef.current;
+    if (!G || !map) return;
+    if (!markerRef.current) {
+      markerRef.current = new G.Marker({ position: { lat, lng }, map, draggable: true });
+      markerRef.current.addListener("dragend", (e) => {
+        const ll = e.latLng;
+        if (ll) setCoords({ lat: ll.lat(), lng: ll.lng() });
+      });
+    } else {
+      markerRef.current.setPosition({ lat, lng });
+    }
+  }, []);
+
+  React.useEffect(() => {
+    loadIfNeeded();
+  }, [loadIfNeeded]);
+
+  // Init the map once the SDK is ready.
+  React.useEffect(() => {
+    if (!ready || !mapContainerRef.current || mapRef.current) return;
+    const G = getMaps();
+    if (!G) return;
+    const map = new G.Map(mapContainerRef.current, {
+      center: { lat: 13.7398, lng: 100.56 },
+      zoom: 12,
+      disableDefaultUI: true,
+      zoomControl: true,
+      gestureHandling: "greedy",
     });
-    if (!distanceKm || !fare) return null;
-    return { distanceKm, fare, etaMin: estimateEtaFromKm(distanceKm) };
-  }, [selected, coords]);
+    mapRef.current = map;
+    map.addListener("click", (e) => {
+      const ll = e.latLng;
+      if (ll) setPin(ll.lat(), ll.lng());
+    });
+    if (G.places && searchInputRef.current) {
+      const ac = new G.places.Autocomplete(searchInputRef.current, {
+        componentRestrictions: { country: "th" },
+        fields: ["geometry"],
+      });
+      ac.addListener("place_changed", () => {
+        const loc = ac.getPlace().geometry?.location;
+        if (!loc) return;
+        const lat = loc.lat();
+        const lng = loc.lng();
+        setPin(lat, lng);
+        map.panTo({ lat, lng });
+        map.setZoom(16);
+      });
+    }
+  }, [ready, setPin]);
 
   const locate = () => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -79,20 +145,39 @@ const TaxiEstimator: React.FC = () => {
     setStatus("locating");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        const { latitude, longitude } = pos.coords;
+        setPin(latitude, longitude);
+        mapRef.current?.panTo({ lat: latitude, lng: longitude });
+        mapRef.current?.setZoom(16);
         setStatus("idle");
       },
       (err) => {
         setStatus("error");
         setErrMsg(
           err.code === err.PERMISSION_DENIED
-            ? t("nearme.taxi.denied", "Location blocked — allow it in your browser, or ask the concierge.")
-            : t("nearme.taxi.failed", "Couldn't get your location. Try again.")
+            ? t("nearme.taxi.denied", "Location blocked — allow it in your browser, or drop a pin on the map.")
+            : t("nearme.taxi.failed", "Couldn't get your location. Drop a pin on the map instead.")
         );
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
   };
+
+  const estimate = React.useMemo(() => {
+    if (!selected || !coords) return null;
+    // estimateTaxiFare gives the real (road) distance; the FARE itself comes
+    // from the founder's fixed travel-budget bands (excl. weather/traffic).
+    const { distanceKm } = estimateTaxiFare({
+      therapistLat: selected.lat,
+      therapistLng: selected.lng,
+      customerLat: coords.lat,
+      customerLng: coords.lng,
+      durationMin: 60,
+    });
+    if (!distanceKm) return null;
+    const fare = travelBudgetForKm(distanceKm);
+    return { distanceKm, fare, etaMin: estimateEtaFromKm(distanceKm) };
+  }, [selected, coords]);
 
   if (roster.length === 0) return null;
 
@@ -157,6 +242,63 @@ const TaxiEstimator: React.FC = () => {
           </Box>
         </Box>
 
+        {/* Search box (Google Places autocomplete) */}
+        <Box
+          component="input"
+          ref={searchInputRef}
+          placeholder={t("nearme.taxi.search", "Search your hotel or address…")}
+          aria-label={t("nearme.taxi.search", "Search your hotel or address…")}
+          sx={{
+            width: "100%",
+            boxSizing: "border-box",
+            fontFamily: SANS,
+            fontSize: 14,
+            color: "var(--sr-ink)",
+            background: "var(--sr-panel-2)",
+            border: "1px solid var(--sr-hairline)",
+            borderRadius: "12px",
+            padding: "11px 14px",
+            "&::placeholder": { color: "var(--sr-muted)" },
+            "&:focus": { outline: "none", borderColor: ROSE },
+          }}
+        />
+
+        {/* The map */}
+        <Box
+          sx={{
+            position: "relative",
+            borderRadius: "14px",
+            overflow: "hidden",
+            border: "1px solid var(--sr-hairline)",
+            height: 220,
+            background: "var(--sr-panel-2)",
+          }}
+        >
+          <Box ref={mapContainerRef} sx={{ position: "absolute", inset: 0 }} />
+          {!coords && (
+            <Box
+              sx={{
+                position: "absolute",
+                left: "50%",
+                bottom: 10,
+                transform: "translateX(-50%)",
+                px: "12px",
+                py: "6px",
+                borderRadius: "999px",
+                background: "rgba(0,0,0,0.55)",
+                color: "#fff",
+                fontFamily: SANS,
+                fontSize: 11,
+                fontWeight: 600,
+                pointerEvents: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {t("nearme.taxi.tapHint", "Tap the map to drop a pin")}
+            </Box>
+          )}
+        </Box>
+
         {/* Use my current location */}
         <Box
           component="button"
@@ -209,8 +351,8 @@ const TaxiEstimator: React.FC = () => {
               value={`${estimate.distanceKm.toFixed(1)} km`}
             />
             <ResultCell
-              label={t("nearme.taxi.fare", "Est. taxi")}
-              value={formatTHB(estimate.fare)}
+              label={t("nearme.taxi.fare", "Travel budget")}
+              value={estimate.fare != null ? formatTHB(estimate.fare) : "—"}
               accent
               divider
             />
@@ -225,9 +367,11 @@ const TaxiEstimator: React.FC = () => {
         )}
 
         <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "var(--sr-muted)", lineHeight: 1.5 }}>
-          {estimate
-            ? t("nearme.taxi.note", "Round-trip estimate — the concierge confirms the final fare when you book.")
-            : t("nearme.taxi.hint", "Pick a practitioner, then share your location for a distance + taxi estimate.")}
+          {!estimate
+            ? t("nearme.taxi.hint", "Pick a practitioner, then search, tap the map, or use your location for a taxi estimate.")
+            : estimate.fare == null
+            ? t("nearme.taxi.over", "Beyond 30 km — the concierge quotes your travel fare.")
+            : t("nearme.taxi.note", "Set travel budget by distance — excludes weather and peak-traffic surcharges. Concierge confirms the final fare.")}
         </Typography>
       </Box>
     </Box>
@@ -342,7 +486,7 @@ const NearMePage: React.FC = () => {
       {/* The live location map (reuses the home grid's data) */}
       <HomeTherapistGrid mapOnly />
 
-      {/* GPS taxi-fare estimator */}
+      {/* Taxi-fare estimator (map variant) */}
       <TaxiEstimator />
 
       {/* Coverage areas */}
@@ -360,29 +504,32 @@ const NearMePage: React.FC = () => {
         >
           {t("nearme.coverage.title", "Areas we cover")}
         </Typography>
-        {/* 🆕 28w.8 — founder "ทำเป็นข้อความสวยๆ": areas as elegant serif
-            prose with rose middot separators instead of chip pills. */}
+        {/* 28w.9 — V2 editorial-prose treatment (pending founder pick vs V1 middots) */}
         <Typography
           sx={{
             fontFamily: SERIF,
-            fontSize: { xs: 15.5, md: 17 },
-            lineHeight: 1.9,
+            fontSize: { xs: 16, md: 18 },
+            lineHeight: 1.95,
             color: "var(--sr-ink)",
             letterSpacing: "0.01em",
             overflowWrap: "break-word",
           }}
         >
+          <Box component="span" sx={{ fontStyle: "italic", color: "var(--sr-gold-text)" }}>
+            Across central Bangkok
+          </Box>
+          <Box component="span" sx={{ color: "var(--sr-muted)" }}>{" — "}</Box>
           {AREAS.map((a, i) => (
             <React.Fragment key={a}>
               {i > 0 && (
-                // breaking spaces around the middot so the line wraps
-                <Box component="span" aria-hidden sx={{ color: ROSE, fontWeight: 700 }}>
-                  {" · "}
+                <Box component="span" sx={{ color: "var(--sr-muted)" }}>
+                  {i === AREAS.length - 1 ? " and " : ", "}
                 </Box>
               )}
               {a}
             </React.Fragment>
           ))}
+          <Box component="span" sx={{ color: "var(--sr-muted)" }}>.</Box>
         </Typography>
         <Typography
           sx={{
