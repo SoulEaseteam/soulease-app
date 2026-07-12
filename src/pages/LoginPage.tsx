@@ -211,10 +211,16 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               sx={{
                 mb: 2,
+                // 🆕 28w.2 — MUI's default outline computes to white
+                //   (palette.mode is dark) → invisible on the day panel.
+                //   Pin a visible rose-tint border for both day + night.
                 "& .MuiOutlinedInput-root": {
                   borderRadius: "16px",
+                  "& fieldset": { borderColor: "rgba(217, 124, 149, 0.55)" },
+                  "&:hover fieldset": { borderColor: ROSE },
                   "&.Mui-focused fieldset": { borderColor: ROSE },
                 },
+                "& label": { color: "var(--sr-muted)" },
                 "& label.Mui-focused": { color: ROSE },
               }}
             />
@@ -229,10 +235,16 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               sx={{
                 mb: 2,
+                // 🆕 28w.2 — MUI's default outline computes to white
+                //   (palette.mode is dark) → invisible on the day panel.
+                //   Pin a visible rose-tint border for both day + night.
                 "& .MuiOutlinedInput-root": {
                   borderRadius: "16px",
+                  "& fieldset": { borderColor: "rgba(217, 124, 149, 0.55)" },
+                  "&:hover fieldset": { borderColor: ROSE },
                   "&.Mui-focused fieldset": { borderColor: ROSE },
                 },
+                "& label": { color: "var(--sr-muted)" },
                 "& label.Mui-focused": { color: ROSE },
               }}
             />
