@@ -72,4 +72,61 @@ button,
   --cta-bottom-offset: calc(
     var(--bottom-nav-height) + 16px + env(safe-area-inset-bottom, 0px)
   );
+
+  /* ─────────────────────────────────────────────────────────────────
+     🕯️ 28t — SunRed DARK-LUXURY day/night theme tokens.
+     Founder direction 2026-07-12: auto-switch a warm light "day" look
+     (cream/ivory grounds) and a dark "night" look (espresso grounds).
+     ACCENTS (dusty rose #C56A6D, soft gold #D7B56D, tan) are identical
+     in both modes — ONLY surfaces + text-on-surface flip, so components
+     hardcode accents and read these vars for grounds/text/hairlines.
+
+     :root = NIGHT (default). `html.sr-day` overrides for daytime below.
+     A tiny runtime (DayNightSync) toggles `.sr-day` on <html> by BKK hour.
+     ───────────────────────────────────────────────────────────────── */
+  /* surfaces (dark → mid) */
+  --sr-bg: #211813;          /* page ground — Espresso Black */
+  --sr-panel: #513326;       /* card / section panel — Dark Chocolate */
+  --sr-panel-2: #674835;     /* raised / inner — Walnut Brown */
+  --sr-panel-deep: #2A1D16;  /* footer / drawer / deep ground */
+  /* text on surfaces */
+  --sr-ink: #F3E6DB;         /* headings / brightest — Ivory White */
+  --sr-body: #E6CDBE;        /* body — Warm Cream */
+  --sr-muted: #D5B7A8;       /* muted — Champagne Beige */
+  --sr-dim: #A78E7B;         /* dim caption */
+  --sr-gold-text: #D7B56D;   /* gold used AS TEXT/icon on a surface */
+  /* lines / shadow */
+  --sr-hairline: rgba(215, 181, 109, 0.22); /* gold "embroidery" border */
+  --sr-line: rgba(243, 230, 219, 0.10);      /* divider */
+  --sr-card-shadow: 0 12px 34px rgba(0, 0, 0, 0.42);
+  /* nav + hero (mode-specific) */
+  --sr-nav-scrim: rgba(33, 24, 19, 0.86);
+  --sr-hero-border: rgba(215, 181, 109, 0.22);
+  --sr-hero-filter: brightness(0.78) saturate(1.06) contrast(1.03) sepia(0.06);
+  --sr-hero-vignette: linear-gradient(180deg, rgba(33, 24, 19, 0) 40%, rgba(33, 24, 19, 0.55) 100%);
+  --sr-hero-scrim-xs: linear-gradient(90deg, rgba(33,24,19,0.94) 0%, rgba(33,24,19,0.86) 48%, rgba(33,24,19,0.56) 72%, rgba(33,24,19,0.32) 100%);
+  --sr-hero-scrim-md: linear-gradient(90deg, rgba(33,24,19,0.92) 0%, rgba(33,24,19,0.72) 38%, rgba(33,24,19,0.40) 60%, rgba(33,24,19,0.16) 100%);
+}
+
+/* ☀️ DAY — warm light luxury (cream/ivory grounds, espresso ink). Same
+   dusty-rose + soft-gold accents; only surfaces + text flip. */
+html.sr-day {
+  --sr-bg: #F3E6DB;          /* page ground — Ivory White */
+  --sr-panel: #FFFFFF;       /* card / section panel — white */
+  --sr-panel-2: #F6ECE3;     /* raised / inner — soft cream */
+  --sr-panel-deep: #EBDDCF;  /* footer / drawer — deep cream */
+  --sr-ink: #2A1B14;         /* headings — espresso */
+  --sr-body: #5A3D2C;        /* body — warm chocolate */
+  --sr-muted: #8A6F5C;       /* muted — walnut */
+  --sr-dim: #A98F7C;         /* dim caption */
+  --sr-gold-text: #B0863A;   /* deeper gold — readable on white */
+  --sr-hairline: rgba(201, 154, 78, 0.32);
+  --sr-line: rgba(42, 27, 20, 0.08);
+  --sr-card-shadow: 0 10px 30px rgba(90, 61, 44, 0.14);
+  --sr-nav-scrim: rgba(243, 230, 219, 0.86);
+  --sr-hero-border: rgba(201, 154, 78, 0.28);
+  --sr-hero-filter: none;
+  --sr-hero-vignette: none;
+  --sr-hero-scrim-xs: linear-gradient(90deg, rgba(243,230,219,0.96) 0%, rgba(243,230,219,0.90) 48%, rgba(243,230,219,0.55) 72%, rgba(243,230,219,0) 100%);
+  --sr-hero-scrim-md: linear-gradient(90deg, rgba(243,230,219,0.95) 0%, rgba(243,230,219,0.74) 38%, rgba(243,230,219,0.34) 60%, rgba(243,230,219,0) 78%);
 }

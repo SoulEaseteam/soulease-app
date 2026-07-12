@@ -26,49 +26,54 @@ import type {} from "@mui/x-date-pickers/themeAugmentation";
 // intended tokens directly without needing the legacy alias trick.
 // ─────────────────────────────────────────────────────────────────────
 
-// ── Palette anchors (from founder spec — use EXACT hex values) ──────
-// Neutrals (page / card / border)
-const NEUTRAL_50  = "#F7F7F6";  // page bg
-const NEUTRAL_100 = "#ECEBE8";  // card / section bg
-const NEUTRAL_200 = "#E2E0DD";  // softer surface / hover
-const NEUTRAL_300 = "#CFCFCB";  // borders
-const NEUTRAL_400 = "#B6B6B1";  // dim borders
+// ─────────────────────────────────────────────────────────────────────
+// 🕯️ DARK-LUXURY + auto DAY/NIGHT — Round 28t (founder 2026-07-12)
+//
+// Founder direction: "เปลี่ยนสีเว็บ · Luxury premium palette" + auto
+// day/night. A warm five-star-spa look that wears a LIGHT cream/ivory
+// palette in daylight and a DARK espresso palette after dark. Dusty-rose
+// + soft-gold ACCENTS are identical in both modes — only SURFACES and
+// TEXT-ON-SURFACE flip. So the surface/text tokens below are CSS
+// variables (`var(--sr-*)`, defined in index.css: `:root` = night ·
+// `html.sr-day` = day, toggled by DayNightSync); accent tokens stay fixed
+// hex. Const NAMES are UNCHANGED so every downstream tree + MUI palette
+// re-skins automatically and follows the day/night switch for free.
+//
+// Grounds (surface tokens → CSS vars, flip day/night).
+const NEUTRAL_50  = "var(--sr-bg)";        // page ground
+const NEUTRAL_100 = "var(--sr-panel)";     // card / section panel
+const NEUTRAL_200 = "var(--sr-panel-2)";   // softer surface / hover
+const NEUTRAL_300 = "var(--sr-hairline)";  // warm hairline borders
+const NEUTRAL_400 = "var(--sr-line)";      // dim dividers
 
-// Grays (ink)
-const GRAY_400 = "#A7A7A2";     // dim / disabled
-const GRAY_500 = "#8E8E89";     // muted body
-const GRAY_600 = "#6E6E6A";     // body text
-const GRAY_800 = "#4B4B48";     // heading + primary TEXT (post-r80)
-const GRAY_900 = "#2D2D2B";     // deepest ink · hero headlines only
+// Ink (text tokens → CSS vars, flip day/night). GRAY_900 = brightest/
+// darkest headline ink per mode; GRAY_400 = dimmest caption.
+const GRAY_400 = "var(--sr-dim)";          // dim / disabled
+const GRAY_500 = "var(--sr-muted)";        // muted body
+const GRAY_600 = "var(--sr-body)";         // body text
+const GRAY_800 = "var(--sr-ink)";          // heading + primary TEXT
+const GRAY_900 = "var(--sr-ink)";          // headline ink
 
-// Warm accents
-const WARM_100 = "#C9B9A7";     // warm sand light
-const WARM_200 = "#B7A896";     // warm sand
-const SAGE_400 = "#A2BF7A";     // sage (success / online dot / check mark)
+// Warm accents (FIXED both modes)
+const WARM_100 = "#D9A98A";     // warm tan light
+const WARM_200 = "#CA906F";     // Warm Tan (skin / secondary fill)
+const SAGE_400 = "var(--sr-gold-text)"; // success / online / "available" → gold (per mode)
 
-// ── Round 28r80 (2026-07-08) — WARM TAUPE primary CTA ──────────────
-// Founder direction: primary CTAs sitewide should adopt the warm-taupe
-// tone the MembershipCard button already uses ("ใช้สีนี้เป็นสีปุ่ม
-// ทั้งหมด"). Softer + more hospitality-brand than the previous
-// GRAY_900 dark-ink CTAs from r70 Nordic rebrand.
-// Hex values below are pulled EXACTLY from MembershipCard.tsx r74.
-const WARM_TAUPE       = "#8F8474"; // primary CTA fill (MembershipCard BTN_BG)
-const WARM_TAUPE_HOVER = "#7A7060"; // primary CTA hover (MembershipCard BTN_BG_HOVER)
+// ── Dusty-rose primary CTA (was WARM_TAUPE) ────────────────────────
+// Founder spec: Dusty Rose #C56A6D primary, Dusty Rose Brown #A16256
+// ribbon/hover. Names kept as WARM_TAUPE* so all CTA call-sites re-skin.
+const WARM_TAUPE       = "#C56A6D"; // primary CTA fill — Vintage Rose
+const WARM_TAUPE_HOVER = "#A16256"; // primary CTA hover — Dusty Rose Brown
 
-// ── Round 28r81 (2026-07-08) — ACCENT PALETTE ──────────────────────
-// Founder direction: layer these signal-highlight accents onto the
-// existing Nordic palette. They are used SPARINGLY (max 2-3 hits per
-// screen) for the small moments where the eye needs to be drawn —
-// NEW badges, availability, favorites, ratings, key highlights.
-// The sage `#A2BF7A` (r70) stays semantically "success / online dot".
-// The new `AVAILABLE_GREEN` (`#e8f8f5`) is a different, lighter tint
-// specifically for the "Available" badge BG per founder spec.
-const TEAL_MINT           = "#2EC4B0"; // primary accent — NEW badge, highlights, icons
-const AVAILABLE_GREEN     = "#e8f8f5"; // "Available" badge bg (light green tint)
-const AVAILABLE_GREEN_TEXT = "#0E6E5A"; // darker green for text on the light bg
-const FAVORITE_PINK       = "#fff0f0"; // heart / favorite icon bg
-const FAVORITE_PINK_TEXT  = "#B54747"; // darker red for the heart icon glyph
-const AMBER_STAR          = "#F5A623"; // star rating (kept from prior rounds) + urgency
+// ── Signal-highlight accents (dark-luxury values) ──────────────────
+// Soft-gold is the single signature "embroidery" accent — NEW badges,
+// stars, price, availability, key highlights. Favorite = dusty rose.
+const TEAL_MINT           = "var(--sr-gold-text)"; // NEW badge / highlights → gold (per mode)
+const AVAILABLE_GREEN     = "rgba(215,181,109,0.16)"; // "Available" pill bg — gold tint (fixed)
+const AVAILABLE_GREEN_TEXT = "var(--sr-gold-text)"; // "Available" text → gold (per mode)
+const FAVORITE_PINK       = "rgba(197,106,109,0.16)"; // heart / favorite bg — rose tint (fixed)
+const FAVORITE_PINK_TEXT  = "#C56A6D"; // heart glyph — Vintage Rose (fixed)
+const AMBER_STAR          = "var(--sr-gold-text)"; // star rating + urgency → gold (per mode)
 
 // ── New named token trees (preferred going forward) ────────────────
 export const neutrals = {
@@ -130,16 +135,16 @@ export const brand = {
   bg2: NEUTRAL_100,            // card / section background
   green: SAGE_400,             // online dot / success (was #16A34A)
 
-  // ── Small accent palette (surfaces re-mapped to Nordic warm accents)
-  amber: WARM_200,             // ★ star ratings · badges (was #F5A623)
-  pink: NEUTRAL_100,           // favourite bg · soft highlight
+  // ── Small accent palette — dark-luxury signature is Soft Gold
+  amber: "var(--sr-gold-text)", // ★ star ratings · badges — gold (per mode)
+  pink: "rgba(197,106,109,0.16)", // favourite bg · soft rose highlight
   tagBlue: NEUTRAL_100,        // tag chip bg
   tagPeach: NEUTRAL_200,       // tag chip bg (warmer variant)
 
   // ── Legacy aliases — every prior colour collapses onto the Nordic
   //   equivalent so downstream `sx={{ color: brand.coral }}` still
   //   compiles + renders consistently with the new palette.
-  coral: GRAY_800,             // legacy 2ndary red → heading ink
+  coral: "var(--sr-gold-text)", // legacy 2ndary → gold wordmark rays (per mode)
   peach: WARM_200,             // legacy urgency → warm sand
   cream: NEUTRAL_100,          // legacy soft accent → neutral 100
   accent: GRAY_600,            // eyebrow labels → muted body
@@ -148,7 +153,7 @@ export const brand = {
   bg2Legacy: NEUTRAL_100,
   bg1Warm: NEUTRAL_50,
   bg2Warm: NEUTRAL_100,
-  greenSoft: "#E9F0DE",        // available pill bg (soft sage tint of SAGE_400)
+  greenSoft: "rgba(215,181,109,0.16)", // available pill bg — soft gold tint
   ink: GRAY_900,               // deepest ink — hero headlines only
 } as const;
 
@@ -159,15 +164,15 @@ export const brand = {
 //   Sunred-red gradient used to sit, a flat dark-ink surface takes over.
 // ─────────────────────────────────────────────────────────────────────
 export const gradients = {
-  /** Primary CTA — flat warm taupe (r80, was GRAY_900) */
-  primary: WARM_TAUPE,
-  /** Section background — flat off-white */
+  /** Primary CTA — dusty-rose gradient (28t dark-luxury) */
+  primary: "linear-gradient(135deg,#C56A6D 0%,#A16256 100%)",
+  /** Section background — flat espresso ground */
   surface: NEUTRAL_50,
-  /** Final hero CTA — flat warm taupe (r80) */
-  finalCta: WARM_TAUPE,
+  /** Final hero CTA — dusty-rose gradient */
+  finalCta: "linear-gradient(135deg,#C56A6D 0%,#A16256 100%)",
 
   // legacy aliases
-  primaryHover: WARM_TAUPE_HOVER, // darker taupe on hover
+  primaryHover: "linear-gradient(135deg,#A16256 0%,#8E4F49 100%)", // deeper rose on hover
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────
@@ -274,28 +279,34 @@ export const blobKeyframes = {
 // ─────────────────────────────────────────────────────────────────────
 const theme = createTheme({
   palette: {
-    mode: "light",
+    // 28t dark-luxury — espresso ground, dusty-rose primary, gold secondary.
+    mode: "dark",
     primary: {
-      main: WARM_TAUPE,
-      light: WARM_TAUPE,
-      dark: WARM_TAUPE_HOVER,
-      contrastText: "#ffffff",
+      main: WARM_TAUPE,          // Vintage Rose #C56A6D
+      light: "#D48A8C",
+      dark: WARM_TAUPE_HOVER,    // Dusty Rose Brown #A16256
+      contrastText: "#FFF7F0",
     },
     secondary: {
-      main: WARM_200,
-      light: WARM_100,
-      dark: GRAY_800,
-      contrastText: "#ffffff",
+      main: "#D7B56D",           // Soft Gold
+      light: "#E4C888",
+      dark: WARM_200,            // Warm Tan
+      contrastText: "#2A1B10",
     },
-    success: { main: SAGE_400 },
+    success: { main: "#D7B56D" }, // Soft Gold (fixed hex — MUI augments this)
     background: {
-      default: NEUTRAL_50,
-      paper: "rgba(255, 255, 255, 0.65)",
+      default: NEUTRAL_50,       // Espresso Black
+      paper: NEUTRAL_100,        // Dark Chocolate panel
     },
     text: {
-      primary: GRAY_800,
-      secondary: GRAY_600,
+      primary: GRAY_800,         // → var(--sr-ink)
+      secondary: GRAY_500,       // → var(--sr-muted)
     },
+    // MUI runs palette.divider through colour math (can't parse var()), so
+    // this stays a fixed warm translucent that reads on both light + dark.
+    // Per-component dividers that need the exact day/night line override
+    // `borderColor: var(--sr-line)` in sx.
+    divider: "rgba(150, 125, 100, 0.22)",
   },
 
   shape: {
@@ -347,10 +358,10 @@ const theme = createTheme({
         containedPrimary: {
           background: gradients.primary,
           boxShadow:
-            "0 6px 18px rgba(143, 132, 116, 0.24), inset 0 1px 0 rgba(255,255,255,0.10)",
+            "0 6px 18px rgba(197, 106, 109, 0.30), inset 0 1px 0 rgba(255,255,255,0.12)",
           "&:hover": {
             background: gradients.primaryHover,
-            boxShadow: "0 8px 22px rgba(122, 112, 96, 0.30)",
+            boxShadow: "0 8px 22px rgba(161, 98, 86, 0.38)",
           },
         },
       },
@@ -375,9 +386,12 @@ const theme = createTheme({
     MuiPickersPopper: {
       styleOverrides: {
         paper: {
+          // Booking-flow date pickers still render on light pages this round,
+          // so keep an opaque white calendar with dark text (brand.text is now
+          // Ivory — would vanish on white, so hardcode dark ink here).
           backgroundColor: "#FFFFFF",
           backgroundImage: "none",
-          color: brand.text,
+          color: "#2A1B14",
           border: "1px solid rgba(31,41,51,0.12)",
           borderRadius: 16,
           boxShadow: "0 14px 44px rgba(15,23,42,0.20)",

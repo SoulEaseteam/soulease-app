@@ -37,15 +37,16 @@ const MokoPromoBanner: React.FC = () => {
         borderRadius: "18px",
         position: "relative",
         overflow: "hidden",
-        // Moko magenta→violet gradient.
-        background: "linear-gradient(120deg,#EC4899 0%,#B052C4 55%,#8B5CF6 100%)",
-        boxShadow: "0 10px 26px rgba(176, 82, 196, 0.28)",
+        // 🕯️ 28t — warm panel gradient (flips light↔dark with day/night).
+        background: "linear-gradient(135deg,var(--sr-panel-deep) 0%,var(--sr-panel) 55%,var(--sr-panel-2) 100%)",
+        border: "1px solid var(--sr-hairline)",
+        boxShadow: "var(--sr-card-shadow)",
         transition: "transform 0.16s ease, box-shadow 0.16s ease",
         "&:hover": {
           transform: "translateY(-1px)",
-          boxShadow: "0 14px 30px rgba(176, 82, 196, 0.34)",
+          boxShadow: "var(--sr-card-shadow)",
         },
-        "&:focus-visible": { outline: "2px solid #fff", outlineOffset: 2 },
+        "&:focus-visible": { outline: "2px solid var(--sr-ink)", outlineOffset: 2 },
       }}
     >
       {/* soft decorative blobs */}
@@ -58,7 +59,7 @@ const MokoPromoBanner: React.FC = () => {
           width: 120,
           height: 120,
           borderRadius: "50%",
-          background: "rgba(255,255,255,0.14)",
+          background: "rgba(215,181,109,0.10)",
         }}
       />
       <Box
@@ -70,7 +71,7 @@ const MokoPromoBanner: React.FC = () => {
           width: 90,
           height: 90,
           borderRadius: "50%",
-          background: "rgba(255,255,255,0.08)",
+          background: "rgba(215,181,109,0.06)",
         }}
       />
 
@@ -92,7 +93,7 @@ const MokoPromoBanner: React.FC = () => {
               marginBottom: "6px",
             }}
           >
-            <Sparkle size={13} weight="fill" color="#fff" />
+            <Sparkle size={13} weight="fill" color="#D7B56D" />
             <Box
               sx={{
                 fontFamily: fonts.body,
@@ -100,7 +101,7 @@ const MokoPromoBanner: React.FC = () => {
                 fontWeight: 800,
                 letterSpacing: "0.16em",
                 textTransform: "uppercase",
-                color: "rgba(255,255,255,0.92)",
+                color: "var(--sr-gold-text)",
               }}
             >
               {t("home.promo.eyebrow", "SunRed Concierge")}
@@ -113,7 +114,7 @@ const MokoPromoBanner: React.FC = () => {
               fontFamily: fonts.heading,
               fontSize: { xs: "16px", md: "18px" },
               fontWeight: 700,
-              color: "#fff",
+              color: "var(--sr-ink)",
               lineHeight: 1.25,
               marginBottom: "3px",
             }}
@@ -138,13 +139,14 @@ const MokoPromoBanner: React.FC = () => {
                 fontFamily: fonts.body,
                 fontSize: "11.5px",
                 fontWeight: 700,
-                color: "#fff",
-                background: "rgba(255,255,255,0.18)",
+                color: "var(--sr-ink)",
+                background: "rgba(215,181,109,0.16)",
+                border: "1px solid rgba(215,181,109,0.28)",
                 borderRadius: "999px",
                 padding: "3px 9px",
               }}
             >
-              <ShieldCheck size={13} weight="fill" color="#fff" />
+              <ShieldCheck size={13} weight="fill" color="#D7B56D" />
               {t("home.promo.verified", "100% Verified")}
             </Box>
             <Box
@@ -152,7 +154,7 @@ const MokoPromoBanner: React.FC = () => {
                 fontFamily: fonts.body,
                 fontSize: "11.5px",
                 fontWeight: 500,
-                color: "rgba(255,255,255,0.9)",
+                color: "var(--sr-body)",
               }}
             >
               {t("home.promo.sub", "Concierge replies in minutes")}
@@ -168,14 +170,14 @@ const MokoPromoBanner: React.FC = () => {
             width: 34,
             height: 34,
             borderRadius: "50%",
-            background: "#fff",
+            background: "linear-gradient(135deg,#E4C888 0%,#C99A4E 100%)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: "0 4px 10px rgba(124, 58, 237, 0.30)",
+            boxShadow: "0 4px 10px rgba(0, 0, 0, 0.35)",
           }}
         >
-          <CaretRight size={17} weight="bold" color="#B052C4" />
+          <CaretRight size={17} weight="bold" color="#2A1B10" />
         </Box>
       </Box>
     </Box>

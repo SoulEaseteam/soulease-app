@@ -72,7 +72,7 @@ const WhySunRedSection: React.FC = () => {
           fontFamily: fonts.heading,
           fontSize: { xs: 22, md: 26 },
           fontWeight: 500,
-          color: "#4B4B48", // GRAY_900
+          color: "var(--sr-ink)", // IVORY heading (was GRAY_900 #4B4B48)
           margin: 0,
           letterSpacing: "-0.005em",
           lineHeight: 1.15,
@@ -84,7 +84,7 @@ const WhySunRedSection: React.FC = () => {
         sx={{
           fontFamily: fonts.body,
           fontSize: 11.5,
-          color: "#6E6E6A", // GRAY_600
+          color: "var(--sr-muted)", // CHAMPAGNE muted (was GRAY_600 #6E6E6A)
           marginTop: "4px",
           marginBottom: { xs: "20px", md: "24px" },
         }}
@@ -122,7 +122,7 @@ const WhySunRedSection: React.FC = () => {
                 height: 42,
                 borderRadius: "50%",
                 background: "transparent",
-                border: "1px solid #CFCFCB", // NEUTRAL_300
+                border: "1px solid var(--sr-hairline)", // GOLD hairline embroidery (was NEUTRAL_300 #CFCFCB)
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -136,7 +136,7 @@ const WhySunRedSection: React.FC = () => {
                 fontFamily: fonts.body,
                 fontSize: 12,
                 fontWeight: 400,
-                color: "#4B4B48", // GRAY_800
+                color: "var(--sr-body)", // CREAM body (was GRAY_800 #4B4B48)
                 lineHeight: 1.5,
                 letterSpacing: 0,
               }}

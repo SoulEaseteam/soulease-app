@@ -19,12 +19,13 @@ import { fonts } from "@/theme";
 
 export type RosterFilter = "all" | "available_now" | "express";
 
-const MAGENTA = "#E6197E"; // Moko primary — hot pink (active / selected)
-const MAGENTA_TXT = "#C2185B"; // readable magenta for text on light
-const GREEN = "#16A34A"; // available / on-standby status
-const PLUM = "#5A2733";
-const TEXT = "#1A2B2E";
-const MUTED = "#6B6560";
+// 🕯️ 28t dark-luxury day/night — rose + gold accents fixed; text follows mode.
+const MAGENTA = "#C56A6D"; // primary — Vintage Rose (active / selected / icons) — fixed
+const MAGENTA_TXT = "var(--sr-ink)"; // active-tab label text (flips day/night)
+const GREEN = "#D7B56D"; // available / on-standby dot — Soft Gold (fixed fill)
+const PLUM = "var(--sr-body)"; // notice-marquee text on the notice panel
+const TEXT = "var(--sr-ink)"; // primary text
+const MUTED = "var(--sr-muted)"; // muted text
 
 interface TabDef {
   key: RosterFilter;
@@ -88,14 +89,14 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
             display: "inline-flex",
             alignItems: "center",
             gap: "5px",
-            background: "rgba(22,163,74,0.10)",
-            border: "1px solid rgba(22,163,74,0.28)",
+            background: "rgba(215,181,109,0.12)",
+            border: "1px solid rgba(215,181,109,0.30)",
             borderRadius: "999px",
             padding: "3px 10px",
             fontFamily: fonts.body,
             fontSize: "11px",
             fontWeight: 700,
-            color: "#15803d",
+            color: "var(--sr-gold-text)",
           }}
         >
           <Box
@@ -107,9 +108,9 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
               background: GREEN,
               animation: "moko-pulse 2s ease-out infinite",
               "@keyframes moko-pulse": {
-                "0%": { boxShadow: "0 0 0 0 rgba(22,163,74,0.5)" },
-                "70%": { boxShadow: "0 0 0 6px rgba(22,163,74,0)" },
-                "100%": { boxShadow: "0 0 0 0 rgba(22,163,74,0)" },
+                "0%": { boxShadow: "0 0 0 0 rgba(215,181,109,0.55)" },
+                "70%": { boxShadow: "0 0 0 6px rgba(215,181,109,0)" },
+                "100%": { boxShadow: "0 0 0 0 rgba(215,181,109,0)" },
               },
               "@media (prefers-reduced-motion: reduce)": { animation: "none" },
             }}
@@ -124,8 +125,8 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
           display: "flex",
           alignItems: "center",
           gap: "8px",
-          background: "linear-gradient(180deg,#FCEAF2 0%,#F7E0EC 100%)",
-          border: "1px solid rgba(230,25,126,0.10)",
+          background: "linear-gradient(180deg,var(--sr-panel) 0%,var(--sr-panel-deep) 100%)",
+          border: "1px solid var(--sr-hairline)",
           borderRadius: "12px",
           padding: "8px 12px",
           overflow: "hidden",
@@ -209,8 +210,8 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
                 WebkitTapHighlightColor: "transparent",
                 border: active
                   ? `1.5px solid ${MAGENTA}`
-                  : "1.5px solid rgba(15,23,42,0.12)",
-                background: active ? "rgba(230,25,126,0.08)" : "#FFFFFF",
+                  : "1.5px solid var(--sr-hairline)",
+                background: active ? "rgba(197,106,109,0.18)" : "var(--sr-panel)",
                 borderRadius: "999px",
                 padding: "7px 14px",
                 fontFamily: fonts.body,
@@ -223,7 +224,7 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
               }}
             >
               {tab.key === "express" && (
-                <Lightning size={13} weight="fill" color={active ? MAGENTA_TXT : MUTED} />
+                <Lightning size={13} weight="fill" color={active ? "#C56A6D" : "#8B7A6B"} />
               )}
               {tab.live && (
                 <Box
@@ -232,7 +233,7 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
                     width: 6,
                     height: 6,
                     borderRadius: "50%",
-                    background: tab.count > 0 ? GREEN : "#C7C2BC",
+                    background: tab.count > 0 ? GREEN : "var(--sr-dim)",
                     flexShrink: 0,
                   }}
                 />
@@ -245,7 +246,7 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
                   fontSize: "11px",
                   fontWeight: 800,
                   color: active ? MAGENTA_TXT : MUTED,
-                  background: active ? "rgba(230,25,126,0.14)" : "#F1EEEA",
+                  background: active ? "rgba(197,106,109,0.22)" : "var(--sr-panel-2)",
                   borderRadius: "999px",
                   padding: "1px 7px",
                   minWidth: 18,

@@ -29,12 +29,14 @@ import { fonts } from "@/theme";
 //   the therapist grid + TopNav so the hero never disagrees on the mode.
 import { useConciergeMode } from "@/utils/conciergeMode";
 
-// Warm quiet-luxury palette — matched to the cream photo, not the cool
-// Nordic page grays.
-const INK = "#2B2620"; // espresso — serif headline ink (hero only)
-const BODY = "#4B4B48"; // GRAY_800 — Thai subtitle unified w/ site body (r80)
-const CTA_FILL = "#8F8474"; // WARM_TAUPE — matches sitewide primary CTA (r80)
-const CTA_FILL_HOVER = "#7A7060"; // WARM_TAUPE_HOVER
+// 🕯️ 28t day/night — NIGHT: the cream photo is graded to a dark cinematic
+// scene with ivory/cream text. DAY: the photo stays bright cream with a
+// light cream scrim + espresso text. The scrim/filter/text flip via CSS
+// vars; the dusty-rose CTA is identical in both modes.
+const INK = "var(--sr-ink)"; // headline ink (ivory at night, espresso by day)
+const BODY = "var(--sr-body)"; // subtitle / sub-copy
+const CTA_FILL = "linear-gradient(135deg,#C56A6D 0%,#A16256 100%)"; // dusty-rose CTA
+const CTA_FILL_HOVER = "linear-gradient(135deg,#A16256 0%,#8E4F49 100%)";
 
 const HERO_IMG = "/images/hero/hero.jpg";
 
@@ -56,8 +58,8 @@ const HomeHero: React.FC = () => {
         overflow: "hidden",
         margin: { xs: "12px 12px 8px", md: "20px 12px 12px" },
         borderRadius: { xs: "22px", md: "26px" },
-        border: "1px solid #E7E0D5",
-        boxShadow: "0 10px 30px rgba(43, 38, 32, 0.08)",
+        border: "1px solid var(--sr-hero-border)",
+        boxShadow: "var(--sr-card-shadow)",
         minHeight: { xs: 470, sm: 500, md: 520, lg: 560 },
         display: "flex",
       }}
@@ -74,6 +76,9 @@ const HomeHero: React.FC = () => {
           // On a narrow phone the crop hugs the right so the vase/candle
           // stay in frame; on wide viewports the whole scene shows.
           backgroundPosition: { xs: "72% center", md: "right center" },
+          // 🕯️ 28t — NIGHT grades the bright cream still-life into a warm
+          //   cinematic dark scene; DAY leaves it bright (filter: none).
+          filter: "var(--sr-hero-filter)",
           // 🆕 28s333 — gentle "breathing" Ken Burns drift (founder: calm,
           //   spa-like motion). Very slow so it reads as ambient, not busy.
           //   Starts at scale 1 (always visible — never JS/opacity-gated);
@@ -88,17 +93,27 @@ const HomeHero: React.FC = () => {
         }}
       />
 
-      {/* Cream scrim — heavier on small screens so the overlaid text always
-          reads; the photo is cream so this blends seamlessly. */}
+      {/* 🕯️ 28t — text-legibility scrim. NIGHT: warm-espresso (grades the
+          frame into a dark cinematic scene, ivory text on top). DAY: warm
+          cream (keeps the bright photo, espresso text on top). Flips via var. */}
       <Box
         aria-hidden="true"
         sx={{
           position: "absolute",
           inset: 0,
           background: {
-            xs: "linear-gradient(90deg, rgba(244,239,232,0.97) 0%, rgba(244,239,232,0.92) 50%, rgba(244,239,232,0.6) 72%, rgba(244,239,232,0) 95%)",
-            md: "linear-gradient(90deg, rgba(244,239,232,0.95) 0%, rgba(244,239,232,0.78) 34%, rgba(244,239,232,0.3) 56%, rgba(244,239,232,0) 72%)",
+            xs: "var(--sr-hero-scrim-xs)",
+            md: "var(--sr-hero-scrim-md)",
           },
+        }}
+      />
+      {/* Bottom vignette — cinematic depth at night, none by day. */}
+      <Box
+        aria-hidden="true"
+        sx={{
+          position: "absolute",
+          inset: 0,
+          background: "var(--sr-hero-vignette)",
         }}
       />
 
@@ -132,8 +147,8 @@ const HomeHero: React.FC = () => {
             gap: "8px",
             padding: "5px 12px",
             borderRadius: 999,
-            background: "rgba(255,255,255,0.62)",
-            border: "1px solid rgba(43,38,32,0.14)",
+            background: "var(--sr-nav-scrim)",
+            border: "1px solid var(--sr-hairline)",
             backdropFilter: "blur(2px)",
             WebkitBackdropFilter: "blur(2px)",
           }}

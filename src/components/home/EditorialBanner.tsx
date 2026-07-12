@@ -32,8 +32,8 @@ const EditorialBanner: React.FC = () => {
       sx={{
         margin: { xs: "28px 12px 0", md: "36px 12px 0" },
         padding: { xs: "24px", md: "32px 32px" },
-        background: "#ECEBE8", // NEUTRAL_100 cream
-        border: "1px solid #E2E0DD", // NEUTRAL_200
+        background: "linear-gradient(135deg,var(--sr-panel-deep),var(--sr-panel) 60%,var(--sr-panel-2))", // dark luxury warm ground
+        border: "1px solid var(--sr-hairline)", // GOLD hairline (embroidery)
         borderRadius: "22px",
         display: "grid",
         gridTemplateColumns: { xs: "1.2fr 1fr", md: "1.4fr 1fr" },
@@ -49,7 +49,7 @@ const EditorialBanner: React.FC = () => {
             fontFamily: fonts.heading,
             fontSize: { xs: 22, md: 30 },
             fontWeight: 400,
-            color: "#4B4B48", // GRAY_900
+            color: "var(--sr-ink)", // IVORY heading
             lineHeight: 1.15,
             letterSpacing: "-0.02em",
             margin: 0,
@@ -62,7 +62,7 @@ const EditorialBanner: React.FC = () => {
             component="em"
             sx={{
               fontStyle: "italic",
-              color: "#4B4B48", // GRAY_800
+              color: "var(--sr-gold-text)", // GOLD accent (embroidery)
               fontWeight: 500,
             }}
           >
@@ -79,8 +79,8 @@ const EditorialBanner: React.FC = () => {
             justifyContent: "center",
             gap: "6px",
             padding: "10px 24px",
-            background: "#8F8474", // WARM_TAUPE (r80)
-            color: "#FFFFFF",
+            background: "linear-gradient(135deg, #C56A6D 0%, #A16256 100%)", // ROSE CTA gradient
+            color: "#F3E6DB", // IVORY
             border: "none",
             borderRadius: 999,
             fontFamily: fonts.body,
@@ -89,15 +89,15 @@ const EditorialBanner: React.FC = () => {
             letterSpacing: "0.005em",
             cursor: "pointer",
             minHeight: 40,
-            boxShadow: "0 4px 12px rgba(143, 132, 116, 0.22)",
+            boxShadow: "0 4px 12px rgba(197, 106, 109, 0.30)",
             transition: "background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease",
             "&:hover": {
-              background: "#7A7060",
-              boxShadow: "0 6px 16px rgba(122, 112, 96, 0.28)",
+              background: "linear-gradient(135deg, #A16256 0%, #8E4F49 100%)",
+              boxShadow: "0 6px 16px rgba(161, 98, 86, 0.35)",
               transform: "translateY(-1px)",
             },
             "&:focus-visible": {
-              outline: "2px solid #4B4B48",
+              outline: "2px solid #C56A6D",
               outlineOffset: 3,
             },
           }}
@@ -118,8 +118,8 @@ const EditorialBanner: React.FC = () => {
           position: "relative",
           overflow: "hidden",
           background: `
-            radial-gradient(circle at 30% 40%, rgba(196,205,191,0.5), transparent),
-            linear-gradient(135deg, #E8E2D3 0%, #C4B896 100%)
+            radial-gradient(circle at 30% 40%, rgba(215,181,109,0.25), transparent),
+            linear-gradient(135deg, #513326 0%, #674835 100%)
           `,
           // Tall narrow vase — left
           "&::before": {
@@ -129,7 +129,7 @@ const EditorialBanner: React.FC = () => {
             left: "25%",
             width: "20%",
             height: "40%",
-            background: "linear-gradient(180deg, #F3EEE1, #C4B896)",
+            background: "linear-gradient(180deg, #D7B56D, #CA906F)",
             borderRadius: "4px 4px 30% 30%",
           },
           // Squat vase — right
@@ -140,7 +140,7 @@ const EditorialBanner: React.FC = () => {
             right: "20%",
             width: "15%",
             height: "30%",
-            background: "linear-gradient(180deg, #EDE7D6, #B8A582)",
+            background: "linear-gradient(180deg, #CA906F, #A16256)",
             borderRadius: "40% 40% 6px 6px",
           },
         }}

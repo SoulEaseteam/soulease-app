@@ -90,9 +90,11 @@ const HomePage: React.FC = () => {
         //   desktop 1200 so wide viewports fill their column instead of
         //   showing a narrow phone strip in gray gutters.
         ...responsiveShell,
-        // 🆕 Round 28r70 (Rebrand Phase 1) — NEUTRAL_50 page bg replaces
-        //   the old cool-slate #F4F6F5 per Nordic palette.
-        background: "#F7F7F6",
+        // 🆕 Round 28t (Dark-Luxury rebrand) — Espresso Black ground
+        //   replaces the Nordic off-white. The whole home is now a dark
+        //   five-star-spa surface; child sections paint their own panels
+        //   on top. Flips light↔dark with the day/night theme.
+        background: "var(--sr-bg)",
         // Round the shell edges on true mobile only; on wider viewports
         // the shell reaches viewport edges (MainLayout paints the page
         // surface) so the borderRadius reads as a stray floating card.
