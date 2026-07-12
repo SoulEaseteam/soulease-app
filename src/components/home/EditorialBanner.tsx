@@ -79,7 +79,7 @@ const EditorialBanner: React.FC = () => {
             justifyContent: "center",
             gap: "6px",
             padding: "10px 24px",
-            background: "linear-gradient(135deg, #E6B7A0 0%, #D28E78 48%, #BA7362 100%)", // ROSE CTA gradient
+            background: "linear-gradient(135deg, #D97C95 0%, #C96F89 100%)", // ROSE CTA gradient
             color: "#F3E6DB", // IVORY
             border: "none",
             borderRadius: 999,
@@ -92,7 +92,7 @@ const EditorialBanner: React.FC = () => {
             boxShadow: "0 4px 12px rgba(217, 124, 149, 0.30)",
             transition: "background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease",
             "&:hover": {
-              background: "linear-gradient(135deg, #D28E78 0%, #A9614F 100%)",
+              background: "linear-gradient(135deg, #C96F89 0%, #B36079 100%)",
               boxShadow: "0 6px 16px rgba(161, 98, 86, 0.35)",
               transform: "translateY(-1px)",
             },

@@ -112,16 +112,16 @@ button,
 /* ☀️ DAY — High-Key Korean Wellness (Apple / Aesop / Laneige / Sulwhasoo).
    Clean near-white grounds + near-black ink. Founder tokens. */
 html.sr-day {
-  --sr-bg: #FAFAF8;          /* Background */
+  --sr-bg: #FAF7F5;          /* Background (founder sheet) */
   --sr-panel: #FFFFFF;       /* Surface / Card */
-  --sr-panel-2: #F7F6F5;     /* Surface 2 / section */
-  --sr-panel-deep: #F5E9E2;  /* Secondary cream — footer / drawer */
+  --sr-panel-2: #F7F6F5;     /* Surface 3 / section */
+  --sr-panel-deep: #F5E9E2;  /* cream — footer / drawer */
   --sr-ink: #2E2A29;         /* Text Primary */
   --sr-body: #6E6762;        /* Text Secondary */
   --sr-muted: #9D958F;       /* Text Muted */
   --sr-dim: #ADA49E;         /* dim caption */
   --sr-gold-text: #B08A46;   /* deeper gold — readable on white */
-  --sr-hairline: #E8E3DE;    /* Border */
+  --sr-hairline: #EBE3DE;    /* Border (founder sheet) */
   --sr-line: #EFEAE6;        /* Divider */
   --sr-card-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
   --sr-nav-scrim: rgba(250, 250, 248, 0.86);
