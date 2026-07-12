@@ -1,44 +1,3 @@
-// src/components/TherapistProfileCard.tsx
-//
-// 🎨 Phase 2 Redesign — verbatim port of `02-mockups/sunred-therapists2.html`
-// (founder 2026-05-02). Compact 2-col grid card with:
-//
-//   ┌──────────────────────────────────────┐
-//   │                  [EN][中] [✓]        │  ← lang pills + verified
-//   │                                       │
-//   │           [photo 3:4]                 │
-//   │                                       │
-//   │  Jimmy 29                             │  ← name + age (Fraunces)
-//   │  ★ 4.6 (2)              1.2 km        │  ← Bayesian rating + live distance
-//   ├──────────────────────────────────────┤
-//   │ [155CM] [SLIM] [📷 GALLERY (9)]       │  ← spec chips coral + V1 gallery
-//   │ ฿1,200/60min               ●Now       │  ← Firestore price + live status
-//   └──────────────────────────────────────┘
-//
-// What's new vs. the v5 single-column hero card:
-//   • Layout — 3:4 photo, fits 2-col grid (~190px wide on a 430px shell)
-//   • Languages — `features.language` parsed → short pills (EN / 中 / 日 / 한)
-//   • Verified — every Therapist in Firestore is verified, so the badge
-//     always shows (matches mockup behavior)
-//   • Real-time GPS distance — optional `userLocation` prop. When provided,
-//     distance recomputes via Haversine on every position update.
-//   • Real Firestore prices — subscribes to `services` collection and picks
-//     the cheapest `priceForDuration(svc, 60)` across the therapist's
-//     `servicesAvailable`. Falls back to static services.ts when Firestore
-//     hasn't loaded yet (first paint).
-//   • Live status — Available (●Now green) / Bookable (in-session) /
-//     Resting (next time HH:MM in coral)
-//
-// Realtime listeners (3 per card — down from 5 in v5):
-//   1. therapists/{id}                  — profile sync
-//   2. bookings WHERE therapistId=…     — reviews + active session + next
-//   3. services collection (live prices)
-//
-// 🆕 Round 26b (founder 2026-05-02) — Privacy mask removed. Photos now
-// show in every state (available / bookable / resting). Status is still
-// communicated via the footer pill (●NOW / HH:MM / RESTING) and the
-// resting saturation filter — but the in-session lock + cream gradient
-// is gone per founder direction.
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -122,15 +81,6 @@ function toDateSafe(v: unknown): Date | null {
   }
 }
 
-// 🆕 Round 28b51 (founder 2026-05-05) — Switched from device-TZ
-//   `getHours/getMinutes` to BKK-anchored `fmtBKK(d, "h:mm A")` so
-//   the home-grid card reads "Avail 2:00 AM" instead of "Avail 02:00".
-//   Local time was wrong for travelers and inconsistent with the
-//   site-wide prettyHHMM/fmtBKKTime standard set in Round 28b42.
-// 🆕 Round 28b52 (founder 2026-05-05) — Day-aware. When the booking
-//   start lands on a different BKK calendar day, append a ` +1d`
-//   suffix (today+1) or fall back to "MMM D · h:mm A" so customers
-//   never see an isolated "2:00 AM" that's actually tomorrow.
 function fmtHHMM(d: Date | null): string | null {
   if (!d) return null;
   const now = nowBKK();
@@ -300,19 +250,9 @@ export interface TherapistProfileCardProps {
    * omitted, the card subscribes itself.
    */
   services?: Map<string, MassageService>;
-  /**
-   * Round 28aw — when set, the "📍 Allow location" prompt becomes
-   * clickable and calls this handler to trigger the browser's geo
-   * permission popup. Parent owns the GPS state.
-   */
+
   onRequestLocation?: () => void;
-  /**
-   * 🆕 Round 28b33 (founder 2026-05-04) — Pre-formatted "X min • X.X km"
-   * label produced upstream by `formatDistanceEta(km, etaMin)`. When
-   * passed, the card renders this verbatim instead of computing its
-   * own string. Lets the parent inject ETA from a single Distance
-   * Matrix call shared across the whole grid.
-   */
+
   distanceLabel?: string | null;
 }
 
@@ -498,12 +438,7 @@ const TherapistProfileCard: React.FC<TherapistProfileCardProps> = ({
     therapist.distanceKm,
   ]);
 
-  // ── Derived display values ───────────────────────────────────────────
-  // Round 28aw — Bayesian-adjusted rating from REAL reviews:
-  //   • 0 reviews → use seed (data.rating, currently 0 across the catalog)
-  //   • 1+ reviews → (PRIOR_MEAN × PRIOR_WEIGHT + sum) / (PRIOR_WEIGHT + count)
-  //                  matches the formula used in StatsCard / ReviewsTab so
-  //                  every surface shows the SAME rating number.
+
   const ratingNum = useMemo(() => {
     const seed = Number(profile.rating) || 0;
     if (reviewCount === 0) return seed.toFixed(1);

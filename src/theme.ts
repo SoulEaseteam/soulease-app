@@ -5,26 +5,7 @@ import { createTheme } from "@mui/material/styles";
 //   type-checks.
 import type {} from "@mui/x-date-pickers/themeAugmentation";
 
-// ─────────────────────────────────────────────────────────────────────
-// 🎨 BRAND tokens — Round 28r70 · Rebrand Phase 1 (2026-07-08)
-//
-// Founder direction: "ลุยเต็มระบบ" (go all-in) — sitewide switch from
-// Sunred Red / Cool Slate to **Nordic Gray Neutrals + Playfair Display**.
-// This is Phase 1 (foundation only): palette + font stacks + hero copy +
-// pricing route. Phase 2 will build a real /pricing page. Phase 3 will
-// sweep per-page polish. Phase 4 will audit.
-//
-// Blast-radius discipline: every existing token export
-// (brand.red, brand.text, brand.textMuted, fonts.heading, gradients.*)
-// is PRESERVED so downstream imports don't break — only the VALUES are
-// changed. Where a name like `brand.red` no longer makes semantic sense,
-// the export still resolves — it points at GRAY_900, the new primary
-// CTA colour. Sunred crimson is gone; Nordic dark ink takes its role.
-//
-// The 3 fresh token trees (`neutrals`, `grays`, `warmAccents`, `sage`)
-// are added ALONGSIDE the legacy ones so new work can consume the
-// intended tokens directly without needing the legacy alias trick.
-// ─────────────────────────────────────────────────────────────────────
+// 
 
 // ─────────────────────────────────────────────────────────────────────
 // 🕯️ DARK-LUXURY + auto DAY/NIGHT — Round 28t (founder 2026-07-12)

@@ -196,7 +196,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
     ? null
     : distanceKm >= 0.1
       ? `${distanceKm.toFixed(1)}km`
-      : "<0.1km";
+      : "0.1km";
 
   return (
     <Box
@@ -391,12 +391,12 @@ const TherapistMinimalCard: React.FC<Props> = ({
               // 🕯️ 28t — unified translucent espresso pill for every state;
               //   a colour-coded dot (gold=available · rose=bookable) carries
               //   the meaning while ivory text stays legible over any photo.
-              background: "rgba(33, 24, 19, 0.72)",
+              background: "rgba(22, 24, 30, 0.68)",
               backdropFilter: "blur(3px)",
               WebkitBackdropFilter: "blur(3px)",
-              color: "#F3E6DB",
-              border: "1px solid rgba(210,182,124,0.20)",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.34)",
+              color: "#FFFFFF",
+              border: "1px solid rgba(255,255,255,0.16)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.32)",
               whiteSpace: "nowrap",
             }}
             aria-label={statusLabel}
@@ -567,20 +567,20 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   alignItems: "center",
                   gap: "4px",
                   // 🕯️ 28t — gold star + ivory number in a soft-gold chip.
-                  background: "rgba(210,182,124,0.15)",
+                  background: "rgba(162, 160, 160, 0.15)",
                   borderRadius: "8px",
                   padding: "2px 8px",
                 }}
               >
                 <StarRoundedIcon
-                  sx={{ fontSize: 15, color: "#F4C542" }}
+                  sx={{ fontSize: 15, color: "#ffc31e" }}
                 />
                 <Typography
                   sx={{
                     fontFamily: fonts.body,
                     fontSize: "13px",
                     fontWeight: 700,
-                    color: "var(--sr-ink)",
+                    color: "#ff651e",
                   }}
                 >
                   {therapist.rating.toFixed(1)}
@@ -655,7 +655,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   sx={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
                   aria-label={`${sessionCount} completed sessions`}
                 >
-                  <CheckCircleRoundedIcon sx={{ fontSize: 14, color: "#57B88B" }} />
+                  <CheckCircleRoundedIcon sx={{ fontSize: 14, color: "#2fd4b3" }} />
                   <Typography
                     sx={{
                       fontFamily: fonts.body,
@@ -754,8 +754,8 @@ const TherapistMinimalCard: React.FC<Props> = ({
               borderRadius: "999px",
               background: isOffDuty
                 ? "var(--sr-panel-2)"
-                : "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
-              color: isOffDuty ? "var(--sr-dim)" : "#FFF7F0",
+                : "#D97C95",
+              color: isOffDuty ? "var(--sr-dim)" : "#ffffff",
               border: "none",
               cursor: isOffDuty ? "not-allowed" : "pointer",
               fontFamily: fonts.body,
