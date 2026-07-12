@@ -65,6 +65,11 @@ const neutrals = {
 };
 const warmAccents = { w100: "var(--sr-panel-2)" };
 const accents = { teal: "#D97C95" };
+
+// 🆕 28w.6 — "ทำให้สวยขึ้น": rose hero band, bestseller ribbon, rose prices.
+const ROSE = "#D97C95";
+const HERO_GRADIENT = "linear-gradient(160deg, #B8567F 0%, #8A3A57 100%)";
+const BESTSELLER_ID = "SR-HJ2200";
 import { responsiveShell } from "@/theme/breakpoints";
 import { useDocumentMeta } from "@/utils/useDocumentMeta";
 import { whatsappDeepLink } from "@/config/concierge";
@@ -266,9 +271,31 @@ const PricingPage: React.FC = () => {
         padding: { xs: "32px 20px 48px", md: "64px 40px 80px" },
       }}
     >
-      {/* ── 1. Page header ─────────────────────────────────────────── */}
-      <Box sx={{ textAlign: { xs: "left", md: "center" }, mb: { xs: 4, md: 6 } }}>
-        <Eyebrow>SunRed · Bangkok</Eyebrow>
+      {/* ── 1. Page header — rose-berry hero band (28w.6) ──────────── */}
+      <Box
+        sx={{
+          background: HERO_GRADIENT,
+          mx: { xs: "-20px", md: "-40px" },
+          mt: { xs: "-32px", md: "-64px" },
+          mb: { xs: 4, md: 6 },
+          px: { xs: "24px", md: "40px" },
+          pt: { xs: "48px", md: "76px" },
+          pb: { xs: "36px", md: "52px" },
+          textAlign: { xs: "left", md: "center" },
+        }}
+      >
+        <Box
+          sx={{
+            fontFamily: fonts.body,
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "0.20em",
+            textTransform: "uppercase",
+            color: "rgba(255,255,255,0.72)",
+          }}
+        >
+          SunRed · Bangkok
+        </Box>
         <Box
           component="h1"
           sx={{
@@ -277,7 +304,7 @@ const PricingPage: React.FC = () => {
             fontWeight: 500,
             lineHeight: 1.1,
             letterSpacing: "-0.01em",
-            color: grays.g900,
+            color: "#fff",
             margin: "12px 0 0",
           }}
         >
@@ -288,7 +315,7 @@ const PricingPage: React.FC = () => {
             fontFamily: fonts.body,
             fontSize: { xs: 14, md: 16 },
             fontWeight: 400,
-            color: grays.g600,
+            color: "rgba(255,255,255,0.82)",
             marginTop: "10px",
             letterSpacing: "0.01em",
           }}
@@ -300,17 +327,14 @@ const PricingPage: React.FC = () => {
             fontFamily: fonts.body,
             fontSize: { xs: 14, md: 15 },
             fontWeight: 400,
-            color: grays.g600,
+            color: "rgba(255,255,255,0.82)",
             lineHeight: 1.7,
-            marginTop: "24px",
+            marginTop: "20px",
             maxWidth: 640,
             marginLeft: { xs: 0, md: "auto" },
             marginRight: { xs: 0, md: "auto" },
           }}
         >
-          {/* 🆕 Round 28r73 — Nordic minimal tone: shorter sentences,
-              editorial rhythm. Facts preserved verbatim; only cadence
-              refined. */}
           {t(
             "pricing.intro",
             "Each ritual delivered to your hotel or residence in Bangkok. Choose your duration; the concierge handles the rest. Rates in Thai Baht (THB) reflect the base session — travel, extensions, and add-ons are quoted separately.",
@@ -334,20 +358,50 @@ const PricingPage: React.FC = () => {
           const durations = [60, 90, 120];
           const priceAt = (min: number) => priceForDuration(s, min);
           const conciergeMsg = `Hi SunRed, I'd like to reserve ${s.name} · 60 min. When can you fit me in?`;
+          const isBestseller = s.id === BESTSELLER_ID;
           return (
             <Box
               key={s.id}
               component="article"
               sx={{
+                position: "relative",
+                overflow: "hidden",
                 background: "var(--sr-panel)",
                 borderRadius: "24px",
-                border: `1px solid ${neutrals.n200}`,
+                border: isBestseller
+                  ? `2px solid ${ROSE}`
+                  : `1px solid ${neutrals.n200}`,
+                boxShadow: isBestseller
+                  ? "0 12px 32px rgba(138, 58, 87, 0.18)"
+                  : "none",
                 padding: { xs: "24px 20px", md: "32px 28px" },
                 display: "flex",
                 flexDirection: "column",
                 gap: "18px",
               }}
             >
+              {isBestseller && (
+                <Box
+                  aria-hidden
+                  sx={{
+                    position: "absolute",
+                    top: 16,
+                    right: -34,
+                    transform: "rotate(45deg)",
+                    background: `linear-gradient(135deg, ${ROSE}, #C96F89)`,
+                    color: "#fff",
+                    fontFamily: fonts.body,
+                    fontSize: 9.5,
+                    fontWeight: 800,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    padding: "5px 40px",
+                    boxShadow: "0 4px 10px rgba(138, 58, 87, 0.30)",
+                  }}
+                >
+                  {t("pricing.bestseller", "Bestseller")}
+                </Box>
+              )}
               {/* Service name — Playfair, generous */}
               <Box>
                 <Box
@@ -430,8 +484,8 @@ const PricingPage: React.FC = () => {
                       sx={{
                         fontFamily: fonts.heading,
                         fontSize: { xs: 17, md: 18 },
-                        fontWeight: 500,
-                        color: grays.g900,
+                        fontWeight: 600,
+                        color: ROSE,
                         letterSpacing: "-0.005em",
                       }}
                     >
