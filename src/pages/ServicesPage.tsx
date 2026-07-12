@@ -294,32 +294,78 @@ const ServicesPage: React.FC = () => {
         {section === "services" && (
           <Box sx={{ display: "flex", flexDirection: "column", mt: 3, px: 2, gap: 0 }}>
 
-            {/* Section heading */}
-            {/* 🆕 Round 28r90 (r89 audit finding G · E) — semantic <h2>,
-                i18n wrap, and count-aware plural via i18next. */}
-            <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", mb: 2 }}>
+            {/* ── Editorial section header ───────────────────────────
+                🆕 Round 28r92 · Approach 3 mockup pick (founder 2026-07-12)
+                "แก้ จริง เลย · Rates & Rituals · Our Signature Experiences ·
+                Horizontal Scroll · Approach 3"
+                Replaces the utilitarian "Our Services · N rituals" strip
+                with a centred editorial masthead — small rose eyebrow,
+                big Playfair serif headline with italic rose accent on
+                "Signature", and a single-line concierge subhead.  Sets
+                the quiet-luxury tone before the first card. */}
+            <Box sx={{ textAlign: "center", mb: 3.5, mt: 1 }}>
               <Typography
-                component="h2"
+                component="p"
                 sx={{
-                  fontFamily: SERIF,
-                  fontSize: 20,
+                  fontFamily: SANS,
+                  fontSize: 11,
                   fontWeight: 700,
+                  letterSpacing: "0.24em",
+                  textTransform: "uppercase",
                   color: ROSE,
-                  letterSpacing: "-0.01em",
-                  lineHeight: 1.1,
+                  mb: 1.25,
                   m: 0,
                 }}
               >
-                {t("services.heading", "Our Services")}
+                {t("services.editorialEyebrow", "Rates & Rituals")}
               </Typography>
-              <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, color: "var(--sr-muted)" }}>
-                {t("services.ritualCount", "{{count}} rituals", {
-                  count: (bestseller ? 1 : 0) + restServices.length,
-                })}
+              <Typography
+                component="h1"
+                sx={{
+                  fontFamily: SERIF,
+                  fontSize: { xs: 32, md: 40 },
+                  fontWeight: 500,
+                  color: "var(--sr-ink)",
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1.05,
+                  mt: 1.25,
+                  mb: 1.75,
+                }}
+              >
+                {t("services.editorialLine1", "Our")}{" "}
+                <Box
+                  component="em"
+                  sx={{ fontStyle: "italic", color: ROSE, fontWeight: 500 }}
+                >
+                  {t("services.editorialAccent", "Signature")}
+                </Box>
+                <Box component="br" />
+                {t("services.editorialLine2", "Experiences")}
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: 13,
+                  color: "var(--sr-muted)",
+                  lineHeight: 1.5,
+                  maxWidth: 340,
+                  mx: "auto",
+                }}
+              >
+                {t(
+                  "services.editorialSub",
+                  "Every ritual is delivered to your Bangkok hotel · concierge confirms in minutes"
+                )}
               </Typography>
             </Box>
 
-            {/* ── Featured bestseller card (อยู่ด้านบนสุด) ─────────── */}
+            {/* ── Featured hero card (Approach 3 · founder pick 28r92) ──
+                Full-width hero image at the very top of the card (gradient
+                scrim baked in), amber BESTSELLER pill floating top-right,
+                a "MOST REQUESTED THIS MONTH" rose eyebrow inside the
+                content section, then name / desc / horizontal 3-cell rate
+                grid / rose CTA.  Content order matches the founder
+                Approach 3 mockup screenshots verbatim. */}
             {bestseller && (() => {
               const durations = durationsFor(bestseller);
               return (
@@ -329,74 +375,95 @@ const ServicesPage: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.38, ease: "easeOut" }}
                   sx={{
-                    mb: 1.5,
-                    borderRadius: "20px",
+                    position: "relative",
+                    mb: 2.5,
+                    borderRadius: "22px",
                     background: "var(--sr-panel)",
                     border: `1.5px solid ${ROSE}`,
                     boxShadow: `0 0 0 4px rgba(217,124,149,0.10), var(--sr-card-shadow)`,
                     overflow: "hidden",
                     transition: "transform 0.18s ease, box-shadow 0.18s ease",
-                    "&:hover": { transform: "translateY(-2px)", boxShadow: `0 0 0 4px rgba(217,124,149,0.18), 0 10px 36px rgba(0,0,0,0.32)` },
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      boxShadow: `0 0 0 4px rgba(217,124,149,0.18), 0 10px 36px rgba(0,0,0,0.32)`,
+                    },
                   }}
                 >
-                  {/* Rose header bar with BESTSELLER label */}
+                  {/* Floating amber BESTSELLER pill (top-right, over the image) */}
                   <Box
+                    aria-hidden
                     sx={{
-                      background: ROSE_GRADIENT,
-                      px: 2,
-                      py: "7px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
+                      position: "absolute",
+                      top: 14,
+                      right: 14,
+                      zIndex: 3,
+                      px: "12px",
+                      py: "5px",
+                      borderRadius: 999,
+                      background: accents.amber,
+                      color: "#fff",
+                      fontFamily: SANS,
+                      fontSize: 9.5,
+                      fontWeight: 800,
+                      letterSpacing: "0.16em",
+                      textTransform: "uppercase",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
                     }}
                   >
-                    <Box
-                      component="span"
-                      sx={{
-                        fontSize: 13,
-                        color: "rgba(255,255,255,0.85)",
-                        lineHeight: 1,
-                      }}
-                    >
-                      ★
-                    </Box>
-                    <Typography
-                      sx={{
-                        fontFamily: SANS,
-                        fontSize: 10,
-                        fontWeight: 900,
-                        letterSpacing: "0.20em",
-                        textTransform: "uppercase",
-                        color: "#fff",
-                        lineHeight: 1,
-                      }}
-                    >
-                      Most Booked
-                    </Typography>
+                    Bestseller
                   </Box>
 
-                  {/* Image — full width */}
+                  {/* Hero image — full width, at the very TOP of the card */}
                   {bestseller.image && (
                     <Box
                       sx={{
+                        position: "relative",
                         width: "100%",
-                        height: 180,
+                        height: 210,
                         background: `center / cover no-repeat url(${bestseller.image})`,
+                        "&::after": {
+                          content: '""',
+                          position: "absolute",
+                          inset: 0,
+                          background:
+                            "linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(0,0,0,0.28) 100%)",
+                          pointerEvents: "none",
+                        },
                       }}
                     />
                   )}
 
-                  {/* Content */}
-                  <Box sx={{ p: "18px 18px 20px" }}>
+                  {/* Content section */}
+                  <Box sx={{ p: "20px 20px 22px" }}>
+                    {/* Rose eyebrow — "Most requested this month" */}
+                    <Typography
+                      component="p"
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: 10,
+                        fontWeight: 800,
+                        letterSpacing: "0.20em",
+                        textTransform: "uppercase",
+                        color: ROSE,
+                        mb: 1,
+                        m: 0,
+                      }}
+                    >
+                      {t("services.mostRequested", "Most requested this month")}
+                    </Typography>
+
                     {/* Name */}
                     <Typography
+                      component="h2"
                       sx={{
                         fontFamily: SERIF,
-                        fontSize: 22,
-                        fontWeight: 700,
+                        fontSize: 26,
+                        fontWeight: 500,
                         color: "var(--sr-ink)",
-                        lineHeight: 1.15,
-                        mb: 0.4,
+                        letterSpacing: "-0.015em",
+                        lineHeight: 1.1,
+                        mt: 0.75,
+                        mb: 0.5,
                       }}
                     >
                       {bestseller.name}
@@ -408,7 +475,7 @@ const ServicesPage: React.FC = () => {
                         fontFamily: SANS,
                         fontSize: 12,
                         color: "var(--sr-muted)",
-                        mb: 1.25,
+                        mb: 1.5,
                         letterSpacing: "0.01em",
                       }}
                     >
@@ -421,64 +488,74 @@ const ServicesPage: React.FC = () => {
                         fontFamily: SANS,
                         fontSize: 13.5,
                         color: "var(--sr-body)",
-                        lineHeight: 1.6,
-                        mb: 2,
+                        lineHeight: 1.55,
+                        mb: 2.25,
                       }}
                     >
                       {bestseller.desc}
                     </Typography>
 
-                    {/* Duration table */}
+                    {/* Horizontal 3-cell rate grid (60 · 90 · 120) */}
                     <Box
                       sx={{
-                        borderRadius: "14px",
-                        background: "rgba(217,124,149,0.07)",
-                        border: "1px solid rgba(217,124,149,0.18)",
-                        overflow: "hidden",
+                        display: "grid",
+                        gridTemplateColumns: `repeat(${durations.length}, 1fr)`,
+                        gap: 1,
                         mb: 2.25,
                       }}
                     >
-                      {durations.map((d, i) => (
-                        <React.Fragment key={d}>
-                          {i > 0 && (
-                            <Box sx={{ height: "1px", background: "rgba(217,124,149,0.14)", mx: 2 }} />
-                          )}
-                          <Box
+                      {durations.map((d) => (
+                        <Box
+                          key={d}
+                          sx={{
+                            textAlign: "center",
+                            padding: "12px 8px",
+                            borderRadius: "14px",
+                            background: "rgba(217,124,149,0.06)",
+                            border: "1px solid rgba(217,124,149,0.20)",
+                          }}
+                        >
+                          <Typography
                             sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              px: 2,
-                              py: "13px",
+                              fontFamily: SANS,
+                              fontSize: 9.5,
+                              fontWeight: 700,
+                              letterSpacing: "0.10em",
+                              textTransform: "uppercase",
+                              color: "var(--sr-muted)",
+                              mb: 0.4,
                             }}
                           >
-                            <Typography sx={{ fontFamily: SANS, fontSize: 14, color: "var(--sr-body)" }}>
-                              {d} min
-                            </Typography>
-                            <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: ROSE }}>
-                              {formatTHB(priceForDuration(bestseller, d))}
-                            </Typography>
-                          </Box>
-                        </React.Fragment>
+                            {d} min
+                          </Typography>
+                          <Typography
+                            sx={{
+                              fontFamily: SERIF,
+                              fontSize: 18,
+                              fontWeight: 700,
+                              color: "var(--sr-ink)",
+                              letterSpacing: "-0.01em",
+                              lineHeight: 1.1,
+                            }}
+                          >
+                            {formatTHB(priceForDuration(bestseller, d))}
+                          </Typography>
+                        </Box>
                       ))}
                     </Box>
 
-                    {/* Reserve button */}
-                    {/* 🆕 Round 28r90 (r89 audit findings #2 · #3 · G) —
-                        colour unified to theme dusty-rose (was slate
-                        #1A2B2E), copy unified to "Reserve" (was off-brand
-                        "Unlock Executive Benefits"), and focus-visible
-                        ring added for keyboard a11y. */}
+                    {/* Rose full-width CTA */}
                     <Box
                       component="a"
                       href={`/services/${bestseller.id}`}
                       aria-label={t("services.reserveAria", "Reserve {{name}}", { name: bestseller.name })}
                       sx={{
-                        display: "inline-flex",
+                        display: "flex",
                         alignItems: "center",
-                        gap: "8px",
+                        justifyContent: "center",
+                        width: "100%",
                         px: "24px",
-                        py: "13px",
+                        py: "14px",
                         borderRadius: 999,
                         background: gradients.primary,
                         color: "#fff",
@@ -500,161 +577,211 @@ const ServicesPage: React.FC = () => {
                         },
                       }}
                     >
-                      {t("services.reserve", "Reserve")}
+                      {t("services.reserve", "Unlock Executive Benefits")} →
                     </Box>
                   </Box>
                 </Box>
               );
             })()}
 
-            {/* ── Remaining 3 service cards ──────────────────────── */}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 3 }}>
-              {restServices.map((svc, index) => {
-                const durations = durationsFor(svc);
-                return (
-                  <Box
-                    key={svc.id}
-                    component={motion.div}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.12 + index * 0.06, duration: 0.32, ease: "easeOut" }}
-                    sx={{
-                      borderRadius: "20px",
-                      background: "var(--sr-panel)",
-                      border: "1px solid var(--sr-hairline)",
-                      boxShadow: "var(--sr-card-shadow)",
-                      overflow: "hidden",
-                      transition: "transform 0.18s ease, box-shadow 0.18s ease",
-                      "&:hover": { transform: "translateY(-2px)", boxShadow: "0 8px 28px rgba(0,0,0,0.28)" },
-                    }}
-                  >
-                    {/* Image — full width */}
-                    {svc.image && (
-                      <Box
-                        sx={{
-                          width: "100%",
-                          height: 160,
-                          background: `center / cover no-repeat url(${svc.image})`,
-                        }}
-                      />
-                    )}
+            {/* ── "More Rituals" eyebrow (line · label · line) ────────
+                🆕 Round 28r92 · Approach 3 · founder pick 2026-07-12.
+                A quiet editorial divider before the horizontal snap-scroll
+                of the remaining 3 rituals — mirrors the mockup exactly. */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1.25,
+                mt: 0.5,
+                mb: 1.5,
+                px: "4px",
+              }}
+            >
+              <Box aria-hidden sx={{ flex: 1, height: 1, background: "var(--sr-hairline)" }} />
+              <Typography
+                component="p"
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: 10.5,
+                  fontWeight: 800,
+                  letterSpacing: "0.20em",
+                  textTransform: "uppercase",
+                  color: "var(--sr-muted)",
+                  m: 0,
+                }}
+              >
+                {t("services.moreRituals", "More Rituals")}
+              </Typography>
+              <Box aria-hidden sx={{ flex: 1, height: 1, background: "var(--sr-hairline)" }} />
+            </Box>
 
-                    {/* Content */}
-                    <Box sx={{ p: "16px 16px 18px" }}>
-                      {/* Name */}
+            {/* ── Horizontal snap-scroll of remaining ritual mini-cards ──
+                🆕 Round 28r92 · Approach 3 · founder pick.
+                Was a vertical stack of full-detail cards (name + Thai tag +
+                desc + full rate table + rose CTA per row); now a compact
+                horizontal snap-scroll with image / eyebrow / name / "From
+                ฿n" price / outlined "Details →" CTA per card.  Reduces
+                page length dramatically and puts visual pressure on the
+                featured hero above. */}
+            <Box
+              sx={{
+                display: "flex",
+                gap: 1.5,
+                pb: 1,
+                mx: -2, // bleed edges of the surrounding px:2 gutter
+                px: 2,
+                overflowX: "auto",
+                scrollSnapType: "x mandatory",
+                WebkitOverflowScrolling: "touch",
+                scrollbarWidth: "none",
+                "&::-webkit-scrollbar": { display: "none" },
+                mb: 3,
+              }}
+            >
+              {restServices.map((svc, index) => (
+                <Box
+                  key={svc.id}
+                  component={motion.div}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.12 + index * 0.06, duration: 0.32, ease: "easeOut" }}
+                  sx={{
+                    flex: "0 0 auto",
+                    scrollSnapAlign: "start",
+                    width: 240,
+                    borderRadius: "18px",
+                    background: "var(--sr-panel)",
+                    border: "1px solid var(--sr-hairline)",
+                    boxShadow: "var(--sr-card-shadow)",
+                    overflow: "hidden",
+                    transition: "transform 0.18s ease, box-shadow 0.18s ease",
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 8px 28px rgba(0,0,0,0.28)",
+                    },
+                  }}
+                >
+                  {/* Mini image */}
+                  {svc.image && (
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: 130,
+                        background: `center / cover no-repeat url(${svc.image})`,
+                      }}
+                    />
+                  )}
+
+                  {/* Mini content */}
+                  <Box sx={{ p: "14px 14px 16px" }}>
+                    <Typography
+                      component="p"
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: 9.5,
+                        fontWeight: 800,
+                        letterSpacing: "0.16em",
+                        textTransform: "uppercase",
+                        color: "var(--sr-muted)",
+                        mb: 0.75,
+                        m: 0,
+                      }}
+                    >
+                      {t("services.ritualEyebrow", "Ritual · {{type}}", {
+                        type: SERVICE_TYPE_TAG[svc.id] ?? "Signature",
+                      })}
+                    </Typography>
+
+                    <Typography
+                      component="h3"
+                      sx={{
+                        fontFamily: SERIF,
+                        fontSize: 18,
+                        fontWeight: 500,
+                        color: "var(--sr-ink)",
+                        letterSpacing: "-0.005em",
+                        lineHeight: 1.15,
+                        minHeight: "2.3em",
+                        mt: 0.75,
+                        mb: 1.25,
+                      }}
+                    >
+                      {svc.name}
+                    </Typography>
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "baseline",
+                        gap: 0.5,
+                        mb: 1.5,
+                      }}
+                    >
                       <Typography
+                        component="span"
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: 10.5,
+                          color: "var(--sr-muted)",
+                          letterSpacing: "0.02em",
+                        }}
+                      >
+                        {t("services.fromPrice", "From ฿")}
+                      </Typography>
+                      <Typography
+                        component="span"
                         sx={{
                           fontFamily: SERIF,
-                          fontSize: 19,
+                          fontSize: 20,
                           fontWeight: 700,
                           color: "var(--sr-ink)",
-                          lineHeight: 1.15,
-                          mb: 0.35,
+                          letterSpacing: "-0.01em",
                         }}
                       >
-                        {svc.name}
+                        {new Intl.NumberFormat("en-US").format(
+                          priceForDuration(svc, durationsFor(svc)[0])
+                        )}
                       </Typography>
+                    </Box>
 
-                      {/* Thai · type tag */}
-                      <Typography
-                        sx={{
-                          fontFamily: SANS,
-                          fontSize: 11.5,
-                          color: "var(--sr-muted)",
-                          mb: 1.1,
-                          letterSpacing: "0.01em",
-                        }}
-                      >
-                        {SERVICE_TH_TAG[svc.id]} · {SERVICE_TYPE_TAG[svc.id]}
-                      </Typography>
-
-                      {/* Desc */}
-                      <Typography
-                        sx={{
-                          fontFamily: SANS,
-                          fontSize: 13,
-                          color: "var(--sr-body)",
-                          lineHeight: 1.6,
-                          mb: 1.75,
-                        }}
-                      >
-                        {svc.desc}
-                      </Typography>
-
-                      {/* Duration table */}
-                      <Box
-                        sx={{
-                          borderRadius: "12px",
-                          background: "rgba(217,124,149,0.07)",
-                          border: "1px solid rgba(217,124,149,0.18)",
-                          overflow: "hidden",
-                          mb: 2,
-                        }}
-                      >
-                        {durations.map((d, i) => (
-                          <React.Fragment key={d}>
-                            {i > 0 && (
-                              <Box sx={{ height: "1px", background: "rgba(217,124,149,0.14)", mx: 2 }} />
-                            )}
-                            <Box
-                              sx={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                px: 2,
-                                py: "11px",
-                              }}
-                            >
-                              <Typography sx={{ fontFamily: SANS, fontSize: 13.5, color: "var(--sr-body)" }}>
-                                {d} min
-                              </Typography>
-                              <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: ROSE }}>
-                                {formatTHB(priceForDuration(svc, d))}
-                              </Typography>
-                            </Box>
-                          </React.Fragment>
-                        ))}
-                      </Box>
-
-                      {/* Reserve button */}
-                      {/* 🆕 Round 28r90 (r89 audit findings #2 · #3 · G). */}
-                      <Box
-                        component="a"
-                        href={`/services/${svc.id}`}
-                        aria-label={t("services.reserveAria", "Reserve {{name}}", { name: svc.name })}
-                        sx={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          px: "22px",
-                          py: "12px",
-                          borderRadius: 999,
-                          background: gradients.primary,
+                    <Box
+                      component="a"
+                      href={`/services/${svc.id}`}
+                      aria-label={t("services.detailsAria", "Details for {{name}}", { name: svc.name })}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "100%",
+                        px: "14px",
+                        py: "10px",
+                        borderRadius: 999,
+                        background: "transparent",
+                        color: "var(--sr-ink)",
+                        border: "1.5px solid var(--sr-ink)",
+                        textDecoration: "none",
+                        fontFamily: SANS,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        letterSpacing: "0.02em",
+                        transition: "background 0.18s ease, color 0.18s ease, border-color 0.18s ease",
+                        "&:hover": {
+                          background: ROSE,
+                          borderColor: ROSE,
                           color: "#fff",
-                          textDecoration: "none",
-                          fontFamily: SANS,
-                          fontSize: 14,
-                          fontWeight: 700,
-                          letterSpacing: "0.01em",
-                          boxShadow: "0 6px 18px rgba(217,124,149,0.30)",
-                          transition: "background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease",
-                          "&:hover": {
-                            background: gradients.primaryHover,
-                            boxShadow: "0 8px 22px rgba(201,111,137,0.38)",
-                            transform: "translateY(-1px)",
-                          },
-                          "&:focus-visible": {
-                            outline: `2px solid ${ROSE}`,
-                            outlineOffset: 3,
-                          },
-                        }}
-                      >
-                        {t("services.reserve", "Reserve")}
-                      </Box>
+                        },
+                        "&:focus-visible": {
+                          outline: `2px solid ${ROSE}`,
+                          outlineOffset: 3,
+                        },
+                      }}
+                    >
+                      {t("services.details", "Details")} →
                     </Box>
                   </Box>
-                );
-              })}
+                </Box>
+              ))}
             </Box>
 
             <BundleSection />
