@@ -92,7 +92,7 @@ import {
 } from "@/hooks/useAbandonedCartTracker";
 import {
   estimateTaxiFare,
-  calcTaxiFare,
+  calcTravelBudgetResult,
   ADMIN_QUOTE_KM,
   DISPATCH_BASE,
   GRAB_BOOKING_FEE,
@@ -656,49 +656,31 @@ const BookingFlowPage: React.FC = () => {
   // so the page never flickers an empty fare line.
   const taxi = useMemo(() => {
     if (!locationSet) return { distanceKm: 0, fare: 0, result: undefined };
-    // 🆕 Round 28s309 — the booking's scheduled hour (BKK) drives the
-    //   time-of-day surge (rush / peak). Undefined until a time is picked.
-    const hourBKK = form.time ? parseInt(form.time.split(":")[0], 10) : undefined;
-    // 🆕 Round 28s310 — rain priced from the real forecast at the scheduled
-    //   date+hour; falls back to current weather when out of forecast range.
-    const rainForFare =
-      rainStatusFromForecast(forecast, form.date, hourBKK) ?? rainStatus;
-    if (route) {
-      const result = calcTaxiFare(route.kmRoad, rainForFare, hourBKK);
-      return {
-        distanceKm: route.kmRoad,
-        fare: result.fare ?? 0,
-        result,
-      };
-    }
-    return estimateTaxiFare(
-      {
-        // 🆕 Round 28s233 — single dispatch base origin (see useEffect above).
-        therapistLat: DISPATCH_BASE.lat,
-        therapistLng: DISPATCH_BASE.lng,
-        customerLat: form.lat,
-        customerLng: form.lng,
-        durationMin: form.duration ?? service?.duration ?? 60,
-      },
-      rainForFare,
-      hourBKK
-    );
+    // 🆕 Round 28w.11 (founder) — taxi fee now comes from the SAME fixed
+    //   travel-budget bands as the near-me estimator (calcTravelBudgetResult),
+    //   NOT the GrabCar meter. Flat by real distance; excludes weather/traffic
+    //   surge (those are dropped, per the founder's budget table). Distance is
+    //   the real route km when available, else the dispatch-base haversine.
+    const distanceKm = route
+      ? route.kmRoad
+      : estimateTaxiFare({
+          // 🆕 Round 28s233 — single dispatch base origin (see useEffect above).
+          therapistLat: DISPATCH_BASE.lat,
+          therapistLng: DISPATCH_BASE.lng,
+          customerLat: form.lat,
+          customerLng: form.lng,
+          durationMin: form.duration ?? service?.duration ?? 60,
+        }).distanceKm;
+    if (!distanceKm) return { distanceKm: 0, fare: 0, result: undefined };
+    const result = calcTravelBudgetResult(distanceKm);
+    return { distanceKm, fare: result.fare ?? 0, result };
   }, [
     locationSet,
     route,
-    therapist?.lat,
-    therapist?.lng,
     form.lat,
     form.lng,
     form.duration,
     service?.duration,
-    // 🆕 Round 28r33 — recompute when weather state changes.
-    rainStatus,
-    // 🆕 Round 28s309 — recompute surge when the scheduled time changes.
-    form.time,
-    // 🆕 Round 28s310 — recompute rain when forecast loads or date changes.
-    forecast,
-    form.date,
   ]);
   const distanceKm = taxi.distanceKm;
   const taxiFare = taxi.fare;

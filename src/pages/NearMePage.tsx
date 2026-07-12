@@ -20,7 +20,7 @@ import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 import { whatsappDeepLink } from "@/config/concierge";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
 import therapists from "@/data/therapists";
-import { estimateTaxiFare, travelBudgetForKm } from "@/utils/taxiFare";
+import { estimateTaxiFare, travelBudgetForKm, haversineKm, BKK_ROAD_FACTOR } from "@/utils/taxiFare";
 import { estimateEtaFromKm } from "@/utils/directionsApi";
 import { formatTHB } from "@/utils/servicePricing";
 
@@ -199,14 +199,14 @@ const TaxiEstimator: React.FC = () => {
 
       <Box
         sx={{
-          p: "16px",
+          p: "13px",
           borderRadius: "18px",
           background: "var(--sr-panel)",
           border: "1px solid var(--sr-hairline)",
           boxShadow: "var(--sr-card-shadow)",
           display: "flex",
           flexDirection: "column",
-          gap: 1.5,
+          gap: 0.75,
         }}
       >
         {/* Practitioner picker */}
@@ -233,12 +233,20 @@ const TaxiEstimator: React.FC = () => {
               cursor: "pointer",
             }}
           >
-            {roster.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-                {p.area ? ` · ${p.area}` : ""}
-              </option>
-            ))}
+            {roster.map((p) => {
+              // 🆕 28w.11 — founder: drop the area names, show the real
+              //   road distance from each practitioner to the picked location.
+              const km =
+                coords && p.lat != null && p.lng != null
+                  ? haversineKm(p.lat, p.lng, coords.lat, coords.lng) * BKK_ROAD_FACTOR
+                  : null;
+              return (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                  {km != null ? ` · ${km.toFixed(1)} km` : ""}
+                </option>
+              );
+            })}
           </Box>
         </Box>
 
@@ -257,7 +265,7 @@ const TaxiEstimator: React.FC = () => {
             background: "var(--sr-panel-2)",
             border: "1px solid var(--sr-hairline)",
             borderRadius: "12px",
-            padding: "11px 14px",
+            padding: "9px 12px",
             "&::placeholder": { color: "var(--sr-muted)" },
             "&:focus": { outline: "none", borderColor: ROSE },
           }}
@@ -270,7 +278,7 @@ const TaxiEstimator: React.FC = () => {
             borderRadius: "14px",
             overflow: "hidden",
             border: "1px solid var(--sr-hairline)",
-            height: 220,
+            height: 118,
             background: "var(--sr-panel-2)",
           }}
         >
@@ -311,7 +319,7 @@ const TaxiEstimator: React.FC = () => {
             justifyContent: "center",
             gap: 1,
             width: "100%",
-            padding: "12px 14px",
+            padding: "10px 14px",
             borderRadius: "12px",
             border: "none",
             background: "linear-gradient(135deg, #D97C95 0%, #C96F89 100%)",
@@ -388,7 +396,7 @@ const ResultCell: React.FC<{ label: string; value: string; accent?: boolean; div
     sx={{
       flex: 1,
       textAlign: "center",
-      py: 1.25,
+      py: 0.9,
       px: 0.5,
       background: "var(--sr-panel-2)",
       borderLeft: divider ? "1px solid var(--sr-hairline)" : "none",

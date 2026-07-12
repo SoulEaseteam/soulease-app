@@ -351,3 +351,39 @@ export function estimateTaxiFare(
     result,
   };
 }
+
+/**
+ * 🆕 Round 28w.11 (founder 2026-07-13) — booking-flow taxi fee from the SAME
+ * fixed travel-budget bands as the near-me estimator (travelBudgetForKm),
+ * packaged as a TaxiFareResult so BookingFlowPage's fare summary keeps
+ * rendering. Flat by real distance — NO weather / peak-traffic surge (rain is
+ * forced to "none"). Beyond 30 km → tier "admin" (fare null → concierge quotes).
+ */
+export function calcTravelBudgetResult(distanceKm: number): TaxiFareResult {
+  const noRain: RainStatus = { tier: "none", surchargePct: 0, label: "Clear", fetchedAt: 0 };
+  const budget = travelBudgetForKm(distanceKm);
+  if (budget == null) {
+    return {
+      fare: null,
+      tier: "admin",
+      label: `Over 30 km · ${distanceKm.toFixed(1)} km`,
+      distanceKm,
+      baseFareBeforeRain: 0,
+      rain: noRain,
+      oneWayFare: 0,
+      bookingFee: 0,
+      surgePct: 0,
+    };
+  }
+  return {
+    fare: budget,
+    tier: "standard",
+    label: `Travel budget · ${distanceKm.toFixed(1)} km`,
+    distanceKm,
+    baseFareBeforeRain: budget,
+    rain: noRain,
+    oneWayFare: budget,
+    bookingFee: 0,
+    surgePct: 0,
+  };
+}
