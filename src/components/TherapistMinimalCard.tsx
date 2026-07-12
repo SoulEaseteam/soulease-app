@@ -655,7 +655,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                   sx={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
                   aria-label={`${sessionCount} completed sessions`}
                 >
-                  <CheckCircleRoundedIcon sx={{ fontSize: 14, color: "var(--sr-gold-text)" }} />
+                  <CheckCircleRoundedIcon sx={{ fontSize: 14, color: "#57B88B" }} />
                   <Typography
                     sx={{
                       fontFamily: fonts.body,
@@ -733,8 +733,9 @@ const TherapistMinimalCard: React.FC<Props> = ({
                 fontFamily: fonts.heading,
                 fontSize: "16px",
                 fontWeight: 700,
-                // 🕯️ 28t — Soft-Gold price (money = gold), deepens in day mode.
-                color: "var(--sr-gold-text)",
+                // 🕯️ 28t.2 — price in dusty rose (founder: gold read "แก่"/dated).
+                //   Fresh, on-brand, reads young on both light + dark.
+                color: "#D97C95",
                 lineHeight: 1,
               }}
             >

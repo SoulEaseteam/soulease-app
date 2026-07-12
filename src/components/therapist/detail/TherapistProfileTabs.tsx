@@ -1,43 +1,4 @@
-// src/components/therapist/detail/TherapistProfileTabs.tsx
-//
-// 🎨 Phase 4 — Compact tabbed Profile section, replaces the 4 stacked
-// sections (Credentials / Specialties / Languages / Reviews) which made
-// the detail page too long for in-a-rush customers to reach the booking.
-//
-// Layout (2 tabs):
-//   ┌────────────────────────────────────────┐
-//   │  [✓ Verified Profile] [★ Reviews]      │  ← tab switcher
-//   ├────────────────────────────────────────┤
-//   │                                         │
-//   │  TAB 1 — Verified Profile               │
-//   │   ┌─ Trust hero strip ─────────────┐    │
-//   │   │ ✓ Licensed · 8 yrs · 1,400+     │    │
-//   │   │   sessions · 98% rebook         │    │
-//   │   └─────────────────────────────────┘    │
-//   │   ┌─ Credentials chips ────────────┐    │
-//   │   │ ✓ License                 │    │
-//   │   │ 🎓 Wat Pho Diploma              │    │
-//   │   │ 🛡 Background-checked           │    │
-//   │   └─────────────────────────────────┘    │
-//   │   ┌─ Specialties grid ─────────────┐    │
-//   │   │ 🌿 Thai · 🌸 Aroma · 💆 Oil   │    │
-//   │   └─────────────────────────────────┘    │
-//   │   ┌─ Languages row ────────────────┐    │
-//   │   │ 🇨🇳 中 NATIVE · 🇬🇧 EN FLUENT  │    │
-//   │   └─────────────────────────────────┘    │
-//   │                                         │
-//   │  TAB 2 — Reviews (real Firestore data)  │
-//   │   ★★★★★ 4.7 (153 reviews)               │
-//   │   bar chart breakdown                   │
-//   │   review list                           │
-//   └────────────────────────────────────────┘
-//
-// Engagement hooks for trust:
-//   • Hero strip with 4 quick proof points (license / yrs / sessions / rebook)
-//   • Verified shield icon turns green whencert present
-//   • Animated chip hover on credentials
-//   • Languages with native-speaker priority sort
-//   • Reviews show "Verified booking" tag for social proof
+
 
 import React, { useState, useMemo } from "react";
 import { Box, Typography, Tabs, Tab } from "@mui/material";
