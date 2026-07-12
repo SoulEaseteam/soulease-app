@@ -107,7 +107,7 @@ const HowItWorks: React.FC = () => {
             fontSize: "10px",
             letterSpacing: "0.24em",
             textTransform: "uppercase",
-            color: "#4A5568",
+            color: "var(--sr-muted)",
             fontWeight: 700,
             marginBottom: "10px",
             fontFamily: SANS,
@@ -115,7 +115,7 @@ const HowItWorks: React.FC = () => {
               content: '""',
               width: "22px",
               height: "1px",
-              background: "rgba(184, 92, 60, 0.55)",
+              background: "rgba(217, 124, 149, 0.65)", // rose tinted eyebrow hairline (28r105)
             },
           }}
         >
@@ -133,13 +133,13 @@ const HowItWorks: React.FC = () => {
             fontSize: "24px",
             lineHeight: 1.2,
             letterSpacing: "-0.015em",
-            color: "#1A2B2E",
+            color: "var(--sr-ink)",
             marginBottom: "10px",
             "& em": {
               fontFamily: SERIF,
               fontStyle: "italic",
               fontWeight: 500,
-              color: "#4B4B48",
+              color: "#D97C95",
             },
           }}
         >
@@ -152,7 +152,7 @@ const HowItWorks: React.FC = () => {
           sx={{
             fontFamily: SANS,
             fontSize: "13.5px",
-            color: "rgba(15, 23, 42, 0.72)",
+            color: "var(--sr-body)",
             lineHeight: 1.6,
             marginBottom: "22px",
             maxWidth: "36ch",
@@ -176,7 +176,7 @@ const HowItWorks: React.FC = () => {
             bottom: "70px",
             width: "1px",
             background:
-              "linear-gradient(180deg, rgba(15, 23, 42, 0.32) 0%, rgba(214, 40, 40, 0.22) 55%, rgba(214, 40, 40, 0.05) 100%)",
+              "linear-gradient(180deg, rgba(217, 124, 149, 0.55) 0%, rgba(217, 124, 149, 0.28) 55%, rgba(217, 124, 149, 0.06) 100%)",
             pointerEvents: "none",
           }}
         />
@@ -197,10 +197,10 @@ const HowItWorks: React.FC = () => {
                 gap: "16px",
                 alignItems: "flex-start",
                 padding: "16px 18px",
-                background: "rgba(255, 255, 255, 0.68)",
+                background: "var(--sr-panel)",
                 backdropFilter: "blur(20px)",
                 WebkitBackdropFilter: "blur(20px)",
-                border: "1px solid rgba(255, 255, 255, 0.7)",
+                border: "1px solid var(--sr-hairline)",
                 borderRadius: "18px",
                 boxShadow:
                   "0 1px 2px rgba(45, 45, 43, 0.04), 0 8px 24px rgba(45, 45, 43, 0.06)",
@@ -208,7 +208,7 @@ const HowItWorks: React.FC = () => {
                   "transform 220ms ease, box-shadow 220ms ease, background 220ms ease",
                 "&:hover": {
                   transform: "translateY(-1px)",
-                  background: "rgba(255, 255, 255, 0.82)",
+                  background: "var(--sr-panel-2)",
                   boxShadow:
                     "0 2px 4px rgba(45, 45, 43, 0.06), 0 14px 32px rgba(45, 45, 43, 0.08)",
                 },
@@ -222,7 +222,7 @@ const HowItWorks: React.FC = () => {
                   flexShrink: 0,
                   borderRadius: "50%",
                   background:
-                    "#2D2D2B",
+                    "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)", // 28r105 rose gradient
                   color: "#fff",
                   display: "flex",
                   alignItems: "center",
@@ -231,7 +231,7 @@ const HowItWorks: React.FC = () => {
                   fontWeight: 500,
                   fontSize: "15px",
                   letterSpacing: "0.04em",
-                  boxShadow: "0 6px 16px rgba(45, 45, 43, 0.32)",
+                  boxShadow: "0 6px 16px rgba(217, 124, 149, 0.30)",
                   "&::before": {
                     content: '""',
                     position: "absolute",
@@ -257,7 +257,7 @@ const HowItWorks: React.FC = () => {
                     fontFamily: SANS,
                     fontWeight: 700,
                     fontSize: "15px",
-                    color: "#1A2B2E",
+                    color: "var(--sr-ink)",
                     marginBottom: "4px",
                     letterSpacing: "-0.005em",
                   }}
@@ -270,7 +270,7 @@ const HowItWorks: React.FC = () => {
                   sx={{
                     fontFamily: SANS,
                     fontSize: "13px",
-                    color: "rgba(15, 23, 42, 0.75)",
+                    color: "var(--sr-body)",
                     lineHeight: 1.6,
                     margin: 0,
                   }}
@@ -286,7 +286,7 @@ const HowItWorks: React.FC = () => {
                     fontWeight: 700,
                     letterSpacing: "0.2em",
                     textTransform: "uppercase",
-                    color: "#4A5568",
+                    color: "var(--sr-muted)",
                   }}
                 >
                   {t(step.metaKey, step.metaFallback)}
@@ -322,18 +322,16 @@ const HowItWorks: React.FC = () => {
             gap: 1.5,
             p: 1.75,
             borderRadius: "14px",
-            background: "#FFFFFF",
-            border: "1px solid rgba(15, 23, 42, 0.06)",
-            boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
+            background: "var(--sr-panel)",
+            border: "1px solid var(--sr-hairline)",
+            boxShadow: "var(--sr-card-shadow)",
             textDecoration: "none",
             color: "inherit",
             transition:
               "transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
             "&:hover": {
               transform: "translateY(-1px)",
-              borderColor: "rgba(15, 23, 42, 0.18)",
-              boxShadow:
-                "0 1px 2px rgba(45, 45, 43, 0.05), 0 8px 22px rgba(45, 45, 43, 0.06)",
+              borderColor: "rgba(217, 124, 149, 0.35)",
             },
           }}
         >
@@ -361,7 +359,7 @@ const HowItWorks: React.FC = () => {
                 fontWeight: 700,
                 letterSpacing: "0.18em",
                 textTransform: "uppercase",
-                color: "#4A5568",
+                color: "var(--sr-muted)",
                 lineHeight: 1.2,
                 mb: 0.25,
               }}
@@ -373,7 +371,7 @@ const HowItWorks: React.FC = () => {
                 fontFamily: SERIF,
                 fontSize: 14,
                 fontWeight: 500,
-                color: "#1A2B2E",
+                color: "var(--sr-ink)",
                 letterSpacing: "-0.005em",
                 lineHeight: 1.3,
               }}
@@ -382,7 +380,7 @@ const HowItWorks: React.FC = () => {
             </Typography>
           </Box>
           <ChevronRightRoundedIcon
-            sx={{ color: "rgba(15, 23, 42,0.4)", fontSize: 22 }}
+            sx={{ color: "var(--sr-dim)", fontSize: 22 }}
           />
         </Box>
 
