@@ -1323,83 +1323,165 @@ const TherapistDetailPage: React.FC = () => {
             facts={[]}
             body={therapist.about}
             gender={therapist.gender}
-          />
-        </Box>
-
-        {/* Languages row — flag · name · level pills */}
-        {therapist.langs.length > 0 && (
-          <Box sx={{ margin: "10px 14px 0" }}>
-            <Typography
-              component="p"
-              sx={{
-                fontFamily: SANS,
-                fontSize: "10px",
-                fontWeight: 800,
-                letterSpacing: "0.16em",
-                textTransform: "uppercase",
-                color: "var(--sr-muted)",
-                marginBottom: "8px",
-              }}
-            >
-              Languages
-            </Typography>
-            {/* 🆕 28t.9 — each language as a cute white pill card: flag ·
-                name · colour-coded level badge (green NATIVE / grey else). */}
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              {therapist.langs.map((l) => {
-                const isNative = l.level.toUpperCase().includes("NATIVE");
-                return (
-                  <Box
-                    key={l.name}
-                    sx={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "7px",
-                      padding: "6px 11px 6px 10px",
-                      borderRadius: "999px",
-                      background: "var(--sr-panel)",
-                      border: "1px solid var(--sr-hairline)",
-                      boxShadow: "0 2px 8px rgba(35,43,54,0.05)",
-                    }}
-                  >
-                    <Box sx={{ fontSize: "15px", lineHeight: 1 }}>{l.flag}</Box>
+            // 🆕 28t.13 — Languages + Credentials live INSIDE the About box,
+            //   revealed when it's expanded (founder "ไปใส่ไว้ข้างใน").
+            extra={
+              <>
+                {therapist.langs.length > 0 && (
+                  <Box>
                     <Typography
-                      component="span"
+                      component="p"
                       sx={{
                         fontFamily: SANS,
-                        fontSize: "13px",
-                        fontWeight: 700,
-                        color: "var(--sr-ink)",
-                        lineHeight: 1,
-                      }}
-                    >
-                      {l.name}
-                    </Typography>
-                    <Box
-                      component="span"
-                      sx={{
-                        fontFamily: SANS,
-                        fontSize: "8.5px",
+                        fontSize: "10px",
                         fontWeight: 800,
-                        letterSpacing: "0.06em",
+                        letterSpacing: "0.16em",
                         textTransform: "uppercase",
-                        color: isNative ? "#2E7D57" : "var(--sr-muted)",
-                        background: isNative
-                          ? "rgba(87,184,139,0.14)"
-                          : "rgba(139,147,160,0.14)",
-                        borderRadius: "999px",
-                        padding: "2px 7px",
-                        lineHeight: 1.3,
+                        color: "var(--sr-muted)",
+                        marginBottom: "8px",
                       }}
                     >
-                      {l.level}
+                      Languages
+                    </Typography>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                      {therapist.langs.map((l) => {
+                        const isNative = l.level
+                          .toUpperCase()
+                          .includes("NATIVE");
+                        return (
+                          <Box
+                            key={l.name}
+                            sx={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "7px",
+                              padding: "6px 11px 6px 10px",
+                              borderRadius: "999px",
+                              background: "var(--sr-panel)",
+                              border: "1px solid var(--sr-hairline)",
+                              boxShadow: "0 2px 8px rgba(35,43,54,0.05)",
+                            }}
+                          >
+                            <Box sx={{ fontSize: "15px", lineHeight: 1 }}>
+                              {l.flag}
+                            </Box>
+                            <Typography
+                              component="span"
+                              sx={{
+                                fontFamily: SANS,
+                                fontSize: "13px",
+                                fontWeight: 700,
+                                color: "var(--sr-ink)",
+                                lineHeight: 1,
+                              }}
+                            >
+                              {l.name}
+                            </Typography>
+                            <Box
+                              component="span"
+                              sx={{
+                                fontFamily: SANS,
+                                fontSize: "8.5px",
+                                fontWeight: 800,
+                                letterSpacing: "0.06em",
+                                textTransform: "uppercase",
+                                color: isNative ? "#2E7D57" : "var(--sr-muted)",
+                                background: isNative
+                                  ? "rgba(87,184,139,0.14)"
+                                  : "rgba(139,147,160,0.14)",
+                                borderRadius: "999px",
+                                padding: "2px 7px",
+                                lineHeight: 1.3,
+                              }}
+                            >
+                              {l.level}
+                            </Box>
+                          </Box>
+                        );
+                      })}
                     </Box>
                   </Box>
-                );
-              })}
-            </Box>
-          </Box>
-        )}
+                )}
+                {therapist.creds.length > 0 && (
+                  <Box>
+                    <Typography
+                      component="p"
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: "10px",
+                        fontWeight: 800,
+                        letterSpacing: "0.16em",
+                        textTransform: "uppercase",
+                        color: "var(--sr-muted)",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      {t("detail.about.credentials", "Credentials")}
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "12px",
+                      }}
+                    >
+                      {therapist.creds.map((c) => (
+                        <Box
+                          key={c.label}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 36,
+                              height: 36,
+                              borderRadius: "11px",
+                              flexShrink: 0,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              background: "rgba(217,124,149,0.12)",
+                              color: "#D97C95",
+                              "& svg": { fontSize: 19 },
+                            }}
+                          >
+                            {c.icon}
+                          </Box>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography
+                              sx={{
+                                fontFamily: SANS,
+                                fontSize: "13.5px",
+                                fontWeight: 700,
+                                color: "var(--sr-ink)",
+                                lineHeight: 1.25,
+                              }}
+                            >
+                              {c.label}
+                            </Typography>
+                            <Typography
+                              sx={{
+                                fontFamily: SANS,
+                                fontSize: "11.5px",
+                                color: "var(--sr-muted)",
+                                marginTop: "2px",
+                              }}
+                            >
+                              {c.meta}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+              </>
+            }
+          />
+        </Box>
 
         <Box sx={{ marginTop: "10px" }}>
           <StatusPill
@@ -2061,75 +2143,8 @@ const TherapistDetailPage: React.FC = () => {
           </Box>
         )}
 
-        {/* 🆕 28t.10 — Credentials below the gallery in the Photos tab
-            (founder "Credentials ย้ายไป ด้านล่างรูป แถบ Photos"). Rose
-            rounded icon chip + label. */}
-        {therapist.creds.length > 0 && (
-          <Box sx={{ marginTop: "26px" }}>
-            <Typography
-              component="p"
-              sx={{
-                fontFamily: SANS,
-                fontSize: "11px",
-                fontWeight: 800,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: "var(--sr-body)",
-                marginBottom: "14px",
-              }}
-            >
-              {t("detail.about.credentials", "Credentials")}
-            </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {therapist.creds.map((c) => (
-                <Box
-                  key={c.label}
-                  sx={{ display: "flex", alignItems: "center", gap: "12px" }}
-                >
-                  <Box
-                    sx={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: "11px",
-                      flexShrink: 0,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: "rgba(217,124,149,0.12)",
-                      color: "#D97C95",
-                      "& svg": { fontSize: 19 },
-                    }}
-                  >
-                    {c.icon}
-                  </Box>
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography
-                      sx={{
-                        fontFamily: SANS,
-                        fontSize: "13.5px",
-                        fontWeight: 700,
-                        color: "var(--sr-ink)",
-                        lineHeight: 1.25,
-                      }}
-                    >
-                      {c.label}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontFamily: SANS,
-                        fontSize: "11.5px",
-                        color: "var(--sr-muted)",
-                        marginTop: "2px",
-                      }}
-                    >
-                      {c.meta}
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        )}
+        {/* 🆕 28t.13 — Credentials moved INTO the About box (revealed on
+            expand). No longer rendered under the gallery. */}
       </Box>
       {/* ── END GRID CHILD 4 (Photos) ──────────────────────────── */}
       </Box>

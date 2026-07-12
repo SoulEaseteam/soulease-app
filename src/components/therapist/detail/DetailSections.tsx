@@ -174,6 +174,9 @@ export const About: React.FC<{
   enhance?: (url: string, mode: "thumb" | "hero") => string;
   /** Override base alt text for gallery images (defaults to name). */
   galleryAltBase?: string;
+  /** 🆕 28t.13 — extra content (Languages + Credentials) revealed BELOW the
+   *  bio when the box is expanded (founder "ไปใส่ไว้ข้างใน About หุบ/กางได้"). */
+  extra?: React.ReactNode;
 }> = ({
   name,
   facts = [],
@@ -183,6 +186,7 @@ export const About: React.FC<{
   images = [],
   enhance,
   galleryAltBase,
+  extra,
 }) => {
   const { t } = useTranslation();
   // Round 28s31 (founder 2026-05-31, "ตรงเกี่ยวกับ ปรับใหม่") —
@@ -536,6 +540,22 @@ export const About: React.FC<{
           </Box>
         )}
       </Box>
+
+      {/* 🆕 28t.13 — Languages + Credentials live INSIDE the About box now,
+          revealed when the bio is expanded (founder "ไปใส่ไว้ข้างใน About
+          หุบ/กางได้"). Hidden while collapsed. */}
+      {extra && bioExpanded && (
+        <Box
+          sx={{
+            marginTop: "18px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "18px",
+          }}
+        >
+          {extra}
+        </Box>
+      )}
 
       {/* 🆕 Round 28b6 — Lightbox redesigned for native gestures
           (founder spec):
