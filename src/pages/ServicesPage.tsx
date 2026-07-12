@@ -330,6 +330,24 @@ const ServicesPage: React.FC = () => {
                   letterSpacing: "0.04em",
                   color: isActive ? "#fff" : "var(--sr-muted)",
                   transition: "color 0.25s ease",
+                  // 🆕 Round 28r96 (founder 2026-07-12) — short vertical
+                  //   hairline between tabs ("เพิ่ม เส้นกั้น Services│
+                  //   About │ How to Book").  Rendered as a ::after on all
+                  //   tabs except the last; hidden when the current tab
+                  //   is active so it doesn't clash with the rose pill.
+                  "&:not(:last-of-type)::after": {
+                    content: '""',
+                    position: "absolute",
+                    right: 0,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    width: "1px",
+                    height: 20,
+                    background: "var(--sr-hairline)",
+                    opacity: isActive ? 0 : 0.7,
+                    transition: "opacity 0.2s ease",
+                    pointerEvents: "none",
+                  },
                   "&:focus-visible": { outline: `2px solid ${ROSE}`, outlineOffset: -2, borderRadius: 999 },
                 }}
               >
