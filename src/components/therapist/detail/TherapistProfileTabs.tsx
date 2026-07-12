@@ -842,11 +842,12 @@ export const LoyaltyTab: React.FC<{
             width: 56,
             height: 56,
             borderRadius: "50%",
-            background:
-              "var(--sr-bg)",
+            // 🆕 28t.19 — soft rose (was var(--sr-body), which resolved to
+            //   dark slate in day mode and read as an off-brand navy glyph).
+            background: "rgba(217, 124, 149, 0.10)",
             marginBottom: "14px",
             fontSize: "22px",
-            color: "var(--sr-body)",
+            color: "#D97C95",
           }}
         >
           ✦

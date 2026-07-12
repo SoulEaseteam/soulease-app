@@ -1579,14 +1579,14 @@ const TherapistDetailPage: React.FC = () => {
                   transition: "color 0.18s ease",
                   color: isActive ? "var(--sr-ink)" : "var(--sr-body)",
                   "& .tab-icon": {
-                    color: isActive ? "#2EC4B0" : "#8F8474",
+                    color: isActive ? "#D97C95" : "var(--sr-muted)",
                     transition: "color 0.18s ease",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                   },
                   "&:hover .tab-icon": {
-                    color: isActive ? "#2EC4B0" : "var(--sr-body)",
+                    color: isActive ? "#D97C95" : "var(--sr-body)",
                   },
                   "&:focus-visible": {
                     outline: "2px solid #2EC4B0",
@@ -1601,7 +1601,7 @@ const TherapistDetailPage: React.FC = () => {
                     bottom: -1,
                     height: 3,
                     borderRadius: 3,
-                    background: isActive ? "#2EC4B0" : "transparent",
+                    background: isActive ? "#D97C95" : "transparent",
                     transition: "background 0.18s ease",
                   },
                 }}
@@ -2153,7 +2153,7 @@ const TherapistDetailPage: React.FC = () => {
               }}
             >
               <CloseRoundedIcon
-                sx={{ color: "#8F8474", fontSize: 26 }}
+                sx={{ color: "#fff", fontSize: 26 }}
               />
             </Box>
 
@@ -2193,7 +2193,7 @@ const TherapistDetailPage: React.FC = () => {
                 }}
               >
                 <ChevronLeftRoundedIcon
-                  sx={{ color: "#8F8474", fontSize: 28 }}
+                  sx={{ color: "#fff", fontSize: 28 }}
                 />
               </Box>
             )}
@@ -2246,7 +2246,7 @@ const TherapistDetailPage: React.FC = () => {
                 }}
               >
                 <ChevronRightRoundedIcon
-                  sx={{ color: "#8F8474", fontSize: 28 }}
+                  sx={{ color: "#fff", fontSize: 28 }}
                 />
               </Box>
             )}

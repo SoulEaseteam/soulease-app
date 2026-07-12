@@ -537,7 +537,8 @@ const DetailHero: React.FC<Props> = ({
               titleAccess="Verified by SunRed"
               sx={{
                 fontSize: 26,
-                color: "#1d9bf0",
+                // 🆕 28t.19 — rose (was Twitter-blue #1d9bf0, off-brand).
+                color: "#D97C95",
                 filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.45))",
               }}
             />
@@ -646,7 +647,11 @@ const DetailHero: React.FC<Props> = ({
                   sessions
                 </Box>
               )}
-              {rebookRate && rebookRate !== "—" && (
+              {/* 🆕 28t.19 — hide until rebook data is meaningful. Showing
+                  "0% rebook" reads as "nobody rebooks" AND contradicts the
+                  Reviews tab, which gates loyalty stats until ≥5 unique
+                  guests. parseFloat("0%")===0 → hidden; "16%"→shown. */}
+              {rebookRate && rebookRate !== "—" && parseFloat(rebookRate) > 0 && (
                 <Box
                   sx={{
                     display: "inline-flex",
