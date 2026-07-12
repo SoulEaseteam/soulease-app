@@ -70,6 +70,9 @@ const ServiceDetailPage = React.lazy(() => import("@/pages/ServiceDetailPage"));
 //   for /pricing + /{zh,ja,ko}/pricing so external links land on
 //   something even before the real page ships.
 const PricingPage = React.lazy(() => import("@/pages/PricingPage"));
+// 🆕 28w.4 — /promotions is the customer "Promotions & News" page
+//   (QuickNavRow slot 2, replacing the Therapists scroll-to-grid link).
+const PromotionsPage = React.lazy(() => import("@/pages/PromotionsPage"));
 // 🆕 28s335 — /near-me hosts the "OR BROWSE BY LOCATION" map moved off home.
 const NearMePage = React.lazy(() => import("@/pages/NearMePage"));
 const TherapistDetailPage = React.lazy(
@@ -280,6 +283,7 @@ export default function App() {
               LocaleEntryRedirect route above (redirects to /pricing
               after switching i18n language). */}
           <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/promotions" element={<PromotionsPage />} />
 
           {/* 🃏 Phase 2 — Browse + Detail */}
           {/* 🆕 Round 25c: full therapist list is now on HomePage

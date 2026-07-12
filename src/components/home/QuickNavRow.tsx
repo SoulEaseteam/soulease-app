@@ -26,7 +26,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
   FlowerLotus,
-  Users,
+  Megaphone,
   MapPin,
   Tag,
 } from "phosphor-react";
@@ -43,25 +43,21 @@ const QuickNavRow: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const scrollToTherapistGrid = () => {
-    const el = document.getElementById("therapist-grid");
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
-
   const items: QuickNavItem[] = [
     {
       key: "massage",
       Icon: FlowerLotus,
-      labelEn: t("home.quickNav.massage", "Massage"),
+      // 🆕 28w.4 — founder: "Massage เปลี่ยนแค่ชื่อ Our Services".
+      labelEn: t("home.quickNav.massage", "Our Services"),
       onTap: () => navigate("/services"),
     },
     {
-      key: "therapists",
-      Icon: Users,
-      labelEn: t("home.quickNav.therapists", "Therapists"),
-      onTap: scrollToTherapistGrid,
+      key: "promos",
+      Icon: Megaphone,
+      // 🆕 28w.4 — was "Therapists" (scroll to grid); founder: repurpose
+      //   to the new Promotions & News page.
+      labelEn: t("home.quickNav.promos", "Promotions"),
+      onTap: () => navigate("/promotions"),
     },
     {
       key: "locations",
