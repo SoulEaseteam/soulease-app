@@ -430,13 +430,17 @@ const ServicesPage: React.FC = () => {
                     Bestseller
                   </Box>
 
-                  {/* Hero image — full width, at the very TOP of the card */}
+                  {/* Hero image — full width, at the very TOP of the card
+                      🆕 Round 28r97 · founder 2026-07-12 — height now
+                      responsive: 180px on mobile (was 210px, felt too
+                      big) → 260px on desktop to balance the wider
+                      canvas.  Aspect stays wide-cinematic on all sizes. */}
                   {bestseller.image && (
                     <Box
                       sx={{
                         position: "relative",
                         width: "100%",
-                        height: 210,
+                        height: { xs: 180, sm: 210, md: 260 },
                         background: `center / cover no-repeat url(${bestseller.image})`,
                         "&::after": {
                           content: '""',
