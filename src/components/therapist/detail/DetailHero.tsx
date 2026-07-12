@@ -25,8 +25,6 @@ import {
 } from "@mui/material";
 import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
 import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
-import FavoriteBorderRoundedIcon from "@mui/icons-material/FavoriteBorderRounded";
-import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
@@ -34,9 +32,6 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import NearMeRoundedIcon from "@mui/icons-material/NearMeRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
-// 🆕 Round 28r81 — accent tokens (favorite-pink glyph in the "Add to
-//   favourites" menu item).
-import { accents } from "@/theme";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -888,58 +883,12 @@ const DetailHero: React.FC<Props> = ({
             Share profile
           </ListItemText>
         </MenuItem>
-        <MenuItem
-          onClick={() => {
-            setMenuOpen(false);
-            // TODO Task 5 — wire to favoriteTherapists in users/{uid}
-          }}
-        >
-          <ListItemIcon>
-            {/* 🆕 Round 28r81 — glyph tinted with the favourite-pink
-                text accent so the heart reads as heart, not chrome. */}
-            <FavoriteBorderRoundedIcon
-              fontSize="small"
-              sx={{ color: accents.favoriteText }}
-            />
-          </ListItemIcon>
-          <ListItemText
-            primaryTypographyProps={{
-              sx: {
-                fontFamily: SANS,
-                fontSize: "13.5px",
-                fontWeight: 600,
-                color: "var(--sr-ink)",
-              },
-            }}
-          >
-            Save to favorites
-          </ListItemText>
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            setMenuOpen(false);
-            // TODO Task 6 — open ReportPage with therapistId pre-filled
-          }}
-        >
-          <ListItemIcon>
-            <FlagOutlinedIcon
-              fontSize="small"
-              sx={{ color: "var(--sr-body)" }}
-            />
-          </ListItemIcon>
-          <ListItemText
-            primaryTypographyProps={{
-              sx: {
-                fontFamily: SANS,
-                fontSize: "13.5px",
-                fontWeight: 600,
-                color: "var(--sr-body)",
-              },
-            }}
-          >
-            Report
-          </ListItemText>
-        </MenuItem>
+        {/* 🆕 28t.18 — "Save to favorites" + "Report" removed (were no-op
+            `TODO` stubs that looked active but did nothing). Favorites needs
+            a logged-in user (users/{uid}/favorites) but SunRed guests are
+            anonymous by design, and Report has no moderation backend — the
+            concierge chat FAB already covers "something's wrong". Re-add as a
+            real feature only if we build the write path. Menu = Share only. */}
       </Menu>
     </>
   );
