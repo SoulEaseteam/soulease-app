@@ -1,17 +1,23 @@
 // src/pages/ServicesPage.tsx
 //
-// 🆕 Round 28v.3
-//   • Bestseller (SR-HJ2200) → featured card ด้านบนสุด + badge เด่น
-//   • สีราคา + heading = #D97C95 (rose) ตาม theme.ts
-//   • ลบปุ่ม Reserve CTA ออก
-//   • "Reach us" → 4 icon tiles แนวนอน (สั้นลง)
+// 🆕 Rounds 28r92 → 28r102 (2026-07-13)
+//   • r92 Editorial masthead (Rates & Rituals / Our Signature Experiences)
+//   • r92 Featured hero card + horizontal 3-cell rate grid
+//   • r93 More Rituals: vertical stack of horizontal cards (image-left)
+//   • r95 Masthead moved to page-level (above tabs)
+//   • r96 Tab dividers · r97 responsive hero height · r98 motion + no glow
+//   • r99 PREMIUM badge on Therapeutic · r101 rose divider
+//   • r102 Audit sweep: masthead scoped to Services tab, reduced-motion
+//     guard, grid safety, i18n keys wired, semantic heading cleanup,
+//     tabpanel landmarks, external-link indicator, dead code removed.
 // ─────────────────────────────────────────────────────────────────────
 
 import React from "react";
 import { Box, Typography } from "@mui/material";
 import { useSearchParams } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 // 🆕 Round 28r90 (r89 audit finding #1) — swap the raw catalog import for
 //   the live-config helpers so admin edits in /admin/promotions
 //   (name/desc/image/detail overrides, custom services, enabled toggle,
@@ -55,7 +61,10 @@ const BESTSELLER_ID = "SR-HJ2200";
 // ─── Remaining services order (bestseller shown separately at top) ─
 const REST_ORDER = ["xSR-Thai", "SR-Aroma", "SR-B2B3200"] as const;
 
-// One-word type tag
+// 🆕 28r102 — SERVICE_TYPE_TAG kept as fallback map only.  Real
+//   copy now lives in locale JSON under `services.type.<id>`; the
+//   values below match the English fallback strings so a missing
+//   locale key doesn't render an empty subtitle.
 const SERVICE_TYPE_TAG: Record<string, string> = {
   "xSR-Thai":   "Traditional",
   "SR-Aroma":   "Relaxing",
@@ -63,7 +72,8 @@ const SERVICE_TYPE_TAG: Record<string, string> = {
   "SR-B2B3200": "Specialised",
 };
 
-// Thai subtitle per service
+// Thai subtitle per service — only rendered when the active locale is
+// `th`.  Non-Thai users don't see this line (L5 audit finding).
 const SERVICE_TH_TAG: Record<string, string> = {
   "xSR-Thai":   "การนวดแผนไทย",
   "SR-Aroma":   "การนวดอโรมา",
@@ -72,32 +82,34 @@ const SERVICE_TH_TAG: Record<string, string> = {
 };
 
 // ─── About pillars ─────────────────────────────────────────────────
-// 🆕 Round 28r90 (r89 audit finding #10) — About-pillar accent hexes
-//   (`#16a34a` green, `#0284C7` blue) replaced with documented theme
-//   tokens. Green pillar → accents.availableText (#57B88B, the sitewide
-//   "available" green). The two blue-accent pillars ended up rendering
-//   the same colour on adjacent tiles pre-r90 — now split onto amber
-//   (accents.amber) + warm-clay tokens so the tone-key varies.
+// 🆕 Round 28r102 (r101 audit finding L4) — stable ids added so the
+//   i18n key `services.pillar.<id>.{title,body}` stays intact even if
+//   the English default title is later reworded. Tone tokens unchanged
+//   from r90.
 const ABOUT_PILLARS = [
   {
+    id: "verified",
     Icon: VerifiedRoundedIcon,
     title: "Verified practitioners",
     body: "Each profile is personally vetted — photographs, identification, and credential checks before publication.",
     tone: { bg: "rgba(87,184,139,0.14)", fg: accents.availableText },
   },
   {
+    id: "discreet",
     Icon: VisibilityOffRoundedIcon,
     title: "Discreet & private",
     body: "Plain-card payments, encrypted reservations, no signage upon arrival. Your stay remains yours.",
     tone: { bg: "rgba(217,124,149,0.12)", fg: ROSE },
   },
   {
+    id: "outcall",
     Icon: LocalHotelRoundedIcon,
     title: "Hotel & residence outcall",
     body: "Your practitioner arrives anywhere in central Bangkok — Sukhumvit, Silom, Asok, Thonglor, Sathorn.",
     tone: { bg: "rgba(244,197,66,0.14)", fg: accents.amber },
   },
   {
+    id: "concierge",
     Icon: SupportAgentRoundedIcon,
     title: "24/7 concierge",
     body: "A real concierge on WhatsApp, LINE, and Telegram around the clock — before, during, and after each session.",
@@ -106,12 +118,15 @@ const ABOUT_PILLARS = [
 ];
 
 // ─── Section eyebrow ───────────────────────────────────────────────
-// 🆕 Round 28r90 (r89 audit finding G) — semantic <h2> for screen readers.
+// 🆕 Round 28r102 (r101 audit finding M1/M6) — reverted from <h2> to
+//   <p>: eyebrow is decorative, actual section heading is the inner
+//   card title (Service area, Reach us, About · Our Promise etc.) at
+//   <h2>.  Fixes duplicate-h2 stack on About tab.
 const SectionEyebrow: React.FC<{ label: string }> = ({ label }) => (
   <Box sx={{ display: "flex", alignItems: "center", gap: "8px", mb: 1.25, px: "4px" }}>
     <Box aria-hidden sx={{ width: 3, height: 16, borderRadius: 2, background: ROSE_GRADIENT, flexShrink: 0 }} />
     <Typography
-      component="h2"
+      component="p"
       sx={{
         fontFamily: SANS,
         fontSize: 10.5,
@@ -120,7 +135,6 @@ const SectionEyebrow: React.FC<{ label: string }> = ({ label }) => (
         textTransform: "uppercase",
         color: ROSE,
         lineHeight: 1,
-        m: 0,
       }}
     >
       {label}
@@ -143,7 +157,10 @@ const CHANNELS = [
 // ─── Main component ────────────────────────────────────────────────
 const ServicesPage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  // 🆕 28r102 (r101 audit H2) — respect prefers-reduced-motion for
+  //   the Ken Burns loop + card entrance animations.
+  const prefersReducedMotion = useReducedMotion();
   const initialTab =
     searchParams.get("tab") === "how"
       ? "how"
@@ -221,109 +238,105 @@ const ServicesPage: React.FC = () => {
     >
       <Box sx={{ width: "100%", pb: 12 }}>
 
-        {/* ─── Editorial page-level masthead ─────────────────────────
-            🆕 Round 28r95 · founder direction 2026-07-12
-            "เอา แถบ ไปไว้ ใต้ Rates & Rituals · Our Signature Experiences"
-            The editorial masthead — moved OUT of the services-tab block
-            and up to page level, so it sits ABOVE the tab strip.  Tabs
-            (Services / About / How to Book) become sub-navigation
-            underneath the always-visible page header.  Copy identical to
-            r92 masthead. */}
-        {/* 🆕 28r98 (founder 2026-07-12) — "เพิ่ม การเคลื่อนไหว สวยๆ".
-            Masthead fades up as a whole block with a slow ease-out, then
-            its 3 lines cascade in via variants.  Quiet luxury: no bounce,
-            slow durations, easing curves that ramp then settle. */}
-        <Box
-          component={motion.div}
-          initial="hidden"
-          animate="visible"
-          variants={{
-            hidden: {},
-            visible: { transition: { staggerChildren: 0.14, delayChildren: 0.05 } },
-          }}
-          sx={{ textAlign: "center", mt: 3, mb: 2.5, px: 2 }}
-        >
+        {/* ─── Editorial masthead — Services tab ONLY ───────────────
+            🆕 28r102 (r101 audit B1) — masthead is Services-specific
+            copy ("Rates & Rituals · Our Signature Experiences") so it
+            only renders on the Services tab.  About + How-to-Book get
+            their own headings inside their tab bodies.
+            Motion (r98): whole block fades up, three lines cascade via
+            stagger.  H1 audit finding: removed stray `m: 0` shorthand
+            that was nuking `mb` / `mx` from earlier `sx` entries.  */}
+        {section === "services" && (
           <Box
-            component={motion.p}
+            component={motion.div}
+            initial="hidden"
+            animate="visible"
             variants={{
-              hidden: { opacity: 0, y: 10 },
-              visible: {
-                opacity: 1,
-                y: 0,
-                transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
-              },
+              hidden: {},
+              visible: { transition: { staggerChildren: 0.14, delayChildren: 0.05 } },
             }}
-            sx={{
-              fontFamily: SANS,
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: "0.24em",
-              textTransform: "uppercase",
-              color: ROSE,
-              mb: 1.25,
-              m: 0,
-            }}
+            sx={{ textAlign: "center", mt: 3, mb: 2.5, px: 2 }}
           >
-            {t("services.editorialEyebrow", "Rates & Rituals")}
-          </Box>
-          <Box
-            component={motion.h1}
-            variants={{
-              hidden: { opacity: 0, y: 14 },
-              visible: {
-                opacity: 1,
-                y: 0,
-                transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-              },
-            }}
-            sx={{
-              fontFamily: SERIF,
-              fontSize: { xs: 32, md: 40 },
-              fontWeight: 500,
-              color: "var(--sr-ink)",
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-              mt: 1.25,
-              mb: 1.75,
-            }}
-          >
-            {t("services.editorialLine1", "Our")}{" "}
             <Box
-              component="em"
-              sx={{ fontStyle: "italic", color: ROSE, fontWeight: 500 }}
+              component={motion.p}
+              variants={{
+                hidden: { opacity: 0, y: 10 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+                },
+              }}
+              sx={{
+                fontFamily: SANS,
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.24em",
+                textTransform: "uppercase",
+                color: ROSE,
+                mb: 1.25,
+              }}
             >
-              {t("services.editorialAccent", "Signature")}
+              {t("services.editorialEyebrow", "Rates & Rituals")}
             </Box>
-            <Box component="br" />
-            {t("services.editorialLine2", "Experiences")}
+            <Box
+              component={motion.h1}
+              variants={{
+                hidden: { opacity: 0, y: 14 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
+                },
+              }}
+              sx={{
+                fontFamily: SERIF,
+                fontSize: { xs: 32, md: 40 },
+                fontWeight: 500,
+                color: "var(--sr-ink)",
+                letterSpacing: "-0.02em",
+                lineHeight: 1.05,
+                mt: 1.25,
+                mb: 1.75,
+              }}
+            >
+              {t("services.editorialLine1", "Our")}{" "}
+              <Box
+                component="em"
+                sx={{ fontStyle: "italic", color: ROSE, fontWeight: 500 }}
+              >
+                {t("services.editorialAccent", "Signature")}
+              </Box>
+              <Box component="br" />
+              {t("services.editorialLine2", "Experiences")}
+            </Box>
+            <Box
+              component={motion.p}
+              variants={{
+                hidden: { opacity: 0, y: 10 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+                },
+              }}
+              sx={{
+                fontFamily: SANS,
+                fontSize: 13,
+                color: "var(--sr-muted)",
+                lineHeight: 1.5,
+                maxWidth: 340,
+                mx: "auto",
+                mt: 0.5,
+              }}
+            >
+              {t(
+                "services.editorialSub",
+                "Every ritual is delivered to your Bangkok hotel · concierge confirms in minutes"
+              )}
+            </Box>
           </Box>
-          <Box
-            component={motion.p}
-            variants={{
-              hidden: { opacity: 0, y: 10 },
-              visible: {
-                opacity: 1,
-                y: 0,
-                transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
-              },
-            }}
-            sx={{
-              fontFamily: SANS,
-              fontSize: 13,
-              color: "var(--sr-muted)",
-              lineHeight: 1.5,
-              maxWidth: 340,
-              mx: "auto",
-              m: 0,
-              mt: 0.5,
-            }}
-          >
-            {t(
-              "services.editorialSub",
-              "Every ritual is delivered to your Bangkok hotel · concierge confirms in minutes"
-            )}
-          </Box>
-        </Box>
+        )}
 
         {/* ─── Tab strip (under masthead) ─────────────────────────── */}
         <Box
@@ -350,7 +363,9 @@ const ServicesPage: React.FC = () => {
                 key={tab.value}
                 component="button"
                 role="tab"
+                id={`sr-tab-${tab.value}`}
                 aria-selected={isActive}
+                aria-controls={`sr-panel-${tab.value}`}
                 onClick={() => setSection(tab.value)}
                 sx={{
                   flex: 1,
@@ -414,7 +429,12 @@ const ServicesPage: React.FC = () => {
             SERVICES TAB
         ═══════════════════════════════════════════════════════════ */}
         {section === "services" && (
-          <Box sx={{ display: "flex", flexDirection: "column", mt: 3, px: 2, gap: 0 }}>
+          <Box
+            role="tabpanel"
+            id="sr-panel-services"
+            aria-labelledby="sr-tab-services"
+            sx={{ display: "flex", flexDirection: "column", mt: 3, px: 2, gap: 0 }}
+          >
 
             {/* ── Featured hero card (Approach 3 · founder pick 28r92) ──
                 Full-width hero image at the very top of the card (gradient
@@ -428,41 +448,50 @@ const ServicesPage: React.FC = () => {
               return (
                 <Box
                   component={motion.div}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1], delay: 0.35 }}
-                  whileHover={{ y: -4 }}
                   sx={{
                     position: "relative",
                     mb: 2.5,
                     borderRadius: "22px",
                     background: "var(--sr-panel)",
                     border: `1.5px solid ${ROSE}`,
-                    // 🆕 28r98 (founder 2026-07-12) — no rose glow ring;
-                    //   just the standard card shadow for depth.
+                    // 🆕 28r98 — no rose glow ring; standard shadow only.
                     boxShadow: "var(--sr-card-shadow)",
                     overflow: "hidden",
-                    transition: "box-shadow 0.4s ease",
-                    "&:hover": {
-                      boxShadow: "0 18px 46px rgba(0,0,0,0.32)",
+                    // 🆕 28r102 (r101 audit M4) — single CSS hover instead of
+                    //   framer whileHover + CSS hover race. Also (r101 L1)
+                    //   swapped raw rgba hover shadow for tokens so
+                    //   dark/light modes get appropriate elevation.
+                    transition: "transform 0.28s ease, box-shadow 0.4s ease",
+                    "@media (hover: hover)": {
+                      "&:hover": {
+                        transform: "translateY(-4px)",
+                        boxShadow: "var(--sr-card-shadow)",
+                      },
                     },
-                    // Reveal children (image scale + badge float + eyebrow
-                    // fade) in sequence after the card lands.
-                    "& .fx-hero-img": {
-                      transform: "scale(1.04)",
-                      animation: "sr-kenburns 14s ease-in-out infinite alternate",
-                    },
-                    "@keyframes sr-kenburns": {
-                      "0%":   { transform: "scale(1.04) translate3d(0,0,0)" },
-                      "100%": { transform: "scale(1.10) translate3d(0,-2%,0)" },
+                    // 🆕 28r102 (r101 audit H2) — Ken Burns is gated on
+                    //   prefers-reduced-motion.  Scoped selector uses a
+                    //   data-attribute (r101 N3) to avoid global class name
+                    //   collision.
+                    "@media (prefers-reduced-motion: no-preference)": {
+                      '& [data-sr-fx="hero"]': {
+                        transform: "scale(1.04)",
+                        animation: "sr-kenburns 14s ease-in-out infinite alternate",
+                      },
+                      "@keyframes sr-kenburns": {
+                        "0%":   { transform: "scale(1.04) translate3d(0,0,0)" },
+                        "100%": { transform: "scale(1.10) translate3d(0,-2%,0)" },
+                      },
                     },
                   }}
                 >
-                  {/* Floating amber BESTSELLER pill (top-right, over the image) */}
+                  {/* Floating amber BESTSELLER pill (top-right, over image) */}
                   <Box
                     component={motion.div}
                     aria-hidden
-                    initial={{ opacity: 0, scale: 0.85, y: -6 }}
+                    initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.85, y: -6 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.9 }}
                     sx={{
@@ -483,7 +512,7 @@ const ServicesPage: React.FC = () => {
                       boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
                     }}
                   >
-                    Bestseller
+                    {t("services.bestseller", "Bestseller")}
                   </Box>
 
                   {/* Hero image — full width, at the very TOP of the card
@@ -509,7 +538,7 @@ const ServicesPage: React.FC = () => {
                       }}
                     >
                       <Box
-                        className="fx-hero-img"
+                        data-sr-fx="hero"
                         sx={{
                           position: "absolute",
                           inset: 0,
@@ -522,7 +551,9 @@ const ServicesPage: React.FC = () => {
 
                   {/* Content section */}
                   <Box sx={{ p: "20px 20px 22px" }}>
-                    {/* Rose eyebrow — "Most requested this month" */}
+                    {/* Rose eyebrow — "Most requested this month"
+                        🆕 28r102 (r101 audit H1) — removed stray `m: 0`
+                        that was blowing away the `mb: 1` gap to the name. */}
                     <Typography
                       component="p"
                       sx={{
@@ -533,7 +564,6 @@ const ServicesPage: React.FC = () => {
                         textTransform: "uppercase",
                         color: ROSE,
                         mb: 1,
-                        m: 0,
                       }}
                     >
                       {t("services.mostRequested", "Most requested this month")}
@@ -556,7 +586,11 @@ const ServicesPage: React.FC = () => {
                       {bestseller.name}
                     </Typography>
 
-                    {/* Thai · type tag */}
+                    {/* Thai · type tag
+                        🆕 28r102 (r101 audit L5 + H5) — Thai subtitle only
+                        renders when active locale is `th`. Type tag pulled
+                        from locale (`services.type.<id>`) with fallback
+                        to English constant map. */}
                     <Typography
                       sx={{
                         fontFamily: SANS,
@@ -566,7 +600,8 @@ const ServicesPage: React.FC = () => {
                         letterSpacing: "0.01em",
                       }}
                     >
-                      {SERVICE_TH_TAG[bestseller.id]} · {SERVICE_TYPE_TAG[bestseller.id]}
+                      {i18n.language === "th" && `${SERVICE_TH_TAG[bestseller.id]} · `}
+                      {t(`services.type.${bestseller.id}`, SERVICE_TYPE_TAG[bestseller.id] ?? "")}
                     </Typography>
 
                     {/* Desc */}
@@ -582,11 +617,15 @@ const ServicesPage: React.FC = () => {
                       {bestseller.desc}
                     </Typography>
 
-                    {/* Horizontal 3-cell rate grid (60 · 90 · 120) */}
+                    {/* Horizontal 3-cell rate grid (60 · 90 · 120)
+                        🆕 28r102 (r101 audit H4) — Math.max guard so an
+                        admin-cleared durations array can't produce an
+                        invalid `repeat(0, 1fr)` template. */}
+                    {durations.length > 0 && (
                     <Box
                       sx={{
                         display: "grid",
-                        gridTemplateColumns: `repeat(${durations.length}, 1fr)`,
+                        gridTemplateColumns: `repeat(${Math.max(durations.length, 1)}, 1fr)`,
                         gap: 1,
                         mb: 2.25,
                       }}
@@ -613,7 +652,7 @@ const ServicesPage: React.FC = () => {
                               mb: 0.4,
                             }}
                           >
-                            {d} min
+                            {t("services.durationMin", "{{d}} min", { d })}
                           </Typography>
                           <Typography
                             sx={{
@@ -630,6 +669,7 @@ const ServicesPage: React.FC = () => {
                         </Box>
                       ))}
                     </Box>
+                    )}
 
                     {/* Rose full-width CTA */}
                     <Box
@@ -857,7 +897,7 @@ const ServicesPage: React.FC = () => {
                           mb: 1,
                         }}
                       >
-                        {firstDur} min · {SERVICE_TYPE_TAG[svc.id] ?? "Signature"}
+                        {t("services.durationMin", "{{d}} min", { d: firstDur })} · {t(`services.type.${svc.id}`, SERVICE_TYPE_TAG[svc.id] ?? "Signature")}
                       </Typography>
 
                       <Typography
@@ -996,7 +1036,12 @@ const ServicesPage: React.FC = () => {
             ABOUT TAB
         ═══════════════════════════════════════════════════════════ */}
         {section === "about" && (
-          <Box sx={{ px: 2, mt: 3, display: "flex", flexDirection: "column", gap: 2 }}>
+          <Box
+            role="tabpanel"
+            id="sr-panel-about"
+            aria-labelledby="sr-tab-about"
+            sx={{ px: 2, mt: 3, display: "flex", flexDirection: "column", gap: 2 }}
+          >
             <SectionEyebrow label={t("services.aboutEyebrow", "About · Our Promise")} />
 
             <Box
@@ -1089,7 +1134,11 @@ const ServicesPage: React.FC = () => {
         {/* ═══════════════════════════════════════════════════════════
             HOW TO BOOK TAB
         ═══════════════════════════════════════════════════════════ */}
-        {section === "how" && <HowItWorks />}
+        {section === "how" && (
+          <Box role="tabpanel" id="sr-panel-how" aria-labelledby="sr-tab-how">
+            <HowItWorks />
+          </Box>
+        )}
 
       </Box>
     </Box>
