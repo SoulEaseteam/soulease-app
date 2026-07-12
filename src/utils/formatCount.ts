@@ -8,6 +8,17 @@
 //     1150 → "1.1k+" · 2980 → "2.9k+" · 3000 → "3k+"
 //   Always rounds DOWN (never overstates the real number).
 
+/** Compact view count: 238 → "238", 1200 → "1.2k", 33800 → "33.8k". */
+export function formatViews(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return "0";
+  const v = Math.floor(n);
+  if (v < 1000) return String(v);
+  const kInt = Math.floor(v / 100); // 33800 → 338
+  const whole = Math.floor(kInt / 10); // 33
+  const dec = kInt % 10; // 8
+  return dec === 0 ? `${whole}k` : `${whole}.${dec}k`;
+}
+
 export function formatSessionCount(n: number): string {
   if (!Number.isFinite(n) || n <= 0) return "0";
   const v = Math.floor(n);

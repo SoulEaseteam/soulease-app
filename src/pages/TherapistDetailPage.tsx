@@ -21,6 +21,8 @@ import { useTranslation } from "react-i18next";
 //   over the dim backdrop so they stay legible without adding a
 //   fourth accent colour to the palette.
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
+import { formatViews } from "@/utils/formatCount";
 import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 // 🆕 Round 28r85 — Icon-first tab bar (Photos · Services · About)
@@ -1304,72 +1306,9 @@ const TherapistDetailPage: React.FC = () => {
           );
         })()}
 
-        {/* 🆕 Round 28s365 — Trust badges row.
-            Small frosted pill chips: ✓ Verified (always) ·
-            ✓ Vaccinated (if features.vaccinated = Yes) ·
-            ● Available (if online).
-            Inspired by competitor reference (Ayla card trust signals). */}
-        <Box
-          sx={{
-            display: "flex",
-            gap: "6px",
-            flexWrap: "wrap",
-            margin: "10px 14px 0",
-          }}
-        >
-          {/* 🕯️ 28t.8 — both trust chips share ONE calm treatment (was a
-              mismatched blue + green pair that read cluttered). Subtle green
-              "verified" tint · green ✓ · navy-grey text. */}
-          {/* Always: Verified */}
-          <Box
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "5px",
-              background: "rgba(87,184,139,0.10)",
-              border: "1px solid rgba(87,184,139,0.24)",
-              borderRadius: "999px",
-              padding: "4px 11px",
-              fontFamily: '"Inter", system-ui, sans-serif',
-              fontSize: "11px",
-              fontWeight: 600,
-              color: "var(--sr-body)",
-              letterSpacing: "0.01em",
-            }}
-          >
-            <Box component="span" sx={{ fontSize: "12px", lineHeight: 1, color: "#3EA575" }}>✓</Box>
-            Data verified
-          </Box>
-          {/* Vaccinated — from features */}
-          {realRecord?.features?.vaccinated === "Yes" && (
-            <Box
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-                background: "rgba(87,184,139,0.10)",
-                border: "1px solid rgba(87,184,139,0.24)",
-                borderRadius: "999px",
-                padding: "4px 11px",
-                fontFamily: '"Inter", system-ui, sans-serif',
-                fontSize: "11px",
-                fontWeight: 600,
-                color: "var(--sr-body)",
-                letterSpacing: "0.01em",
-              }}
-            >
-              <Box component="span" sx={{ fontSize: "12px", lineHeight: 1, color: "#3EA575" }}>✓</Box>
-              Vaccinated
-            </Box>
-          )}
-          {/* 🗑️ 28s375 — "Available Now" trust badge removed. Live
-              availability is already shown twice below (the green
-              "พร้อมให้บริการ" status card WITH an arrival ETA, plus the
-              hero status dot). Three indicators for one state violated the
-              founder's own "don't show status twice" guardrail; the status
-              card wins because it carries the arrival window. Trust badges
-              now read Data verified · Vaccinated — matching the reference. */}
-        </Box>
+        {/* 🆕 28t.12 — Trust chips (Data verified · Vaccinated) removed
+            (founder "เอาออก"). Verification is conveyed by the Credentials
+            section below the gallery. */}
 
         {/* 🆕 28t.10 — Credentials moved back INTO the Photos tab, below the
             gallery (founder "ย้ายไป ด้านล่างรูป แถบ Photos"). See the About
@@ -2029,12 +1968,12 @@ const TherapistDetailPage: React.FC = () => {
           <Box
             sx={{
               display: "grid",
+              // 🆕 28t.12 — 3 photos per row on mobile (founder ref).
               gridTemplateColumns: {
-                xs: "repeat(2, 1fr)",
-                sm: "repeat(3, 1fr)",
+                xs: "repeat(3, 1fr)",
                 md: "repeat(4, 1fr)",
               },
-              gap: { xs: "8px", md: "12px" },
+              gap: { xs: "6px", md: "10px" },
             }}
           >
             {(therapist.images ?? []).map((src, idx) => (
@@ -2052,8 +1991,9 @@ const TherapistDetailPage: React.FC = () => {
                   }
                 )}
                 sx={{
+                  position: "relative",
                   width: "100%",
-                  aspectRatio: "1 / 1",
+                  aspectRatio: "3 / 4",
                   border: "none",
                   padding: 0,
                   cursor: "zoom-in",
@@ -2064,11 +2004,10 @@ const TherapistDetailPage: React.FC = () => {
                     "transform 0.15s ease, box-shadow 0.15s ease",
                   "&:hover": {
                     transform: "translateY(-1px)",
-                    boxShadow:
-                      "0 6px 14px rgba(15, 23, 42, 0.10)",
+                    boxShadow: "var(--sr-card-shadow)",
                   },
                   "&:focus-visible": {
-                    outline: "2px solid #8F8474",
+                    outline: "2px solid #D97C95",
                     outlineOffset: 2,
                   },
                 }}
@@ -2085,6 +2024,38 @@ const TherapistDetailPage: React.FC = () => {
                     display: "block",
                   }}
                 />
+                {/* 🆕 28t.12 — 👁 view count over each photo (founder ref). */}
+                {(realRecord?.viewCount ?? 0) > 0 && (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      padding: "18px 8px 6px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      background:
+                        "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.55) 100%)",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <VisibilityRoundedIcon sx={{ fontSize: 14, color: "#fff" }} />
+                    <Box
+                      component="span"
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        color: "#fff",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {formatViews(realRecord?.viewCount ?? 0)}
+                    </Box>
+                  </Box>
+                )}
               </Box>
             ))}
           </Box>

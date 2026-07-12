@@ -191,6 +191,8 @@ export const About: React.FC<{
   // / area. The embedded gallery is also dropped here because the
   // Round 28s30 DetailHero Airbnb grid already exposes every photo.
   const [expanded, setExpanded] = React.useState(true);
+  // 🆕 28t.12 — collapsible bio box (founder "About ทำเหมือนตัวอย่าง หุบได้").
+  const [bioExpanded, setBioExpanded] = React.useState(false);
   // Round 28b5 — embedded gallery lightbox state.
   const [openIdx, setOpenIdx] = React.useState<number | null>(null);
   // Round 28b6 — track which page the horizontal scroller is on so
@@ -475,17 +477,62 @@ export const About: React.FC<{
             })}
           </Box>
         ) : (
+          // 🆕 28t.12 — bio in a collapsible box with a rose accent bar +
+          //   chevron toggle (founder ref). Clamped to 2 lines when closed.
           <Box
-            component="p"
             sx={{
-              fontFamily: SANS,
-              fontSize: "13.5px",
-              color: "var(--sr-body)",
-              lineHeight: 1.6,
-              margin: 0,
+              position: "relative",
+              borderRadius: "14px",
+              background: "var(--sr-panel-2)",
+              borderLeft: "4px solid #D97C95",
+              padding: "14px 46px 14px 16px",
             }}
           >
-            {body}
+            <Box
+              component="p"
+              sx={{
+                fontFamily: SANS,
+                fontSize: "13.5px",
+                color: "var(--sr-body)",
+                lineHeight: 1.6,
+                margin: 0,
+                whiteSpace: "pre-line",
+                ...(bioExpanded
+                  ? {}
+                  : {
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }),
+              }}
+            >
+              {body}
+            </Box>
+            <IconButton
+              aria-label={bioExpanded ? "Collapse bio" : "Expand bio"}
+              aria-expanded={bioExpanded}
+              onClick={() => setBioExpanded((v) => !v)}
+              sx={{
+                position: "absolute",
+                right: 10,
+                bottom: 10,
+                width: 28,
+                height: 28,
+                background: "var(--sr-panel)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.14)",
+                color: "#D97C95",
+                "&:hover": { background: "var(--sr-panel)" },
+              }}
+            >
+              <KeyboardArrowDownRoundedIcon
+                sx={{
+                  fontSize: 20,
+                  transform: bioExpanded ? "rotate(180deg)" : "none",
+                  transition: "transform 0.2s ease",
+                }}
+              />
+            </IconButton>
           </Box>
         )}
       </Box>

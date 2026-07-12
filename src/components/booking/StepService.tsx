@@ -222,23 +222,24 @@ const StepService: React.FC<Props> = ({
               //   Services page. Selected = brand-red ring; trending =
               //   coral ring.
               position: "relative",
-              borderRadius: "20px",
+              borderRadius: "16px",
               overflow: "hidden",
-              aspectRatio: "16 / 10",
+              // 🆕 28t.12 — smaller service cards (founder "ทำการ์ดให้เล็กลง").
+              aspectRatio: "5 / 2",
               cursor: "pointer",
               userSelect: "none",
               boxShadow: isSelected
-                ? "0 0 0 2.5px #2D2D2B, 0 14px 32px rgba(15, 23, 42, 0.26)"
+                ? "0 0 0 2.5px #D97C95, 0 14px 32px rgba(0, 0, 0, 0.26)"
                 : isTrending
-                  ? "0 0 0 2px #2D2D2B, 0 12px 28px rgba(15, 23, 42, 0.16)"
-                  : "0 8px 22px rgba(15, 23, 42, 0.12)",
+                  ? "0 0 0 2px #D97C95, 0 12px 28px rgba(0, 0, 0, 0.16)"
+                  : "0 8px 22px rgba(0, 0, 0, 0.12)",
               transition: "transform 0.2s ease, box-shadow 0.2s ease",
               "@media (hover: hover)": {
                 "&:hover": { transform: "translateY(-2px)" },
                 "&:hover .svc-img": { transform: "scale(1.05)" },
               },
               "&:focus-visible": {
-                outline: "2px solid #2D2D2B",
+                outline: "2px solid #D97C95",
                 outlineOffset: "2px",
               },
               // 🆕 Round 28s88 (founder "ตรง •TRENDING เป็นกรอบ และมี
