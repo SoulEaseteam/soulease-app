@@ -700,22 +700,50 @@ const ServicesPage: React.FC = () => {
                 sx={{ flex: 1, height: 1, background: "var(--sr-hairline)" }}
               />
               <Box
-                component={motion.p}
+                component={motion.div}
                 variants={{
                   hidden: { opacity: 0, y: 4 },
                   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
                 }}
                 sx={{
-                  fontFamily: SANS,
-                  fontSize: 10.5,
-                  fontWeight: 800,
-                  letterSpacing: "0.20em",
-                  textTransform: "uppercase",
-                  color: "var(--sr-muted)",
-                  m: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "3px",
+                  lineHeight: 1,
                 }}
               >
-                {t("services.moreRituals", "More Rituals")}
+                <Typography
+                  component="p"
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: 10.5,
+                    fontWeight: 800,
+                    letterSpacing: "0.20em",
+                    textTransform: "uppercase",
+                    color: "var(--sr-muted)",
+                    m: 0,
+                    lineHeight: 1,
+                  }}
+                >
+                  {t("services.moreRituals", "More Rituals")}
+                </Typography>
+                {/* 🆕 28r99 (founder 2026-07-12) — small Thai 'อ่านเพิ่ม'
+                    beneath the MORE RITUALS label */}
+                <Typography
+                  component="p"
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: 9,
+                    fontWeight: 500,
+                    letterSpacing: "0.06em",
+                    color: "var(--sr-dim)",
+                    m: 0,
+                    lineHeight: 1,
+                  }}
+                >
+                  {t("services.moreRitualsSub", "อ่านเพิ่ม")}
+                </Typography>
               </Box>
               <Box
                 component={motion.div}
@@ -776,17 +804,50 @@ const ServicesPage: React.FC = () => {
                       },
                     }}
                   >
-                    {/* Square image on the LEFT */}
+                    {/* Square image on the LEFT — with PREMIUM badge
+                        floating top-left when the service is SunRed
+                        Therapeutic (SR-B2B3200).
+                        🆕 28r99 (founder 2026-07-12) — 'SunRed Therapeutic
+                        เพิ่ม ติดป้าย'.  Rose-toned pill differentiates
+                        from the amber BESTSELLER on Gentleman's. */}
                     {svc.image && (
                       <Box
                         aria-hidden
                         sx={{
+                          position: "relative",
                           flex: "0 0 auto",
                           width: 108,
                           alignSelf: "stretch",
                           background: `center / cover no-repeat url(${svc.image})`,
                         }}
-                      />
+                      >
+                        {svc.id === "SR-B2B3200" && (
+                          <Box
+                            component={motion.div}
+                            initial={{ opacity: 0, scale: 0.85 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.4 }}
+                            sx={{
+                              position: "absolute",
+                              top: 8,
+                              left: 8,
+                              px: "8px",
+                              py: "3px",
+                              borderRadius: 999,
+                              background: ROSE,
+                              color: "#fff",
+                              fontFamily: SANS,
+                              fontSize: 8.5,
+                              fontWeight: 800,
+                              letterSpacing: "0.16em",
+                              textTransform: "uppercase",
+                              boxShadow: "0 2px 6px rgba(0,0,0,0.22)",
+                            }}
+                          >
+                            {t("services.premium", "Premium")}
+                          </Box>
+                        )}
+                      </Box>
                     )}
 
                     {/* Text column on the RIGHT */}
