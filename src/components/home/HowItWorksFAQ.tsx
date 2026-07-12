@@ -47,11 +47,8 @@ interface QA {
 //   · "Payment methods" — /payment-methods CTA above owns this
 //   · Merged 2 discretion Qs (charge + arrival) into one
 const FAQ_ITEMS: QA[] = [
-  {
-    id: "book",
-    q: "How do I book?",
-    a: "Open the Therapists tab, pick a practitioner, choose your service and time, then confirm. The concierge confirms within minutes on LINE, WhatsApp, or Telegram — no phone calls.",
-  },
+  // 🆕 28r108 — "How do I book?" removed. Founder: "มีแล้ว 123 ไง" —
+  //   the 3-step ritual (01/02/03) above already answers this.
   {
     id: "arrive",
     q: "How quickly can she arrive?",

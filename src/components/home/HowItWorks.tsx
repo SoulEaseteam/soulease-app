@@ -74,8 +74,10 @@ const STEPS: StepDef[] = [
     titleKey: "home.howItWorks.step3.title",
     titleFallback: "Restore in your sanctuary",
     bodyKey: "home.howItWorks.step3.body",
+    // 🆕 28r108 — "arrives fully equipped" / "พร้อมอุปกรณ์ครบครัน" cut
+    //   per founder audit.
     bodyFallback:
-      "Your practitioner arrives fully equipped and discreet. Settle securely afterwards.",
+      "Your practitioner arrives discreetly. Settle securely afterwards.",
   },
 ];
 

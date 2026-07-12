@@ -232,11 +232,14 @@ const ServicesPage: React.FC = () => {
         overflow: "hidden",
         boxShadow: { xs: "0 20px 60px rgba(15,23,42,0.08)", md: "none" },
         position: "relative",
-        pb: 10,
+        // 🆕 28r108 (founder "พื้นที่ด้านล้างเหลือเยอะมาก · ทั้ง 3 แถบ") —
+        //   trimmed pb from 10+12 (176px combined) to 4+2 (~48px total)
+        //   so the last tab section sits just above the bottom nav.
+        pb: 4,
         fontFamily: SANS,
       }}
     >
-      <Box sx={{ width: "100%", pb: 12 }}>
+      <Box sx={{ width: "100%", pb: 2 }}>
 
         {/* ─── Editorial masthead — Services tab ONLY ───────────────
             🆕 28r102 (r101 audit B1) — masthead is Services-specific
