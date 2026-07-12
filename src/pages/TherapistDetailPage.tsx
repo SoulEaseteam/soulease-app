@@ -1317,24 +1317,27 @@ const TherapistDetailPage: React.FC = () => {
             margin: "10px 14px 0",
           }}
         >
+          {/* 🕯️ 28t.8 — both trust chips share ONE calm treatment (was a
+              mismatched blue + green pair that read cluttered). Subtle green
+              "verified" tint · green ✓ · navy-grey text. */}
           {/* Always: Verified */}
           <Box
             sx={{
               display: "inline-flex",
               alignItems: "center",
-              gap: "4px",
-              background: "rgba(29,155,240,0.08)",
-              border: "1px solid rgba(29,155,240,0.22)",
+              gap: "5px",
+              background: "rgba(87,184,139,0.10)",
+              border: "1px solid rgba(87,184,139,0.24)",
               borderRadius: "999px",
               padding: "4px 11px",
               fontFamily: '"Inter", system-ui, sans-serif',
               fontSize: "11px",
               fontWeight: 600,
-              color: "#1d7fbf",
+              color: "#3A4452",
               letterSpacing: "0.01em",
             }}
           >
-            <Box component="span" sx={{ fontSize: "12px", lineHeight: 1 }}>✓</Box>
+            <Box component="span" sx={{ fontSize: "12px", lineHeight: 1, color: "#3EA575" }}>✓</Box>
             Data verified
           </Box>
           {/* Vaccinated — from features */}
@@ -1343,19 +1346,19 @@ const TherapistDetailPage: React.FC = () => {
               sx={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "4px",
-                background: "rgba(22,163,74,0.07)",
-                border: "1px solid rgba(22,163,74,0.20)",
+                gap: "5px",
+                background: "rgba(87,184,139,0.10)",
+                border: "1px solid rgba(87,184,139,0.24)",
                 borderRadius: "999px",
                 padding: "4px 11px",
                 fontFamily: '"Inter", system-ui, sans-serif',
                 fontSize: "11px",
                 fontWeight: 600,
-                color: "#16a34a",
+                color: "#3A4452",
                 letterSpacing: "0.01em",
               }}
             >
-              <Box component="span" sx={{ fontSize: "12px", lineHeight: 1 }}>✓</Box>
+              <Box component="span" sx={{ fontSize: "12px", lineHeight: 1, color: "#3EA575" }}>✓</Box>
               Vaccinated
             </Box>
           )}
@@ -1391,7 +1394,7 @@ const TherapistDetailPage: React.FC = () => {
                 fontWeight: 800,
                 letterSpacing: "0.16em",
                 textTransform: "uppercase",
-                color: "#4A5568",
+                color: "#8B93A0",
                 marginBottom: "8px",
               }}
             >
@@ -1412,7 +1415,7 @@ const TherapistDetailPage: React.FC = () => {
                         fontFamily: SANS,
                         fontSize: "13px",
                         fontWeight: 600,
-                        color: "#1A2B2E",
+                        color: "#232B36",
                       }}
                     >
                       {l.name}
@@ -1424,7 +1427,7 @@ const TherapistDetailPage: React.FC = () => {
                         fontSize: "9.5px",
                         fontWeight: 800,
                         letterSpacing: "0.08em",
-                        color: isNative ? "#2D2D2B" : "rgba(15,23,42,0.55)",
+                        color: isNative ? "#3EA575" : "#9AA0AC",
                         textTransform: "uppercase",
                       }}
                     >
