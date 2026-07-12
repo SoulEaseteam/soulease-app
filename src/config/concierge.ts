@@ -40,6 +40,15 @@ export const CONCIERGE = {
   lineUrl: "https://lin.ee/uqvdwWt",
   /** Telegram Bangkok broadcast channel handle (public). */
   telegramChannel: "@SunRed_BKK",
+  /**
+   * 🆕 Round 28r90 (r89 audit finding #4) — canonical Telegram broadcast
+   * channel URL. Before r90, the URL form was reconstructed at three
+   * separate call sites with different results (`t.me/SunRedvip_bkk`
+   * on the ServicesPage concierge tile vs `t.me/SunRed_BKK` in the
+   * same tab's subscribe link). Centralised so both tiles + every
+   * future TG deep-link target the same channel.
+   */
+  telegramChannelUrl: "https://t.me/SunRed_BKK",
   /** Human-facing display phone (used as a `handle` label in nav grids). */
   displayPhone: "+66 63 435 0987",
 } as const;

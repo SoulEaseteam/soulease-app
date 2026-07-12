@@ -63,7 +63,7 @@ import {
 } from "@/utils/servicePricing";
 import { trackServiceView, trackConciergeOpen } from "@/utils/analytics";
 import { db } from "@/lib/firebase";
-import { brand, fonts, accents } from "@/theme";
+import { brand, fonts, accents, gradients } from "@/theme";
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell.
 // 🆕 Round 28r54 (Phase 3.3) — responsiveType scales the h1 name +
@@ -231,8 +231,7 @@ const ServiceDetailPage: React.FC = () => {
       sx={{
         // 🆕 Round 28r52 — responsiveShell widens through sm/md/lg.
         ...responsiveShell,
-        background:
-          "#F4F6F5",
+        background: "var(--sr-bg)",
         minHeight: "100vh",
         position: "relative",
         // 🆕 Round 28r54 (Phase 3.3) — on md+ the Reserve CTA moves
@@ -288,6 +287,7 @@ const ServiceDetailPage: React.FC = () => {
         >
           {/* Hero + title block — matches original padding on xs */}
           <Box sx={{ padding: { xs: "0 18px", md: 0 } }}>
+            {/* Hero image (real photo) — falls back to icon swatch */}
             <Box
               component={motion.div}
               initial={{ opacity: 0, y: 10 }}
@@ -295,24 +295,21 @@ const ServiceDetailPage: React.FC = () => {
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               sx={{
                 width: "100%",
-                // 🆕 Round 28r54 (Phase 3.3) — hero grows a bit on md+
-                //   to match the wider left rail.
-                height: { xs: 140, md: 180 },
+                height: { xs: 200, md: 240 },
                 borderRadius: "20px",
-                // 🎨 Round 28r79 — Nordic sweep · was #FFF1E5 warm peach.
-                background: "#ECEBE8",
-                display: "flex",
+                overflow: "hidden",
+                marginBottom: "20px",
+                background: service.image
+                  ? `center / cover no-repeat url(${service.image})`
+                  : "#ECEBE8",
+                display: service.image ? "block" : "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                marginBottom: "20px",
               }}
             >
-              <Icon
-                sx={{
-                  fontSize: { xs: 64, md: 80 },
-                  color: config.swatchIcon,
-                }}
-              />
+              {!service.image && (
+                <Icon sx={{ fontSize: { xs: 64, md: 80 }, color: config.swatchIcon }} />
+              )}
             </Box>
 
             {/* Title block */}
@@ -511,18 +508,23 @@ const ServiceDetailPage: React.FC = () => {
                 <WhatsAppIcon sx={{ fontSize: "20px !important" }} />
               }
               sx={{
+                // 🆕 Round 28r90 (r89 audit finding #2) — CTA colour
+                //   unified to theme.gradients.primary (dusty rose,
+                //   28t primary). Was #8F8474 warm taupe; ServicesPage
+                //   was #1A2B2E slate. Now both sit on the single
+                //   theme primary, matching MUI containedPrimary.
                 padding: "14px 20px",
                 borderRadius: "16px",
-                background: "#8F8474",
+                background: gradients.primary,
                 color: "#fff",
                 fontFamily: fonts.body,
                 fontWeight: 700,
                 fontSize: "15px",
                 textTransform: "none",
-                boxShadow: "0 12px 28px rgba(45, 45, 43, 0.28)",
+                boxShadow: "0 12px 28px rgba(217, 124, 149, 0.30)",
                 "&:hover": {
-                  background: "#7A7060",
-                  boxShadow: "0 16px 36px rgba(45, 45, 43, 0.34)",
+                  background: gradients.primaryHover,
+                  boxShadow: "0 16px 36px rgba(201, 111, 137, 0.38)",
                 },
               }}
             >
@@ -763,18 +765,21 @@ const ServiceDetailPage: React.FC = () => {
             )}
             startIcon={<WhatsAppIcon sx={{ fontSize: "20px !important" }} />}
             sx={{
+              // 🆕 Round 28r90 (r89 audit finding #2) — sticky mobile
+              //   CTA on the theme primary (dusty rose), matching the
+              //   inline desktop CTA above + ServicesPage cards.
               padding: "14px 20px",
               borderRadius: "16px",
-              background: "#8F8474",
+              background: gradients.primary,
               color: "#fff",
               fontFamily: fonts.body,
               fontWeight: 700,
               fontSize: "15px",
               textTransform: "none",
-              boxShadow: "0 14px 32px rgba(45, 45, 43, 0.32)",
+              boxShadow: "0 14px 32px rgba(217, 124, 149, 0.34)",
               "&:hover": {
-                background: "#7A7060",
-                boxShadow: "0 18px 40px rgba(45, 45, 43, 0.38)",
+                background: gradients.primaryHover,
+                boxShadow: "0 18px 40px rgba(201, 111, 137, 0.40)",
               },
             }}
           >
