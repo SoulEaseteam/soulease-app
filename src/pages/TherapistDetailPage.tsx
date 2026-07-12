@@ -122,6 +122,7 @@ import type { Therapist } from "@/types/therapist";
 import { db } from "@/lib/firebase";
 import { doc as fsDoc, getDoc as fsGetDoc } from "firebase/firestore";
 import { recordTherapistView } from "@/utils/therapistViews";
+import { trackTherapistView } from "@/utils/analytics";
 import { enhanceImage } from "@/utils/cloudinary";
 // Round 28s53 — real GPS distance. The DetailHero "Allow location"
 // prompt now triggers an actual geolocation request and the
@@ -818,6 +819,17 @@ const TherapistDetailPage: React.FC = () => {
     url: `https://sunred.vip/therapists/${id ?? therapist?.id ?? ""}`,
     type: "profile",
   });
+
+  // 🆕 28t.14 (founder "เพิ่ม therapist_view") — funnel event: this
+  //   practitioner's profile was opened. Fires once the display name has
+  //   resolved (so the admin dashboard shows "Milo", not the raw id);
+  //   trackEvent dedupes per therapistId per session, so the name-resolve
+  //   re-render can't double-count. Separate from recordTherapistView
+  //   above (that bumps the public viewCount chip; this feeds /admin/analytics).
+  useEffect(() => {
+    if (!id || !therapist?.name) return;
+    trackTherapistView(id, therapist.name);
+  }, [id, therapist?.name]);
 
   // 🆕 Phase 4 — Inline picker state. The user picks service+duration+
   //    date+time on this page; StickyBookCTA forwards everything to
@@ -1798,79 +1810,16 @@ const TherapistDetailPage: React.FC = () => {
       </Box>
       {/* ── END GRID CHILD 2 ────────────────────────────────────── */}
 
-      {/* ── GRID CHILD 4 — About section (col 2 row 2 on md+)
-             🆕 Round 28r55 (Phase 3.4) — was `{detailTab === "about"
-             && (...)}`. Now rendered unconditionally with display
-             toggled by breakpoint + tab state.
-             🆕 Round 28r87 — display-conditional dropped: sections
-             now render stacked simultaneously on mobile and the
-             sticky tab bar smooth-scrolls between them. `id="about"`
-             is the IntersectionObserver + hash-scroll anchor;
-             `scrollMarginTop: 90px` lands the section BELOW the
-             sticky tab bar when scrolled to. Same panel content,
-             same handlers. ── */}
-      <Box
-        id="about"
-        role="tabpanel"
-        sx={{
-          // 🆕 28s338 — About lives in the Photos tab (shown above the
-          //   gallery). Hidden on other tabs.
-          display: detailTab === "photos" ? "block" : "none",
-          gridColumn: { md: "2" },
-          gridRow: { md: "2" },
-          // 🆕 Round 28r88 — Mobile stack reordered per founder
-          //   direction (2026-07-08): About → Services → Photos
-          //   ("เอา about ขึ้นก่อน เลื่อน เจอ Photos"). Was `order: 6`
-          //   (bottom of stack) in r87.
-          order: { xs: 3 },
-          paddingTop: { xs: "24px", md: "16px" },
-          scrollMarginTop: { xs: "24px", md: "24px" },
-        }}
-      >
-          {/* 🆕 Round 28r88 — StatsCard removed from here; moved back
-              above the section stack (below hero) per founder direction
-              2026-07-08 ("เอาแถบนี้ ไปยุที่เดิม ซ้อนอยู่ใต้รูป"). Cell
-              taps now scroll-nav instead of opening InfoSheet. */}
-
-          {/* 🆕 Round 28s366 — About moved above tab bar (below trust badges).
-              Not rendered here anymore. */}
-
-          {/* 🆕 28t.10 — Discovery Reservation callout removed (founder "เอาออก"). */}
-
-          {/* 🆕 Round 28s221 — Drop the "Show more details" toggle and
-              the embedded sub-sections. FEATURES + Credentials +
-              Specialties + Languages now always render below the About
-              card. Founder: "ปรับ แก้ ทั้ง tab About" — flatter, less
-              progressive disclosure. */}
-          <Box
-            sx={{
-              // 🆕 Round 28r52 — responsiveShell for the About sub-
-              //   sections (features, credentials, langs, specialties).
-              ...responsiveShell,
-              padding: "16px 20px 24px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "16px",
-            }}
-          >
-            {/* BioStatsBar moved to always-visible section (Round 28s361)
-                above the tab bar — no longer rendered here. */}
-
-            {/* 🆕 28t.9 — Credentials moved OUT of the Photos tab up to the
-                info column right below the hero photo (founder "Credentials
-                ย้ายไปด้านล่างรูป"). See GRID CHILD 2. */}
-
-            {/* Round 28s366 — Specialties + Languages removed from Photos tab.
-                Languages moved to below trust badges (above tab bar).
-                Specialties removed per founder request. */}
-
-            {/* Round 28s52 — Working hours moved to the DetailHero
-                info overlay (next to Allow location + status pill)
-                per founder ask. No longer rendered as an About-tab
-                section. */}
-          </Box>
-        </Box>
-      {/* ── END GRID CHILD 4 (About panel) ──────────────────────── */}
+      {/* 🆕 28t.15 (founder "Photos ขยับขึ้น ให้บาลานซ์") — the old
+          GRID CHILD 4 (About panel) is GONE. Its content (bio +
+          Languages + Credentials) moved into the collapsible About box
+          above the tab bar (GRID CHILD 2, round 28t.13), so this panel
+          had become an EMPTY padded shell that rendered ~64px of dead
+          space between the tab bar and the Photos grid on the Photos
+          tab. Removing it lets the gallery sit right under the tabs.
+          The `#about` hash still routes to the Photos tab via the
+          hashchange handler (it keys off the string, never this
+          element), so nothing depends on the removed anchor. */}
 
       {/* ── GRID CHILD 3 — Services picker / Reserve rail
              (col 1 row 2 on md+; mobile: order 5, always visible)

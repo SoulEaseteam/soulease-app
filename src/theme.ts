@@ -279,9 +279,18 @@ const theme = createTheme({
       default: NEUTRAL_50,       // Espresso Black
       paper: NEUTRAL_100,        // Dark Chocolate panel
     },
+    // 🆕 28t.17 — FIXED HEXES, not var(--sr-*). MUI feeds text.primary through
+    //   alpha()/decomposeColor for internal colour-math (e.g. the Button text
+    //   variant's hover tint) and CANNOT parse `var()` — it throws
+    //   "Unsupported var(--sr-ink) color", which was crashing the ENTIRE
+    //   booking sheet (tap any service → white error screen) AND the admin
+    //   login. Same landmine the `divider` comment below documents.
+    //   Day/night text still flips: `MuiCssBaseline` sets
+    //   `body { color: var(--sr-ink) }`, and MUI text inherits that — this
+    //   token is only read by MUI's own colour-math, never as visible copy.
     text: {
-      primary: GRAY_800,         // → var(--sr-ink)
-      secondary: GRAY_500,       // → var(--sr-muted)
+      primary: "#232B36",        // day ink; night text flips via body inheritance
+      secondary: "#8B93A0",      // muted
     },
     // MUI runs palette.divider through colour math (can't parse var()), so
     // this stays a fixed neutral translucent that reads on both light + dark.

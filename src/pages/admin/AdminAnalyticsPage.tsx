@@ -222,6 +222,9 @@ const AdminAnalyticsPage: React.FC = () => {
       off: {},
     };
     const serviceViews: Record<string, number> = {};
+    // 🆕 28t.14 — profile opens per practitioner. Keyed by display name
+    //   when the event carried one (falls back to the raw therapistId).
+    const therapistViews: Record<string, number> = {};
     const channels: Record<string, number> = {};
     const dailyByEvent: Record<string, Record<string, number>> = {
       home_view: {},
@@ -279,6 +282,15 @@ const AdminAnalyticsPage: React.FC = () => {
       if (ev.event === "service_view") {
         const sid = (ev.props?.serviceId as string) ?? "(unknown)";
         serviceViews[sid] = (serviceViews[sid] ?? 0) + 1;
+      }
+
+      // 🆕 28t.14 — practitioner profile opens, ranked in their own card.
+      if (ev.event === "therapist_view") {
+        const key =
+          (ev.props?.name as string) ||
+          (ev.props?.therapistId as string) ||
+          "(unknown)";
+        therapistViews[key] = (therapistViews[key] ?? 0) + 1;
       }
 
       if (ev.event === "concierge_chat_open") {
@@ -345,6 +357,7 @@ const AdminAnalyticsPage: React.FC = () => {
       sessionsBooked,
       modeConv,
       serviceViews,
+      therapistViews,
       channels,
       dailyByEvent,
       referrers,
@@ -585,6 +598,12 @@ const AdminAnalyticsPage: React.FC = () => {
               value={stats.byEvent.service_view ?? 0}
               of={stats.byEvent.home_view ?? 0}
             />
+            {/* 🆕 28t.14 — practitioner profile opens: the browse→pick step. */}
+            <FunnelStep
+              label="Profile views"
+              value={stats.byEvent.therapist_view ?? 0}
+              of={stats.byEvent.home_view ?? 0}
+            />
             <FunnelStep
               label="Booking start"
               value={stats.byEvent.booking_start ?? 0}
@@ -660,6 +679,32 @@ const AdminAnalyticsPage: React.FC = () => {
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 6)}
               emptyHint="No service_view events yet · ยังไม่มีข้อมูล"
+            />
+          </Card>
+
+          {/* 🆕 28t.14 — Top practitioners viewed */}
+          <Card>
+            <Eyebrow>Practitioner interest</Eyebrow>
+            <Typography
+              sx={{
+                fontFamily: SERIF,
+                fontSize: 18,
+                fontWeight: 600,
+                color: adminColor.text,
+                mb: 0.25,
+                lineHeight: 1.2,
+              }}
+            >
+              Top practitioners viewed
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mb: 2 }}>
+              โปรไฟล์ที่ถูกเปิดมากสุด
+            </Typography>
+            <RankedList
+              entries={Object.entries(stats.therapistViews)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 8)}
+              emptyHint="No therapist_view events yet · ยังไม่มีข้อมูล (forward-only; new sessions since 28t.14)"
             />
           </Card>
 
