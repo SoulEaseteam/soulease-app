@@ -855,11 +855,11 @@ const DetailHero: React.FC<Props> = ({
             marginTop: "6px",
             minWidth: 180,
             borderRadius: "14px",
-            background: "rgba(244, 246, 245, 0.96)",
+            background: "var(--sr-panel)",
             backdropFilter: "blur(20px) saturate(180%)",
             WebkitBackdropFilter: "blur(20px) saturate(180%)",
-            border: "1px solid rgba(0, 0, 0, 0.06)",
-            boxShadow: "0 12px 32px rgba(15, 23, 42, 0.18)",
+            border: "1px solid var(--sr-hairline)",
+            boxShadow: "var(--sr-card-shadow)",
           },
         }}
       >
@@ -872,7 +872,7 @@ const DetailHero: React.FC<Props> = ({
           <ListItemIcon>
             <IosShareRoundedIcon
               fontSize="small"
-              sx={{ color: "#1A2B2E" }}
+              sx={{ color: "var(--sr-ink)" }}
             />
           </ListItemIcon>
           <ListItemText
@@ -881,7 +881,7 @@ const DetailHero: React.FC<Props> = ({
                 fontFamily: SANS,
                 fontSize: "13.5px",
                 fontWeight: 600,
-                color: "#1A2B2E",
+                color: "var(--sr-ink)",
               },
             }}
           >
@@ -908,7 +908,7 @@ const DetailHero: React.FC<Props> = ({
                 fontFamily: SANS,
                 fontSize: "13.5px",
                 fontWeight: 600,
-                color: "#1A2B2E",
+                color: "var(--sr-ink)",
               },
             }}
           >
@@ -924,7 +924,7 @@ const DetailHero: React.FC<Props> = ({
           <ListItemIcon>
             <FlagOutlinedIcon
               fontSize="small"
-              sx={{ color: "rgba(15, 23, 42, 0.7)" }}
+              sx={{ color: "var(--sr-body)" }}
             />
           </ListItemIcon>
           <ListItemText
@@ -933,7 +933,7 @@ const DetailHero: React.FC<Props> = ({
                 fontFamily: SANS,
                 fontSize: "13.5px",
                 fontWeight: 600,
-                color: "rgba(15, 23, 42, 0.7)",
+                color: "var(--sr-body)",
               },
             }}
           >

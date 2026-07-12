@@ -58,7 +58,7 @@ const StarRow: React.FC<{ rating: number; size?: number }> = ({
         ) : (
           <StarBorderRoundedIcon
             key={i}
-            sx={{ fontSize: size, color: "rgba(15, 23, 42, 0.20)" }}
+            sx={{ fontSize: size, color: "var(--sr-dim)" }}
           />
         )
       )}
@@ -77,10 +77,10 @@ const DSectionH2: React.FC<{ children: React.ReactNode; em?: string }> = ({
       fontFamily: SERIF,
       fontWeight: 500,
       fontSize: "17px",
-      color: "#232B36",
+      color: "var(--sr-ink)",
       marginBottom: "8px",
       letterSpacing: "-0.01em",
-      "& em": { fontStyle: "italic", color: "#5C6573", fontWeight: 500 },
+      "& em": { fontStyle: "italic", color: "var(--sr-body)", fontWeight: 500 },
     }}
   >
     {children}
@@ -127,15 +127,15 @@ const TONE_STYLES: Record<
 > = {
   work: {
     iconBg: "rgba(214, 40, 40, 0.12)",
-    iconColor: "#4A5568",
+    iconColor: "var(--sr-body)",
   },
   ethnicity: {
     iconBg: "rgba(22, 163, 74, 0.12)",
     iconColor: "#16a34a",
   },
   body: {
-    iconBg: "rgba(15, 23, 42, 0.10)",
-    iconColor: "#2D2D2B",
+    iconBg: "var(--sr-panel-2)",
+    iconColor: "var(--sr-ink)",
   },
   language: {
     iconBg: "rgba(14, 165, 233, 0.10)",
@@ -370,7 +370,7 @@ export const About: React.FC<{
                     borderTop:
                       i === 0
                         ? "none"
-                        : "1px solid rgba(184, 92, 60, 0.10)",
+                        : "1px solid var(--sr-line)",
                   }}
                 >
                   <Box
@@ -396,7 +396,7 @@ export const About: React.FC<{
                       fontFamily: SANS,
                       fontSize: "13px",
                       fontWeight: 600,
-                      color: "#1A2B2E",
+                      color: "var(--sr-ink)",
                       letterSpacing: "0.005em",
                       lineHeight: 1.45,
                     }}
@@ -407,7 +407,7 @@ export const About: React.FC<{
                           <Box
                             component="span"
                             sx={{
-                              color: "rgba(184, 92, 60, 0.45)",
+                              color: "var(--sr-dim)",
                               margin: "0 8px",
                               fontWeight: 400,
                             }}
@@ -465,7 +465,7 @@ export const About: React.FC<{
                       fontFamily: SANS,
                       fontSize: "11.5px",
                       fontWeight: 600,
-                      color: "rgba(15, 23, 42, 0.85)",
+                      color: "var(--sr-body)",
                     }}
                   >
                     {f.text}
@@ -480,7 +480,7 @@ export const About: React.FC<{
             sx={{
               fontFamily: SANS,
               fontSize: "13.5px",
-              color: "#5C6573",
+              color: "var(--sr-body)",
               lineHeight: 1.6,
               margin: 0,
             }}
@@ -635,7 +635,7 @@ export const GalleryTile: React.FC<{
         <Box
           component="span"
           sx={{
-            color: "rgba(15, 23, 42, 0.55)",
+            color: "var(--sr-muted)",
             fontWeight: 400,
             fontSize: "13px",
             fontFamily: SANS,
@@ -686,15 +686,15 @@ export const GalleryTile: React.FC<{
               borderRadius: "12px",
               overflow: "hidden",
               cursor: "pointer",
-              background: "#F1F3F5",
-              border: "1px solid rgba(15, 23, 42, 0.06)",
+              background: "var(--sr-panel-2)",
+              border: "1px solid var(--sr-hairline)",
               transition: "transform 0.15s ease, box-shadow 0.15s ease",
               "&:hover": {
                 transform: "translateY(-1px)",
                 boxShadow: "0 6px 18px rgba(15, 23, 42, 0.12)",
               },
               "&:focus-visible": {
-                outline: "2px solid #2D2D2B",
+                outline: "2px solid var(--sr-ink)",
                 outlineOffset: 2,
               },
             }}
@@ -898,8 +898,8 @@ export const Credentials: React.FC<{ creds: Cred[] }> = ({ creds }) => {
               alignItems: "center",
               gap: "10px",
               padding: "10px 12px",
-              background: "#FFFFFF",
-              border: "1px solid rgba(15, 23, 42, 0.06)",
+              background: "var(--sr-panel)",
+              border: "1px solid var(--sr-hairline)",
               boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
               borderRadius: "12px",
             }}
@@ -927,7 +927,7 @@ export const Credentials: React.FC<{ creds: Cred[] }> = ({ creds }) => {
                   fontFamily: SANS,
                   fontSize: "12px",
                   fontWeight: 700,
-                  color: "#1A2B2E",
+                  color: "var(--sr-ink)",
                   marginBottom: "1px",
                 }}
               >
@@ -937,7 +937,7 @@ export const Credentials: React.FC<{ creds: Cred[] }> = ({ creds }) => {
                 sx={{
                   fontFamily: SANS,
                   fontSize: "10.5px",
-                  color: "rgba(15, 23, 42, 0.72)",
+                  color: "var(--sr-body)",
                 }}
               >
                 {c.meta}
@@ -973,8 +973,8 @@ export const Specialties: React.FC<{ specs: Spec[] }> = ({ specs }) => {
             key={i}
             sx={{
               padding: "12px",
-              background: "#FFFFFF",
-              border: "1px solid rgba(15, 23, 42, 0.06)",
+              background: "var(--sr-panel)",
+              border: "1px solid var(--sr-hairline)",
               boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
               borderRadius: "14px",
               display: "flex",
@@ -988,8 +988,8 @@ export const Specialties: React.FC<{ specs: Spec[] }> = ({ specs }) => {
                 height: 32,
                 borderRadius: "50%",
                 background:
-                  "rgba(45, 45, 43, 0.09)",
-                color: "#4B4B48",
+                  "var(--sr-panel-2)",
+                color: "var(--sr-body)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -1006,7 +1006,7 @@ export const Specialties: React.FC<{ specs: Spec[] }> = ({ specs }) => {
                   fontFamily: SERIF,
                   fontWeight: 500,
                   fontSize: "13px",
-                  color: "#1A2B2E",
+                  color: "var(--sr-ink)",
                   lineHeight: 1.2,
                 }}
               >
@@ -1017,7 +1017,7 @@ export const Specialties: React.FC<{ specs: Spec[] }> = ({ specs }) => {
                   sx={{
                     fontFamily: SANS,
                     fontSize: "9.5px",
-                    color: "rgba(15, 23, 42, 0.72)",
+                    color: "var(--sr-body)",
                     fontWeight: 600,
                     marginTop: "2px",
                   }}
@@ -1059,9 +1059,9 @@ export const Languages: React.FC<{ langs: Lang[] }> = ({ langs }) => {
               alignItems: "center",
               gap: "10px",
               padding: "8px 12px",
-              background: "#FFFFFF",
+              background: "var(--sr-panel)",
               borderRadius: "10px",
-              border: "1px solid rgba(15, 23, 42, 0.06)",
+              border: "1px solid var(--sr-hairline)",
               boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
             }}
           >
@@ -1091,7 +1091,7 @@ export const Languages: React.FC<{ langs: Lang[] }> = ({ langs }) => {
                 fontFamily: SANS,
                 fontSize: "12.5px",
                 fontWeight: 600,
-                color: "#1A2B2E",
+                color: "var(--sr-ink)",
               }}
             >
               {l.name}
@@ -1100,7 +1100,7 @@ export const Languages: React.FC<{ langs: Lang[] }> = ({ langs }) => {
               sx={{
                 fontFamily: SANS,
                 fontSize: "10px",
-                color: "#4A5568",
+                color: "var(--sr-body)",
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
@@ -1133,9 +1133,9 @@ export const Pricing: React.FC<{ items: Price[] }> = ({ items }) => {
               alignItems: "center",
               justifyContent: "space-between",
               padding: "12px 14px",
-              background: "#FFFFFF",
+              background: "var(--sr-panel)",
               borderRadius: "12px",
-              border: "1px solid rgba(15, 23, 42, 0.06)",
+              border: "1px solid var(--sr-hairline)",
               boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
             }}
           >
@@ -1145,7 +1145,7 @@ export const Pricing: React.FC<{ items: Price[] }> = ({ items }) => {
                   fontFamily: SERIF,
                   fontWeight: 500,
                   fontSize: "13px",
-                  color: "#1A2B2E",
+                  color: "var(--sr-ink)",
                 }}
               >
                 {p.name}
@@ -1154,7 +1154,7 @@ export const Pricing: React.FC<{ items: Price[] }> = ({ items }) => {
                 sx={{
                   fontFamily: SANS,
                   fontSize: "10px",
-                  color: "rgba(15, 23, 42, 0.72)",
+                  color: "var(--sr-body)",
                   marginTop: "1px",
                 }}
               >
@@ -1166,7 +1166,7 @@ export const Pricing: React.FC<{ items: Price[] }> = ({ items }) => {
                 fontFamily: SERIF,
                 fontWeight: 600,
                 fontSize: "14px",
-                color: "#4B4B48",
+                color: "var(--sr-body)",
                 letterSpacing: "-0.02em",
               }}
             >
@@ -1223,11 +1223,11 @@ export const Calendar: React.FC<CalendarProps> = ({ days, slots }) => {
                 padding: "8px 10px",
                 borderRadius: "12px",
                 background: active
-                  ? "#2D2D2B"
-                  : "#FFFFFF",
+                  ? "var(--sr-ink)"
+                  : "var(--sr-panel)",
                 border: active
-                  ? "1px solid rgba(255, 255, 255, 0.4)"
-                  : "1px solid rgba(15, 23, 42, 0.06)",
+                  ? "1px solid var(--sr-hairline)"
+                  : "1px solid var(--sr-hairline)",
                 textAlign: "center",
                 minWidth: "50px",
                 cursor: d.unavailable ? "not-allowed" : "pointer",
@@ -1244,7 +1244,7 @@ export const Calendar: React.FC<CalendarProps> = ({ days, slots }) => {
                   fontWeight: 700,
                   textTransform: "uppercase",
                   letterSpacing: "0.05em",
-                  color: active ? "rgba(255, 255, 255, 0.85)" : "rgba(15, 23, 42, 0.72)",
+                  color: active ? "var(--sr-bg)" : "var(--sr-body)",
                 }}
               >
                 {d.dow}
@@ -1254,7 +1254,7 @@ export const Calendar: React.FC<CalendarProps> = ({ days, slots }) => {
                   fontFamily: SERIF,
                   fontWeight: 600,
                   fontSize: "16px",
-                  color: active ? "#fff" : "#1A2B2E",
+                  color: active ? "var(--sr-bg)" : "var(--sr-ink)",
                   marginTop: "1px",
                 }}
               >
@@ -1285,16 +1285,16 @@ export const Calendar: React.FC<CalendarProps> = ({ days, slots }) => {
                 padding: "8px 4px",
                 borderRadius: "10px",
                 background: active
-                  ? "#2D2D2B"
-                  : "#FFFFFF",
+                  ? "var(--sr-ink)"
+                  : "var(--sr-panel)",
                 border: active
-                  ? "1px solid rgba(255, 255, 255, 0.4)"
-                  : "1px solid rgba(15, 23, 42, 0.06)",
+                  ? "1px solid var(--sr-hairline)"
+                  : "1px solid var(--sr-hairline)",
                 textAlign: "center",
                 fontFamily: SANS,
                 fontSize: "11px",
                 fontWeight: 700,
-                color: active ? "#fff" : "#1A2B2E",
+                color: active ? "var(--sr-bg)" : "var(--sr-ink)",
                 cursor: s.taken ? "not-allowed" : "pointer",
                 ...(s.taken && { opacity: 0.4, textDecoration: "line-through" }),
                 boxShadow: active
@@ -1341,7 +1341,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
           fontFamily: SERIF,
           fontWeight: 500,
           fontSize: "17px",
-          color: "#1A2B2E",
+          color: "var(--sr-ink)",
           marginBottom: "8px",
           letterSpacing: "-0.01em",
         }}
@@ -1350,7 +1350,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
         <Box
           component="span"
           sx={{
-            color: "rgba(15, 23, 42, 0.72)",
+            color: "var(--sr-body)",
             fontWeight: 400,
             fontSize: "13px",
             fontFamily: SANS,
@@ -1371,8 +1371,8 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
           alignItems: "center",
           gap: "14px",
           padding: "14px",
-          background: "#FFFFFF",
-          border: "1px solid rgba(15, 23, 42, 0.06)",
+          background: "var(--sr-panel)",
+          border: "1px solid var(--sr-hairline)",
           boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
           borderRadius: "14px",
           marginBottom: "12px",
@@ -1384,7 +1384,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
               fontFamily: SERIF,
               fontWeight: 600,
               fontSize: "32px",
-              color: "#4B4B48",
+              color: "var(--sr-body)",
               letterSpacing: "-0.03em",
               lineHeight: 1,
             }}
@@ -1398,7 +1398,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
             sx={{
               fontFamily: SANS,
               fontSize: "9.5px",
-              color: "rgba(15, 23, 42, 0.72)",
+              color: "var(--sr-body)",
               marginTop: "2px",
               fontWeight: 600,
             }}
@@ -1416,7 +1416,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
                 gap: "6px",
                 fontFamily: SANS,
                 fontSize: "9.5px",
-                color: "rgba(15, 23, 42, 0.72)",
+                color: "var(--sr-body)",
               }}
             >
               <Box sx={{ width: "8px", fontWeight: 700 }}>{b.num}</Box>
@@ -1424,7 +1424,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
                 sx={{
                   flex: 1,
                   height: "4px",
-                  background: "rgba(15, 23, 42, 0.08)",
+                  background: "var(--sr-panel-2)",
                   borderRadius: "2px",
                   overflow: "hidden",
                 }}
@@ -1450,8 +1450,8 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
           key={i}
           sx={{
             padding: "14px",
-            background: "#FFFFFF",
-            border: "1px solid rgba(15, 23, 42, 0.06)",
+            background: "var(--sr-panel)",
+            border: "1px solid var(--sr-hairline)",
             boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
             borderRadius: "14px",
             marginBottom: "8px",
@@ -1489,7 +1489,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
                   fontFamily: SANS,
                   fontSize: "12px",
                   fontWeight: 700,
-                  color: "#1A2B2E",
+                  color: "var(--sr-ink)",
                   display: "flex",
                   alignItems: "center",
                   gap: "5px",
@@ -1509,7 +1509,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
                 <Box
                   component="span"
                   sx={{
-                    color: "rgba(15, 23, 42, 0.72)",
+                    color: "var(--sr-body)",
                     fontWeight: 400,
                     fontSize: "10px",
                   }}
@@ -1521,7 +1521,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
                 sx={{
                   fontFamily: SANS,
                   fontSize: "10px",
-                  color: "rgba(15, 23, 42, 0.72)",
+                  color: "var(--sr-body)",
                   marginTop: "1px",
                 }}
               >
@@ -1536,7 +1536,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
               fontStyle: "italic",
               fontSize: "13px",
               lineHeight: 1.45,
-              color: "#1A2B2E",
+              color: "var(--sr-ink)",
             }}
           >
             &ldquo;{r.quote}&rdquo;
@@ -1548,7 +1548,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ rating, total, buckets, review
         sx={{
           textAlign: "center",
           padding: "8px",
-          color: "#4A5568",
+          color: "var(--sr-body)",
           fontSize: "12px",
           fontWeight: 700,
           fontFamily: SANS,

@@ -147,9 +147,9 @@ const FeaturesPanel: React.FC<Props> = ({ features, languageText }) => {
   return (
     <Box
       sx={{
-        background: "#fff",
+        background: "var(--sr-panel)",
         borderRadius: "14px",
-        border: "1px solid rgba(15,23,42,0.10)",
+        border: "1px solid var(--sr-hairline)",
         overflow: "hidden",
       }}
     >
@@ -157,8 +157,8 @@ const FeaturesPanel: React.FC<Props> = ({ features, languageText }) => {
       <Box
         sx={{
           padding: "12px 16px",
-          background: "#1A2B2E",
-          color: "#fff",
+          background: "var(--sr-ink)",
+          color: "var(--sr-panel)",
         }}
       >
         <Typography
@@ -175,7 +175,7 @@ const FeaturesPanel: React.FC<Props> = ({ features, languageText }) => {
       </Box>
 
       {/* Rolodex rows */}
-      <Stack divider={<Box sx={{ height: "1px", background: "rgba(15,23,42,0.08)" }} />}>
+      <Stack divider={<Box sx={{ height: "1px", background: "var(--sr-line)" }} />}>
         {rows.map((r) => (
           <Box
             key={r.label}
@@ -189,7 +189,7 @@ const FeaturesPanel: React.FC<Props> = ({ features, languageText }) => {
           >
             <Box
               sx={{
-                color: "#4A5568",
+                color: "var(--sr-body)",
                 display: "flex",
                 alignItems: "center",
                 "& svg": { fontSize: 18 },
@@ -203,7 +203,7 @@ const FeaturesPanel: React.FC<Props> = ({ features, languageText }) => {
                 fontFamily: SANS,
                 fontSize: 13,
                 fontWeight: 600,
-                color: "#1A2B2E",
+                color: "var(--sr-ink)",
                 flex: 1,
                 paddingTop: "1px",
               }}
@@ -219,7 +219,7 @@ const FeaturesPanel: React.FC<Props> = ({ features, languageText }) => {
                       fontFamily: SANS,
                       fontSize: 13,
                       fontWeight: 500,
-                      color: "#1A2B2E",
+                      color: "var(--sr-ink)",
                       lineHeight: 1.5,
                     }}
                   >
@@ -232,7 +232,7 @@ const FeaturesPanel: React.FC<Props> = ({ features, languageText }) => {
                     fontFamily: SANS,
                     fontSize: 13,
                     fontWeight: 500,
-                    color: "#1A2B2E",
+                    color: "var(--sr-ink)",
                     lineHeight: 1.5,
                   }}
                 >

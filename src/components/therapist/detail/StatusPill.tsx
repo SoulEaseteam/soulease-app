@@ -108,10 +108,10 @@ const VARIANTS: Record<
     icon: "💤",
     title: "Off duty",
     titleKey: "detail.status.offline",
-    bg: "rgba(15, 23, 42, 0.05)",
-    border: "rgba(15, 23, 42, 0.12)",
-    fg: "rgba(15, 23, 42, 0.6)",
-    iconBg: "rgba(15, 23, 42, 0.4)",
+    bg: "var(--sr-panel-2)",
+    border: "var(--sr-hairline)",
+    fg: "var(--sr-muted)",
+    iconBg: "var(--sr-muted)",
   },
 };
 
@@ -186,6 +186,16 @@ const StatusPill: React.FC<Props> = ({
         gap: "9px",
         cursor: clickable ? "pointer" : "default",
         transition: "transform 0.16s ease, box-shadow 0.16s ease",
+        // 🆕 28t.10 — gentle "blink" glow ONLY while the therapist is
+        //   online/open for work (founder "กระพริบเบาๆ เฉพาะตอนเปิดงาน").
+        animation:
+          status === "online"
+            ? "srPillGlow 2.6s ease-in-out infinite"
+            : "none",
+        "@keyframes srPillGlow": {
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(87,184,139,0)" },
+          "50%": { boxShadow: "0 0 0 4px rgba(87,184,139,0.16)" },
+        },
         "&:hover": clickable
           ? { transform: "translateY(-1px)", boxShadow: `0 6px 16px ${v.border}` }
           : undefined,
@@ -193,6 +203,7 @@ const StatusPill: React.FC<Props> = ({
         "&:focus-visible": clickable
           ? { outline: `2px solid ${v.fg}`, outlineOffset: 2 }
           : undefined,
+        "@media (prefers-reduced-motion: reduce)": { animation: "none" },
       }}
     >
       {/* icon — gentle bounce */}
@@ -226,7 +237,7 @@ const StatusPill: React.FC<Props> = ({
             fontFamily: SERIF,
             fontSize: "13px",
             fontWeight: 700,
-            color: "#232B36",
+            color: "var(--sr-ink)",
             lineHeight: 1.2,
           }}
         >
@@ -236,7 +247,7 @@ const StatusPill: React.FC<Props> = ({
           sx={{
             fontFamily: SANS,
             fontSize: "10.5px",
-            color: "#5C6573",
+            color: "var(--sr-body)",
             lineHeight: 1.35,
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -255,7 +266,9 @@ const StatusPill: React.FC<Props> = ({
             color: v.fg,
             fontSize: "16px",
             fontWeight: 700,
-            animation: "srPillNudge 1.4s ease-in-out infinite",
+            // 🆕 28t.10 — nudge only while online (founder "เฉพาะตอนเปิดงาน").
+            animation:
+              status === "online" ? "srPillNudge 1.4s ease-in-out infinite" : "none",
             "@keyframes srPillNudge": {
               "0%, 100%": { transform: "translateX(0)" },
               "50%": { transform: "translateX(3px)" },

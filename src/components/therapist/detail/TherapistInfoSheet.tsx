@@ -70,7 +70,7 @@ const TherapistInfoSheet: React.FC<Props> = ({
       PaperProps={{
         sx: {
           background:
-            "#F4F6F5",
+            "var(--sr-panel)",
           borderRadius: "24px",
           // 🆕 Round 28r52 — Dialog paper widens on tablet/desktop so
           //   the info sheet fills its column at larger viewports.
@@ -100,8 +100,8 @@ const TherapistInfoSheet: React.FC<Props> = ({
           sx={{
             width: 36,
             height: 36,
-            background: "rgba(184, 92, 60, 0.10)",
-            color: "#1A2B2E",
+            background: "var(--sr-hairline)",
+            color: "var(--sr-ink)",
             "&:hover": {
               background: "rgba(184, 92, 60, 0.18)",
             },
