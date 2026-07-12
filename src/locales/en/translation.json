@@ -396,5 +396,19 @@
   "success.channel.line": "LINE",
   "success.channel.telegram": "Telegram",
   "success.channel.wechat": "WeChat",
-  "success.replyFast": "Concierge typically replies in minutes · 24/7"
+  "success.replyFast": "Concierge typically replies in minutes · 24/7",
+  "available": "Available",
+  "bookable": "Bookable",
+  "offline": "Offline",
+  "holiday": "Holiday",
+  "home.hero.book": "Book Now",
+  "home.quickNav.massage": "Massage",
+  "home.quickNav.therapists": "Therapists",
+  "home.quickNav.nearme": "Near Me",
+  "home.quickNav.pricing": "Pricing",
+  "home.why.title": "Why SunRed",
+  "therapistCard.reviews": "reviews",
+  "therapistCard.sessions": "sessions",
+  "therapistCard.startingFrom": "Starting from",
+  "therapistCard.bookNow": "Book Now"
 }

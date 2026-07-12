@@ -27,8 +27,6 @@ import staticServices from "@/data/services";
 // 🆕 Round 28r79 — dead imports (brand, glass) removed. Only
 //   fonts.heading + gradients.primary are consumed downstream.
 import { fonts, gradients } from "@/theme";
-// 🆕 Round 28r53 — Phase 3.2 responsive typography helpers.
-import { responsiveType } from "@/theme/typography";
 import type { MassageService } from "@/data/services";
 // 🆕 Round 28r4 — same time-aware mode the Hero uses, so the grid
 //   header phrase ("On standby · Bangkok Tonight" / "Concierge resumes
@@ -41,7 +39,6 @@ import { nowBKK } from "@/utils/time";
 // 🆕 Round 28r71 — shared concierge endpoints (r71 rebrand phase 2).
 import { whatsappDeepLink } from "@/config/concierge";
 
-const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
 interface Therapist extends TherapistType {

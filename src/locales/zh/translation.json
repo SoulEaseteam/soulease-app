@@ -491,5 +491,19 @@
   "pay.faq.cancel.q": "取消与改期",
   "pay.faq.cancel.a": "在预约时间前 30 分钟以内，可免费取消或改期。超过该时段——或理疗师已在前往途中——将收取 50% 的服务费，以体现对其所安排时间与行程的尊重。",
   "pay.faq.secure.q": "我的支付信息安全吗？",
-  "pay.faq.secure.a": "安全无虞。我们采用不含服务说明的简明账单、对线上支付方式采用代币化处理，且绝不自行存储您的卡号。您的预约，您的隐私。"
+  "pay.faq.secure.a": "安全无虞。我们采用不含服务说明的简明账单、对线上支付方式采用代币化处理，且绝不自行存储您的卡号。您的预约，您的隐私。",
+  "available": "可预约",
+  "bookable": "可预订",
+  "offline": "休息中",
+  "holiday": "休假中",
+  "home.hero.book": "立即预约",
+  "home.quickNav.massage": "按摩服务",
+  "home.quickNav.therapists": "按摩师",
+  "home.quickNav.nearme": "附近",
+  "home.quickNav.pricing": "价格",
+  "home.why.title": "为什么选择 SunRed",
+  "therapistCard.reviews": "评价",
+  "therapistCard.sessions": "次服务",
+  "therapistCard.startingFrom": "起价",
+  "therapistCard.bookNow": "立即预约"
 }

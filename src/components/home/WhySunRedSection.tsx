@@ -53,7 +53,7 @@ const WhySunRedSection: React.FC = () => {
     {
       key: "support",
       Icon: Headphones,
-      textTh: "แอดมินคอย ตลอดการจอง",
+      textTh: "คอนเซียร์จดูแล ตลอดการจอง",
     },
   ];
 

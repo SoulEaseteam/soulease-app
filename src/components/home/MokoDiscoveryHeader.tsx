@@ -150,8 +150,15 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
             }}
           >
             {/* duplicated once so the loop is seamless (translate -50%) */}
+            {/* dup===1 hidden under prefers-reduced-motion — avoids showing 8 items when animation is off */}
             {[0, 1].map((dup) => (
-              <React.Fragment key={dup}>
+              <Box
+                key={dup}
+                component="span"
+                sx={dup === 1 ? {
+                  "@media (prefers-reduced-motion: reduce)": { display: "none" },
+                } : undefined}
+              >
                 {notices.map((n, i) => (
                   <Box
                     component="span"
@@ -170,7 +177,7 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
                     </Box>
                   </Box>
                 ))}
-              </React.Fragment>
+              </Box>
             ))}
           </Box>
         </Box>

@@ -217,7 +217,7 @@ const ServicesPage: React.FC = () => {
         // 🆕 Round 28r52 — responsiveShell widens through sm/md/lg.
         ...responsiveShell,
         minHeight: "100vh",
-        background: "#F4F6F5",
+        background: "var(--sr-bg)",
         borderRadius: { xs: "28px", md: 0 },
         overflow: "hidden",
         boxShadow: {
@@ -303,12 +303,12 @@ const ServicesPage: React.FC = () => {
                   fontWeight: 700,
                   letterSpacing: "0.18em",
                   textTransform: "uppercase",
-                  color: isActive ? "#fff" : "rgba(15, 23, 42, 0.55)",
+                  color: isActive ? "#fff" : "var(--sr-muted)",
                   transition:
                     "color 0.25s ease, transform 0.18s ease",
                   "&:hover": isActive
                     ? {}
-                    : { color: "#4B4B48", transform: "translateY(-1px)" },
+                    : { color: "var(--sr-ink)", transform: "translateY(-1px)" },
                   "&:active": { transform: "scale(0.96)" },
                   "&:focus-visible": {
                     outline: "2px solid rgba(15, 23, 42, 0.50)",

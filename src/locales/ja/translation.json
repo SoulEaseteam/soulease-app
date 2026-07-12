@@ -396,5 +396,19 @@
   "pay.faq.cancel.q": "キャンセルと日程変更",
   "pay.faq.cancel.a": "ご予約時刻の30分前までは、無料でキャンセルまたは日程変更を承ります。それを過ぎた場合——またはプラクティショナーがすでに移動を開始している場合——は、確保したお時間と移動への敬意として、施術料の50%を申し受けます。",
   "pay.faq.secure.q": "支払い情報は安全に保護されますか？",
-  "pay.faq.secure.a": "はい、ご安心ください。明細にはサービス内容を記載しないシンプルな表記を用い、オンライン決済にはトークン化処理を施し、カード番号を当方で保管することは一切ございません。お客様のご予約は、お客様のプライバシーです。"
+  "pay.faq.secure.a": "はい、ご安心ください。明細にはサービス内容を記載しないシンプルな表記を用い、オンライン決済にはトークン化処理を施し、カード番号を当方で保管することは一切ございません。お客様のご予約は、お客様のプライバシーです。",
+  "available": "空き有り",
+  "bookable": "予約可",
+  "offline": "オフライン",
+  "holiday": "休暇中",
+  "home.hero.book": "今すぐ予約",
+  "home.quickNav.massage": "マッサージ",
+  "home.quickNav.therapists": "セラピスト",
+  "home.quickNav.nearme": "近くの",
+  "home.quickNav.pricing": "料金",
+  "home.why.title": "SunRedを選ぶ理由",
+  "therapistCard.reviews": "件のレビュー",
+  "therapistCard.sessions": "回のセッション",
+  "therapistCard.startingFrom": "料金",
+  "therapistCard.bookNow": "予約する"
 }

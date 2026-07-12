@@ -39,11 +39,21 @@ type FooterLink = {
 const HomeFooterV2: React.FC = () => {
   const navigate = useNavigate();
 
+  const scrollToTherapistGrid = () => {
+    const el = document.getElementById("therapist-grid");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      // Not on home page — navigate home then scroll
+      navigate("/");
+    }
+  };
+
   const menuLinks: FooterLink[] = [
     { label: "หน้าแรก", onClick: () => navigate("/") },
     { label: "บริการ", onClick: () => navigate("/services") },
-    { label: "หมอนวด", onClick: () => navigate("/") }, // grid is on home
-    { label: "สถานที่", onClick: () => navigate("/services?tab=how") },
+    { label: "หมอนวด", onClick: scrollToTherapistGrid },
+    { label: "สถานที่", onClick: () => navigate("/near-me") },
     { label: "ราคา", onClick: () => navigate("/pricing") },
   ];
 

@@ -200,7 +200,6 @@ const TherapistMinimalCard: React.FC<Props> = ({
   return (
     <Box
       onClick={handleCardTap}
-      role="button"
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -579,7 +578,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
                     fontFamily: fonts.body,
                     fontSize: "13px",
                     fontWeight: 700,
-                    color: "#ff651e",
+                    color: "var(--sr-ink)",
                   }}
                 >
                   {therapist.rating.toFixed(1)}
