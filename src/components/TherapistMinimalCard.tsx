@@ -754,7 +754,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
               borderRadius: "999px",
               background: isOffDuty
                 ? "var(--sr-panel-2)"
-                : "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
+                : "linear-gradient(135deg,#E6B7A0 0%,#D28E78 48%,#BA7362 100%)",
               color: isOffDuty ? "var(--sr-dim)" : "#FFF7F0",
               border: "none",
               cursor: isOffDuty ? "not-allowed" : "pointer",
@@ -769,7 +769,7 @@ const TherapistMinimalCard: React.FC<Props> = ({
               "&:hover": isOffDuty
                 ? {}
                 : {
-                    background: "linear-gradient(135deg,#C96F89 0%,#B36079 100%)",
+                    background: "linear-gradient(135deg,#D28E78 0%,#A9614F 100%)",
                     transform: "translateY(-1px)",
                   },
               "&:focus-visible": {

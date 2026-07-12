@@ -29,8 +29,8 @@ const IVORY_HEAD = "var(--sr-ink)"; // heading
 const CHAMPAGNE_SUB = "var(--sr-muted)"; // subtitle (muted)
 const CREAM_PERK = "var(--sr-body)"; // perk text
 const GOLD_CHIP = "#D2B67C"; // tick circle (gold — accent fill, kept)
-const BTN_BG = "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)"; // ROSE CTA fill
-const BTN_BG_HOVER = "linear-gradient(135deg,#C96F89 0%,#B36079 100%)";
+const BTN_BG = "linear-gradient(135deg,#E6B7A0 0%,#D28E78 48%,#BA7362 100%)"; // ROSE CTA fill
+const BTN_BG_HOVER = "linear-gradient(135deg,#D28E78 0%,#A9614F 100%)";
 
 const MembershipCard: React.FC = () => {
   const { t } = useTranslation();

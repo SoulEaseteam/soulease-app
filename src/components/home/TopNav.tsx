@@ -505,7 +505,7 @@ const TopNav: React.FC = () => {
             alignItems: "center",
             gap: "8px",
             // 🕯️ 28t — dusty-rose gradient concierge pill (both home + inner).
-            background: "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
+            background: "linear-gradient(135deg,#E6B7A0 0%,#D28E78 48%,#BA7362 100%)",
             border: "none",
             color: "#FFF7F0",
             fontFamily: SANS,
@@ -801,7 +801,7 @@ const TopNav: React.FC = () => {
                 padding: "12px 14px",
                 borderRadius: "12px",
                 background:
-                  "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
+                  "linear-gradient(135deg,#E6B7A0 0%,#D28E78 48%,#BA7362 100%)",
                 border: "none",
                 color: "#FFF7F0",
                 fontFamily: SANS,

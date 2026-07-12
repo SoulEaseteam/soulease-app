@@ -165,14 +165,14 @@ export const brand = {
 // ─────────────────────────────────────────────────────────────────────
 export const gradients = {
   /** Primary CTA — dusty-rose gradient (28t dark-luxury) */
-  primary: "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
+  primary: "linear-gradient(135deg,#E6B7A0 0%,#D28E78 48%,#BA7362 100%)",
   /** Section background — flat espresso ground */
   surface: NEUTRAL_50,
   /** Final hero CTA — dusty-rose gradient */
-  finalCta: "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
+  finalCta: "linear-gradient(135deg,#E6B7A0 0%,#D28E78 48%,#BA7362 100%)",
 
   // legacy aliases
-  primaryHover: "linear-gradient(135deg,#C96F89 0%,#B36079 100%)", // deeper rose on hover
+  primaryHover: "linear-gradient(135deg,#D28E78 0%,#A9614F 100%)", // deeper rose on hover
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────
