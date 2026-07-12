@@ -160,17 +160,17 @@ const HomeHero: React.FC = () => {
               width: 7,
               height: 7,
               borderRadius: "50%",
-              background: "#A2846A",
+              background: "#57B88B",
               flexShrink: 0,
               // 🆕 28s333 — soft "live" pulse, slow + calm (spa breathing).
               animation: "heroDotPulse 3.4s ease-in-out infinite",
               "@keyframes heroDotPulse": {
-                "0%, 100%": { boxShadow: "0 0 0 3px rgba(162,132,106,0.22)" },
-                "50%": { boxShadow: "0 0 0 5px rgba(162,132,106,0.08)" },
+                "0%, 100%": { boxShadow: "0 0 0 3px rgba(87,184,139,0.22)" },
+                "50%": { boxShadow: "0 0 0 5px rgba(87,184,139,0.08)" },
               },
               "@media (prefers-reduced-motion: reduce)": {
                 animation: "none",
-                boxShadow: "0 0 0 3px rgba(162,132,106,0.22)",
+                boxShadow: "0 0 0 3px rgba(87,184,139,0.22)",
               },
             }}
           />

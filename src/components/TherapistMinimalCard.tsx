@@ -136,8 +136,8 @@ const TherapistMinimalCard: React.FC<Props> = ({
   > = {
     // 🕯️ 28t — founder badge spec: VIP gold+brown · NEW rose+white · HOT
     //   #F56B6B+white · TOP STAR gold+brown.
-    TOP_RATED: { label: "TOP STAR", bg: "#D2B67C",     color: "#4C3415" },
-    VIP:       { label: "VIP",        bg: "#D2B67C",     color: "#4C3415" },
+    TOP_RATED: { label: "TOP STAR", bg: "#F4C542",     color: "#232B36" },
+    VIP:       { label: "VIP",        bg: "#B8567F",     color: "#FFFFFF" },
     HOT:       { label: "HOT",        bg: "#F56B6B",     color: "#FFFFFF" },
     NEW:       { label: "NEW",        bg: "#D97C95",     color: "#FFFFFF" },
   };

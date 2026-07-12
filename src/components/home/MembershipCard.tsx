@@ -28,7 +28,7 @@ const MEMBER_IMG = "/images/hero/member.png";
 const IVORY_HEAD = "var(--sr-ink)"; // heading
 const CHAMPAGNE_SUB = "var(--sr-muted)"; // subtitle (muted)
 const CREAM_PERK = "var(--sr-body)"; // perk text
-const GOLD_CHIP = "#D2B67C"; // tick circle (gold — accent fill, kept)
+const GOLD_CHIP = "#57B88B"; // tick circle — green "included" (gold retired)
 const BTN_BG = "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)"; // ROSE CTA fill
 const BTN_BG_HOVER = "linear-gradient(135deg,#C96F89 0%,#B36079 100%)";
 
@@ -163,7 +163,7 @@ const MembershipCard: React.FC = () => {
                   flexShrink: 0,
                 }}
               >
-                <Check size={13} weight="bold" color="#2A1B10" />
+                <Check size={13} weight="bold" color="#FFFFFF" />
               </Box>
               {perk}
             </Box>

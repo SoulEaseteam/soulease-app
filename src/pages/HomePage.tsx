@@ -39,10 +39,8 @@ import BundleSection from "@/components/common/BundleSection";
 //   wants richer content back ("มีแค่นี้ หรอ" · 2026-07-08 · live site
 //   feedback). See individual component files for per-section notes.
 import QuickNavRow from "@/components/home/QuickNavRow";
-import MokoPromoBanner from "@/components/home/MokoPromoBanner";
 import MembershipCard from "@/components/home/MembershipCard";
 import WhySunRedSection from "@/components/home/WhySunRedSection";
-import EditorialBanner from "@/components/home/EditorialBanner";
 import HomeFooterV2 from "@/components/home/HomeFooterV2";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell replaces the old
 //   maxWidth: 430px cage so the home widens on tablet/desktop.
@@ -146,11 +144,6 @@ const HomePage: React.FC = () => {
           scrolls to the `#therapist-grid` wrapper below. */}
       <QuickNavRow />
 
-      {/* 🆕 28s383 — Moko-style pink promo banner (founder "จัดเต็ม
-          เหมือน mokofans"). Magenta→violet gradient, discreet welcome-offer
-          copy, taps through to the practitioner list. */}
-      <MokoPromoBanner />
-
       {/* 🆕 Round 28r58 — Bundle Packages between the hero and the
           therapist grid. Self-hides on empty, so no layout impact
           until admin ships a bundle via /admin/promotions. */}
@@ -166,15 +159,11 @@ const HomePage: React.FC = () => {
         <HomeTherapistGrid />
       </Box>
 
-      {/* 🆕 Round 28r74 — 4 Nordic marketing sections in the order
-          approved in the mockup (outputs/sunred-nordic-gray-mockup.html
-          phone 2): Membership benefits → Why SunRed → Editorial banner
-          → Footer. Each carries its own vertical rhythm (24-36px) so
-          the scroll reads as a calm editorial column, not a stack of
-          equally-weighted marketing tiles. */}
+      {/* 🆕 Round 28r74 — home marketing sections. 28t.6 (founder): the
+          Moko promo banner + Editorial banner were removed — they read
+          dated. Membership → Why SunRed → Footer remain. */}
       <MembershipCard />
       <WhySunRedSection />
-      <EditorialBanner />
       <HomeFooterV2 />
 
       {/* Bottom spacer keeps the footer above MainLayout's

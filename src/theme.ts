@@ -35,9 +35,9 @@ const GRAY_600 = "var(--sr-body)";         // body text
 const GRAY_800 = "var(--sr-ink)";          // heading + primary TEXT
 const GRAY_900 = "var(--sr-ink)";          // headline ink
 
-// Warm accents (FIXED both modes)
-const WARM_100 = "#D9A98A";     // warm tan light
-const WARM_200 = "#CA906F";     // Warm Tan (skin / secondary fill)
+// Accent tints (FIXED both modes) — tan retired (read dated) → rose family
+const WARM_100 = "#E8A9BE";     // light rose
+const WARM_200 = "#D97C95";     // rose (skin / secondary fill)
 const SAGE_400 = "#57B88B"; // success / online / "available" → green (founder semantic)
 
 // ── Dusty-rose primary CTA (was WARM_TAUPE) ────────────────────────
@@ -117,7 +117,7 @@ export const brand = {
   green: SAGE_400,             // online dot / success (was #16A34A)
 
   // ── Small accent palette — dark-luxury signature is Soft Gold
-  amber: "var(--sr-gold-text)", // ★ star ratings · badges — gold (per mode)
+  amber: "#F4C542", // ★ star ratings — bright fresh gold-yellow
   pink: "rgba(217,124,149,0.16)", // favourite bg · soft rose highlight
   tagBlue: NEUTRAL_100,        // tag chip bg
   tagPeach: NEUTRAL_200,       // tag chip bg (warmer variant)
@@ -269,10 +269,10 @@ const theme = createTheme({
       contrastText: "#FFFFFF",
     },
     secondary: {
-      main: "#D2B67C",           // Luxury Gold
-      light: "#E4C888",
-      dark: WARM_200,            // Warm Tan
-      contrastText: "#4C3415",   // deep brown on gold
+      main: "#D97C95",           // rose (gold retired — read dated)
+      light: "#E8A9BE",
+      dark: "#C96F89",
+      contrastText: "#FFFFFF",
     },
     success: { main: "#57B88B" }, // Available green (founder semantic)
     background: {
@@ -284,10 +284,10 @@ const theme = createTheme({
       secondary: GRAY_500,       // → var(--sr-muted)
     },
     // MUI runs palette.divider through colour math (can't parse var()), so
-    // this stays a fixed warm translucent that reads on both light + dark.
+    // this stays a fixed neutral translucent that reads on both light + dark.
     // Per-component dividers that need the exact day/night line override
     // `borderColor: var(--sr-line)` in sx.
-    divider: "rgba(150, 125, 100, 0.22)",
+    divider: "rgba(140, 147, 160, 0.22)",
   },
 
   shape: {
@@ -372,7 +372,7 @@ const theme = createTheme({
           // Ivory — would vanish on white, so hardcode dark ink here).
           backgroundColor: "#FFFFFF",
           backgroundImage: "none",
-          color: "#2A1B14",
+          color: "#232B36",
           border: "1px solid rgba(31,41,51,0.12)",
           borderRadius: 16,
           boxShadow: "0 14px 44px rgba(15,23,42,0.20)",
