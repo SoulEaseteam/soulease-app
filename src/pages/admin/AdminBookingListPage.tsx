@@ -98,7 +98,7 @@ import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 //   uses the SAME shared commission split as Earnings/Reports (currently
 //   flat 60/40, see commission.ts) so this summary number can never drift
 //   from what those two pages say — the exact bug the 28s247 audit fixed.
-import { commissionBaseFor, therapistPayoutFor, stampSplit } from "@/utils/commission";
+import { commissionBaseFor, therapistPayoutFor, stampSplit, isPayrollExcluded } from "@/utils/commission";
 // 🆕 28s260 (founder: "เพิ่มวิธีการจ่ายด้วย") — WeChat/Alipay carry a 5%+฿200
 //   surcharge (same rule as the customer flow + AdminBookingAddPage).
 //   Editing payment method is a price-affecting edit, so the total gets
@@ -304,7 +304,11 @@ const AdminBookingListPage: React.FC = () => {
       filters.push(where("createdAt", ">=", Timestamp.fromDate(customStart.startOf("day").toDate())));
       filters.push(where("createdAt", "<=", Timestamp.fromDate(customEnd.endOf("day").toDate())));
     }
-    filters.push(orderBy("createdAt", "desc"), limit(feedSize));
+    // 🆕 28w.44 (founder "all คือ งานทั้งหมด ไม่จำกัดไว้ที่ 500 เพราะทำให้
+    //   Revenue ไม่ตรง") — no 500 cap: load EVERY booking so Booked Value /
+    //   Shop Revenue + tab counts are exact. Custom date ranges are still
+    //   bounded by the where() clauses above.
+    filters.push(orderBy("createdAt", "desc"));
     const q = query(collection(db, "bookings"), ...filters);
     const unsub = onSnapshot(q, (snap) => {
       setBookings(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Booking)));
@@ -313,7 +317,9 @@ const AdminBookingListPage: React.FC = () => {
     return () => unsub();
   }, [dateMode, customStart, customEnd, feedSize]);
 
-  const atCap = bookings.length >= feedSize;
+  // 🆕 28w.44 — the 500 cap is gone (all bookings load), so the "showing
+  //   latest N" note + the Load-more button (both gated on atCap) are retired.
+  const atCap = false;
 
   // 🆕 28s254 — therapist option list from the date-scoped set only (not
   //   further narrowed by payment), so switching one filter never collapses
@@ -355,14 +361,21 @@ const AdminBookingListPage: React.FC = () => {
   //   is a quick list-page figure, not a replacement for the Earnings page.
   const valueStats = useMemo(() => {
     let totalValue = 0, activeCount = 0, shopRevenue = 0;
+    // 🆕 28w.44 (founder "ยกเลิก ให้แสดงยอดแยกต่างหาก") — track cancelled
+    //   value/count separately so it's a stat of its own, not just excluded.
+    let cancelledValue = 0, cancelledCount = 0;
     for (const b of faceted) {
-      if (b.status === "cancelled") continue;
+      if (isPayrollExcluded(b.status)) {
+        cancelledCount++;
+        cancelledValue += b.totalPrice ?? b.total ?? 0;
+        continue;
+      }
       activeCount++;
       totalValue += b.totalPrice ?? b.total ?? 0;
       const base = commissionBaseFor(b);
       shopRevenue += base - therapistPayoutFor(b);
     }
-    return { totalValue, activeCount, shopRevenue };
+    return { totalValue, activeCount, shopRevenue, cancelledValue, cancelledCount };
   }, [faceted]);
 
   // ── filtered list (facets + tab + search) ──────────────────────────
@@ -596,7 +609,13 @@ const AdminBookingListPage: React.FC = () => {
         sx={{
           px: { xs: 2, md: 3 }, pt: 2.5,
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "repeat(2,1fr)", md: "repeat(4,1fr)" },
+          // 🆕 28w.44 — auto-fit so the 5 stat cards (incl. Cancelled) flow
+          //   without overflowing on any width; mobile stacks 1-up.
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "repeat(2,1fr)",
+            md: "repeat(auto-fit, minmax(150px, 1fr))",
+          },
           gap: 1.25,
         }}
       >
@@ -604,6 +623,9 @@ const AdminBookingListPage: React.FC = () => {
           { label: "Needs Action", labelTh: "ต้องดำเนินการ",  value: String(counts.pending),           sub: "pending confirmation · รอยืนยัน", color: adminColor.amber,     icon: <Warning   size={20} weight="duotone" /> },
           { label: "In Progress",  labelTh: "กำลังดำเนินการ", value: String(counts.confirmed),         sub: "confirmed · ยืนยันแล้ว",           color: adminColor.accent,    icon: <Clock     size={20} weight="duotone" /> },
           { label: "Booked Value", labelTh: "มูลค่ารวม",       value: formatTHB(valueStats.totalValue), sub: `${valueStats.activeCount} bookings · ไม่รวมยกเลิก`, color: adminColor.highlight, icon: <Wallet    size={20} weight="duotone" /> },
+          // 🆕 28w.44 (founder "ยกเลิก ให้แสดงยอดแยกต่างหาก") — cancelled value
+          //   as its own stat, so it isn't silently folded out of Booked Value.
+          { label: "Cancelled",    labelTh: "ยกเลิก",          value: formatTHB(valueStats.cancelledValue), sub: `${valueStats.cancelledCount} bookings · ยกเลิก/คืนเงิน`, color: adminColor.dim, icon: <XCircle size={20} weight="duotone" /> },
           // 🆕 28s258 — shop-revenue was an inline tag under Booked Value; r44
           //   promotes it to a peer stat card (same commission split as
           //   Earnings/Reports — see commission.ts).
