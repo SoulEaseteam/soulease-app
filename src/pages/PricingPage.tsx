@@ -500,46 +500,21 @@ const PricingPage: React.FC = () => {
                     >
                       {d} min
                     </Box>
-                    {/* 🆕 28r115 (founder "ปรับราคาลง ไส่ขีด") — visual
-                        sale display.  Struck-through "was" price is the
-                        current price × 1.20 rounded up to the nearest
-                        hundred; actual booking / payment logic stays on
-                        the un-discounted `priceForDuration()` value. */}
+                    {/* 🆕 28r117 (founder "เอาราคาที่ขีดออก · โชว์แค่
+                        ราคาสีชมพู") — the r115 struck-through "was"
+                        price was removed; only the rose current price
+                        shows. */}
                     <Box
+                      component="span"
                       sx={{
-                        display: "inline-flex",
-                        alignItems: "baseline",
-                        gap: "8px",
+                        fontFamily: fonts.heading,
+                        fontSize: { xs: 17, md: 18 },
+                        fontWeight: 600,
+                        color: ROSE,
+                        letterSpacing: "-0.005em",
                       }}
                     >
-                      <Box
-                        component="span"
-                        aria-hidden
-                        sx={{
-                          fontFamily: fonts.body,
-                          fontSize: { xs: 12.5, md: 13 },
-                          fontWeight: 500,
-                          color: grays.g600,
-                          textDecoration: "line-through",
-                          textDecorationColor: grays.g600,
-                          textDecorationThickness: "1.5px",
-                          opacity: 0.85,
-                        }}
-                      >
-                        {formatTHB(Math.ceil((priceAt(d) * 1.20) / 100) * 100)}
-                      </Box>
-                      <Box
-                        component="span"
-                        sx={{
-                          fontFamily: fonts.heading,
-                          fontSize: { xs: 17, md: 18 },
-                          fontWeight: 600,
-                          color: ROSE,
-                          letterSpacing: "-0.005em",
-                        }}
-                      >
-                        {formatTHB(priceAt(d))}
-                      </Box>
+                      {formatTHB(priceAt(d))}
                     </Box>
                   </Box>
                 ))}
