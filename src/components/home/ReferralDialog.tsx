@@ -43,9 +43,19 @@ import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/providers/AuthProvider";
 import { brand, fonts } from "@/theme";
+// 🆕 Round 28w.20 (founder: "ในแอดมินไม่เชื่อมต่อ … แก้ฝั่งแอดมินด้วยให้เชื่อมต่อ")
+//   — wire the dialog to the live admin promo state so it never advertises a
+//   reward the booking flow wouldn't honour. `PROMOS_ENABLED` is the master
+//   switch (off by default); `getReferralConfig()` is the effective REFERRAL
+//   reward + enabled flag from the admin Promotions page.
+import { PROMOS_ENABLED } from "@/config/featureFlags";
+import { getReferralConfig } from "@/utils/discount";
 
-const REFERRAL_REWARD_THB = 200;
 const SHARE_HOST = "https://sunred.vip";
+
+// Rose theme (Round 28w) — retired the dated taupe #8F8474 banner/button.
+const ROSE = "#D97C95";
+const ROSE_DEEP = "#C96F89";
 
 interface Props {
   open: boolean;
@@ -75,6 +85,16 @@ const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
   const { user } = useAuth();
   const u = user;
 
+  // 🆕 Round 28w.20 — live referral state. `live` requires BOTH the promos
+  //   master switch AND the REFERRAL code enabled in admin; `rewardThb` is
+  //   the admin-set amount (default ฿200). Read at render: the dialog
+  //   re-renders whenever it's opened, by which point MaintenanceGate has
+  //   already applied the live config from adminSettings/publicRules.
+  const refCfg = getReferralConfig();
+  const live = PROMOS_ENABLED && refCfg.enabled;
+  const rewardThb = refCfg.amountThb;
+  const rewardLabel = rewardThb.toLocaleString();
+
   const code = useMemo(
     () => deriveReferralCode(u?.uid ?? u?.email ?? null),
     [u?.uid, u?.email]
@@ -84,7 +104,7 @@ const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
 
   const shareText = t(
     "referral.shareText",
-    `I love SunRed — premium outcall massage delivered to your Bangkok hotel. Use my code ${code} for ${REFERRAL_REWARD_THB.toLocaleString()}฿ off your first booking: ${SHARE_HOST}/?ref=${code}`
+    `I love SunRed — premium outcall massage delivered to your Bangkok hotel. Use my code ${code} for ${rewardLabel}฿ off your first booking: ${SHARE_HOST}/?ref=${code}`
   );
 
   const handleCopy = async () => {
@@ -146,7 +166,7 @@ const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
       <Box
         sx={{
           padding: "20px 22px 18px",
-          background: "#8F8474",
+          background: `linear-gradient(135deg, ${ROSE} 0%, ${ROSE_DEEP} 100%)`,
           color: "#fff",
           position: "relative",
           overflow: "hidden",
@@ -224,10 +244,12 @@ const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
                 marginTop: "2px",
               }}
             >
-              {t(
-                "referral.title",
-                `Give ${REFERRAL_REWARD_THB.toLocaleString()}฿ · Get ${REFERRAL_REWARD_THB.toLocaleString()}฿`
-              )}
+              {live
+                ? t(
+                    "referral.title",
+                    `Give ${rewardLabel}฿ · Get ${rewardLabel}฿`
+                  )
+                : t("referral.comingSoonTitle", "Coming soon")}
             </Typography>
           </Box>
         </Stack>
@@ -236,22 +258,44 @@ const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
       <DialogTitle sx={{ display: "none" }}>{t("referral.title", "Refer & earn")}</DialogTitle>
 
       <DialogContent sx={{ padding: "18px 22px 22px" }}>
-        <Typography
-          sx={{
-            fontFamily: fonts.body,
-            fontSize: 13,
-            color: brand.textMuted,
-            lineHeight: 1.55,
-            marginBottom: 2,
-          }}
-        >
-          {t(
-            "referral.intro",
-            // 🆕 Round 28r79 — CLAUDE.md §3 euphemism: "discount"
-            //   → "complimentary credit". Same math, brand-safe copy.
-            "Share your code with friends. They receive a complimentary credit on their first reservation, and you receive the same credit once they complete it."
-          )}
-        </Typography>
+        {!live ? (
+          // 🆕 Round 28w.20 — inactive state: promos are OFF site-wide OR
+          //   the REFERRAL code is disabled in admin. Show an honest "being
+          //   prepared" note instead of a shareable code the booking flow
+          //   would refuse to honour. No code card, no share CTA.
+          <Typography
+            sx={{
+              fontFamily: fonts.body,
+              fontSize: 13.5,
+              color: brand.textMuted,
+              lineHeight: 1.65,
+              textAlign: "center",
+              padding: "8px 4px 6px",
+            }}
+          >
+            {t(
+              "referral.inactive",
+              "Our referral rewards are being prepared. Your concierge will share your personal code the moment the programme opens."
+            )}
+          </Typography>
+        ) : (
+          <>
+            <Typography
+              sx={{
+                fontFamily: fonts.body,
+                fontSize: 13,
+                color: brand.textMuted,
+                lineHeight: 1.55,
+                marginBottom: 2,
+              }}
+            >
+              {t(
+                "referral.intro",
+                // 🆕 Round 28r79 — CLAUDE.md §3 euphemism: "discount"
+                //   → "complimentary credit". Same math, brand-safe copy.
+                "Share your code with friends. They receive a complimentary credit on their first reservation, and you receive the same credit once they complete it."
+              )}
+            </Typography>
 
         {/* Referral code card */}
         <Box
@@ -323,17 +367,17 @@ const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
           startIcon={<IosShareRoundedIcon />}
           onClick={() => void handleShare()}
           sx={{
-            background: "#8F8474",
+            background: `linear-gradient(135deg, ${ROSE} 0%, ${ROSE_DEEP} 100%)`,
             textTransform: "none",
             fontFamily: fonts.body,
             fontWeight: 700,
             fontSize: 14,
             padding: "11px",
             borderRadius: "12px",
-            boxShadow: "0 6px 18px rgba(15, 23, 42, 0.28)",
+            boxShadow: "0 6px 18px rgba(138, 58, 87, 0.30)",
             "&:hover": {
-              background: "#7A7060",
-              boxShadow: "0 8px 22px rgba(15, 23, 42, 0.36)",
+              background: `linear-gradient(135deg, ${ROSE_DEEP} 0%, #B85F79 100%)`,
+              boxShadow: "0 8px 22px rgba(138, 58, 87, 0.40)",
             },
           }}
         >
@@ -357,6 +401,8 @@ const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
             "Reward credited after their first completed session. One use per friend. Valid on Thai & Aromatherapy menu."
           )}
         </Typography>
+          </>
+        )}
       </DialogContent>
 
       <Snackbar

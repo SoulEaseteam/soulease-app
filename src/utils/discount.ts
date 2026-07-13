@@ -280,6 +280,38 @@ function builtinOverrideRejects(code: string, subtotalTHB: number): boolean {
 }
 
 /**
+ * 🆕 Round 28w.20 (founder: "แก้ฝั่งแอดมินด้วยให้เชื่อมต่อ") — the customer
+ * Refer & earn dialog used to hard-code "Give ฿200 · Get ฿200 · SUN-WELCOME"
+ * with zero regard for whether the referral code was actually released. It
+ * now reads its state HERE so it can never advertise a reward the booking
+ * flow wouldn't honour.
+ *
+ * Returns the effective flat referral reward + whether the REFERRAL built-in
+ * is currently live (not admin-disabled, not soft-deleted). This deliberately
+ * does NOT consult `PROMOS_ENABLED` — that master gate is layered on by the
+ * caller, exactly the same split as `validateDiscount` (pure) vs
+ * BookingFlowPage (applies `PROMOS_ENABLED && discount.valid`).
+ */
+export function getReferralConfig(): {
+  /** REFERRAL built-in is enabled AND not soft-deleted in admin. */
+  enabled: boolean;
+  /** Effective flat reward in THB (admin `amount` override, else default). */
+  amountThb: number;
+  /** Admin label override, or null when using the default copy. */
+  label: string | null;
+} {
+  const disabled = disabledBuiltinCodes.has("REFERRAL");
+  const deleted = isBuiltinDeleted("REFERRAL");
+  const ov = builtinOverrides["REFERRAL"];
+  const amountThb =
+    typeof ov?.amount === "number" && ov.amount >= 0
+      ? ov.amount
+      : REFERRAL_FIXED_THB;
+  const label = ov?.label?.trim() ? ov.label.trim() : null;
+  return { enabled: !disabled && !deleted, amountThb, label };
+}
+
+/**
  * 🆕 Round 28s299 — redemption caps live on the custom-code definition
  * but are enforced with a booking-count query at submit time (see
  * BookingFlowPage), since validateDiscount is pure/sync. This getter

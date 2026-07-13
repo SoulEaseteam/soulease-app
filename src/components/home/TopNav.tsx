@@ -49,6 +49,12 @@ import LocalOfferRoundedIcon from "@mui/icons-material/LocalOfferRounded";
 import AdminPanelSettingsRoundedIcon from "@mui/icons-material/AdminPanelSettingsRounded";
 import { useAuth } from "@/providers/AuthProvider";
 import ReferralDialog from "@/components/home/ReferralDialog";
+// 🆕 Round 28w.20 — the Refer & earn drawer hint mirrors the dialog: it only
+//   promises "Give X · Get X" when the referral program is actually live
+//   (promos master switch on + REFERRAL code enabled in admin), else "Coming
+//   soon" — so drawer + dialog never disagree.
+import { PROMOS_ENABLED } from "@/config/featureFlags";
+import { getReferralConfig } from "@/utils/discount";
 import SunRedWordmark from "@/components/common/SunRedWordmark";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 // 🆕 Round 28r79 — dead imports removed. `useConciergeMode`, `brand`,
@@ -211,6 +217,11 @@ const TopNav: React.FC = () => {
   const isLoggedIn = Boolean(user);
   const isAdmin = role === "admin";
   const isTherapist = role === "therapist";
+
+  // 🆕 Round 28w.20 — live referral state for the drawer hint (see the
+  //   INFO_ITEMS render below). Same gate the dialog uses.
+  const referralCfg = getReferralConfig();
+  const referralLive = PROMOS_ENABLED && referralCfg.enabled;
 
   // 🆕 Round 28r52 — Desktop mode: md+ (>= 900px) gets a horizontal
   //   nav row with real link buttons + concierge CTA. Mobile (<900px)
@@ -775,9 +786,28 @@ const TopNav: React.FC = () => {
           component="ul"
           sx={{ listStyle: "none", margin: 0, padding: "0 8px 8px" }}
         >
-          {INFO_ITEMS.map((item) =>
-            renderNavRow(item, location, (k, def) => t(k, def), handleNavItem)
-          )}
+          {INFO_ITEMS.map((item) => {
+            // 🆕 Round 28w.20 — swap the referral row's hint for the live
+            //   state so it never over-promises while promos are off. Drop
+            //   hintKey so the dynamic default renders (not a stale "Give 200"
+            //   translation).
+            const rendered =
+              item.action === "openReferral"
+                ? {
+                    ...item,
+                    hintKey: undefined,
+                    defaultHint: referralLive
+                      ? `Give ${referralCfg.amountThb.toLocaleString()}฿ · Get ${referralCfg.amountThb.toLocaleString()}฿`
+                      : "Coming soon",
+                  }
+                : item;
+            return renderNavRow(
+              rendered,
+              location,
+              (k, def) => t(k, def),
+              handleNavItem
+            );
+          })}
         </Box>
 
         <Box sx={{ height: "1px", background: "var(--sr-hairline)", mx: 2 }} />
@@ -897,7 +927,11 @@ function renderNavRow(
     ? location.pathname + location.search === item.path
     : false;
   const key = item.path ?? `action:${item.action ?? ""}:${item.labelKey}`;
-  const hint = item.hintKey ? t(item.hintKey, item.defaultHint ?? "") : null;
+  // 🆕 Round 28w.20 — fall back to defaultHint when hintKey is cleared (the
+  //   referral row injects a dynamic hint with no key; see INFO_ITEMS render).
+  const hint = item.hintKey
+    ? t(item.hintKey, item.defaultHint ?? "")
+    : item.defaultHint ?? null;
 
   return (
     <Box component="li" key={key} sx={{ listStyle: "none" }}>

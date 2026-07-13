@@ -1677,6 +1677,27 @@ const AdminPromotionsPage: React.FC = () => {
                     {extras.length > 0 && (
                       <Typography sx={{ fontSize: 10.5, color: adminColor.dim }}>{extras.join(" · ")}</Typography>
                     )}
+                    {/* 🆕 Round 28w.20 (founder: "แก้ฝั่งแอดมินด้วยให้เชื่อมต่อ")
+                        — the customer Refer & earn dialog now reads this code's
+                        live state. Surface here whether it's actually showing,
+                        so on/off + amount aren't a mystery. */}
+                    {b.code === "REFERRAL" && (
+                      <Typography
+                        sx={{
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          mt: 0.25,
+                          color:
+                            promosEnabled && enabled && !deleted
+                              ? adminColor.green
+                              : adminColor.amber,
+                        }}
+                      >
+                        {promosEnabled && enabled && !deleted
+                          ? `เชื่อมหน้า Refer & earn ลูกค้าแล้ว — กำลังแสดง Give ฿${effAmount} / Get ฿${effAmount}`
+                          : "หน้า Refer & earn ลูกค้า: ซ่อนอยู่ (ต้องเปิด “โปรโมชั่น” ด้านบน + เปิดโค้ดนี้)"}
+                      </Typography>
+                    )}
                   </Box>
                   <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0 }}>
                     {deleted ? (
