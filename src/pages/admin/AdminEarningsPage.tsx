@@ -85,7 +85,7 @@ import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 //   before, so Earnings behaviour is unchanged.
 import {
   therapistPctFor, therapistPayoutFor, commissionBaseFor, applyServiceSplitConfig,
-  PAYROLL_EXCLUDED_STATUSES as EXCLUDED_STATUSES,
+  PAYROLL_EXCLUDED_STATUSES as EXCLUDED_STATUSES, noShowCompFor,
 } from "@/utils/commission";
 
 // 🆕 Round 28s245 — this page predates adminTheme.ts and still carried its
@@ -389,6 +389,21 @@ const AdminEarningsPage: React.FC = () => {
     for (const b of filteredBookings) {
       if (b.status && EXCLUDED_STATUSES.has(b.status)) {
         countCancelled += 1;
+        // 🆕 28w.52 — no-show still owes the therapist a ฿200 taxi comp (shop
+        //   side stays ฿0). Keep it on the same payout + outstanding lines so
+        //   Earnings agrees with Reports; other cancels pay ฿0.
+        const comp = noShowCompFor(b.status);
+        if (comp > 0) {
+          totalTherapistPayout += comp;
+          const tKey = b.therapistId ?? "(no therapist)";
+          const tName = b.therapistName ?? tKey;
+          if (!byTherapist[tKey]) byTherapist[tKey] = { name: tName, jobs: 0, gross: 0, service: 0, payout: 0 };
+          byTherapist[tKey].payout += comp;
+          if (!isCashPayment(b.payment, b.paymentMethodId) && !b.therapistPaid) {
+            outstandingPay += comp;
+            outstandingPayCount += 1;
+          }
+        }
         continue;
       }
       countCompleted += 1;

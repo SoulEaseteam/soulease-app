@@ -41,6 +41,7 @@ import {
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import {
   isPayrollExcluded, therapistPayoutFor, commissionBaseFor, applyServiceSplitConfig,
+  isNoShow, noShowCompFor, NO_SHOW_TAXI_COMP,
 } from "@/utils/commission";
 // 🆕 28w.39 — admin split-table editor (therapist/shop per service × duration).
 import SplitTableEditor from "./SplitTableEditor";
@@ -165,7 +166,9 @@ const AdminReportPage: React.FC = () => {
       const r = map.get(k)!;
       r.bookings.push(b);
       // 🆕 28s247 — full excluded-status set, not just the exact "cancelled".
-      if (isPayrollExcluded(b.status)) { r.cancelled++; continue; }
+      // 🆕 28w.52 — a no-show still owes the therapist a ฿200 taxi comp (shop
+      //   revenue stays ฿0). Other cancels pay ฿0. Counts as cancelled, not a job.
+      if (isPayrollExcluded(b.status)) { r.cancelled++; r.worker += noShowCompFor(b.status); continue; }
       const svc  = b.servicePrice || 0;
       const disc = b.discountAmount || 0;
       const base = commissionBaseFor(b);   // max(0, svc - disc)
@@ -199,16 +202,20 @@ const AdminReportPage: React.FC = () => {
   // ── export helpers ────────────────────────────────────────────────
   const buildSheet = (s: TherapistSummary) => {
     const detailRows = s.bookings
-      .filter((b) => !isPayrollExcluded(b.status))
-      .map((b) => ({
-        Date:         dayjs(toDate(b.createdAt) || new Date()).format("YYYY-MM-DD"),
-        Service:      b.serviceName || "",
-        "Service ฿":  b.servicePrice || 0,
-        "Discount ฿": b.discountAmount || 0,
-        "Taxi ฿":     b.taxiFee || 0,
-        "Pay ฿":      therapistPayoutFor(b),
-        "Total ฿":    b.totalPrice ?? (b.servicePrice || 0) + (b.taxiFee || 0),
-      }));
+      // keep payable jobs + no-shows (which still pay the ฿200 taxi comp)
+      .filter((b) => !isPayrollExcluded(b.status) || isNoShow(b.status))
+      .map((b) => {
+        const noShow = isNoShow(b.status);
+        return {
+          Date:         dayjs(toDate(b.createdAt) || new Date()).format("YYYY-MM-DD"),
+          Service:      noShow ? `${b.serviceName || ""} (No-show)` : (b.serviceName || ""),
+          "Service ฿":  noShow ? 0 : (b.servicePrice || 0),
+          "Discount ฿": noShow ? 0 : (b.discountAmount || 0),
+          "Taxi ฿":     noShow ? NO_SHOW_TAXI_COMP : (b.taxiFee || 0),
+          "Pay ฿":      noShow ? NO_SHOW_TAXI_COMP : therapistPayoutFor(b),
+          "Total ฿":    noShow ? 0 : (b.totalPrice ?? (b.servicePrice || 0) + (b.taxiFee || 0)),
+        };
+      });
     const summary = { Jobs: s.jobs, Cancelled: s.cancelled, "Service Total": s.serviceTotal, "Discount Total": s.discountTotal, "Taxi Total": s.taxiTotal, "Therapist Pay": s.worker, "Shop Share": s.shop };
     return [...detailRows, {}, summary];
   };
@@ -880,7 +887,14 @@ const AdminReportPage: React.FC = () => {
                         </Box>
                         <Box sx={{ textAlign: "right", flexShrink: 0 }}>
                           {excluded ? (
-                            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.dim }}>Cancelled</Typography>
+                            isNoShow(b.status) ? (
+                              <>
+                                <Typography sx={{ ...adminFigureSx, fontSize: 13.5, fontWeight: 800, color: adminColor.accent, lineHeight: 1.1 }}>{thb(NO_SHOW_TAXI_COMP)}</Typography>
+                                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim }}>No-show · ค่าโดยสาร</Typography>
+                              </>
+                            ) : (
+                              <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.dim }}>Cancelled</Typography>
+                            )
                           ) : (
                             <>
                               <Typography sx={{ ...adminFigureSx, fontSize: 13.5, fontWeight: 800, color: adminColor.accent, lineHeight: 1.1 }}>{thb(therapistPayoutFor(b))}</Typography>

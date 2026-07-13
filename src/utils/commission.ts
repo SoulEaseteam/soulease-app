@@ -118,6 +118,26 @@ export const isPayrollExcluded = (status: string | null | undefined): boolean =>
   !!status && PAYROLL_EXCLUDED_STATUSES.has(status);
 
 /**
+ * 🆕 28w.52 (founder policy 2026-07-14) — a NO-SHOW (customer didn't come,
+ * but the therapist already travelled) is treated as CANCELLED for the SHOP —
+ * ฿0 service revenue, ฿0 shop cut — yet the therapist is still owed a flat
+ * ฿200 taxi compensation. Every other excluded status (cancelled / refunded /
+ * failed / rejected) pays ฿0 to everyone.
+ *
+ * This ฿200 is a therapist-PAY line only; per the founder's "ร้านนับเป็น
+ * cancelled" it is NOT netted against shop revenue (the shop figure stays ฿0).
+ * Add noShowCompFor(status) to payroll totals for excluded bookings so a
+ * no-show still pays the taxi.
+ */
+export const NO_SHOW_TAXI_COMP = 200;
+
+export const isNoShow = (status: string | null | undefined): boolean =>
+  status === "no_show";
+
+export const noShowCompFor = (status: string | null | undefined): number =>
+  isNoShow(status) ? NO_SHOW_TAXI_COMP : 0;
+
+/**
  * The commission base = service price after promo discount, floored at 0.
  * (Taxi is a pass-through and never part of the commission split.)
  */
