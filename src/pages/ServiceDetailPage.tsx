@@ -21,7 +21,7 @@
 //
 // To revert: git revert 28s22 — old file in history.
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Box,
   Typography,
@@ -56,6 +56,9 @@ import {
 } from "firebase/firestore";
 
 import { getServiceById, getAllServices } from "@/utils/serviceCatalog";
+// 🆕 28w.35 — raw (pre-override) catalog, to surface the ORIGINAL stock
+//   photo as a 2nd swipeable hero image alongside the admin upload.
+import servicesCatalog from "@/data/services";
 import {
   priceForDuration,
   durationsFor,
@@ -155,6 +158,15 @@ const ServiceDetailPage: React.FC = () => {
   const [duration, setDuration] = useState<number>(60);
   const [reviews, setReviews] = useState<ReviewLite[]>([]);
 
+  // 🆕 28w.35 — swipeable hero gallery (admin photo + original stock photo).
+  const heroScrollRef = useRef<HTMLDivElement | null>(null);
+  const [heroIndex, setHeroIndex] = useState(0);
+  const onHeroScroll = () => {
+    const el = heroScrollRef.current;
+    if (!el || el.clientWidth === 0) return;
+    setHeroIndex(Math.round(el.scrollLeft / el.clientWidth));
+  };
+
   useEffect(() => {
     if (service) {
       trackServiceView(service.id);
@@ -243,6 +255,16 @@ const ServiceDetailPage: React.FC = () => {
     tier: "PREMIUM" as const,
   };
   const Icon = config.icon;
+
+  // 🆕 28w.35 (founder "เพิ่มรูปที่สอง เป็นรูปเมื่อกี้ เลือนดูได้") — hero
+  //   gallery: [admin-uploaded photo (service.image), original stock photo].
+  //   The stock image is the pre-override catalog entry; deduped so services
+  //   with no admin upload (image === stock) keep a single full-height photo.
+  const stockImage = servicesCatalog.find((s) => s.id === service.id)?.image;
+  const heroImages = [service.image, stockImage].filter(
+    (v, i, a): v is string => Boolean(v) && a.indexOf(v) === i
+  );
+
   // 🆕 28r118 (founder "โชว์แค่ 60 นาที ทุกเมนู · ซ่อนเมนูราคา ทุกหน้า
   //   ที่โชว์") — 90 + 120 duration cards hidden while new pricing is
   //   being redone. Filtering here (rather than in durationsFor())
@@ -333,23 +355,77 @@ const ServiceDetailPage: React.FC = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              sx={{
-                width: "100%",
-                borderRadius: "20px",
-                overflow: "hidden",
-                marginBottom: "20px",
-                background: "#ECEBE8",
-              }}
+              sx={{ width: "100%", marginBottom: "20px" }}
             >
-              {service.image ? (
+              {heroImages.length > 1 ? (
+                // 🆕 28w.35 — swipeable gallery: admin photo + original stock
+                //   photo. Uniform square frame so the slides align; swipe /
+                //   scroll horizontally. Dots track the active slide.
+                <>
+                  <Box
+                    ref={heroScrollRef}
+                    onScroll={onHeroScroll}
+                    sx={{
+                      display: "flex",
+                      overflowX: "auto",
+                      borderRadius: "20px",
+                      scrollSnapType: "x mandatory",
+                      background: "#ECEBE8",
+                      scrollbarWidth: "none",
+                      WebkitOverflowScrolling: "touch",
+                      "&::-webkit-scrollbar": { display: "none" },
+                    }}
+                  >
+                    {heroImages.map((img, i) => (
+                      <Box
+                        key={img}
+                        component="img"
+                        src={img}
+                        alt={`${service.name} — ${i + 1}`}
+                        loading={i === 0 ? "eager" : "lazy"}
+                        draggable={false}
+                        sx={{
+                          flex: "0 0 100%",
+                          width: "100%",
+                          aspectRatio: "1 / 1",
+                          objectFit: "cover",
+                          objectPosition: "center 28%",
+                          scrollSnapAlign: "start",
+                          display: "block",
+                        }}
+                      />
+                    ))}
+                  </Box>
+                  {/* slide dots */}
+                  <Box sx={{ display: "flex", justifyContent: "center", gap: "6px", mt: 1.25 }}>
+                    {heroImages.map((img, i) => (
+                      <Box
+                        key={img}
+                        aria-hidden
+                        sx={{
+                          height: 6,
+                          width: heroIndex === i ? 18 : 6,
+                          borderRadius: "999px",
+                          background:
+                            heroIndex === i ? "var(--sr-gold-text)" : "var(--sr-hairline)",
+                          transition: "width 0.2s ease, background 0.2s ease",
+                        }}
+                      />
+                    ))}
+                  </Box>
+                </>
+              ) : heroImages.length === 1 ? (
+                // Single photo → keep the r119 full, uncropped natural display.
                 <Box
                   component="img"
-                  src={service.image}
+                  src={heroImages[0]}
                   alt={service.name}
                   sx={{
                     display: "block",
                     width: "100%",
                     height: "auto",
+                    borderRadius: "20px",
+                    background: "#ECEBE8",
                   }}
                 />
               ) : (
@@ -359,6 +435,8 @@ const ServiceDetailPage: React.FC = () => {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    borderRadius: "20px",
+                    background: "#ECEBE8",
                   }}
                 >
                   <Icon sx={{ fontSize: { xs: 64, md: 80 }, color: config.swatchIcon }} />
