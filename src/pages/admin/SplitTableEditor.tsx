@@ -109,16 +109,20 @@ const SplitTableEditor: React.FC<Props> = ({ splitVersion }) => {
     }
   };
 
-  // One-time backfill: freeze each un-stamped booking at the OLD flat rate —
+  // One-time backfill / reset: set EVERY priced booking to the OLD flat rate —
   // 60% of the post-discount price (DEFAULT_THERAPIST_PCT), i.e. what was
-  // actually paid before the split table existed. Independent of the table.
+  // actually paid before the split table existed. OVERWRITES any earlier lock
+  // (🆕 28w.50 — the first lock run stamped 485 old jobs at TABLE values, which
+  // pay LESS than 60% on Thai/Aroma; this re-stamps them at the true 60% rate,
+  // so it must NOT skip already-frozen jobs). Independent of the table — new
+  // jobs still confirm-stamp at the table going forward.
   const runBackfill = async () => {
     const pct = Math.round(DEFAULT_THERAPIST_PCT * 100);
     const ok = window.confirm(
-      `ล็อกส่วนแบ่งงานเก่าทั้งหมด ที่เรตเดิม ${pct}% ของราคา (หลังส่วนลด)?\n\n` +
-        `• งานเก่าที่ยังไม่ถูกล็อก → ตรึงที่ ${pct}% (เท่าที่จ่ายจริงตอนนั้น)\n` +
-        "• งานที่ล็อกไว้แล้ว จะไม่ถูกแตะ\n" +
-        "• ทำครั้งเดียว · หลังจากนี้แก้ตารางไม่กระทบงานเก่าอีก",
+      `ตั้งส่วนแบ่งงานเก่าทั้งหมดใหม่ ที่เรตเดิม ${pct}% ของราคา (หลังส่วนลด)?\n\n` +
+        `• งานเก่าทุกอัน → ตั้งเป็น ${pct}% (เท่าที่จ่ายจริง)\n` +
+        "• เขียนทับล็อกเดิมที่เคยตั้งไว้ที่ตาราง (ถ้ามี)\n" +
+        "• งานใหม่หลังจากนี้ยังใช้ตารางส่วนแบ่งตามปกติ",
     );
     if (!ok) return;
     setBackfilling(true);
@@ -126,25 +130,17 @@ const SplitTableEditor: React.FC<Props> = ({ splitVersion }) => {
     try {
       const snap = await getDocs(collection(db, "bookings"));
       let stamped = 0;
-      let already = 0;
       let noPrice = 0;
       let batch = writeBatch(db);
       let inBatch = 0;
       for (const d of snap.docs) {
         const data = d.data() as {
-          serviceId?: string | null;
           servicePrice?: number | null;
           discountAmount?: number | null;
-          duration?: number | null;
-          therapistShare?: number | null;
         };
-        if (typeof data.therapistShare === "number" && data.therapistShare >= 0) {
-          already++;
-          continue; // already frozen — never overwrite
-        }
-        if (!data.serviceId || !(typeof data.servicePrice === "number" && data.servicePrice > 0)) {
+        if (!(typeof data.servicePrice === "number" && data.servicePrice > 0)) {
           noPrice++;
-          continue; // nothing to split
+          continue; // nothing to split (no service price)
         }
         const base = commissionBaseFor({
           servicePrice: data.servicePrice,
@@ -162,7 +158,7 @@ const SplitTableEditor: React.FC<Props> = ({ splitVersion }) => {
         }
       }
       if (inBatch > 0) await batch.commit();
-      setBackfillMsg(`ล็อกแล้ว ${stamped} งาน (เรตเดิม ${Math.round(DEFAULT_THERAPIST_PCT * 100)}%) · ล็อกอยู่ก่อน ${already} · ข้าม ${noPrice}`);
+      setBackfillMsg(`ตั้งเรตเดิม ${pct}% แล้ว ${stamped} งาน · ข้าม ${noPrice} (ไม่มีราคา)`);
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error("[splitTable] backfill failed", e);
@@ -292,7 +288,7 @@ const SplitTableEditor: React.FC<Props> = ({ splitVersion }) => {
           ล็อกงานเก่าที่เรตเดิม 60% (ทำครั้งเดียว)
         </Typography>
         <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mb: 1.25, lineHeight: 1.5 }}>
-          ตรึงงานเก่าทุกอันที่ 60% ของราคาหลังส่วนลด (เท่าที่จ่ายจริงก่อนมีตารางส่วนแบ่ง) · งานที่ล็อกไว้แล้วไม่ถูกแตะ · หลังจากนี้แก้ตารางไม่กระทบงานเก่า
+          ตั้งงานเก่าทุกอันที่ 60% ของราคาหลังส่วนลด (เท่าที่จ่ายจริง) · เขียนทับล็อกเดิมถ้าเคยตั้งที่ตารางไว้ · งานใหม่ยังใช้ตารางตามปกติ
         </Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <Button
