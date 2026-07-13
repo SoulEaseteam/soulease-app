@@ -140,15 +140,17 @@ export function therapistPayoutFor(b: {
   duration?: number | null;
   therapistShare?: number | null;
 }): number {
-  // 🆕 28w.43 (founder "Payslip นับส่วนแบ่งปัจจุบัน ทั้งที่ยังไม่มียอดจองใหม่")
-  //   — a split FROZEN on the booking at confirm-time (see stampSplit) wins.
-  //   Un-stamped bookings (everything from before the split table existed)
-  //   keep the ORIGINAL tier-% payout, so editing the split table NEVER
-  //   changes a historical payslip retroactively. The fixed split reaches a
-  //   booking ONLY through the stamp written when it's confirmed.
+  // 🆕 28w.43 — a split FROZEN on the booking at confirm-time (see stampSplit)
+  //   always wins, so a later split-table edit never moves a confirmed job.
   if (typeof b.therapistShare === "number" && b.therapistShare >= 0) {
     return Math.round(b.therapistShare);
   }
+  // 🆕 28w.46 (founder chose "ก": Thai 60 = พนักงาน 700) — un-stamped bookings
+  //   (existing ones from before the split table) use the CURRENT split table
+  //   so the table applies to them too. Only durations with NO fixed entry
+  //   (odd/legacy) fall back to the tier %.
+  const fixed = therapistFixedFor(b.serviceId, b.duration);
+  if (fixed != null) return fixed;
   return Math.round(commissionBaseFor(b) * therapistPctFor(b.serviceId));
 }
 
