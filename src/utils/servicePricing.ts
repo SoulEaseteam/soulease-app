@@ -140,6 +140,23 @@ export function getLiveServiceOrder(): string[] {
 // a real card instead of a broken image.
 const CUSTOM_SERVICE_FALLBACK_IMAGE = "/images/workphoto/IMG_5096.JPG";
 
+// 🆕 Round 28w.42 (founder 2026-07-14 "ทำไมราคาเก่ากระทบไปด้วย") — the 4
+//   standard services are now CODE-PRICED (services.ts base + the
+//   DURATION_PRICE_OVERRIDES map above). A stale admin live override in
+//   adminSettings/publicRules.serviceOverrides still carried the OLD
+//   ×1.5/×2.0 prices (60/90/120-shaped), which WON over the code in
+//   priceForDuration and masked the 28w.36 repricing + the 70-min switch
+//   (the admin panel can't even express 70 min). So when we apply the live
+//   config we STRIP any price/prices for these services — the code is the
+//   single source of truth for their price. Name/desc/image/badge overrides
+//   still flow through; custom (admin-created) services keep their prices.
+const CODE_PRICED_SERVICE_IDS = new Set([
+  "xSR-Thai",
+  "SR-Aroma",
+  "SR-HJ2200",
+  "SR-B2B3200",
+]);
+
 /**
  * 🆕 Round 28s300/28s301 — one entry point (called only by MaintenanceGate)
  * for BOTH per-service overrides AND admin-created custom services. Unified
@@ -163,6 +180,16 @@ export function applyLiveServiceConfig(cfg: {
   const filteredOverrides: Record<string, LiveServiceOverride> = {};
   for (const [k, v] of Object.entries(rawOverrides)) {
     if (v?.scheduledFor && v.scheduledFor > now) continue;
+    // 🆕 28w.42 — the 4 standard services are code-priced; drop any stale
+    //   live price override so the code (services.ts + DURATION_PRICE_OVERRIDES)
+    //   wins. Keep name/desc/image/badge/enabled/scheduledFor.
+    if (v && CODE_PRICED_SERVICE_IDS.has(k)) {
+      const { price: _p, prices: _pr, ...rest } = v;
+      void _p;
+      void _pr;
+      filteredOverrides[k] = rest;
+      continue;
+    }
     filteredOverrides[k] = v;
   }
   const map: Record<string, LiveServiceOverride> = { ...filteredOverrides };
