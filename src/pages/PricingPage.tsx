@@ -542,10 +542,8 @@ const PricingPage: React.FC = () => {
                   },
                 }}
               >
+                {/* 🆕 28w.27 (founder: "เอาลูกศรออก") — arrow removed. */}
                 {t("pricing.unlockBenefits", "Unlock Executive Benefits")}
-                <Box component="span" aria-hidden sx={{ fontSize: 14, lineHeight: 1 }}>
-                  →
-                </Box>
               </Box>
             </Box>
           );
