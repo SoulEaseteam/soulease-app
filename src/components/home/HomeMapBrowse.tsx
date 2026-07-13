@@ -406,8 +406,11 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
                 top: `${pos.top}%`,
                 left: `${pos.left}%`,
                 transform: "translate(-50%, -50%)",
-                width: isActive ? 46 : 36,
-                height: isActive ? 46 : 36,
+                // 🆕 28w.18 (founder "ลอง ซูม เข้าหน้า เลย ตัดปัญหา") —
+                //   enlarged the pins so the (face-cropped) photo reads
+                //   clearly at a glance instead of a tiny muddy circle.
+                width: isActive ? 54 : 42,
+                height: isActive ? 54 : 42,
                 borderRadius: "50%",
                 // 🆕 Round 28b1 — fallback bg moved from warm tan
                 //   #d4a574 → cool slate so loading state matches
@@ -476,6 +479,12 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
                     height: "100%",
                     borderRadius: "50%",
                     objectFit: "cover",
+                    // 🆕 28w.18 — frame the FACE, not the midsection.
+                    //   Roster photos are full-body standing shots; a
+                    //   centered cover crop showed torso/background and
+                    //   read as a grey blob. Bias the crop to the top
+                    //   third so the practitioner's face fills the pin.
+                    objectPosition: "50% 10%",
                     display: "block",
                     pointerEvents: "none",
                   }}
@@ -602,6 +611,9 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
                 height: 56,
                 borderRadius: "12px",
                 objectFit: "cover",
+                // 🆕 28w.18 — same face-first crop as the map pins so the
+                //   thumbnail shows the practitioner's face, not her torso.
+                objectPosition: "50% 18%",
                 flexShrink: 0,
                 boxShadow: "0 4px 10px rgba(15, 23, 42, 0.10)",
               }}
