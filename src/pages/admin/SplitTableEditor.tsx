@@ -12,11 +12,11 @@
 
 import React, { useEffect, useState } from "react";
 import { Box, Typography, Button, TextField, CircularProgress } from "@mui/material";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp, collection, getDocs, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import services from "@/data/services";
 import { durationsFor, priceForDuration, formatTHB } from "@/utils/servicePricing";
-import { effectiveServiceSplits, applyServiceSplitConfig } from "@/utils/commission";
+import { effectiveServiceSplits, applyServiceSplitConfig, stampSplit } from "@/utils/commission";
 import { adminColor, adminFont } from "@/theme/adminTheme";
 
 const SANS = adminFont.sans;
@@ -32,6 +32,12 @@ const SplitTableEditor: React.FC<Props> = ({ splitVersion }) => {
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // 🆕 28w.48 (founder: "backfill ครั้งเดียว") — one-time LOCK: stamp every
+  //   existing booking that has no frozen split yet with the CURRENT table,
+  //   so later table edits can never move an old job again.
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillMsg, setBackfillMsg] = useState<string | null>(null);
 
   // (Re)seed from the effective config on load / after a save round-trips.
   useEffect(() => {
@@ -94,6 +100,68 @@ const SplitTableEditor: React.FC<Props> = ({ splitVersion }) => {
       console.error("[splitTable] save failed", e);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // One-time backfill: freeze the split onto every un-stamped booking using
+  // the CURRENT table (must be saved first, so the applied config is live).
+  const runBackfill = async () => {
+    if (dirty) return; // guard — the button is disabled while unsaved anyway
+    const ok = window.confirm(
+      "ล็อกส่วนแบ่งงานเก่าทั้งหมด ตามตารางปัจจุบัน?\n\n" +
+        "• งานที่ยังไม่ถูกล็อก จะถูกตรึงค่าตามตารางนี้\n" +
+        "• งานที่ล็อกไว้แล้ว จะไม่ถูกแตะ\n" +
+        "• หลังจากนี้ แก้ตาราง จะไม่กระทบงานเก่าอีก (ถาวร)",
+    );
+    if (!ok) return;
+    setBackfilling(true);
+    setBackfillMsg(null);
+    try {
+      const snap = await getDocs(collection(db, "bookings"));
+      let stamped = 0;
+      let already = 0;
+      let noPrice = 0;
+      let batch = writeBatch(db);
+      let inBatch = 0;
+      for (const d of snap.docs) {
+        const data = d.data() as {
+          serviceId?: string | null;
+          servicePrice?: number | null;
+          discountAmount?: number | null;
+          duration?: number | null;
+          therapistShare?: number | null;
+        };
+        if (typeof data.therapistShare === "number" && data.therapistShare >= 0) {
+          already++;
+          continue; // already frozen — never overwrite
+        }
+        if (!data.serviceId || !(typeof data.servicePrice === "number" && data.servicePrice > 0)) {
+          noPrice++;
+          continue; // nothing to split
+        }
+        const split = stampSplit({
+          serviceId: data.serviceId,
+          servicePrice: data.servicePrice,
+          discountAmount: data.discountAmount,
+          duration: data.duration,
+        });
+        batch.update(d.ref, split);
+        stamped++;
+        inBatch++;
+        if (inBatch >= 400) {
+          await batch.commit();
+          batch = writeBatch(db);
+          inBatch = 0;
+        }
+      }
+      if (inBatch > 0) await batch.commit();
+      setBackfillMsg(`ล็อกแล้ว ${stamped} งาน · ล็อกอยู่ก่อน ${already} · ข้าม ${noPrice}`);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("[splitTable] backfill failed", e);
+      setBackfillMsg("ล้มเหลว — ลองใหม่อีกครั้ง");
+    } finally {
+      setBackfilling(false);
     }
   };
 
@@ -203,6 +271,49 @@ const SplitTableEditor: React.FC<Props> = ({ splitVersion }) => {
             มีช่องที่ค่าจ้างเกินราคา — แก้ก่อนบันทึก
           </Typography>
         )}
+      </Box>
+
+      {/* 🔒 One-time backfill / lock — freezes the split onto old bookings */}
+      <Box
+        sx={{
+          mt: 2.5,
+          pt: 2,
+          borderTop: `1px solid ${adminColor.line ?? "rgba(0,0,0,0.08)"}`,
+        }}
+      >
+        <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 800, color: adminColor.text, mb: 0.25 }}>
+          ล็อกส่วนแบ่งงานเก่า (ทำครั้งเดียว)
+        </Typography>
+        <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mb: 1.25, lineHeight: 1.5 }}>
+          ตรึงค่าส่วนแบ่งลงในงานที่มีอยู่ทั้งหมด ตามตารางด้านบน · หลังจากนี้แก้ตารางจะไม่กระทบงานเก่าอีก
+          {dirty && " · บันทึกตารางก่อนถึงจะกดได้"}
+        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Button
+            onClick={runBackfill}
+            disabled={dirty || backfilling || anyInvalid}
+            variant="outlined"
+            sx={{
+              textTransform: "none",
+              fontFamily: SANS,
+              fontWeight: 700,
+              fontSize: 13,
+              borderRadius: "999px",
+              px: 2.5,
+              color: "#8A3A57",
+              borderColor: "#B8567F",
+              "&:hover": { borderColor: "#8A3A57", background: "rgba(184,86,127,0.06)" },
+              "&.Mui-disabled": { opacity: 0.4, color: "#8A3A57", borderColor: "#B8567F" },
+            }}
+          >
+            {backfilling ? <CircularProgress size={16} sx={{ color: "#8A3A57" }} /> : "🔒 ล็อกงานเก่าทั้งหมด"}
+          </Button>
+          {backfillMsg && (
+            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.text, fontWeight: 600 }}>
+              {backfillMsg}
+            </Typography>
+          )}
+        </Box>
       </Box>
     </Box>
   );
