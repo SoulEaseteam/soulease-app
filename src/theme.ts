@@ -276,8 +276,16 @@ const theme = createTheme({
     },
     success: { main: "#57B88B" }, // Available green (founder semantic)
     background: {
-      default: NEUTRAL_50,       // Espresso Black
-      paper: NEUTRAL_100,        // Dark Chocolate panel
+      // 🆕 28w.41 — FIXED HEX, not var(--sr-*). Same 28t.17 landmine as the
+      //   `text` / `divider` tokens below: MUI runs background.default/paper
+      //   through decomposeColor for internal colour-math and CANNOT parse
+      //   `var()` — it throws "Unsupported var(--sr-bg) color", which was
+      //   crashing /admin/users (white error screen). Day/night bg still
+      //   flips: MuiCssBaseline paints `body { background: var(--sr-bg) }`
+      //   (gradients.surface); these tokens are only read by MUI's own math,
+      //   never as the visible surface.
+      default: "#FBF7F9",        // day page ground (night flips via body)
+      paper: "#FFFFFF",          // day panel
     },
     // 🆕 28t.17 — FIXED HEXES, not var(--sr-*). MUI feeds text.primary through
     //   alpha()/decomposeColor for internal colour-math (e.g. the Button text
