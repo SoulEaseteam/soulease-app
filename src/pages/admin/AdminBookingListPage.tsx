@@ -609,14 +609,15 @@ const AdminBookingListPage: React.FC = () => {
         sx={{
           px: { xs: 2, md: 3 }, pt: 2.5,
           display: "grid",
-          // 🆕 28w.44 — auto-fit so the 5 stat cards (incl. Cancelled) flow
-          //   without overflowing on any width; mobile stacks 1-up.
+          // 🆕 28w.47 (founder "คอลัม เรียง 2-3 แถว ประหยัดพื้นที่บนมือถือ") —
+          //   2 cards per row on phones (was 1-up = a very tall strip), 3 on
+          //   larger phones, auto-fit on desktop.
           gridTemplateColumns: {
-            xs: "1fr",
-            sm: "repeat(2,1fr)",
+            xs: "repeat(2, 1fr)",
+            sm: "repeat(3, 1fr)",
             md: "repeat(auto-fit, minmax(150px, 1fr))",
           },
-          gap: 1.25,
+          gap: { xs: 1, sm: 1.25 },
         }}
       >
         {[

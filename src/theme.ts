@@ -408,6 +408,24 @@ const theme = createTheme({
         },
       },
     },
+    // 🆕 28w.47 (founder "ปฏิทินบนมือถือ ก็ แก้") — the MOBILE date picker
+    //   renders in a Dialog (not the Popper above), so the popper-scoped arrow
+    //   fix didn't reach it. These COMPONENT-level overrides make the month
+    //   ‹ › arrows + the year switch (▼) visible in BOTH the desktop popper
+    //   and the mobile dialog.
+    MuiPickersArrowSwitcher: {
+      styleOverrides: {
+        button: {
+          color: "#232B36",
+          "&.Mui-disabled": { color: "rgba(31,41,51,0.28)" },
+        },
+      },
+    },
+    MuiPickersCalendarHeader: {
+      styleOverrides: {
+        switchViewButton: { color: "#232B36" },
+      },
+    },
   },
 });
 
