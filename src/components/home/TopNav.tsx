@@ -41,6 +41,11 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import PaymentRoundedIcon from "@mui/icons-material/PaymentRounded";
 import RedeemRoundedIcon from "@mui/icons-material/RedeemRounded";
+// 🆕 28w.19 — icons for the public site-section rows the drawer was
+//   missing (Promotions · Near Me · Pricing), mirroring QuickNavRow.
+import CampaignRoundedIcon from "@mui/icons-material/CampaignRounded";
+import NearMeRoundedIcon from "@mui/icons-material/NearMeRounded";
+import LocalOfferRoundedIcon from "@mui/icons-material/LocalOfferRounded";
 import AdminPanelSettingsRoundedIcon from "@mui/icons-material/AdminPanelSettingsRounded";
 import { useAuth } from "@/providers/AuthProvider";
 import ReferralDialog from "@/components/home/ReferralDialog";
@@ -97,6 +102,28 @@ const NAV_ITEMS: NavItem[] = [
     labelKey: "nav.services",
     defaultLabel: "Services",
     path: "/services",
+  },
+  // 🆕 28w.19 (founder: "แก้แทบบาร์ให้มีเมนูเหมือนกับด้านบน") — surface the
+  //   same public destinations as the home QuickNavRow so the hamburger
+  //   drawer isn't just Home + Services for guests. Order mirrors the top
+  //   quick-nav: Services → Promotions → Near Me → Pricing.
+  {
+    icon: <CampaignRoundedIcon />,
+    labelKey: "nav.promotions",
+    defaultLabel: "Promotions",
+    path: "/promotions",
+  },
+  {
+    icon: <NearMeRoundedIcon />,
+    labelKey: "nav.nearme",
+    defaultLabel: "Near Me",
+    path: "/near-me",
+  },
+  {
+    icon: <LocalOfferRoundedIcon />,
+    labelKey: "nav.pricing",
+    defaultLabel: "Pricing",
+    path: "/pricing",
   },
   {
     icon: <EventNoteRoundedIcon />,
