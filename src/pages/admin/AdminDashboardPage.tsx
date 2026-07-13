@@ -139,6 +139,7 @@ interface BookingRow {
   taxiFee?: number;
   totalPrice?: number;
   duration?: number;
+  therapistShare?: number;   // 🆕 28w.51 — split frozen at confirm/lock time
 }
 
 function toDate(v: FBTS): Date | null {
@@ -182,8 +183,9 @@ const AdminDashboardPage: React.FC = () => {
   const [counts,           setCounts]          = useState({ users: 0, therapists: 0, services: 0 });
   const [therapistOptions, setTherapistOptions] = useState<string[]>([]);
   // 🆕 Round 28s323 — lifetime totals (all bookings, no date filter), computed
-  //   with the same rules as every other page: 60/40 split, promo applied,
-  //   cancelled/refunded excluded. Loaded once.
+  //   with the same rules as every other page: the real per-job therapist
+  //   split (locked stamp → table → 60%), promo applied, cancelled/refunded
+  //   excluded. Loaded once.
   // 🆕 Round 28r36 (founder 2026-05-07) — expanded to also track:
   //   • openedAtMs — earliest booking createdAt → "days since opening"
   //   • thisMonthShop / prevMonthShop → month-over-month delta chip
@@ -214,12 +216,17 @@ const AdminDashboardPage: React.FC = () => {
         const b = d.data() as BookingRow;
         if (isPayrollExcluded(b.status)) return;         // exclude cancelled/refunded/no-show
         const svc = b.servicePrice || 0;
-        const worker = therapistPayoutFor({ serviceId: b.serviceId, servicePrice: svc, discountAmount: b.discountAmount }); // 60%
+        // 🆕 28w.51 — pass the FULL booking (duration + frozen therapistShare)
+        //   so the shop cut reads the locked split first, then the table, then
+        //   60% — identical to the Bookings & Reports pages. Passing a stripped
+        //   object (as before) always fell through to a flat 60/40, so the
+        //   Dashboard's "shop net" disagreed with every other surface.
+        const worker = therapistPayoutFor({ serviceId: b.serviceId, servicePrice: svc, discountAmount: b.discountAmount, duration: b.duration, therapistShare: b.therapistShare });
         const base   = commissionBaseFor({ servicePrice: svc, discountAmount: b.discountAmount });                          // service − promo
         const shopCut = Math.max(0, base - worker);
         jobs += 1;
         service += svc;
-        shop += shopCut;                                 // shop's 40% after promo
+        shop += shopCut;                                 // shop cut after the real therapist split
 
         // earliest booking = "opening day" — createdAt can be a Timestamp,
         //   Date, string, or a raw { seconds } shape depending on where the
@@ -349,7 +356,7 @@ const AdminDashboardPage: React.FC = () => {
         //   discount) − payout, identical to Reports' `base − pay` and to
         //   Earnings' shopGross. The old `service − payout` used the full list
         //   price, over-counting shop revenue by the discount amount.
-        const worker = therapistPayoutFor({ serviceId: r.serviceId, servicePrice: service, discountAmount: r.discountAmount });
+        const worker = therapistPayoutFor({ serviceId: r.serviceId, servicePrice: service, discountAmount: r.discountAmount, duration: r.duration, therapistShare: r.therapistShare });
         const base   = commissionBaseFor({ servicePrice: service, discountAmount: r.discountAmount });
         periodWorker += worker;
         periodShop   += Math.max(0, base - worker);
@@ -472,8 +479,8 @@ const AdminDashboardPage: React.FC = () => {
         {/* ── 🆕 Round 28r35 → r36 — LIFETIME REVENUE HERO CARD.
              Moved from mid-dashboard to right below the page title so the
              first money figure View sees on open is the crown number.
-             All-time, not date-filtered. Shop take = 40% after promo,
-             cancelled excluded.
+             All-time, not date-filtered. Shop take = price − real therapist
+             split (locked stamp / table / 60% fallback), cancelled excluded.
              r36 additions: MoM delta chip · days-since-opening + avg/day
              · animated shimmer border · richer three-column stats. */}
         <motion.div {...fadeUp(0.04)}>
@@ -580,7 +587,7 @@ const AdminDashboardPage: React.FC = () => {
                     Shop Net Earned
                   </Typography>
                   <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim, mt: 0.1 }}>
-                    รายได้ร้านสะสม · 40% หลังโปรฯ · ไม่รวมยกเลิก
+                    รายได้ร้านสะสม · หลังหักหมอ · ไม่รวมยกเลิก
                   </Typography>
                   {/* days-since-opening + avg/day sub-line */}
                   {lifetime.openedAtMs > 0 && (() => {
