@@ -2395,15 +2395,25 @@ const BookingFlowPage: React.FC = () => {
           )}
 
           {/* 🆕 Round 28s77 — WeChat/Alipay transfer surcharge row.
-              Only renders when one of those methods is selected. */}
+              Only renders when one of those methods is selected.
+              🆕 28r121 — flat ฿200 handling retired; row now reads
+              "Transfer fee (7%)". */}
           {paymentFee > 0 && (
             <Box sx={{ marginTop: "6px" }}>
               <PriceRow
-                label={t(
-                  "booking.priceRow.paymentFee",
-                  "Transfer fee ({{pct}}% + ฿{{flat}})",
-                  { pct: SURCHARGE_PCT, flat: SURCHARGE_FLAT }
-                )}
+                label={
+                  SURCHARGE_FLAT > 0
+                    ? t(
+                        "booking.priceRow.paymentFee",
+                        "Transfer fee ({{pct}}% + ฿{{flat}})",
+                        { pct: SURCHARGE_PCT, flat: SURCHARGE_FLAT }
+                      )
+                    : t(
+                        "booking.priceRow.paymentFeePctOnly",
+                        "Transfer fee ({{pct}}%)",
+                        { pct: SURCHARGE_PCT }
+                      )
+                }
                 value={`+${formatTHB(paymentFee)}`}
               />
             </Box>

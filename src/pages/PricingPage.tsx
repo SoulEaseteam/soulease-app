@@ -170,8 +170,8 @@ const PAYMENT_METHODS = [
   { label: "PromptPay", note: "" },
   {
     label: "WeChat Pay · Alipay",
-    // Surcharge value in servicePricing/paymentSurcharge — 5% + ฿200.
-    note: "+ 5% + ฿200 handling",
+    // 🆕 28r121 — Surcharge simplified to flat 7% (see paymentSurcharge.ts).
+    note: "+ 7% handling",
   },
 ];
 

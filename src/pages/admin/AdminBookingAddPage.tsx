@@ -718,7 +718,7 @@ const AdminBookingAddPage: React.FC = () => {
           {/* 🆕 28s249 — surcharge notice; recompute stays inside paymentSurcharge.ts */}
           {hasPaymentSurcharge(payment) && paymentFee > 0 && (
             <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.amber, fontWeight: 600 }}>
-              + Transfer fee {formatTHB(paymentFee)} (5% + ฿200) · WeChat/Alipay
+              + Transfer fee {formatTHB(paymentFee)} (7%) · WeChat/Alipay
             </Typography>
           )}
         </Section>

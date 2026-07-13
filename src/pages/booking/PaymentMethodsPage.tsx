@@ -709,10 +709,10 @@ const PaymentRow: React.FC<{
               whiteSpace: "nowrap",
             }}
           >
-            {t("pay.feeBadge", "+{{pct}}% + ฿{{flat}}", {
-              pct: SURCHARGE_PCT,
-              flat: SURCHARGE_FLAT,
-            })}
+            {/* 🆕 28r121 — flat handling retired; badge is now just "+7%". */}
+            {SURCHARGE_FLAT > 0
+              ? t("pay.feeBadge", "+{{pct}}% + ฿{{flat}}", { pct: SURCHARGE_PCT, flat: SURCHARGE_FLAT })
+              : t("pay.feeBadgePctOnly", "+{{pct}}%", { pct: SURCHARGE_PCT })}
           </Box>
         )}
       </Box>

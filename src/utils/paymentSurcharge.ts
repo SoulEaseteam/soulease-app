@@ -3,25 +3,26 @@
 // 🆕 Round 28s77 (founder 2026-05-31) — Transfer surcharge for the
 //   Chinese e-wallet rails (WeChat Pay / Alipay).
 //
-//   Founder: "we chat กะ alipay … มีค่าธรรมเนียม การโอน อิงตามเรท
-//   และเพิ่มชาจอีก 200". When a guest pays via WeChat / Alipay we
-//   incur an FX + processing cost on the CNY→THB settlement, so a
-//   surcharge is added to the order total:
+// 🆕 Round 28r121 (founder 2026-07-13) — simplified to a flat 7%
+//   after margin analysis showed the CNY→THB settlement spread +
+//   processor fee + delay risk fit comfortably inside a 7% net
+//   (yields ~5.5% real margin after FX).  Removed the ฿200 flat
+//   handling charge — the % component alone scales cleanly across
+//   all price points and reads cleaner to guests than "5% + ฿200".
 //
-//       surcharge = round(total × 5%) + ฿200 flat
+//       surcharge = round(total × 7%)
 //
-//   The 5% stands in for the exchange-rate / processor markup ("อิง
-//   เรท"); the ฿200 is the fixed handling charge on top. Cash /
-//   PromptPay / others have no surcharge.
+//   Cash / PromptPay / others have no surcharge.
 //
 //   Single source of truth — imported by both PaymentMethodsPage (for
-//   the "+5% + ฿200" badge) and BookingFlowPage (to add it to the
-//   Confirm Order total + the booking doc + the Telegram payload).
+//   the "+7%" badge) and BookingFlowPage (to add it to the Confirm
+//   Order total + the booking doc + the Telegram payload).
 
-/** Percentage markup (whole number, e.g. 5 = 5%). */
-export const SURCHARGE_PCT = 5;
-/** Flat handling charge in THB, added on top of the percentage. */
-export const SURCHARGE_FLAT = 200;
+/** Percentage markup (whole number, e.g. 7 = 7%). */
+export const SURCHARGE_PCT = 7;
+/** 🆕 28r121 — kept exported at 0 for backward compatibility with any
+ *  legacy call site expecting the constant; the flat charge is retired. */
+export const SURCHARGE_FLAT = 0;
 /** Payment-method ids that carry the transfer surcharge. */
 export const SURCHARGE_METHOD_IDS = ["wechat", "alipay"] as const;
 
