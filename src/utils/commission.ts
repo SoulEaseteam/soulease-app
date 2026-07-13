@@ -119,23 +119,27 @@ export const isPayrollExcluded = (status: string | null | undefined): boolean =>
 
 /**
  * 🆕 28w.52 (founder policy 2026-07-14) — a NO-SHOW (customer didn't come,
- * but the therapist already travelled) is treated as CANCELLED for the SHOP —
- * ฿0 service revenue, ฿0 shop cut — yet the therapist is still owed a flat
- * ฿200 taxi compensation. Every other excluded status (cancelled / refunded /
- * failed / rejected) pays ฿0 to everyone.
+ * but the therapist already travelled) earns ฿0 service revenue but still owes
+ * the therapist a taxi compensation. Every other excluded status (cancelled /
+ * refunded / failed / rejected) pays ฿0 to everyone.
  *
- * This ฿200 is a therapist-PAY line only; per the founder's "ร้านนับเป็น
- * cancelled" it is NOT netted against shop revenue (the shop figure stays ฿0).
- * Add noShowCompFor(status) to payroll totals for excluded bookings so a
- * no-show still pays the taxi.
+ * 🆕 28w.53 (founder refinement) — the comp STARTS at ฿200 but uses the
+ * booking's actual taxi fare when that is higher (View can edit taxiFee up for
+ * a long trip). And the SHOP now BEARS the comp: it is subtracted from shop
+ * revenue so the books reconcile — on a no-show nothing is collected, so
+ * shop (−comp) + therapist (+comp) = 0.
  */
 export const NO_SHOW_TAXI_COMP = 200;
 
 export const isNoShow = (status: string | null | undefined): boolean =>
   status === "no_show";
 
-export const noShowCompFor = (status: string | null | undefined): number =>
-  isNoShow(status) ? NO_SHOW_TAXI_COMP : 0;
+/** Taxi comp owed to the therapist for a no-show: max(฿200, actual taxi fare).
+ *  0 for any non-no-show status. The shop bears this (subtract from shop net). */
+export function noShowCompFor(b: { status?: string | null; taxiFee?: number | null }): number {
+  if (!isNoShow(b.status)) return 0;
+  return Math.max(NO_SHOW_TAXI_COMP, Math.round(b.taxiFee ?? 0));
+}
 
 /**
  * The commission base = service price after promo discount, floored at 0.

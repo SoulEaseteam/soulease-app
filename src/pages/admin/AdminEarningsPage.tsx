@@ -389,10 +389,10 @@ const AdminEarningsPage: React.FC = () => {
     for (const b of filteredBookings) {
       if (b.status && EXCLUDED_STATUSES.has(b.status)) {
         countCancelled += 1;
-        // 🆕 28w.52 — no-show still owes the therapist a ฿200 taxi comp (shop
-        //   side stays ฿0). Keep it on the same payout + outstanding lines so
+        // 🆕 28w.52/53 — no-show owes the therapist a taxi comp (max ฿200 /
+        //   actual fare). Keep it on the same payout + outstanding lines so
         //   Earnings agrees with Reports; other cancels pay ฿0.
-        const comp = noShowCompFor(b.status);
+        const comp = noShowCompFor(b);
         if (comp > 0) {
           totalTherapistPayout += comp;
           const tKey = b.therapistId ?? "(no therapist)";

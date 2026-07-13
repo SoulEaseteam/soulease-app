@@ -73,7 +73,7 @@ import { getServiceLabel } from "@/utils/serviceCatalog";
 //   shop cut matches Earnings / Pay-Therapists instead of a stale flat 40%.
 // 🆕 Round 28s321 — also share isPayrollExcluded + commissionBaseFor so the
 //   dashboard reconciles with Reports/Earnings (same exclusions, same shop base).
-import { therapistPayoutFor, isPayrollExcluded, commissionBaseFor } from "@/utils/commission";
+import { therapistPayoutFor, isPayrollExcluded, commissionBaseFor, noShowCompFor } from "@/utils/commission";
 // 🆕 Round 28s234 — Control Room redesign (shared dark tokens).
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { logAdminAction } from "@/utils/auditLog";
@@ -212,9 +212,38 @@ const AdminDashboardPage: React.FC = () => {
       const now = dayjs();
       const thisMonthStart = now.startOf("month").valueOf();
       const prevMonthStart = now.subtract(1, "month").startOf("month").valueOf();
+      // createdAt can be a Timestamp, Date, string, or a raw { seconds } shape
+      //   depending on where the doc was written (customer flow / admin add /
+      //   legacy backfill). Normalise to ms via a permissive helper.
+      const toMs = (c: unknown): number => {
+        if (c && typeof c === "object") {
+          const anyC = c as { toDate?: () => Date; seconds?: number };
+          if (typeof anyC.toDate === "function") return anyC.toDate().getTime();
+          if (typeof anyC.seconds === "number") return anyC.seconds * 1000;
+          if (c instanceof Date) return c.getTime();
+        } else if (typeof c === "string") {
+          const t = Date.parse(c);
+          if (!Number.isNaN(t)) return t;
+        }
+        return 0;
+      };
       snap.forEach((d) => {
         const b = d.data() as BookingRow;
-        if (isPayrollExcluded(b.status)) return;         // exclude cancelled/refunded/no-show
+        const createdMs = toMs(b.createdAt);
+
+        // 🆕 28w.53 — a no-show costs the shop the therapist's taxi comp
+        //   (max ฿200 / actual fare) even though nothing was collected; other
+        //   cancels touch nothing. Books reconcile: shop −comp, therapist +comp.
+        if (isPayrollExcluded(b.status)) {
+          const comp = noShowCompFor(b);
+          if (comp > 0) {
+            shop -= comp;
+            if (createdMs >= thisMonthStart) thisMonthShop -= comp;
+            else if (createdMs >= prevMonthStart) prevMonthShop -= comp;
+          }
+          return;
+        }
+
         const svc = b.servicePrice || 0;
         // 🆕 28w.51 — pass the FULL booking (duration + frozen therapistShare)
         //   so the shop cut reads the locked split first, then the table, then
@@ -228,33 +257,10 @@ const AdminDashboardPage: React.FC = () => {
         service += svc;
         shop += shopCut;                                 // shop cut after the real therapist split
 
-        // earliest booking = "opening day" — createdAt can be a Timestamp,
-        //   Date, string, or a raw { seconds } shape depending on where the
-        //   doc was written (customer flow / admin add / legacy backfill).
-        //   Normalise to ms via a permissive helper.
-        const c = b.createdAt as unknown;
-        let createdMs = 0;
-        if (c && typeof c === "object") {
-          const anyC = c as { toDate?: () => Date; seconds?: number };
-          if (typeof anyC.toDate === "function") {
-            createdMs = anyC.toDate().getTime();
-          } else if (typeof anyC.seconds === "number") {
-            createdMs = anyC.seconds * 1000;
-          } else if (c instanceof Date) {
-            createdMs = c.getTime();
-          }
-        } else if (typeof c === "string") {
-          const t = Date.parse(c);
-          if (!Number.isNaN(t)) createdMs = t;
-        }
-        if (createdMs > 0 && createdMs < openedAtMs) openedAtMs = createdMs;
-
+        if (createdMs > 0 && createdMs < openedAtMs) openedAtMs = createdMs;  // earliest booking = "opening day"
         // this month / previous month — for MoM delta
-        if (createdMs >= thisMonthStart) {
-          thisMonthShop += shopCut;
-        } else if (createdMs >= prevMonthStart) {
-          prevMonthShop += shopCut;
-        }
+        if (createdMs >= thisMonthStart) thisMonthShop += shopCut;
+        else if (createdMs >= prevMonthStart) prevMonthShop += shopCut;
       });
       setLifetime({
         jobs,
@@ -360,8 +366,14 @@ const AdminDashboardPage: React.FC = () => {
         const base   = commissionBaseFor({ servicePrice: service, discountAmount: r.discountAmount });
         periodWorker += worker;
         periodShop   += Math.max(0, base - worker);
+      } else {
+        periodCancelled++;
+        // 🆕 28w.53 — no-show: therapist taxi comp (max ฿200 / actual); shop
+        //   bears it so the period books reconcile.
+        const comp = noShowCompFor(r);
+        periodWorker += comp;
+        periodShop   -= comp;
       }
-      if (isCancelled)  periodCancelled++;
 
       if (created >= todayStart) {
         todayBookings++;

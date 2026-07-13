@@ -41,7 +41,7 @@ import {
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import {
   isPayrollExcluded, therapistPayoutFor, commissionBaseFor, applyServiceSplitConfig,
-  isNoShow, noShowCompFor, NO_SHOW_TAXI_COMP,
+  isNoShow, noShowCompFor,
 } from "@/utils/commission";
 // 🆕 28w.39 — admin split-table editor (therapist/shop per service × duration).
 import SplitTableEditor from "./SplitTableEditor";
@@ -166,9 +166,16 @@ const AdminReportPage: React.FC = () => {
       const r = map.get(k)!;
       r.bookings.push(b);
       // 🆕 28s247 — full excluded-status set, not just the exact "cancelled".
-      // 🆕 28w.52 — a no-show still owes the therapist a ฿200 taxi comp (shop
-      //   revenue stays ฿0). Other cancels pay ฿0. Counts as cancelled, not a job.
-      if (isPayrollExcluded(b.status)) { r.cancelled++; r.worker += noShowCompFor(b.status); continue; }
+      // 🆕 28w.52/53 — a no-show still owes the therapist a taxi comp
+      //   (max ฿200 / actual fare); the SHOP bears it (−comp) so the books
+      //   reconcile. Other cancels pay ฿0. Counts as cancelled, not a job.
+      if (isPayrollExcluded(b.status)) {
+        r.cancelled++;
+        const comp = noShowCompFor(b);
+        r.worker += comp;
+        r.shop   -= comp;
+        continue;
+      }
       const svc  = b.servicePrice || 0;
       const disc = b.discountAmount || 0;
       const base = commissionBaseFor(b);   // max(0, svc - disc)
@@ -206,13 +213,14 @@ const AdminReportPage: React.FC = () => {
       .filter((b) => !isPayrollExcluded(b.status) || isNoShow(b.status))
       .map((b) => {
         const noShow = isNoShow(b.status);
+        const comp = noShowCompFor(b);
         return {
           Date:         dayjs(toDate(b.createdAt) || new Date()).format("YYYY-MM-DD"),
           Service:      noShow ? `${b.serviceName || ""} (No-show)` : (b.serviceName || ""),
           "Service ฿":  noShow ? 0 : (b.servicePrice || 0),
           "Discount ฿": noShow ? 0 : (b.discountAmount || 0),
-          "Taxi ฿":     noShow ? NO_SHOW_TAXI_COMP : (b.taxiFee || 0),
-          "Pay ฿":      noShow ? NO_SHOW_TAXI_COMP : therapistPayoutFor(b),
+          "Taxi ฿":     noShow ? comp : (b.taxiFee || 0),
+          "Pay ฿":      noShow ? comp : therapistPayoutFor(b),
           "Total ฿":    noShow ? 0 : (b.totalPrice ?? (b.servicePrice || 0) + (b.taxiFee || 0)),
         };
       });
@@ -889,7 +897,7 @@ const AdminReportPage: React.FC = () => {
                           {excluded ? (
                             isNoShow(b.status) ? (
                               <>
-                                <Typography sx={{ ...adminFigureSx, fontSize: 13.5, fontWeight: 800, color: adminColor.accent, lineHeight: 1.1 }}>{thb(NO_SHOW_TAXI_COMP)}</Typography>
+                                <Typography sx={{ ...adminFigureSx, fontSize: 13.5, fontWeight: 800, color: adminColor.accent, lineHeight: 1.1 }}>{thb(noShowCompFor(b))}</Typography>
                                 <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim }}>No-show · ค่าโดยสาร</Typography>
                               </>
                             ) : (

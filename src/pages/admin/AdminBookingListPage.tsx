@@ -98,7 +98,7 @@ import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 //   uses the SAME shared commission split as Earnings/Reports (currently
 //   flat 60/40, see commission.ts) so this summary number can never drift
 //   from what those two pages say — the exact bug the 28s247 audit fixed.
-import { commissionBaseFor, therapistPayoutFor, stampSplit, isPayrollExcluded } from "@/utils/commission";
+import { commissionBaseFor, therapistPayoutFor, stampSplit, isPayrollExcluded, noShowCompFor } from "@/utils/commission";
 // 🆕 28s260 (founder: "เพิ่มวิธีการจ่ายด้วย") — WeChat/Alipay carry a 5%+฿200
 //   surcharge (same rule as the customer flow + AdminBookingAddPage).
 //   Editing payment method is a price-affecting edit, so the total gets
@@ -368,6 +368,7 @@ const AdminBookingListPage: React.FC = () => {
       if (isPayrollExcluded(b.status)) {
         cancelledCount++;
         cancelledValue += b.totalPrice ?? b.total ?? 0;
+        shopRevenue -= noShowCompFor(b);   // 🆕 28w.53 — shop bears a no-show's taxi comp
         continue;
       }
       activeCount++;
