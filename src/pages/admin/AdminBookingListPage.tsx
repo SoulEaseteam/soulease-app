@@ -133,6 +133,7 @@ import {
   Wallet,
   Buildings,
   Taxi,
+  Tag,
 } from "phosphor-react";
 
 // Cap the realtime window. Pending/confirmed bookings are always recent; older
@@ -361,28 +362,34 @@ const AdminBookingListPage: React.FC = () => {
   //   the per-booking overhead AdminEarningsPage subtracts for "net" — this
   //   is a quick list-page figure, not a replacement for the Earnings page.
   const valueStats = useMemo(() => {
-    let totalValue = 0, activeCount = 0, shopRevenue = 0;
-    // 🆕 28w.44 (founder "ยกเลิก ให้แสดงยอดแยกต่างหาก") — track cancelled
-    //   value/count separately so it's a stat of its own, not just excluded.
-    let cancelledValue = 0, cancelledCount = 0;
-    // 🆕 28w.54 — actual taxi comp the shop PAYS OUT for no-shows (real cash out,
-    //   unlike cancelledValue which is just lost booking value).
-    let noShowTaxi = 0, noShowCount = 0;
+    // 🆕 28w.55 (founder) — Booked Value & Promotions count DELIVERED jobs only
+    //   (completed/done). Shop Revenue accrues over all active (non-excluded)
+    //   bookings, net of split + promo + no-show taxi. No-show Taxi card also
+    //   surfaces the total cancelled count.
+    let successValue = 0, successCount = 0;   // delivered jobs (completed/done)
+    let promoTotal = 0, promoCount = 0;        // discount handed out on delivered jobs
+    let shopRevenue = 0;                        // net of therapist split + promo + no-show taxi
+    let cancelledCount = 0;                     // every excluded booking (cancel/refund/no-show/…)
+    let noShowTaxi = 0, noShowCount = 0;        // taxi comp the shop pays out for no-shows
     for (const b of faceted) {
       if (isPayrollExcluded(b.status)) {
         cancelledCount++;
-        cancelledValue += b.totalPrice ?? b.total ?? 0;
         const comp = noShowCompFor(b);   // 🆕 28w.53 — shop bears a no-show's taxi comp
         if (comp > 0) { noShowTaxi += comp; noShowCount++; }
         shopRevenue -= comp;
         continue;
       }
-      activeCount++;
-      totalValue += b.totalPrice ?? b.total ?? 0;
-      const base = commissionBaseFor(b);
-      shopRevenue += base - therapistPayoutFor(b);
+      // active (non-excluded) → shop revenue accrues (base already net of promo)
+      shopRevenue += commissionBaseFor(b) - therapistPayoutFor(b);
+      // delivered (successful) → booked value + promo actually spent
+      if (b.status === "completed" || b.status === "done") {
+        successCount++;
+        successValue += b.totalPrice ?? b.total ?? 0;
+        const disc = b.discountAmount ?? 0;
+        if (disc > 0) { promoTotal += disc; promoCount++; }
+      }
     }
-    return { totalValue, activeCount, shopRevenue, cancelledValue, cancelledCount, noShowTaxi, noShowCount };
+    return { successValue, successCount, promoTotal, promoCount, shopRevenue, cancelledCount, noShowTaxi, noShowCount };
   }, [faceted]);
 
   // ── filtered list (facets + tab + search) ──────────────────────────
@@ -630,17 +637,18 @@ const AdminBookingListPage: React.FC = () => {
         {[
           { label: "Needs Action", labelTh: "ต้องดำเนินการ",  value: String(counts.pending),           sub: "pending confirmation · รอยืนยัน", color: adminColor.amber,     icon: <Warning   size={20} weight="duotone" /> },
           { label: "In Progress",  labelTh: "กำลังดำเนินการ", value: String(counts.confirmed),         sub: "confirmed · ยืนยันแล้ว",           color: adminColor.accent,    icon: <Clock     size={20} weight="duotone" /> },
-          { label: "Booked Value", labelTh: "มูลค่ารวม",       value: formatTHB(valueStats.totalValue), sub: `${valueStats.activeCount} bookings · ไม่รวมยกเลิก`, color: adminColor.highlight, icon: <Wallet    size={20} weight="duotone" /> },
-          // 🆕 28w.54 (founder "เปลี่ยนเป็นยอดจ่ายค่าเทกซี่") — this card used to
-          //   show cancelledValue (Σ totalPrice of the 45 cancelled bookings =
-          //   lost booking value, not real cash). Replaced with the actual taxi
-          //   comp the shop pays out for no-shows — the only cash that moves on
-          //   a cancel/no-show. Cancelled COUNT is still on the "Cancelled" tab.
-          { label: "No-show Taxi", labelTh: "ค่าแท็กซี่ No-show", value: formatTHB(valueStats.noShowTaxi), sub: `${valueStats.noShowCount} no-show · จ่ายพนักงาน`, color: adminColor.amber, icon: <Taxi size={20} weight="duotone" /> },
-          // 🆕 28s258 — shop-revenue was an inline tag under Booked Value; r44
-          //   promotes it to a peer stat card (same commission split as
-          //   Earnings/Reports — see commission.ts).
-          { label: "Shop Revenue", labelTh: "รายได้ร้าน",      value: formatTHB(valueStats.shopRevenue), sub: "after therapist split · หลังหักหมอ", color: adminColor.green,     icon: <Buildings size={20} weight="duotone" /> },
+          // 🆕 28w.55 (founder "มูลค่ารวม bookings แค่ที่สำเร็จ") — delivered
+          //   jobs only (completed/done), not confirmed-but-not-done.
+          { label: "Booked Value", labelTh: "มูลค่ารวม",       value: formatTHB(valueStats.successValue), sub: `${valueStats.successCount} bookings · สำเร็จแล้ว`, color: adminColor.highlight, icon: <Wallet    size={20} weight="duotone" /> },
+          // 🆕 28w.55 (founder "เพิ่ม Promotions โชว์ยอดที่ร้านใช้แจกโปร") —
+          //   total discount handed out on delivered jobs.
+          { label: "Promotions",  labelTh: "โปรโมชั่น",        value: formatTHB(valueStats.promoTotal), sub: `${valueStats.promoCount} โปร · ส่วนลดที่แจก`, color: adminColor.accent, icon: <Tag size={20} weight="duotone" /> },
+          // 🆕 28w.54/55 — taxi comp the shop pays out for no-shows (real cash,
+          //   unlike lost booking value). Sub also surfaces the cancelled count.
+          { label: "No-show Taxi", labelTh: "ค่าแท็กซี่ No-show", value: formatTHB(valueStats.noShowTaxi), sub: `ยกเลิก ${valueStats.cancelledCount} · no-show ${valueStats.noShowCount}`, color: adminColor.amber, icon: <Taxi size={20} weight="duotone" /> },
+          // 🆕 28s258 — shop's net cut. Base is post-promo, and 28w.53 subtracts
+          //   the no-show taxi, so this is already net of split + promo + no-show.
+          { label: "Shop Revenue", labelTh: "รายได้ร้าน",      value: formatTHB(valueStats.shopRevenue), sub: "หลังหักหมอ · โปร · No-show", color: adminColor.green,     icon: <Buildings size={20} weight="duotone" /> },
         ].map((s) => (
           <Box
             key={s.label}
