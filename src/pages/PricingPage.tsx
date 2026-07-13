@@ -50,6 +50,8 @@ import {
   formatTHB,
 } from "@/utils/servicePricing";
 import { fonts } from "@/theme";
+// 🆕 28w.37 — 1st-anniversary banner.
+import AnniversaryBanner from "@/components/home/AnniversaryBanner";
 
 // 🆕 28w.5 — the r70 "Nordic Gray" tokens were fixed light-only hexes, so
 //   this page's cards stayed white with near-invisible text in night mode.
@@ -360,6 +362,11 @@ const PricingPage: React.FC = () => {
             "Each ritual delivered to your hotel or residence in Bangkok. Choose your duration; the concierge handles the rest. Rates in Thai Baht (THB) reflect the base session — travel, extensions, and add-ons are quoted separately.",
           )}
         </Box>
+      </Box>
+
+      {/* 🎉 28w.37 — 1st-anniversary banner (founder 2026-07-14) */}
+      <Box sx={{ px: { xs: 2.5, md: 0 }, mb: { xs: 4, md: 5 } }}>
+        <AnniversaryBanner variant="pricing" />
       </Box>
 
       {/* ── 2. Rate menu grid ─────────────────────────────────────── */}
