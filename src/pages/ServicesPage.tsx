@@ -490,13 +490,14 @@ const ServicesPage: React.FC = () => {
                     },
                   }}
                 >
-                  {/* Floating badge pill (top-right, over image)
-                      🆕 28r103 — badge label is now data-driven.
-                      🆕 28r109 (founder "ขยับทุกป้ายให้บาล้าน กับรูป") —
-                      bumped size + padding + shadow so the badge reads
-                      as proportionate to the large hero image (was 9.5px
-                      lost against a 260px-tall photo). Corner offset also
-                      widened for a more premium, breathing composition. */}
+                  {/* Floating badge pill — TOP-LEFT anchor (unified w/ mini)
+                      🆕 28r112 (founder "ปรับแต่งเหมือนกันทุกป้าย") —
+                      moved from top-right amber → top-LEFT to match the
+                      mini-card badge anchor.  Same padding shape + letter-
+                      spacing across all badges; amber stays reserved for
+                      SIGNATURE (bestseller/most-requested), rose for the
+                      other tiers.  Semantically distinct, structurally
+                      identical. */}
                   <Box
                     component={motion.div}
                     aria-hidden
@@ -506,17 +507,17 @@ const ServicesPage: React.FC = () => {
                     sx={{
                       position: "absolute",
                       top: 18,
-                      right: 18,
+                      left: 18,
                       zIndex: 3,
-                      px: "16px",
-                      py: "8px",
+                      px: "14px",
+                      py: "7px",
                       borderRadius: 999,
                       background: accents.amber,
                       color: "#fff",
                       fontFamily: SANS,
-                      fontSize: 11.5,
+                      fontSize: 11,
                       fontWeight: 800,
-                      letterSpacing: "0.18em",
+                      letterSpacing: "0.16em",
                       textTransform: "uppercase",
                       boxShadow: "0 6px 18px rgba(0,0,0,0.28)",
                     }}
@@ -524,23 +525,25 @@ const ServicesPage: React.FC = () => {
                     {bestseller.badge ?? t("services.bestseller", "Bestseller")}
                   </Box>
 
-                  {/* Hero image — full width, at the very TOP of the card
-                      🆕 Round 28r97 · height responsive.  28r98 adds a
-                      slow Ken Burns loop (see .fx-hero-img keyframes on
-                      the parent card) for a subtle living-still quality. */}
+                  {/* Hero image — full-canvas 4:3 aspect
+                      🆕 28r112 (founder "ให้เห็นรูปเต็มใบ สวยๆ") —
+                      switched from fixed heights (180/210/260) to
+                      aspect-ratio 4/3 so the frame flexes with viewport
+                      width but always shows enough of the subject.  On
+                      a 400px screen that's ~300px tall (was 180px). */}
                   {bestseller.image && (
                     <Box
                       sx={{
                         position: "relative",
                         width: "100%",
-                        height: { xs: 180, sm: 210, md: 260 },
+                        aspectRatio: "4 / 3",
                         overflow: "hidden",
                         "&::after": {
                           content: '""',
                           position: "absolute",
                           inset: 0,
                           background:
-                            "linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(0,0,0,0.28) 100%)",
+                            "linear-gradient(180deg, rgba(0,0,0,0) 60%, rgba(0,0,0,0.22) 100%)",
                           pointerEvents: "none",
                           zIndex: 1,
                         },
@@ -632,32 +635,45 @@ const ServicesPage: React.FC = () => {
                       {bestseller.desc}
                     </Typography>
 
-                    {/* 🆕 28w.31 (founder: "ให้เหลือแค่อธิบาย · ราคาให้ลิ้งไป
-                        หน้า pricing") — the Services page now describes only;
-                        the per-duration rate grid was removed. Prices live on
-                        /pricing, reached via this link. */}
+                    {/* 🆕 28r112 (founder 2026-07-13 · "ไม่เอาราคา" +
+                        "เพิ่มปุ่มสำรวจราคาให้ลิ้งไปหน้า pricing") —
+                        the r92 3-cell rate grid was replaced upstream
+                        with a text link; that text link is now promoted
+                        to a proper outlined button sitting above the
+                        primary CTA. No arrow (per r98 direction). */}
                     <Box
                       component="a"
                       href="/pricing"
+                      aria-label={t("services.explorePricingAria", "Explore full pricing")}
                       sx={{
-                        display: "inline-flex",
+                        display: "flex",
                         alignItems: "center",
-                        gap: "6px",
-                        mb: 2.25,
-                        fontFamily: SANS,
-                        fontSize: 13,
-                        fontWeight: 700,
+                        justifyContent: "center",
+                        width: "100%",
+                        px: "22px",
+                        py: "12px",
+                        mb: 1.25,
+                        borderRadius: 999,
+                        background: "transparent",
                         color: ROSE,
+                        border: `1.5px solid ${ROSE}`,
                         textDecoration: "none",
+                        fontFamily: SANS,
+                        fontSize: 14,
+                        fontWeight: 700,
                         letterSpacing: "0.01em",
-                        "&:hover": { color: "#C96F89" },
-                        "&:focus-visible": { outline: `2px solid ${ROSE}`, outlineOffset: 3 },
+                        transition: "background 0.2s ease, color 0.2s ease, transform 0.15s ease",
+                        "&:hover": {
+                          background: "rgba(217,124,149,0.10)",
+                          transform: "translateY(-1px)",
+                        },
+                        "&:focus-visible": {
+                          outline: `2px solid ${ROSE}`,
+                          outlineOffset: 3,
+                        },
                       }}
                     >
-                      {t("services.viewPricing", "View full pricing")}
-                      <Box component="span" aria-hidden sx={{ fontSize: 15, lineHeight: 1 }}>
-                        →
-                      </Box>
+                      {t("services.explorePricing", "Explore Prices")}
                     </Box>
 
                     {/* Rose full-width CTA */}
