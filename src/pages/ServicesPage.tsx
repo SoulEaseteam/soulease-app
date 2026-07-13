@@ -537,43 +537,34 @@ const ServicesPage: React.FC = () => {
                       whole card now.  Composition inside the card is
                       pure image + name + description. */}
 
-                  {/* Hero image — full-canvas 4:3 aspect
-                      🆕 28r112 (founder "ให้เห็นรูปเต็มใบ สวยๆ") —
-                      switched from fixed heights (180/210/260) to
-                      aspect-ratio 4/3 so the frame flexes with viewport
-                      width but always shows enough of the subject.  On
-                      a 400px screen that's ~300px tall (was 180px). */}
+                  {/* Hero image — natural full display (no crop)
+                      🆕 28r116 (founder "services ทุกเมนู เห็น รูปเต็มใบ")
+                      — swapped 4:3 cover crop for a plain <img> at
+                      natural aspect ratio.  Each service card now shows
+                      its full uploaded photo without cropping the face,
+                      subject, or product shot.  Height adapts per image. */}
                   {bestseller.image && (
-                    <Box
-                      sx={{
-                        position: "relative",
-                        width: "100%",
-                        aspectRatio: "4 / 3",
-                        overflow: "hidden",
-                        "&::after": {
-                          content: '""',
+                    <Box sx={{ position: "relative", width: "100%", overflow: "hidden" }}>
+                      <Box
+                        component="img"
+                        src={bestseller.image}
+                        alt=""
+                        data-sr-fx="hero"
+                        sx={{
+                          display: "block",
+                          width: "100%",
+                          height: "auto",
+                          willChange: "transform",
+                        }}
+                      />
+                      <Box
+                        aria-hidden
+                        sx={{
                           position: "absolute",
                           inset: 0,
                           background:
-                            "linear-gradient(180deg, rgba(0,0,0,0) 60%, rgba(0,0,0,0.22) 100%)",
+                            "linear-gradient(180deg, rgba(0,0,0,0) 68%, rgba(0,0,0,0.22) 100%)",
                           pointerEvents: "none",
-                          zIndex: 1,
-                        },
-                      }}
-                    >
-                      <Box
-                        data-sr-fx="hero"
-                        sx={{
-                          // 🆕 28r111 (founder 2026-07-13 · "ปรับให้
-                          //   เห็นรูป") — was `center` which cropped the
-                          //   therapist's face out on the Gentleman's
-                          //   hero.  Anchoring to `center top` keeps the
-                          //   upper composition (face) inside the frame
-                          //   on every service image.
-                          position: "absolute",
-                          inset: 0,
-                          background: `center top / cover no-repeat url(${bestseller.image})`,
-                          willChange: "transform",
                         }}
                       />
                     </Box>
@@ -742,25 +733,31 @@ const ServicesPage: React.FC = () => {
                         },
                       }}
                     >
-                      {/* Hero image — full-canvas 4:3 aspect */}
+                      {/* Hero image — natural full display (no crop)
+                          🆕 28r116 — see featured card comment above. */}
                       {svc.image && (
-                        <Box
-                          sx={{
-                            position: "relative",
-                            width: "100%",
-                            aspectRatio: "4 / 3",
-                            overflow: "hidden",
-                            background: `center top / cover no-repeat url(${svc.image})`,
-                            "&::after": {
-                              content: '""',
+                        <Box sx={{ position: "relative", width: "100%", overflow: "hidden" }}>
+                          <Box
+                            component="img"
+                            src={svc.image}
+                            alt=""
+                            sx={{
+                              display: "block",
+                              width: "100%",
+                              height: "auto",
+                            }}
+                          />
+                          <Box
+                            aria-hidden
+                            sx={{
                               position: "absolute",
                               inset: 0,
                               background:
-                                "linear-gradient(180deg, rgba(0,0,0,0) 60%, rgba(0,0,0,0.22) 100%)",
+                                "linear-gradient(180deg, rgba(0,0,0,0) 68%, rgba(0,0,0,0.22) 100%)",
                               pointerEvents: "none",
-                            },
-                          }}
-                        />
+                            }}
+                          />
+                        </Box>
                       )}
 
                       {/* Content section */}
