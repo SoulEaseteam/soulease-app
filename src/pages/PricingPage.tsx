@@ -374,7 +374,10 @@ const PricingPage: React.FC = () => {
       >
         {orderedServices.map((s) => {
           const copy = SERVICE_COPY[s.id] ?? { thai: "", teaser: s.desc };
-          const durations = [60, 90, 120];
+          // 🆕 28r115 (founder "โชว์แค่ราคาเดียว คือ 60 นาที ของทุกเมนู
+          //   ก่อน · นอกนั้น ซ่อนราคา เพราะจะทำราคาใหม่") — 90 + 120
+          //   min rows hidden while new pricing is being decided.
+          const durations = [60];
           const priceAt = (min: number) => priceForDuration(s, min);
           const isBestseller = s.id === BESTSELLER_ID;
           return (
@@ -497,17 +500,46 @@ const PricingPage: React.FC = () => {
                     >
                       {d} min
                     </Box>
+                    {/* 🆕 28r115 (founder "ปรับราคาลง ไส่ขีด") — visual
+                        sale display.  Struck-through "was" price is the
+                        current price × 1.20 rounded up to the nearest
+                        hundred; actual booking / payment logic stays on
+                        the un-discounted `priceForDuration()` value. */}
                     <Box
-                      component="span"
                       sx={{
-                        fontFamily: fonts.heading,
-                        fontSize: { xs: 17, md: 18 },
-                        fontWeight: 600,
-                        color: ROSE,
-                        letterSpacing: "-0.005em",
+                        display: "inline-flex",
+                        alignItems: "baseline",
+                        gap: "8px",
                       }}
                     >
-                      {formatTHB(priceAt(d))}
+                      <Box
+                        component="span"
+                        aria-hidden
+                        sx={{
+                          fontFamily: fonts.body,
+                          fontSize: { xs: 12.5, md: 13 },
+                          fontWeight: 500,
+                          color: grays.g600,
+                          textDecoration: "line-through",
+                          textDecorationColor: grays.g600,
+                          textDecorationThickness: "1.5px",
+                          opacity: 0.85,
+                        }}
+                      >
+                        {formatTHB(Math.ceil((priceAt(d) * 1.20) / 100) * 100)}
+                      </Box>
+                      <Box
+                        component="span"
+                        sx={{
+                          fontFamily: fonts.heading,
+                          fontSize: { xs: 17, md: 18 },
+                          fontWeight: 600,
+                          color: ROSE,
+                          letterSpacing: "-0.005em",
+                        }}
+                      >
+                        {formatTHB(priceAt(d))}
+                      </Box>
                     </Box>
                   </Box>
                 ))}
