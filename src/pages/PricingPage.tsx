@@ -511,7 +511,9 @@ const PricingPage: React.FC = () => {
                 onClick={() => navigate(`/services/${s.id}`)}
                 aria-label={`Unlock Executive Benefits — ${s.name}`}
                 sx={{
-                  alignSelf: "flex-start",
+                  // 🆕 28w.26 (founder: "ขยับไว้ตรงกลางป้าย") — centre the CTA
+                  //   in the card (was flex-start / left-aligned).
+                  alignSelf: "center",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "8px",
