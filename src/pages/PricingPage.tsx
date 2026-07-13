@@ -77,7 +77,7 @@ const HERO_GRADIENT = "linear-gradient(160deg, #B8567F 0%, #8A3A57 100%)";
 const BESTSELLER_ID = "SR-HJ2200";
 import { responsiveShell } from "@/theme/breakpoints";
 import { useDocumentMeta } from "@/utils/useDocumentMeta";
-import { whatsappDeepLink, CONCIERGE } from "@/config/concierge";
+import { CONCIERGE } from "@/config/concierge";
 
 // 🆕 28w.28 — concierge channels (ported from ServicesPage) for the Reach us grid.
 const CHANNELS = [
@@ -790,69 +790,6 @@ const PricingPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* ── 6b. Reach us ── 🆕 28w.29 (founder: "ย้ายไปที่นี้") — moved the
-             concierge tiles + Telegram subscribe down here, just above the
-             final CTA band, so all the ways to reach us sit together. */}
-      <Box component="section" sx={{ marginBottom: { xs: 5, md: 7 } }}>
-        <Box sx={{ mb: 1.5 }}>
-          <Eyebrow>{t("services.reachUs", "Reach us")}</Eyebrow>
-        </Box>
-        <Box sx={{ display: "flex", gap: 1 }}>
-          {CHANNELS.map(({ Icon, name, href, tone, aria }) => (
-            <Box
-              key={name}
-              component="a"
-              href={href}
-              aria-label={aria}
-              {...(href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              sx={{
-                flex: 1,
-                textDecoration: "none",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "6px",
-                py: "14px",
-                borderRadius: "14px",
-                background: "var(--sr-panel)",
-                border: "1px solid var(--sr-hairline)",
-                boxShadow: "var(--sr-card-shadow)",
-                transition: "border-color 200ms ease, transform 200ms ease",
-                "&:hover": { borderColor: tone, transform: "translateY(-2px)" },
-                "&:focus-visible": { outline: `2px solid ${ROSE}`, outlineOffset: 3 },
-                "& svg": { fontSize: 24, color: tone },
-              }}
-            >
-              <Icon />
-              <Box sx={{ fontFamily: fonts.body, fontSize: 10, fontWeight: 700, color: "var(--sr-muted)", letterSpacing: "0.03em" }}>
-                {name}
-              </Box>
-            </Box>
-          ))}
-        </Box>
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 1.25 }}>
-          <Box
-            component="a"
-            href={CONCIERGE.telegramChannelUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            sx={{
-              fontFamily: fonts.body,
-              fontSize: 12,
-              fontWeight: 600,
-              color: "var(--sr-muted)",
-              textDecoration: "none",
-              letterSpacing: "0.02em",
-              "&:hover": { color: ROSE },
-              "&:focus-visible": { outline: `2px solid ${ROSE}`, outlineOffset: 3 },
-            }}
-          >
-            {t("services.subscribeTelegram", "Subscribe to our Telegram channel")}
-          </Box>
-        </Box>
-      </Box>
-
       {/* ── 7. Bottom CTA band ────────────────────────────────────── */}
       <Box
         component="section"
@@ -896,93 +833,61 @@ const PricingPage: React.FC = () => {
             "Message the concierge with your preferred time and room number · we confirm your booking in minutes.",
           )}
         </Box>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "12px",
-            marginTop: "28px",
-          }}
-        >
+        {/* 🆕 28w.30 (founder: "Reach us ย้ายไปแทนปุ่ม") — replaced the
+            Contact Concierge / Back to Home buttons with the concierge tiles
+            (WhatsApp covers the old Contact CTA) + Telegram subscribe. */}
+        <Box sx={{ display: "flex", gap: 1, marginTop: "28px" }}>
+          {CHANNELS.map(({ Icon, name, href, tone, aria }) => (
+            <Box
+              key={name}
+              component="a"
+              href={href}
+              aria-label={aria}
+              {...(href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              sx={{
+                flex: 1,
+                textDecoration: "none",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                py: "14px",
+                borderRadius: "14px",
+                background: "var(--sr-panel)",
+                border: "1px solid var(--sr-hairline)",
+                boxShadow: "var(--sr-card-shadow)",
+                transition: "border-color 200ms ease, transform 200ms ease",
+                "&:hover": { borderColor: tone, transform: "translateY(-2px)" },
+                "&:focus-visible": { outline: `2px solid ${ROSE}`, outlineOffset: 3 },
+                "& svg": { fontSize: 24, color: tone },
+              }}
+            >
+              <Icon />
+              <Box sx={{ fontFamily: fonts.body, fontSize: 10, fontWeight: 700, color: "var(--sr-muted)", letterSpacing: "0.03em" }}>
+                {name}
+              </Box>
+            </Box>
+          ))}
+        </Box>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 1.75 }}>
           <Box
             component="a"
-            href={whatsappDeepLink(
-              "Hi SunRed concierge, I'd like to reserve a session tonight.",
-            )}
+            href={CONCIERGE.telegramChannelUrl}
             target="_blank"
             rel="noopener noreferrer"
             sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "10px",
-              padding: { xs: "12px 24px", md: "14px 30px" },
-              borderRadius: 999,
-              background: "#D97C95",
-              color: "#FFFFFF",
               fontFamily: fonts.body,
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: 600,
-              letterSpacing: "0.005em",
+              color: "var(--sr-muted)",
               textDecoration: "none",
-              boxShadow: "0 6px 18px rgba(45, 45, 43, 0.24)",
-              whiteSpace: "nowrap",
-              minHeight: 46,
-              minWidth: 200,
-              transition:
-                "transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease",
-              "&:hover": {
-                background: "#C96F89",
-                transform: "translateY(-1px)",
-              },
-              "&:focus-visible": {
-                outline: `2px solid ${grays.g900}`,
-                outlineOffset: 3,
-              },
+              letterSpacing: "0.02em",
+              "&:hover": { color: ROSE },
+              "&:focus-visible": { outline: `2px solid ${ROSE}`, outlineOffset: 3 },
             }}
           >
-            {t("pricing.finalCta.contact", "Contact Concierge")}
-            <Box component="span" aria-hidden sx={{ fontSize: 15, lineHeight: 1 }}>
-              →
-            </Box>
-          </Box>
-          <Box
-            component="button"
-            type="button"
-            onClick={() => navigate("/")}
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: { xs: "12px 24px", md: "14px 30px" },
-              borderRadius: 999,
-              background: "transparent",
-              color: grays.g900,
-              fontFamily: fonts.body,
-              fontSize: 14,
-              fontWeight: 600,
-              letterSpacing: "0.005em",
-              cursor: "pointer",
-              border: `1.5px solid ${grays.g900}`,
-              whiteSpace: "nowrap",
-              minHeight: 46,
-              minWidth: 200,
-              transition:
-                "transform 0.16s ease, background 0.16s ease, color 0.16s ease",
-              "&:hover": {
-                background: "#D97C95",
-                color: "#FFFFFF",
-                transform: "translateY(-1px)",
-              },
-              "&:focus-visible": {
-                outline: `2px solid ${grays.g900}`,
-                outlineOffset: 3,
-              },
-            }}
-          >
-            {t("pricing.finalCta.home", "Back to Home")}
+            {t("services.subscribeTelegram", "Subscribe to our Telegram channel")}
           </Box>
         </Box>
       </Box>
