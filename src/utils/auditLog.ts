@@ -59,6 +59,10 @@ export type AuditAction =
   //   unblock, which toggles a signed-up `users` account, not a phone.
   | "phone.block"
   | "phone.unblock"
+  // 🆕 28w.60 — membership enrollment (SRD- code) on Customer Insights.
+  | "member.enroll"
+  | "member.reset"
+  | "member.upgrade"
   // 🆕 Round 28s296 — AdminAdvancedSettingsPage now actually enforces
   //   maintenanceMode/minAdvanceMins/maxFutureDays; saving a change to
   //   live booking-eligibility rules deserves a trail like every other

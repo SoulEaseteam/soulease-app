@@ -82,6 +82,29 @@ function tierIndexByMetric(value: number, mins: Record<MembershipTier, number>):
   return idx;
 }
 
+// ── Member code (SRD-…) ────────────────────────────────────────────────
+// 🆕 28w.60 (founder) — an enrolled member gets a code that starts with "SRD-"
+//   and embeds their tier letter, so it can be re-issued ("upgraded") when they
+//   reach Gold/BlackVIP, or reset if they forget it.
+export const MEMBER_TIER_LETTER: Record<MembershipTier, string> = {
+  Bronze: "B", Silver: "S", Gold: "G", BlackVIP: "V",
+};
+// No ambiguous chars (0/O, 1/I) so codes read cleanly over the phone.
+const MEMBER_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+/** Generate a member code: `SRD-<tierLetter><5 random chars>`, e.g. SRD-G7K2F9.
+ *  `rand` is injectable for tests; defaults to Math.random (app runtime only). */
+export function generateMemberCode(tier: MembershipTier, rand: () => number = Math.random): string {
+  let body = "";
+  for (let i = 0; i < 5; i++) body += MEMBER_CODE_CHARS[Math.floor(rand() * MEMBER_CODE_CHARS.length)];
+  return `SRD-${MEMBER_TIER_LETTER[tier]}${body}`;
+}
+
+/** Rank helper — higher index = stronger tier; -1 for null/unknown. */
+export function tierRank(tier: MembershipTier | null | undefined): number {
+  return tier ? MEMBERSHIP_TIERS.indexOf(tier) : -1;
+}
+
 export interface MembershipResult {
   tier: MembershipTier | null; // null = below Bronze (not a member yet)
   demoted: boolean;            // inactivity knocked them down a tier
