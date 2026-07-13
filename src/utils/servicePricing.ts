@@ -94,6 +94,32 @@ let liveServiceOverrides: Record<string, LiveServiceOverride> = {};
 let liveCustomServices: MassageService[] = [];
 let liveServiceOrder: string[] = [];
 
+// 🆕 Round 28w.32 (founder "ใช้ที่เดียวกันกัน services" — service photos
+//   inconsistent across surfaces) — reactive signal so React surfaces
+//   re-render when the async admin config (image/name/price/order
+//   overrides) lands AFTER first paint. Without it, a component that
+//   memoises the catalog on mount (e.g. ServicesPage `useMemo(…, [])`)
+//   freezes the pre-override STOCK images and never shows the admin's
+//   uploaded photos — while surfaces that happen to re-render for other
+//   reasons (booking flow / therapist page live listeners) do, so the
+//   same service showed two different photos. Bumped once per apply.
+let serviceConfigVersion = 0;
+const serviceConfigListeners = new Set<() => void>();
+
+/** Current live-config revision. Increments each applyLiveServiceConfig. */
+export function getServiceConfigVersion(): number {
+  return serviceConfigVersion;
+}
+
+/** Subscribe to live-config (re)applies. Returns an unsubscribe fn.
+ *  Pair with useSyncExternalStore — see useServiceConfigVersion hook. */
+export function subscribeServiceConfig(cb: () => void): () => void {
+  serviceConfigListeners.add(cb);
+  return () => {
+    serviceConfigListeners.delete(cb);
+  };
+}
+
 /** Admin-set display order (service ids). Empty = use the caller's own
  *  default order. 🆕 Round 28s302. */
 export function getLiveServiceOrder(): string[] {
@@ -169,6 +195,12 @@ export function applyLiveServiceConfig(cfg: {
   }
   liveServiceOverrides = map;
   liveCustomServices = list;
+
+  // 🆕 28w.32 — notify React subscribers so memoised catalog reads
+  //   (ServicesPage / ServiceDetailPage) recompute with the freshly
+  //   applied admin image/name/price overrides.
+  serviceConfigVersion += 1;
+  serviceConfigListeners.forEach((cb) => cb());
 }
 
 /** ENABLED admin-created services, in the shape the catalog uses. */

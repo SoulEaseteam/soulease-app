@@ -61,6 +61,9 @@ import {
   durationsFor,
   formatTHB,
 } from "@/utils/servicePricing";
+// 🆕 28w.32 — re-render when the admin image override lands so the hero
+//   photo matches the booking flow / services list (same uploaded image).
+import { useServiceConfigVersion } from "@/hooks/useServiceConfigVersion";
 import { trackServiceView, trackConciergeOpen } from "@/utils/analytics";
 import { db } from "@/lib/firebase";
 import { brand, fonts, accents, gradients } from "@/theme";
@@ -118,7 +121,14 @@ const ServiceDetailPage: React.FC = () => {
 
   // 🆕 Round 28s302 — via getServiceById so live admin overrides
   //   (name/price/image/detail/benefits) + custom services flow here too.
-  const service = rawId ? getServiceById(rawId) : null;
+  // 🆕 28w.32 — recompute when the async admin override lands (was computed
+  //   once, so the hero froze on the stock image while the booking flow
+  //   showed the uploaded photo).
+  const cfgVersion = useServiceConfigVersion();
+  const service = React.useMemo(
+    () => (rawId ? getServiceById(rawId) : null),
+    [rawId, cfgVersion]
+  );
 
   const [duration, setDuration] = useState<number>(60);
   const [reviews, setReviews] = useState<ReviewLite[]>([]);

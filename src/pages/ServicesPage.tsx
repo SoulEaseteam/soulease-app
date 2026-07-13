@@ -34,6 +34,9 @@ import {
   isServiceEnabled,
   getLiveServiceOrder,
 } from "../utils/servicePricing";
+// 🆕 28w.32 — re-render when the async admin image/config override lands so
+//   the cards show the same uploaded photos as the booking flow.
+import { useServiceConfigVersion } from "@/hooks/useServiceConfigVersion";
 import HowItWorks from "@/components/home/HowItWorks";
 import BundleSection from "@/components/common/BundleSection";
 import { useDocumentMeta } from "@/utils/useDocumentMeta";
@@ -186,11 +189,15 @@ const ServicesPage: React.FC = () => {
   //   4. `getLiveServiceOrder()` — if the admin has set a display order,
   //      it wins; otherwise falls back to the r89 REST_ORDER + bestseller
   //      pinning behaviour.
+  // 🆕 28w.32 — bump on live-config apply so the memo below recomputes when
+  //   the admin image/order override loads after mount (was frozen with []).
+  const cfgVersion = useServiceConfigVersion();
   const liveServices: MassageService[] = React.useMemo(() => {
     return getAllServices()
       .filter((s) => isServiceEnabled(s.id))
       .map((s) => getServiceById(s.id) ?? s);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cfgVersion]);
 
   const bestseller = React.useMemo(
     () => liveServices.find((s) => s.id === BESTSELLER_ID),
