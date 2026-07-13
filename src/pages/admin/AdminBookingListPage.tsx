@@ -853,18 +853,34 @@ const AdminBookingListPage: React.FC = () => {
           <MenuItem value="unpaid">Unpaid</MenuItem>
         </Select>
 
-        {/* 🆕 28w.56 — filter by promo usage (discountAmount > 0) */}
-        <Select
-          size="small"
-          value={promoFilter}
-          onChange={(e) => setPromoFilter(e.target.value)}
-          sx={{ minWidth: 160, fontSize: 13 }}
-          MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
+        {/* 🆕 28w.56 → 28w.57 (founder "เปลี่ยนเป็น button") — promo filter as a
+            pill toggle (matches the status tabs): on = only promo orders. */}
+        <motion.button
+          type="button"
+          whileTap={{ scale: 0.97 }}
+          onClick={() => setPromoFilter((p) => (p === "promo" ? "__ALL__" : "promo"))}
+          aria-pressed={promoFilter === "promo"}
+          aria-label="Promotions filter · ใช้โปรฯ"
+          style={{
+            flexShrink: 0,
+            height: 40,
+            padding: "0 16px",
+            borderRadius: 999,
+            background: promoFilter === "promo" ? adminColor.accent : adminColor.panel,
+            border: promoFilter === "promo" ? "none" : `1px solid ${adminColor.line2}`,
+            color: promoFilter === "promo" ? "#fff" : adminColor.muted,
+            fontFamily: SANS,
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: "pointer",
+            boxShadow: promoFilter === "promo" ? "0 5px 14px rgba(78,126,140,0.28)" : "none",
+            display: "flex", alignItems: "center", gap: 6,
+            transition: "border-color 0.15s ease, color 0.15s ease, background 0.15s ease",
+          }}
         >
-          <MenuItem value="__ALL__">โปรฯ · ทั้งหมด</MenuItem>
-          <MenuItem value="promo">ใช้โปรฯ</MenuItem>
-          <MenuItem value="nopromo">ไม่ใช้โปรฯ</MenuItem>
-        </Select>
+          <Tag size={16} weight={promoFilter === "promo" ? "fill" : "duotone"} />
+          ใช้โปรฯ
+        </motion.button>
       </Box>
 
       {/* ── card list ─────────────────────────────────────────────── */}
