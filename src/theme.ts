@@ -393,6 +393,18 @@ const theme = createTheme({
           border: "1px solid rgba(31,41,51,0.12)",
           borderRadius: 16,
           boxShadow: "0 14px 44px rgba(15,23,42,0.20)",
+          // 🆕 28w.45 (founder "ปฏิทินทุกที่ในแอดมิน ไม่เห็นลูกศรไปกลับ") —
+          //   the month ‹ › arrows + the year switch (▼) are IconButtons
+          //   whose SVGs inherit the DARK palette's white text → invisible on
+          //   this white calendar. Force dark ink so they're visible; keep the
+          //   dimmed look when disabled (range edge).
+          "& .MuiPickersArrowSwitcher-button, & .MuiPickersCalendarHeader-switchViewButton":
+            {
+              color: "#232B36",
+            },
+          "& .MuiPickersArrowSwitcher-button.Mui-disabled": {
+            color: "rgba(31,41,51,0.28)",
+          },
         },
       },
     },
