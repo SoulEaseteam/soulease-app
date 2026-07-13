@@ -34,6 +34,39 @@ const AREAS = [
   "Phrom Phong", "Ploenchit", "Chidlom", "Ari", "Riverside", "Ratchada",
 ];
 
+// 🆕 28w.17 — one consistent section header across the page (founder
+//   "จัดระเบียบ"): a rose accent (bar by default, or a passed icon) + the
+//   uppercase rose-gold label.
+const SectionHeader: React.FC<{ label: string; icon?: React.ReactNode; center?: boolean }> = ({
+  label,
+  icon,
+  center,
+}) => (
+  <Box
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: center ? "center" : "flex-start",
+      gap: 0.75,
+      mb: 1.25,
+    }}
+  >
+    {icon ?? <Box sx={{ width: 3, height: 14, borderRadius: "2px", background: ROSE }} />}
+    <Typography
+      sx={{
+        fontFamily: SANS,
+        fontSize: 11,
+        fontWeight: 800,
+        letterSpacing: "0.14em",
+        textTransform: "uppercase",
+        color: "var(--sr-gold-text)",
+      }}
+    >
+      {label}
+    </Typography>
+  </Box>
+);
+
 // 🆕 28w.12 — concierge channel grid (founder: "ต่อด้วย คอนเทค แบบหน้า
 //   เซอร์วิส"), mirrors the ServicesPage "Reach us" tiles.
 const REACH_CHANNELS = [
@@ -45,21 +78,7 @@ const REACH_CHANNELS = [
 
 const ReachUs: React.FC<{ t: (k: string, d: string) => string }> = ({ t }) => (
   <Box sx={{ mt: 3.5, px: 0.5 }}>
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.25 }}>
-      <Box sx={{ width: 3, height: 14, borderRadius: 2, background: ROSE }} />
-      <Typography
-        sx={{
-          fontFamily: SANS,
-          fontSize: 11,
-          fontWeight: 800,
-          letterSpacing: "0.14em",
-          textTransform: "uppercase",
-          color: "var(--sr-gold-text)",
-        }}
-      >
-        {t("nearme.reach.title", "Reach us")}
-      </Typography>
-    </Box>
+    <SectionHeader label={t("nearme.reach.title", "Reach us")} />
     <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1 }}>
       {REACH_CHANNELS.map((c) => (
         <Box
@@ -263,20 +282,8 @@ const TaxiEstimator: React.FC = () => {
   return (
     // 🆕 28w.16 — narrow the price-check widget only (founder clarified
     //   "ลดความกว้าง" = just the estimator, not the whole near-me page).
-    <Box sx={{ mt: 3, px: 0.5, maxWidth: 360, mx: "auto" }}>
-      <Typography
-        sx={{
-          fontFamily: SANS,
-          fontSize: 11,
-          fontWeight: 800,
-          letterSpacing: "0.14em",
-          textTransform: "uppercase",
-          color: "var(--sr-gold-text)",
-          mb: 1.25,
-        }}
-      >
-        {t("nearme.taxi.title", "Estimate taxi to your place")}
-      </Typography>
+    <Box sx={{ mt: 3.5, px: 0.5, maxWidth: 360, mx: "auto" }}>
+      <SectionHeader label={t("nearme.taxi.title", "Estimate taxi to your place")} center />
 
       <Box
         sx={{
@@ -579,22 +586,11 @@ const NearMePage: React.FC = () => {
       <TaxiEstimator />
 
       {/* Coverage areas */}
-      <Box sx={{ mt: 3, px: 0.5 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1.25 }}>
-          <MapPin size={15} weight="fill" color={ROSE} />
-          <Typography
-            sx={{
-              fontFamily: SANS,
-              fontSize: 11,
-              fontWeight: 800,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              color: "var(--sr-gold-text)",
-            }}
-          >
-            {t("nearme.coverage.title", "Areas we cover")}
-          </Typography>
-        </Box>
+      <Box sx={{ mt: 3.5, px: 0.5 }}>
+        <SectionHeader
+          label={t("nearme.coverage.title", "Areas we cover")}
+          icon={<MapPin size={15} weight="fill" color={ROSE} />}
+        />
         {/* 28w.9 V2 prose · 28w.12 wrapped in a soft panel (decorate) */}
         <Box
           sx={{

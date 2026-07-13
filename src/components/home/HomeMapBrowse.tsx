@@ -315,24 +315,9 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
       : null;
 
   return (
-    <Box sx={{ padding: "16px 14px 0" }}>
-      {/* Eyebrow */}
-      <Typography
-        sx={{
-          fontSize: 10,
-          color: brand.accent,
-          fontWeight: 700,
-          letterSpacing: "0.15em",
-          textTransform: "uppercase",
-          margin: "0 4px 8px",
-          display: "flex",
-          alignItems: "center",
-          gap: "4px",
-        }}
-      >
-        Or browse by location <Box component="span">↓</Box>
-      </Typography>
-
+    <Box sx={{ padding: "4px 14px 0" }}>
+      {/* 🆕 28w.17 — removed the redundant "Or browse by location ↓" eyebrow;
+          the near-me page header already frames the map. */}
       {/* Map surface — 🆕 Round 28b1 Clean v3: warm cream/peach base
           → cool neutral slate. Grid lines neutral slate too. Inset
           shadow loses the red tint so the map reads as a "real" cool
