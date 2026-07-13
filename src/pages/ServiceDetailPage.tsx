@@ -211,7 +211,11 @@ const ServiceDetailPage: React.FC = () => {
     tier: "PREMIUM" as const,
   };
   const Icon = config.icon;
-  const tiers = durationsFor(service);
+  // 🆕 28r118 (founder "โชว์แค่ 60 นาที ทุกเมนู · ซ่อนเมนูราคา ทุกหน้า
+  //   ที่โชว์") — 90 + 120 duration cards hidden while new pricing is
+  //   being redone. Filtering here (rather than in durationsFor())
+  //   keeps the 90/120 tiers available for booking flow / concierge use.
+  const tiers: number[] = durationsFor(service).filter((d) => d === 60);
   const currentPrice = priceForDuration(service, duration);
 
   const handleBook = () => {
