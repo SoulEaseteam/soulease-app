@@ -116,7 +116,14 @@ const ServiceDurationSheet: React.FC<Props> = ({
   onConfirm,
 }) => {
   const { t } = useTranslation();
-  const durations = service ? durationsFor(service) : [];
+  // 🆕 28r122 (founder "ซ่อนราคา ตามที่สั่ง · โชว์แค่ 60 นาที ทุกเมนู") —
+  //   match /pricing (r115) and /services/:id (r118) — only 60 min
+  //   surfaces while new pricing is being decided. Booking flow logic
+  //   still reads the un-filtered tier list, so 90/120 remain bookable
+  //   via concierge.
+  const durations: number[] = service
+    ? durationsFor(service).filter((d) => d === 60)
+    : [];
   // Default to the MIDDLE tier (90 min — 'Most popular' label) when the
   // service offers 60/90/120; falls through to first tier for services
   // that override DEFAULT_DURATIONS to a shorter list.
@@ -280,18 +287,8 @@ const ServiceDurationSheet: React.FC<Props> = ({
               flexWrap: "wrap",
             }}
           >
-            <Typography
-              component="span"
-              sx={{
-                fontFamily: SERIF,
-                fontSize: "18px",
-                fontWeight: 700,
-                color: "var(--sr-ink)",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              ฿{totalPrice.toLocaleString()}
-            </Typography>
+            {/* 🆕 28r122 — header price hidden while new pricing is being
+                decided (ซ่อนราคา ตามที่สั่ง). */}
             <Typography
               component="span"
               sx={{
@@ -673,18 +670,8 @@ const ServiceDurationSheet: React.FC<Props> = ({
                     {tagText}
                   </Typography>
                 </Box>
-                <Typography
-                  sx={{
-                    fontFamily: SERIF,
-                    fontSize: "18px",
-                    fontWeight: 700,
-                    color: isActive ? "#D97C95" : "var(--sr-ink)",
-                    letterSpacing: "-0.02em",
-                    flexShrink: 0,
-                  }}
-                >
-                  {formatTHB(price)}
-                </Typography>
+                {/* 🆕 28r122 — per-tier price hidden while new pricing is
+                    being decided (ซ่อนราคา ตามที่สั่ง). */}
               </Box>
             );
           })}
@@ -815,7 +802,8 @@ const ServiceDurationSheet: React.FC<Props> = ({
         >
           {!draftDate || !draftTime
             ? t("sheet.pickToContinue", "Select a time")
-            : `${t("sheet.confirm", "Confirm")} · ${formatTHB(totalPrice)}`}
+            /* 🆕 28r122 — price hidden from Confirm CTA (ซ่อนราคา ตามที่สั่ง) */
+            : t("sheet.confirm", "Confirm")}
         </Button>
       </Box>
     </Dialog>
