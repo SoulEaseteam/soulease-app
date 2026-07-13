@@ -177,6 +177,8 @@ interface Booking {
   placeDetail?: string;
   servicePrice?: number;
   discountAmount?: number;  // 🆕 28s258 — needed for the shared commission calc
+  discountCode?: string;    // 🆕 28w.58 — promo code applied at booking (e.g. FREETAXI)
+  discountLabel?: string;   // 🆕 28w.58 — human-readable promo label
   taxiFee?: number;
   paymentFee?: number;      // 🆕 28s260 — WeChat/Alipay surcharge, recomputed if payment method is edited
   totalPrice?: number;
@@ -1165,6 +1167,15 @@ const BookingCard: React.FC<{
                 incl. ฿{b.taxiFee} taxi
               </Typography>
             ) : null}
+            {/* 🆕 28w.58 — promo chip so promo orders are spottable in the list */}
+            {(b.discountCode || (b.discountAmount ?? 0) > 0) && (
+              <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.4, mt: 0.4, px: 0.75, py: "2px", borderRadius: 999, background: `${adminColor.accent}14` }}>
+                <Tag size={11} weight="fill" color={adminColor.accent} />
+                <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: adminColor.accent, lineHeight: 1 }}>
+                  {b.discountCode || "โปรฯ"}{(b.discountAmount ?? 0) > 0 ? ` −฿${b.discountAmount}` : ""}
+                </Typography>
+              </Box>
+            )}
           </Box>
 
           <Box sx={{ display: "flex", gap: 0.75, alignItems: "center" }}>
@@ -1628,6 +1639,40 @@ const DetailPanel: React.FC<{
 
       {/* scrollable body */}
       <Box sx={{ flex: 1, overflowY: "auto", px: 2.5, py: 2 }}>
+
+        {/* 🆕 28w.58 (founder "ดูตรงไหนว่าโปรอะไร") — promo used on this order:
+            label + code + amount, from the booking's discountCode/Label. */}
+        {(b.discountCode || (b.discountAmount ?? 0) > 0) && (
+          <Box
+            sx={{
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1,
+              borderRadius: "14px", background: `${adminColor.accent}0D`,
+              border: `1px solid ${adminColor.accent}33`, px: 1.75, py: 1.25, mb: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+              <Tag size={18} weight="duotone" color={adminColor.accent} />
+              <Box sx={{ minWidth: 0 }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.accent, letterSpacing: "0.06em", textTransform: "uppercase", lineHeight: 1 }}>
+                  Promo · โปรโมชั่น
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: adminColor.text, mt: 0.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {b.discountLabel || b.discountCode || "ส่วนลด"}
+                </Typography>
+                {b.discountCode && b.discountLabel && (
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 0.1 }}>
+                    โค้ด · {b.discountCode}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+            {(b.discountAmount ?? 0) > 0 && (
+              <Typography sx={{ ...adminFigureSx, fontSize: 15, fontWeight: 800, color: adminColor.accent, flexShrink: 0 }}>
+                −{formatTHB(b.discountAmount as number)}
+              </Typography>
+            )}
+          </Box>
+        )}
 
         {/* 🆕 28s259 (fix: "สถานนะ แก้ไขไม่ได้ Cancelled / Completed") —
             always-active override, works from ANY current status (un-cancel,
