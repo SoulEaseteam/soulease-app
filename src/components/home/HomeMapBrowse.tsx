@@ -81,10 +81,10 @@ function pickServiceTags(t: Therapist): string[] {
 const FALLBACK_POSITIONS = [
   // 🆕 28w — pulled the extremes inward so the active pin + its ★ pill
   //   never touch the frame edge (founder "รูปพนักงานหลุดเฟรม").
-  { top: 22, left: 28 }, // values in %
-  { top: 20, left: 70 },
-  { top: 44, left: 74 },
-  { top: 48, left: 24 },
+  { top: 28, left: 30 }, // values in %
+  { top: 26, left: 68 },
+  { top: 46, left: 72 },
+  { top: 47, left: 28 },
 ] as const;
 
 // "You are here" dot position — kept as % so projected pins can be
@@ -127,8 +127,8 @@ function projectPin(
   //   rating pill (which sits below + wider than the avatar) always stays
   //   inside the framed map. Founder: "รูปพนักงานหลุดเฟรม".
   return {
-    top: Math.max(16, Math.min(50, top)),
-    left: Math.max(16, Math.min(84, left)),
+    top: Math.max(24, Math.min(48, top)),
+    left: Math.max(18, Math.min(82, left)),
   };
 }
 
@@ -421,8 +421,8 @@ const HomeMapBrowse: React.FC<HomeMapBrowseProps> = ({
                 top: `${pos.top}%`,
                 left: `${pos.left}%`,
                 transform: "translate(-50%, -50%)",
-                width: isActive ? 50 : 36,
-                height: isActive ? 50 : 36,
+                width: isActive ? 46 : 36,
+                height: isActive ? 46 : 36,
                 borderRadius: "50%",
                 // 🆕 Round 28b1 — fallback bg moved from warm tan
                 //   #d4a574 → cool slate so loading state matches
