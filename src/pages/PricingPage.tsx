@@ -46,6 +46,7 @@ import { FaLine, FaTelegramPlane, FaWeixin, FaWhatsapp } from "react-icons/fa";
 import services from "@/data/services";
 import {
   priceForDuration,
+  durationsFor,
   formatTHB,
 } from "@/utils/servicePricing";
 import { fonts } from "@/theme";
@@ -374,10 +375,10 @@ const PricingPage: React.FC = () => {
       >
         {orderedServices.map((s) => {
           const copy = SERVICE_COPY[s.id] ?? { thai: "", teaser: s.desc };
-          // 🆕 28r115 (founder "โชว์แค่ราคาเดียว คือ 60 นาที ของทุกเมนู
-          //   ก่อน · นอกนั้น ซ่อนราคา เพราะจะทำราคาใหม่") — 90 + 120
-          //   min rows hidden while new pricing is being decided.
-          const durations = [60];
+          // 🆕 28w.36 (founder 2026-07-14 "โชว์ราคาทั้งหมด") — new pricing
+          //   set, so every offered tier shows (Thai/Aroma 60/90/120 ·
+          //   Gentleman's/Therapeutic 70/120). Reverses the 28r115 hide.
+          const durations = durationsFor(s);
           const priceAt = (min: number) => priceForDuration(s, min);
           const isBestseller = s.id === BESTSELLER_ID;
           return (

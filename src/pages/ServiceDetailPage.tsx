@@ -173,6 +173,14 @@ const ServiceDetailPage: React.FC = () => {
     }
   }, [service]);
 
+  // 🆕 28w.36 — default the selected tier to the first OFFERED duration when
+  //   the current one isn't offered (60 default → 70 for Gentleman's / B2B).
+  useEffect(() => {
+    if (!service) return;
+    const offered = durationsFor(service);
+    setDuration((d) => (offered.includes(d) ? d : offered[0]));
+  }, [service]);
+
   // Reviews — gated by Firestore rule (28s6) to docs with `rating`
   // field present. Filter to this service id client-side.
   useEffect(() => {
@@ -265,11 +273,11 @@ const ServiceDetailPage: React.FC = () => {
     (v, i, a): v is string => Boolean(v) && a.indexOf(v) === i
   );
 
-  // 🆕 28r118 (founder "โชว์แค่ 60 นาที ทุกเมนู · ซ่อนเมนูราคา ทุกหน้า
-  //   ที่โชว์") — 90 + 120 duration cards hidden while new pricing is
-  //   being redone. Filtering here (rather than in durationsFor())
-  //   keeps the 90/120 tiers available for booking flow / concierge use.
-  const tiers: number[] = durationsFor(service).filter((d) => d === 60);
+  // 🆕 28w.36 (founder 2026-07-14 "โชว์ราคาทั้งหมด") — new pricing is set,
+  //   so ALL offered tiers show again (Thai/Aroma 60/90/120 · Gentleman's/
+  //   Therapeutic 70/120). Reverses the 28r118 "60 only" hide. Duration
+  //   default is corrected to the first offered tier in a hook above.
+  const tiers: number[] = durationsFor(service);
   const currentPrice = priceForDuration(service, duration);
 
   const handleBook = () => {

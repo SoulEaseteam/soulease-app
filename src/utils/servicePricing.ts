@@ -33,7 +33,17 @@ export const DURATION_MULTIPLIERS: Record<number, number> = {
 export const DURATION_PRICE_OVERRIDES: Record<
   string,
   Partial<Record<number, number>>
-> = {};
+> = {
+  // 🆕 Round 28w.36 (founder 2026-07-14 "ใส่เงินใหม่ตามนี้") — explicit
+  //   per-duration pricing, replaces the old ×1.5/×2.0 multiplier. Thai &
+  //   Aroma keep 60/90/120; Gentleman's & Therapeutic move to 70/120
+  //   (see availableDurations in src/data/services.ts). 60-min bases live
+  //   in services.ts (Thai 1,200 · Aroma 1,400); everything else here.
+  "xSR-Thai": { 90: 1600, 120: 2000 },
+  "SR-Aroma": { 90: 1800, 120: 2400 },
+  "SR-HJ2200": { 70: 2200, 120: 3000 },
+  "SR-B2B3200": { 70: 3200, 120: 4000 },
+};
 
 // 🆕 Round 28s300 (founder: "admin/promotions สามารถจัดการราคาและบริการได้")
 // — live, admin-editable price/name/desc/enabled overrides per service,

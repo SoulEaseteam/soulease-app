@@ -121,14 +121,14 @@ const ServiceDurationSheet: React.FC<Props> = ({
   //   surfaces while new pricing is being decided. Booking flow logic
   //   still reads the un-filtered tier list, so 90/120 remain bookable
   //   via concierge.
-  const durations: number[] = service
-    ? durationsFor(service).filter((d) => d === 60)
-    : [];
-  // Default to the MIDDLE tier (90 min — 'Most popular' label) when the
-  // service offers 60/90/120; falls through to first tier for services
-  // that override DEFAULT_DURATIONS to a shorter list.
+  // 🆕 28w.36 (founder 2026-07-14 "โชว์ราคาทั้งหมด") — new pricing set, so
+  //   ALL offered tiers show again (Thai/Aroma 60/90/120 · Gentleman's/
+  //   Therapeutic 70/120). Reverses the 28r122 "60 only" hide.
+  const durations: number[] = service ? durationsFor(service) : [];
+  // Default to the FIRST offered tier (cheapest) — predictable, and fixes
+  // the old "default to a hidden tier" mispricing bug.
   const [selected, setSelected] = useState<number>(
-    initialDuration ?? durations[1] ?? durations[0] ?? 60
+    initialDuration ?? durations[0] ?? 60
   );
   // 🆕 Founder 2026-05-01 round 4: 'Tabs ซ้อนข้อมูลไปก่อน กดก่อนแทบ
   //    เนือหาค่อยเลือนออกมา' — content stays hidden by default; tapping
@@ -153,7 +153,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
   useEffect(() => {
     if (open && service) {
       const d = durationsFor(service);
-      setSelected(initialDuration ?? d[1] ?? d[0] ?? 60);
+      setSelected(initialDuration ?? d[0] ?? 60);
       setTab(null); // hidden by default — see comment on the state above
       setDraftDate(initialDate ?? null);
       setDraftTime(initialTime ?? null);
