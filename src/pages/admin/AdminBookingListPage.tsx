@@ -286,6 +286,9 @@ const AdminBookingListPage: React.FC = () => {
   const [customEnd,       setCustomEnd]       = useState<Dayjs>(() => dayjs());
   const [therapistFilter, setTherapistFilter] = useState("__ALL__");
   const [paymentFilter,   setPaymentFilter]   = useState("__ALL__"); // __ALL__ | paid | unpaid
+  // 🆕 28w.56 (founder "เพิ่มตัวกรองออเดอที่ใช้ Promotions") — filter by whether
+  //   the order used a promo (discountAmount > 0).
+  const [promoFilter,     setPromoFilter]     = useState("__ALL__"); // __ALL__ | promo | nopromo
 
   // 🆕 28s257 (founder: "ทำไมจำกัดแค่ 500 ทั้งหมดไม่ได้หรอ") — the 500 cap
   //   from 28s252 was hiding real bookings once the collection passed 500
@@ -340,9 +343,11 @@ const AdminBookingListPage: React.FC = () => {
     return bookings.filter((b) => {
       const matchTherapist = therapistFilter === "__ALL__" || b.therapistId === therapistFilter;
       const matchPayment   = paymentFilter === "__ALL__" || (paymentFilter === "paid" ? isPaid(b) : !isPaid(b));
-      return matchTherapist && matchPayment;
+      const usedPromo      = (b.discountAmount ?? 0) > 0;
+      const matchPromo     = promoFilter === "__ALL__" || (promoFilter === "promo" ? usedPromo : !usedPromo);
+      return matchTherapist && matchPayment && matchPromo;
     });
-  }, [bookings, therapistFilter, paymentFilter]);
+  }, [bookings, therapistFilter, paymentFilter, promoFilter]);
 
   // ── counts per bucket ──────────────────────────────────────────────
   const counts = useMemo(() => {
@@ -846,6 +851,19 @@ const AdminBookingListPage: React.FC = () => {
           <MenuItem value="__ALL__">Any Payment</MenuItem>
           <MenuItem value="paid">Paid</MenuItem>
           <MenuItem value="unpaid">Unpaid</MenuItem>
+        </Select>
+
+        {/* 🆕 28w.56 — filter by promo usage (discountAmount > 0) */}
+        <Select
+          size="small"
+          value={promoFilter}
+          onChange={(e) => setPromoFilter(e.target.value)}
+          sx={{ minWidth: 160, fontSize: 13 }}
+          MenuProps={{ PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } }}
+        >
+          <MenuItem value="__ALL__">โปรฯ · ทั้งหมด</MenuItem>
+          <MenuItem value="promo">ใช้โปรฯ</MenuItem>
+          <MenuItem value="nopromo">ไม่ใช้โปรฯ</MenuItem>
         </Select>
       </Box>
 
