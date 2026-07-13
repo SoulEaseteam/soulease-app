@@ -263,17 +263,41 @@ const StepService: React.FC<Props> = ({
               },
             }}
           >
-            {/* Small square image on the LEFT */}
+            {/* Small image on the LEFT — natural full display (no crop)
+                🆕 28r124 (founder "ปรับขนาดรูป · ให้เห็นทั้งใบ") —
+                swapped background 'cover' crop for an <img> with
+                object-fit: contain inside a fixed 108×108 frame.  Full
+                photo now shows; letterbox areas use a soft rose blush
+                so portrait shots don't leave hard bars. */}
             {s.image && (
               <Box
-                aria-hidden
                 sx={{
                   flex: "0 0 auto",
-                  width: 92,
-                  alignSelf: "stretch",
-                  background: `center top / cover no-repeat url("${s.image}"), linear-gradient(135deg, #E8B7C6, #D97C95)`,
+                  width: 108,
+                  height: 108,
+                  alignSelf: "center",
+                  m: "10px 0 10px 10px",
+                  borderRadius: "10px",
+                  overflow: "hidden",
+                  background:
+                    "linear-gradient(135deg, rgba(232,183,198,0.35), rgba(217,124,149,0.20))",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
-              />
+              >
+                <Box
+                  component="img"
+                  src={s.image}
+                  alt=""
+                  sx={{
+                    display: "block",
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                  }}
+                />
+              </Box>
             )}
 
             {/* Text column on the RIGHT */}
