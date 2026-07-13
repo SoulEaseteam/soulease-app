@@ -291,7 +291,11 @@ const ServiceDetailPage: React.FC = () => {
         >
           {/* Hero + title block — matches original padding on xs */}
           <Box sx={{ padding: { xs: "0 18px", md: 0 } }}>
-            {/* Hero image (real photo) — falls back to icon swatch */}
+            {/* Hero image (real photo) — natural full display (no crop)
+                🆕 28r119 (founder "รูปไม่เห็น · ทำให้มันสมส่วน") —
+                swapped fixed-height cover crop for a plain <img> at
+                natural aspect ratio.  Full photo now shows; card height
+                adapts.  Matches the r116 ServicesPage treatment. */}
             <Box
               component={motion.div}
               initial={{ opacity: 0, y: 10 }}
@@ -299,20 +303,34 @@ const ServiceDetailPage: React.FC = () => {
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               sx={{
                 width: "100%",
-                height: { xs: 200, md: 240 },
                 borderRadius: "20px",
                 overflow: "hidden",
                 marginBottom: "20px",
-                background: service.image
-                  ? `center / cover no-repeat url(${service.image})`
-                  : "#ECEBE8",
-                display: service.image ? "block" : "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                background: "#ECEBE8",
               }}
             >
-              {!service.image && (
-                <Icon sx={{ fontSize: { xs: 64, md: 80 }, color: config.swatchIcon }} />
+              {service.image ? (
+                <Box
+                  component="img"
+                  src={service.image}
+                  alt={service.name}
+                  sx={{
+                    display: "block",
+                    width: "100%",
+                    height: "auto",
+                  }}
+                />
+              ) : (
+                <Box
+                  sx={{
+                    height: { xs: 200, md: 240 },
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Icon sx={{ fontSize: { xs: 64, md: 80 }, color: config.swatchIcon }} />
+                </Box>
               )}
             </Box>
 
