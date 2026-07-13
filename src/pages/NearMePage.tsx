@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 import HomeTherapistGrid from "@/components/home/HomeTherapistGrid";
 import { responsiveShell } from "@/theme/breakpoints";
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
-import { whatsappDeepLink, CONCIERGE } from "@/config/concierge";
+import { CONCIERGE } from "@/config/concierge";
 import { MapPin } from "phosphor-react";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
 import therapists from "@/data/therapists";
@@ -644,40 +644,24 @@ const NearMePage: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* Concierge CTA */}
-      <Box
-        component="a"
-        href={whatsappDeepLink(
-          "Hi SunRed concierge, which practitioner is nearest me tonight?"
-        )}
-        target="_blank"
-        rel="noopener noreferrer"
+      {/* 🆕 28w.13 — concierge line is plain text now (founder: "ทำเป็นข้อความก็พอ
+          เรามีคอนแทคแล้ว") since the Reach-us tiles below carry the actual contact. */}
+      <Typography
         sx={{
-          mt: 3,
-          display: "flex",
-          alignItems: "center",
-          gap: 1.5,
-          p: "16px 18px",
-          borderRadius: "18px",
-          background: "linear-gradient(135deg, rgba(217,124,149,0.16), rgba(217,124,149,0.06))",
-          border: "1px solid rgba(217,124,149,0.30)",
-          textDecoration: "none",
-          transition: "transform 0.15s ease",
-          "&:hover": { transform: "translateY(-1px)" },
+          mt: 2.5,
+          px: 0.5,
+          textAlign: "center",
+          fontFamily: SANS,
+          fontSize: 13,
+          color: "var(--sr-muted)",
+          lineHeight: 1.55,
         }}
       >
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography sx={{ fontFamily: SERIF, fontSize: 15.5, fontWeight: 700, color: "var(--sr-ink)", lineHeight: 1.25 }}>
-            {t("nearme.cta.title", "Not sure who's nearest?")}
-          </Typography>
-          <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: "var(--sr-body)", mt: 0.25 }}>
-            {t("nearme.cta.subtitle", "Ask the concierge — we'll match the closest available practitioner.")}
-          </Typography>
-        </Box>
-        <Box aria-hidden sx={{ flexShrink: 0, fontSize: 20, fontWeight: 800, color: ROSE }}>
-          ›
-        </Box>
-      </Box>
+        {t(
+          "nearme.cta.line",
+          "Not sure who's nearest? Ask the concierge — we'll match the closest available practitioner."
+        )}
+      </Typography>
 
       {/* Reach us — concierge channel grid (founder: like the services page) */}
       <ReachUs t={t} />
