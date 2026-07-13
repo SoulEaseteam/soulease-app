@@ -49,14 +49,23 @@ const AdminMembershipPage: React.FC = () => {
   const [stats, setStats] = useState<CustStat[]>([]);
   const [loaded, setLoaded] = useState(false);
 
+  // 🆕 28w.61 — staff bonus: therapist earns ฿bonus for every N completed orders
+  //   (recurring). Editable; stored alongside the membership thresholds.
+  const [staffPer, setStaffPer] = useState("1000");
+  const [staffAmt, setStaffAmt] = useState("5000");
+  const [staffStats, setStaffStats] = useState<{ name: string; completed: number }[]>([]);
+
   // seed from saved config
   useEffect(() => {
     void getDoc(doc(db, "adminSettings", "membership")).then((snap) => {
-      applyMembershipConfig((snap.data() as Partial<MembershipThresholds>) ?? null);
+      const d = (snap.data() as (Partial<MembershipThresholds> & { staffBonusPerOrders?: number; staffBonusAmount?: number }) | undefined) ?? {};
+      applyMembershipConfig(d);
       const eff = effectiveMembershipConfig();
       setMinVisits(toStrMap(eff.minVisits));
       setMinSpend(toStrMap(eff.minSpend));
       setDemoteDays(String(eff.demoteAfterDays));
+      setStaffPer(String(d.staffBonusPerOrders ?? 1000));
+      setStaffAmt(String(d.staffBonusAmount ?? 5000));
     });
   }, []);
 
@@ -66,16 +75,27 @@ const AdminMembershipPage: React.FC = () => {
     const NOSHOW = new Set(["no_show", "no-show", "noshow"]);
     void getDocs(collection(db, "bookings")).then((snap) => {
       const map: Record<string, CustStat> = {};
+      const tmap: Record<string, { name: string; completed: number }> = {};
       snap.forEach((d) => {
         const b = d.data() as {
           phone?: string; status?: string; totalPrice?: number; servicePrice?: number;
+          therapistId?: string; therapistName?: string;
           createdAt?: { toDate?: () => Date; seconds?: number };
           startAt?: { toDate?: () => Date; seconds?: number };
         };
+        const st = b.status ?? "";
+        // therapist tally — completed orders per therapist (staff bonus basis)
+        if (SERVED.has(st)) {
+          const tkey = (b.therapistId || b.therapistName || "").trim();
+          if (tkey) {
+            const tr = (tmap[tkey] ??= { name: b.therapistName || tkey, completed: 0 });
+            tr.completed++;
+            if (b.therapistName) tr.name = b.therapistName;
+          }
+        }
         const phone = normPhone((b.phone ?? "").trim());
         if (!phone) return;
         const row = (map[phone] ??= { served: 0, totalSpent: 0, lastVisitMs: 0, noShowCount: 0 });
-        const st = b.status ?? "";
         if (NOSHOW.has(st)) row.noShowCount++;
         if (SERVED.has(st)) {
           row.served++;
@@ -86,6 +106,7 @@ const AdminMembershipPage: React.FC = () => {
         }
       });
       setStats(Object.values(map));
+      setStaffStats(Object.values(tmap).sort((a, b) => b.completed - a.completed));
       setLoaded(true);
     });
   }, []);
@@ -117,7 +138,12 @@ const AdminMembershipPage: React.FC = () => {
   const save = async () => {
     setSaving(true);
     try {
-      await setDoc(doc(db, "adminSettings", "membership"), { ...draftCfg, updatedAt: serverTimestamp() }, { merge: true });
+      await setDoc(doc(db, "adminSettings", "membership"), {
+        ...draftCfg,
+        staffBonusPerOrders: parseInt(staffPer, 10) || 1000,
+        staffBonusAmount: parseInt(staffAmt, 10) || 0,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
       applyMembershipConfig(draftCfg);
       setDirty(false); setSaved(true);
     } catch (e) {
@@ -217,6 +243,65 @@ const AdminMembershipPage: React.FC = () => {
         <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.text, fontWeight: 700 }}>
           {loaded ? counts.none : "–"} <span style={{ color: adminColor.dim, fontWeight: 500 }}>ยังไม่เข้าเกณฑ์</span>
         </Typography>
+      </Box>
+
+      {/* 🆕 28w.61 — Staff bonus (therapist): ฿bonus every N completed orders */}
+      <Box sx={{ mt: 3.5, pt: 2.5, borderTop: `1px solid ${adminColor.line}` }}>
+        <Typography sx={{ fontFamily: SANS, fontSize: 16, fontWeight: 800, color: adminColor.text }}>
+          โบนัสพนักงาน (Staff Bonus)
+        </Typography>
+        <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: adminColor.muted, mt: 0.5, mb: 1.5, lineHeight: 1.5 }}>
+          หมอที่ทำงานสำเร็จครบทุกๆ <b>N ออเดอร์</b> (นับสะสมทั้งหมด) ได้โบนัสก้อน · ได้ซ้ำทุกครั้งที่ครบอีกรอบ
+        </Typography>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, alignItems: "center", mb: 2 }}>
+          <TextField
+            label="ครบทุก (ออเดอร์)"
+            value={staffPer}
+            onChange={(e) => { setDirty(true); setSaved(false); setStaffPer(e.target.value.replace(/[^\d]/g, "")); }}
+            size="small" inputProps={{ inputMode: "numeric" }}
+            sx={{ width: 150, "& .MuiInputBase-input": { fontFamily: SANS, fontSize: 13 } }}
+          />
+          <TextField
+            label="โบนัส (฿)"
+            value={staffAmt}
+            onChange={(e) => { setDirty(true); setSaved(false); setStaffAmt(e.target.value.replace(/[^\d]/g, "")); }}
+            size="small" inputProps={{ inputMode: "numeric" }}
+            sx={{ width: 150, "& .MuiInputBase-input": { fontFamily: SANS, fontSize: 13 } }}
+          />
+          <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.dim }}>เช่น ครบทุก 1,000 ออเดอร์ ได้ ฿5,000</Typography>
+        </Box>
+
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+          {(() => {
+            const perN = Math.max(1, parseInt(staffPer, 10) || 1000);
+            const amt = parseInt(staffAmt, 10) || 0;
+            if (!loaded) return <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.dim }}>กำลังโหลด…</Typography>;
+            if (staffStats.length === 0) return <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.dim }}>ยังไม่มีข้อมูลพนักงาน</Typography>;
+            return staffStats.map((t) => {
+              const rounds = Math.floor(t.completed / perN);
+              const bonus = rounds * amt;
+              const into = t.completed % perN;
+              const pct = Math.min(100, Math.round((into / perN) * 100));
+              return (
+                <Box key={t.name} sx={{ background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "12px", p: "10px 14px", display: "grid", gridTemplateColumns: { xs: "1fr auto", sm: "150px 1fr auto" }, gap: 1.25, alignItems: "center" }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 13.5, fontWeight: 700, color: adminColor.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</Typography>
+                  <Box sx={{ display: { xs: "none", sm: "block" } }}>
+                    <Box sx={{ height: 6, borderRadius: 999, background: `${adminColor.accent}22`, overflow: "hidden" }}>
+                      <Box sx={{ height: "100%", width: `${pct}%`, background: adminColor.accent }} />
+                    </Box>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 10, color: adminColor.dim, mt: 0.4 }}>
+                      {t.completed.toLocaleString()} ออเดอร์ · อีก {(perN - into).toLocaleString()} ครบรอบหน้า{rounds > 0 ? ` · ครบแล้ว ${rounds} รอบ` : ""}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ textAlign: "right" }}>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 15, fontWeight: 800, color: bonus > 0 ? "#57B88B" : adminColor.dim, lineHeight: 1 }}>{thb(bonus)}</Typography>
+                    <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.05em" }}>โบนัสสะสม</Typography>
+                  </Box>
+                </Box>
+              );
+            });
+          })()}
+        </Box>
       </Box>
 
       {/* save */}
