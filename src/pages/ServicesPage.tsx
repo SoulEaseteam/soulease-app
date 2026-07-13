@@ -446,6 +446,48 @@ const ServicesPage: React.FC = () => {
                 Approach 3 mockup screenshots verbatim. */}
             {bestseller && (() => {
               return (
+                <React.Fragment>
+                {/* ── Editorial per-item eyebrow · ━━ BESTSELLER pill ━━
+                    🆕 28r113 (founder "ปรับแต่งเหมือนกันทุกป้าย · More
+                    Rituals ไม่เอา · เอา ตามที่สั่ง") — every ritual now
+                    gets its own line-flanked eyebrow.  BESTSELLER slot
+                    holds an amber pill; RITUAL · 02/03/04 use text.
+                    Floating pills on the images have been removed. */}
+                <Box
+                  component={motion.div}
+                  initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-30px" }}
+                  transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.25,
+                    mb: 1.25,
+                    mt: 0.5,
+                    px: "4px",
+                  }}
+                >
+                  <Box aria-hidden sx={{ flex: 1, height: 1, background: "rgba(217,124,149,0.45)" }} />
+                  <Box
+                    sx={{
+                      px: "14px",
+                      py: "6px",
+                      borderRadius: 999,
+                      background: accents.amber,
+                      color: "#fff",
+                      fontFamily: SANS,
+                      fontSize: 10.5,
+                      fontWeight: 800,
+                      letterSpacing: "0.18em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {bestseller.badge ?? t("services.bestseller", "Bestseller")}
+                  </Box>
+                  <Box aria-hidden sx={{ flex: 1, height: 1, background: "rgba(217,124,149,0.45)" }} />
+                </Box>
+
                 <Box
                   component={motion.div}
                   initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
@@ -490,40 +532,10 @@ const ServicesPage: React.FC = () => {
                     },
                   }}
                 >
-                  {/* Floating badge pill — TOP-LEFT anchor (unified w/ mini)
-                      🆕 28r112 (founder "ปรับแต่งเหมือนกันทุกป้าย") —
-                      moved from top-right amber → top-LEFT to match the
-                      mini-card badge anchor.  Same padding shape + letter-
-                      spacing across all badges; amber stays reserved for
-                      SIGNATURE (bestseller/most-requested), rose for the
-                      other tiers.  Semantically distinct, structurally
-                      identical. */}
-                  <Box
-                    component={motion.div}
-                    aria-hidden
-                    initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.85, y: -6 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.9 }}
-                    sx={{
-                      position: "absolute",
-                      top: 18,
-                      left: 18,
-                      zIndex: 3,
-                      px: "14px",
-                      py: "7px",
-                      borderRadius: 999,
-                      background: accents.amber,
-                      color: "#fff",
-                      fontFamily: SANS,
-                      fontSize: 11,
-                      fontWeight: 800,
-                      letterSpacing: "0.16em",
-                      textTransform: "uppercase",
-                      boxShadow: "0 6px 18px rgba(0,0,0,0.28)",
-                    }}
-                  >
-                    {bestseller.badge ?? t("services.bestseller", "Bestseller")}
-                  </Box>
+                  {/* 🆕 28r113 — floating BESTSELLER pill removed; the
+                      amber badge lives in the ━━ eyebrow ━━ above the
+                      whole card now.  Composition inside the card is
+                      pure image + name + description. */}
 
                   {/* Hero image — full-canvas 4:3 aspect
                       🆕 28r112 (founder "ให้เห็นรูปเต็มใบ สวยๆ") —
@@ -569,23 +581,9 @@ const ServicesPage: React.FC = () => {
 
                   {/* Content section */}
                   <Box sx={{ p: "20px 20px 22px" }}>
-                    {/* Rose eyebrow — "Most requested this month"
-                        🆕 28r102 (r101 audit H1) — removed stray `m: 0`
-                        that was blowing away the `mb: 1` gap to the name. */}
-                    <Typography
-                      component="p"
-                      sx={{
-                        fontFamily: SANS,
-                        fontSize: 10,
-                        fontWeight: 800,
-                        letterSpacing: "0.20em",
-                        textTransform: "uppercase",
-                        color: ROSE,
-                        mb: 1,
-                      }}
-                    >
-                      {t("services.mostRequested", "Most requested this month")}
-                    </Typography>
+                    {/* 🆕 28r113 — "Most requested this month" internal
+                        rose eyebrow removed; the BESTSELLER label above
+                        the card already communicates this. */}
 
                     {/* Name */}
                     <Typography
@@ -635,143 +633,21 @@ const ServicesPage: React.FC = () => {
                       {bestseller.desc}
                     </Typography>
 
-                    {/* 🆕 28r112 (founder 2026-07-13 · "ไม่เอาราคา" +
-                        "เพิ่มปุ่มสำรวจราคาให้ลิ้งไปหน้า pricing") —
-                        the r92 3-cell rate grid was replaced upstream
-                        with a text link; that text link is now promoted
-                        to a proper outlined button sitting above the
-                        primary CTA. No arrow (per r98 direction). */}
-                    <Box
-                      component="a"
-                      href="/pricing"
-                      aria-label={t("services.explorePricingAria", "Explore full pricing")}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: "100%",
-                        px: "22px",
-                        py: "12px",
-                        mb: 1.25,
-                        borderRadius: 999,
-                        background: "transparent",
-                        color: ROSE,
-                        border: `1.5px solid ${ROSE}`,
-                        textDecoration: "none",
-                        fontFamily: SANS,
-                        fontSize: 14,
-                        fontWeight: 700,
-                        letterSpacing: "0.01em",
-                        transition: "background 0.2s ease, color 0.2s ease, transform 0.15s ease",
-                        "&:hover": {
-                          background: "rgba(217,124,149,0.10)",
-                          transform: "translateY(-1px)",
-                        },
-                        "&:focus-visible": {
-                          outline: `2px solid ${ROSE}`,
-                          outlineOffset: 3,
-                        },
-                      }}
-                    >
-                      {t("services.explorePricing", "Explore Prices")}
-                    </Box>
-
-                    {/* Rose full-width CTA */}
-                    <Box
-                      component="a"
-                      href={`/services/${bestseller.id}`}
-                      aria-label={t("services.reserveAria", "Reserve {{name}}", { name: bestseller.name })}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: "100%",
-                        px: "24px",
-                        py: "14px",
-                        borderRadius: 999,
-                        background: gradients.primary,
-                        color: "#fff",
-                        textDecoration: "none",
-                        fontFamily: SANS,
-                        fontSize: 15,
-                        fontWeight: 700,
-                        letterSpacing: "0.01em",
-                        // 🆕 28r98 (founder 2026-07-12) — no glow on the CTA.
-                        transition: "background 0.25s ease, transform 0.2s ease",
-                        "&:hover": {
-                          background: gradients.primaryHover,
-                          transform: "translateY(-1px)",
-                        },
-                        "&:focus-visible": {
-                          outline: `2px solid ${ROSE}`,
-                          outlineOffset: 3,
-                        },
-                      }}
-                    >
-                      {t("services.reserve", "Unlock Executive Benefits")}
-                    </Box>
+                    {/* 🆕 28r113 (founder "Unlock Executive Benefits
+                        เปลี่ยน View full pricing ไว้ ใต้สุด ของ เมนู") —
+                        both per-card buttons removed.  A single
+                        'View full pricing' primary button now lives at
+                        the bottom of the whole services list. */}
                   </Box>
                 </Box>
+                </React.Fragment>
               );
             })()}
 
-            {/* ── "More Rituals" eyebrow (line · label · line) ────────
-                🆕 Round 28r92 · Approach 3 · founder pick 2026-07-12.
-                A quiet editorial divider before the horizontal snap-scroll
-                of the remaining 3 rituals — mirrors the mockup exactly. */}
-            {/* 🆕 28r98 · lines draw in from left/right, label fades up */}
-            <Box
-              component={motion.div}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-40px" }}
-              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1.25,
-                mt: 0.5,
-                mb: 1.5,
-                px: "4px",
-              }}
-            >
-              <Box
-                component={motion.div}
-                aria-hidden
-                variants={{
-                  hidden: { scaleX: 0, transformOrigin: "right" },
-                  visible: { scaleX: 1, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
-                }}
-                sx={{ flex: 1, height: 1, background: "rgba(217,124,149,0.45)" }}
-              />
-              <Box
-                component={motion.p}
-                variants={{
-                  hidden: { opacity: 0, y: 4 },
-                  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
-                }}
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: 10.5,
-                  fontWeight: 800,
-                  letterSpacing: "0.20em",
-                  textTransform: "uppercase",
-                  color: ROSE,
-                  m: 0,
-                }}
-              >
-                {t("services.moreRituals", "More Rituals")}
-              </Box>
-              <Box
-                component={motion.div}
-                aria-hidden
-                variants={{
-                  hidden: { scaleX: 0, transformOrigin: "left" },
-                  visible: { scaleX: 1, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
-                }}
-                sx={{ flex: 1, height: 1, background: "rgba(217,124,149,0.45)" }}
-              />
-            </Box>
+            {/* 🆕 28r113 — "More Rituals" divider removed per founder
+                direction.  Each mini card below now has its own
+                ━━ RITUAL · XX ━━ eyebrow, unified with the BESTSELLER
+                eyebrow above the featured card. */}
 
             {/* ── Vertical stack of horizontal-layout ritual cards ──
                 🆕 Round 28r93 · founder screenshot pattern (2026-07-12)
@@ -781,52 +657,85 @@ const ServicesPage: React.FC = () => {
                 subtitle / bold from-price).  The list itself stacks
                 vertically — no snap-scroll.  Whole card is one <a> tag,
                 so tapping anywhere routes to the service detail page. */}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mb: 3 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 3 }}>
               {restServices.map((svc, index) => {
                 const firstDur = durationsFor(svc)[0];
+                // 🆕 28r113 — per-item numbered eyebrow (Ritual · 02/03/04).
+                //   Bestseller sits above these at "01" implicitly.
+                const ritualNumber = String(index + 2).padStart(2, "0");
                 return (
-                  <Box
-                    key={svc.id}
-                    component={motion.a}
-                    href={`/services/${svc.id}`}
-                    aria-label={t("services.detailsAria", "Details for {{name}}", { name: svc.name })}
-                    initial={{ opacity: 0, y: 18 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-30px" }}
-                    transition={{
-                      delay: 0.15 + index * 0.10,
-                      duration: 0.65,
-                      ease: [0.22, 1, 0.36, 1],
-                    }}
-                    whileHover={{ y: -3 }}
-                    sx={{
-                      display: "flex",
-                      alignItems: "stretch",
-                      gap: 0,
-                      textDecoration: "none",
-                      borderRadius: "16px",
-                      background: "var(--sr-panel)",
-                      border: "1px solid var(--sr-hairline)",
-                      boxShadow: "var(--sr-card-shadow)",
-                      overflow: "hidden",
-                      transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
-                      "&:hover": {
-                        transform: "translateY(-1px)",
-                        boxShadow: "0 8px 28px rgba(0,0,0,0.28)",
-                        borderColor: "rgba(217,124,149,0.4)",
-                      },
-                      "&:focus-visible": {
-                        outline: `2px solid ${ROSE}`,
-                        outlineOffset: 2,
-                      },
-                    }}
-                  >
-                    {/* Square image on the LEFT — with data-driven badge
-                        floating top-left, sourced from svc.badge (admin
-                        editable via /admin/promotions).
-                        🆕 28r103 — generic badge renderer.
-                        🆕 28r111 — background-position anchored to
-                        `center top` so the face is retained on portraits. */}
+                  <Box key={svc.id}>
+                    {/* ── Editorial per-item eyebrow ─────────────────── */}
+                    <Box
+                      component={motion.div}
+                      initial={prefersReducedMotion ? false : { opacity: 0, y: 6 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "-30px" }}
+                      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.05 + index * 0.06 }}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.25,
+                        mb: 1,
+                        px: "4px",
+                      }}
+                    >
+                      <Box aria-hidden sx={{ flex: 1, height: 1, background: "rgba(217,124,149,0.35)" }} />
+                      <Typography
+                        component="p"
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: 10.5,
+                          fontWeight: 800,
+                          letterSpacing: "0.20em",
+                          textTransform: "uppercase",
+                          color: ROSE,
+                          m: 0,
+                        }}
+                      >
+                        {t("services.ritualNumbered", "Ritual · {{n}}", { n: ritualNumber })}
+                      </Typography>
+                      <Box aria-hidden sx={{ flex: 1, height: 1, background: "rgba(217,124,149,0.35)" }} />
+                    </Box>
+
+                    {/* ── Card ──────────────────────────────────────── */}
+                    <Box
+                      component={motion.a}
+                      href={`/services/${svc.id}`}
+                      aria-label={t("services.detailsAria", "Details for {{name}}", { name: svc.name })}
+                      initial={{ opacity: 0, y: 18 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "-30px" }}
+                      transition={{
+                        delay: 0.15 + index * 0.10,
+                        duration: 0.65,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
+                      whileHover={{ y: -3 }}
+                      sx={{
+                        display: "flex",
+                        alignItems: "stretch",
+                        gap: 0,
+                        textDecoration: "none",
+                        borderRadius: "16px",
+                        background: "var(--sr-panel)",
+                        border: "1px solid var(--sr-hairline)",
+                        boxShadow: "var(--sr-card-shadow)",
+                        overflow: "hidden",
+                        transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
+                        "&:hover": {
+                          transform: "translateY(-1px)",
+                          boxShadow: "0 8px 28px rgba(0,0,0,0.28)",
+                          borderColor: "rgba(217,124,149,0.4)",
+                        },
+                        "&:focus-visible": {
+                          outline: `2px solid ${ROSE}`,
+                          outlineOffset: 2,
+                        },
+                      }}
+                    >
+                    {/* 🆕 28r113 — floating rose badge on the image removed;
+                        the badge moved into the eyebrow above. */}
                     {svc.image && (
                       <Box
                         aria-hidden
@@ -837,36 +746,7 @@ const ServicesPage: React.FC = () => {
                           alignSelf: "stretch",
                           background: `center top / cover no-repeat url(${svc.image})`,
                         }}
-                      >
-                        {svc.badge && (
-                          <Box
-                            component={motion.div}
-                            initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.85 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.4 }}
-                            sx={{
-                              // 🆕 28r109 — bump size + padding for balance
-                              //   with the 108px square image.
-                              position: "absolute",
-                              top: 10,
-                              left: 10,
-                              px: "10px",
-                              py: "4.5px",
-                              borderRadius: 999,
-                              background: ROSE,
-                              color: "#fff",
-                              fontFamily: SANS,
-                              fontSize: 10,
-                              fontWeight: 800,
-                              letterSpacing: "0.16em",
-                              textTransform: "uppercase",
-                              boxShadow: "0 3px 8px rgba(0,0,0,0.28)",
-                            }}
-                          >
-                            {svc.badge}
-                          </Box>
-                        )}
-                      </Box>
+                      />
                     )}
 
                     {/* Text column on the RIGHT */}
@@ -909,9 +789,51 @@ const ServicesPage: React.FC = () => {
                       {/* 🆕 28w.31 — from-price removed; Services page is
                           description-only, prices live on /pricing. */}
                     </Box>
+                    </Box>
                   </Box>
                 );
               })}
+            </Box>
+
+            {/* ── 🆕 28r113 · Single 'View full pricing' at bottom ────
+                Founder: "Unlock Executive Benefits เปลี่ยน View full
+                pricing ไว้ ใต้สุด ของ เมนู".  Replaces the two per-card
+                buttons (Explore Prices + Unlock Executive Benefits) with
+                one primary rose gradient CTA routing to /pricing at the
+                bottom of the whole services list. */}
+            <Box
+              component="a"
+              href="/pricing"
+              aria-label={t("services.viewPricingAria", "View full pricing")}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "100%",
+                px: "24px",
+                py: "14px",
+                mt: 1,
+                mb: 3,
+                borderRadius: 999,
+                background: gradients.primary,
+                color: "#fff",
+                textDecoration: "none",
+                fontFamily: SANS,
+                fontSize: 15,
+                fontWeight: 700,
+                letterSpacing: "0.01em",
+                transition: "background 0.25s ease, transform 0.2s ease",
+                "&:hover": {
+                  background: gradients.primaryHover,
+                  transform: "translateY(-1px)",
+                },
+                "&:focus-visible": {
+                  outline: `2px solid ${ROSE}`,
+                  outlineOffset: 3,
+                },
+              }}
+            >
+              {t("services.viewPricing", "View full pricing")}
             </Box>
 
             <BundleSection />
