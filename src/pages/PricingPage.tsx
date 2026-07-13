@@ -268,14 +268,21 @@ const PricingPage: React.FC = () => {
           md: "none",
         },
         position: "relative",
-        padding: { xs: "32px 20px 48px", md: "64px 40px 80px" },
+        // 🆕 28w.24 — desktop horizontal padding trimmed 40→32 to match the
+        //   nav's responsiveShell px, so the hero (below) lines up with the bar.
+        padding: { xs: "32px 20px 48px", md: "64px 32px 80px" },
       }}
     >
       {/* ── 1. Page header — rose-berry hero band (28w.6) ──────────── */}
       <Box
         sx={{
           background: HERO_GRADIENT,
-          mx: { xs: "-20px", md: "-40px" },
+          // 🆕 28w.24 (founder: "แก้หมด" — equal columns) — keep the full-bleed
+          //   breakout on mobile, but on desktop DON'T break past the root
+          //   padding so the hero width = the nav bar (both inset by the shell
+          //   px). Was md:-40 which pushed the hero to the column edge (wider
+          //   than the bar).
+          mx: { xs: "-20px", md: "0px" },
           mt: { xs: "-32px", md: "-64px" },
           mb: { xs: 4, md: 6 },
           px: { xs: "24px", md: "40px" },
