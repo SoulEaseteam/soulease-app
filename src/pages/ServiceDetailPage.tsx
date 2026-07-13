@@ -55,11 +55,12 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 
-import { getServiceById } from "@/utils/serviceCatalog";
+import { getServiceById, getAllServices } from "@/utils/serviceCatalog";
 import {
   priceForDuration,
   durationsFor,
   formatTHB,
+  isServiceEnabled,
 } from "@/utils/servicePricing";
 // 🆕 28w.32 — re-render when the admin image override lands so the hero
 //   photo matches the booking flow / services list (same uploaded image).
@@ -114,6 +115,16 @@ interface ReviewLite {
   author: string;
 }
 
+// 🆕 28w.34 — short "RITUAL · TYPE" tag per service for the More Rituals
+//   cross-sell cards (founder screenshot). Custom services fall back to
+//   the generic label.
+const RITUAL_TYPE: Record<string, string> = {
+  "xSR-Thai": "Traditional",
+  "SR-Aroma": "Oil",
+  "SR-HJ2200": "Signature",
+  "SR-B2B3200": "Specialised",
+};
+
 const ServiceDetailPage: React.FC = () => {
   const { id: rawId } = useParams<{ id: string }>();
   const { t, i18n } = useTranslation();
@@ -128,6 +139,17 @@ const ServiceDetailPage: React.FC = () => {
   const service = React.useMemo(
     () => (rawId ? getServiceById(rawId) : null),
     [rawId, cfgVersion]
+  );
+
+  // 🆕 28w.34 — the OTHER enabled services for the "More Rituals" cross-sell
+  //   row below the Chat-to-book CTA. getServiceById so the admin override
+  //   images (28w.32) show here too; recompute when the config lands.
+  const otherServices = React.useMemo(
+    () =>
+      getAllServices()
+        .filter((s) => isServiceEnabled(s.id) && s.id !== service?.id)
+        .map((s) => getServiceById(s.id) ?? s),
+    [service?.id, cfgVersion]
   );
 
   const [duration, setDuration] = useState<number>(60);
@@ -758,6 +780,190 @@ const ServiceDetailPage: React.FC = () => {
           {t("serviceDetail.bookCta", "Chat to book")} · {formatTHB(currentPrice)}
         </Button>
       </Box>
+
+      {/* ── More Rituals (cross-sell) ──────────────────────────────────
+          🆕 28w.34 (founder screenshot "เพิ่ม More Rituals ใต้ปุ่มแชท") —
+          horizontal row of the OTHER services below the Chat-to-book CTA.
+          Photo-top card · RITUAL · TYPE eyebrow · name · From ฿X ·
+          Details → (routes to that service). Reuses getServiceById so the
+          admin override images (28w.32) show here too. Day/night via
+          var(--sr-*). */}
+      {otherServices.length > 0 && (
+        <Box
+          sx={{
+            ...responsiveShell,
+            mx: "auto",
+            width: "100%",
+            padding: { xs: "16px 0 40px", md: "24px 0 48px" },
+          }}
+        >
+          {/* Section header — MORE RITUALS flanked by rules */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              px: { xs: "18px", md: 0 },
+              mb: 2.5,
+            }}
+          >
+            <Box sx={{ flex: 1, height: "1px", background: "var(--sr-hairline)" }} />
+            <Typography
+              sx={{
+                fontFamily: fonts.body,
+                fontSize: "12px",
+                fontWeight: 700,
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: "var(--sr-muted)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {t("serviceDetail.moreRituals", "More Rituals")}
+            </Typography>
+            <Box sx={{ flex: 1, height: "1px", background: "var(--sr-hairline)" }} />
+          </Box>
+
+          {/* Horizontal scroll row */}
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              overflowX: "auto",
+              px: { xs: "18px", md: 0 },
+              pb: 1,
+              scrollSnapType: "x mandatory",
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" },
+            }}
+          >
+            {otherServices.map((svc) => {
+              const from = priceForDuration(svc, 60);
+              const type = RITUAL_TYPE[svc.id] ?? "Ritual";
+              return (
+                <Box
+                  key={svc.id}
+                  sx={{
+                    flex: "0 0 auto",
+                    width: "72%",
+                    minWidth: "236px",
+                    maxWidth: "300px",
+                    scrollSnapAlign: "start",
+                    background: "var(--sr-panel)",
+                    border: "1px solid var(--sr-hairline)",
+                    borderRadius: "20px",
+                    boxShadow: "var(--sr-card-shadow)",
+                    overflow: "hidden",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  {svc.image && (
+                    <Box
+                      component="img"
+                      src={svc.image}
+                      alt={svc.name}
+                      loading="lazy"
+                      sx={{
+                        width: "100%",
+                        height: 168,
+                        objectFit: "cover",
+                        objectPosition: "center 30%",
+                        display: "block",
+                      }}
+                    />
+                  )}
+                  <Box
+                    sx={{
+                      padding: "16px 18px 18px",
+                      display: "flex",
+                      flexDirection: "column",
+                      flex: 1,
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontFamily: fonts.body,
+                        fontSize: "10.5px",
+                        fontWeight: 700,
+                        letterSpacing: "0.16em",
+                        textTransform: "uppercase",
+                        color: "var(--sr-muted)",
+                        mb: 0.75,
+                      }}
+                    >
+                      {t("serviceDetail.ritualTag", "Ritual")} · {type}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: fonts.heading,
+                        fontSize: "20px",
+                        fontWeight: 600,
+                        color: "var(--sr-ink)",
+                        letterSpacing: "-0.01em",
+                        lineHeight: 1.15,
+                      }}
+                    >
+                      {svc.name}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: fonts.body,
+                        fontSize: "14px",
+                        color: "var(--sr-muted)",
+                        mt: 0.5,
+                        mb: 1.75,
+                      }}
+                    >
+                      {t("serviceDetail.from", "From")}{" "}
+                      <Box
+                        component="span"
+                        sx={{ color: "var(--sr-ink)", fontWeight: 700, fontSize: "17px" }}
+                      >
+                        {formatTHB(from)}
+                      </Box>
+                    </Typography>
+                    <Box
+                      component="button"
+                      onClick={() => {
+                        window.scrollTo({ top: 0 });
+                        navigate(`/services/${svc.id}`);
+                      }}
+                      aria-label={t("serviceDetail.detailsAria", "Details for {{name}}", {
+                        name: svc.name,
+                      })}
+                      sx={{
+                        mt: "auto",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 1,
+                        width: "100%",
+                        padding: "12px 16px",
+                        borderRadius: "999px",
+                        background: "transparent",
+                        border: "1.5px solid var(--sr-ink)",
+                        color: "var(--sr-ink)",
+                        fontFamily: fonts.body,
+                        fontSize: "14px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        transition: "background 0.15s ease, color 0.15s ease",
+                        "&:hover": { background: "var(--sr-ink)", color: "var(--sr-panel)" },
+                      }}
+                    >
+                      {t("serviceDetail.details", "Details")}
+                      <Box component="span" aria-hidden sx={{ fontSize: "16px", lineHeight: 1 }}>
+                        →
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 };
