@@ -132,6 +132,7 @@ import {
   Warning,
   Wallet,
   Buildings,
+  Taxi,
 } from "phosphor-react";
 
 // Cap the realtime window. Pending/confirmed bookings are always recent; older
@@ -364,11 +365,16 @@ const AdminBookingListPage: React.FC = () => {
     // 🆕 28w.44 (founder "ยกเลิก ให้แสดงยอดแยกต่างหาก") — track cancelled
     //   value/count separately so it's a stat of its own, not just excluded.
     let cancelledValue = 0, cancelledCount = 0;
+    // 🆕 28w.54 — actual taxi comp the shop PAYS OUT for no-shows (real cash out,
+    //   unlike cancelledValue which is just lost booking value).
+    let noShowTaxi = 0, noShowCount = 0;
     for (const b of faceted) {
       if (isPayrollExcluded(b.status)) {
         cancelledCount++;
         cancelledValue += b.totalPrice ?? b.total ?? 0;
-        shopRevenue -= noShowCompFor(b);   // 🆕 28w.53 — shop bears a no-show's taxi comp
+        const comp = noShowCompFor(b);   // 🆕 28w.53 — shop bears a no-show's taxi comp
+        if (comp > 0) { noShowTaxi += comp; noShowCount++; }
+        shopRevenue -= comp;
         continue;
       }
       activeCount++;
@@ -376,7 +382,7 @@ const AdminBookingListPage: React.FC = () => {
       const base = commissionBaseFor(b);
       shopRevenue += base - therapistPayoutFor(b);
     }
-    return { totalValue, activeCount, shopRevenue, cancelledValue, cancelledCount };
+    return { totalValue, activeCount, shopRevenue, cancelledValue, cancelledCount, noShowTaxi, noShowCount };
   }, [faceted]);
 
   // ── filtered list (facets + tab + search) ──────────────────────────
@@ -625,9 +631,12 @@ const AdminBookingListPage: React.FC = () => {
           { label: "Needs Action", labelTh: "ต้องดำเนินการ",  value: String(counts.pending),           sub: "pending confirmation · รอยืนยัน", color: adminColor.amber,     icon: <Warning   size={20} weight="duotone" /> },
           { label: "In Progress",  labelTh: "กำลังดำเนินการ", value: String(counts.confirmed),         sub: "confirmed · ยืนยันแล้ว",           color: adminColor.accent,    icon: <Clock     size={20} weight="duotone" /> },
           { label: "Booked Value", labelTh: "มูลค่ารวม",       value: formatTHB(valueStats.totalValue), sub: `${valueStats.activeCount} bookings · ไม่รวมยกเลิก`, color: adminColor.highlight, icon: <Wallet    size={20} weight="duotone" /> },
-          // 🆕 28w.44 (founder "ยกเลิก ให้แสดงยอดแยกต่างหาก") — cancelled value
-          //   as its own stat, so it isn't silently folded out of Booked Value.
-          { label: "Cancelled",    labelTh: "ยกเลิก",          value: formatTHB(valueStats.cancelledValue), sub: `${valueStats.cancelledCount} bookings · ยกเลิก/คืนเงิน`, color: adminColor.dim, icon: <XCircle size={20} weight="duotone" /> },
+          // 🆕 28w.54 (founder "เปลี่ยนเป็นยอดจ่ายค่าเทกซี่") — this card used to
+          //   show cancelledValue (Σ totalPrice of the 45 cancelled bookings =
+          //   lost booking value, not real cash). Replaced with the actual taxi
+          //   comp the shop pays out for no-shows — the only cash that moves on
+          //   a cancel/no-show. Cancelled COUNT is still on the "Cancelled" tab.
+          { label: "No-show Taxi", labelTh: "ค่าแท็กซี่ No-show", value: formatTHB(valueStats.noShowTaxi), sub: `${valueStats.noShowCount} no-show · จ่ายพนักงาน`, color: adminColor.amber, icon: <Taxi size={20} weight="duotone" /> },
           // 🆕 28s258 — shop-revenue was an inline tag under Booked Value; r44
           //   promotes it to a peer stat card (same commission split as
           //   Earnings/Reports — see commission.ts).
