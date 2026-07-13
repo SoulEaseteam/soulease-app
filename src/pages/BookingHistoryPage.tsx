@@ -19,6 +19,11 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Box, Avatar, Typography } from "@mui/material";
+// 🆕 Round 28w.21 (founder: "แถบบาร์ ไม่เสมอ กล่องล่าง") — page was full-bleed
+//   while the TopNav is capped by responsiveShell, so on tablet/desktop the
+//   maroon hero ran edge-to-edge past the centered nav. Cap the page to the
+//   same shell so the bar + the box below line up.
+import { responsiveShell } from "@/theme/breakpoints";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -210,7 +215,18 @@ const BookingHistoryPage: React.FC = () => {
   );
 
   return (
-    <Box sx={{ minHeight: "100vh", background: "var(--sr-bg)", pb: 14, fontFamily: SANS }}>
+    <Box
+      sx={{
+        // 🆕 28w.21 — cap + centre to the same shell as TopNav (px:0 keeps the
+        //   hero flush to the column edge; inner sections keep their own px).
+        ...responsiveShell,
+        px: 0,
+        minHeight: "100vh",
+        background: "var(--sr-bg)",
+        pb: 14,
+        fontFamily: SANS,
+      }}
+    >
 
       {/* ── Rose-berry hero header ───────────────────────────────── */}
       <Box
