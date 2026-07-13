@@ -657,7 +657,7 @@ const ServicesPage: React.FC = () => {
                 subtitle / bold from-price).  The list itself stacks
                 vertically — no snap-scroll.  Whole card is one <a> tag,
                 so tapping anywhere routes to the service detail page. */}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 3 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, mb: 3 }}>
               {restServices.map((svc, index) => {
                 const firstDur = durationsFor(svc)[0];
                 // 🆕 28r113 — per-item numbered eyebrow (Ritual · 02/03/04).
@@ -698,7 +698,14 @@ const ServicesPage: React.FC = () => {
                       <Box aria-hidden sx={{ flex: 1, height: 1, background: "rgba(217,124,149,0.35)" }} />
                     </Box>
 
-                    {/* ── Card ──────────────────────────────────────── */}
+                    {/* ── Card · full-size, unified with featured layout ──
+                        🆕 28r114 (founder "ให้ทุกเมนูนวด เหมือน Gentleman's
+                        เลย · ไม่ต้องย่อเล็ก") — replaced horizontal mini
+                        card (image-left / text-right) with the same
+                        4:3 hero image + name + Thai/type + description
+                        layout as the featured card.  Featured keeps its
+                        rose border + Ken Burns as the visual differentiator;
+                        these get a standard hairline. */}
                     <Box
                       component={motion.a}
                       href={`/services/${svc.id}`}
@@ -713,82 +720,90 @@ const ServicesPage: React.FC = () => {
                       }}
                       whileHover={{ y: -3 }}
                       sx={{
-                        display: "flex",
-                        alignItems: "stretch",
-                        gap: 0,
+                        display: "block",
                         textDecoration: "none",
-                        borderRadius: "16px",
+                        color: "inherit",
+                        borderRadius: "22px",
                         background: "var(--sr-panel)",
                         border: "1px solid var(--sr-hairline)",
                         boxShadow: "var(--sr-card-shadow)",
                         overflow: "hidden",
-                        transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
-                        "&:hover": {
-                          transform: "translateY(-1px)",
-                          boxShadow: "0 8px 28px rgba(0,0,0,0.28)",
-                          borderColor: "rgba(217,124,149,0.4)",
+                        transition: "transform 0.28s ease, box-shadow 0.4s ease, border-color 0.28s ease",
+                        "@media (hover: hover)": {
+                          "&:hover": {
+                            transform: "translateY(-3px)",
+                            boxShadow: "0 14px 32px rgba(0,0,0,0.28)",
+                            borderColor: "rgba(217,124,149,0.4)",
+                          },
                         },
                         "&:focus-visible": {
                           outline: `2px solid ${ROSE}`,
-                          outlineOffset: 2,
+                          outlineOffset: 3,
                         },
                       }}
                     >
-                    {/* 🆕 28r113 — floating rose badge on the image removed;
-                        the badge moved into the eyebrow above. */}
-                    {svc.image && (
-                      <Box
-                        aria-hidden
-                        sx={{
-                          position: "relative",
-                          flex: "0 0 auto",
-                          width: 108,
-                          alignSelf: "stretch",
-                          background: `center top / cover no-repeat url(${svc.image})`,
-                        }}
-                      />
-                    )}
+                      {/* Hero image — full-canvas 4:3 aspect */}
+                      {svc.image && (
+                        <Box
+                          sx={{
+                            position: "relative",
+                            width: "100%",
+                            aspectRatio: "4 / 3",
+                            overflow: "hidden",
+                            background: `center top / cover no-repeat url(${svc.image})`,
+                            "&::after": {
+                              content: '""',
+                              position: "absolute",
+                              inset: 0,
+                              background:
+                                "linear-gradient(180deg, rgba(0,0,0,0) 60%, rgba(0,0,0,0.22) 100%)",
+                              pointerEvents: "none",
+                            },
+                          }}
+                        />
+                      )}
 
-                    {/* Text column on the RIGHT */}
-                    <Box
-                      sx={{
-                        flex: "1 1 auto",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
-                        p: "14px 16px",
-                        minWidth: 0,
-                      }}
-                    >
-                      <Typography
-                        component="h3"
-                        sx={{
-                          fontFamily: SERIF,
-                          fontSize: 16.5,
-                          fontWeight: 700,
-                          color: "var(--sr-ink)",
-                          letterSpacing: "-0.005em",
-                          lineHeight: 1.2,
-                          mb: 0.5,
-                        }}
-                      >
-                        {svc.name}
-                      </Typography>
+                      {/* Content section */}
+                      <Box sx={{ p: "20px 20px 22px" }}>
+                        <Typography
+                          component="h2"
+                          sx={{
+                            fontFamily: SERIF,
+                            fontSize: 26,
+                            fontWeight: 500,
+                            color: "var(--sr-ink)",
+                            letterSpacing: "-0.015em",
+                            lineHeight: 1.1,
+                            mb: 0.5,
+                          }}
+                        >
+                          {svc.name}
+                        </Typography>
 
-                      <Typography
-                        sx={{
-                          fontFamily: SANS,
-                          fontSize: 12,
-                          color: "var(--sr-muted)",
-                          letterSpacing: "0.01em",
-                          mb: 1,
-                        }}
-                      >
-                        {t("services.durationMin", "{{d}} min", { d: firstDur })} · {t(`services.type.${svc.id}`, SERVICE_TYPE_TAG[svc.id] ?? "Signature")}
-                      </Typography>
-                      {/* 🆕 28w.31 — from-price removed; Services page is
-                          description-only, prices live on /pricing. */}
-                    </Box>
+                        <Typography
+                          sx={{
+                            fontFamily: SANS,
+                            fontSize: 12,
+                            color: "var(--sr-muted)",
+                            mb: 1.5,
+                            letterSpacing: "0.01em",
+                          }}
+                        >
+                          {i18n.language === "th" && `${SERVICE_TH_TAG[svc.id]} · `}
+                          {t(`services.type.${svc.id}`, SERVICE_TYPE_TAG[svc.id] ?? "")}
+                        </Typography>
+
+                        <Typography
+                          sx={{
+                            fontFamily: SANS,
+                            fontSize: 13.5,
+                            color: "var(--sr-body)",
+                            lineHeight: 1.55,
+                          }}
+                        >
+                          {svc.desc}
+                        </Typography>
+                      </Box>
                     </Box>
                   </Box>
                 );
