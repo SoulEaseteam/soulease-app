@@ -37,6 +37,11 @@ import React from "react";
 import { Box } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+// 🆕 28w.28 — icons + concierge channels ported from ServicesPage so the
+//   Pricing "Areas & Timing" block matches the richer Services-page card.
+import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
+import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import { FaLine, FaTelegramPlane, FaWeixin, FaWhatsapp } from "react-icons/fa";
 
 import services from "@/data/services";
 import {
@@ -72,7 +77,15 @@ const HERO_GRADIENT = "linear-gradient(160deg, #B8567F 0%, #8A3A57 100%)";
 const BESTSELLER_ID = "SR-HJ2200";
 import { responsiveShell } from "@/theme/breakpoints";
 import { useDocumentMeta } from "@/utils/useDocumentMeta";
-import { whatsappDeepLink } from "@/config/concierge";
+import { whatsappDeepLink, CONCIERGE } from "@/config/concierge";
+
+// 🆕 28w.28 — concierge channels (ported from ServicesPage) for the Reach us grid.
+const CHANNELS = [
+  { Icon: FaWhatsapp,      name: "WhatsApp", href: CONCIERGE.whatsappUrl,        tone: "#25D366", aria: "Reserve on WhatsApp" },
+  { Icon: FaTelegramPlane, name: "Telegram", href: CONCIERGE.telegramChannelUrl, tone: "#229ED9", aria: "Reserve on Telegram" },
+  { Icon: FaLine,          name: "LINE",     href: CONCIERGE.lineUrl,            tone: "#06C755", aria: "Reserve on LINE" },
+  { Icon: FaWeixin,        name: "WeChat",   href: "/wechat-scan",               tone: "#07C160", aria: "Reserve on WeChat" },
+];
 
 // ─── Content data ─────────────────────────────────────────────────────
 //
@@ -151,7 +164,6 @@ const ENHANCEMENTS = [
   },
 ];
 
-const AREAS = ["Sukhumvit", "Silom", "Asok", "Thonglor"];
 
 const PAYMENT_METHODS = [
   { label: "Cash on arrival", note: "" },
@@ -618,50 +630,115 @@ const PricingPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* ── 4. Areas & Timing ─────────────────────────────────────── */}
+      {/* ── 4. Areas & Timing ── 🆕 28w.28 (founder: "เอาอันแรกเหมือนหน้า
+             services มาใส") — replaced the pill row + single prime-hours line
+             with the richer Services-page card (service-area prose + arrival
+             window) and the Reach us concierge grid + Telegram subscribe. */}
       <Box component="section" sx={{ marginBottom: { xs: 5, md: 7 } }}>
-        <SectionTitle
-          eyebrow={t("pricing.areas.eyebrow", "Where & When")}
-          title={t("pricing.areas.title", "Areas & Timing")}
-        />
-        <Box
-          sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "8px",
-            marginBottom: "12px",
-          }}
-        >
-          {AREAS.map((a) => (
-            <Box
-              key={a}
-              sx={{
-                padding: "6px 14px",
-                borderRadius: 999,
-                background: warmAccents.w100,
-                color: grays.g900,
-                fontFamily: fonts.body,
-                fontSize: 12,
-                fontWeight: 600,
-                letterSpacing: "0.04em",
-              }}
-            >
-              {a}
-            </Box>
-          ))}
+        <Box sx={{ mb: 1.5 }}>
+          <Eyebrow>{t("services.areasTiming", "Areas & Timing")}</Eyebrow>
         </Box>
         <Box
           sx={{
-            fontFamily: fonts.body,
-            fontSize: 13,
-            color: grays.g600,
-            lineHeight: 1.6,
+            borderRadius: "18px",
+            background: "var(--sr-panel)",
+            border: "1px solid var(--sr-hairline)",
+            boxShadow: "var(--sr-card-shadow)",
+            overflow: "hidden",
           }}
         >
-          {t(
-            "pricing.areas.body",
-            "Prime hours 22:00 – 04:00 · Concierge on standby 24/7 · Beyond-central areas quoted per trip.",
-          )}
+          <Box sx={{ padding: "16px 18px" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.75 }}>
+              <LocationOnRoundedIcon sx={{ color: ROSE, fontSize: 18 }} />
+              <Box sx={{ fontFamily: fonts.body, fontSize: 13.5, fontWeight: 700, color: "var(--sr-ink)" }}>
+                {t("services.serviceArea", "Service area")}
+              </Box>
+            </Box>
+            <Box sx={{ fontFamily: fonts.body, fontSize: 12.5, lineHeight: 1.6, color: "var(--sr-body)" }}>
+              {t(
+                "services.serviceAreaBody",
+                "Sukhumvit · Silom · Asok · Thonglor · Sathorn · Phrom Phong · Ari · Chidlom · Ploenchit. Beyond the centre — our concierge provides a private quotation.",
+              )}
+            </Box>
+          </Box>
+          <Box aria-hidden sx={{ height: 1, background: "var(--sr-hairline)", mx: "18px" }} />
+          <Box sx={{ padding: "14px 18px 16px" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.75 }}>
+              <AccessTimeRoundedIcon sx={{ color: ROSE, fontSize: 18 }} />
+              <Box sx={{ fontFamily: fonts.body, fontSize: 13.5, fontWeight: 700, color: "var(--sr-ink)" }}>
+                {t("services.arrivalWindow", "Arrival window")}
+              </Box>
+            </Box>
+            <Box sx={{ fontFamily: fonts.body, fontSize: 12.5, color: "var(--sr-body)", lineHeight: 1.55 }}>
+              {t("services.arrivalCentral", "Central Bangkok:")}{" "}
+              <Box component="span" sx={{ fontWeight: 600, color: "var(--sr-ink)" }}>
+                {t("services.arrivalCentralWindow", "30–60 min.")}
+              </Box>{" "}
+              {t("services.arrivalOuter", "Outer districts:")}{" "}
+              <Box component="span" sx={{ fontWeight: 600, color: "var(--sr-ink)" }}>
+                {t("services.arrivalOuterWindow", "60–90 min.")}
+              </Box>
+            </Box>
+          </Box>
+        </Box>
+
+        {/* Reach us — 4 concierge tiles + TG subscribe (Services-page style) */}
+        <Box sx={{ mt: 3, mb: 1.5 }}>
+          <Eyebrow>{t("services.reachUs", "Reach us")}</Eyebrow>
+        </Box>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          {CHANNELS.map(({ Icon, name, href, tone, aria }) => (
+            <Box
+              key={name}
+              component="a"
+              href={href}
+              aria-label={aria}
+              {...(href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              sx={{
+                flex: 1,
+                textDecoration: "none",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                py: "14px",
+                borderRadius: "14px",
+                background: "var(--sr-panel)",
+                border: "1px solid var(--sr-hairline)",
+                boxShadow: "var(--sr-card-shadow)",
+                transition: "border-color 200ms ease, transform 200ms ease",
+                "&:hover": { borderColor: tone, transform: "translateY(-2px)" },
+                "&:focus-visible": { outline: `2px solid ${ROSE}`, outlineOffset: 3 },
+                "& svg": { fontSize: 24, color: tone },
+              }}
+            >
+              <Icon />
+              <Box sx={{ fontFamily: fonts.body, fontSize: 10, fontWeight: 700, color: "var(--sr-muted)", letterSpacing: "0.03em" }}>
+                {name}
+              </Box>
+            </Box>
+          ))}
+        </Box>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 1.25 }}>
+          <Box
+            component="a"
+            href={CONCIERGE.telegramChannelUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{
+              fontFamily: fonts.body,
+              fontSize: 12,
+              fontWeight: 600,
+              color: "var(--sr-muted)",
+              textDecoration: "none",
+              letterSpacing: "0.02em",
+              "&:hover": { color: ROSE },
+              "&:focus-visible": { outline: `2px solid ${ROSE}`, outlineOffset: 3 },
+            }}
+          >
+            {t("services.subscribeTelegram", "Subscribe to our Telegram channel")}
+          </Box>
         </Box>
       </Box>
 
