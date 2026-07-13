@@ -15,6 +15,7 @@ import React from "react";
 import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import HomeTherapistGrid from "@/components/home/HomeTherapistGrid";
+import { responsiveShell } from "@/theme/breakpoints";
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 import { CONCIERGE } from "@/config/concierge";
 import { MapPin } from "phosphor-react";
@@ -260,7 +261,9 @@ const TaxiEstimator: React.FC = () => {
   if (roster.length === 0) return null;
 
   return (
-    <Box sx={{ mt: 3, px: 0.5 }}>
+    // 🆕 28w.16 — narrow the price-check widget only (founder clarified
+    //   "ลดความกว้าง" = just the estimator, not the whole near-me page).
+    <Box sx={{ mt: 3, px: 0.5, maxWidth: 360, mx: "auto" }}>
       <Typography
         sx={{
           fontFamily: SANS,
@@ -516,16 +519,14 @@ const NearMePage: React.FC = () => {
   });
 
   return (
-    <Box sx={{ background: "var(--sr-bg)", minHeight: "100vh" }}>
-      <Box
-        sx={{
-          // 🆕 28w.15 — tidy centered app-column (founder "ลดความกว้าง")
-          //   instead of stretching to the full desktop width.
-          maxWidth: 480,
-          mx: "auto",
-          padding: { xs: "10px 16px 32px", md: "16px 16px 40px" },
-        }}
-      >
+    <Box
+      sx={{
+        ...responsiveShell,
+        background: "var(--sr-bg)",
+        minHeight: "100vh",
+        padding: { xs: "10px 12px 28px", md: "16px 12px 36px" },
+      }}
+    >
       {/* Header */}
       <Box sx={{ px: 0.5, pt: 1, pb: 2 }}>
         <Typography
@@ -666,7 +667,6 @@ const NearMePage: React.FC = () => {
 
       {/* Reach us — concierge channel grid (founder: like the services page) */}
       <ReachUs t={t} />
-      </Box>
     </Box>
   );
 };
