@@ -681,65 +681,6 @@ const PricingPage: React.FC = () => {
             </Box>
           </Box>
         </Box>
-
-        {/* Reach us — 4 concierge tiles + TG subscribe (Services-page style) */}
-        <Box sx={{ mt: 3, mb: 1.5 }}>
-          <Eyebrow>{t("services.reachUs", "Reach us")}</Eyebrow>
-        </Box>
-        <Box sx={{ display: "flex", gap: 1 }}>
-          {CHANNELS.map(({ Icon, name, href, tone, aria }) => (
-            <Box
-              key={name}
-              component="a"
-              href={href}
-              aria-label={aria}
-              {...(href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              sx={{
-                flex: 1,
-                textDecoration: "none",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "6px",
-                py: "14px",
-                borderRadius: "14px",
-                background: "var(--sr-panel)",
-                border: "1px solid var(--sr-hairline)",
-                boxShadow: "var(--sr-card-shadow)",
-                transition: "border-color 200ms ease, transform 200ms ease",
-                "&:hover": { borderColor: tone, transform: "translateY(-2px)" },
-                "&:focus-visible": { outline: `2px solid ${ROSE}`, outlineOffset: 3 },
-                "& svg": { fontSize: 24, color: tone },
-              }}
-            >
-              <Icon />
-              <Box sx={{ fontFamily: fonts.body, fontSize: 10, fontWeight: 700, color: "var(--sr-muted)", letterSpacing: "0.03em" }}>
-                {name}
-              </Box>
-            </Box>
-          ))}
-        </Box>
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 1.25 }}>
-          <Box
-            component="a"
-            href={CONCIERGE.telegramChannelUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            sx={{
-              fontFamily: fonts.body,
-              fontSize: 12,
-              fontWeight: 600,
-              color: "var(--sr-muted)",
-              textDecoration: "none",
-              letterSpacing: "0.02em",
-              "&:hover": { color: ROSE },
-              "&:focus-visible": { outline: `2px solid ${ROSE}`, outlineOffset: 3 },
-            }}
-          >
-            {t("services.subscribeTelegram", "Subscribe to our Telegram channel")}
-          </Box>
-        </Box>
       </Box>
 
       {/* ── 5. Payment methods ────────────────────────────────────── */}
@@ -846,6 +787,69 @@ const PricingPage: React.FC = () => {
               <Box component="span">{line}</Box>
             </Box>
           ))}
+        </Box>
+      </Box>
+
+      {/* ── 6b. Reach us ── 🆕 28w.29 (founder: "ย้ายไปที่นี้") — moved the
+             concierge tiles + Telegram subscribe down here, just above the
+             final CTA band, so all the ways to reach us sit together. */}
+      <Box component="section" sx={{ marginBottom: { xs: 5, md: 7 } }}>
+        <Box sx={{ mb: 1.5 }}>
+          <Eyebrow>{t("services.reachUs", "Reach us")}</Eyebrow>
+        </Box>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          {CHANNELS.map(({ Icon, name, href, tone, aria }) => (
+            <Box
+              key={name}
+              component="a"
+              href={href}
+              aria-label={aria}
+              {...(href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              sx={{
+                flex: 1,
+                textDecoration: "none",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                py: "14px",
+                borderRadius: "14px",
+                background: "var(--sr-panel)",
+                border: "1px solid var(--sr-hairline)",
+                boxShadow: "var(--sr-card-shadow)",
+                transition: "border-color 200ms ease, transform 200ms ease",
+                "&:hover": { borderColor: tone, transform: "translateY(-2px)" },
+                "&:focus-visible": { outline: `2px solid ${ROSE}`, outlineOffset: 3 },
+                "& svg": { fontSize: 24, color: tone },
+              }}
+            >
+              <Icon />
+              <Box sx={{ fontFamily: fonts.body, fontSize: 10, fontWeight: 700, color: "var(--sr-muted)", letterSpacing: "0.03em" }}>
+                {name}
+              </Box>
+            </Box>
+          ))}
+        </Box>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 1.25 }}>
+          <Box
+            component="a"
+            href={CONCIERGE.telegramChannelUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{
+              fontFamily: fonts.body,
+              fontSize: 12,
+              fontWeight: 600,
+              color: "var(--sr-muted)",
+              textDecoration: "none",
+              letterSpacing: "0.02em",
+              "&:hover": { color: ROSE },
+              "&:focus-visible": { outline: `2px solid ${ROSE}`, outlineOffset: 3 },
+            }}
+          >
+            {t("services.subscribeTelegram", "Subscribe to our Telegram channel")}
+          </Box>
         </Box>
       </Box>
 
