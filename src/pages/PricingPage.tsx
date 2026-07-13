@@ -364,7 +364,6 @@ const PricingPage: React.FC = () => {
           const copy = SERVICE_COPY[s.id] ?? { thai: "", teaser: s.desc };
           const durations = [60, 90, 120];
           const priceAt = (min: number) => priceForDuration(s, min);
-          const conciergeMsg = `Hi SunRed, I'd like to reserve ${s.name} · 60 min. When can you fit me in?`;
           const isBestseller = s.id === BESTSELLER_ID;
           return (
             <Box
@@ -502,12 +501,15 @@ const PricingPage: React.FC = () => {
                 ))}
               </Box>
 
-              {/* Reserve — WhatsApp with per-service prefilled message */}
+              {/* 🆕 28w.25 (founder: "ลิ้งไปตามเมนูนั้นๆ … Unlock Executive
+                  Benefits") — was a WhatsApp "Reserve" deep link; now opens
+                  THIS service's own detail page (/services/{id}) under a
+                  premium "Unlock Executive Benefits" label. */}
               <Box
-                component="a"
-                href={whatsappDeepLink(conciergeMsg)}
-                target="_blank"
-                rel="noopener noreferrer"
+                component="button"
+                type="button"
+                onClick={() => navigate(`/services/${s.id}`)}
+                aria-label={`Unlock Executive Benefits — ${s.name}`}
                 sx={{
                   alignSelf: "flex-start",
                   display: "inline-flex",
@@ -515,6 +517,8 @@ const PricingPage: React.FC = () => {
                   gap: "8px",
                   padding: "10px 20px",
                   borderRadius: 999,
+                  border: "none",
+                  cursor: "pointer",
                   background: "#D97C95",
                   color: "#FFFFFF",
                   fontFamily: fonts.body,
@@ -536,7 +540,7 @@ const PricingPage: React.FC = () => {
                   },
                 }}
               >
-                {t("pricing.reserve", "Reserve")}
+                {t("pricing.unlockBenefits", "Unlock Executive Benefits")}
                 <Box component="span" aria-hidden sx={{ fontSize: 14, lineHeight: 1 }}>
                   →
                 </Box>
