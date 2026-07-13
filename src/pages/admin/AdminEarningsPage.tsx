@@ -144,7 +144,9 @@ interface BookingRow {
   serviceName?: string | null;
   totalPrice?: number | null;
   servicePrice?: number | null;
-  duration?: number | null;   // 🆕 28w.39 — keys the fixed per-tier split
+  duration?: number | null;         // 🆕 28w.39 — keys the fixed per-tier split
+  therapistShare?: number | null;   // 🆕 28w.43 — split frozen at confirm-time
+  shopShare?: number | null;        // 🆕 28w.43
   taxiFee?: number | null;
   status?: string;
   startAt?: Timestamp | null;
@@ -306,6 +308,8 @@ const AdminEarningsPage: React.FC = () => {
             createdAt: d.createdAt ?? null,
             discountAmount: d.discountAmount ?? null,
             discountCode: d.discountCode ?? null,
+            therapistShare: d.therapistShare ?? null,
+            shopShare: d.shopShare ?? null,
             paid: d.paid ?? null,
             paymentStatus: d.paymentStatus ?? null,
             payment: d.payment ?? null,
@@ -576,6 +580,8 @@ const AdminEarningsPage: React.FC = () => {
             createdAt: d.createdAt ?? null,
             discountAmount: d.discountAmount ?? null,
             discountCode: d.discountCode ?? null,
+            therapistShare: d.therapistShare ?? null,
+            shopShare: d.shopShare ?? null,
           });
         });
         setPrevBookings(arr);
@@ -636,6 +642,8 @@ const AdminEarningsPage: React.FC = () => {
             taxiFee: d.taxiFee ?? null,
             totalPrice: d.totalPrice ?? null,
             discountAmount: d.discountAmount ?? null,
+            therapistShare: d.therapistShare ?? null,
+            shopShare: d.shopShare ?? null,
             status: d.status ?? "",
           });
         });

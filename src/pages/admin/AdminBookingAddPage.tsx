@@ -44,6 +44,8 @@ import { useNavigate } from "react-router-dom";
 import { db } from "@/lib/firebase";
 import services from "@/data/services";
 import { priceForDuration, durationsFor, formatTHB } from "@/utils/servicePricing";
+// 🆕 28w.43 — freeze the shop/therapist split on admin-created (born-confirmed) bookings.
+import { stampSplit } from "@/utils/commission";
 import { estimateTaxiFare, DISPATCH_BASE } from "@/utils/taxiFare";
 import { paymentSurcharge, hasPaymentSurcharge } from "@/utils/paymentSurcharge";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
@@ -363,6 +365,9 @@ const AdminBookingAddPage: React.FC = () => {
         phone:         phone.trim(),
         note:          note.trim(),
         status:        "confirmed",
+        // 🆕 28w.43 — born confirmed → freeze the split now (from the current
+        //   split table). No discount on admin-add, so base = servicePrice.
+        ...stampSplit({ serviceId: selectedService.id, servicePrice, duration }),
         payment,
         createdAt:     Timestamp.now(),
         createdBy:     "admin",

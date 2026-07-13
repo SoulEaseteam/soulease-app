@@ -124,6 +124,9 @@ import {
   type RainForecast,
 } from "@/utils/weather";
 import { priceForDuration, formatTHB, isServiceEnabled } from "@/utils/servicePricing";
+// 🆕 28w.43 — freeze the split on admin-created (born-confirmed) bookings; a
+//   customer booking (born pending) gets stamped when the admin confirms it.
+import { stampSplit } from "@/utils/commission";
 import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
 import services from "@/data/services";
 import { getServiceById } from "@/utils/serviceCatalog";
@@ -1301,6 +1304,17 @@ const BookingFlowPage: React.FC = () => {
         //   so Telegram alerts are unaffected; the admin "Confirm" button
         //   promotes pending → confirmed.
         status: isAdminBooking ? "confirmed" : "pending",
+        // 🆕 28w.43 — admin bookings are born confirmed → freeze the split now
+        //   (from the current split table). Customer bookings start pending and
+        //   get stamped when the admin confirms them (AdminBookingListPage).
+        ...(isAdminBooking
+          ? stampSplit({
+              serviceId: service.id,
+              servicePrice,
+              discountAmount: effectiveDiscountAmount,
+              duration: form.duration ?? service.duration,
+            })
+          : {}),
         // 🆕 Round 16: align with Firestore architecture spec.
         paymentStatus: "unpaid", // → "paid" once admin confirms via Telegram
         // 🆕 Round 28b21 (founder 2026-05-04) — Phase 2: TIME-LIMITED

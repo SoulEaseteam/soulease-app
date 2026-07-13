@@ -98,7 +98,7 @@ import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 //   uses the SAME shared commission split as Earnings/Reports (currently
 //   flat 60/40, see commission.ts) so this summary number can never drift
 //   from what those two pages say — the exact bug the 28s247 audit fixed.
-import { commissionBaseFor, therapistPayoutFor } from "@/utils/commission";
+import { commissionBaseFor, therapistPayoutFor, stampSplit } from "@/utils/commission";
 // 🆕 28s260 (founder: "เพิ่มวิธีการจ่ายด้วย") — WeChat/Alipay carry a 5%+฿200
 //   surcharge (same rule as the customer flow + AdminBookingAddPage).
 //   Editing payment method is a price-affecting edit, so the total gets
@@ -381,9 +381,18 @@ const AdminBookingListPage: React.FC = () => {
     try {
       // 🆕 Round 28s230 (FIX D) — confirming settles the 10-min hold so
       //   releaseExpiredHolds can't later stamp it "expired".
+      // 🆕 28w.43 — FREEZE the shop/therapist split onto the booking the
+      //   moment it's confirmed (from the current split table). The payslip
+      //   reads these stamped fields verbatim, so a later split-table edit
+      //   never changes this booking's payout. Un-confirmed / pre-28w.43
+      //   bookings have no stamp → payroll falls back to the tier %.
       const patch: Record<string, unknown> =
         status === "confirmed"
-          ? { status, holdState: "confirmed", holdExpiresAt: null }
+          ? (() => {
+              const b = bookings.find((x) => x.id === id);
+              const split = b ? stampSplit(b) : {};
+              return { status, holdState: "confirmed", holdExpiresAt: null, ...split };
+            })()
           : status === "cancelled"
           ? { status, ...(reason ? { cancelReason: reason } : {}) }
           : { status };

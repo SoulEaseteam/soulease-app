@@ -138,23 +138,48 @@ export function therapistPayoutFor(b: {
   servicePrice?: number | null;
   discountAmount?: number | null;
   duration?: number | null;
+  therapistShare?: number | null;
 }): number {
-  // 🆕 28w.39 — a FIXED per-(service, duration) split wins over the tier %.
-  //   Falls back to the % (× post-discount base) when no fixed entry exists
-  //   (legacy/odd durations), so historical payouts never break.
-  const fixed = therapistFixedFor(b.serviceId, b.duration);
-  if (fixed != null) return fixed;
+  // 🆕 28w.43 (founder "Payslip นับส่วนแบ่งปัจจุบัน ทั้งที่ยังไม่มียอดจองใหม่")
+  //   — a split FROZEN on the booking at confirm-time (see stampSplit) wins.
+  //   Un-stamped bookings (everything from before the split table existed)
+  //   keep the ORIGINAL tier-% payout, so editing the split table NEVER
+  //   changes a historical payslip retroactively. The fixed split reaches a
+  //   booking ONLY through the stamp written when it's confirmed.
+  if (typeof b.therapistShare === "number" && b.therapistShare >= 0) {
+    return Math.round(b.therapistShare);
+  }
   return Math.round(commissionBaseFor(b) * therapistPctFor(b.serviceId));
 }
 
 /** The shop's cut of ONE booking's service revenue (taxi excluded) =
- *  (servicePrice − discount) − therapist payout, floored at 0. Reconciles
- *  with therapistPayoutFor so shop + therapist = service revenue. */
+ *  (servicePrice − discount) − therapist payout, floored at 0. Prefers the
+ *  frozen shopShare; otherwise reconciles with therapistPayoutFor. */
 export function shopShareFor(b: {
   serviceId?: string | null;
   servicePrice?: number | null;
   discountAmount?: number | null;
   duration?: number | null;
+  therapistShare?: number | null;
+  shopShare?: number | null;
 }): number {
+  if (typeof b.shopShare === "number" && b.shopShare >= 0) return Math.round(b.shopShare);
   return Math.max(0, commissionBaseFor(b) - therapistPayoutFor(b));
+}
+
+/** 🆕 28w.43 — the split to FREEZE onto a booking at confirm-time, from the
+ *  CURRENT split table: the fixed per-(service, duration) therapist amount,
+ *  or the tier % as a fallback for durations with no fixed entry. Write both
+ *  fields onto the booking doc; the payslip then reads them verbatim forever. */
+export function stampSplit(b: {
+  serviceId?: string | null;
+  servicePrice?: number | null;
+  discountAmount?: number | null;
+  duration?: number | null;
+}): { therapistShare: number; shopShare: number } {
+  const fixed = therapistFixedFor(b.serviceId, b.duration);
+  const therapistShare =
+    fixed != null ? fixed : Math.round(commissionBaseFor(b) * therapistPctFor(b.serviceId));
+  const shopShare = Math.max(0, commissionBaseFor(b) - therapistShare);
+  return { therapistShare, shopShare };
 }

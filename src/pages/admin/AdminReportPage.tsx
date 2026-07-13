@@ -59,6 +59,8 @@ interface Booking {
   serviceName?: string;
   servicePrice?: number;
   duration?: number;         // 🆕 28w.39 — keys the fixed per-tier split
+  therapistShare?: number;   // 🆕 28w.43 — split frozen at confirm-time
+  shopShare?: number;        // 🆕 28w.43
   discountAmount?: number;   // 🆕 28s247 — commission is on the post-discount price
   taxiFee?: number;
   totalPrice?: number;
