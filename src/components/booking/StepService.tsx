@@ -36,9 +36,6 @@ import {
 } from "@/utils/therapistLookup";
 import type { Therapist } from "@/types/therapist";
 import {
-  startingPrice,
-  durationsFor,
-  formatTHB,
   isServiceEnabled,
   withLiveServiceOverrides,
   getLiveCustomServices,
@@ -48,6 +45,16 @@ import ServiceDurationSheet from "@/components/booking/ServiceDurationSheet";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
+
+// 🆕 28r123 — one-word type tag per service, same map as ServicesPage.tsx.
+//   Kept inline here to avoid a shared import; adjust both if a new
+//   standard service is added to the catalog.
+const SERVICE_TYPE_TAG: Record<string, string> = {
+  "xSR-Thai":   "Traditional",
+  "SR-Aroma":   "Relaxing",
+  "SR-HJ2200":  "Signature",
+  "SR-B2B3200": "Specialised",
+};
 
 interface Props {
   /** Currently selected service id (null when nothing picked yet) */
@@ -206,17 +213,15 @@ const StepService: React.FC<Props> = ({
       aria-label="Choose service"
       sx={{ display: "flex", flexDirection: "column", gap: "12px" }}
     >
-      {visibleServices.map((s, idx) => {
+      {visibleServices.map((s) => {
         const isSelected = value === s.id;
-        // Round 28s43 ("ตรงเมนูเด่น ใส่ กรอป มาแรง ด้วย") —
-        // First card in the editorial order is the current
-        // best-seller (Gentleman's Signature per 28s33 analytics).
-        // Highlights it with a brand-red gradient border + a small
-        // "มาแรง" / "TRENDING" pill so the eye lands there first.
-        const isTrending = idx === 0;
-        const badgeColor = BADGE_COLORS[s.badge];
-        const fromPrice = startingPrice(s);
-        const tiers = durationsFor(s);
+        // 🆕 28r123 (founder mockup 2026-07-13 · therapist services list
+        //   compact horizontal cards) — replaced the r28s86 full-bleed
+        //   5:2 photo card with a small image-left + text-right list
+        //   card. Price / TRENDING pulse / description clamp / duration
+        //   tiers removed per r122+r118 direction (ซ่อนราคา).  Only
+        //   name + '60 min · Type' subtitle surface.
+        const typeLabel = SERVICE_TYPE_TAG[s.id] ?? "Signature";
         return (
           <Box
             key={s.id}
@@ -231,210 +236,67 @@ const StepService: React.FC<Props> = ({
               }
             }}
             sx={{
-              // 🆕 Round 28s86 (founder "ใส่รายละเอียด บนภาพ") —
-              //   full-bleed photo card with all the detail (name,
-              //   description, FROM price + duration range, badge,
-              //   TRENDING) overlaid on the image, matching the new
-              //   Services page. Selected = brand-red ring; trending =
-              //   coral ring.
               position: "relative",
-              borderRadius: "16px",
+              display: "flex",
+              alignItems: "stretch",
+              gap: 0,
+              borderRadius: "14px",
+              background: "var(--sr-panel)",
+              border: isSelected
+                ? "1.5px solid #D97C95"
+                : "1px solid var(--sr-hairline)",
+              boxShadow: "var(--sr-card-shadow)",
               overflow: "hidden",
-              // 🆕 28t.12 — smaller service cards (founder "ทำการ์ดให้เล็กลง").
-              aspectRatio: "5 / 2",
               cursor: "pointer",
               userSelect: "none",
-              boxShadow: isSelected
-                ? "0 0 0 2.5px #D97C95, 0 14px 32px rgba(0, 0, 0, 0.26)"
-                : isTrending
-                  ? "0 0 0 2px #D97C95, 0 12px 28px rgba(0, 0, 0, 0.16)"
-                  : "0 8px 22px rgba(0, 0, 0, 0.12)",
-              transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              transition:
+                "transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease",
               "@media (hover: hover)": {
-                "&:hover": { transform: "translateY(-2px)" },
-                "&:hover .svc-img": { transform: "scale(1.05)" },
+                "&:hover": {
+                  transform: "translateY(-1px)",
+                  borderColor: "rgba(217,124,149,0.5)",
+                },
               },
               "&:focus-visible": {
                 outline: "2px solid #D97C95",
-                outlineOffset: "2px",
+                outlineOffset: 2,
               },
-              // 🆕 Round 28s88 (founder "ตรง •TRENDING เป็นกรอบ และมี
-              //   อนิเมชั่นเด่นๆ") — the best-seller card gets a pulsing
-              //   red→coral glow frame so it visibly stands out.
-              ...(isTrending && !isSelected
-                ? {
-                    // 🆕 28t.16 — rose pulse frame (was dark navy #2D2D2B +
-                    //   rgba(15,23,42) — off-brand + reinforced the "too dark"
-                    //   read). Matches the rose selected-ring below.
-                    animation:
-                      "sunredTrendFrame 1.7s ease-in-out infinite",
-                    "@keyframes sunredTrendFrame": {
-                      "0%, 100%": {
-                        boxShadow:
-                          "0 0 0 2px #D97C95, 0 0 0 4px rgba(217, 124, 149, 0.14), 0 10px 26px rgba(217, 124, 149, 0.20)",
-                      },
-                      "50%": {
-                        boxShadow:
-                          "0 0 0 2px #D97C95, 0 0 0 9px rgba(217, 124, 149, 0.30), 0 16px 38px rgba(217, 124, 149, 0.38)",
-                      },
-                    },
-                    "@media (prefers-reduced-motion: reduce)": {
-                      animation: "none",
-                    },
-                  }
-                : {}),
             }}
           >
-            {/* Photo layer */}
-            <Box
-              className="svc-img"
-              aria-hidden
-              sx={{
-                position: "absolute",
-                inset: 0,
-                // 🆕 28t.16 — rose placeholder (was tan/brown #d4a574→#8b6f47,
-                //   part of the retired "old" palette).
-                background: `center / cover no-repeat url("${s.image}"), linear-gradient(135deg, #E8B7C6, #D97C95)`,
-                transition: "transform 0.45s cubic-bezier(0.16,1,0.3,1)",
-              }}
-            />
-            {/* Legibility scrim
-                🆕 28t.16 (founder "ดูมืดเกินไป") — lightened + de-browned.
-                Was an espresso wash (rgba(20,8,4) up to 0.88) that buried
-                the photo on the short 5:2 card; now a neutral near-black
-                just strong enough for the white caption to stay legible. */}
-            <Box
-              aria-hidden
-              sx={{
-                position: "absolute",
-                inset: 0,
-                background:
-                  "linear-gradient(180deg, rgba(12,8,12,0.20) 0%, rgba(12,8,12,0) 36%, rgba(12,8,12,0.30) 62%, rgba(8,5,9,0.76) 100%)",
-              }}
-            />
-
-            {/* Top row — badge (left) + Trending (right) */}
-            <Box
-              sx={{
-                position: "absolute",
-                top: 12,
-                left: 12,
-                right: 12,
-                zIndex: 2,
-                display: "flex",
-                alignItems: "flex-start",
-                justifyContent: "space-between",
-                gap: "8px",
-              }}
-            >
-              <Box
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: "9px",
-                  fontWeight: 800,
-                  letterSpacing: "0.08em",
-                  background: badgeColor.bg,
-                  color: badgeColor.fg,
-                  padding: "3px 8px",
-                  borderRadius: "6px",
-                  textTransform: "uppercase",
-                  boxShadow: "0 2px 6px rgba(20, 6, 12, 0.22)",
-                }}
-              >
-                {s.badge}
-              </Box>
-              {isTrending && (
-                <Box
-                  aria-label="Trending"
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    padding: "3px 9px 3px 7px",
-                    borderRadius: 999,
-                    // 🆕 28t.16 — rose (was taupe #8F8474, retired palette).
-                    background: "#D97C95",
-                    color: "#fff",
-                    fontFamily: SANS,
-                    fontSize: "9.5px",
-                    fontWeight: 800,
-                    letterSpacing: "0.10em",
-                    textTransform: "uppercase",
-                    boxShadow: "0 8px 18px rgba(217, 124, 149, 0.42)",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  <Box
-                    component="span"
-                    aria-hidden
-                    sx={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: "50%",
-                      background: "#fff",
-                      boxShadow: "0 0 0 3px rgba(255,255,255,0.30)",
-                      animation:
-                        "sunredTrendingPulse 1.6s ease-in-out infinite",
-                      "@keyframes sunredTrendingPulse": {
-                        "0%, 100%": { opacity: 1 },
-                        "50%": { opacity: 0.45 },
-                      },
-                      "@media (prefers-reduced-motion: reduce)": {
-                        animation: "none",
-                      },
-                    }}
-                  />
-                  Trending
-                </Box>
-              )}
-            </Box>
-
-            {/* Selected-duration chip — bottom-right marker */}
-            {isSelected && selectedDuration && (
+            {/* Small square image on the LEFT */}
+            {s.image && (
               <Box
                 aria-hidden
                 sx={{
-                  position: "absolute",
-                  top: 12,
-                  right: 12,
-                  zIndex: 3,
-                  marginTop: isTrending ? "26px" : 0,
-                  padding: "3px 9px",
-                  borderRadius: 999,
-                  // 🆕 28t.16 — rose (was taupe #8F8474 / navy shadow).
-                  background: "#D97C95",
-                  color: "#fff",
-                  fontFamily: SANS,
-                  fontSize: "10px",
-                  fontWeight: 800,
-                  boxShadow: "0 4px 12px rgba(217, 124, 149, 0.44)",
+                  flex: "0 0 auto",
+                  width: 92,
+                  alignSelf: "stretch",
+                  background: `center top / cover no-repeat url("${s.image}"), linear-gradient(135deg, #E8B7C6, #D97C95)`,
                 }}
-              >
-                {selectedDuration}m
-              </Box>
+              />
             )}
 
-            {/* Overlaid detail — bottom */}
+            {/* Text column on the RIGHT */}
             <Box
               sx={{
-                position: "absolute",
-                left: 16,
-                right: 16,
-                bottom: 14,
-                zIndex: 1,
+                flex: "1 1 auto",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                p: "12px 16px",
+                minWidth: 0,
               }}
             >
               <Typography
                 component="h3"
                 sx={{
                   fontFamily: SERIF,
-                  fontSize: "19px",
-                  fontWeight: 600,
-                  color: "#fff",
-                  letterSpacing: "-0.01em",
-                  lineHeight: 1.14,
-                  textShadow: "0 1px 8px rgba(0,0,0,0.4)",
-                  marginBottom: "4px",
+                  fontSize: "16px",
+                  fontWeight: 700,
+                  color: "var(--sr-ink)",
+                  letterSpacing: "-0.005em",
+                  lineHeight: 1.2,
+                  mb: 0.5,
                 }}
               >
                 {s.name}
@@ -443,64 +305,35 @@ const StepService: React.FC<Props> = ({
                 sx={{
                   fontFamily: SANS,
                   fontSize: "12px",
-                  color: "rgba(255,255,255,0.86)",
-                  lineHeight: 1.4,
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                  textShadow: "0 1px 6px rgba(0,0,0,0.35)",
-                  marginBottom: "8px",
+                  color: "var(--sr-muted)",
+                  letterSpacing: "0.01em",
                 }}
               >
-                {s.desc}
+                60 min · {typeLabel}
               </Typography>
+              {/* 🆕 28r123 — price hidden (ซ่อนราคา ตามที่สั่ง). */}
+            </Box>
+
+            {/* Selected-tier marker (subtle) */}
+            {isSelected && selectedDuration && (
               <Box
+                aria-hidden
                 sx={{
-                  display: "flex",
-                  alignItems: "baseline",
-                  gap: "6px",
+                  position: "absolute",
+                  top: 8,
+                  right: 10,
+                  padding: "3px 9px",
+                  borderRadius: 999,
+                  background: "#D97C95",
+                  color: "#fff",
                   fontFamily: SANS,
-                  flexWrap: "wrap",
+                  fontSize: "10px",
+                  fontWeight: 800,
                 }}
               >
-                <Typography
-                  component="span"
-                  sx={{
-                    fontSize: "9.5px",
-                    fontWeight: 700,
-                    color: "rgba(255,255,255,0.7)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                  }}
-                >
-                  From
-                </Typography>
-                <Typography
-                  component="span"
-                  sx={{
-                    fontFamily: SERIF,
-                    fontSize: "17px",
-                    fontWeight: 700,
-                    color: "#fff",
-                    letterSpacing: "-0.02em",
-                    textShadow: "0 1px 8px rgba(0,0,0,0.4)",
-                  }}
-                >
-                  {formatTHB(fromPrice)}
-                </Typography>
-                <Typography
-                  component="span"
-                  sx={{
-                    fontSize: "11px",
-                    color: "rgba(255,255,255,0.72)",
-                    fontWeight: 500,
-                  }}
-                >
-                  · {tiers.join("/")} min
-                </Typography>
+                {selectedDuration}m
               </Box>
-            </Box>
+            )}
           </Box>
         );
       })}
