@@ -31,8 +31,6 @@ import {
 import type { MassageService } from "@/data/services";
 import {
   durationsFor,
-  formatTHB,
-  priceForDuration,
   isServiceEnabled,
   getLiveServiceOrder,
 } from "../utils/servicePricing";
@@ -447,7 +445,6 @@ const ServicesPage: React.FC = () => {
                 grid / rose CTA.  Content order matches the founder
                 Approach 3 mockup screenshots verbatim. */}
             {bestseller && (() => {
-              const durations = durationsFor(bestseller);
               return (
                 <Box
                   component={motion.div}
@@ -635,59 +632,33 @@ const ServicesPage: React.FC = () => {
                       {bestseller.desc}
                     </Typography>
 
-                    {/* Horizontal 3-cell rate grid (60 · 90 · 120)
-                        🆕 28r102 (r101 audit H4) — Math.max guard so an
-                        admin-cleared durations array can't produce an
-                        invalid `repeat(0, 1fr)` template. */}
-                    {durations.length > 0 && (
+                    {/* 🆕 28w.31 (founder: "ให้เหลือแค่อธิบาย · ราคาให้ลิ้งไป
+                        หน้า pricing") — the Services page now describes only;
+                        the per-duration rate grid was removed. Prices live on
+                        /pricing, reached via this link. */}
                     <Box
+                      component="a"
+                      href="/pricing"
                       sx={{
-                        display: "grid",
-                        gridTemplateColumns: `repeat(${Math.max(durations.length, 1)}, 1fr)`,
-                        gap: 1,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
                         mb: 2.25,
+                        fontFamily: SANS,
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: ROSE,
+                        textDecoration: "none",
+                        letterSpacing: "0.01em",
+                        "&:hover": { color: "#C96F89" },
+                        "&:focus-visible": { outline: `2px solid ${ROSE}`, outlineOffset: 3 },
                       }}
                     >
-                      {durations.map((d) => (
-                        <Box
-                          key={d}
-                          sx={{
-                            textAlign: "center",
-                            padding: "12px 8px",
-                            borderRadius: "14px",
-                            background: "rgba(217,124,149,0.06)",
-                            border: "1px solid rgba(217,124,149,0.20)",
-                          }}
-                        >
-                          <Typography
-                            sx={{
-                              fontFamily: SANS,
-                              fontSize: 9.5,
-                              fontWeight: 700,
-                              letterSpacing: "0.10em",
-                              textTransform: "uppercase",
-                              color: "var(--sr-muted)",
-                              mb: 0.4,
-                            }}
-                          >
-                            {t("services.durationMin", "{{d}} min", { d })}
-                          </Typography>
-                          <Typography
-                            sx={{
-                              fontFamily: SERIF,
-                              fontSize: 18,
-                              fontWeight: 700,
-                              color: "var(--sr-ink)",
-                              letterSpacing: "-0.01em",
-                              lineHeight: 1.1,
-                            }}
-                          >
-                            {formatTHB(priceForDuration(bestseller, d))}
-                          </Typography>
-                        </Box>
-                      ))}
+                      {t("services.viewPricing", "View full pricing")}
+                      <Box component="span" aria-hidden sx={{ fontSize: 15, lineHeight: 1 }}>
+                        →
+                      </Box>
                     </Box>
-                    )}
 
                     {/* Rose full-width CTA */}
                     <Box
@@ -919,20 +890,8 @@ const ServicesPage: React.FC = () => {
                       >
                         {t("services.durationMin", "{{d}} min", { d: firstDur })} · {t(`services.type.${svc.id}`, SERVICE_TYPE_TAG[svc.id] ?? "Signature")}
                       </Typography>
-
-                      <Typography
-                        component="span"
-                        sx={{
-                          fontFamily: SERIF,
-                          fontSize: 17,
-                          fontWeight: 700,
-                          color: ROSE,
-                          letterSpacing: "-0.01em",
-                          lineHeight: 1,
-                        }}
-                      >
-                        {formatTHB(priceForDuration(svc, firstDur))}
-                      </Typography>
+                      {/* 🆕 28w.31 — from-price removed; Services page is
+                          description-only, prices live on /pricing. */}
                     </Box>
                   </Box>
                 );
