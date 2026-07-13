@@ -28,6 +28,8 @@ import { useAuth } from "@/providers/AuthProvider";
 import { fonts } from "@/theme";
 // 🆕 Round 28r71 — shared concierge endpoints (r71 rebrand phase 2).
 import { CONCIERGE } from "@/config/concierge";
+// 🆕 28w.23 — cap pages to the same shell as TopNav so they align on desktop.
+import { responsiveShell } from "@/theme/breakpoints";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS  = '"Inter", system-ui, sans-serif';
@@ -177,14 +179,17 @@ const ProfilePage: React.FC = () => {
     return (
       <Box
         sx={{
+          // 🆕 28w.23 (founder: align pages + retire navy/taupe) — cap to the
+          //   nav shell and move the splash onto the rose day/night surface;
+          //   the old full-bleed #1A2B2E box ran edge-to-edge past the nav.
+          ...responsiveShell,
           minHeight: "100vh",
-          background: "#1A2B2E",
+          background: "var(--sr-bg)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           gap: 3,
-          px: 3,
           pb: 10,
         }}
       >
@@ -197,12 +202,12 @@ const ProfilePage: React.FC = () => {
             height={72}
             loading="lazy"
             decoding="async"
-            sx={{ width: 72, height: 72, borderRadius: "50%", mb: 2, opacity: 0.9 }}
+            sx={{ width: 72, height: 72, borderRadius: "50%", mb: 2, opacity: 0.95 }}
           />
-          <Typography sx={{ fontFamily: SERIF, fontSize: 26, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
+          <Typography sx={{ fontFamily: SERIF, fontSize: 26, fontWeight: 700, color: "var(--sr-ink)", letterSpacing: "-0.02em" }}>
             Welcome to SunRed
           </Typography>
-          <Typography sx={{ fontFamily: SANS, fontSize: 14, color: "rgba(255,255,255,0.55)", mt: 1 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 14, color: "var(--sr-muted)", mt: 1 }}>
             Sign in to view your bookings and profile
           </Typography>
         </motion.div>
@@ -210,7 +215,7 @@ const ProfilePage: React.FC = () => {
           <Box
             onClick={() => navigate("/login")}
             sx={{
-              background: "#8F8474",
+              background: "linear-gradient(135deg, #D97C95 0%, #C96F89 100%)",
               color: "#fff",
               borderRadius: 999,
               py: 1.6,
@@ -219,7 +224,7 @@ const ProfilePage: React.FC = () => {
               fontSize: 15,
               fontWeight: 700,
               cursor: "pointer",
-              boxShadow: "0 8px 24px rgba(15, 23, 42, 0.35)",
+              boxShadow: "0 8px 24px rgba(138, 58, 87, 0.32)",
               letterSpacing: "0.01em",
             }}
           >
@@ -235,6 +240,9 @@ const ProfilePage: React.FC = () => {
   return (
     <Box
       sx={{
+        // 🆕 28w.23 (founder: align pages with the nav) — cap + centre to the
+        //   same shell as TopNav so the hero box lines up with the nav bar.
+        ...responsiveShell,
         minHeight: "100vh",
         background: "#F4F6F5",
         pb: 12,

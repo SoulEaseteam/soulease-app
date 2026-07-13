@@ -16,7 +16,9 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Ticket, Package, CheckCircle, Megaphone } from "phosphor-react";
 
-import BottomNav from "@/components/layouts/BottomNavGlass";
+// 🆕 28w.23 — page renders under MainLayout, which already provides the
+//   bottom nav; the page-level <BottomNav/> was a duplicate (removed below).
+import { responsiveShell } from "@/theme/breakpoints";
 import { useActivePromos } from "@/hooks/useActivePromos";
 import { formatTHB } from "@/utils/servicePricing";
 import { CONCIERGE } from "@/config/concierge";
@@ -58,8 +60,7 @@ const PromotionsPage: React.FC = () => {
   };
 
   return (
-    <>
-      <Box sx={{ minHeight: "100vh", background: "var(--sr-bg)", pb: 14, fontFamily: SANS }}>
+      <Box sx={{ ...responsiveShell, minHeight: "100vh", background: "var(--sr-bg)", pb: 14, fontFamily: SANS }}>
         {/* ── Rose-berry hero ─────────────────────────────────────── */}
         <Box
           sx={{
@@ -171,8 +172,6 @@ const PromotionsPage: React.FC = () => {
           </Box>
         </Box>
       </Box>
-      <BottomNav />
-    </>
   );
 };
 
