@@ -263,12 +263,12 @@ const StepService: React.FC<Props> = ({
               },
             }}
           >
-            {/* Small image on the LEFT — natural full display (no crop)
-                🆕 28r124 (founder "ปรับขนาดรูป · ให้เห็นทั้งใบ") —
-                swapped background 'cover' crop for an <img> with
-                object-fit: contain inside a fixed 108×108 frame.  Full
-                photo now shows; letterbox areas use a soft rose blush
-                so portrait shots don't leave hard bars. */}
+            {/* Small image on the LEFT — uniform frame · face-priority
+                🆕 28r125 (founder "ทำขอบให้มันสมส่วนกัน") — r124's
+                object-fit: contain left inconsistent rose-blush
+                letterboxes across portrait vs landscape images.  Back
+                to object-fit: cover with center-top anchoring so every
+                card frames identically and faces stay in the crop. */}
             {s.image && (
               <Box
                 sx={{
@@ -281,9 +281,6 @@ const StepService: React.FC<Props> = ({
                   overflow: "hidden",
                   background:
                     "linear-gradient(135deg, rgba(232,183,198,0.35), rgba(217,124,149,0.20))",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
                 }}
               >
                 <Box
@@ -294,7 +291,8 @@ const StepService: React.FC<Props> = ({
                     display: "block",
                     width: "100%",
                     height: "100%",
-                    objectFit: "contain",
+                    objectFit: "cover",
+                    objectPosition: "center top",
                   }}
                 />
               </Box>
