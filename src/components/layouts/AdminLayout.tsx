@@ -53,7 +53,11 @@ import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, onSnapshot } from "firebase/firestore";
+// 🆕 28w.39 — load the admin service-split table (admin-only) into
+//   commission.ts once, so every admin payout surface (Report, Payouts,
+//   Earnings) resolves the SAME fixed per-tier therapist split.
+import { applyServiceSplitConfig } from "@/utils/commission";
 import { useAuth } from "@/providers/AuthProvider";
 
 import BottomNavGlass from "@/components/layouts/BottomNavGlass";
@@ -128,6 +132,20 @@ const AdminLayout: React.FC = () => {
         setNotifications(snap.size);
       } catch { /* ignore */ }
     })();
+  }, []);
+
+  // 🆕 28w.39 — keep commission.ts's split config in sync for all admin
+  //   payout surfaces (defaults apply until this lands; edits propagate live).
+  useEffect(() => {
+    return onSnapshot(
+      doc(db, "adminSettings", "earnings"),
+      (snap) => {
+        applyServiceSplitConfig(
+          (snap.data()?.serviceSplits ?? {}) as Record<string, Record<number, number>>,
+        );
+      },
+      () => { /* admin-only doc may be absent — defaults still apply */ },
+    );
   }, []);
 
   // close mobile drawer on navigation

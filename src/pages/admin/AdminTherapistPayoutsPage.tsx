@@ -211,6 +211,9 @@ const AdminTherapistPayoutsPage: React.FC = () => {
             serviceId: d.serviceId ?? null,
             servicePrice: d.servicePrice ?? null,
             discountAmount: d.discountAmount ?? null,
+            // 🆕 28w.39 — duration keys the fixed per-tier split (matches
+            //   the Report page; falls back to % when no fixed entry).
+            duration: (d.duration as number) ?? null,
           });
           if (commission <= 0) return; // no service price yet → skip
           // 🆕 Round 28s315 — shop pays commission + taxi reimbursement.

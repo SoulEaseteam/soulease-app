@@ -26,7 +26,7 @@ import {
 import { motion } from "framer-motion";
 import { db } from "@/lib/firebase";
 import {
-  collection, query, where, orderBy, onSnapshot, Timestamp, getDocs,
+  collection, query, where, orderBy, onSnapshot, Timestamp, getDocs, doc,
 } from "firebase/firestore";
 import { therapistKey, buildRosterIndex, type RosterEntry } from "@/utils/therapistIdentity";
 import dayjs, { Dayjs } from "dayjs";
@@ -40,8 +40,10 @@ import {
 } from "phosphor-react";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import {
-  isPayrollExcluded, therapistPayoutFor, commissionBaseFor,
+  isPayrollExcluded, therapistPayoutFor, commissionBaseFor, applyServiceSplitConfig,
 } from "@/utils/commission";
+// 🆕 28w.39 — admin split-table editor (therapist/shop per service × duration).
+import SplitTableEditor from "./SplitTableEditor";
 
 const SANS  = adminFont.sans;
 const SERIF = adminFont.serif;
@@ -56,6 +58,7 @@ interface Booking {
   serviceId?: string;        // 🆕 28s247 — needed for the tier-aware split
   serviceName?: string;
   servicePrice?: number;
+  duration?: number;         // 🆕 28w.39 — keys the fixed per-tier split
   discountAmount?: number;   // 🆕 28s247 — commission is on the post-discount price
   taxiFee?: number;
   totalPrice?: number;
@@ -98,6 +101,10 @@ const AdminReportPage: React.FC = () => {
   const [filter,   setFilter]   = useState("__ALL__");
   const [preview,    setPreview]    = useState<TherapistSummary | null>(null);
   const [showTable,  setShowTable]  = useState(false);
+  // 🆕 28w.39 — split-table editor toggle + a version that bumps when the
+  //   admin split config (re)loads, so the payroll memo recomputes.
+  const [showSplits, setShowSplits] = useState(false);
+  const [splitVersion, setSplitVersion] = useState(0);
 
   // 🆕 Round 28s324 — therapist roster (canonical id+name), so booking rows
   //   that stored a variant id/casing resolve to one clean label.
@@ -110,6 +117,25 @@ const AdminReportPage: React.FC = () => {
       }));
       setRosterIdx(buildRosterIndex(roster));
     });
+  }, []);
+
+  // 🆕 28w.39 — live-load the admin split table (adminSettings/earnings.
+  //   serviceSplits) and apply it to commission.ts so therapistPayoutFor /
+  //   shopShareFor use the fixed per-tier amounts. Bumps splitVersion so the
+  //   payroll memo below recomputes on load / edit.
+  useEffect(() => {
+    return onSnapshot(
+      doc(db, "adminSettings", "earnings"),
+      (snap) => {
+        const cfg = (snap.data()?.serviceSplits ?? {}) as Record<
+          string,
+          Record<number, number>
+        >;
+        applyServiceSplitConfig(cfg);
+        setSplitVersion((v) => v + 1);
+      },
+      () => setSplitVersion((v) => v + 1),
+    );
   }, []);
 
   // ── load bookings in range ────────────────────────────────────────
@@ -150,7 +176,9 @@ const AdminReportPage: React.FC = () => {
       r.shop          += base - pay;       // shop's share of net service revenue
     }
     return Array.from(map.values()).sort((a, b) => b.serviceTotal - a.serviceTotal);
-  }, [rows, rosterIdx]);
+    // splitVersion → recompute payouts when the admin split table (re)loads.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, rosterIdx, splitVersion]);
 
   // ── totals ────────────────────────────────────────────────────────
   const totals = useMemo(() => {
@@ -219,7 +247,20 @@ const AdminReportPage: React.FC = () => {
             <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted }}>{periodLabel}</Typography>
           </Box>
         </Box>
-        <Box sx={{ display: "flex", gap: 1 }}>
+        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+          <motion.button
+            whileTap={{ scale: 0.93 }}
+            onClick={() => setShowSplits((v) => !v)}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              height: 36, padding: "0 14px", borderRadius: 999,
+              background: showSplits ? adminColor.accent : adminColor.panel,
+              border: `1px solid ${showSplits ? adminColor.accent : adminColor.line2}`,
+              color: showSplits ? "#fff" : adminColor.text, fontFamily: SANS, fontSize: 13, fontWeight: 600, cursor: "pointer",
+            }}
+          >
+            <Coins size={14} /> ส่วนแบ่ง
+          </motion.button>
           <motion.button
             whileTap={{ scale: 0.93 }}
             onClick={() => setShowTable(true)}
@@ -246,6 +287,13 @@ const AdminReportPage: React.FC = () => {
           </motion.button>
         </Box>
       </Box>
+
+      {/* 🆕 28w.39 — split-table editor (therapist/shop per service × duration) */}
+      {showSplits && (
+        <Box sx={{ px: { xs: 2, md: 3 }, mb: 1.5 }}>
+          <SplitTableEditor splitVersion={splitVersion} />
+        </Box>
+      )}
 
       {/* ── 🆕 Round 28r42 — TOTAL PAYROLL HERO CARD.
            Same DNA as AdminDashboardPage's "Lifetime Revenue" hero

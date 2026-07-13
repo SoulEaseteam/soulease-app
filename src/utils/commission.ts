@@ -38,6 +38,68 @@ export const therapistPctFor = (serviceId: string | null | undefined): number =>
   return TIER_THERAPIST_PCT[serviceId] ?? DEFAULT_THERAPIST_PCT;
 };
 
+// ─────────────────────────────────────────────────────────────────────
+// 🆕 Round 28w.39 (founder 2026-07-14 "โครงสร้างการคิดเงินทั้งหมด …
+//   ตารางส่วนแบ่ง เอาไว้หน้ารีพอต") — FIXED per-(service, duration)
+//   therapist split, in baht. When an entry exists it WINS over the tier %.
+//   The shop's cut is derived (service revenue − therapist), so the Report
+//   totals always reconcile.
+//
+//   Source of truth = the therapist amount (that's the payout View pays).
+//   The shop share = (servicePrice − discount) − therapistAmount, so a
+//   promo is absorbed by the shop and the therapist keeps their rate.
+//
+//   These are the code DEFAULTS; the admin split tool on the Report page
+//   overrides them live via adminSettings/earnings.serviceSplits (loaded
+//   by applyServiceSplitConfig). Durations with no entry (e.g. legacy
+//   80-min bookings) fall back to the tier % below — so history never
+//   breaks.
+//
+//   NOTE on the founder's raw numbers: for Aromatherapy 90 min the split
+//   she gave (shop 800 + therapist 1,100 = 1,900) didn't match the price
+//   (1,800), so the therapist figure (1,100) is used and shop derives to
+//   700 — adjust in the tool if a different split was intended.
+export const SERVICE_SPLIT_DEFAULTS: Record<string, Record<number, number>> = {
+  "xSR-Thai":   { 60: 700,  90: 900,  120: 1200 },
+  "SR-Aroma":   { 60: 800,  90: 1100, 120: 1500 },
+  "SR-HJ2200":  { 70: 1300, 120: 1800 },
+  "SR-B2B3200": { 70: 2000, 120: 2500 },
+};
+
+// Live admin overrides merged over the defaults (per service+duration).
+let serviceSplitOverrides: Record<string, Record<number, number>> = {};
+
+/** Apply the admin-edited split table (from adminSettings/earnings). Merges
+ *  per-entry over SERVICE_SPLIT_DEFAULTS; pass null/undefined to clear. */
+export function applyServiceSplitConfig(
+  cfg: Record<string, Record<number, number>> | null | undefined,
+): void {
+  serviceSplitOverrides = cfg ?? {};
+}
+
+/** The effective split table (defaults + admin overrides), for the editor. */
+export function effectiveServiceSplits(): Record<string, Record<number, number>> {
+  const out: Record<string, Record<number, number>> = {};
+  for (const [sid, tiers] of Object.entries(SERVICE_SPLIT_DEFAULTS)) {
+    out[sid] = { ...tiers };
+  }
+  for (const [sid, tiers] of Object.entries(serviceSplitOverrides)) {
+    out[sid] = { ...(out[sid] ?? {}), ...tiers };
+  }
+  return out;
+}
+
+/** Fixed therapist amount for a (service, duration), or null if none set. */
+export function therapistFixedFor(
+  serviceId: string | null | undefined,
+  duration: number | null | undefined,
+): number | null {
+  if (!serviceId || duration == null) return null;
+  const amt = serviceSplitOverrides[serviceId]?.[duration] ??
+    SERVICE_SPLIT_DEFAULTS[serviceId]?.[duration];
+  return typeof amt === "number" && amt >= 0 ? amt : null;
+}
+
 /**
  * Statuses that must NOT earn payroll — cancelled/refunded/no-show/etc.
  * Includes both British and American spellings of "cancel(l)ed". A booking
@@ -75,6 +137,24 @@ export function therapistPayoutFor(b: {
   serviceId?: string | null;
   servicePrice?: number | null;
   discountAmount?: number | null;
+  duration?: number | null;
 }): number {
+  // 🆕 28w.39 — a FIXED per-(service, duration) split wins over the tier %.
+  //   Falls back to the % (× post-discount base) when no fixed entry exists
+  //   (legacy/odd durations), so historical payouts never break.
+  const fixed = therapistFixedFor(b.serviceId, b.duration);
+  if (fixed != null) return fixed;
   return Math.round(commissionBaseFor(b) * therapistPctFor(b.serviceId));
+}
+
+/** The shop's cut of ONE booking's service revenue (taxi excluded) =
+ *  (servicePrice − discount) − therapist payout, floored at 0. Reconciles
+ *  with therapistPayoutFor so shop + therapist = service revenue. */
+export function shopShareFor(b: {
+  serviceId?: string | null;
+  servicePrice?: number | null;
+  discountAmount?: number | null;
+  duration?: number | null;
+}): number {
+  return Math.max(0, commissionBaseFor(b) - therapistPayoutFor(b));
 }
