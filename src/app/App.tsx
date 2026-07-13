@@ -205,6 +205,10 @@ const AdminSeedReviewsPage = React.lazy(
 const AdminReportPage = React.lazy(
   () => import("@/pages/admin/AdminReportPage")
 );
+// 🆕 Round 28w.59 — membership tier config + per-tier customer counts.
+const AdminMembershipPage = React.lazy(
+  () => import("@/pages/admin/AdminMembershipPage")
+);
 const AdminBlockedDevicesPage = React.lazy(
   () => import("@/pages/admin/AdminBlockedDevicesPage")
 );
@@ -366,6 +370,7 @@ export default function App() {
           />
           <Route path="add-therapist" element={<AddTherapistPage />} />
           <Route path="users" element={<AdminUsersPage />} />
+          <Route path="membership" element={<AdminMembershipPage />} />
           <Route path="user/:id" element={<AdminUserDetailPage />} />
           <Route path="bookings" element={<AdminBookingListPage />} />
           <Route path="bookings/add" element={<AdminBookingAddPage />} />

@@ -105,6 +105,11 @@ import { commissionBaseFor, therapistPayoutFor, stampSplit, isPayrollExcluded, n
 //   recomputed on save — silently leaving it stale would under-charge a
 //   booking that got switched to a surcharged method.
 import { paymentSurcharge } from "@/utils/paymentSurcharge";
+// 🆕 28w.59 — customer membership tiers (Bronze/Silver/Gold/BlackVIP) + no-show
+//   flag, badged on each order. Full-history per-phone aggregate, tier from the
+//   shared membership util (same config as the Membership admin page).
+import { membershipFor, applyMembershipConfig, MEMBERSHIP_COLORS, type MembershipThresholds, type MembershipResult } from "@/utils/membership";
+import { normPhone } from "@/utils/phoneCountry";
 import {
   MagnifyingGlass,
   CheckCircle,
@@ -134,6 +139,7 @@ import {
   Buildings,
   Taxi,
   Tag,
+  Crown,
 } from "phosphor-react";
 
 // Cap the realtime window. Pending/confirmed bookings are always recent; older
@@ -239,6 +245,35 @@ const nameOf = (b: Booking): string =>
 //   `paid` boolean if set, else the customer-flow `paymentStatus`.
 const isPaid = (b: Booking): boolean => b.paid ?? b.paymentStatus === "paid";
 
+// 🆕 28w.59 — membership + no-show badges for an order (stackable). Tier pill
+//   (Bronze/Silver/Gold/BlackVIP, with ↓ if demoted for inactivity) + a red
+//   "No-shows" pill when the customer has any no-show history.
+const MembershipBadges: React.FC<{ member: MembershipResult | null; size?: "sm" | "md" }> = ({ member, size = "sm" }) => {
+  if (!member || (!member.tier && !member.hasNoShow)) return null;
+  const fs = size === "md" ? 10.5 : 9.5;
+  const py = size === "md" ? "3px" : "2px";
+  const ic = size === "md" ? 12 : 11;
+  return (
+    <Box sx={{ display: "inline-flex", flexWrap: "wrap", gap: 0.5, alignItems: "center" }}>
+      {member.tier && (
+        <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.4, px: 0.75, py, borderRadius: 999, background: `${MEMBERSHIP_COLORS[member.tier]}1A`, border: `1px solid ${MEMBERSHIP_COLORS[member.tier]}55` }}>
+          <Crown size={ic} weight="fill" color={MEMBERSHIP_COLORS[member.tier]} />
+          <Typography sx={{ fontFamily: SANS, fontSize: fs, fontWeight: 800, color: MEMBERSHIP_COLORS[member.tier], lineHeight: 1, letterSpacing: "0.02em" }}>
+            {member.tier}{member.demoted ? " ↓" : ""}
+          </Typography>
+        </Box>
+      )}
+      {member.hasNoShow && (
+        <Box sx={{ display: "inline-flex", alignItems: "center", px: 0.75, py, borderRadius: 999, background: `${adminColor.red}14`, border: `1px solid ${adminColor.red}44` }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: fs, fontWeight: 800, color: adminColor.red, lineHeight: 1 }}>
+            No-shows
+          </Typography>
+        </Box>
+      )}
+    </Box>
+  );
+};
+
 // ── shared detail row (module scope — was redefined every render, fix #6) ─
 const Row: React.FC<{ label: string; value?: string | React.ReactNode }> = ({ label, value }) =>
   value ? (
@@ -252,6 +287,9 @@ const Row: React.FC<{ label: string; value?: string | React.ReactNode }> = ({ la
 // Page
 // ──────────────────────────────────────────────────────────────────────
 type DateMode = "all" | "custom";
+
+// 🆕 28w.59 — per-customer (by phone) lifetime aggregate for membership tiers.
+type CustStat = { served: number; totalSpent: number; lastVisitMs: number; noShowCount: number };
 
 const AdminBookingListPage: React.FC = () => {
   const [bookings,    setBookings]    = useState<Booking[]>([]);
@@ -281,6 +319,59 @@ const AdminBookingListPage: React.FC = () => {
       setTherapists(snap.docs.map((d) => ({ id: d.id, name: (d.data() as any).name || d.id })));
     });
   }, []);
+
+  // 🆕 28w.59 — FULL-history per-phone aggregate for membership tiers, computed
+  //   once over the whole bookings collection (NOT the paginated feed above, so
+  //   a tier reflects the customer's entire history), plus the live threshold
+  //   config from adminSettings/membership.
+  const [custStats, setCustStats] = useState<Record<string, CustStat>>({});
+  const [memberVersion, setMemberVersion] = useState(0);
+  const nowMs = useMemo(() => Date.now(), []);
+  useEffect(() => {
+    const SERVED = new Set(["completed", "done"]);
+    const NOSHOW = new Set(["no_show", "no-show", "noshow"]);
+    void getDocs(collection(db, "bookings")).then((snap) => {
+      const map: Record<string, CustStat> = {};
+      snap.forEach((d) => {
+        const b = d.data() as {
+          phone?: string; status?: string; totalPrice?: number; servicePrice?: number;
+          createdAt?: { toDate?: () => Date; seconds?: number };
+          startAt?: { toDate?: () => Date; seconds?: number };
+        };
+        const phone = normPhone((b.phone ?? "").trim());
+        if (!phone) return;
+        const row = (map[phone] ??= { served: 0, totalSpent: 0, lastVisitMs: 0, noShowCount: 0 });
+        const st = b.status ?? "";
+        if (NOSHOW.has(st)) row.noShowCount++;
+        if (SERVED.has(st)) {
+          row.served++;
+          row.totalSpent += b.totalPrice ?? b.servicePrice ?? 0;
+          const t = b.createdAt ?? b.startAt;
+          const ms = t?.toDate ? t.toDate().getTime() : (typeof t?.seconds === "number" ? t.seconds * 1000 : 0);
+          if (ms > row.lastVisitMs) row.lastVisitMs = ms;
+        }
+      });
+      setCustStats(map);
+    });
+  }, []);
+  useEffect(() => {
+    const unsub = onSnapshot(
+      doc(db, "adminSettings", "membership"),
+      (snap) => { applyMembershipConfig((snap.data() as Partial<MembershipThresholds>) ?? null); setMemberVersion((v) => v + 1); },
+      () => {},
+    );
+    return () => unsub();
+  }, []);
+  const memberForPhone = useMemo(() => {
+    return (phone?: string | null) => {
+      const p = normPhone((phone ?? "").trim());
+      if (!p) return null;
+      const s = custStats[p];
+      return s ? membershipFor(s, nowMs) : null;
+    };
+    // memberVersion → recompute when the admin thresholds change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [custStats, nowMs, memberVersion]);
 
   // 🆕 28s254 — date range + therapist + payment filters.
   const [dateMode,        setDateMode]        = useState<DateMode>("all");
@@ -923,6 +1014,7 @@ const AdminBookingListPage: React.FC = () => {
               >
                 <BookingCard
                   booking={b}
+                  member={memberForPhone(b.phone)}
                   onConfirm={() => setStatus(b.id, "confirmed")}
                   onComplete={() => setStatus(b.id, "completed")}
                   onCancel={() => cancelBooking(b.id)}
@@ -972,6 +1064,7 @@ const AdminBookingListPage: React.FC = () => {
         {detailBooking && (
           <DetailPanel
             booking={detailBooking}
+            member={memberForPhone(detailBooking.phone)}
             therapists={therapists}
             onClose={closeDetail}
             onConfirm={() => { void setStatus(detailBooking.id, "confirmed"); }}
@@ -1009,6 +1102,7 @@ const AdminBookingListPage: React.FC = () => {
 // ──────────────────────────────────────────────────────────────────────
 const BookingCard: React.FC<{
   booking: Booking;
+  member: MembershipResult | null;
   onConfirm: () => void;
   onComplete: () => void;
   onCancel: () => void;
@@ -1016,7 +1110,7 @@ const BookingCard: React.FC<{
   onSaveNote: (note: string) => void;
   onViewDetail: () => void;
   onMarkReviewed: () => void;
-}> = ({ booking: b, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onViewDetail, onMarkReviewed }) => {
+}> = ({ booking: b, member, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onViewDetail, onMarkReviewed }) => {
   const [expanded, setExpanded] = useState(false);
   const [note,     setNote]     = useState(b.adminNote ?? "");
 
@@ -1123,6 +1217,13 @@ const BookingCard: React.FC<{
           <User size={12} color={adminColor.dim} />
           <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted }}>{nameOf(b)}</Typography>
         </Box>
+
+        {/* 🆕 28w.59 — membership + no-show badges for this customer */}
+        {member && (member.tier || member.hasNoShow) && (
+          <Box sx={{ mt: 0.5 }}>
+            <MembershipBadges member={member} />
+          </Box>
+        )}
 
         {/* customer phone, tap-to-call */}
         {b.phone && (
@@ -1431,6 +1532,7 @@ const SectionHeader: React.FC<{ icon: React.ReactNode; children: React.ReactNode
 
 const DetailPanel: React.FC<{
   booking: Booking;
+  member: MembershipResult | null;
   therapists: { id: string; name: string }[];
   onClose: () => void;
   onConfirm: () => void;
@@ -1440,7 +1542,7 @@ const DetailPanel: React.FC<{
   onSaveNote: (note: string) => void;
   onChangeStatus: (status: string) => void;
   onSaveDetails: (patch: Record<string, unknown>, auditDetail?: Record<string, unknown>) => void;
-}> = ({ booking: b, therapists, onClose, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onChangeStatus, onSaveDetails }) => {
+}> = ({ booking: b, member, therapists, onClose, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onChangeStatus, onSaveDetails }) => {
   const [note, setNote] = useState(b.adminNote ?? "");
   const cfg        = cfgFor(b.status);
   const isCancelled = b.status === "cancelled";
@@ -1598,6 +1700,12 @@ const DetailPanel: React.FC<{
               {getServiceLabel(b.serviceId, b.serviceName)}
               {b.duration && ` · ${b.duration} min`}
             </Typography>
+            {/* 🆕 28w.59 — customer's membership tier + no-show flag */}
+            {member && (member.tier || member.hasNoShow) && (
+              <Box sx={{ mt: 1 }}>
+                <MembershipBadges member={member} size="md" />
+              </Box>
+            )}
           </Box>
           <IconButton onClick={onClose} aria-label="Close · ปิด" sx={{ color: adminColor.muted, mt: -0.5 }}>
             <X size={20} />

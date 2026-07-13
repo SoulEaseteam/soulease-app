@@ -48,6 +48,7 @@ import PaidIcon from "@mui/icons-material/Paid";
 import PaymentsIcon from "@mui/icons-material/Payments";
 import RateReviewIcon from "@mui/icons-material/RateReview";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import CardMembershipIcon from "@mui/icons-material/CardMembership";
 
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -95,6 +96,7 @@ const menuItems = [
   // People
   { label: "Therapists",   path: "/admin/therapists",         icon: <TherapistIcon /> },
   { label: "Users",        path: "/admin/users",              icon: <UserIcon /> },
+  { label: "Membership",   path: "/admin/membership",         icon: <CardMembershipIcon /> },
   // Content
   { label: "Reviews",      path: "/admin/reviews",            icon: <ReviewIcon /> },
   // 🆕 Round 28s213 — Backfill anonymous reviews onto completed bookings
