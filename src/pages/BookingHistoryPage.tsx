@@ -217,10 +217,13 @@ const BookingHistoryPage: React.FC = () => {
   return (
     <Box
       sx={{
-        // 🆕 28w.21 — cap + centre to the same shell as TopNav (px:0 keeps the
-        //   hero flush to the column edge; inner sections keep their own px).
+        // 🆕 28w.21 — cap + centre to the same shell as TopNav.
+        // 🆕 28w.22 (founder: "คอลัมไม่เท่ากัน") — keep responsiveShell's own px
+        //   (don't zero it) so the hero insets by the SAME padding as the nav
+        //   bar. With px:0 the maroon ran to the column edge (1200) while the
+        //   nav content sat inset (1136) → the box looked wider than the bar.
+        //   Now both are the same width, perfectly aligned.
         ...responsiveShell,
-        px: 0,
         minHeight: "100vh",
         background: "var(--sr-bg)",
         pb: 14,
