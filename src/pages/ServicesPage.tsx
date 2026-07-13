@@ -489,11 +489,20 @@ const ServicesPage: React.FC = () => {
                 </Box>
 
                 <Box
-                  component={motion.div}
+                  component={motion.a}
+                  href={`/services/${bestseller.id}`}
+                  aria-label={t("services.detailsAria", "Details for {{name}}", { name: bestseller.name })}
                   initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1], delay: 0.35 }}
                   sx={{
+                    // 🆕 28r120 (founder "Gentleman's + ทุกเมนู เชื่อมไป
+                    //   /services/<id>") — featured card was a motion.div
+                    //   with no route; now a motion.a linking to its own
+                    //   detail page, matching the rest cards.
+                    display: "block",
+                    textDecoration: "none",
+                    color: "inherit",
                     position: "relative",
                     mb: 2.5,
                     borderRadius: "22px",
@@ -512,6 +521,10 @@ const ServicesPage: React.FC = () => {
                         transform: "translateY(-4px)",
                         boxShadow: "var(--sr-card-shadow)",
                       },
+                    },
+                    "&:focus-visible": {
+                      outline: `2px solid ${ROSE}`,
+                      outlineOffset: 3,
                     },
                     // 🆕 28r102 (r101 audit H2) — Ken Burns is gated on
                     //   prefers-reduced-motion.  Scoped selector uses a
