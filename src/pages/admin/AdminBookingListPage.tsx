@@ -109,6 +109,7 @@ import { paymentSurcharge } from "@/utils/paymentSurcharge";
 //   flag, badged on each order. Full-history per-phone aggregate, tier from the
 //   shared membership util (same config as the Membership admin page).
 import { membershipFor, applyMembershipConfig, MEMBERSHIP_COLORS, type MembershipThresholds, type MembershipResult } from "@/utils/membership";
+import { bookingAuthorLabel } from "@/utils/bookingAuthor";
 import { normPhone } from "@/utils/phoneCountry";
 import {
   MagnifyingGlass,
@@ -160,6 +161,13 @@ const CARD_FRAME_BG = "#C5D8DF";
 // ── types ─────────────────────────────────────────────────────────────
 interface Booking {
   id: string;
+  // 🆕 28x.3 (founder: "จะระบุได้ไง ใครจอง") — who created this reservation.
+  //   Absent on anything booked before this round; bookingAuthorLabel() says
+  //   "แอดมิน (ไม่ระบุ)" rather than inventing an author for it.
+  createdBy?: string;
+  createdByEmail?: string;
+  createdByPhone?: string;
+  createdByName?: string;
   userName?: string;
   // 🆕 Round 28s230 — customer flow writes `contactName`, admin-add writes
   //   `customerName`; `nameOf()` normalises all three.
@@ -495,7 +503,7 @@ const AdminBookingListPage: React.FC = () => {
     const q = search.toLowerCase();
     return faceted.filter((b) => {
       const matchTab = tab === "all" || b.status === tab;
-      const matchQ   = !q || [nameOf(b), b.phone, b.therapistName, b.serviceName, b.address, b.locationName, b.id]
+      const matchQ   = !q || [nameOf(b), b.phone, b.therapistName, b.serviceName, b.address, b.locationName, b.id, b.createdByName, b.createdByEmail, b.createdByPhone]
         .join(" ").toLowerCase().includes(q);
       return matchTab && matchQ;
     });
@@ -620,6 +628,7 @@ const AdminBookingListPage: React.FC = () => {
       Date:         b.date || (b.startAt ? fmtBKK(b.startAt.toDate(), "YYYY-MM-DD") : "-"),
       Time:         b.time || "-",
       Address:      b.locationName || b.address || "",
+      BookedBy:     bookingAuthorLabel(b),
       Status:       b.status,
       Payment:      isPaid(b) ? "Paid" : "Unpaid",
       ServicePrice: b.servicePrice || 0,
@@ -1363,6 +1372,43 @@ const BookingCard: React.FC<{
               style={{ overflow: "hidden" }}
             >
               <Box sx={{ pt: 1.5, display: "flex", flexDirection: "column", gap: 1 }}>
+                {/* 🆕 28x.3 (founder: "จะระบุได้ไง ใครจอง") — WHO opened this
+                    reservation. Tap-to-call the admin who did: when a therapist is
+                    at the door and the price is wrong, the person to reach is
+                    whoever booked it, and an email address is useless on a
+                    doorstep. Bookings made before this round carry no author and
+                    say so, rather than being attributed to someone. */}
+                <Box
+                  sx={{
+                    display: "flex", gap: 0.75, alignItems: "center",
+                    px: 1.25, py: 0.75, borderRadius: "10px",
+                    background: adminColor.panel2,
+                    border: `1px solid ${adminColor.line}`,
+                  }}
+                >
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: adminColor.dim, flexShrink: 0 }}>
+                    เปิดโดย
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: adminColor.text, flex: 1, minWidth: 0 }}>
+                    {bookingAuthorLabel(b)}
+                  </Typography>
+                  {b.createdByPhone && (
+                    <Box
+                      component="a"
+                      href={`tel:${b.createdByPhone}`}
+                      sx={{
+                        fontFamily: SANS, fontSize: 11.5, fontWeight: 800,
+                        color: adminColor.accent, textDecoration: "none",
+                        px: 1, py: "2px", borderRadius: 999,
+                        border: `1px solid ${adminColor.line2}`,
+                        flexShrink: 0,
+                      }}
+                    >
+                      โทร
+                    </Box>
+                  )}
+                </Box>
+
                 {/* note */}
                 <Box
                   sx={{

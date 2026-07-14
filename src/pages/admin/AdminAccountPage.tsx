@@ -28,13 +28,14 @@ import {
   signOut,
 } from "firebase/auth";
 import { toast } from "react-toastify";
-import { Crown, SignOut, Key, ShieldCheck, Clock } from "phosphor-react";
+import { Crown, SignOut, Key, ShieldCheck, Clock, Phone } from "phosphor-react";
 
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import { adminColor, adminFont, adminFieldSx, adminPanelSx } from "@/theme/adminTheme";
 import { logAdminAction } from "@/utils/auditLog";
 import { isAliasEmail } from "@/utils/loginId";
+import { useAdminIdentity } from "@/hooks/useAdminIdentity";
 
 const SANS = adminFont.sans;
 
@@ -50,6 +51,17 @@ const Row: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value
 const AdminAccountPage: React.FC = () => {
   const { user, role } = useAuth();
   const navigate = useNavigate();
+
+  // 🆕 28x.3 (founder: "เบอร์โทรแอดมินละ จะระบุได้ไง ใครจอง")
+  const { phone, saving: phoneSaving, savePhone } = useAdminIdentity();
+  const [phoneDraft, setPhoneDraft] = useState("");
+  useEffect(() => { setPhoneDraft(phone ?? ""); }, [phone]);
+
+  const doSavePhone = async () => {
+    const ok = await savePhone(phoneDraft);
+    if (ok) toast.success("บันทึกเบอร์แล้ว · ออเดอร์ที่คุณเปิดจะติดเบอร์นี้");
+    else toast.error("เบอร์ไม่ถูกต้อง");
+  };
 
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -174,6 +186,51 @@ const AdminAccountPage: React.FC = () => {
           แก้ที่นี่ไม่ได้โดยตั้งใจ (กันตัวเองถอดสิทธิ์ตัวเองพลาด) · เวลาปัจจุบัน{" "}
           {new Date(now).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}
         </Typography>
+      </Box>
+
+      {/* 🆕 28x.3 — the admin's own phone.
+          It lives on users/{uid}, NOT admins/{uid}: firestore.rules makes the
+          admins collection `allow write: if false` on purpose (rights come from
+          the Firebase console, never from the app), so there is nowhere on that
+          doc for the client to write. users/{uid} already whitelists `phone` for
+          its owner.
+          Stored via normPhone — the SAME normalised form members, blocked numbers
+          and the returning-guest test key on — so an admin's number is comparable
+          with everything else instead of being a lone free-text string. */}
+      <Box sx={{ ...adminPanelSx, p: 2, mb: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.5 }}>
+          <Phone size={16} weight="duotone" color={adminColor.accent} />
+          <Typography sx={{ fontFamily: SANS, fontSize: 15, fontWeight: 800, color: adminColor.text }}>
+            เบอร์โทรของฉัน
+          </Typography>
+        </Box>
+        <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.dim, mb: 1.5, lineHeight: 1.55 }}>
+          ทุกออเดอร์ที่คุณเป็นคนเปิด จะติดชื่อ + เบอร์นี้ไว้ → <b>ย้อนดูได้ว่าใครจอง</b> ·
+          เบอร์คือสิ่งที่หมอนวดหรือลูกค้าโทรหาจริงตอนมีปัญหาตอนตี 2 (อีเมลใช้ไม่ได้หน้างาน)
+        </Typography>
+        <Box sx={{ display: "flex", gap: 1.25, flexWrap: "wrap", alignItems: "center" }}>
+          <TextField
+            size="small" label="เบอร์โทร" placeholder="081-234-5678"
+            value={phoneDraft} onChange={(e) => setPhoneDraft(e.target.value)}
+            sx={{ ...adminFieldSx, width: 220 }}
+          />
+          <Button
+            variant="contained" disabled={phoneSaving || !phoneDraft.trim()}
+            onClick={() => void doSavePhone()}
+            sx={{
+              textTransform: "none", fontWeight: 700, fontSize: 13, borderRadius: "999px", px: 2.5,
+              background: "linear-gradient(135deg,#D97C95,#C96F89)",
+              "&.Mui-disabled": { opacity: 0.5, color: "#fff" },
+            }}
+          >
+            {phoneSaving ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : "บันทึกเบอร์"}
+          </Button>
+          {!phone && (
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.amber }}>
+              ⚠️ ยังไม่ได้ตั้งเบอร์ — ออเดอร์ที่เปิดจะไม่มีเบอร์ติดไป
+            </Typography>
+          )}
+        </Box>
       </Box>
 
       {/* Password */}

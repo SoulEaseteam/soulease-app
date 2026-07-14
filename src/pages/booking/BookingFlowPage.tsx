@@ -187,6 +187,8 @@ import {
 import { useReferralRedeemCount } from "@/hooks/useReferralRedeemCount";
 // 🆕 Round 28s84 — shared promo kill-switch (home banner + discount field).
 import { PROMOS_ENABLED } from "@/config/featureFlags";
+import { bookingAuthor } from "@/utils/bookingAuthor";
+import { useAdminIdentity } from "@/hooks/useAdminIdentity";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell.
 // 🆕 Round 28r56 — Phase 3.5 responsive typography for headings.
 import { responsiveShellNarrow, responsiveType } from "@/theme/breakpoints";
@@ -245,6 +247,8 @@ const BookingFlowPage: React.FC = () => {
   //   normally so the booking record stays clean.
   const { user, role } = useAuth();
   const isAdminBooking = role === "admin";
+  // 🆕 28x.3 — the concierge's own phone, stamped onto anything they book.
+  const { phone: adminPhone } = useAdminIdentity();
 
   // ── Pre-fill from URL params (DetailPage StickyBookCTA forwards these)
   const preService = searchParams.get("service");
@@ -1224,6 +1228,16 @@ const BookingFlowPage: React.FC = () => {
       // wasn't valid".
       const effectiveTotalPrice = first10Abused ? Math.round(total + discountAmount) : total;
       const ref = await addDoc(collection(db, "bookings"), {
+        // 🆕 28x.3 (founder: "จะระบุได้ไง ใครจอง") — this page is ALSO how the
+        //   concierge books (isAdminBooking), and it recorded no author at all.
+        //   A guest booking themselves stamps createdBy:"guest" and no identity.
+        ...bookingAuthor({
+          isAdmin: isAdminBooking,
+          uid: user?.uid,
+          email: user?.email,
+          displayName: user?.displayName,
+          phone: adminPhone,
+        }),
         userId: user?.uid ?? null,
         therapistId: form.therapistId,
         therapistName: therapist.name,
