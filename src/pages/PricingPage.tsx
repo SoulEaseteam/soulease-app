@@ -81,6 +81,9 @@ const accents = { teal: "#D97C95" };
 const ROSE = "#D97C95";
 const HERO_GRADIENT = "linear-gradient(160deg, #B8567F 0%, #8A3A57 100%)";
 const BESTSELLER_ID = "SR-HJ2200";
+// 🆕 28w.72 (founder "Unlock Executive Benefits เฉพาะ Gentleman's กับ SunRed
+//   Therapeutic") — only these two carry the premium CTA wording.
+const PREMIUM_BENEFITS_IDS = new Set(["SR-HJ2200", "SR-B2B3200"]);
 import { responsiveShell } from "@/theme/breakpoints";
 import { useDocumentMeta } from "@/utils/useDocumentMeta";
 import { CONCIERGE } from "@/config/concierge";
@@ -391,6 +394,10 @@ const PricingPage: React.FC = () => {
           const durations = durationsFor(s);
           const priceAt = (min: number) => priceForDuration(s, min);
           const isBestseller = s.id === BESTSELLER_ID;
+          const isPremiumBenefits = PREMIUM_BENEFITS_IDS.has(s.id);
+          const benefitsLabel = isPremiumBenefits
+            ? t("pricing.unlockBenefits", "Unlock Executive Benefits")
+            : t("pricing.benefits", "Benefits");
           return (
             <Box
               key={s.id}
@@ -571,7 +578,7 @@ const PricingPage: React.FC = () => {
                 component="button"
                 type="button"
                 onClick={() => navigate(`/services/${s.id}`)}
-                aria-label={`Benefits — ${s.name}`}
+                aria-label={`${benefitsLabel} — ${s.name}`}
                 sx={{
                   // 🆕 28w.26 (founder: "ขยับไว้ตรงกลางป้าย") — centre the CTA
                   //   in the card (was flex-start / left-aligned).
@@ -605,8 +612,10 @@ const PricingPage: React.FC = () => {
                 }}
               >
                 {/* 🆕 28w.27 (founder: "เอาลูกศรออก") — arrow removed.
-                    🆕 28w.70 (founder: "เปลี่ยนให้เหลือแค่คำว่า benefits"). */}
-                {t("pricing.unlockBenefits", "Benefits")}
+                    🆕 28w.70 → 28w.72 (founder: "Unlock Executive Benefits
+                    เฉพาะ Gentleman's กับ SunRed Therapeutic") — the premium
+                    framing is reserved for those two; the rest read "Benefits". */}
+                {benefitsLabel}
               </Box>
             </Box>
           );

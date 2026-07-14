@@ -531,6 +531,23 @@ export const About: React.FC<{
                 boxShadow: "0 2px 8px rgba(0,0,0,0.14)",
                 color: "#D97C95",
                 "&:hover": { background: "var(--sr-panel)" },
+                // 🆕 28w.72 (founder "กระพริบได้ กลัวลูกค้าไม่รู้") — pulse a rose
+                //   halo while the bio is COLLAPSED so guests notice it expands.
+                //   Stops once opened, and honours prefers-reduced-motion.
+                animation: bioExpanded
+                  ? "none"
+                  : "sr-bio-pulse 1.8s ease-in-out infinite",
+                "@keyframes sr-bio-pulse": {
+                  "0%, 100%": {
+                    transform: "scale(1)",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.14), 0 0 0 0 rgba(217,124,149,0.60)",
+                  },
+                  "50%": {
+                    transform: "scale(1.12)",
+                    boxShadow: "0 2px 10px rgba(0,0,0,0.18), 0 0 0 7px rgba(217,124,149,0)",
+                  },
+                },
+                "@media (prefers-reduced-motion: reduce)": { animation: "none" },
               }}
             >
               <KeyboardArrowDownRoundedIcon
