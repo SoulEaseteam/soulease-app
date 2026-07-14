@@ -48,7 +48,9 @@ import {
   priceForDuration,
   durationsFor,
   formatTHB,
+  wasPriceFor,
 } from "@/utils/servicePricing";
+import PromoBadge from "@/components/common/PromoBadge";
 import { fonts } from "@/theme";
 // 🆕 28w.37 — 1st-anniversary banner.
 import AnniversaryBanner from "@/components/home/AnniversaryBanner";
@@ -447,6 +449,10 @@ const PricingPage: React.FC = () => {
                 >
                   {s.name}
                 </Box>
+                {/* 🆕 28w.64 (founder "ป้ายวิบวับ 🔥 BEST VALUE ทุกเมนู") */}
+                <Box sx={{ mt: "8px" }}>
+                  <PromoBadge badge="bestvalue" size="sm" />
+                </Box>
                 {copy.thai && (
                   <Box
                     sx={{
@@ -508,21 +514,36 @@ const PricingPage: React.FC = () => {
                     >
                       {d} min
                     </Box>
-                    {/* 🆕 28r117 (founder "เอาราคาที่ขีดออก · โชว์แค่
-                        ราคาสีชมพู") — the r115 struck-through "was"
-                        price was removed; only the rose current price
-                        shows. */}
-                    <Box
-                      component="span"
-                      sx={{
-                        fontFamily: fonts.heading,
-                        fontSize: { xs: 17, md: 18 },
-                        fontWeight: 600,
-                        color: ROSE,
-                        letterSpacing: "-0.005em",
-                      }}
-                    >
-                      {formatTHB(priceAt(d))}
+                    {/* 🆕 28w.64 (founder "เพิ่มราคาเก่าขีดทับ") — the struck
+                        was-price is back (reverses the 28r117 removal), small,
+                        before the rose current price. */}
+                    <Box sx={{ display: "flex", alignItems: "baseline", gap: "7px" }}>
+                      {wasPriceFor(s, d) && (
+                        <Box
+                          component="span"
+                          sx={{
+                            fontFamily: fonts.body,
+                            fontSize: { xs: 12, md: 12.5 },
+                            fontWeight: 500,
+                            color: grays.g500,
+                            textDecoration: "line-through",
+                          }}
+                        >
+                          {formatTHB(wasPriceFor(s, d) as number)}
+                        </Box>
+                      )}
+                      <Box
+                        component="span"
+                        sx={{
+                          fontFamily: fonts.heading,
+                          fontSize: { xs: 17, md: 18 },
+                          fontWeight: 600,
+                          color: ROSE,
+                          letterSpacing: "-0.005em",
+                        }}
+                      >
+                        {formatTHB(priceAt(d))}
+                      </Box>
                     </Box>
                   </Box>
                 ))}

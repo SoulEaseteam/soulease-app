@@ -98,6 +98,11 @@ const DURATION_LABELS: Record<
   120: { tagKey: "sheet.duration.bestValue" },
 };
 
+// 🆕 28w.64 (founder "ให้ปุ่มเลือกมาราคายอดนิยมเลย") — default-select the
+//   popular tier when the sheet opens (falls back to first if none marked).
+const popularDurationOf = (durs: number[]): number | null =>
+  durs.find((d) => DURATION_LABELS[d]?.popular) ?? null;
+
 // 🆕 28t.18 — match StepService's 28t.16 rose/berry badges (the two
 //   service surfaces were disagreeing: sheet still had retired navy).
 const BADGE_COLORS: Record<MassageService["badge"], { bg: string; fg: string }> = {
@@ -127,10 +132,9 @@ const ServiceDurationSheet: React.FC<Props> = ({
   //   ALL offered tiers show again (Thai/Aroma 60/90/120 · Gentleman's/
   //   Therapeutic 70/120). Reverses the 28r122 "60 only" hide.
   const durations: number[] = service ? durationsFor(service) : [];
-  // Default to the FIRST offered tier (cheapest) — predictable, and fixes
-  // the old "default to a hidden tier" mispricing bug.
+  // 🆕 28w.64 — default to the POPULAR tier (founder), else first offered.
   const [selected, setSelected] = useState<number>(
-    initialDuration ?? durations[0] ?? 60
+    initialDuration ?? popularDurationOf(durations) ?? durations[0] ?? 60
   );
   // 🆕 Founder 2026-05-01 round 4: 'Tabs ซ้อนข้อมูลไปก่อน กดก่อนแทบ
   //    เนือหาค่อยเลือนออกมา' — content stays hidden by default; tapping
@@ -155,7 +159,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
   useEffect(() => {
     if (open && service) {
       const d = durationsFor(service);
-      setSelected(initialDuration ?? d[0] ?? 60);
+      setSelected(initialDuration ?? popularDurationOf(d) ?? d[0] ?? 60);
       setTab(null); // hidden by default — see comment on the state above
       setDraftDate(initialDate ?? null);
       setDraftTime(initialTime ?? null);
