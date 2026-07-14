@@ -108,7 +108,9 @@ export type AuditAction =
   | "promo.anniversary_edit"
   | "membership.sunpoints_edit"
   // 🆕 28x.1 — recomputing the public star rating changes what customers buy on.
-  | "therapist.rating_sync";
+  | "therapist.rating_sync"
+  // 🆕 28x.2 — an admin changing their own password is a security event.
+  | "admin.password_change";
 
 export async function logAdminAction(
   action: AuditAction,

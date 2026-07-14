@@ -54,6 +54,8 @@ import MainLayout from "@/components/layouts/MainLayout";
 //   Lazy import shaves the admin-side MUI icons + nav widgets out of
 //   the customer's first-paint chunk.
 const AdminLayout = React.lazy(() => import("@/components/layouts/AdminLayout"));
+// 🆕 28x.2 — the admin's OWN account (who am I · change password · sign out).
+const AdminAccountPage = React.lazy(() => import("@/pages/admin/AdminAccountPage"));
 // 🆕 Round 28b29 (perf) — WeChatScanPage is only hit by Chinese
 //   visitors scanning a QR. Lazy.
 const WeChatScanPage = React.lazy(() => import("@/pages/WeChatScanPage"));
@@ -406,6 +408,7 @@ export default function App() {
             element={<AdminAdvancedSettingsPage />}
           />
           <Route path="promotions" element={<AdminPromotionsPage />} />
+          <Route path="account" element={<AdminAccountPage />} />
         </Route>
 
         {/* ================= 404 ================= */}
