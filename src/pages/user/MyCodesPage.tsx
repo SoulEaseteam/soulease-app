@@ -27,7 +27,7 @@ import { Ticket, Copy, ShareNetwork, Gift, ArrowLeft, Coins } from "phosphor-rea
 import { useAuth } from "@/providers/AuthProvider";
 import { useAnniversaryClaim } from "@/hooks/useAnniversaryClaim";
 import { deriveReferralCode, getActiveReferralCode } from "@/utils/referral";
-import { anniversaryPeriodLabel, anniversaryIsLive, SUNPOINT_THB } from "@/config/anniversary";
+import { anniversaryPeriodLabel, anniversaryIsLive, pointsValueTHB } from "@/config/anniversary";
 import { whatsappDeepLink } from "@/config/concierge";
 import { getReferralConfig } from "@/utils/discount";
 import { PROMOS_ENABLED } from "@/config/featureFlags";
@@ -220,7 +220,7 @@ const MyCodesPage: React.FC = () => {
                       </Typography>
                       <Typography sx={{ fontFamily: fonts.body, fontSize: 12, color: ROSE, fontWeight: 700, mt: "1px" }}>
                         {t("codes.worth", "Worth ฿{{thb}} off your next booking", {
-                          thb: (points * SUNPOINT_THB).toLocaleString(),
+                          thb: pointsValueTHB(points).toLocaleString(),
                         })}
                       </Typography>
                     </Box>

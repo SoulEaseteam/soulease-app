@@ -11,16 +11,23 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Box, Typography, TextField, Button, CircularProgress } from "@mui/material";
-import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { adminColor, adminFont, adminFieldSx } from "@/theme/adminTheme";
 import { normPhone } from "@/utils/phoneCountry";
+import { toast } from "react-toastify";
+import { logAdminAction } from "@/utils/auditLog";
+import {
+  applyLiveAnniversaryConfig,
+  sunPointEarnPerTHB,
+  sunPointTHB,
+} from "@/config/anniversary";
 import {
   MEMBERSHIP_TIERS, MEMBERSHIP_COLORS, MEMBERSHIP_LABELS_TH, MEMBERSHIP_DEFAULTS,
   applyMembershipConfig, effectiveMembershipConfig, membershipFor,
   type MembershipThresholds, type MembershipTier,
 } from "@/utils/membership";
-import { Crown, Prohibit } from "phosphor-react";
+import { Crown, Prohibit, Coins } from "phosphor-react";
 
 const SANS = adminFont.sans;
 const thb = (n: number) => `฿${Math.round(n).toLocaleString()}`;
@@ -129,6 +136,51 @@ const AdminMembershipPage: React.FC = () => {
     }
     return c;
   }, [stats, draftCfg, nowMs]);
+
+  // 🆕 28w.96 (founder: "admin/membership ตั้งค่า SunPoints และ อื่นๆ") — the two
+  //   loyalty rates. They live on publicRules (guests must be able to read the
+  //   rate they earn at) but are EDITED here, with the rest of the membership
+  //   rules. Deliberately not also editable on /admin/promotions: two editors
+  //   writing the same two numbers is how they end up disagreeing.
+  const [earnPerTHB, setEarnPerTHB] = useState<string>(String(sunPointEarnPerTHB()));
+  const [redeemTHB, setRedeemTHB] = useState<string>(String(sunPointTHB()));
+  const [ptSaving, setPtSaving] = useState(false);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "adminSettings", "publicRules"), (snap) => {
+      const a = snap.data()?.anniversary as { earnPerTHB?: number; redeemTHB?: number } | undefined;
+      applyLiveAnniversaryConfig((snap.data()?.anniversary ?? null) as never);
+      if (typeof a?.earnPerTHB === "number") setEarnPerTHB(String(a.earnPerTHB));
+      if (typeof a?.redeemTHB === "number") setRedeemTHB(String(a.redeemTHB));
+    });
+    return () => unsub();
+  }, []);
+
+  const savePoints = async () => {
+    const earn = parseInt(earnPerTHB, 10);
+    const redeem = parseInt(redeemTHB, 10);
+    // Guard hard. A zero earn-rate divides the programme by zero; a mistyped
+    // redeem rate is the difference between a 1% and a 100% giveaway.
+    if (!earn || earn <= 0 || !redeem || redeem <= 0) {
+      toast.error("อัตราคะแนนต้องมากกว่า 0");
+      return;
+    }
+    setPtSaving(true);
+    try {
+      await setDoc(
+        doc(db, "adminSettings", "publicRules"),
+        { anniversary: { earnPerTHB: earn, redeemTHB: redeem }, updatedAt: serverTimestamp() },
+        { merge: true },
+      );
+      void logAdminAction("membership.sunpoints_edit", { earnPerTHB: earn, redeemTHB: redeem });
+      toast.success("บันทึกอัตรา SunPoints แล้ว");
+    } catch (e) {
+      console.error("[membership] sunpoints save failed", e);
+      toast.error("บันทึกไม่สำเร็จ");
+    } finally {
+      setPtSaving(false);
+    }
+  };
 
   const edit = (setter: React.Dispatch<React.SetStateAction<StrMap>>, t: MembershipTier, v: string) => {
     setDirty(true); setSaved(false);
@@ -242,6 +294,51 @@ const AdminMembershipPage: React.FC = () => {
         </Typography>
         <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.text, fontWeight: 700 }}>
           {loaded ? counts.none : "–"} <span style={{ color: adminColor.dim, fontWeight: 500 }}>ยังไม่เข้าเกณฑ์</span>
+        </Typography>
+      </Box>
+
+      {/* 🆕 28w.96 (founder: "admin/membership ตั้งค่า SunPoints และ อื่นๆ") — the two
+          loyalty rates. Deliberately TWO fields, not one "points rate": earning
+          (฿ per point) and redeeming (฿ per point) are different numbers and are
+          very easy to conflate — swapping them turns a 1% programme into a 100%
+          one. The worked example under them recomputes as you type, so a wrong
+          rate is visible before it is saved. */}
+      <Box sx={{ mt: 3.5, pt: 2.5, borderTop: `1px solid ${adminColor.line}` }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+          <Coins size={17} weight="duotone" color="#E3BE55" />
+          <Typography sx={{ fontFamily: SANS, fontSize: 16, fontWeight: 800, color: adminColor.text }}>
+            SunPoints
+          </Typography>
+        </Box>
+        <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: adminColor.muted, mt: 0.5, mb: 1.5, lineHeight: 1.5 }}>
+          คะแนนสะสมของลูกค้า · ลูกค้าเห็นอัตรานี้ในแอป และใช้คิดเครดิตย้อนหลังจากประวัติการจอง
+        </Typography>
+        <Box sx={{ display: "flex", gap: 1.25, flexWrap: "wrap", alignItems: "flex-start" }}>
+          <TextField
+            size="small" label="ใช้จ่ายกี่บาท = 1 คะแนน" value={earnPerTHB}
+            onChange={(e) => setEarnPerTHB(e.target.value.replace(/[^\d]/g, ""))}
+            sx={{ ...adminFieldSx, width: 200 }}
+          />
+          <TextField
+            size="small" label="1 คะแนน = ลดกี่บาท" value={redeemTHB}
+            onChange={(e) => setRedeemTHB(e.target.value.replace(/[^\d]/g, ""))}
+            sx={{ ...adminFieldSx, width: 180 }}
+          />
+          <Button
+            variant="contained" disabled={ptSaving} onClick={() => void savePoints()}
+            sx={{ textTransform: "none", fontWeight: 700, fontSize: 13, borderRadius: "999px", px: 2.5,
+              background: "linear-gradient(135deg,#D97C95,#C96F89)",
+              "&.Mui-disabled": { opacity: 0.5, color: "#fff" } }}
+          >
+            {ptSaving ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : "บันทึก"}
+          </Button>
+        </Box>
+        <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.dim, mt: 1 }}>
+          ตัวอย่าง: จ่าย ฿1,200 → ได้{" "}
+          <b>{Math.floor(1200 / (parseInt(earnPerTHB, 10) || 100))} คะแนน</b>{" "}
+          (ใช้ลดได้ ฿{(Math.floor(1200 / (parseInt(earnPerTHB, 10) || 100)) * (parseInt(redeemTHB, 10) || 1)).toLocaleString()})
+          · ช่วงแคมเปญ 2× ได้{" "}
+          <b>{Math.floor(1200 / (parseInt(earnPerTHB, 10) || 100)) * 2} คะแนน</b>
         </Typography>
       </Box>
 

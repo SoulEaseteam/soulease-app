@@ -55,7 +55,7 @@ import {
   limit as fbLimit, orderBy, serverTimestamp, Timestamp,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { Tag, Percent, Ticket, ChartBar, Plus, Trash, Warning, ShareNetwork, Copy, Storefront, FloppyDisk, Camera, CaretUp, CaretDown, NotePencil, PencilSimple, ArrowCounterClockwise, Package, Calendar, Printer, Sliders, ClockCounterClockwise, Flask, ShieldCheck, TrendUp, MagnifyingGlass } from "phosphor-react";
+import { Tag, Percent, Ticket, ChartBar, Plus, Trash, Warning, ShareNetwork, Copy, Storefront, FloppyDisk, Camera, CaretUp, CaretDown, NotePencil, PencilSimple, ArrowCounterClockwise, Package, Calendar, Printer, Sliders, ClockCounterClockwise, Flask, ShieldCheck, TrendUp, MagnifyingGlass, Gift } from "phosphor-react";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { SectionCard, fieldSx, downscaleImage } from "./therapistFormKit";
 import { logAdminAction } from "@/utils/auditLog";
@@ -66,6 +66,12 @@ import {
   type LiveServiceOverride, type CustomServiceInput,
 } from "@/utils/servicePricing";
 import { therapistPctFor } from "@/utils/commission";
+import {
+  anniversaryConfig,
+  applyLiveAnniversaryConfig,
+  type AnniversaryConfig,
+  type AnniversaryReward,
+} from "@/config/anniversary";
 // 🆕 Round 28r50 (Promotions Phase 1) — Bundle Packages helpers.
 // 🆕 Round 28r60 — + BUNDLE_CATEGORY_TAGS for the Autocomplete freeSolo picker.
 import { bundleSavings, BUNDLE_CATEGORY_TAGS, type Bundle } from "@/utils/bundles";
@@ -76,6 +82,7 @@ import { validateDiscountDebug, type ReferralTier } from "@/utils/discount";
 const BADGE_OPTIONS: MassageService["badge"][] = ["SIGNATURE", "POPULAR", "RECOMMEND", "EXCLUSIVE"];
 
 const SANS = adminFont.sans;
+const thb = (n: number) => `฿${Math.round(n || 0).toLocaleString()}`;
 
 // Kept in sync BY HAND with src/utils/discount.ts's hardcoded branches —
 // this page can't introspect that file's conditional logic as data, so
@@ -266,6 +273,11 @@ const selectMenuProps = {
 
 const AdminPromotionsPage: React.FC = () => {
   const [promosEnabled, setPromosEnabled] = useState(false);
+
+  // 🆕 28w.96 (founder: "admin/promotions ... แก้ไขและเปลี่ยนเองได้โดยไม่ต้องป้อนคำสั่ง
+  //   ซ้ำๆ") — the Anniversary campaign, editable here instead of hardcoded.
+  const [annivCfg, setAnnivCfg] = useState<AnniversaryConfig>(anniversaryConfig());
+  const [annivSaving, setAnnivSaving] = useState(false);
   const [promosSaving, setPromosSaving] = useState(false);
   const [promoDocs, setPromoDocs] = useState<Record<string, PromoDoc>>({});
   const [usage, setUsage] = useState<Record<string, UsageStat>>({});
@@ -441,6 +453,10 @@ const AdminPromotionsPage: React.FC = () => {
     const unsub = onSnapshot(doc(db, "adminSettings", "publicRules"), (snap) => {
       const data = snap.data();
       setPromosEnabled(data?.promosEnabled === true);
+      // 🆕 28w.96 — seed the campaign editor from the live doc, falling back to
+      //   the code defaults so an empty doc shows the current terms, not blanks.
+      applyLiveAnniversaryConfig((data?.anniversary ?? null) as Partial<AnniversaryConfig> | null);
+      setAnnivCfg(anniversaryConfig());
       // 🆕 Round 28r49 — pull the per-code override map live so the row's
       //   effective values (and the "deleted" strikethrough) reflect the
       //   most recent Save without a page refresh.
@@ -888,6 +904,50 @@ const AdminPromotionsPage: React.FC = () => {
     () => Object.values(promoDocs).filter((p) => p.kind === "custom"),
     [promoDocs],
   );
+
+  // 🆕 28w.96 — write the whole campaign back. Full replace (not a deep merge) so
+  //   a reward the founder DELETES actually disappears instead of lingering under
+  //   its old key.
+  const handleSaveAnniversary = async () => {
+    if (annivCfg.startISO > annivCfg.endISO) {
+      toast.error("วันเริ่มต้องไม่เกินวันสิ้นสุด"); return;
+    }
+    if (annivCfg.earnPerTHB <= 0 || annivCfg.redeemTHB <= 0) {
+      toast.error("อัตราคะแนนต้องมากกว่า 0"); return;
+    }
+    setAnnivSaving(true);
+    try {
+      await setDoc(
+        doc(db, "adminSettings", "publicRules"),
+        { anniversary: annivCfg, updatedAt: serverTimestamp() },
+        { merge: true },
+      );
+      void logAdminAction("promo.anniversary_edit", {
+        enabled: annivCfg.enabled,
+        period: `${annivCfg.startISO}..${annivCfg.endISO}`,
+        earnPerTHB: annivCfg.earnPerTHB,
+        redeemTHB: annivCfg.redeemTHB,
+      });
+      toast.success("บันทึกแคมเปญครบรอบแล้ว — มีผลกับลูกค้าทันที");
+    } catch (err) {
+      console.error(err);
+      toast.error("บันทึกไม่สำเร็จ");
+    } finally {
+      setAnnivSaving(false);
+    }
+  };
+
+  /** Edit one reward row in either audience list. */
+  const setAnnivReward = (
+    list: "newRewards" | "returningRewards",
+    id: string,
+    patch: Partial<AnniversaryReward>,
+  ) => {
+    setAnnivCfg((c) => ({
+      ...c,
+      [list]: c[list].map((r) => (r.id === id ? { ...r, ...patch } : r)),
+    }));
+  };
 
   const handleTogglePromos = async (checked: boolean) => {
     setPromosSaving(true);
@@ -1568,6 +1628,92 @@ const AdminPromotionsPage: React.FC = () => {
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {/* 🆕 Round 28s300 — Pricing & services editor */}
+        {/* 🆕 28w.96 (founder: "admin/promotions เพิ่มประวัติไปด้วยให้โปรนี้ใช้ได้จริง ·
+            แก้ไขและเปลี่ยนเองได้โดยไม่ต้องป้อนคำสั่งซ้ำๆ") — the Anniversary campaign,
+            editable. Every number here used to be hardcoded, so changing a spend
+            floor or a date meant a code change and a deploy. Saved to
+            publicRules.anniversary; MaintenanceGate pushes it to guests live. */}
+        <SectionCard icon={<Gift size={13} weight="bold" />} title="Anniversary Campaign · แคมเปญครบรอบ">
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, flexWrap: "wrap" }}>
+            <Switch
+              checked={annivCfg.enabled}
+              onChange={(e) => setAnnivCfg((c) => ({ ...c, enabled: e.target.checked }))}
+              sx={switchSx}
+            />
+            <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: adminColor.text }}>
+              {annivCfg.enabled ? "เปิดแคมเปญ" : "ปิดแคมเปญ"}
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, flex: 1, minWidth: 160 }}>
+              ปิด = ลูกค้ายังเห็นรายละเอียดได้ แต่กดเก็บสิทธิ์ไม่ได้
+            </Typography>
+          </Box>
+
+          <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+            <TextField
+              type="date" label="เริ่ม" size="small" fullWidth sx={fieldSx}
+              InputLabelProps={{ shrink: true }}
+              value={annivCfg.startISO}
+              onChange={(e) => setAnnivCfg((c) => ({ ...c, startISO: e.target.value }))}
+            />
+            <TextField
+              type="date" label="สิ้นสุด" size="small" fullWidth sx={fieldSx}
+              InputLabelProps={{ shrink: true }}
+              value={annivCfg.endISO}
+              onChange={(e) => setAnnivCfg((c) => ({ ...c, endISO: e.target.value }))}
+            />
+          </Stack>
+
+          {/* SunPoints rates live on /admin/membership (28w.96, founder put them
+              there) — deliberately NOT duplicated here. Two editors writing the
+              same two numbers is how they end up disagreeing. */}
+
+          {/* Reward rows, per audience */}
+          {([["newRewards", "ลูกค้าใหม่"], ["returningRewards", "ลูกค้าเก่า"]] as const).map(([listKey, title]) => (
+            <Box key={listKey} sx={{ mb: 2 }}>
+              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: adminColor.dim, mb: 0.75 }}>
+                {title}
+              </Typography>
+              <Stack spacing={1}>
+                {annivCfg[listKey].map((r) => (
+                  <Box key={r.id} sx={{ p: "10px 11px", borderRadius: "12px", background: adminColor.panel2, border: `1px solid ${adminColor.line}` }}>
+                    <TextField
+                      label="ชื่อสิทธิ์ (ภาษาอังกฤษ)" size="small" fullWidth sx={{ ...fieldSx, mb: 1 }}
+                      value={r.label}
+                      onChange={(e) => setAnnivReward(listKey, r.id, { label: e.target.value })}
+                    />
+                    <Stack direction="row" spacing={1}>
+                      <TextField
+                        type="number" label="ขั้นต่ำ (฿)" size="small" fullWidth sx={fieldSx}
+                        value={r.minSpendTHB ?? 0}
+                        onChange={(e) => {
+                          const v = Number(e.target.value);
+                          setAnnivReward(listKey, r.id, { minSpendTHB: v > 0 ? v : null });
+                        }}
+                        helperText="0 = ไม่มีขั้นต่ำ"
+                      />
+                      <TextField
+                        type="number" label="ใช้ได้กี่วัน" size="small" fullWidth sx={fieldSx}
+                        value={r.validityDays}
+                        onChange={(e) => setAnnivReward(listKey, r.id, { validityDays: Math.max(1, Number(e.target.value)) })}
+                      />
+                    </Stack>
+                  </Box>
+                ))}
+              </Stack>
+            </Box>
+          ))}
+
+          <Button
+            variant="contained"
+            disabled={annivSaving}
+            onClick={() => void handleSaveAnniversary()}
+            startIcon={annivSaving ? <CircularProgress size={15} sx={{ color: "#fff" }} /> : <FloppyDisk size={15} weight="bold" />}
+            sx={{ background: adminColor.accent, textTransform: "none", fontWeight: 700, borderRadius: "10px", "&:hover": { background: adminColor.accentDeep } }}
+          >
+            บันทึกแคมเปญ
+          </Button>
+        </SectionCard>
+
         <SectionCard icon={<Storefront size={13} weight="bold" />} title="Pricing & Services · ราคา & บริการ">
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.5 }}>
             แก้ราคาแต่ละช่วงเวลา · เปลี่ยนชื่อ · เปิด/ปิดบริการ — มีผลกับการจองใหม่เท่านั้น (ออเดอร์เก่าล็อกราคาที่จ่ายไว้แล้ว)

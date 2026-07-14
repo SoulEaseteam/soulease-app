@@ -34,11 +34,11 @@ import { X, Check, Gift, Crown, Lock, Ticket, Coins } from "phosphor-react";
 import { fonts } from "@/theme";
 import { whatsappDeepLink } from "@/config/concierge";
 import {
-  ANNIVERSARY_EXCLUSIONS,
+  anniversaryExclusions,
   anniversaryPeriodLabel,
   pointsFor,
-  SUNPOINT_EARN_PER_THB,
-  SUNPOINT_THB,
+  sunPointEarnPerTHB,
+  sunPointTHB,
 } from "@/config/anniversary";
 import { useAnniversaryClaim } from "@/hooks/useAnniversaryClaim";
 
@@ -240,8 +240,8 @@ const AnniversaryDialog: React.FC<Props> = ({ open, onClose }) => {
             <Box>
               <Box sx={{ fontWeight: 700, color: "var(--sr-ink)", mb: 0.25 }}>
                 {t("anniv.points.earn", "Every ฿{{per}} you spend earns 1 SunPoint. 1 SunPoint = ฿{{worth}} off.", {
-                  per: SUNPOINT_EARN_PER_THB.toLocaleString(),
-                  worth: SUNPOINT_THB,
+                  per: sunPointEarnPerTHB().toLocaleString(),
+                  worth: sunPointTHB(),
                 })}
               </Box>
               {t("anniv.points.example", "A ฿1,200 booking normally earns {{normal}} SunPoints — during the campaign it earns {{doubled}}.", {
@@ -285,7 +285,7 @@ const AnniversaryDialog: React.FC<Props> = ({ open, onClose }) => {
           <strong style={{ color: "var(--sr-body)" }}>
             {t("anniv.notCombined", "Cannot be combined with")}:
           </strong>{" "}
-          {ANNIVERSARY_EXCLUSIONS.map((e, i) => (
+          {anniversaryExclusions().map((e: string, i: number) => (
             <React.Fragment key={e}>
               {i > 0 && " · "}
               {t(`anniv.exclusion.${i}`, e)}

@@ -102,7 +102,11 @@ export type AuditAction =
   //   admin generated a printable handout for a code; doesn't change any
   //   customer-facing data, but useful for correlating "who handed out
   //   which code where" if a promo overshoots redemptions).
-  | "promo.print_card";
+  | "promo.print_card"
+  // 🆕 28w.96 — the Anniversary campaign is admin-editable; its terms are money,
+  //   so an edit belongs in the audit trail like every other price change.
+  | "promo.anniversary_edit"
+  | "membership.sunpoints_edit";
 
 export async function logAdminAction(
   action: AuditAction,

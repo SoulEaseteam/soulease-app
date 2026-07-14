@@ -62,6 +62,9 @@ interface AuditRow {
 }
 
 const ACTION_LABEL: Record<string, { label: string; color: string }> = {
+  // 🆕 28w.96 — campaign + loyalty-rate edits are money changes; label them.
+  "promo.anniversary_edit": { label: "แก้แคมเปญครบรอบ", color: "#D97C95" },
+  "membership.sunpoints_edit": { label: "ตั้งค่า SunPoints", color: "#E3BE55" },
   "booking.confirm":         { label: "ยืนยันออเดอร์",        color: adminColor.green },
   "booking.cancel":          { label: "ยกเลิกออเดอร์",        color: adminColor.red },
   "booking.complete":        { label: "ปิดงานเสร็จ",          color: adminColor.green },

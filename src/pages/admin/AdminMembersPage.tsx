@@ -23,7 +23,7 @@ import { Crown, MagnifyingGlass } from "phosphor-react";
 import { adminColor, adminFont, adminFieldSx } from "@/theme/adminTheme";
 import { logAdminAction } from "@/utils/auditLog";
 import { normPhone } from "@/utils/phoneCountry";
-import { pointsFor, SUNPOINT_EARN_PER_THB } from "@/config/anniversary";
+import { pointsFor, pointsValueTHB, sunPointEarnPerTHB } from "@/config/anniversary";
 import {
   membershipFor,
   applyMembershipConfig,
@@ -49,9 +49,25 @@ type MemberRec = {
 /** Lifetime stats per phone — drives the auto tier + the visits/spend columns. */
 type CustStat = { served: number; totalSpent: number; lastVisitMs: number; noShowCount: number; name: string };
 
+// 🆕 28w.96 (founder: "admin/members กดดูประวัติการจองได้ ยอดสะสม เครดิตได้") — one
+//   row per reservation, kept per phone so a member's history opens instantly
+//   instead of firing another query. Built in the SAME pass that computes the
+//   stats, and keyed by the SAME normPhone — so what the history shows and what
+//   the credit was calculated from can never disagree.
+type BookingLite = {
+  id: string;
+  whenMs: number;
+  serviceName: string;
+  therapistName: string;
+  status: string;
+  totalTHB: number;
+};
+
 const AdminMembersPage: React.FC = () => {
   const [members, setMembers] = useState<Record<string, MemberRec>>({});
   const [stats, setStats] = useState<Record<string, CustStat>>({});
+  const [history, setHistory] = useState<Record<string, BookingLite[]>>({});
+  const [openPhone, setOpenPhone] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [query, setQuery] = useState("");
@@ -99,15 +115,27 @@ const AdminMembersPage: React.FC = () => {
     const NOSHOW = new Set(["no_show", "no-show", "noshow"]);
     void getDocs(collection(db, "bookings")).then((snap) => {
       const map: Record<string, CustStat> = {};
+      const hist: Record<string, BookingLite[]> = {};
       snap.forEach((d) => {
         const b = d.data() as {
           phone?: string; status?: string; totalPrice?: number; servicePrice?: number;
           contactName?: string; customerName?: string;
+          serviceName?: string; therapistName?: string;
           createdAt?: { toDate?: () => Date; seconds?: number };
           startAt?: { toDate?: () => Date; seconds?: number };
         };
         const phone = normPhone((b.phone ?? "").trim());
         if (!phone) return;
+        const tAny = b.startAt ?? b.createdAt;
+        const whenMs = tAny?.toDate ? tAny.toDate().getTime() : (typeof tAny?.seconds === "number" ? tAny.seconds * 1000 : 0);
+        (hist[phone] ??= []).push({
+          id: d.id,
+          whenMs,
+          serviceName: b.serviceName ?? "-",
+          therapistName: b.therapistName ?? "-",
+          status: b.status ?? "-",
+          totalTHB: b.totalPrice ?? b.servicePrice ?? 0,
+        });
         const row = (map[phone] ??= { served: 0, totalSpent: 0, lastVisitMs: 0, noShowCount: 0, name: "" });
         const nm = (b.contactName || b.customerName || "").trim();
         if (nm && !row.name) row.name = nm;
@@ -121,6 +149,8 @@ const AdminMembersPage: React.FC = () => {
           if (ms > row.lastVisitMs) row.lastVisitMs = ms;
         }
       });
+      for (const k of Object.keys(hist)) hist[k].sort((a, b) => b.whenMs - a.whenMs);
+      setHistory(hist);
       setStats(map);
       setLoaded(true);
     });
@@ -414,7 +444,7 @@ const AdminMembersPage: React.FC = () => {
           </Button>
           <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, flex: 1, minWidth: 180 }}>
             ส่งประวัติไปที่บัญชีลูกค้า — จำนวนครั้งที่ใช้บริการ (แยก “ลูกค้าเก่า / ใหม่”) และ
-            <b> เครดิตคะแนนย้อนหลังจากยอดใช้จ่ายเดิม</b> (ทุก {thb(SUNPOINT_EARN_PER_THB)} = 1 คะแนน ·
+            <b> เครดิตคะแนนย้อนหลังจากยอดใช้จ่ายเดิม</b> (ทุก {thb(sunPointEarnPerTHB())} = 1 คะแนน ·
             นับเฉพาะออเดอร์ที่สำเร็จจริง) · <b>สมาชิกที่สมัครไว้ก่อนหน้านี้ ต้องกดครั้งหนึ่ง</b>
           </Typography>
         </Box>
@@ -527,10 +557,70 @@ const AdminMembersPage: React.FC = () => {
                           sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: adminColor.muted, borderColor: adminColor.line2 }}>
                           แก้ไข
                         </Button>
+                        {/* 🆕 28w.96 — open this member's real reservations. */}
+                        <Button size="small" variant="outlined"
+                          onClick={() => setOpenPhone((p) => (p === phone ? null : phone))}
+                          sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: adminColor.accent, borderColor: adminColor.line2 }}>
+                          {openPhone === phone ? "ซ่อนประวัติ" : `ประวัติ (${history[phone]?.length ?? 0})`}
+                        </Button>
                       </>
                     )}
                   </Box>
                 </Box>
+
+                {/* 🆕 28w.96 (founder: "admin/members กดดูประวัติการจองได้ ยอดสะสม
+                    เครดิตได้") — the reservations behind the numbers. Shown from the
+                    SAME per-phone aggregation the credit is computed from, so the
+                    history and the points can never tell different stories. Rows the
+                    shop did NOT deliver are greyed and marked "ไม่นับ", because those
+                    earn nothing — the founder can see exactly which ones counted. */}
+                {openPhone === phone && (
+                  <Box sx={{ mt: 1.5, pt: 1.5, borderTop: `1px solid ${adminColor.line}` }}>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 1.25 }}>
+                      {[
+                        { k: "ใช้บริการ", v: `${stat?.served ?? 0} ครั้ง` },
+                        { k: "ยอดสะสม", v: thb(stat?.totalSpent ?? 0) },
+                        { k: "เครดิตคะแนน", v: `${pointsFor(stat?.totalSpent ?? 0).toLocaleString()} คะแนน` },
+                        { k: "มูลค่าคะแนน", v: thb(pointsValueTHB(pointsFor(stat?.totalSpent ?? 0))) },
+                      ].map((c) => (
+                        <Box key={c.k} sx={{ px: 1.25, py: 0.75, borderRadius: "10px", background: adminColor.panel2, border: `1px solid ${adminColor.line}` }}>
+                          <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: adminColor.dim }}>{c.k}</Typography>
+                          <Typography sx={{ fontFamily: SANS, fontSize: 14, fontWeight: 800, color: adminColor.text, fontVariantNumeric: "lining-nums tabular-nums" }}>{c.v}</Typography>
+                        </Box>
+                      ))}
+                    </Box>
+
+                    {(history[phone]?.length ?? 0) === 0 ? (
+                      <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.dim }}>ยังไม่มีออเดอร์ของเบอร์นี้</Typography>
+                    ) : (
+                      <Box sx={{ maxHeight: 260, overflowY: "auto", borderRadius: "10px", border: `1px solid ${adminColor.line}` }}>
+                        {history[phone].map((b) => {
+                          const counted = b.status === "completed" || b.status === "done";
+                          return (
+                            <Box key={b.id} sx={{
+                              display: "flex", alignItems: "center", gap: 1, px: 1.25, py: 0.85,
+                              borderBottom: `1px solid ${adminColor.line}`,
+                              opacity: counted ? 1 : 0.55,
+                            }}>
+                              <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, width: 78, flexShrink: 0 }}>
+                                {b.whenMs ? new Date(b.whenMs).toLocaleDateString("th-TH", { day: "2-digit", month: "short", year: "2-digit" }) : "-"}
+                              </Typography>
+                              <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.text, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                {b.serviceName} · {b.therapistName}
+                              </Typography>
+                              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: counted ? adminColor.green : adminColor.dim, width: 74, textAlign: "right", flexShrink: 0 }}>
+                                {counted ? b.status : `${b.status} · ไม่นับ`}
+                              </Typography>
+                              <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 800, color: adminColor.text, width: 74, textAlign: "right", flexShrink: 0, fontVariantNumeric: "lining-nums tabular-nums" }}>
+                                {thb(b.totalTHB)}
+                              </Typography>
+                            </Box>
+                          );
+                        })}
+                      </Box>
+                    )}
+                  </Box>
+                )}
               </Box>
             );
           })}
