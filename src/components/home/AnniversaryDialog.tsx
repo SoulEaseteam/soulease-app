@@ -30,7 +30,7 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { X, Check, Gift, Crown, Lock, Ticket } from "phosphor-react";
+import { X, Check, Gift, Crown, Lock, Ticket, Coins } from "phosphor-react";
 import { fonts } from "@/theme";
 import { whatsappDeepLink } from "@/config/concierge";
 import {
@@ -213,11 +213,36 @@ const AnniversaryDialog: React.FC<Props> = ({ open, onClose }) => {
           ))}
         </Box>
 
+        {/* 🆕 28w.93 (founder spelled out the credit: "1 คะแนน = 1 บาท · ตัวอย่างมี
+            150 คะแนน ใช้ลดได้ 150 บาท") — "2× SunPoints" means nothing on its own,
+            so the exchange rate is stated where the reward is offered rather than
+            buried in the terms. Shown only when the points reward is on the menu. */}
+        {eligibleRewards.some((r) => r.id === "points2x") && (
+          <Box
+            sx={{
+              display: "flex", alignItems: "flex-start", gap: 1,
+              padding: "10px 12px", borderRadius: "10px", mb: 2,
+              background: "rgba(227,190,85,0.10)",
+              border: "1px solid rgba(227,190,85,0.35)",
+              fontFamily: fonts.body, fontSize: 11.5, lineHeight: 1.5,
+              color: "var(--sr-body)",
+            }}
+          >
+            <Coins size={15} weight="duotone" color={GOLD} style={{ flexShrink: 0, marginTop: 1 }} />
+            <Box>
+              {t(
+                "anniv.points.explain",
+                "1 SunPoint = ฿1 off. Collect 150 SunPoints and take ฿150 off your next reservation.",
+              )}
+            </Box>
+          </Box>
+        )}
+
         {/* Eligibility */}
         <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
           {[
             { k: "new", title: t("anniv.new.title", "New guests"), body: t("anniv.new.body", "One reward, valid for 30 days") },
-            { k: "returning", title: t("anniv.returning.title", "Returning guests"), body: t("anniv.returning.body", "One reward, valid during the campaign") },
+            { k: "returning", title: t("anniv.returning.title", "Returning guests"), body: t("anniv.returning.body", "One reward, valid for 30 days") },
           ].map((c) => (
             <Box
               key={c.k}

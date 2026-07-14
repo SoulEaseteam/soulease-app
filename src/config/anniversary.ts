@@ -8,7 +8,7 @@
 // reads back all describe the same offer. Change a floor here and every surface
 // moves together.
 
-export type AnniversaryRewardId = "off200" | "voucher300" | "points2x";
+export type AnniversaryRewardId = "off100" | "off200" | "voucher300" | "points2x";
 
 export interface AnniversaryReward {
   id: AnniversaryRewardId;
@@ -20,14 +20,36 @@ export interface AnniversaryReward {
   note: string;
 }
 
-export const ANNIVERSARY_REWARDS: AnniversaryReward[] = [
-  { id: "off200",     label: "THB 200 off your next booking", minSpendTHB: 1400, note: "Minimum spend THB 1,400" },
-  { id: "voucher300", label: "THB 300 voucher",               minSpendTHB: 2500, note: "Minimum spend THB 2,500" },
-  { id: "points2x",   label: "2× reward points",              minSpendTHB: null, note: "Valid on any ritual" },
+// 🆕 Round 28w.93 — founder revised the whole reward table. New and returning
+//   guests now get DIFFERENT offers, not the same list filtered down:
+//
+//     New       · THB 100 off first booking   · min 1,400
+//     Returning · THB 200 off                 · min 1,800
+//                 THB 300 voucher             · min 2,000
+//                 2× SunPoints                · any ritual
+//
+//   Both audiences: one reward, valid 30 days.
+export const NEW_GUEST_REWARDS: AnniversaryReward[] = [
+  { id: "off100", label: "THB 100 off your first booking", minSpendTHB: 1400, note: "Minimum spend THB 1,400" },
 ];
 
-/** Guests may claim exactly ONE of the three. */
+export const RETURNING_GUEST_REWARDS: AnniversaryReward[] = [
+  { id: "off200",     label: "THB 200 off your next booking", minSpendTHB: 1800, note: "Minimum spend THB 1,800" },
+  { id: "voucher300", label: "THB 300 voucher",               minSpendTHB: 2000, note: "Minimum spend THB 2,000" },
+  { id: "points2x",   label: "2× SunPoints",                  minSpendTHB: null, note: "Valid on any ritual · 1 SunPoint = ฿1" },
+];
+
+/** Every reward in the campaign — used to resolve a claim back to its terms. */
+export const ANNIVERSARY_REWARDS: AnniversaryReward[] = [
+  ...NEW_GUEST_REWARDS,
+  ...RETURNING_GUEST_REWARDS,
+];
+
+/** Guests may claim exactly ONE reward. */
 export const ANNIVERSARY_MAX_CLAIMS = 1;
+
+/** 1 SunPoint = ฿1 off. 150 points → ฿150 off. */
+export const SUNPOINT_THB = 1;
 
 export const ANNIVERSARY_EXCLUSIONS: string[] = [
   "Flash Sale",
@@ -50,17 +72,19 @@ export const ANNIVERSARY_PERIOD: { startISO: string; endISO: string } | null = {
  *   เก่า ใหม่ และให้ไปเก็บโค้ดกันเอง ในนั้น") — which rewards a guest may collect
  *   depends on whether they have booked before.
  *
- *   • New guest       → the welcome offer only (THB 200 off the first booking).
- *   • Returning guest → all three, of which they may collect ONE
- *     (ANNIVERSARY_MAX_CLAIMS). That matches the founder's original brief:
- *     "รับสิทธิ์เลือกอย่างใดอย่างหนึ่ง".
+ *   • New guest       → the welcome offer (THB 100 off the first booking).
+ *   • Returning guest → the three loyalty rewards, of which they collect ONE
+ *     (ANNIVERSARY_MAX_CLAIMS) — "รับสิทธิ์เลือกอย่างใดอย่างหนึ่ง".
  *
- * Returning-ness is measured from delivered bookings, not from having an
- * account — someone who signed up and never booked is still a new guest.
+ * 28w.93: the two audiences now get DIFFERENT offers, not one list filtered — a
+ * new guest's ฿100/1,400 is not a subset of the returning ฿200/1,800.
+ *
+ * Returning-ness is measured from delivered bookings ON THEIR PHONE (28w.92), so
+ * a regular whose reservations the concierge created still counts; someone who
+ * merely signed up and never booked is still a new guest.
  */
 export function rewardsFor(isReturning: boolean): AnniversaryReward[] {
-  if (isReturning) return ANNIVERSARY_REWARDS;
-  return ANNIVERSARY_REWARDS.filter((r) => r.id === "off200");
+  return isReturning ? RETURNING_GUEST_REWARDS : NEW_GUEST_REWARDS;
 }
 
 /**
