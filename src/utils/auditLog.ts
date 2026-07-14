@@ -63,6 +63,8 @@ export type AuditAction =
   | "member.enroll"
   | "member.reset"
   | "member.upgrade"
+  | "member.edit"
+  | "member.remove"
   // 🆕 Round 28s296 — AdminAdvancedSettingsPage now actually enforces
   //   maintenanceMode/minAdvanceMins/maxFutureDays; saving a change to
   //   live booking-eligibility rules deserves a trail like every other

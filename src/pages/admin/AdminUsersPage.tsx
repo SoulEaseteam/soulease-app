@@ -41,7 +41,7 @@ import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 // 🆕 28w.60 — membership enrollment (SRD- codes) on the customer insights drawer.
 import {
   membershipFor, applyMembershipConfig, generateMemberCode, tierRank,
-  MEMBERSHIP_COLORS, type MembershipTier, type MembershipThresholds,
+  MEMBERSHIP_COLORS, MEMBERSHIP_TIERS, type MembershipTier, type MembershipThresholds,
 } from "@/utils/membership";
 import { countryFromPhone, normPhone, type PhoneCountry } from "@/utils/phoneCountry";
 import { logAdminAction } from "@/utils/auditLog";
@@ -277,7 +277,7 @@ const AdminUsersPage: React.FC = () => {
       setOpenBooking({ id, loading: false, data: null });
     }
   };
-  const closeGuest = () => { setSelectedGuest(null); setOpenBooking(null); setBlockFlow(false); setBlockReason(""); };
+  const closeGuest = () => { setSelectedGuest(null); setOpenBooking(null); setBlockFlow(false); setBlockReason(""); setMemberEditing(false); };
 
   // 🆕 Round 28s293 — live set of blocked phone numbers, so the guest
   //   drawer can show a "Blocked" badge and toggle Block/Unblock in one
@@ -357,11 +357,16 @@ const AdminUsersPage: React.FC = () => {
   }, []);
 
   const [memberSaving, setMemberSaving] = useState(false);
+  // 🆕 28w.61b (founder "แก้ไขได้ทุกอย่าง") — manual edit of a member's code + tier.
+  const [memberEditing, setMemberEditing] = useState(false);
+  const [editCode, setEditCode] = useState("");
+  const [editTier, setEditTier] = useState<MembershipTier>("Bronze");
   const computedTierFor = (g: CustomerInsight) =>
     membershipFor({ served: g.served, totalSpent: g.totalSpent, lastVisitMs: g.lastVisit?.getTime() ?? 0, noShowCount: g.noShowCount }, nowMs).tier;
 
+  // Full-doc replace (not merge) so removing a member key actually deletes it.
   const writeMembers = async (next: Record<string, MemberRec>) => {
-    await setDoc(doc(db, "adminSettings", "members"), { members: next }, { merge: true });
+    await setDoc(doc(db, "adminSettings", "members"), { members: next });
   };
   const enrollGuest = async () => {
     if (!selectedGuest) return;
@@ -400,6 +405,35 @@ const AdminUsersPage: React.FC = () => {
       void logAdminAction("member.upgrade", { phone: key, code: rec.code, tier: to });
       toast.success(`อัปเกรดเป็น ${to} · ${rec.code}`);
     } catch (e) { console.error("[member upgrade] failed", e); toast.error("อัปเกรดไม่สำเร็จ"); }
+    finally { setMemberSaving(false); }
+  };
+  const startEditMember = (rec: MemberRec) => { setEditCode(rec.code); setEditTier(rec.tier); setMemberEditing(true); };
+  const saveMemberEdit = async () => {
+    if (!selectedGuest) return;
+    const key = normPhone(selectedGuest.phone); const cur = members[key]; if (!cur) return;
+    const code = editCode.trim().toUpperCase();
+    if (!code) { toast.error("ใส่รหัสก่อน"); return; }
+    setMemberSaving(true);
+    try {
+      const rec: MemberRec = { ...cur, code, tier: editTier, updatedAtMs: Date.now() };
+      await writeMembers({ ...members, [key]: rec });
+      void logAdminAction("member.edit", { phone: key, code, tier: editTier });
+      setMemberEditing(false);
+      toast.success("บันทึกแล้ว");
+    } catch (e) { console.error("[member edit] failed", e); toast.error("บันทึกไม่สำเร็จ"); }
+    finally { setMemberSaving(false); }
+  };
+  const removeMember = async () => {
+    if (!selectedGuest) return;
+    const key = normPhone(selectedGuest.phone); if (!members[key]) return;
+    setMemberSaving(true);
+    try {
+      const next = { ...members }; delete next[key];
+      await writeMembers(next);
+      void logAdminAction("member.remove", { phone: key });
+      setMemberEditing(false);
+      toast.success("ยกเลิกสมาชิกแล้ว");
+    } catch (e) { console.error("[member remove] failed", e); toast.error("ยกเลิกไม่สำเร็จ"); }
     finally { setMemberSaving(false); }
   };
 
@@ -838,26 +872,63 @@ const AdminUsersPage: React.FC = () => {
                       )}
                     </Box>
                     {member ? (
-                      <>
-                        <Typography sx={{ fontFamily: "ui-monospace, monospace", fontSize: 18, fontWeight: 800, letterSpacing: "0.08em", color: adminColor.text, mb: 1 }}>
-                          {member.code}
-                        </Typography>
-                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                          <Button size="small" variant="outlined" disabled={memberSaving} onClick={resetMemberCode}
-                            sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: "#8A3A57", borderColor: "#B8567F", "&:hover": { borderColor: "#8A3A57", background: "rgba(184,86,127,0.06)" } }}>
-                            รีเซตรหัส
-                          </Button>
-                          {canUpgrade && (
-                            <Button size="small" variant="contained" disabled={memberSaving} onClick={upgradeMemberCode}
+                      memberEditing ? (
+                        <>
+                          {/* 🆕 28w.61b — edit everything: custom code + tier */}
+                          <TextField
+                            label="รหัสสมาชิก" value={editCode}
+                            onChange={(e) => setEditCode(e.target.value.toUpperCase())}
+                            size="small" fullWidth sx={{ mb: 1 }}
+                            inputProps={{ style: { fontFamily: "ui-monospace, monospace", letterSpacing: "0.06em", fontWeight: 700 } }}
+                          />
+                          <TextField
+                            select label="ยศ" value={editTier}
+                            onChange={(e) => setEditTier(e.target.value as MembershipTier)}
+                            size="small" fullWidth sx={{ mb: 1.25 }}
+                          >
+                            {MEMBERSHIP_TIERS.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                          </TextField>
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center" }}>
+                            <Button size="small" variant="contained" disabled={memberSaving} onClick={saveMemberEdit}
                               sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", background: "linear-gradient(135deg,#D97C95,#C96F89)", "&:hover": { background: "linear-gradient(135deg,#C96F89,#B36079)" } }}>
-                              อัปเกรด → {computed}
+                              บันทึก
                             </Button>
+                            <Button size="small" variant="text" disabled={memberSaving} onClick={() => setMemberEditing(false)}
+                              sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, color: adminColor.muted }}>
+                              ยกเลิก
+                            </Button>
+                            <Button size="small" variant="text" disabled={memberSaving} onClick={removeMember}
+                              sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, color: adminColor.red, ml: "auto" }}>
+                              ลบสมาชิก
+                            </Button>
+                          </Box>
+                        </>
+                      ) : (
+                        <>
+                          <Typography sx={{ fontFamily: "ui-monospace, monospace", fontSize: 18, fontWeight: 800, letterSpacing: "0.08em", color: adminColor.text, mb: 1 }}>
+                            {member.code}
+                          </Typography>
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                            <Button size="small" variant="outlined" disabled={memberSaving} onClick={resetMemberCode}
+                              sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: "#8A3A57", borderColor: "#B8567F", "&:hover": { borderColor: "#8A3A57", background: "rgba(184,86,127,0.06)" } }}>
+                              รีเซตรหัส
+                            </Button>
+                            {canUpgrade && (
+                              <Button size="small" variant="contained" disabled={memberSaving} onClick={upgradeMemberCode}
+                                sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", background: "linear-gradient(135deg,#D97C95,#C96F89)", "&:hover": { background: "linear-gradient(135deg,#C96F89,#B36079)" } }}>
+                                อัปเกรด → {computed}
+                              </Button>
+                            )}
+                            <Button size="small" variant="outlined" disabled={memberSaving} onClick={() => startEditMember(member)}
+                              sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: adminColor.muted, borderColor: adminColor.line2, "&:hover": { borderColor: adminColor.muted } }}>
+                              แก้ไข
+                            </Button>
+                          </Box>
+                          {computed && tierRank(computed) > tierRank(member.tier) && !canUpgrade && (
+                            <Typography sx={{ fontSize: 10.5, color: adminColor.dim, mt: 0.6 }}>ถึงเกณฑ์ {computed} แล้ว (อัปเกรดรหัสได้เมื่อถึง Gold/BlackVIP)</Typography>
                           )}
-                        </Box>
-                        {computed && tierRank(computed) > tierRank(member.tier) && !canUpgrade && (
-                          <Typography sx={{ fontSize: 10.5, color: adminColor.dim, mt: 0.6 }}>ถึงเกณฑ์ {computed} แล้ว (อัปเกรดรหัสได้เมื่อถึง Gold/BlackVIP)</Typography>
-                        )}
-                      </>
+                        </>
+                      )
                     ) : (
                       <>
                         <Typography sx={{ fontSize: 12, color: adminColor.dim, mb: 1 }}>
