@@ -131,10 +131,13 @@ const WhySunRedSection: React.FC = () => {
                 accent (accents.teal = #2EC4B0) for a bit of Nordic
                 energy on an otherwise all-gray section. Circle border
                 stays neutral so the accent is subtle, not shouty. */}
+            {/* 🆕 28w.85b (founder: "ขยาย ไอคอนอีกนิด") — 38/42 → 48/56. Capped
+                there deliberately: at 320px the section's four columns are only
+                ~59px wide, so a bigger circle would burst the single row. */}
             <Box
               sx={{
-                width: { xs: 38, md: 42 },
-                height: { xs: 38, md: 42 },
+                width: { xs: 48, sm: 52, md: 56 },
+                height: { xs: 48, sm: 52, md: 56 },
                 borderRadius: "50%",
                 background: "transparent",
                 border: "1px solid var(--sr-hairline)", // GOLD hairline embroidery (was NEUTRAL_300 #CFCFCB)
@@ -145,7 +148,7 @@ const WhySunRedSection: React.FC = () => {
                 flexShrink: 0,
               }}
             >
-              <Icon size={20} weight="regular" />
+              <Icon size={26} weight="regular" />
             </Box>
             <Box
               sx={{
