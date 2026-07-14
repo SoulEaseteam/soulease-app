@@ -41,6 +41,7 @@ import {
   sunPointTHB,
 } from "@/config/anniversary";
 import { useAnniversaryClaim } from "@/hooks/useAnniversaryClaim";
+import { maskBookingRef } from "@/utils/bookingRef";
 
 const ROSE = "#D97C95";
 const GOLD = "#E3BE55";
@@ -369,8 +370,11 @@ const AnniversaryDialog: React.FC<Props> = ({ open, onClose }) => {
               >
                 <Crown size={12} weight="fill" color={GOLD} />
                 {t("anniv.bookingRef", "Booking ref")} ·{" "}
+                {/* 🆕 28w.99 — middle masked. The full reference stays intact on the
+                    booking confirmation and on every admin screen; this is a display
+                    mask, not a different identifier. */}
                 <Box component="span" sx={{ fontWeight: 800, letterSpacing: "0.04em", color: "var(--sr-body)" }}>
-                  {bookingRefCode}
+                  {maskBookingRef(bookingRefCode)}
                 </Box>
               </Box>
             )}

@@ -22,3 +22,29 @@ export function bookingRef(id: string | null | undefined): string {
   if (!id) return "SR-—";
   return `SR-${id.slice(0, 8).toUpperCase()}`;
 }
+
+/**
+ * 🆕 Round 28w.99 (founder: "เปิดตรงกลางสักหน่อยก็ได้ ไม่ต้องโชว์หมด") — the
+ * reference with its middle masked, for the reward dialog.
+ *
+ *     SR-5DYYOM2M  →  SR-5Dxxxx2M
+ *
+ * The head and tail are enough for the guest to recognise their own reservation
+ * and for the concierge to find it once they confirm the rest; the full string
+ * never sits on a screen that gets screenshotted or read over a shoulder.
+ *
+ * The FULL reference is unchanged everywhere it is actually needed — the booking
+ * confirmation the guest receives, and every admin surface. This masks the
+ * display only; it is not a new identifier, so nothing downstream has to be
+ * taught about it.
+ *
+ * Anything that isn't a well-formed reference is returned untouched rather than
+ * mangled into a misleading fake.
+ */
+export function maskBookingRef(ref: string | null | undefined): string {
+  if (!ref) return "";
+  const m = /^(SR-)([A-Z0-9]{2})([A-Z0-9]{2,})([A-Z0-9]{2})$/.exec(ref.trim());
+  if (!m) return ref;
+  const [, prefix, head, middle, tail] = m;
+  return `${prefix}${head}${"x".repeat(middle.length)}${tail}`;
+}
