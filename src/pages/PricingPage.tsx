@@ -449,10 +449,6 @@ const PricingPage: React.FC = () => {
                 >
                   {s.name}
                 </Box>
-                {/* 🆕 28w.64 (founder "ป้ายวิบวับ 🔥 BEST VALUE ทุกเมนู") */}
-                <Box sx={{ mt: "8px" }}>
-                  <PromoBadge badge="bestvalue" size="sm" />
-                </Box>
                 {copy.thai && (
                   <Box
                     sx={{
@@ -517,7 +513,10 @@ const PricingPage: React.FC = () => {
                     {/* 🆕 28w.64 (founder "เพิ่มราคาเก่าขีดทับ") — the struck
                         was-price is back (reverses the 28r117 removal), small,
                         before the rose current price. */}
-                    <Box sx={{ display: "flex", alignItems: "baseline", gap: "7px" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: "7px" }}>
+                      {/* 🆕 28w.65 (founder "🔥 BEST VALUE badges ที่ราคา") —
+                          the badge sits AT the price, on the entry tier. */}
+                      {idx === 0 && <PromoBadge badge="bestvalue" size="sm" />}
                       {wasPriceFor(s, d) && (
                         <Box
                           component="span"

@@ -681,7 +681,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
                     struck-through was-price + current price; the popular tier
                     gets the shimmering Best Seller / Best Value badge. */}
                 <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, gap: "4px" }}>
-                  {isPopular && <PromoBadge serviceId={service.id} size="sm" />}
+                  {isPopular && <PromoBadge badge="bestvalue" size="sm" />}
                   <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", lineHeight: 1 }}>
                     {was && (
                       <Typography component="span" sx={{ fontFamily: SANS, fontSize: "10.5px", fontWeight: 500, textDecoration: "line-through", color: "var(--sr-muted)", lineHeight: 1 }}>
