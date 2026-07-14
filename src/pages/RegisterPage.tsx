@@ -18,6 +18,7 @@ import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { getErrorMessage } from "@/utils/getErrorMessage";
 import { resolveLoginId } from "@/utils/loginId";
+import { useTranslation } from "react-i18next";
 
 const SERIF = '"Fraunces", "Playfair Display", Georgia, serif';
 const ROSE = "#D97C95";
@@ -56,6 +57,11 @@ const fieldSx = {
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
+  // 🆕 Round 28w.82 — same i18n gap as LoginPage: every string was hardcoded
+  //   English (and my 28w.81 hint was hardcoded Thai). All routed through t()
+  //   now, so the page follows the device language like the rest of the site.
+  const { t } = useTranslation();
+
   // 🆕 Round 28w.81 — sign-up mirrors the new login: the guest picks ONE
   //   identifier (phone / username / email) rather than being forced to have an
   //   email. Phone is the one we nudge toward — it's the key the membership
@@ -67,21 +73,21 @@ const RegisterPage: React.FC = () => {
 
   const handleRegister = async () => {
     if (!loginId.trim() || !password || !confirmPassword) {
-      toast.warning('Please fill in all fields.');
+      toast.warning(t('auth.register.error.fields', 'Please fill in all fields.'));
       return;
     }
 
     const resolved = resolveLoginId(loginId);
     if (!resolved) {
-      toast.error('Enter a valid phone number, username, or email.');
+      toast.error(t('auth.register.error.invalidId', 'Enter a valid phone number, username, or email.'));
       return;
     }
     if (password.length < 8) {
-      toast.error('Password must be at least 8 characters.');
+      toast.error(t('auth.register.error.passwordShort', 'Password must be at least 8 characters.'));
       return;
     }
     if (password !== confirmPassword) {
-      toast.error('Passwords do not match.');
+      toast.error(t('auth.register.error.passwordMismatch', 'Passwords do not match.'));
       return;
     }
 
@@ -107,10 +113,10 @@ const RegisterPage: React.FC = () => {
         createdAt: serverTimestamp(),
       });
 
-      toast.success('Register successful');
+      toast.success(t('auth.register.success', 'Register successful'));
       void navigate('/login');
     } catch (error: unknown) {
-      toast.error(getErrorMessage(error, 'Registration failed.'));
+      toast.error(getErrorMessage(error, t('auth.register.error.failed', 'Registration failed.')));
     }
   };
 
@@ -146,7 +152,7 @@ const RegisterPage: React.FC = () => {
 
           <Typography variant="h6" fontWeight="bold" mt={3} mb={4}
             sx={{ fontFamily: SERIF, fontSize: '2rem', color: "var(--sr-ink)" }}>
-            Sign Up
+            {t('auth.register.title', 'Sign Up')}
           </Typography>
 
           <Box
@@ -157,7 +163,7 @@ const RegisterPage: React.FC = () => {
             }}
           >
             <TextField
-              label="Phone, username, or email"
+              label={t('auth.field.loginId', 'Phone, username, or email')}
               type="text"
               autoComplete="username"
               value={loginId}
@@ -165,7 +171,7 @@ const RegisterPage: React.FC = () => {
               variant="outlined"
               size="small"
               fullWidth
-              helperText="ใช้เบอร์โทรจะดีที่สุด — ผูกกับสิทธิ์สมาชิกอัตโนมัติ"
+              helperText={t('auth.register.hint', 'A phone number works best — it links to your member benefits automatically')}
               FormHelperTextProps={{
                 sx: { color: 'var(--sr-muted)', fontSize: 11, ml: 0.5, mt: 0.25, textAlign: 'left' },
               }}
@@ -173,7 +179,7 @@ const RegisterPage: React.FC = () => {
             />
 
             <TextField
-              label="Password"
+              label={t('auth.field.password', 'Password')}
               type="password"
               autoComplete="new-password"
               value={password}
@@ -184,7 +190,7 @@ const RegisterPage: React.FC = () => {
             />
 
             <TextField
-              label="Confirm Password"
+              label={t('auth.field.confirmPassword', 'Confirm Password')}
               type="password"
               autoComplete="new-password"
               value={confirmPassword}
@@ -205,20 +211,20 @@ const RegisterPage: React.FC = () => {
                 '&:hover': { background: ROSE_HOVER },
                 transition: '0.2s ease-in-out'
               }}>
-              SIGN UP
+              {t('auth.register.cta', 'SIGN UP')}
             </Button>
           </Box>
 
           <Typography mt={3} fontSize={14} sx={{ color: 'var(--sr-body)' }}>
-            Already have an account?{' '}
+            {t('auth.register.haveAccount', 'Already have an account?')}{' '}
             <Link component={RouterLink} to="/login" underline="always" sx={{ color: ROSE, fontWeight: 'bold' }}>
-              Login
+              {t('auth.register.login', 'Login')}
             </Link>
           </Typography>
         </Paper>
 
         <Typography mt={4} fontSize={14} sx={{ color: 'var(--sr-muted)' }} textAlign="center">
-          You may proceed with booking without an account.
+          {t('auth.guestNote', 'You may proceed with booking without an account.')}
         </Typography>
       </Box>
 

@@ -35,6 +35,7 @@ import { auth, db } from "@/lib/firebase";
 import BottomNav from '../components/layouts/BottomNavGlass';
 import { getErrorMessage } from "@/utils/getErrorMessage";
 import { resolveLoginId } from "@/utils/loginId";
+import { useTranslation } from "react-i18next";
 // 🆕 28w.77 — "ลืมรหัสผ่าน?" hands the guest to the concierge (no self-serve reset).
 import { whatsappDeepLink } from "@/config/concierge";
 
@@ -81,6 +82,15 @@ const LoginPage: React.FC = () => {
   const fromPath =
     (location.state as { from?: string } | null)?.from ?? null;
 
+  // 🆕 Round 28w.82 (founder: "ทุกอย่างเป็นภาษาอังกฤษ เพราะระบบเว็บเราทำแบบแปล
+  //   ภาษาตามเครื่อง") — this page had ZERO i18n: every string was hardcoded
+  //   English, so a Japanese or Chinese guest saw untranslated copy on the one
+  //   screen where confusion costs an account. Routed through t() with the
+  //   English source as the fallback, and the Thai strings I'd hardcoded in
+  //   28w.77/.81 are gone — Thai now comes from the locale file like every
+  //   other language.
+  const { t } = useTranslation();
+
   // 🆕 Round 28w.81 — was `email`. Now holds whatever the guest types: a phone
   //   number, a username, or an email. resolveLoginId() maps it to the address
   //   Firebase Auth actually signs in with.
@@ -106,15 +116,15 @@ const LoginPage: React.FC = () => {
       case "auth/invalid-credential":
       case "auth/wrong-password":
       case "auth/user-not-found":
-        return "Wrong login or password. Forgotten it? Tap “ลืมรหัสผ่าน?” below.";
+        return t("auth.error.badCredentials", "Wrong login or password. Forgotten it? Tap “Forgot password?” below.");
       case "auth/too-many-requests":
-        return "Too many attempts. Wait a moment, or message the concierge.";
+        return t("auth.error.tooMany", "Too many attempts. Wait a moment, or message the concierge.");
       case "auth/network-request-failed":
-        return "No connection. Check your network and try again.";
+        return t("auth.error.network", "No connection. Check your network and try again.");
       case "auth/user-disabled":
-        return "This account is disabled. Please contact the concierge.";
+        return t("auth.error.disabled", "This account is disabled. Please contact the concierge.");
       default:
-        return `Login failed: ${getErrorMessage(err)}`;
+        return `${t("auth.error.generic", "Login failed")}: ${getErrorMessage(err)}`;
     }
   };
 
@@ -150,7 +160,7 @@ const LoginPage: React.FC = () => {
     if (!loginId || !password) {
       return setSnackbar({
         open: true,
-        message: "Please enter your phone, username, or email — and your password",
+        message: t("auth.error.missingFields", "Please enter your phone, username, or email — and your password"),
         severity: "error",
       });
     }
@@ -160,7 +170,7 @@ const LoginPage: React.FC = () => {
     if (!resolved) {
       return setSnackbar({
         open: true,
-        message: "That doesn't look like a phone number, username, or email",
+        message: t("auth.error.invalidId", "That doesn't look like a phone number, username, or email"),
         severity: "error",
       });
     }
@@ -176,7 +186,7 @@ const LoginPage: React.FC = () => {
 
       setSnackbar({
         open: true,
-        message: "Login successful",
+        message: t("auth.login.success", "Login successful"),
         severity: "success",
       });
 
@@ -259,7 +269,7 @@ const LoginPage: React.FC = () => {
               color: "var(--sr-ink)",
             }}
           >
-            Login
+            {t("auth.login.title", "Login")}
           </Typography>
 
           {/* Form — Enter submits */}
@@ -274,14 +284,14 @@ const LoginPage: React.FC = () => {
                 (not "email") or the browser's own validation rejects a phone
                 number before our resolver ever sees it. */}
             <TextField
-              label="Phone, username, or email"
+              label={t("auth.field.loginId", "Phone, username, or email")}
               type="text"
               autoComplete="username"
               fullWidth
               size="small"
               value={loginId}
               onChange={(e) => setLoginId(e.target.value)}
-              helperText="เบอร์โทร · ชื่อผู้ใช้ · หรืออีเมล"
+              helperText={t("auth.field.loginId.hint", "Your phone number is best — it links to your member benefits")}
               FormHelperTextProps={{
                 sx: { color: "var(--sr-muted)", fontSize: 11, ml: 0.5, mt: 0.25 },
               }}
@@ -289,7 +299,7 @@ const LoginPage: React.FC = () => {
             />
 
             <TextField
-              label="Password"
+              label={t("auth.field.password", "Password")}
               type="password"
               autoComplete="current-password"
               fullWidth
@@ -317,16 +327,16 @@ const LoginPage: React.FC = () => {
               {loading ? (
                 <CircularProgress size={22} sx={{ color: "#fff" }} />
               ) : (
-                "LOGIN"
+                t("auth.login.cta", "LOGIN")
               )}
             </Button>
           </Box>
 
           {/* Register */}
           <Typography mt={3} fontSize={14} sx={{ color: "var(--sr-body)" }}>
-            Don&apos;t have an account?{" "}
+            {t("auth.login.noAccount", "Don't have an account?")}{" "}
             <Link to="/register" style={{ color: ROSE, fontWeight: "bold" }}>
-              Sign up
+              {t("auth.login.signUp", "Sign up")}
             </Link>
           </Typography>
 
@@ -349,12 +359,12 @@ const LoginPage: React.FC = () => {
                 "&:hover": { color: ROSE_HOVER },
               }}
             >
-              ลืมรหัสผ่าน?
+              {t("auth.login.forgot", "Forgot password?")}
             </Box>
           </Typography>
         </Paper>
         <Typography mt={4} fontSize={14} sx={{ color: "var(--sr-muted)" }} textAlign="center">
-          You may proceed with booking without an account.
+          {t("auth.guestNote", "You may proceed with booking without an account.")}
         </Typography>
       </Box>
       <BottomNav />
