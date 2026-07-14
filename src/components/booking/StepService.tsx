@@ -354,19 +354,27 @@ const StepService: React.FC<Props> = ({
                       )}
                       <Typography component="span" sx={{ fontFamily: SERIF, fontSize: "16px", fontWeight: 700, color: "#D97C95", lineHeight: 1 }}>{formatTHB(from)}</Typography>
                     </Box>
-                    {badgeFor(s.id) && <PromoBadge serviceId={s.id} size="sm" />}
                   </Box>
                 );
               })()}
             </Box>
 
-            {/* Selected-tier marker (subtle) */}
+            {/* 🆕 28w.67 (founder "เอาป้ายไปไว้ตรงที่มาร์คไว้") — badge moved out
+                of the price row to the card's top-right corner. */}
+            {badgeFor(s.id) && (
+              <Box sx={{ position: "absolute", top: 10, right: 12, zIndex: 2 }}>
+                <PromoBadge serviceId={s.id} size="sm" />
+              </Box>
+            )}
+
+            {/* Selected-tier marker (subtle) — 🆕 28w.67 moved to the BOTTOM
+                right so it no longer collides with the top-right promo badge. */}
             {isSelected && selectedDuration && (
               <Box
                 aria-hidden
                 sx={{
                   position: "absolute",
-                  top: 8,
+                  bottom: 8,
                   right: 10,
                   padding: "3px 9px",
                   borderRadius: 999,

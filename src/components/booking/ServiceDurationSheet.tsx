@@ -41,7 +41,6 @@ import EventRoundedIcon from "@mui/icons-material/EventRounded";
 // opens a centred modal instead of a bottom drawer.
 import { Dialog, Box, Typography, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 // 🆕 Round 28r81 — accent amber for the "popular" star badges.
 import { accents } from "@/theme";
@@ -58,14 +57,8 @@ import StepDateTime from "@/components/booking/StepDateTime";
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
-// Round 28s64 — Notes are now i18n keys, translated at render via
-// t(). Identical for all services today.
-const SERVICE_NOTE_KEYS = [
-  "sheet.note.bookingId",
-  "sheet.note.cashNearby",
-  "sheet.note.deposit",
-  "sheet.note.payment",
-] as const;
+// 🆕 28w.67 — SERVICE_NOTE_KEYS removed with the Details/Notices tabs
+//   (founder: "เอาออก"). That copy still lives on /services/:id.
 
 interface Props {
   service: MassageService | null;
@@ -103,14 +96,7 @@ const DURATION_LABELS: Record<
 const popularDurationOf = (durs: number[]): number | null =>
   durs.find((d) => DURATION_LABELS[d]?.popular) ?? null;
 
-// 🆕 28t.18 — match StepService's 28t.16 rose/berry badges (the two
-//   service surfaces were disagreeing: sheet still had retired navy).
-const BADGE_COLORS: Record<MassageService["badge"], { bg: string; fg: string }> = {
-  SIGNATURE: { bg: "rgba(184, 86, 127, 0.95)", fg: "#fff" },
-  POPULAR: { bg: "rgba(214, 40, 40, 0.95)", fg: "#fff" },
-  RECOMMEND: { bg: "rgba(217, 124, 149, 0.95)", fg: "#fff" },
-  EXCLUSIVE: { bg: "rgba(138, 58, 87, 0.96)", fg: "#FFF0F0" },
-};
+// 🆕 28w.67 — BADGE_COLORS removed with the hero badge overlay.
 
 const ServiceDurationSheet: React.FC<Props> = ({
   service,
@@ -136,11 +122,6 @@ const ServiceDurationSheet: React.FC<Props> = ({
   const [selected, setSelected] = useState<number>(
     initialDuration ?? popularDurationOf(durations) ?? durations[0] ?? 60
   );
-  // 🆕 Founder 2026-05-01 round 4: 'Tabs ซ้อนข้อมูลไปก่อน กดก่อนแทบ
-  //    เนือหาค่อยเลือนออกมา' — content stays hidden by default; tapping
-  //    a tab slides the panel out. Tapping the active tab again closes
-  //    it (so the customer can re-collapse without picking another tab).
-  const [tab, setTab] = useState<"details" | "notices" | null>(null);
   // 🆕 Phase 5 — Date+Time picker lives inside this same sheet so the
   //    customer picks service+duration+date+time in one place. Founder
   //    feedback: 'ในsheet เดียวกัน'.
@@ -160,7 +141,6 @@ const ServiceDurationSheet: React.FC<Props> = ({
     if (open && service) {
       const d = durationsFor(service);
       setSelected(initialDuration ?? popularDurationOf(d) ?? d[0] ?? 60);
-      setTab(null); // hidden by default — see comment on the state above
       setDraftDate(initialDate ?? null);
       setDraftTime(initialTime ?? null);
       // Wait for MUI Drawer's open transition (~250ms) before scrolling so
@@ -179,9 +159,6 @@ const ServiceDurationSheet: React.FC<Props> = ({
   }, [open, service, initialDuration, initialDate, initialTime]);
 
   if (!service) return null;
-
-  const totalPrice = priceForDuration(service, selected);
-  const badgeColor = BADGE_COLORS[service.badge];
 
   return (
     <Dialog
@@ -234,294 +211,6 @@ const ServiceDurationSheet: React.FC<Props> = ({
           padding: "8px 20px 20px",
         }}
       >
-        {/* Hero image with badge overlay — compact 16:10 to keep duration
-            picker above the fold (decision-first UX, B-pattern). */}
-        <Box
-          sx={{
-            position: "relative",
-            width: "100%",
-            aspectRatio: "16 / 10",
-            maxHeight: "200px",
-            borderRadius: "20px",
-            overflow: "hidden",
-            background: `center / cover no-repeat url("${service.image}"), linear-gradient(135deg, #E8B7C6, #D97C95)`,
-            boxShadow: "0 8px 24px rgba(15, 23, 42, 0.12)",
-          }}
-        >
-          <Box
-            sx={{
-              position: "absolute",
-              top: 12,
-              left: 12,
-              fontFamily: SANS,
-              fontSize: "10px",
-              fontWeight: 800,
-              letterSpacing: "0.08em",
-              background: badgeColor.bg,
-              color: badgeColor.fg,
-              padding: "4px 10px",
-              borderRadius: "999px",
-              textTransform: "uppercase",
-            }}
-          >
-            {service.badge}
-          </Box>
-        </Box>
-
-        {/* Service header — name + simple inline price/duration/usage.
-            Reverted from the big hero pill (founder 2026-05-01: 'มันตลก'). */}
-        <Box sx={{ marginTop: "16px", marginBottom: "20px" }}>
-          <Typography
-            component="h2"
-            sx={{
-              fontFamily: SERIF,
-              fontSize: "24px",
-              fontWeight: 600,
-              color: "var(--sr-ink)",
-              letterSpacing: "-0.02em",
-              lineHeight: 1.1,
-              marginBottom: "6px",
-            }}
-          >
-            {service.name}
-          </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "baseline",
-              gap: "10px",
-              flexWrap: "wrap",
-            }}
-          >
-            {/* 🆕 28r122 — header price hidden while new pricing is being
-                decided (ซ่อนราคา ตามที่สั่ง). */}
-            <Typography
-              component="span"
-              sx={{
-                fontFamily: SANS,
-                fontSize: "13px",
-                color: "var(--sr-muted)",
-              }}
-            >
-              ·{" "}
-              <AccessTimeRoundedIcon
-                sx={{ fontSize: 13, verticalAlign: "-2px" }}
-              />{" "}
-              {t("sheet.mins", "{{n}} mins", { n: selected })}
-            </Typography>
-            {service.count > 0 && (
-              <Typography
-                component="span"
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: "12px",
-                  color: "var(--sr-muted)",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "2px",
-                }}
-              >
-                ·{" "}
-                <StarRoundedIcon
-                  sx={{ fontSize: 13, color: accents.amber }}
-                />
-                {t("sheet.used", "{{count}} used", {
-                  count: service.count,
-                })}
-              </Typography>
-            )}
-          </Box>
-        </Box>
-
-        {/* 🆕 Founder round 4 (2026-05-01) — Tabs HIDE content by default;
-            tap a tab to slide its panel out, tap the same tab again to
-            slide it back in. Chevron ▼ rotates to ▶ when closed. */}
-        <Box
-          role="tablist"
-          aria-label="Service info"
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "8px",
-          }}
-        >
-          {(["details", "notices"] as const).map((id) => {
-            const isOpen = tab === id;
-            return (
-              <Box
-                key={id}
-                role="tab"
-                aria-selected={isOpen}
-                aria-expanded={isOpen}
-                tabIndex={0}
-                onClick={() => setTab((cur) => (cur === id ? null : id))}
-                onKeyDown={(e) => {
-                  if (e.key === " " || e.key === "Enter") {
-                    e.preventDefault();
-                    setTab((cur) => (cur === id ? null : id));
-                  }
-                }}
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "6px",
-                  height: 44,
-                  borderRadius: "12px",
-                  cursor: "pointer",
-                  userSelect: "none",
-                  fontFamily: SANS,
-                  fontSize: "14px",
-                  fontWeight: 700,
-                  color: isOpen ? "#D97C95" : "var(--sr-muted)",
-                  background: isOpen
-                    ? "rgba(217, 124, 149, 0.10)"
-                    : "var(--sr-panel-2)",
-                  border: isOpen
-                    ? "2px solid #D97C95"
-                    : "1px solid var(--sr-hairline)",
-                  boxShadow: isOpen
-                    ? "0 4px 14px rgba(217, 124, 149, 0.18)"
-                    : "0 2px 6px rgba(0, 0, 0, 0.05)",
-                  transition: "all 0.15s ease",
-                  "&:focus-visible": {
-                    outline: "2px solid #D97C95",
-                    outlineOffset: "2px",
-                  },
-                }}
-              >
-                {id === "details"
-                  ? t("sheet.details", "Details")
-                  : t("sheet.notices", "Notices")}
-                <Box
-                  component="span"
-                  aria-hidden
-                  sx={{
-                    fontSize: "10px",
-                    display: "inline-block",
-                    color: isOpen ? "#D97C95" : "var(--sr-muted)",
-                    transform: isOpen ? "rotate(0deg)" : "rotate(-90deg)",
-                    transition: "transform 0.2s ease",
-                  }}
-                >
-                  ▼
-                </Box>
-              </Box>
-            );
-          })}
-        </Box>
-
-        {/* Tab panel — collapsed (max-height: 0) by default; slides open
-            when a tab is active. Different content swaps based on which
-            tab is open. The whole card shrinks away when both tabs closed
-            so the sheet stays compact and Choose Duration stays in view. */}
-        <Box
-          sx={{
-            overflow: "hidden",
-            maxHeight: tab === null ? 0 : "1500px",
-            opacity: tab === null ? 0 : 1,
-            marginTop: tab === null ? 0 : "10px",
-            transition:
-              "max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease",
-            background: "var(--sr-panel-2)",
-            borderRadius: tab === null ? 0 : "18px",
-            boxShadow:
-              tab === null ? "none" : "0 4px 14px rgba(0, 0, 0, 0.06)",
-          }}
-        >
-          <Box sx={{ padding: tab === null ? 0 : "16px 18px 18px" }}>
-          {tab === null ? null : tab === "details" ? (
-            <>
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: "10.5px",
-                  fontWeight: 700,
-                  color: "var(--sr-muted)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.1em",
-                  marginBottom: "8px",
-                }}
-              >
-                Description
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: "13px",
-                  lineHeight: 1.6,
-                  color: "var(--sr-body)",
-                  textIndent: "16px",
-                  marginBottom: "14px",
-                }}
-              >
-                {service.detail}
-              </Typography>
-
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: "10.5px",
-                  fontWeight: 700,
-                  color: "var(--sr-muted)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.1em",
-                  marginBottom: "8px",
-                }}
-              >
-                Benefits
-              </Typography>
-              <Box component="ul" sx={{ paddingLeft: "20px", margin: 0 }}>
-                {service.benefit.map((b) => (
-                  <Typography
-                    key={b}
-                    component="li"
-                    sx={{
-                      fontFamily: SANS,
-                      fontSize: "13px",
-                      lineHeight: 1.7,
-                      color: "var(--sr-body)",
-                    }}
-                  >
-                    {b}
-                  </Typography>
-                ))}
-              </Box>
-            </>
-          ) : (
-            <>
-              <Typography
-                sx={{
-                  fontFamily: SERIF,
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  color: "var(--sr-ink)",
-                  textAlign: "center",
-                  marginBottom: "12px",
-                }}
-              >
-                • {t("sheet.serviceNotes", "Service Notes")} •
-              </Typography>
-              {SERVICE_NOTE_KEYS.map((noteKey, i) => (
-                <Typography
-                  key={noteKey}
-                  sx={{
-                    fontFamily: SANS,
-                    fontSize: "13px",
-                    lineHeight: 1.6,
-                    color: "var(--sr-body)",
-                    marginBottom: "10px",
-                    paddingLeft: "16px",
-                    textIndent: "-16px",
-                  }}
-                >
-                  {i + 1}.&nbsp;&nbsp;{t(noteKey)}
-                </Typography>
-              ))}
-            </>
-          )}
-          </Box>
-        </Box>
 
         {/* 🎯 CHOOSE DURATION — 3 cards (60 / 90 / 120). Auto-scrolled into
             the vertical center of the sheet on open (founder: 'เห็น 🎯 Choose
