@@ -74,15 +74,17 @@ const MembershipCard: React.FC = () => {
           top: 0,
           bottom: 0,
           right: 0,
-          width: { xs: "52%", sm: "50%", md: "54%" },
+          width: { xs: "42%", sm: "44%", md: "50%" },
           backgroundImage: `url("${MEMBER_IMG}")`,
           backgroundSize: "cover",
           backgroundRepeat: "no-repeat",
           // The SUNRED card sits right-of-centre in the source photo; a plain
           // "center" crop on this narrow box sliced it in half.
           backgroundPosition: "78% center",
-          maskImage: "linear-gradient(90deg, transparent 0%, #000 34%)",
-          WebkitMaskImage: "linear-gradient(90deg, transparent 0%, #000 34%)",
+          // 🆕 Round 28w.84b (founder: "เอาแค่รูปกับข้อความ ไม่เอาพื้นหลังมาทับรูป")
+          //   — the mask fade was the panel background eating into the photo's
+          //   left edge. Gone. The photo is now shown whole and untouched: just
+          //   image + text, nothing laid over the picture.
         }}
       />
 
@@ -94,8 +96,11 @@ const MembershipCard: React.FC = () => {
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          padding: { xs: "24px 20px", md: "30px 36px" },
-          maxWidth: { xs: "62%", sm: "60%", md: "56%" },
+          // 🆕 28w.84b — with no scrim and no fade, text can no longer sit ON the
+          //   photo: the two must not overlap at all. Content width is capped to
+          //   the panel left of the image (photo 42/44/50% → text 58/56/50%).
+          padding: { xs: "22px 16px", md: "30px 36px" },
+          maxWidth: { xs: "58%", sm: "56%", md: "50%" },
         }}
       >
         <Box
@@ -119,7 +124,6 @@ const MembershipCard: React.FC = () => {
             color: CHAMPAGNE_SUB,
             marginTop: "7px",
             lineHeight: 1.5,
-            maxWidth: 240,
           }}
         >
           {t("home.member.subtitle", "Exclusive privileges for SunRed members")}
