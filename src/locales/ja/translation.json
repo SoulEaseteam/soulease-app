@@ -576,5 +576,7 @@
   "chat.greet.title.day": "今夜のトリートメントを予約",
   "chat.greet.body.day": "タップでチャット — 22:00以降が最も早く埋まります",
   "chat.greet.title.off": "コンシェルジュは 09:00 に再開",
-  "chat.greet.body.off": "メッセージを残してください — 朝にご連絡します"
+  "chat.greet.body.off": "メッセージを残してください — 朝にご連絡します",
+  "chat.status.off": "09:00 より返信",
+  "chat.status.live": "対応中 · 数分で返信"
 }

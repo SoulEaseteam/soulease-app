@@ -576,5 +576,7 @@
   "chat.greet.title.day": "Plan tonight's ritual",
   "chat.greet.body.day": "Tap to chat — 22:00 onward fills fastest.",
   "chat.greet.title.off": "Concierge resumes at 09:00",
-  "chat.greet.body.off": "Leave a message — we'll confirm at sunrise."
+  "chat.greet.body.off": "Leave a message — we'll confirm at sunrise.",
+  "chat.status.off": "Replies from 09:00",
+  "chat.status.live": "Live · replies in minutes"
 }

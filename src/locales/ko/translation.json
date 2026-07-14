@@ -576,5 +576,7 @@
   "chat.greet.title.day": "오늘 밤 트리트먼트 예약",
   "chat.greet.body.day": "탭하여 채팅 — 22:00 이후가 가장 빨리 마감",
   "chat.greet.title.off": "컨시어지는 09:00에 재개",
-  "chat.greet.body.off": "메시지를 남겨 주세요 — 아침에 확인해 드립니다"
+  "chat.greet.body.off": "메시지를 남겨 주세요 — 아침에 확인해 드립니다",
+  "chat.status.off": "09:00부터 응답",
+  "chat.status.live": "실시간 · 몇 분 내 응답"
 }

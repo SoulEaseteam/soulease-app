@@ -671,5 +671,7 @@
   "chat.greet.title.day": "预约今晚的疗程",
   "chat.greet.body.day": "点按聊天 — 22:00 后最快满",
   "chat.greet.title.off": "礼宾将于 09:00 恢复",
-  "chat.greet.body.off": "留言给我们 — 清晨为您确认"
+  "chat.greet.body.off": "留言给我们 — 清晨为您确认",
+  "chat.status.off": "09:00 起回复",
+  "chat.status.live": "在线 · 数分钟内回复"
 }

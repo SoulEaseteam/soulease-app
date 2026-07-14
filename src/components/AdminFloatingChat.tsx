@@ -387,9 +387,14 @@ const AdminFloatingChat: React.FC = () => {
                     }}
                   />
                 </Box>
+                {/* 🆕 Round 28x.8 (audit fix #4 follow-up) — was hardcoded
+                    English ("Replies from 09:00" / "Live · {pillLabel} ·
+                    replies in minutes"); the pillLabel itself is English
+                    from conciergeMode, so it leaked English on every
+                    device. Now fully i18n and pillLabel-free. */}
                 {concierge.mode === "off"
-                  ? "Replies from 09:00"
-                  : `Live · ${concierge.pillLabel} · replies in minutes`}
+                  ? t("chat.status.off", "Replies from 09:00")
+                  : t("chat.status.live", "Live · replies in minutes")}
               </Typography>
             </Box>
 
