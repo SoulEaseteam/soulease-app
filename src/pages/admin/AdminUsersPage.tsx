@@ -437,6 +437,27 @@ const AdminUsersPage: React.FC = () => {
     finally { setMemberSaving(false); }
   };
 
+  // 🆕 28w.62 (founder "ทำกล่องสมัครสมาชิกให้ลูกค้า") — quick enroll by phone +
+  //   name from an outer box; email is left for the customer's own login.
+  const [newPhone, setNewPhone] = useState("");
+  const [newName, setNewName] = useState("");
+  const registerNewMember = async () => {
+    const key = normPhone(newPhone.trim());
+    if (!key) { toast.error("ใส่เบอร์ก่อน"); return; }
+    if (members[key]) { toast.warning("เบอร์นี้เป็นสมาชิกอยู่แล้ว"); return; }
+    const insight = insights.find((i) => normPhone(i.phone) === key);
+    const tier: MembershipTier = (insight ? computedTierFor(insight) : null) ?? "Bronze";
+    setMemberSaving(true);
+    try {
+      const rec: MemberRec = { code: generateMemberCode(tier), tier, name: newName.trim() || insight?.name || newPhone.trim(), createdAtMs: Date.now(), updatedAtMs: Date.now() };
+      await writeMembers({ ...members, [key]: rec });
+      void logAdminAction("member.enroll", { phone: key, code: rec.code, tier });
+      setNewPhone(""); setNewName("");
+      toast.success(`สมัครสมาชิกแล้ว · ${rec.code}`);
+    } catch (e) { console.error("[member register] failed", e); toast.error("สมัครไม่สำเร็จ"); }
+    finally { setMemberSaving(false); }
+  };
+
   // 🆕 Round 28s287b — guest count per country (doubles as the filter row).
   const countryBreakdown = useMemo(() => {
     const m = new Map<string, { country: PhoneCountry; count: number }>();
@@ -719,6 +740,24 @@ const AdminUsersPage: React.FC = () => {
             </Box>
           </Box>
         ))}
+      </Box>
+
+      {/* 🆕 28w.62 — admin registers a member directly (phone + name); email
+          is the customer's own login later. */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center", mb: 2, background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "14px", p: "12px 14px" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mr: 0.5 }}>
+          <Crown size={16} weight="fill" color={adminColor.accent} />
+          <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 800, color: adminColor.text }}>สมัครสมาชิกให้ลูกค้า</Typography>
+        </Box>
+        <TextField size="small" label="เบอร์โทร" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} inputProps={{ inputMode: "tel" }} sx={{ width: 170, "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} />
+        <TextField size="small" label="ชื่อ" value={newName} onChange={(e) => setNewName(e.target.value)} sx={{ width: 170, "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} />
+        <Button variant="contained" disabled={memberSaving || !newPhone.trim()} onClick={registerNewMember}
+          sx={{ textTransform: "none", fontWeight: 700, fontSize: 13, borderRadius: "999px", px: 2, background: "linear-gradient(135deg,#D97C95,#C96F89)", "&:hover": { background: "linear-gradient(135deg,#C96F89,#B36079)" }, "&.Mui-disabled": { opacity: 0.5, color: "#fff" } }}>
+          + สมัคร (รหัส SRD-)
+        </Button>
+        <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, width: "100%", mt: 0.25 }}>
+          อีเมล — ให้ลูกค้าสมัคร/ล็อกอินใส่เอง · ยศตัดจากประวัติเบอร์นี้อัตโนมัติ (ถ้ามี)
+        </Typography>
       </Box>
 
       {/* 🆕 Round 28s285 search + 28s287c country dropdown filter. */}
