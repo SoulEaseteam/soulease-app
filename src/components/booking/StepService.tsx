@@ -315,6 +315,15 @@ const StepService: React.FC<Props> = ({
                 minWidth: 0,
               }}
             >
+              {/* 🆕 28w.71 (founder "BEST SELLER ให้อยู่เหนือ") — the badge was
+                  absolutely pinned to the card corner and the service name ran
+                  underneath it. It now sits ABOVE the name on its own line,
+                  right-aligned, so nothing overlaps. */}
+              {badgeFor(s.id) && (
+                <Box sx={{ display: "flex", justifyContent: "flex-end", mb: "6px" }}>
+                  <PromoBadge serviceId={s.id} size="sm" />
+                </Box>
+              )}
               <Typography
                 component="h3"
                 sx={{
@@ -359,16 +368,8 @@ const StepService: React.FC<Props> = ({
               })()}
             </Box>
 
-            {/* 🆕 28w.67 (founder "เอาป้ายไปไว้ตรงที่มาร์คไว้") — badge moved out
-                of the price row to the card's top-right corner. */}
-            {badgeFor(s.id) && (
-              <Box sx={{ position: "absolute", top: 10, right: 12, zIndex: 2 }}>
-                <PromoBadge serviceId={s.id} size="sm" />
-              </Box>
-            )}
-
             {/* Selected-tier marker (subtle) — 🆕 28w.67 moved to the BOTTOM
-                right so it no longer collides with the top-right promo badge. */}
+                right so it no longer collides with the promo badge. */}
             {isSelected && selectedDuration && (
               <Box
                 aria-hidden
