@@ -48,6 +48,11 @@ export interface AnniversaryClaim {
 export interface MembershipMirror {
   code: string;
   tier: string;
+  /** 🆕 28w.92 — phone the concierge enrolled them under. */
+  phone?: string;
+  /** Delivered sessions on that phone, stamped by /admin/members. */
+  visits?: number;
+  lastVisitMs?: number;
 }
 
 export function useAnniversaryClaim() {
@@ -108,14 +113,35 @@ export function useAnniversaryClaim() {
     return () => unsub();
   }, [user]);
 
-  // 🆕 28w.90 — new vs returning decides WHICH rewards they may collect
-  //   (config/anniversary rewardsFor). Measured from DELIVERED bookings, not
-  //   from having an account: someone who signed up and never booked is still a
-  //   new guest, and would otherwise be handed the returning-guest menu.
-  const [isReturning, setIsReturning] = useState(false);
+  // 🆕 28w.92 (founder: "ลูกค้าที่มีเบอร์กับเราแล้วถือว่าเป็นลูกค้าเก่าทันที")
+  //   — if the shop already has your number, you are a returning guest. Full stop.
+  //
+  //   28w.90 measured this from bookings carrying `userId == uid`, which was
+  //   wrong for how SunRed actually operates: most reservations are created by
+  //   the concierge, so they land with `userId: null` and only a phone. A real
+  //   regular who signs in would have shown ZERO bookings under their uid and
+  //   been handed the first-timer offer instead of the returning-guest menu.
+  //
+  //   The guest cannot look this up for themselves — Firestore rules only let
+  //   them list bookings by their own uid, never by phone — so the answer is
+  //   delivered to them: the concierge's membership mirror (written by phone in
+  //   /admin/members) carries the fact. Holding a membership record IS "the shop
+  //   has my number".
+  //
+  //   Confirmed with the founder: returning means they have BOOKED with us before
+  //   (their phone appears on a reservation) — not merely that they hold an
+  //   account. So the test is the delivered-session count carried on the mirror,
+  //   which /admin/members computes from bookings BY PHONE, catching every
+  //   concierge-created reservation the uid check missed. A member the concierge
+  //   just enrolled but who has never had a session is still a new guest and
+  //   correctly gets the welcome offer.
+  //
+  //   The uid-booking count is kept as a second route in, for a guest who booked
+  //   through the site while signed in but is not on the roster yet.
+  const [hasOwnBookings, setHasOwnBookings] = useState(false);
   useEffect(() => {
     if (!user) {
-      setIsReturning(false);
+      setHasOwnBookings(false);
       return;
     }
     let cancelled = false;
@@ -127,16 +153,17 @@ export function useAnniversaryClaim() {
       ),
     )
       .then((snap) => {
-        if (!cancelled) setIsReturning(snap.data().count > 0);
+        if (!cancelled) setHasOwnBookings(snap.data().count > 0);
       })
       .catch((err) => {
         console.warn("[anniversary] booking count failed:", err?.code);
-        // Fail CLOSED: treat as a new guest. Wrongly handing a first-timer the
-        // returning-guest menu gives away a reward they haven't earned.
-        if (!cancelled) setIsReturning(false);
+        if (!cancelled) setHasOwnBookings(false);
       });
     return () => { cancelled = true; };
   }, [user]);
+
+  /** Has had at least one delivered session with us — by phone OR by uid. */
+  const isReturning = (membership?.visits ?? 0) > 0 || hasOwnBookings;
 
   /** The Anniversary reward is one-per-guest; a rejected claim doesn't burn it. */
   const activeClaim =

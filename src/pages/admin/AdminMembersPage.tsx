@@ -164,8 +164,20 @@ const AdminMembersPage: React.FC = () => {
           setDoc(
             doc(db, "users", d.id),
             {
+              // 🆕 28w.92 (founder: "ลูกค้าที่มีเบอร์กับเราแล้วถือว่าเป็นลูกค้าเก่าทันที")
+              //   — carry the guest's real history on their OWN doc. The client
+              //   cannot ask "does my phone appear in bookings?" (rules only let
+              //   a guest list bookings by their uid, and most SunRed bookings are
+              //   concierge-created with userId null and only a phone), so the
+              //   count has to be delivered to them, not discovered by them.
               membership: rec
-                ? { code: rec.code, tier: rec.tier, phone: phoneKey }
+                ? {
+                    code: rec.code,
+                    tier: rec.tier,
+                    phone: phoneKey,
+                    visits: stats[phoneKey]?.served ?? 0,
+                    lastVisitMs: stats[phoneKey]?.lastVisitMs ?? 0,
+                  }
                 : null,
             },
             { merge: true },
@@ -177,6 +189,38 @@ const AdminMembersPage: React.FC = () => {
       // letting the guest silently look like a non-member.
       console.error("[members] membership mirror failed", e);
       toast.warning("บันทึกสมาชิกแล้ว แต่ซิงก์ไปหน้าลูกค้าไม่สำเร็จ");
+    }
+  };
+
+  /**
+   * 🆕 Round 28w.92 — re-stamp EVERY member's mirror with their current visit
+   * count.
+   *
+   * Needed for two reasons:
+   *   1. Backfill. Members enrolled before this round carry a mirror with no
+   *      `visits` field, so the Anniversary page would read 0 and hand a loyal
+   *      regular the first-timer offer — the exact bug the founder just called
+   *      out. Run this once and they're all correct.
+   *   2. Drift. `visits` is a snapshot. A guest who books again is still shown
+   *      at their old count until someone re-stamps it. Re-run whenever the
+   *      difference matters (e.g. before a campaign opens).
+   */
+  const syncAllMirrors = async () => {
+    const keys = Object.keys(members);
+    if (keys.length === 0) { toast.info("ยังไม่มีสมาชิก"); return; }
+    setSaving(true);
+    let ok = 0;
+    try {
+      for (const key of keys) {
+        await syncMembershipMirror(key, members[key]);
+        ok++;
+      }
+      toast.success(`ซิงก์ประวัติสมาชิกแล้ว · ${ok}/${keys.length} คน`);
+    } catch (e) {
+      console.error("[members] sync-all failed", e);
+      toast.error(`ซิงก์ไม่สำเร็จ (สำเร็จ ${ok}/${keys.length})`);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -333,6 +377,32 @@ const AdminMembersPage: React.FC = () => {
         <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 1 }}>
           อีเมล — ให้ลูกค้าสมัคร/ล็อกอินใส่เอง · ยศตัดจากประวัติของเบอร์นี้อัตโนมัติ (ถ้ามี) ไม่มีก็ Bronze
         </Typography>
+
+        {/* 🆕 28w.92 — backfill/refresh the visit count carried on each member's
+            own user doc. Members enrolled before this round have no count, so the
+            customer app would read 0 and treat a loyal regular as a first-timer.
+            Also fixes drift: the count is a snapshot, so a guest who books again
+            keeps their old number until this is re-run. */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mt: 1.5, flexWrap: "wrap" }}>
+          <Button
+            variant="outlined"
+            size="small"
+            disabled={saving || Object.keys(members).length === 0}
+            onClick={() => void syncAllMirrors()}
+            sx={{
+              textTransform: "none", fontWeight: 700, fontSize: 12,
+              borderRadius: "999px", px: 2,
+              color: adminColor.accent, borderColor: adminColor.line2,
+              "&:hover": { borderColor: adminColor.accent },
+            }}
+          >
+            {saving ? <CircularProgress size={14} /> : `ซิงก์ประวัติสมาชิก (${Object.keys(members).length})`}
+          </Button>
+          <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, flex: 1, minWidth: 180 }}>
+            ส่งจำนวนครั้งที่เคยใช้บริการ (นับจากเบอร์ — รวมออเดอร์ที่แอดมินเปิดให้) ไปที่บัญชีลูกค้า
+            เพื่อให้หน้าสิทธิ์แยก “ลูกค้าเก่า / ใหม่” ได้ถูก · <b>สมาชิกที่สมัครไว้ก่อนหน้านี้ ต้องกดครั้งหนึ่ง</b>
+          </Typography>
+        </Box>
       </Box>
 
       {/* search */}
