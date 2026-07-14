@@ -179,7 +179,11 @@ const StatusPill: React.FC<Props> = ({
       sx={{
         all: clickable ? "unset" : undefined,
         boxSizing: "border-box",
-        width: "auto",
+        // 🆕 28w.68 (founder "จัดกึ่งกลาง ให้บาลานซ์กับคอลัมอื่น") — `all: unset`
+        //   made the <button> shrink-to-fit, so the pill hugged the left edge
+        //   while the stat columns above spanned the full card. Span the same
+        //   width (minus its own 14px side margins) so the two line up.
+        width: "calc(100% - 28px)",
         margin: "12px 14px 0",
         padding: "9px 12px",
         borderRadius: "12px",
@@ -236,7 +240,8 @@ const StatusPill: React.FC<Props> = ({
       >
         {v.icon}
       </Box>
-      <Box sx={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+      {/* 🆕 28w.68 — centred so it balances the centred stat columns above */}
+      <Box sx={{ flex: 1, minWidth: 0, textAlign: "center" }}>
         <Typography
           sx={{
             fontFamily: SERIF,

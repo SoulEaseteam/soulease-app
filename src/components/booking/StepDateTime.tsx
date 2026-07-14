@@ -796,10 +796,15 @@ const StepDateTime: React.FC<Props> = ({
                       fontFamily: SANS,
                       fontSize: "10.5px",
                       fontWeight: 700,
+                      // 🆕 28w.68 (founder "สีตัวหนังสือ ไม่เห็น") — was a
+                      //   hardcoded near-black rgba(15,23,42,.4), which on the
+                      //   dark theme landed at 1.3:1 contrast (invisible).
+                      //   --sr-body measures 7.53:1 on the slot panel (AA);
+                      //   --sr-muted was only 4.12:1, still short for 10.5px.
                       color:
                         key === "rightNow"
                           ? "#16a34a"
-                          : "rgba(15, 23, 42, 0.4)",
+                          : "var(--sr-body)",
                       textTransform: "uppercase",
                       letterSpacing: "0.07em",
                       marginBottom: "10px",

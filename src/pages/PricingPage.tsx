@@ -411,6 +411,8 @@ const PricingPage: React.FC = () => {
                 gap: "18px",
               }}
             >
+              {/* 🆕 28w.68 (founder "สีทองวิบวับ") — the corner ribbon is now a
+                  shimmering metallic gold sweep instead of flat rose. */}
               {isBestseller && (
                 <Box
                   aria-hidden
@@ -419,15 +421,24 @@ const PricingPage: React.FC = () => {
                     top: 16,
                     right: -34,
                     transform: "rotate(45deg)",
-                    background: `linear-gradient(135deg, ${ROSE}, #C96F89)`,
-                    color: "#fff",
+                    background:
+                      "linear-gradient(100deg, #A97913 0%, #E3BE55 28%, #FFF6D2 46%, #E3BE55 62%, #A97913 100%)",
+                    backgroundSize: "220% 100%",
+                    animation: "sr-gold-shimmer 3.2s linear infinite",
+                    "@keyframes sr-gold-shimmer": {
+                      "0%": { backgroundPosition: "220% 0" },
+                      "100%": { backgroundPosition: "-220% 0" },
+                    },
+                    color: "#4A3400",
+                    textShadow: "0 1px 0 rgba(255,255,255,0.35)",
                     fontFamily: fonts.body,
                     fontSize: 9.5,
                     fontWeight: 800,
                     letterSpacing: "0.14em",
                     textTransform: "uppercase",
                     padding: "5px 40px",
-                    boxShadow: "0 4px 10px rgba(138, 58, 87, 0.30)",
+                    boxShadow: "0 4px 14px rgba(201,162,39,0.45)",
+                    "@media (prefers-reduced-motion: reduce)": { animation: "none" },
                   }}
                 >
                   {t("pricing.bestseller", "Bestseller")}

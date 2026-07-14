@@ -299,14 +299,15 @@ const TaxiEstimator: React.FC = () => {
       >
         {/* Practitioner picker */}
         <Box>
+          {/* 🆕 28w.68 (founder "เปลี่ยนเป็นข้อความว่าเลือกชื่อพนักงาน ภาษาอังกฤษ") */}
           <Typography sx={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 700, color: "var(--sr-muted)", mb: 0.5 }}>
-            {t("nearme.taxi.practitioner", "Practitioner")}
+            {t("nearme.taxi.practitioner", "Select practitioner")}
           </Typography>
           <Box
             component="select"
             value={selectedId}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedId(e.target.value)}
-            aria-label={t("nearme.taxi.practitioner", "Practitioner")}
+            aria-label={t("nearme.taxi.practitioner", "Select practitioner")}
             sx={{
               width: "100%",
               appearance: "none",
