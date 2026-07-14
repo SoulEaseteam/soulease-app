@@ -50,7 +50,9 @@ import {
   priceForDuration,
   durationsFor,
   formatTHB,
+  wasPriceFor,
 } from "@/utils/servicePricing";
+import PromoBadge from "@/components/common/PromoBadge";
 import StepDateTime from "@/components/booking/StepDateTime";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
@@ -548,6 +550,7 @@ const ServiceDurationSheet: React.FC<Props> = ({
           {durations.map((min) => {
             const isActive = selected === min;
             const price = priceForDuration(service, min);
+            const was = wasPriceFor(service, min);
             const meta = DURATION_LABELS[min];
             const tagText = meta
               ? t(meta.tagKey)
@@ -670,8 +673,22 @@ const ServiceDurationSheet: React.FC<Props> = ({
                     {tagText}
                   </Typography>
                 </Box>
-                {/* 🆕 28r122 — per-tier price hidden while new pricing is
-                    being decided (ซ่อนราคา ตามที่สั่ง). */}
+                {/* 🆕 28w.63 (founder "ใส่ราคา + ป้ายวิบวับ") — price is back:
+                    struck-through was-price + current price; the popular tier
+                    gets the shimmering Best Seller / Best Value badge. */}
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, gap: "4px" }}>
+                  {isPopular && <PromoBadge serviceId={service.id} size="sm" />}
+                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", lineHeight: 1 }}>
+                    {was && (
+                      <Typography component="span" sx={{ fontFamily: SANS, fontSize: "10.5px", fontWeight: 500, textDecoration: "line-through", color: "var(--sr-muted)", lineHeight: 1 }}>
+                        {formatTHB(was)}
+                      </Typography>
+                    )}
+                    <Typography component="span" sx={{ fontFamily: SERIF, fontSize: "17px", fontWeight: 700, color: isActive ? "#D97C95" : "var(--sr-ink)", lineHeight: 1.15 }}>
+                      {formatTHB(price)}
+                    </Typography>
+                  </Box>
+                </Box>
               </Box>
             );
           })}

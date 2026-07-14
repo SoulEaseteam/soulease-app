@@ -66,8 +66,8 @@ import {
   isServiceEnabled,
   wasPriceFor,
   badgeFor,
-  BADGE_META,
 } from "@/utils/servicePricing";
+import PromoBadge from "@/components/common/PromoBadge";
 // 🆕 28w.32 — re-render when the admin image override lands so the hero
 //   photo matches the booking flow / services list (same uploaded image).
 import { useServiceConfigVersion } from "@/hooks/useServiceConfigVersion";
@@ -503,18 +503,12 @@ const ServiceDetailPage: React.FC = () => {
 
           {/* ── Duration tiles (inside left rail on md+) ─────────── */}
           <Box sx={{ padding: { xs: "0 18px", md: 0 }, marginBottom: "24px" }}>
-        {/* 🆕 28w.62 — Best Seller / Best Value badge on the pricing block */}
-        {(() => {
-          const b = badgeFor(service.id);
-          if (!b) return null;
-          const meta = BADGE_META[b];
-          return (
-            <Box sx={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "4px 11px", borderRadius: "999px", background: `${meta.color}1F`, border: `1px solid ${meta.color}66`, marginBottom: "12px" }}>
-              <span style={{ fontSize: "13px", lineHeight: 1 }}>{meta.emoji}</span>
-              <span style={{ fontFamily: fonts.body, fontSize: "11px", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: meta.color }}>{meta.label}</span>
-            </Box>
-          );
-        })()}
+        {/* 🆕 28w.62/63 — shimmering Best Seller / Best Value badge */}
+        {badgeFor(service.id) && (
+          <Box sx={{ mb: "12px" }}>
+            <PromoBadge serviceId={service.id} />
+          </Box>
+        )}
         <Typography
           component="p"
           sx={{
