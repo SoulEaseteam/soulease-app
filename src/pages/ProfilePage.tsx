@@ -19,7 +19,7 @@ import {
   CheckCircle,
   Gauge,
   IdentificationCard,
-  Gift,
+  Ticket,
 } from "phosphor-react";
 import { collection, query, where, getCountFromServer, doc, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
@@ -409,38 +409,31 @@ const ProfilePage: React.FC = () => {
           </motion.div>
         )}
 
-        {/* 🆕 Round 28w.88 (founder: "ถ้ามีสามชิก สิทจะไปยุในหน้า ยูสเซอเลย") —
-            a claimed Anniversary reward lands HERE, on the guest's own page.
-            Renders only when they actually hold one, so the section never shows
-            an empty shell. `pending` is honest: the concierge applies the reward
-            at booking — the client cannot approve its own claim (Firestore rules
-            allow create-only, admin-only update). */}
-        {rewardClaims.length > 0 && (
-          <motion.div {...fadeUp(0.14)}>
-            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
-              Rewards
-            </Typography>
-            <Section>
-              {rewardClaims.map((c) => (
-                <Row
-                  key={c.id}
-                  icon={<Gift size={18} weight="duotone" />}
-                  label={c.rewardLabel}
-                  sub={
-                    c.status === "pending"
-                      ? "Anniversary reward · the concierge will apply it to your next booking"
-                      : c.status === "approved"
-                        ? "Anniversary reward · ready to use on your next booking"
-                        : c.status === "used"
-                          ? "Anniversary reward · already used"
-                          : "Anniversary reward · not approved"
-                  }
-                  onClick={() => navigate("/booking/history")}
-                />
-              ))}
-            </Section>
-          </motion.div>
-        )}
+        {/* 🆕 Round 28w.89 (founder: "หน้า Guest profile เพิ่มเมนู โค้ดส่วนลดของฉัน")
+            — one menu row for every discount the guest holds. This REPLACES the
+            28w.88 inline Rewards list: that listed the claimed Anniversary reward
+            here, and a separate codes page listing the same reward again would
+            have said it twice. The row carries the count; /my-codes carries the
+            detail (rewards · a code waiting at checkout · their referral code).
+            Always shown, so a guest can find their codes even when they hold
+            none — the page says so plainly rather than hiding the entrance. */}
+        <motion.div {...fadeUp(0.14)}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
+            Rewards
+          </Typography>
+          <Section>
+            <Row
+              icon={<Ticket size={18} weight="duotone" />}
+              label="My Discount Codes"
+              sub={
+                rewardClaims.length > 0
+                  ? `${rewardClaims.length} reward${rewardClaims.length > 1 ? "s" : ""} · referral code`
+                  : "Rewards, vouchers & your referral code"
+              }
+              onClick={() => navigate("/my-codes")}
+            />
+          </Section>
+        </motion.div>
 
         {/* Bookings */}
         <motion.div {...fadeUp(0.15)}>

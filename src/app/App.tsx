@@ -109,6 +109,8 @@ const BookingHistoryPage = React.lazy(
 const ReviewPage = React.lazy(() => import("@/pages/ReviewPage"));
 const ReviewListPage = React.lazy(() => import("@/pages/ReviewListPage"));
 
+// 🆕 28w.89 — "My discount codes" (rewards · held code · referral code).
+const MyCodesPage = React.lazy(() => import("@/pages/user/MyCodesPage"));
 const SavedTherapistsPage = React.lazy(
   () => import("@/pages/user/SavedTherapistsPage")
 );
@@ -330,6 +332,7 @@ export default function App() {
 
           <Route path="/saved" element={<SavedTherapistsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/my-codes" element={<MyCodesPage />} />
           {/* 🆕 Round 28b26 — legacy /account?tab=… → /profile redirect */}
           <Route path="/account" element={<AccountLegacyRedirect />} />
           <Route path="/edit-profile" element={<EditProfilePage />} />
