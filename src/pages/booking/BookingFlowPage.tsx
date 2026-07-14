@@ -127,7 +127,7 @@ import { priceForDuration, formatTHB, isServiceEnabled } from "@/utils/servicePr
 // 🆕 28w.43 — freeze the split on admin-created (born-confirmed) bookings; a
 //   customer booking (born pending) gets stamped when the admin confirms it.
 import { stampSplit } from "@/utils/commission";
-import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
+import { formatRating } from "@/utils/rating";
 import services from "@/data/services";
 import { getServiceById } from "@/utils/serviceCatalog";
 import therapistsData from "@/data/therapists";
@@ -1769,13 +1769,16 @@ const BookingFlowPage: React.FC = () => {
                   }}
                 >
                   ★{" "}
-                  {therapist
-                    ? formatRating(
-                        bayesianRatingFromAggregate(
-                          therapist.rating * (therapist.reviews ?? 0),
-                          therapist.reviews ?? 0
-                        )
-                      )
+                  {/* 🆕 28x.5 (founder: screenshot showed 4.5 · 0 reviews here while
+                      every other screen said 4.7 · 10) — this was applying the
+                      Bayesian smoothing a SECOND time. Since 28x.1, therapists/{id}
+                      .rating is ALREADY the Bayesian display value, so multiplying
+                      it back out by the review count to fake a "sum" and re-smoothing
+                      pulled it toward the 4.5 prior all over again: 4.7 → 4.6, and
+                      4.5 flat for anyone the doc hadn't been synced for.
+                      The doc value IS the number. Show it. */}
+                  {therapist && (therapist.reviews ?? 0) > 0
+                    ? formatRating(therapist.rating)
                     : "—"}
                 </Typography>
                 <Typography
