@@ -9,11 +9,11 @@
 //   both day and night themes (it's a self-lit colored band). The 🎉 emoji
 //   is an explicit founder request (overrides the general no-emoji rule).
 
-import React from "react";
+import React, { useState } from "react";
 import { Box, Typography } from "@mui/material";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import AnniversaryDialog from "./AnniversaryDialog";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
@@ -25,32 +25,33 @@ interface Props {
 
 const AnniversaryBanner: React.FC<Props> = ({ variant = "home" }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const clickable = variant === "home";
+  // 🆕 Round 28w.88 (founder: "กดบัตรนี้ แล้วขึ้นป๊อปอับ") — tapping the banner
+  //   opens the reward dialog instead of navigating to /pricing.
+  //   Note `clickable` used to be `variant === "home"`, so on the PRICING page —
+  //   the very page the founder tapped it on — the banner was inert. It is now
+  //   clickable on both surfaces.
+  const [open, setOpen] = useState(false);
+  const clickable = true;
+  void variant;
 
   return (
+    <>
     <Box
       component={motion.div}
       initial={{ opacity: 0, y: 12 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.4 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      onClick={clickable ? () => navigate("/pricing") : undefined}
-      role={clickable ? "button" : undefined}
-      tabIndex={clickable ? 0 : undefined}
-      onKeyDown={
-        clickable
-          ? (e: React.KeyboardEvent) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                navigate("/pricing");
-              }
-            }
-          : undefined
-      }
-      aria-label={
-        clickable ? "SunRed 1st Anniversary — view pricing" : undefined
-      }
+      onClick={() => setOpen(true)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e: React.KeyboardEvent) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setOpen(true);
+        }
+      }}
+      aria-label={t("home.anniversary.aria", "SunRed 1st Anniversary — view your reward")}
       sx={{
         position: "relative",
         overflow: "hidden",
@@ -193,9 +194,9 @@ const AnniversaryBanner: React.FC<Props> = ({ variant = "home" }) => {
               lineHeight: 1.4,
             }}
           >
-            {clickable
-              ? t("home.anniversary.pricing", "Celebrating 1 year · New rates on every ritual — tap to view")
-              : t("home.anniversary.thanks", "Celebrating 1 year · Thank you for trusting SunRed")}
+            {/* 🆕 28w.88 — the banner no longer goes to /pricing, so it must not
+                promise that. It opens the reward dialog. */}
+            {t("home.anniversary.tapReward", "Thank you for a wonderful first year · Tap to claim your Anniversary reward")}
           </Typography>
         </Box>
 
@@ -222,6 +223,8 @@ const AnniversaryBanner: React.FC<Props> = ({ variant = "home" }) => {
         )}
       </Box>
     </Box>
+    <AnniversaryDialog open={open} onClose={() => setOpen(false)} />
+    </>
   );
 };
 

@@ -312,6 +312,27 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ── reward claims (Anniversary campaign) ────────────────────────
+    // 🆕 Round 28w.88 — a guest claims ONE Anniversary reward from the banner
+    //   dialog. The claim is a REQUEST, never a grant:
+    //     • create — only for yourself, only status "pending". A guest cannot
+    //       mint an already-approved claim.
+    //     • read   — only your own claims (or admin). Claims carry a userId, so
+    //       no public list.
+    //     • update/delete — admin only. Approving or marking a reward used is
+    //       the concierge's call; the client can never do it.
+    //   Note the guest ALSO cannot write the reward onto their own users/{uid}
+    //   doc — userEditableKeys() is a whitelist that has no reward field — so
+    //   there is no client path to granting yourself anything.
+    match /rewardClaims/{claimId} {
+      allow read: if isAdmin()
+                  || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.status == 'pending';
+      allow update, delete: if isAdmin();
+    }
+
     // ── audit log ───────────────────────────────────────────────────
     // 🆕 Round 28s234 (Phase 4) — was write:false ("Cloud Functions only")
     // but nothing server-side ever wrote it, so the collection was

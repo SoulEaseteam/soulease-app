@@ -14,7 +14,9 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Box, Typography, TextField, Button, MenuItem, CircularProgress } from "@mui/material";
-import { collection, doc, getDocs, onSnapshot, setDoc } from "firebase/firestore";
+// NB: `query` is aliased — this component already has a `query` state for the
+//     search box, which would shadow the Firestore helper.
+import { collection, doc, getDocs, onSnapshot, setDoc, query as fsQuery, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "react-toastify";
 import { Crown, MagnifyingGlass } from "phosphor-react";
@@ -135,6 +137,49 @@ const AdminMembersPage: React.FC = () => {
     await setDoc(doc(db, "adminSettings", "members"), { members: next });
   };
 
+  /**
+   * 🆕 Round 28w.88 — mirror the membership onto the guest's OWN users/{uid} doc.
+   *
+   * The roster above lives in `adminSettings/members`, which Firestore rules make
+   * admin-only — so the customer app cannot read it and had no way to know the
+   * guest is a member. Without this mirror, an enrolled guest would open the
+   * Anniversary dialog and still be told to "request membership".
+   *
+   * Matched on the normalised phone, which is the SAME key the roster uses and
+   * the same value the new phone-based signup writes to users.phone — so the two
+   * sides line up with no extra bookkeeping. A guest who has no account yet
+   * simply gets no mirror; re-running enrol (or their signing up later) is
+   * handled by `syncMembershipMirror` being safe to call again.
+   */
+  const syncMembershipMirror = async (
+    phoneKey: string,
+    rec: MemberRec | null,
+  ) => {
+    try {
+      const snap = await getDocs(
+        fsQuery(collection(db, "users"), where("phone", "==", phoneKey)),
+      );
+      await Promise.all(
+        snap.docs.map((d) =>
+          setDoc(
+            doc(db, "users", d.id),
+            {
+              membership: rec
+                ? { code: rec.code, tier: rec.tier, phone: phoneKey }
+                : null,
+            },
+            { merge: true },
+          ),
+        ),
+      );
+    } catch (e) {
+      // Non-fatal: the roster write already succeeded. Surface it rather than
+      // letting the guest silently look like a non-member.
+      console.error("[members] membership mirror failed", e);
+      toast.warning("บันทึกสมาชิกแล้ว แต่ซิงก์ไปหน้าลูกค้าไม่สำเร็จ");
+    }
+  };
+
   const enrol = async () => {
     const key = normPhone(newPhone.trim());
     if (!key) { toast.error("ใส่เบอร์ก่อน"); return; }
@@ -150,6 +195,7 @@ const AdminMembersPage: React.FC = () => {
         updatedAtMs: Date.now(),
       };
       await writeMembers({ ...members, [key]: rec });
+      await syncMembershipMirror(key, rec);
       void logAdminAction("member.enroll", { phone: key, code: rec.code, tier });
       setNewPhone(""); setNewName("");
       toast.success(`สมัครแล้ว · ${rec.code}`);
@@ -163,6 +209,7 @@ const AdminMembersPage: React.FC = () => {
     try {
       const rec: MemberRec = { ...cur, code: generateMemberCode(cur.tier), updatedAtMs: Date.now() };
       await writeMembers({ ...members, [key]: rec });
+      await syncMembershipMirror(key, rec);
       void logAdminAction("member.reset", { phone: key, code: rec.code });
       toast.success(`รีเซตรหัสแล้ว · ${rec.code}`);
     } catch (e) { console.error("[members] reset failed", e); toast.error("รีเซตไม่สำเร็จ"); }

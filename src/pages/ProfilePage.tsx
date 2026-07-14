@@ -19,12 +19,14 @@ import {
   CheckCircle,
   Gauge,
   IdentificationCard,
+  Gift,
 } from "phosphor-react";
 import { collection, query, where, getCountFromServer, doc, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
+import { useAnniversaryClaim } from "@/hooks/useAnniversaryClaim";
 import { fonts } from "@/theme";
 // 🆕 Round 28r71 — shared concierge endpoints (r71 rebrand phase 2).
 import { CONCIERGE } from "@/config/concierge";
@@ -137,6 +139,8 @@ const Section: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 // ── main page ─────────────────────────────────────────────────────────
 const ProfilePage: React.FC = () => {
+  // 🆕 28w.88 — the guest's own Anniversary reward claims.
+  const { claims: rewardClaims } = useAnniversaryClaim();
   const { user, role } = useAuth();
   const navigate  = useNavigate();
   const [bookingCount, setBookingCount] = useState<number | null>(null);
@@ -401,6 +405,39 @@ const ProfilePage: React.FC = () => {
                 sub="Availability · services · earnings"
                 onClick={() => navigate("/therapist/profile")}
               />
+            </Section>
+          </motion.div>
+        )}
+
+        {/* 🆕 Round 28w.88 (founder: "ถ้ามีสามชิก สิทจะไปยุในหน้า ยูสเซอเลย") —
+            a claimed Anniversary reward lands HERE, on the guest's own page.
+            Renders only when they actually hold one, so the section never shows
+            an empty shell. `pending` is honest: the concierge applies the reward
+            at booking — the client cannot approve its own claim (Firestore rules
+            allow create-only, admin-only update). */}
+        {rewardClaims.length > 0 && (
+          <motion.div {...fadeUp(0.14)}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
+              Rewards
+            </Typography>
+            <Section>
+              {rewardClaims.map((c) => (
+                <Row
+                  key={c.id}
+                  icon={<Gift size={18} weight="duotone" />}
+                  label={c.rewardLabel}
+                  sub={
+                    c.status === "pending"
+                      ? "Anniversary reward · the concierge will apply it to your next booking"
+                      : c.status === "approved"
+                        ? "Anniversary reward · ready to use on your next booking"
+                        : c.status === "used"
+                          ? "Anniversary reward · already used"
+                          : "Anniversary reward · not approved"
+                  }
+                  onClick={() => navigate("/booking/history")}
+                />
+              ))}
             </Section>
           </motion.div>
         )}
