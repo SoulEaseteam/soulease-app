@@ -640,5 +640,13 @@
   "codes.status.rejected": "未通过",
   "codes.signInNote": "登录以查看您账户中的优惠码与礼遇。",
   "codes.signIn": "登录",
-  "codes.empty": "您目前还没有优惠码。收到的礼遇与优惠将显示在这里。"
+  "codes.empty": "您目前还没有优惠码。收到的礼遇与优惠将显示在这里。",
+  "home.anniversary.cta": "领取礼遇",
+  "anniv.yourWelcome": "您的迎新礼遇",
+  "codes.available": "周年礼遇",
+  "codes.collect": "领取",
+  "codes.collected": "已领取优惠码",
+  "codes.collectFailed": "领取失败，请重试。",
+  "codes.pickOne": "可领取一项礼遇。",
+  "codes.welcomeOnly": "首次光临的迎新礼遇。"
 }

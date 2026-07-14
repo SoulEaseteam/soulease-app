@@ -14,6 +14,7 @@ import { Box, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import AnniversaryDialog from "./AnniversaryDialog";
+import { anniversaryPeriodLabel } from "@/config/anniversary";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
@@ -24,13 +25,14 @@ interface Props {
 }
 
 const AnniversaryBanner: React.FC<Props> = ({ variant = "home" }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   // 🆕 Round 28w.88 (founder: "กดบัตรนี้ แล้วขึ้นป๊อปอับ") — tapping the banner
   //   opens the reward dialog instead of navigating to /pricing.
   //   Note `clickable` used to be `variant === "home"`, so on the PRICING page —
   //   the very page the founder tapped it on — the banner was inert. It is now
   //   clickable on both surfaces.
   const [open, setOpen] = useState(false);
+  const period = anniversaryPeriodLabel(i18n.language);
   const clickable = true;
   void variant;
 
@@ -198,29 +200,55 @@ const AnniversaryBanner: React.FC<Props> = ({ variant = "home" }) => {
                 promise that. It opens the reward dialog. */}
             {t("home.anniversary.tapReward", "Thank you for a wonderful first year · Tap to claim your Anniversary reward")}
           </Typography>
+          {/* 🆕 28w.90 (founder: "ตั้งแต่ 15 กค - 15 สค 69" · "ทำเป็นข้อความ
+              แสดงรายละเอียด") — the campaign window, spelled out on the banner
+              like the reference card. Rendered in the guest's own locale, so a
+              Thai guest reads 2569 and a Japanese guest reads Japanese months —
+              hardcoding "15 ก.ค. – 15 ส.ค. 69" would have been Thai-only on a
+              site that auto-translates. */}
+          {period && (
+            <Typography
+              sx={{
+                fontFamily: SANS,
+                fontSize: { xs: 11, md: 11.5 },
+                color: "rgba(255,255,255,0.72)",
+                mt: 0.4,
+                letterSpacing: "0.02em",
+              }}
+            >
+              {period}
+            </Typography>
+          )}
         </Box>
 
-        {clickable && (
-          <Box
-            aria-hidden
-            sx={{
-              flexShrink: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 34,
-              height: 34,
-              borderRadius: "50%",
-              background: "rgba(255,255,255,0.16)",
-              border: "1px solid rgba(255,255,255,0.28)",
-              color: "#fff",
-              fontSize: 17,
-              fontWeight: 700,
-            }}
-          >
-            →
-          </Box>
-        )}
+        {/* 🆕 28w.90 (founder: "ตรงปุ่มให้เปลี่ยนเป็น ใส่เป็นคำว่ารับสิทธิ์") — was a
+            bare "→" glyph, which told the guest nothing about what tapping does.
+            Now a labelled pill. It is decorative (aria-hidden): the whole banner
+            is already the button, so exposing a second control here would make
+            screen readers announce two. */}
+        <Box
+          aria-hidden
+          sx={{
+            flexShrink: 0,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "6px",
+            px: { xs: 1.6, md: 2 },
+            py: { xs: 0.75, md: 0.9 },
+            borderRadius: 999,
+            background: "rgba(255,255,255,0.94)",
+            color: "#8A3A57",
+            fontFamily: SANS,
+            fontSize: { xs: 12, md: 12.5 },
+            fontWeight: 800,
+            letterSpacing: "0.01em",
+            whiteSpace: "nowrap",
+            boxShadow: "0 4px 14px rgba(0,0,0,0.18)",
+          }}
+        >
+          {t("home.anniversary.cta", "Claim reward")}
+        </Box>
       </Box>
     </Box>
     <AnniversaryDialog open={open} onClose={() => setOpen(false)} />

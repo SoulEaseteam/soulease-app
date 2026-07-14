@@ -545,5 +545,13 @@
   "codes.status.rejected": "Not approved",
   "codes.signInNote": "Sign in to see the discount codes and rewards on your account.",
   "codes.signIn": "Sign in",
-  "codes.empty": "You have no discount codes yet. Rewards and offers you receive will appear here."
+  "codes.empty": "You have no discount codes yet. Rewards and offers you receive will appear here.",
+  "home.anniversary.cta": "Claim reward",
+  "anniv.yourWelcome": "Your welcome reward",
+  "codes.available": "Anniversary rewards",
+  "codes.collect": "Collect",
+  "codes.collected": "Code collected",
+  "codes.collectFailed": "Could not collect the code. Please try again.",
+  "codes.pickOne": "You may collect one reward.",
+  "codes.welcomeOnly": "Your welcome reward as a first-time guest."
 }

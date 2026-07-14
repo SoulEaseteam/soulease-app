@@ -545,5 +545,13 @@
   "codes.status.rejected": "承認されませんでした",
   "codes.signInNote": "ログインすると、アカウントのクーポンと特典をご確認いただけます。",
   "codes.signIn": "ログイン",
-  "codes.empty": "現在ご利用可能なクーポンはありません。受け取った特典やオファーはこちらに表示されます。"
+  "codes.empty": "現在ご利用可能なクーポンはありません。受け取った特典やオファーはこちらに表示されます。",
+  "home.anniversary.cta": "特典を受け取る",
+  "anniv.yourWelcome": "ウェルカム特典",
+  "codes.available": "記念特典",
+  "codes.collect": "受け取る",
+  "codes.collected": "コードを受け取りました",
+  "codes.collectFailed": "コードを受け取れませんでした。もう一度お試しください。",
+  "codes.pickOne": "特典は1つお選びいただけます。",
+  "codes.welcomeOnly": "初めてのお客様へのウェルカム特典です。"
 }

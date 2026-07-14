@@ -27,6 +27,8 @@ import { Ticket, Copy, ShareNetwork, Gift, ArrowLeft } from "phosphor-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { useAnniversaryClaim } from "@/hooks/useAnniversaryClaim";
 import { deriveReferralCode, getActiveReferralCode } from "@/utils/referral";
+import { anniversaryPeriodLabel, anniversaryIsLive } from "@/config/anniversary";
+import { whatsappDeepLink } from "@/config/concierge";
 import { getReferralConfig } from "@/utils/discount";
 import { PROMOS_ENABLED } from "@/config/featureFlags";
 import { responsiveShell } from "@/theme/breakpoints";
@@ -64,7 +66,24 @@ const MyCodesPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { claims, loading } = useAnniversaryClaim();
+  const {
+    claims, loading, isMember, isReturning, eligibleRewards,
+    activeClaim, submitting, claimReward,
+  } = useAnniversaryClaim();
+  const { i18n } = useTranslation();
+  const period = anniversaryPeriodLabel(i18n.language);
+  const campaignLive = anniversaryIsLive();
+
+  // 🆕 28w.90 (founder: "ให้ไปเก็บโค้ดกันเอง ในนั้น") — the rewards this guest
+  //   qualifies for, minus the one they already took. Anniversary is
+  //   one-reward-per-guest, so once a claim exists the rest close.
+  const collectable = eligibleRewards.filter((r) => !claims.some((c) => c.rewardId === r.id));
+
+  const collect = async (id: typeof eligibleRewards[number]["id"]) => {
+    const ok = await claimReward(id);
+    if (ok) toast.success(t("codes.collected", "Code collected"));
+    else toast.error(t("codes.collectFailed", "Could not collect the code. Please try again."));
+  };
 
   const refCfg = getReferralConfig();
   const referralLive = PROMOS_ENABLED && refCfg.enabled;
@@ -161,6 +180,82 @@ const MyCodesPage: React.FC = () => {
 
         {user && !loading && (
           <>
+            {/* 0 — Anniversary rewards still to collect. Members only: the
+                   campaign is member-exclusive, so a signed-in non-member is
+                   pointed at the concierge instead of shown a button that the
+                   concierge would have to refuse. */}
+            {campaignLive && collectable.length > 0 && !activeClaim && (
+              <>
+                <Eyebrow>
+                  {t("codes.available", "Anniversary rewards")}
+                  {period ? ` · ${period}` : ""}
+                </Eyebrow>
+                {!isMember ? (
+                  <Card>
+                    <Typography sx={{ fontFamily: fonts.body, fontSize: 13, color: "var(--sr-body)", lineHeight: 1.6, mb: 1.5 }}>
+                      {t("anniv.notMemberNote", "Anniversary rewards are reserved for SunRed members. Our concierge will enrol you and apply your reward.")}
+                    </Typography>
+                    <Box
+                      component="a"
+                      href={whatsappDeepLink("Hello SunRed concierge. I would like to join SunRed membership and collect my 1st Anniversary reward. Could you assist me?")}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{ ...ctaSx, textDecoration: "none" }}
+                    >
+                      {t("anniv.requestMembership", "Request membership & reward")}
+                    </Box>
+                  </Card>
+                ) : (
+                  <>
+                    <Typography sx={{ fontFamily: fonts.body, fontSize: 11.5, color: "var(--sr-muted)", mb: 0.5, mt: -0.5 }}>
+                      {isReturning
+                        ? t("codes.pickOne", "You may collect one reward.")
+                        : t("codes.welcomeOnly", "Your welcome reward as a first-time guest.")}
+                    </Typography>
+                    {collectable.map((r) => (
+                      <Card key={r.id}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                          <Box
+                            aria-hidden
+                            sx={{
+                              width: 36, height: 36, borderRadius: "10px", flexShrink: 0,
+                              background: "rgba(217,124,149,0.12)", color: ROSE,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                            }}
+                          >
+                            <Ticket size={18} weight="duotone" />
+                          </Box>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography sx={{ fontFamily: fonts.body, fontSize: 14, fontWeight: 700, color: "var(--sr-ink)", lineHeight: 1.3 }}>
+                              {t(`anniv.reward.${r.id}`, r.label)}
+                            </Typography>
+                            <Typography sx={{ fontFamily: fonts.body, fontSize: 11.5, color: "var(--sr-muted)", mt: "2px" }}>
+                              {t(`anniv.reward.${r.id}.note`, r.note)}
+                            </Typography>
+                          </Box>
+                          <Box
+                            component="button"
+                            type="button"
+                            disabled={submitting}
+                            onClick={() => void collect(r.id)}
+                            sx={{
+                              flexShrink: 0, minHeight: 34, px: 1.75,
+                              border: "none", borderRadius: 999, cursor: "pointer",
+                              background: "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
+                              color: "#fff", fontFamily: fonts.body, fontSize: 12.5, fontWeight: 700,
+                              opacity: submitting ? 0.6 : 1,
+                            }}
+                          >
+                            {t("codes.collect", "Collect")}
+                          </Box>
+                        </Box>
+                      </Card>
+                    ))}
+                  </>
+                )}
+              </>
+            )}
+
             {/* 1 — Anniversary rewards */}
             {claims.length > 0 && (
               <>

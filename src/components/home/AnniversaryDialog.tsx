@@ -8,8 +8,11 @@
 // rewards with their spend floors, who qualifies, what the reward can't be
 // combined with, and the terms — then branches on ONE question:
 //
-//   member?  → "Claim reward" writes a pending claim; it appears on their
-//              Profile immediately, and the concierge honours it at booking.
+//   member?  → "Claim reward" sends them to /my-codes, where every reward they
+//              qualify for is listed and they collect the ones they want. 28w.90
+//              moved the picking OUT of this dialog (founder: "สิทธิ์ทั้งหมดจะถูก
+//              โชว์ใน my-codes … ให้ไปเก็บโค้ดกันเอง ในนั้น") — the dialog explains
+//              the campaign, the codes wallet holds the codes.
 //   not?     → "Request membership" opens the concierge chat. There is no
 //              self-serve enrolment: the concierge enrols by phone from
 //              /admin/members, so pretending otherwise would dead-end the guest.
@@ -18,7 +21,7 @@
 // Copy is English in a semi-formal register (founder's explicit ask), routed
 // through t() so it still follows the guest's device language.
 
-import React, { useState } from "react";
+import React from "react";
 import {
   Box,
   Dialog,
@@ -27,15 +30,12 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { X, Check, Gift, Crown, Lock } from "phosphor-react";
-import { toast } from "react-toastify";
+import { X, Check, Gift, Crown, Lock, Ticket } from "phosphor-react";
 import { fonts } from "@/theme";
 import { whatsappDeepLink } from "@/config/concierge";
 import {
-  ANNIVERSARY_REWARDS,
   ANNIVERSARY_EXCLUSIONS,
   anniversaryPeriodLabel,
-  type AnniversaryRewardId,
 } from "@/config/anniversary";
 import { useAnniversaryClaim } from "@/hooks/useAnniversaryClaim";
 
@@ -48,36 +48,25 @@ interface Props {
 }
 
 const AnniversaryDialog: React.FC<Props> = ({ open, onClose }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const {
     signedIn,
     isMember,
+    isReturning,
+    eligibleRewards,
     membership,
     activeClaim,
     loading,
-    submitting,
-    claimReward,
   } = useAnniversaryClaim();
 
-  const [picked, setPicked] = useState<AnniversaryRewardId | null>(null);
-  const period = anniversaryPeriodLabel();
+  // 🆕 28w.90 — the period is rendered in the GUEST'S locale, so a Thai guest
+  //   sees 2569 and a Japanese guest sees Japanese months.
+  const period = anniversaryPeriodLabel(i18n.language);
 
-  const handleClaim = async () => {
-    if (!picked) {
-      toast.info(t("anniv.pickFirst", "Please select one reward to continue."));
-      return;
-    }
-    const ok = await claimReward(picked);
-    if (ok) {
-      toast.success(
-        t("anniv.claimed", "Reward claimed. You will find it under Rewards in your profile."),
-      );
-      onClose();
-      navigate("/profile");
-    } else {
-      toast.error(t("anniv.claimFailed", "We could not record your reward. Please try again."));
-    }
+  const goCollect = () => {
+    onClose();
+    navigate("/my-codes");
   };
 
   const conciergeHref = whatsappDeepLink(
@@ -164,7 +153,11 @@ const AnniversaryDialog: React.FC<Props> = ({ open, onClose }) => {
           )}
         </Box>
 
-        {/* Rewards — the guest picks exactly one */}
+        {/* 🆕 28w.90 — READ-ONLY list now. Collecting happens in /my-codes, so
+            this stopped being a picker: showing selectable radios here and then
+            asking them to pick again on the codes page would be the same choice
+            twice. Only the rewards THIS guest qualifies for are listed — a first
+            timer sees the welcome offer, not the returning-guest menu. */}
         <Box
           sx={{
             fontFamily: fonts.body, fontSize: 10.5, fontWeight: 800,
@@ -172,65 +165,52 @@ const AnniversaryDialog: React.FC<Props> = ({ open, onClose }) => {
             color: "var(--sr-muted)", mb: 1,
           }}
         >
-          {t("anniv.chooseOne", "Choose one reward")}
+          {isReturning
+            ? t("anniv.chooseOne", "Choose one reward")
+            : t("anniv.yourWelcome", "Your welcome reward")}
         </Box>
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 2 }}>
-          {ANNIVERSARY_REWARDS.map((r) => {
-            const active = picked === r.id;
-            const locked = Boolean(activeClaim);
-            return (
+          {eligibleRewards.map((r) => (
+            <Box
+              key={r.id}
+              sx={{
+                display: "flex", alignItems: "center", gap: 1.25,
+                padding: "11px 13px", borderRadius: "12px",
+                background: "var(--sr-panel-2)",
+                border: "1px solid var(--sr-hairline)",
+              }}
+            >
               <Box
-                key={r.id}
-                component="button"
-                type="button"
-                disabled={locked}
-                onClick={() => setPicked(r.id)}
-                aria-pressed={active}
+                aria-hidden
                 sx={{
-                  display: "flex", alignItems: "center", gap: 1.25,
-                  width: "100%", textAlign: "left",
-                  padding: "11px 13px",
-                  borderRadius: "12px",
-                  cursor: locked ? "default" : "pointer",
-                  background: active ? "rgba(217,124,149,0.12)" : "var(--sr-panel-2)",
-                  border: `1.5px solid ${active ? ROSE : "var(--sr-hairline)"}`,
-                  opacity: locked ? 0.55 : 1,
-                  transition: "border-color .15s ease, background .15s ease",
+                  width: 30, height: 30, borderRadius: "9px", flexShrink: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "rgba(217,124,149,0.12)", color: ROSE,
                 }}
               >
+                <Ticket size={16} weight="duotone" />
+              </Box>
+              <Box sx={{ minWidth: 0 }}>
                 <Box
-                  aria-hidden
                   sx={{
-                    width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    background: active ? ROSE : "transparent",
-                    border: `1.5px solid ${active ? ROSE : "var(--sr-hairline)"}`,
+                    fontFamily: fonts.body, fontSize: 13.5, fontWeight: 700,
+                    color: "var(--sr-ink)", lineHeight: 1.3,
                   }}
                 >
-                  {active && <Check size={11} weight="bold" color="#fff" />}
+                  {t(`anniv.reward.${r.id}`, r.label)}
                 </Box>
-                <Box sx={{ minWidth: 0 }}>
-                  <Box
-                    sx={{
-                      fontFamily: fonts.body, fontSize: 13.5, fontWeight: 700,
-                      color: "var(--sr-ink)", lineHeight: 1.3,
-                    }}
-                  >
-                    {t(`anniv.reward.${r.id}`, r.label)}
-                  </Box>
-                  <Box
-                    sx={{
-                      fontFamily: fonts.body, fontSize: 11.5,
-                      color: "var(--sr-muted)", mt: "2px",
-                    }}
-                  >
-                    {t(`anniv.reward.${r.id}.note`, r.note)}
-                  </Box>
+                <Box
+                  sx={{
+                    fontFamily: fonts.body, fontSize: 11.5,
+                    color: "var(--sr-muted)", mt: "2px",
+                  }}
+                >
+                  {t(`anniv.reward.${r.id}.note`, r.note)}
                 </Box>
               </Box>
-            );
-          })}
+            </Box>
+          ))}
         </Box>
 
         {/* Eligibility */}
@@ -321,18 +301,10 @@ const AnniversaryDialog: React.FC<Props> = ({ open, onClose }) => {
             {t("anniv.signInToClaim", "Sign in to claim your reward")}
           </Box>
         ) : isMember ? (
-          // Member — the reward lands straight in their profile.
+          // Member — send them to the codes wallet to collect.
           <>
-            <Box
-              component="button"
-              type="button"
-              disabled={submitting}
-              onClick={() => void handleClaim()}
-              sx={{ ...ctaSx, opacity: submitting ? 0.7 : 1 }}
-            >
-              {submitting
-                ? <CircularProgress size={16} sx={{ color: "#fff" }} />
-                : <Gift size={16} weight="bold" />}
+            <Box component="button" type="button" onClick={goCollect} sx={ctaSx}>
+              <Gift size={16} weight="bold" />
               {t("anniv.claim", "Claim reward")}
             </Box>
             <Box

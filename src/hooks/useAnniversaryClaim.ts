@@ -25,6 +25,7 @@ import {
   addDoc,
   collection,
   doc,
+  getCountFromServer,
   onSnapshot,
   query,
   serverTimestamp,
@@ -33,7 +34,7 @@ import {
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import type { AnniversaryRewardId } from "@/config/anniversary";
-import { ANNIVERSARY_REWARDS } from "@/config/anniversary";
+import { ANNIVERSARY_REWARDS, rewardsFor } from "@/config/anniversary";
 
 export interface AnniversaryClaim {
   id: string;
@@ -107,9 +108,42 @@ export function useAnniversaryClaim() {
     return () => unsub();
   }, [user]);
 
+  // 🆕 28w.90 — new vs returning decides WHICH rewards they may collect
+  //   (config/anniversary rewardsFor). Measured from DELIVERED bookings, not
+  //   from having an account: someone who signed up and never booked is still a
+  //   new guest, and would otherwise be handed the returning-guest menu.
+  const [isReturning, setIsReturning] = useState(false);
+  useEffect(() => {
+    if (!user) {
+      setIsReturning(false);
+      return;
+    }
+    let cancelled = false;
+    void getCountFromServer(
+      query(
+        collection(db, "bookings"),
+        where("userId", "==", user.uid),
+        where("status", "in", ["completed", "done"]),
+      ),
+    )
+      .then((snap) => {
+        if (!cancelled) setIsReturning(snap.data().count > 0);
+      })
+      .catch((err) => {
+        console.warn("[anniversary] booking count failed:", err?.code);
+        // Fail CLOSED: treat as a new guest. Wrongly handing a first-timer the
+        // returning-guest menu gives away a reward they haven't earned.
+        if (!cancelled) setIsReturning(false);
+      });
+    return () => { cancelled = true; };
+  }, [user]);
+
   /** The Anniversary reward is one-per-guest; a rejected claim doesn't burn it. */
   const activeClaim =
     claims.find((c) => c.status !== "rejected") ?? null;
+
+  /** The rewards THIS guest is entitled to collect. */
+  const eligibleRewards = rewardsFor(isReturning);
 
   const claimReward = useCallback(
     async (rewardId: AnniversaryRewardId): Promise<boolean> => {
@@ -144,6 +178,8 @@ export function useAnniversaryClaim() {
   return {
     signedIn: Boolean(user),
     isMember: Boolean(membership),
+    isReturning,
+    eligibleRewards,
     membership,
     activeClaim,
     claims,
