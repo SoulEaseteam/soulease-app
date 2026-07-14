@@ -50,6 +50,7 @@ import {
   durationsFor,
   formatTHB,
   wasPriceFor,
+  badgeForDuration,
 } from "@/utils/servicePricing";
 import PromoBadge from "@/components/common/PromoBadge";
 import StepDateTime from "@/components/booking/StepDateTime";
@@ -370,7 +371,12 @@ const ServiceDurationSheet: React.FC<Props> = ({
                     struck-through was-price + current price; the popular tier
                     gets the shimmering Best Seller / Best Value badge. */}
                 <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, gap: "4px" }}>
-                  {isPopular && <PromoBadge badge="bestvalue" size="sm" />}
+                  {/* 🆕 28w.69 — badge by DURATION: 90 min = 🔥 BEST VALUE,
+                      70 min = ⭐ BEST SELLER (Gentleman's/Therapeutic have no
+                      90-min tier). */}
+                  {badgeForDuration(min) && (
+                    <PromoBadge badge={badgeForDuration(min)!} size="sm" />
+                  )}
                   <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", lineHeight: 1 }}>
                     {was && (
                       <Typography component="span" sx={{ fontFamily: SANS, fontSize: "10.5px", fontWeight: 500, textDecoration: "line-through", color: "var(--sr-muted)", lineHeight: 1 }}>

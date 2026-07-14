@@ -393,3 +393,16 @@ export const BADGE_META: Record<ServiceBadge, { label: string; emoji: string; co
 export function badgeFor(serviceId: string): ServiceBadge | null {
   return SERVICE_BADGE[serviceId] ?? null;
 }
+
+/**
+ * 🆕 28w.69 (founder: "🔥 BEST VALUE คือ ตัว 90 นาที" + "⭐ BEST SELLER" on the
+ * 70-min tier) — the badge on a RATE ROW is decided by the DURATION, not the
+ * service: 90 min is the value pick (Thai/Aroma), and 70 min is the top seller
+ * (Gentleman's/Therapeutic, which have no 90-min tier). Everything else gets
+ * no badge.
+ */
+export function badgeForDuration(duration: number): ServiceBadge | null {
+  if (duration === 90) return "bestvalue";
+  if (duration === 70) return "bestseller";
+  return null;
+}
