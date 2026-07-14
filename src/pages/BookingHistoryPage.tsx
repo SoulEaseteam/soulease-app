@@ -47,7 +47,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import { formatTHB } from "@/utils/servicePricing";
 import { fmtBKK } from "@/utils/time";
-import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
+import { formatRating } from "@/utils/rating";
 import { getServiceLabel } from "@/utils/serviceCatalog";
 // 🆕 Round 28r79 — admin-created practitioners live only in Firestore
 //   `therapists/{id}`. The r68 pattern (hardcoded fast-path + Firestore
@@ -580,10 +580,9 @@ const BookingCard: React.FC<{
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.4 }}>
                 <Star size={11} color={ROSE} weight="fill" />
                 <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "var(--sr-muted)" }}>
-                  {formatRating(bayesianRatingFromAggregate(
-                    therapist.rating * (therapist.reviews ?? 0),
-                    therapist.reviews ?? 0,
-                  ))}
+                  {/* 🆕 28x.5 — same double-Bayesian bug as BookingFlowPage.
+                      therapists/{id}.rating is already the adjusted value (28x.1). */}
+                  {formatRating(therapist.rating)}
                 </Typography>
               </Box>
             )}

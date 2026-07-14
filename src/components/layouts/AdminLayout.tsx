@@ -69,6 +69,7 @@ import useAdminPresenceHeartbeat from "@/hooks/useAdminPresenceHeartbeat";
 // 🆕 Round 28s234 — Control Room redesign (shared dark tokens).
 import { adminColor, adminFont } from "@/theme/adminTheme";
 import NightsStayIcon from "@mui/icons-material/NightsStay";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 
 const DRAWER_FULL      = 240;
 const DRAWER_COLLAPSED = 60;
@@ -134,7 +135,8 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Blocked",   th: "อุปกรณ์ที่บล็อก",     path: "/admin/blocked-devices",   icon: <BlockIcon /> },
       // 🆕 Round 28s234 — audit log viewer (Phase 4).
       { label: "Audit Log", th: "ประวัติการทำงานแอดมิน", path: "/admin/audit-log",         icon: <ListAltIcon /> },
-      { label: "Settings",  th: "ตั้งค่าขั้นสูง",      path: "/admin/advanced-settings", icon: <SettingsIcon /> },
+      { label: "My Account", th: "บัญชีของฉัน · เปลี่ยนรหัสผ่าน", path: "/admin/account",          icon: <AccountCircleIcon /> },
+      { label: "Settings",   th: "ตั้งค่าขั้นสูง",              path: "/admin/advanced-settings", icon: <SettingsIcon /> },
     ],
   },
 ];
@@ -411,8 +413,13 @@ const AdminLayout: React.FC = () => {
               onClose={() => setAnchorEl(null)}
               slotProps={{ paper: { sx: { background: adminColor.panel2, color: adminColor.text, border: `1px solid ${adminColor.line}` } } }}
             >
-              <MenuItem onClick={() => { void navigate("/admin/advanced-settings"); setAnchorEl(null); }}>Settings</MenuItem>
-              <MenuItem onClick={() => { void navigate("/profile"); setAnchorEl(null); }}>My Profile</MenuItem>
+              {/* 🆕 28x.2 (founder: "admin ไม่มี Settings ของตัวเอง หรอ ว่าเป็นใคร")
+                  — "My Profile" used to send an admin to /profile, the CUSTOMER
+                  page (booking history, saved therapists). It now goes to their
+                  OWN account. "Settings" is renamed to what it actually is: the
+                  system config, not anything personal. */}
+              <MenuItem onClick={() => { void navigate("/admin/account"); setAnchorEl(null); }}>My Account</MenuItem>
+              <MenuItem onClick={() => { void navigate("/admin/advanced-settings"); setAnchorEl(null); }}>System Settings</MenuItem>
               <MenuItem onClick={logout} sx={{ color: adminColor.accent }}>Logout</MenuItem>
             </Menu>
           </Box>

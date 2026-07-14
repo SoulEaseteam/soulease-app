@@ -43,6 +43,7 @@ import React, { useEffect, useState } from "react";
 import { Box, Typography, Switch, TextField, Button, Snackbar, Alert, CircularProgress } from "@mui/material";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { DEFAULT_TRAVEL_BANDS, travelBudgetForKm, type TravelBand } from "@/utils/taxiFare";
 import { Clock, BellRinging, CreditCard, Wallet, FloppyDisk, Warning, CheckCircle, MoonStars } from "phosphor-react";
 import { adminColor, adminFont } from "@/theme/adminTheme";
 import { SectionCard, fieldSx } from "./therapistFormKit";
@@ -61,6 +62,9 @@ interface PublicRules {
   grabBookingFee: number;
   rushSurgePct: number;
   peakSurgePct: number;
+  // 🆕 28x.6 (founder: "เทคซี่ละ") — the travel-fee table. Every other fare knob
+  //   was already editable here; the ONE number the guest actually pays was not.
+  travelBands: TravelBand[];
 }
 const defaultPublicRules: PublicRules = {
   maintenanceMode: false,
@@ -71,6 +75,7 @@ const defaultPublicRules: PublicRules = {
   grabBookingFee: 20,
   rushSurgePct: 25,
   peakSurgePct: 15,
+  travelBands: DEFAULT_TRAVEL_BANDS,
 };
 
 // telegramEnabled is real (see functions/src/index.ts). The rest is
@@ -222,31 +227,85 @@ const AdminAdvancedSettingsPage: React.FC = () => {
           </Row>
         </SectionCard>
 
-        {/* 📍 Travel fare & Distance — actual round-trip + Grab fee + surge
-             (Round 28s309). */}
-        <SectionCard icon={<CreditCard size={13} weight="bold" />} title="Travel Fare & Distance · ค่าเดินทาง">
+        {/* 📍 Travel fee — 🆕 28x.6 (founder: "เทคซี่ละ")
+             REWRITTEN. This section used to explain a GrabCar meter formula
+             (meter x round-trip multiplier + booking fee x surge) and offer four
+             fields to tune it. Since 28w.11 the booking charges a FLAT BAND TABLE
+             and ignores all of that: roundTripMultiplier, rushSurgePct and
+             peakSurgePct are referenced nowhere outside taxiFare.ts, and
+             grabBookingFee only ever appeared in a customer tooltip — it was never
+             added to a bill. So the page described a formula we do not use, let her
+             tune knobs that changed nothing, and did NOT let her edit the one number
+             a guest actually pays. Those four fields are gone; the table is here. */}
+        <SectionCard icon={<CreditCard size={13} weight="bold" />} title="Travel Fee · ค่าเดินทาง">
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
-          <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
-            ค่าเดินทาง = (มิเตอร์เที่ยวเดียว × ตัวคูณไป-กลับ + ค่าเรียกรถ×2) × (1 + surge ช่วงเวลา + ค่าฝน) · surge/ฝนคิดจากเวลานัด (จองล่วงหน้าคาดการณ์ไม่ได้แบบ Grab สด)
+          <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.5 }}>
+            ค่าเดินทาง = <b>เหมาตามระยะจริง (ระยะถนน)</b> · ไม่ใช่มิเตอร์ ไม่มี surge ไม่บวกค่าเรียกรถ ·
+            เกินระยะสูงสุดด้านล่าง → ให้ลูกค้าติดต่อคอนเซียร์จแทนคิดราคาอัตโนมัติ
           </Typography>
-          <TextField label="ตัวคูณค่าเดินทางไป-กลับ" fullWidth type="number" margin="dense" sx={fieldSx}
-            helperText="2.0 = ไปเต็ม + กลับเต็มตามจริง · ต้องมากกว่า 1"
-            value={rules.roundTripMultiplier}
-            onChange={(e) => setRules((p) => ({ ...p, roundTripMultiplier: Math.max(1.01, Number(e.target.value)) }))} />
-          <TextField label="ค่าเรียกรถ Grab ต่อเที่ยว (บาท)" fullWidth type="number" margin="dense" sx={fieldSx}
-            helperText={`คิดต่อเที่ยว · ไป-กลับ = ×2 = +฿${(Math.max(0, rules.grabBookingFee) * 2).toLocaleString()} ต่อการจอง`}
-            value={rules.grabBookingFee}
-            onChange={(e) => setRules((p) => ({ ...p, grabBookingFee: Math.max(0, Number(e.target.value)) }))} />
-          <TextField label="Surge ชั่วโมงเร่งด่วน (%)" fullWidth type="number" margin="dense" sx={fieldSx}
-            helperText="รถติด/รถหยุดนิ่ง 07:00–09:00 และ 17:00–20:00 · 0 = ปิด"
-            value={rules.rushSurgePct}
-            onChange={(e) => setRules((p) => ({ ...p, rushSurgePct: Math.min(200, Math.max(0, Number(e.target.value))) }))} />
-          <TextField label="Surge ช่วงพีค/แออัด (%)" fullWidth type="number" margin="dense" sx={fieldSx}
-            helperText="ดึกดีมานด์สูง 21:00–02:00 · 0 = ปิด"
-            value={rules.peakSurgePct}
-            onChange={(e) => setRules((p) => ({ ...p, peakSurgePct: Math.min(200, Math.max(0, Number(e.target.value))) }))} />
+
+          <Typography sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: adminColor.dim, mb: 0.75 }}>
+            ตารางค่าเดินทาง
+          </Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 1.5 }}>
+            {rules.travelBands.map((b, i) => (
+              <Box key={i} sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                <Typography sx={{ fontSize: 12, color: adminColor.dim, width: 34, flexShrink: 0 }}>ไม่เกิน</Typography>
+                <TextField
+                  type="number" size="small" label="กม." sx={{ ...fieldSx, width: 100 }}
+                  value={b.maxKm}
+                  onChange={(e) => {
+                    const v = Math.max(1, Number(e.target.value));
+                    setRules((p) => ({ ...p, travelBands: p.travelBands.map((x, j) => j === i ? { ...x, maxKm: v } : x) }));
+                  }}
+                />
+                <Typography sx={{ fontSize: 12, color: adminColor.dim, flexShrink: 0 }}>→</Typography>
+                <TextField
+                  type="number" size="small" label="ค่าเดินทาง (฿)" sx={{ ...fieldSx, width: 140 }}
+                  value={b.fareTHB}
+                  onChange={(e) => {
+                    const v = Math.max(1, Number(e.target.value));
+                    setRules((p) => ({ ...p, travelBands: p.travelBands.map((x, j) => j === i ? { ...x, fareTHB: v } : x) }));
+                  }}
+                />
+                <Button
+                  size="small" variant="text"
+                  onClick={() => setRules((p) => ({ ...p, travelBands: p.travelBands.filter((_, j) => j !== i) }))}
+                  sx={{ minWidth: "auto", color: adminColor.red, textTransform: "none", fontWeight: 700, fontSize: 12 }}
+                >
+                  ลบ
+                </Button>
+              </Box>
+            ))}
+            <Button
+              size="small" variant="text"
+              onClick={() => setRules((p) => ({
+                ...p,
+                travelBands: [...p.travelBands, { maxKm: (p.travelBands.at(-1)?.maxKm ?? 0) + 5, fareTHB: (p.travelBands.at(-1)?.fareTHB ?? 0) + 100 }],
+              }))}
+              sx={{ alignSelf: "flex-start", color: adminColor.accent, textTransform: "none", fontWeight: 700, fontSize: 12.5 }}
+            >
+              + เพิ่มช่วง
+            </Button>
+          </Box>
+
+          {/* Live preview — a wrong band is far easier to see as a fare than as a table. */}
+          <Typography sx={{ fontSize: 11, color: adminColor.dim, mb: 1.5, lineHeight: 1.7 }}>
+            ลองคิดจริง:{" "}
+            {[3, 8, 12, 18, 25].map((km) => {
+              const f = travelBudgetForKm(km);
+              return (
+                <Box key={km} component="span" sx={{ mr: 1.25 }}>
+                  {km} กม. → <b style={{ color: adminColor.text }}>{f === null ? "คอนเซียร์จเสนอราคา" : `฿${f.toLocaleString()}`}</b>
+                </Box>
+              );
+            })}
+            <br />
+            <i>(ตัวอย่างนี้ใช้ค่าที่บันทึกแล้ว — กดบันทึกก่อนถึงจะอัปเดต)</i>
+          </Typography>
+
           <TextField label="ระยะทางสูงสุดก่อนต้องยืนยันกับแอดมิน (กม.)" fullWidth type="number" margin="dense" sx={fieldSx}
-            helperText="เกินระยะนี้ระบบให้ติดต่อแอดมินยืนยันแทนคิดราคาอัตโนมัติ (ตอนนี้ 15)"
+            helperText="เกินระยะนี้ระบบให้ติดต่อคอนเซียร์จแทนคิดราคาอัตโนมัติ"
             value={rules.maxDistance} onChange={(e) => setRules((p) => ({ ...p, maxDistance: Math.max(1, Number(e.target.value)) }))} />
         </SectionCard>
 

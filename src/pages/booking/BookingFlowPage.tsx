@@ -95,7 +95,7 @@ import {
   calcTravelBudgetResult,
   ADMIN_QUOTE_KM,
   DISPATCH_BASE,
-  GRAB_BOOKING_FEE,
+  travelBands,
 } from "@/utils/taxiFare";
 // 🆕 Round 28b35 — Live therapist Holiday/override gate.
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
@@ -127,7 +127,7 @@ import { priceForDuration, formatTHB, isServiceEnabled } from "@/utils/servicePr
 // 🆕 28w.43 — freeze the split on admin-created (born-confirmed) bookings; a
 //   customer booking (born pending) gets stamped when the admin confirms it.
 import { stampSplit } from "@/utils/commission";
-import { bayesianRatingFromAggregate, formatRating } from "@/utils/rating";
+import { formatRating } from "@/utils/rating";
 import services from "@/data/services";
 import { getServiceById } from "@/utils/serviceCatalog";
 import therapistsData from "@/data/therapists";
@@ -187,6 +187,8 @@ import {
 import { useReferralRedeemCount } from "@/hooks/useReferralRedeemCount";
 // 🆕 Round 28s84 — shared promo kill-switch (home banner + discount field).
 import { PROMOS_ENABLED } from "@/config/featureFlags";
+import { bookingAuthor } from "@/utils/bookingAuthor";
+import { useAdminIdentity } from "@/hooks/useAdminIdentity";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell.
 // 🆕 Round 28r56 — Phase 3.5 responsive typography for headings.
 import { responsiveShellNarrow, responsiveType } from "@/theme/breakpoints";
@@ -245,6 +247,8 @@ const BookingFlowPage: React.FC = () => {
   //   normally so the booking record stays clean.
   const { user, role } = useAuth();
   const isAdminBooking = role === "admin";
+  // 🆕 28x.3 — the concierge's own phone, stamped onto anything they book.
+  const { phone: adminPhone } = useAdminIdentity();
 
   // ── Pre-fill from URL params (DetailPage StickyBookCTA forwards these)
   const preService = searchParams.get("service");
@@ -1224,6 +1228,16 @@ const BookingFlowPage: React.FC = () => {
       // wasn't valid".
       const effectiveTotalPrice = first10Abused ? Math.round(total + discountAmount) : total;
       const ref = await addDoc(collection(db, "bookings"), {
+        // 🆕 28x.3 (founder: "จะระบุได้ไง ใครจอง") — this page is ALSO how the
+        //   concierge books (isAdminBooking), and it recorded no author at all.
+        //   A guest booking themselves stamps createdBy:"guest" and no identity.
+        ...bookingAuthor({
+          isAdmin: isAdminBooking,
+          uid: user?.uid,
+          email: user?.email,
+          displayName: user?.displayName,
+          phone: adminPhone,
+        }),
         userId: user?.uid ?? null,
         therapistId: form.therapistId,
         therapistName: therapist.name,
@@ -1755,13 +1769,16 @@ const BookingFlowPage: React.FC = () => {
                   }}
                 >
                   ★{" "}
-                  {therapist
-                    ? formatRating(
-                        bayesianRatingFromAggregate(
-                          therapist.rating * (therapist.reviews ?? 0),
-                          therapist.reviews ?? 0
-                        )
-                      )
+                  {/* 🆕 28x.5 (founder: screenshot showed 4.5 · 0 reviews here while
+                      every other screen said 4.7 · 10) — this was applying the
+                      Bayesian smoothing a SECOND time. Since 28x.1, therapists/{id}
+                      .rating is ALREADY the Bayesian display value, so multiplying
+                      it back out by the review count to fake a "sum" and re-smoothing
+                      pulled it toward the 4.5 prior all over again: 4.7 → 4.6, and
+                      4.5 flat for anyone the doc hadn't been synced for.
+                      The doc value IS the number. Show it. */}
+                  {therapist && (therapist.reviews ?? 0) > 0
+                    ? formatRating(therapist.rating)
                     : "—"}
                 </Typography>
                 <Typography
@@ -2123,17 +2140,21 @@ const BookingFlowPage: React.FC = () => {
                     >
                       {t("booking.travelTip.title", "Travel Fee · SunRed Smart Routing")}
                     </Typography>
+                    {/* 🆕 28x.6 (founder: "เทคซี่ละ") — this tooltip explained a
+                        GrabCar METER to the guest: a ฿45 flag-fall, per-km tiers,
+                        and a booking fee. We have not charged that since 28w.11 —
+                        travel is a flat band by real distance, and the booking fee
+                        was never added to a bill. So the guest was reading a fare
+                        breakdown that did not produce the number on their own
+                        screen. It now shows the table we actually charge, read from
+                        the same live config the price comes from. */}
                     <Typography sx={{ fontFamily: SANS, fontSize: "11.5px", lineHeight: 1.6 }}>
-                      ≤ 1 km · <strong>฿45</strong> base fare
-                      <br />
-                      1–6 km · +฿8/km
-                      <br />
-                      6–40 km · +฿7/km
-                      <br />
-                      40+ km · +฿10/km
-                      <br />
-                      +฿{GRAB_BOOKING_FEE} · {t("booking.travelTip.bookingFee", "booking fee / leg")}
-                      <br />
+                      {travelBands().map((b) => (
+                        <React.Fragment key={b.maxKm}>
+                          ≤ {b.maxKm} km · <strong>฿{b.fareTHB.toLocaleString()}</strong>
+                          <br />
+                        </React.Fragment>
+                      ))}
                       &gt; {ADMIN_QUOTE_KM} km ·{" "}
                       {t("booking.conciergeQuote", "Concierge quote")}
                       <Box

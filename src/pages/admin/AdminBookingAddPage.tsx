@@ -56,6 +56,8 @@ import {
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
+import { useAdminIdentity } from "@/hooks/useAdminIdentity";
+import { bookingAuthor } from "@/utils/bookingAuthor";
 
 // ── constants ─────────────────────────────────────────────────────────
 const SERIF = adminFont.serif;
@@ -182,6 +184,8 @@ function buildMapUrl(placeName: string, lat: number | null, lng: number | null):
 
 // ── component ─────────────────────────────────────────────────────────
 const AdminBookingAddPage: React.FC = () => {
+  // 🆕 28x.3 — who is creating this reservation (+ their phone).
+  const { uid, email, displayName, phone: adminPhone } = useAdminIdentity();
   const navigate = useNavigate();
   const { ready, loadIfNeeded } = useGoogleMaps();
 
@@ -370,7 +374,16 @@ const AdminBookingAddPage: React.FC = () => {
         ...stampSplit({ serviceId: selectedService.id, servicePrice, duration }),
         payment,
         createdAt:     Timestamp.now(),
-        createdBy:     "admin",
+        // 🆕 28x.3 (founder: "จะระบุได้ไง ใครจอง") — was the literal string
+        //   "admin", which says a human in the back office did it and nothing
+        //   else. Stamp WHO.
+        ...bookingAuthor({
+          isAdmin: true,
+          uid,
+          email,
+          displayName,
+          phone: adminPhone,
+        }),
       });
 
       // Write bookingCode after we have the doc ID

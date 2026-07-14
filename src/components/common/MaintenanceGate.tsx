@@ -16,7 +16,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { doc, collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
-import { applyLiveFareConfig } from "@/utils/taxiFare";
+import { applyLiveFareConfig, type TravelBand } from "@/utils/taxiFare";
 import { applyLivePromosEnabled } from "@/config/featureFlags";
 // 🆕 28w.96 — the Anniversary campaign is admin-editable now; push it in from
 //   publicRules the same way promos/pricing are.
@@ -63,6 +63,8 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
           grabBookingFee: data?.grabBookingFee,
           rushSurgePct: data?.rushSurgePct,
           peakSurgePct: data?.peakSurgePct,
+          // 🆕 28x.6 — the travel-fee table itself (the number a guest pays).
+          travelBands: data?.travelBands as TravelBand[] | undefined,
         });
         applyLivePromosEnabled(data?.promosEnabled === true);
         applyLiveAnniversaryConfig(
