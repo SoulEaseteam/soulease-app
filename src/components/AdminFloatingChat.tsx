@@ -70,6 +70,22 @@ const GREETING_LS_KEY = "sunred.adminChat.greeted";
 const GREETING_SHOW_AFTER_MS = 1800; // wait briefly so it doesn't feel spammy
 const GREETING_AUTO_DISMISS_MS = 12000; // self-hide after a beat
 
+// 🆕 Round 28x.7 (audit fix #4) — durable in-memory dismiss fallback.
+//   When localStorage is blocked (private/incognito, storage disabled),
+//   the persisted "greeted" flag silently fails to write, so the greeting
+//   used to re-appear on every route change / remount. This module-scope
+//   flag survives remounts within the session even when storage can't,
+//   so once dismissed it stays dismissed.
+let greetingDismissedThisSession = false;
+function markGreetingSeen() {
+  greetingDismissedThisSession = true;
+  try {
+    window.localStorage.setItem(GREETING_LS_KEY, "1");
+  } catch {
+    /* private mode / quota — the in-memory flag above still holds */
+  }
+}
+
 interface ChatOption {
   title: string;
   /** External URL or internal route */
@@ -135,21 +151,25 @@ const AdminFloatingChat: React.FC = () => {
   // Per-mode greeting copy — friendlier than the static "Hi! Need help"
   // because each mode answers a different unspoken guest question:
   // prime → "is anyone there now?"; off → "are you closed?"; etc.
+  // 🆕 Round 28x.7 (audit fix #4) — emoji stripped (founder no-emoji-in-
+  //   production rule). These are only the English fallbacks now; the
+  //   real copy comes from the chat.* i18n keys added in all 5 locales,
+  //   so the widget no longer renders English on a Thai/zh/ja/ko device.
   const greetingByMode: Record<typeof concierge.mode, { title: string; body: string }> = {
     prime: {
-      title: "🌙 Concierge live · tonight's roster",
-      body: "Tap to chat — practitioner dispatched in <40 min.",
+      title: "Concierge live · tonight's roster",
+      body: "Tap to chat — a practitioner is dispatched in under 40 minutes.",
     },
     evening: {
-      title: "🌅 Slots opening for late-night",
-      body: "Tap to lock your 22:00 — 02:00 window.",
+      title: "Slots opening for late-night",
+      body: "Tap to lock your 22:00 – 02:00 window.",
     },
     day: {
-      title: "☀ Plan tonight's ritual",
+      title: "Plan tonight's ritual",
       body: "Tap to chat — 22:00 onward fills fastest.",
     },
     off: {
-      title: "☕ Concierge resumes at 09:00",
+      title: "Concierge resumes at 09:00",
       body: "Leave a message — we'll confirm at sunrise.",
     },
   };
@@ -160,7 +180,15 @@ const AdminFloatingChat: React.FC = () => {
   // 🆕 First-visit greeting bubble — shows once, never again.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const seen = window.localStorage.getItem(GREETING_LS_KEY);
+    // 🆕 28x.7 — also honour the in-memory flag so a storage-blocked
+    //   device doesn't re-show the greeting on every remount.
+    if (greetingDismissedThisSession) return;
+    let seen = false;
+    try {
+      seen = !!window.localStorage.getItem(GREETING_LS_KEY);
+    } catch {
+      /* storage blocked — fall back to the in-memory flag only */
+    }
     if (seen) return;
     const showTimer = window.setTimeout(() => {
       setShowGreeting(true);
@@ -173,11 +201,7 @@ const AdminFloatingChat: React.FC = () => {
     if (!showGreeting) return;
     const hideTimer = window.setTimeout(() => {
       setShowGreeting(false);
-      try {
-        window.localStorage.setItem(GREETING_LS_KEY, "1");
-      } catch {
-        /* private mode / quota — non-fatal */
-      }
+      markGreetingSeen();
     }, GREETING_AUTO_DISMISS_MS);
     return () => window.clearTimeout(hideTimer);
   }, [showGreeting]);
@@ -185,11 +209,7 @@ const AdminFloatingChat: React.FC = () => {
   // Opening the chat panel also dismisses the greeting permanently.
   const dismissGreeting = () => {
     setShowGreeting(false);
-    try {
-      window.localStorage.setItem(GREETING_LS_KEY, "1");
-    } catch {
-      /* ignore */
-    }
+    markGreetingSeen();
   };
 
   // ESC closes
@@ -294,7 +314,7 @@ const AdminFloatingChat: React.FC = () => {
                   textTransform: "uppercase",
                 }}
               >
-                Concierge
+                {t("chat.header.eyebrow", "Concierge")}
               </Typography>
 
               <Typography
@@ -309,7 +329,7 @@ const AdminFloatingChat: React.FC = () => {
                   marginTop: "3px",
                 }}
               >
-                Chat in your language
+                {t("chat.header.title", "Chat in your language")}
               </Typography>
 
               <Typography
@@ -576,15 +596,26 @@ const AdminFloatingChat: React.FC = () => {
                 }}
                 size="small"
                 sx={{
-                  width: 22,
-                  height: 22,
+                  // 🆕 Round 28x.7 (audit fix #4) — was a 22px target that
+                  //   shared the tap zone with the bubble's own open-on-tap
+                  //   handler, so a near-miss opened the panel instead of
+                  //   dismissing (read as "the X doesn't work"). Enlarged to
+                  //   a comfortable 34px hit area with its own solid chip so
+                  //   it's unambiguously the close control.
+                  width: 34,
+                  height: 34,
+                  flexShrink: 0,
                   color: "var(--sr-muted)",
-                  marginTop: "-2px",
-                  marginRight: "-4px",
-                  "&:hover": { color: brand.red },
+                  marginTop: "-6px",
+                  marginRight: "-6px",
+                  borderRadius: "999px",
+                  "&:hover": {
+                    color: brand.red,
+                    background: "var(--sr-hairline)",
+                  },
                 }}
               >
-                <CloseRoundedIcon sx={{ fontSize: 14 }} />
+                <CloseRoundedIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Box>
           </Box>

@@ -564,5 +564,17 @@
   "codes.points": "ポイント",
   "codes.worth": "次回ご予約で{{thb}}バーツ割引",
   "codes.backCredited": "これまでの{{visits}}回のご利用（合計{{spent}}バーツ）から自動的に付与されました。ご予約時にコンシェルジュへお申し付けください。",
-  "anniv.bookingRef": "ご予約番号"
+  "anniv.bookingRef": "ご予約番号",
+  "common.dismiss": "閉じる",
+  "chat.header.eyebrow": "コンシェルジュ",
+  "chat.header.title": "あなたの言語でチャット",
+  "chat.greet.eyebrow": "コンシェルジュ",
+  "chat.greet.title.prime": "コンシェルジュ対応中 · 本日のセラピスト",
+  "chat.greet.body.prime": "タップでチャット — 40分以内に手配いたします",
+  "chat.greet.title.evening": "深夜枠の受付開始",
+  "chat.greet.body.evening": "タップで 22:00〜02:00 を確保",
+  "chat.greet.title.day": "今夜のトリートメントを予約",
+  "chat.greet.body.day": "タップでチャット — 22:00以降が最も早く埋まります",
+  "chat.greet.title.off": "コンシェルジュは 09:00 に再開",
+  "chat.greet.body.off": "メッセージを残してください — 朝にご連絡します"
 }

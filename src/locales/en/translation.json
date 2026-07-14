@@ -564,5 +564,17 @@
   "codes.points": "SunPoints",
   "codes.worth": "Worth ฿{{thb}} off your next booking",
   "codes.backCredited": "Credited automatically from your {{visits}} previous sessions (฿{{spent}} spent). Tell the concierge when you book to redeem.",
-  "anniv.bookingRef": "Booking ref"
+  "anniv.bookingRef": "Booking ref",
+  "common.dismiss": "Dismiss",
+  "chat.header.eyebrow": "Concierge",
+  "chat.header.title": "Chat in your language",
+  "chat.greet.eyebrow": "Concierge",
+  "chat.greet.title.prime": "Concierge live · tonight's roster",
+  "chat.greet.body.prime": "Tap to chat — a practitioner is dispatched in under 40 minutes.",
+  "chat.greet.title.evening": "Slots opening for late-night",
+  "chat.greet.body.evening": "Tap to lock your 22:00 – 02:00 window.",
+  "chat.greet.title.day": "Plan tonight's ritual",
+  "chat.greet.body.day": "Tap to chat — 22:00 onward fills fastest.",
+  "chat.greet.title.off": "Concierge resumes at 09:00",
+  "chat.greet.body.off": "Leave a message — we'll confirm at sunrise."
 }

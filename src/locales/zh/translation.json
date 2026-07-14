@@ -659,5 +659,17 @@
   "codes.points": "分",
   "codes.worth": "下次预约可抵扣 {{thb}} 泰铢",
   "codes.backCredited": "根据您过往 {{visits}} 次服务（累计消费 {{spent}} 泰铢）自动发放。预约时告知管家即可抵扣。",
-  "anniv.bookingRef": "预约编号"
+  "anniv.bookingRef": "预约编号",
+  "common.dismiss": "关闭",
+  "chat.header.eyebrow": "礼宾",
+  "chat.header.title": "用您的语言聊天",
+  "chat.greet.eyebrow": "礼宾",
+  "chat.greet.title.prime": "礼宾在线 · 今晚可预约",
+  "chat.greet.body.prime": "点按聊天 — 技师 40 分钟内到达",
+  "chat.greet.title.evening": "深夜时段开放预订",
+  "chat.greet.body.evening": "点按锁定 22:00 – 02:00 时段",
+  "chat.greet.title.day": "预约今晚的疗程",
+  "chat.greet.body.day": "点按聊天 — 22:00 后最快满",
+  "chat.greet.title.off": "礼宾将于 09:00 恢复",
+  "chat.greet.body.off": "留言给我们 — 清晨为您确认"
 }

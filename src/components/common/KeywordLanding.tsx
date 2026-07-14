@@ -1,28 +1,37 @@
 // src/components/common/KeywordLanding.tsx
 //
-// 🆕 Round 28s304 (founder: "ได้ทั้งหมด") — drop-in replacement for the
-//   bare `<Navigate to="/" replace>` on the district SEO routes
-//   (/outcall-massage-sukhumvit etc.). Behaviour for humans is unchanged
-//   — they still get bounced to the home page — but first we record WHICH
-//   district keyword page pulled them in, so the Analytics dashboard can
-//   show which SEO page drives traffic. The capture is a client-only
-//   side effect (recordLandingArea no-ops when there's no window), so the
-//   prerendered static shell for these routes is byte-identical: this
-//   component still renders exactly `<Navigate to="/" replace>` during
-//   prerender.
+// 🆕 Round 28x.7 (audit fix #3) — district SEO routes now render a REAL
+//   page instead of `<Navigate to="/" replace>`.
 //
-//   The write is done in the render body (not an effect) on purpose: the
-//   <Navigate> unmounts this component and mounts HomePage in the same
-//   commit, and HomePage's home_view effect must read a value that's
-//   already in sessionStorage — a useEffect here could race that read.
+//   The old redirect meant that when Googlebot executed JS the URL
+//   bounced to `/` — rendered DOM ≠ the self-referential canonical in
+//   the prerendered shell, so Google demoted these as soft-redirect /
+//   thin pages and dropped the exact district keywords the strategy
+//   depends on (paid ads are banned for this vertical, so these organic
+//   pages ARE the acquisition channel).
+//
+//   Now KeywordLanding renders <HomePage district={…}> — the full live
+//   home experience (practitioner roster, services, membership) plus a
+//   district-specific hero band + district title/description/H1. The
+//   hydrated page matches its canonical and reads as a genuine localized
+//   landing page. Still records which district pulled the visitor in
+//   for the Analytics dashboard.
+//
+//   Unknown area (should never happen — all 5 are wired in App.tsx) →
+//   falls back to a plain redirect home so a typo can't render a broken
+//   district band.
 
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { recordLandingArea } from "@/utils/analytics";
+import { districtByArea } from "@/data/districts";
+import HomePage from "@/pages/HomePage";
 
 const KeywordLanding: React.FC<{ area: string }> = ({ area }) => {
   recordLandingArea(area);
-  return <Navigate to="/" replace />;
+  const district = districtByArea(area);
+  if (!district) return <Navigate to="/" replace />;
+  return <HomePage district={district} />;
 };
 
 export default KeywordLanding;

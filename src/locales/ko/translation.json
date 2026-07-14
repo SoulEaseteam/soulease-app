@@ -564,5 +564,17 @@
   "codes.points": "포인트",
   "codes.worth": "다음 예약에서 {{thb}}바트 할인",
   "codes.backCredited": "지난 {{visits}}회 이용 내역(총 {{spent}}바트)을 기준으로 자동 적립되었습니다. 예약 시 컨시어지에게 알려주시면 사용 가능합니다.",
-  "anniv.bookingRef": "예약 번호"
+  "anniv.bookingRef": "예약 번호",
+  "common.dismiss": "닫기",
+  "chat.header.eyebrow": "컨시어지",
+  "chat.header.title": "당신의 언어로 채팅",
+  "chat.greet.eyebrow": "컨시어지",
+  "chat.greet.title.prime": "컨시어지 대기 중 · 오늘 밤 로스터",
+  "chat.greet.body.prime": "탭하여 채팅 — 40분 이내 방문",
+  "chat.greet.title.evening": "심야 예약 오픈",
+  "chat.greet.body.evening": "탭하여 22:00 – 02:00 예약",
+  "chat.greet.title.day": "오늘 밤 트리트먼트 예약",
+  "chat.greet.body.day": "탭하여 채팅 — 22:00 이후가 가장 빨리 마감",
+  "chat.greet.title.off": "컨시어지는 09:00에 재개",
+  "chat.greet.body.off": "메시지를 남겨 주세요 — 아침에 확인해 드립니다"
 }

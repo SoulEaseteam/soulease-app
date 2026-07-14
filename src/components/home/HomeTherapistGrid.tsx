@@ -44,6 +44,14 @@ const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 interface Therapist extends TherapistType {
   computedStatus?: Avail;
   computedNext?: string | null;
+  // 🆕 Round 28x.7 (audit fix #1) — the guaranteed-unique Firestore
+  //   document id, kept separate from the mutable `id` field (which an
+  //   admin can type freely and could collide across two docs). Used as
+  //   the React list key so a duplicate `id` can never hand two sibling
+  //   cards the same key — the bug that rendered the 2nd card as a bare
+  //   photo (missing name/price/CTA) and can trigger the Firestore
+  //   "INTERNAL ASSERTION FAILED" reconciler cascade.
+  _docId?: string;
 }
 
 // Round 28s2 — Areas chip strip + BANGKOK_AREAS table removed (founder
@@ -61,6 +69,11 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
 }) => {
   const [therapists, setTherapists] = useState<Therapist[]>([]);
   const [loading, setLoading] = useState(true);
+  // 🆕 Round 28x.7 (audit fix #2) — the therapists listener previously
+  //   had NO error callback and cleared `loading` only on success, so a
+  //   permission error / network drop left the home page spinning
+  //   forever. Track the failure so we can show a real error state.
+  const [loadError, setLoadError] = useState(false);
   const [searchQ, setSearchQ] = useState("");
   // 🆕 Round 28r4 — current concierge mode for the grid header phrase.
   const concierge = useConciergeMode();
@@ -187,7 +200,9 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
       const raw: Therapist[] = [];
       snap.forEach((docSnap) => {
         const data = docSnap.data() as Therapist;
-        raw.push({ ...data, id: data.id || docSnap.id });
+        // Keep the mutable `id` field (used for nav / bookings) but always
+        // carry the immutable Firestore doc id for the React key.
+        raw.push({ ...data, id: data.id || docSnap.id, _docId: docSnap.id });
       });
 
       // 🆕 Round 28s153 — TOP RATED is the daily bestseller. Picked
@@ -225,6 +240,15 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
       });
 
       setTherapists(enriched);
+      setLoadError(false);
+      setLoading(false);
+    },
+    (err) => {
+      // 🆕 Round 28x.7 (audit fix #2) — error path: stop the spinner and
+      //   surface a recoverable state instead of hanging on loading.
+      // eslint-disable-next-line no-console
+      console.warn("[HomeTherapistGrid] therapists listener error", err);
+      setLoadError(true);
       setLoading(false);
     });
     return () => unsubscribe();
@@ -481,6 +505,67 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
         >
           <CircularProgress size={28} sx={{ color: "#D97C95" }} />
         </Box>
+      ) : loadError ? (
+        // 🆕 Round 28x.7 (audit fix #2) — recoverable error state. Was:
+        //   infinite spinner when the therapists listener failed.
+        <Box
+          sx={{
+            margin: "0 14px",
+            textAlign: "center",
+            padding: "40px 14px",
+            borderRadius: "16px",
+            background: "var(--sr-panel)",
+            border: "1px solid var(--sr-hairline)",
+          }}
+        >
+          <Typography
+            sx={{
+              fontFamily: fonts.heading,
+              fontSize: "15px",
+              color: "var(--sr-ink)",
+              fontWeight: 600,
+            }}
+          >
+            {"Couldn't load the roster just now"}
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontSize: "12px",
+              color: "var(--sr-muted)",
+              marginTop: "4px",
+            }}
+          >
+            {"Please refresh — or message the concierge and we'll arrange everything directly."}
+          </Typography>
+          <Box
+            component="a"
+            href={whatsappDeepLink(
+              "Hi SunRed concierge, I'd like to book an outcall massage tonight — who's available?",
+            )}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              marginTop: "18px",
+              padding: "11px 22px",
+              borderRadius: "999px",
+              background: gradients.primary,
+              color: "var(--sr-ink)",
+              fontFamily: SANS,
+              fontSize: "13px",
+              fontWeight: 700,
+              letterSpacing: "0.01em",
+              textDecoration: "none",
+              boxShadow: "var(--sr-card-shadow)",
+            }}
+          >
+            Chat with concierge
+            <ArrowForwardRoundedIcon sx={{ fontSize: 16 }} />
+          </Box>
+        </Box>
       ) : visible.length === 0 ? (
         <Box
           sx={{
@@ -604,7 +689,7 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
             >
               {visible.map((t, i) => (
                 <TherapistMinimalCard
-                  key={t.id}
+                  key={t._docId ?? t.id}
                   therapist={t}
                   computedStatus={t.computedStatus}
                   distanceKm={liveDistanceKm(t)}

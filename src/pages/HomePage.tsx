@@ -50,8 +50,25 @@ import { responsiveShell } from "@/theme/breakpoints";
 
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 
-const HomePage: React.FC = () => {
+// 🆕 Round 28x.7 (audit fix #3) — optional district context. When set
+//   (via the /outcall-massage-* routes → KeywordLanding), the home page
+//   renders a district-specific hero band + district title/description/H1
+//   instead of the generic home meta, so the SEO landing URL hydrates
+//   into a genuine localized page (no more redirect-to-home).
+import type { District } from "@/data/districts";
+import { districtContent, districtMeta } from "@/data/districts";
+
+interface HomePageProps {
+  district?: District;
+}
+
+const HomePage: React.FC<HomePageProps> = ({ district }) => {
   const { t, i18n } = useTranslation();
+
+  const districtCopy = district
+    ? districtContent(district, i18n.language)
+    : null;
+  const districtSeo = district ? districtMeta(district, i18n.language) : null;
 
   // 🆕 Round 28r7 — Capture referral code from URL on mount.
   //   Idempotent + fully no-op when no `?ref=` is present.
@@ -68,16 +85,20 @@ const HomePage: React.FC = () => {
   }, []);
 
   useDocumentMeta({
-    title: t(
-      "meta.home.title",
-      "SunRed Bangkok — Luxury Outcall Massage Delivered to Your Hotel"
-    ),
-    description: t(
-      "meta.home.description",
-      "Bangkok's #1 luxury outcall massage. Verified therapists delivered to your hotel — Sukhumvit, Silom, Asok, Thonglor & all major areas. English, 中文, 日本語, 한국어. 24/7 live availability."
-    ),
+    title: districtSeo
+      ? districtSeo.title
+      : t(
+          "meta.home.title",
+          "SunRed Bangkok — Luxury Outcall Massage Delivered to Your Hotel"
+        ),
+    description: districtSeo
+      ? districtSeo.description
+      : t(
+          "meta.home.description",
+          "Bangkok's #1 luxury outcall massage. Verified practitioners delivered to your hotel — Sukhumvit, Silom, Asok, Thonglor & all major areas. English, 中文, 日本語, 한국어. 24/7 live availability."
+        ),
     locale: langToLocale(i18n.language),
-    url: "https://sunred.vip/",
+    url: districtSeo ? districtSeo.url : "https://sunred.vip/",
     type: "website",
   });
 
@@ -129,7 +150,9 @@ const HomePage: React.FC = () => {
           border: 0,
         }}
       >
-        SunRed — Luxury outcall massage in Bangkok, delivered to your hotel
+        {districtSeo
+          ? districtSeo.h1
+          : "SunRed — Luxury outcall massage in Bangkok, delivered to your hotel"}
       </Box>
 
       {/* 🆕 Round 28s326 (founder 2026-07-08) — "Simple · Pure · Balanced"
@@ -137,6 +160,68 @@ const HomePage: React.FC = () => {
           carousel + Book Now / View Services). Replaces the r70/r76
           inline Nordic-gray hero band. */}
       <HomeHero />
+
+      {/* 🆕 Round 28x.7 (audit fix #3) — district landing band. Only
+          renders on the /outcall-massage-* SEO routes (district prop set);
+          gives the hydrated page unique, indexable, localized copy that
+          matches its self-canonical instead of a redirect-to-home. */}
+      {districtCopy && (
+        <Box
+          component="section"
+          aria-label={districtCopy.name}
+          sx={{
+            px: { xs: 2, sm: 2.5, md: 0 },
+            mt: 1.5,
+            mb: 0.5,
+          }}
+        >
+          <Box
+            sx={{
+              borderRadius: "18px",
+              padding: { xs: "16px 18px", md: "20px 24px" },
+              background: "var(--sr-panel)",
+              border: "1px solid var(--sr-hairline)",
+            }}
+          >
+            <Box
+              component="h2"
+              sx={{
+                margin: 0,
+                fontFamily: "var(--sr-font-heading, Georgia, serif)",
+                fontSize: { xs: "18px", md: "22px" },
+                fontWeight: 600,
+                lineHeight: 1.25,
+                color: "var(--sr-ink)",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {districtSeo?.h1}
+            </Box>
+            <Box
+              component="p"
+              sx={{
+                margin: "8px 0 0",
+                fontSize: { xs: "13px", md: "14px" },
+                lineHeight: 1.6,
+                color: "var(--sr-muted)",
+              }}
+            >
+              {districtCopy.intro}
+            </Box>
+            <Box
+              component="p"
+              sx={{
+                margin: "6px 0 0",
+                fontSize: { xs: "12.5px", md: "13.5px" },
+                lineHeight: 1.6,
+                color: "var(--sr-muted)",
+              }}
+            >
+              {districtCopy.extra}
+            </Box>
+          </Box>
+        </Box>
+      )}
 
       {/* 🆕 Round 28r74 — QuickNavRow (Massage · Therapists · Locations
           · Reviews). Bilingual outlined icon-circles that give the

@@ -567,5 +567,17 @@
   "codes.points": "คะแนน",
   "codes.worth": "ใช้ลดได้ {{thb}} บาท ในการจองครั้งถัดไป",
   "codes.backCredited": "เครดิตให้อัตโนมัติจากประวัติการใช้บริการ {{visits}} ครั้ง (ยอดรวม {{spent}} บาท) · แจ้งคอนเซียร์จตอนจองเพื่อใช้ส่วนลด",
-  "anniv.bookingRef": "หมายเลขการจอง"
+  "anniv.bookingRef": "หมายเลขการจอง",
+  "common.dismiss": "ปิด",
+  "chat.header.eyebrow": "คอนเซียร์จ",
+  "chat.header.title": "แชทได้ในภาษาของคุณ",
+  "chat.greet.eyebrow": "คอนเซียร์จ",
+  "chat.greet.title.prime": "คอนเซียร์จพร้อมดูแล · รายชื่อคืนนี้",
+  "chat.greet.body.prime": "แตะเพื่อแชท — practitioner ถึงภายใน 40 นาที",
+  "chat.greet.title.evening": "เปิดจองรอบดึกแล้ว",
+  "chat.greet.body.evening": "แตะเพื่อจองช่วง 22:00 – 02:00",
+  "chat.greet.title.day": "วางแผนทริทเมนต์คืนนี้",
+  "chat.greet.body.day": "แตะเพื่อแชท — หลัง 22:00 เต็มเร็วที่สุด",
+  "chat.greet.title.off": "คอนเซียร์จกลับมา 09:00",
+  "chat.greet.body.off": "ฝากข้อความไว้ — เรายืนยันให้ตอนเช้า"
 }

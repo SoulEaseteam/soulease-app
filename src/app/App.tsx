@@ -263,19 +263,6 @@ export default function App() {
         <Route path="/zh/*" element={<LocaleEntryRedirect lng="zh" />} />
         <Route path="/ja/*" element={<LocaleEntryRedirect lng="ja" />} />
         <Route path="/ko/*" element={<LocaleEntryRedirect lng="ko" />} />
-        {/* ===== Round 28s224: district SEO landing pages ===========
-            Search Console showed lost ground on "outcall massage
-            sukhumvit" (-25%) and a 300% rise on "massage near me".
-            These URLs ship as static prerendered shells (district-
-            specific English title + LocalBusiness JSON-LD + crawlable
-            noscript body); humans landing on them get the home page
-            (the SPA boots and shows the practitioner roster).
-            =========================================================== */}
-        <Route path="/outcall-massage-sukhumvit" element={<KeywordLanding area="sukhumvit" />} />
-        <Route path="/outcall-massage-silom" element={<KeywordLanding area="silom" />} />
-        <Route path="/outcall-massage-asok" element={<KeywordLanding area="asok" />} />
-        <Route path="/outcall-massage-thonglor" element={<KeywordLanding area="thonglor" />} />
-        <Route path="/outcall-massage-near-me" element={<KeywordLanding area="near-me" />} />
         {/* ================= PUBLIC ================= */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -285,6 +272,21 @@ export default function App() {
         {/* ================= MAIN LAYOUT ================= */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
+          {/* ===== Round 28s224 / 28x.7: district SEO landing pages ====
+              Search Console showed lost ground on "outcall massage
+              sukhumvit" (-25%) and a 300% rise on "massage near me".
+              These URLs ship as static prerendered shells (district-
+              specific title + LocalBusiness JSON-LD + crawlable noscript
+              body). 28x.7 (audit fix #3): they now hydrate into a REAL
+              district page (HomePage with a district hero + district
+              meta) inside MainLayout — no more redirect-to-home, so the
+              rendered DOM matches the self-canonical and Google keeps
+              them indexed. =========================================== */}
+          <Route path="/outcall-massage-sukhumvit" element={<KeywordLanding area="sukhumvit" />} />
+          <Route path="/outcall-massage-silom" element={<KeywordLanding area="silom" />} />
+          <Route path="/outcall-massage-asok" element={<KeywordLanding area="asok" />} />
+          <Route path="/outcall-massage-thonglor" element={<KeywordLanding area="thonglor" />} />
+          <Route path="/outcall-massage-near-me" element={<KeywordLanding area="near-me" />} />
           <Route path="/near-me" element={<NearMePage />} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/services/:id" element={<ServiceDetailPage />} />
