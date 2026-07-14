@@ -231,6 +231,9 @@ const MyCodesPage: React.FC = () => {
                             </Typography>
                             <Typography sx={{ fontFamily: fonts.body, fontSize: 11.5, color: "var(--sr-muted)", mt: "2px" }}>
                               {t(`anniv.reward.${r.id}.note`, r.note)}
+                              {" · "}
+                              {/* 🆕 28w.94 — 60 days on the ฿300 voucher, 30 on the rest. */}
+                              {t("anniv.validDays", "valid {{days}} days", { days: r.validityDays })}
                             </Typography>
                           </Box>
                           <Box

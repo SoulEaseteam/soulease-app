@@ -18,6 +18,13 @@ export interface AnniversaryReward {
   minSpendTHB: number | null;
   /** Short qualifier shown next to the minimum. */
   note: string;
+  /**
+   * 🆕 28w.94 — days the reward stays usable after it is collected.
+   * NOT a single campaign-wide number: the founder gave the ฿300 voucher 60 days
+   * while everything else keeps 30 ("คูปอง ฿300 · ขั้นต่ำ ฿2,000 แก้ อันนี้ ให้ 60วัน").
+   * Stating one blanket "30 days" would have shortened her voucher by half.
+   */
+  validityDays: number;
 }
 
 // 🆕 Round 28w.93 — founder revised the whole reward table. New and returning
@@ -30,13 +37,14 @@ export interface AnniversaryReward {
 //
 //   Both audiences: one reward, valid 30 days.
 export const NEW_GUEST_REWARDS: AnniversaryReward[] = [
-  { id: "off100", label: "THB 100 off your first booking", minSpendTHB: 1400, note: "Minimum spend THB 1,400" },
+  { id: "off100", label: "THB 100 off your first booking", minSpendTHB: 1400, note: "Minimum spend THB 1,400", validityDays: 30 },
 ];
 
 export const RETURNING_GUEST_REWARDS: AnniversaryReward[] = [
-  { id: "off200",     label: "THB 200 off your next booking", minSpendTHB: 1800, note: "Minimum spend THB 1,800" },
-  { id: "voucher300", label: "THB 300 voucher",               minSpendTHB: 2000, note: "Minimum spend THB 2,000" },
-  { id: "points2x",   label: "2× SunPoints",                  minSpendTHB: null, note: "Valid on any ritual · 1 SunPoint = ฿1" },
+  { id: "off200",     label: "THB 200 off your next booking", minSpendTHB: 1800, note: "Minimum spend THB 1,800", validityDays: 30 },
+  // 60 days, not 30 — the founder extended this one specifically.
+  { id: "voucher300", label: "THB 300 voucher",               minSpendTHB: 2000, note: "Minimum spend THB 2,000", validityDays: 60 },
+  { id: "points2x",   label: "2× SunPoints",                  minSpendTHB: null, note: "Valid on any ritual",     validityDays: 30 },
 ];
 
 /** Every reward in the campaign — used to resolve a claim back to its terms. */
@@ -48,8 +56,33 @@ export const ANNIVERSARY_REWARDS: AnniversaryReward[] = [
 /** Guests may claim exactly ONE reward. */
 export const ANNIVERSARY_MAX_CLAIMS = 1;
 
-/** 1 SunPoint = ฿1 off. 150 points → ฿150 off. */
+// ── SunPoints ────────────────────────────────────────────────────────
+// 🆕 28w.94 — the founder gave BOTH halves of the loyalty currency, and they are
+//   different numbers that are easy to conflate:
+//
+//     EARNING   ฿100 spent  → 1 SunPoint   ("ทุกการใช้จ่าย 100 บาท = 1 คะแนน")
+//     REDEEMING 1 SunPoint  → ฿1 off       ("1 คะแนน = 1 บาท")
+//
+//   So a ฿1,200 booking earns 12 points, worth ฿12 — a 1% loyalty rate, doubled
+//   to 2% while the campaign's 2× reward is active. Keeping them as two named
+//   constants (rather than one "points rate") is what stops a future edit from
+//   silently turning a 1% programme into a 100% one.
+
+/** Baht of spend needed to earn ONE SunPoint. */
+export const SUNPOINT_EARN_PER_THB = 100;
+
+/** Baht a single SunPoint is worth when redeemed. */
 export const SUNPOINT_THB = 1;
+
+/**
+ * SunPoints earned on a booking. Partial hundreds do not earn — ฿1,250 earns 12,
+ * the same as ฿1,200 — which matches the founder's table exactly
+ * (1,200→12 · 1,800→18 · 2,400→24 · 4,000→40).
+ */
+export function pointsFor(spendTHB: number, multiplier = 1): number {
+  if (!Number.isFinite(spendTHB) || spendTHB <= 0) return 0;
+  return Math.floor(spendTHB / SUNPOINT_EARN_PER_THB) * multiplier;
+}
 
 export const ANNIVERSARY_EXCLUSIONS: string[] = [
   "Flash Sale",

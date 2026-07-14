@@ -505,11 +505,11 @@
   "anniv.reward.voucher300": "คูปอง 300 บาท",
   "anniv.reward.voucher300.note": "ยอดขั้นต่ำ 2,000 บาท",
   "anniv.reward.points2x": "รับ SunPoints 2 เท่า",
-  "anniv.reward.points2x.note": "ใช้ได้ทุกเมนู · 1 SunPoint = 1 บาท",
+  "anniv.reward.points2x.note": "ใช้ได้ทุกเมนู",
   "anniv.new.title": "ลูกค้าใหม่",
-  "anniv.new.body": "รับได้ 1 สิทธิ์ ใช้ภายใน 30 วัน",
+  "anniv.new.body": "1 สิทธิ์ · สิทธิ์ต้อนรับ",
   "anniv.returning.title": "ลูกค้าประจำ",
-  "anniv.returning.body": "รับได้ 1 สิทธิ์ ใช้ภายใน 30 วัน",
+  "anniv.returning.body": "1 สิทธิ์ · เลือกได้จาก 3 แบบ",
   "anniv.notCombined": "ใช้ร่วมกับสิ่งเหล่านี้ไม่ได้",
   "anniv.exclusion.0": "Flash Sale",
   "anniv.exclusion.1": "ส่วนลดสมาชิก",
@@ -559,5 +559,8 @@
   "codes.welcomeOnly": "สิทธิ์ต้อนรับสำหรับลูกค้าใหม่",
   "anniv.reward.off100": "ส่วนลด 100 บาท สำหรับการจองครั้งแรก",
   "anniv.reward.off100.note": "ยอดขั้นต่ำ 1,400 บาท",
-  "anniv.points.explain": "1 SunPoint = ส่วนลด 1 บาท · เช่น มี 150 คะแนน ใช้ลดได้ 150 บาท ในการจองครั้งถัดไป"
+  "anniv.points.explain": "1 SunPoint = ส่วนลด 1 บาท · เช่น มี 150 คะแนน ใช้ลดได้ 150 บาท ในการจองครั้งถัดไป",
+  "anniv.validDays": "ใช้ภายใน {{days}} วัน",
+  "anniv.points.earn": "ทุกการใช้จ่าย {{per}} บาท = 1 คะแนน · 1 คะแนน = ส่วนลด {{worth}} บาท",
+  "anniv.points.example": "เช่น จ่าย 1,200 บาท ปกติได้ {{normal}} คะแนน · ช่วงแคมเปญได้ {{doubled}} คะแนน"
 }

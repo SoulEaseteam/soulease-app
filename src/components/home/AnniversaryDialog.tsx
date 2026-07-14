@@ -36,6 +36,9 @@ import { whatsappDeepLink } from "@/config/concierge";
 import {
   ANNIVERSARY_EXCLUSIONS,
   anniversaryPeriodLabel,
+  pointsFor,
+  SUNPOINT_EARN_PER_THB,
+  SUNPOINT_THB,
 } from "@/config/anniversary";
 import { useAnniversaryClaim } from "@/hooks/useAnniversaryClaim";
 
@@ -207,6 +210,11 @@ const AnniversaryDialog: React.FC<Props> = ({ open, onClose }) => {
                   }}
                 >
                   {t(`anniv.reward.${r.id}.note`, r.note)}
+                  {" · "}
+                  {/* 🆕 28w.94 — validity is PER REWARD (the ฿300 voucher runs 60
+                      days, the rest 30), so it is stated on the reward itself. A
+                      single blanket line would have halved the voucher. */}
+                  {t("anniv.validDays", "valid {{days}} days", { days: r.validityDays })}
                 </Box>
               </Box>
             </Box>
@@ -230,10 +238,16 @@ const AnniversaryDialog: React.FC<Props> = ({ open, onClose }) => {
           >
             <Coins size={15} weight="duotone" color={GOLD} style={{ flexShrink: 0, marginTop: 1 }} />
             <Box>
-              {t(
-                "anniv.points.explain",
-                "1 SunPoint = ฿1 off. Collect 150 SunPoints and take ฿150 off your next reservation.",
-              )}
+              <Box sx={{ fontWeight: 700, color: "var(--sr-ink)", mb: 0.25 }}>
+                {t("anniv.points.earn", "Every ฿{{per}} you spend earns 1 SunPoint. 1 SunPoint = ฿{{worth}} off.", {
+                  per: SUNPOINT_EARN_PER_THB.toLocaleString(),
+                  worth: SUNPOINT_THB,
+                })}
+              </Box>
+              {t("anniv.points.example", "A ฿1,200 booking normally earns {{normal}} SunPoints — during the campaign it earns {{doubled}}.", {
+                normal: pointsFor(1200),
+                doubled: pointsFor(1200, 2),
+              })}
             </Box>
           </Box>
         )}
@@ -241,8 +255,8 @@ const AnniversaryDialog: React.FC<Props> = ({ open, onClose }) => {
         {/* Eligibility */}
         <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
           {[
-            { k: "new", title: t("anniv.new.title", "New guests"), body: t("anniv.new.body", "One reward, valid for 30 days") },
-            { k: "returning", title: t("anniv.returning.title", "Returning guests"), body: t("anniv.returning.body", "One reward, valid for 30 days") },
+            { k: "new", title: t("anniv.new.title", "New guests"), body: t("anniv.new.body", "One reward · welcome offer") },
+            { k: "returning", title: t("anniv.returning.title", "Returning guests"), body: t("anniv.returning.body", "One reward · choose from three") },
           ].map((c) => (
             <Box
               key={c.k}

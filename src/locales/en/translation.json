@@ -502,11 +502,11 @@
   "anniv.reward.voucher300": "THB 300 voucher",
   "anniv.reward.voucher300.note": "Minimum spend THB 2,000",
   "anniv.reward.points2x": "2× SunPoints",
-  "anniv.reward.points2x.note": "Valid on any ritual · 1 SunPoint = ฿1",
+  "anniv.reward.points2x.note": "Valid on any ritual",
   "anniv.new.title": "New guests",
-  "anniv.new.body": "One reward, valid for 30 days",
+  "anniv.new.body": "One reward · welcome offer",
   "anniv.returning.title": "Returning guests",
-  "anniv.returning.body": "One reward, valid for 30 days",
+  "anniv.returning.body": "One reward · choose from three",
   "anniv.notCombined": "Cannot be combined with",
   "anniv.exclusion.0": "Flash Sale",
   "anniv.exclusion.1": "Member Discount",
@@ -556,5 +556,8 @@
   "codes.welcomeOnly": "Your welcome reward as a first-time guest.",
   "anniv.reward.off100": "THB 100 off your first booking",
   "anniv.reward.off100.note": "Minimum spend THB 1,400",
-  "anniv.points.explain": "1 SunPoint = ฿1 off. Collect 150 SunPoints and take ฿150 off your next reservation."
+  "anniv.points.explain": "1 SunPoint = ฿1 off. Collect 150 SunPoints and take ฿150 off your next reservation.",
+  "anniv.validDays": "valid {{days}} days",
+  "anniv.points.earn": "Every ฿{{per}} you spend earns 1 SunPoint. 1 SunPoint = ฿{{worth}} off.",
+  "anniv.points.example": "A ฿1,200 booking normally earns {{normal}} SunPoints — during the campaign it earns {{doubled}}."
 }

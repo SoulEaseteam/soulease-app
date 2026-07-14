@@ -597,11 +597,11 @@
   "anniv.reward.voucher300": "300 泰铢代金券",
   "anniv.reward.voucher300.note": "最低消费 2,000 泰铢",
   "anniv.reward.points2x": "双倍 SunPoints",
-  "anniv.reward.points2x.note": "适用于所有项目 · 1 SunPoint = 1 泰铢",
+  "anniv.reward.points2x.note": "适用于所有项目",
   "anniv.new.title": "新客户",
-  "anniv.new.body": "一项礼遇，30 天内有效",
+  "anniv.new.body": "一项礼遇 · 迎新专属",
   "anniv.returning.title": "回头客",
-  "anniv.returning.body": "一项礼遇，30 天内有效",
+  "anniv.returning.body": "一项礼遇 · 三选一",
   "anniv.notCombined": "不可与以下优惠同享",
   "anniv.exclusion.0": "限时特惠",
   "anniv.exclusion.1": "会员折扣",
@@ -651,5 +651,8 @@
   "codes.welcomeOnly": "首次光临的迎新礼遇。",
   "anniv.reward.off100": "首次预约立减 100 泰铢",
   "anniv.reward.off100.note": "最低消费 1,400 泰铢",
-  "anniv.points.explain": "1 SunPoint = 抵扣 1 泰铢。例如累积 150 分，下次预约可抵扣 150 泰铢。"
+  "anniv.points.explain": "1 SunPoint = 抵扣 1 泰铢。例如累积 150 分，下次预约可抵扣 150 泰铢。",
+  "anniv.validDays": "{{days}} 天内有效",
+  "anniv.points.earn": "每消费 {{per}} 泰铢即得 1 SunPoint · 1 SunPoint = 抵扣 {{worth}} 泰铢",
+  "anniv.points.example": "例如消费 1,200 泰铢，平时得 {{normal}} 分，活动期间得 {{doubled}} 分。"
 }

@@ -502,11 +502,11 @@
   "anniv.reward.voucher300": "300바트 바우처",
   "anniv.reward.voucher300.note": "최소 결제 2,000바트",
   "anniv.reward.points2x": "SunPoints 2배",
-  "anniv.reward.points2x.note": "모든 메뉴 적용 · 1 SunPoint = 1바트",
+  "anniv.reward.points2x.note": "모든 메뉴 적용",
   "anniv.new.title": "신규 고객",
-  "anniv.new.body": "리워드 1개, 30일간 유효",
+  "anniv.new.body": "리워드 1개 · 웰컴 혜택",
   "anniv.returning.title": "재방문 고객",
-  "anniv.returning.body": "리워드 1개, 30일간 유효",
+  "anniv.returning.body": "리워드 1개 · 3가지 중 선택",
   "anniv.notCombined": "다음과 중복 사용 불가",
   "anniv.exclusion.0": "플래시 세일",
   "anniv.exclusion.1": "회원 할인",
@@ -556,5 +556,8 @@
   "codes.welcomeOnly": "첫 방문 고객을 위한 웰컴 리워드입니다.",
   "anniv.reward.off100": "첫 예약 100바트 할인",
   "anniv.reward.off100.note": "최소 결제 1,400바트",
-  "anniv.points.explain": "1 SunPoint = 1바트 할인. 예를 들어 150포인트를 모으면 다음 예약에서 150바트를 할인받습니다."
+  "anniv.points.explain": "1 SunPoint = 1바트 할인. 예를 들어 150포인트를 모으면 다음 예약에서 150바트를 할인받습니다.",
+  "anniv.validDays": "{{days}}일간 유효",
+  "anniv.points.earn": "{{per}}바트 결제마다 1 SunPoint 적립 · 1 SunPoint = {{worth}}바트 할인",
+  "anniv.points.example": "예를 들어 1,200바트 결제 시 평소 {{normal}}포인트, 캠페인 기간에는 {{doubled}}포인트."
 }
