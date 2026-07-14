@@ -191,11 +191,30 @@ service cloud.firestore {
       // private. Long-term: denormalise reviews into a separate
       // `public_reviews` collection so we don't lean on the rated
       // bookings still exposing phone/address; tracked as a follow-up.
+      // 🆕 Round 28w.91 — the `rating is number` type-check was silently killing
+      //   this rule. For a LIST, Firestore must PROVE from the query's own
+      //   constraints that every doc it could return is permitted; it evaluates
+      //   the rule against the query, not the documents. A client filter of
+      //   where('rating','>=',1) proves `resource.data.rating >= 1`, but nothing
+      //   in the query proves the field's TYPE — so the clause could never be
+      //   satisfied and every guest got permission-denied. That is why reviews
+      //   were invisible to logged-out visitors even though the rule "looked"
+      //   correct. The inequality alone is the guard, and it is the one the
+      //   client actually asserts.
+      // 🔴 Round 28w.91 — PUBLIC LIST REMOVED. Making rated bookings publicly
+      //   listable DOES work (the `rating is number` type-check was what broke
+      //   it), but it hands every anonymous visitor the whole booking document —
+      //   and a booking carries `address`, `phone`, `location` {lat,lng} and
+      //   `note`. Verified against production: a logged-out request returned a
+      //   real guest's home address, phone number and GPS coordinates.
+      //
+      //   For an outcall business whose entire promise is discretion, that is a
+      //   far worse outcome than reviews being invisible. Reviews must come from
+      //   a separate collection holding ONLY rating + text (see /reviewsPublic
+      //   below) — never from the reservation document.
       allow list: if isAdmin()
                   || (isSignedIn() && resource.data.userId == request.auth.uid)
-                  || (isSignedIn() && resource.data.therapistId == request.auth.uid)
-                  || (resource.data.rating is number
-                      && resource.data.rating >= 1);
+                  || (isSignedIn() && resource.data.therapistId == request.auth.uid);
       allow create: if request.resource.data.status in ['pending', 'confirmed'];
       allow update: if isAdmin()
                     || (isSignedIn()
