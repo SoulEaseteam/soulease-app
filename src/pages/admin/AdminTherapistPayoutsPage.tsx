@@ -211,6 +211,10 @@ const AdminTherapistPayoutsPage: React.FC = () => {
             serviceId: d.serviceId ?? null,
             servicePrice: d.servicePrice ?? null,
             discountAmount: d.discountAmount ?? null,
+            duration: (d.duration as number) ?? null,
+            // 🆕 28w.43 — the split FROZEN at confirm-time wins; un-stamped
+            //   (pre-28w.43) bookings fall back to the tier %.
+            therapistShare: (d.therapistShare as number) ?? null,
           });
           if (commission <= 0) return; // no service price yet → skip
           // 🆕 Round 28s315 — shop pays commission + taxi reimbursement.

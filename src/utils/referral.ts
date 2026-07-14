@@ -82,3 +82,23 @@ export function clearReferralCode(): void {
     /* ignore */
   }
 }
+
+/**
+ * 🆕 Round 28w.89 — the guest's OWN referral code, to share.
+ *
+ * Moved here from ReferralDialog: the new "My discount codes" page needs the
+ * same code, and two independent derivations of a code the guest hands to a
+ * friend is exactly the kind of thing that silently drifts apart. One function.
+ *
+ * Stable + human-readable: `SUN-XXXXXX` (6 chars, base36 hash of the uid).
+ * Swap for a backend-issued code when a /referrals API exists.
+ */
+export function deriveReferralCode(seed: string | null | undefined): string {
+  if (!seed) return "SUN-WELCOME";
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = (h * 31 + seed.charCodeAt(i)) | 0;
+  }
+  const code = Math.abs(h).toString(36).toUpperCase().padStart(6, "0").slice(0, 6);
+  return `SUN-${code}`;
+}

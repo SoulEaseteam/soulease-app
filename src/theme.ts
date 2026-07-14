@@ -276,8 +276,16 @@ const theme = createTheme({
     },
     success: { main: "#57B88B" }, // Available green (founder semantic)
     background: {
-      default: NEUTRAL_50,       // Espresso Black
-      paper: NEUTRAL_100,        // Dark Chocolate panel
+      // 🆕 28w.41 — FIXED HEX, not var(--sr-*). Same 28t.17 landmine as the
+      //   `text` / `divider` tokens below: MUI runs background.default/paper
+      //   through decomposeColor for internal colour-math and CANNOT parse
+      //   `var()` — it throws "Unsupported var(--sr-bg) color", which was
+      //   crashing /admin/users (white error screen). Day/night bg still
+      //   flips: MuiCssBaseline paints `body { background: var(--sr-bg) }`
+      //   (gradients.surface); these tokens are only read by MUI's own math,
+      //   never as the visible surface.
+      default: "#FBF7F9",        // day page ground (night flips via body)
+      paper: "#FFFFFF",          // day panel
     },
     // 🆕 28t.17 — FIXED HEXES, not var(--sr-*). MUI feeds text.primary through
     //   alpha()/decomposeColor for internal colour-math (e.g. the Button text
@@ -385,7 +393,37 @@ const theme = createTheme({
           border: "1px solid rgba(31,41,51,0.12)",
           borderRadius: 16,
           boxShadow: "0 14px 44px rgba(15,23,42,0.20)",
+          // 🆕 28w.45 (founder "ปฏิทินทุกที่ในแอดมิน ไม่เห็นลูกศรไปกลับ") —
+          //   the month ‹ › arrows + the year switch (▼) are IconButtons
+          //   whose SVGs inherit the DARK palette's white text → invisible on
+          //   this white calendar. Force dark ink so they're visible; keep the
+          //   dimmed look when disabled (range edge).
+          "& .MuiPickersArrowSwitcher-button, & .MuiPickersCalendarHeader-switchViewButton":
+            {
+              color: "#232B36",
+            },
+          "& .MuiPickersArrowSwitcher-button.Mui-disabled": {
+            color: "rgba(31,41,51,0.28)",
+          },
         },
+      },
+    },
+    // 🆕 28w.47 (founder "ปฏิทินบนมือถือ ก็ แก้") — the MOBILE date picker
+    //   renders in a Dialog (not the Popper above), so the popper-scoped arrow
+    //   fix didn't reach it. These COMPONENT-level overrides make the month
+    //   ‹ › arrows + the year switch (▼) visible in BOTH the desktop popper
+    //   and the mobile dialog.
+    MuiPickersArrowSwitcher: {
+      styleOverrides: {
+        button: {
+          color: "#232B36",
+          "&.Mui-disabled": { color: "rgba(31,41,51,0.28)" },
+        },
+      },
+    },
+    MuiPickersCalendarHeader: {
+      styleOverrides: {
+        switchViewButton: { color: "#232B36" },
       },
     },
   },

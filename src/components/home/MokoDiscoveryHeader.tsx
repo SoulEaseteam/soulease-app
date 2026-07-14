@@ -16,6 +16,7 @@ import React from "react";
 import { Box } from "@mui/material";
 import { MapPin, ShieldCheck, Lightning } from "phosphor-react";
 import { fonts } from "@/theme";
+import { useTranslation } from "react-i18next";
 
 export type RosterFilter = "all" | "available_now" | "express";
 
@@ -42,18 +43,24 @@ interface Props {
 }
 
 const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
+  // 🆕 Round 28w.83 — every string here was hardcoded THAI, on the home page,
+  //   above the fold. A Japanese or Chinese guest landed on "ทั้งหมด · All" /
+  //   "ว่างตอนนี้" / "คอนเซียร์จตอบใน 5 นาที". English is the source; the locale
+  //   files carry Thai like any other language.
+  const { t } = useTranslation();
+
   const tabs: TabDef[] = [
-    { key: "all", label: "ทั้งหมด · All", count: counts.all },
-    { key: "available_now", label: "ว่างตอนนี้", count: counts.availableNow, live: true },
-    { key: "express", label: "ใกล้ฉัน · Express", count: counts.express },
+    { key: "all", label: t("home.filter.all", "All"), count: counts.all },
+    { key: "available_now", label: t("home.filter.availableNow", "Available now"), count: counts.availableNow, live: true },
+    { key: "express", label: t("home.filter.express", "Near me"), count: counts.express },
   ];
 
   // Concierge notice items — brand-voice safe, no crude wording.
   const notices = [
-    "คอนเซียร์จตอบใน 5 นาที",
-    "Verified practitioners on standby",
-    "จัดส่งถึงโรงแรม · คอนโด ทั่วกรุงเทพฯ",
-    "ชำระปลายทาง · PromptPay · 24 ชม.",
+    t("home.notice.reply", "Concierge replies within 5 minutes"),
+    t("home.notice.verified", "Verified practitioners on standby"),
+    t("home.notice.delivery", "Delivered to your hotel or residence — anywhere in Bangkok"),
+    t("home.notice.payment", "Pay on arrival · PromptPay · 24 hours"),
   ];
 
   return (
@@ -77,7 +84,7 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
             letterSpacing: "0.01em",
           }}
         >
-          กรุงเทพฯ
+          {t("home.city", "Bangkok")}
         </Box>
         <Box sx={{ fontFamily: fonts.body, fontSize: "12.5px", color: MUTED }}>
           · Bangkok outcall
@@ -115,7 +122,7 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
               "@media (prefers-reduced-motion: reduce)": { animation: "none" },
             }}
           />
-          On standby 24 ชม.
+          {t("home.standby", "On standby 24h")}
         </Box>
       </Box>
 

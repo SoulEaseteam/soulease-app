@@ -39,6 +39,8 @@ import BundleSection from "@/components/common/BundleSection";
 //   wants richer content back ("มีแค่นี้ หรอ" · 2026-07-08 · live site
 //   feedback). See individual component files for per-section notes.
 import QuickNavRow from "@/components/home/QuickNavRow";
+// 🆕 28w.37 — 1st-anniversary banner (links to /pricing).
+import AnniversaryBanner from "@/components/home/AnniversaryBanner";
 import MembershipCard from "@/components/home/MembershipCard";
 import WhySunRedSection from "@/components/home/WhySunRedSection";
 import HomeFooterV2 from "@/components/home/HomeFooterV2";
@@ -143,6 +145,11 @@ const HomePage: React.FC = () => {
           just as useful as breadcrumbs on desktop). Therapists tap
           scrolls to the `#therapist-grid` wrapper below. */}
       <QuickNavRow />
+
+      {/* 🆕 28w.37 (founder 2026-07-14) — 1st-anniversary banner, tap → /pricing */}
+      <Box sx={{ px: { xs: 2, sm: 2.5, md: 0 }, mt: 1.5, mb: 0.5 }}>
+        <AnniversaryBanner variant="home" />
+      </Box>
 
       {/* 🆕 Round 28r58 — Bundle Packages between the hero and the
           therapist grid. Self-hides on empty, so no layout impact

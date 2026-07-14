@@ -40,7 +40,13 @@ import {
   withLiveServiceOverrides,
   getLiveCustomServices,
   getLiveServiceOrder,
+  startingPrice,
+  wasPriceFor,
+  durationsFor,
+  formatTHB,
+  badgeFor,
 } from "@/utils/servicePricing";
+import PromoBadge from "@/components/common/PromoBadge";
 import ServiceDurationSheet from "@/components/booking/ServiceDurationSheet";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
@@ -309,6 +315,15 @@ const StepService: React.FC<Props> = ({
                 minWidth: 0,
               }}
             >
+              {/* 🆕 28w.71 (founder "BEST SELLER ให้อยู่เหนือ") — the badge was
+                  absolutely pinned to the card corner and the service name ran
+                  underneath it. It now sits ABOVE the name on its own line,
+                  right-aligned, so nothing overlaps. */}
+              {badgeFor(s.id) && (
+                <Box sx={{ display: "flex", justifyContent: "flex-end", mb: "6px" }}>
+                  <PromoBadge serviceId={s.id} size="sm" />
+                </Box>
+              )}
               <Typography
                 component="h3"
                 sx={{
@@ -333,16 +348,34 @@ const StepService: React.FC<Props> = ({
               >
                 60 min · {typeLabel}
               </Typography>
-              {/* 🆕 28r123 — price hidden (ซ่อนราคา ตามที่สั่ง). */}
+              {/* 🆕 28w.63 (founder "ใส่ราคาเริ่มต้น + ป้ายวิบวับ") — starting
+                  price (struck-through was + from-price) + shimmering badge. */}
+              {(() => {
+                const from = startingPrice(s);
+                const firstDur = durationsFor(s)[0];
+                const was = firstDur != null ? wasPriceFor(s, firstDur) : null;
+                return (
+                  <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "8px", mt: "6px" }}>
+                    <Box sx={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+                      <Typography component="span" sx={{ fontFamily: SANS, fontSize: "10px", color: "var(--sr-muted)", fontWeight: 600 }}>เริ่มต้น</Typography>
+                      {was && (
+                        <Typography component="span" sx={{ fontFamily: SANS, fontSize: "11px", fontWeight: 500, textDecoration: "line-through", color: "var(--sr-muted)" }}>{formatTHB(was)}</Typography>
+                      )}
+                      <Typography component="span" sx={{ fontFamily: SERIF, fontSize: "16px", fontWeight: 700, color: "#D97C95", lineHeight: 1 }}>{formatTHB(from)}</Typography>
+                    </Box>
+                  </Box>
+                );
+              })()}
             </Box>
 
-            {/* Selected-tier marker (subtle) */}
+            {/* Selected-tier marker (subtle) — 🆕 28w.67 moved to the BOTTOM
+                right so it no longer collides with the promo badge. */}
             {isSelected && selectedDuration && (
               <Box
                 aria-hidden
                 sx={{
                   position: "absolute",
-                  top: 8,
+                  bottom: 8,
                   right: 10,
                   padding: "3px 9px",
                   borderRadius: 999,

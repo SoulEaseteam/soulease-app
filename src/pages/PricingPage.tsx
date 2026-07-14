@@ -37,6 +37,7 @@ import React from "react";
 import { Box } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import BestsellerRibbon from "@/components/common/BestsellerRibbon";
 // 🆕 28w.28 — icons + concierge channels ported from ServicesPage so the
 //   Pricing "Areas & Timing" block matches the richer Services-page card.
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
@@ -46,9 +47,15 @@ import { FaLine, FaTelegramPlane, FaWeixin, FaWhatsapp } from "react-icons/fa";
 import services from "@/data/services";
 import {
   priceForDuration,
+  durationsFor,
   formatTHB,
+  wasPriceFor,
+  badgeForDuration,
 } from "@/utils/servicePricing";
+import PromoBadge from "@/components/common/PromoBadge";
 import { fonts } from "@/theme";
+// 🆕 28w.37 — 1st-anniversary banner.
+import AnniversaryBanner from "@/components/home/AnniversaryBanner";
 
 // 🆕 28w.5 — the r70 "Nordic Gray" tokens were fixed light-only hexes, so
 //   this page's cards stayed white with near-invisible text in night mode.
@@ -75,6 +82,9 @@ const accents = { teal: "#D97C95" };
 const ROSE = "#D97C95";
 const HERO_GRADIENT = "linear-gradient(160deg, #B8567F 0%, #8A3A57 100%)";
 const BESTSELLER_ID = "SR-HJ2200";
+// 🆕 28w.72 (founder "Unlock Executive Benefits เฉพาะ Gentleman's กับ SunRed
+//   Therapeutic") — only these two carry the premium CTA wording.
+const PREMIUM_BENEFITS_IDS = new Set(["SR-HJ2200", "SR-B2B3200"]);
 import { responsiveShell } from "@/theme/breakpoints";
 import { useDocumentMeta } from "@/utils/useDocumentMeta";
 import { CONCIERGE } from "@/config/concierge";
@@ -361,6 +371,11 @@ const PricingPage: React.FC = () => {
         </Box>
       </Box>
 
+      {/* 🎉 28w.37 — 1st-anniversary banner (founder 2026-07-14) */}
+      <Box sx={{ px: { xs: 2.5, md: 0 }, mb: { xs: 4, md: 5 } }}>
+        <AnniversaryBanner variant="pricing" />
+      </Box>
+
       {/* ── 2. Rate menu grid ─────────────────────────────────────── */}
       <Box
         component="section"
@@ -374,12 +389,16 @@ const PricingPage: React.FC = () => {
       >
         {orderedServices.map((s) => {
           const copy = SERVICE_COPY[s.id] ?? { thai: "", teaser: s.desc };
-          // 🆕 28r115 (founder "โชว์แค่ราคาเดียว คือ 60 นาที ของทุกเมนู
-          //   ก่อน · นอกนั้น ซ่อนราคา เพราะจะทำราคาใหม่") — 90 + 120
-          //   min rows hidden while new pricing is being decided.
-          const durations = [60];
+          // 🆕 28w.36 (founder 2026-07-14 "โชว์ราคาทั้งหมด") — new pricing
+          //   set, so every offered tier shows (Thai/Aroma 60/90/120 ·
+          //   Gentleman's/Therapeutic 70/120). Reverses the 28r115 hide.
+          const durations = durationsFor(s);
           const priceAt = (min: number) => priceForDuration(s, min);
           const isBestseller = s.id === BESTSELLER_ID;
+          const isPremiumBenefits = PREMIUM_BENEFITS_IDS.has(s.id);
+          const benefitsLabel = isPremiumBenefits
+            ? t("pricing.unlockBenefits", "Unlock Executive Benefits")
+            : t("pricing.benefits", "Benefits");
           return (
             <Box
               key={s.id}
@@ -401,27 +420,12 @@ const PricingPage: React.FC = () => {
                 gap: "18px",
               }}
             >
+              {/* 🆕 28w.68 (founder "สีทองวิบวับ") — the corner ribbon is now a
+                  shimmering metallic gold sweep instead of flat rose. */}
+              {/* 🆕 28w.87 — the ribbon markup moved to a shared component so
+                  /services can show the SAME badge (founder). Same output. */}
               {isBestseller && (
-                <Box
-                  aria-hidden
-                  sx={{
-                    position: "absolute",
-                    top: 16,
-                    right: -34,
-                    transform: "rotate(45deg)",
-                    background: `linear-gradient(135deg, ${ROSE}, #C96F89)`,
-                    color: "#fff",
-                    fontFamily: fonts.body,
-                    fontSize: 9.5,
-                    fontWeight: 800,
-                    letterSpacing: "0.14em",
-                    textTransform: "uppercase",
-                    padding: "5px 40px",
-                    boxShadow: "0 4px 10px rgba(138, 58, 87, 0.30)",
-                  }}
-                >
-                  {t("pricing.bestseller", "Bestseller")}
-                </Box>
+                <BestsellerRibbon label={t("pricing.bestseller", "Bestseller")} />
               )}
               {/* Service name — Playfair, generous */}
               <Box>
@@ -500,21 +504,42 @@ const PricingPage: React.FC = () => {
                     >
                       {d} min
                     </Box>
-                    {/* 🆕 28r117 (founder "เอาราคาที่ขีดออก · โชว์แค่
-                        ราคาสีชมพู") — the r115 struck-through "was"
-                        price was removed; only the rose current price
-                        shows. */}
-                    <Box
-                      component="span"
-                      sx={{
-                        fontFamily: fonts.heading,
-                        fontSize: { xs: 17, md: 18 },
-                        fontWeight: 600,
-                        color: ROSE,
-                        letterSpacing: "-0.005em",
-                      }}
-                    >
-                      {formatTHB(priceAt(d))}
+                    {/* 🆕 28w.64 (founder "เพิ่มราคาเก่าขีดทับ") — the struck
+                        was-price is back (reverses the 28r117 removal), small,
+                        before the rose current price. */}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: "7px" }}>
+                      {/* 🆕 28w.65 → 28w.69 — the badge sits AT the price, and
+                          which badge is decided by the DURATION: 90 min =
+                          🔥 BEST VALUE, 70 min = ⭐ BEST SELLER. */}
+                      {badgeForDuration(d) && (
+                        <PromoBadge badge={badgeForDuration(d)!} size="sm" />
+                      )}
+                      {wasPriceFor(s, d) && (
+                        <Box
+                          component="span"
+                          sx={{
+                            fontFamily: fonts.body,
+                            fontSize: { xs: 12, md: 12.5 },
+                            fontWeight: 500,
+                            color: grays.g500,
+                            textDecoration: "line-through",
+                          }}
+                        >
+                          {formatTHB(wasPriceFor(s, d) as number)}
+                        </Box>
+                      )}
+                      <Box
+                        component="span"
+                        sx={{
+                          fontFamily: fonts.heading,
+                          fontSize: { xs: 17, md: 18 },
+                          fontWeight: 600,
+                          color: ROSE,
+                          letterSpacing: "-0.005em",
+                        }}
+                      >
+                        {formatTHB(priceAt(d))}
+                      </Box>
                     </Box>
                   </Box>
                 ))}
@@ -528,7 +553,7 @@ const PricingPage: React.FC = () => {
                 component="button"
                 type="button"
                 onClick={() => navigate(`/services/${s.id}`)}
-                aria-label={`Unlock Executive Benefits — ${s.name}`}
+                aria-label={`${benefitsLabel} — ${s.name}`}
                 sx={{
                   // 🆕 28w.26 (founder: "ขยับไว้ตรงกลางป้าย") — centre the CTA
                   //   in the card (was flex-start / left-aligned).
@@ -561,8 +586,11 @@ const PricingPage: React.FC = () => {
                   },
                 }}
               >
-                {/* 🆕 28w.27 (founder: "เอาลูกศรออก") — arrow removed. */}
-                {t("pricing.unlockBenefits", "Unlock Executive Benefits")}
+                {/* 🆕 28w.27 (founder: "เอาลูกศรออก") — arrow removed.
+                    🆕 28w.70 → 28w.72 (founder: "Unlock Executive Benefits
+                    เฉพาะ Gentleman's กับ SunRed Therapeutic") — the premium
+                    framing is reserved for those two; the rest read "Benefits". */}
+                {benefitsLabel}
               </Box>
             </Box>
           );

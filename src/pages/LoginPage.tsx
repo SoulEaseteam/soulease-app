@@ -34,10 +34,44 @@ import {
 import { auth, db } from "@/lib/firebase";
 import BottomNav from '../components/layouts/BottomNavGlass';
 import { getErrorMessage } from "@/utils/getErrorMessage";
+import { resolveLoginId } from "@/utils/loginId";
+import { useTranslation } from "react-i18next";
+// 🆕 28w.77 — "ลืมรหัสผ่าน?" hands the guest to the concierge (no self-serve reset).
+import { whatsappDeepLink } from "@/config/concierge";
 
 const SERIF = '"Fraunces", "Playfair Display", Georgia, serif';
 const ROSE = "#D97C95";
 const ROSE_HOVER = "#C96F89";
+
+// 🆕 28w.76 (founder "ไม่เห็นข้อมูลในกล่อง · แก้ทั้ง 2 หน้า") — the outline and
+//   label were themed but the INPUT TEXT never was, so MUI fell back to its
+//   light-theme ink (#232B36) and painted near-black on the dark panel:
+//   1.11:1 contrast — what you type is invisible. Pin text/placeholder/caret to
+//   theme tokens and neutralise the browser's autofill repaint. Extracted to
+//   one const (was duplicated inline on both fields) and mirrored in
+//   RegisterPage so the two auth screens can't drift apart again.
+const fieldSx = {
+  mb: 2,
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "16px",
+    "& fieldset": { borderColor: "rgba(217, 124, 149, 0.55)" },
+    "&:hover fieldset": { borderColor: ROSE },
+    "&.Mui-focused fieldset": { borderColor: ROSE },
+  },
+  "& .MuiOutlinedInput-input": {
+    color: "var(--sr-ink)",
+    caretColor: "var(--sr-ink)",
+    "&::placeholder": { color: "var(--sr-muted)", opacity: 1 },
+    "&:-webkit-autofill": {
+      WebkitTextFillColor: "var(--sr-ink)",
+      WebkitBoxShadow: "0 0 0 1000px var(--sr-panel-2) inset",
+      caretColor: "var(--sr-ink)",
+      transition: "background-color 9999s ease-in-out 0s",
+    },
+  },
+  "& label": { color: "var(--sr-muted)" },
+  "& label.Mui-focused": { color: ROSE },
+} as const;
 
 type LoginRole = "admin" | "therapist" | "user";
 
@@ -48,7 +82,19 @@ const LoginPage: React.FC = () => {
   const fromPath =
     (location.state as { from?: string } | null)?.from ?? null;
 
-  const [email, setEmail] = useState("");
+  // 🆕 Round 28w.82 (founder: "ทุกอย่างเป็นภาษาอังกฤษ เพราะระบบเว็บเราทำแบบแปล
+  //   ภาษาตามเครื่อง") — this page had ZERO i18n: every string was hardcoded
+  //   English, so a Japanese or Chinese guest saw untranslated copy on the one
+  //   screen where confusion costs an account. Routed through t() with the
+  //   English source as the fallback, and the Thai strings I'd hardcoded in
+  //   28w.77/.81 are gone — Thai now comes from the locale file like every
+  //   other language.
+  const { t } = useTranslation();
+
+  // 🆕 Round 28w.81 — was `email`. Now holds whatever the guest types: a phone
+  //   number, a username, or an email. resolveLoginId() maps it to the address
+  //   Firebase Auth actually signs in with.
+  const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -57,6 +103,30 @@ const LoginPage: React.FC = () => {
     message: "",
     severity: "success" as "success" | "error",
   });
+
+  // 🆕 Round 28w.81 — a failed sign-in used to surface the raw SDK string
+  //   ("Login failed: Firebase: Error (auth/invalid-credential)."), which tells
+  //   a guest nothing and looks broken. Modern Firebase deliberately collapses
+  //   wrong-password and no-such-account into ONE code (email-enumeration
+  //   protection), so we must not claim to know which it was — one honest
+  //   message covers both, and quietly preserves that privacy property.
+  const friendlyAuthError = (err: unknown): string => {
+    const code = (err as { code?: string })?.code ?? "";
+    switch (code) {
+      case "auth/invalid-credential":
+      case "auth/wrong-password":
+      case "auth/user-not-found":
+        return t("auth.error.badCredentials", "Wrong login or password. Forgotten it? Tap “Forgot password?” below.");
+      case "auth/too-many-requests":
+        return t("auth.error.tooMany", "Too many attempts. Wait a moment, or message the concierge.");
+      case "auth/network-request-failed":
+        return t("auth.error.network", "No connection. Check your network and try again.");
+      case "auth/user-disabled":
+        return t("auth.error.disabled", "This account is disabled. Please contact the concierge.");
+      default:
+        return `${t("auth.error.generic", "Login failed")}: ${getErrorMessage(err)}`;
+    }
+  };
 
   // =============================================================
   // 🔥 ROLE CHECK: SunRed Role Logic (Admin > Therapist > User)
@@ -87,10 +157,20 @@ const LoginPage: React.FC = () => {
   // 🔥 HANDLE LOGIN
   // =============================================================
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!loginId || !password) {
       return setSnackbar({
         open: true,
-        message: "Please enter email and password",
+        message: t("auth.error.missingFields", "Please enter your phone, username, or email — and your password"),
+        severity: "error",
+      });
+    }
+
+    // 🆕 Round 28w.81 — resolve phone / username / email to the Auth address.
+    const resolved = resolveLoginId(loginId);
+    if (!resolved) {
+      return setSnackbar({
+        open: true,
+        message: t("auth.error.invalidId", "That doesn't look like a phone number, username, or email"),
         severity: "error",
       });
     }
@@ -98,7 +178,7 @@ const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const userCred = await signInWithEmailAndPassword(auth, email, password);
+      const userCred = await signInWithEmailAndPassword(auth, resolved.authEmail, password);
       const uid = userCred.user.uid;
       const userEmail = userCred.user.email ?? "";
 
@@ -106,7 +186,7 @@ const LoginPage: React.FC = () => {
 
       setSnackbar({
         open: true,
-        message: "Login successful",
+        message: t("auth.login.success", "Login successful"),
         severity: "success",
       });
 
@@ -120,7 +200,7 @@ const LoginPage: React.FC = () => {
     } catch (err: unknown) {
       setSnackbar({
         open: true,
-        message: `Login failed: ${getErrorMessage(err)}`,
+        message: friendlyAuthError(err),
         severity: "error",
       });
     } finally {
@@ -189,7 +269,7 @@ const LoginPage: React.FC = () => {
               color: "var(--sr-ink)",
             }}
           >
-            Login
+            {t("auth.login.title", "Login")}
           </Typography>
 
           {/* Form — Enter submits */}
@@ -200,53 +280,33 @@ const LoginPage: React.FC = () => {
               if (!loading) void handleLogin();
             }}
           >
-            {/* Inputs */}
+            {/* 🆕 Round 28w.81 — one field, three accepted forms. type="text"
+                (not "email") or the browser's own validation rejects a phone
+                number before our resolver ever sees it. */}
             <TextField
-              label="Email"
-              type="email"
-              autoComplete="email"
+              label={t("auth.field.loginId", "Phone, username, or email")}
+              type="text"
+              autoComplete="username"
               fullWidth
               size="small"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              sx={{
-                mb: 2,
-                // 🆕 28w.2 — MUI's default outline computes to white
-                //   (palette.mode is dark) → invisible on the day panel.
-                //   Pin a visible rose-tint border for both day + night.
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "16px",
-                  "& fieldset": { borderColor: "rgba(217, 124, 149, 0.55)" },
-                  "&:hover fieldset": { borderColor: ROSE },
-                  "&.Mui-focused fieldset": { borderColor: ROSE },
-                },
-                "& label": { color: "var(--sr-muted)" },
-                "& label.Mui-focused": { color: ROSE },
+              value={loginId}
+              onChange={(e) => setLoginId(e.target.value)}
+              helperText={t("auth.field.loginId.hint", "Your phone number is best — it links to your member benefits")}
+              FormHelperTextProps={{
+                sx: { color: "var(--sr-muted)", fontSize: 11, ml: 0.5, mt: 0.25 },
               }}
+              sx={fieldSx}
             />
 
             <TextField
-              label="Password"
+              label={t("auth.field.password", "Password")}
               type="password"
               autoComplete="current-password"
               fullWidth
               size="small"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              sx={{
-                mb: 2,
-                // 🆕 28w.2 — MUI's default outline computes to white
-                //   (palette.mode is dark) → invisible on the day panel.
-                //   Pin a visible rose-tint border for both day + night.
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "16px",
-                  "& fieldset": { borderColor: "rgba(217, 124, 149, 0.55)" },
-                  "&:hover fieldset": { borderColor: ROSE },
-                  "&.Mui-focused fieldset": { borderColor: ROSE },
-                },
-                "& label": { color: "var(--sr-muted)" },
-                "& label.Mui-focused": { color: ROSE },
-              }}
+              sx={fieldSx}
             />
 
             {/* LOGIN BUTTON */}
@@ -267,21 +327,44 @@ const LoginPage: React.FC = () => {
               {loading ? (
                 <CircularProgress size={22} sx={{ color: "#fff" }} />
               ) : (
-                "LOGIN"
+                t("auth.login.cta", "LOGIN")
               )}
             </Button>
           </Box>
 
           {/* Register */}
           <Typography mt={3} fontSize={14} sx={{ color: "var(--sr-body)" }}>
-            Don&apos;t have an account?{" "}
+            {t("auth.login.noAccount", "Don't have an account?")}{" "}
             <Link to="/register" style={{ color: ROSE, fontWeight: "bold" }}>
-              Sign up
+              {t("auth.login.signUp", "Sign up")}
             </Link>
+          </Typography>
+
+          {/* 🆕 28w.77 (founder "ใส่ ลืมรหัสผ่าน? แล้วให้ลิ้งไปที่แอดมิน") — no
+              self-serve reset flow exists, so this hands the guest straight to
+              the concierge with a pre-filled request instead of a dead end. */}
+          <Typography mt={1} fontSize={14} sx={{ color: "var(--sr-body)" }}>
+            <Box
+              component="a"
+              href={whatsappDeepLink(
+                "Hi SunRed concierge, I've forgotten my account password. Could you help me reset it?"
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{
+                color: ROSE,
+                fontWeight: "bold",
+                textDecoration: "underline",
+                textUnderlineOffset: "3px",
+                "&:hover": { color: ROSE_HOVER },
+              }}
+            >
+              {t("auth.login.forgot", "Forgot password?")}
+            </Box>
           </Typography>
         </Paper>
         <Typography mt={4} fontSize={14} sx={{ color: "var(--sr-muted)" }} textAlign="center">
-          You may proceed with booking without an account.
+          {t("auth.guestNote", "You may proceed with booking without an account.")}
         </Typography>
       </Box>
       <BottomNav />

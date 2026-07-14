@@ -259,8 +259,9 @@ const AdminFloatingChat: React.FC = () => {
               bottom: 180,
               right: 18,
               zIndex: 1500,
-              width: 220,
-              padding: "16px 14px 12px",
+              // 🆕 28w.74 — widened so the 5 icon-only tiles breathe in one row.
+              width: 262,
+              padding: "16px 14px 14px",
               borderRadius: "20px",
               // 🆕 28w.3 — day/night surface (was hardcoded #fff + navy),
               //   so the popup isn't a bright-white card in night mode.
@@ -271,14 +272,18 @@ const AdminFloatingChat: React.FC = () => {
               "@media (max-width: 500px)": {
                 bottom: 158,
                 right: 12,
-                width: 224,
+                width: 262,
               },
             }}
             role="dialog"
             aria-label="Concierge contact options"
           >
-            {/* Header — editorial eyebrow + italic tagline */}
-            <Box sx={{ paddingX: "4px", marginBottom: "10px" }}>
+            {/* Header — 🆕 28w.74 (founder "ปรับให้สวยงามขึ้น · บอกว่าแชทตาม
+                ภาษาของคุณ · ออกแบบคำพูดด้วย"): the panel now leads with the
+                promise ("Chat in your language"), lists the languages we
+                actually answer in, and keeps the live-window status as a
+                quiet caption. App names moved off the tiles entirely. */}
+            <Box sx={{ paddingX: "4px", marginBottom: "12px" }}>
               <Typography
                 sx={{
                   fontFamily: fonts.body,
@@ -287,28 +292,52 @@ const AdminFloatingChat: React.FC = () => {
                   color: "var(--sr-gold-text)",
                   letterSpacing: "0.18em",
                   textTransform: "uppercase",
-                  marginBottom: "2px",
                 }}
               >
                 Concierge
               </Typography>
-              {/* 🆕 Round 28r6 — header tagline now reflects the
-                  current concierge window. Glyph swaps ☀ → 🌅 → 🌙
-                  → ☕; "Live · 24/7" replaced with the mode-specific
-                  pill label so an off-hours guest doesn't see
-                  "Live" while concierge is sleeping. */}
+
               <Typography
                 sx={{
                   fontFamily: fonts.heading,
                   fontStyle: "italic",
                   fontWeight: 500,
-                  fontSize: "16px",
+                  fontSize: "17px",
                   color: "var(--sr-ink)",
                   letterSpacing: "-0.01em",
-                  lineHeight: 1.1,
+                  lineHeight: 1.15,
+                  marginTop: "3px",
+                }}
+              >
+                Chat in your language
+              </Typography>
+
+              <Typography
+                sx={{
+                  fontFamily: fonts.body,
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  color: "var(--sr-muted)",
+                  letterSpacing: "0.01em",
+                  marginTop: "5px",
+                }}
+              >
+                English · ไทย · 中文 · 日本語 · 한국어
+              </Typography>
+
+              {/* Live-window status — 28r6 behaviour preserved: an off-hours
+                  guest must never see "Live" while the concierge is asleep. */}
+              <Typography
+                sx={{
+                  fontFamily: fonts.body,
+                  fontSize: "10.5px",
+                  fontWeight: 700,
+                  color: modeTint,
+                  letterSpacing: "0.02em",
+                  marginTop: "8px",
                   display: "flex",
                   alignItems: "center",
-                  gap: "6px",
+                  gap: "5px",
                 }}
               >
                 <Box
@@ -329,7 +358,7 @@ const AdminFloatingChat: React.FC = () => {
                   <ConciergeModeIcon
                     mode={concierge.mode}
                     sx={{
-                      fontSize: 14,
+                      fontSize: 13,
                       color: modeTint,
                       filter:
                         concierge.mode === "off"
@@ -339,13 +368,21 @@ const AdminFloatingChat: React.FC = () => {
                   />
                 </Box>
                 {concierge.mode === "off"
-                  ? "Concierge · 09:00"
-                  : `Live · ${concierge.pillLabel}`}
+                  ? "Replies from 09:00"
+                  : `Live · ${concierge.pillLabel} · replies in minutes`}
               </Typography>
             </Box>
 
-            {/* 5 chat platform pills */}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            {/* 🆕 28w.74 — 5 icon-only tiles in one row (founder: "ไม่ต้องใส่
+                ชื่อแอปก็ได้"). The logos carry the recognition; the name lives
+                on aria-label + title so screen readers and hover still get it. */}
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "repeat(5, 1fr)",
+                gap: "8px",
+              }}
+            >
               {CHAT_OPTIONS.map((opt, idx) => {
                 // 🆕 Round 28s98 — WhatsApp supports a prefilled body via
                 //   ?text=; append the page-aware opener so the concierge
@@ -381,64 +418,40 @@ const AdminFloatingChat: React.FC = () => {
                     duration: 0.25,
                   }}
                   whileHover={
-                    prefersReducedMotion ? undefined : { x: -2, scale: 1.02 }
+                    prefersReducedMotion ? undefined : { y: -3, scale: 1.07 }
                   }
-                  whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
-                  aria-label={`Contact via ${opt.title}`}
+                  whileTap={prefersReducedMotion ? undefined : { scale: 0.94 }}
+                  aria-label={`Chat on ${opt.title}`}
+                  title={`Chat on ${opt.title}`}
                   sx={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "10px",
-                    padding: "8px 10px",
-                    borderRadius: "12px",
-                    background: "var(--sr-panel-2)",
-                    border: "1px solid var(--sr-hairline)",
+                    justifyContent: "center",
+                    aspectRatio: "1 / 1",
+                    borderRadius: "13px",
+                    background: opt.tint,
+                    boxShadow: `0 3px 10px ${opt.tint}55`,
                     textDecoration: "none",
-                    transition: "background 0.2s ease, transform 0.2s ease",
-                    "&:hover": {
-                      background: "rgba(217, 124, 149, 0.12)",
-                    },
+                    transition: "box-shadow 0.2s ease",
+                    "&:hover": { boxShadow: `0 7px 18px ${opt.tint}88` },
                     "&:focus-visible": {
                       outline: `2px solid ${brand.red}`,
                       outlineOffset: 2,
                     },
                   }}
                 >
+                  {/* alt="" — the anchor's aria-label already names the channel,
+                      so a filled alt would make screen readers say it twice. */}
                   <Box
-                    sx={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: "10px",
-                      background: opt.tint,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                      boxShadow: `0 2px 8px ${opt.tint}55`,
-                    }}
-                  >
-                    <Box
-                      component="img"
-                      src={opt.src}
-                      alt={opt.title}
-                      width={20}
-                      height={20}
-                      loading="lazy"
-                      decoding="async"
-                      sx={{ width: 20, height: 20, objectFit: "contain" }}
-                    />
-                  </Box>
-                  <Typography
-                    sx={{
-                      fontFamily: fonts.body,
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: "var(--sr-ink)",
-                      letterSpacing: "-0.01em",
-                    }}
-                  >
-                    {opt.title}
-                  </Typography>
+                    component="img"
+                    src={opt.src}
+                    alt=""
+                    width={22}
+                    height={22}
+                    loading="lazy"
+                    decoding="async"
+                    sx={{ width: 22, height: 22, objectFit: "contain" }}
+                  />
                 </Box>
                 );
               })}

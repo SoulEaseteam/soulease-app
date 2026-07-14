@@ -19,12 +19,14 @@ import {
   CheckCircle,
   Gauge,
   IdentificationCard,
+  Ticket,
 } from "phosphor-react";
 import { collection, query, where, getCountFromServer, doc, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
+import { useAnniversaryClaim } from "@/hooks/useAnniversaryClaim";
 import { fonts } from "@/theme";
 // 🆕 Round 28r71 — shared concierge endpoints (r71 rebrand phase 2).
 import { CONCIERGE } from "@/config/concierge";
@@ -137,6 +139,8 @@ const Section: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 // ── main page ─────────────────────────────────────────────────────────
 const ProfilePage: React.FC = () => {
+  // 🆕 28w.88 — the guest's own Anniversary reward claims.
+  const { claims: rewardClaims } = useAnniversaryClaim();
   const { user, role } = useAuth();
   const navigate  = useNavigate();
   const [bookingCount, setBookingCount] = useState<number | null>(null);
@@ -404,6 +408,32 @@ const ProfilePage: React.FC = () => {
             </Section>
           </motion.div>
         )}
+
+        {/* 🆕 Round 28w.89 (founder: "หน้า Guest profile เพิ่มเมนู โค้ดส่วนลดของฉัน")
+            — one menu row for every discount the guest holds. This REPLACES the
+            28w.88 inline Rewards list: that listed the claimed Anniversary reward
+            here, and a separate codes page listing the same reward again would
+            have said it twice. The row carries the count; /my-codes carries the
+            detail (rewards · a code waiting at checkout · their referral code).
+            Always shown, so a guest can find their codes even when they hold
+            none — the page says so plainly rather than hiding the entrance. */}
+        <motion.div {...fadeUp(0.14)}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
+            Rewards
+          </Typography>
+          <Section>
+            <Row
+              icon={<Ticket size={18} weight="duotone" />}
+              label="My Discount Codes"
+              sub={
+                rewardClaims.length > 0
+                  ? `${rewardClaims.length} reward${rewardClaims.length > 1 ? "s" : ""} · referral code`
+                  : "Rewards, vouchers & your referral code"
+              }
+              onClick={() => navigate("/my-codes")}
+            />
+          </Section>
+        </motion.div>
 
         {/* Bookings */}
         <motion.div {...fadeUp(0.15)}>

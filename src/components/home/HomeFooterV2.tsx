@@ -25,6 +25,7 @@
 // ─────────────────────────────────────────────────────────────────────
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Box } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { fonts } from "@/theme";
@@ -37,6 +38,10 @@ type FooterLink = {
 };
 
 const HomeFooterV2: React.FC = () => {
+  // 🆕 Round 28w.83 — the ENTIRE footer was hardcoded Thai, and it renders on
+  //   every page. A Japanese guest browsing an otherwise-Japanese site hit a
+  //   Thai nav block at the bottom of every screen. English source + locales.
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const scrollToTherapistGrid = () => {
@@ -50,19 +55,19 @@ const HomeFooterV2: React.FC = () => {
   };
 
   const menuLinks: FooterLink[] = [
-    { label: "หน้าแรก", onClick: () => navigate("/") },
-    { label: "บริการ", onClick: () => navigate("/services") },
-    { label: "หมอนวด", onClick: scrollToTherapistGrid },
-    { label: "สถานที่", onClick: () => navigate("/near-me") },
-    { label: "ราคา", onClick: () => navigate("/pricing") },
+    { label: t("footer.home", "Home"), onClick: () => navigate("/") },
+    { label: t("footer.services", "Services"), onClick: () => navigate("/services") },
+    { label: t("footer.practitioners", "Practitioners"), onClick: scrollToTherapistGrid },
+    { label: t("footer.nearMe", "Near me"), onClick: () => navigate("/near-me") },
+    { label: t("footer.pricing", "Pricing"), onClick: () => navigate("/pricing") },
   ];
 
   const helpLinks: FooterLink[] = [
-    { label: "วิธีการจอง", onClick: () => navigate("/services?tab=how") },
-    { label: "การชำระเงิน", onClick: () => navigate("/services?tab=how") },
-    { label: "คำถามที่พบบ่อย", onClick: () => navigate("/services?tab=how") },
+    { label: t("footer.howToBook", "How to book"), onClick: () => navigate("/services?tab=how") },
+    { label: t("footer.payment", "Payment"), onClick: () => navigate("/services?tab=how") },
+    { label: t("footer.faq", "FAQ"), onClick: () => navigate("/services?tab=how") },
     {
-      label: "ติดต่อเรา",
+      label: t("footer.contact", "Contact us"),
       href: CONCIERGE.whatsappUrl,
     },
   ];
@@ -73,7 +78,7 @@ const HomeFooterV2: React.FC = () => {
       href: CONCIERGE.lineUrl,
     },
     {
-      label: `โทร: ${CONCIERGE.displayPhone}`,
+      label: `${t("footer.call", "Call")}: ${CONCIERGE.displayPhone}`,
       href: `tel:+${CONCIERGE.whatsappPhone}`,
     },
     {
@@ -83,9 +88,9 @@ const HomeFooterV2: React.FC = () => {
   ];
 
   const columns: { title: string; links: FooterLink[] }[] = [
-    { title: "เมนู", links: menuLinks },
-    { title: "ช่วยเหลือ", links: helpLinks },
-    { title: "ติดต่อเรา", links: contactLinks },
+    { title: t("footer.col.menu", "Menu"), links: menuLinks },
+    { title: t("footer.col.help", "Help"), links: helpLinks },
+    { title: t("footer.col.contact", "Contact us"), links: contactLinks },
   ];
 
   return (
@@ -168,7 +173,7 @@ const HomeFooterV2: React.FC = () => {
           maxWidth: 320,
         }}
       >
-        เราดูแลคุณเหมือนคนสำคัญ ในทุกช่วงเวลาของชีวิต
+        {t("footer.tagline", "We care for you like someone who matters — at every moment of your life.")}
       </Box>
 
       {/* 3-column link grid */}

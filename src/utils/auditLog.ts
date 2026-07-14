@@ -59,6 +59,12 @@ export type AuditAction =
   //   unblock, which toggles a signed-up `users` account, not a phone.
   | "phone.block"
   | "phone.unblock"
+  // 🆕 28w.60 — membership enrollment (SRD- code) on Customer Insights.
+  | "member.enroll"
+  | "member.reset"
+  | "member.upgrade"
+  | "member.edit"
+  | "member.remove"
   // 🆕 Round 28s296 — AdminAdvancedSettingsPage now actually enforces
   //   maintenanceMode/minAdvanceMins/maxFutureDays; saving a change to
   //   live booking-eligibility rules deserves a trail like every other
@@ -96,7 +102,13 @@ export type AuditAction =
   //   admin generated a printable handout for a code; doesn't change any
   //   customer-facing data, but useful for correlating "who handed out
   //   which code where" if a promo overshoots redemptions).
-  | "promo.print_card";
+  | "promo.print_card"
+  // 🆕 28w.96 — the Anniversary campaign is admin-editable; its terms are money,
+  //   so an edit belongs in the audit trail like every other price change.
+  | "promo.anniversary_edit"
+  | "membership.sunpoints_edit"
+  // 🆕 28x.1 — recomputing the public star rating changes what customers buy on.
+  | "therapist.rating_sync";
 
 export async function logAdminAction(
   action: AuditAction,

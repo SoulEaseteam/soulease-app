@@ -59,12 +59,8 @@ const services: MassageService[] = [
     desc: 'A time-honoured ritual · muscle tension eased, body balance restored.',
     price: 1200,
     duration: 60,
-    // Founder confirmed prices 2026-05-01:
-    //   60: ฿1,200 · 90: ฿1,800 · 120: ฿2,400
-    // (= base × 1.0/1.5/2.0 multiplier — see src/utils/servicePricing.ts)
-    //
-    // future promotional campaign — wired in via DURATION_PRICE_OVERRIDES
-    // when the promo launches.
+    // 🆕 28w.36 (founder 2026-07-14) — 60: ฿1,200 · 90: ฿1,600 · 120: ฿2,000
+    //   (90/120 set in DURATION_PRICE_OVERRIDES — no longer ×1.5/×2.0)
     availableDurations: [60, 90, 120],
     count: 62,
     image: '/images/workphoto/IMG_5092.JPG',
@@ -83,9 +79,10 @@ const services: MassageService[] = [
     name: 'Aromatherapy Massage',
     // 🆕 Round 28r73 · Nordic minimal tone.
     desc: 'A quiet oil ritual · premium aromatic blends for deep, restorative rest.',
-    price: 1600,
+    price: 1400,
     duration: 60,
-    // 60: ฿1,600 · 90: ฿2,400 · 120: ฿3,200
+    // 🆕 28w.36 — 60: ฿1,400 · 90: ฿1,800 · 120: ฿2,400
+    //   (base 1,400 here; 90/120 in DURATION_PRICE_OVERRIDES)
     availableDurations: [60, 90, 120],
     count: 0,
     image: '/images/workphoto/IMG_5096.JPG',
@@ -105,9 +102,10 @@ const services: MassageService[] = [
     // 🆕 Round 28r73 · Nordic minimal tone.
     desc: 'A warming ritual for men · attentive tension-release work, unhurried.',
     price: 2200,
-    duration: 60,
-    // 60: ฿2,200 · 90: ฿3,300 · 120: ฿4,400
-    availableDurations: [60, 90, 120],
+    duration: 70,
+    // 🆕 28w.36 — 70: ฿2,200 · 120: ฿3,000 (no 60/90 offered;
+    //   prices in DURATION_PRICE_OVERRIDES)
+    availableDurations: [70, 120],
     count: 0,
     image: '/images/workphoto/IMG_5289.JPG',
     detail: `A focused aromatic-oil session crafted for men, blending warming aromatherapy with attentive tension-release work and a personalised finishing ritual. Performed by a trained female practitioner in your residence unhurried, attentive, and entirely paced to your preference.`,
@@ -131,9 +129,10 @@ const services: MassageService[] = [
     // 🆕 Round 28r73 · Nordic minimal tone + euphemism-table compliance.
     desc: 'Our most refined ritual · reserved for specialised practitioners.',
     price: 3200,
-    duration: 60,
-    // 60: ฿3,200 · 90: ฿4,800 · 120: ฿6,400
-    availableDurations: [60, 90, 120],
+    duration: 70,
+    // 🆕 28w.36 — 70: ฿3,200 · 120: ฿4,000 (no 60/90 offered;
+    //   prices in DURATION_PRICE_OVERRIDES)
+    availableDurations: [70, 120],
     count: 0,
     image: '/images/workphoto/IMG_8368.JPG',
     detail: `Our most refined ritual — a flowing whole-body oil ceremony of continuous-contact technique, premium aromatic blends, and gentle Thai-style stretching. Reserved for specialised practitioners trained in this discipline, who arrive at your residence with the full repertoire and undivided attention.`,

@@ -98,13 +98,18 @@ import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 //   uses the SAME shared commission split as Earnings/Reports (currently
 //   flat 60/40, see commission.ts) so this summary number can never drift
 //   from what those two pages say — the exact bug the 28s247 audit fixed.
-import { commissionBaseFor, therapistPayoutFor } from "@/utils/commission";
+import { commissionBaseFor, therapistPayoutFor, stampSplit, isPayrollExcluded, noShowCompFor } from "@/utils/commission";
 // 🆕 28s260 (founder: "เพิ่มวิธีการจ่ายด้วย") — WeChat/Alipay carry a 5%+฿200
 //   surcharge (same rule as the customer flow + AdminBookingAddPage).
 //   Editing payment method is a price-affecting edit, so the total gets
 //   recomputed on save — silently leaving it stale would under-charge a
 //   booking that got switched to a surcharged method.
 import { paymentSurcharge } from "@/utils/paymentSurcharge";
+// 🆕 28w.59 — customer membership tiers (Bronze/Silver/Gold/BlackVIP) + no-show
+//   flag, badged on each order. Full-history per-phone aggregate, tier from the
+//   shared membership util (same config as the Membership admin page).
+import { membershipFor, applyMembershipConfig, MEMBERSHIP_COLORS, type MembershipThresholds, type MembershipResult } from "@/utils/membership";
+import { normPhone } from "@/utils/phoneCountry";
 import {
   MagnifyingGlass,
   CheckCircle,
@@ -132,6 +137,9 @@ import {
   Warning,
   Wallet,
   Buildings,
+  Taxi,
+  Tag,
+  Crown,
 } from "phosphor-react";
 
 // Cap the realtime window. Pending/confirmed bookings are always recent; older
@@ -175,6 +183,8 @@ interface Booking {
   placeDetail?: string;
   servicePrice?: number;
   discountAmount?: number;  // 🆕 28s258 — needed for the shared commission calc
+  discountCode?: string;    // 🆕 28w.58 — promo code applied at booking (e.g. FREETAXI)
+  discountLabel?: string;   // 🆕 28w.58 — human-readable promo label
   taxiFee?: number;
   paymentFee?: number;      // 🆕 28s260 — WeChat/Alipay surcharge, recomputed if payment method is edited
   totalPrice?: number;
@@ -235,6 +245,35 @@ const nameOf = (b: Booking): string =>
 //   `paid` boolean if set, else the customer-flow `paymentStatus`.
 const isPaid = (b: Booking): boolean => b.paid ?? b.paymentStatus === "paid";
 
+// 🆕 28w.59 — membership + no-show badges for an order (stackable). Tier pill
+//   (Bronze/Silver/Gold/BlackVIP, with ↓ if demoted for inactivity) + a red
+//   "No-shows" pill when the customer has any no-show history.
+const MembershipBadges: React.FC<{ member: MembershipResult | null; size?: "sm" | "md" }> = ({ member, size = "sm" }) => {
+  if (!member || (!member.tier && !member.hasNoShow)) return null;
+  const fs = size === "md" ? 10.5 : 9.5;
+  const py = size === "md" ? "3px" : "2px";
+  const ic = size === "md" ? 12 : 11;
+  return (
+    <Box sx={{ display: "inline-flex", flexWrap: "wrap", gap: 0.5, alignItems: "center" }}>
+      {member.tier && (
+        <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.4, px: 0.75, py, borderRadius: 999, background: `${MEMBERSHIP_COLORS[member.tier]}1A`, border: `1px solid ${MEMBERSHIP_COLORS[member.tier]}55` }}>
+          <Crown size={ic} weight="fill" color={MEMBERSHIP_COLORS[member.tier]} />
+          <Typography sx={{ fontFamily: SANS, fontSize: fs, fontWeight: 800, color: MEMBERSHIP_COLORS[member.tier], lineHeight: 1, letterSpacing: "0.02em" }}>
+            {member.tier}{member.demoted ? " ↓" : ""}
+          </Typography>
+        </Box>
+      )}
+      {member.hasNoShow && (
+        <Box sx={{ display: "inline-flex", alignItems: "center", px: 0.75, py, borderRadius: 999, background: `${adminColor.red}14`, border: `1px solid ${adminColor.red}44` }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: fs, fontWeight: 800, color: adminColor.red, lineHeight: 1 }}>
+            No-shows
+          </Typography>
+        </Box>
+      )}
+    </Box>
+  );
+};
+
 // ── shared detail row (module scope — was redefined every render, fix #6) ─
 const Row: React.FC<{ label: string; value?: string | React.ReactNode }> = ({ label, value }) =>
   value ? (
@@ -248,6 +287,9 @@ const Row: React.FC<{ label: string; value?: string | React.ReactNode }> = ({ la
 // Page
 // ──────────────────────────────────────────────────────────────────────
 type DateMode = "all" | "custom";
+
+// 🆕 28w.59 — per-customer (by phone) lifetime aggregate for membership tiers.
+type CustStat = { served: number; totalSpent: number; lastVisitMs: number; noShowCount: number };
 
 const AdminBookingListPage: React.FC = () => {
   const [bookings,    setBookings]    = useState<Booking[]>([]);
@@ -278,12 +320,68 @@ const AdminBookingListPage: React.FC = () => {
     });
   }, []);
 
+  // 🆕 28w.59 — FULL-history per-phone aggregate for membership tiers, computed
+  //   once over the whole bookings collection (NOT the paginated feed above, so
+  //   a tier reflects the customer's entire history), plus the live threshold
+  //   config from adminSettings/membership.
+  const [custStats, setCustStats] = useState<Record<string, CustStat>>({});
+  const [memberVersion, setMemberVersion] = useState(0);
+  const nowMs = useMemo(() => Date.now(), []);
+  useEffect(() => {
+    const SERVED = new Set(["completed", "done"]);
+    const NOSHOW = new Set(["no_show", "no-show", "noshow"]);
+    void getDocs(collection(db, "bookings")).then((snap) => {
+      const map: Record<string, CustStat> = {};
+      snap.forEach((d) => {
+        const b = d.data() as {
+          phone?: string; status?: string; totalPrice?: number; servicePrice?: number;
+          createdAt?: { toDate?: () => Date; seconds?: number };
+          startAt?: { toDate?: () => Date; seconds?: number };
+        };
+        const phone = normPhone((b.phone ?? "").trim());
+        if (!phone) return;
+        const row = (map[phone] ??= { served: 0, totalSpent: 0, lastVisitMs: 0, noShowCount: 0 });
+        const st = b.status ?? "";
+        if (NOSHOW.has(st)) row.noShowCount++;
+        if (SERVED.has(st)) {
+          row.served++;
+          row.totalSpent += b.totalPrice ?? b.servicePrice ?? 0;
+          const t = b.createdAt ?? b.startAt;
+          const ms = t?.toDate ? t.toDate().getTime() : (typeof t?.seconds === "number" ? t.seconds * 1000 : 0);
+          if (ms > row.lastVisitMs) row.lastVisitMs = ms;
+        }
+      });
+      setCustStats(map);
+    });
+  }, []);
+  useEffect(() => {
+    const unsub = onSnapshot(
+      doc(db, "adminSettings", "membership"),
+      (snap) => { applyMembershipConfig((snap.data() as Partial<MembershipThresholds>) ?? null); setMemberVersion((v) => v + 1); },
+      () => {},
+    );
+    return () => unsub();
+  }, []);
+  const memberForPhone = useMemo(() => {
+    return (phone?: string | null) => {
+      const p = normPhone((phone ?? "").trim());
+      if (!p) return null;
+      const s = custStats[p];
+      return s ? membershipFor(s, nowMs) : null;
+    };
+    // memberVersion → recompute when the admin thresholds change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [custStats, nowMs, memberVersion]);
+
   // 🆕 28s254 — date range + therapist + payment filters.
   const [dateMode,        setDateMode]        = useState<DateMode>("all");
   const [customStart,     setCustomStart]     = useState<Dayjs>(() => dayjs().subtract(30, "day").startOf("day"));
   const [customEnd,       setCustomEnd]       = useState<Dayjs>(() => dayjs());
   const [therapistFilter, setTherapistFilter] = useState("__ALL__");
   const [paymentFilter,   setPaymentFilter]   = useState("__ALL__"); // __ALL__ | paid | unpaid
+  // 🆕 28w.56 (founder "เพิ่มตัวกรองออเดอที่ใช้ Promotions") — filter by whether
+  //   the order used a promo (discountAmount > 0).
+  const [promoFilter,     setPromoFilter]     = useState("__ALL__"); // __ALL__ | promo | nopromo
 
   // 🆕 28s257 (founder: "ทำไมจำกัดแค่ 500 ทั้งหมดไม่ได้หรอ") — the 500 cap
   //   from 28s252 was hiding real bookings once the collection passed 500
@@ -304,7 +402,11 @@ const AdminBookingListPage: React.FC = () => {
       filters.push(where("createdAt", ">=", Timestamp.fromDate(customStart.startOf("day").toDate())));
       filters.push(where("createdAt", "<=", Timestamp.fromDate(customEnd.endOf("day").toDate())));
     }
-    filters.push(orderBy("createdAt", "desc"), limit(feedSize));
+    // 🆕 28w.44 (founder "all คือ งานทั้งหมด ไม่จำกัดไว้ที่ 500 เพราะทำให้
+    //   Revenue ไม่ตรง") — no 500 cap: load EVERY booking so Booked Value /
+    //   Shop Revenue + tab counts are exact. Custom date ranges are still
+    //   bounded by the where() clauses above.
+    filters.push(orderBy("createdAt", "desc"));
     const q = query(collection(db, "bookings"), ...filters);
     const unsub = onSnapshot(q, (snap) => {
       setBookings(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Booking)));
@@ -313,7 +415,9 @@ const AdminBookingListPage: React.FC = () => {
     return () => unsub();
   }, [dateMode, customStart, customEnd, feedSize]);
 
-  const atCap = bookings.length >= feedSize;
+  // 🆕 28w.44 — the 500 cap is gone (all bookings load), so the "showing
+  //   latest N" note + the Load-more button (both gated on atCap) are retired.
+  const atCap = false;
 
   // 🆕 28s254 — therapist option list from the date-scoped set only (not
   //   further narrowed by payment), so switching one filter never collapses
@@ -332,9 +436,11 @@ const AdminBookingListPage: React.FC = () => {
     return bookings.filter((b) => {
       const matchTherapist = therapistFilter === "__ALL__" || b.therapistId === therapistFilter;
       const matchPayment   = paymentFilter === "__ALL__" || (paymentFilter === "paid" ? isPaid(b) : !isPaid(b));
-      return matchTherapist && matchPayment;
+      const usedPromo      = (b.discountAmount ?? 0) > 0;
+      const matchPromo     = promoFilter === "__ALL__" || (promoFilter === "promo" ? usedPromo : !usedPromo);
+      return matchTherapist && matchPayment && matchPromo;
     });
-  }, [bookings, therapistFilter, paymentFilter]);
+  }, [bookings, therapistFilter, paymentFilter, promoFilter]);
 
   // ── counts per bucket ──────────────────────────────────────────────
   const counts = useMemo(() => {
@@ -354,15 +460,34 @@ const AdminBookingListPage: React.FC = () => {
   //   the per-booking overhead AdminEarningsPage subtracts for "net" — this
   //   is a quick list-page figure, not a replacement for the Earnings page.
   const valueStats = useMemo(() => {
-    let totalValue = 0, activeCount = 0, shopRevenue = 0;
+    // 🆕 28w.55 (founder) — Booked Value & Promotions count DELIVERED jobs only
+    //   (completed/done). Shop Revenue accrues over all active (non-excluded)
+    //   bookings, net of split + promo + no-show taxi. No-show Taxi card also
+    //   surfaces the total cancelled count.
+    let successValue = 0, successCount = 0;   // delivered jobs (completed/done)
+    let promoTotal = 0, promoCount = 0;        // discount handed out on delivered jobs
+    let shopRevenue = 0;                        // net of therapist split + promo + no-show taxi
+    let cancelledCount = 0;                     // every excluded booking (cancel/refund/no-show/…)
+    let noShowTaxi = 0, noShowCount = 0;        // taxi comp the shop pays out for no-shows
     for (const b of faceted) {
-      if (b.status === "cancelled") continue;
-      activeCount++;
-      totalValue += b.totalPrice ?? b.total ?? 0;
-      const base = commissionBaseFor(b);
-      shopRevenue += base - therapistPayoutFor(b);
+      if (isPayrollExcluded(b.status)) {
+        cancelledCount++;
+        const comp = noShowCompFor(b);   // 🆕 28w.53 — shop bears a no-show's taxi comp
+        if (comp > 0) { noShowTaxi += comp; noShowCount++; }
+        shopRevenue -= comp;
+        continue;
+      }
+      // active (non-excluded) → shop revenue accrues (base already net of promo)
+      shopRevenue += commissionBaseFor(b) - therapistPayoutFor(b);
+      // delivered (successful) → booked value + promo actually spent
+      if (b.status === "completed" || b.status === "done") {
+        successCount++;
+        successValue += b.totalPrice ?? b.total ?? 0;
+        const disc = b.discountAmount ?? 0;
+        if (disc > 0) { promoTotal += disc; promoCount++; }
+      }
     }
-    return { totalValue, activeCount, shopRevenue };
+    return { successValue, successCount, promoTotal, promoCount, shopRevenue, cancelledCount, noShowTaxi, noShowCount };
   }, [faceted]);
 
   // ── filtered list (facets + tab + search) ──────────────────────────
@@ -381,9 +506,18 @@ const AdminBookingListPage: React.FC = () => {
     try {
       // 🆕 Round 28s230 (FIX D) — confirming settles the 10-min hold so
       //   releaseExpiredHolds can't later stamp it "expired".
+      // 🆕 28w.43 — FREEZE the shop/therapist split onto the booking the
+      //   moment it's confirmed (from the current split table). The payslip
+      //   reads these stamped fields verbatim, so a later split-table edit
+      //   never changes this booking's payout. Un-confirmed / pre-28w.43
+      //   bookings have no stamp → payroll falls back to the tier %.
       const patch: Record<string, unknown> =
         status === "confirmed"
-          ? { status, holdState: "confirmed", holdExpiresAt: null }
+          ? (() => {
+              const b = bookings.find((x) => x.id === id);
+              const split = b ? stampSplit(b) : {};
+              return { status, holdState: "confirmed", holdExpiresAt: null, ...split };
+            })()
           : status === "cancelled"
           ? { status, ...(reason ? { cancelReason: reason } : {}) }
           : { status };
@@ -587,18 +721,32 @@ const AdminBookingListPage: React.FC = () => {
         sx={{
           px: { xs: 2, md: 3 }, pt: 2.5,
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "repeat(2,1fr)", md: "repeat(4,1fr)" },
-          gap: 1.25,
+          // 🆕 28w.47 (founder "คอลัม เรียง 2-3 แถว ประหยัดพื้นที่บนมือถือ") —
+          //   2 cards per row on phones (was 1-up = a very tall strip), 3 on
+          //   larger phones, auto-fit on desktop.
+          gridTemplateColumns: {
+            xs: "repeat(2, 1fr)",
+            sm: "repeat(3, 1fr)",
+            md: "repeat(auto-fit, minmax(150px, 1fr))",
+          },
+          gap: { xs: 1, sm: 1.25 },
         }}
       >
         {[
           { label: "Needs Action", labelTh: "ต้องดำเนินการ",  value: String(counts.pending),           sub: "pending confirmation · รอยืนยัน", color: adminColor.amber,     icon: <Warning   size={20} weight="duotone" /> },
           { label: "In Progress",  labelTh: "กำลังดำเนินการ", value: String(counts.confirmed),         sub: "confirmed · ยืนยันแล้ว",           color: adminColor.accent,    icon: <Clock     size={20} weight="duotone" /> },
-          { label: "Booked Value", labelTh: "มูลค่ารวม",       value: formatTHB(valueStats.totalValue), sub: `${valueStats.activeCount} bookings · ไม่รวมยกเลิก`, color: adminColor.highlight, icon: <Wallet    size={20} weight="duotone" /> },
-          // 🆕 28s258 — shop-revenue was an inline tag under Booked Value; r44
-          //   promotes it to a peer stat card (same commission split as
-          //   Earnings/Reports — see commission.ts).
-          { label: "Shop Revenue", labelTh: "รายได้ร้าน",      value: formatTHB(valueStats.shopRevenue), sub: "after therapist split · หลังหักหมอ", color: adminColor.green,     icon: <Buildings size={20} weight="duotone" /> },
+          // 🆕 28w.55 (founder "มูลค่ารวม bookings แค่ที่สำเร็จ") — delivered
+          //   jobs only (completed/done), not confirmed-but-not-done.
+          { label: "Booked Value", labelTh: "มูลค่ารวม",       value: formatTHB(valueStats.successValue), sub: `${valueStats.successCount} bookings · สำเร็จแล้ว`, color: adminColor.highlight, icon: <Wallet    size={20} weight="duotone" /> },
+          // 🆕 28w.55 (founder "เพิ่ม Promotions โชว์ยอดที่ร้านใช้แจกโปร") —
+          //   total discount handed out on delivered jobs.
+          { label: "Promotions",  labelTh: "โปรโมชั่น",        value: formatTHB(valueStats.promoTotal), sub: `${valueStats.promoCount} โปร · ส่วนลดที่แจก`, color: adminColor.accent, icon: <Tag size={20} weight="duotone" /> },
+          // 🆕 28w.54/55 — taxi comp the shop pays out for no-shows (real cash,
+          //   unlike lost booking value). Sub also surfaces the cancelled count.
+          { label: "No-show Taxi", labelTh: "ค่าแท็กซี่ No-show", value: formatTHB(valueStats.noShowTaxi), sub: `ยกเลิก ${valueStats.cancelledCount} · no-show ${valueStats.noShowCount}`, color: adminColor.amber, icon: <Taxi size={20} weight="duotone" /> },
+          // 🆕 28s258 — shop's net cut. Base is post-promo, and 28w.53 subtracts
+          //   the no-show taxi, so this is already net of split + promo + no-show.
+          { label: "Shop Revenue", labelTh: "รายได้ร้าน",      value: formatTHB(valueStats.shopRevenue), sub: "หลังหักหมอ · โปร · No-show", color: adminColor.green,     icon: <Buildings size={20} weight="duotone" /> },
         ].map((s) => (
           <Box
             key={s.label}
@@ -797,6 +945,35 @@ const AdminBookingListPage: React.FC = () => {
           <MenuItem value="paid">Paid</MenuItem>
           <MenuItem value="unpaid">Unpaid</MenuItem>
         </Select>
+
+        {/* 🆕 28w.56 → 28w.57 (founder "เปลี่ยนเป็น button") — promo filter as a
+            pill toggle (matches the status tabs): on = only promo orders. */}
+        <motion.button
+          type="button"
+          whileTap={{ scale: 0.97 }}
+          onClick={() => setPromoFilter((p) => (p === "promo" ? "__ALL__" : "promo"))}
+          aria-pressed={promoFilter === "promo"}
+          aria-label="Promotions filter · ใช้โปรฯ"
+          style={{
+            flexShrink: 0,
+            height: 40,
+            padding: "0 16px",
+            borderRadius: 999,
+            background: promoFilter === "promo" ? adminColor.accent : adminColor.panel,
+            border: promoFilter === "promo" ? "none" : `1px solid ${adminColor.line2}`,
+            color: promoFilter === "promo" ? "#fff" : adminColor.muted,
+            fontFamily: SANS,
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: "pointer",
+            boxShadow: promoFilter === "promo" ? "0 5px 14px rgba(78,126,140,0.28)" : "none",
+            display: "flex", alignItems: "center", gap: 6,
+            transition: "border-color 0.15s ease, color 0.15s ease, background 0.15s ease",
+          }}
+        >
+          <Tag size={16} weight={promoFilter === "promo" ? "fill" : "duotone"} />
+          ใช้โปรฯ
+        </motion.button>
       </Box>
 
       {/* ── card list ─────────────────────────────────────────────── */}
@@ -837,6 +1014,7 @@ const AdminBookingListPage: React.FC = () => {
               >
                 <BookingCard
                   booking={b}
+                  member={memberForPhone(b.phone)}
                   onConfirm={() => setStatus(b.id, "confirmed")}
                   onComplete={() => setStatus(b.id, "completed")}
                   onCancel={() => cancelBooking(b.id)}
@@ -886,6 +1064,7 @@ const AdminBookingListPage: React.FC = () => {
         {detailBooking && (
           <DetailPanel
             booking={detailBooking}
+            member={memberForPhone(detailBooking.phone)}
             therapists={therapists}
             onClose={closeDetail}
             onConfirm={() => { void setStatus(detailBooking.id, "confirmed"); }}
@@ -923,6 +1102,7 @@ const AdminBookingListPage: React.FC = () => {
 // ──────────────────────────────────────────────────────────────────────
 const BookingCard: React.FC<{
   booking: Booking;
+  member: MembershipResult | null;
   onConfirm: () => void;
   onComplete: () => void;
   onCancel: () => void;
@@ -930,7 +1110,7 @@ const BookingCard: React.FC<{
   onSaveNote: (note: string) => void;
   onViewDetail: () => void;
   onMarkReviewed: () => void;
-}> = ({ booking: b, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onViewDetail, onMarkReviewed }) => {
+}> = ({ booking: b, member, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onViewDetail, onMarkReviewed }) => {
   const [expanded, setExpanded] = useState(false);
   const [note,     setNote]     = useState(b.adminNote ?? "");
 
@@ -1038,6 +1218,13 @@ const BookingCard: React.FC<{
           <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted }}>{nameOf(b)}</Typography>
         </Box>
 
+        {/* 🆕 28w.59 — membership + no-show badges for this customer */}
+        {member && (member.tier || member.hasNoShow) && (
+          <Box sx={{ mt: 0.5 }}>
+            <MembershipBadges member={member} />
+          </Box>
+        )}
+
         {/* customer phone, tap-to-call */}
         {b.phone && (
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.3 }}>
@@ -1081,6 +1268,15 @@ const BookingCard: React.FC<{
                 incl. ฿{b.taxiFee} taxi
               </Typography>
             ) : null}
+            {/* 🆕 28w.58 — promo chip so promo orders are spottable in the list */}
+            {(b.discountCode || (b.discountAmount ?? 0) > 0) && (
+              <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.4, mt: 0.4, px: 0.75, py: "2px", borderRadius: 999, background: `${adminColor.accent}14` }}>
+                <Tag size={11} weight="fill" color={adminColor.accent} />
+                <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: adminColor.accent, lineHeight: 1 }}>
+                  {b.discountCode || "โปรฯ"}{(b.discountAmount ?? 0) > 0 ? ` −฿${b.discountAmount}` : ""}
+                </Typography>
+              </Box>
+            )}
           </Box>
 
           <Box sx={{ display: "flex", gap: 0.75, alignItems: "center" }}>
@@ -1336,6 +1532,7 @@ const SectionHeader: React.FC<{ icon: React.ReactNode; children: React.ReactNode
 
 const DetailPanel: React.FC<{
   booking: Booking;
+  member: MembershipResult | null;
   therapists: { id: string; name: string }[];
   onClose: () => void;
   onConfirm: () => void;
@@ -1345,7 +1542,7 @@ const DetailPanel: React.FC<{
   onSaveNote: (note: string) => void;
   onChangeStatus: (status: string) => void;
   onSaveDetails: (patch: Record<string, unknown>, auditDetail?: Record<string, unknown>) => void;
-}> = ({ booking: b, therapists, onClose, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onChangeStatus, onSaveDetails }) => {
+}> = ({ booking: b, member, therapists, onClose, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onChangeStatus, onSaveDetails }) => {
   const [note, setNote] = useState(b.adminNote ?? "");
   const cfg        = cfgFor(b.status);
   const isCancelled = b.status === "cancelled";
@@ -1503,6 +1700,12 @@ const DetailPanel: React.FC<{
               {getServiceLabel(b.serviceId, b.serviceName)}
               {b.duration && ` · ${b.duration} min`}
             </Typography>
+            {/* 🆕 28w.59 — customer's membership tier + no-show flag */}
+            {member && (member.tier || member.hasNoShow) && (
+              <Box sx={{ mt: 1 }}>
+                <MembershipBadges member={member} size="md" />
+              </Box>
+            )}
           </Box>
           <IconButton onClick={onClose} aria-label="Close · ปิด" sx={{ color: adminColor.muted, mt: -0.5 }}>
             <X size={20} />
@@ -1544,6 +1747,40 @@ const DetailPanel: React.FC<{
 
       {/* scrollable body */}
       <Box sx={{ flex: 1, overflowY: "auto", px: 2.5, py: 2 }}>
+
+        {/* 🆕 28w.58 (founder "ดูตรงไหนว่าโปรอะไร") — promo used on this order:
+            label + code + amount, from the booking's discountCode/Label. */}
+        {(b.discountCode || (b.discountAmount ?? 0) > 0) && (
+          <Box
+            sx={{
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1,
+              borderRadius: "14px", background: `${adminColor.accent}0D`,
+              border: `1px solid ${adminColor.accent}33`, px: 1.75, py: 1.25, mb: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+              <Tag size={18} weight="duotone" color={adminColor.accent} />
+              <Box sx={{ minWidth: 0 }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: adminColor.accent, letterSpacing: "0.06em", textTransform: "uppercase", lineHeight: 1 }}>
+                  Promo · โปรโมชั่น
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: adminColor.text, mt: 0.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {b.discountLabel || b.discountCode || "ส่วนลด"}
+                </Typography>
+                {b.discountCode && b.discountLabel && (
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 0.1 }}>
+                    โค้ด · {b.discountCode}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+            {(b.discountAmount ?? 0) > 0 && (
+              <Typography sx={{ ...adminFigureSx, fontSize: 15, fontWeight: 800, color: adminColor.accent, flexShrink: 0 }}>
+                −{formatTHB(b.discountAmount as number)}
+              </Typography>
+            )}
+          </Box>
+        )}
 
         {/* 🆕 28s259 (fix: "สถานนะ แก้ไขไม่ได้ Cancelled / Completed") —
             always-active override, works from ANY current status (un-cancel,

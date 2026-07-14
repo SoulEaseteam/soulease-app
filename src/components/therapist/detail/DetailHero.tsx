@@ -603,11 +603,18 @@ const DetailHero: React.FC<Props> = ({
               ) : (
                 <>
                   <NearMeRoundedIcon sx={{ fontSize: 14 }} />
+                  {/* 🆕 28w.73 (founder "โลเคชั่น ไม่ทำงาน") — geolocation itself
+                      works; the browser had BLOCKED the permission (error code
+                      1). Once blocked, browsers never re-prompt, so the old
+                      dead "Location off" chip just looked broken. Say what to
+                      do instead. */}
                   {geoStatus === "prompt"
                     ? "Locating…"
                     : geoStatus === "denied"
-                      ? "Location off"
-                      : "Allow location"}
+                      ? "Location blocked — allow it in your browser settings"
+                      : geoStatus === "unsupported"
+                        ? "Location unavailable on this device"
+                        : "Allow location"}
                 </>
               )}
             </Box>

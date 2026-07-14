@@ -109,6 +109,8 @@ const BookingHistoryPage = React.lazy(
 const ReviewPage = React.lazy(() => import("@/pages/ReviewPage"));
 const ReviewListPage = React.lazy(() => import("@/pages/ReviewListPage"));
 
+// 🆕 28w.89 — "My discount codes" (rewards · held code · referral code).
+const MyCodesPage = React.lazy(() => import("@/pages/user/MyCodesPage"));
 const SavedTherapistsPage = React.lazy(
   () => import("@/pages/user/SavedTherapistsPage")
 );
@@ -204,6 +206,15 @@ const AdminSeedReviewsPage = React.lazy(
 );
 const AdminReportPage = React.lazy(
   () => import("@/pages/admin/AdminReportPage")
+);
+// 🆕 Round 28w.59 — membership tier config + per-tier customer counts.
+const AdminMembershipPage = React.lazy(
+  () => import("@/pages/admin/AdminMembershipPage")
+);
+// 🆕 Round 28w.77 — the member ROSTER (enrol / codes / tiers). Deliberately
+//   separate from AdminMembershipPage, which holds the RULES.
+const AdminMembersPage = React.lazy(
+  () => import("@/pages/admin/AdminMembersPage")
 );
 const AdminBlockedDevicesPage = React.lazy(
   () => import("@/pages/admin/AdminBlockedDevicesPage")
@@ -321,6 +332,7 @@ export default function App() {
 
           <Route path="/saved" element={<SavedTherapistsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/my-codes" element={<MyCodesPage />} />
           {/* 🆕 Round 28b26 — legacy /account?tab=… → /profile redirect */}
           <Route path="/account" element={<AccountLegacyRedirect />} />
           <Route path="/edit-profile" element={<EditProfilePage />} />
@@ -366,6 +378,8 @@ export default function App() {
           />
           <Route path="add-therapist" element={<AddTherapistPage />} />
           <Route path="users" element={<AdminUsersPage />} />
+          <Route path="membership" element={<AdminMembershipPage />} />
+          <Route path="members" element={<AdminMembersPage />} />
           <Route path="user/:id" element={<AdminUserDetailPage />} />
           <Route path="bookings" element={<AdminBookingListPage />} />
           <Route path="bookings/add" element={<AdminBookingAddPage />} />

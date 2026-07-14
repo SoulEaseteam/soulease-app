@@ -55,6 +55,7 @@ import ShowerRoundedIcon from "@mui/icons-material/ShowerRounded";
 import WaterDropRoundedIcon from "@mui/icons-material/WaterDropRounded";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { bookingRef } from "@/utils/bookingRef";
 // 🆕 Round 28s90 (CRO audit) — multi-channel confirm row. Chinese
 //   tourists (WeChat) + the Telegram-first audience were being dumped
 //   into a LINE-only button and bailing at the finish line. Same
@@ -195,8 +196,9 @@ const BookingSuccessPage: React.FC = () => {
       )
     : null;
 
-  // Booking ref code: SR + first 8 chars of doc id, uppercased.
-  const refCode = id ? `SR-${id.slice(0, 8).toUpperCase()}` : "SR-—";
+  // 🆕 28w.98 — format moved to utils/bookingRef so the reward dialog shows the
+  //   SAME reference the guest sees here, not a second derivation of it.
+  const refCode = bookingRef(id);
 
   // 🆕 Round 28b21 — Phase 2: 10-min hold window. Field present only on
   //   bookings created after this round; older docs render no countdown.
@@ -362,7 +364,7 @@ const BookingSuccessPage: React.FC = () => {
                 marginTop: "4px",
               }}
             >
-              รับคำสั่งจองเรียบร้อย
+              {t("success.received", "Reservation received")}
             </Typography>
 
             {/* Booking ref pill */}
@@ -734,7 +736,7 @@ const BookingSuccessPage: React.FC = () => {
                   marginBottom: "10px",
                 }}
               >
-                รายละเอียดการจอง
+                {t("success.details", "Reservation details")}
               </Typography>
               <SummaryLine
                 label={t("success.summary.practitioner", "Practitioner")}
@@ -942,7 +944,7 @@ const BookingSuccessPage: React.FC = () => {
                       marginTop: "1px",
                     }}
                   >
-                    สิ่งที่ต้องเตรียม
+                    {t("success.prepare", "What to prepare")}
                   </Typography>
                 </Box>
                 <Typography
@@ -1072,7 +1074,7 @@ const BookingSuccessPage: React.FC = () => {
                   marginBottom: "6px",
                 }}
               >
-                ยืนยันกับ concierge
+                {t("success.confirmWithConcierge", "Confirm with the concierge")}
               </Typography>
               <Box
                 sx={{

@@ -38,6 +38,11 @@ import {
 import { toast } from "react-toastify";
 import { Crown, Warning, MagnifyingGlass, UsersThree, Repeat, CurrencyCircleDollar, CaretDown, CircleNotch, ProhibitInset } from "phosphor-react";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
+// 🆕 28w.60 — membership enrollment (SRD- codes) on the customer insights drawer.
+import {
+  membershipFor, applyMembershipConfig, generateMemberCode, tierRank,
+  MEMBERSHIP_COLORS, MEMBERSHIP_TIERS, type MembershipTier, type MembershipThresholds,
+} from "@/utils/membership";
 import { countryFromPhone, normPhone, type PhoneCountry } from "@/utils/phoneCountry";
 import { logAdminAction } from "@/utils/auditLog";
 
@@ -272,7 +277,7 @@ const AdminUsersPage: React.FC = () => {
       setOpenBooking({ id, loading: false, data: null });
     }
   };
-  const closeGuest = () => { setSelectedGuest(null); setOpenBooking(null); setBlockFlow(false); setBlockReason(""); };
+  const closeGuest = () => { setSelectedGuest(null); setOpenBooking(null); setBlockFlow(false); setBlockReason(""); setMemberEditing(false); };
 
   // 🆕 Round 28s293 — live set of blocked phone numbers, so the guest
   //   drawer can show a "Blocked" badge and toggle Block/Unblock in one
@@ -327,6 +332,109 @@ const AdminUsersPage: React.FC = () => {
     } finally {
       setBlockSubmitting(false);
     }
+  };
+
+  // 🆕 28w.60 — membership enrollment. Records live in adminSettings/members
+  //   (map keyed by normalized phone) so no new collection / rules deploy is
+  //   needed; thresholds come from adminSettings/membership.
+  type MemberRec = { code: string; tier: MembershipTier; name?: string; createdAtMs: number; updatedAtMs: number };
+  const [members, setMembers] = useState<Record<string, MemberRec>>({});
+  const nowMs = useMemo(() => Date.now(), []);
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "adminSettings", "members"), (snap) => {
+      const data = snap.data() as { members?: Record<string, MemberRec> } | undefined;
+      setMembers(data?.members ?? {});
+    }, () => {});
+    return () => unsub();
+  }, []);
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "adminSettings", "membership"), (snap) => {
+      applyMembershipConfig((snap.data() as Partial<MembershipThresholds>) ?? null);
+      // bump `members` identity so the open drawer recomputes tier with new cfg
+      setMembers((m) => ({ ...m }));
+    }, () => {});
+    return () => unsub();
+  }, []);
+
+  const [memberSaving, setMemberSaving] = useState(false);
+  // 🆕 28w.61b (founder "แก้ไขได้ทุกอย่าง") — manual edit of a member's code + tier.
+  const [memberEditing, setMemberEditing] = useState(false);
+  const [editCode, setEditCode] = useState("");
+  const [editTier, setEditTier] = useState<MembershipTier>("Bronze");
+  const computedTierFor = (g: CustomerInsight) =>
+    membershipFor({ served: g.served, totalSpent: g.totalSpent, lastVisitMs: g.lastVisit?.getTime() ?? 0, noShowCount: g.noShowCount }, nowMs).tier;
+
+  // Full-doc replace (not merge) so removing a member key actually deletes it.
+  const writeMembers = async (next: Record<string, MemberRec>) => {
+    await setDoc(doc(db, "adminSettings", "members"), { members: next });
+  };
+  const enrollGuest = async () => {
+    if (!selectedGuest) return;
+    setMemberSaving(true);
+    try {
+      const key = normPhone(selectedGuest.phone);
+      const tier: MembershipTier = computedTierFor(selectedGuest) ?? "Bronze";
+      const rec: MemberRec = { code: generateMemberCode(tier), tier, name: selectedGuest.name, createdAtMs: Date.now(), updatedAtMs: Date.now() };
+      await writeMembers({ ...members, [key]: rec });
+      void logAdminAction("member.enroll", { phone: key, code: rec.code, tier });
+      toast.success(`สมัครสมาชิกแล้ว · ${rec.code}`);
+    } catch (e) { console.error("[member enroll] failed", e); toast.error("สมัครไม่สำเร็จ"); }
+    finally { setMemberSaving(false); }
+  };
+  const resetMemberCode = async () => {
+    if (!selectedGuest) return;
+    const key = normPhone(selectedGuest.phone); const cur = members[key]; if (!cur) return;
+    setMemberSaving(true);
+    try {
+      const rec: MemberRec = { ...cur, code: generateMemberCode(cur.tier), updatedAtMs: Date.now() };
+      await writeMembers({ ...members, [key]: rec });
+      void logAdminAction("member.reset", { phone: key, code: rec.code });
+      toast.success(`รีเซตรหัสแล้ว · ${rec.code}`);
+    } catch (e) { console.error("[member reset] failed", e); toast.error("รีเซตไม่สำเร็จ"); }
+    finally { setMemberSaving(false); }
+  };
+  const upgradeMemberCode = async () => {
+    if (!selectedGuest) return;
+    const key = normPhone(selectedGuest.phone); const cur = members[key]; if (!cur) return;
+    const to = computedTierFor(selectedGuest);
+    if (!to || tierRank(to) <= tierRank(cur.tier)) return;
+    setMemberSaving(true);
+    try {
+      const rec: MemberRec = { ...cur, tier: to, code: generateMemberCode(to), updatedAtMs: Date.now() };
+      await writeMembers({ ...members, [key]: rec });
+      void logAdminAction("member.upgrade", { phone: key, code: rec.code, tier: to });
+      toast.success(`อัปเกรดเป็น ${to} · ${rec.code}`);
+    } catch (e) { console.error("[member upgrade] failed", e); toast.error("อัปเกรดไม่สำเร็จ"); }
+    finally { setMemberSaving(false); }
+  };
+  const startEditMember = (rec: MemberRec) => { setEditCode(rec.code); setEditTier(rec.tier); setMemberEditing(true); };
+  const saveMemberEdit = async () => {
+    if (!selectedGuest) return;
+    const key = normPhone(selectedGuest.phone); const cur = members[key]; if (!cur) return;
+    const code = editCode.trim().toUpperCase();
+    if (!code) { toast.error("ใส่รหัสก่อน"); return; }
+    setMemberSaving(true);
+    try {
+      const rec: MemberRec = { ...cur, code, tier: editTier, updatedAtMs: Date.now() };
+      await writeMembers({ ...members, [key]: rec });
+      void logAdminAction("member.edit", { phone: key, code, tier: editTier });
+      setMemberEditing(false);
+      toast.success("บันทึกแล้ว");
+    } catch (e) { console.error("[member edit] failed", e); toast.error("บันทึกไม่สำเร็จ"); }
+    finally { setMemberSaving(false); }
+  };
+  const removeMember = async () => {
+    if (!selectedGuest) return;
+    const key = normPhone(selectedGuest.phone); if (!members[key]) return;
+    setMemberSaving(true);
+    try {
+      const next = { ...members }; delete next[key];
+      await writeMembers(next);
+      void logAdminAction("member.remove", { phone: key });
+      setMemberEditing(false);
+      toast.success("ยกเลิกสมาชิกแล้ว");
+    } catch (e) { console.error("[member remove] failed", e); toast.error("ยกเลิกไม่สำเร็จ"); }
+    finally { setMemberSaving(false); }
   };
 
   // 🆕 Round 28s287b — guest count per country (doubles as the filter row).
@@ -741,6 +849,100 @@ const AdminUsersPage: React.FC = () => {
                   </Box>
                 ))}
               </Box>
+
+              {/* 🆕 28w.60 — Membership enrollment (SRD- code / reset / upgrade) */}
+              {(() => {
+                const mKey = normPhone(selectedGuest.phone);
+                const member = members[mKey];
+                const computed = computedTierFor(selectedGuest);
+                const shown = member?.tier ?? computed;
+                const canUpgrade = !!member && !!computed && tierRank(computed) > tierRank(member.tier) && (computed === "Gold" || computed === "BlackVIP");
+                const tc = shown ? MEMBERSHIP_COLORS[shown] : adminColor.dim;
+                return (
+                  <Box sx={{ background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "12px", p: "12px 14px", mb: 2 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, mb: 1 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                        <Crown size={16} weight="fill" color={tc} />
+                        <Typography sx={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: adminColor.muted }}>Membership</Typography>
+                      </Box>
+                      {shown && (
+                        <Box sx={{ px: 0.9, py: "2px", borderRadius: 999, background: `${tc}1A`, border: `1px solid ${tc}55` }}>
+                          <Typography sx={{ fontSize: 10.5, fontWeight: 800, color: tc, lineHeight: 1.4 }}>{shown}</Typography>
+                        </Box>
+                      )}
+                    </Box>
+                    {member ? (
+                      memberEditing ? (
+                        <>
+                          {/* 🆕 28w.61b — edit everything: custom code + tier */}
+                          <TextField
+                            label="รหัสสมาชิก" value={editCode}
+                            onChange={(e) => setEditCode(e.target.value.toUpperCase())}
+                            size="small" fullWidth sx={{ mb: 1 }}
+                            inputProps={{ style: { fontFamily: "ui-monospace, monospace", letterSpacing: "0.06em", fontWeight: 700 } }}
+                          />
+                          <TextField
+                            select label="ยศ" value={editTier}
+                            onChange={(e) => setEditTier(e.target.value as MembershipTier)}
+                            size="small" fullWidth sx={{ mb: 1.25 }}
+                          >
+                            {MEMBERSHIP_TIERS.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                          </TextField>
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center" }}>
+                            <Button size="small" variant="contained" disabled={memberSaving} onClick={saveMemberEdit}
+                              sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", background: "linear-gradient(135deg,#D97C95,#C96F89)", "&:hover": { background: "linear-gradient(135deg,#C96F89,#B36079)" } }}>
+                              บันทึก
+                            </Button>
+                            <Button size="small" variant="text" disabled={memberSaving} onClick={() => setMemberEditing(false)}
+                              sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, color: adminColor.muted }}>
+                              ยกเลิก
+                            </Button>
+                            <Button size="small" variant="text" disabled={memberSaving} onClick={removeMember}
+                              sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, color: adminColor.red, ml: "auto" }}>
+                              ลบสมาชิก
+                            </Button>
+                          </Box>
+                        </>
+                      ) : (
+                        <>
+                          <Typography sx={{ fontFamily: "ui-monospace, monospace", fontSize: 18, fontWeight: 800, letterSpacing: "0.08em", color: adminColor.text, mb: 1 }}>
+                            {member.code}
+                          </Typography>
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                            <Button size="small" variant="outlined" disabled={memberSaving} onClick={resetMemberCode}
+                              sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: "#8A3A57", borderColor: "#B8567F", "&:hover": { borderColor: "#8A3A57", background: "rgba(184,86,127,0.06)" } }}>
+                              รีเซตรหัส
+                            </Button>
+                            {canUpgrade && (
+                              <Button size="small" variant="contained" disabled={memberSaving} onClick={upgradeMemberCode}
+                                sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", background: "linear-gradient(135deg,#D97C95,#C96F89)", "&:hover": { background: "linear-gradient(135deg,#C96F89,#B36079)" } }}>
+                                อัปเกรด → {computed}
+                              </Button>
+                            )}
+                            <Button size="small" variant="outlined" disabled={memberSaving} onClick={() => startEditMember(member)}
+                              sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: adminColor.muted, borderColor: adminColor.line2, "&:hover": { borderColor: adminColor.muted } }}>
+                              แก้ไข
+                            </Button>
+                          </Box>
+                          {computed && tierRank(computed) > tierRank(member.tier) && !canUpgrade && (
+                            <Typography sx={{ fontSize: 10.5, color: adminColor.dim, mt: 0.6 }}>ถึงเกณฑ์ {computed} แล้ว (อัปเกรดรหัสได้เมื่อถึง Gold/BlackVIP)</Typography>
+                          )}
+                        </>
+                      )
+                    ) : (
+                      <>
+                        <Typography sx={{ fontSize: 12, color: adminColor.dim, mb: 1 }}>
+                          ยังไม่ได้สมัคร · เกณฑ์ปัจจุบัน: <b style={{ color: tc }}>{computed ?? "ยังไม่เข้าเกณฑ์"}</b>
+                        </Typography>
+                        <Button size="small" variant="contained" disabled={memberSaving} onClick={enrollGuest}
+                          sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", background: "linear-gradient(135deg,#D97C95,#C96F89)", "&:hover": { background: "linear-gradient(135deg,#C96F89,#B36079)" } }}>
+                          + สมัครสมาชิก (รหัส SRD-)
+                        </Button>
+                      </>
+                    )}
+                  </Box>
+                );
+              })()}
 
               {/* history — 🆕 Round 28r45 bilingual header */}
               <Typography sx={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.07em", color: adminColor.muted, mb: 0.15 }}>

@@ -450,7 +450,12 @@ const TopNav: React.FC = () => {
               sx={{
                 fontFamily:
                   '"Playfair Display", "Fraunces", Georgia, serif',
-                fontSize: { xs: "17px", md: "19px" },
+                // 🆕 28w.86 (founder: "ขยาย ชื่อแบรนด์") — 17/19 → 22/26. The
+                //   0.22em tracking makes this wordmark much wider than its
+                //   point size suggests, and it shares the mobile bar with the
+                //   burger + the icon cluster, so the size is checked against a
+                //   320px bar rather than just eyeballed.
+                fontSize: { xs: "22px", md: "26px" },
                 fontWeight: 700,
                 letterSpacing: "0.22em",
                 textTransform: "uppercase",

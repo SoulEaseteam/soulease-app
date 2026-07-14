@@ -49,6 +49,7 @@ import { brand, fonts } from "@/theme";
 //   switch (off by default); `getReferralConfig()` is the effective REFERRAL
 //   reward + enabled flag from the admin Promotions page.
 import { PROMOS_ENABLED } from "@/config/featureFlags";
+import { deriveReferralCode } from "@/utils/referral";
 import { getReferralConfig } from "@/utils/discount";
 
 const SHARE_HOST = "https://sunred.vip";
@@ -62,21 +63,7 @@ interface Props {
   onClose: () => void;
 }
 
-/**
- * Build a stable, human-readable code from the user's identifier.
- * Format: `SUN-XXXXXX` (6 chars from base36 hash). Replace this with
- * a backend-issued code once the /referrals API exists.
- */
-function deriveReferralCode(seed: string | null | undefined): string {
-  if (!seed) return "SUN-WELCOME";
-  // Tiny string-hash → base36 → first 6 chars uppercased.
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) {
-    h = (h * 31 + seed.charCodeAt(i)) | 0;
-  }
-  const code = Math.abs(h).toString(36).toUpperCase().padStart(6, "0").slice(0, 6);
-  return `SUN-${code}`;
-}
+// 🆕 28w.89 — deriveReferralCode moved to utils/referral so /user/codes shares it.
 
 const ReferralDialog: React.FC<Props> = ({ open, onClose }) => {
   const { t } = useTranslation();

@@ -21,7 +21,7 @@
 //
 // To revert: git revert 28s22 — old file in history.
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Box,
   Typography,
@@ -55,12 +55,22 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 
-import { getServiceById } from "@/utils/serviceCatalog";
+import { getServiceById, getAllServices } from "@/utils/serviceCatalog";
+// 🆕 28w.35 — raw (pre-override) catalog, to surface the ORIGINAL stock
+//   photo as a 2nd swipeable hero image alongside the admin upload.
+import servicesCatalog from "@/data/services";
 import {
   priceForDuration,
   durationsFor,
   formatTHB,
+  isServiceEnabled,
+  wasPriceFor,
+  badgeFor,
 } from "@/utils/servicePricing";
+import PromoBadge from "@/components/common/PromoBadge";
+// 🆕 28w.32 — re-render when the admin image override lands so the hero
+//   photo matches the booking flow / services list (same uploaded image).
+import { useServiceConfigVersion } from "@/hooks/useServiceConfigVersion";
 import { trackServiceView, trackConciergeOpen } from "@/utils/analytics";
 import { db } from "@/lib/firebase";
 import { brand, fonts, accents, gradients } from "@/theme";
@@ -111,6 +121,16 @@ interface ReviewLite {
   author: string;
 }
 
+// 🆕 28w.34 — short "RITUAL · TYPE" tag per service for the More Rituals
+//   cross-sell cards (founder screenshot). Custom services fall back to
+//   the generic label.
+const RITUAL_TYPE: Record<string, string> = {
+  "xSR-Thai": "Traditional",
+  "SR-Aroma": "Oil",
+  "SR-HJ2200": "Signature",
+  "SR-B2B3200": "Specialised",
+};
+
 const ServiceDetailPage: React.FC = () => {
   const { id: rawId } = useParams<{ id: string }>();
   const { t, i18n } = useTranslation();
@@ -118,15 +138,50 @@ const ServiceDetailPage: React.FC = () => {
 
   // 🆕 Round 28s302 — via getServiceById so live admin overrides
   //   (name/price/image/detail/benefits) + custom services flow here too.
-  const service = rawId ? getServiceById(rawId) : null;
+  // 🆕 28w.32 — recompute when the async admin override lands (was computed
+  //   once, so the hero froze on the stock image while the booking flow
+  //   showed the uploaded photo).
+  const cfgVersion = useServiceConfigVersion();
+  const service = React.useMemo(
+    () => (rawId ? getServiceById(rawId) : null),
+    [rawId, cfgVersion]
+  );
+
+  // 🆕 28w.34 — the OTHER enabled services for the "More Rituals" cross-sell
+  //   row below the Chat-to-book CTA. getServiceById so the admin override
+  //   images (28w.32) show here too; recompute when the config lands.
+  const otherServices = React.useMemo(
+    () =>
+      getAllServices()
+        .filter((s) => isServiceEnabled(s.id) && s.id !== service?.id)
+        .map((s) => getServiceById(s.id) ?? s),
+    [service?.id, cfgVersion]
+  );
 
   const [duration, setDuration] = useState<number>(60);
   const [reviews, setReviews] = useState<ReviewLite[]>([]);
+
+  // 🆕 28w.35 — swipeable hero gallery (admin photo + original stock photo).
+  const heroScrollRef = useRef<HTMLDivElement | null>(null);
+  const [heroIndex, setHeroIndex] = useState(0);
+  const onHeroScroll = () => {
+    const el = heroScrollRef.current;
+    if (!el || el.clientWidth === 0) return;
+    setHeroIndex(Math.round(el.scrollLeft / el.clientWidth));
+  };
 
   useEffect(() => {
     if (service) {
       trackServiceView(service.id);
     }
+  }, [service]);
+
+  // 🆕 28w.36 — default the selected tier to the first OFFERED duration when
+  //   the current one isn't offered (60 default → 70 for Gentleman's / B2B).
+  useEffect(() => {
+    if (!service) return;
+    const offered = durationsFor(service);
+    setDuration((d) => (offered.includes(d) ? d : offered[0]));
   }, [service]);
 
   // Reviews — gated by Firestore rule (28s6) to docs with `rating`
@@ -211,11 +266,21 @@ const ServiceDetailPage: React.FC = () => {
     tier: "PREMIUM" as const,
   };
   const Icon = config.icon;
-  // 🆕 28r118 (founder "โชว์แค่ 60 นาที ทุกเมนู · ซ่อนเมนูราคา ทุกหน้า
-  //   ที่โชว์") — 90 + 120 duration cards hidden while new pricing is
-  //   being redone. Filtering here (rather than in durationsFor())
-  //   keeps the 90/120 tiers available for booking flow / concierge use.
-  const tiers: number[] = durationsFor(service).filter((d) => d === 60);
+
+  // 🆕 28w.35 (founder "เพิ่มรูปที่สอง เป็นรูปเมื่อกี้ เลือนดูได้") — hero
+  //   gallery: [admin-uploaded photo (service.image), original stock photo].
+  //   The stock image is the pre-override catalog entry; deduped so services
+  //   with no admin upload (image === stock) keep a single full-height photo.
+  const stockImage = servicesCatalog.find((s) => s.id === service.id)?.image;
+  const heroImages = [service.image, stockImage].filter(
+    (v, i, a): v is string => Boolean(v) && a.indexOf(v) === i
+  );
+
+  // 🆕 28w.36 (founder 2026-07-14 "โชว์ราคาทั้งหมด") — new pricing is set,
+  //   so ALL offered tiers show again (Thai/Aroma 60/90/120 · Gentleman's/
+  //   Therapeutic 70/120). Reverses the 28r118 "60 only" hide. Duration
+  //   default is corrected to the first offered tier in a hook above.
+  const tiers: number[] = durationsFor(service);
   const currentPrice = priceForDuration(service, duration);
 
   const handleBook = () => {
@@ -301,23 +366,77 @@ const ServiceDetailPage: React.FC = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              sx={{
-                width: "100%",
-                borderRadius: "20px",
-                overflow: "hidden",
-                marginBottom: "20px",
-                background: "#ECEBE8",
-              }}
+              sx={{ width: "100%", marginBottom: "20px" }}
             >
-              {service.image ? (
+              {heroImages.length > 1 ? (
+                // 🆕 28w.35 — swipeable gallery: admin photo + original stock
+                //   photo. Uniform square frame so the slides align; swipe /
+                //   scroll horizontally. Dots track the active slide.
+                <>
+                  <Box
+                    ref={heroScrollRef}
+                    onScroll={onHeroScroll}
+                    sx={{
+                      display: "flex",
+                      overflowX: "auto",
+                      borderRadius: "20px",
+                      scrollSnapType: "x mandatory",
+                      background: "#ECEBE8",
+                      scrollbarWidth: "none",
+                      WebkitOverflowScrolling: "touch",
+                      "&::-webkit-scrollbar": { display: "none" },
+                    }}
+                  >
+                    {heroImages.map((img, i) => (
+                      <Box
+                        key={img}
+                        component="img"
+                        src={img}
+                        alt={`${service.name} — ${i + 1}`}
+                        loading={i === 0 ? "eager" : "lazy"}
+                        draggable={false}
+                        sx={{
+                          flex: "0 0 100%",
+                          width: "100%",
+                          aspectRatio: "1 / 1",
+                          objectFit: "cover",
+                          objectPosition: "center 28%",
+                          scrollSnapAlign: "start",
+                          display: "block",
+                        }}
+                      />
+                    ))}
+                  </Box>
+                  {/* slide dots */}
+                  <Box sx={{ display: "flex", justifyContent: "center", gap: "6px", mt: 1.25 }}>
+                    {heroImages.map((img, i) => (
+                      <Box
+                        key={img}
+                        aria-hidden
+                        sx={{
+                          height: 6,
+                          width: heroIndex === i ? 18 : 6,
+                          borderRadius: "999px",
+                          background:
+                            heroIndex === i ? "var(--sr-gold-text)" : "var(--sr-hairline)",
+                          transition: "width 0.2s ease, background 0.2s ease",
+                        }}
+                      />
+                    ))}
+                  </Box>
+                </>
+              ) : heroImages.length === 1 ? (
+                // Single photo → keep the r119 full, uncropped natural display.
                 <Box
                   component="img"
-                  src={service.image}
+                  src={heroImages[0]}
                   alt={service.name}
                   sx={{
                     display: "block",
                     width: "100%",
                     height: "auto",
+                    borderRadius: "20px",
+                    background: "#ECEBE8",
                   }}
                 />
               ) : (
@@ -327,6 +446,8 @@ const ServiceDetailPage: React.FC = () => {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    borderRadius: "20px",
+                    background: "#ECEBE8",
                   }}
                 >
                   <Icon sx={{ fontSize: { xs: 64, md: 80 }, color: config.swatchIcon }} />
@@ -382,6 +503,12 @@ const ServiceDetailPage: React.FC = () => {
 
           {/* ── Duration tiles (inside left rail on md+) ─────────── */}
           <Box sx={{ padding: { xs: "0 18px", md: 0 }, marginBottom: "24px" }}>
+        {/* 🆕 28w.62/63 — shimmering Best Seller / Best Value badge */}
+        {badgeFor(service.id) && (
+          <Box sx={{ mb: "12px" }}>
+            <PromoBadge serviceId={service.id} />
+          </Box>
+        )}
         <Typography
           component="p"
           sx={{
@@ -408,7 +535,7 @@ const ServiceDetailPage: React.FC = () => {
             opacity: 0.75,
           }}
         >
-          เลือกระยะเวลา
+          {t("service.chooseDuration", "Choose duration")}
         </Typography>
         <Box
           role="group"
@@ -421,6 +548,7 @@ const ServiceDetailPage: React.FC = () => {
         >
           {tiers.map((d) => {
             const price = priceForDuration(service, d);
+            const was = wasPriceFor(service, d);
             const isActive = d === duration;
             return (
               <Box
@@ -497,17 +625,35 @@ const ServiceDetailPage: React.FC = () => {
                     </Typography>
                   )}
                 </Box>
-                <Typography
-                  component="span"
-                  sx={{
-                    fontFamily: fonts.heading,
-                    fontSize: "18px",
-                    fontWeight: 700,
-                    color: isActive ? "#fff" : brand.red,
-                  }}
-                >
-                  {formatTHB(price)}
-                </Typography>
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                  {was && (
+                    <Typography
+                      component="span"
+                      sx={{
+                        fontFamily: fonts.body,
+                        fontSize: "11px",
+                        fontWeight: 500,
+                        textDecoration: "line-through",
+                        color: isActive ? "rgba(255,255,255,0.7)" : "var(--sr-muted)",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {formatTHB(was)}
+                    </Typography>
+                  )}
+                  <Typography
+                    component="span"
+                    sx={{
+                      fontFamily: fonts.heading,
+                      fontSize: "18px",
+                      fontWeight: 700,
+                      color: isActive ? "#fff" : brand.red,
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {formatTHB(price)}
+                  </Typography>
+                </Box>
               </Box>
             );
           })}
@@ -551,7 +697,7 @@ const ServiceDetailPage: React.FC = () => {
             opacity: 0.75,
           }}
         >
-          สิ่งที่รวมในบริการ
+          {t("service.whatsIncluded", "What's included")}
         </Typography>
         <Box
           component="ul"
@@ -637,7 +783,7 @@ const ServiceDetailPage: React.FC = () => {
               opacity: 0.75,
             }}
           >
-            รีวิวจากลูกค้า
+            {t("service.guestReviews", "Guest reviews")}
           </Typography>
           <Box
             sx={{
@@ -748,6 +894,190 @@ const ServiceDetailPage: React.FC = () => {
           {t("serviceDetail.bookCta", "Chat to book")} · {formatTHB(currentPrice)}
         </Button>
       </Box>
+
+      {/* ── More Rituals (cross-sell) ──────────────────────────────────
+          🆕 28w.34 (founder screenshot "เพิ่ม More Rituals ใต้ปุ่มแชท") —
+          horizontal row of the OTHER services below the Chat-to-book CTA.
+          Photo-top card · RITUAL · TYPE eyebrow · name · From ฿X ·
+          Details → (routes to that service). Reuses getServiceById so the
+          admin override images (28w.32) show here too. Day/night via
+          var(--sr-*). */}
+      {otherServices.length > 0 && (
+        <Box
+          sx={{
+            ...responsiveShell,
+            mx: "auto",
+            width: "100%",
+            padding: { xs: "16px 0 40px", md: "24px 0 48px" },
+          }}
+        >
+          {/* Section header — MORE RITUALS flanked by rules */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              px: { xs: "18px", md: 0 },
+              mb: 2.5,
+            }}
+          >
+            <Box sx={{ flex: 1, height: "1px", background: "var(--sr-hairline)" }} />
+            <Typography
+              sx={{
+                fontFamily: fonts.body,
+                fontSize: "12px",
+                fontWeight: 700,
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: "var(--sr-muted)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {t("serviceDetail.moreRituals", "More Rituals")}
+            </Typography>
+            <Box sx={{ flex: 1, height: "1px", background: "var(--sr-hairline)" }} />
+          </Box>
+
+          {/* Horizontal scroll row */}
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              overflowX: "auto",
+              px: { xs: "18px", md: 0 },
+              pb: 1,
+              scrollSnapType: "x mandatory",
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" },
+            }}
+          >
+            {otherServices.map((svc) => {
+              const from = priceForDuration(svc, 60);
+              const type = RITUAL_TYPE[svc.id] ?? "Ritual";
+              return (
+                <Box
+                  key={svc.id}
+                  sx={{
+                    flex: "0 0 auto",
+                    width: "72%",
+                    minWidth: "236px",
+                    maxWidth: "300px",
+                    scrollSnapAlign: "start",
+                    background: "var(--sr-panel)",
+                    border: "1px solid var(--sr-hairline)",
+                    borderRadius: "20px",
+                    boxShadow: "var(--sr-card-shadow)",
+                    overflow: "hidden",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  {svc.image && (
+                    <Box
+                      component="img"
+                      src={svc.image}
+                      alt={svc.name}
+                      loading="lazy"
+                      sx={{
+                        width: "100%",
+                        height: 168,
+                        objectFit: "cover",
+                        objectPosition: "center 30%",
+                        display: "block",
+                      }}
+                    />
+                  )}
+                  <Box
+                    sx={{
+                      padding: "16px 18px 18px",
+                      display: "flex",
+                      flexDirection: "column",
+                      flex: 1,
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontFamily: fonts.body,
+                        fontSize: "10.5px",
+                        fontWeight: 700,
+                        letterSpacing: "0.16em",
+                        textTransform: "uppercase",
+                        color: "var(--sr-muted)",
+                        mb: 0.75,
+                      }}
+                    >
+                      {t("serviceDetail.ritualTag", "Ritual")} · {type}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: fonts.heading,
+                        fontSize: "20px",
+                        fontWeight: 600,
+                        color: "var(--sr-ink)",
+                        letterSpacing: "-0.01em",
+                        lineHeight: 1.15,
+                      }}
+                    >
+                      {svc.name}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: fonts.body,
+                        fontSize: "14px",
+                        color: "var(--sr-muted)",
+                        mt: 0.5,
+                        mb: 1.75,
+                      }}
+                    >
+                      {t("serviceDetail.from", "From")}{" "}
+                      <Box
+                        component="span"
+                        sx={{ color: "var(--sr-ink)", fontWeight: 700, fontSize: "17px" }}
+                      >
+                        {formatTHB(from)}
+                      </Box>
+                    </Typography>
+                    <Box
+                      component="button"
+                      onClick={() => {
+                        window.scrollTo({ top: 0 });
+                        navigate(`/services/${svc.id}`);
+                      }}
+                      aria-label={t("serviceDetail.detailsAria", "Details for {{name}}", {
+                        name: svc.name,
+                      })}
+                      sx={{
+                        mt: "auto",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 1,
+                        width: "100%",
+                        padding: "12px 16px",
+                        borderRadius: "999px",
+                        background: "transparent",
+                        border: "1.5px solid var(--sr-ink)",
+                        color: "var(--sr-ink)",
+                        fontFamily: fonts.body,
+                        fontSize: "14px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        transition: "background 0.15s ease, color 0.15s ease",
+                        "&:hover": { background: "var(--sr-ink)", color: "var(--sr-panel)" },
+                      }}
+                    >
+                      {t("serviceDetail.details", "Details")}
+                      <Box component="span" aria-hidden sx={{ fontSize: "16px", lineHeight: 1 }}>
+                        →
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 };

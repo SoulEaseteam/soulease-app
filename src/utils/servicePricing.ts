@@ -33,7 +33,17 @@ export const DURATION_MULTIPLIERS: Record<number, number> = {
 export const DURATION_PRICE_OVERRIDES: Record<
   string,
   Partial<Record<number, number>>
-> = {};
+> = {
+  // 🆕 Round 28w.36 (founder 2026-07-14 "ใส่เงินใหม่ตามนี้") — explicit
+  //   per-duration pricing, replaces the old ×1.5/×2.0 multiplier. Thai &
+  //   Aroma keep 60/90/120; Gentleman's & Therapeutic move to 70/120
+  //   (see availableDurations in src/data/services.ts). 60-min bases live
+  //   in services.ts (Thai 1,200 · Aroma 1,400); everything else here.
+  "xSR-Thai": { 90: 1600, 120: 2000 },
+  "SR-Aroma": { 90: 1800, 120: 2400 },
+  "SR-HJ2200": { 70: 2200, 120: 3000 },
+  "SR-B2B3200": { 70: 3200, 120: 4000 },
+};
 
 // 🆕 Round 28s300 (founder: "admin/promotions สามารถจัดการราคาและบริการได้")
 // — live, admin-editable price/name/desc/enabled overrides per service,
@@ -55,6 +65,10 @@ export interface LiveServiceOverride {
   price?: number;
   /** Explicit per-duration prices (keys are minute counts). Wins over `price`×mult. */
   prices?: Record<number, number>;
+  /** 🆕 Round 28w.79 — stamp identifying which admin price model wrote this
+   *  override. Overrides for the 4 code-priced services are only honoured
+   *  when this equals PRICE_MODEL; see applyLiveServiceConfig. */
+  priceModel?: string;
   // 🆕 Round 28s302 — full presentation overrides for the 4 standard
   //   services (image + detail page copy), editable from /admin/promotions.
   image?: string;
@@ -94,6 +108,32 @@ let liveServiceOverrides: Record<string, LiveServiceOverride> = {};
 let liveCustomServices: MassageService[] = [];
 let liveServiceOrder: string[] = [];
 
+// 🆕 Round 28w.32 (founder "ใช้ที่เดียวกันกัน services" — service photos
+//   inconsistent across surfaces) — reactive signal so React surfaces
+//   re-render when the async admin config (image/name/price/order
+//   overrides) lands AFTER first paint. Without it, a component that
+//   memoises the catalog on mount (e.g. ServicesPage `useMemo(…, [])`)
+//   freezes the pre-override STOCK images and never shows the admin's
+//   uploaded photos — while surfaces that happen to re-render for other
+//   reasons (booking flow / therapist page live listeners) do, so the
+//   same service showed two different photos. Bumped once per apply.
+let serviceConfigVersion = 0;
+const serviceConfigListeners = new Set<() => void>();
+
+/** Current live-config revision. Increments each applyLiveServiceConfig. */
+export function getServiceConfigVersion(): number {
+  return serviceConfigVersion;
+}
+
+/** Subscribe to live-config (re)applies. Returns an unsubscribe fn.
+ *  Pair with useSyncExternalStore — see useServiceConfigVersion hook. */
+export function subscribeServiceConfig(cb: () => void): () => void {
+  serviceConfigListeners.add(cb);
+  return () => {
+    serviceConfigListeners.delete(cb);
+  };
+}
+
 /** Admin-set display order (service ids). Empty = use the caller's own
  *  default order. 🆕 Round 28s302. */
 export function getLiveServiceOrder(): string[] {
@@ -103,6 +143,38 @@ export function getLiveServiceOrder(): string[] {
 // Fallback image so a custom service with no uploaded photo still renders
 // a real card instead of a broken image.
 const CUSTOM_SERVICE_FALLBACK_IMAGE = "/images/workphoto/IMG_5096.JPG";
+
+// 🆕 Round 28w.42 (founder 2026-07-14 "ทำไมราคาเก่ากระทบไปด้วย") — the 4
+//   standard services are now CODE-PRICED (services.ts base + the
+//   DURATION_PRICE_OVERRIDES map above). A stale admin live override in
+//   adminSettings/publicRules.serviceOverrides still carried the OLD
+//   ×1.5/×2.0 prices (60/90/120-shaped), which WON over the code in
+//   priceForDuration and masked the 28w.36 repricing + the 70-min switch
+//   (the admin panel can't even express 70 min). So when we apply the live
+//   config we STRIP any price/prices for these services — the code is the
+//   single source of truth for their price. Name/desc/image/badge overrides
+//   still flow through; custom (admin-created) services keep their prices.
+const CODE_PRICED_SERVICE_IDS = new Set([
+  "xSR-Thai",
+  "SR-Aroma",
+  "SR-HJ2200",
+  "SR-B2B3200",
+]);
+
+/**
+ * 🆕 Round 28w.79 — 28w.42's blanket strip (above) fixed the stale-price bug
+ * but left /admin/promotions unable to price these 4 services AT ALL: it kept
+ * showing the doc's old 60/90/120 numbers, let the founder edit them, said
+ * "saved — live immediately", and then the strip silently threw the price away.
+ *
+ * Rather than trust every override again (which would instantly re-apply the
+ * stale ×1.5/×2.0 doc still sitting in Firestore), we version the writer. Only
+ * an override stamped with the CURRENT model — which only the fixed, duration-
+ * aware editor writes — is allowed to price a code-priced service. Legacy docs
+ * carry no stamp, so they stay stripped exactly as they are today: customers
+ * see no change until the founder deliberately saves a price.
+ */
+export const PRICE_MODEL = "28w.79";
 
 /**
  * 🆕 Round 28s300/28s301 — one entry point (called only by MaintenanceGate)
@@ -127,6 +199,20 @@ export function applyLiveServiceConfig(cfg: {
   const filteredOverrides: Record<string, LiveServiceOverride> = {};
   for (const [k, v] of Object.entries(rawOverrides)) {
     if (v?.scheduledFor && v.scheduledFor > now) continue;
+    // 🆕 28w.42 — the 4 standard services are code-priced; drop any stale
+    //   live price override so the code (services.ts + DURATION_PRICE_OVERRIDES)
+    //   wins. Keep name/desc/image/badge/enabled/scheduledFor.
+    // 🆕 28w.79 — …unless the override was written by the current, duration-
+    //   aware admin editor (PRICE_MODEL stamp). Those ARE the founder's real
+    //   intent and must reach the customer; only unstamped legacy docs get
+    //   stripped. See PRICE_MODEL above.
+    if (v && CODE_PRICED_SERVICE_IDS.has(k) && v.priceModel !== PRICE_MODEL) {
+      const { price: _p, prices: _pr, ...rest } = v;
+      void _p;
+      void _pr;
+      filteredOverrides[k] = rest;
+      continue;
+    }
     filteredOverrides[k] = v;
   }
   const map: Record<string, LiveServiceOverride> = { ...filteredOverrides };
@@ -169,6 +255,12 @@ export function applyLiveServiceConfig(cfg: {
   }
   liveServiceOverrides = map;
   liveCustomServices = list;
+
+  // 🆕 28w.32 — notify React subscribers so memoised catalog reads
+  //   (ServicesPage / ServiceDetailPage) recompute with the freshly
+  //   applied admin image/name/price overrides.
+  serviceConfigVersion += 1;
+  serviceConfigListeners.forEach((cb) => cb());
 }
 
 /** ENABLED admin-created services, in the shape the catalog uses. */
@@ -283,4 +375,57 @@ export function startingPrice(service: MassageService): number {
  */
 export function formatTHB(amount: number): string {
   return `฿${amount.toLocaleString()}`;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// 🆕 28w.62 → 28w.66 (founder gave the REAL old prices: "ขีดทับตามราคาเก่านี้")
+//   The struck-through "was" price is no longer auto-derived — these are the
+//   actual pre-28w.36 prices (the old ×1.5 / ×2.0 multiplier model).
+//   Only (service, duration) pairs listed here get a strikethrough, and only
+//   when the old price is genuinely HIGHER than today's — so no fake discount
+//   is ever shown (e.g. Thai 60 min is still ฿1,200 → no strikethrough).
+export const OLD_PRICES: Record<string, Partial<Record<number, number>>> = {
+  "xSR-Thai":  { 60: 1200, 90: 1800, 120: 2400 },
+  "SR-Aroma":  { 60: 1600, 90: 2400, 120: 3200 },
+  "SR-HJ2200": { 60: 2200, 90: 3300, 120: 4400 },
+  // SR-B2B3200 (SunRed Therapeutic): no old price supplied yet.
+};
+
+/** Struck-through "original" price for a (service, duration), or null when
+ *  there is no old price on file or it isn't actually a reduction. */
+export function wasPriceFor(service: MassageService, duration: number): number | null {
+  const old = OLD_PRICES[service.id]?.[duration];
+  if (typeof old !== "number") return null;
+  const now = priceForDuration(service, duration);
+  return old > now ? old : null;
+}
+
+export type ServiceBadge = "bestseller" | "bestvalue";
+
+/** Which service carries which promo badge (by service id). */
+export const SERVICE_BADGE: Record<string, ServiceBadge> = {
+  "SR-HJ2200": "bestseller",  // Gentleman's Signature — ⭐ Best Seller
+  "SR-B2B3200": "bestvalue",  // SunRed Therapeutic — 🔥 Best Value
+};
+
+export const BADGE_META: Record<ServiceBadge, { label: string; emoji: string; color: string }> = {
+  bestseller: { label: "Best Seller", emoji: "⭐", color: "#E6A817" },
+  bestvalue:  { label: "Best Value",  emoji: "🔥", color: "#E4557A" },
+};
+
+export function badgeFor(serviceId: string): ServiceBadge | null {
+  return SERVICE_BADGE[serviceId] ?? null;
+}
+
+/**
+ * 🆕 28w.69 (founder: "🔥 BEST VALUE คือ ตัว 90 นาที" + "⭐ BEST SELLER" on the
+ * 70-min tier) — the badge on a RATE ROW is decided by the DURATION, not the
+ * service: 90 min is the value pick (Thai/Aroma), and 70 min is the top seller
+ * (Gentleman's/Therapeutic, which have no 90-min tier). Everything else gets
+ * no badge.
+ */
+export function badgeForDuration(duration: number): ServiceBadge | null {
+  if (duration === 90) return "bestvalue";
+  if (duration === 70) return "bestseller";
+  return null;
 }

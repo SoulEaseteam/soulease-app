@@ -83,7 +83,10 @@ import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 //   logic moved to a shared util so Earnings and Reports can't drift apart
 //   (they had: Reports was still flat 60/40 over full price). Same values as
 //   before, so Earnings behaviour is unchanged.
-import { therapistPctFor, PAYROLL_EXCLUDED_STATUSES as EXCLUDED_STATUSES } from "@/utils/commission";
+import {
+  therapistPctFor, therapistPayoutFor, commissionBaseFor, applyServiceSplitConfig,
+  PAYROLL_EXCLUDED_STATUSES as EXCLUDED_STATUSES, noShowCompFor,
+} from "@/utils/commission";
 
 // 🆕 Round 28s245 — this page predates adminTheme.ts and still carried its
 //   own Federo/Inter stacks; aliased onto the shared admin fonts so Earnings
@@ -141,6 +144,9 @@ interface BookingRow {
   serviceName?: string | null;
   totalPrice?: number | null;
   servicePrice?: number | null;
+  duration?: number | null;         // 🆕 28w.39 — keys the fixed per-tier split
+  therapistShare?: number | null;   // 🆕 28w.43 — split frozen at confirm-time
+  shopShare?: number | null;        // 🆕 28w.43
   taxiFee?: number | null;
   status?: string;
   startAt?: Timestamp | null;
@@ -250,7 +256,13 @@ const AdminEarningsPage: React.FC = () => {
   const [earn, setEarn] = useState<EarnConfig>(DEFAULT_EARN);
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "adminSettings", "earnings"), (snap) => {
-      const d = (snap.exists() ? snap.data() : {}) as Partial<EarnConfig>;
+      const raw = snap.exists() ? snap.data() : {};
+      // 🆕 28w.39 — apply the fixed split config before setEarn triggers the
+      //   payroll recompute, so this page matches Report/Payouts exactly.
+      applyServiceSplitConfig(
+        (raw?.serviceSplits ?? {}) as Record<string, Record<number, number>>,
+      );
+      const d = raw as Partial<EarnConfig>;
       setEarn({
         supplies: typeof d.supplies === "number" ? d.supplies : DEFAULT_EARN.supplies,
         ops: typeof d.ops === "number" ? d.ops : DEFAULT_EARN.ops,
@@ -289,12 +301,15 @@ const AdminEarningsPage: React.FC = () => {
             serviceName: d.serviceName ?? null,
             totalPrice: d.totalPrice ?? null,
             servicePrice: d.servicePrice ?? null,
+            duration: d.duration ?? null,
             taxiFee: d.taxiFee ?? null,
             status: d.status ?? "",
             startAt: d.startAt ?? null,
             createdAt: d.createdAt ?? null,
             discountAmount: d.discountAmount ?? null,
             discountCode: d.discountCode ?? null,
+            therapistShare: d.therapistShare ?? null,
+            shopShare: d.shopShare ?? null,
             paid: d.paid ?? null,
             paymentStatus: d.paymentStatus ?? null,
             payment: d.payment ?? null,
@@ -374,6 +389,21 @@ const AdminEarningsPage: React.FC = () => {
     for (const b of filteredBookings) {
       if (b.status && EXCLUDED_STATUSES.has(b.status)) {
         countCancelled += 1;
+        // 🆕 28w.52/53 — no-show owes the therapist a taxi comp (max ฿200 /
+        //   actual fare). Keep it on the same payout + outstanding lines so
+        //   Earnings agrees with Reports; other cancels pay ฿0.
+        const comp = noShowCompFor(b);
+        if (comp > 0) {
+          totalTherapistPayout += comp;
+          const tKey = b.therapistId ?? "(no therapist)";
+          const tName = b.therapistName ?? tKey;
+          if (!byTherapist[tKey]) byTherapist[tKey] = { name: tName, jobs: 0, gross: 0, service: 0, payout: 0 };
+          byTherapist[tKey].payout += comp;
+          if (!isCashPayment(b.payment, b.paymentMethodId) && !b.therapistPaid) {
+            outstandingPay += comp;
+            outstandingPayCount += 1;
+          }
+        }
         continue;
       }
       countCompleted += 1;
@@ -393,8 +423,9 @@ const AdminEarningsPage: React.FC = () => {
       //   E.g. ฿330 promo on Gentleman tier 65% → therapist −฿215,
       //   shop −฿115. Same fair share that retail / commission
       //   businesses use everywhere.
-      const commissionBase = Math.max(0, service - discount);
-      const payout = Math.round(commissionBase * tPct);
+      // 🆕 28w.39 — fixed per-(service, duration) therapist split; falls
+      //   back to the tier % for legacy/odd durations. Shop share derives.
+      const payout = therapistPayoutFor(b);
 
       totalCollected += collected;
       totalServicePrice += service;
@@ -557,12 +588,15 @@ const AdminEarningsPage: React.FC = () => {
             serviceName: d.serviceName ?? null,
             totalPrice: d.totalPrice ?? null,
             servicePrice: d.servicePrice ?? null,
+            duration: d.duration ?? null,
             taxiFee: d.taxiFee ?? null,
             status: d.status ?? "",
             startAt: d.startAt ?? null,
             createdAt: d.createdAt ?? null,
             discountAmount: d.discountAmount ?? null,
             discountCode: d.discountCode ?? null,
+            therapistShare: d.therapistShare ?? null,
+            shopShare: d.shopShare ?? null,
           });
         });
         setPrevBookings(arr);
@@ -587,8 +621,7 @@ const AdminEarningsPage: React.FC = () => {
       const service = b.servicePrice ?? 0;
       const t = b.taxiFee ?? 0;
       const c = b.totalPrice ?? service + t;
-      const discount = b.discountAmount ?? 0;
-      const p = Math.round(Math.max(0, service - discount) * therapistPctFor(b.serviceId));
+      const p = therapistPayoutFor(b); // 🆕 28w.39 — fixed split (see main loop)
       collected += c;
       payout += p;
       taxi += t;
@@ -620,9 +653,12 @@ const AdminEarningsPage: React.FC = () => {
             id: d0.id,
             serviceId: d.serviceId ?? null,
             servicePrice: d.servicePrice ?? null,
+            duration: d.duration ?? null,
             taxiFee: d.taxiFee ?? null,
             totalPrice: d.totalPrice ?? null,
             discountAmount: d.discountAmount ?? null,
+            therapistShare: d.therapistShare ?? null,
+            shopShare: d.shopShare ?? null,
             status: d.status ?? "",
           });
         });
@@ -640,8 +676,7 @@ const AdminEarningsPage: React.FC = () => {
       const service = b.servicePrice ?? 0;
       const taxi = b.taxiFee ?? 0;
       const collected = b.totalPrice ?? service + taxi;
-      const discount = b.discountAmount ?? 0;
-      const payout = Math.round(Math.max(0, service - discount) * therapistPctFor(b.serviceId));
+      const payout = therapistPayoutFor(b); // 🆕 28w.39 — fixed split
       net += collected - payout - taxi - (earn.supplies + earn.ops + earn.payment);
     }
     return net;
@@ -761,10 +796,11 @@ const AdminEarningsPage: React.FC = () => {
       .map((b) => {
         const gross = b.totalPrice ?? (b.servicePrice ?? 0) + (b.taxiFee ?? 0);
         const service = b.servicePrice ?? 0;
-        // 🆕 Round 28r27 — tier-aware split per row
-        const tPct = therapistPctFor(b.serviceId);
-        const therapistShare = Math.round(service * tPct);
-        const shopShare = service - therapistShare;
+        // 🆕 28w.39 — fixed per-(service, duration) split per row; shop
+        //   derives; the % column is the effective ratio for this row.
+        const therapistShare = therapistPayoutFor(b);
+        const shopShare = Math.max(0, commissionBaseFor(b) - therapistShare);
+        const effPct = service > 0 ? Math.round((therapistShare / service) * 100) : 0;
         return [
           b.createdAt?.toDate
             ? dayjs(b.createdAt.toDate()).format("YYYY-MM-DD HH:mm")
@@ -777,7 +813,7 @@ const AdminEarningsPage: React.FC = () => {
           gross,
           therapistShare,
           shopShare,
-          `${Math.round(tPct * 100)}%`,
+          `${effPct}%`,
           b.status ?? "",
         ];
       });

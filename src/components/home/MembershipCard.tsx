@@ -7,19 +7,21 @@
 //   and CTA all taupe instead of the old espresso ink + sage-green ticks).
 //   Bigger heading + roomier rhythm to match "ตัวอย่าง จอมือถือ".
 //
-// The founder-supplied member-card photo (public/images/hero/member.png —
-// "SUNRED MEMBER" card on cream with olive branches) is the section's
-// full-bleed background; copy + perks + CTA sit over the scrimmed left.
+// 🆕 Round 28w.84 (founder: "ไม่เอา สีมาเกลี่ยทับ · ปุ่มพาไป สมัครกับแอดมิน")
+//   — the photo no longer bleeds under the copy behind an espresso scrim; it
+//   sits on the right half only, unwashed. And the CTA now opens the concierge
+//   chat (membership is enrolled by admin — there is no self-serve signup).
 //
-// CTA "สมัครสมาชิก" → /pricing (canonical membership-tier surface).
+// The founder-supplied member-card photo (public/images/hero/member.png —
+// "SUNRED MEMBER" card on cream with olive branches) fills the RIGHT side.
 // ─────────────────────────────────────────────────────────────────────
 
 import React from "react";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { Check } from "phosphor-react";
 import { fonts } from "@/theme";
+import { whatsappDeepLink } from "@/config/concierge";
 
 const MEMBER_IMG = "/images/hero/member.png";
 
@@ -34,12 +36,11 @@ const BTN_BG_HOVER = "linear-gradient(135deg,#C96F89 0%,#B36079 100%)";
 
 const MembershipCard: React.FC = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   const perks = [
-    "ส่วนลดสูงสุด 20%",
-    "จองก่อนใคร",
-    "สะสมแต้ม แลกรางวัล",
+    t("home.member.perk1", "Up to 20% off"),
+    t("home.member.perk2", "Priority booking"),
+    t("home.member.perk3", "Earn points, redeem rewards"),
   ];
 
   return (
@@ -58,33 +59,36 @@ const MembershipCard: React.FC = () => {
         display: "flex",
       }}
     >
-      {/* Full-bleed member-card photo — card kept on the right. */}
+      {/* 🆕 Round 28w.84 (founder: "ไม่เอา สีมาเกลี่ยทับ") — the photo used to be
+          full-bleed with a heavy espresso scrim painted across it (96% opaque on
+          the left) purely so the light copy could sit ON the photo. That wash
+          muddied the whole card. The scrim is GONE: the photo now occupies only
+          the right side, the copy sits on the clean panel, and nothing is
+          painted over the image. The left edge is feathered with a mask — that
+          fades the IMAGE itself into the panel, it does not lay any colour on
+          top of it. */}
       <Box
         aria-hidden="true"
         sx={{
           position: "absolute",
-          inset: 0,
+          top: 0,
+          bottom: 0,
+          right: 0,
+          width: { xs: "42%", sm: "44%", md: "50%" },
           backgroundImage: `url("${MEMBER_IMG}")`,
           backgroundSize: "cover",
           backgroundRepeat: "no-repeat",
-          backgroundPosition: { xs: "80% center", md: "right center" },
-        }}
-      />
-      {/* Warm-espresso scrim so the overlaid light copy always reads; fades
-          out toward the right where the photo shows. */}
-      <Box
-        aria-hidden="true"
-        sx={{
-          position: "absolute",
-          inset: 0,
-          background: {
-            xs: "linear-gradient(90deg, rgba(33,24,19,0.96) 0%, rgba(33,24,19,0.9) 46%, rgba(33,24,19,0.5) 68%, rgba(33,24,19,0) 92%)",
-            md: "linear-gradient(90deg, rgba(33,24,19,0.94) 0%, rgba(33,24,19,0.72) 32%, rgba(33,24,19,0.25) 54%, rgba(33,24,19,0) 70%)",
-          },
+          // The SUNRED card sits right-of-centre in the source photo; a plain
+          // "center" crop on this narrow box sliced it in half.
+          backgroundPosition: "78% center",
+          // 🆕 Round 28w.84b (founder: "เอาแค่รูปกับข้อความ ไม่เอาพื้นหลังมาทับรูป")
+          //   — the mask fade was the panel background eating into the photo's
+          //   left edge. Gone. The photo is now shown whole and untouched: just
+          //   image + text, nothing laid over the picture.
         }}
       />
 
-      {/* Content — copy + perks + CTA over the empty left. */}
+      {/* Content — copy + perks + CTA on the clean panel, clear of the photo. */}
       <Box
         sx={{
           position: "relative",
@@ -92,8 +96,11 @@ const MembershipCard: React.FC = () => {
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          padding: { xs: "24px 20px", md: "30px 36px" },
-          maxWidth: { xs: "84%", sm: "72%", md: "60%" },
+          // 🆕 28w.84b — with no scrim and no fade, text can no longer sit ON the
+          //   photo: the two must not overlap at all. Content width is capped to
+          //   the panel left of the image (photo 42/44/50% → text 58/56/50%).
+          padding: { xs: "22px 16px", md: "30px 36px" },
+          maxWidth: { xs: "58%", sm: "56%", md: "50%" },
         }}
       >
         <Box
@@ -117,10 +124,9 @@ const MembershipCard: React.FC = () => {
             color: CHAMPAGNE_SUB,
             marginTop: "7px",
             lineHeight: 1.5,
-            maxWidth: 240,
           }}
         >
-          รับสิทธิพิเศษมากมาย สำหรับสมาชิก SunRed
+          {t("home.member.subtitle", "Exclusive privileges for SunRed members")}
         </Box>
 
         <Box
@@ -170,11 +176,20 @@ const MembershipCard: React.FC = () => {
           ))}
         </Box>
 
+        {/* 🆕 Round 28w.84 (founder: "ปุ่มพาไป สมัครกับแอดมิน") — was
+            navigate("/pricing"), which just showed rates and left the guest with
+            no way to actually join. There IS no self-serve membership signup:
+            the concierge enrols members by phone from /admin/members. So the CTA
+            now opens the concierge chat with the request pre-written. */}
         <Box
-          component="button"
-          type="button"
-          onClick={() => navigate("/pricing")}
+          component="a"
+          href={whatsappDeepLink(
+            "Hi SunRed concierge, I'd like to sign up for SunRed membership. Could you enrol me?"
+          )}
+          target="_blank"
+          rel="noopener noreferrer"
           sx={{
+            textDecoration: "none",
             alignSelf: "flex-start",
             display: "inline-flex",
             alignItems: "center",
@@ -202,7 +217,7 @@ const MembershipCard: React.FC = () => {
             },
           }}
         >
-          สมัครสมาชิก
+          {t("home.member.cta", "Become a member")}
         </Box>
       </Box>
     </Box>

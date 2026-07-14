@@ -37,6 +37,9 @@ type QuickNavItem = {
   Icon: typeof FlowerLotus;
   labelEn: string;
   onTap: () => void;
+  // 🆕 28w.38 — draw the eye to the anniversary pricing: rose-filled icon
+  //   + pulsing "NEW" badge.
+  highlight?: boolean;
 };
 
 const QuickNavRow: React.FC = () => {
@@ -72,6 +75,7 @@ const QuickNavRow: React.FC = () => {
       Icon: Tag,
       labelEn: t("home.quickNav.pricing", "Pricing"),
       onTap: () => navigate("/pricing"),
+      highlight: true, // 🎉 anniversary — new prices live
     },
   ];
 
@@ -101,7 +105,7 @@ const QuickNavRow: React.FC = () => {
         zIndex: 2, // float above the hero it overlaps
       }}
     >
-      {items.map(({ key, Icon, labelEn, onTap }) => (
+      {items.map(({ key, Icon, labelEn, onTap, highlight }) => (
         <Box
           key={key}
           component="button"
@@ -149,23 +153,63 @@ const QuickNavRow: React.FC = () => {
             },
           }}
         >
-          <Box
-            className="qn-icon"
-            sx={{
-              width: 44,
-              height: 44,
-              borderRadius: "50%",
-              background: "transparent",
-              // 🆕 Round 28r75 — border removed per founder direction
-              //   "เอาขอบวงกลม ออก" — cleaner Muji / Aesop feel.
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--sr-muted)", // CHAMPAGNE icon at rest (light on dark)
-              transition: "background 0.18s ease, color 0.18s ease",
-            }}
-          >
-            <Icon size={22} weight="regular" />
+          <Box sx={{ position: "relative", display: "flex" }}>
+            <Box
+              className="qn-icon"
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
+                // 🆕 28w.38 — highlighted (Pricing) tile gets a soft rose halo
+                //   at rest so the eye lands on it.
+                background: highlight ? "rgba(217,124,149,0.12)" : "transparent",
+                // 🆕 Round 28r75 — border removed per founder direction
+                //   "เอาขอบวงกลม ออก" — cleaner Muji / Aesop feel.
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                // Rose accent at rest for the highlighted tile; muted otherwise.
+                color: highlight ? "#D97C95" : "var(--sr-muted)",
+                transition: "background 0.18s ease, color 0.18s ease",
+              }}
+            >
+              <Icon size={22} weight={highlight ? "fill" : "regular"} />
+            </Box>
+
+            {/* 🎉 28w.38 (founder "ให้ตรงนี้ มีอนิเมชั่น หรือ ป้ายไอคอนเล็กๆ") —
+                pulsing NEW badge on the Pricing tile for the anniversary. */}
+            {highlight && (
+              <Box
+                aria-hidden
+                sx={{
+                  position: "absolute",
+                  top: -3,
+                  right: -8,
+                  px: "5px",
+                  height: 15,
+                  display: "flex",
+                  alignItems: "center",
+                  borderRadius: "999px",
+                  background: "linear-gradient(135deg, #E0879E 0%, #C96F89 100%)",
+                  color: "#fff",
+                  fontFamily: fonts.body,
+                  fontSize: 8,
+                  fontWeight: 800,
+                  letterSpacing: "0.06em",
+                  boxShadow: "0 2px 7px rgba(201,111,137,0.55)",
+                  animation: "qnBadgePulse 1.9s ease-in-out infinite",
+                  "@keyframes qnBadgePulse": {
+                    "0%, 100%": { transform: "scale(1)" },
+                    "50%": { transform: "scale(1.14)" },
+                  },
+                  "@media (prefers-reduced-motion: reduce)": {
+                    animation: "none",
+                  },
+                }}
+              >
+                NEW
+              </Box>
+            )}
           </Box>
           <Box
             sx={{

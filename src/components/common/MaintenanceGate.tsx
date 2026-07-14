@@ -18,9 +18,13 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import { applyLiveFareConfig } from "@/utils/taxiFare";
 import { applyLivePromosEnabled } from "@/config/featureFlags";
+// 🆕 28w.96 — the Anniversary campaign is admin-editable now; push it in from
+//   publicRules the same way promos/pricing are.
+import { applyLiveAnniversaryConfig, type AnniversaryConfig } from "@/config/anniversary";
 import { applyLivePromoConfig, applyLiveBuiltinOverrides, type CustomPromoCode, type BuiltinPromoOverride } from "@/utils/discount";
 import { applyLiveServiceConfig } from "@/utils/servicePricing";
 import { applyLiveBundles, type Bundle } from "@/utils/bundles";
+import i18n from "@/app/i18n";
 
 const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { role, loading: authLoading } = useAuth();
@@ -61,6 +65,9 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
           peakSurgePct: data?.peakSurgePct,
         });
         applyLivePromosEnabled(data?.promosEnabled === true);
+        applyLiveAnniversaryConfig(
+          (data?.anniversary ?? null) as Partial<AnniversaryConfig> | null,
+        );
         // 🆕 Round 28s300/28s301 — live service overrides + admin-created
         //   custom services, both nested fields on this same public doc
         //   (no new listener / rules entry). Empty/absent = hardcoded
@@ -206,6 +213,8 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
         setMaintenanceOn(false);
         applyLiveBuiltinOverrides(null);
         applyLiveBundles(null);
+        // Campaign falls back to the hardcoded defaults rather than vanishing.
+        applyLiveAnniversaryConfig(null);
       },
     );
     return () => unsub();
@@ -380,7 +389,7 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
           SunRed
         </div>
         <div style={{ fontSize: 15, color: "rgba(255,255,255,0.85)", maxWidth: 380 }}>
-          ระบบจองปิดปรับปรุงชั่วคราว กลับมาให้บริการเร็ว ๆ นี้
+          {i18n.t("maintenance.body", "Reservations are paused for brief maintenance. We'll be back very shortly.")}
         </div>
         <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>
           Booking temporarily paused — back shortly.

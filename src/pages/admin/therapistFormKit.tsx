@@ -10,7 +10,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Box, Typography, TextField, MenuItem, IconButton, Button, Avatar } from "@mui/material";
 import { Plus, Trash, MagnifyingGlass, UploadSimple, CircleNotch, Camera } from "phosphor-react";
 import type { Credential, LanguageSkill } from "@/types/therapist";
-import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
+import { adminColor, adminFont, adminFigureSx, adminFieldSx } from "@/theme/adminTheme";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
 import { app } from "@/lib/firebase";
 import services from "@/data/services";
@@ -33,9 +33,21 @@ export const SERVICE_OPTIONS = services.map((s) => ({ id: s.id, name: s.name }))
 export const selectMenuProps = {
   PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px", boxShadow: "0 8px 24px rgba(31,41,51,0.16)" } },
 } as const;
+// 🆕 Round 28w.79 — this used to set radius/background/size but NEVER the
+//   border or input-text colour, so MUI fell back to the theme's dark-mode
+//   outline `rgba(255,255,255,0.23)` — white on the white admin panel, i.e.
+//   a 1.0:1 contrast border you cannot see. Every field on the 4 pages that
+//   import this (Promotions, Advanced Settings, Add/Edit Therapist) rendered
+//   as a borderless box. Compose the shared adminFieldSx (which pins outline,
+//   text, caret + placeholder) and keep the local sizing on top.
 export const fieldSx = {
-  "& .MuiOutlinedInput-root": { borderRadius: "10px", background: adminColor.panel, fontSize: 13.5 },
-  "& .MuiInputLabel-root": { fontSize: 13 },
+  ...adminFieldSx,
+  "& .MuiOutlinedInput-root": {
+    ...adminFieldSx["& .MuiOutlinedInput-root"],
+    background: adminColor.panel,
+    fontSize: 13.5,
+  },
+  "& .MuiInputLabel-root": { ...adminFieldSx["& .MuiInputLabel-root"], fontSize: 13 },
 } as const;
 const chipDeleteBtnSx = { color: adminColor.dim, "&:hover": { background: "rgba(220,38,38,0.09)", color: adminColor.red } } as const;
 const addBtnSx = { color: adminColor.accent, textTransform: "none", fontWeight: 700, fontSize: 12.5, alignSelf: "flex-start", mt: "2px" } as const;
