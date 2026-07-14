@@ -355,19 +355,26 @@ export function formatTHB(amount: number): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// 🆕 28w.62 (founder) — marketing framing on the pricing surfaces:
-//   a struck-through "was" price + Best Seller / Best Value badges.
-//   NOTE: the "was" price is auto-derived (current × markup, rounded up to
-//   ฿100) as a placeholder — set WAS_PRICE_MARKUP or a per-service map when
-//   the real original prices are decided.
-export const WAS_PRICE_MARKUP = 1.25;
+// 🆕 28w.62 → 28w.66 (founder gave the REAL old prices: "ขีดทับตามราคาเก่านี้")
+//   The struck-through "was" price is no longer auto-derived — these are the
+//   actual pre-28w.36 prices (the old ×1.5 / ×2.0 multiplier model).
+//   Only (service, duration) pairs listed here get a strikethrough, and only
+//   when the old price is genuinely HIGHER than today's — so no fake discount
+//   is ever shown (e.g. Thai 60 min is still ฿1,200 → no strikethrough).
+export const OLD_PRICES: Record<string, Partial<Record<number, number>>> = {
+  "xSR-Thai":  { 60: 1200, 90: 1800, 120: 2400 },
+  "SR-Aroma":  { 60: 1600, 90: 2400, 120: 3200 },
+  "SR-HJ2200": { 60: 2200, 90: 3300, 120: 4400 },
+  // SR-B2B3200 (SunRed Therapeutic): no old price supplied yet.
+};
 
-/** Struck-through "original" price for a (service, duration), or null. */
+/** Struck-through "original" price for a (service, duration), or null when
+ *  there is no old price on file or it isn't actually a reduction. */
 export function wasPriceFor(service: MassageService, duration: number): number | null {
-  const p = priceForDuration(service, duration);
-  if (!(p > 0)) return null;
-  const w = Math.ceil((p * WAS_PRICE_MARKUP) / 100) * 100;
-  return w > p ? w : null;
+  const old = OLD_PRICES[service.id]?.[duration];
+  if (typeof old !== "number") return null;
+  const now = priceForDuration(service, duration);
+  return old > now ? old : null;
 }
 
 export type ServiceBadge = "bestseller" | "bestvalue";
