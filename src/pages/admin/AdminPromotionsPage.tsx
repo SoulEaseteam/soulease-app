@@ -61,7 +61,10 @@ import { SectionCard, fieldSx, downscaleImage } from "./therapistFormKit";
 import { logAdminAction } from "@/utils/auditLog";
 import type { MassageService } from "@/data/services";
 import services from "@/data/services";
-import { priceForDuration, type LiveServiceOverride, type CustomServiceInput } from "@/utils/servicePricing";
+import {
+  priceForDuration, durationsFor, DEFAULT_DURATIONS, PRICE_MODEL,
+  type LiveServiceOverride, type CustomServiceInput,
+} from "@/utils/servicePricing";
 import { therapistPctFor } from "@/utils/commission";
 // 🆕 Round 28r50 (Promotions Phase 1) — Bundle Packages helpers.
 // 🆕 Round 28r60 — + BUNDLE_CATEGORY_TAGS for the Autocomplete freeSolo picker.
@@ -163,7 +166,11 @@ interface BundleDoc {
 
 // 🆕 Round 28r50 — bulk adjustment shape.
 type BulkAdjustMode = "pct_up" | "pct_down" | "thb_up" | "thb_down" | "fixed";
-interface BulkDurationScope { d60: boolean; d90: boolean; d120: boolean }
+// 🆕 Round 28w.79 — was a fixed { d60, d90, d120 }. That silently EXCLUDED the
+//   70-min price from every bulk edit, so "raise all prices 10%" left the two
+//   premium services' best-selling duration untouched. Keyed by duration now,
+//   built from whatever the catalog actually sells.
+type BulkDurationScope = Record<number, boolean>;
 
 interface UsageStat {
   count: number;
@@ -176,9 +183,14 @@ interface SvcRow {
   id: string;
   name: string;
   enabled: boolean;
-  p60: number;
-  p90: number;
-  p120: number;
+  // 🆕 Round 28w.79 — was a fixed p60/p90/p120 triple, which silently lied on
+  //   the two premium services: since 28w.36 they sell at 70/120 min, not
+  //   60/90/120. The grid rendered a phantom "90 น. ฿3,300" that nothing can
+  //   buy, and had NO box for the 70-min price — the actual best seller. Now
+  //   the row carries the service's REAL duration list and a price per
+  //   duration, so what's editable is exactly what's purchasable.
+  durations: number[];
+  prices: Record<number, number>;
   image: string;
   detail: string;
   benefit: string; // newline-separated in the editor
@@ -364,7 +376,7 @@ const AdminPromotionsPage: React.FC = () => {
   const [bulkSelected, setBulkSelected] = useState<Record<string, boolean>>({});
   const [bulkMode, setBulkMode] = useState<BulkAdjustMode>("pct_down");
   const [bulkValue, setBulkValue] = useState<number>(10);
-  const [bulkScope, setBulkScope] = useState<BulkDurationScope>({ d60: true, d90: true, d120: true });
+  const [bulkScope, setBulkScope] = useState<BulkDurationScope>({});
   const [bulkScheduledFor, setBulkScheduledFor] = useState<string>("");
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
 
@@ -394,7 +406,7 @@ const AdminPromotionsPage: React.FC = () => {
   //   variant of validateDiscount to surface the reason string.
   const [testCode, setTestCode] = useState("");
   const [testServiceId, setTestServiceId] = useState<string>("");
-  const [testDuration, setTestDuration] = useState<60 | 90 | 120>(60);
+  const [testDuration, setTestDuration] = useState<number>(60);
   const [testTaxiKm, setTestTaxiKm] = useState<number>(0);
   const [testHour, setTestHour] = useState<number>(22);
   const [testReferralRedeems, setTestReferralRedeems] = useState<number>(0);
@@ -635,13 +647,20 @@ const AdminPromotionsPage: React.FC = () => {
         //   local editable state carries it as epoch ms so the pending
         //   dialog datetime-local input round-trips cleanly.
         const rawSched = (o as unknown as { scheduledFor?: Timestamp | null }).scheduledFor;
+        // 🆕 Round 28w.79 — seed from priceForDuration ONLY. It is the same
+        //   function the customer is charged through, so the boxes now show
+        //   what guests actually pay. The old `o.prices?.[d] ?? …` read the
+        //   raw doc first, which still holds the pre-28w.36 ×1.5/×2.0 prices
+        //   (Thai 90 = ฿1,800 vs the real ฿1,600) — the engine has ignored
+        //   those since 28w.42, so the editor was displaying prices no guest
+        //   has been charged in weeks.
+        const ds = durationsFor(s);
         return {
           id: s.id,
           name: o.name ?? s.name,
           enabled: o.enabled !== false,
-          p60: o.prices?.[60] ?? priceForDuration(s, 60),
-          p90: o.prices?.[90] ?? priceForDuration(s, 90),
-          p120: o.prices?.[120] ?? priceForDuration(s, 120),
+          durations: ds,
+          prices: Object.fromEntries(ds.map((d) => [d, priceForDuration(s, d)])),
           image: o.image ?? s.image,
           detail: o.detail ?? s.detail,
           benefit: (o.benefit ?? s.benefit ?? []).join("\n"),
@@ -650,10 +669,14 @@ const AdminPromotionsPage: React.FC = () => {
           scheduledForMs: rawSched?.toMillis?.() ?? null,
         };
       });
+      // Custom (admin-created) services aren't code-priced, so their stored
+      // prices ARE the truth — read them straight back. They use the default
+      // 60/90/120 duration set.
       const custRows: CustomSvcRow[] = (custom ?? []).filter((c) => c?.id).map((c) => ({
         id: c.id, name: c.name ?? c.id, desc: c.desc ?? "", image: c.image ?? "",
         badge: c.badge ?? "POPULAR", enabled: c.enabled !== false,
-        p60: c.prices?.[60] ?? 0, p90: c.prices?.[90] ?? 0, p120: c.prices?.[120] ?? 0,
+        durations: [...DEFAULT_DURATIONS],
+        prices: Object.fromEntries(DEFAULT_DURATIONS.map((d) => [d, c.prices?.[d] ?? 0])),
         detail: "", benefit: "",
         scheduledForMs: null,
       }));
@@ -686,11 +709,19 @@ const AdminPromotionsPage: React.FC = () => {
     //   the runtime shape onto the serialized shape.
     const overrides: Record<string, Record<string, unknown>> = {};
     rows.forEach((r) => {
+      // 🆕 Round 28w.79 — write a price for each duration the service ACTUALLY
+      //   sells (70/120 on the premium pair, 60/90/120 on Thai/Aroma) instead
+      //   of a hardcoded 60/90/120 triple, and stamp PRICE_MODEL so
+      //   applyLiveServiceConfig honours it. Without the stamp the engine keeps
+      //   stripping the price (28w.42's stale-data guard) and the save is a
+      //   silent no-op — which is exactly what was happening before this round.
+      const priceMap = Object.fromEntries(r.durations.map((d) => [d, r.prices[d] ?? 0]));
       overrides[r.id] = {
         enabled: r.enabled,
         name: r.name.trim() || r.id,
-        price: r.p60,
-        prices: { 60: r.p60, 90: r.p90, 120: r.p120 },
+        price: r.prices[r.durations[0]] ?? 0,
+        prices: priceMap,
+        priceModel: PRICE_MODEL,
         image: r.image,
         detail: r.detail,
         benefit: r.benefit.split("\n").map((b) => b.trim()).filter(Boolean),
@@ -710,7 +741,8 @@ const AdminPromotionsPage: React.FC = () => {
     //   on read back.
     const customServices: Record<string, unknown>[] = customRows.map((c) => ({
       id: c.id, name: c.name.trim() || c.id, desc: c.desc.trim(), image: c.image,
-      badge: c.badge, enabled: c.enabled, prices: { 60: c.p60, 90: c.p90, 120: c.p120 },
+      badge: c.badge, enabled: c.enabled,
+      prices: Object.fromEntries(c.durations.map((d) => [d, c.prices[d] ?? 0])),
       scheduledFor: c.scheduledForMs ? Timestamp.fromMillis(c.scheduledForMs) : null,
     }));
     await setDoc(
@@ -813,7 +845,8 @@ const AdminPromotionsPage: React.FC = () => {
       const row: CustomSvcRow = {
         id, name, desc: addSvcDesc.trim(), image: addSvcImage,
         badge: addSvcBadge, enabled: true,
-        p60: addSvcP60, p90: addSvcP90, p120: addSvcP120,
+        durations: [...DEFAULT_DURATIONS],
+        prices: { 60: addSvcP60, 90: addSvcP90, 120: addSvcP120 },
         detail: "", benefit: "",
         scheduledForMs: scheduledMs,
       };
@@ -945,8 +978,11 @@ const AdminPromotionsPage: React.FC = () => {
     if (!code) return;
     const meta = BUILTIN_CODES.find((b) => b.code === code);
     if (!meta) return;
-    if (builtinEditStart && builtinEditExpiry && new Date(builtinEditStart) >= new Date(builtinEditExpiry)) {
-      toast.error("วันเริ่มต้องมาก่อนวันหมดอายุ"); return;
+    // 🆕 Round 28w.79 — was `>=`, which rejected start === expiry and made a
+    //   ONE-DAY promo impossible to create. startsAt is stored at 00:00:00 and
+    //   expiryDate at 23:59:59, so same-day is a perfectly valid 24h window.
+    if (builtinEditStart && builtinEditExpiry && builtinEditStart > builtinEditExpiry) {
+      toast.error("วันเริ่มต้องไม่เกินวันหมดอายุ"); return;
     }
     setBuiltinEditSubmitting(true);
     try {
@@ -1053,8 +1089,9 @@ const AdminPromotionsPage: React.FC = () => {
     if (!code) { toast.error("กรอกโค้ดก่อน"); return; }
     if (BUILTIN_CODES.some((b) => b.code === code)) { toast.error("ชื่อนี้ซ้ำกับโค้ดมาตรฐาน ใช้ชื่ออื่น"); return; }
     if (addAmount <= 0) { toast.error("จำนวนต้องมากกว่า 0"); return; }
-    if (addStart && addExpiry && new Date(addStart) >= new Date(addExpiry)) {
-      toast.error("วันเริ่มต้องมาก่อนวันหมดอายุ"); return;
+    // 🆕 Round 28w.79 — same one-day-promo fix as handleSaveBuiltinEdit.
+    if (addStart && addExpiry && addStart > addExpiry) {
+      toast.error("วันเริ่มต้องไม่เกินวันหมดอายุ"); return;
     }
     setAddSubmitting(true);
     try {
@@ -1286,18 +1323,19 @@ const AdminPromotionsPage: React.FC = () => {
   const bundlePreview = useMemo(() => {
     const cnt = Math.max(1, Math.round(bundleSessionCount));
     const pct = Math.max(0, Math.min(100, bundleDiscountPct));
-    // Baseline = the specific service's 60-min price (or the first
-    // standard service if "any").
+    // 🆕 Round 28w.79 — baseline is the service's cheapest REAL duration, not a
+    //   hardcoded 60 min. The premium pair doesn't sell 60, so the old code
+    //   priced bundles off a duration that isn't on the menu.
+    const baseOf = (r: SvcRow) => ({ price: r.prices[r.durations[0]] ?? 0, d: r.durations[0] });
     let base = 0;
-    let baseLabel = "60-min baseline";
-    if (bundleServiceId) {
-      const std = svcRows.find((r) => r.id === bundleServiceId);
-      const cus = customSvcRows.find((r) => r.id === bundleServiceId);
-      if (std) { base = std.p60; baseLabel = `${std.name} · 60 min`; }
-      else if (cus) { base = cus.p60; baseLabel = `${cus.name} · 60 min`; }
-    } else if (svcRows[0]) {
-      base = svcRows[0].p60;
-      baseLabel = `e.g. ${svcRows[0].name} · 60 min`;
+    let baseLabel = "baseline";
+    const row = bundleServiceId
+      ? (svcRows.find((r) => r.id === bundleServiceId) ?? customSvcRows.find((r) => r.id === bundleServiceId))
+      : svcRows[0];
+    if (row) {
+      const b = baseOf(row);
+      base = b.price;
+      baseLabel = `${bundleServiceId ? "" : "e.g. "}${row.name} · ${b.d} min`;
     }
     const s = bundleSavings({ sessionCount: cnt, discountPct: pct }, base);
     return { ...s, base, baseLabel, cnt, pct };
@@ -1307,19 +1345,44 @@ const AdminPromotionsPage: React.FC = () => {
   // 🆕 Round 28r50 (feature #3 "Bulk Service Edits") — handlers
   // ─────────────────────────────────────────────────────────────
 
+  const bulkAllRows: (SvcRow | CustomSvcRow)[] = useMemo(
+    () => [...svcRows, ...customSvcRows],
+    [svcRows, customSvcRows],
+  );
+  /** Every distinct duration across all rows — 60/70/90/120 today. */
+  const allBulkDurations: number[] = useMemo(
+    () => [...new Set(bulkAllRows.flatMap((r) => r.durations))].sort((a, b) => a - b),
+    [bulkAllRows],
+  );
+
+  // 🆕 Round 28w.79 — the Test-a-Code sandbox's duration list follows the
+  //   service it's testing, so the 70-min premium services are testable.
+  //   "(any)" falls back to every duration we sell.
+  const testDurationOptions: number[] = useMemo(() => {
+    const row = testServiceId
+      ? (svcRows.find((r) => r.id === testServiceId) ?? customSvcRows.find((r) => r.id === testServiceId))
+      : undefined;
+    const list = row?.durations ?? allBulkDurations;
+    return list.length ? list : [...DEFAULT_DURATIONS];
+  }, [testServiceId, svcRows, customSvcRows, allBulkDurations]);
+
+  // Keep the picked duration legal when the service changes (e.g. switching
+  // from Thai@90 to Gentleman's, which has no 90).
+  useEffect(() => {
+    if (testDurationOptions.length && !testDurationOptions.includes(testDuration)) {
+      setTestDuration(testDurationOptions[0]);
+    }
+  }, [testDurationOptions, testDuration]);
   const openBulk = () => {
     // Pre-select nothing — founder should explicitly opt each row in.
     setBulkSelected({});
     setBulkMode("pct_down");
     setBulkValue(10);
-    setBulkScope({ d60: true, d90: true, d120: true });
+    // Default: every duration the catalog actually sells (incl. 70).
+    setBulkScope(Object.fromEntries(allBulkDurations.map((d) => [d, true])));
     setBulkScheduledFor("");
     setBulkOpen(true);
   };
-  const bulkAllRows: (SvcRow | CustomSvcRow)[] = useMemo(
-    () => [...svcRows, ...customSvcRows],
-    [svcRows, customSvcRows],
-  );
   const applyBulkAdjustment = (currentPrice: number): number => {
     if (bulkMode === "pct_up")   return Math.max(0, Math.round(currentPrice * (1 + bulkValue / 100)));
     if (bulkMode === "pct_down") return Math.max(0, Math.round(currentPrice * (1 - bulkValue / 100)));
@@ -1329,18 +1392,15 @@ const AdminPromotionsPage: React.FC = () => {
     return currentPrice;
   };
   // Preview of what will change (only rows selected + only durations in scope).
-  interface BulkPreviewCell { row: SvcRow | CustomSvcRow; duration: 60|90|120; before: number; after: number }
+  interface BulkPreviewCell { row: SvcRow | CustomSvcRow; duration: number; before: number; after: number }
   const bulkPreview = useMemo<BulkPreviewCell[]>(() => {
     const list: BulkPreviewCell[] = [];
     for (const row of bulkAllRows) {
       if (!bulkSelected[row.id]) continue;
-      const durations: (60|90|120)[] = [
-        ...(bulkScope.d60 ? [60 as const] : []),
-        ...(bulkScope.d90 ? [90 as const] : []),
-        ...(bulkScope.d120 ? [120 as const] : []),
-      ];
-      for (const d of durations) {
-        const before = d === 60 ? row.p60 : d === 90 ? row.p90 : row.p120;
+      // Only durations this row actually sells AND that are in scope.
+      for (const d of row.durations) {
+        if (!bulkScope[d]) continue;
+        const before = row.prices[d] ?? 0;
         const after = applyBulkAdjustment(before);
         if (before !== after) list.push({ row, duration: d, before, after });
       }
@@ -1358,12 +1418,10 @@ const AdminPromotionsPage: React.FC = () => {
       const changed = new Set(bulkPreview.map((c) => c.row.id));
       const patchRow = <T extends SvcRow>(r: T): T => {
         if (!changed.has(r.id)) return r;
-        const nx: T = { ...r };
+        const nx: T = { ...r, prices: { ...r.prices } };
         for (const c of bulkPreview) {
           if (c.row.id !== r.id) continue;
-          if (c.duration === 60) nx.p60 = c.after;
-          if (c.duration === 90) nx.p90 = c.after;
-          if (c.duration === 120) nx.p120 = c.after;
+          nx.prices[c.duration] = c.after;
         }
         if (schedMs) nx.scheduledForMs = schedMs;
         return nx;
@@ -1523,8 +1581,10 @@ const AdminPromotionsPage: React.FC = () => {
               const isCustom = !!cus;
               const set = isCustom ? setCustomField : setSvcField;
               const pct = therapistPctFor(r.id);
-              const shopCut = Math.round(r.p60 * (1 - pct));
-              const therapistCut = r.p60 - shopCut;
+              const baseDuration = r.durations[0];
+              const basePrice = r.prices[baseDuration] ?? 0;
+              const shopCut = Math.round(basePrice * (1 - pct));
+              const therapistCut = basePrice - shopCut;
               return (
                 <Box key={r.id} sx={{ p: "11px 12px", borderRadius: "12px", background: adminColor.panel2, ...(isCustom ? { border: `1px dashed ${adminColor.line2}` } : {}), opacity: r.enabled ? 1 : 0.6 }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1 }}>
@@ -1554,19 +1614,29 @@ const AdminPromotionsPage: React.FC = () => {
                     <Switch checked={r.enabled} onChange={(e) => set(r.id, { enabled: e.target.checked })} sx={switchSx} size="small" />
                     {isCustom && <Button size="small" onClick={() => void handleDeleteCustomService(r.id)} sx={{ color: adminColor.red, minWidth: "auto", p: "3px" }}><Trash size={15} /></Button>}
                   </Box>
+                  {/* 🆕 Round 28w.79 — one box per duration the service really
+                      sells. Gentleman's / Therapeutic now show 70 น. (their
+                      best seller, previously not editable at all) and no
+                      longer show a phantom 90 น. that nothing can buy. */}
                   <Stack direction="row" spacing={1}>
-                    {([["60 น.", "p60"], ["90 น.", "p90"], ["120 น.", "p120"]] as const).map(([lbl, key]) => (
+                    {r.durations.map((d) => (
                       <TextField
-                        key={key} label={lbl} type="number" size="small" fullWidth sx={fieldSx}
-                        value={r[key]}
-                        onChange={(e) => set(r.id, { [key]: Math.max(0, Number(e.target.value)) } as Partial<CustomSvcRow>)}
+                        key={d} label={`${d} น.`} type="number" size="small" fullWidth sx={fieldSx}
+                        value={r.prices[d] ?? 0}
+                        onChange={(e) =>
+                          set(r.id, {
+                            prices: { ...r.prices, [d]: Math.max(0, Number(e.target.value)) },
+                          } as Partial<CustomSvcRow>)
+                        }
                         InputProps={{ startAdornment: <span style={{ color: adminColor.dim, fontSize: 12, marginRight: 3 }}>฿</span> }}
                       />
                     ))}
                   </Stack>
-                  {/* 🆕 Round 28s302 — margin line (60-min basis) */}
+                  {/* 🆕 Round 28s302 — margin line. 28w.79: on the service's
+                      cheapest REAL duration, not a hardcoded 60 min (which the
+                      premium pair doesn't sell). */}
                   <Typography sx={{ fontSize: 10.5, color: adminColor.dim, mt: 0.75 }}>
-                    60 น.: หมอนวดได้ ฿{therapistCut.toLocaleString()} · ร้าน ฿{shopCut.toLocaleString()} ({Math.round((1 - pct) * 100)}%)
+                    {baseDuration} น.: หมอนวดได้ ฿{therapistCut.toLocaleString()} · ร้าน ฿{shopCut.toLocaleString()} ({Math.round((1 - pct) * 100)}%)
                   </Typography>
                 </Box>
               );
@@ -1826,16 +1896,12 @@ const AdminPromotionsPage: React.FC = () => {
               {Object.entries(bundles).map(([id, b]) => {
                 const now = Date.now();
                 const expired = b.expiresAt && b.expiresAt.toMillis() < now;
-                // Preview savings: use the target service's 60-min price,
-                // or the first standard service if any-service.
-                let base = 0;
-                if (b.serviceId) {
-                  const std = svcRows.find((r) => r.id === b.serviceId);
-                  const cus = customSvcRows.find((r) => r.id === b.serviceId);
-                  base = std?.p60 ?? cus?.p60 ?? 0;
-                } else {
-                  base = svcRows[0]?.p60 ?? 0;
-                }
+                // Preview savings off the target service's cheapest REAL
+                // duration (28w.79 — the premium pair has no 60-min price).
+                const bRow = b.serviceId
+                  ? (svcRows.find((r) => r.id === b.serviceId) ?? customSvcRows.find((r) => r.id === b.serviceId))
+                  : svcRows[0];
+                const base = bRow ? (bRow.prices[bRow.durations[0]] ?? 0) : 0;
                 const s = bundleSavings({ sessionCount: b.sessionCount, discountPct: b.discountPct }, base);
                 const svcName = b.serviceId
                   ? svcRows.find((r) => r.id === b.serviceId)?.name
@@ -1985,12 +2051,15 @@ const AdminPromotionsPage: React.FC = () => {
               {services.map((s) => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
               {customSvcRows.map((r) => <MenuItem key={r.id} value={r.id}>{r.name} · custom</MenuItem>)}
             </TextField>
+            {/* 🆕 Round 28w.79 — offer the SELECTED service's real durations,
+                so a promo can be tested against the 70-min premium services
+                (previously untestable: the list only ever showed 60/90/120). */}
             <TextField
               select fullWidth label="Duration · ช่วงเวลา"
-              value={testDuration} onChange={(e) => setTestDuration(Number(e.target.value) as 60 | 90 | 120)}
+              value={testDuration} onChange={(e) => setTestDuration(Number(e.target.value))}
               sx={fieldSx} SelectProps={selectMenuProps}
             >
-              {[60, 90, 120].map((d) => <MenuItem key={d} value={d}>{d} min</MenuItem>)}
+              {testDurationOptions.map((d) => <MenuItem key={d} value={d}>{d} min</MenuItem>)}
             </TextField>
           </Stack>
           <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
@@ -2018,11 +2087,15 @@ const AdminPromotionsPage: React.FC = () => {
           />
           {(() => {
             const svc = [...services, ...customSvcRows].find((s) => s.id === testServiceId);
-            const basePrice = svc ? (
-              testDuration === 60 ? (svcRows.find((r) => r.id === svc.id)?.p60 ?? customSvcRows.find((r) => r.id === svc.id)?.p60 ?? priceForDuration(svc as MassageService, 60))
-              : testDuration === 90 ? (svcRows.find((r) => r.id === svc.id)?.p90 ?? customSvcRows.find((r) => r.id === svc.id)?.p90 ?? priceForDuration(svc as MassageService, 90))
-              : (svcRows.find((r) => r.id === svc.id)?.p120 ?? customSvcRows.find((r) => r.id === svc.id)?.p120 ?? priceForDuration(svc as MassageService, 120))
-            ) : 2000;
+            // 🆕 Round 28w.79 — read the edited row's price for the SELECTED
+            //   duration (any duration, incl. 70) instead of a 60/90/120 chain.
+            const testRow = svc
+              ? (svcRows.find((r) => r.id === svc.id) ?? customSvcRows.find((r) => r.id === svc.id))
+              : undefined;
+            const basePrice = svc
+              ? (testRow?.prices[testDuration]
+                  ?? priceForDuration(svc as MassageService, testDuration))
+              : 2000;
             // rough taxi baseline: 45 base + 10/km
             const taxi = testTaxiKm > 0 ? Math.round(45 + testTaxiKm * 10) : 0;
             const debug = validateDiscountDebug(testCode, basePrice, {
@@ -2877,7 +2950,7 @@ const AdminPromotionsPage: React.FC = () => {
                 />
                 <Typography sx={{ fontSize: 13, color: adminColor.text, flex: 1 }}>{r.name}</Typography>
                 <Typography sx={{ fontSize: 11, color: adminColor.dim }}>
-                  60 ฿{r.p60.toLocaleString()} / 90 ฿{r.p90.toLocaleString()} / 120 ฿{r.p120.toLocaleString()}
+                  {r.durations.map((d) => `${d} ฿${(r.prices[d] ?? 0).toLocaleString()}`).join(" / ")}
                 </Typography>
               </Box>
             ))}
@@ -2908,15 +2981,15 @@ const AdminPromotionsPage: React.FC = () => {
             Apply to durations · ใช้กับช่วงเวลา
           </Typography>
           <Stack direction="row" spacing={2} sx={{ mb: 1.5 }}>
-            {([["60 min", "d60"], ["90 min", "d90"], ["120 min", "d120"]] as const).map(([lbl, key]) => (
-              <Box key={key} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            {allBulkDurations.map((d) => (
+              <Box key={d} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 <Checkbox
                   size="small"
-                  checked={bulkScope[key]}
-                  onChange={(e) => setBulkScope((s) => ({ ...s, [key]: e.target.checked }))}
+                  checked={bulkScope[d] ?? false}
+                  onChange={(e) => setBulkScope((s) => ({ ...s, [d]: e.target.checked }))}
                   sx={{ color: adminColor.accent, "&.Mui-checked": { color: adminColor.accent } }}
                 />
-                <Typography sx={{ fontSize: 13, color: adminColor.text }}>{lbl}</Typography>
+                <Typography sx={{ fontSize: 13, color: adminColor.text }}>{d} min</Typography>
               </Box>
             ))}
           </Stack>

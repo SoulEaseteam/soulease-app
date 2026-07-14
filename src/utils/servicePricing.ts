@@ -65,6 +65,10 @@ export interface LiveServiceOverride {
   price?: number;
   /** Explicit per-duration prices (keys are minute counts). Wins over `price`×mult. */
   prices?: Record<number, number>;
+  /** 🆕 Round 28w.79 — stamp identifying which admin price model wrote this
+   *  override. Overrides for the 4 code-priced services are only honoured
+   *  when this equals PRICE_MODEL; see applyLiveServiceConfig. */
+  priceModel?: string;
   // 🆕 Round 28s302 — full presentation overrides for the 4 standard
   //   services (image + detail page copy), editable from /admin/promotions.
   image?: string;
@@ -158,6 +162,21 @@ const CODE_PRICED_SERVICE_IDS = new Set([
 ]);
 
 /**
+ * 🆕 Round 28w.79 — 28w.42's blanket strip (above) fixed the stale-price bug
+ * but left /admin/promotions unable to price these 4 services AT ALL: it kept
+ * showing the doc's old 60/90/120 numbers, let the founder edit them, said
+ * "saved — live immediately", and then the strip silently threw the price away.
+ *
+ * Rather than trust every override again (which would instantly re-apply the
+ * stale ×1.5/×2.0 doc still sitting in Firestore), we version the writer. Only
+ * an override stamped with the CURRENT model — which only the fixed, duration-
+ * aware editor writes — is allowed to price a code-priced service. Legacy docs
+ * carry no stamp, so they stay stripped exactly as they are today: customers
+ * see no change until the founder deliberately saves a price.
+ */
+export const PRICE_MODEL = "28w.79";
+
+/**
  * 🆕 Round 28s300/28s301 — one entry point (called only by MaintenanceGate)
  * for BOTH per-service overrides AND admin-created custom services. Unified
  * so there's no cross-call ordering fragility on the shared override map.
@@ -183,7 +202,11 @@ export function applyLiveServiceConfig(cfg: {
     // 🆕 28w.42 — the 4 standard services are code-priced; drop any stale
     //   live price override so the code (services.ts + DURATION_PRICE_OVERRIDES)
     //   wins. Keep name/desc/image/badge/enabled/scheduledFor.
-    if (v && CODE_PRICED_SERVICE_IDS.has(k)) {
+    // 🆕 28w.79 — …unless the override was written by the current, duration-
+    //   aware admin editor (PRICE_MODEL stamp). Those ARE the founder's real
+    //   intent and must reach the customer; only unstamped legacy docs get
+    //   stripped. See PRICE_MODEL above.
+    if (v && CODE_PRICED_SERVICE_IDS.has(k) && v.priceModel !== PRICE_MODEL) {
       const { price: _p, prices: _pr, ...rest } = v;
       void _p;
       void _pr;
