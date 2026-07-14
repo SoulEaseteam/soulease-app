@@ -4,7 +4,7 @@
 //   Mobile (< md): temporary drawer opened via hamburger + BottomNavGlass.
 //   Desktop (≥ md): permanent collapsible sidebar as before.
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   AppBar,
   Toolbar,
@@ -49,6 +49,9 @@ import PaymentsIcon from "@mui/icons-material/Payments";
 import RateReviewIcon from "@mui/icons-material/RateReview";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import CardMembershipIcon from "@mui/icons-material/CardMembership";
+// 🆕 Round 28w.80 — Members (sign-up) and Membership (rules) shared ONE icon,
+//   so the two rows were visually identical. Give the rules page its own.
+import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -75,41 +78,68 @@ const DRAWER_COLLAPSED = 60;
 // content → rarely-touched system pages. Tonight still leads (control-room
 // entry, 28s232); New Booking/Bookings are now adjacent (were split apart
 // by Reports before).
-const menuItems = [
-  // Daily ops
-  { label: "Tonight",      path: "/admin/tonight",            icon: <NightsStayIcon /> },
-  { label: "Dashboard",    path: "/admin/dashboard",          icon: <DashboardIcon /> },
-  { label: "New Booking",  path: "/admin/bookings/add",       icon: <AddBoxIcon /> },
-  { label: "Bookings",     path: "/admin/bookings",           icon: <BookingIcon /> },
-  // Money & numbers
-  // 🆕 Round 28r26 — Earnings calculator (revenue · 60/40 split · CSV).
-  { label: "Earnings",     path: "/admin/earnings",           icon: <PaidIcon /> },
-  // 🆕 Round 28s313 — pay-therapist queue (non-cash bookings → shop owes cut).
-  { label: "Pay Therapists", path: "/admin/pay-therapists",   icon: <PaymentsIcon /> },
-  { label: "Reports",      path: "/admin/reports",            icon: <ReportIcon /> },
-  // 🆕 Round 28r15 — Funnel analytics (self-hosted, reads
-  //   `analytics_events` collection populated by Round 28r13).
-  { label: "Analytics",    path: "/admin/analytics",          icon: <InsightsIcon /> },
-  // 🆕 Round 28s298 — manage discount codes (on/off + create new) and
-  //   the master promos-enabled switch. See src/utils/discount.ts.
-  { label: "Promotions",   path: "/admin/promotions",         icon: <LocalOfferIcon /> },
-  // People
-  { label: "Therapists",   path: "/admin/therapists",         icon: <TherapistIcon /> },
-  { label: "Users",        path: "/admin/users",              icon: <UserIcon /> },
-  { label: "Members",      path: "/admin/members",            icon: <CardMembershipIcon /> },
-  { label: "Membership",   path: "/admin/membership",         icon: <CardMembershipIcon /> },
-  // Content
-  { label: "Reviews",      path: "/admin/reviews",            icon: <ReviewIcon /> },
-  // 🆕 Round 28s213 — Backfill anonymous reviews onto completed bookings
-  //   that never got a guest comment.
-  { label: "Seed Reviews", path: "/admin/seed-reviews",       icon: <RateReviewIcon /> },
-  // System
-  { label: "Blocked",      path: "/admin/blocked-devices",    icon: <BlockIcon /> },
-  // 🆕 Round 28s234 — audit log viewer (Phase 4).
-  { label: "Audit Log",    path: "/admin/audit-log",          icon: <ListAltIcon /> },
-  { label: "Pages",        path: "/admin/pages-list",         icon: <ListAltIcon /> },
-  { label: "Settings",     path: "/admin/advanced-settings",  icon: <SettingsIcon /> },
+// 🆕 Round 28w.80 (founder: "มีภาษาไทย ด้านล่างเมนู เล็กๆ ทุกเมนู และ
+//   จัดเรียงตามหมวดหมู่") — the workflow grouping from 28s266 only ever
+//   existed as CODE COMMENTS; the drawer rendered one flat 20-item list, so
+//   the structure was invisible to the person using it. Groups are real now,
+//   and every item carries a small Thai caption under its English label.
+interface NavItem { label: string; th: string; path: string; icon: React.ReactNode }
+interface NavGroup { title: string; th: string; items: NavItem[] }
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    title: "Daily", th: "งานประจำวัน",
+    items: [
+      { label: "Tonight",     th: "คืนนี้",        path: "/admin/tonight",      icon: <NightsStayIcon /> },
+      { label: "Dashboard",   th: "ภาพรวม",       path: "/admin/dashboard",    icon: <DashboardIcon /> },
+      { label: "New Booking", th: "เปิดออเดอร์ใหม่", path: "/admin/bookings/add", icon: <AddBoxIcon /> },
+      { label: "Bookings",    th: "รายการจอง",     path: "/admin/bookings",     icon: <BookingIcon /> },
+    ],
+  },
+  {
+    title: "Money", th: "เงิน & ตัวเลข",
+    items: [
+      // 🆕 Round 28r26 — Earnings calculator (revenue · split · CSV).
+      { label: "Earnings",       th: "รายได้ร้าน",     path: "/admin/earnings",       icon: <PaidIcon /> },
+      // 🆕 Round 28s313 — pay-therapist queue (non-cash bookings → shop owes cut).
+      { label: "Pay Therapists", th: "จ่ายหมอนวด",    path: "/admin/pay-therapists", icon: <PaymentsIcon /> },
+      { label: "Reports",        th: "รายงาน",        path: "/admin/reports",        icon: <ReportIcon /> },
+      // 🆕 Round 28r15 — funnel analytics (reads `analytics_events`).
+      { label: "Analytics",      th: "สถิติการใช้งาน", path: "/admin/analytics",      icon: <InsightsIcon /> },
+      // 🆕 Round 28s298 — discount codes + the master promos switch.
+      { label: "Promotions",     th: "ราคา & โปรโมชั่น", path: "/admin/promotions",   icon: <LocalOfferIcon /> },
+    ],
+  },
+  {
+    title: "People", th: "คน",
+    items: [
+      { label: "Therapists", th: "หมอนวด",         path: "/admin/therapists", icon: <TherapistIcon /> },
+      { label: "Users",      th: "ผู้ใช้งาน",       path: "/admin/users",      icon: <UserIcon /> },
+      { label: "Members",    th: "สมัครสมาชิก",     path: "/admin/members",    icon: <CardMembershipIcon /> },
+      { label: "Membership", th: "กติกาสมาชิก & โบนัส", path: "/admin/membership", icon: <WorkspacePremiumIcon /> },
+    ],
+  },
+  {
+    title: "Content", th: "เนื้อหา",
+    items: [
+      { label: "Reviews",      th: "รีวิวลูกค้า",   path: "/admin/reviews",      icon: <ReviewIcon /> },
+      // 🆕 Round 28s213 — backfill anon reviews onto completed bookings.
+      { label: "Seed Reviews", th: "เติมรีวิวย้อนหลัง", path: "/admin/seed-reviews", icon: <RateReviewIcon /> },
+      { label: "Pages",        th: "หน้าเว็บทั้งหมด", path: "/admin/pages-list",   icon: <ListAltIcon /> },
+    ],
+  },
+  {
+    title: "System", th: "ระบบ",
+    items: [
+      { label: "Blocked",   th: "อุปกรณ์ที่บล็อก",     path: "/admin/blocked-devices",   icon: <BlockIcon /> },
+      // 🆕 Round 28s234 — audit log viewer (Phase 4).
+      { label: "Audit Log", th: "ประวัติการทำงานแอดมิน", path: "/admin/audit-log",         icon: <ListAltIcon /> },
+      { label: "Settings",  th: "ตั้งค่าขั้นสูง",      path: "/admin/advanced-settings", icon: <SettingsIcon /> },
+    ],
+  },
 ];
+
+const ALL_NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
 
 const AdminLayout: React.FC = () => {
   const navigate  = useNavigate();
@@ -127,6 +157,21 @@ const AdminLayout: React.FC = () => {
   const [anchorEl,     setAnchorEl]     = useState<null | HTMLElement>(null);
 
   useAdminPresenceHeartbeat(Boolean(user) && role === "admin");
+
+  // 🆕 Round 28w.80 — active-row detection used a bare `startsWith`, so any
+  //   path that PREFIXES another lit up two rows at once: on /admin/membership
+  //   both "Members" and "Membership" highlighted, and on /admin/bookings/add
+  //   both "New Booking" and "Bookings" did. Resolve to the single longest
+  //   matching path instead, so the most specific page always wins.
+  const activePath = useMemo(() => {
+    let best = "";
+    for (const it of ALL_NAV_ITEMS) {
+      const hit =
+        location.pathname === it.path || location.pathname.startsWith(`${it.path}/`);
+      if (hit && it.path.length > best.length) best = it.path;
+    }
+    return best;
+  }, [location.pathname]);
 
   useEffect(() => {
     (async () => {
@@ -215,54 +260,85 @@ const AdminLayout: React.FC = () => {
 
       {/* nav items */}
       <List sx={{ pt: 1, px: 0.75, flex: 1, overflowY: "auto" }}>
-        {menuItems.map((item) => {
-          const active = location.pathname === item.path ||
-            (item.path !== "/admin/dashboard" && location.pathname.startsWith(item.path));
-          return (
-            <ListItemButton
-              key={item.path}
-              component={Link}
-              to={item.path}
-              selected={active}
-              sx={{
-                justifyContent: compact ? "center" : "flex-start",
-                py: 1,
-                px: compact ? 1 : 1.5,
-                borderRadius: "10px",
-                mb: 0.25,
-                color: active ? adminColor.accent : adminColor.muted,
-                "&:hover": {
-                  background: adminColor.panel2,
-                  color: adminColor.text,
-                },
-                "&.Mui-selected": {
-                  background: "rgba(78,126,140,0.16)",
-                  color: adminColor.accent,
-                  "&:hover": { background: "rgba(78,126,140,0.22)" },
-                  "& .MuiListItemIcon-root": { color: adminColor.accent },
-                },
-                "& .MuiListItemIcon-root": {
-                  color: active ? adminColor.accent : adminColor.dim,
-                  minWidth: compact ? "auto" : 38,
-                },
-              }}
-            >
-              <ListItemIcon>
-                {item.icon}
-              </ListItemIcon>
-              {!compact && (
-                <ListItemText
-                  primary={item.label}
-                  primaryTypographyProps={{
-                    fontSize: 13.5,
-                    fontWeight: active ? 700 : 500,
-                    color: "inherit",
+        {NAV_GROUPS.map((group, gi) => (
+          <React.Fragment key={group.title}>
+            {/* Group heading — hidden when the rail is collapsed to icons; a
+                hairline keeps the grouping legible there instead. */}
+            {compact ? (
+              gi > 0 && <Divider sx={{ my: 0.75, borderColor: adminColor.line }} />
+            ) : (
+              <Box sx={{ px: 1.5, pt: gi === 0 ? 0.25 : 1.5, pb: 0.5 }}>
+                <Typography
+                  sx={{
+                    fontSize: 9.5, fontWeight: 800, letterSpacing: "0.14em",
+                    textTransform: "uppercase", color: adminColor.dim,
                   }}
-                />
-              )}
-            </ListItemButton>
-          );
-        })}
+                >
+                  {group.title} · {group.th}
+                </Typography>
+              </Box>
+            )}
+
+            {group.items.map((item) => {
+              const active = item.path === activePath;
+              return (
+                <ListItemButton
+                  key={item.path}
+                  component={Link}
+                  to={item.path}
+                  selected={active}
+                  title={compact ? `${item.label} · ${item.th}` : undefined}
+                  sx={{
+                    justifyContent: compact ? "center" : "flex-start",
+                    py: compact ? 1 : 0.75,
+                    px: compact ? 1 : 1.5,
+                    borderRadius: "10px",
+                    mb: 0.25,
+                    color: active ? adminColor.accent : adminColor.muted,
+                    "&:hover": {
+                      background: adminColor.panel2,
+                      color: adminColor.text,
+                    },
+                    "&.Mui-selected": {
+                      background: "rgba(78,126,140,0.16)",
+                      color: adminColor.accent,
+                      "&:hover": { background: "rgba(78,126,140,0.22)" },
+                      "& .MuiListItemIcon-root": { color: adminColor.accent },
+                    },
+                    "& .MuiListItemIcon-root": {
+                      color: active ? adminColor.accent : adminColor.dim,
+                      minWidth: compact ? "auto" : 38,
+                    },
+                  }}
+                >
+                  <ListItemIcon>
+                    {item.icon}
+                  </ListItemIcon>
+                  {!compact && (
+                    <ListItemText
+                      primary={item.label}
+                      secondary={item.th}
+                      primaryTypographyProps={{
+                        fontSize: 13.5,
+                        fontWeight: active ? 700 : 500,
+                        color: "inherit",
+                        lineHeight: 1.25,
+                      }}
+                      secondaryTypographyProps={{
+                        fontSize: 10.5,
+                        // Not "inherit": the caption must stay quiet even on the
+                        // active row, or the two lines compete for attention.
+                        color: active ? adminColor.accent : adminColor.dim,
+                        lineHeight: 1.3,
+                        sx: { opacity: active ? 0.85 : 1 },
+                      }}
+                    />
+                  )}
+                </ListItemButton>
+              );
+            })}
+          </React.Fragment>
+        ))}
       </List>
 
       {/* bottom: user info */}
