@@ -571,7 +571,7 @@ const PricingPage: React.FC = () => {
                 component="button"
                 type="button"
                 onClick={() => navigate(`/services/${s.id}`)}
-                aria-label={`Unlock Executive Benefits — ${s.name}`}
+                aria-label={`Benefits — ${s.name}`}
                 sx={{
                   // 🆕 28w.26 (founder: "ขยับไว้ตรงกลางป้าย") — centre the CTA
                   //   in the card (was flex-start / left-aligned).
@@ -604,8 +604,9 @@ const PricingPage: React.FC = () => {
                   },
                 }}
               >
-                {/* 🆕 28w.27 (founder: "เอาลูกศรออก") — arrow removed. */}
-                {t("pricing.unlockBenefits", "Unlock Executive Benefits")}
+                {/* 🆕 28w.27 (founder: "เอาลูกศรออก") — arrow removed.
+                    🆕 28w.70 (founder: "เปลี่ยนให้เหลือแค่คำว่า benefits"). */}
+                {t("pricing.unlockBenefits", "Benefits")}
               </Box>
             </Box>
           );
