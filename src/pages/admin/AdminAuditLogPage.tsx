@@ -97,6 +97,18 @@ const ACTION_LABEL: Record<string, { label: string; color: string }> = {
   "bundle.update":           { label: "แก้ไขแพ็คเกจ",           color: adminColor.blue },
   "bundle.delete":           { label: "ลบแพ็คเกจ",             color: adminColor.red },
   "promo.print_card":        { label: "พิมพ์การ์ดโปรโมชั่น",     color: adminColor.dim },
+  // 🆕 28w.78 — 10 actions were being logged but had no label, so they fell
+  //   through to the raw "therapist_payout.mark_paid_batch" string in the UI.
+  "therapist_payout.mark_paid":       { label: "จ่ายหมอนวดแล้ว",        color: adminColor.highlight },
+  "therapist_payout.mark_paid_batch": { label: "จ่ายหมอนวด (ยกชุด)",     color: adminColor.highlight },
+  "therapist_payout.mark_unpaid":     { label: "ยกเลิกสถานะจ่ายหมอนวด",  color: adminColor.dim },
+  "review.check":            { label: "ตรวจรีวิว",             color: adminColor.blue },
+  "review.restore":          { label: "กู้คืนรีวิว",            color: adminColor.green },
+  "member.enroll":           { label: "สมัครสมาชิก",           color: adminColor.green },
+  "member.reset":            { label: "รีเซตรหัสสมาชิก",        color: adminColor.blue },
+  "member.upgrade":          { label: "อัปเกรดยศสมาชิก",        color: adminColor.green },
+  "member.edit":             { label: "แก้ไขข้อมูลสมาชิก",      color: adminColor.blue },
+  "member.remove":           { label: "ยกเลิกสมาชิก",           color: adminColor.red },
 };
 
 // 🆕 Round 28s294 — category = the prefix before the dot. New actions
@@ -167,7 +179,21 @@ const AdminAuditLogPage: React.FC = () => {
     const unsub = onSnapshot(
       q,
       (snap) => {
-        setRows(snap.docs.map((d) => ({ id: d.id, ...d.data() } as AuditRow)));
+        // 🆕 28w.78 (founder "มันอัปเดตตลอดเวลาเกินไป ให้เก็บเฉพาะการกระทำจริง")
+        //   Drop rows with no `action`. Those were written by the
+        //   onTherapistUpdate Cloud Function, which logged EVERY therapist doc
+        //   change — including the `viewCount` bump that fires on each public
+        //   profile view — with no action field, so they all rendered as
+        //   "ไม่ทราบประเภท" and buried the real admin actions.
+        //   The function is fixed (28w.78) to ignore that churn, but auditLogs
+        //   is append-only (rules: update/delete false), so the ~500 rows
+        //   already written can't be deleted — filter them out here so the log
+        //   is usable straight away, without waiting on the functions deploy.
+        setRows(
+          snap.docs
+            .map((d) => ({ id: d.id, ...d.data() } as AuditRow))
+            .filter((r) => typeof r.action === "string" && r.action.length > 0),
+        );
         setLoading(false);
       },
       () => setLoading(false)

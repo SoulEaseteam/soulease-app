@@ -390,11 +390,45 @@ export const setRoleOnSignup = functionsV1
   });
 
 
+// 🆕 Round 28w.78 (founder: "audit-log มันอัปเดตตลอดเวลาเกินไป ให้เก็บเฉพาะ
+//   การกระทำจริงก็พอ") — this trigger logged an audit row for ANY therapist
+//   field change, so it was recording machine churn, not decisions:
+//
+//     • `viewCount` is bumped by EVERY public profile view (firestore.rules
+//       lets an anonymous visitor do viewCount + 1). That single key was
+//       generating ~all of the ~100 rows/day the founder was seeing.
+//     • GPS / presence / booking-state fields are written continuously by the
+//       therapist app and the booking flow — nobody "did" them.
+//     • Derived aggregates (rating, counts) are recomputed, not decided.
+//
+//   Keep only fields a human deliberately changes.
 const AUDIT_IGNORE_KEYS = new Set([
+  // bookkeeping
   "updatedAt",
   "createdAt",
   "bioGeneratedAt",
   "badgeUpdatedAt",
+  "updatedBy",
+  // pure telemetry — THE spammer: one row per profile view
+  "viewCount",
+  "views",
+  // live presence / GPS churn (therapist app writes these constantly)
+  "currentLocation",
+  "lat",
+  "lng",
+  "area",
+  "lastSeen",
+  "lastActiveAt",
+  "online",
+  // auto-maintained by the booking flow, not a human action
+  "activeBooking",
+  "busyUntil",
+  // derived aggregates — recomputed, never "decided"
+  "rating",
+  "reviewCount",
+  "reviews",
+  "totalSessions",
+  "sessions",
 ]);
 
 /** Truncate large values so audit log row stays small. */
@@ -464,11 +498,20 @@ export const onTherapistUpdate = onDocumentUpdated(
       await getFirestore()
         .collection("auditLogs")
         .add({
+          // 🆕 28w.78 — this write had NO `action` field, so every one of these
+          //   rows rendered as "ไม่ทราบประเภท" in /admin/audit-log (the page
+          //   falls back to that label only when `action` isn't a string).
+          //   Stamp the same action the admin UI uses, and put the actor where
+          //   the page expects it.
+          action: "therapist.update",
+          actorId: updatedBy,
+          actorEmail: null,
           collection: "therapists",
           docId: therapistId,
           updatedBy,
           changedKeys: Object.keys(changes),
           changes,
+          detail: { therapistId, changedKeys: Object.keys(changes) },
           at: FieldValue.serverTimestamp(),
         });
       logger.info("[onTherapistUpdate] logged", {
