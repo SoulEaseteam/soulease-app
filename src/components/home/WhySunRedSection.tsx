@@ -86,17 +86,10 @@ const WhySunRedSection: React.FC = () => {
       >
         {t("home.why.title", "Why SunRed")}
       </Box>
-      <Box
-        sx={{
-          fontFamily: fonts.body,
-          fontSize: 11.5,
-          color: "var(--sr-muted)", // CHAMPAGNE muted (was GRAY_600 #6E6E6A)
-          marginTop: "4px",
-          marginBottom: { xs: "20px", md: "24px" },
-        }}
-      >
-        {t("home.why.title", "Why SunRed")}
-      </Box>
+      {/* 🆕 Round 28w.84 — a second line under the heading used to hold the THAI
+          version of that same heading (an English/Thai pair). Now that the
+          heading itself translates per device locale, that line was rendering
+          the title twice. Removed — the pair has no job left to do. */}
 
       <Box
         sx={{
