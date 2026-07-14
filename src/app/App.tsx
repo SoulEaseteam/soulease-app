@@ -209,6 +209,11 @@ const AdminReportPage = React.lazy(
 const AdminMembershipPage = React.lazy(
   () => import("@/pages/admin/AdminMembershipPage")
 );
+// 🆕 Round 28w.77 — the member ROSTER (enrol / codes / tiers). Deliberately
+//   separate from AdminMembershipPage, which holds the RULES.
+const AdminMembersPage = React.lazy(
+  () => import("@/pages/admin/AdminMembersPage")
+);
 const AdminBlockedDevicesPage = React.lazy(
   () => import("@/pages/admin/AdminBlockedDevicesPage")
 );
@@ -371,6 +376,7 @@ export default function App() {
           <Route path="add-therapist" element={<AddTherapistPage />} />
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="membership" element={<AdminMembershipPage />} />
+          <Route path="members" element={<AdminMembersPage />} />
           <Route path="user/:id" element={<AdminUserDetailPage />} />
           <Route path="bookings" element={<AdminBookingListPage />} />
           <Route path="bookings/add" element={<AdminBookingAddPage />} />

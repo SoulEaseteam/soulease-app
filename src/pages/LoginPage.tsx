@@ -34,6 +34,8 @@ import {
 import { auth, db } from "@/lib/firebase";
 import BottomNav from '../components/layouts/BottomNavGlass';
 import { getErrorMessage } from "@/utils/getErrorMessage";
+// 🆕 28w.77 — "ลืมรหัสผ่าน?" hands the guest to the concierge (no self-serve reset).
+import { whatsappDeepLink } from "@/config/concierge";
 
 const SERIF = '"Fraunces", "Playfair Display", Georgia, serif';
 const ROSE = "#D97C95";
@@ -282,6 +284,29 @@ const LoginPage: React.FC = () => {
             <Link to="/register" style={{ color: ROSE, fontWeight: "bold" }}>
               Sign up
             </Link>
+          </Typography>
+
+          {/* 🆕 28w.77 (founder "ใส่ ลืมรหัสผ่าน? แล้วให้ลิ้งไปที่แอดมิน") — no
+              self-serve reset flow exists, so this hands the guest straight to
+              the concierge with a pre-filled request instead of a dead end. */}
+          <Typography mt={1} fontSize={14} sx={{ color: "var(--sr-body)" }}>
+            <Box
+              component="a"
+              href={whatsappDeepLink(
+                "Hi SunRed concierge, I've forgotten my account password. Could you help me reset it?"
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{
+                color: ROSE,
+                fontWeight: "bold",
+                textDecoration: "underline",
+                textUnderlineOffset: "3px",
+                "&:hover": { color: ROSE_HOVER },
+              }}
+            >
+              ลืมรหัสผ่าน?
+            </Box>
           </Typography>
         </Paper>
         <Typography mt={4} fontSize={14} sx={{ color: "var(--sr-muted)" }} textAlign="center">

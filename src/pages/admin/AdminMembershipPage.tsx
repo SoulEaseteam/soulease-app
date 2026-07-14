@@ -13,7 +13,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Box, Typography, TextField, Button, CircularProgress } from "@mui/material";
 import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { adminColor, adminFont } from "@/theme/adminTheme";
+import { adminColor, adminFont, adminFieldSx } from "@/theme/adminTheme";
 import { normPhone } from "@/utils/phoneCountry";
 import {
   MEMBERSHIP_TIERS, MEMBERSHIP_COLORS, MEMBERSHIP_LABELS_TH, MEMBERSHIP_DEFAULTS,
@@ -192,7 +192,7 @@ const AdminMembershipPage: React.FC = () => {
                 onChange={(e) => edit(setMinVisits, t, e.target.value)}
                 size="small"
                 inputProps={{ inputMode: "numeric" }}
-                sx={{ "& .MuiInputBase-input": { fontFamily: SANS, fontSize: 13 } }}
+                sx={adminFieldSx}
               />
               <TextField
                 label="ยอดใช้จ่าย ≥ (฿)"
@@ -200,7 +200,7 @@ const AdminMembershipPage: React.FC = () => {
                 onChange={(e) => edit(setMinSpend, t, e.target.value)}
                 size="small"
                 inputProps={{ inputMode: "numeric" }}
-                sx={{ "& .MuiInputBase-input": { fontFamily: SANS, fontSize: 13 } }}
+                sx={adminFieldSx}
               />
               <Box sx={{ textAlign: { xs: "left", sm: "right" }, gridColumn: { xs: "1 / -1", sm: "auto" } }}>
                 <Typography sx={{ fontFamily: SANS, fontSize: 18, fontWeight: 800, color, lineHeight: 1 }}>
@@ -223,7 +223,7 @@ const AdminMembershipPage: React.FC = () => {
           onChange={(e) => { setDirty(true); setSaved(false); setDemoteDays(e.target.value.replace(/[^\d]/g, "")); }}
           size="small"
           inputProps={{ inputMode: "numeric" }}
-          sx={{ width: 200, "& .MuiInputBase-input": { fontFamily: SANS, fontSize: 13 } }}
+          sx={{ ...adminFieldSx, width: 200 }}
         />
         <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.dim }}>
           (90 วัน ≈ 3 เดือน) · ลดครั้งละ 1 ขั้น (ต่ำสุด Bronze)
@@ -259,14 +259,14 @@ const AdminMembershipPage: React.FC = () => {
             value={staffPer}
             onChange={(e) => { setDirty(true); setSaved(false); setStaffPer(e.target.value.replace(/[^\d]/g, "")); }}
             size="small" inputProps={{ inputMode: "numeric" }}
-            sx={{ width: 150, "& .MuiInputBase-input": { fontFamily: SANS, fontSize: 13 } }}
+            sx={{ ...adminFieldSx, width: 150 }}
           />
           <TextField
             label="โบนัส (฿)"
             value={staffAmt}
             onChange={(e) => { setDirty(true); setSaved(false); setStaffAmt(e.target.value.replace(/[^\d]/g, "")); }}
             size="small" inputProps={{ inputMode: "numeric" }}
-            sx={{ width: 150, "& .MuiInputBase-input": { fontFamily: SANS, fontSize: 13 } }}
+            sx={{ ...adminFieldSx, width: 150 }}
           />
           <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.dim }}>เช่น ครบทุก 1,000 ออเดอร์ ได้ ฿5,000</Typography>
         </Box>

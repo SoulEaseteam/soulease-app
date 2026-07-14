@@ -96,6 +96,7 @@ const menuItems = [
   // People
   { label: "Therapists",   path: "/admin/therapists",         icon: <TherapistIcon /> },
   { label: "Users",        path: "/admin/users",              icon: <UserIcon /> },
+  { label: "Members",      path: "/admin/members",            icon: <CardMembershipIcon /> },
   { label: "Membership",   path: "/admin/membership",         icon: <CardMembershipIcon /> },
   // Content
   { label: "Reviews",      path: "/admin/reviews",            icon: <ReviewIcon /> },

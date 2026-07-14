@@ -76,6 +76,36 @@ export const adminPanelSx = {
 } as const;
 
 /**
+ * 🆕 Round 28w.77 — outlined-field styling for EVERY admin form.
+ *
+ * The MUI theme is built with `palette.mode: "dark"`, so an outlined TextField
+ * resolves its notched outline to `rgba(255,255,255,0.23)` — white. The admin
+ * surface is WHITE (adminColor.panel), so that outline lands at 1.0:1 contrast
+ * and the input box is literally invisible; MUI also paints the input text with
+ * the dark-palette ink. Every admin page that forgot to override this shipped
+ * borderless, unreadable fields (the founder hit it twice).
+ *
+ * Spread this into any admin TextField's `sx` instead of re-deriving it.
+ */
+export const adminFieldSx = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "10px",
+    "& fieldset": { borderColor: adminColor.line2 },
+    "&:hover fieldset": { borderColor: adminColor.accent },
+    "&.Mui-focused fieldset": { borderColor: adminColor.accent },
+  },
+  "& .MuiOutlinedInput-input": {
+    fontFamily: adminFont.sans,
+    fontSize: 13,
+    color: adminColor.text,
+    caretColor: adminColor.text,
+    "&::placeholder": { color: adminColor.dim, opacity: 1 },
+  },
+  "& .MuiInputLabel-root": { color: adminColor.dim },
+  "& .MuiInputLabel-root.Mui-focused": { color: adminColor.accent },
+} as const;
+
+/**
  * 🆕 Round 28s246 (founder: "ปรับตัวเลข ให้ดูง่าย") — number typography.
  * Hoefler Text (adminFont.serif) defaults to OLD-STYLE figures — digits with
  * ascenders/descenders that look elegant in prose but are hard to scan in a
