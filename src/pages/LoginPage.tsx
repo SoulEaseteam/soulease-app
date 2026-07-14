@@ -39,6 +39,36 @@ const SERIF = '"Fraunces", "Playfair Display", Georgia, serif';
 const ROSE = "#D97C95";
 const ROSE_HOVER = "#C96F89";
 
+// 🆕 28w.76 (founder "ไม่เห็นข้อมูลในกล่อง · แก้ทั้ง 2 หน้า") — the outline and
+//   label were themed but the INPUT TEXT never was, so MUI fell back to its
+//   light-theme ink (#232B36) and painted near-black on the dark panel:
+//   1.11:1 contrast — what you type is invisible. Pin text/placeholder/caret to
+//   theme tokens and neutralise the browser's autofill repaint. Extracted to
+//   one const (was duplicated inline on both fields) and mirrored in
+//   RegisterPage so the two auth screens can't drift apart again.
+const fieldSx = {
+  mb: 2,
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "16px",
+    "& fieldset": { borderColor: "rgba(217, 124, 149, 0.55)" },
+    "&:hover fieldset": { borderColor: ROSE },
+    "&.Mui-focused fieldset": { borderColor: ROSE },
+  },
+  "& .MuiOutlinedInput-input": {
+    color: "var(--sr-ink)",
+    caretColor: "var(--sr-ink)",
+    "&::placeholder": { color: "var(--sr-muted)", opacity: 1 },
+    "&:-webkit-autofill": {
+      WebkitTextFillColor: "var(--sr-ink)",
+      WebkitBoxShadow: "0 0 0 1000px var(--sr-panel-2) inset",
+      caretColor: "var(--sr-ink)",
+      transition: "background-color 9999s ease-in-out 0s",
+    },
+  },
+  "& label": { color: "var(--sr-muted)" },
+  "& label.Mui-focused": { color: ROSE },
+} as const;
+
 type LoginRole = "admin" | "therapist" | "user";
 
 const LoginPage: React.FC = () => {
@@ -209,20 +239,7 @@ const LoginPage: React.FC = () => {
               size="small"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              sx={{
-                mb: 2,
-                // 🆕 28w.2 — MUI's default outline computes to white
-                //   (palette.mode is dark) → invisible on the day panel.
-                //   Pin a visible rose-tint border for both day + night.
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "16px",
-                  "& fieldset": { borderColor: "rgba(217, 124, 149, 0.55)" },
-                  "&:hover fieldset": { borderColor: ROSE },
-                  "&.Mui-focused fieldset": { borderColor: ROSE },
-                },
-                "& label": { color: "var(--sr-muted)" },
-                "& label.Mui-focused": { color: ROSE },
-              }}
+              sx={fieldSx}
             />
 
             <TextField
@@ -233,20 +250,7 @@ const LoginPage: React.FC = () => {
               size="small"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              sx={{
-                mb: 2,
-                // 🆕 28w.2 — MUI's default outline computes to white
-                //   (palette.mode is dark) → invisible on the day panel.
-                //   Pin a visible rose-tint border for both day + night.
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "16px",
-                  "& fieldset": { borderColor: "rgba(217, 124, 149, 0.55)" },
-                  "&:hover fieldset": { borderColor: ROSE },
-                  "&.Mui-focused fieldset": { borderColor: ROSE },
-                },
-                "& label": { color: "var(--sr-muted)" },
-                "& label.Mui-focused": { color: ROSE },
-              }}
+              sx={fieldSx}
             />
 
             {/* LOGIN BUTTON */}

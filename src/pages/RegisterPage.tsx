@@ -24,6 +24,12 @@ const ROSE_HOVER = "#C96F89";
 
 // Shared field styling — rose border visible in both day + night
 // (MUI's default outline computes to white on the day panel).
+// 🆕 28w.76 (founder "ไม่เห็นข้อมูลในกล่อง") — the outline + label were themed
+//   but the INPUT TEXT never was, so MUI fell back to its light-theme ink
+//   (#232B36) and rendered near-black on the dark panel: 1.11:1 contrast, i.e.
+//   what you type is invisible. Pin the text, placeholder and caret to theme
+//   tokens, and neutralise the browser's autofill styling (Chrome force-paints
+//   its own background + text colour on autofilled fields).
 const fieldSx = {
   mb: 2,
   '& .MuiOutlinedInput-root': {
@@ -31,6 +37,17 @@ const fieldSx = {
     '& fieldset': { borderColor: 'rgba(217, 124, 149, 0.55)' },
     '&:hover fieldset': { borderColor: ROSE },
     '&.Mui-focused fieldset': { borderColor: ROSE },
+  },
+  '& .MuiOutlinedInput-input': {
+    color: 'var(--sr-ink)',
+    caretColor: 'var(--sr-ink)',
+    '&::placeholder': { color: 'var(--sr-muted)', opacity: 1 },
+    '&:-webkit-autofill': {
+      WebkitTextFillColor: 'var(--sr-ink)',
+      WebkitBoxShadow: '0 0 0 1000px var(--sr-panel-2) inset',
+      caretColor: 'var(--sr-ink)',
+      transition: 'background-color 9999s ease-in-out 0s',
+    },
   },
   '& label': { color: 'var(--sr-muted)' },
   '& label.Mui-focused': { color: ROSE },
