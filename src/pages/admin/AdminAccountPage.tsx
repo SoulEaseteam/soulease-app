@@ -24,16 +24,18 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
   updatePassword,
+  updateProfile,
   sendPasswordResetEmail,
   signOut,
 } from "firebase/auth";
+import { collection, doc, limit, onSnapshot, orderBy, query, setDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { Crown, SignOut, Key, ShieldCheck, Clock, Phone } from "phosphor-react";
+import { Crown, SignOut, Key, ShieldCheck, Clock, Phone, IdentificationCard, ClockCounterClockwise } from "phosphor-react";
 
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import { adminColor, adminFont, adminFieldSx, adminPanelSx } from "@/theme/adminTheme";
-import { logAdminAction } from "@/utils/auditLog";
+import { logAdminAction, ACTION_LABEL } from "@/utils/auditLog";
 import { isAliasEmail } from "@/utils/loginId";
 import { useAdminIdentity } from "@/hooks/useAdminIdentity";
 
@@ -56,6 +58,55 @@ const AdminAccountPage: React.FC = () => {
   const { phone, saving: phoneSaving, savePhone } = useAdminIdentity();
   const [phoneDraft, setPhoneDraft] = useState("");
   useEffect(() => { setPhoneDraft(phone ?? ""); }, [phone]);
+
+  // 🆕 28x.4 — display name. Nothing in the app ever set one, so the "เปิดโดย"
+  //   stamp from 28x.3 fell back to the raw email. With a second person in the
+  //   back office, "sunred.team@gmail.com opened this" is not an answer.
+  const [nameDraft, setNameDraft] = useState("");
+  const [nameSaving, setNameSaving] = useState(false);
+  useEffect(() => { setNameDraft(user?.displayName ?? ""); }, [user?.displayName]);
+
+  const doSaveName = async () => {
+    const next = nameDraft.trim();
+    if (!next || !user) { toast.error("ใส่ชื่อก่อน"); return; }
+    setNameSaving(true);
+    try {
+      // Auth carries it for anything reading the token; the users doc mirrors it
+      // so admin screens can render a name without a second auth lookup.
+      await updateProfile(user, { displayName: next });
+      await setDoc(doc(db, "users", user.uid), { displayName: next }, { merge: true });
+      toast.success("บันทึกชื่อแล้ว · ออเดอร์ที่คุณเปิดจะขึ้นชื่อนี้");
+    } catch (e) {
+      console.error("[account] name save failed", e);
+      toast.error("บันทึกชื่อไม่สำเร็จ");
+    } finally {
+      setNameSaving(false);
+    }
+  };
+
+  // 🆕 28x.4 — what THIS admin did recently. auditLogs already carries actorId,
+  //   so this needs no new data — only a place to see it. Ordered by time and
+  //   filtered client-side rather than with a where(actorId) + orderBy composite,
+  //   which would need a new Firestore index deployed.
+  const [myActions, setMyActions] = useState<{ id: string; action: string; atMs: number }[]>([]);
+  useEffect(() => {
+    if (!user) return;
+    const q = query(collection(db, "auditLogs"), orderBy("at", "desc"), limit(200));
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        setMyActions(
+          snap.docs
+            .map((d) => ({ id: d.id, ...(d.data() as { action?: string; actorId?: string; at?: { toMillis?: () => number } }) }))
+            .filter((r) => r.actorId === user.uid && typeof r.action === "string" && r.action)
+            .map((r) => ({ id: r.id, action: r.action as string, atMs: r.at?.toMillis?.() ?? 0 }))
+            .slice(0, 8),
+        );
+      },
+      (err) => console.warn("[account] activity read failed", err.code),
+    );
+    return () => unsub();
+  }, [user]);
 
   const doSavePhone = async () => {
     const ok = await savePhone(phoneDraft);
@@ -188,6 +239,37 @@ const AdminAccountPage: React.FC = () => {
         </Typography>
       </Box>
 
+      {/* 🆕 28x.4 — display name. */}
+      <Box sx={{ ...adminPanelSx, p: 2, mb: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.5 }}>
+          <IdentificationCard size={16} weight="duotone" color={adminColor.accent} />
+          <Typography sx={{ fontFamily: SANS, fontSize: 15, fontWeight: 800, color: adminColor.text }}>
+            ชื่อที่แสดง
+          </Typography>
+        </Box>
+        <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.dim, mb: 1.5 }}>
+          ใช้ตอนโชว์ว่า “ใครเปิดออเดอร์” · ถ้าไม่ตั้ง จะขึ้นเป็นอีเมลดิบ ({user.email})
+        </Typography>
+        <Box sx={{ display: "flex", gap: 1.25, flexWrap: "wrap", alignItems: "center" }}>
+          <TextField
+            size="small" label="ชื่อ" placeholder="View"
+            value={nameDraft} onChange={(e) => setNameDraft(e.target.value)}
+            sx={{ ...adminFieldSx, width: 220 }}
+          />
+          <Button
+            variant="contained" disabled={nameSaving || !nameDraft.trim()}
+            onClick={() => void doSaveName()}
+            sx={{
+              textTransform: "none", fontWeight: 700, fontSize: 13, borderRadius: "999px", px: 2.5,
+              background: "linear-gradient(135deg,#D97C95,#C96F89)",
+              "&.Mui-disabled": { opacity: 0.5, color: "#fff" },
+            }}
+          >
+            {nameSaving ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : "บันทึกชื่อ"}
+          </Button>
+        </Box>
+      </Box>
+
       {/* 🆕 28x.3 — the admin's own phone.
           It lives on users/{uid}, NOT admins/{uid}: firestore.rules makes the
           admins collection `allow write: if false` on purpose (rights come from
@@ -285,6 +367,40 @@ const AdminAccountPage: React.FC = () => {
           )}
         </Box>
       </Box>
+
+      {/* 🆕 28x.4 — my recent actions. Not a vanity feed: it is how you notice a
+          change you did not make, and with a second person in the back office it is
+          how each of you can see your own trail without opening the full audit log. */}
+      {myActions.length > 0 && (
+        <Box sx={{ ...adminPanelSx, p: 2, mb: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1.25 }}>
+            <ClockCounterClockwise size={16} weight="duotone" color={adminColor.accent} />
+            <Typography sx={{ fontFamily: SANS, fontSize: 15, fontWeight: 800, color: adminColor.text, flex: 1 }}>
+              สิ่งที่ฉันทำล่าสุด
+            </Typography>
+            <Button
+              size="small" variant="text" onClick={() => navigate("/admin/audit-log")}
+              sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, color: adminColor.accent }}
+            >
+              ดูทั้งหมด
+            </Button>
+          </Box>
+          {myActions.map((a) => {
+            const meta = ACTION_LABEL[a.action];
+            return (
+              <Box key={a.id} sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.65, borderTop: `1px solid ${adminColor.line}` }}>
+                <Box sx={{ width: 6, height: 6, borderRadius: "50%", background: meta?.color ?? adminColor.dim, flexShrink: 0 }} />
+                <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: adminColor.text, flex: 1, minWidth: 0 }}>
+                  {meta?.label ?? a.action}
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, flexShrink: 0 }}>
+                  {a.atMs ? new Date(a.atMs).toLocaleString("th-TH", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "-"}
+                </Typography>
+              </Box>
+            );
+          })}
+        </Box>
+      )}
 
       {/* Sign out */}
       <Box sx={{ ...adminPanelSx, p: 2 }}>

@@ -1,3 +1,4 @@
+import { adminColor } from "@/theme/adminTheme";
 // src/utils/auditLog.ts
 //
 // 🆕 Round 28s234 (Phase 4 — "รื้อ ทำให้ ตกแต่ง และฟังก์ชั่น") — thin helper
@@ -130,3 +131,64 @@ export async function logAdminAction(
     console.warn("[auditLog] failed to record", action, e);
   }
 }
+
+
+/**
+ * 🆕 28x.4 — human label + colour per action. Lives HERE, beside the AuditAction
+ * union it describes, so the audit page and the admin account page read the same
+ * map. A second copy is how one of them ends up showing a raw action string.
+ */
+export const ACTION_LABEL: Record<string, { label: string; color: string }> = {
+  // 🆕 28w.96 — campaign + loyalty-rate edits are money changes; label them.
+  "promo.anniversary_edit": { label: "แก้แคมเปญครบรอบ", color: "#D97C95" },
+  "membership.sunpoints_edit": { label: "ตั้งค่า SunPoints", color: "#E3BE55" },
+  "therapist.rating_sync": { label: "ซิงก์คะแนนหมอนวด", color: "#F5A623" },
+  "admin.password_change": { label: "แอดมินเปลี่ยนรหัสผ่าน", color: "#DC2626" },
+  "booking.confirm":         { label: "ยืนยันออเดอร์",        color: adminColor.green },
+  "booking.cancel":          { label: "ยกเลิกออเดอร์",        color: adminColor.red },
+  "booking.complete":        { label: "ปิดงานเสร็จ",          color: adminColor.green },
+  "booking.mark_paid":       { label: "ลูกค้าจ่ายแล้ว",       color: adminColor.green },
+  "booking.mark_unpaid":     { label: "ยกเลิกสถานะจ่าย",      color: adminColor.dim },
+  "booking.status_change":   { label: "เปลี่ยนสถานะ",         color: adminColor.blue },
+  "booking.edit_details":    { label: "แก้ไขรายละเอียดจอง",    color: adminColor.blue },
+  "booking.mark_reviewed":   { label: "เคลียร์รอรีวิว",        color: adminColor.dim },
+  "payout.mark_paid":        { label: "จ่ายค่าตอบแทนแล้ว",     color: adminColor.highlight },
+  "payout.mark_unpaid":      { label: "ยกเลิกสถานะจ่ายแล้ว",   color: adminColor.dim },
+  "therapist.relight_all":   { label: "เปิดร้านทั้งหมด",       color: adminColor.green },
+  "therapist.reset_auto":    { label: "รีเซ็ตเป็น Auto",       color: adminColor.blue },
+  "therapist.create":        { label: "เพิ่มหมอนวดใหม่",       color: adminColor.green },
+  "therapist.update":        { label: "แก้ไขข้อมูลหมอนวด",     color: adminColor.blue },
+  "therapist.delete":        { label: "ลบหมอนวด",             color: adminColor.red },
+  "user.block":              { label: "บล็อกผู้ใช้",          color: adminColor.red },
+  "user.unblock":            { label: "ปลดบล็อกผู้ใช้",       color: adminColor.green },
+  "review.edit":             { label: "แก้ไขรีวิว",           color: adminColor.blue },
+  "review.hide":             { label: "ซ่อนรีวิว",            color: adminColor.red },
+  "phone.block":             { label: "บล็อกเบอร์โทร",         color: adminColor.red },
+  "phone.unblock":           { label: "ปลดบล็อกเบอร์โทร",      color: adminColor.green },
+  "settings.update":         { label: "แก้ไขการตั้งค่า",       color: adminColor.blue },
+  "promo.toggle":            { label: "เปิด/ปิดโค้ดโปรโมชั่น",  color: adminColor.blue },
+  "promo.create":            { label: "สร้างโค้ดโปรโมชั่น",     color: adminColor.green },
+  "promo.delete":            { label: "ลบโค้ดโปรโมชั่น",        color: adminColor.red },
+  "promo.builtin_edit":      { label: "แก้ไขโค้ดมาตรฐาน",       color: adminColor.blue },
+  "promo.builtin_delete":    { label: "ลบโค้ดมาตรฐาน",          color: adminColor.red },
+  "promo.builtin_restore":   { label: "กู้คืนโค้ดมาตรฐาน",       color: adminColor.green },
+  "service.update":          { label: "แก้ไขราคา/บริการ",       color: adminColor.blue },
+  // 🆕 Round 28r50 (Promotions Phase 1)
+  "service.bulk_edit":       { label: "แก้ราคาแบบยกชุด",         color: adminColor.blue },
+  "bundle.create":           { label: "สร้างแพ็คเกจ",           color: adminColor.green },
+  "bundle.update":           { label: "แก้ไขแพ็คเกจ",           color: adminColor.blue },
+  "bundle.delete":           { label: "ลบแพ็คเกจ",             color: adminColor.red },
+  "promo.print_card":        { label: "พิมพ์การ์ดโปรโมชั่น",     color: adminColor.dim },
+  // 🆕 28w.78 — 10 actions were being logged but had no label, so they fell
+  //   through to the raw "therapist_payout.mark_paid_batch" string in the UI.
+  "therapist_payout.mark_paid":       { label: "จ่ายหมอนวดแล้ว",        color: adminColor.highlight },
+  "therapist_payout.mark_paid_batch": { label: "จ่ายหมอนวด (ยกชุด)",     color: adminColor.highlight },
+  "therapist_payout.mark_unpaid":     { label: "ยกเลิกสถานะจ่ายหมอนวด",  color: adminColor.dim },
+  "review.check":            { label: "ตรวจรีวิว",             color: adminColor.blue },
+  "review.restore":          { label: "กู้คืนรีวิว",            color: adminColor.green },
+  "member.enroll":           { label: "สมัครสมาชิก",           color: adminColor.green },
+  "member.reset":            { label: "รีเซตรหัสสมาชิก",        color: adminColor.blue },
+  "member.upgrade":          { label: "อัปเกรดยศสมาชิก",        color: adminColor.green },
+  "member.edit":             { label: "แก้ไขข้อมูลสมาชิก",      color: adminColor.blue },
+  "member.remove":           { label: "ยกเลิกสมาชิก",           color: adminColor.red },
+};
