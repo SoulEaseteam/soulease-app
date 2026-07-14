@@ -160,14 +160,18 @@ export function useTherapistReviews(
         setLoading(false);
       },
       (err) => {
-        // 🆕 28s375 — a permission-denied here is expected in some contexts
-        //   (e.g. a missing composite index falls back, or rules deny an
-        //   edge query); it's not a crash and the UI shows an empty state.
-        //   Don't spam the console with an error for the expected case.
-        if ((err as { code?: string })?.code !== "permission-denied") {
-          // eslint-disable-next-line no-console
-          console.warn("[useTherapistReviews] snapshot error:", err);
-        }
+        // 🆕 28w.73 — 28s375 silently swallowed `permission-denied`, which is
+        //   exactly the failure that makes guest reviews vanish with NO trace
+        //   (undeployed rules / missing composite index). Always log the code
+        //   so "No reviews yet." can be told apart from "reviews are blocked".
+        //   Still non-fatal: the UI keeps its empty state.
+        const code = (err as { code?: string })?.code;
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[useTherapistReviews] reviews query failed (${code ?? "unknown"}) — ` +
+            "guests will see an empty review list.",
+          err
+        );
         setReviews([]);
         setLoading(false);
       }
