@@ -563,5 +563,6 @@
   "codes.sunpoints": "SunPoints",
   "codes.points": "포인트",
   "codes.worth": "다음 예약에서 {{thb}}바트 할인",
-  "codes.backCredited": "지난 {{visits}}회 이용 내역(총 {{spent}}바트)을 기준으로 자동 적립되었습니다. 예약 시 컨시어지에게 알려주시면 사용 가능합니다."
+  "codes.backCredited": "지난 {{visits}}회 이용 내역(총 {{spent}}바트)을 기준으로 자동 적립되었습니다. 예약 시 컨시어지에게 알려주시면 사용 가능합니다.",
+  "anniv.bookingRef": "예약 번호"
 }

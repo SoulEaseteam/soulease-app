@@ -35,6 +35,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import type { AnniversaryRewardId } from "@/config/anniversary";
 import { ANNIVERSARY_REWARDS, rewardsFor } from "@/config/anniversary";
+import { bookingRef } from "@/utils/bookingRef";
 
 export interface AnniversaryClaim {
   id: string;
@@ -59,6 +60,9 @@ export interface MembershipMirror {
    *  backed by real history. */
   totalSpentTHB?: number;
   points?: number;
+  /** 🆕 28w.98 — most recent reservation on that phone. Shown to the guest as
+   *  their booking reference instead of the SRD- membership code. */
+  lastBookingId?: string | null;
 }
 
 export function useAnniversaryClaim() {
@@ -213,6 +217,8 @@ export function useAnniversaryClaim() {
     isMember: Boolean(membership),
     /** SunPoints back-credited from verified past sessions. */
     points: membership?.points ?? 0,
+    /** Disclosable reservation reference — SR-XXXXXXXX. */
+    bookingRefCode: membership?.lastBookingId ? bookingRef(membership.lastBookingId) : null,
     totalSpentTHB: membership?.totalSpentTHB ?? 0,
     visits: membership?.visits ?? 0,
     isReturning,

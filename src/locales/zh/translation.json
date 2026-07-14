@@ -658,5 +658,6 @@
   "codes.sunpoints": "SunPoints",
   "codes.points": "分",
   "codes.worth": "下次预约可抵扣 {{thb}} 泰铢",
-  "codes.backCredited": "根据您过往 {{visits}} 次服务（累计消费 {{spent}} 泰铢）自动发放。预约时告知管家即可抵扣。"
+  "codes.backCredited": "根据您过往 {{visits}} 次服务（累计消费 {{spent}} 泰铢）自动发放。预约时告知管家即可抵扣。",
+  "anniv.bookingRef": "预约编号"
 }

@@ -217,6 +217,13 @@ const AdminMembersPage: React.FC = () => {
                     visits: stats[phoneKey]?.served ?? 0,
                     lastVisitMs: stats[phoneKey]?.lastVisitMs ?? 0,
                     totalSpentTHB: Math.round(stats[phoneKey]?.totalSpent ?? 0),
+                    // 🆕 28w.98 — the guest's most recent reservation id. The
+                    //   customer app shows THIS (as SR-XXXXXXXX) instead of the
+                    //   SRD- membership code: a booking reference is disclosable
+                    //   by design, identifies the reservation rather than the
+                    //   person, and grants nothing to whoever reads it.
+                    //   `history` is sorted newest-first in the same pass.
+                    lastBookingId: history[phoneKey]?.[0]?.id ?? null,
                     // Back-credit at the NORMAL 1x rate. The 2x multiplier is an
                     // Anniversary reward for NEW spend — applying it retroactively
                     // would double every historic baht and hand out a fortune.

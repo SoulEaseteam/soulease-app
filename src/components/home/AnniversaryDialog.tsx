@@ -58,7 +58,7 @@ const AnniversaryDialog: React.FC<Props> = ({ open, onClose }) => {
     isMember,
     isReturning,
     eligibleRewards,
-    membership,
+    bookingRefCode,
     activeClaim,
     loading,
   } = useAnniversaryClaim();
@@ -350,16 +350,30 @@ const AnniversaryDialog: React.FC<Props> = ({ open, onClose }) => {
               <Gift size={16} weight="bold" />
               {t("anniv.claim", "Claim reward")}
             </Box>
-            <Box
-              sx={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                gap: 0.5, mt: 1,
-                fontFamily: fonts.body, fontSize: 11, color: "var(--sr-muted)",
-              }}
-            >
-              <Crown size={12} weight="fill" color={GOLD} />
-              {t("anniv.memberAs", "Member")} · {membership?.code}
-            </Box>
+            {/* 🆕 28w.98 (founder: "เอาเป็นหมายเลขการจองแทน เพื่อให้สามารถเปิดเผยได้")
+                — was the SRD- membership code. That code is the credential the
+                concierge uses to recognise a member, so it behaves like a card
+                number, and this dialog is exactly the screen a guest screenshots
+                or has open in a hotel lobby. The booking reference is disclosable
+                by design (it is already printed on their confirmation), identifies
+                the reservation rather than the person, and grants nothing to
+                whoever reads it. Hidden entirely when we have no reservation to
+                quote, rather than printing an empty label. */}
+            {bookingRefCode && (
+              <Box
+                sx={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  gap: 0.5, mt: 1,
+                  fontFamily: fonts.body, fontSize: 11, color: "var(--sr-muted)",
+                }}
+              >
+                <Crown size={12} weight="fill" color={GOLD} />
+                {t("anniv.bookingRef", "Booking ref")} ·{" "}
+                <Box component="span" sx={{ fontWeight: 800, letterSpacing: "0.04em", color: "var(--sr-body)" }}>
+                  {bookingRefCode}
+                </Box>
+              </Box>
+            )}
           </>
         ) : (
           // Not a member — there is no self-serve enrolment, so hand them to the

@@ -563,5 +563,6 @@
   "codes.sunpoints": "SunPoints",
   "codes.points": "SunPoints",
   "codes.worth": "Worth ฿{{thb}} off your next booking",
-  "codes.backCredited": "Credited automatically from your {{visits}} previous sessions (฿{{spent}} spent). Tell the concierge when you book to redeem."
+  "codes.backCredited": "Credited automatically from your {{visits}} previous sessions (฿{{spent}} spent). Tell the concierge when you book to redeem.",
+  "anniv.bookingRef": "Booking ref"
 }
