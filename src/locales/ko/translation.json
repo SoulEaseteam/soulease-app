@@ -487,5 +487,8 @@
   "home.why.short.professional": "전문가",
   "home.why.short.private": "프라이버시",
   "home.why.short.alwaysOn": "24시간",
-  "home.why.short.concierge": "컨시어지"
+  "home.why.short.concierge": "컨시어지",
+  "services.mostRequested": "가장 많이 찾는",
+  "services.bestseller": "베스트셀러",
+  "pricing.bestseller": "베스트셀러"
 }

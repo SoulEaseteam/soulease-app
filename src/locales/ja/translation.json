@@ -487,5 +487,8 @@
   "home.why.short.professional": "プロ厳選",
   "home.why.short.private": "プライバシー",
   "home.why.short.alwaysOn": "24時間",
-  "home.why.short.concierge": "コンシェルジュ"
+  "home.why.short.concierge": "コンシェルジュ",
+  "services.mostRequested": "一番人気",
+  "services.bestseller": "ベストセラー",
+  "pricing.bestseller": "ベストセラー"
 }

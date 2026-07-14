@@ -18,6 +18,7 @@ import { useSearchParams } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
+import BestsellerRibbon from "@/components/common/BestsellerRibbon";
 // 🆕 Round 28r90 (r89 audit finding #1) — swap the raw catalog import for
 //   the live-config helpers so admin edits in /admin/promotions
 //   (name/desc/image/detail overrides, custom services, enabled toggle,
@@ -475,22 +476,25 @@ const ServicesPage: React.FC = () => {
                     px: "4px",
                   }}
                 >
+                  {/* 🆕 28w.87 (founder: "services เพิ่ม ป้าย แบบ นี้ เมนูแนะนำด้วย")
+                      — the recommended ritual now carries the SAME shimmering gold
+                      corner ribbon as /pricing (rendered on the card below). The
+                      flat amber pill that used to sit here said the same word in a
+                      different visual language, so it was dropped rather than
+                      stacked on top of the ribbon. The line-flanked eyebrow slot
+                      stays for the ritual label. */}
                   <Box aria-hidden sx={{ flex: 1, height: 1, background: "rgba(217,124,149,0.45)" }} />
                   <Box
                     sx={{
-                      px: "14px",
-                      py: "6px",
-                      borderRadius: 999,
-                      background: accents.amber,
-                      color: "#fff",
                       fontFamily: SANS,
                       fontSize: 10.5,
                       fontWeight: 800,
                       letterSpacing: "0.18em",
                       textTransform: "uppercase",
+                      color: ROSE,
                     }}
                   >
-                    {bestseller.badge ?? t("services.bestseller", "Bestseller")}
+                    {t("services.mostRequested", "Most requested")}
                   </Box>
                   <Box aria-hidden sx={{ flex: 1, height: 1, background: "rgba(217,124,149,0.45)" }} />
                 </Box>
@@ -552,10 +556,19 @@ const ServicesPage: React.FC = () => {
                     },
                   }}
                 >
-                  {/* 🆕 28r113 — floating BESTSELLER pill removed; the
-                      amber badge lives in the ━━ eyebrow ━━ above the
-                      whole card now.  Composition inside the card is
-                      pure image + name + description. */}
+                  {/* 🆕 28w.87 — the shimmering gold corner ribbon the founder
+                      pointed at on /pricing, now on the recommended ritual here
+                      too. Shared component, so the two surfaces cannot drift.
+                      The card above already sets position:relative +
+                      overflow:hidden, which the ribbon needs to clip cleanly at
+                      the corner. */}
+                  {/* Label is the shared translated string, NOT `bestseller.badge`.
+                      That field holds a raw catalog value ("RECOMMEND") which is
+                      (a) untranslated — a Japanese guest would read English on an
+                      otherwise-Japanese page — and (b) a different word from the
+                      ribbon on /pricing for the very same service. One service,
+                      one badge, in the guest's language. */}
+                  <BestsellerRibbon label={t("services.bestseller", "Bestseller")} />
 
                   {/* Hero image — natural full display (no crop)
                       🆕 28r116 (founder "services ทุกเมนู เห็น รูปเต็มใบ")

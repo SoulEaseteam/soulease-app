@@ -490,5 +490,8 @@
   "home.why.short.professional": "มืออาชีพ",
   "home.why.short.private": "เป็นส่วนตัว",
   "home.why.short.alwaysOn": "24 ชม.",
-  "home.why.short.concierge": "คอนเซียร์จ"
+  "home.why.short.concierge": "คอนเซียร์จ",
+  "services.mostRequested": "ยอดนิยมที่สุด",
+  "services.bestseller": "ขายดีที่สุด",
+  "pricing.bestseller": "ขายดีที่สุด"
 }

@@ -582,5 +582,8 @@
   "home.why.short.professional": "专业认证",
   "home.why.short.private": "私密安全",
   "home.why.short.alwaysOn": "24 小时",
-  "home.why.short.concierge": "专属管家"
+  "home.why.short.concierge": "专属管家",
+  "services.mostRequested": "最多人预约",
+  "services.bestseller": "热销之选",
+  "pricing.bestseller": "热销之选"
 }

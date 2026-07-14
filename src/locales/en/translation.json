@@ -487,5 +487,8 @@
   "home.why.short.professional": "Professional",
   "home.why.short.private": "Private",
   "home.why.short.alwaysOn": "24 hours",
-  "home.why.short.concierge": "Concierge"
+  "home.why.short.concierge": "Concierge",
+  "services.mostRequested": "Most requested",
+  "services.bestseller": "Bestseller",
+  "pricing.bestseller": "Bestseller"
 }
