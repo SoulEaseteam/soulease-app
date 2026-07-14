@@ -353,3 +353,36 @@ export function startingPrice(service: MassageService): number {
 export function formatTHB(amount: number): string {
   return `฿${amount.toLocaleString()}`;
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// 🆕 28w.62 (founder) — marketing framing on the pricing surfaces:
+//   a struck-through "was" price + Best Seller / Best Value badges.
+//   NOTE: the "was" price is auto-derived (current × markup, rounded up to
+//   ฿100) as a placeholder — set WAS_PRICE_MARKUP or a per-service map when
+//   the real original prices are decided.
+export const WAS_PRICE_MARKUP = 1.25;
+
+/** Struck-through "original" price for a (service, duration), or null. */
+export function wasPriceFor(service: MassageService, duration: number): number | null {
+  const p = priceForDuration(service, duration);
+  if (!(p > 0)) return null;
+  const w = Math.ceil((p * WAS_PRICE_MARKUP) / 100) * 100;
+  return w > p ? w : null;
+}
+
+export type ServiceBadge = "bestseller" | "bestvalue";
+
+/** Which service carries which promo badge (by service id). */
+export const SERVICE_BADGE: Record<string, ServiceBadge> = {
+  "SR-HJ2200": "bestseller",  // Gentleman's Signature — ⭐ Best Seller
+  "SR-B2B3200": "bestvalue",  // SunRed Therapeutic — 🔥 Best Value
+};
+
+export const BADGE_META: Record<ServiceBadge, { label: string; emoji: string; color: string }> = {
+  bestseller: { label: "Best Seller", emoji: "⭐", color: "#E6A817" },
+  bestvalue:  { label: "Best Value",  emoji: "🔥", color: "#E4557A" },
+};
+
+export function badgeFor(serviceId: string): ServiceBadge | null {
+  return SERVICE_BADGE[serviceId] ?? null;
+}

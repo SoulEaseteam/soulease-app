@@ -64,6 +64,9 @@ import {
   durationsFor,
   formatTHB,
   isServiceEnabled,
+  wasPriceFor,
+  badgeFor,
+  BADGE_META,
 } from "@/utils/servicePricing";
 // 🆕 28w.32 — re-render when the admin image override lands so the hero
 //   photo matches the booking flow / services list (same uploaded image).
@@ -500,6 +503,18 @@ const ServiceDetailPage: React.FC = () => {
 
           {/* ── Duration tiles (inside left rail on md+) ─────────── */}
           <Box sx={{ padding: { xs: "0 18px", md: 0 }, marginBottom: "24px" }}>
+        {/* 🆕 28w.62 — Best Seller / Best Value badge on the pricing block */}
+        {(() => {
+          const b = badgeFor(service.id);
+          if (!b) return null;
+          const meta = BADGE_META[b];
+          return (
+            <Box sx={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "4px 11px", borderRadius: "999px", background: `${meta.color}1F`, border: `1px solid ${meta.color}66`, marginBottom: "12px" }}>
+              <span style={{ fontSize: "13px", lineHeight: 1 }}>{meta.emoji}</span>
+              <span style={{ fontFamily: fonts.body, fontSize: "11px", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: meta.color }}>{meta.label}</span>
+            </Box>
+          );
+        })()}
         <Typography
           component="p"
           sx={{
@@ -539,6 +554,7 @@ const ServiceDetailPage: React.FC = () => {
         >
           {tiers.map((d) => {
             const price = priceForDuration(service, d);
+            const was = wasPriceFor(service, d);
             const isActive = d === duration;
             return (
               <Box
@@ -615,17 +631,35 @@ const ServiceDetailPage: React.FC = () => {
                     </Typography>
                   )}
                 </Box>
-                <Typography
-                  component="span"
-                  sx={{
-                    fontFamily: fonts.heading,
-                    fontSize: "18px",
-                    fontWeight: 700,
-                    color: isActive ? "#fff" : brand.red,
-                  }}
-                >
-                  {formatTHB(price)}
-                </Typography>
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                  {was && (
+                    <Typography
+                      component="span"
+                      sx={{
+                        fontFamily: fonts.body,
+                        fontSize: "11px",
+                        fontWeight: 500,
+                        textDecoration: "line-through",
+                        color: isActive ? "rgba(255,255,255,0.7)" : "var(--sr-muted)",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {formatTHB(was)}
+                    </Typography>
+                  )}
+                  <Typography
+                    component="span"
+                    sx={{
+                      fontFamily: fonts.heading,
+                      fontSize: "18px",
+                      fontWeight: 700,
+                      color: isActive ? "#fff" : brand.red,
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {formatTHB(price)}
+                  </Typography>
+                </Box>
               </Box>
             );
           })}
