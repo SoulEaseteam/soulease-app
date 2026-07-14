@@ -252,7 +252,7 @@ const MyCodesPage: React.FC = () => {
                     </Typography>
                     <Box
                       component="a"
-                      href={whatsappDeepLink("Hello SunRed concierge. I would like to join SunRed membership and collect my 1st Anniversary reward. Could you assist me?")}
+                      href={whatsappDeepLink("Hello SunRed concierge. I would like to ask about the 1st Anniversary rewards and how to receive mine. Could you assist me?")}
                       target="_blank"
                       rel="noopener noreferrer"
                       sx={{ ...ctaSx, textDecoration: "none" }}

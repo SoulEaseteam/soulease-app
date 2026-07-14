@@ -72,8 +72,12 @@ const AnniversaryDialog: React.FC<Props> = ({ open, onClose }) => {
     navigate("/my-codes");
   };
 
+  // 🆕 28w.97 — the button now says "enquire", so the message it sends must say
+  //   the same. It used to open with "I would like to join SunRed membership",
+  //   which would have put words in the guest's mouth that the button never
+  //   promised — and read oddly to someone who only wanted to ask a question.
   const conciergeHref = whatsappDeepLink(
-    "Hello SunRed concierge. I would like to join SunRed membership and claim my 1st Anniversary reward. Could you assist me?",
+    "Hello SunRed concierge. I would like to ask about the 1st Anniversary rewards and how to receive mine. Could you assist me?",
   );
 
   return (
