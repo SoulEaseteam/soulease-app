@@ -95,7 +95,7 @@ import {
   calcTravelBudgetResult,
   ADMIN_QUOTE_KM,
   DISPATCH_BASE,
-  GRAB_BOOKING_FEE,
+  travelBands,
 } from "@/utils/taxiFare";
 // 🆕 Round 28b35 — Live therapist Holiday/override gate.
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
@@ -2140,17 +2140,21 @@ const BookingFlowPage: React.FC = () => {
                     >
                       {t("booking.travelTip.title", "Travel Fee · SunRed Smart Routing")}
                     </Typography>
+                    {/* 🆕 28x.6 (founder: "เทคซี่ละ") — this tooltip explained a
+                        GrabCar METER to the guest: a ฿45 flag-fall, per-km tiers,
+                        and a booking fee. We have not charged that since 28w.11 —
+                        travel is a flat band by real distance, and the booking fee
+                        was never added to a bill. So the guest was reading a fare
+                        breakdown that did not produce the number on their own
+                        screen. It now shows the table we actually charge, read from
+                        the same live config the price comes from. */}
                     <Typography sx={{ fontFamily: SANS, fontSize: "11.5px", lineHeight: 1.6 }}>
-                      ≤ 1 km · <strong>฿45</strong> base fare
-                      <br />
-                      1–6 km · +฿8/km
-                      <br />
-                      6–40 km · +฿7/km
-                      <br />
-                      40+ km · +฿10/km
-                      <br />
-                      +฿{GRAB_BOOKING_FEE} · {t("booking.travelTip.bookingFee", "booking fee / leg")}
-                      <br />
+                      {travelBands().map((b) => (
+                        <React.Fragment key={b.maxKm}>
+                          ≤ {b.maxKm} km · <strong>฿{b.fareTHB.toLocaleString()}</strong>
+                          <br />
+                        </React.Fragment>
+                      ))}
                       &gt; {ADMIN_QUOTE_KM} km ·{" "}
                       {t("booking.conciergeQuote", "Concierge quote")}
                       <Box
