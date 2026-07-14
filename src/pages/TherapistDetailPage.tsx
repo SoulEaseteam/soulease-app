@@ -771,7 +771,10 @@ const TherapistDetailPage: React.FC = () => {
     if (liveReviews.reviewCount > 0) {
       t = {
         ...t,
-        reviewCount: liveReviews.reviewCount,
+        // 🆕 28x.1 — headline COUNT stays the doc's (same as the cards); only the
+        //   buckets and the review list come from the live query. Overriding the
+        //   count here is what made the card say 7 and this page say 6.
+        reviewCount: t.reviewCount,
         reviewBuckets: liveReviews.buckets.map((b) => ({
           num: b.stars,
           count: b.count,
@@ -1050,16 +1053,27 @@ const TherapistDetailPage: React.FC = () => {
   //   stats-cell scroll-nav is one-way (tap → scroll) and doesn't
   //   need a return trip.
 
-  // Round 28s34 — Memoised Bayesian rating. Previously recomputed
-  // on every parent render, even when reviews didn't change.
-  // Round 28s371 — only show a real Bayesian rating; hide chip when
-  // no Firestore reviews exist (was falling back to static "0.0").
+  // 🆕 28x.1 (founder: "รีวิวไม่ตรงกันสักที่") — the headline rating now comes from
+  //   the THERAPIST DOC, the same field the browse cards read, instead of being
+  //   recomputed here from the live review list. Two reasons, and the second is
+  //   the one that actually forced it:
+  //
+  //   1. Agreement. The card said 4.8 and this page said 4.7 for the same person,
+  //      because one read a stored number and the other recomputed. One source.
+  //
+  //   2. A LOGGED-OUT GUEST CANNOT READ RATED BOOKINGS (firestore.rules — reviews
+  //      live on the reservation, which carries the guest's address and phone, so
+  //      that stays shut). So `liveReviews` is empty for the very people this page
+  //      is for, and the old code showed them "—" while the card that brought them
+  //      here showed a score. The doc field is the only rating a guest can see.
+  //
+  //   The doc field is no longer hand-typed: /admin/reviews recomputes it from the
+  //   real reviews with the same bayesianRating() the app documents to guests.
+  const docRating = Number((realRow as { rating?: number } | null)?.rating) || 0;
+  const docReviewCount = Number((realRow as { reviews?: number } | null)?.reviews) || 0;
   const displayRating = useMemo(
-    () =>
-      liveReviews.reviewCount > 0
-        ? formatRating(bayesianRating(liveReviews.reviews))
-        : "—",
-    [liveReviews.reviewCount, liveReviews.reviews],
+    () => (docReviewCount > 0 ? formatRating(docRating) : "—"),
+    [docReviewCount, docRating],
   );
 
   // ── 404 — explicit not-found branch (was previously masked by

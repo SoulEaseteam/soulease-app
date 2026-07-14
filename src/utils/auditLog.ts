@@ -106,7 +106,9 @@ export type AuditAction =
   // 🆕 28w.96 — the Anniversary campaign is admin-editable; its terms are money,
   //   so an edit belongs in the audit trail like every other price change.
   | "promo.anniversary_edit"
-  | "membership.sunpoints_edit";
+  | "membership.sunpoints_edit"
+  // 🆕 28x.1 — recomputing the public star rating changes what customers buy on.
+  | "therapist.rating_sync";
 
 export async function logAdminAction(
   action: AuditAction,

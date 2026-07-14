@@ -55,6 +55,8 @@ import {
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { db } from "@/lib/firebase";
+import { syncTherapistRatings } from "@/utils/syncTherapistRatings";
+import { toast } from "react-toastify";
 import {
   collection,
   updateDoc,
@@ -149,6 +151,35 @@ interface ReviewRow {
 }
 
 const AdminReviewListPage: React.FC = () => {
+  // 🆕 28x.1 — recompute therapists.rating/.reviews from real reviews.
+  const [ratingSyncing, setRatingSyncing] = useState(false);
+  const [ratingSyncMsg, setRatingSyncMsg] = useState<string | null>(null);
+
+  const handleSyncRatings = async () => {
+    setRatingSyncing(true);
+    setRatingSyncMsg(null);
+    try {
+      const res = await syncTherapistRatings();
+      const fixed = res.rows.filter((r) => r.changed);
+      setRatingSyncMsg(
+        `อัปเดต ${res.updated} คน จาก ${res.rows.length} · อ่านรีวิวจริง ${res.scannedReviews} รายการ` +
+          (fixed.length
+            ? ` · เช่น ${fixed
+                .slice(0, 2)
+                .map((r) => `${r.therapistId}: ${r.wasRating ?? 0}·${r.wasReviews ?? 0} → ${r.rating}·${r.reviewCount}`)
+                .join(" | ")}`
+            : " · ทุกคนตรงอยู่แล้ว"),
+      );
+      void logAdminAction("therapist.rating_sync", { updated: res.updated, scanned: res.scannedReviews });
+      toast.success(`ซิงก์คะแนนแล้ว · แก้ ${res.updated} คน`);
+    } catch (e) {
+      console.error("[reviews] rating sync failed", e);
+      toast.error("ซิงก์คะแนนไม่สำเร็จ");
+    } finally {
+      setRatingSyncing(false);
+    }
+  };
+
   const [rows, setRows] = useState<ReviewRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [editDialog, setEditDialog] = useState(false);
@@ -636,6 +667,37 @@ const AdminReviewListPage: React.FC = () => {
           <Typography sx={{ fontSize: 12.5, color: adminColor.muted, mt: 1 }}>
             รีวิวทุกอันในระบบ ดึงจาก booking ที่มี reviewText — แก้ไข/ซ่อนได้ที่นี่
           </Typography>
+
+          {/* 🆕 28x.1 (founder: "รีวิวไม่ตรงกันสักที่") — the browse cards read
+              therapists.rating / .reviews, which were TYPED by hand on
+              /admin/therapists and never derived from real reviews. Recompute
+              them from the actual reviews so every screen finally agrees. */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mt: 1.5, flexWrap: "wrap" }}>
+            <Button
+              size="small"
+              variant="outlined"
+              disabled={ratingSyncing}
+              onClick={() => void handleSyncRatings()}
+              startIcon={ratingSyncing ? <CircularProgress size={14} /> : <Star size={14} weight="fill" />}
+              sx={{
+                textTransform: "none", fontWeight: 700, fontSize: 12,
+                borderRadius: "999px", px: 2,
+                color: adminColor.accent, borderColor: adminColor.line2,
+                "&:hover": { borderColor: adminColor.accent },
+              }}
+            >
+              ซิงก์คะแนนหมอนวด
+            </Button>
+            <Typography sx={{ fontSize: 10.5, color: adminColor.dim, flex: 1, minWidth: 200 }}>
+              คำนวณคะแนน + จำนวนรีวิวใหม่จาก<b>รีวิวจริง</b> แล้วเขียนลงโปรไฟล์หมอนวด ·
+              การ์ดหน้าแรกอ่านจากตรงนี้ <b>กดแล้วทุกหน้าจะโชว์เลขเดียวกัน</b>
+            </Typography>
+          </Box>
+          {ratingSyncMsg && (
+            <Typography sx={{ fontSize: 11.5, color: adminColor.green, mt: 0.75, fontWeight: 700 }}>
+              {ratingSyncMsg}
+            </Typography>
+          )}
         </Box>
         <Button
           variant="contained"
