@@ -559,5 +559,9 @@
   "anniv.points.explain": "1 SunPoint = 1바트 할인. 예를 들어 150포인트를 모으면 다음 예약에서 150바트를 할인받습니다.",
   "anniv.validDays": "{{days}}일간 유효",
   "anniv.points.earn": "{{per}}바트 결제마다 1 SunPoint 적립 · 1 SunPoint = {{worth}}바트 할인",
-  "anniv.points.example": "예를 들어 1,200바트 결제 시 평소 {{normal}}포인트, 캠페인 기간에는 {{doubled}}포인트."
+  "anniv.points.example": "예를 들어 1,200바트 결제 시 평소 {{normal}}포인트, 캠페인 기간에는 {{doubled}}포인트.",
+  "codes.sunpoints": "SunPoints",
+  "codes.points": "포인트",
+  "codes.worth": "다음 예약에서 {{thb}}바트 할인",
+  "codes.backCredited": "지난 {{visits}}회 이용 내역(총 {{spent}}바트)을 기준으로 자동 적립되었습니다. 예약 시 컨시어지에게 알려주시면 사용 가능합니다."
 }

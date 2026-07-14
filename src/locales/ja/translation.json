@@ -559,5 +559,9 @@
   "anniv.points.explain": "1 SunPoint = 1バーツ割引。例えば150ポイントで、次回ご予約から150バーツ割引となります。",
   "anniv.validDays": "{{days}}日間有効",
   "anniv.points.earn": "{{per}}バーツのご利用ごとに1 SunPoint · 1 SunPoint = {{worth}}バーツ割引",
-  "anniv.points.example": "例えば1,200バーツのご利用で通常{{normal}}ポイント、キャンペーン期間中は{{doubled}}ポイント。"
+  "anniv.points.example": "例えば1,200バーツのご利用で通常{{normal}}ポイント、キャンペーン期間中は{{doubled}}ポイント。",
+  "codes.sunpoints": "SunPoints",
+  "codes.points": "ポイント",
+  "codes.worth": "次回ご予約で{{thb}}バーツ割引",
+  "codes.backCredited": "これまでの{{visits}}回のご利用（合計{{spent}}バーツ）から自動的に付与されました。ご予約時にコンシェルジュへお申し付けください。"
 }

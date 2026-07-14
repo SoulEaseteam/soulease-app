@@ -53,6 +53,12 @@ export interface MembershipMirror {
   /** Delivered sessions on that phone, stamped by /admin/members. */
   visits?: number;
   lastVisitMs?: number;
+  /** 🆕 28w.95 — lifetime spend on delivered sessions, and the SunPoints
+   *  back-credited from it. Both computed by /admin/members from bookings the
+   *  shop actually delivered (status completed/done), so the credit is always
+   *  backed by real history. */
+  totalSpentTHB?: number;
+  points?: number;
 }
 
 export function useAnniversaryClaim() {
@@ -205,6 +211,10 @@ export function useAnniversaryClaim() {
   return {
     signedIn: Boolean(user),
     isMember: Boolean(membership),
+    /** SunPoints back-credited from verified past sessions. */
+    points: membership?.points ?? 0,
+    totalSpentTHB: membership?.totalSpentTHB ?? 0,
+    visits: membership?.visits ?? 0,
     isReturning,
     eligibleRewards,
     membership,

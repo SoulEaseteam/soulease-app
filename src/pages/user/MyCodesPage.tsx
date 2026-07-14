@@ -22,12 +22,12 @@ import { Box, Typography, CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import { Ticket, Copy, ShareNetwork, Gift, ArrowLeft } from "phosphor-react";
+import { Ticket, Copy, ShareNetwork, Gift, ArrowLeft, Coins } from "phosphor-react";
 
 import { useAuth } from "@/providers/AuthProvider";
 import { useAnniversaryClaim } from "@/hooks/useAnniversaryClaim";
 import { deriveReferralCode, getActiveReferralCode } from "@/utils/referral";
-import { anniversaryPeriodLabel, anniversaryIsLive } from "@/config/anniversary";
+import { anniversaryPeriodLabel, anniversaryIsLive, SUNPOINT_THB } from "@/config/anniversary";
 import { whatsappDeepLink } from "@/config/concierge";
 import { getReferralConfig } from "@/utils/discount";
 import { PROMOS_ENABLED } from "@/config/featureFlags";
@@ -69,6 +69,7 @@ const MyCodesPage: React.FC = () => {
   const {
     claims, loading, isMember, isReturning, eligibleRewards,
     activeClaim, submitting, claimReward,
+    points, totalSpentTHB, visits,
   } = useAnniversaryClaim();
   const { i18n } = useTranslation();
   const period = anniversaryPeriodLabel(i18n.language);
@@ -127,7 +128,7 @@ const MyCodesPage: React.FC = () => {
           ? t("codes.status.used", "Already used")
           : t("codes.status.rejected", "Not approved");
 
-  const nothing = claims.length === 0 && !heldCode && !referralLive;
+  const nothing = claims.length === 0 && !heldCode && !referralLive && points === 0;
 
   return (
     <Box sx={{ ...responsiveShell, minHeight: "100vh", background: "var(--sr-bg)", pb: 12 }}>
@@ -180,6 +181,60 @@ const MyCodesPage: React.FC = () => {
 
         {user && !loading && (
           <>
+            {/* 🆕 28w.95 (founder: "กันลูกค้าเก่าน้อยใจ · ยอดสะสมจากการจองครั้งก่อนหน้า
+                จะถูกเก็บเป็นเครดิตให้อัตโนมัติ หากยืนยันได้ว่ามีประวัติจริง") — SunPoints
+                back-credited from sessions we ACTUALLY delivered (status
+                completed/done on their phone), so the balance is always backed by
+                real history. Shown first: a loyal guest should see what their past
+                custom is worth before they see anything else.
+                Hidden at zero rather than shown as "0 points" — a first-timer has
+                nothing to be reassured about, and an empty balance reads as a
+                broken promise. */}
+            {points > 0 && (
+              <>
+                <Eyebrow>{t("codes.sunpoints", "SunPoints")}</Eyebrow>
+                <Card>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Box
+                      aria-hidden
+                      sx={{
+                        width: 44, height: 44, borderRadius: "12px", flexShrink: 0,
+                        background: "rgba(227,190,85,0.14)", color: "#E3BE55",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}
+                    >
+                      <Coins size={22} weight="duotone" />
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        sx={{
+                          fontFamily: fonts.body, fontSize: 22, fontWeight: 800,
+                          color: "var(--sr-ink)", lineHeight: 1.15,
+                          fontVariantNumeric: "lining-nums tabular-nums",
+                        }}
+                      >
+                        {points.toLocaleString()}{" "}
+                        <Box component="span" sx={{ fontSize: 13, fontWeight: 600, color: "var(--sr-muted)" }}>
+                          {t("codes.points", "SunPoints")}
+                        </Box>
+                      </Typography>
+                      <Typography sx={{ fontFamily: fonts.body, fontSize: 12, color: ROSE, fontWeight: 700, mt: "1px" }}>
+                        {t("codes.worth", "Worth ฿{{thb}} off your next booking", {
+                          thb: (points * SUNPOINT_THB).toLocaleString(),
+                        })}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Typography sx={{ fontFamily: fonts.body, fontSize: 11.5, color: "var(--sr-muted)", mt: 1.25, lineHeight: 1.5 }}>
+                    {t("codes.backCredited", "Credited automatically from your {{visits}} previous sessions (฿{{spent}} spent). Tell the concierge when you book to redeem.", {
+                      visits,
+                      spent: totalSpentTHB.toLocaleString(),
+                    })}
+                  </Typography>
+                </Card>
+              </>
+            )}
+
             {/* 0 — Anniversary rewards still to collect. Members only: the
                    campaign is member-exclusive, so a signed-in non-member is
                    pointed at the concierge instead of shown a button that the

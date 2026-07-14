@@ -654,5 +654,9 @@
   "anniv.points.explain": "1 SunPoint = 抵扣 1 泰铢。例如累积 150 分，下次预约可抵扣 150 泰铢。",
   "anniv.validDays": "{{days}} 天内有效",
   "anniv.points.earn": "每消费 {{per}} 泰铢即得 1 SunPoint · 1 SunPoint = 抵扣 {{worth}} 泰铢",
-  "anniv.points.example": "例如消费 1,200 泰铢，平时得 {{normal}} 分，活动期间得 {{doubled}} 分。"
+  "anniv.points.example": "例如消费 1,200 泰铢，平时得 {{normal}} 分，活动期间得 {{doubled}} 分。",
+  "codes.sunpoints": "SunPoints",
+  "codes.points": "分",
+  "codes.worth": "下次预约可抵扣 {{thb}} 泰铢",
+  "codes.backCredited": "根据您过往 {{visits}} 次服务（累计消费 {{spent}} 泰铢）自动发放。预约时告知管家即可抵扣。"
 }

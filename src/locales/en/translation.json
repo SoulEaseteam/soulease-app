@@ -559,5 +559,9 @@
   "anniv.points.explain": "1 SunPoint = ฿1 off. Collect 150 SunPoints and take ฿150 off your next reservation.",
   "anniv.validDays": "valid {{days}} days",
   "anniv.points.earn": "Every ฿{{per}} you spend earns 1 SunPoint. 1 SunPoint = ฿{{worth}} off.",
-  "anniv.points.example": "A ฿1,200 booking normally earns {{normal}} SunPoints — during the campaign it earns {{doubled}}."
+  "anniv.points.example": "A ฿1,200 booking normally earns {{normal}} SunPoints — during the campaign it earns {{doubled}}.",
+  "codes.sunpoints": "SunPoints",
+  "codes.points": "SunPoints",
+  "codes.worth": "Worth ฿{{thb}} off your next booking",
+  "codes.backCredited": "Credited automatically from your {{visits}} previous sessions (฿{{spent}} spent). Tell the concierge when you book to redeem."
 }

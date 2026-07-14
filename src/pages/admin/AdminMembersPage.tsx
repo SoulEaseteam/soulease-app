@@ -23,6 +23,7 @@ import { Crown, MagnifyingGlass } from "phosphor-react";
 import { adminColor, adminFont, adminFieldSx } from "@/theme/adminTheme";
 import { logAdminAction } from "@/utils/auditLog";
 import { normPhone } from "@/utils/phoneCountry";
+import { pointsFor, SUNPOINT_EARN_PER_THB } from "@/config/anniversary";
 import {
   membershipFor,
   applyMembershipConfig,
@@ -170,6 +171,14 @@ const AdminMembersPage: React.FC = () => {
               //   a guest list bookings by their uid, and most SunRed bookings are
               //   concierge-created with userId null and only a phone), so the
               //   count has to be delivered to them, not discovered by them.
+              // 🆕 28w.95 (founder: "กันลูกค้าเก่าน้อยใจ · ยอดสะสมจากการจองครั้งก่อนหน้า
+              //   จะถูกเก็บเป็นเครดิตให้อัตโนมัติ หากยืนยันได้ว่ามีประวัติจริง") — back-credit
+              //   SunPoints for everything they already spent with us.
+              //
+              //   "ยืนยันได้ว่ามีประวัติจริง" is not a promise we take on trust: totalSpent
+              //   is summed ONLY over bookings with status completed/done on this
+              //   phone. A pending, cancelled or no-show reservation earns nothing,
+              //   so the credit is always backed by a session we actually delivered.
               membership: rec
                 ? {
                     code: rec.code,
@@ -177,6 +186,11 @@ const AdminMembersPage: React.FC = () => {
                     phone: phoneKey,
                     visits: stats[phoneKey]?.served ?? 0,
                     lastVisitMs: stats[phoneKey]?.lastVisitMs ?? 0,
+                    totalSpentTHB: Math.round(stats[phoneKey]?.totalSpent ?? 0),
+                    // Back-credit at the NORMAL 1x rate. The 2x multiplier is an
+                    // Anniversary reward for NEW spend — applying it retroactively
+                    // would double every historic baht and hand out a fortune.
+                    points: pointsFor(stats[phoneKey]?.totalSpent ?? 0),
                   }
                 : null,
             },
@@ -399,8 +413,9 @@ const AdminMembersPage: React.FC = () => {
             {saving ? <CircularProgress size={14} /> : `ซิงก์ประวัติสมาชิก (${Object.keys(members).length})`}
           </Button>
           <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, flex: 1, minWidth: 180 }}>
-            ส่งจำนวนครั้งที่เคยใช้บริการ (นับจากเบอร์ — รวมออเดอร์ที่แอดมินเปิดให้) ไปที่บัญชีลูกค้า
-            เพื่อให้หน้าสิทธิ์แยก “ลูกค้าเก่า / ใหม่” ได้ถูก · <b>สมาชิกที่สมัครไว้ก่อนหน้านี้ ต้องกดครั้งหนึ่ง</b>
+            ส่งประวัติไปที่บัญชีลูกค้า — จำนวนครั้งที่ใช้บริการ (แยก “ลูกค้าเก่า / ใหม่”) และ
+            <b> เครดิตคะแนนย้อนหลังจากยอดใช้จ่ายเดิม</b> (ทุก {thb(SUNPOINT_EARN_PER_THB)} = 1 คะแนน ·
+            นับเฉพาะออเดอร์ที่สำเร็จจริง) · <b>สมาชิกที่สมัครไว้ก่อนหน้านี้ ต้องกดครั้งหนึ่ง</b>
           </Typography>
         </Box>
       </Box>
