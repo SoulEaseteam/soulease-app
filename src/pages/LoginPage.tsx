@@ -34,6 +34,7 @@ import {
 import { auth, db } from "@/lib/firebase";
 import BottomNav from '../components/layouts/BottomNavGlass';
 import { getErrorMessage } from "@/utils/getErrorMessage";
+import { resolveLoginId } from "@/utils/loginId";
 // 🆕 28w.77 — "ลืมรหัสผ่าน?" hands the guest to the concierge (no self-serve reset).
 import { whatsappDeepLink } from "@/config/concierge";
 
@@ -80,7 +81,10 @@ const LoginPage: React.FC = () => {
   const fromPath =
     (location.state as { from?: string } | null)?.from ?? null;
 
-  const [email, setEmail] = useState("");
+  // 🆕 Round 28w.81 — was `email`. Now holds whatever the guest types: a phone
+  //   number, a username, or an email. resolveLoginId() maps it to the address
+  //   Firebase Auth actually signs in with.
+  const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -89,6 +93,30 @@ const LoginPage: React.FC = () => {
     message: "",
     severity: "success" as "success" | "error",
   });
+
+  // 🆕 Round 28w.81 — a failed sign-in used to surface the raw SDK string
+  //   ("Login failed: Firebase: Error (auth/invalid-credential)."), which tells
+  //   a guest nothing and looks broken. Modern Firebase deliberately collapses
+  //   wrong-password and no-such-account into ONE code (email-enumeration
+  //   protection), so we must not claim to know which it was — one honest
+  //   message covers both, and quietly preserves that privacy property.
+  const friendlyAuthError = (err: unknown): string => {
+    const code = (err as { code?: string })?.code ?? "";
+    switch (code) {
+      case "auth/invalid-credential":
+      case "auth/wrong-password":
+      case "auth/user-not-found":
+        return "Wrong login or password. Forgotten it? Tap “ลืมรหัสผ่าน?” below.";
+      case "auth/too-many-requests":
+        return "Too many attempts. Wait a moment, or message the concierge.";
+      case "auth/network-request-failed":
+        return "No connection. Check your network and try again.";
+      case "auth/user-disabled":
+        return "This account is disabled. Please contact the concierge.";
+      default:
+        return `Login failed: ${getErrorMessage(err)}`;
+    }
+  };
 
   // =============================================================
   // 🔥 ROLE CHECK: SunRed Role Logic (Admin > Therapist > User)
@@ -119,10 +147,20 @@ const LoginPage: React.FC = () => {
   // 🔥 HANDLE LOGIN
   // =============================================================
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!loginId || !password) {
       return setSnackbar({
         open: true,
-        message: "Please enter email and password",
+        message: "Please enter your phone, username, or email — and your password",
+        severity: "error",
+      });
+    }
+
+    // 🆕 Round 28w.81 — resolve phone / username / email to the Auth address.
+    const resolved = resolveLoginId(loginId);
+    if (!resolved) {
+      return setSnackbar({
+        open: true,
+        message: "That doesn't look like a phone number, username, or email",
         severity: "error",
       });
     }
@@ -130,7 +168,7 @@ const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const userCred = await signInWithEmailAndPassword(auth, email, password);
+      const userCred = await signInWithEmailAndPassword(auth, resolved.authEmail, password);
       const uid = userCred.user.uid;
       const userEmail = userCred.user.email ?? "";
 
@@ -152,7 +190,7 @@ const LoginPage: React.FC = () => {
     } catch (err: unknown) {
       setSnackbar({
         open: true,
-        message: `Login failed: ${getErrorMessage(err)}`,
+        message: friendlyAuthError(err),
         severity: "error",
       });
     } finally {
@@ -232,15 +270,21 @@ const LoginPage: React.FC = () => {
               if (!loading) void handleLogin();
             }}
           >
-            {/* Inputs */}
+            {/* 🆕 Round 28w.81 — one field, three accepted forms. type="text"
+                (not "email") or the browser's own validation rejects a phone
+                number before our resolver ever sees it. */}
             <TextField
-              label="Email"
-              type="email"
-              autoComplete="email"
+              label="Phone, username, or email"
+              type="text"
+              autoComplete="username"
               fullWidth
               size="small"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={loginId}
+              onChange={(e) => setLoginId(e.target.value)}
+              helperText="เบอร์โทร · ชื่อผู้ใช้ · หรืออีเมล"
+              FormHelperTextProps={{
+                sx: { color: "var(--sr-muted)", fontSize: 11, ml: 0.5, mt: 0.25 },
+              }}
               sx={fieldSx}
             />
 

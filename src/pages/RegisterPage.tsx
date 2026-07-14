@@ -17,6 +17,7 @@ import { auth, db } from "../lib/firebase";
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { getErrorMessage } from "@/utils/getErrorMessage";
+import { resolveLoginId } from "@/utils/loginId";
 
 const SERIF = '"Fraunces", "Playfair Display", Georgia, serif';
 const ROSE = "#D97C95";
@@ -55,15 +56,24 @@ const fieldSx = {
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  // 🆕 Round 28w.81 — sign-up mirrors the new login: the guest picks ONE
+  //   identifier (phone / username / email) rather than being forced to have an
+  //   email. Phone is the one we nudge toward — it's the key the membership
+  //   system and every booking already use, so a phone signup links straight to
+  //   their visit history and tier with nothing to reconcile.
+  const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleRegister = async () => {
-    const trimmedEmail = email.trim().toLowerCase();
-
-    if (!trimmedEmail || !password || !confirmPassword) {
+    if (!loginId.trim() || !password || !confirmPassword) {
       toast.warning('Please fill in all fields.');
+      return;
+    }
+
+    const resolved = resolveLoginId(loginId);
+    if (!resolved) {
+      toast.error('Enter a valid phone number, username, or email.');
       return;
     }
     if (password.length < 8) {
@@ -76,11 +86,23 @@ const RegisterPage: React.FC = () => {
     }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
+      // Auth enforces uniqueness on the resolved address, so a taken phone or
+      // username surfaces as `auth/email-already-in-use` — no index of our own.
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        resolved.authEmail,
+        password,
+      );
       const uid = userCredential.user.uid;
 
       await setDoc(doc(db, 'users', uid), {
-        email: trimmedEmail,
+        // Store the identifier under its REAL name, not as a fake email — so
+        // `users.phone` matches bookings/members, and the synthetic alias never
+        // leaks into admin screens or exports.
+        ...(resolved.kind === 'email' ? { email: resolved.canonical } : {}),
+        ...(resolved.kind === 'phone' ? { phone: resolved.canonical } : {}),
+        ...(resolved.kind === 'username' ? { username: resolved.canonical } : {}),
+        loginKind: resolved.kind,
         role: 'user', // normalized — เลิกใช้ "customer" ที่ไม่ตรงกับ Role type
         createdAt: serverTimestamp(),
       });
@@ -135,14 +157,18 @@ const RegisterPage: React.FC = () => {
             }}
           >
             <TextField
-              label="Email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              label="Phone, username, or email"
+              type="text"
+              autoComplete="username"
+              value={loginId}
+              onChange={(e) => setLoginId(e.target.value)}
               variant="outlined"
               size="small"
               fullWidth
+              helperText="ใช้เบอร์โทรจะดีที่สุด — ผูกกับสิทธิ์สมาชิกอัตโนมัติ"
+              FormHelperTextProps={{
+                sx: { color: 'var(--sr-muted)', fontSize: 11, ml: 0.5, mt: 0.25, textAlign: 'left' },
+              }}
               sx={fieldSx}
             />
 
