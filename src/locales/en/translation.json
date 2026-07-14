@@ -483,5 +483,9 @@
   "booking.price": "Price",
   "booking.payment": "Payment",
   "maintenance.body": "Reservations are paused for brief maintenance. We'll be back very shortly.",
-  "error.body": "Sorry — something unexpected went wrong. Please try again."
+  "error.body": "Sorry — something unexpected went wrong. Please try again.",
+  "home.why.short.professional": "Professional",
+  "home.why.short.private": "Private",
+  "home.why.short.alwaysOn": "24 hours",
+  "home.why.short.concierge": "Concierge"
 }

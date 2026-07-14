@@ -486,5 +486,9 @@
   "booking.payment": "การชำระเงิน",
   "maintenance.body": "ระบบจองปิดปรับปรุงชั่วคราว กลับมาให้บริการเร็ว ๆ นี้",
   "error.body": "ขออภัย มีข้อผิดพลาดที่ไม่คาดคิดเกิดขึ้น โปรดลองใหม่อีกครั้ง",
-  "footer.legal.licensing": "หมอนวดทุกคนมีใบอนุญาตจากกระทรวงสาธารณสุขอย่างถูกต้อง"
+  "footer.legal.licensing": "หมอนวดทุกคนมีใบอนุญาตจากกระทรวงสาธารณสุขอย่างถูกต้อง",
+  "home.why.short.professional": "มืออาชีพ",
+  "home.why.short.private": "เป็นส่วนตัว",
+  "home.why.short.alwaysOn": "24 ชม.",
+  "home.why.short.concierge": "คอนเซียร์จ"
 }

@@ -483,5 +483,9 @@
   "booking.price": "가격",
   "booking.payment": "결제",
   "maintenance.body": "예약 시스템 점검 중입니다. 곧 다시 찾아뵙겠습니다.",
-  "error.body": "죄송합니다. 예기치 않은 오류가 발생했습니다. 다시 시도해 주세요."
+  "error.body": "죄송합니다. 예기치 않은 오류가 발생했습니다. 다시 시도해 주세요.",
+  "home.why.short.professional": "전문가",
+  "home.why.short.private": "프라이버시",
+  "home.why.short.alwaysOn": "24시간",
+  "home.why.short.concierge": "컨시어지"
 }
