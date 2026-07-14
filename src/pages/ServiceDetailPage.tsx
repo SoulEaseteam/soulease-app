@@ -535,7 +535,7 @@ const ServiceDetailPage: React.FC = () => {
             opacity: 0.75,
           }}
         >
-          เลือกระยะเวลา
+          {t("service.chooseDuration", "Choose duration")}
         </Typography>
         <Box
           role="group"
@@ -697,7 +697,7 @@ const ServiceDetailPage: React.FC = () => {
             opacity: 0.75,
           }}
         >
-          สิ่งที่รวมในบริการ
+          {t("service.whatsIncluded", "What's included")}
         </Typography>
         <Box
           component="ul"
@@ -783,7 +783,7 @@ const ServiceDetailPage: React.FC = () => {
               opacity: 0.75,
             }}
           >
-            รีวิวจากลูกค้า
+            {t("service.guestReviews", "Guest reviews")}
           </Typography>
           <Box
             sx={{

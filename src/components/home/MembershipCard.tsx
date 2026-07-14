@@ -37,9 +37,9 @@ const MembershipCard: React.FC = () => {
   const navigate = useNavigate();
 
   const perks = [
-    "ส่วนลดสูงสุด 20%",
-    "จองก่อนใคร",
-    "สะสมแต้ม แลกรางวัล",
+    t("home.member.perk1", "Up to 20% off"),
+    t("home.member.perk2", "Priority booking"),
+    t("home.member.perk3", "Earn points, redeem rewards"),
   ];
 
   return (
@@ -120,7 +120,7 @@ const MembershipCard: React.FC = () => {
             maxWidth: 240,
           }}
         >
-          รับสิทธิพิเศษมากมาย สำหรับสมาชิก SunRed
+          {t("home.member.subtitle", "Exclusive privileges for SunRed members")}
         </Box>
 
         <Box
@@ -202,7 +202,7 @@ const MembershipCard: React.FC = () => {
             },
           }}
         >
-          สมัครสมาชิก
+          {t("home.member.cta", "Become a member")}
         </Box>
       </Box>
     </Box>

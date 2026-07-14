@@ -28,7 +28,9 @@ import { fonts, accents } from "@/theme";
 type Feature = {
   key: string;
   Icon: typeof UserCircle;
-  textTh: string;
+  /** 🆕 28w.83 — was `textTh` (hardcoded Thai rendered to every guest). */
+  textKey: string;
+  textEn: string;
 };
 
 const WhySunRedSection: React.FC = () => {
@@ -38,22 +40,26 @@ const WhySunRedSection: React.FC = () => {
     {
       key: "professional",
       Icon: UserCircle,
-      textTh: "คัดสรรหมอนวด มืออาชีพ",
+      textKey: "home.why.professional",
+      textEn: "Hand-picked professional practitioners",
     },
     {
       key: "private",
       Icon: ShieldCheck,
-      textTh: "ปลอดภัย เป็นส่วนตัว",
+      textKey: "home.why.private",
+      textEn: "Safe and completely private",
     },
     {
       key: "always-on",
       Icon: Clock,
-      textTh: "บริการ 24 ชม. พร้อมดูแล",
+      textKey: "home.why.always-on",
+      textEn: "Available around the clock, 24 hours",
     },
     {
       key: "support",
       Icon: Headphones,
-      textTh: "คอนเซียร์จดูแล ตลอดการจอง",
+      textKey: "home.why.support",
+      textEn: "Concierge with you through every reservation",
     },
   ];
 
@@ -89,7 +95,7 @@ const WhySunRedSection: React.FC = () => {
           marginBottom: { xs: "20px", md: "24px" },
         }}
       >
-        ทำไมต้อง SunRed
+        {t("home.why.title", "Why SunRed")}
       </Box>
 
       <Box
@@ -102,7 +108,7 @@ const WhySunRedSection: React.FC = () => {
           gap: { xs: "24px 16px", md: "24px" },
         }}
       >
-        {features.map(({ key, Icon, textTh }) => (
+        {features.map(({ key, Icon, textKey, textEn }) => (
           <Box
             key={key}
             sx={{
@@ -141,7 +147,7 @@ const WhySunRedSection: React.FC = () => {
                 letterSpacing: 0,
               }}
             >
-              {textTh}
+              {t(textKey, textEn)}
             </Box>
           </Box>
         ))}

@@ -13,6 +13,7 @@ import React from "react";
 import { Box, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
@@ -23,6 +24,7 @@ interface Props {
 }
 
 const AnniversaryBanner: React.FC<Props> = ({ variant = "home" }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const clickable = variant === "home";
 
@@ -192,8 +194,8 @@ const AnniversaryBanner: React.FC<Props> = ({ variant = "home" }) => {
             }}
           >
             {clickable
-              ? "ฉลองครบรอบ 1 ปี · ราคาใหม่ทุกเมนู — แตะดูราคา"
-              : "ฉลองครบรอบ 1 ปี · ขอบคุณที่ไว้วางใจ SunRed"}
+              ? t("home.anniversary.pricing", "Celebrating 1 year · New rates on every ritual — tap to view")
+              : t("home.anniversary.thanks", "Celebrating 1 year · Thank you for trusting SunRed")}
           </Typography>
         </Box>
 

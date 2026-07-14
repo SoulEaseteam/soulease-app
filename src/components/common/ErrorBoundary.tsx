@@ -5,6 +5,7 @@
 // — หน้าตา fallback ใช้สี brand เดียวกับ LoginPage เพื่อความ consistent
 
 import React from "react";
+import i18n from "@/app/i18n";
 
 interface Props {
   children: React.ReactNode;
@@ -82,7 +83,7 @@ class ErrorBoundary extends React.Component<Props, State> {
             Something went wrong
           </h1>
           <p style={{ margin: "0 0 16px", fontSize: 14, opacity: 0.8 }}>
-            ขออภัย มีข้อผิดพลาดที่ไม่คาดคิดเกิดขึ้น โปรดลองใหม่อีกครั้ง
+            {i18n.t("error.body", "Sorry — something unexpected went wrong. Please try again.")}
           </p>
           <pre
             style={{

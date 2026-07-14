@@ -21,6 +21,7 @@ import { applyLivePromosEnabled } from "@/config/featureFlags";
 import { applyLivePromoConfig, applyLiveBuiltinOverrides, type CustomPromoCode, type BuiltinPromoOverride } from "@/utils/discount";
 import { applyLiveServiceConfig } from "@/utils/servicePricing";
 import { applyLiveBundles, type Bundle } from "@/utils/bundles";
+import i18n from "@/app/i18n";
 
 const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { role, loading: authLoading } = useAuth();
@@ -380,7 +381,7 @@ const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
           SunRed
         </div>
         <div style={{ fontSize: 15, color: "rgba(255,255,255,0.85)", maxWidth: 380 }}>
-          ระบบจองปิดปรับปรุงชั่วคราว กลับมาให้บริการเร็ว ๆ นี้
+          {i18n.t("maintenance.body", "Reservations are paused for brief maintenance. We'll be back very shortly.")}
         </div>
         <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>
           Booking temporarily paused — back shortly.

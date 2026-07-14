@@ -1666,7 +1666,7 @@ const BookingFlowPage: React.FC = () => {
         <Box sx={{ gridArea: "orderDetails", minWidth: 0 }}>
         <SectionCard
           label={t("booking.section.orderDetails", "Order Details")}
-          sublabel="รายละเอียดคำสั่งซื้อ"
+          sublabel={t("booking.orderDetails", "Order details")}
           icon={<ReceiptLongRoundedIcon />}
         >
           {/* Therapist row + EDIT */}
@@ -1899,7 +1899,7 @@ const BookingFlowPage: React.FC = () => {
         >
         <SectionCard
           label={t("booking.section.pricing", "Pricing")}
-          sublabel="ราคา"
+          sublabel={t("booking.price", "Price")}
           icon={<PaidRoundedIcon />}
         >
           <PriceRow
@@ -2896,7 +2896,7 @@ const BookingFlowPage: React.FC = () => {
                   textTransform: "none",
                 }}
               >
-                · การชำระเงิน
+                · {t("booking.payment", "Payment")}
               </Box>
             </Typography>
             <Typography

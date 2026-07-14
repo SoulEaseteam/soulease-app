@@ -362,7 +362,7 @@ const BookingSuccessPage: React.FC = () => {
                 marginTop: "4px",
               }}
             >
-              รับคำสั่งจองเรียบร้อย
+              {t("success.received", "Reservation received")}
             </Typography>
 
             {/* Booking ref pill */}
@@ -734,7 +734,7 @@ const BookingSuccessPage: React.FC = () => {
                   marginBottom: "10px",
                 }}
               >
-                รายละเอียดการจอง
+                {t("success.details", "Reservation details")}
               </Typography>
               <SummaryLine
                 label={t("success.summary.practitioner", "Practitioner")}
@@ -942,7 +942,7 @@ const BookingSuccessPage: React.FC = () => {
                       marginTop: "1px",
                     }}
                   >
-                    สิ่งที่ต้องเตรียม
+                    {t("success.prepare", "What to prepare")}
                   </Typography>
                 </Box>
                 <Typography
@@ -1072,7 +1072,7 @@ const BookingSuccessPage: React.FC = () => {
                   marginBottom: "6px",
                 }}
               >
-                ยืนยันกับ concierge
+                {t("success.confirmWithConcierge", "Confirm with the concierge")}
               </Typography>
               <Box
                 sx={{
