@@ -2308,7 +2308,7 @@ const BookingFlowPage: React.FC = () => {
               <FareChip color="amber" icon={<SupportAgentRoundedIcon />}>
                 {t(
                   "booking.longDistance",
-                  "Long-distance · contact the concierge to confirm"
+                  "Long trip · contact the concierge — a deposit may apply"
                 )}
               </FareChip>
             )}

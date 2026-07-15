@@ -588,7 +588,7 @@ const TaxiEstimator: React.FC = () => {
           {!estimate
             ? t("nearme.taxi.hint", "Pick a practitioner, then search, tap the map, or use your location for a taxi estimate.")
             : estimate.fare == null
-            ? t("nearme.taxi.over", "Long trip — the concierge quotes your travel fare.")
+            ? t("nearme.taxi.over", "Long trip — contact the concierge to confirm (a deposit may apply).")
             : t("nearme.taxi.note", "Set travel budget by distance — excludes weather and peak-traffic surcharges. Concierge confirms the final fare.")}
         </Typography>
       </Box>

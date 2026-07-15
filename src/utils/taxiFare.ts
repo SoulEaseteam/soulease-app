@@ -34,8 +34,12 @@ import { getCachedRainStatus, type RainStatus } from "@/utils/weather";
  * 🆕 Round 28s309 (founder: "15 km เก็บค่ามัดจำ" → chose "เกิน 15 กม. =
  * ยืนยันกับแอดมินก่อน") — dropped 40 → 15 so long trips route to a manual
  * concierge confirmation instead of an automatic price. Live-overridable.
+ * 🆕 Round 28x.49 (founder: "20 กิโล ต้องติดต่อแอดมิน หรือวางมัดจำ") — raised to
+ * 20: the real meter auto-prices trips up to ~20 km; beyond that the fare
+ * (and no-show risk) is high enough that it routes to the concierge for a
+ * quote / deposit instead.
  */
-export let ADMIN_QUOTE_KM = 15;
+export let ADMIN_QUOTE_KM = 20;
 
 /**
  * 🆕 Round 28s231 — Bangkok road-circuity factor. Straight-line
