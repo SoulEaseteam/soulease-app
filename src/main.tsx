@@ -23,6 +23,18 @@ const ToastContainerLazy = React.lazy(() =>
 import App from "./app/App";
 import "./index.css";
 
+import { reloadOnceForStaleChunk } from "@/utils/staleChunkReload";
+// 🆕 Round 28x.36 — Vite fires `vite:preloadError` when a lazy chunk fails to
+//   preload (a stale tab pointing at a hash the new deploy replaced). Recover
+//   by reloading once (loop-guarded) instead of letting it throw into the
+//   ErrorBoundary. preventDefault stops Vite's default rethrow.
+if (typeof window !== "undefined") {
+  window.addEventListener("vite:preloadError", (event) => {
+    event.preventDefault();
+    reloadOnceForStaleChunk();
+  });
+}
+
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import AuthProvider from "@/providers/AuthProvider";
 import { GoogleMapsProvider } from "@/context/GoogleMapsContext";

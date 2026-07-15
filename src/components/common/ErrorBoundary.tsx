@@ -6,6 +6,8 @@
 
 import React from "react";
 import i18n from "@/app/i18n";
+// 🆕 Round 28x.36 — auto-recover from a stale-chunk error after a deploy.
+import { isDynamicImportError, reloadOnceForStaleChunk } from "@/utils/staleChunkReload";
 
 interface Props {
   children: React.ReactNode;
@@ -15,16 +17,27 @@ interface Props {
 
 interface State {
   error: Error | null;
+  /** 🆕 28x.36 — a stale-chunk reload is in flight; render a quiet placeholder
+   *  instead of the scary error card (navigation is imminent). */
+  reloading: boolean;
 }
 
 class ErrorBoundary extends React.Component<Props, State> {
-  state: State = { error: null };
+  state: State = { error: null, reloading: false };
 
   static getDerivedStateFromError(error: Error): State {
-    return { error };
+    return { error, reloading: false };
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
+    // 🆕 Round 28x.36 — a lazy route whose hashed chunk was replaced by a new
+    //   deploy rejects its import; that's not a real crash. Reload once (guarded
+    //   against loops) so the browser pulls the current index.html + chunks.
+    if (isDynamicImportError(error) && reloadOnceForStaleChunk()) {
+      this.setState({ reloading: true });
+      return;
+    }
+
     // log → console (ในอนาคตเชื่อม Sentry / GA event ที่นี่)
     console.error("[ErrorBoundary]", error, info);
 
@@ -41,11 +54,23 @@ class ErrorBoundary extends React.Component<Props, State> {
     }
   }
 
-  reset = () => this.setState({ error: null });
+  reset = () => this.setState({ error: null, reloading: false });
 
   render() {
-    const { error } = this.state;
+    const { error, reloading } = this.state;
     if (!error) return this.props.children;
+
+    // 🆕 28x.36 — mid-reload after a stale-chunk error: keep it silent, no
+    //   alarming copy for a self-healing hiccup.
+    if (reloading) {
+      return (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{ minHeight: "100vh", background: "#8F8474" }}
+        />
+      );
+    }
 
     if (this.props.fallback) {
       return this.props.fallback(error, this.reset);
@@ -104,7 +129,13 @@ class ErrorBoundary extends React.Component<Props, State> {
           <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
             <button
               type="button"
-              onClick={this.reset}
+              onClick={() => {
+                // 🆕 28x.36 — for a stale-chunk error a plain reset just re-runs
+                //   the same failed import from the old index; force a hard
+                //   reload so the fresh deploy's chunks load.
+                if (isDynamicImportError(error)) window.location.reload();
+                else this.reset();
+              }}
               style={{
                 padding: "10px 18px",
                 borderRadius: 999,
