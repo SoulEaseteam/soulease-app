@@ -46,10 +46,6 @@ import React, { useEffect, useState } from "react";
 import { Box, Typography, Button, CircularProgress } from "@mui/material";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
-import ChatRoundedIcon from "@mui/icons-material/ChatRounded";
-import PinDropRoundedIcon from "@mui/icons-material/PinDropRounded";
-import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
-import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
 import KeyRoundedIcon from "@mui/icons-material/KeyRounded";
 import ShowerRoundedIcon from "@mui/icons-material/ShowerRounded";
 import WaterDropRoundedIcon from "@mui/icons-material/WaterDropRounded";
@@ -105,12 +101,12 @@ const BookingSuccessPage: React.FC = () => {
   const concierge = useConciergeMode();
   const modeTint =
     concierge.mode === "prime"
-      ? "#2D2D2B"
+      ? "var(--sr-ink)"
       : concierge.mode === "evening"
       ? "#F59E0B"
       : concierge.mode === "off"
-      ? "rgba(15, 23, 42,0.55)"
-      : "#2D2D2B";
+      ? "var(--sr-muted)"
+      : "var(--sr-ink)";
 
   useEffect(() => {
     if (!id) {
@@ -234,7 +230,7 @@ const BookingSuccessPage: React.FC = () => {
           lg: "1100px",
         },
         minHeight: "100vh",
-        background: "#F4F6F5",
+        background: "var(--sr-bg)",
         borderRadius: { xs: "28px", md: 0 },
         overflow: "hidden",
         boxShadow: {
@@ -254,7 +250,7 @@ const BookingSuccessPage: React.FC = () => {
             paddingTop: "120px",
           }}
         >
-          <CircularProgress sx={{ color: "#4B4B48" }} />
+          <CircularProgress sx={{ color: "var(--sr-body)" }} />
         </Box>
       ) : error ? (
         <Box sx={{ textAlign: "center", paddingTop: "60px" }}>
@@ -262,7 +258,7 @@ const BookingSuccessPage: React.FC = () => {
             sx={{
               fontFamily: SERIF,
               fontSize: "20px",
-              color: "#1A2B2E",
+              color: "var(--sr-ink)",
               marginBottom: "12px",
             }}
           >
@@ -270,7 +266,7 @@ const BookingSuccessPage: React.FC = () => {
           </Typography>
           <Button
             onClick={() => void navigate("/")}
-            sx={{ color: "#4B4B48", textTransform: "none" }}
+            sx={{ color: "var(--sr-body)", textTransform: "none" }}
           >
             {t("success.backHome", "Back to home")}
           </Button>
@@ -342,7 +338,7 @@ const BookingSuccessPage: React.FC = () => {
                 ...responsiveType.h2,
                 fontWeight: 500,
                 letterSpacing: "-0.02em",
-                color: "#1A2B2E",
+                color: "var(--sr-ink)",
                 textAlign: "center",
                 lineHeight: 1.05,
               }}
@@ -358,7 +354,7 @@ const BookingSuccessPage: React.FC = () => {
                 fontFamily: SANS,
                 fontSize: "11px",
                 fontWeight: 500,
-                color: "rgba(15, 23, 42, 0.5)",
+                color: "var(--sr-muted)",
                 textAlign: "center",
                 letterSpacing: "0.02em",
                 marginTop: "4px",
@@ -381,12 +377,12 @@ const BookingSuccessPage: React.FC = () => {
                   alignItems: "center",
                   padding: "5px 14px",
                   borderRadius: "999px",
-                  background: "rgba(45, 45, 43, 0.08)",
-                  border: "1px solid rgba(15, 23, 42, 0.18)",
+                  background: "var(--sr-panel-2)",
+                  border: "1px solid var(--sr-hairline)",
                   fontFamily: SANS,
                   fontSize: "12px",
                   fontWeight: 700,
-                  color: "#4B4B48",
+                  color: "var(--sr-body)",
                   letterSpacing: "0.06em",
                   fontVariantNumeric: "tabular-nums",
                 }}
@@ -400,7 +396,7 @@ const BookingSuccessPage: React.FC = () => {
               sx={{
                 fontFamily: SANS,
                 fontSize: "13px",
-                color: "rgba(15, 23, 42, 0.7)",
+                color: "var(--sr-body)",
                 textAlign: "center",
                 marginTop: "12px",
                 lineHeight: 1.55,
@@ -462,7 +458,7 @@ const BookingSuccessPage: React.FC = () => {
                     fontWeight: 700,
                     color:
                       concierge.mode === "off"
-                        ? "rgba(15, 23, 42,0.7)"
+                        ? "var(--sr-body)"
                         : "#15803d",
                   }}
                 >
@@ -566,22 +562,9 @@ const BookingSuccessPage: React.FC = () => {
             </Box>
               </Box>{/* end hero cluster */}
 
-            {/* 🆕 Round 28r10 (founder 2026-05-06) — Action cards
-                un-locked. All four now do something useful in the
-                Phase-1 manual flow:
-                  • Chat with [Therapist] → opens LINE concierge with
-                    a pre-filled message ("Booking SR-XXX, can you
-                    connect me with [name]?"). View bridges the chat
-                    by hand until 1:1 therapist DMs ship.
-                  • Track arrival → opens Google Maps to the booking's
-                    address (real). Live GPS tracking is Phase 2.
-                  • Add to calendar → generates a .ics file in-browser.
-                    100% client-side, no backend needed.
-                  • Reschedule → opens LINE with a "I'd like to move
-                    SR-XXX" pre-fill so the conversation starts in the
-                    right context.
-                Sizing also tightened (label 12.5px, icon disc 36px,
-                padding 12/10) per founder feedback "ย่อขนาดลง · ดูรก". */}
+            {/* 🆕 Reach-us concierge channel grid (replaced the 4 dead
+                action cards — founder "4 คอลัมน์ที่ใช้ไม่ได้จริง ลบไปเลย").
+                Same brand channel tiles as the site's "Reach us" grid. */}
             <Box
               sx={{
                 // 🆕 Round 28r56 — on mobile, keeps the 16px top spacing
@@ -596,106 +579,55 @@ const BookingSuccessPage: React.FC = () => {
                 position: "relative",
               }}
             >
-              <ActionCard
-                label={t("success.action.chat", "Chat with {{name}}", {
-                  name: therapistName.split(" ")[0],
-                })}
-                sub={t("success.action.viaConcierge", "Via concierge")}
-                icon={<ChatRoundedIcon />}
-                onClick={() => {
-                  // Round 28s75 (audit) — dropped a dead
-                  //   `encodeURIComponent(message)` that was computed then
-                  //   discarded (void msg); LINE's deep link can't carry a
-                  //   prefilled body, so opening the chat is all we can do.
-                  const lineUrl = `https://line.me/R/ti/p/@sunred.bkk?from=page&searchId=sunred.bkk`;
-                  window.open(lineUrl, "_blank", "noopener,noreferrer");
-                }}
-              />
-              <ActionCard
-                label={t("success.action.track", "Track arrival")}
-                sub={t("success.action.maps", "Open in Maps")}
-                icon={<PinDropRoundedIcon />}
-                onClick={() => {
-                  const placeName =
-                    (booking?.locationName as string | undefined) ||
-                    (booking?.address as string | undefined) ||
-                    null;
-                  const lat = booking?.lat as number | undefined;
-                  const lng = booking?.lng as number | undefined;
-                  // Prefer name → address → lat,lng (matches the
-                  // updated buildMapUrl in SelectLocationPage).
-                  const url = placeName
-                    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                        placeName
-                      )}`
-                    : lat != null && lng != null
-                    ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
-                    : null;
-                  if (url) window.open(url, "_blank", "noopener,noreferrer");
-                }}
-              />
-              <ActionCard
-                label={t("success.action.calendar", "Add to calendar")}
-                sub={t("success.action.icsSub", "Save .ics file")}
-                icon={<CalendarMonthRoundedIcon />}
-                onClick={() => {
-                  if (!startAt) return;
-                  const durationMin =
-                    typeof booking?.duration === "number"
-                      ? (booking.duration as number)
-                      : 60;
-                  const endAtDate = new Date(
-                    startAt.getTime() + durationMin * 60_000
-                  );
-                  const fmtIcs = (d: Date) =>
-                    d
-                      .toISOString()
-                      .replace(/[-:]/g, "")
-                      .replace(/\.\d{3}/, "");
-                  const summary = `SunRed · ${therapistName} · ${getServiceLabel(
-                    booking?.serviceId as string | undefined,
-                    booking?.serviceName as string | undefined
-                  )}`;
-                  const loc =
-                    (booking?.locationName as string | undefined) ||
-                    (booking?.address as string | undefined) ||
-                    "";
-                  const ics = [
-                    "BEGIN:VCALENDAR",
-                    "VERSION:2.0",
-                    "PRODID:-//SunRed//Booking//EN",
-                    "BEGIN:VEVENT",
-                    `UID:${refCode}@sunred.vip`,
-                    `DTSTAMP:${fmtIcs(new Date())}`,
-                    `DTSTART:${fmtIcs(startAt)}`,
-                    `DTEND:${fmtIcs(endAtDate)}`,
-                    `SUMMARY:${summary}`,
-                    `LOCATION:${loc.replace(/[\r\n,;]/g, " ")}`,
-                    `DESCRIPTION:${t("success.ics.desc", "Reservation ref {{ref}}", { ref: refCode })}`,
-                    "END:VEVENT",
-                    "END:VCALENDAR",
-                  ].join("\r\n");
-                  const blob = new Blob([ics], {
-                    type: "text/calendar;charset=utf-8",
-                  });
-                  const a = document.createElement("a");
-                  a.href = URL.createObjectURL(blob);
-                  a.download = `${refCode}.ics`;
-                  a.click();
-                  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
-                }}
-              />
-              <ActionCard
-                label={t("success.action.reschedule", "Reschedule")}
-                sub={t("success.action.viaConcierge", "Via concierge")}
-                icon={<AutorenewRoundedIcon />}
-                onClick={() => {
-                  // Round 28s75 (audit) — dead `void msg` removed (LINE
-                  //   deep link can't carry a prefilled reschedule note).
-                  const lineUrl = `https://line.me/R/ti/p/@sunred.bkk?from=page&searchId=sunred.bkk`;
-                  window.open(lineUrl, "_blank", "noopener,noreferrer");
-                }}
-              />
+              {[
+                { name: "WhatsApp", src: "/images/profli/whatsapp.png", href: CONCIERGE.whatsappUrl },
+                { name: "Telegram", src: "/images/profli/telegram.png", href: CONCIERGE.telegramChannelUrl },
+                { name: "LINE", src: "/images/profli/line.png", href: CONCIERGE.lineUrl },
+                { name: "WeChat", src: "/images/profli/wechat_2626283.png", href: "/wechat-scan" },
+              ].map((c) => (
+                <Box
+                  key={c.name}
+                  component="a"
+                  href={c.href}
+                  target={c.href.startsWith("http") ? "_blank" : undefined}
+                  rel={c.href.startsWith("http") ? "noopener" : undefined}
+                  aria-label={`Contact via ${c.name}`}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 0.75,
+                    py: 1.75,
+                    px: 0.5,
+                    borderRadius: "16px",
+                    background: "var(--sr-panel-2)",
+                    border: "1px solid var(--sr-hairline)",
+                    textDecoration: "none",
+                    transition: "transform 0.15s ease",
+                    "&:hover": { transform: "translateY(-2px)" },
+                  }}
+                >
+                  <Box
+                    component="img"
+                    src={c.src}
+                    alt=""
+                    width={26}
+                    height={26}
+                    loading="lazy"
+                    sx={{ width: 26, height: 26, objectFit: "contain" }}
+                  />
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "var(--sr-body)",
+                    }}
+                  >
+                    {c.name}
+                  </Typography>
+                </Box>
+              ))}
             </Box>
             </Box>{/* end top-cluster 2-col grid */}
 
@@ -705,11 +637,11 @@ const BookingSuccessPage: React.FC = () => {
                 marginTop: "16px",
                 padding: "16px 18px",
                 borderRadius: "20px",
-                background: "rgba(255, 255, 255, 0.85)",
+                background: "var(--sr-panel)",
                 backdropFilter: "blur(20px) saturate(180%)",
                 WebkitBackdropFilter: "blur(20px) saturate(180%)",
-                border: "1px solid rgba(255, 255, 255, 0.6)",
-                boxShadow: "0 4px 14px rgba(15, 23, 42, 0.05)",
+                border: "1px solid var(--sr-panel)",
+                boxShadow: "var(--sr-card-shadow)",
               }}
             >
               <Typography
@@ -718,7 +650,7 @@ const BookingSuccessPage: React.FC = () => {
                   fontFamily: SERIF,
                   fontSize: "16px",
                   fontWeight: 600,
-                  color: "#4B4B48",
+                  color: "var(--sr-body)",
                   fontStyle: "italic",
                   marginBottom: "2px",
                 }}
@@ -731,7 +663,7 @@ const BookingSuccessPage: React.FC = () => {
                   fontFamily: SANS,
                   fontSize: "10.5px",
                   fontWeight: 500,
-                  color: "rgba(15, 23, 42, 0.5)",
+                  color: "var(--sr-muted)",
                   letterSpacing: "0.02em",
                   marginBottom: "10px",
                 }}
@@ -849,7 +781,7 @@ const BookingSuccessPage: React.FC = () => {
                             sx={{
                               fontFamily: SERIF,
                               fontSize: "12.5px",
-                              color: "rgba(15, 23, 42, 0.45)",
+                              color: "var(--sr-muted)",
                               textDecoration: "line-through",
                               fontVariantNumeric: "tabular-nums",
                             }}
@@ -882,7 +814,7 @@ const BookingSuccessPage: React.FC = () => {
                     sx={{
                       fontFamily: SERIF,
                       fontWeight: 700,
-                      color: "#4B4B48",
+                      color: "var(--sr-body)",
                       fontSize: "16px",
                     }}
                   >
@@ -904,11 +836,11 @@ const BookingSuccessPage: React.FC = () => {
                 marginTop: "16px",
                 padding: "16px 18px",
                 borderRadius: "20px",
-                background: "rgba(255, 255, 255, 0.85)",
+                background: "var(--sr-panel)",
                 backdropFilter: "blur(20px) saturate(180%)",
                 WebkitBackdropFilter: "blur(20px) saturate(180%)",
-                border: "1px solid rgba(255, 255, 255, 0.6)",
-                boxShadow: "0 4px 14px rgba(15, 23, 42, 0.05)",
+                border: "1px solid var(--sr-panel)",
+                boxShadow: "var(--sr-card-shadow)",
               }}
             >
               <Box
@@ -926,7 +858,7 @@ const BookingSuccessPage: React.FC = () => {
                       fontFamily: SERIF,
                       fontSize: "16px",
                       fontWeight: 600,
-                      color: "#4B4B48",
+                      color: "var(--sr-body)",
                       fontStyle: "italic",
                       lineHeight: 1.2,
                     }}
@@ -939,7 +871,7 @@ const BookingSuccessPage: React.FC = () => {
                       fontFamily: SANS,
                       fontSize: "10.5px",
                       fontWeight: 500,
-                      color: "rgba(15, 23, 42, 0.5)",
+                      color: "var(--sr-muted)",
                       letterSpacing: "0.02em",
                       marginTop: "1px",
                     }}
@@ -951,7 +883,7 @@ const BookingSuccessPage: React.FC = () => {
                   sx={{
                     fontFamily: SANS,
                     fontSize: "11px",
-                    color: "rgba(15, 23, 42, 0.45)",
+                    color: "var(--sr-muted)",
                     fontStyle: "italic",
                   }}
                 >
@@ -1023,16 +955,16 @@ const BookingSuccessPage: React.FC = () => {
                 sx={{
                   height: 44,
                   borderRadius: "999px",
-                  background: "rgba(255, 255, 255, 0.95)",
-                  color: "#1A2B2E",
+                  background: "var(--sr-panel)",
+                  color: "var(--sr-ink)",
                   fontFamily: SANS,
                   fontWeight: 700,
                   fontSize: "13.5px",
                   textTransform: "none",
-                  border: "1px solid rgba(15, 23, 42, 0.14)",
+                  border: "1px solid var(--sr-hairline)",
                   "&:hover": {
-                    background: "#fff",
-                    borderColor: "rgba(15, 23, 42, 0.22)",
+                    background: "var(--sr-panel)",
+                    borderColor: "var(--sr-hairline)",
                   },
                 }}
               >
@@ -1055,26 +987,12 @@ const BookingSuccessPage: React.FC = () => {
                   fontWeight: 700,
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
-                  color: "rgba(15, 23, 42, 0.55)",
+                  color: "var(--sr-muted)",
                   textAlign: "center",
                   marginBottom: "-2px",
                 }}
               >
                 {t("success.confirmHeading", "Confirm with concierge")}
-              </Typography>
-              {/* 🆕 Round 28r61 — bilingual pass: tiny Thai subtitle. */}
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: "10px",
-                  fontWeight: 500,
-                  color: "rgba(15, 23, 42, 0.42)",
-                  letterSpacing: "0.02em",
-                  textAlign: "center",
-                  marginBottom: "6px",
-                }}
-              >
-                {t("success.confirmWithConcierge", "Confirm with the concierge")}
               </Typography>
               <Box
                 sx={{
@@ -1181,7 +1099,7 @@ const BookingSuccessPage: React.FC = () => {
                 sx={{
                   fontFamily: SANS,
                   fontSize: "11.5px",
-                  color: "rgba(15, 23, 42, 0.55)",
+                  color: "var(--sr-muted)",
                   textAlign: "center",
                   marginTop: "-2px",
                   lineHeight: 1.4,
@@ -1198,12 +1116,12 @@ const BookingSuccessPage: React.FC = () => {
                 sx={{
                   height: 38,
                   borderRadius: "999px",
-                  color: "rgba(15, 23, 42, 0.55)",
+                  color: "var(--sr-muted)",
                   fontFamily: SANS,
                   fontWeight: 600,
                   fontSize: "12.5px",
                   textTransform: "none",
-                  "&:hover": { background: "rgba(15, 23, 42, 0.04)" },
+                  "&:hover": { background: "var(--sr-hairline)" },
                 }}
               >
                 {t("success.backHome", "Back to home")}
@@ -1215,115 +1133,6 @@ const BookingSuccessPage: React.FC = () => {
     </Box>
   );
 };
-
-// ─── Action card (2×2 grid item) ───────────────────────────────────────
-// 🆕 Round 28b19 — `disabled` prop locks tile (no hover, no click,
-//   "After confirmation" sub-text). Used until admin confirmation +
-//   live tracking pipelines are wired. onClick is optional now.
-const ActionCard: React.FC<{
-  label: string;
-  sub?: string;
-  icon: React.ReactNode;
-  onClick?: () => void;
-  disabled?: boolean;
-}> = ({ label, sub, icon, onClick, disabled = false }) => (
-  <Box
-    role={disabled ? undefined : "button"}
-    tabIndex={disabled ? -1 : 0}
-    aria-disabled={disabled || undefined}
-    onClick={disabled ? undefined : onClick}
-    onKeyDown={(e) => {
-      if (disabled) return;
-      if (e.key === " " || e.key === "Enter") {
-        e.preventDefault();
-        onClick?.();
-      }
-    }}
-    sx={{
-      // 🆕 Round 28r10 — Tighter sizing per founder direction:
-      //   "ย่อขนาดลง เพราะมันดูรก". Padding 16/12 → 11/8, icon disc
-      //   42 → 36, label 14 → 12.5, gap 8 → 6. Cards still hit the
-      //   44px tap-target floor.
-      padding: "11px 8px",
-      borderRadius: "14px",
-      background: "rgba(255, 255, 255, 0.55)",
-      backdropFilter: "blur(20px) saturate(180%)",
-      WebkitBackdropFilter: "blur(20px) saturate(180%)",
-      border: "1px solid rgba(255, 255, 255, 0.6)",
-      boxShadow: disabled
-        ? "0 1px 2px rgba(15, 23, 42, 0.03)"
-        : "0 2px 8px rgba(15, 23, 42, 0.04)",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      gap: "6px",
-      cursor: disabled ? "not-allowed" : "pointer",
-      opacity: disabled ? 0.55 : 1,
-      filter: disabled ? "grayscale(0.4)" : "none",
-      transition: "transform 0.15s ease, box-shadow 0.15s ease",
-      ...(disabled
-        ? {}
-        : {
-            "&:hover": {
-              transform: "translateY(-1px)",
-              boxShadow: "0 6px 16px rgba(15, 23, 42, 0.08)",
-            },
-            "&:focus-visible": {
-              outline: "2px solid #2D2D2B",
-              outlineOffset: "2px",
-            },
-          }),
-    }}
-  >
-    <Box
-      aria-hidden
-      sx={{
-        width: 36,
-        height: 36,
-        borderRadius: "50%",
-        background: disabled
-          ? "#64748b"
-          : "#2D2D2B",
-        color: "#fff",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        boxShadow: disabled
-          ? "0 2px 6px rgba(15, 23, 42, 0.08)"
-          : "0 4px 10px rgba(15, 23, 42, 0.22)",
-        "& svg": { fontSize: 18 },
-      }}
-    >
-      {icon}
-    </Box>
-    <Typography
-      sx={{
-        fontFamily: SERIF,
-        fontSize: "12.5px",
-        fontWeight: 700,
-        color: "#1A2B2E",
-        textAlign: "center",
-        lineHeight: 1.15,
-      }}
-    >
-      {label}
-    </Typography>
-    {sub && (
-      <Typography
-        sx={{
-          fontFamily: SANS,
-          fontSize: "10px",
-          color: "rgba(15, 23, 42, 0.55)",
-          textAlign: "center",
-          marginTop: "-3px",
-          lineHeight: 1.15,
-        }}
-      >
-        {sub}
-      </Typography>
-    )}
-  </Box>
-);
 
 // ─── Summary row ─────────────────────────────────────────────────────────
 const SummaryLine: React.FC<{
@@ -1344,7 +1153,7 @@ const SummaryLine: React.FC<{
       sx={{
         fontFamily: SANS,
         fontSize: "12.5px",
-        color: "rgba(15, 23, 42, 0.6)",
+        color: "var(--sr-body)",
         flexShrink: 0,
       }}
     >
@@ -1356,7 +1165,7 @@ const SummaryLine: React.FC<{
         fontFamily: SANS,
         fontSize: "13.5px",
         fontWeight: 600,
-        color: "#1A2B2E",
+        color: "var(--sr-ink)",
         textAlign: "right",
         lineHeight: 1.3,
         minWidth: 0,
@@ -1404,7 +1213,7 @@ const PrepLine: React.FC<{
         flex: 1,
         fontFamily: SANS,
         fontSize: "13px",
-        color: "rgba(15, 23, 42, 0.78)",
+        color: "var(--sr-body)",
         lineHeight: 1.55,
       }}
     >
