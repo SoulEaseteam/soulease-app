@@ -131,8 +131,31 @@ const CHAT_OPTIONS: ChatOption[] = [
   },
 ];
 
+// 🆕 Round 28x.13 (founder: "button แอดมิน จะหลบ" — the concierge FAB, at
+//   zIndex 1500, sits ABOVE MUI Dialogs (zIndex 1300), so it floated over
+//   dialog content like the Anniversary reward's Claim button). This hook
+//   reports whether any MUI Dialog/Modal is currently mounted so the whole
+//   concierge widget can step aside while a popup is open. MUI portals each
+//   Dialog to <body> as a `.MuiModal-root` child, so watching body's direct
+//   children is enough — no per-dialog wiring.
+function useAnyModalOpen(): boolean {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const check = () =>
+      setOpen(document.querySelectorAll(".MuiModal-root").length > 0);
+    check();
+    const obs = new MutationObserver(check);
+    obs.observe(document.body, { childList: true });
+    return () => obs.disconnect();
+  }, []);
+  return open;
+}
+
 const AdminFloatingChat: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
+  // 🆕 28x.13 — hide the whole concierge widget while a dialog/popup is open.
+  const modalOpen = useAnyModalOpen();
   const [showGreeting, setShowGreeting] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -250,6 +273,10 @@ const AdminFloatingChat: React.FC = () => {
     typeof window !== "undefined" && window.matchMedia
       ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
       : false;
+
+  // 🆕 28x.13 — step aside while any dialog/popup is open so the FAB never
+  //   floats over a modal's own controls (all hooks above run first).
+  if (modalOpen) return null;
 
   return (
     <>
