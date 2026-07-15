@@ -59,12 +59,13 @@ const AnniversaryBanner: React.FC<Props> = ({ variant = "home" }) => {
           overflow: "hidden",
           cursor: "pointer",
           outline: "none",
-          // 🆕 28x.17 (founder: "เด้ง อย่างเดียว สีไม่ต้อง") — keep ONLY the
-          //   periodic scale bounce to catch the eye; the magenta glow pulse,
-          //   the shimmer sweep, and the sparkles were all removed. Paused for
-          //   reduced-motion users.
+          // 🆕 28x.18 (founder: "ยังมีเรืองแสงสีแดงๆ อยู่ เอาออก แล้วให้การ์ด
+          //   แวววาว วิบวับ") — removed the berry/red glow (was a coloured
+          //   box-shadow) for a NEUTRAL theme shadow, and brought back the
+          //   glossy shimmer sweep + twinkling sparkles below. The periodic
+          //   scale bounce stays. Paused for reduced-motion users.
           animation: "sunredAnnivPop 4.6s ease-in-out infinite",
-          boxShadow: "0 14px 36px -16px rgba(138,58,87,0.5)",
+          boxShadow: "var(--sr-card-shadow)",
           "@keyframes sunredAnnivPop": {
             "0%, 82%, 100%": { transform: "scale(1)" },
             "88%": { transform: "scale(1.03)" },
@@ -75,7 +76,7 @@ const AnniversaryBanner: React.FC<Props> = ({ variant = "home" }) => {
           },
           "&:hover": {
             transform: "translateY(-2px)",
-            boxShadow: "0 20px 44px -16px rgba(138,58,87,0.72)",
+            boxShadow: "var(--sr-card-shadow)",
           },
           "&:focus-visible": {
             boxShadow: "0 0 0 3px rgba(217,124,149,0.55)",
@@ -93,6 +94,65 @@ const AnniversaryBanner: React.FC<Props> = ({ variant = "home" }) => {
           decoding="async"
           sx={{ display: "block", width: "100%", height: "auto" }}
         />
+
+        {/* 🆕 28x.18 — diagonal shimmer sweep for a glossy "แวววาว" glint.
+            Over the image, pointer-events none so taps still open the dialog. */}
+        <Box
+          component={motion.div}
+          aria-hidden
+          initial={{ x: "-140%" }}
+          animate={{ x: "140%" }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            repeatDelay: 3.1,
+            ease: "easeInOut",
+          }}
+          sx={{
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            width: "42%",
+            transform: "skewX(-14deg)",
+            background:
+              "linear-gradient(100deg, transparent, rgba(255,255,255,0.45), transparent)",
+            pointerEvents: "none",
+            mixBlendMode: "screen",
+          }}
+        />
+
+        {/* twinkling sparkles ("วิบวับ") */}
+        {[
+          { t: "14%", l: "24%", s: 4, d: 0 },
+          { t: "70%", l: "16%", s: 3, d: 0.6 },
+          { t: "30%", l: "52%", s: 3.5, d: 1.1 },
+          { t: "58%", l: "60%", s: 3, d: 0.3 },
+        ].map((d, i) => (
+          <Box
+            key={i}
+            component={motion.span}
+            aria-hidden
+            animate={{ opacity: [0, 1, 0], scale: [0.6, 1, 0.6] }}
+            transition={{
+              duration: 1.8,
+              repeat: Infinity,
+              repeatDelay: 1.6,
+              delay: d.d,
+              ease: "easeInOut",
+            }}
+            sx={{
+              position: "absolute",
+              top: d.t,
+              left: d.l,
+              width: d.s,
+              height: d.s,
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.95)",
+              boxShadow: "0 0 6px rgba(255,255,255,0.85)",
+              pointerEvents: "none",
+            }}
+          />
+        ))}
       </Box>
       <AnniversaryDialog open={open} onClose={() => setOpen(false)} />
     </>
