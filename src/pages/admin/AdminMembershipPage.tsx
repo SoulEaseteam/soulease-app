@@ -212,7 +212,7 @@ const AdminMembershipPage: React.FC = () => {
         Membership
       </Typography>
       <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: adminColor.muted, mt: 0.5, mb: 2.5, lineHeight: 1.55 }}>
-        ยศลูกค้าตัดจาก <b>จำนวนครั้งที่มา</b> หรือ <b>ยอดใช้จ่ายรวม</b> (เอายศสูงสุดที่เข้าเกณฑ์) · ลูกค้าที่ไม่มาเกินกำหนดจะ<b>ลดขั้น 1 ระดับ</b> · ป้าย “With no-shows” ติดเพิ่มถ้าเคยไม่มา
+        Level ลูกค้าตัดจาก <b>จำนวนครั้งที่มา</b> หรือ <b>ยอดใช้จ่ายรวม</b> (เอา Level สูงสุดที่เข้าเกณฑ์) · ลูกค้าที่ไม่มาเกินกำหนดจะ<b>ลดขั้น 1 ระดับ</b> · ป้าย “With no-shows” ติดเพิ่มถ้าเคยไม่มา
       </Typography>
 
       {/* tier cards */}

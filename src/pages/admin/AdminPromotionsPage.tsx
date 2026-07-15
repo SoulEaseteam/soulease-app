@@ -1894,7 +1894,20 @@ const AdminPromotionsPage: React.FC = () => {
                         ...(deleted ? { textDecoration: "line-through" } : {}),
                       }}
                     >
-                      {b.code} <span style={{ fontWeight: 400, color: adminColor.dim }}>· {displayLabel}</span>
+                      {/* 🆕 28x.42 (founder: "คัดลอกโค้ดได้") — tap the code to copy it. */}
+                      <Box
+                        component="span"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => { void navigator.clipboard?.writeText(b.code); toast.success(`คัดลอกแล้ว · ${b.code}`); }}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); void navigator.clipboard?.writeText(b.code); toast.success(`คัดลอกแล้ว · ${b.code}`); } }}
+                        sx={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "3px", "&:hover": { color: adminColor.accent } }}
+                        aria-label={`คัดลอก ${b.code}`}
+                      >
+                        {b.code}
+                        <Copy size={12} color={adminColor.dim} style={{ marginBottom: -1 }} />
+                      </Box>
+                      <span style={{ fontWeight: 400, color: adminColor.dim }}> · {displayLabel}</span>
                       {deleted && <span style={{ marginLeft: 6, color: adminColor.red, fontWeight: 700 }}>· ลบแล้ว</span>}
                     </Typography>
                     <Typography sx={{ fontSize: 11.5, color: adminColor.muted }}>{summary} · {b.desc}</Typography>

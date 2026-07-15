@@ -13,7 +13,7 @@
 //   no new collection and no Firestore rules deploy is needed.
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link as RouterLink } from "react-router-dom";
 import { Box, Typography, TextField, Button, MenuItem, CircularProgress } from "@mui/material";
 // NB: `query` is aliased — this component already has a `query` state for the
 //     search box, which would shadow the Firestore helper.
@@ -399,7 +399,7 @@ const AdminMembersPage: React.FC = () => {
         ระบบสมัครสมาชิก · รหัส SRD-
       </Typography>
       <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: adminColor.muted, mt: 1, mb: 2 }}>
-        สมัครสมาชิกให้ลูกค้า แล้วจัดการรหัส/ยศได้ที่นี่ · เกณฑ์ยศตั้งที่หน้า <b>Membership</b>
+        สมัครสมาชิกให้ลูกค้า แล้วจัดการรหัส/Level ได้ที่นี่ · เกณฑ์ Level ตั้งที่หน้า <b>Membership</b>
       </Typography>
 
       {/* tier tally */}
@@ -441,7 +441,7 @@ const AdminMembersPage: React.FC = () => {
           </Button>
         </Box>
         <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 1 }}>
-          อีเมล — ให้ลูกค้าสมัคร/ล็อกอินใส่เอง · ยศตัดจากประวัติของเบอร์นี้อัตโนมัติ (ถ้ามี) ไม่มีก็ Bronze
+          อีเมล — ให้ลูกค้าสมัคร/ล็อกอินใส่เอง · Level ตัดจากประวัติของเบอร์นี้อัตโนมัติ (ถ้ามี) ไม่มีก็ Bronze
         </Typography>
 
         {/* 🆕 28w.92 — backfill/refresh the visit count carried on each member's
@@ -517,7 +517,7 @@ const AdminMembersPage: React.FC = () => {
                         sx={{ ...adminFieldSx, width: 190 }}
                       />
                       <TextField
-                        select size="small" label="ยศ" value={editTier}
+                        select size="small" label="Level" value={editTier}
                         onChange={(e) => setEditTier(e.target.value as MembershipTier)}
                         sx={{ ...adminFieldSx, width: 140 }}
                       >
@@ -619,10 +619,15 @@ const AdminMembersPage: React.FC = () => {
                         {history[phone].map((b) => {
                           const counted = b.status === "completed" || b.status === "done";
                           return (
-                            <Box key={b.id} sx={{
+                            // 🆕 28x.42 (founder: "กดที่รายละเอียดการจอง...เชื่อมต่อไปยัง
+                            //   ประวัติการจองนั้นๆ หน้า booking") — tap a history row to open
+                            //   that exact reservation on the Bookings page (?open=<id>).
+                            <Box key={b.id} component={RouterLink} to={`/admin/bookings?open=${b.id}`} sx={{
                               display: "flex", alignItems: "center", gap: 1, px: 1.25, py: 0.85,
                               borderBottom: `1px solid ${adminColor.line}`,
                               opacity: counted ? 1 : 0.55,
+                              textDecoration: "none", cursor: "pointer",
+                              "&:hover": { background: `${adminColor.line}55` },
                             }}>
                               <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, width: 78, flexShrink: 0 }}>
                                 {b.whenMs ? new Date(b.whenMs).toLocaleDateString("th-TH", { day: "2-digit", month: "short", year: "2-digit" }) : "-"}

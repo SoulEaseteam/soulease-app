@@ -188,7 +188,7 @@ export const ACTION_LABEL: Record<string, { label: string; color: string }> = {
   "review.restore":          { label: "กู้คืนรีวิว",            color: adminColor.green },
   "member.enroll":           { label: "สมัครสมาชิก",           color: adminColor.green },
   "member.reset":            { label: "รีเซตรหัสสมาชิก",        color: adminColor.blue },
-  "member.upgrade":          { label: "อัปเกรดยศสมาชิก",        color: adminColor.green },
+  "member.upgrade":          { label: "อัปเกรด Level สมาชิก",        color: adminColor.green },
   "member.edit":             { label: "แก้ไขข้อมูลสมาชิก",      color: adminColor.blue },
   "member.remove":           { label: "ยกเลิกสมาชิก",           color: adminColor.red },
 };

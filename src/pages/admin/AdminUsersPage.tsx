@@ -1001,7 +1001,7 @@ const AdminUsersPage: React.FC = () => {
                             inputProps={{ style: { fontFamily: "ui-monospace, monospace", letterSpacing: "0.06em", fontWeight: 700 } }}
                           />
                           <TextField
-                            select label="ยศ" value={editTier}
+                            select label="Level" value={editTier}
                             onChange={(e) => setEditTier(e.target.value as MembershipTier)}
                             size="small" fullWidth sx={{ mb: 1.25 }}
                           >
