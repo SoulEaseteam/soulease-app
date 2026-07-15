@@ -769,7 +769,14 @@ export const LoyaltyTab: React.FC<{
     : Math.min(100, rebookPct);
   const firstTimePct = 100 - repeatPct;
 
-  const isTopTier = (useReal ? repeatPct : rebookPct) >= TOP_5_PCT_THRESHOLD;
+  // 🆕 28x.30 — a reliable sample for the "Top 5%" badge only. The panel
+  //   itself now shows on tiny samples (founder: "ลด gate — โชว์แม้ข้อมูลน้อย"),
+  //   but the badge stays gated so a 1-of-1 = 100% never wears "Top 5%".
+  const reliableSample =
+    (useReal && (loyaltyStats?.uniqueCustomers ?? 0) >= 5) ||
+    totalSessions >= 10;
+  const isTopTier =
+    reliableSample && (useReal ? repeatPct : rebookPct) >= TOP_5_PCT_THRESHOLD;
 
   // Headline rebook % — use real if available
   const headlinePct = useReal ? repeatPct : rebookPct;
@@ -810,7 +817,13 @@ export const LoyaltyTab: React.FC<{
   //   is misleading (1 of 1 = 100% + a bogus "Top 5%" badge). Require a
   //   minimum real sample before showing the panel; below it, show the
   //   "building history" placeholder instead of an inflated number.
-  const MIN_SAMPLE = 5;
+  // 🆕 28x.30 (founder: "ลด gate — โชว์แม้ข้อมูลน้อย") — was 5 / 10 with a
+  //   rebook>0 requirement, which hid the panel for new practitioners (e.g.
+  //   Milo, 2 sessions) behind "Loyalty data coming soon". Lowered so the
+  //   rebook rate shows as soon as there's ANY real activity. The estimate
+  //   mode still carries its "accumulates real data…" disclaimer, and the
+  //   "Top 5%" badge stays gated by reliableSample above.
+  const MIN_SAMPLE = 1;
   // 🆕 28s375 — also render (in estimate mode, which carries its own
   //   "Estimate — accumulates real data…" disclaimer below) when the
   //   therapist doc has a reliable denormalized session count synced by
@@ -820,10 +833,10 @@ export const LoyaltyTab: React.FC<{
   //   "N sessions · X% rebook" — an inconsistency (audit #1). The tiny-live-
   //   sample real path (the 28s346 "1 of 1 = 100%" concern) stays gated by
   //   MIN_SAMPLE; this only opens the honest aggregate-estimate path.
-  const MIN_SYNCED_SESSIONS = 10;
+  const MIN_SYNCED_SESSIONS = 1;
   const enoughData =
     (useReal && (loyaltyStats?.uniqueCustomers ?? 0) >= MIN_SAMPLE) ||
-    (totalSessions >= MIN_SYNCED_SESSIONS && rebookPct > 0);
+    totalSessions >= MIN_SYNCED_SESSIONS;
   if (!enoughData) {
     return (
       <Box
