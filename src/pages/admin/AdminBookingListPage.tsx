@@ -384,6 +384,23 @@ const AdminBookingListPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [custStats, nowMs, memberVersion]);
 
+  // 🆕 28x.43 — redemption memory: count OTHER bookings on this phone that
+  //   already carry this discount code. Reads the full in-memory bookings
+  //   list (already loaded for stats) — no extra query.
+  const countPriorCodeUses = useMemo(() => {
+    return (phone: string, code: string, excludeId: string): number => {
+      const p = normPhone((phone ?? "").trim());
+      const c = (code ?? "").trim().toUpperCase();
+      if (!p || !c) return 0;
+      return bookings.filter(
+        (bk) =>
+          bk.id !== excludeId &&
+          normPhone((bk.phone ?? "").trim()) === p &&
+          String(bk.discountCode ?? "").trim().toUpperCase() === c,
+      ).length;
+    };
+  }, [bookings]);
+
   // 🆕 28s254 — date range + therapist + payment filters.
   const [dateMode,        setDateMode]        = useState<DateMode>("all");
   const [customStart,     setCustomStart]     = useState<Dayjs>(() => dayjs().subtract(30, "day").startOf("day"));
@@ -1086,6 +1103,7 @@ const AdminBookingListPage: React.FC = () => {
             onSaveNote={(note) => { void saveNote(detailBooking.id, note); }}
             onChangeStatus={(status) => changeStatus(detailBooking.id, status)}
             onSaveDetails={(patch, auditDetail) => { void saveDetails(detailBooking.id, patch, auditDetail); }}
+            countPriorCodeUses={countPriorCodeUses}
           />
         )}
       </Drawer>
@@ -1611,7 +1629,10 @@ const DetailPanel: React.FC<{
   onSaveNote: (note: string) => void;
   onChangeStatus: (status: string) => void;
   onSaveDetails: (patch: Record<string, unknown>, auditDetail?: Record<string, unknown>) => void;
-}> = ({ booking: b, member, therapists, onClose, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onChangeStatus, onSaveDetails }) => {
+  // 🆕 28x.43 — how many OTHER bookings this phone already has under a code
+  //   (the redemption memory made visible on the slip).
+  countPriorCodeUses: (phone: string, code: string, excludeId: string) => number;
+}> = ({ booking: b, member, therapists, onClose, onConfirm, onComplete, onCancel, onTogglePaid, onSaveNote, onChangeStatus, onSaveDetails, countPriorCodeUses }) => {
   const [note, setNote] = useState(b.adminNote ?? "");
   const cfg        = cfgFor(b.status);
   const isCancelled = b.status === "cancelled";
@@ -1703,12 +1724,21 @@ const DetailPanel: React.FC<{
     serviceId: editForm.serviceId || null,
     bookingHourBKK: editForm.time ? parseInt(editForm.time.split(":")[0], 10) : undefined,
     taxiFareTHB: editTaxiFee,
+    // 🆕 28x.43 — concierge slip can honour a code on a premium ticket (the
+    //   welcome codes she hands out) — the premium block is a guest-only guard.
+    adminOverride: true,
   });
   // 🆕 28x.38 — the concierge slip applies a code REGARDLESS of the customer
   //   master switch (PROMOS_ENABLED). That switch only controls what guests
   //   see / can self-apply; here the operator is deliberately keying a code to
   //   cut this bill, so it must work even while public promos are paused.
   const editDiscountAmount = editDiscount.valid ? editDiscount.amount : 0;
+  // 🆕 28x.43 (founder: "ให้ระบบจำได้ว่าลูกค้าใช้โค้ดนี้ไปแล้ว") — surface the
+  //   redemption memory: has THIS phone already carried THIS code on another
+  //   booking? Stored discountCode is the record; this makes it visible so the
+  //   concierge doesn't hand the same welcome code to a guest twice.
+  const editCodeTrim = editForm.discountCode.trim().toUpperCase();
+  const priorCodeUses = editCodeTrim ? countPriorCodeUses(editForm.phone, editCodeTrim, b.id) : 0;
   const computedTotal    = Math.max(0, editServicePrice + editTaxiFee + editSurcharge - editDiscountAmount);
   const editTotal        = Number(editForm.total) || 0;
 
@@ -2072,9 +2102,17 @@ const DetailPanel: React.FC<{
                       </Typography>
                     ) : (
                       <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.6 }}>
-                        โค้ดนี้ใช้กับบิลนี้ไม่ได้ (ขั้นต่ำ / บริการ / หมดอายุ)
+                        โค้ดนี้ไม่ลดบิลนี้ (ขั้นต่ำ / เงื่อนไข / หมดอายุ) — แต่ยัง<b>บันทึกว่าลูกค้าใช้โค้ดนี้</b>เมื่อกด Save
                       </Typography>
                     )
+                  )}
+                  {/* 🆕 28x.43 — redemption memory: warn if this guest already used this code. */}
+                  {editCodeTrim !== "" && priorCodeUses > 0 && (
+                    <Box sx={{ mt: 0.6, px: 1, py: 0.6, borderRadius: "8px", background: `${adminColor.amber}18`, border: `1px solid ${adminColor.amber}55` }}>
+                      <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: adminColor.amber }}>
+                        ⚠️ เบอร์นี้เคยใช้โค้ด {editCodeTrim} แล้ว {priorCodeUses} ครั้ง
+                      </Typography>
+                    </Box>
                   )}
                 </Box>
 

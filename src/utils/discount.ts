@@ -400,6 +400,14 @@ export interface DiscountValidationContext {
    *  test-code sandbox) is responsible for running a bounded count
    *  query on `bookings.discountCode == code` and passing it in. */
   referralRedeemCount?: number;
+  /** 🆕 Round 28x.43 (founder: "แอดมินเป็นคนอนุมัติการจอง...ใส่โค้ดเอง") — set
+   *  by the concierge booking slip only. It lifts the premium-service block
+   *  (PROMO_BLOCKED_SERVICES) so the operator can honour a code they issued
+   *  by hand on a premium ticket (e.g. a welcome code on Gentleman's). It does
+   *  NOT relax min-spend, expiry, or a code's own eligibility — only the
+   *  customer-facing "entry-tier codes are blocked on premium" acquisition
+   *  guard, which exists to stop GUESTS self-applying, not the shop owner. */
+  adminOverride?: boolean;
 }
 
 // 🆕 Round 28r27 — Per-tier eligibility. Entry tier accepts all
@@ -456,6 +464,7 @@ export function validateDiscount(
   const isPremiumOk = PREMIUM_OK_CODES.has(code);
   if (
     !isPremiumOk &&
+    !ctx?.adminOverride &&
     ctx?.serviceId &&
     PROMO_BLOCKED_SERVICES.has(ctx.serviceId)
   ) {
