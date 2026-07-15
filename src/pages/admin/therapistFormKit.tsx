@@ -68,7 +68,13 @@ export const SectionCard: React.FC<{ icon: React.ReactNode; title: string; child
 );
 
 // ─── image downscale + upload ─────────────────────────────────────────
-export async function downscaleImage(file: File, maxEdge = 1600, quality = 0.85): Promise<Blob> {
+// 🆕 28x.26 (founder: "ป้องกันเรื่องลดเกรดรูป") — this downscale is the ONE
+//   place image grade is lost permanently (the original is discarded, only
+//   this re-encoded blob is stored). Raised the default quality floor
+//   0.85 → 0.92 so the STORED source keeps more detail; Cloudinary then
+//   resizes it per surface at delivery, so a higher-grade source costs
+//   almost nothing in user-facing load speed (Cloudinary downsizes anyway).
+export async function downscaleImage(file: File, maxEdge = 1600, quality = 0.92): Promise<Blob> {
   try {
     const dataUrl: string = await new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -359,11 +365,12 @@ export const AvatarUploader: React.FC<{
     try {
       const { getStorage, ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
       const storage = getStorage(app);
-      // 🆕 28x.23 (founder: "รูปบนเว็บไม่ชัด") — was 800px longest-edge, which
-      //   makes a portrait only ~600px wide → soft on retina cards and blurry
-      //   on the full-width detail hero. 1440px keeps faces crisp at every
-      //   surface. (Existing photos need a re-upload to gain the extra res.)
-      const blob = await downscaleImage(file, 1440, 0.9); // profile pic
+      // 🆕 28x.23/28x.26 (founder: "รูปบนเว็บไม่ชัด" · "ป้องกันลดเกรดรูป") —
+      //   was 800px @ q0.86 → portrait only ~600px, soft everywhere. Now
+      //   1600px @ q0.94 keeps the profile (the card + full-screen hero) at
+      //   high grade. Cloudinary resizes per surface at delivery, so the
+      //   larger source doesn't slow the page.
+      const blob = await downscaleImage(file, 1600, 0.94); // profile pic
       const path = `therapists/${docId}/profile/${Date.now()}.jpg`;
       const snap = await uploadBytes(ref(storage, path), blob, { contentType: "image/jpeg" });
       onChange(await getDownloadURL(snap.ref));
