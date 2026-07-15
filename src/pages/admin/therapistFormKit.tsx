@@ -7,8 +7,8 @@
 // lives here once; both pages just wire their own state in.
 
 import React, { useEffect, useRef, useState } from "react";
-import { Box, Typography, TextField, MenuItem, IconButton, Button, Avatar } from "@mui/material";
-import { Plus, Trash, MagnifyingGlass, UploadSimple, CircleNotch, Camera } from "phosphor-react";
+import { Box, Typography, TextField, MenuItem, IconButton, Button, Avatar, Collapse } from "@mui/material";
+import { Plus, Trash, MagnifyingGlass, UploadSimple, CircleNotch, Camera, CaretDown } from "phosphor-react";
 import type { Credential, LanguageSkill } from "@/types/therapist";
 import { adminColor, adminFont, adminFigureSx, adminFieldSx } from "@/theme/adminTheme";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
@@ -60,12 +60,53 @@ export const SectionHeader: React.FC<{ icon: React.ReactNode; children: React.Re
   </Box>
 );
 
-export const SectionCard: React.FC<{ icon: React.ReactNode; title: string; children: React.ReactNode }> = ({ icon, title, children }) => (
-  <Box sx={{ background: adminColor.panel2, border: `1px solid ${adminColor.line}`, borderRadius: "16px", p: "16px 16px 17px" }}>
-    <SectionHeader icon={icon}>{title}</SectionHeader>
-    {children}
-  </Box>
-);
+// 🆕 28x.39 (founder: "ทำเป็นดรอปดาว ทีมันเกะกะ") — optional collapsible mode.
+//   Pass `collapsible` to turn the header into a toggle (caret rotates) with the
+//   body in a Collapse; `defaultCollapsed` starts it folded so a long section
+//   (Pricing & Services, Anniversary Campaign) stays out of the way until
+//   tapped. Omitting `collapsible` keeps every existing usage byte-identical.
+export const SectionCard: React.FC<{
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+  collapsible?: boolean;
+  defaultCollapsed?: boolean;
+}> = ({ icon, title, children, collapsible = false, defaultCollapsed = false }) => {
+  const [open, setOpen] = useState(collapsible ? !defaultCollapsed : true);
+  if (!collapsible) {
+    return (
+      <Box sx={{ background: adminColor.panel2, border: `1px solid ${adminColor.line}`, borderRadius: "16px", p: "16px 16px 17px" }}>
+        <SectionHeader icon={icon}>{title}</SectionHeader>
+        {children}
+      </Box>
+    );
+  }
+  return (
+    <Box sx={{ background: adminColor.panel2, border: `1px solid ${adminColor.line}`, borderRadius: "16px", p: open ? "16px 16px 17px" : "13px 16px" }}>
+      <Box
+        role="button"
+        tabIndex={0}
+        onClick={() => setOpen((v) => !v)}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen((v) => !v); } }}
+        sx={{
+          display: "flex", alignItems: "center", gap: "6px", color: adminColor.dim,
+          cursor: "pointer", userSelect: "none", mb: open ? "10px" : 0,
+        }}
+      >
+        {icon}
+        <Typography sx={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.07em", flex: 1 }}>{title}</Typography>
+        <CaretDown
+          size={14}
+          weight="bold"
+          style={{ transition: "transform 0.2s ease", transform: open ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }}
+        />
+      </Box>
+      <Collapse in={open} timeout={220} unmountOnExit>
+        {children}
+      </Collapse>
+    </Box>
+  );
+};
 
 // ─── image downscale + upload ─────────────────────────────────────────
 // 🆕 28x.26 (founder: "ป้องกันเรื่องลดเกรดรูป") — this downscale is the ONE

@@ -1638,7 +1638,7 @@ const AdminPromotionsPage: React.FC = () => {
             editable. Every number here used to be hardcoded, so changing a spend
             floor or a date meant a code change and a deploy. Saved to
             publicRules.anniversary; MaintenanceGate pushes it to guests live. */}
-        <SectionCard icon={<Gift size={13} weight="bold" />} title="Anniversary Campaign · แคมเปญครบรอบ">
+        <SectionCard icon={<Gift size={13} weight="bold" />} title="Anniversary Campaign · แคมเปญครบรอบ" collapsible defaultCollapsed>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, flexWrap: "wrap" }}>
             <Switch
               checked={annivCfg.enabled}
@@ -1719,7 +1719,7 @@ const AdminPromotionsPage: React.FC = () => {
           </Button>
         </SectionCard>
 
-        <SectionCard icon={<Storefront size={13} weight="bold" />} title="Pricing & Services · ราคา & บริการ">
+        <SectionCard icon={<Storefront size={13} weight="bold" />} title="Pricing & Services · ราคา & บริการ" collapsible defaultCollapsed>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.5 }}>
             แก้ราคาแต่ละช่วงเวลา · เปลี่ยนชื่อ · เปิด/ปิดบริการ — มีผลกับการจองใหม่เท่านั้น (ออเดอร์เก่าล็อกราคาที่จ่ายไว้แล้ว)
           </Typography>
