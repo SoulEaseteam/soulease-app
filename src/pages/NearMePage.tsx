@@ -145,6 +145,13 @@ interface GMarker {
 interface GMaps {
   Map: new (el: HTMLElement, opts: unknown) => GMap;
   Marker: new (opts: unknown) => GMarker;
+  // 🆕 28x.45 — reverse geocode a dropped/dragged pin into a readable place name.
+  Geocoder?: new () => {
+    geocode: (
+      req: { location: { lat: number; lng: number } },
+      cb: (results: Array<{ formatted_address?: string }> | null, status: string) => void
+    ) => void;
+  };
   places?: {
     Autocomplete: new (
       input: HTMLInputElement,
@@ -173,17 +180,33 @@ const TaxiEstimator: React.FC = () => {
   const [coords, setCoords] = React.useState<{ lat: number; lng: number } | null>(null);
   const [status, setStatus] = React.useState<"idle" | "locating" | "error">("idle");
   const [errMsg, setErrMsg] = React.useState("");
+  // 🆕 28x.45 (founder: "พอกดปุ่ม ชื่อสถานที่จะขึ้น ถ้าไม่ตรงคำค้นหาให้ขยับได้") —
+  //   the resolved place name for the current pin, so the guest can see where the
+  //   system landed and drag the pin to correct it if it's off.
+  const [placeName, setPlaceName] = React.useState<string | null>(null);
 
   const mapContainerRef = React.useRef<HTMLDivElement | null>(null);
   const searchInputRef = React.useRef<HTMLInputElement | null>(null);
   const mapRef = React.useRef<GMap | null>(null);
   const markerRef = React.useRef<GMarker | null>(null);
+  const geocoderRef = React.useRef<InstanceType<NonNullable<GMaps["Geocoder"]>> | null>(null);
+
+  // 🆕 28x.45 — reverse-geocode a pin into a readable address.
+  const reverseGeocode = React.useCallback((lat: number, lng: number) => {
+    const G = getMaps();
+    if (!G?.Geocoder) return;
+    if (!geocoderRef.current) geocoderRef.current = new G.Geocoder();
+    geocoderRef.current.geocode({ location: { lat, lng } }, (results, gcStatus) => {
+      setPlaceName(gcStatus === "OK" && results?.[0]?.formatted_address ? results[0].formatted_address! : null);
+    });
+  }, []);
 
   const selected = roster.find((p) => p.id === selectedId) ?? null;
 
   // Place / move the customer pin + record coords.
   const setPin = React.useCallback((lat: number, lng: number) => {
     setCoords({ lat, lng });
+    reverseGeocode(lat, lng);
     const G = getMaps();
     const map = mapRef.current;
     if (!G || !map) return;
@@ -191,12 +214,12 @@ const TaxiEstimator: React.FC = () => {
       markerRef.current = new G.Marker({ position: { lat, lng }, map, draggable: true });
       markerRef.current.addListener("dragend", (e) => {
         const ll = e.latLng;
-        if (ll) setCoords({ lat: ll.lat(), lng: ll.lng() });
+        if (ll) { setCoords({ lat: ll.lat(), lng: ll.lng() }); reverseGeocode(ll.lat(), ll.lng()); }
       });
     } else {
       markerRef.current.setPosition({ lat, lng });
     }
-  }, []);
+  }, [reverseGeocode]);
 
   React.useEffect(() => {
     loadIfNeeded();
@@ -399,6 +422,27 @@ const TaxiEstimator: React.FC = () => {
             </Box>
           )}
         </Box>
+
+        {/* 🆕 28x.45 — resolved place name + drag-to-adjust hint once a pin is set. */}
+        {coords && (
+          <Box
+            sx={{
+              display: "flex", alignItems: "flex-start", gap: 0.75,
+              px: "12px", py: "9px", borderRadius: "12px",
+              background: "var(--sr-panel-2)", border: "1px solid var(--sr-hairline)",
+            }}
+          >
+            <Box sx={{ fontSize: 14, lineHeight: 1.4, flexShrink: 0 }}>📍</Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: "var(--sr-ink)", lineHeight: 1.35 }}>
+                {placeName ?? t("nearme.taxi.pinDropped", "Pin dropped on the map")}
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "var(--sr-muted)", mt: 0.15 }}>
+                {t("nearme.taxi.dragHint", "Not right? Drag the pin on the map to adjust.")}
+              </Typography>
+            </Box>
+          </Box>
+        )}
 
         {/* Use my current location */}
         <Box
