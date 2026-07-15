@@ -1207,3 +1207,94 @@ export const resetCustomerPassword = onCall(
     };
   }
 );
+
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.31 (founder: "สถานะบนหน้าเว็บไม่เปลี่ยน") — sync a
+//   therapist's live BUSY status from her active jobs onto her doc.
+//
+//   Problem: customer-facing cards read the therapist doc via
+//   calculateTherapistStatus (busyUntil / activeBooking), but NOTHING ever
+//   wrote those from bookings — so a practitioner who is mid-session still
+//   showed a green "Available" card. The admin Tonight board knew (it reads
+//   dispatchState off the bookings), but the guest didn't.
+//
+//   This reconciler runs every 2 minutes: any therapist with a booking in
+//   an active dispatch state (assigned / arrived / in_session) is marked
+//   activeBooking:true + busyUntil:expectedEndAt, so the engine returns
+//   "bookable" (orange, not green) on her card. When the job finishes
+//   (completed / done / cancelled → drops out of the active set) she's
+//   cleared back to available. Conditional writes only — no churn.
+//   (busyUntil also self-expires in the engine once its time passes.)
+// ─────────────────────────────────────────────────────────────
+export const syncTherapistBusyStatus = onSchedule(
+  {
+    schedule: "every 2 minutes",
+    region: "asia-southeast1",
+    timeZone: "Asia/Bangkok",
+  },
+  async () => {
+    const db = getFirestore();
+    const ACTIVE_STATES = ["assigned", "arrived", "in_session"];
+    const snap = await db
+      .collection("bookings")
+      .where("dispatchState", "in", ACTIVE_STATES)
+      .limit(300)
+      .get();
+
+    // therapistId → latest session end (Timestamp | null)
+    const busy = new Map<string, Timestamp | null>();
+    for (const d of snap.docs) {
+      const b = d.data() as {
+        therapistId?: string;
+        expectedEndAt?: Timestamp;
+        endAt?: Timestamp;
+      };
+      const tid = b.therapistId;
+      if (!tid) continue;
+      const end = b.expectedEndAt ?? b.endAt ?? null;
+      if (!busy.has(tid)) {
+        busy.set(tid, end);
+      } else {
+        const prev = busy.get(tid) ?? null;
+        if (end && (!prev || end.toMillis() > prev.toMillis())) {
+          busy.set(tid, end);
+        }
+      }
+    }
+
+    const tSnap = await db.collection("therapists").get();
+    const batch = db.batch();
+    let changes = 0;
+    for (const t of tSnap.docs) {
+      const data = t.data() as {
+        id?: string;
+        activeBooking?: boolean;
+      };
+      // bookings store therapistId as the doc id, but match the mutable
+      // `id` field too, defensively.
+      const key = busy.has(t.id)
+        ? t.id
+        : data.id && busy.has(data.id)
+        ? data.id
+        : null;
+      if (key != null) {
+        if (data.activeBooking !== true) {
+          batch.update(t.ref, {
+            activeBooking: true,
+            busyUntil: busy.get(key) ?? null,
+          });
+          changes += 1;
+        }
+      } else if (data.activeBooking === true) {
+        batch.update(t.ref, { activeBooking: false, busyUntil: null });
+        changes += 1;
+      }
+    }
+    if (changes > 0) await batch.commit();
+    logger.info("[syncTherapistBusyStatus]", {
+      activeBookings: snap.size,
+      busyTherapists: busy.size,
+      changes,
+    });
+  }
+);
