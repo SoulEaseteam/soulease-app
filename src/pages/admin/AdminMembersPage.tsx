@@ -38,6 +38,51 @@ import {
 const SANS = adminFont.sans;
 const thb = (n: number) => `฿${Math.round(n).toLocaleString()}`;
 
+// 🆕 28w — founder-authored (2026-07-15) welcome note handed to a guest on
+//   enrolment. The guest's real SRD- code is dropped into the "Membership No."
+//   line, so what View copies always carries the exact code stored on the
+//   record. One source of truth: the row copy button and the enrol flow both
+//   call this.
+const buildWelcomeMessage = (code: string): string =>
+  [
+    "🎉 Thank You for Choosing SunRed",
+    "",
+    "We truly appreciate your trust and support.",
+    "",
+    "As a thank-you gift, your SunRed Membership has been activated.",
+    "",
+    "Membership No.",
+    code,
+    "",
+    "Welcome to the SunRed Community ❤️",
+  ].join("\n");
+
+/** Copy text to clipboard with a mobile-webview fallback (execCommand). */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    /* fall through to legacy path */
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
 type MemberRec = {
   code: string;
   tier: MembershipTier;
@@ -293,9 +338,15 @@ const AdminMembersPage: React.FC = () => {
       await syncMembershipMirror(key, rec);
       void logAdminAction("member.enroll", { phone: key, code: rec.code, tier });
       setNewPhone(""); setNewName("");
-      toast.success(`สมัครแล้ว · ${rec.code}`);
+      toast.success(`สมัครแล้ว · ${rec.code} — กด “คัดลอกข้อความต้อนรับ” เพื่อส่งลูกค้า`);
     } catch (e) { console.error("[members] enrol failed", e); toast.error("สมัครไม่สำเร็จ"); }
     finally { setSaving(false); }
+  };
+
+  const copyWelcome = async (code: string) => {
+    const ok = await copyText(buildWelcomeMessage(code));
+    if (ok) toast.success(`คัดลอกข้อความต้อนรับแล้ว · ${code} — วางส่งลูกค้าได้เลย`);
+    else toast.error("คัดลอกไม่สำเร็จ — ลองใหม่อีกครั้ง");
   };
 
   const resetCode = async (key: string) => {
@@ -549,9 +600,14 @@ const AdminMembersPage: React.FC = () => {
                       </>
                     ) : (
                       <>
+                        <Button size="small" variant="contained" onClick={() => void copyWelcome(rec.code)}
+                          sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", background: "linear-gradient(135deg,#D97C95,#C96F89)",
+                            "&:hover": { background: "linear-gradient(135deg,#C96F89,#B36079)" } }}>
+                          คัดลอกข้อความต้อนรับ
+                        </Button>
                         {canUpgrade && (
-                          <Button size="small" variant="contained" disabled={saving} onClick={() => void upgrade(phone)}
-                            sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", background: "linear-gradient(135deg,#D97C95,#C96F89)" }}>
+                          <Button size="small" variant="outlined" disabled={saving} onClick={() => void upgrade(phone)}
+                            sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: MEMBERSHIP_COLORS[auto!], borderColor: MEMBERSHIP_COLORS[auto!] }}>
                             อัปเกรด → {auto}
                           </Button>
                         )}
