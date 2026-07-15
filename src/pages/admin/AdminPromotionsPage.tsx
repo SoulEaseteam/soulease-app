@@ -114,6 +114,11 @@ const BUILTIN_CODES: BuiltinCodeMeta[] = [
   { code: "VIP100",     label: "VIP (premium only)",         desc: "เฉพาะบริการพรีเมียม (Gentleman/B2B) · ลด ฿100",           kind: "fixed",   defaultAmount: 100 },
   { code: "FREETAXI",   label: "Free travel (premium only)", desc: "เฉพาะบริการพรีเมียม · ฟรีค่าเดินทาง",                       kind: "freetaxi", defaultAmount: 0 },
   { code: "REFERRAL",   label: "Referral (SUN-XXXX)",        desc: "โค้ดแนะนำเพื่อน รูปแบบ SUN-XXXX · ลด ฿200",                kind: "fixed",   defaultAmount: 200 },
+  // 🆕 Round 28x.35 — SunRed brand welcome codes. Fixed, memorable, harder
+  //   to guess than SUNRED100. Auto-filled at booking for a signed-in guest
+  //   (new → N4K9 · returning → R7M2). Amounts mirror Anniversary off100/off200.
+  { code: "SUNRED-N4K9", label: "SunRed welcome · ลูกค้าใหม่",  desc: "โค้ดต้อนรับ ลูกค้าใหม่ · ลด ฿100 · ขั้นต่ำ ฿1,400 · เด้งใส่อัตโนมัติเมื่อ login", kind: "fixed", defaultAmount: 100 },
+  { code: "SUNRED-R7M2", label: "SunRed welcome · ลูกค้าเก่า",  desc: "โค้ดต้อนรับ ลูกค้าเก่า · ลด ฿200 · ขั้นต่ำ ฿1,800 · เด้งใส่อัตโนมัติเมื่อ login", kind: "fixed", defaultAmount: 200 },
 ];
 
 // 🆕 Round 28r49 — override map = `publicRules.builtinCodeOverrides`. Keys

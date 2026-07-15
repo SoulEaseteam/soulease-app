@@ -78,6 +78,9 @@ import PaymentRoundedIcon from "@mui/icons-material/PaymentRounded";
 
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
+// 🆕 Round 28x.35 — returning-vs-new status, to pick the welcome code that
+//   auto-fills for a signed-in guest.
+import { useAnniversaryClaim } from "@/hooks/useAnniversaryClaim";
 import { isInappropriate } from "@/utils/moderate";
 import { getAttribution } from "@/utils/attribution";
 // Round 28s81 — client no longer sends the Telegram notification; the
@@ -173,6 +176,8 @@ import {
   validateDiscount,
   getInitialDiscountCode,
   getCustomPromoLimits,
+  // 🆕 Round 28x.35 — brand welcome code auto-filled for a signed-in guest.
+  welcomeCodeFor,
   // 🆕 Round 28r63 — resolves the exact tier that fired for the
   //   current count + live REFERRAL override, so the analytics event
   //   logs a real tierMinRedeems (not a heuristic) and the tier chip
@@ -247,6 +252,10 @@ const BookingFlowPage: React.FC = () => {
   //   normally so the booking record stays clean.
   const { user, role } = useAuth();
   const isAdminBooking = role === "admin";
+  // 🆕 Round 28x.35 — signed-in guest gets their SunRed welcome code
+  //   auto-filled (returning → ฿200 tier, new → ฿100). Concierge/admin
+  //   bookings are excluded: the concierge enters codes by hand.
+  const { signedIn, isReturning, loading: memberLoading } = useAnniversaryClaim();
   // 🆕 28x.3 — the concierge's own phone, stamped onto anything they book.
   const { phone: adminPhone } = useAdminIdentity();
 
@@ -303,6 +312,26 @@ const BookingFlowPage: React.FC = () => {
   useEffect(() => {
     writePersistedForm(therapistId, form);
   }, [form, therapistId]);
+
+  // 🆕 Round 28x.35 (founder: "สมาชิก login แล้วโค้ดเด้งใส่ให้เลยอัตโนมัติ") —
+  //   auto-fill the brand welcome code for a signed-in guest once their
+  //   returning-vs-new status has resolved. Fires at most once per mount
+  //   (the ref) and ONLY when the field is empty — so a captured ?ref= /
+  //   ?promo= code, a persisted manual entry, or a code the guest cleared
+  //   on purpose all win over the auto-fill. Concierge/admin bookings are
+  //   skipped (they set codes by hand). The min-spend floor + View's
+  //   Telegram confirmation still gate whether it actually discounts.
+  const autoFilledWelcome = useRef(false);
+  useEffect(() => {
+    if (autoFilledWelcome.current) return;
+    if (!PROMOS_ENABLED || !signedIn || isAdminBooking || memberLoading) return;
+    autoFilledWelcome.current = true;
+    setForm((prev) =>
+      prev.discountCode?.trim()
+        ? prev
+        : { ...prev, discountCode: welcomeCodeFor(isReturning) },
+    );
+  }, [signedIn, isReturning, isAdminBooking, memberLoading]);
 
   // 🌧 Warm the rain-status cache on mount — surcharge surfaces in the
   //    pricing card without an extra round-trip when location is set.

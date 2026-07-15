@@ -96,6 +96,38 @@ const WELCOME_CODE = "WELCOME20";
 const TONIGHT_CODE = "TONIGHT500";
 const SAMMY_CODE = "SAMMY200";
 
+// 🆕 Round 28x.35 (founder: "ทำทั้ง2 · ขอโค้ดที่เดายากขึ้นอีกนิด") — brand
+//   welcome codes. Two goals in one:
+//     (1) "โค้ดเดียวจำง่าย" — ONE fixed SunRed-branded code per audience
+//         (new vs returning), instead of the random per-user SUN-XXXX
+//         referral codes that nobody can remember.
+//     (2) "เดายากขึ้น" — NOT a guessable round number like SUNRED100.
+//         Fixed SUNRED- stem + a non-obvious 4-char token (no ambiguous
+//         0/O/1/I chars, same convention as the SRD- member code) so a
+//         guest can't type their way into a discount they weren't given.
+//   The amounts mirror the Anniversary off100 / off200 tiers exactly, so
+//   the typed-code path and the concierge-honoured claim path can never
+//   advertise two different numbers. BookingFlowPage auto-fills the right
+//   one for a signed-in guest (welcomeCodeFor), so a logged-in member sees
+//   the discount land without copy-pasting anything.
+//   Both are FIXED-type built-ins → admin can retire/re-price them from
+//   /admin/promotions via the same disable + override plumbing as FIRST10.
+export const WELCOME_NEW_CODE = "SUNRED-N4K9";       // ฿100 off · min ฿1,400
+export const WELCOME_RETURNING_CODE = "SUNRED-R7M2"; // ฿200 off · min ฿1,800
+const WELCOME_NEW_FIXED_THB = 100;
+const WELCOME_NEW_MIN_THB = 1400;
+const WELCOME_RETURNING_FIXED_THB = 200;
+const WELCOME_RETURNING_MIN_THB = 1800;
+
+/** The welcome code a signed-in guest should see auto-filled at booking.
+ *  Returning guests (a session on their phone/uid) get the ฿200 tier; a
+ *  first-time / unknown guest gets the ฿100 welcome. Pure — callers pass
+ *  the returning flag they already resolved (BookingFlowPage from
+ *  useAnniversaryClaim). */
+export function welcomeCodeFor(isReturning: boolean): string {
+  return isReturning ? WELCOME_RETURNING_CODE : WELCOME_NEW_CODE;
+}
+
 // 🆕 Round 28s298 (founder: "เพิ่ม เมนู โปรโมชั่น") — every code above
 // was locked in code with no admin UI at all. This stays a pure,
 // synchronous function (no async signature change, no call-site churn)
@@ -564,6 +596,33 @@ export function validateDiscount(
     };
   }
 
+  // 🆕 Round 28x.35 — SUNRED-N4K9 / SUNRED-R7M2 brand welcome codes.
+  //   Flat off with a min-spend floor that mirrors the Anniversary
+  //   off100 / off200 tiers. Amount / cap-free / min-spend / scheduling /
+  //   label all admin-overridable via the same builtin-override key as
+  //   every other built-in (the uppercased code itself). The premium-tier
+  //   PROMO_BLOCKED gate at the top of this fn already keeps them off the
+  //   ฿2,200 / ฿3,200 services (they're not in PREMIUM_OK_CODES).
+  if (code === WELCOME_NEW_CODE || code === WELCOME_RETURNING_CODE) {
+    if (builtinOverrideRejects(code, subtotalTHB)) return { ...NULL_RESULT, code };
+    const isReturningCode = code === WELCOME_RETURNING_CODE;
+    const defaultMin = isReturningCode ? WELCOME_RETURNING_MIN_THB : WELCOME_NEW_MIN_THB;
+    const defaultAmt = isReturningCode ? WELCOME_RETURNING_FIXED_THB : WELCOME_NEW_FIXED_THB;
+    const ov = builtinOverrides[code];
+    // Min-spend floor: admin override wins, else the tier default. Quiet
+    // invalid below it — same posture as the custom-code min-spend gate.
+    const minSpend = typeof ov?.minSpend === "number" && ov.minSpend >= 0 ? ov.minSpend : defaultMin;
+    if (subtotalTHB < minSpend) return { ...NULL_RESULT, code };
+    const amount = typeof ov?.amount === "number" && ov.amount >= 0 ? ov.amount : defaultAmt;
+    return {
+      valid: true,
+      code,
+      amount,
+      label: ov?.label?.trim() || `SunRed welcome · ฿${amount} off`,
+      type: "fixed",
+    };
+  }
+
   // ── SUN-XXXXXX: referral, flat ฿200 off (entry tier only after r33) ──
   // 🆕 Round 28s298 — this matches a PATTERN (any SUN-XXXX), not one
   //   literal code, so the disable check uses the pseudo-key "REFERRAL"
@@ -752,6 +811,14 @@ export function validateDiscountDebug(
     if (builtinOverrideRejects(code, subtotalTHB)) {
       return attach({ ...NULL_RESULT, code }, builtinRejectReason(code, subtotalTHB));
     }
+  } else if (code === WELCOME_NEW_CODE || code === WELCOME_RETURNING_CODE) {
+    if (builtinOverrideRejects(code, subtotalTHB)) {
+      return attach({ ...NULL_RESULT, code }, builtinRejectReason(code, subtotalTHB));
+    }
+    const defaultMin = code === WELCOME_RETURNING_CODE ? WELCOME_RETURNING_MIN_THB : WELCOME_NEW_MIN_THB;
+    const ov = builtinOverrides[code];
+    const minSpend = typeof ov?.minSpend === "number" && ov.minSpend >= 0 ? ov.minSpend : defaultMin;
+    if (subtotalTHB < minSpend) return attach({ ...NULL_RESULT, code }, REJECT_MSG.BUILTIN_MIN_SPEND);
   } else if (REFERRAL_CODE_RE.test(code)) {
     if (disabledBuiltinCodes.has("REFERRAL")) return attach({ ...NULL_RESULT, code }, REJECT_MSG.DISABLED_BUILTIN);
     if (isBuiltinDeleted("REFERRAL")) return attach({ ...NULL_RESULT, code }, REJECT_MSG.DELETED_BUILTIN);
