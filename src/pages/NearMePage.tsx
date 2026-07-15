@@ -167,7 +167,9 @@ const TaxiEstimator: React.FC = () => {
     () => therapists.filter((p) => p.lat != null && p.lng != null),
     []
   );
-  const [selectedId, setSelectedId] = React.useState(roster[0]?.id ?? "");
+  // 🆕 28x.44 (founder: "Select practitioner ไม่ต้องให้ชื่อใครขึ้นก่อน") — start
+  //   with NO practitioner chosen; a placeholder prompts the guest to pick.
+  const [selectedId, setSelectedId] = React.useState("");
   const [coords, setCoords] = React.useState<{ lat: number; lng: number } | null>(null);
   const [status, setStatus] = React.useState<"idle" | "locating" | "error">("idle");
   const [errMsg, setErrMsg] = React.useState("");
@@ -177,7 +179,7 @@ const TaxiEstimator: React.FC = () => {
   const mapRef = React.useRef<GMap | null>(null);
   const markerRef = React.useRef<GMarker | null>(null);
 
-  const selected = roster.find((p) => p.id === selectedId) ?? roster[0];
+  const selected = roster.find((p) => p.id === selectedId) ?? null;
 
   // Place / move the customer pin + record coords.
   const setPin = React.useCallback((lat: number, lng: number) => {
@@ -322,6 +324,8 @@ const TaxiEstimator: React.FC = () => {
               cursor: "pointer",
             }}
           >
+            {/* 🆕 28x.44 — placeholder shown until the guest picks; no name pre-filled. */}
+            <option value="">{t("nearme.taxi.pickPrompt", "Select practitioner…")}</option>
             {roster.map((p) => {
               // 🆕 28w.11 — founder: drop the area names, show the real
               //   road distance from each practitioner to the picked location.
