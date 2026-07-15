@@ -627,8 +627,10 @@ const BookingSuccessPage: React.FC = () => {
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "8px",
+                  // 🆕 28x.34b (founder "เรียง4ทุกจอ") — 4 in one row on every
+                  //   screen (was 2×2).
+                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gap: "6px",
                 }}
               >
                 {(() => {
@@ -689,15 +691,14 @@ const BookingSuccessPage: React.FC = () => {
                       }}
                       aria-label={`Confirm via ${c.name}`}
                       sx={{
+                        // 🆕 28x.34b (founder "เอาขอบออกให้เหลือแค่ไอคอน") —
+                        //   borderless: just the app icon + name, no card.
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
                         gap: 0.75,
-                        py: 1.75,
-                        px: 0.5,
-                        borderRadius: "16px",
-                        background: "var(--sr-panel-2)",
-                        border: "1px solid var(--sr-hairline)",
+                        py: 1,
+                        px: 0.25,
                         textDecoration: "none",
                         cursor: "pointer",
                         transition: "transform 0.15s ease",
