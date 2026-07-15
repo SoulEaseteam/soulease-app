@@ -1186,6 +1186,19 @@ const BookingFlowPage: React.FC = () => {
             let total = 0;
             let byPhone = 0;
             usedSnap.forEach((d) => {
+              // 🆕 28x.35 (founder 2026-07-15: "แก้ — ไม่นับใบที่ยกเลิก") — a
+              //   cancelled / refunded / no-show / rejected / failed booking
+              //   never actually consumed the code, so it must not burn a
+              //   redemption. Mirrors the FIRST10 first-time guard's excluded
+              //   set exactly, so the two usage checks agree on what "used"
+              //   means. Guest who books then cancels can use the code again.
+              const s = String((d.data() as { status?: string }).status ?? "").toLowerCase();
+              if (
+                s === "cancelled" || s === "canceled" || s === "refunded" ||
+                s === "no_show" || s === "rejected" || s === "failed" || s === ""
+              ) {
+                return;
+              }
               total += 1;
               if (normPhone(String((d.data() as { phone?: string }).phone ?? "")) === myPhone) {
                 byPhone += 1;
