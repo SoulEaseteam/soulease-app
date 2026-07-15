@@ -1844,10 +1844,13 @@ const AdminPromotionsPage: React.FC = () => {
         {/* Built-in codes */}
         <SectionCard icon={<Percent size={13} weight="bold" />} title="Built-in Codes · โค้ดมาตรฐาน">
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
-            แก้ไข/ลบได้ทุกโค้ด — เก็บไว้ในระบบเสมอ (ลบแล้วกู้คืนได้)
+            แก้ไข/ลบได้ทุกโค้ด — ตัวที่ลบไปเก็บอยู่ล่างสุด (กู้คืนได้)
           </Typography>
           <Stack spacing={1}>
-            {BUILTIN_CODES.map((b) => {
+            {/* 🆕 28x.40 (founder: "ลบแล้วลบ ออกไปเลย") — deleted built-ins no
+                longer clutter the main list; they drop into the folded
+                "โค้ดที่ลบแล้ว" dropdown below, still recoverable. */}
+            {BUILTIN_CODES.filter((b) => builtinOverrides[b.code]?.deleted !== true).map((b) => {
               const enabled = promoDocs[b.code]?.enabled !== false;
               const ov = builtinOverrides[b.code];
               const deleted = ov?.deleted === true;
@@ -1963,6 +1966,44 @@ const AdminPromotionsPage: React.FC = () => {
             })}
           </Stack>
         </SectionCard>
+
+        {/* 🆕 28x.40 — deleted built-ins, tucked in a folded dropdown so they
+            stop cluttering the live list but stay one tap from a restore. Only
+            rendered when something is actually deleted. */}
+        {BUILTIN_CODES.some((b) => builtinOverrides[b.code]?.deleted === true) && (
+          <SectionCard
+            icon={<Trash size={13} weight="bold" />}
+            title={`โค้ดที่ลบแล้ว · Deleted codes (${BUILTIN_CODES.filter((b) => builtinOverrides[b.code]?.deleted === true).length})`}
+            collapsible
+            defaultCollapsed
+          >
+            <Stack spacing={1}>
+              {BUILTIN_CODES.filter((b) => builtinOverrides[b.code]?.deleted === true).map((b) => (
+                <Box
+                  key={b.code}
+                  sx={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    gap: 2, p: "8px 10px", borderRadius: "10px",
+                    background: adminColor.panel2, opacity: 0.7,
+                    border: `1px dashed ${adminColor.line}`,
+                  }}
+                >
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: adminColor.muted, textDecoration: "line-through", minWidth: 0 }}>
+                    {b.code} <span style={{ fontWeight: 400, color: adminColor.dim }}>· {builtinOverrides[b.code]?.label?.trim() || b.label}</span>
+                  </Typography>
+                  <Button
+                    size="small"
+                    onClick={() => void handleRestoreBuiltin(b.code)}
+                    startIcon={<ArrowCounterClockwise size={15} />}
+                    sx={{ color: adminColor.green, minWidth: "auto", flexShrink: 0, fontSize: 11.5, fontWeight: 700, textTransform: "none" }}
+                  >
+                    กู้คืน
+                  </Button>
+                </Box>
+              ))}
+            </Stack>
+          </SectionCard>
+        )}
 
         {/* Custom codes */}
         <SectionCard icon={<Ticket size={13} weight="bold" />} title="Custom Codes · โค้ดที่สร้างเอง">
