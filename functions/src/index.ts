@@ -1298,3 +1298,114 @@ export const syncTherapistBusyStatus = onSchedule(
     });
   }
 );
+
+// 🆕 Round 28x.37 (founder: "ทำเลย" — เปลี่ยนตัวหมอนวดในบุ๊กกิ้งแล้วสถานะบนเว็บ
+//   ต้องขยับทันที ไม่รอรอบ 2 นาที) — instant busy re-sync at the exact moment a
+//   booking's therapist assignment OR dispatch state changes.
+//
+//   syncTherapistBusyStatus (every 2 min) stays as the safety-net reconciler.
+//   This trigger runs the SAME recompute immediately, but only for the
+//   practitioner(s) the change touched — so a reassignment flips the "busy → free"
+//   chip on BOTH the old and the new practitioner within ~1s, then the public
+//   cards get it live via onSnapshot (useTherapistLiveStatus). No new index: it
+//   reuses the reconciler's bounded, single-field `dispatchState in (…)` query.
+//
+//   Loop-safe: it writes only `activeBooking` / `busyUntil` on therapist docs,
+//   both of which are in AUDIT_IGNORE_KEYS, so onTherapistUpdate treats the
+//   write as "no meaningful change" and does nothing — no cascade.
+export const onBookingDispatchChange = onDocumentUpdated(
+  {
+    document: "bookings/{bookingId}",
+    region: "asia-southeast1",
+  },
+  async (event) => {
+    const before = event.data?.before.data() as
+      | { therapistId?: string; dispatchState?: string }
+      | undefined;
+    const after = event.data?.after.data() as
+      | { therapistId?: string; dispatchState?: string }
+      | undefined;
+    if (!after) return;
+
+    // Cheap guard BEFORE any read: skip ordinary edits (price / location /
+    // phone / time) that can't move a practitioner's live busy status.
+    const idChanged = (before?.therapistId ?? null) !== (after.therapistId ?? null);
+    const stateChanged = (before?.dispatchState ?? null) !== (after.dispatchState ?? null);
+    if (!idChanged && !stateChanged) return;
+
+    // Practitioners whose busy status may have moved: the one just assigned,
+    // plus the one just un-assigned (reassignment touches both).
+    const affected = new Set<string>();
+    if (before?.therapistId) affected.add(before.therapistId);
+    if (after.therapistId) affected.add(after.therapistId);
+    if (affected.size === 0) return;
+
+    const db = getFirestore();
+    const ACTIVE_STATES = ["assigned", "arrived", "in_session"];
+
+    // Same bounded, index-free query the 2-min reconciler uses.
+    const snap = await db
+      .collection("bookings")
+      .where("dispatchState", "in", ACTIVE_STATES)
+      .limit(300)
+      .get();
+    const busy = new Map<string, Timestamp | null>();
+    for (const d of snap.docs) {
+      const b = d.data() as {
+        therapistId?: string;
+        expectedEndAt?: Timestamp;
+        endAt?: Timestamp;
+      };
+      const tid = b.therapistId;
+      if (!tid) continue;
+      const end = b.expectedEndAt ?? b.endAt ?? null;
+      const prev = busy.get(tid) ?? null;
+      if (!busy.has(tid) || (end && (!prev || end.toMillis() > prev.toMillis()))) {
+        busy.set(tid, end);
+      }
+    }
+
+    const batch = db.batch();
+    let changes = 0;
+    for (const tid of affected) {
+      // therapistId on a booking is the therapist DOC id; fall back to the
+      // mutable `id` field the same defensive way the reconciler does.
+      let ref = db.collection("therapists").doc(tid);
+      let docSnap = await ref.get();
+      if (!docSnap.exists) {
+        const q = await db
+          .collection("therapists")
+          .where("id", "==", tid)
+          .limit(1)
+          .get();
+        if (q.empty) continue;
+        docSnap = q.docs[0];
+        ref = q.docs[0].ref;
+      }
+      const data = docSnap.data() as
+        | { activeBooking?: boolean; busyUntil?: Timestamp | null }
+        | undefined;
+      if (busy.has(tid)) {
+        const newUntil = busy.get(tid) ?? null;
+        const curUntil = data?.busyUntil ?? null;
+        const untilDiff =
+          (newUntil?.toMillis?.() ?? null) !== (curUntil?.toMillis?.() ?? null);
+        if (data?.activeBooking !== true || untilDiff) {
+          batch.update(ref, { activeBooking: true, busyUntil: newUntil });
+          changes += 1;
+        }
+      } else if (data?.activeBooking === true) {
+        batch.update(ref, { activeBooking: false, busyUntil: null });
+        changes += 1;
+      }
+    }
+    if (changes > 0) await batch.commit();
+    logger.info("[onBookingDispatchChange]", {
+      bookingId: event.params.bookingId,
+      idChanged,
+      stateChanged,
+      affected: [...affected],
+      changes,
+    });
+  }
+);

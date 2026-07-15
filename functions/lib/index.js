@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -315,11 +315,45 @@ exports.setRoleOnSignup = functionsV1
         // fail-open: don't block sign-up if claim assignment fails
     }
 });
+// 🆕 Round 28w.78 (founder: "audit-log มันอัปเดตตลอดเวลาเกินไป ให้เก็บเฉพาะ
+//   การกระทำจริงก็พอ") — this trigger logged an audit row for ANY therapist
+//   field change, so it was recording machine churn, not decisions:
+//
+//     • `viewCount` is bumped by EVERY public profile view (firestore.rules
+//       lets an anonymous visitor do viewCount + 1). That single key was
+//       generating ~all of the ~100 rows/day the founder was seeing.
+//     • GPS / presence / booking-state fields are written continuously by the
+//       therapist app and the booking flow — nobody "did" them.
+//     • Derived aggregates (rating, counts) are recomputed, not decided.
+//
+//   Keep only fields a human deliberately changes.
 const AUDIT_IGNORE_KEYS = new Set([
+    // bookkeeping
     "updatedAt",
     "createdAt",
     "bioGeneratedAt",
     "badgeUpdatedAt",
+    "updatedBy",
+    // pure telemetry — THE spammer: one row per profile view
+    "viewCount",
+    "views",
+    // live presence / GPS churn (therapist app writes these constantly)
+    "currentLocation",
+    "lat",
+    "lng",
+    "area",
+    "lastSeen",
+    "lastActiveAt",
+    "online",
+    // auto-maintained by the booking flow, not a human action
+    "activeBooking",
+    "busyUntil",
+    // derived aggregates — recomputed, never "decided"
+    "rating",
+    "reviewCount",
+    "reviews",
+    "totalSessions",
+    "sessions",
 ]);
 /** Truncate large values so audit log row stays small. */
 function truncateValue(v) {
@@ -379,11 +413,20 @@ exports.onTherapistUpdate = (0, firestore_1.onDocumentUpdated)({
         await (0, firestore_2.getFirestore)()
             .collection("auditLogs")
             .add({
+            // 🆕 28w.78 — this write had NO `action` field, so every one of these
+            //   rows rendered as "ไม่ทราบประเภท" in /admin/audit-log (the page
+            //   falls back to that label only when `action` isn't a string).
+            //   Stamp the same action the admin UI uses, and put the actor where
+            //   the page expects it.
+            action: "therapist.update",
+            actorId: updatedBy,
+            actorEmail: null,
             collection: "therapists",
             docId: therapistId,
             updatedBy,
             changedKeys: Object.keys(changes),
             changes,
+            detail: { therapistId, changedKeys: Object.keys(changes) },
             at: firestore_2.FieldValue.serverTimestamp(),
         });
         v2_1.logger.info("[onTherapistUpdate] logged", {
@@ -886,4 +929,242 @@ Object.defineProperty(exports, "postToChannelManual", { enumerable: true, get: f
 // ─────────────────────────────────────────────────────────────
 var telegram_concierge_bot_1 = require("./telegram-concierge-bot");
 Object.defineProperty(exports, "telegramConciergeWebhook", { enumerable: true, get: function () { return telegram_concierge_bot_1.telegramConciergeWebhook; } });
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.29 (founder) — Admin: reset a customer's login password
+//   to their own phone number.
+//
+//   Customers sign in via Firebase Auth on a synthetic alias email
+//   (0812345678@phone.sunred.vip). Phone/username guests have no real
+//   mailbox, so the standard reset-link email is undeliverable and they
+//   had no recovery path. Founder flow: guest forgets → tells us their
+//   phone → admin taps "reset" → password becomes that phone → they log
+//   in with their username (or phone) + phone-as-password.
+//
+//   Security: admin-only (verified against the authoritative admins/{uid}
+//   doc). Phone is low-entropy on purpose — usability for low-value guest
+//   logins. Every reset is written to auditLogs.
+// ─────────────────────────────────────────────────────────────
+exports.resetCustomerPassword = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = (0, firestore_2.getFirestore)();
+    const adminDoc = await db.collection("admins").doc(request.auth.uid).get();
+    if (!adminDoc.exists) {
+        throw new https_1.HttpsError("permission-denied", "Admin only.");
+    }
+    const uid = String(request.data?.uid ?? "").trim();
+    if (!uid) {
+        throw new https_1.HttpsError("invalid-argument", "uid is required.");
+    }
+    const userSnap = await db.collection("users").doc(uid).get();
+    if (!userSnap.exists) {
+        throw new https_1.HttpsError("not-found", "User not found.");
+    }
+    const u = userSnap.data();
+    // Strip to digits; Firebase requires a password of at least 6 chars.
+    const phone = String(u.phone ?? "").replace(/\D/g, "");
+    if (phone.length < 6) {
+        throw new https_1.HttpsError("failed-precondition", "This customer has no valid phone number on file, so it can't be used as the new password.");
+    }
+    await (0, auth_1.getAuth)().updateUser(uid, { password: phone });
+    await db.collection("auditLogs").add({
+        action: "user.password_reset",
+        byUid: request.auth.uid,
+        targetUid: uid,
+        at: firestore_2.FieldValue.serverTimestamp(),
+    });
+    v2_1.logger.info("[resetCustomerPassword] reset to phone", {
+        targetUid: uid,
+        byUid: request.auth.uid,
+    });
+    return {
+        ok: true,
+        newPassword: phone,
+        username: u.username ?? null,
+        phone,
+    };
+});
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.31 (founder: "สถานะบนหน้าเว็บไม่เปลี่ยน") — sync a
+//   therapist's live BUSY status from her active jobs onto her doc.
+//
+//   Problem: customer-facing cards read the therapist doc via
+//   calculateTherapistStatus (busyUntil / activeBooking), but NOTHING ever
+//   wrote those from bookings — so a practitioner who is mid-session still
+//   showed a green "Available" card. The admin Tonight board knew (it reads
+//   dispatchState off the bookings), but the guest didn't.
+//
+//   This reconciler runs every 2 minutes: any therapist with a booking in
+//   an active dispatch state (assigned / arrived / in_session) is marked
+//   activeBooking:true + busyUntil:expectedEndAt, so the engine returns
+//   "bookable" (orange, not green) on her card. When the job finishes
+//   (completed / done / cancelled → drops out of the active set) she's
+//   cleared back to available. Conditional writes only — no churn.
+//   (busyUntil also self-expires in the engine once its time passes.)
+// ─────────────────────────────────────────────────────────────
+exports.syncTherapistBusyStatus = (0, scheduler_1.onSchedule)({
+    schedule: "every 2 minutes",
+    region: "asia-southeast1",
+    timeZone: "Asia/Bangkok",
+}, async () => {
+    const db = (0, firestore_2.getFirestore)();
+    const ACTIVE_STATES = ["assigned", "arrived", "in_session"];
+    const snap = await db
+        .collection("bookings")
+        .where("dispatchState", "in", ACTIVE_STATES)
+        .limit(300)
+        .get();
+    // therapistId → latest session end (Timestamp | null)
+    const busy = new Map();
+    for (const d of snap.docs) {
+        const b = d.data();
+        const tid = b.therapistId;
+        if (!tid)
+            continue;
+        const end = b.expectedEndAt ?? b.endAt ?? null;
+        if (!busy.has(tid)) {
+            busy.set(tid, end);
+        }
+        else {
+            const prev = busy.get(tid) ?? null;
+            if (end && (!prev || end.toMillis() > prev.toMillis())) {
+                busy.set(tid, end);
+            }
+        }
+    }
+    const tSnap = await db.collection("therapists").get();
+    const batch = db.batch();
+    let changes = 0;
+    for (const t of tSnap.docs) {
+        const data = t.data();
+        // bookings store therapistId as the doc id, but match the mutable
+        // `id` field too, defensively.
+        const key = busy.has(t.id)
+            ? t.id
+            : data.id && busy.has(data.id)
+                ? data.id
+                : null;
+        if (key != null) {
+            if (data.activeBooking !== true) {
+                batch.update(t.ref, {
+                    activeBooking: true,
+                    busyUntil: busy.get(key) ?? null,
+                });
+                changes += 1;
+            }
+        }
+        else if (data.activeBooking === true) {
+            batch.update(t.ref, { activeBooking: false, busyUntil: null });
+            changes += 1;
+        }
+    }
+    if (changes > 0)
+        await batch.commit();
+    v2_1.logger.info("[syncTherapistBusyStatus]", {
+        activeBookings: snap.size,
+        busyTherapists: busy.size,
+        changes,
+    });
+});
+// 🆕 Round 28x.37 (founder: "ทำเลย" — เปลี่ยนตัวหมอนวดในบุ๊กกิ้งแล้วสถานะบนเว็บ
+//   ต้องขยับทันที ไม่รอรอบ 2 นาที) — instant busy re-sync at the exact moment a
+//   booking's therapist assignment OR dispatch state changes.
+//
+//   syncTherapistBusyStatus (every 2 min) stays as the safety-net reconciler.
+//   This trigger runs the SAME recompute immediately, but only for the
+//   practitioner(s) the change touched — so a reassignment flips the "busy → free"
+//   chip on BOTH the old and the new practitioner within ~1s, then the public
+//   cards get it live via onSnapshot (useTherapistLiveStatus). No new index: it
+//   reuses the reconciler's bounded, single-field `dispatchState in (…)` query.
+//
+//   Loop-safe: it writes only `activeBooking` / `busyUntil` on therapist docs,
+//   both of which are in AUDIT_IGNORE_KEYS, so onTherapistUpdate treats the
+//   write as "no meaningful change" and does nothing — no cascade.
+exports.onBookingDispatchChange = (0, firestore_1.onDocumentUpdated)({
+    document: "bookings/{bookingId}",
+    region: "asia-southeast1",
+}, async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!after)
+        return;
+    // Cheap guard BEFORE any read: skip ordinary edits (price / location /
+    // phone / time) that can't move a practitioner's live busy status.
+    const idChanged = (before?.therapistId ?? null) !== (after.therapistId ?? null);
+    const stateChanged = (before?.dispatchState ?? null) !== (after.dispatchState ?? null);
+    if (!idChanged && !stateChanged)
+        return;
+    // Practitioners whose busy status may have moved: the one just assigned,
+    // plus the one just un-assigned (reassignment touches both).
+    const affected = new Set();
+    if (before?.therapistId)
+        affected.add(before.therapistId);
+    if (after.therapistId)
+        affected.add(after.therapistId);
+    if (affected.size === 0)
+        return;
+    const db = (0, firestore_2.getFirestore)();
+    const ACTIVE_STATES = ["assigned", "arrived", "in_session"];
+    // Same bounded, index-free query the 2-min reconciler uses.
+    const snap = await db
+        .collection("bookings")
+        .where("dispatchState", "in", ACTIVE_STATES)
+        .limit(300)
+        .get();
+    const busy = new Map();
+    for (const d of snap.docs) {
+        const b = d.data();
+        const tid = b.therapistId;
+        if (!tid)
+            continue;
+        const end = b.expectedEndAt ?? b.endAt ?? null;
+        const prev = busy.get(tid) ?? null;
+        if (!busy.has(tid) || (end && (!prev || end.toMillis() > prev.toMillis()))) {
+            busy.set(tid, end);
+        }
+    }
+    const batch = db.batch();
+    let changes = 0;
+    for (const tid of affected) {
+        // therapistId on a booking is the therapist DOC id; fall back to the
+        // mutable `id` field the same defensive way the reconciler does.
+        let ref = db.collection("therapists").doc(tid);
+        let docSnap = await ref.get();
+        if (!docSnap.exists) {
+            const q = await db
+                .collection("therapists")
+                .where("id", "==", tid)
+                .limit(1)
+                .get();
+            if (q.empty)
+                continue;
+            docSnap = q.docs[0];
+            ref = q.docs[0].ref;
+        }
+        const data = docSnap.data();
+        if (busy.has(tid)) {
+            const newUntil = busy.get(tid) ?? null;
+            const curUntil = data?.busyUntil ?? null;
+            const untilDiff = (newUntil?.toMillis?.() ?? null) !== (curUntil?.toMillis?.() ?? null);
+            if (data?.activeBooking !== true || untilDiff) {
+                batch.update(ref, { activeBooking: true, busyUntil: newUntil });
+                changes += 1;
+            }
+        }
+        else if (data?.activeBooking === true) {
+            batch.update(ref, { activeBooking: false, busyUntil: null });
+            changes += 1;
+        }
+    }
+    if (changes > 0)
+        await batch.commit();
+    v2_1.logger.info("[onBookingDispatchChange]", {
+        bookingId: event.params.bookingId,
+        idChanged,
+        stateChanged,
+        affected: [...affected],
+        changes,
+    });
+});
 //# sourceMappingURL=index.js.map
