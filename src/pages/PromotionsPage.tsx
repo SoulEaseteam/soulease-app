@@ -23,6 +23,13 @@ import { useActivePromos } from "@/hooks/useActivePromos";
 import { formatTHB } from "@/utils/servicePricing";
 import { CONCIERGE } from "@/config/concierge";
 import { useDocumentMeta } from "@/utils/useDocumentMeta";
+// 🆕 28x.16 (founder: "หน้า promotions เอา การ์ดนี้ไปใส่") — surface the
+//   1st-anniversary privileges card here while the campaign is live, and
+//   stop showing "No promotions running" when it is.
+import { anniversaryIsLive } from "@/config/anniversary";
+import AnniversaryDialog from "@/components/home/AnniversaryDialog";
+
+const ANNIV_IMG = "/images/anniversary/privileges.jpg";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
@@ -42,6 +49,9 @@ const PromotionsPage: React.FC = () => {
   const navigate = useNavigate();
   const { activeCustomCodes, activeBundles, totalCount } = useActivePromos();
   const [copied, setCopied] = useState<string | null>(null);
+  // 🆕 28x.16 — anniversary campaign card + its reward dialog.
+  const [annivOpen, setAnnivOpen] = useState(false);
+  const annivLive = anniversaryIsLive();
 
   useDocumentMeta({
     title: "Promotions & News · SunRed Bangkok",
@@ -100,6 +110,8 @@ const PromotionsPage: React.FC = () => {
           <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(255,255,255,0.72)", mt: 0.5 }}>
             {totalCount > 0
               ? `${totalCount} offer${totalCount > 1 ? "s" : ""} live right now`
+              : annivLive
+              ? "Our 1st Anniversary privileges are live"
               : "Follow our channels for the next drop"}
           </Typography>
         </Box>
@@ -108,8 +120,15 @@ const PromotionsPage: React.FC = () => {
         <Box sx={{ px: 2, pt: 3 }}>
           <SectionEyebrow>Current Offers</SectionEyebrow>
 
+          {/* 🆕 28x.16 — anniversary privileges card (only while the campaign
+              is live). Tapping it opens the same reward dialog as the home
+              banner, so a guest can claim from here too. */}
+          {annivLive && (
+            <AnniversaryOfferCard onOpen={() => setAnnivOpen(true)} />
+          )}
+
           {totalCount === 0 ? (
-            <EmptyOffers />
+            annivLive ? null : <EmptyOffers />
           ) : (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mt: 1.5 }}>
               {activeCustomCodes.map((p, i) => (
@@ -171,9 +190,76 @@ const PromotionsPage: React.FC = () => {
             />
           </Box>
         </Box>
+
+        <AnniversaryDialog open={annivOpen} onClose={() => setAnnivOpen(false)} />
       </Box>
   );
 };
+
+// ── Anniversary privileges card — full infographic, tap to open the
+//    reward dialog. Shown on the Promotions page only while the campaign
+//    is live (28x.16).
+const AnniversaryOfferCard: React.FC<{ onOpen: () => void }> = ({ onOpen }) => (
+  <Box
+    component={motion.div}
+    initial={{ opacity: 0, y: 12 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.35 }}
+    onClick={onOpen}
+    role="button"
+    tabIndex={0}
+    onKeyDown={(e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onOpen();
+      }
+    }}
+    aria-label="SunRed 1st Anniversary privileges — tap to claim your reward"
+    sx={{
+      position: "relative",
+      display: "block",
+      width: "100%",
+      mt: 1.5,
+      borderRadius: "18px",
+      overflow: "hidden",
+      cursor: "pointer",
+      outline: "none",
+      border: "1px solid var(--sr-hairline)",
+      boxShadow: "var(--sr-card-shadow)",
+      transition: "transform 0.15s ease, box-shadow 0.15s ease",
+      "&:hover": { transform: "translateY(-2px)" },
+      "&:focus-visible": { boxShadow: "0 0 0 3px rgba(217,124,149,0.55)" },
+    }}
+  >
+    <Box
+      component="img"
+      src={ANNIV_IMG}
+      alt="SunRed 1st Anniversary exclusive privileges. New guests: THB 100 welcome gift. Returning guests choose one — THB 200 gift, THB 300 voucher, or double SunPoints. Valid 15 July to 15 August 2026."
+      loading="lazy"
+      decoding="async"
+      sx={{ display: "block", width: "100%", height: "auto" }}
+    />
+    {/* claim hint bar */}
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 0.75,
+        py: 1.1,
+        background: "linear-gradient(135deg,#D97C95 0%,#C96F89 100%)",
+        color: "#fff",
+        fontFamily: SANS,
+        fontSize: 13,
+        fontWeight: 800,
+        letterSpacing: "0.02em",
+      }}
+    >
+      <Ticket size={16} weight="fill" />
+      Tap to claim your reward
+    </Box>
+  </Box>
+);
 
 // ── bits ────────────────────────────────────────────────────────────
 const SectionEyebrow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
