@@ -38,9 +38,9 @@ export const SectionCard: React.FC<SectionCardProps> = ({
     sx={{
       padding: tight ? "14px 14px 16px" : "14px 16px 18px",
       borderRadius: "16px",
-      background: "rgba(255, 255, 255, 0.7)",
-      border: "1px solid rgba(255, 255, 255, 0.6)",
-      boxShadow: "0 4px 14px rgba(15, 23, 42, 0.06)",
+      background: "var(--sr-panel)",
+      border: "1px solid var(--sr-hairline)",
+      boxShadow: "var(--sr-card-shadow)",
     }}
   >
     <Box
@@ -59,8 +59,8 @@ export const SectionCard: React.FC<SectionCardProps> = ({
             height: 30,
             flexShrink: 0,
             borderRadius: "9px",
-            background: "rgba(15, 23, 42, 0.10)",
-            color: "#4B4B48",
+            background: "var(--sr-panel-2)",
+            color: "var(--sr-body)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -76,7 +76,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
             fontFamily: SERIF,
             fontSize: "15px",
             fontWeight: 600,
-            color: "#1A2B2E",
+            color: "var(--sr-ink)",
             lineHeight: 1.2,
           }}
         >
@@ -89,7 +89,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
                 '"Inter", system-ui, -apple-system, sans-serif',
               fontSize: "10.5px",
               fontWeight: 500,
-              color: "rgba(15, 23, 42, 0.5)",
+              color: "var(--sr-muted)",
               letterSpacing: "0.01em",
               marginTop: "2px",
             }}

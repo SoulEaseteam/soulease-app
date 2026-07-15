@@ -65,15 +65,15 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
         //   only makes sense on the mobile checkout form.
         display: { xs: "flex", md: "none" },
         marginTop: "16px",
-        background: "rgba(244, 246, 245, 0.92)",
+        background: "var(--sr-panel)",
         backdropFilter: "blur(30px) saturate(180%)",
         WebkitBackdropFilter: "blur(30px) saturate(180%)",
-        border: "1px solid rgba(0, 0, 0, 0.06)",
+        border: "1px solid var(--sr-hairline)",
         borderRadius: "20px",
         padding: "12px 16px",
         alignItems: "center",
         gap: "12px",
-        boxShadow: "0 8px 22px rgba(15, 23, 42, 0.10)",
+        boxShadow: "var(--sr-card-shadow)",
       }}
     >
       <Box>
@@ -82,7 +82,7 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
             fontFamily: SANS,
             fontSize: "10px",
             fontWeight: 700,
-            color: "rgba(15, 23, 42, 0.55)",
+            color: "var(--sr-muted)",
             textTransform: "uppercase",
             letterSpacing: "0.08em",
           }}
@@ -95,7 +95,7 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
             fontFamily: SERIF,
             fontSize: "22px",
             fontWeight: 700,
-            color: "#4B4B48",
+            color: "var(--sr-body)",
             letterSpacing: "-0.02em",
             lineHeight: 1,
             marginTop: "2px",
@@ -138,8 +138,8 @@ export const ConfirmBar: React.FC<ConfirmBarProps> = ({
             outlineOffset: 2,
           },
           "&.Mui-disabled": {
-            background: "rgba(15, 23, 42, 0.12)",
-            color: "rgba(15, 23, 42, 0.35)",
+            background: "var(--sr-panel-2)",
+            color: "var(--sr-muted)",
             boxShadow: "none",
           },
         }}

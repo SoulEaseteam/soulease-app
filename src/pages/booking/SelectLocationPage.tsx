@@ -107,15 +107,15 @@ const MEETING_POINTS: {
     id: "lift",
     label: "Meet at the Elevator",
     icon: <ElevatorRoundedIcon sx={{ fontSize: 22 }} />,
-    iconBg: "rgba(20, 184, 166, 0.12)",
-    iconFg: "#14b8a6",
+    iconBg: "rgba(217, 124, 149, 0.12)",
+    iconFg: "#D97C95",
   },
   {
     id: "direct",
     label: "Come to my room",
     icon: <MeetingRoomRoundedIcon sx={{ fontSize: 22 }} />,
-    iconBg: "rgba(15, 23, 42, 0.10)",
-    iconFg: "#2D2D2B",
+    iconBg: "var(--sr-hairline)",
+    iconFg: "var(--sr-ink)",
   },
   {
     id: "other",
@@ -865,7 +865,7 @@ const SelectLocationPage: React.FC = () => {
           lg: "1200px",
         },
         minHeight: "100vh",
-        background: "#F4F6F5",
+        background: "var(--sr-bg)",
         borderRadius: { xs: "28px", md: 0 },
         overflow: "hidden",
         boxShadow: {
@@ -888,10 +888,10 @@ const SelectLocationPage: React.FC = () => {
           position: "sticky",
           top: 0,
           zIndex: 10,
-          background: "rgba(244, 246, 245, 0.92)",
+          background: "var(--sr-panel)",
           backdropFilter: "blur(20px) saturate(180%)",
           WebkitBackdropFilter: "blur(20px) saturate(180%)",
-          borderBottom: "1px solid rgba(0, 0, 0, 0.04)",
+          borderBottom: "1px solid var(--sr-hairline)",
           display: "flex",
           alignItems: "center",
           padding: "14px 16px",
@@ -903,13 +903,13 @@ const SelectLocationPage: React.FC = () => {
           sx={{
             width: 44,
             height: 44,
-            background: "rgba(255, 255, 255, 0.85)",
-            border: "1px solid rgba(15, 23, 42, 0.06)",
-            color: "#1A2B2E",
+            background: "var(--sr-panel)",
+            border: "1px solid var(--sr-hairline)",
+            color: "var(--sr-ink)",
             boxShadow: "0 2px 8px rgba(15, 23, 42, 0.06)",
-            "&:hover": { background: "#fff" },
+            "&:hover": { background: "var(--sr-panel)" },
             "&:focus-visible": {
-              outline: "2px solid #2D2D2B",
+              outline: "2px solid var(--sr-ink)",
               outlineOffset: 2,
             },
           }}
@@ -930,7 +930,7 @@ const SelectLocationPage: React.FC = () => {
               // 🆕 Round 28r56 — responsive heading; base 18 → md 20 → lg 22.
               ...responsiveType.h5,
               fontWeight: 600,
-              color: "#1A2B2E",
+              color: "var(--sr-ink)",
               letterSpacing: "-0.01em",
               lineHeight: 1.15,
             }}
@@ -941,7 +941,7 @@ const SelectLocationPage: React.FC = () => {
             sx={{
               fontFamily: SANS,
               fontSize: "11px",
-              color: "rgba(15, 23, 42, 0.55)",
+              color: "var(--sr-muted)",
               marginTop: "2px",
             }}
           >
@@ -991,8 +991,8 @@ const SelectLocationPage: React.FC = () => {
             minWidth: 0,
             position: "relative",
             "&:focus-within input": {
-              borderColor: "#14b8a6",
-              boxShadow: "0 0 0 3px rgba(20, 184, 166, 0.12)",
+              borderColor: "#D97C95",
+              boxShadow: "0 0 0 3px rgba(217, 124, 149, 0.12)",
             },
           }}
         >
@@ -1002,7 +1002,7 @@ const SelectLocationPage: React.FC = () => {
               left: 16,
               top: "50%",
               transform: "translateY(-50%)",
-              color: "rgba(15, 23, 42, 0.5)",
+              color: "var(--sr-muted)",
               fontSize: 20,
               pointerEvents: "none",
               zIndex: 1,
@@ -1029,8 +1029,8 @@ const SelectLocationPage: React.FC = () => {
               width: "100%",
               padding: "13px 16px 13px 44px",
               borderRadius: "16px",
-              border: "1px solid rgba(0, 0, 0, 0.06)",
-              background: "#fff",
+              border: "1px solid var(--sr-hairline)",
+              background: "var(--sr-panel)",
               fontFamily: "Inter, sans-serif",
               // 🆕 Round 28b60 — 14 → 16px so iOS Safari/Chrome doesn't
               //   auto-zoom the viewport on focus. Matches the global
@@ -1038,7 +1038,7 @@ const SelectLocationPage: React.FC = () => {
               //   applied to MUI inputs only — this raw <input> for
               //   Google Places Autocomplete was missed).
               fontSize: "16px",
-              color: "#1a1a1a",
+              color: "var(--sr-ink)",
               outline: "none",
               boxShadow: "0 4px 14px rgba(15, 23, 42, 0.06)",
               transition: "border-color 0.15s ease, box-shadow 0.15s ease",
@@ -1061,8 +1061,8 @@ const SelectLocationPage: React.FC = () => {
             maxHeight: { md: 560 },
             borderRadius: "20px",
             overflow: "hidden",
-            background: "rgba(0, 0, 0, 0.04)",
-            border: "1px solid rgba(0, 0, 0, 0.04)",
+            background: "var(--sr-hairline)",
+            border: "1px solid var(--sr-hairline)",
             boxShadow: "0 8px 24px rgba(15, 23, 42, 0.10)",
           }}
         />
@@ -1080,23 +1080,23 @@ const SelectLocationPage: React.FC = () => {
             height: 48,
             borderRadius: "999px",
             background:
-              "linear-gradient(180deg, rgba(20, 184, 166, 0.10), rgba(20, 184, 166, 0.06))",
-            color: "#14b8a6",
+              "linear-gradient(180deg, rgba(217, 124, 149, 0.10), rgba(217, 124, 149, 0.06))",
+            color: "#D97C95",
             fontFamily: SANS,
             fontWeight: 700,
             fontSize: "14px",
             textTransform: "none",
-            border: "1.5px solid rgba(20, 184, 166, 0.35)",
-            boxShadow: "0 2px 8px rgba(20, 184, 166, 0.08)",
+            border: "1.5px solid rgba(217, 124, 149, 0.35)",
+            boxShadow: "0 2px 8px rgba(217, 124, 149, 0.08)",
             transition: "all 0.15s ease",
             "&:hover": {
               background:
-                "linear-gradient(180deg, rgba(20, 184, 166, 0.18), rgba(20, 184, 166, 0.10))",
-              borderColor: "#14b8a6",
+                "linear-gradient(180deg, rgba(217, 124, 149, 0.18), rgba(217, 124, 149, 0.10))",
+              borderColor: "#D97C95",
             },
             "&.Mui-disabled": {
               opacity: 0.55,
-              color: "#14b8a6",
+              color: "#D97C95",
             },
           }}
         >
@@ -1116,22 +1116,22 @@ const SelectLocationPage: React.FC = () => {
               minWidth: 0,
               padding: "12px 14px",
               borderRadius: "14px",
-              background: "rgba(45, 45, 43, 0.06)",
-              border: "1px solid rgba(15, 23, 42, 0.28)",
+              background: "var(--sr-hairline)",
+              border: "1px solid var(--sr-hairline)",
               display: "flex",
               alignItems: "flex-start",
               gap: "10px",
             }}
           >
             <MyLocationRoundedIcon
-              sx={{ fontSize: 20, color: "#4B4B48", flexShrink: 0, marginTop: "1px" }}
+              sx={{ fontSize: 20, color: "var(--sr-body)", flexShrink: 0, marginTop: "1px" }}
             />
             <Typography
               sx={{
                 flex: 1,
                 fontFamily: SANS,
                 fontSize: "12.5px",
-                color: "rgba(15, 23, 42, 0.82)",
+                color: "var(--sr-body)",
                 lineHeight: 1.5,
               }}
             >
@@ -1190,7 +1190,7 @@ const SelectLocationPage: React.FC = () => {
                 sx={{
                   fontFamily: SANS,
                   fontSize: "12px",
-                  color: "rgba(15, 23, 42, 0.7)",
+                  color: "var(--sr-body)",
                   lineHeight: 1.45,
                 }}
               >
@@ -1208,8 +1208,8 @@ const SelectLocationPage: React.FC = () => {
               minWidth: 0,
               padding: "16px",
               borderRadius: "18px",
-              background: "#fff",
-              border: "1px solid rgba(15, 23, 42, 0.16)",
+              background: "var(--sr-panel)",
+              border: "1px solid var(--sr-hairline)",
               boxShadow: "0 6px 18px rgba(45, 45, 43, 0.08)",
               display: "flex",
               gap: "12px",
@@ -1239,7 +1239,7 @@ const SelectLocationPage: React.FC = () => {
                   fontFamily: SERIF,
                   fontSize: "14.5px",
                   fontWeight: 600,
-                  color: "#1a1a1a",
+                  color: "var(--sr-ink)",
                   lineHeight: 1.25,
                   marginBottom: "3px",
                 }}
@@ -1250,7 +1250,7 @@ const SelectLocationPage: React.FC = () => {
                 sx={{
                   fontFamily: SANS,
                   fontSize: "12px",
-                  color: "rgba(15, 23, 42, 0.6)",
+                  color: "var(--sr-body)",
                   lineHeight: 1.45,
                 }}
               >
@@ -1276,12 +1276,12 @@ const SelectLocationPage: React.FC = () => {
                     // 🆕 Round 28s73 (audit) — was a copy-pasted border
                     //   value in `background` (invalid, silently ignored).
                     //   Now a real light-teal tint behind the pill.
-                    background: "rgba(20, 184, 166, 0.10)",
-                    color: "#14b8a6",
+                    background: "rgba(217, 124, 149, 0.10)",
+                    color: "#D97C95",
                     fontFamily: SANS,
                     fontSize: "11px",
                     fontWeight: 700,
-                    border: "1.5px solid rgba(20, 184, 166, 0.35)",
+                    border: "1.5px solid rgba(217, 124, 149, 0.35)",
                     animation: "addrSync 0.3s ease-out",
                     "@keyframes addrSync": {
                       "0%": { opacity: 0, transform: "translateY(-4px)" },
@@ -1294,7 +1294,7 @@ const SelectLocationPage: React.FC = () => {
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" 
                   height="26px" viewBox="0 -960 960 960" 
-                  width="26px" fill="#14b8a6">
+                  width="26px" fill="#D97C95">
                     <path d="M420-180 220-380l60-60 140 140 260-260 60 60L420-180Z"/>
                   </svg> {t("loc.addrUpdated", "Address updated to match pin")}
                 </Box>
@@ -1316,10 +1316,10 @@ const SelectLocationPage: React.FC = () => {
             marginTop: { xs: "4px", md: 0 },
             padding: "18px 16px 16px",
             borderRadius: "20px",
-            background: "rgba(255, 255, 255, 0.85)",
+            background: "var(--sr-panel)",
             backdropFilter: "blur(20px) saturate(180%)",
             WebkitBackdropFilter: "blur(20px) saturate(180%)",
-            border: "1px solid rgba(0, 0, 0, 0.04)",
+            border: "1px solid var(--sr-hairline)",
             boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
             display: "flex",
             flexDirection: "column",
@@ -1331,7 +1331,7 @@ const SelectLocationPage: React.FC = () => {
               fontFamily: SERIF,
               fontSize: "16px",
               fontWeight: 600,
-              color: "#1a1a1a",
+              color: "var(--sr-ink)",
               letterSpacing: "-0.01em",
               marginBottom: "-4px",
             }}
@@ -1376,19 +1376,19 @@ const SelectLocationPage: React.FC = () => {
                 gap: "6px",
                 padding: "12px 14px",
                 borderRadius: "14px",
-                background: "#fff",
-                border: "1px solid rgba(0, 0, 0, 0.08)",
+                background: "var(--sr-panel)",
+                border: "1px solid var(--sr-hairline)",
                 fontFamily: SANS,
                 fontSize: "14px",
                 fontWeight: 600,
-                color: "#1a1a1a",
+                color: "var(--sr-ink)",
                 flexShrink: 0,
                 cursor: "pointer",
                 userSelect: "none",
                 transition: "border-color 0.15s ease",
-                "&:hover": { borderColor: "rgba(20, 184, 166, 0.45)" },
+                "&:hover": { borderColor: "rgba(217, 124, 149, 0.45)" },
                 "&:focus-visible": {
-                  outline: "2px solid #14b8a6",
+                  outline: "2px solid #D97C95",
                   outlineOffset: "2px",
                 },
               }}
@@ -1401,7 +1401,7 @@ const SelectLocationPage: React.FC = () => {
                 aria-hidden
                 sx={{
                   fontSize: 16,
-                  color: "rgba(15, 23, 42, 0.5)",
+                  color: "var(--sr-muted)",
                   marginLeft: "2px",
                 }}
               />
@@ -1436,7 +1436,7 @@ const SelectLocationPage: React.FC = () => {
                       fontFamily: SANS,
                       fontSize: "14px",
                       "&.Mui-selected": {
-                        background: "rgba(20, 184, 166, 0.1)",
+                        background: "rgba(217, 124, 149, 0.1)",
                       },
                     }}
                   >
@@ -1445,14 +1445,14 @@ const SelectLocationPage: React.FC = () => {
                     </Box>
                     <Box
                       component="span"
-                      sx={{ flex: 1, color: "#1a1a1a", fontWeight: 500 }}
+                      sx={{ flex: 1, color: "var(--sr-ink)", fontWeight: 500 }}
                     >
                       {c.name}
                     </Box>
                     <Box
                       component="span"
                       sx={{
-                        color: "rgba(15, 23, 42, 0.55)",
+                        color: "var(--sr-muted)",
                         fontWeight: 600,
                         fontVariantNumeric: "tabular-nums",
                       }}
@@ -1480,7 +1480,7 @@ const SelectLocationPage: React.FC = () => {
             sx={{
               fontFamily: SANS,
               fontSize: "10.5px",
-              color: "rgba(15, 23, 42, 0.5)",
+              color: "var(--sr-muted)",
               marginTop: "6px",
               paddingLeft: "8px",
             }}
@@ -1503,8 +1503,8 @@ const SelectLocationPage: React.FC = () => {
               fontSize: "12px",
               color:
                 form.meetingPoint === "direct"
-                  ? "#2D2D2B"
-                  : "rgba(15, 23, 42, 0.6)",
+                  ? "var(--sr-ink)"
+                  : "var(--sr-body)",
               marginTop: "-4px",
               marginBottom: "8px",
               paddingLeft: "2px",
@@ -1559,8 +1559,8 @@ const SelectLocationPage: React.FC = () => {
               display: "flex",
               flexDirection: "column",
               borderRadius: "14px",
-              background: "#fff",
-              border: "1px solid rgba(0, 0, 0, 0.08)",
+              background: "var(--sr-panel)",
+              border: "1px solid var(--sr-hairline)",
               overflow: "hidden",
             }}
           >
@@ -1597,18 +1597,18 @@ const SelectLocationPage: React.FC = () => {
                     borderTop:
                       idx === 0
                         ? "none"
-                        : "1px solid rgba(0, 0, 0, 0.06)",
+                        : "1px solid var(--sr-hairline)",
                     background: isActive
-                      ? "rgba(45, 45, 43, 0.05)"
+                      ? "var(--sr-hairline)"
                       : "transparent",
                     transition: "background 0.15s ease",
                     "&:hover": {
                       background: isActive
-                        ? "rgba(45, 45, 43, 0.08)"
-                        : "rgba(0, 0, 0, 0.02)",
+                        ? "var(--sr-hairline)"
+                        : "var(--sr-panel-2)",
                     },
                     "&:focus-visible": {
-                      outline: "2px solid #2D2D2B",
+                      outline: "2px solid var(--sr-ink)",
                       outlineOffset: "-2px",
                     },
                   }}
@@ -1636,7 +1636,7 @@ const SelectLocationPage: React.FC = () => {
                       fontFamily: SANS,
                       fontSize: "14px",
                       fontWeight: 500,
-                      color: "#1a1a1a",
+                      color: "var(--sr-ink)",
                     }}
                   >
                     {t(`loc.meet.${m.id}`, m.label)}
@@ -1650,7 +1650,7 @@ const SelectLocationPage: React.FC = () => {
                       borderRadius: "50%",
                       border: isActive
                         ? "6px solid #2D2D2B"
-                        : "2px solid rgba(0, 0, 0, 0.25)",
+                        : "2px solid var(--sr-hairline)",
                       background: isActive ? "#fff" : "transparent",
                       transition: "all 0.15s ease",
                     }}
@@ -1678,7 +1678,7 @@ const SelectLocationPage: React.FC = () => {
               fontFamily: SERIF,
               fontSize: "14px",
               fontWeight: 700,
-              color: "#1A2B2E",
+              color: "var(--sr-ink)",
               marginBottom: "4px",
             }}
           >
@@ -1688,7 +1688,7 @@ const SelectLocationPage: React.FC = () => {
             sx={{
               fontFamily: SANS,
               fontSize: "12.5px",
-              color: "rgba(15, 23, 42, 0.75)",
+              color: "var(--sr-body)",
               lineHeight: 1.55,
             }}
           >
@@ -1746,8 +1746,8 @@ const SelectLocationPage: React.FC = () => {
                 "0 12px 24px rgba(15, 23, 42, 0.38), 0 4px 10px rgba(214, 40, 40, 0.20)",
             },
             "&.Mui-disabled": {
-              background: "rgba(0, 0, 0, 0.10)",
-              color: "rgba(0, 0, 0, 0.35)",
+              background: "var(--sr-hairline)",
+              color: "var(--sr-muted)",
               boxShadow: "none",
             },
           }}
@@ -1775,7 +1775,7 @@ const SelectLocationPage: React.FC = () => {
 const inputSx = {
   flex: 1,
   "& .MuiOutlinedInput-root": {
-    background: "#fff",
+    background: "var(--sr-panel)",
     borderRadius: "14px",
     fontFamily: '"Inter", sans-serif',
     // 🆕 Round 28b15 — bumped 14 → 16px so iOS Safari/Chrome doesn't
@@ -1783,11 +1783,11 @@ const inputSx = {
     //   sizing identical to user (CSS pixel space), just disables
     //   the zoom-on-focus heuristic that breaks booking UX.
     fontSize: "16px",
-    color: "#1a1a1a",
-    "& fieldset": { borderColor: "rgba(0, 0, 0, 0.08)" },
-    "&:hover fieldset": { borderColor: "rgba(20, 184, 166, 0.45)" },
+    color: "var(--sr-ink)",
+    "& fieldset": { borderColor: "var(--sr-hairline)" },
+    "&:hover fieldset": { borderColor: "rgba(217, 124, 149, 0.45)" },
     "&.Mui-focused fieldset": {
-      borderColor: "#14b8a6",
+      borderColor: "#D97C95",
       borderWidth: "1.5px",
     },
   },
@@ -1833,8 +1833,8 @@ const FieldLabel: React.FC<{
             height: 28,
             flexShrink: 0,
             borderRadius: "8px",
-            background: "rgba(20, 184, 166, 0.12)",
-            color: "#14b8a6",
+            background: "rgba(217, 124, 149, 0.12)",
+            color: "#D97C95",
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1849,7 +1849,7 @@ const FieldLabel: React.FC<{
           fontFamily: SANS,
           fontSize: "14px",
           fontWeight: 700,
-          color: "#1a1a1a",
+          color: "var(--sr-ink)",
         }}
       >
         {label}
@@ -1861,7 +1861,7 @@ const FieldLabel: React.FC<{
             fontFamily: SANS,
             fontSize: "13px",
             fontWeight: 700,
-            color: "#4B4B48",
+            color: "var(--sr-body)",
             marginLeft: "-2px",
           }}
         >
@@ -1875,7 +1875,7 @@ const FieldLabel: React.FC<{
             fontFamily: SANS,
             fontSize: "12.5px",
             fontWeight: 500,
-            color: "rgba(15, 23, 42, 0.4)",
+            color: "var(--sr-muted)",
             marginLeft: "-2px",
           }}
         >

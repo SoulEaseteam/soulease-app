@@ -95,8 +95,8 @@ const RECOMMENDED: PaymentOption = {
   label: "PromptPay",
   sub: "Scan QR on arrival (Details after booking)",
   icon: <QrCodeScannerRoundedIcon />,
-  iconBg: "rgba(20, 184, 166, 0.12)",
-  iconFg: "#14b8a6",
+  iconBg: "rgba(217, 124, 149, 0.12)",
+  iconFg: "#D97C95",
 };
 
 // 🆕 Round 28t (founder 2026-05-02, corrected) — Cards (Visa/Mastercard/
@@ -110,8 +110,8 @@ const LINKED_DEFAULTS: PaymentOption[] = [
     label: "Cash",
     sub: "Pay with cash on arrival",
     icon: <LocalAtmRoundedIcon />,
-    iconBg: "rgba(20, 184, 166, 0.10)",
-    iconFg: "#14b8a6",
+    iconBg: "rgba(217, 124, 149, 0.10)",
+    iconFg: "#D97C95",
   },
 ];
 
@@ -145,8 +145,8 @@ const ADD_METHODS: PaymentOption[] = [
     label: "Cards",
     sub: "Visa / Mastercard / JCB",
     icon: <CreditCardRoundedIcon />,
-    iconBg: "rgba(15, 23, 42, 0.10)",
-    iconFg: "#2D2D2B",
+    iconBg: "var(--sr-hairline)",
+    iconFg: "var(--sr-ink)",
     badge: "not available",
     comingSoon: true,
   },
@@ -300,7 +300,7 @@ const PaymentMethodsPage: React.FC = () => {
           lg: "1100px",
         },
         minHeight: "100vh",
-        background: "#F4F6F5",
+        background: "var(--sr-bg)",
         borderRadius: { xs: "28px", md: 0 },
         overflow: "hidden",
         boxShadow: {
@@ -318,10 +318,10 @@ const PaymentMethodsPage: React.FC = () => {
           position: "sticky",
           top: 0,
           zIndex: 10,
-          background: "rgba(250, 251, 252, 0.92)",
+          background: "var(--sr-panel)",
           backdropFilter: "blur(20px) saturate(180%)",
           WebkitBackdropFilter: "blur(20px) saturate(180%)",
-          borderBottom: "1px solid rgba(15, 23, 42, 0.06)",
+          borderBottom: "1px solid var(--sr-hairline)",
           display: "flex",
           alignItems: "center",
           padding: "14px 16px",
@@ -333,13 +333,13 @@ const PaymentMethodsPage: React.FC = () => {
           sx={{
             width: 44,
             height: 44,
-            background: "rgba(255, 255, 255, 0.85)",
-            border: "1px solid rgba(15, 23, 42, 0.06)",
-            color: "#1A2B2E",
+            background: "var(--sr-panel)",
+            border: "1px solid var(--sr-hairline)",
+            color: "var(--sr-ink)",
             boxShadow: "0 2px 8px rgba(15, 23, 42, 0.06)",
-            "&:hover": { background: "#fff" },
+            "&:hover": { background: "var(--sr-panel)" },
             "&:focus-visible": {
-              outline: "2px solid #2D2D2B",
+              outline: "2px solid var(--sr-ink)",
               outlineOffset: 2,
             },
           }}
@@ -355,7 +355,7 @@ const PaymentMethodsPage: React.FC = () => {
             // 🆕 Round 28r56 — responsive heading (18→20→22).
             ...responsiveType.h5,
             fontWeight: 600,
-            color: "#1A2B2E",
+            color: "var(--sr-ink)",
             letterSpacing: "-0.01em",
             marginRight: "38px",
           }}
@@ -398,8 +398,8 @@ const PaymentMethodsPage: React.FC = () => {
           sx={{
             padding: "14px 14px 6px",
             borderRadius: "20px",
-            background: "rgba(20, 184, 166, 0.08)",
-            border: "1px solid rgba(20, 184, 166, 0.18)",
+            background: "rgba(217, 124, 149, 0.08)",
+            border: "1px solid rgba(217, 124, 149, 0.18)",
           }}
         >
           <Typography
@@ -407,7 +407,7 @@ const PaymentMethodsPage: React.FC = () => {
               fontFamily: SERIF,
               fontSize: "14.5px",
               fontWeight: 700,
-              color: "#1A2B2E",
+              color: "var(--sr-ink)",
               marginBottom: "10px",
               paddingLeft: "2px",
             }}
@@ -429,7 +429,7 @@ const PaymentMethodsPage: React.FC = () => {
               fontFamily: SERIF,
               fontSize: "16px",
               fontWeight: 700,
-              color: "#1a1a1a",
+              color: "var(--sr-ink)",
               marginBottom: "2px",
               paddingLeft: "2px",
             }}
@@ -440,7 +440,7 @@ const PaymentMethodsPage: React.FC = () => {
             sx={{
               fontFamily: SANS,
               fontSize: "12px",
-              color: "rgba(15, 23, 42, 0.55)",
+              color: "var(--sr-muted)",
               marginBottom: "12px",
               paddingLeft: "2px",
             }}
@@ -450,8 +450,8 @@ const PaymentMethodsPage: React.FC = () => {
           <Box
             sx={{
               borderRadius: "16px",
-              background: "#fff",
-              border: "1px solid rgba(0, 0, 0, 0.06)",
+              background: "var(--sr-panel)",
+              border: "1px solid var(--sr-hairline)",
               overflow: "hidden",
             }}
           >
@@ -475,7 +475,7 @@ const PaymentMethodsPage: React.FC = () => {
               fontFamily: SERIF,
               fontSize: "16px",
               fontWeight: 700,
-              color: "#1a1a1a",
+              color: "var(--sr-ink)",
               marginBottom: "12px",
               paddingLeft: "2px",
             }}
@@ -485,8 +485,8 @@ const PaymentMethodsPage: React.FC = () => {
           <Box
             sx={{
               borderRadius: "16px",
-              background: "#fff",
-              border: "1px solid rgba(0, 0, 0, 0.06)",
+              background: "var(--sr-panel)",
+              border: "1px solid var(--sr-hairline)",
               overflow: "hidden",
             }}
           >
@@ -516,7 +516,7 @@ const PaymentMethodsPage: React.FC = () => {
           sx={{
             fontFamily: SANS,
             fontSize: "11px",
-            color: "rgba(15, 23, 42, 0.5)",
+            color: "var(--sr-muted)",
             textAlign: "center",
             marginTop: "8px",
             lineHeight: 1.5,
@@ -540,7 +540,7 @@ const PaymentMethodsPage: React.FC = () => {
               fontSize: 10,
               letterSpacing: "0.24em",
               textTransform: "uppercase",
-              color: "#4A5568",
+              color: "var(--sr-muted)",
               fontWeight: 700,
               mb: 0.75,
               fontFamily: SANS,
@@ -559,10 +559,10 @@ const PaymentMethodsPage: React.FC = () => {
               fontFamily: SERIF,
               fontSize: 22,
               fontWeight: 400,
-              color: "#1A2B2E",
+              color: "var(--sr-ink)",
               letterSpacing: "-0.02em",
               lineHeight: 1.2,
-              "& em": { fontStyle: "italic", color: "#4B4B48" },
+              "& em": { fontStyle: "italic", color: "var(--sr-body)" },
             }}
           >
             {t("pay.policy.title", "What you should know")}
@@ -571,7 +571,7 @@ const PaymentMethodsPage: React.FC = () => {
             sx={{
               fontFamily: SANS,
               fontSize: 13,
-              color: "rgba(15, 23, 42,0.65)",
+              color: "var(--sr-body)",
               lineHeight: 1.55,
               mt: 0.75,
               mb: 2,
@@ -632,17 +632,17 @@ const PaymentRow: React.FC<{
       padding: elevated ? "14px 12px" : "14px 16px",
       cursor: isDisabled ? "not-allowed" : "pointer",
       userSelect: "none",
-      borderTop: divider ? "1px solid rgba(0, 0, 0, 0.06)" : "none",
+      borderTop: divider ? "1px solid var(--sr-hairline)" : "none",
       borderRadius: elevated ? "14px" : 0,
-      background: elevated ? "#fff" : "transparent",
-      border: elevated ? "1px solid rgba(0, 0, 0, 0.06)" : undefined,
+      background: elevated ? "var(--sr-panel)" : "transparent",
+      border: elevated ? "1px solid var(--sr-hairline)" : undefined,
       opacity: isDisabled ? 0.62 : 1,
       transition: "background 0.15s ease",
       "&:hover": isDisabled
         ? {}
-        : { background: elevated ? "#fff" : "rgba(0, 0, 0, 0.02)" },
+        : { background: elevated ? "var(--sr-panel)" : "var(--sr-panel-2)" },
       "&:focus-visible": {
-        outline: "2px solid #2D2D2B",
+        outline: "2px solid var(--sr-ink)",
         outlineOffset: "-2px",
       },
     }}
@@ -671,7 +671,7 @@ const PaymentRow: React.FC<{
             fontFamily: SANS,
             fontSize: "15px",
             fontWeight: 600,
-            color: "#1a1a1a",
+            color: "var(--sr-ink)",
           }}
         >
           {methodLabel(t, option)}
@@ -683,8 +683,8 @@ const PaymentRow: React.FC<{
               fontFamily: SANS,
               fontSize: "10.5px",
               fontWeight: 700,
-              color: "rgba(15, 23, 42, 0.6)",
-              background: "rgba(0, 0, 0, 0.06)",
+              color: "var(--sr-body)",
+              background: "var(--sr-hairline)",
               borderRadius: "999px",
               padding: "2px 8px",
               letterSpacing: "0.04em",
@@ -721,7 +721,7 @@ const PaymentRow: React.FC<{
           sx={{
             fontFamily: SANS,
             fontSize: "12px",
-            color: "rgba(15, 23, 42, 0.6)",
+            color: "var(--sr-body)",
             marginTop: "2px",
           }}
         >
@@ -753,7 +753,7 @@ const PaymentRow: React.FC<{
         height: 24,
         flexShrink: 0,
         borderRadius: "50%",
-        border: isActive ? "none" : "2px solid rgba(0, 0, 0, 0.2)",
+        border: isActive ? "none" : "2px solid var(--sr-hairline)",
         background: isActive
           ? "#2D2D2B"
           : "transparent",
@@ -794,7 +794,7 @@ const AddMethodRow: React.FC<{
         padding: "14px 16px",
         cursor: isDisabled ? "not-allowed" : "pointer",
         userSelect: "none",
-        borderTop: divider ? "1px solid rgba(0, 0, 0, 0.06)" : "none",
+        borderTop: divider ? "1px solid var(--sr-hairline)" : "none",
         transition: "background 0.15s ease",
         opacity: isDisabled ? 0.62 : 1,
         // Faint stripe pattern in the background tells the eye "not
@@ -805,9 +805,9 @@ const AddMethodRow: React.FC<{
         }),
         "&:hover": isDisabled
           ? {}
-          : { background: "rgba(0, 0, 0, 0.02)" },
+          : { background: "var(--sr-panel-2)" },
         "&:focus-visible": {
-          outline: "2px solid #2D2D2B",
+          outline: "2px solid var(--sr-ink)",
           outlineOffset: "-2px",
         },
       }}
@@ -842,7 +842,7 @@ const AddMethodRow: React.FC<{
             fontFamily: SANS,
             fontSize: "15px",
             fontWeight: 600,
-            color: "#1a1a1a",
+            color: "var(--sr-ink)",
           }}
         >
           {methodLabel(t, option)}
@@ -852,7 +852,7 @@ const AddMethodRow: React.FC<{
             sx={{
               fontFamily: SANS,
               fontSize: "12px",
-              color: "rgba(15, 23, 42, 0.6)",
+              color: "var(--sr-body)",
               marginTop: "2px",
             }}
           >
@@ -905,7 +905,7 @@ const AddMethodRow: React.FC<{
       )}
       <ChevronRightRoundedIcon
         sx={{
-          color: "rgba(15, 23, 42, 0.35)",
+          color: "var(--sr-muted)",
           fontSize: 22,
           opacity: isDisabled ? 0.45 : 1,
         }}
@@ -927,8 +927,8 @@ const FaqRow: React.FC<{ item: FaqItem }> = ({ item }) => {
       mb: 1,
       position: "relative",
       borderRadius: "14px !important",
-      background: "#FFFFFF",
-      border: "1px solid rgba(15, 23, 42, 0.06)",
+      background: "var(--sr-panel)",
+      border: "1px solid var(--sr-hairline)",
       boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
       overflow: "hidden",
       transition: "border-color 200ms ease, box-shadow 200ms ease",
@@ -946,7 +946,7 @@ const FaqRow: React.FC<{ item: FaqItem }> = ({ item }) => {
         transition: "opacity 220ms ease",
       },
       "&.Mui-expanded": {
-        borderColor: "rgba(15, 23, 42, 0.18)",
+        borderColor: "var(--sr-hairline)",
         boxShadow:
           "0 1px 2px rgba(45, 45, 43, 0.06), 0 8px 22px rgba(45, 45, 43, 0.06)",
         "&::after": { opacity: 1 },
@@ -956,7 +956,7 @@ const FaqRow: React.FC<{ item: FaqItem }> = ({ item }) => {
     <AccordionSummary
       expandIcon={
         <ExpandMoreRoundedIcon
-          sx={{ color: "rgba(15, 23, 42,0.55)", fontSize: 22 }}
+          sx={{ color: "var(--sr-muted)", fontSize: 22 }}
         />
       }
       sx={{
@@ -970,7 +970,7 @@ const FaqRow: React.FC<{ item: FaqItem }> = ({ item }) => {
           fontFamily: SANS,
           fontWeight: 600,
           fontSize: 13.5,
-          color: "#1A2B2E",
+          color: "var(--sr-ink)",
           letterSpacing: "-0.005em",
           lineHeight: 1.4,
         }}
@@ -986,7 +986,7 @@ const FaqRow: React.FC<{ item: FaqItem }> = ({ item }) => {
             fontFamily: SANS,
             fontSize: 13,
             lineHeight: 1.7,
-            color: "rgba(15, 23, 42,0.78)",
+            color: "var(--sr-body)",
             mb: 1,
             "&:last-child": { mb: 0 },
           }}
