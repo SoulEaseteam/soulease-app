@@ -325,8 +325,11 @@ function buildFromReal(real: Therapist, lang?: string): DemoTherapist {
       if (g && !rawImages.includes(g)) rawImages.push(g);
     }
   }
+  // 🆕 28x.25 — the profile hero is full-bleed, so request the "full"
+  //   width variant: existing ~600px sources are unchanged (c_limit), but a
+  //   re-uploaded 1440px photo is delivered at full resolution → crisp hero.
   const images = rawImages.map((url) =>
-    enhanceImage(url, { variant: "hero" })
+    enhanceImage(url, { variant: "full" })
   );
   const photoBg = images.length > 0
     ? `center / cover no-repeat url("${images[0]}")`
