@@ -71,13 +71,10 @@ const GRADIENT_EVENING =
   "#2D2D2B";
 const GRADIENT_DAY =
   "#2D2D2B";
-const GRADIENT_OFF =
-  "#475569";
 
 const GLOW_PRIME = "0 10px 28px rgba(132, 24, 67, 0.42)";
 const GLOW_EVENING = "0 10px 28px rgba(245, 158, 11, 0.36)";
 const GLOW_DAY = "0 10px 28px rgba(214, 40, 40, 0.28)";
-const GLOW_OFF = "0 10px 28px rgba(71, 85, 105, 0.24)";
 
 /**
  * Pure function — given a Bangkok hour, return the mode payload.
@@ -113,29 +110,13 @@ export function modeForHourBKK(hour: number): ConciergeModeInfo {
     };
   }
 
-  // 04:00–08:59 → off-hours (concierge resumes at 09:00)
-  if (hour >= 4 && hour < 9) {
-    return {
-      mode: "off",
-      hourBKK: hour,
-      pillLabel: "Concierge · 09:00",
-      promoEyebrow: "Pre-Booking",
-      promoMessages: [
-        {
-          title: "Concierge resumes at 09:00",
-          sub: "Tap to leave a message — we'll confirm at sunrise",
-        },
-        {
-          title: "Pre-book tonight's window now",
-          sub: "Tap once · skip the prime-hours rush after 22:00",
-        },
-      ],
-      gridHeadline: "Concierge resumes 09:00",
-      isPrime: false,
-      bannerGradient: GRADIENT_OFF,
-      bannerGlow: GLOW_OFF,
-    };
-  }
+  // 🆕 Round 28x.28 (founder: "concierge ออนไลน์ 24 ชม. ตลอด") — the
+  //   04:00–08:59 "off / resumes at 09:00" window was removed. SunRed's
+  //   concierge is reachable 24/7, and showing "closed" right after prime
+  //   (04:00) was turning away late guests. Those hours now fall through to
+  //   the "day" mode below, so the concierge always reads as live. The
+  //   `off` mode stays in the type for any manual/maintenance use, but the
+  //   clock never selects it.
 
   // 17:00–21:59 → evening (warming up)
   if (hour >= 17 && hour < 22) {
