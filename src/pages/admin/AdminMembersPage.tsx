@@ -13,6 +13,7 @@
 //   no new collection and no Firestore rules deploy is needed.
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Box, Typography, TextField, Button, MenuItem, CircularProgress } from "@mui/material";
 // NB: `query` is aliased — this component already has a `query` state for the
 //     search box, which would shadow the Firestore helper.
@@ -70,7 +71,10 @@ const AdminMembersPage: React.FC = () => {
   const [openPhone, setOpenPhone] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [query, setQuery] = useState("");
+  // 🆕 28x.38 — a booking card links here as /admin/members?q=<phone>, so the
+  //   concierge lands with that guest already filtered (SRD code · ยอดสะสม · history).
+  const [searchParams] = useSearchParams();
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
 
   // enrol form
   const [newPhone, setNewPhone] = useState("");
@@ -119,6 +123,7 @@ const AdminMembersPage: React.FC = () => {
       snap.forEach((d) => {
         const b = d.data() as {
           phone?: string; status?: string; totalPrice?: number; servicePrice?: number;
+          taxiFee?: number; paymentFee?: number;
           contactName?: string; customerName?: string;
           serviceName?: string; therapistName?: string;
           createdAt?: { toDate?: () => Date; seconds?: number };
@@ -126,6 +131,16 @@ const AdminMembersPage: React.FC = () => {
         };
         const phone = normPhone((b.phone ?? "").trim());
         if (!phone) return;
+        // 🆕 Round 28x.38 (founder: "ยอดสะสมคือยอดตามเมนู ไม่รวมค่าเทกซี่") —
+        //   membership tier + SunPoints accrue on the MENU amount only, not
+        //   the paid total. `servicePrice` is the menu (service + add-ons),
+        //   which already excludes taxi and the WeChat/Alipay payment
+        //   surcharge. Old bookings without servicePrice fall back to
+        //   totalPrice minus those two non-menu fees.
+        const menuTHB =
+          typeof b.servicePrice === "number"
+            ? b.servicePrice
+            : Math.max(0, (b.totalPrice ?? 0) - (b.taxiFee ?? 0) - (b.paymentFee ?? 0));
         const tAny = b.startAt ?? b.createdAt;
         const whenMs = tAny?.toDate ? tAny.toDate().getTime() : (typeof tAny?.seconds === "number" ? tAny.seconds * 1000 : 0);
         (hist[phone] ??= []).push({
@@ -134,7 +149,7 @@ const AdminMembersPage: React.FC = () => {
           serviceName: b.serviceName ?? "-",
           therapistName: b.therapistName ?? "-",
           status: b.status ?? "-",
-          totalTHB: b.totalPrice ?? b.servicePrice ?? 0,
+          totalTHB: menuTHB,
         });
         const row = (map[phone] ??= { served: 0, totalSpent: 0, lastVisitMs: 0, noShowCount: 0, name: "" });
         const nm = (b.contactName || b.customerName || "").trim();
@@ -143,7 +158,7 @@ const AdminMembersPage: React.FC = () => {
         if (NOSHOW.has(st)) row.noShowCount++;
         if (SERVED.has(st)) {
           row.served++;
-          row.totalSpent += b.totalPrice ?? b.servicePrice ?? 0;
+          row.totalSpent += menuTHB;
           const t = b.createdAt ?? b.startAt;
           const ms = t?.toDate ? t.toDate().getTime() : (typeof t?.seconds === "number" ? t.seconds * 1000 : 0);
           if (ms > row.lastVisitMs) row.lastVisitMs = ms;

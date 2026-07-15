@@ -78,7 +78,7 @@ import {
   limit,
   Timestamp,
 } from "firebase/firestore";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link as RouterLink } from "react-router-dom";
 import dayjs, { type Dayjs } from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -105,6 +105,9 @@ import { commissionBaseFor, therapistPayoutFor, stampSplit, isPayrollExcluded, n
 //   recomputed on save — silently leaving it stale would under-charge a
 //   booking that got switched to a surcharged method.
 import { paymentSurcharge } from "@/utils/paymentSurcharge";
+// 🆕 Round 28x.38 — concierge can key a discount code straight on the booking
+//   slip; same validator the customer flow uses, so amounts/rules match.
+import { validateDiscount } from "@/utils/discount";
 // 🆕 28w.59 — customer membership tiers (Bronze/Silver/Gold/BlackVIP) + no-show
 //   flag, badged on each order. Full-history per-phone aggregate, tier from the
 //   shared membership util (same config as the Membership admin page).
@@ -1221,10 +1224,30 @@ const BookingCard: React.FC<{
           </Box>
         )}
 
-        {/* customer name */}
+        {/* customer name — 🆕 28x.38 (founder: "ในใบจอง...กดเข้าดูโปรไฟล์หรือ
+            ประวัติการจองหรือ เลขรหัสสมาชิกของลูกค้าได้") — tap the name to open
+            the members page filtered to this guest (SRD code · ยอดสะสม · history).
+            Booking phone is the key (concierge bookings carry no userId).
+            stopPropagation so it doesn't also open the booking drawer. */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
           <User size={12} color={adminColor.dim} />
-          <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted }}>{nameOf(b)}</Typography>
+          {b.phone ? (
+            <Typography
+              component={RouterLink}
+              to={`/admin/members?q=${encodeURIComponent(normPhone(String(b.phone)))}`}
+              onClick={(e) => e.stopPropagation()}
+              sx={{
+                fontFamily: SANS, fontSize: 12, fontWeight: 600,
+                color: adminColor.accent,
+                textDecoration: "underline", textDecorationStyle: "dotted",
+                textUnderlineOffset: 2,
+              }}
+            >
+              {nameOf(b)}
+            </Typography>
+          ) : (
+            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: adminColor.muted }}>{nameOf(b)}</Typography>
+          )}
         </Box>
 
         {/* 🆕 28w.59 — membership + no-show badges for this customer */}
@@ -1620,6 +1643,7 @@ const DetailPanel: React.FC<{
       servicePrice: String(b.servicePrice ?? 0),
       taxiFee: String(b.taxiFee ?? 0),
       total: String(b.totalPrice ?? b.total ?? 0),
+      discountCode: b.discountCode ?? "",
     });
     setEditing(true);
   };
@@ -1636,6 +1660,7 @@ const DetailPanel: React.FC<{
     servicePrice: String(b.servicePrice ?? 0),
     taxiFee: String(b.taxiFee ?? 0),
     total: String(b.totalPrice ?? b.total ?? 0),
+    discountCode: b.discountCode ?? "",
   });
 
   // 🆕 28s263 — changing Service or Duration re-fills Service price with the
@@ -1669,7 +1694,22 @@ const DetailPanel: React.FC<{
   const editServicePrice = Number(editForm.servicePrice) || 0;
   const editTaxiFee      = Number(editForm.taxiFee) || 0;
   const editSurcharge    = paymentSurcharge(editForm.payment, editServicePrice + editTaxiFee);
-  const computedTotal    = editServicePrice + editTaxiFee + editSurcharge;
+  // 🆕 28x.38 — validate the typed discount code against the menu amount
+  //   (service, not taxi), same rules the customer flow enforces. Quiet
+  //   invalid → 0 (UI shows a hint). Surcharge is computed on the pre-discount
+  //   base, matching the customer flow (the payment fee tracks the transfer,
+  //   not the promo).
+  const editDiscount = validateDiscount(editForm.discountCode, editServicePrice, {
+    serviceId: editForm.serviceId || null,
+    bookingHourBKK: editForm.time ? parseInt(editForm.time.split(":")[0], 10) : undefined,
+    taxiFareTHB: editTaxiFee,
+  });
+  // 🆕 28x.38 — the concierge slip applies a code REGARDLESS of the customer
+  //   master switch (PROMOS_ENABLED). That switch only controls what guests
+  //   see / can self-apply; here the operator is deliberately keying a code to
+  //   cut this bill, so it must work even while public promos are paused.
+  const editDiscountAmount = editDiscount.valid ? editDiscount.amount : 0;
+  const computedTotal    = Math.max(0, editServicePrice + editTaxiFee + editSurcharge - editDiscountAmount);
   const editTotal        = Number(editForm.total) || 0;
 
   const saveEdit = () => {
@@ -1695,6 +1735,14 @@ const DetailPanel: React.FC<{
         totalPrice: editTotal,
         startAt,
         locationName: editForm.location.trim(),
+        // 🆕 28x.38 — persist the discount the concierge keyed on the slip.
+        //   Storing discountCode IS the redemption memory: the booking list
+        //   shows the code chip + filters by promo, and a guest's history
+        //   (reachable by tapping their name) shows every code they've used.
+        //   Empty string clears a previously-applied code.
+        discountCode: editForm.discountCode.trim().toUpperCase(),
+        discountAmount: editDiscountAmount,
+        discountLabel: editDiscountAmount > 0 ? editDiscount.label : "",
         ...(editForm.therapistId && editForm.therapistId !== b.therapistId
           ? { therapistId: editForm.therapistId, therapistName: newTherapist?.name ?? b.therapistName }
           : {}),
@@ -2005,6 +2053,30 @@ const DetailPanel: React.FC<{
                     + {formatTHB(editSurcharge)} transfer surcharge · ค่าธรรมเนียมโอน
                   </Typography>
                 )}
+
+                {/* 🆕 28x.38 — discount code straight on the slip. Same validator
+                    the customer flow uses (menu amount, premium-tier rules, min
+                    spend). Feeds the computed Total via editDiscountAmount. */}
+                <Box sx={{ mt: 1.25 }}>
+                  <TextField
+                    label="Discount code · โค้ดส่วนลด" size="small" fullWidth
+                    value={editForm.discountCode}
+                    onChange={(e) => setEditForm((f) => ({ ...f, discountCode: e.target.value.toUpperCase() }))}
+                    sx={editFieldSx}
+                    inputProps={{ style: { textTransform: "uppercase", letterSpacing: "0.04em" } }}
+                  />
+                  {editForm.discountCode.trim() !== "" && (
+                    editDiscountAmount > 0 ? (
+                      <Typography sx={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 700, color: adminColor.green, mt: 0.6 }}>
+                        −{formatTHB(editDiscountAmount)} · {editDiscount.label}
+                      </Typography>
+                    ) : (
+                      <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.6 }}>
+                        โค้ดนี้ใช้กับบิลนี้ไม่ได้ (ขั้นต่ำ / บริการ / หมดอายุ)
+                      </Typography>
+                    )
+                  )}
+                </Box>
 
                 {/* 🆕 28s262 — Total is its OWN free number, independent of
                     service+taxi+surcharge. Computed figure is a one-click
