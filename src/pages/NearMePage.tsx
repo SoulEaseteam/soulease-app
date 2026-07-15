@@ -564,7 +564,7 @@ const TaxiEstimator: React.FC = () => {
 
         {/* 🆕 28x.47 — "you saved" chip (Grab-style), only when the online fare
             actually undercuts the band. */}
-        {estimate && estimate.fare != null && estimate.save > 0 && (
+        {estimate?.fare != null && estimate.save > 0 && (
           <Box sx={{ display: "flex", justifyContent: "center" }}>
             <Box
               sx={{
