@@ -95,10 +95,8 @@ import {
 } from "@/hooks/useAbandonedCartTracker";
 import {
   estimateTaxiFare,
-  calcTravelBudgetResult,
   ADMIN_QUOTE_KM,
   DISPATCH_BASE,
-  travelBands,
   travelFareDisplay,
 } from "@/utils/taxiFare";
 // 🆕 Round 28b35 — Live therapist Holiday/override gate.
@@ -709,12 +707,13 @@ const BookingFlowPage: React.FC = () => {
           durationMin: form.duration ?? service?.duration ?? 60,
         }).distanceKm;
     if (!distanceKm) return { distanceKm: 0, fare: 0, result: undefined, taxiOriginal: null, taxiSave: 0 };
-    const result = calcTravelBudgetResult(distanceKm);
-    // 🆕 28x.47 — apply the same online-booking saving the near-me estimate
-    //   shows, so the fee the guest saw ("you save online") is exactly what the
-    //   booking charges. Band fare = struck original; youPay = actual charge.
-    const disp = travelFareDisplay(distanceKm);
-    const fare = disp.youPay != null ? disp.youPay : (result.fare ?? 0);
+    // 🆕 28x.48 — REAL metered fare (round-trip + booking fee + time/rain surge)
+    //   for the booking's own hour, with the online saving on top. `result` now
+    //   carries the surge/rain tiers so the chips below still light up.
+    const hour = form.time ? parseInt(form.time.split(":")[0], 10) : undefined;
+    const disp = travelFareDisplay(distanceKm, rainStatus, hour);
+    const result = disp.result;
+    const fare = disp.youPay ?? 0;
     return { distanceKm, fare, result, taxiOriginal: disp.original, taxiSave: disp.save };
   }, [
     locationSet,
@@ -722,7 +721,9 @@ const BookingFlowPage: React.FC = () => {
     form.lat,
     form.lng,
     form.duration,
+    form.time,
     service?.duration,
+    rainStatus,
   ]);
   const distanceKm = taxi.distanceKm;
   const taxiFare = taxi.fare;
@@ -2177,21 +2178,14 @@ const BookingFlowPage: React.FC = () => {
                     >
                       {t("booking.travelTip.title", "Travel Fee · SunRed Smart Routing")}
                     </Typography>
-                    {/* 🆕 28x.6 (founder: "เทคซี่ละ") — this tooltip explained a
-                        GrabCar METER to the guest: a ฿45 flag-fall, per-km tiers,
-                        and a booking fee. We have not charged that since 28w.11 —
-                        travel is a flat band by real distance, and the booking fee
-                        was never added to a bill. So the guest was reading a fare
-                        breakdown that did not produce the number on their own
-                        screen. It now shows the table we actually charge, read from
-                        the same live config the price comes from. */}
+                    {/* 🆕 28x.48 (founder: "ใช้ราคาจริงแบบเดิม · มิเตอร์จริง + surge") —
+                        reverted from flat bands back to the real metered fare, so
+                        the tooltip again explains the meter that actually produces
+                        the number: round-trip distance + booking fee + surge, with
+                        the online saving on top. Long trips route to a quote. */}
                     <Typography sx={{ fontFamily: SANS, fontSize: "11.5px", lineHeight: 1.6 }}>
-                      {travelBands().map((b) => (
-                        <React.Fragment key={b.maxKm}>
-                          ≤ {b.maxKm} km · <strong>฿{b.fareTHB.toLocaleString()}</strong>
-                          <br />
-                        </React.Fragment>
-                      ))}
+                      {t("booking.travelTip.meter", "Real metered fare · charged round-trip (both legs) + booking fee, by your actual route.")}
+                      <br />
                       &gt; {ADMIN_QUOTE_KM} km ·{" "}
                       {t("booking.conciergeQuote", "Concierge quote")}
                       <Box
@@ -2203,7 +2197,7 @@ const BookingFlowPage: React.FC = () => {
                           color: "var(--sr-ink)",
                         }}
                       >
-                        {t("booking.travelTip.roundTrip", "Round-trip · both legs at full meter")}
+                        {t("booking.travelTip.online", "Booking online saves you a little off the meter.")}
                       </Box>
                       <Box
                         component="span"

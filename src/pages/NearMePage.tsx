@@ -320,8 +320,10 @@ const TaxiEstimator: React.FC = () => {
     if (!rawKm) return null;
     // Band from the RAW km (identical to the booking charge); round only for display.
     const distanceKm = Math.round(rawKm * 10) / 10;
-    // 🆕 28x.47 — Grab-style saving: struck band original + rounded-down youPay.
-    const { original, youPay, save } = travelFareDisplay(rawKm);
+    // 🆕 28x.48 — real metered fare + surge for the current Bangkok hour, with
+    //   the online saving on top (struck original → rounded-down youPay).
+    const bkkHour = (new Date().getUTCHours() + 7) % 24;
+    const { original, youPay, save } = travelFareDisplay(rawKm, undefined, bkkHour);
     const isLive = route != null && route.source !== "haversine";
     const etaMin = route ? route.durationMin : estimateEtaFromKm(distanceKm);
     return { distanceKm, fare: youPay, original, save, etaMin, isLive };
@@ -586,7 +588,7 @@ const TaxiEstimator: React.FC = () => {
           {!estimate
             ? t("nearme.taxi.hint", "Pick a practitioner, then search, tap the map, or use your location for a taxi estimate.")
             : estimate.fare == null
-            ? t("nearme.taxi.over", "Beyond 30 km — the concierge quotes your travel fare.")
+            ? t("nearme.taxi.over", "Long trip — the concierge quotes your travel fare.")
             : t("nearme.taxi.note", "Set travel budget by distance — excludes weather and peak-traffic surcharges. Concierge confirms the final fare.")}
         </Typography>
       </Box>

@@ -119,20 +119,32 @@ export function travelBudgetForKm(km: number): number | null {
 export const WEB_TAXI_SAVING_PCT = 0.05;
 
 export interface TravelFareDisplay {
-  /** The standard band fare — shown struck-through as the "before" price. */
+  /** The full metered round-trip fare (incl. booking fee + surge) — shown
+   *  struck-through as the "before" price. */
   original: number | null;
-  /** What the guest actually pays: band − saving, rounded DOWN to ฿10. */
+  /** What the guest actually pays: meter − saving, rounded DOWN to ฿10. */
   youPay: number | null;
-  /** original − youPay (0 when there's no saving or no priced band). */
+  /** original − youPay (0 when there's no saving or the trip needs a quote). */
   save: number;
+  /** The underlying meter result (tier / rain / surge) for chips + labels. */
+  result: TaxiFareResult;
 }
 
-export function travelFareDisplay(km: number): TravelFareDisplay {
-  const original = travelBudgetForKm(km);
-  if (original == null) return { original: null, youPay: null, save: 0 };
+// 🆕 Round 28x.48 (founder: "ใช้ราคาจริงแบบเดิม ... มิเตอร์จริง + surge, เก็บส่วนลดไว้")
+//   — reverted from the flat bands to the REAL GrabCar meter: round-trip metered
+//   distance + booking fee + time/rain surge (calcTaxiFare). The online saving
+//   (WEB_TAXI_SAVING_PCT) rides on top of that real price.
+export function travelFareDisplay(
+  km: number,
+  rain?: RainStatus,
+  bkkHour?: number | null
+): TravelFareDisplay {
+  const result = calcTaxiFare(km, rain, bkkHour);
+  const original = result.fare;
+  if (original == null) return { original: null, youPay: null, save: 0, result };
   const pct = Math.min(0.5, Math.max(0, WEB_TAXI_SAVING_PCT));
   const youPay = Math.max(0, Math.floor((original * (1 - pct)) / 10) * 10);
-  return { original, youPay, save: Math.max(0, original - youPay) };
+  return { original, youPay, save: Math.max(0, original - youPay), result };
 }
 
 // ─── GrabCar Bangkok rate card ───────────────────────────────────────
