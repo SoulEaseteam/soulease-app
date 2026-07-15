@@ -405,7 +405,7 @@ const BookingSuccessPage: React.FC = () => {
             >
               {t(
                 "success.subtitle",
-                "We've sent confirmation to your email and {{name}} will arrive at {{time}}.",
+                "{{name}} will arrive at {{time}}.",
                 { name: therapistName, time: timeLabel }
               )}
             </Typography>
@@ -562,72 +562,155 @@ const BookingSuccessPage: React.FC = () => {
             </Box>
               </Box>{/* end hero cluster */}
 
-            {/* 🆕 Reach-us concierge channel grid (replaced the 4 dead
-                action cards — founder "4 คอลัมน์ที่ใช้ไม่ได้จริง ลบไปเลย").
-                Same brand channel tiles as the site's "Reach us" grid. */}
+            {/* 🆕 Round 28s90 (CRO audit) — Multi-channel confirm row.
+                Was a single LINE-only gradient button that dropped
+                WeChat (Chinese tourists) + Telegram-first guests into
+                the wrong app, where they bailed. Now every guest taps
+                their own channel; the booking refCode is pre-filled in
+                the message everywhere the platform allows a body
+                (WhatsApp + Telegram + LINE web; WeChat → QR scan page).
+                Brand-color icons reuse the home concierge grid set.
+                Round 28s??? (founder) — moved to the TOP of the content,
+                immediately after the hero cluster ("ย้ายไปไว้ด้านบน"). */}
             <Box
               sx={{
-                // 🆕 Round 28r56 — on mobile, keeps the 16px top spacing
-                //   inside the stacked flow. On desktop, this Box lives
-                //   in the right column of the top-cluster grid so
-                //   marginTop is dropped (the grid gap handles spacing).
-                marginTop: { xs: "16px", md: 0 },
                 minWidth: 0,
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "8px",
-                position: "relative",
+                marginTop: { xs: "16px", md: 0 },
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
               }}
             >
-              {[
-                { name: "WhatsApp", src: "/images/profli/whatsapp.png", href: CONCIERGE.whatsappUrl },
-                { name: "Telegram", src: "/images/profli/telegram.png", href: CONCIERGE.telegramChannelUrl },
-                { name: "LINE", src: "/images/profli/line.png", href: CONCIERGE.lineUrl },
-                { name: "WeChat", src: "/images/profli/wechat_2626283.png", href: "/wechat-scan" },
-              ].map((c) => (
-                <Box
-                  key={c.name}
-                  component="a"
-                  href={c.href}
-                  target={c.href.startsWith("http") ? "_blank" : undefined}
-                  rel={c.href.startsWith("http") ? "noopener" : undefined}
-                  aria-label={`Contact via ${c.name}`}
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 0.75,
-                    py: 1.75,
-                    px: 0.5,
-                    borderRadius: "16px",
-                    background: "var(--sr-panel-2)",
-                    border: "1px solid var(--sr-hairline)",
-                    textDecoration: "none",
-                    transition: "transform 0.15s ease",
-                    "&:hover": { transform: "translateY(-2px)" },
-                  }}
-                >
-                  <Box
-                    component="img"
-                    src={c.src}
-                    alt=""
-                    width={26}
-                    height={26}
-                    loading="lazy"
-                    sx={{ width: 26, height: 26, objectFit: "contain" }}
-                  />
-                  <Typography
-                    sx={{
-                      fontFamily: SANS,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: "var(--sr-body)",
-                    }}
-                  >
-                    {c.name}
-                  </Typography>
-                </Box>
-              ))}
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                  color: "var(--sr-muted)",
+                  textAlign: "center",
+                  marginBottom: "-2px",
+                }}
+              >
+                {t("success.confirmHeading", "Confirm with concierge")}
+              </Typography>
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "8px",
+                }}
+              >
+                {(() => {
+                  const message = encodeURIComponent(
+                    t(
+                      "success.msg.confirm",
+                      "Hi SunRed concierge, I just placed reservation {{ref}}. Please confirm my order. Thanks!",
+                      { ref: refCode }
+                    )
+                  );
+                  const channels: Array<{
+                    name: string;
+                    Icon: React.ComponentType<{ size?: number }>;
+                    href: string;
+                    external: boolean;
+                    fg: string;
+                    bg: string;
+                    border: string;
+                  }> = [
+                    {
+                      name: t("success.channel.whatsapp", "WhatsApp"),
+                      Icon: FaWhatsapp,
+                      href: `${CONCIERGE.whatsappUrl}?text=${message}`,
+                      external: true,
+                      fg: "#25D366",
+                      bg: "rgba(37, 211, 102, 0.10)",
+                      border: "rgba(37, 211, 102, 0.28)",
+                    },
+                    {
+                      name: t("success.channel.line", "LINE"),
+                      Icon: FaLine,
+                      href: "https://line.me/R/ti/p/@sunred.bkk",
+                      external: true,
+                      fg: "#06C755",
+                      bg: "rgba(6, 199, 85, 0.10)",
+                      border: "rgba(6, 199, 85, 0.28)",
+                    },
+                    {
+                      name: t("success.channel.telegram", "Telegram"),
+                      Icon: FaTelegramPlane,
+                      href: `https://t.me/SunRedvip_bkk?text=${message}`,
+                      external: true,
+                      fg: "#229ED9",
+                      bg: "rgba(34, 158, 217, 0.10)",
+                      border: "rgba(34, 158, 217, 0.28)",
+                    },
+                    {
+                      name: t("success.channel.wechat", "WeChat"),
+                      Icon: FaWeixin,
+                      href: "/wechat-scan",
+                      external: false,
+                      fg: "#07C160",
+                      bg: "rgba(7, 193, 96, 0.10)",
+                      border: "rgba(7, 193, 96, 0.28)",
+                    },
+                  ];
+                  return channels.map((c) => (
+                    <Button
+                      key={c.name}
+                      fullWidth
+                      onClick={() => {
+                        if (c.external) {
+                          window.open(
+                            c.href,
+                            "_blank",
+                            "noopener,noreferrer"
+                          );
+                        } else {
+                          void navigate(c.href);
+                        }
+                      }}
+                      startIcon={<c.Icon size={18} />}
+                      sx={{
+                        height: 46,
+                        borderRadius: "999px",
+                        background: c.bg,
+                        color: c.fg,
+                        fontFamily: SANS,
+                        fontWeight: 700,
+                        fontSize: "13.5px",
+                        textTransform: "none",
+                        border: `1px solid ${c.border}`,
+                        "& .MuiButton-startIcon": { marginRight: "8px" },
+                        "&:hover": {
+                          background: c.bg,
+                          borderColor: c.fg,
+                          boxShadow: `0 4px 14px ${c.bg}`,
+                        },
+                      }}
+                    >
+                      {c.name}
+                    </Button>
+                  ));
+                })()}
+              </Box>
+              {/* 🆕 Round 28s90 — reassurance line near the contact CTAs. */}
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "11.5px",
+                  color: "var(--sr-muted)",
+                  textAlign: "center",
+                  marginTop: "-2px",
+                  lineHeight: 1.4,
+                }}
+              >
+                {t(
+                  "success.replyFast",
+                  "Concierge typically replies in minutes · 24/7"
+                )}
+              </Typography>
             </Box>
             </Box>{/* end top-cluster 2-col grid */}
 
@@ -972,144 +1055,6 @@ const BookingSuccessPage: React.FC = () => {
                   ref: refCode,
                 })}
               </Button>
-              {/* 🆕 Round 28s90 (CRO audit) — Multi-channel confirm row.
-                  Was a single LINE-only gradient button that dropped
-                  WeChat (Chinese tourists) + Telegram-first guests into
-                  the wrong app, where they bailed. Now every guest taps
-                  their own channel; the booking refCode is pre-filled in
-                  the message everywhere the platform allows a body
-                  (WhatsApp + Telegram + LINE web; WeChat → QR scan page).
-                  Brand-color icons reuse the home concierge grid set. */}
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  letterSpacing: "0.04em",
-                  textTransform: "uppercase",
-                  color: "var(--sr-muted)",
-                  textAlign: "center",
-                  marginBottom: "-2px",
-                }}
-              >
-                {t("success.confirmHeading", "Confirm with concierge")}
-              </Typography>
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "8px",
-                }}
-              >
-                {(() => {
-                  const message = encodeURIComponent(
-                    t(
-                      "success.msg.confirm",
-                      "Hi SunRed concierge, I just placed reservation {{ref}}. Please confirm my order. Thanks!",
-                      { ref: refCode }
-                    )
-                  );
-                  const channels: Array<{
-                    name: string;
-                    Icon: React.ComponentType<{ size?: number }>;
-                    href: string;
-                    external: boolean;
-                    fg: string;
-                    bg: string;
-                    border: string;
-                  }> = [
-                    {
-                      name: t("success.channel.whatsapp", "WhatsApp"),
-                      Icon: FaWhatsapp,
-                      href: `${CONCIERGE.whatsappUrl}?text=${message}`,
-                      external: true,
-                      fg: "#25D366",
-                      bg: "rgba(37, 211, 102, 0.10)",
-                      border: "rgba(37, 211, 102, 0.28)",
-                    },
-                    {
-                      name: t("success.channel.line", "LINE"),
-                      Icon: FaLine,
-                      href: "https://line.me/R/ti/p/@sunred.bkk",
-                      external: true,
-                      fg: "#06C755",
-                      bg: "rgba(6, 199, 85, 0.10)",
-                      border: "rgba(6, 199, 85, 0.28)",
-                    },
-                    {
-                      name: t("success.channel.telegram", "Telegram"),
-                      Icon: FaTelegramPlane,
-                      href: `https://t.me/SunRedvip_bkk?text=${message}`,
-                      external: true,
-                      fg: "#229ED9",
-                      bg: "rgba(34, 158, 217, 0.10)",
-                      border: "rgba(34, 158, 217, 0.28)",
-                    },
-                    {
-                      name: t("success.channel.wechat", "WeChat"),
-                      Icon: FaWeixin,
-                      href: "/wechat-scan",
-                      external: false,
-                      fg: "#07C160",
-                      bg: "rgba(7, 193, 96, 0.10)",
-                      border: "rgba(7, 193, 96, 0.28)",
-                    },
-                  ];
-                  return channels.map((c) => (
-                    <Button
-                      key={c.name}
-                      fullWidth
-                      onClick={() => {
-                        if (c.external) {
-                          window.open(
-                            c.href,
-                            "_blank",
-                            "noopener,noreferrer"
-                          );
-                        } else {
-                          void navigate(c.href);
-                        }
-                      }}
-                      startIcon={<c.Icon size={18} />}
-                      sx={{
-                        height: 46,
-                        borderRadius: "999px",
-                        background: c.bg,
-                        color: c.fg,
-                        fontFamily: SANS,
-                        fontWeight: 700,
-                        fontSize: "13.5px",
-                        textTransform: "none",
-                        border: `1px solid ${c.border}`,
-                        "& .MuiButton-startIcon": { marginRight: "8px" },
-                        "&:hover": {
-                          background: c.bg,
-                          borderColor: c.fg,
-                          boxShadow: `0 4px 14px ${c.bg}`,
-                        },
-                      }}
-                    >
-                      {c.name}
-                    </Button>
-                  ));
-                })()}
-              </Box>
-              {/* 🆕 Round 28s90 — reassurance line near the contact CTAs. */}
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: "11.5px",
-                  color: "var(--sr-muted)",
-                  textAlign: "center",
-                  marginTop: "-2px",
-                  lineHeight: 1.4,
-                }}
-              >
-                {t(
-                  "success.replyFast",
-                  "Concierge typically replies in minutes · 24/7"
-                )}
-              </Typography>
               <Button
                 fullWidth
                 onClick={() => void navigate("/")}

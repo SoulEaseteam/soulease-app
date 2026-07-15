@@ -331,7 +331,7 @@
   "success.backHome": "홈으로 돌아가기",
   "success.therapistFallback": "고객님의 테라피스트",
   "success.title": "모든 준비가 완료되었습니다.",
-  "success.subtitle": "확인 내용을 이메일로 보내드렸으며, {{name}} 님이 {{time}}에 도착할 예정입니다.",
+  "success.subtitle": "{{name}} 님이 {{time}}에 도착할 예정입니다.",
   "success.concierge.resumesAt9": "컨시어지는 09:00에 다시 운영됩니다",
   "success.concierge.live": "컨시어지 대기 중 · {{label}}",
   "success.preparing": "{{name}} 님이 세션을 준비하고 있습니다",

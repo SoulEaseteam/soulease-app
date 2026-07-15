@@ -331,7 +331,7 @@
   "success.backHome": "ホームに戻る",
   "success.therapistFallback": "お客様のセラピスト",
   "success.title": "すべてのご準備が整いました。",
-  "success.subtitle": "ご登録のメールに確認をお送りしました。{{name}} が {{time}} に到着いたします。",
+  "success.subtitle": "{{name}} が {{time}} に到着いたします。",
   "success.concierge.resumesAt9": "コンシェルジュは09:00より再開いたします",
   "success.concierge.live": "コンシェルジュ対応中 · {{label}}",
   "success.preparing": "{{name}} がセッションのご準備をしております",

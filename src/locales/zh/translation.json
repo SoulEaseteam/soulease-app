@@ -426,7 +426,7 @@
   "success.backHome": "返回首页",
   "success.therapistFallback": "您的理疗师",
   "success.title": "一切已为您准备就绪。",
-  "success.subtitle": "我们已将确认信息发送至您的邮箱，{{name}} 将于 {{time}} 抵达。",
+  "success.subtitle": "{{name}} 将于 {{time}} 抵达。",
   "success.concierge.resumesAt9": "礼宾服务将于 09:00 恢复",
   "success.concierge.live": "礼宾在线 · {{label}}",
   "success.preparing": "{{name}} 正在为您的疗程做准备",

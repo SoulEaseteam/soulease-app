@@ -362,7 +362,7 @@
   "success.backHome": "Back to home",
   "success.therapistFallback": "your practitioner",
   "success.title": "You're all set.",
-  "success.subtitle": "We've sent confirmation to your email and {{name}} will arrive at {{time}}.",
+  "success.subtitle": "{{name}} will arrive at {{time}}.",
   "success.concierge.resumesAt9": "Concierge resumes at 09:00",
   "success.concierge.live": "Concierge live · {{label}}",
   "success.preparing": "{{name}} is preparing your session",

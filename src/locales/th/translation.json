@@ -333,7 +333,7 @@
   "success.backHome": "กลับสู่หน้าหลัก",
   "success.therapistFallback": "ผู้เชี่ยวชาญของคุณ",
   "success.title": "เรียบร้อยทุกอย่างแล้ว",
-  "success.subtitle": "เราได้ส่งการยืนยันไปยังอีเมลของคุณแล้ว และ {{name}} จะมาถึงเวลา {{time}}",
+  "success.subtitle": "{{name}} จะมาถึงเวลา {{time}}",
   "success.concierge.resumesAt9": "คอนเซียร์จเปิดให้บริการอีกครั้งเวลา 09:00",
   "success.concierge.live": "คอนเซียร์จพร้อมดูแล · {{label}}",
   "success.preparing": "{{name}} กำลังเตรียมความพร้อมสำหรับเซสชันของคุณ",
