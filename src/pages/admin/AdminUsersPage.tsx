@@ -21,6 +21,7 @@ import {
   TextField,
   MenuItem,
   Stack,
+  useMediaQuery,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { auth, db } from "@/lib/firebase";
@@ -36,7 +37,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { Crown, Warning, MagnifyingGlass, UsersThree, Repeat, CurrencyCircleDollar, CaretDown, CircleNotch, ProhibitInset } from "phosphor-react";
+import { Crown, Warning, MagnifyingGlass, UsersThree, Repeat, CurrencyCircleDollar, CaretDown, CircleNotch, ProhibitInset, Copy } from "phosphor-react";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 // 🆕 28w.60 — membership enrollment (SRD- codes) on the customer insights drawer.
 import {
@@ -260,6 +261,12 @@ const AdminUsersPage: React.FC = () => {
 
   const [query, setQuery] = useState("");
   const [countryFilter, setCountryFilter] = useState<string | null>(null); // ISO code · "__none__" · null=all
+  // 🆕 28x.41 (founder: "ปุ่มกรอง ลูกค้าตามเลเวล + กรองคนที่เป็นสมาชิกและยังไม่เป็น")
+  const [tierFilter, setTierFilter] = useState<MembershipTier | "__all__">("__all__");
+  const [memberFilter, setMemberFilter] = useState<"__all__" | "member" | "nonmember">("__all__");
+  // 🆕 28x.41 (founder: "ให้ดูในจอมือถือสะดวกขึ้น") — the 8-col DataGrid is
+  //   cramped on a phone; on narrow screens we swap it for a stacked card list.
+  const isMobile = useMediaQuery("(max-width:600px)");
   const [selectedGuest, setSelectedGuest] = useState<CustomerInsight | null>(null);
   // 🆕 Round 28s288 — one history row can expand to its FULL booking doc,
   //   fetched on demand (an old booking may be outside the Bookings feed
@@ -363,6 +370,11 @@ const AdminUsersPage: React.FC = () => {
   const [editTier, setEditTier] = useState<MembershipTier>("Bronze");
   const computedTierFor = (g: CustomerInsight) =>
     membershipFor({ served: g.served, totalSpent: g.totalSpent, lastVisitMs: g.lastVisit?.getTime() ?? 0, noShowCount: g.noShowCount }, nowMs).tier;
+  // 🆕 28x.41 — a guest's level for the filter + card chip: the enrolled member
+  //   tier if they hold an SRD- code, else the tier their history qualifies for.
+  const isEnrolledMember = (g: CustomerInsight) => !!members[normPhone(g.phone)];
+  const effectiveTier = (g: CustomerInsight): MembershipTier | null =>
+    members[normPhone(g.phone)]?.tier ?? computedTierFor(g);
 
   // Full-doc replace (not merge) so removing a member key actually deletes it.
   const writeMembers = async (next: Record<string, MemberRec>) => {
@@ -459,9 +471,16 @@ const AdminUsersPage: React.FC = () => {
       const matchesCountry =
         !countryFilter ||
         (countryFilter === "__none__" ? !i.country : i.country?.code === countryFilter);
-      return matchesText && matchesCountry;
+      // 🆕 28x.41 — level + membership filters.
+      const matchesTier = tierFilter === "__all__" || effectiveTier(i) === tierFilter;
+      const enrolled = isEnrolledMember(i);
+      const matchesMember =
+        memberFilter === "__all__" ||
+        (memberFilter === "member" ? enrolled : !enrolled);
+      return matchesText && matchesCountry && matchesTier && matchesMember;
     });
-  }, [insights, query, countryFilter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [insights, query, countryFilter, tierFilter, memberFilter, members, nowMs]);
 
   const vipCount = useMemo(() => insights.filter((i) => i.served >= VIP_THRESHOLD).length, [insights]);
   const repeatCount = useMemo(() => insights.filter((i) => i.served >= 2).length, [insights]);
@@ -750,20 +769,115 @@ const AdminUsersPage: React.FC = () => {
           ))}
           {countryBreakdown.unknown > 0 && <MenuItem value="__none__">❔ Unknown ({countryBreakdown.unknown})</MenuItem>}
         </TextField>
+
+        {/* 🆕 28x.41 — Level (tier) filter. Count each tier by effective level. */}
+        <TextField
+          select size="small" label="Level"
+          value={tierFilter}
+          onChange={(e) => setTierFilter(e.target.value as MembershipTier | "__all__")}
+          sx={{ minWidth: 150, "& .MuiOutlinedInput-root": { borderRadius: "12px", background: adminColor.panel } }}
+          SelectProps={{ MenuProps: { PaperProps: { sx: { background: adminColor.panel, color: adminColor.text, borderRadius: "12px", boxShadow: "0 8px 24px rgba(31,41,51,0.10)" } } } }}
+        >
+          <MenuItem value="__all__">All levels</MenuItem>
+          {MEMBERSHIP_TIERS.map((t) => {
+            const n = insights.filter((i) => effectiveTier(i) === t).length;
+            return <MenuItem key={t} value={t}><span style={{ color: MEMBERSHIP_COLORS[t], fontWeight: 700 }}>●</span>&nbsp;{t} ({n})</MenuItem>;
+          })}
+        </TextField>
+
+        {/* 🆕 28x.41 — Membership filter (enrolled SRD- vs not). */}
+        <TextField
+          select size="small" label="Membership"
+          value={memberFilter}
+          onChange={(e) => setMemberFilter(e.target.value as "__all__" | "member" | "nonmember")}
+          sx={{ minWidth: 170, "& .MuiOutlinedInput-root": { borderRadius: "12px", background: adminColor.panel } }}
+          SelectProps={{ MenuProps: { PaperProps: { sx: { background: adminColor.panel, color: adminColor.text, borderRadius: "12px", boxShadow: "0 8px 24px rgba(31,41,51,0.10)" } } } }}
+        >
+          <MenuItem value="__all__">All guests</MenuItem>
+          <MenuItem value="member">👑 Members ({insights.filter(isEnrolledMember).length})</MenuItem>
+          <MenuItem value="nonmember">Non-members ({insights.filter((i) => !isEnrolledMember(i)).length})</MenuItem>
+        </TextField>
       </Box>
 
-      <Paper sx={{ height: 440, p: 0, borderRadius: 3, background: adminColor.panel2, mb: 4, overflow: "hidden" }}>
-        <DataGrid
-          rows={filteredInsights}
-          columns={insightColumns}
-          loading={insightsLoading}
-          getRowId={(row) => row.phone}
-          disableRowSelectionOnClick
-          onRowClick={(p) => setSelectedGuest(p.row as CustomerInsight)}
-          initialState={{ sorting: { sortModel: [{ field: "served", sort: "desc" }] } }}
-          sx={{ ...gridSx, "& .MuiDataGrid-row": { cursor: "pointer" } }}
-        />
-      </Paper>
+      {/* 🆕 28x.41 — phone: stacked card list; desktop: the full DataGrid. */}
+      {isMobile ? (
+        <Box sx={{ mb: 4 }}>
+          <Typography sx={{ fontSize: 11, color: adminColor.dim, mb: 1 }}>
+            {filteredInsights.length} guests
+          </Typography>
+          <Stack spacing={1}>
+            {filteredInsights
+              .slice()
+              .sort((a, b) => b.served - a.served)
+              .map((g) => {
+                const tier = effectiveTier(g);
+                const tc = tier ? MEMBERSHIP_COLORS[tier] : adminColor.dim;
+                const enrolled = isEnrolledMember(g);
+                const blocked = blockedPhones.has(normPhone(g.phone));
+                return (
+                  <Box
+                    key={g.phone}
+                    onClick={() => setSelectedGuest(g)}
+                    sx={{
+                      background: adminColor.panel, border: `1px solid ${adminColor.line}`,
+                      borderRadius: "14px", p: "11px 13px", cursor: "pointer",
+                      "&:active": { background: adminColor.panel3 },
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, mb: 0.5 }}>
+                      {g.served >= VIP_THRESHOLD && <Crown size={14} weight="fill" color={adminColor.amber} />}
+                      {blocked && <ProhibitInset size={14} weight="fill" color={adminColor.red} />}
+                      <Typography sx={{ fontSize: 14.5, fontWeight: 700, color: adminColor.text, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {g.name}
+                      </Typography>
+                      {tier && (
+                        <Box sx={{ px: 0.8, py: "1px", borderRadius: 999, background: `${tc}1A`, border: `1px solid ${tc}55`, flexShrink: 0, display: "flex", alignItems: "center", gap: "3px" }}>
+                          {enrolled && <Crown size={10} weight="fill" color={tc} />}
+                          <Typography sx={{ fontSize: 9.5, fontWeight: 800, color: tc, lineHeight: 1.5 }}>{tier}</Typography>
+                        </Box>
+                      )}
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.75 }}>
+                      <span style={{ fontSize: 14 }}>{g.country?.flag ?? "🌐"}</span>
+                      <a href={`tel:${g.phone}`} onClick={(e) => e.stopPropagation()} style={{ color: adminColor.accent, textDecoration: "none", fontWeight: 600, fontSize: 12.5 }}>
+                        {g.phone}
+                      </a>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+                      {[
+                        { l: "Visits", v: String(g.served), strong: true },
+                        { l: "Orders", v: String(g.orders) },
+                        { l: "No-show", v: String(g.noShowCount), danger: g.noShowCount > 0 },
+                        { l: "Spent", v: `฿${g.totalSpent.toLocaleString()}` },
+                      ].map((s) => (
+                        <Box key={s.l} sx={{ display: "flex", alignItems: "baseline", gap: 0.4 }}>
+                          <Typography sx={{ ...adminFigureSx, fontSize: 13, fontWeight: s.strong ? 800 : 700, color: s.danger ? adminColor.red : adminColor.text }}>{s.v}</Typography>
+                          <Typography sx={{ fontSize: 9, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 700 }}>{s.l}</Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                );
+              })}
+            {filteredInsights.length === 0 && !insightsLoading && (
+              <Typography sx={{ fontSize: 13, color: adminColor.dim, textAlign: "center", py: 3 }}>ไม่พบลูกค้าตามตัวกรอง</Typography>
+            )}
+          </Stack>
+        </Box>
+      ) : (
+        <Paper sx={{ height: 440, p: 0, borderRadius: 3, background: adminColor.panel2, mb: 4, overflow: "hidden" }}>
+          <DataGrid
+            rows={filteredInsights}
+            columns={insightColumns}
+            loading={insightsLoading}
+            getRowId={(row) => row.phone}
+            disableRowSelectionOnClick
+            onRowClick={(p) => setSelectedGuest(p.row as CustomerInsight)}
+            initialState={{ sorting: { sortModel: [{ field: "served", sort: "desc" }] } }}
+            sx={{ ...gridSx, "& .MuiDataGrid-row": { cursor: "pointer" } }}
+          />
+        </Paper>
+      )}
 
       {/* ── Registered accounts ──────────────────────────────────────── */}
       {/* 🆕 Round 28r45 — bilingual section header. */}
@@ -811,11 +925,16 @@ const AdminUsersPage: React.FC = () => {
                   </Box>
                 )}
               </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
                 <a href={`tel:${selectedGuest.phone}`} style={{ color: adminColor.accent, textDecoration: "none", fontWeight: 600, fontSize: 13 }}>{selectedGuest.phone}</a>
-                {selectedGuest.country && (
-                  <Typography sx={{ fontSize: 12.5, color: adminColor.muted }}>{selectedGuest.country.flag} {selectedGuest.country.name}</Typography>
-                )}
+                {/* 🆕 28x.41 (founder: "โชว์สัญชาติ") — nationality chip, always shown
+                    (falls back to Unknown when the phone has no resolvable dial code). */}
+                <Box sx={{ display: "inline-flex", alignItems: "center", gap: "5px", px: "8px", py: "2px", borderRadius: 999, background: adminColor.panel, border: `1px solid ${adminColor.line}` }}>
+                  <span style={{ fontSize: 14 }}>{selectedGuest.country?.flag ?? "🌐"}</span>
+                  <Typography sx={{ fontSize: 12, fontWeight: 600, color: adminColor.muted }}>
+                    {selectedGuest.country?.name ?? "Unknown"}
+                  </Typography>
+                </Box>
               </Box>
             </DialogTitle>
             <DialogContent>
@@ -905,9 +1024,34 @@ const AdminUsersPage: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          <Typography sx={{ fontFamily: "ui-monospace, monospace", fontSize: 18, fontWeight: 800, letterSpacing: "0.08em", color: adminColor.text, mb: 1 }}>
-                            {member.code}
-                          </Typography>
+                          {/* 🆕 28x.41 (founder: "กดคัดลอกได้") — tap the SRD code to copy it. */}
+                          <Box
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => {
+                              void navigator.clipboard?.writeText(member.code);
+                              toast.success(`คัดลอกแล้ว · ${member.code}`);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                void navigator.clipboard?.writeText(member.code);
+                                toast.success(`คัดลอกแล้ว · ${member.code}`);
+                              }
+                            }}
+                            sx={{
+                              display: "inline-flex", alignItems: "center", gap: 0.75, mb: 1,
+                              cursor: "pointer", userSelect: "none", borderRadius: "8px",
+                              px: 0.75, py: 0.25, ml: -0.75,
+                              "&:hover": { background: adminColor.panel3 },
+                            }}
+                            aria-label="Copy membership code"
+                          >
+                            <Typography sx={{ fontFamily: "ui-monospace, monospace", fontSize: 18, fontWeight: 800, letterSpacing: "0.08em", color: adminColor.text }}>
+                              {member.code}
+                            </Typography>
+                            <Copy size={16} color={adminColor.dim} />
+                          </Box>
                           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                             <Button size="small" variant="outlined" disabled={memberSaving} onClick={resetMemberCode}
                               sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: "#8A3A57", borderColor: "#B8567F", "&:hover": { borderColor: "#8A3A57", background: "rgba(184,86,127,0.06)" } }}>
