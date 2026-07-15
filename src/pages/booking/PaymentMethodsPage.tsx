@@ -940,7 +940,7 @@ const FaqRow: React.FC<{ item: FaqItem }> = ({ item }) => {
         top: "12%",
         bottom: "12%",
         width: "2px",
-        background: "#8F8474",
+        background: "#D97C95",
         borderRadius: "2px",
         opacity: 0,
         transition: "opacity 220ms ease",

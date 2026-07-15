@@ -1662,15 +1662,27 @@ const SelectLocationPage: React.FC = () => {
         </FieldLabel>
 
         {/* 🆕 Founder 2026-05-01 round 13: helper info card explaining
-            the 'Direct Room Access' policy. Soft cream tile, no
-            interaction — pure communication. */}
+            the 'Direct Room Access' policy. 28x.20 — soft ROSE notice tile
+            (was a washed pink-white that read as flat gray on the dark
+            theme), with a rose left-accent bar + rose title. */}
         <Box
           sx={{
-            padding: "14px 16px",
+            position: "relative",
+            padding: "14px 16px 14px 18px",
             borderRadius: "14px",
-            background: "rgba(255, 240, 240, 0.18)",
-            border: "1px solid rgba(214, 40, 40, 0.18)",
+            background: "rgba(217, 124, 149, 0.10)",
+            border: "1px solid rgba(217, 124, 149, 0.28)",
             marginTop: "-4px",
+            overflow: "hidden",
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: "3px",
+              background: "#D97C95",
+            },
           }}
         >
           <Typography
@@ -1678,7 +1690,7 @@ const SelectLocationPage: React.FC = () => {
               fontFamily: SERIF,
               fontSize: "14px",
               fontWeight: 700,
-              color: "var(--sr-ink)",
+              color: "#C2185B",
               marginBottom: "4px",
             }}
           >
@@ -1729,7 +1741,7 @@ const SelectLocationPage: React.FC = () => {
           sx={{
             height: 46,
             borderRadius: "999px",
-            background: "#8F8474",
+            background: "#D97C95",
             color: "#fff",
             fontFamily: SANS,
             fontSize: "14.5px",
@@ -1740,7 +1752,7 @@ const SelectLocationPage: React.FC = () => {
               "0 8px 20px rgba(15, 23, 42, 0.32), 0 3px 8px rgba(214, 40, 40, 0.15)",
             transition: "transform 0.15s ease, box-shadow 0.15s ease",
             "&:hover": {
-              background: "#7A7060",
+              background: "#C96F89",
               transform: "translateY(-1px)",
               boxShadow:
                 "0 12px 24px rgba(15, 23, 42, 0.38), 0 4px 10px rgba(214, 40, 40, 0.20)",
