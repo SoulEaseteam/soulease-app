@@ -291,11 +291,11 @@ export const therapists: Therapist[] = [
     id: "XingXingSunRed",
     name: "XingXing",
     bios: {
-      en: "Softer, fuller physique with a distinctive trilingual range — native Thai, fluent English, conversational Chinese. Din Daeng afternoons to late-night.",
-      th: "รูปร่างนุ่มอวบกว่านักบำบัดทั่วไป · ไทยภาษาแม่ อังกฤษคล่อง จีนใช้งานได้ · ดินแดง บ่ายถึงดึก",
-      zh: "柔和丰盈体态,泰语母语英语流利,中文可沟通 · 迪丹丁午后至深夜",
-      ja: "柔らかく豊かな体型と三か国語対応(タイ語ネイティブ、英語流暢、中国語会話)。ディンデーン午後〜深夜。",
-      ko: "부드러운 풍만한 체형, 태국어 원어민·영어 능통·중국어 회화. 딘다엥 오후-심야.",
+      en: "Bright and easy to talk to. Fluent English, basic Chinese. A slow, unhurried rhythm.",
+      th: "สดใส และคุยสนุก · อังกฤษคล่อง จีนพื้นฐาน · นวดช้าๆ ไม่เร่งรีบ",
+      zh: "开朗健谈 · 英语流利,中文基础 · 节奏舒缓不催促",
+      ja: "明るく話しやすい。英語流暢、中国語は基礎。ゆったりと急がないリズム。",
+      ko: "밝고 대화가 즐거운 · 영어 능통, 중국어 기초 · 느리고 서두르지 않는 리듬",
     },
     image: "/images/xing/xi.jpeg",
     rating: 0,
@@ -362,7 +362,7 @@ export const therapists: Therapist[] = [
     languageSkills: [
       { code: "th", level: "Native" },
       { code: "en", level: "Fluent" },
-      { code: "zh", level: "Conversational" },
+      { code: "zh", level: "Basic" },
     ],
 
     credentials: [
