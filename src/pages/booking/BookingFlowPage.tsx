@@ -99,6 +99,7 @@ import {
   ADMIN_QUOTE_KM,
   DISPATCH_BASE,
   travelBands,
+  travelFareDisplay,
 } from "@/utils/taxiFare";
 // 🆕 Round 28b35 — Live therapist Holiday/override gate.
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
@@ -691,7 +692,7 @@ const BookingFlowPage: React.FC = () => {
   // distance. Otherwise we render with the haversine quick estimate
   // so the page never flickers an empty fare line.
   const taxi = useMemo(() => {
-    if (!locationSet) return { distanceKm: 0, fare: 0, result: undefined };
+    if (!locationSet) return { distanceKm: 0, fare: 0, result: undefined, taxiOriginal: null, taxiSave: 0 };
     // 🆕 Round 28w.11 (founder) — taxi fee now comes from the SAME fixed
     //   travel-budget bands as the near-me estimator (calcTravelBudgetResult),
     //   NOT the GrabCar meter. Flat by real distance; excludes weather/traffic
@@ -707,9 +708,14 @@ const BookingFlowPage: React.FC = () => {
           customerLng: form.lng,
           durationMin: form.duration ?? service?.duration ?? 60,
         }).distanceKm;
-    if (!distanceKm) return { distanceKm: 0, fare: 0, result: undefined };
+    if (!distanceKm) return { distanceKm: 0, fare: 0, result: undefined, taxiOriginal: null, taxiSave: 0 };
     const result = calcTravelBudgetResult(distanceKm);
-    return { distanceKm, fare: result.fare ?? 0, result };
+    // 🆕 28x.47 — apply the same online-booking saving the near-me estimate
+    //   shows, so the fee the guest saw ("you save online") is exactly what the
+    //   booking charges. Band fare = struck original; youPay = actual charge.
+    const disp = travelFareDisplay(distanceKm);
+    const fare = disp.youPay != null ? disp.youPay : (result.fare ?? 0);
+    return { distanceKm, fare, result, taxiOriginal: disp.original, taxiSave: disp.save };
   }, [
     locationSet,
     route,
@@ -720,6 +726,8 @@ const BookingFlowPage: React.FC = () => {
   ]);
   const distanceKm = taxi.distanceKm;
   const taxiFare = taxi.fare;
+  const taxiOriginal = taxi.taxiOriginal;
+  const taxiSave = taxi.taxiSave;
   const taxiResult = taxi.result;
   const adminQuoteRequired = taxiResult?.tier === "admin";
   /** True while Directions API hasn't resolved yet — shows "≈" + spinner hint. */
@@ -2237,6 +2245,21 @@ const BookingFlowPage: React.FC = () => {
                 discount as "SunRed Smart Routing". We no longer compare
                 to Grab anywhere — it's all our brand. */}
             <Box sx={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+              {/* 🆕 28x.47 — struck standard band fare (the REAL "before" rate,
+                  not a fake anchor) when the online saving actually applies. */}
+              {locationSet && !adminQuoteRequired && taxiFare > 0 && taxiSave > 0 && taxiOriginal != null && (
+                <Typography
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    color: "var(--sr-muted)",
+                    textDecoration: "line-through",
+                  }}
+                >
+                  {formatTHB(taxiOriginal)}
+                </Typography>
+              )}
               <Typography
                 sx={{
                   fontFamily: SANS,
@@ -2272,8 +2295,14 @@ const BookingFlowPage: React.FC = () => {
               marginBottom: "8px",
             }}
           >
-            {/* 🆕 Round 28s308 — Smart Routing chip removed with the fake
-                discount anchor; travel is charged at the actual round-trip. */}
+            {/* 🆕 28x.47 — REAL online-booking saving (youPay < band). Honest,
+                unlike the 28s308 fake anchor: the struck price above is the
+                actual standard band and this is the money genuinely saved. */}
+            {locationSet && !adminQuoteRequired && taxiFare > 0 && taxiSave > 0 && (
+              <FareChip color="green" icon={<LocalOfferRoundedIcon />}>
+                {t("booking.taxiSaved", "You save ฿{{n}} booking online", { n: taxiSave })}
+              </FareChip>
+            )}
             {locationSet &&
               taxiResult &&
               taxiResult.rain.tier !== "none" && (

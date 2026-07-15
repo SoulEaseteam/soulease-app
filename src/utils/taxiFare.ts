@@ -111,6 +111,30 @@ export function travelBudgetForKm(km: number): number | null {
   return null;
 }
 
+// 🆕 Round 28x.47 (founder: "ปัดเศษลง แล้วขึ้นข้อความ ประหยัด ค่าเดินทางแบบแกรปทำ") —
+//   an online-booking saving on the travel fee, presented Grab-style: the band
+//   fare is the struck "original", and the guest actually pays a slightly lower,
+//   rounded-DOWN figure. Tunable in one place; set to 0 to switch the saving off
+//   (then youPay === original and no "save" chip shows).
+export const WEB_TAXI_SAVING_PCT = 0.05;
+
+export interface TravelFareDisplay {
+  /** The standard band fare — shown struck-through as the "before" price. */
+  original: number | null;
+  /** What the guest actually pays: band − saving, rounded DOWN to ฿10. */
+  youPay: number | null;
+  /** original − youPay (0 when there's no saving or no priced band). */
+  save: number;
+}
+
+export function travelFareDisplay(km: number): TravelFareDisplay {
+  const original = travelBudgetForKm(km);
+  if (original == null) return { original: null, youPay: null, save: 0 };
+  const pct = Math.min(0.5, Math.max(0, WEB_TAXI_SAVING_PCT));
+  const youPay = Math.max(0, Math.floor((original * (1 - pct)) / 10) * 10);
+  return { original, youPay, save: Math.max(0, original - youPay) };
+}
+
 // ─── GrabCar Bangkok rate card ───────────────────────────────────────
 const BASE_FARE = 45;        // first km (≤ 1 km flag-fall)
 const TIER_2_PER_KM = 8;     // applies to km 1 → 6

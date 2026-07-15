@@ -21,8 +21,9 @@ import { CONCIERGE } from "@/config/concierge";
 import { MapPin } from "phosphor-react";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
 import therapists from "@/data/therapists";
-import { travelBudgetForKm, haversineKm, BKK_ROAD_FACTOR, DISPATCH_BASE } from "@/utils/taxiFare";
+import { travelFareDisplay, haversineKm, BKK_ROAD_FACTOR, DISPATCH_BASE } from "@/utils/taxiFare";
 import { estimateEtaFromKm, fetchDrivingDistance, type RouteResult } from "@/utils/directionsApi";
+import { useTweenedNumber } from "@/hooks/useTweenedNumber";
 import { formatTHB } from "@/utils/servicePricing";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
@@ -319,11 +320,16 @@ const TaxiEstimator: React.FC = () => {
     if (!rawKm) return null;
     // Band from the RAW km (identical to the booking charge); round only for display.
     const distanceKm = Math.round(rawKm * 10) / 10;
-    const fare = travelBudgetForKm(rawKm);
+    // 🆕 28x.47 — Grab-style saving: struck band original + rounded-down youPay.
+    const { original, youPay, save } = travelFareDisplay(rawKm);
     const isLive = route != null && route.source !== "haversine";
     const etaMin = route ? route.durationMin : estimateEtaFromKm(distanceKm);
-    return { distanceKm, fare, etaMin, isLive };
+    return { distanceKm, fare: youPay, original, save, etaMin, isLive };
   }, [selected, coords, route]);
+
+  // 🆕 28x.47 — animate the fare so it "ticks" to the new value when the pin
+  //   moves (à la Grab). Tween the amount the guest pays; 0 when unpriced.
+  const tweenedFare = useTweenedNumber(estimate?.fare ?? 0);
 
   if (roster.length === 0) return null;
 
@@ -541,7 +547,8 @@ const TaxiEstimator: React.FC = () => {
             />
             <ResultCell
               label={t("nearme.taxi.fare", "Travel budget")}
-              value={estimate.fare != null ? formatTHB(estimate.fare) : "—"}
+              value={estimate.fare != null ? formatTHB(Math.round(tweenedFare)) : "—"}
+              strike={estimate.fare != null && estimate.save > 0 && estimate.original != null ? formatTHB(estimate.original) : undefined}
               accent
               divider
             />
@@ -552,6 +559,26 @@ const TaxiEstimator: React.FC = () => {
                 divider
               />
             )}
+          </Box>
+        )}
+
+        {/* 🆕 28x.47 — "you saved" chip (Grab-style), only when the online fare
+            actually undercuts the band. */}
+        {estimate && estimate.fare != null && estimate.save > 0 && (
+          <Box sx={{ display: "flex", justifyContent: "center" }}>
+            <Box
+              sx={{
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                px: "12px", py: "5px", borderRadius: "999px",
+                background: "rgba(230,25,126,0.10)",
+                border: "1px solid rgba(230,25,126,0.30)",
+              }}
+            >
+              <Box component="span" sx={{ width: 7, height: 7, borderRadius: "50%", background: "#E6197E" }} />
+              <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 800, color: "#C2185B" }}>
+                {t("nearme.taxi.saved", "You save ฿{{n}} booking online", { n: estimate.save })}
+              </Typography>
+            </Box>
           </Box>
         )}
 
@@ -567,11 +594,12 @@ const TaxiEstimator: React.FC = () => {
   );
 };
 
-const ResultCell: React.FC<{ label: string; value: string; accent?: boolean; divider?: boolean }> = ({
+const ResultCell: React.FC<{ label: string; value: string; accent?: boolean; divider?: boolean; strike?: string }> = ({
   label,
   value,
   accent,
   divider,
+  strike,
 }) => (
   <Box
     sx={{
@@ -586,13 +614,19 @@ const ResultCell: React.FC<{ label: string; value: string; accent?: boolean; div
     <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--sr-muted)" }}>
       {label}
     </Typography>
+    {/* 🆕 28x.47 — struck "before" price above the discounted fare (Grab-style). */}
+    {strike && (
+      <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 600, color: "var(--sr-muted)", textDecoration: "line-through", lineHeight: 1, mt: 0.3 }}>
+        {strike}
+      </Typography>
+    )}
     <Typography
       sx={{
         fontFamily: SERIF,
         fontSize: 18,
         fontWeight: 700,
         lineHeight: 1.15,
-        mt: 0.35,
+        mt: strike ? 0.1 : 0.35,
         color: accent ? "#D97C95" : "var(--sr-ink)",
       }}
     >
