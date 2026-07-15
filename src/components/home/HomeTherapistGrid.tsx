@@ -67,7 +67,12 @@ interface Therapist extends TherapistType {
 const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
   mapOnly = false,
 }) => {
-  const [therapists, setTherapists] = useState<Therapist[]>([]);
+  // 🆕 Round 28x.27 (founder: "สถานะเปลี่ยนตามการทำงาน") — store the RAW
+  //   roster; status is enriched in a memo below that also re-runs on a
+  //   60s clock tick, so cards flip available↔resting↔bookable as shifts
+  //   start/end and bookings expire, WITHOUT needing a page reload.
+  const [rawTherapists, setRawTherapists] = useState<Therapist[]>([]);
+  const [statusTick, setStatusTick] = useState(0);
   const [loading, setLoading] = useState(true);
   // 🆕 Round 28x.7 (audit fix #2) — the therapists listener previously
   //   had NO error callback and cleared `loading` only on success, so a
@@ -204,42 +209,9 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
         // carry the immutable Firestore doc id for the React key.
         raw.push({ ...data, id: data.id || docSnap.id, _docId: docSnap.id });
       });
-
-      // 🆕 Round 28s153 — TOP RATED is the daily bestseller. Picked
-      //   once across the whole roster (top 1 by todayBookings, tie-
-      //   broken by totalBookings, min 1 sale to qualify) so only
-      //   ONE practitioner ever wears the badge per day.
-      const topRatedId = pickTopRatedTherapistId(raw);
-
-      const enriched = raw.map((t) => {
-        const { status, nextAvailable } = calculateTherapistStatus(t);
-        // Defensive: clamp engine output to known Avail union — admin
-        // typo on statusOverride can leak a non-Avail string at runtime.
-        /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-        const safeStatus: Avail =
-          status === "available" || status === "bookable" || status === "resting" || status === "holiday"
-            ? status
-            : "resting";
-        /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-        const badge = getBadgeForTherapist({
-          totalBookings: t.totalBookings ?? 0,
-          todayBookings: t.todayBookings ?? 0,
-          // 🆕 28s349 — NEW badge now keys off roster age, not booking count.
-          createdAt: (t as { createdAt?: unknown }).createdAt,
-          badgeKey: t.badgeKey,
-          badgeUpdatedAt: t.badgeUpdatedAt,
-        });
-        // TOP_RATED override — beats VIP/HOT/NEW for the day's #1.
-        const badgeKey = t.id === topRatedId ? "TOP_RATED" : badge.key;
-        return {
-          ...t,
-          computedStatus: safeStatus,
-          computedNext: nextAvailable ?? null,
-          badgeKey,
-        };
-      });
-
-      setTherapists(enriched);
+      // 🆕 28x.27 — store RAW only; status/badge enrichment happens in the
+      //   `therapists` memo below so it can re-run on the 60s clock tick.
+      setRawTherapists(raw);
       setLoadError(false);
       setLoading(false);
     },
@@ -253,6 +225,49 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
     });
     return () => unsubscribe();
   }, []);
+
+  // 🆕 28x.27 — 60s clock tick. calculateTherapistStatus reads the live BKK
+  //   wall clock, so re-running the enrichment on this tick makes each card
+  //   flip as shifts start/end and bookings expire, with no reload.
+  useEffect(() => {
+    const id = window.setInterval(() => setStatusTick((n) => n + 1), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  // ── Enrich: status + badge. Re-runs when the roster changes OR the clock
+  //   ticks (statusTick), so displayed status always tracks the working
+  //   schedule / booking window in real time.
+  const therapists = useMemo<Therapist[]>(() => {
+    // TOP RATED is the daily bestseller — one practitioner per day.
+    const topRatedId = pickTopRatedTherapistId(rawTherapists);
+    return rawTherapists.map((t) => {
+      const { status, nextAvailable } = calculateTherapistStatus(t);
+      // Defensive: clamp engine output to the known Avail union — an admin
+      // typo on statusOverride can leak a non-Avail string at runtime.
+      /* eslint-disable @typescript-eslint/no-unnecessary-condition */
+      const safeStatus: Avail =
+        status === "available" || status === "bookable" || status === "resting" || status === "holiday"
+          ? status
+          : "resting";
+      /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+      const badge = getBadgeForTherapist({
+        totalBookings: t.totalBookings ?? 0,
+        todayBookings: t.todayBookings ?? 0,
+        createdAt: (t as { createdAt?: unknown }).createdAt,
+        badgeKey: t.badgeKey,
+        badgeUpdatedAt: t.badgeUpdatedAt,
+      });
+      const badgeKey = t.id === topRatedId ? "TOP_RATED" : badge.key;
+      return {
+        ...t,
+        computedStatus: safeStatus,
+        computedNext: nextAvailable ?? null,
+        badgeKey,
+      };
+    });
+    // statusTick is an intentional re-compute trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawTherapists, statusTick]);
 
   // ── Sort: status (available > bookable > resting), distance ASC, rating DESC.
   //    🆕 Round 26d (founder 2026-05-02): "พนักงานที่ใกล้ user และกำลัง
