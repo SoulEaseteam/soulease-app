@@ -291,10 +291,6 @@ const LoginPage: React.FC = () => {
               size="small"
               value={loginId}
               onChange={(e) => setLoginId(e.target.value)}
-              helperText={t("auth.field.loginId.hint", "Your phone number is best — it links to your member benefits")}
-              FormHelperTextProps={{
-                sx: { color: "var(--sr-muted)", fontSize: 11, ml: 0.5, mt: 0.25 },
-              }}
               sx={fieldSx}
             />
 
