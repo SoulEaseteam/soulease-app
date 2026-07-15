@@ -449,11 +449,18 @@ const AdminFloatingChat: React.FC = () => {
                   aria-label={`Chat on ${opt.title}`}
                   title={`Chat on ${opt.title}`}
                   sx={{
+                    // 🆕 Round 28x.9 (founder) — the logo now fills the whole
+                    //   tile edge-to-edge (the source PNGs are full-bleed app
+                    //   icons with their own brand colour), so there's no
+                    //   coloured ring/frame around a small centred logo.
+                    //   `overflow: hidden` clips the image to the rounded
+                    //   corners; `opt.tint` stays only as a load-time backdrop.
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     aspectRatio: "1 / 1",
                     borderRadius: "13px",
+                    overflow: "hidden",
                     background: opt.tint,
                     boxShadow: `0 3px 10px ${opt.tint}55`,
                     textDecoration: "none",
@@ -471,11 +478,14 @@ const AdminFloatingChat: React.FC = () => {
                     component="img"
                     src={opt.src}
                     alt=""
-                    width={22}
-                    height={22}
                     loading="lazy"
                     decoding="async"
-                    sx={{ width: 22, height: 22, objectFit: "contain" }}
+                    sx={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      display: "block",
+                    }}
                   />
                 </Box>
                 );
