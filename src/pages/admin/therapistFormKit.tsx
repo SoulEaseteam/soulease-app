@@ -359,7 +359,11 @@ export const AvatarUploader: React.FC<{
     try {
       const { getStorage, ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
       const storage = getStorage(app);
-      const blob = await downscaleImage(file, 800, 0.86); // profile pic — smaller than gallery
+      // 🆕 28x.23 (founder: "รูปบนเว็บไม่ชัด") — was 800px longest-edge, which
+      //   makes a portrait only ~600px wide → soft on retina cards and blurry
+      //   on the full-width detail hero. 1440px keeps faces crisp at every
+      //   surface. (Existing photos need a re-upload to gain the extra res.)
+      const blob = await downscaleImage(file, 1440, 0.9); // profile pic
       const path = `therapists/${docId}/profile/${Date.now()}.jpg`;
       const snap = await uploadBytes(ref(storage, path), blob, { contentType: "image/jpeg" });
       onChange(await getDownloadURL(snap.ref));

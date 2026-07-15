@@ -96,7 +96,12 @@ export function enhanceImage(
   // build transformations chain
   const transforms = [
     enhance ? "e_improve" : null, // auto enhance contrast/color
-    "q_auto", // auto quality
+    // 🆕 28x.23 (founder: "รูปบนเว็บไม่ชัด") — was bare `q_auto`, which
+    //   Cloudinary can drop to eco/low on portraits and soften faces on top
+    //   of the upload-side JPEG compression. `q_auto:good` sets a higher
+    //   quality floor so delivered photos stay sharp (helps existing images
+    //   immediately, no re-upload needed).
+    "q_auto:good",
     "f_auto", // auto format (WebP/AVIF when supported)
     `w_${w}`,
     `c_${crop}`,
