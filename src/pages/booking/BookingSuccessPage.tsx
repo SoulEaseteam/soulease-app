@@ -581,6 +581,36 @@ const BookingSuccessPage: React.FC = () => {
                 gap: "10px",
               }}
             >
+              {/* 🆕 28x.33 (founder "ย้ายไปไว้ด้านบน") — Copy reservation code
+                  moved up here, above the concierge confirm block: copy the
+                  ref, then send it via a channel below. */}
+              <Button
+                fullWidth
+                onClick={() => {
+                  if (typeof navigator !== "undefined" && navigator.clipboard) {
+                    void navigator.clipboard.writeText(refCode).catch(() => {});
+                  }
+                }}
+                sx={{
+                  height: 44,
+                  borderRadius: "999px",
+                  background: "var(--sr-panel)",
+                  color: "var(--sr-ink)",
+                  fontFamily: SANS,
+                  fontWeight: 700,
+                  fontSize: "13.5px",
+                  textTransform: "none",
+                  border: "1px solid var(--sr-hairline)",
+                  "&:hover": {
+                    background: "var(--sr-panel)",
+                    borderColor: "var(--sr-hairline)",
+                  },
+                }}
+              >
+                {t("success.copyCode", "Copy reservation code · {{ref}}", {
+                  ref: refCode,
+                })}
+              </Button>
               <Typography
                 sx={{
                   fontFamily: SANS,
@@ -1017,44 +1047,6 @@ const BookingSuccessPage: React.FC = () => {
                 gap: "10px",
               }}
             >
-              {/* 🆕 Round 28r10 (founder 2026-05-06) — Two changes:
-                    • Order swap: Copy booking code now sits ABOVE
-                      Contact admin (per founder direction "ย้าย copy
-                      สลับกับปุ่มติดต่อ"). Reasoning: every guest needs
-                      to keep their booking code first; chatting with
-                      admin is a stronger commitment that comes second.
-                    • Contact button label translated to English
-                      (the rest of the page is English; the lone Thai
-                      sentence read as a copy-paste glitch). */}
-              <Button
-                fullWidth
-                onClick={() => {
-                  if (typeof navigator !== "undefined" && navigator.clipboard) {
-                    void navigator.clipboard
-                      .writeText(refCode)
-                      .catch(() => {});
-                  }
-                }}
-                sx={{
-                  height: 44,
-                  borderRadius: "999px",
-                  background: "var(--sr-panel)",
-                  color: "var(--sr-ink)",
-                  fontFamily: SANS,
-                  fontWeight: 700,
-                  fontSize: "13.5px",
-                  textTransform: "none",
-                  border: "1px solid var(--sr-hairline)",
-                  "&:hover": {
-                    background: "var(--sr-panel)",
-                    borderColor: "var(--sr-hairline)",
-                  },
-                }}
-              >
-                {t("success.copyCode", "Copy reservation code · {{ref}}", {
-                  ref: refCode,
-                })}
-              </Button>
               <Button
                 fullWidth
                 onClick={() => void navigate("/")}
