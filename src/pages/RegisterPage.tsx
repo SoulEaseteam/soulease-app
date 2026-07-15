@@ -171,10 +171,6 @@ const RegisterPage: React.FC = () => {
               variant="outlined"
               size="small"
               fullWidth
-              helperText={t('auth.register.hint', 'A phone number works best — it links to your member benefits automatically')}
-              FormHelperTextProps={{
-                sx: { color: 'var(--sr-muted)', fontSize: 11, ml: 0.5, mt: 0.25, textAlign: 'left' },
-              }}
               sx={fieldSx}
             />
 
