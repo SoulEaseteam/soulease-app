@@ -21,8 +21,8 @@ import { CONCIERGE } from "@/config/concierge";
 import { MapPin } from "phosphor-react";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
 import therapists from "@/data/therapists";
-import { estimateTaxiFare, travelBudgetForKm, haversineKm, BKK_ROAD_FACTOR } from "@/utils/taxiFare";
-import { estimateEtaFromKm } from "@/utils/directionsApi";
+import { travelBudgetForKm, haversineKm, BKK_ROAD_FACTOR, DISPATCH_BASE } from "@/utils/taxiFare";
+import { estimateEtaFromKm, fetchDrivingDistance, type RouteResult } from "@/utils/directionsApi";
 import { formatTHB } from "@/utils/servicePricing";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
@@ -184,6 +184,11 @@ const TaxiEstimator: React.FC = () => {
   //   the resolved place name for the current pin, so the guest can see where the
   //   system landed and drag the pin to correct it if it's off.
   const [placeName, setPlaceName] = React.useState<string | null>(null);
+  // 🆕 28x.46 (founder: "เอา Live route จริงๆ ... จะได้ดูโปร่งใส") — the taxi fee is
+  //   charged on the REAL driving route from our dispatch base to the guest (the
+  //   exact basis the booking page uses), not a straight-line guess. Fetch it so
+  //   the estimate matches the actual bill.
+  const [route, setRoute] = React.useState<RouteResult | null>(null);
 
   const mapContainerRef = React.useRef<HTMLDivElement | null>(null);
   const searchInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -236,6 +241,10 @@ const TaxiEstimator: React.FC = () => {
       disableDefaultUI: true,
       zoomControl: true,
       gestureHandling: "greedy",
+      // 🆕 28x.46 (founder: "ตัวหนังสือในกล่องจางมองไม่เห็น") — a tap on a Google POI
+      //   opened its own low-contrast info card over our pin. Turn POI clicks off so
+      //   every tap just drops the pin, and that dim popup never appears.
+      clickableIcons: false,
     });
     mapRef.current = map;
     map.addListener("click", (e) => {
@@ -286,21 +295,35 @@ const TaxiEstimator: React.FC = () => {
     );
   };
 
+  // 🆕 28x.46 — fetch the REAL driving route from the dispatch base to the pin,
+  //   the same origin + method the booking page charges on. Falls back to a
+  //   haversine estimate inside fetchDrivingDistance if Directions is unavailable,
+  //   so the fare line never goes blank.
+  React.useEffect(() => {
+    if (!coords || !ready) { setRoute(null); return; }
+    let cancelled = false;
+    void fetchDrivingDistance(
+      { lat: DISPATCH_BASE.lat, lng: DISPATCH_BASE.lng },
+      { lat: coords.lat, lng: coords.lng }
+    ).then((r) => { if (!cancelled) setRoute(r); }).catch(() => { /* keep last */ });
+    return () => { cancelled = true; };
+  }, [coords, ready]);
+
   const estimate = React.useMemo(() => {
     if (!selected || !coords) return null;
-    // estimateTaxiFare gives the real (road) distance; the FARE itself comes
-    // from the founder's fixed travel-budget bands (excl. weather/traffic).
-    const { distanceKm } = estimateTaxiFare({
-      therapistLat: selected.lat,
-      therapistLng: selected.lng,
-      customerLat: coords.lat,
-      customerLng: coords.lng,
-      durationMin: 60,
-    });
-    if (!distanceKm) return null;
-    const fare = travelBudgetForKm(distanceKm);
-    return { distanceKm, fare, etaMin: estimateEtaFromKm(distanceKm) };
-  }, [selected, coords]);
+    // Real driving distance from our dispatch base (same basis as the bill),
+    // rounded to 1 decimal so what the guest sees is what the band charges.
+    const rawKm = route
+      ? route.kmRoad
+      : haversineKm(DISPATCH_BASE.lat, DISPATCH_BASE.lng, coords.lat, coords.lng) * BKK_ROAD_FACTOR;
+    if (!rawKm) return null;
+    // Band from the RAW km (identical to the booking charge); round only for display.
+    const distanceKm = Math.round(rawKm * 10) / 10;
+    const fare = travelBudgetForKm(rawKm);
+    const isLive = route != null && route.source !== "haversine";
+    const etaMin = route ? route.durationMin : estimateEtaFromKm(distanceKm);
+    return { distanceKm, fare, etaMin, isLive };
+  }, [selected, coords, route]);
 
   if (roster.length === 0) return null;
 
@@ -478,6 +501,27 @@ const TaxiEstimator: React.FC = () => {
           <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "#C0562E", lineHeight: 1.45 }}>
             {errMsg}
           </Typography>
+        )}
+
+        {/* 🆕 28x.46 — route-source badge: "Live route" when the real Google
+            driving route resolved, "Estimated" while we're on the haversine
+            fallback. Same signal the booking page shows, for transparency. */}
+        {estimate && (
+          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+            <Box
+              sx={{
+                display: "inline-flex", alignItems: "center", gap: "5px",
+                px: "9px", py: "3px", borderRadius: "999px",
+                background: estimate.isLive ? "rgba(22,163,74,0.14)" : "var(--sr-panel-2)",
+                border: `1px solid ${estimate.isLive ? "rgba(22,163,74,0.45)" : "var(--sr-hairline)"}`,
+              }}
+            >
+              <Box sx={{ width: 6, height: 6, borderRadius: "50%", background: estimate.isLive ? "#16A34A" : "var(--sr-muted)" }} />
+              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, letterSpacing: "0.03em", color: estimate.isLive ? "#16A34A" : "var(--sr-muted)" }}>
+                {estimate.isLive ? t("nearme.taxi.liveRoute", "Live route") : t("nearme.taxi.estimated", "Estimated")}
+              </Typography>
+            </Box>
+          </Box>
         )}
 
         {/* Result */}
