@@ -15,6 +15,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from "@/lib/firebase";
 import { Timestamp } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+import { adminResetCustomerPassword } from "@/utils/adminResetPassword";
 
 interface User {
   id: string;
@@ -24,12 +25,15 @@ interface User {
   isActive?: boolean;
   image?: string;
   name?: string;
+  phone?: string;
+  username?: string;
 }
 
 const AdminUserDetailPage: React.FC = () => {
   const { id } = useParams();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [resetting, setResetting] = useState(false);
 
   const currentAdminUid = auth.currentUser?.uid; // 👈 ตรวจสอบ admin คนปัจจุบัน
 
@@ -69,6 +73,36 @@ const AdminUserDetailPage: React.FC = () => {
 
     await updateDoc(doc(db, 'users', user.id), { isActive: !user.isActive });
     setUser({ ...user, isActive: !user.isActive });
+  };
+
+  // 🆕 28x.29 — reset this customer's login password to their phone number.
+  //   Calls the admin-only Cloud Function; on success the concierge tells the
+  //   guest to log in with their username/phone + phone-as-password.
+  const handleResetPassword = async () => {
+    if (!user) return;
+    if (user.id === currentAdminUid) {
+      toast.warning("Use My Account to change your own password.");
+      return;
+    }
+    const ok = window.confirm(
+      `รีเซตรหัสผ่านของ ${user.name || user.username || user.phone || user.email}?\n\nรหัสใหม่จะเป็น "เบอร์โทรของลูกค้าเอง" — ลูกค้าเข้าระบบด้วย username/เบอร์ + เบอร์เป็นรหัสผ่าน`
+    );
+    if (!ok) return;
+    setResetting(true);
+    try {
+      const res = await adminResetCustomerPassword(user.id);
+      const loginHint = user.username || res.phone;
+      toast.success(
+        `รีเซตแล้ว · เข้าด้วย ${loginHint} · รหัสผ่าน = ${res.newPassword} (เบอร์)`,
+        { autoClose: 12000 }
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("[reset password] failed", e);
+      toast.error(`รีเซตไม่สำเร็จ: ${msg}`);
+    } finally {
+      setResetting(false);
+    }
   };
 
   const formatDate = (timestamp?: Timestamp) => {
@@ -149,6 +183,26 @@ const AdminUserDetailPage: React.FC = () => {
               ⚠️ You cannot deactivate your own account.
             </Typography>
           )}
+        </Box>
+
+        {/* 🆕 28x.29 — reset login password to the customer's phone number */}
+        <Divider sx={{ my: 2 }} />
+        <Box mt={1}>
+          <Typography fontWeight="bold">รหัสผ่าน (Login):</Typography>
+          <Typography fontSize={12.5} color="text.secondary" sx={{ mt: 0.5, mb: 1 }}>
+            {user.phone
+              ? `รีเซตแล้วรหัสจะเป็นเบอร์ ${user.phone} · เข้าด้วย ${user.username || user.phone}`
+              : "⚠️ ลูกค้ารายนี้ไม่มีเบอร์ในระบบ — รีเซตเป็นเบอร์ไม่ได้"}
+          </Typography>
+          <Button
+            variant="outlined"
+            color="warning"
+            onClick={handleResetPassword}
+            disabled={isSelf || resetting || !user.phone}
+            sx={{ mt: 0.5 }}
+          >
+            {resetting ? "กำลังรีเซต…" : "รีเซตรหัสผ่าน → เบอร์โทร"}
+          </Button>
         </Box>
       </Paper>
     </Box>

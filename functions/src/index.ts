@@ -1139,3 +1139,71 @@ export {
 //   acknowledgement" gap that personal accounts can't provide.
 // ─────────────────────────────────────────────────────────────
 export { telegramConciergeWebhook } from "./telegram-concierge-bot";
+
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.29 (founder) — Admin: reset a customer's login password
+//   to their own phone number.
+//
+//   Customers sign in via Firebase Auth on a synthetic alias email
+//   (0812345678@phone.sunred.vip). Phone/username guests have no real
+//   mailbox, so the standard reset-link email is undeliverable and they
+//   had no recovery path. Founder flow: guest forgets → tells us their
+//   phone → admin taps "reset" → password becomes that phone → they log
+//   in with their username (or phone) + phone-as-password.
+//
+//   Security: admin-only (verified against the authoritative admins/{uid}
+//   doc). Phone is low-entropy on purpose — usability for low-value guest
+//   logins. Every reset is written to auditLogs.
+// ─────────────────────────────────────────────────────────────
+export const resetCustomerPassword = onCall(
+  { region: "asia-southeast1" },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = getFirestore();
+    const adminDoc = await db.collection("admins").doc(request.auth.uid).get();
+    if (!adminDoc.exists) {
+      throw new HttpsError("permission-denied", "Admin only.");
+    }
+    const uid = String(
+      (request.data as { uid?: string } | undefined)?.uid ?? ""
+    ).trim();
+    if (!uid) {
+      throw new HttpsError("invalid-argument", "uid is required.");
+    }
+    const userSnap = await db.collection("users").doc(uid).get();
+    if (!userSnap.exists) {
+      throw new HttpsError("not-found", "User not found.");
+    }
+    const u = userSnap.data() as {
+      phone?: string;
+      username?: string;
+    };
+    // Strip to digits; Firebase requires a password of at least 6 chars.
+    const phone = String(u.phone ?? "").replace(/\D/g, "");
+    if (phone.length < 6) {
+      throw new HttpsError(
+        "failed-precondition",
+        "This customer has no valid phone number on file, so it can't be used as the new password."
+      );
+    }
+    await getAuth().updateUser(uid, { password: phone });
+    await db.collection("auditLogs").add({
+      action: "user.password_reset",
+      byUid: request.auth.uid,
+      targetUid: uid,
+      at: FieldValue.serverTimestamp(),
+    });
+    logger.info("[resetCustomerPassword] reset to phone", {
+      targetUid: uid,
+      byUid: request.auth.uid,
+    });
+    return {
+      ok: true,
+      newPassword: phone,
+      username: u.username ?? null,
+      phone,
+    };
+  }
+);
