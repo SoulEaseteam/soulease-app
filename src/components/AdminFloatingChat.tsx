@@ -146,7 +146,12 @@ const AdminFloatingChat: React.FC = () => {
       : concierge.mode === "evening"
       ? "#F59E0B"
       : concierge.mode === "off"
-      ? "rgba(15, 23, 42,0.55)"
+      // 🆕 Round 28x.10 (founder: "ข้อความจม มองไม่เห็น") — was a hardcoded
+      //   dark navy rgba(15,23,42,.55) that read fine on the light theme but
+      //   sank into the dark (night) panel, making the "replies from 09:00"
+      //   status line invisible. Use the theme-aware muted token so it stays
+      //   readable on both light and dark.
+      ? "var(--sr-muted)"
       : brand.green;
   // Per-mode greeting copy — friendlier than the static "Hi! Need help"
   // because each mode answers a different unspoken guest question:
