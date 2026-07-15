@@ -232,7 +232,10 @@ const HomePage: React.FC<HomePageProps> = ({ district }) => {
       <QuickNavRow />
 
       {/* 🆕 28w.37 (founder 2026-07-14) — 1st-anniversary banner, tap → /pricing */}
-      <Box sx={{ px: { xs: 2, sm: 2.5, md: 0 }, mt: 1.5, mb: 0.5 }}>
+      {/* 🆕 28x.14 (founder: "ขยับ ขอบเข้าอีกนิด") — pulled the anniversary
+          banner's side edges in a touch (more horizontal inset) so it sits
+          slightly narrower and doesn't reach as close to the screen edges. */}
+      <Box sx={{ px: { xs: 3, sm: 3.5, md: 2 }, mt: 1.5, mb: 0.5 }}>
         <AnniversaryBanner variant="home" />
       </Box>
 
