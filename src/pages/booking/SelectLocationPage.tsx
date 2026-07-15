@@ -1420,6 +1420,13 @@ const SelectLocationPage: React.FC = () => {
                     borderRadius: "14px",
                     boxShadow: "0 10px 30px rgba(0, 0, 0, 0.12)",
                     marginTop: "6px",
+                    // 🆕 28x.46 (founder: "เชคตัวหนังสือ ไม่เห็นในกล่อง") — the MUI
+                    //   Menu paper defaulted to white, but the country name uses
+                    //   --sr-ink (light in the dark theme) → invisible on white.
+                    //   Theme the paper so text keeps its contrast in day AND night.
+                    background: "var(--sr-panel)",
+                    color: "var(--sr-ink)",
+                    border: "1px solid var(--sr-hairline)",
                   },
                 },
               }}

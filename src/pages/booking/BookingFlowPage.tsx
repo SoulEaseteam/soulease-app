@@ -2328,6 +2328,10 @@ const BookingFlowPage: React.FC = () => {
                   fontSize: "13.5px",
                   letterSpacing: "0.04em",
                   fontVariantNumeric: "tabular-nums",
+                  // 🆕 28x.46 — explicit themed text + placeholder so they stay
+                  //   readable on the dark panel (default MUI text was dark-on-dark).
+                  color: "var(--sr-ink)",
+                  "& input::placeholder": { color: "var(--sr-muted)", opacity: 1 },
                   "& fieldset": { borderColor: "var(--sr-hairline)" },
                   "&:hover fieldset": {
                     borderColor: "rgba(15, 23, 42, 0.40)",
@@ -2798,6 +2802,9 @@ const BookingFlowPage: React.FC = () => {
                     fontFamily: SANS,
                     fontSize: "14px",
                     fontVariantNumeric: "tabular-nums",
+                    // 🆕 28x.46 — readable text + placeholder on the dark panel.
+                    color: "var(--sr-ink)",
+                    "& input::placeholder": { color: "var(--sr-muted)", opacity: 1 },
                   },
                 }}
               />
