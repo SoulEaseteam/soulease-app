@@ -56,7 +56,6 @@ import { bookingRef } from "@/utils/bookingRef";
 //   tourists (WeChat) + the Telegram-first audience were being dumped
 //   into a LINE-only button and bailing at the finish line. Same
 //   brand-color channel icon set the home concierge grid uses.
-import { FaWhatsapp, FaLine, FaTelegramPlane, FaWeixin } from "react-icons/fa";
 import { doc, getDoc, type DocumentData } from "firebase/firestore";
 // 🆕 Round 28b59 — `dayjs` direct import dropped (was only used by
 //   the now-removed onAddToCalendar handler). All time formatting
@@ -640,88 +639,91 @@ const BookingSuccessPage: React.FC = () => {
                       { ref: refCode }
                     )
                   );
+                  // 🆕 28x.34 (founder) — icon-tile style (colored app icon +
+                  //   name on a card) replacing the pill buttons, matching the
+                  //   site's "Reach us" grid. The booking-ref prefill is kept
+                  //   on the WhatsApp/Telegram hrefs.
                   const channels: Array<{
                     name: string;
-                    Icon: React.ComponentType<{ size?: number }>;
+                    src: string;
                     href: string;
                     external: boolean;
-                    fg: string;
-                    bg: string;
-                    border: string;
                   }> = [
                     {
                       name: t("success.channel.whatsapp", "WhatsApp"),
-                      Icon: FaWhatsapp,
+                      src: "/images/profli/whatsapp.png",
                       href: `${CONCIERGE.whatsappUrl}?text=${message}`,
                       external: true,
-                      fg: "#25D366",
-                      bg: "rgba(37, 211, 102, 0.10)",
-                      border: "rgba(37, 211, 102, 0.28)",
                     },
                     {
                       name: t("success.channel.line", "LINE"),
-                      Icon: FaLine,
+                      src: "/images/profli/line.png",
                       href: "https://line.me/R/ti/p/@sunred.bkk",
                       external: true,
-                      fg: "#06C755",
-                      bg: "rgba(6, 199, 85, 0.10)",
-                      border: "rgba(6, 199, 85, 0.28)",
                     },
                     {
                       name: t("success.channel.telegram", "Telegram"),
-                      Icon: FaTelegramPlane,
+                      src: "/images/profli/telegram.png",
                       href: `https://t.me/SunRedvip_bkk?text=${message}`,
                       external: true,
-                      fg: "#229ED9",
-                      bg: "rgba(34, 158, 217, 0.10)",
-                      border: "rgba(34, 158, 217, 0.28)",
                     },
                     {
                       name: t("success.channel.wechat", "WeChat"),
-                      Icon: FaWeixin,
+                      src: "/images/profli/wechat_2626283.png",
                       href: "/wechat-scan",
                       external: false,
-                      fg: "#07C160",
-                      bg: "rgba(7, 193, 96, 0.10)",
-                      border: "rgba(7, 193, 96, 0.28)",
                     },
                   ];
                   return channels.map((c) => (
-                    <Button
+                    <Box
                       key={c.name}
-                      fullWidth
-                      onClick={() => {
-                        if (c.external) {
-                          window.open(
-                            c.href,
-                            "_blank",
-                            "noopener,noreferrer"
-                          );
-                        } else {
+                      component="a"
+                      href={c.href}
+                      target={c.external ? "_blank" : undefined}
+                      rel={c.external ? "noopener noreferrer" : undefined}
+                      onClick={(e: React.MouseEvent) => {
+                        if (!c.external) {
+                          e.preventDefault();
                           void navigate(c.href);
                         }
                       }}
-                      startIcon={<c.Icon size={18} />}
+                      aria-label={`Confirm via ${c.name}`}
                       sx={{
-                        height: 46,
-                        borderRadius: "999px",
-                        background: c.bg,
-                        color: c.fg,
-                        fontFamily: SANS,
-                        fontWeight: 700,
-                        fontSize: "13.5px",
-                        textTransform: "none",
-                        border: `1px solid ${c.border}`,
-                        "& .MuiButton-startIcon": { marginRight: "8px" },
-                        "&:hover": {
-                          background: c.bg,
-                          borderColor: c.fg,
-                          boxShadow: `0 4px 14px ${c.bg}`,
-                        },
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 0.75,
+                        py: 1.75,
+                        px: 0.5,
+                        borderRadius: "16px",
+                        background: "var(--sr-panel-2)",
+                        border: "1px solid var(--sr-hairline)",
+                        textDecoration: "none",
+                        cursor: "pointer",
+                        transition: "transform 0.15s ease",
+                        "&:hover": { transform: "translateY(-2px)" },
                       }}
                     >
-                      {c.name}
-                    </Button>
+                      <Box
+                        component="img"
+                        src={c.src}
+                        alt=""
+                        width={26}
+                        height={26}
+                        loading="lazy"
+                        sx={{ width: 26, height: 26, objectFit: "contain" }}
+                      />
+                      <Typography
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: "var(--sr-body)",
+                        }}
+                      >
+                        {c.name}
+                      </Typography>
+                    </Box>
                   ));
                 })()}
               </Box>
