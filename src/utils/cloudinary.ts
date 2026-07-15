@@ -12,8 +12,16 @@
 //
 // Fallback ปลอดภัย: ถ้า env ไม่ตั้ง → return URL เดิม (ไม่พัง)
 
+// 🆕 28x.24 (founder: "รูปบนเว็บไม่ชัด") — fall back to the public cloud
+//   name instead of "" when the env var is absent. Local/CLI builds don't
+//   inherit Vercel's VITE_CLOUDINARY_CLOUD_NAME, so a `vercel --prod` from
+//   this machine was silently shipping RAW Firebase images (unoptimised, no
+//   WebP, no quality control) — Cloudinary would flip on/off between
+//   deploys. The cloud name is already public (index.html OG tags), so this
+//   is not a secret; the env var still overrides it when present.
 const CLOUD_NAME =
-  (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined) ?? "";
+  (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined) ||
+  "dhzvzvatb";
 
 /** ขนาดที่ใช้บ่อย */
 export type ImageVariant = "card" | "thumb" | "hero" | "full";
