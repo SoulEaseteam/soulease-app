@@ -14,7 +14,12 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import HomeTherapistGrid from "@/components/home/HomeTherapistGrid";
+// 🆕 28x.52 — near-me → all-in price + one-tap book (pre-filled location) + share pin.
+import staticServices from "@/data/services";
+import { writePersistedForm, initialFormState } from "@/utils/bookingFormStorage";
+import { whatsappDeepLink } from "@/config/concierge";
 import { responsiveShell } from "@/theme/breakpoints";
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 import { CONCIERGE } from "@/config/concierge";
@@ -170,6 +175,7 @@ const getMaps = (): GMaps | null =>
 const TaxiEstimator: React.FC = () => {
   const { t } = useTranslation();
   const { ready, loadIfNeeded } = useGoogleMaps();
+  const navigate = useNavigate();
 
   const roster = React.useMemo(
     () => therapists.filter((p) => p.lat != null && p.lng != null),
@@ -332,6 +338,43 @@ const TaxiEstimator: React.FC = () => {
   // 🆕 28x.47 — animate the fare so it "ticks" to the new value when the pin
   //   moves (à la Grab). Tween the amount the guest pays; 0 when unpriced.
   const tweenedFare = useTweenedNumber(estimate?.fare ?? 0);
+
+  // 🆕 28x.52 (founder idea #3) — the selected practitioner's starting rate
+  //   (lowest 60-min service they offer) → an all-in "from" price with taxi.
+  const startingPrice = React.useMemo(() => {
+    const ids = selected?.servicesAvailable ?? selected?.services ?? [];
+    const prices = ids
+      .map((id) => staticServices.find((s) => s.id === id)?.price)
+      .filter((p): p is number => typeof p === "number");
+    return prices.length ? Math.min(...prices) : 1200;
+  }, [selected]);
+  const allIn =
+    estimate?.fare != null ? startingPrice + estimate.fare : null;
+  const mapsUrl = coords ? `https://maps.google.com/?q=${coords.lat},${coords.lng}` : "";
+
+  // 🆕 28x.52 (idea #3) — jump straight into this practitioner's booking with
+  //   the pinned location already carried over (no re-entering the address).
+  const bookNow = () => {
+    if (!selected || !coords) return;
+    writePersistedForm(selected.id, {
+      ...initialFormState,
+      therapistId: selected.id,
+      lat: coords.lat,
+      lng: coords.lng,
+      locationName: placeName ?? null,
+      locationAddress: placeName ?? null,
+      mapUrl: mapsUrl || null,
+    });
+    void navigate(`/booking/${selected.id}/address`);
+  };
+
+  // 🆕 28x.52 (idea #6) — hand the exact pin to the concierge on WhatsApp.
+  const sharePin = () => {
+    if (!coords) return;
+    const msg = t("nearme.taxi.shareMsg", "SunRed booking · my location:") +
+      `\n${placeName ?? ""}\n${mapsUrl}`;
+    window.open(whatsappDeepLink(msg), "_blank", "noopener");
+  };
 
   if (roster.length === 0) return null;
 
@@ -581,6 +624,64 @@ const TaxiEstimator: React.FC = () => {
                 {t("nearme.taxi.saved", "You save ฿{{n}} booking online", { n: estimate.save })}
               </Typography>
             </Box>
+          </Box>
+        )}
+
+        {/* 🆕 28x.52 (idea #3) — all-in "from" price + one-tap book. */}
+        {allIn != null && selected && (
+          <Box
+            sx={{
+              mt: 0.5, p: "12px 14px", borderRadius: "14px",
+              background: "var(--sr-panel-2)", border: "1px solid var(--sr-hairline)",
+              display: "flex", flexDirection: "column", gap: 1,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 1 }}>
+              <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "var(--sr-body)" }}>
+                {t("nearme.taxi.allInLabel", "From, with {{name}}", { name: selected.name })}
+              </Typography>
+              <Box sx={{ textAlign: "right" }}>
+                <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "var(--sr-ink)", lineHeight: 1 }}>
+                  {formatTHB(allIn)}
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "var(--sr-body)", mt: 0.3 }}>
+                  {t("nearme.taxi.allInBreak", "service from {{svc}} + travel {{taxi}}", {
+                    svc: formatTHB(startingPrice), taxi: formatTHB(allIn - startingPrice),
+                  })}
+                </Typography>
+              </Box>
+            </Box>
+            <Box
+              component="button"
+              type="button"
+              onClick={bookNow}
+              sx={{
+                width: "100%", py: "11px", borderRadius: "12px", border: "none", cursor: "pointer",
+                background: "linear-gradient(135deg, #D97C95 0%, #C96F89 100%)",
+                color: "#fff", fontFamily: SANS, fontSize: 14, fontWeight: 800,
+                boxShadow: "0 6px 16px rgba(138,58,87,0.28)",
+              }}
+            >
+              {t("nearme.taxi.bookNow", "Book {{name}} now", { name: selected.name })}
+            </Box>
+          </Box>
+        )}
+
+        {/* 🆕 28x.52 (idea #6) — send the exact pin to the concierge. */}
+        {coords && (
+          <Box
+            component="button"
+            type="button"
+            onClick={sharePin}
+            sx={{
+              width: "100%", py: "9px", borderRadius: "12px", cursor: "pointer",
+              background: "transparent", border: "1px solid var(--sr-hairline)",
+              color: "var(--sr-body)", fontFamily: SANS, fontSize: 12.5, fontWeight: 700,
+              display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px",
+            }}
+          >
+            <MapPin size={14} weight="fill" color={ROSE} />
+            {t("nearme.taxi.sharePin", "Send my location to the concierge")}
           </Box>
         )}
 
