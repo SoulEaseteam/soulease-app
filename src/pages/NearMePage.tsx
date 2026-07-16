@@ -23,7 +23,7 @@ import { whatsappDeepLink } from "@/config/concierge";
 import { responsiveShell } from "@/theme/breakpoints";
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 import { CONCIERGE } from "@/config/concierge";
-import { MapPin } from "phosphor-react";
+import { MapPin, Headset } from "phosphor-react";
 import { useGoogleMaps } from "@/context/GoogleMapsContext";
 import therapists from "@/data/therapists";
 import { travelFareDisplay, haversineKm, BKK_ROAD_FACTOR, DISPATCH_BASE } from "@/utils/taxiFare";
@@ -876,24 +876,53 @@ const NearMePage: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* 🆕 28w.13 — concierge line is plain text now (founder: "ทำเป็นข้อความก็พอ
-          เรามีคอนแทคแล้ว") since the Reach-us tiles below carry the actual contact. */}
-      <Typography
+      {/* 🆕 28x.54 (founder: "จัดเรียงให้ดีหน่อย") — the concierge nudge was a
+          plain centred paragraph floating between coverage and the Reach-us
+          grid. Wrapped it in a soft callout with a concierge icon so it reads
+          as an intentional lead-in to the channels right below it. */}
+      <Box
         sx={{
-          mt: 2.5,
-          px: 0.5,
-          textAlign: "center",
-          fontFamily: SANS,
-          fontSize: 13.5,
-          color: "var(--sr-body)",
-          lineHeight: 1.6,
+          mt: 3,
+          mb: 1.25,
+          display: "flex",
+          alignItems: "center",
+          gap: 1.25,
+          p: "12px 14px",
+          borderRadius: "14px",
+          background: "var(--sr-panel-2)",
+          border: "1px solid var(--sr-hairline)",
         }}
       >
-        {t(
-          "nearme.cta.line",
-          "Not sure who's nearest? Ask the concierge. We'll match the closest available practitioner."
-        )}
-      </Typography>
+        <Box
+          aria-hidden
+          sx={{
+            width: 34,
+            height: 34,
+            flexShrink: 0,
+            borderRadius: "50%",
+            background: "rgba(217,124,149,0.14)",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Headset size={18} weight="fill" color={ROSE} />
+        </Box>
+        <Typography
+          sx={{
+            fontFamily: SANS,
+            fontSize: 13,
+            fontWeight: 500,
+            color: "var(--sr-ink)",
+            lineHeight: 1.5,
+          }}
+        >
+          {t(
+            "nearme.cta.line",
+            "Not sure who's nearest? Ask the concierge. We'll match the closest available practitioner."
+          )}
+        </Typography>
+      </Box>
 
       {/* Reach us — concierge channel grid (founder: like the services page) */}
       <ReachUs t={t} />
