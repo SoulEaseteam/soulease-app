@@ -2391,7 +2391,7 @@ const BookingFlowPage: React.FC = () => {
                       <Box component="span" sx={{ fontWeight: 800 }}>
                         ✓
                       </Box>
-                      {t("booking.discountSaves", "{{label}} — saves {{amount}}", {
+                      {t("booking.discountSaves", "{{label}} · saves {{amount}}", {
                         label: discount.label,
                         amount: formatTHB(discount.amount),
                       })}
@@ -2589,7 +2589,7 @@ const BookingFlowPage: React.FC = () => {
                     }}
                   >
                     <LocalTaxiRoundedIcon sx={{ fontSize: 13 }} />
-                    {t("booking.savedRouting", "Smart Routing — {{amount}}", {
+                    {t("booking.savedRouting", "Smart Routing · {{amount}}", {
                       amount: formatTHB(Math.round(savingsRouting)),
                     })}
                   </Box>
@@ -2608,7 +2608,7 @@ const BookingFlowPage: React.FC = () => {
                     }}
                   >
                     <LocalOfferRoundedIcon sx={{ fontSize: 13 }} />
-                    {t("booking.savedDiscount", "{{label}} — {{amount}}", {
+                    {t("booking.savedDiscount", "{{label}} · {{amount}}", {
                       label: discount.label,
                       amount: formatTHB(Math.round(savingsDiscount)),
                     })}

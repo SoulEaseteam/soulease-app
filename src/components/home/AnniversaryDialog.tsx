@@ -143,7 +143,7 @@ const AnniversaryDialog: React.FC<Props> = ({ open, onClose }) => {
                 <strong style={{ color: "var(--sr-ink)" }}>
                   {activeClaim.rewardLabel}
                 </strong>
-                {" — "}
+                {" · "}
                 <Box
                   component="button"
                   type="button"

@@ -46,17 +46,17 @@ const FAQ_POLICY: FaqItem[] = [
   {
     id: "cost",
     q: "What is the cost of a session?",
-    a: "Each practitioner sets their own rates — the exact starting price is shown on their profile. The total reflects the service fee plus a transparent travel fee, aligned with GrabCar pricing (฿45 base, tiered per kilometre, return at half rate).",
+    a: "Each practitioner sets their own rates; the exact starting price is shown on their profile. The total reflects the service fee plus a transparent travel fee, aligned with GrabCar pricing (฿45 base, tiered per kilometre, return at half rate).",
   },
   {
     id: "deposit",
     q: "When is a deposit required?",
-    a: "For long-distance reservations — beyond approximately 25 km from central Sukhumvit — we request a modest deposit to secure the practitioner's travel commitment. This is communicated in advance, never as a surprise.",
+    a: "For long-distance reservations, beyond approximately 20 km from central Sukhumvit, we request a modest deposit to secure the practitioner's travel commitment. This is communicated in advance, never as a surprise.",
   },
   {
     id: "cancel",
     q: "Cancellation & rescheduling",
-    a: "Complimentary cancellation or rescheduling up to 30 minutes before the appointment. Beyond that window — or once the practitioner is en route — a 50% service-fee charge applies, in respect of their committed time and travel.",
+    a: "Complimentary cancellation or rescheduling up to 30 minutes before the appointment. Beyond that window, or once the practitioner is en route, a 50% service-fee charge applies, in respect of their committed time and travel.",
   },
   {
     id: "secure",

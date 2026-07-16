@@ -288,7 +288,7 @@ const TaxiEstimator: React.FC = () => {
         setStatus("error");
         setErrMsg(
           err.code === err.PERMISSION_DENIED
-            ? t("nearme.taxi.denied", "Location blocked — allow it in your browser, or drop a pin on the map.")
+            ? t("nearme.taxi.denied", "Location blocked. Allow it in your browser, or drop a pin on the map.")
             : t("nearme.taxi.failed", "Couldn't get your location. Drop a pin on the map instead.")
         );
       },
@@ -588,8 +588,8 @@ const TaxiEstimator: React.FC = () => {
           {!estimate
             ? t("nearme.taxi.hint", "Pick a practitioner, then search, tap the map, or use your location for a taxi estimate.")
             : estimate.fare == null
-            ? t("nearme.taxi.over", "Long trip — contact the concierge to confirm (a deposit may apply).")
-            : t("nearme.taxi.note", "Set travel budget by distance — excludes weather and peak-traffic surcharges. Concierge confirms the final fare.")}
+            ? t("nearme.taxi.over", "Long trip. Contact the concierge to confirm (a deposit may apply).")
+            : t("nearme.taxi.note", "Set travel budget by distance. Excludes weather and peak-traffic surcharges. Concierge confirms the final fare.")}
         </Typography>
       </Box>
     </Box>
@@ -643,11 +643,11 @@ const NearMePage: React.FC = () => {
   useDocumentMeta({
     title: t(
       "meta.nearme.title",
-      "Near Me — Bangkok Outcall Massage by Location | SunRed"
+      "Near Me · Bangkok Outcall Massage by Location | SunRed"
     ),
     description: t(
       "meta.nearme.description",
-      "See which verified SunRed practitioners are near your Bangkok hotel — browse outcall massage by location on the live map."
+      "See which verified SunRed practitioners are near your Bangkok hotel. Browse outcall massage by location on the live map."
     ),
     locale: langToLocale(i18n.language),
     url: "https://sunred.vip/near-me",
@@ -742,7 +742,7 @@ const NearMePage: React.FC = () => {
           <Box component="span" sx={{ fontStyle: "italic", color: "var(--sr-gold-text)" }}>
             Across central Bangkok
           </Box>
-          <Box component="span" sx={{ color: "var(--sr-muted)" }}>{" — "}</Box>
+          <Box component="span" sx={{ color: "var(--sr-muted)" }}>{": "}</Box>
           {AREAS.map((a, i) => (
             <React.Fragment key={a}>
               {i > 0 && (
@@ -767,7 +767,7 @@ const NearMePage: React.FC = () => {
         >
           {t(
             "nearme.coverage.note",
-            "Delivered to your door — typical arrival 30–45 min to central Bangkok."
+            "Delivered to your door. Typical arrival 30–45 min to central Bangkok."
           )}
         </Typography>
       </Box>
@@ -787,7 +787,7 @@ const NearMePage: React.FC = () => {
       >
         {t(
           "nearme.cta.line",
-          "Not sure who's nearest? Ask the concierge — we'll match the closest available practitioner."
+          "Not sure who's nearest? Ask the concierge. We'll match the closest available practitioner."
         )}
       </Typography>
 

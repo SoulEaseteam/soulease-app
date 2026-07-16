@@ -57,12 +57,12 @@ const FAQ_ITEMS: QA[] = [
   {
     id: "cancel",
     q: "What's the cancellation policy?",
-    a: "Complimentary up until dispatch. Once she's en route, a travel reimbursement applies — the concierge tells you transparently before anything is charged.",
+    a: "Complimentary up until dispatch. Once she's en route, a travel reimbursement applies. The concierge tells you transparently before anything is charged.",
   },
   {
     id: "female",
     q: "Are all practitioners female?",
-    a: "Yes — 100% Thai, cisgender female. Verified roster only.",
+    a: "Yes, 100% Thai, cisgender female. Verified roster only.",
   },
   {
     id: "value",
@@ -72,7 +72,7 @@ const FAQ_ITEMS: QA[] = [
   {
     id: "discreet",
     q: "How discreet is the visit?",
-    a: "Practitioners arrive in everyday attire — nothing signals 'massage service'. PromptPay transfers show only the neutral receiving account; cash leaves no record. No branded receipts unless you ask.",
+    a: "Practitioners arrive in everyday attire. Nothing signals 'massage service'. PromptPay transfers show only the neutral receiving account; cash leaves no record. No branded receipts unless you ask.",
   },
 ];
 

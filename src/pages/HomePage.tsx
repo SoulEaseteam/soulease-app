@@ -152,7 +152,7 @@ const HomePage: React.FC<HomePageProps> = ({ district }) => {
       >
         {districtSeo
           ? districtSeo.h1
-          : "SunRed — Luxury outcall massage in Bangkok, delivered to your hotel"}
+          : "SunRed · Luxury outcall massage in Bangkok, delivered to your hotel"}
       </Box>
 
       {/* 🆕 Round 28s326 (founder 2026-07-08) — "Simple · Pure · Balanced"

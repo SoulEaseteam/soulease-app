@@ -93,7 +93,7 @@ const ABOUT_PILLARS = [
     id: "verified",
     Icon: VerifiedRoundedIcon,
     title: "Verified practitioners",
-    body: "Each profile is personally vetted — photographs, identification, and credential checks before publication.",
+    body: "Each profile is personally vetted: photographs, identification, and credential checks before publication.",
     tone: { bg: "rgba(87,184,139,0.14)", fg: accents.availableText },
   },
   {
@@ -107,14 +107,14 @@ const ABOUT_PILLARS = [
     id: "outcall",
     Icon: LocalHotelRoundedIcon,
     title: "Hotel & residence outcall",
-    body: "Your practitioner arrives anywhere in central Bangkok — Sukhumvit, Silom, Asok, Thonglor, Sathorn.",
+    body: "Your practitioner arrives anywhere in central Bangkok: Sukhumvit, Silom, Asok, Thonglor, Sathorn.",
     tone: { bg: "rgba(244,197,66,0.14)", fg: accents.amber },
   },
   {
     id: "concierge",
     Icon: SupportAgentRoundedIcon,
     title: "24/7 concierge",
-    body: "A real concierge on WhatsApp, LINE, and Telegram around the clock — before, during, and after each session.",
+    body: "A real concierge on WhatsApp, LINE, and Telegram around the clock, before, during, and after each session.",
     tone: { bg: "rgba(183,168,150,0.16)", fg: "#B7A896" },
   },
 ];
@@ -174,7 +174,7 @@ const ServicesPage: React.FC = () => {
   useDocumentMeta({
     title: "Services · SunRed Bangkok Outcall Massage",
     description:
-      "Choose your outcall massage in Bangkok — Thai, Aromatherapy, Gentleman's Signature, and SunRed Therapeutic. From ฿1,200, delivered to your hotel or residence.",
+      "Choose your outcall massage in Bangkok: Thai, Aromatherapy, Gentleman's Signature, and SunRed Therapeutic. From ฿1,200, delivered to your hotel or residence.",
     url: "https://sunred.vip/services",
     type: "website",
   });
@@ -905,7 +905,7 @@ const ServicesPage: React.FC = () => {
                   <Typography sx={{ fontFamily: SANS, fontSize: 12.5, lineHeight: 1.6, color: "var(--sr-body)" }}>
                     {t(
                       "services.serviceAreaBody",
-                      "Sukhumvit · Silom · Asok · Thonglor · Sathorn · Phrom Phong · Ari · Chidlom · Ploenchit. Beyond the centre — our concierge provides a private quotation."
+                      "Sukhumvit · Silom · Asok · Thonglor · Sathorn · Phrom Phong · Ari · Chidlom · Ploenchit. Beyond the centre, our concierge provides a private quotation."
                     )}
                   </Typography>
                 </Box>
@@ -1086,7 +1086,7 @@ const ServicesPage: React.FC = () => {
               <Typography sx={{ fontFamily: SANS, fontSize: 12.5, lineHeight: 1.6, color: "var(--sr-body)" }}>
                 {t(
                   "services.languagesBody",
-                  "English · ไทย · 中文 · 日本語 · 한국어 — our concierge corresponds in your language, and many practitioners are fluent in two or more."
+                  "English · ไทย · 中文 · 日本語 · 한국어. Our concierge corresponds in your language, and many practitioners are fluent in two or more."
                 )}
               </Typography>
             </Box>

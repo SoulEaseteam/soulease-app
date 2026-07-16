@@ -121,7 +121,7 @@ const MyCodesPage: React.FC = () => {
 
   const statusLabel = (s: string) =>
     s === "pending"
-      ? t("codes.status.pending", "Awaiting concierge — applied to your next booking")
+      ? t("codes.status.pending", "Awaiting concierge · applied to your next booking")
       : s === "approved"
         ? t("codes.status.approved", "Ready to use on your next booking")
         : s === "used"
@@ -387,7 +387,7 @@ const MyCodesPage: React.FC = () => {
                 <Eyebrow>{t("codes.myReferral", "My referral code")}</Eyebrow>
                 <Card>
                   <Typography sx={{ fontFamily: fonts.body, fontSize: 12.5, color: "var(--sr-body)", mb: 1.25, lineHeight: 1.5 }}>
-                    {t("codes.referralNote", "Share your code with a friend. They receive ฿{{amount}} off their first session — and so do you.", { amount: refCfg.amountThb.toLocaleString() })}
+                    {t("codes.referralNote", "Share your code with a friend. They receive ฿{{amount}} off their first session, and so do you.", { amount: refCfg.amountThb.toLocaleString() })}
                   </Typography>
                   <Box
                     sx={{

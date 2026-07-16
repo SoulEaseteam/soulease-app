@@ -160,7 +160,7 @@ const LoginPage: React.FC = () => {
     if (!loginId || !password) {
       return setSnackbar({
         open: true,
-        message: t("auth.error.missingFields", "Please enter your phone, username, or email — and your password"),
+        message: t("auth.error.missingFields", "Please enter your phone, username, or email, and your password"),
         severity: "error",
       });
     }

@@ -87,7 +87,7 @@ const tierStyles: Record<
     titleColor: "#b91c1c",
     bodyColor: "rgba(127, 29, 29, 0.88)",
     icon: <ErrorOutlineRoundedIcon sx={{ fontSize: 18 }} />,
-    title: "Almost up — confirm now!",
+    title: "Almost up, confirm now!",
     pulseAnim: true,
   },
   expired: {

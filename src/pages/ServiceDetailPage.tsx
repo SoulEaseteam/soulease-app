@@ -226,7 +226,7 @@ const ServiceDetailPage: React.FC = () => {
 
   useDocumentMeta({
     title: service
-      ? t("meta.serviceDetail.title", "{{name}} — SunRed Bangkok", {
+      ? t("meta.serviceDetail.title", "{{name}} · SunRed Bangkok", {
           name: service.name,
         })
       : t("meta.serviceDetail.fallback", "SunRed Services"),

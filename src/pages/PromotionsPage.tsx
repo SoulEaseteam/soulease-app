@@ -214,7 +214,7 @@ const AnniversaryOfferCard: React.FC<{ onOpen: () => void }> = ({ onOpen }) => (
         onOpen();
       }
     }}
-    aria-label="SunRed 1st Anniversary privileges — tap to claim your reward"
+    aria-label="SunRed 1st Anniversary privileges, tap to claim your reward"
     sx={{
       position: "relative",
       display: "block",
@@ -234,7 +234,7 @@ const AnniversaryOfferCard: React.FC<{ onOpen: () => void }> = ({ onOpen }) => (
     <Box
       component="img"
       src={ANNIV_IMG}
-      alt="SunRed 1st Anniversary exclusive privileges. New guests: THB 100 welcome gift. Returning guests choose one — THB 200 gift, THB 300 voucher, or double SunPoints. Valid 15 July to 15 August 2026."
+      alt="SunRed 1st Anniversary exclusive privileges. New guests: THB 100 welcome gift. Returning guests choose one: THB 200 gift, THB 300 voucher, or double SunPoints. Valid 15 July to 15 August 2026."
       loading="lazy"
       decoding="async"
       sx={{ display: "block", width: "100%", height: "auto" }}

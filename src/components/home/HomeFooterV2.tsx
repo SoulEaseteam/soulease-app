@@ -173,7 +173,7 @@ const HomeFooterV2: React.FC = () => {
           maxWidth: 320,
         }}
       >
-        {t("footer.tagline", "We care for you like someone who matters — at every moment of your life.")}
+        {t("footer.tagline", "We care for you like someone who matters, at every moment of your life.")}
       </Box>
 
       {/* 3-column link grid */}

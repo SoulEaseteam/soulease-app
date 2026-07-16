@@ -108,7 +108,7 @@ class ErrorBoundary extends React.Component<Props, State> {
             Something went wrong
           </h1>
           <p style={{ margin: "0 0 16px", fontSize: 14, opacity: 0.8 }}>
-            {i18n.t("error.body", "Sorry — something unexpected went wrong. Please try again.")}
+            {i18n.t("error.body", "Sorry, something unexpected went wrong. Please try again.")}
           </p>
           <pre
             style={{

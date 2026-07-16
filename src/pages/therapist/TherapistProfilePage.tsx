@@ -296,7 +296,7 @@ const TherapistProfilePage: React.FC = () => {
     } catch (err) {
       console.error("[TherapistProfile] updateOverride failed:", err);
       setToast({
-        msg: "Couldn't update status — please try again.",
+        msg: "Couldn't update status. Please try again.",
         severity: "error",
       });
     } finally {
@@ -320,7 +320,7 @@ const TherapistProfilePage: React.FC = () => {
     } catch (err) {
       console.error("[TherapistProfile] updateHoliday failed:", err);
       setToast({
-        msg: "Couldn't update holiday mode — please try again.",
+        msg: "Couldn't update holiday mode. Please try again.",
         severity: "error",
       });
     } finally {

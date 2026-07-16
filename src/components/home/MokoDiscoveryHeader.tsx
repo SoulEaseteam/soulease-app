@@ -59,7 +59,7 @@ const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
   const notices = [
     t("home.notice.reply", "Concierge replies within 5 minutes"),
     t("home.notice.verified", "Verified practitioners on standby"),
-    t("home.notice.delivery", "Delivered to your hotel or residence — anywhere in Bangkok"),
+    t("home.notice.delivery", "Delivered to your hotel or residence, anywhere in Bangkok"),
     t("home.notice.payment", "Pay on arrival · PromptPay · 24 hours"),
   ];
 
