@@ -356,7 +356,7 @@ const TaxiEstimator: React.FC = () => {
         {/* Practitioner picker */}
         <Box>
           {/* 🆕 28w.68 (founder "เปลี่ยนเป็นข้อความว่าเลือกชื่อพนักงาน ภาษาอังกฤษ") */}
-          <Typography sx={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 700, color: "var(--sr-muted)", mb: 0.5 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 800, color: "var(--sr-body)", mb: 0.5 }}>
             {t("nearme.taxi.practitioner", "Select practitioner")}
           </Typography>
           <Box
@@ -468,7 +468,7 @@ const TaxiEstimator: React.FC = () => {
               <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: "var(--sr-ink)", lineHeight: 1.35 }}>
                 {placeName ?? t("nearme.taxi.pinDropped", "Pin dropped on the map")}
               </Typography>
-              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "var(--sr-muted)", mt: 0.15 }}>
+              <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "var(--sr-body)", mt: 0.2, lineHeight: 1.45 }}>
                 {t("nearme.taxi.dragHint", "Not right? Drag the pin on the map to adjust.")}
               </Typography>
             </Box>
@@ -584,7 +584,7 @@ const TaxiEstimator: React.FC = () => {
           </Box>
         )}
 
-        <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "var(--sr-muted)", lineHeight: 1.5 }}>
+        <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "var(--sr-body)", lineHeight: 1.55 }}>
           {!estimate
             ? t("nearme.taxi.hint", "Pick a practitioner, then search, tap the map, or use your location for a taxi estimate.")
             : estimate.fare == null
@@ -613,7 +613,7 @@ const ResultCell: React.FC<{ label: string; value: string; accent?: boolean; div
       borderLeft: divider ? "1px solid var(--sr-hairline)" : "none",
     }}
   >
-    <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--sr-muted)" }}>
+    <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--sr-body)" }}>
       {label}
     </Typography>
     {/* 🆕 28x.47 — struck "before" price above the discounted fare (Grab-style). */}
@@ -694,9 +694,9 @@ const NearMePage: React.FC = () => {
         <Typography
           sx={{
             fontFamily: SANS,
-            fontSize: 13,
-            color: "var(--sr-muted)",
-            lineHeight: 1.5,
+            fontSize: 13.5,
+            color: "var(--sr-body)",
+            lineHeight: 1.6,
             mt: 0.75,
             maxWidth: 460,
           }}
@@ -759,8 +759,9 @@ const NearMePage: React.FC = () => {
         <Typography
           sx={{
             fontFamily: SANS,
-            fontSize: 12,
-            color: "var(--sr-muted)",
+            fontSize: 12.5,
+            color: "var(--sr-body)",
+            lineHeight: 1.55,
             mt: 1.25,
           }}
         >
@@ -779,9 +780,9 @@ const NearMePage: React.FC = () => {
           px: 0.5,
           textAlign: "center",
           fontFamily: SANS,
-          fontSize: 13,
-          color: "var(--sr-muted)",
-          lineHeight: 1.55,
+          fontSize: 13.5,
+          color: "var(--sr-body)",
+          lineHeight: 1.6,
         }}
       >
         {t(
