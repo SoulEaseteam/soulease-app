@@ -830,31 +830,34 @@ const NearMePage: React.FC = () => {
             border: "1px solid var(--sr-hairline)",
           }}
         >
+        {/* 🆕 28x.53 (founder: "ปรับฟอนต์ให้อ่านง่ายขึ้น") — was Playfair serif at a
+            loose 1.9 line-height, which reads heavy for a plain list of areas.
+            Now sans, medium-weight area names, and readable (not muted) separators. */}
         <Typography
           sx={{
-            fontFamily: SERIF,
-            fontSize: { xs: 15.5, md: 17 },
-            lineHeight: 1.9,
+            fontFamily: SANS,
+            fontSize: { xs: 14.5, md: 15.5 },
+            lineHeight: 1.75,
             color: "var(--sr-ink)",
-            letterSpacing: "0.01em",
+            letterSpacing: "0.005em",
             overflowWrap: "break-word",
           }}
         >
-          <Box component="span" sx={{ fontStyle: "italic", color: "var(--sr-gold-text)" }}>
+          <Box component="span" sx={{ fontWeight: 800, color: "var(--sr-gold-text)" }}>
             Across central Bangkok
           </Box>
-          <Box component="span" sx={{ color: "var(--sr-muted)" }}>{": "}</Box>
+          <Box component="span" sx={{ color: "var(--sr-body)" }}>{": "}</Box>
           {AREAS.map((a, i) => (
             <React.Fragment key={a}>
               {i > 0 && (
-                <Box component="span" sx={{ color: "var(--sr-muted)" }}>
+                <Box component="span" sx={{ color: "var(--sr-body)" }}>
                   {i === AREAS.length - 1 ? " and " : ", "}
                 </Box>
               )}
-              {a}
+              <Box component="span" sx={{ fontWeight: 600 }}>{a}</Box>
             </React.Fragment>
           ))}
-          <Box component="span" sx={{ color: "var(--sr-muted)" }}>.</Box>
+          <Box component="span" sx={{ color: "var(--sr-body)" }}>.</Box>
         </Typography>
         </Box>
         <Typography
