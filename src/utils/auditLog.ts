@@ -46,6 +46,8 @@ export type AuditAction =
   | "therapist.create"
   | "therapist.update"
   | "therapist.delete"
+  // 🆕 shop-created account (manual users/{id} doc) on AdminUsersPage.
+  | "user.create"
   | "user.block"
   | "user.unblock"
   // 🆕 Round 28s291 — Edit/Hide on AdminReviewListPage had zero audit trail,
@@ -159,6 +161,7 @@ export const ACTION_LABEL: Record<string, { label: string; color: string }> = {
   "therapist.create":        { label: "เพิ่มหมอนวดใหม่",       color: adminColor.green },
   "therapist.update":        { label: "แก้ไขข้อมูลหมอนวด",     color: adminColor.blue },
   "therapist.delete":        { label: "ลบหมอนวด",             color: adminColor.red },
+  "user.create":             { label: "สร้างผู้ใช้",           color: adminColor.green },
   "user.block":              { label: "บล็อกผู้ใช้",          color: adminColor.red },
   "user.unblock":            { label: "ปลดบล็อกผู้ใช้",       color: adminColor.green },
   "review.edit":             { label: "แก้ไขรีวิว",           color: adminColor.blue },
