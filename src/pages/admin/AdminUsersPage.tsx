@@ -37,7 +37,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { Crown, Warning, MagnifyingGlass, UsersThree, Repeat, CurrencyCircleDollar, CaretDown, CircleNotch, ProhibitInset, Copy, UserPlus } from "phosphor-react";
+import { Crown, Warning, MagnifyingGlass, UsersThree, Repeat, CurrencyCircleDollar, CaretDown, CircleNotch, ProhibitInset, Copy } from "phosphor-react";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 // 🆕 28w.60 — membership enrollment (SRD- codes) on the customer insights drawer.
 import {
@@ -161,16 +161,6 @@ const AdminUsersPage: React.FC = () => {
 
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [form, setForm] = useState<User | null>(null);
-
-  // 🆕 28x.xx (founder: "สร้างยูสเซอร์ผ่านไอดีที่ร้านตั้งขึ้นเอง + เบอร์โทร") —
-  //   manual account creation. The doc ID is shop-defined (not a Firebase Auth
-  //   UID), so View can hand out a login/reference ID herself for guests who
-  //   never signed up through the app. Phone is the one required field.
-  const [creating, setCreating] = useState(false);
-  const [createForm, setCreateForm] = useState<{ id: string; name: string; phone: string; role: Role }>(
-    { id: "", name: "", phone: "", role: "user" }
-  );
-  const [createSaving, setCreateSaving] = useState(false);
 
   // 🆕 Round 28s234 — customer insights (grouped by phone from `bookings`).
   const [insights, setInsights] = useState<CustomerInsight[]>([]);
@@ -543,57 +533,6 @@ const AdminUsersPage: React.FC = () => {
   };
 
   // --------------------------------------------------------------------
-  // 🆕 Create — shop-defined ID + phone
-  // --------------------------------------------------------------------
-  const openCreate = () => {
-    setCreateForm({ id: "", name: "", phone: "", role: "user" });
-    setCreating(true);
-  };
-  const closeCreate = () => setCreating(false);
-
-  const handleCreateUser = async () => {
-    const id = createForm.id.trim();
-    const phone = createForm.phone.trim();
-    if (!id) { toast.error("ใส่ไอดีก่อน"); return; }
-    if (!phone) { toast.error("ใส่เบอร์โทรก่อน"); return; }
-    // Firestore doc IDs can't contain "/" and can't be "." / "..".
-    if (id.includes("/") || id === "." || id === "..") {
-      toast.error("ไอดีห้ามมี / หรือเป็น . / ..");
-      return;
-    }
-
-    setCreateSaving(true);
-    try {
-      const ref = doc(db, "users", id);
-      // Don't clobber an existing account (a real Auth UID or an earlier
-      // shop-created ID) — creating must never silently overwrite.
-      const existing = await getDoc(ref);
-      if (existing.exists()) {
-        toast.error(`ไอดี "${id}" มีอยู่แล้ว`);
-        setCreateSaving(false);
-        return;
-      }
-      await setDoc(ref, {
-        name: createForm.name.trim() || null,
-        email: null,
-        phone,
-        role: createForm.role,
-        createdManually: true, // shop-created, not an Auth signup
-        createdAt: serverTimestamp(),
-      });
-      void logAdminAction("user.create", { id, phone, role: createForm.role });
-      toast.success(`สร้างผู้ใช้ "${id}" แล้ว`);
-      setCreating(false);
-      await fetchUsers();
-    } catch (err) {
-      console.error("Create user failed:", err);
-      toast.error("สร้างไม่สำเร็จ");
-    } finally {
-      setCreateSaving(false);
-    }
-  };
-
-  // --------------------------------------------------------------------
   // Delete
   // --------------------------------------------------------------------
   const handleDelete = async (id?: string) => {
@@ -942,29 +881,13 @@ const AdminUsersPage: React.FC = () => {
 
       {/* ── Registered accounts ──────────────────────────────────────── */}
       {/* 🆕 Round 28r45 — bilingual section header. */}
-      <Box sx={{ mb: 1.5, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 1, flexWrap: "wrap" }}>
-        <Box>
-          <Typography sx={{ fontFamily: adminFont.serif, fontSize: 20, fontWeight: 600, color: adminColor.text, lineHeight: 1 }}>
-            Accounts
-          </Typography>
-          <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 0.35, letterSpacing: "0.02em" }}>
-            บัญชีผู้ใช้ · signed-up + shop-created
-          </Typography>
-        </Box>
-        {/* 🆕 create a manual account (shop-defined ID + phone) */}
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={<UserPlus size={16} weight="bold" />}
-          onClick={openCreate}
-          sx={{
-            textTransform: "none", fontWeight: 700, fontSize: 13, borderRadius: "999px",
-            background: "linear-gradient(135deg,#D97C95,#C96F89)",
-            "&:hover": { background: "linear-gradient(135deg,#C96F89,#B36079)" },
-          }}
-        >
-          + สร้างผู้ใช้
-        </Button>
+      <Box sx={{ mb: 1.5 }}>
+        <Typography sx={{ fontFamily: adminFont.serif, fontSize: 20, fontWeight: 600, color: adminColor.text, lineHeight: 1 }}>
+          Accounts
+        </Typography>
+        <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 0.35, letterSpacing: "0.02em" }}>
+          บัญชีผู้ใช้ · signed-up users only
+        </Typography>
       </Box>
 
       <Paper
@@ -1285,70 +1208,6 @@ const AdminUsersPage: React.FC = () => {
             </DialogActions>
           </>
         )}
-      </Dialog>
-
-      {/* ------------------ CREATE DIALOG ------------------ */}
-      {/* 🆕 shop-defined ID + phone. ID becomes the Firestore users/{id} doc. */}
-      <Dialog open={creating} onClose={closeCreate} fullWidth maxWidth="sm"
-        slotProps={{ paper: { sx: { background: adminColor.bg, borderRadius: "16px" } } }}>
-        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1, color: adminColor.text }}>
-          <UserPlus size={20} weight="bold" color={adminColor.accent} /> สร้างผู้ใช้ · New user
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            label="ไอดี · User ID"
-            placeholder="เช่น sunred-001"
-            fullWidth
-            margin="dense"
-            required
-            value={createForm.id}
-            onChange={(e) => setCreateForm((p) => ({ ...p, id: e.target.value }))}
-            helperText="ไอดีที่ร้านตั้งเอง — ใช้เป็นรหัสอ้างอิงของบัญชีนี้ (ห้ามซ้ำ · ห้ามมี /)"
-            inputProps={{ style: { fontFamily: "ui-monospace, monospace", letterSpacing: "0.04em" } }}
-          />
-          <TextField
-            label="เบอร์โทร · Phone"
-            placeholder="0812345678"
-            fullWidth
-            margin="dense"
-            required
-            value={createForm.phone}
-            onChange={(e) => setCreateForm((p) => ({ ...p, phone: e.target.value }))}
-          />
-          <TextField
-            label="ชื่อ · Name (ไม่บังคับ)"
-            fullWidth
-            margin="dense"
-            value={createForm.name}
-            onChange={(e) => setCreateForm((p) => ({ ...p, name: e.target.value }))}
-          />
-          <TextField
-            select
-            label="Role"
-            fullWidth
-            margin="dense"
-            value={createForm.role}
-            onChange={(e) => setCreateForm((p) => ({ ...p, role: e.target.value as Role }))}
-            SelectProps={{ MenuProps: { PaperProps: { sx: { background: adminColor.panel2, color: adminColor.text, borderRadius: "12px" } } } }}
-          >
-            <MenuItem value="user">User</MenuItem>
-            <MenuItem value="therapist">Therapist</MenuItem>
-            <MenuItem value="admin">Admin</MenuItem>
-          </TextField>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeCreate} disabled={createSaving} sx={{ color: adminColor.muted, textTransform: "none" }}>
-            ยกเลิก
-          </Button>
-          <Button
-            variant="contained"
-            disabled={createSaving}
-            onClick={() => void handleCreateUser()}
-            sx={{ textTransform: "none", fontWeight: 700, borderRadius: "999px", background: "linear-gradient(135deg,#D97C95,#C96F89)", "&:hover": { background: "linear-gradient(135deg,#C96F89,#B36079)" } }}
-          >
-            {createSaving ? "กำลังสร้าง…" : "สร้าง"}
-          </Button>
-        </DialogActions>
       </Dialog>
 
       {/* ------------------ EDIT DIALOG ------------------ */}
