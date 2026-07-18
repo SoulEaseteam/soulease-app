@@ -699,10 +699,13 @@ const formatBookingForAdmin = (
   //   differs (so the operator sees both "Rosewood Bangkok" and the road).
   const norm = (s?: string) => (s ?? "").replace(/\s+/g, " ").trim().toLowerCase();
   const place = b.locationName?.trim() || b.address?.trim() || "—";
+  // 🆕 28x.68 — compare against `place`, not `locationName`. When a booking has
+  //   no locationName (most guest bookings — the field is only set when a POI
+  //   is picked), `place` already fell back to the address, but this check
+  //   compared the address to an EMPTY locationName, decided they differed, and
+  //   appended it again: "Asok, Asok" on every such dispatch card.
   const extra =
-    b.address?.trim() && norm(b.address) !== norm(b.locationName)
-      ? b.address.trim()
-      : "";
+    b.address?.trim() && norm(b.address) !== norm(place) ? b.address.trim() : "";
   const addressLine = [place, extra].filter(Boolean).join(", ");
 
   // Map link: explicit mapUrl, else a Places search on name/address.
