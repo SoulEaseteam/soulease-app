@@ -1280,7 +1280,25 @@ const BookingFlowPage: React.FC = () => {
       // applied; adding `discountAmount` back mirrors "as if the code
       // wasn't valid".
       const effectiveTotalPrice = first10Abused ? Math.round(total + discountAmount) : total;
+      // 🆕 Round 28x.65 (founder: "ทั้งหมด" — closing the public-read hole) —
+      //   a capability token for the success page.
+      //
+      //   Why it's needed: firestore.rules currently has `allow get: if true` on
+      //   bookings, because a guest lands on /booking/success/:id with no
+      //   account and must read their own reservation. The rules file's own
+      //   comment admits the cost — that read returns the guest's address,
+      //   phone and GPS to anyone holding a booking id.
+      //
+      //   Rules can't check a client-supplied secret on a read (there is no
+      //   request.resource on a get), so the token is verified by a callable
+      //   instead, which also returns a REDACTED booking (no phone, no author,
+      //   no internal dispatch fields). The rule can then require ownership.
+      const accessToken =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
       const ref = await addDoc(collection(db, "bookings"), {
+        accessToken,
         // 🆕 28x.3 (founder: "จะระบุได้ไง ใครจอง") — this page is ALSO how the
         //   concierge books (isAdminBooking), and it recorded no author at all.
         //   A guest booking themselves stamps createdBy:"guest" and no identity.
@@ -1454,7 +1472,7 @@ const BookingFlowPage: React.FC = () => {
                 time: form.time ?? "—",
               }
             ),
-            link: `/booking/success/${ref.id}`,
+            link: `/booking/success/${ref.id}?t=${accessToken}`,
             read: false,
             priority: "normal",
             createdAt: serverTimestamp(),
@@ -1491,7 +1509,7 @@ const BookingFlowPage: React.FC = () => {
         form.duration ?? service.duration,
         Math.round(total)
       );
-      void navigate(`/booking/success/${ref.id}`);
+      void navigate(`/booking/success/${ref.id}?t=${accessToken}`);
     } catch (err) {
       // 🆕 Round 28r18 — Persist the error so admin can triage from
       //   /admin/analytics-style queries instead of asking "what

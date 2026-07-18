@@ -49,7 +49,7 @@ import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import KeyRoundedIcon from "@mui/icons-material/KeyRounded";
 import ShowerRoundedIcon from "@mui/icons-material/ShowerRounded";
 import WaterDropRoundedIcon from "@mui/icons-material/WaterDropRounded";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { bookingRef } from "@/utils/bookingRef";
 // 🆕 Round 28s90 (CRO audit) — multi-channel confirm row. Chinese
@@ -57,6 +57,9 @@ import { bookingRef } from "@/utils/bookingRef";
 //   into a LINE-only button and bailing at the finish line. Same
 //   brand-color channel icon set the home concierge grid uses.
 import { doc, getDoc, type DocumentData } from "firebase/firestore";
+// 🆕 28x.65 — token-gated read, so bookings no longer need `allow get: if true`.
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { app } from "@/lib/firebase";
 // 🆕 Round 28b59 — `dayjs` direct import dropped (was only used by
 //   the now-removed onAddToCalendar handler). All time formatting
 //   goes through fmtBKK / nowBKK / toBKK from @/utils/time.
@@ -92,6 +95,11 @@ const PREP_BUFFER_MIN = 30;
 const BookingSuccessPage: React.FC = () => {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
+  // 🆕 28x.65 — the capability token minted at checkout, carried in the URL.
+  //   Absent for older links and for arrivals from booking history; in those
+  //   cases the callable falls back to proving ownership by sign-in.
+  const [searchParams] = useSearchParams();
+  const accessToken = searchParams.get("t") ?? "";
   const navigate = useNavigate();
   const [booking, setBooking] = useState<DocumentData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -123,12 +131,29 @@ const BookingSuccessPage: React.FC = () => {
     setBooking(null);
     const fetch = async () => {
       try {
-        const snap = await getDoc(doc(db, "bookings", id));
+        // 🆕 28x.65 — go through the callable, which verifies the token (or
+        //   sign-in) server-side and returns a redacted booking. The direct
+        //   read below is kept only as a fallback for a signed-in owner, whose
+        //   own rule branch still permits it — if the callable is ever down,
+        //   a logged-in guest still sees their confirmation.
+        let loaded: DocumentData | null = null;
+        try {
+          const fn = httpsCallable<
+            { bookingId: string; token: string },
+            { ok: boolean; booking: DocumentData }
+          >(getFunctions(app, "asia-southeast1"), "getBookingPublic");
+          const res = await fn({ bookingId: id, token: accessToken });
+          loaded = res.data?.booking ?? null;
+        } catch (callErr) {
+          console.warn("[success] callable read failed, trying direct", callErr);
+          const snap = await getDoc(doc(db, "bookings", id));
+          loaded = snap.exists() ? snap.data() : null;
+        }
         if (!alive) return;
-        if (!snap.exists()) {
+        if (!loaded) {
           setError(t("success.err.notFound", "Booking not found"));
         } else {
-          setBooking(snap.data());
+          setBooking(loaded);
         }
       } catch (e) {
         if (!alive) return;
@@ -141,7 +166,7 @@ const BookingSuccessPage: React.FC = () => {
     return () => {
       alive = false;
     };
-  }, [id, t]);
+  }, [id, t, accessToken]);
 
   // ── Derived display values (booked once, then memoize-safe to recompute) ──
   const therapistName =
@@ -197,9 +222,24 @@ const BookingSuccessPage: React.FC = () => {
 
   // 🆕 Round 28b21 — Phase 2: 10-min hold window. Field present only on
   //   bookings created after this round; older docs render no countdown.
-  const holdExpiresAt: Date | null = booking?.holdExpiresAt?.toDate
-    ? (booking.holdExpiresAt.toDate() as Date)
-    : null;
+  // 🆕 28x.65 — the callable returns timestamps as epoch ms (JSON has no
+  //   Timestamp), while the direct-read fallback still yields a Firestore
+  //   Timestamp. Handle both, or the hold countdown silently vanishes for
+  //   every guest — the exact people it exists to warn.
+  const holdExpiresAt: Date | null = (() => {
+    const raw = booking?.holdExpiresAt as
+      | { toDate?: () => Date }
+      | number
+      | string
+      | null
+      | undefined;
+    if (raw == null) return null;
+    if (typeof raw === "object" && typeof raw.toDate === "function") {
+      return raw.toDate();
+    }
+    const d = new Date(raw as number | string);
+    return isNaN(d.getTime()) ? null : d;
+  })();
   const holdState = (booking?.holdState as string | undefined) ?? undefined;
   const therapistIdForRebook =
     (booking?.therapistId as string | undefined) ?? undefined;

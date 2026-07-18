@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -1468,6 +1468,83 @@ exports.setMemberAdmin = (0, https_1.onCall)({ region: "asia-southeast1" }, asyn
 //   self-promotion (granting yourself rights you don't have). Creating a
 //   second staff account is a different act, and it still requires already
 //   being an admin.
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.65 — read ONE booking for the guest success page.
+//
+//   Replaces the `allow get: if true` rule on bookings. That rule existed for
+//   exactly one flow (an unauthenticated guest landing on /booking/success/:id
+//   after checkout) and paid for it by letting anyone holding a 20-char doc id
+//   read a guest's home address, phone and GPS coordinates. For a business
+//   whose entire promise is discretion, that was the wrong trade.
+//
+//   Firestore rules can't verify a client-supplied secret on a read, so the
+//   check lives here. Two ways in:
+//     • the capability token minted at booking time (guests), or
+//     • being signed in as the booking's owner (or an admin).
+//
+//   What comes back is a WHITELIST — the fields BookingSuccessPage actually
+//   renders. Notably absent: phone, note, location{lat,lng}, createdBy,
+//   dispatch state, therapistResponse. Even the legitimate guest doesn't need
+//   those to see their own confirmation, and a whitelist can't leak a field
+//   somebody adds to the doc later.
+exports.getBookingPublic = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
+    const data = request.data;
+    const bookingId = String(data?.bookingId ?? "").trim();
+    const token = String(data?.token ?? "").trim();
+    if (!bookingId) {
+        throw new https_1.HttpsError("invalid-argument", "bookingId is required.");
+    }
+    const db = (0, firestore_2.getFirestore)();
+    const snap = await db.collection("bookings").doc(bookingId).get();
+    if (!snap.exists) {
+        // Same code AND message as a bad token below — a distinguishable
+        // "not-found" would confirm which booking ids are real to anyone
+        // probing, which is exactly the enumeration this round closed.
+        throw new https_1.HttpsError("permission-denied", "Booking not found.");
+    }
+    const b = snap.data();
+    const uid = request.auth?.uid ?? null;
+    const storedToken = typeof b.accessToken === "string" ? b.accessToken.trim() : "";
+    const tokenOk = storedToken.length > 0 && token === storedToken;
+    const ownerOk = uid != null && b.userId === uid;
+    let adminOk = false;
+    if (!tokenOk && !ownerOk && uid) {
+        adminOk = (await db.collection("admins").doc(uid).get()).exists;
+    }
+    if (!tokenOk && !ownerOk && !adminOk) {
+        // Same error whether the id is wrong or the token is wrong — a
+        // different message would let someone enumerate valid booking ids.
+        throw new https_1.HttpsError("permission-denied", "Booking not found.");
+    }
+    return {
+        ok: true,
+        booking: {
+            serviceId: b.serviceId ?? null,
+            serviceName: b.serviceName ?? null,
+            servicePrice: b.servicePrice ?? null,
+            originalPrice: b.originalPrice ?? null,
+            totalPrice: b.totalPrice ?? null,
+            discountCode: b.discountCode ?? null,
+            discountAmount: b.discountAmount ?? null,
+            savingsTotal: b.savingsTotal ?? null,
+            duration: b.duration ?? null,
+            therapistId: b.therapistId ?? null,
+            therapistName: b.therapistName ?? null,
+            // The guest typed these themselves — showing them back is the point
+            // of a confirmation screen.
+            address: b.address ?? null,
+            locationName: b.locationName ?? null,
+            holdState: b.holdState ?? null,
+            // Timestamps → epoch ms, so the callable's JSON survives the wire.
+            startAt: b.startAt instanceof firestore_2.Timestamp
+                ? b.startAt.toMillis()
+                : (b.startAt ?? null),
+            holdExpiresAt: b.holdExpiresAt instanceof firestore_2.Timestamp
+                ? b.holdExpiresAt.toMillis()
+                : (b.holdExpiresAt ?? null),
+        },
+    };
+});
 exports.createAdminAccount = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Sign in required.");

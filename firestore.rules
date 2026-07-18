@@ -220,7 +220,19 @@ service cloud.firestore {
       return ['status', 'arrivedAt', 'completedAt', 'therapistNote', 'updatedAt'];
     }
     match /bookings/{bookingId} {
-      allow get: if true;
+      // 🆕 28x.65 — was `allow get: if true`, which let anyone holding a 20-char
+      //   doc id read a guest's address, phone and GPS without signing in. It
+      //   existed for one flow: an unauthenticated guest on
+      //   /booking/success/:id after checkout.
+      //
+      //   That flow now goes through the `getBookingPublic` callable, which
+      //   verifies a capability token minted at booking time and returns a
+      //   redacted document. Rules can't check a client-supplied secret on a
+      //   read, which is why the guest path lives in a function and this rule
+      //   can be reduced to real ownership.
+      allow get: if isAdmin()
+                 || (isSignedIn() && resource.data.userId == request.auth.uid)
+                 || (isSignedIn() && resource.data.therapistId == request.auth.uid);
       // Round 28s6 (founder 2026-05-30) — the 28s1 rule denied public
       // review listeners. Reviews live on bookings (reviewText / rating
       // fields on the same doc as the original reservation). Allow
