@@ -550,6 +550,26 @@ const AdminTherapistsPage: React.FC = () => {
   // ==========================================================
   // 🆕 28x.67 — see the button below.
   const [backfilling, setBackfilling] = useState(false);
+  // 🆕 28x.72 — see the button below.
+  const [chanCoding, setChanCoding] = useState(false);
+  const [chanCode, setChanCode] = useState<string | null>(null);
+  const makeChannelCode = async () => {
+    setChanCoding(true);
+    try {
+      const fn = httpsCallable<Record<string, never>, { ok: boolean; code: string }>(
+        getFunctions(app, "asia-southeast1"),
+        "createJobChannelCode"
+      );
+      const res = await fn({});
+      setChanCode(res.data.code);
+    } catch (e) {
+      console.error("[therapists] channel code failed", e);
+      toast.error("สร้างรหัสไม่สำเร็จ");
+    } finally {
+      setChanCoding(false);
+    }
+  };
+
   const runBackfill = async () => {
     setBackfilling(true);
     try {
@@ -837,7 +857,39 @@ const AdminTherapistsPage: React.FC = () => {
         >
           {backfilling ? <CircularProgress size={16} /> : "ซิงก์สิทธิ์งานพนักงาน"}
         </Button>
+
+        {/* 🆕 28x.72 — claim a Telegram group/channel as the open-job board.
+            Code-gated because anyone can add a public bot to their own group;
+            without proof of authority "/setjobchannel" there would redirect
+            every unassigned job to a stranger. */}
+        <Button
+          disabled={chanCoding}
+          onClick={() => void makeChannelCode()}
+          sx={{
+            textTransform: "none", fontWeight: 700, borderRadius: "11px",
+            color: adminColor.text, border: `1px solid ${adminColor.line2}`,
+          }}
+        >
+          {chanCoding ? <CircularProgress size={16} /> : "รหัสตั้งช่องงาน"}
+        </Button>
       </Box>
+
+      {chanCode && (
+        <Box
+          sx={{
+            mb: 2, p: 1.5, borderRadius: "12px",
+            background: `${adminColor.green}14`,
+            border: `1px solid ${adminColor.green}55`,
+          }}
+        >
+          <Typography sx={{ fontFamily: adminFont.sans, fontSize: 11.5, color: adminColor.dim, mb: 0.5 }}>
+            พิมพ์ข้อความนี้ในกลุ่ม/ช่องงาน · ใช้ได้ครั้งเดียว หมดอายุใน 1 ชม.
+          </Typography>
+          <Typography sx={{ fontFamily: adminFont.sans, fontSize: 15, fontWeight: 800, color: adminColor.text }}>
+            /setjobchannel {chanCode}
+          </Typography>
+        </Box>
+      )}
 
       {loading ? (
         <Box textAlign="center" mt={5}>

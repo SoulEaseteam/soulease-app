@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.createJobChannelCode = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -1114,6 +1114,36 @@ async function linkTherapistByCode(code, chatId, greetName) {
 //   personal accounts, so a roster of 13 would learn each other's real Telegram
 //   identities. Channel subscribers can't see each other at all, and inline
 //   buttons still work.
+/**
+ * Claim this chat as the job board. Returns the reply to send, or null to stay
+ * silent (wrong/absent code — a silent bot tells a prober nothing).
+ */
+async function claimJobChannel(chatId, chatTitle, suppliedCode) {
+    const db = (0, firestore_2.getFirestore)();
+    const ref = db.collection("adminSettings").doc("advanced");
+    const snap = await ref.get();
+    const d = snap.data() ?? {};
+    const want = typeof d.jobChannelCode === "string" ? d.jobChannelCode : "";
+    const exp = d.jobChannelCodeExpiresAt;
+    if (!want || !exp || exp.toMillis() < Date.now())
+        return null;
+    if (suppliedCode.toUpperCase() !== want.toUpperCase())
+        return null;
+    await ref.set({
+        jobChannelId: String(chatId),
+        jobChannelTitle: chatTitle ?? null,
+        // Burn the code so a forwarded setup message can't move the board again.
+        jobChannelCode: firestore_2.FieldValue.delete(),
+        jobChannelCodeExpiresAt: firestore_2.FieldValue.delete(),
+    }, { merge: true });
+    v2_1.logger.info("[claimJobChannel] job board set", { chatId, chatTitle });
+    return [
+        "✅ ตั้งเป็นช่องงานเรียบร้อยแล้ว",
+        "",
+        "งานที่ยังไม่ได้จ่ายให้ใคร จะมาโพสต์ที่นี่",
+        "ใครกดรับก่อนได้ก่อน · รายละเอียดเต็มส่งเข้าแชทส่วนตัว",
+    ].join("\n");
+}
 async function jobChannelId() {
     try {
         const snap = await (0, firestore_2.getFirestore)()
@@ -1393,18 +1423,11 @@ exports.telegramWebhook = (0, https_1.onRequest)({
     if (update?.channel_post) {
         const cp = update.channel_post;
         const cid = cp.chat?.id;
-        if (cid && (cp.text ?? "").trim().toLowerCase() === "/setjobchannel") {
-            await (0, firestore_2.getFirestore)()
-                .collection("adminSettings")
-                .doc("advanced")
-                .set({ jobChannelId: String(cid), jobChannelTitle: cp.chat?.title ?? null }, { merge: true });
-            v2_1.logger.info("[telegramWebhook] job channel set", { cid });
-            await sendTelegram(token, String(cid), [
-                "✅ ตั้งเป็นช่องงานเรียบร้อยแล้ว",
-                "",
-                "งานที่ยังไม่ได้จ่ายให้ใคร จะมาโพสต์ที่นี่",
-                "ใครกดรับก่อนได้ก่อน · รายละเอียดเต็มส่งเข้าแชทส่วนตัว",
-            ].join("\n"));
+        const t = (cp.text ?? "").trim();
+        if (cid && /^\/setjobchannel(@\w+)?\b/i.test(t)) {
+            const reply = await claimJobChannel(cid, cp.chat?.title, t.replace(/^\/setjobchannel(@\w+)?/i, "").trim());
+            if (reply)
+                await sendTelegram(token, String(cid), reply);
         }
         res.status(200).send("ok");
         return;
@@ -1478,6 +1501,17 @@ exports.telegramWebhook = (0, https_1.onRequest)({
                 "— Send /myid to get your chat ID, then give it to the admin.",
             ].join("\n");
     }
+    else if (/^\/setjobchannel(@\w+)?\b/i.test(text)) {
+        // 🆕 28x.72 — the founder created a GROUP, not a channel, so this arrives
+        //   as `message`. Telegram also appends @botname to commands in groups,
+        //   hence the optional suffix in the pattern.
+        const claimed = await claimJobChannel(chatId, update?.message?.chat?.title, text.replace(/^\/setjobchannel(@\w+)?/i, "").trim());
+        if (!claimed) {
+            res.status(200).send("ok"); // wrong/absent code → stay silent
+            return;
+        }
+        reply = claimed;
+    }
     else if (text.toLowerCase().startsWith("/link")) {
         // 🆕 28x.70 — self-service linking. Replaces the three-step /myid dance
         //   where a 10-digit chat id was read off one screen and retyped into
@@ -1514,6 +1548,13 @@ exports.telegramWebhook = (0, https_1.onRequest)({
             ].join("\n");
     }
     else if (text.startsWith("/")) {
+        // 🆕 28x.72 — private chats only. In the job group this fired on every
+        //   mistyped command and answered into a channel practitioners read for
+        //   work, which is exactly the noise a dispatch board must not have.
+        if (update?.message?.chat?.type !== "private") {
+            res.status(200).send("ok");
+            return;
+        }
         reply = [
             "ไม่รู้จักคำสั่งนี้ค่ะ",
             "พิมพ์ /myid เพื่อดูรหัสประจำตัว",
@@ -1905,6 +1946,34 @@ exports.createTherapistLinkCode = (0, https_1.onCall)({ region: "asia-southeast1
         actorId: request.auth.uid,
         byUid: request.auth.uid,
         detail: { therapistId }, // never the code itself
+        at: firestore_2.FieldValue.serverTimestamp(),
+    });
+    return { ok: true, code, expiresAtMs: expiresAt.toMillis() };
+});
+// 🆕 Round 28x.72 — a one-time code to claim the job board.
+//
+//   Anyone can add a public bot to their own Telegram group. Without proof of
+//   authority, "/setjobchannel" there would silently redirect every unassigned
+//   job — zone, time, price — to a stranger's group. Same one-time-code shape
+//   as the practitioner link codes.
+exports.createJobChannelCode = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = (0, firestore_2.getFirestore)();
+    if (!(await db.collection("admins").doc(request.auth.uid).get()).exists) {
+        throw new https_1.HttpsError("permission-denied", "Admin only.");
+    }
+    const code = makeLinkCode();
+    const expiresAt = firestore_2.Timestamp.fromMillis(Date.now() + 60 * 60 * 1000); // 1h
+    await db
+        .collection("adminSettings")
+        .doc("advanced")
+        .set({ jobChannelCode: code, jobChannelCodeExpiresAt: expiresAt }, { merge: true });
+    await db.collection("auditLogs").add({
+        action: "settings.update",
+        actorId: request.auth.uid,
+        detail: { what: "jobChannelCode issued" },
         at: firestore_2.FieldValue.serverTimestamp(),
     });
     return { ok: true, code, expiresAtMs: expiresAt.toMillis() };
