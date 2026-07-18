@@ -37,6 +37,29 @@ const TELEGRAM_CHAT_ID = "-1002962073895";
 //   Telegram (via /start) and View is ready to auto-DM them.
 const DISPATCH_THERAPIST_DM = false;
 
+// 🆕 Round 28x.61 (founder: "ทดลองกับ XingXing ดูก่อน ถ้าเวิร์ค ค่อยขยับขยาย
+//   กับคนอื่น") — a PILOT allowlist that overrides the master switch above for
+//   named practitioners only.
+//
+//   Why not just flip DISPATCH_THERAPIST_DM: that switch is all-or-nothing, so
+//   turning it on to test one person would start DMing every practitioner who
+//   already has a telegramChatId on file — the opposite of a controlled trial.
+//
+//   Entries are therapist DOC IDs (src/data/therapists.ts `id`), not display
+//   names — a name can be edited in the admin panel, and a renamed therapist
+//   silently dropping out of the pilot is a bug nobody would notice.
+//
+//   To expand: add doc IDs here and redeploy onBookingCreate. To go fully
+//   live: set DISPATCH_THERAPIST_DM = true (the allowlist then stops mattering).
+const THERAPIST_DM_PILOT: string[] = ["XingXingSunRed"];
+
+/** True if this practitioner should receive job DMs right now. */
+function therapistDmEnabled(therapistId: string | undefined): boolean {
+  if (DISPATCH_THERAPIST_DM) return true;           // everyone, once flipped
+  if (!therapistId) return false;
+  return THERAPIST_DM_PILOT.includes(therapistId);  // pilot only
+}
+
 // ─────────────────────────────────────────────────────────────
 // Helper: ส่งข้อความเข้า Telegram (reuse ใน multiple functions)
 // ─────────────────────────────────────────────────────────────
@@ -811,7 +834,10 @@ export const onBookingCreate = onDocumentCreated(
     //   purely a convenience channel ("Hey, you got a job").
     //   🆕 Round 28s82 — gated OFF (DISPATCH_THERAPIST_DM). For now the
     //   bot sends to View only; she dispatches manually.
-    if (DISPATCH_THERAPIST_DM && data.therapistId) {
+    //   🆕 Round 28x.61 — except for the pilot allowlist above. The admin group
+    //   still gets the master copy either way, so a pilot DM adds a channel
+    //   rather than replacing View's manual dispatch.
+    if (therapistDmEnabled(data.therapistId) && data.therapistId) {
       try {
         const therapistSnap = await getFirestore()
           .collection("therapists")

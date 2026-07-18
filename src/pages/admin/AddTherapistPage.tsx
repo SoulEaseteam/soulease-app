@@ -286,7 +286,7 @@ const AddTherapistPage: React.FC = () => {
               <TextField
                 label="Telegram Chat ID (สำหรับแจ้งงาน)" fullWidth size="small" sx={fieldSx}
                 value={form.telegramChatId} onChange={(e) => set("telegramChatId", e.target.value)}
-                helperText="ให้หมอนวดส่ง /myid ไปที่ @SunRedBot เพื่อรับรหัสนี้ · ไม่มีก็เว้นว่างได้"
+                helperText="ให้หมอนวดส่ง /myid ไปที่ @SunRed24hBot เพื่อรับรหัสนี้ · ไม่มีก็เว้นว่างได้"
                 placeholder="เช่น 123456789" inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               />
             </Box>

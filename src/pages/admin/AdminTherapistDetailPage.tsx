@@ -923,14 +923,14 @@ const AdminTherapistDetailPage: React.FC = () => {
 
             <SectionCard icon={<TelegramLogo size={13} />} title="Contact · ติดต่อ">
               {/* 🆕 Round 28b27 — when set, the therapist receives a personal
-                  DM from @SunRedBot every time a booking is assigned to
-                  them. Onboarding: therapist sends /myid to @SunRedBot to
+                  DM from @SunRed24hBot every time a booking is assigned to
+                  them. Onboarding: therapist sends /myid to @SunRed24hBot to
                   get this number. */}
               <TextField
                 label="Telegram Chat ID (for job DMs)" fullWidth size="small" sx={fieldSx}
                 value={formData.telegramChatId}
                 onChange={(e) => setFormData((f) => ({ ...f, telegramChatId: e.target.value }))}
-                helperText="Therapist sends /myid to @SunRedBot to get this number. Leave blank if not on Telegram."
+                helperText="Therapist sends /myid to @SunRed24hBot to get this number. Leave blank if not on Telegram."
                 placeholder="e.g. 123456789"
                 inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               />
