@@ -415,21 +415,9 @@ const TherapistProfilePage: React.FC = () => {
           boxShadow: "0 12px 30px rgba(15, 23, 42, 0.22)",
         }}
       >
-        <IconButton
-          aria-label="sign out"
-          onClick={handleLogout}
-          sx={{
-            position: "absolute",
-            top: 10,
-            right: 10,
-            color: "#fff",
-            background: "rgba(0,0,0,0.18)",
-            "&:hover": { background: "rgba(0,0,0,0.32)" },
-          }}
-        >
-          <LogoutRoundedIcon />
-        </IconButton>
-
+        {/* 🆕 28x.79 — the top-right sign-out icon that lived here is gone.
+            StaffLayout now renders one sign-out affordance in the top bar on
+            every staff screen; a second one here duplicated it. */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Box
             component="img"

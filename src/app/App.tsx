@@ -146,6 +146,7 @@ const NotFoundPage = React.lazy(() => import("@/pages/NotFoundPage"));
 const TherapistLocationPage = React.lazy(
   () => import("@/pages/therapist/TherapistLocationPage")
 );
+const StaffLayout = React.lazy(() => import("@/components/layouts/StaffLayout"));
 const TherapistProfilePage = React.lazy(
   () => import("@/pages/therapist/TherapistProfilePage")
 );
@@ -362,10 +363,12 @@ export default function App() {
         </Route>
 
         {/* ================= THERAPIST ================= */}
+        {/* 🆕 28x.79 — StaffLayout replaces MainLayout here. See the file's
+            header comment: no shared chrome with the customer app at all. */}
         <Route
           element={
             <PrivateRoute requiredRoles={["therapist"]}>
-              <MainLayout />
+              <StaffLayout />
             </PrivateRoute>
           }
         >

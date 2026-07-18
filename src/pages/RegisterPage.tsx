@@ -10,6 +10,7 @@ import React, { useState } from 'react';
 import {
   Box, TextField, Button, Typography, Paper, Link
 } from '@mui/material';
+import PasswordField from '@/components/common/PasswordField';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import BottomNav from '../components/layouts/BottomNavGlass';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -186,9 +187,8 @@ const RegisterPage: React.FC = () => {
               sx={fieldSx}
             />
 
-            <TextField
+            <PasswordField
               label={t('auth.field.password', 'Password')}
-              type="password"
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -197,9 +197,8 @@ const RegisterPage: React.FC = () => {
               sx={fieldSx}
             />
 
-            <TextField
+            <PasswordField
               label={t('auth.field.confirmPassword', 'Confirm Password')}
-              type="password"
               autoComplete="new-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}

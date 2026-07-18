@@ -274,8 +274,11 @@ const TopNav: React.FC = () => {
 
   const handleSignOut = async () => {
     setDrawerOpen(false);
+    // 🆕 28x.79 — was always "/" regardless of role, which sent a signed-out
+    //   therapist to the customer storefront instead of back to the staff door.
+    const dest = isTherapist ? "/staff" : "/";
     if (providerLogout) await providerLogout();
-    if (location.pathname !== "/") void navigate("/");
+    if (location.pathname !== dest) void navigate(dest);
   };
 
   // 🆕 Round 28r52 — Desktop horizontal nav rows. Each item is a real
@@ -412,7 +415,9 @@ const TopNav: React.FC = () => {
         <Box
           component="button"
           type="button"
-          onClick={() => goto("/")}
+          // 🆕 28x.79 — the logo was a second door back into the customer
+          //   storefront from a therapist's own pages. Home means her panel now.
+          onClick={() => goto(isTherapist ? "/therapist/profile" : "/")}
           aria-label={t("nav.brandHome", "SunRed home")}
           sx={{
             background: "transparent",
@@ -652,10 +657,12 @@ const TopNav: React.FC = () => {
               if (isAdmin) {
                 void navigate("/admin/dashboard");
               } else {
-                // Therapists land on their own profile editor for now
-                // (a dedicated /therapist/dashboard can replace this
-                // once it ships).
-                void navigate("/profile");
+                // 🆕 28x.79 (founder: "ทางเข้าเดียวกัน ทุกอย่างในนั้นก็เหมือนกัน")
+                //   — was /profile, the CUSTOMER page. The exact bug she was
+                //   pointing at: opening this drawer FROM her own therapist
+                //   panel and having its own shortcut send her back to the
+                //   guest profile.
+                void navigate("/therapist/profile");
               }
             }}
             aria-label={
@@ -751,7 +758,9 @@ const TopNav: React.FC = () => {
           </Box>
         )}
 
-        {/* Account / nav items */}
+        {/* Account / nav items — 🆕 28x.79: therapist pages no longer render
+            TopNav at all (see StaffLayout), so this is customer-only chrome by
+            construction and needs no role gating here. */}
         <Box
           component="ul"
           sx={{ listStyle: "none", margin: 0, padding: "8px" }}

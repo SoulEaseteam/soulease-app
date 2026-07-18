@@ -29,29 +29,18 @@ const TABS = [
   { label: "Profile",       value: "/profile",         icon: (a: boolean) => <UserCircle   size={20} color={a ? "#fff" : "#9AA0AC"} /> },
 ] as const;
 
-// 🆕 28x.75 (founder's screenshots) — for a practitioner the History tab led to
-//   "My Bookings · Browse therapists and book your next session", i.e. the
-//   customer's own reservations. Her work lives at /therapist/jobs. Same slot,
-//   same icon; only the destination and label change, so the shell stays one
-//   app rather than two.
-const THERAPIST_TABS = TABS.map((t) => {
-  if (t.value === "/booking/history")
-    return { ...t, label: "My Jobs", value: "/therapist/jobs" };
-  // 🆕 28x.77 — Profile means her practitioner panel. Pointing it at /profile
-  //   put the customer-shaped page between her and her own controls every time
-  //   she tapped the tab, which is the tap the founder asked to remove.
-  if (t.value === "/profile")
-    return { ...t, value: "/therapist/profile" };
-  return t;
-}) as unknown as typeof TABS;
-
+// 🆕 28x.79 (founder: "ไปทำหน้าแยก เว็บแยก แต่ใช้โดเมนเดียวกัน") — the
+//   therapist-branching this tab bar carried in 28x.75/77 is gone: therapist
+//   routes now render inside StaffLayout, which has its own bottom nav
+//   (StaffBottomNav) and never mounts this component at all. This bar is
+//   customer-only again, by construction rather than by role check.
 const N    = TABS.length;  // 4
 const INSET = 2;           // px gap pill ↔ track edge
 
 const BottomNavGlass: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, role } = useAuth();
+  const { user } = useAuth();
 
   const [showNav,     setShowNav]     = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -75,24 +64,17 @@ const BottomNavGlass: React.FC = () => {
   const currentTab = (() => {
     if (location.pathname.startsWith("/services"))        return "/services";
     if (location.pathname.startsWith("/booking/history")) return "/booking/history";
-    // 🆕 28x.75 — keep the pill lit on the practitioner's version of that slot.
-    if (location.pathname.startsWith("/therapist/jobs"))  return "/therapist/jobs";
     if (
-      location.pathname.startsWith("/profile")           ||
-      location.pathname.startsWith("/admin")             ||
-      location.pathname.startsWith("/therapist/profile") ||
-      location.pathname.startsWith("/user/")             ||
-      location.pathname === "/login"                     ||
+      location.pathname.startsWith("/profile")  ||
+      location.pathname.startsWith("/admin")    ||
+      location.pathname.startsWith("/user/")    ||
+      location.pathname === "/login"            ||
       location.pathname === "/register"
-    ) return role === "therapist" ? "/therapist/profile" : "/profile";
+    ) return "/profile";
     return "/";
   })();
 
-  // 🆕 28x.75 — index against the array actually rendered. A practitioner on
-  //   /therapist/jobs isn't in TABS, so this returned -1 and parked the
-  //   highlight pill off the first tab.
-  const navTabs = role === "therapist" ? THERAPIST_TABS : TABS;
-  const activeIndex = navTabs.findIndex((t) => t.value === currentTab);
+  const activeIndex = TABS.findIndex((t) => t.value === currentTab);
 
   // ── scroll hide ──────────────────────────────────────────────────
   useEffect(() => {
@@ -185,7 +167,7 @@ const BottomNavGlass: React.FC = () => {
           )}
 
           {/* Tabs */}
-          {navTabs.map((tab) => {
+          {TABS.map((tab) => {
             const active = currentTab === tab.value;
             return (
               <motion.div

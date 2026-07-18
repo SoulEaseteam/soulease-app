@@ -21,6 +21,7 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
+import PasswordField from "@/components/common/PasswordField";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import {
@@ -341,9 +342,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ staff = false }) => {
               sx={fieldSx}
             />
 
-            <TextField
+            <PasswordField
               label={t("auth.field.password", "Password")}
-              type="password"
               autoComplete="current-password"
               fullWidth
               size="small"
