@@ -182,10 +182,16 @@ const TherapistProfilePage: React.FC = () => {
   // ── 3. Live bookings subscription — derive today/completed/cancelled +
   //       review count in one place. Replaces the old getDocs one-shot.
   useEffect(() => {
-    if (!therapistDocId) return;
+    // 🆕 28x.67 — query by therapistUid, not the profile doc id.
+    //   firestore.rules can only grant access uid-to-uid, and Firestore rejects
+    //   a whole query it can't prove is allowed — so filtering on therapistId
+    //   returned permission-denied and these counters had been rendering 0 for
+    //   every practitioner regardless of how much work she'd done.
+    const myUid = auth.currentUser?.uid;
+    if (!myUid) return;
     const q = query(
       collection(db, "bookings"),
-      where("therapistId", "==", therapistDocId)
+      where("therapistUid", "==", myUid)
     );
     const unsub = onSnapshot(q, (snap) => {
       const now = new Date();
@@ -251,7 +257,7 @@ const TherapistProfilePage: React.FC = () => {
       setReviewCount(reviewed);
     });
     return () => unsub();
-  }, [therapistDocId]);
+  }, [therapistDocId]);   // re-subscribes after auth resolves the profile
 
   // ── 4. Computed status via canonical engine — one source of truth ──────
   const computedStatus: Avail = useMemo(() => {

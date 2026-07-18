@@ -34,7 +34,9 @@ import {
   getCountFromServer,
 } from "firebase/firestore";
 
-import { db } from "@/lib/firebase";
+import { app, db } from "@/lib/firebase";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 // 🆕 Round 28s230 (FIX B) — use the SAME Bangkok-anchored engine the public
 //   site uses (calculateTherapistStatus), not the legacy device-clock
@@ -546,6 +548,28 @@ const AdminTherapistsPage: React.FC = () => {
   // ==========================================================
   // FILTERED LIST
   // ==========================================================
+  // 🆕 28x.67 — see the button below.
+  const [backfilling, setBackfilling] = useState(false);
+  const runBackfill = async () => {
+    setBackfilling(true);
+    try {
+      const fn = httpsCallable<
+        Record<string, never>,
+        { ok: boolean; stamped: number; skipped: number; therapistsWithLogin: number; therapistsTotal: number }
+      >(getFunctions(app, "asia-southeast1"), "backfillTherapistUids");
+      const res = await fn({});
+      const d = res.data;
+      toast.success(
+        `ซิงก์แล้ว · อัปเดต ${d.stamped} ใบ · พนักงานที่มีบัญชี ${d.therapistsWithLogin}/${d.therapistsTotal} คน`
+      );
+    } catch (e) {
+      console.error("[therapists] backfill failed", e);
+      toast.error("ซิงก์ไม่สำเร็จ");
+    } finally {
+      setBackfilling(false);
+    }
+  };
+
   const filtered = useMemo(() => {
     return therapists
       .filter((t) => {
@@ -797,6 +821,21 @@ const AdminTherapistsPage: React.FC = () => {
           }}
         >
           Add Therapist · เพิ่มพนักงาน
+        </Button>
+
+        {/* 🆕 28x.67 — link every practitioner's profile to her login and stamp
+            therapistUid onto existing bookings. Without it a practitioner's job
+            list only ever shows work booked after this round, which reads as
+            "the feature is broken" rather than "history isn't migrated". */}
+        <Button
+          disabled={backfilling}
+          onClick={() => void runBackfill()}
+          sx={{
+            textTransform: "none", fontWeight: 700, borderRadius: "11px",
+            color: adminColor.text, border: `1px solid ${adminColor.line2}`,
+          }}
+        >
+          {backfilling ? <CircularProgress size={16} /> : "ซิงก์สิทธิ์งานพนักงาน"}
         </Button>
       </Box>
 

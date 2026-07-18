@@ -114,10 +114,13 @@ const TherapistLocationPage: React.FC = () => {
   // ── 3. Live active-booking subscription — if there's an ongoing booking,
   //       show the customer's location on the map; otherwise show home.
   useEffect(() => {
-    if (!therapistId) return;
+    // 🆕 28x.67 — see TherapistProfilePage: rules grant access by uid, and a
+    //   query filtering on the profile doc id is rejected wholesale.
+    const therapistUid = auth.currentUser?.uid;
+    if (!therapistId || !therapistUid) return;
     const bQ = query(
       collection(db, "bookings"),
-      where("therapistId", "==", therapistId),
+      where("therapistUid", "==", therapistUid),
       where("status", "in", ["ongoing", "accepted", "confirmed"])
     );
     const unsub = onSnapshot(bQ, (bSnap) => {

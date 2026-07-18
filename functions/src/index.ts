@@ -1855,6 +1855,79 @@ export const setMemberAdmin = onCall(
 //   dispatch state, therapistResponse. Even the legitimate guest doesn't need
 //   those to see their own confirmation, and a whitelist can't leak a field
 //   somebody adds to the doc later.
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.67 — backfill therapistUid across existing bookings.
+//
+//   New bookings get stamped by onBookingCreate, but every job already in the
+//   system predates the field — so without this a practitioner opening her job
+//   list would see an empty screen and reasonably conclude the feature is
+//   broken. Admin-only, idempotent, safe to run repeatedly.
+export const backfillTherapistUids = onCall(
+  { region: "asia-southeast1", timeoutSeconds: 540 },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = getFirestore();
+    if (!(await db.collection("admins").doc(request.auth.uid).get()).exists) {
+      throw new HttpsError("permission-denied", "Admin only.");
+    }
+
+    // Resolve every therapist's uid once, rather than per booking.
+    const uidByTherapist = new Map<string, string>();
+    const therapists = await db.collection("therapists").get();
+    for (const t of therapists.docs) {
+      const d = t.data() as { uid?: string; email?: string };
+      let uid = typeof d.uid === "string" && d.uid ? d.uid : null;
+      if (!uid && d.email) {
+        try {
+          uid = (await getAuth().getUserByEmail(d.email.trim())).uid;
+          await t.ref.set({ uid }, { merge: true });   // self-heal the doc
+        } catch {
+          uid = null;   // no login for this practitioner yet
+        }
+      }
+      if (uid) uidByTherapist.set(t.id, uid);
+    }
+
+    const bookings = await db.collection("bookings").get();
+    let stamped = 0;
+    let skipped = 0;
+    let batch = db.batch();
+    let inBatch = 0;
+    for (const b of bookings.docs) {
+      const d = b.data() as { therapistId?: string; therapistUid?: string };
+      const want = d.therapistId ? uidByTherapist.get(d.therapistId) : undefined;
+      if (!want || d.therapistUid === want) {
+        skipped++;
+        continue;
+      }
+      batch.update(b.ref, { therapistUid: want });
+      stamped++;
+      inBatch++;
+      if (inBatch >= 400) {           // Firestore caps a batch at 500 writes
+        await batch.commit();
+        batch = db.batch();
+        inBatch = 0;
+      }
+    }
+    if (inBatch > 0) await batch.commit();
+
+    logger.info("[backfillTherapistUids] done", {
+      stamped,
+      skipped,
+      linkedTherapists: uidByTherapist.size,
+    });
+    return {
+      ok: true,
+      stamped,
+      skipped,
+      therapistsWithLogin: uidByTherapist.size,
+      therapistsTotal: therapists.size,
+    };
+  }
+);
+
 export const getBookingPublic = onCall(
   { region: "asia-southeast1" },
   async (request) => {
@@ -2158,14 +2231,45 @@ async function stampTherapistUid(
       return;
     }
     const tSnap = await db.collection("therapists").doc(therapistId).get();
-    const uid = (tSnap.data() as { uid?: string } | undefined)?.uid;
+    const t = tSnap.data() as { uid?: string; email?: string } | undefined;
+    let uid = typeof t?.uid === "string" && t.uid ? t.uid : null;
+
+    // 🆕 28x.67 — none of the 14 therapist docs carries a `uid`, even though
+    //   their logins exist: TherapistProfilePage resolves the profile by EMAIL,
+    //   so nothing ever needed the field and nothing ever wrote it. The rules,
+    //   however, can only compare uid to uid — so without this the whole chain
+    //   dead-ends and every practitioner sees an empty job list.
+    //
+    //   Resolve through Auth by email and write it back, so this self-heals
+    //   once per practitioner instead of needing a migration.
+    if (!uid && t?.email) {
+      try {
+        const authUser = await getAuth().getUserByEmail(t.email.trim());
+        uid = authUser.uid;
+        await db
+          .collection("therapists")
+          .doc(therapistId)
+          .set({ uid }, { merge: true });
+        logger.info("[stampTherapistUid] linked therapist to login", {
+          therapistId,
+          uid,
+        });
+      } catch {
+        // No account for that email yet — she simply has no access, which is
+        // the correct default. Not an error worth alerting on.
+        logger.info("[stampTherapistUid] no login for therapist", {
+          therapistId,
+        });
+      }
+    }
+
     await db
       .collection("bookings")
       .doc(bookingId)
       .update({
         // A practitioner with no linked login yet simply has no uid stamped;
         // she sees nothing rather than everything.
-        therapistUid: typeof uid === "string" && uid ? uid : FieldValue.delete(),
+        therapistUid: uid ?? FieldValue.delete(),
       });
   } catch (err) {
     logger.error("[stampTherapistUid] failed", { bookingId, therapistId, err });
