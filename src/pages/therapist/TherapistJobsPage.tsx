@@ -115,35 +115,45 @@ const TherapistJobsPage: React.FC = () => {
     return () => unsub();
   }, []);
 
-  const { upcoming, past } = useMemo(() => {
-    const now = Date.now();
-    const live = (jobs ?? []).filter(
-      (j) => j.status !== "cancelled" && j.status !== "canceled",
-    );
+  // 🆕 28x.79 (founder: "Today's Bookings, Completed, Cancelled แยกตาม
+  //   หมวดหมู่งาน คล้ายๆ หน้า booking/history ของเว็บ") — three tabs, same
+  //   shape as the customer booking/history page's Upcoming/Completed/
+  //   Cancelled switcher, using the SAME three labels already on the stat
+  //   strip so tile and tab agree.
+  //
+  //   Bucketed by STATUS, not by calendar day: the old "today" tile counted
+  //   only jobs starting within today's date bounds, so a confirmed job for
+  //   tomorrow — or a past-dated one an admin forgot to close out — belonged
+  //   to neither Today nor Completed nor Cancelled and fell out of every
+  //   view. "Today" here means "not yet resolved", which for this same-night
+  //   business is virtually always today anyway, and nothing disappears.
+  const DONE_STATUSES = new Set(["completed", "done"]);
+  const CANCELLED_STATUSES = new Set(["cancelled", "canceled", "no_show", "no-show"]);
+  const bucketOf = (j: Job): "today" | "completed" | "cancelled" => {
+    const s = j.status ?? "";
+    if (DONE_STATUSES.has(s)) return "completed";
+    if (CANCELLED_STATUSES.has(s)) return "cancelled";
+    return "today";
+  };
+
+  const [tab, setTab] = useState<"today" | "completed" | "cancelled">("today");
+
+  const buckets = useMemo(() => {
+    const all = jobs ?? [];
     return {
-      upcoming: live.filter((j) => j.startAtMs >= now - 3 * 60 * 60 * 1000),
-      past: live.filter((j) => j.startAtMs < now - 3 * 60 * 60 * 1000),
+      today: all.filter((j) => bucketOf(j) === "today"),
+      completed: all.filter((j) => bucketOf(j) === "completed"),
+      cancelled: all.filter((j) => bucketOf(j) === "cancelled"),
     };
   }, [jobs]);
 
-  // 🆕 28x.78 (founder: "Today's/Completed/Cancelled ย้ายไปหน้า therapist/jobs
-  //   ทำให้สวยงาม") — the three counters used to sit on the profile page,
-  //   computed from a second bookings listener. This page already holds every
-  //   job, so it derives them directly — no extra read, and they can't disagree
-  //   with the list right below them.
-  const stats = useMemo(() => {
-    const all = jobs ?? [];
-    const now = new Date();
-    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const dayEnd = dayStart + 24 * 60 * 60 * 1000;
-    const done = new Set(["completed", "done"]);
-    const cancelled = new Set(["cancelled", "canceled", "no_show", "no-show"]);
-    return {
-      today: all.filter((j) => j.startAtMs >= dayStart && j.startAtMs < dayEnd && !cancelled.has(j.status ?? "")).length,
-      completed: all.filter((j) => done.has(j.status ?? "")).length,
-      cancelled: all.filter((j) => cancelled.has(j.status ?? "")).length,
-    };
-  }, [jobs]);
+  const stats = {
+    today: buckets.today.length,
+    completed: buckets.completed.length,
+    cancelled: buckets.cancelled.length,
+  };
+
+  const shown = buckets[tab];
 
   const respond = async (jobId: string, action: "accept" | "decline") => {
     setBusyId(jobId);
@@ -296,11 +306,15 @@ const TherapistJobsPage: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* 🆕 28x.78 — the three counters, moved here from the profile page and
-          rebuilt as one strip. Colour follows meaning: rose today, green done,
-          clay cancelled — all measured to clear 4.5:1 on the dark panel. */}
+      {/* 🆕 28x.79 — the three tiles ARE the tab switcher now, mirroring the
+          customer booking/history page's Upcoming/Completed/Cancelled pills
+          with the same three labels the founder already had on this strip.
+          One row instead of a passive stat strip + a separate pill bar below
+          it — same behaviour, less chrome, which fits StaffLayout's brief. */}
       {jobs !== null && (
         <Box
+          role="tablist"
+          aria-label="Job status"
           sx={{
             display: "flex",
             mb: 2.5,
@@ -311,28 +325,53 @@ const TherapistJobsPage: React.FC = () => {
             overflow: "hidden",
           }}
         >
-          {[
-            { value: stats.today, label: "วันนี้ · Today", color: ROSE_DEEP },
-            { value: stats.completed, label: "เสร็จ · Done", color: "#22C55E" },
-            { value: stats.cancelled, label: "ยกเลิก · Cancelled", color: "#F87171" },
-          ].map((s, i) => (
-            <Box
-              key={s.label}
-              sx={{
-                flex: 1,
-                textAlign: "center",
-                py: 1.75,
-                borderRight: i < 2 ? "1px solid var(--sr-hairline)" : "none",
-              }}
-            >
-              <Typography sx={{ fontFamily: SERIF, fontSize: 24, fontWeight: 700, color: s.color, lineHeight: 1 }}>
-                {s.value}
-              </Typography>
-              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "var(--sr-muted)", mt: 0.5, letterSpacing: "0.02em" }}>
-                {s.label}
-              </Typography>
-            </Box>
-          ))}
+          {(
+            [
+              { key: "today", value: stats.today, label: "วันนี้ · Today", color: ROSE_DEEP },
+              { key: "completed", value: stats.completed, label: "เสร็จ · Done", color: "#22C55E" },
+              { key: "cancelled", value: stats.cancelled, label: "ยกเลิก · Cancelled", color: "#F87171" },
+            ] as const
+          ).map((s, i) => {
+            const active = tab === s.key;
+            return (
+              <Box
+                key={s.key}
+                component="button"
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setTab(s.key)}
+                sx={{
+                  flex: 1,
+                  textAlign: "center",
+                  py: 1.75,
+                  border: "none",
+                  cursor: "pointer",
+                  background: active ? "var(--sr-panel-2)" : "transparent",
+                  borderRight: i < 2 ? "1px solid var(--sr-hairline)" : "none",
+                  borderBottom: active ? `3px solid ${s.color}` : "3px solid transparent",
+                  transition: "background 120ms ease",
+                  WebkitTapHighlightColor: "transparent",
+                }}
+              >
+                <Typography sx={{ fontFamily: SERIF, fontSize: 24, fontWeight: 700, color: s.color, lineHeight: 1 }}>
+                  {s.value}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: 10.5,
+                    color: active ? "var(--sr-ink)" : "var(--sr-muted)",
+                    fontWeight: active ? 800 : 600,
+                    mt: 0.5,
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  {s.label}
+                </Typography>
+              </Box>
+            );
+          })}
         </Box>
       )}
 
@@ -344,30 +383,16 @@ const TherapistJobsPage: React.FC = () => {
         <Typography sx={{ fontFamily: SANS, fontSize: 13.5, color: "var(--sr-muted)", textAlign: "center", mt: 6 }}>
           ยังไม่มีงานที่จ่ายให้คุณค่ะ
         </Typography>
+      ) : shown.length === 0 ? (
+        <Typography sx={{ fontFamily: SANS, fontSize: 13.5, color: "var(--sr-muted)", textAlign: "center", mt: 6 }}>
+          {tab === "today" ? "ไม่มีงานวันนี้" : tab === "completed" ? "ยังไม่มีงานที่เสร็จ" : "ไม่มีงานที่ยกเลิก"}
+        </Typography>
       ) : (
-        <>
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "var(--sr-muted)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 1 }}>
-              งานที่กำลังจะถึง · {upcoming.length}
-            </Typography>
-            {upcoming.length === 0 ? (
-              <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "var(--sr-muted)", mb: 3 }}>
-                ไม่มีงานที่กำลังจะถึง
-              </Typography>
-            ) : (
-              upcoming.map((j) => <JobCard key={j.id} job={j} live />)
-            )}
-          </motion.div>
-
-          {past.length > 0 && (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-              <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "var(--sr-muted)", letterSpacing: "0.1em", textTransform: "uppercase", mt: 3, mb: 1 }}>
-                ผ่านมาแล้ว · {past.length}
-              </Typography>
-              {past.slice(0, 30).map((j) => <JobCard key={j.id} job={j} live={false} />)}
-            </motion.div>
-          )}
-        </>
+        <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+          {shown.slice(0, 60).map((j) => (
+            <JobCard key={j.id} job={j} live={tab === "today"} />
+          ))}
+        </motion.div>
       )}
     </Box>
   );
