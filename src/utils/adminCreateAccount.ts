@@ -36,3 +36,28 @@ export async function adminCreateCustomerAccount(args: {
   const res = await fn(args);
   return res.data;
 }
+
+// 🆕 Round 28x.58 (founder: "ตั้ง SUNRED 0634350987 เป็นแอดมิน") — promote or
+//   demote an existing member account. The function moves BOTH /admins/{uid}
+//   (what the security rules actually check) and users/{uid}.role (what the
+//   UI reads), so the two can't drift apart.
+export interface SetMemberAdminResult {
+  ok: boolean;
+  uid: string;
+  isAdmin: boolean;
+}
+
+export async function adminSetMemberAdmin(args: {
+  /** The member's phone — must already have a login account. */
+  phone: string;
+  /** true = grant admin, false = revoke. */
+  makeAdmin: boolean;
+}): Promise<SetMemberAdminResult> {
+  const functions = getFunctions(app, "asia-southeast1");
+  const fn = httpsCallable<typeof args, SetMemberAdminResult>(
+    functions,
+    "setMemberAdmin"
+  );
+  const res = await fn(args);
+  return res.data;
+}

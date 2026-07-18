@@ -20,12 +20,12 @@ import { Box, Typography, TextField, Button, MenuItem, CircularProgress } from "
 import { collection, doc, getDocs, onSnapshot, setDoc, query as fsQuery, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "react-toastify";
-import { Crown, MagnifyingGlass, UserCircle } from "phosphor-react";
+import { Crown, MagnifyingGlass, UserCircle, ShieldCheck } from "phosphor-react";
 import { adminColor, adminFont, adminFieldSx } from "@/theme/adminTheme";
 import { logAdminAction } from "@/utils/auditLog";
 import { normPhone } from "@/utils/phoneCountry";
 // 🆕 28x.55 — mint the guest's login (username = SRD code, password = phone).
-import { adminCreateCustomerAccount } from "@/utils/adminCreateAccount";
+import { adminCreateCustomerAccount, adminSetMemberAdmin } from "@/utils/adminCreateAccount";
 import { pointsFor, pointsValueTHB, sunPointEarnPerTHB } from "@/config/anniversary";
 import {
   membershipFor,
@@ -80,6 +80,9 @@ const AdminMembersPage: React.FC = () => {
   //   have a login, so each row can show a persistent "มีบัญชี" badge instead of
   //   only the one-off box right after creating it.
   const [accountPhones, setAccountPhones] = useState<Set<string>>(new Set());
+  // 🆕 28x.58 (founder: "ตั้ง SUNRED เป็นแอดมิน เพิ่มป้าย ADMIN") — phones whose
+  //   account carries admin rights.
+  const [adminPhones, setAdminPhones] = useState<Set<string>>(new Set());
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   // 🆕 28x.38 — a booking card links here as /admin/members?q=<phone>, so the
@@ -129,11 +132,18 @@ const AdminMembersPage: React.FC = () => {
   useEffect(() => {
     void getDocs(collection(db, "users")).then((snap) => {
       const s = new Set<string>();
+      // 🆕 28x.58 — same read also tells us who already holds admin rights,
+      //   so the ADMIN badge costs no extra query.
+      const a = new Set<string>();
       snap.forEach((d) => {
-        const p = normPhone(String((d.data() as { phone?: string }).phone ?? "").trim());
-        if (p) s.add(p);
+        const row = d.data() as { phone?: string; role?: string };
+        const p = normPhone(String(row.phone ?? "").trim());
+        if (!p) return;
+        s.add(p);
+        if (row.role === "admin") a.add(p);
       });
       setAccountPhones(s);
+      setAdminPhones(a);
     }).catch((e) => console.warn("[members] users read failed", e));
   }, []);
 
@@ -375,6 +385,26 @@ const AdminMembersPage: React.FC = () => {
     } finally { setSaving(false); }
   };
 
+  // 🆕 28x.58 — grant / revoke admin rights on a member's existing account.
+  const toggleAdmin = async (key: string) => {
+    const makeAdmin = !adminPhones.has(key);
+    if (!makeAdmin && !window.confirm("ถอดสิทธิ์แอดมินของเบอร์นี้?")) return;
+    setSaving(true);
+    try {
+      await adminSetMemberAdmin({ phone: key, makeAdmin });
+      setAdminPhones((p) => {
+        const n = new Set(p);
+        if (makeAdmin) n.add(key); else n.delete(key);
+        return n;
+      });
+      toast.success(makeAdmin ? "ตั้งเป็นแอดมินแล้ว" : "ถอดสิทธิ์แอดมินแล้ว");
+    } catch (e) {
+      const msg = (e as { message?: string })?.message ?? "";
+      console.error("[members] toggleAdmin failed", e);
+      toast.error(msg || "เปลี่ยนสิทธิ์ไม่สำเร็จ");
+    } finally { setSaving(false); }
+  };
+
   const upgrade = async (key: string) => {
     const cur = members[key]; if (!cur) return;
     const to = autoTierFor(key);
@@ -489,8 +519,14 @@ const AdminMembersPage: React.FC = () => {
             {saving ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : "+ สมัคร (รหัส SRD-)"}
           </Button>
         </Box>
-        <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 1 }}>
-          อีเมล — ให้ลูกค้าสมัคร/ล็อกอินใส่เอง · Level ตัดจากประวัติของเบอร์นี้อัตโนมัติ (ถ้ามี) ไม่มีก็ Bronze
+        {/* 🆕 28x.58 (founder: "สมัครสมาชิก / สร้างบัญชี มันไม่ซ้ำกันหรอ") — the old
+            line ("อีเมล — ให้ลูกค้าสมัคร/ล็อกอินใส่เอง") predated 28x.55 and read
+            as if this button already handed the guest a login. Spell out that
+            these are two steps, not two ways of doing the same thing. */}
+        <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: adminColor.dim, mt: 1, lineHeight: 1.7 }}>
+          <b>ขั้นที่ 1</b> ปุ่มนี้ = ออกรหัสสมาชิก SRD- + Level (ตัดจากประวัติของเบอร์นี้อัตโนมัติ ไม่มีก็ Bronze) · ยังล็อกอินไม่ได้
+          <br />
+          <b>ขั้นที่ 2</b> กด <b>สร้างบัญชี</b> ที่การ์ดของลูกค้า = เปิดสิทธิ์ล็อกอิน (ยูสเซอร์ = รหัส SRD- · รหัสผ่าน = เบอร์โทร) · ทำแล้วขึ้นป้าย <b>มีบัญชี</b>
         </Typography>
 
         {/* 🆕 28w.92 — backfill/refresh the visit count carried on each member's
@@ -591,6 +627,17 @@ const AdminMembersPage: React.FC = () => {
                           </Typography>
                         </Box>
                       )}
+                      {/* 🆕 28x.58 — staff, not a guest. Deliberately the loudest
+                          badge on the row so a shop account is never mistaken
+                          for a customer during a dispatch. */}
+                      {adminPhones.has(phone) && (
+                        <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.4, px: 0.9, py: "2px", borderRadius: 999, background: "#1F2937", border: "1px solid #111827" }}>
+                          <ShieldCheck size={12} weight="fill" color="#FFFFFF" />
+                          <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 900, color: "#FFFFFF", letterSpacing: "0.06em" }}>
+                            ADMIN
+                          </Typography>
+                        </Box>
+                      )}
                       <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim }}>
                         {stat ? `${stat.served} ครั้ง · ${thb(stat.totalSpent)}` : "ยังไม่มีประวัติ"}
                         {stat && stat.noShowCount > 0 && ` · no-show ${stat.noShowCount}`}
@@ -644,6 +691,20 @@ const AdminMembersPage: React.FC = () => {
                             onClick={() => void createLogin(phone)}
                             sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: adminColor.green, borderColor: adminColor.green }}>
                             สร้างบัญชี
+                          </Button>
+                        )}
+                        {/* 🆕 28x.58 — only offered once a login exists; admin
+                            rights attach to an account, not to a membership. */}
+                        {accountPhones.has(phone) && (
+                          <Button size="small" variant={adminPhones.has(phone) ? "contained" : "outlined"} disabled={saving}
+                            onClick={() => void toggleAdmin(phone)}
+                            sx={{
+                              textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px",
+                              ...(adminPhones.has(phone)
+                                ? { background: "#1F2937", color: "#fff", boxShadow: "none", "&:hover": { background: "#111827", boxShadow: "none" } }
+                                : { color: adminColor.text, borderColor: adminColor.line2 }),
+                            }}>
+                            {adminPhones.has(phone) ? "ถอดแอดมิน" : "ตั้งเป็นแอดมิน"}
                           </Button>
                         )}
                         {/* 🆕 28w.96 — open this member's real reservations. */}

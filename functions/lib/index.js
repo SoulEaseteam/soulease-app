@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -1077,6 +1077,67 @@ exports.createCustomerAccount = (0, https_1.onCall)({ region: "asia-southeast1" 
     });
     // Return the exact credentials the concierge should hand to the guest.
     return { ok: true, uid, username: code, password: phone };
+});
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.58 (founder: "ตั้ง SUNRED 0634350987 เป็นแอดมิน") —
+//   promote/demote an existing member account to admin.
+//
+//   Admin identity lives in TWO places and both must move together:
+//     • /admins/{uid}      — the authoritative check (firestore.rules
+//                            isAdmin() and every callable here read this)
+//     • users/{uid}.role   — what the client AuthProvider reads for UI
+//   Writing only `role` would give an admin-looking UI whose every write
+//   is then denied by the rules, so this does both in one place.
+//
+//   Guarded: admin-only, and an admin cannot demote themselves (that would
+//   lock the last concierge out of /admin with no way back in).
+exports.setMemberAdmin = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = (0, firestore_2.getFirestore)();
+    const callerUid = request.auth.uid;
+    const adminDoc = await db.collection("admins").doc(callerUid).get();
+    if (!adminDoc.exists) {
+        throw new https_1.HttpsError("permission-denied", "Admin only.");
+    }
+    const data = request.data;
+    const phone = normPhoneServer(data?.phone ?? "");
+    const makeAdmin = data?.makeAdmin !== false; // default: promote
+    if (!phone) {
+        throw new https_1.HttpsError("invalid-argument", "A phone number is required.");
+    }
+    // The member must already hold a login — admin rights attach to an
+    // account, so "สร้างบัญชี" has to happen first.
+    const found = await db
+        .collection("users")
+        .where("phone", "==", phone)
+        .limit(1)
+        .get();
+    if (found.empty) {
+        throw new https_1.HttpsError("not-found", "This member has no account yet — create one first.");
+    }
+    const targetUid = found.docs[0].id;
+    if (!makeAdmin && targetUid === callerUid) {
+        throw new https_1.HttpsError("failed-precondition", "You cannot remove your own admin rights.");
+    }
+    if (makeAdmin) {
+        await db.collection("admins").doc(targetUid).set({ grantedBy: callerUid, grantedAt: firestore_2.FieldValue.serverTimestamp(), phone }, { merge: true });
+        await db.collection("users").doc(targetUid).set({ role: "admin" }, { merge: true });
+    }
+    else {
+        await db.collection("admins").doc(targetUid).delete();
+        await db.collection("users").doc(targetUid).set({ role: "user" }, { merge: true });
+    }
+    await db.collection("auditLogs").add({
+        action: makeAdmin ? "user.admin_granted" : "user.admin_revoked",
+        byUid: callerUid,
+        targetUid,
+        detail: { phone },
+        at: firestore_2.FieldValue.serverTimestamp(),
+    });
+    v2_1.logger.info("[setMemberAdmin] done", { targetUid, makeAdmin, byUid: callerUid });
+    return { ok: true, uid: targetUid, isAdmin: makeAdmin };
 });
 // ─────────────────────────────────────────────────────────────
 // 🆕 Round 28x.31 (founder: "สถานะบนหน้าเว็บไม่เปลี่ยน") — sync a
