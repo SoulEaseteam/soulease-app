@@ -111,7 +111,14 @@ export type AuditAction =
   // 🆕 28x.1 — recomputing the public star rating changes what customers buy on.
   | "therapist.rating_sync"
   // 🆕 28x.2 — an admin changing their own password is a security event.
-  | "admin.password_change";
+  | "admin.password_change"
+  // 🆕 28x.58/59 — who can reach the back office is the highest-stakes change
+  //   in the system. These three are written server-side by setMemberAdmin /
+  //   createAdminAccount (the client can't be trusted to log its own grants),
+  //   and are listed here so the audit viewer can label them.
+  | "user.admin_granted"
+  | "user.admin_revoked"
+  | "user.admin_created";
 
 export async function logAdminAction(
   action: AuditAction,
@@ -144,6 +151,9 @@ export const ACTION_LABEL: Record<string, { label: string; color: string }> = {
   "membership.sunpoints_edit": { label: "ตั้งค่า SunPoints", color: "#E3BE55" },
   "therapist.rating_sync": { label: "ซิงก์คะแนนหมอนวด", color: "#F5A623" },
   "admin.password_change": { label: "แอดมินเปลี่ยนรหัสผ่าน", color: "#DC2626" },
+  "user.admin_granted":      { label: "ให้สิทธิ์แอดมิน",        color: "#DC2626" },
+  "user.admin_revoked":      { label: "ถอดสิทธิ์แอดมิน",       color: "#DC2626" },
+  "user.admin_created":      { label: "สร้างบัญชีแอดมิน",      color: "#DC2626" },
   "booking.confirm":         { label: "ยืนยันออเดอร์",        color: adminColor.green },
   "booking.cancel":          { label: "ยกเลิกออเดอร์",        color: adminColor.red },
   "booking.complete":        { label: "ปิดงานเสร็จ",          color: adminColor.green },

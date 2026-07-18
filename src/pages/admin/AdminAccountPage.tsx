@@ -38,6 +38,7 @@ import { adminColor, adminFont, adminFieldSx, adminPanelSx } from "@/theme/admin
 import { logAdminAction, ACTION_LABEL } from "@/utils/auditLog";
 import { isAliasEmail } from "@/utils/loginId";
 import { useAdminIdentity } from "@/hooks/useAdminIdentity";
+import { adminCreateAdminAccount } from "@/utils/adminCreateAccount";
 
 const SANS = adminFont.sans;
 
@@ -81,6 +82,40 @@ const AdminAccountPage: React.FC = () => {
       toast.error("บันทึกชื่อไม่สำเร็จ");
     } finally {
       setNameSaving(false);
+    }
+  };
+
+  // 🆕 28x.59 — mint a second admin login. Credentials are typed here and never
+  //   stored anywhere by us; the function refuses phone-shaped passwords and
+  //   SRD-shaped usernames, so the guessable-credentials failure mode can't be
+  //   recreated by accident.
+  const [naUser, setNaUser]     = useState("");
+  const [naPass, setNaPass]     = useState("");
+  const [naName, setNaName]     = useState("");
+  const [naSaving, setNaSaving] = useState(false);
+  const [naDone, setNaDone]     = useState<string | null>(null);
+
+  const createAdmin = async () => {
+    setNaSaving(true);
+    setNaDone(null);
+    try {
+      const res = await adminCreateAdminAccount({
+        username: naUser.trim(),
+        password: naPass,
+        name: naName.trim() || undefined,
+      });
+      setNaDone(res.username);
+      setNaUser(""); setNaPass(""); setNaName("");
+      // No logAdminAction here — createAdminAccount already writes the audit
+      // entry server-side (with actorId, so it still reaches the feed below).
+      // Logging from the client too would double every grant in the viewer.
+      toast.success(`สร้างบัญชีแอดมินแล้ว · ${res.username}`);
+    } catch (e) {
+      const msg = (e as { message?: string })?.message ?? "";
+      console.error("[account] createAdmin failed", e);
+      toast.error(msg || "สร้างบัญชีแอดมินไม่สำเร็จ");
+    } finally {
+      setNaSaving(false);
     }
   };
 
@@ -366,6 +401,68 @@ const AdminAccountPage: React.FC = () => {
             </Button>
           )}
         </Box>
+      </Box>
+
+      {/* 🆕 28x.59 (founder: "หรือจะแยกหน้าแอดมิน ออกจากทางเข้าระบบผ่านเว็บ") —
+          a dedicated admin login, kept separate from any customer membership.
+
+          The header rule above ("no role editing here") still holds: this does
+          not change YOUR rights, and it can't be reached without already being
+          an admin. What it prevents is the shortcut of promoting a member
+          account, whose username is its printed SRD- code and whose password is
+          the shop phone off the taxi cards. */}
+      <Box sx={{ ...adminPanelSx, p: 2, mb: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.5 }}>
+          <ShieldCheck size={16} weight="duotone" color={adminColor.accent} />
+          <Typography sx={{ fontFamily: SANS, fontSize: 15, fontWeight: 800, color: adminColor.text }}>
+            สร้างบัญชีแอดมิน
+          </Typography>
+        </Box>
+        <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.dim, mb: 1.5, lineHeight: 1.65 }}>
+          บัญชีแอดมินต้อง<b>แยกจากบัญชีสมาชิกลูกค้า</b> — บัญชีสมาชิกใช้รหัส SRD- เป็นยูสเซอร์
+          และเบอร์โทรเป็นรหัสผ่าน ซึ่งเป็นข้อมูลที่คนนอกหาได้ ถ้าเอาบัญชีแบบนั้นมาเป็นแอดมิน
+          เท่ากับเปิดหลังบ้านทิ้งไว้ · ยูสเซอร์ที่นี่ตั้งเองได้ (ห้ามขึ้นต้น srd) รหัสผ่านอย่างน้อย 10 ตัว ห้ามเป็นตัวเลขล้วน
+        </Typography>
+        <Box sx={{ display: "flex", gap: 1.25, flexWrap: "wrap", alignItems: "center" }}>
+          <TextField
+            size="small" label="ยูสเซอร์" placeholder="เช่น view.bkk"
+            value={naUser} onChange={(e) => setNaUser(e.target.value)}
+            autoComplete="off"
+            sx={{ ...adminFieldSx, width: 200 }}
+          />
+          <TextField
+            size="small" label="รหัสผ่าน" type="password"
+            value={naPass} onChange={(e) => setNaPass(e.target.value)}
+            autoComplete="new-password"
+            sx={{ ...adminFieldSx, width: 200 }}
+          />
+          <TextField
+            size="small" label="ชื่อ (ไม่ใส่ก็ได้)"
+            value={naName} onChange={(e) => setNaName(e.target.value)}
+            sx={{ ...adminFieldSx, width: 180 }}
+          />
+          <Button
+            variant="contained" disabled={naSaving || !naUser.trim() || !naPass}
+            onClick={() => void createAdmin()}
+            sx={{
+              textTransform: "none", fontWeight: 700, fontSize: 13, borderRadius: "999px", px: 2.5,
+              background: "linear-gradient(135deg,#D97C95,#C96F89)",
+              "&.Mui-disabled": { opacity: 0.5, color: "#fff" },
+            }}
+          >
+            {naSaving ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : "+ สร้างแอดมิน"}
+          </Button>
+        </Box>
+        {naDone && (
+          <Box sx={{ mt: 1.5, p: 1.25, borderRadius: 2, background: `${adminColor.green}14`, border: `1px solid ${adminColor.green}55` }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 800, color: adminColor.green }}>
+              สร้างแล้ว · ยูสเซอร์ {naDone}
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim, mt: 0.25 }}>
+              รหัสผ่านไม่ถูกเก็บไว้ที่ไหนเลย — จดไว้เองตอนนี้ ถ้าลืมต้องรีเซตใหม่
+            </Typography>
+          </Box>
+        )}
       </Box>
 
       {/* 🆕 28x.4 — my recent actions. Not a vanity feed: it is how you notice a

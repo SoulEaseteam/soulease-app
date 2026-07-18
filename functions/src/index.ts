@@ -1405,6 +1405,9 @@ export const setMemberAdmin = onCall(
 
     await db.collection("auditLogs").add({
       action: makeAdmin ? "user.admin_granted" : "user.admin_revoked",
+      // actorId (not just byUid) so this shows in the granting admin's own
+      // activity feed on /admin/account, which filters on actorId.
+      actorId: callerUid,
       byUid: callerUid,
       targetUid,
       detail: { phone },
@@ -1413,6 +1416,127 @@ export const setMemberAdmin = onCall(
     logger.info("[setMemberAdmin] done", { targetUid, makeAdmin, byUid: callerUid });
 
     return { ok: true, uid: targetUid, isAdmin: makeAdmin };
+  }
+);
+
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.59 (founder: "หรือจะแยกหน้าแอดมิน ออกจากทางเข้าระบบผ่านเว็บ") —
+//   mint a DEDICATED admin login, separate from any customer membership.
+//
+//   Why this and not a separate admin login page: hiding the form at a secret
+//   URL buys nothing. Firebase Auth accepts signInWithEmailAndPassword at the
+//   API level, so anyone holding the credentials gets in without ever loading
+//   our page. What actually matters is that the credentials aren't guessable —
+//   and a member account's are, by construction (username = the SRD- code,
+//   password = the phone we print on taxi cards).
+//
+//   So the separation is of IDENTITY, not of URL:
+//     • username must NOT look like a member code (srd-… is rejected)
+//     • password is typed by the concierge, never derived from a phone
+//
+//   NB the "no role editing here" rule in AdminAccountPage's header is about
+//   self-promotion (granting yourself rights you don't have). Creating a
+//   second staff account is a different act, and it still requires already
+//   being an admin.
+export const createAdminAccount = onCall(
+  { region: "asia-southeast1" },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = getFirestore();
+    const callerUid = request.auth.uid;
+    const adminDoc = await db.collection("admins").doc(callerUid).get();
+    if (!adminDoc.exists) {
+      throw new HttpsError("permission-denied", "Admin only.");
+    }
+
+    const data = request.data as
+      | { username?: string; password?: string; name?: string }
+      | undefined;
+    const handle = String(data?.username ?? "").trim().toLowerCase();
+    const password = String(data?.password ?? "");
+    const name = String(data?.name ?? "").trim();
+
+    // Same shape the client's resolveLoginId will parse back into an alias.
+    if (!/^[a-z][a-z0-9._-]{2,19}$/.test(handle)) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Username: 3-20 characters, must start with a letter, and may contain only letters, numbers, . _ -"
+      );
+    }
+    // A member-code-shaped handle would defeat the whole point of this function.
+    if (handle.startsWith("srd-") || handle.startsWith("srd")) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Don't use a member-code style username (SRD-…) for an admin account."
+      );
+    }
+    // Reject the failure mode this round exists to prevent: a phone number, or
+    // anything else a stranger could read off the website, as the password.
+    if (password.length < 10) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Password must be at least 10 characters."
+      );
+    }
+    if (/^\d+$/.test(password)) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Password must not be digits only — a phone number is guessable."
+      );
+    }
+    if (password.toLowerCase().includes(handle)) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Password must not contain the username."
+      );
+    }
+
+    const authEmail = `${handle}@${USERNAME_ALIAS_DOMAIN}`;
+    let uid: string;
+    try {
+      const rec = await getAuth().createUser({
+        email: authEmail,
+        password,
+        ...(name ? { displayName: name } : {}),
+      });
+      uid = rec.uid;
+    } catch (err) {
+      const errCode = (err as { code?: string }).code;
+      if (errCode === "auth/email-already-exists") {
+        throw new HttpsError("already-exists", "This username is already taken.");
+      }
+      throw err;
+    }
+
+    // Both sides of admin identity, same as setMemberAdmin.
+    await db.collection("users").doc(uid).set(
+      {
+        username: handle,
+        loginKind: "username",
+        role: "admin",
+        ...(name ? { displayName: name } : {}),
+        createdAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+    await db.collection("admins").doc(uid).set(
+      { grantedBy: callerUid, grantedAt: FieldValue.serverTimestamp(), username: handle },
+      { merge: true }
+    );
+
+    await db.collection("auditLogs").add({
+      action: "user.admin_created",
+      actorId: callerUid,
+      byUid: callerUid,
+      targetUid: uid,
+      detail: { username: handle },   // never the password
+      at: FieldValue.serverTimestamp(),
+    });
+    logger.info("[createAdminAccount] created", { targetUid: uid, byUid: callerUid });
+
+    return { ok: true, uid, username: handle };
   }
 );
 

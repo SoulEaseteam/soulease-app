@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -1131,6 +1131,9 @@ exports.setMemberAdmin = (0, https_1.onCall)({ region: "asia-southeast1" }, asyn
     }
     await db.collection("auditLogs").add({
         action: makeAdmin ? "user.admin_granted" : "user.admin_revoked",
+        // actorId (not just byUid) so this shows in the granting admin's own
+        // activity feed on /admin/account, which filters on actorId.
+        actorId: callerUid,
         byUid: callerUid,
         targetUid,
         detail: { phone },
@@ -1138,6 +1141,95 @@ exports.setMemberAdmin = (0, https_1.onCall)({ region: "asia-southeast1" }, asyn
     });
     v2_1.logger.info("[setMemberAdmin] done", { targetUid, makeAdmin, byUid: callerUid });
     return { ok: true, uid: targetUid, isAdmin: makeAdmin };
+});
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.59 (founder: "หรือจะแยกหน้าแอดมิน ออกจากทางเข้าระบบผ่านเว็บ") —
+//   mint a DEDICATED admin login, separate from any customer membership.
+//
+//   Why this and not a separate admin login page: hiding the form at a secret
+//   URL buys nothing. Firebase Auth accepts signInWithEmailAndPassword at the
+//   API level, so anyone holding the credentials gets in without ever loading
+//   our page. What actually matters is that the credentials aren't guessable —
+//   and a member account's are, by construction (username = the SRD- code,
+//   password = the phone we print on taxi cards).
+//
+//   So the separation is of IDENTITY, not of URL:
+//     • username must NOT look like a member code (srd-… is rejected)
+//     • password is typed by the concierge, never derived from a phone
+//
+//   NB the "no role editing here" rule in AdminAccountPage's header is about
+//   self-promotion (granting yourself rights you don't have). Creating a
+//   second staff account is a different act, and it still requires already
+//   being an admin.
+exports.createAdminAccount = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = (0, firestore_2.getFirestore)();
+    const callerUid = request.auth.uid;
+    const adminDoc = await db.collection("admins").doc(callerUid).get();
+    if (!adminDoc.exists) {
+        throw new https_1.HttpsError("permission-denied", "Admin only.");
+    }
+    const data = request.data;
+    const handle = String(data?.username ?? "").trim().toLowerCase();
+    const password = String(data?.password ?? "");
+    const name = String(data?.name ?? "").trim();
+    // Same shape the client's resolveLoginId will parse back into an alias.
+    if (!/^[a-z][a-z0-9._-]{2,19}$/.test(handle)) {
+        throw new https_1.HttpsError("invalid-argument", "Username: 3-20 characters, must start with a letter, and may contain only letters, numbers, . _ -");
+    }
+    // A member-code-shaped handle would defeat the whole point of this function.
+    if (handle.startsWith("srd-") || handle.startsWith("srd")) {
+        throw new https_1.HttpsError("invalid-argument", "Don't use a member-code style username (SRD-…) for an admin account.");
+    }
+    // Reject the failure mode this round exists to prevent: a phone number, or
+    // anything else a stranger could read off the website, as the password.
+    if (password.length < 10) {
+        throw new https_1.HttpsError("invalid-argument", "Password must be at least 10 characters.");
+    }
+    if (/^\d+$/.test(password)) {
+        throw new https_1.HttpsError("invalid-argument", "Password must not be digits only — a phone number is guessable.");
+    }
+    if (password.toLowerCase().includes(handle)) {
+        throw new https_1.HttpsError("invalid-argument", "Password must not contain the username.");
+    }
+    const authEmail = `${handle}@${USERNAME_ALIAS_DOMAIN}`;
+    let uid;
+    try {
+        const rec = await (0, auth_1.getAuth)().createUser({
+            email: authEmail,
+            password,
+            ...(name ? { displayName: name } : {}),
+        });
+        uid = rec.uid;
+    }
+    catch (err) {
+        const errCode = err.code;
+        if (errCode === "auth/email-already-exists") {
+            throw new https_1.HttpsError("already-exists", "This username is already taken.");
+        }
+        throw err;
+    }
+    // Both sides of admin identity, same as setMemberAdmin.
+    await db.collection("users").doc(uid).set({
+        username: handle,
+        loginKind: "username",
+        role: "admin",
+        ...(name ? { displayName: name } : {}),
+        createdAt: firestore_2.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    await db.collection("admins").doc(uid).set({ grantedBy: callerUid, grantedAt: firestore_2.FieldValue.serverTimestamp(), username: handle }, { merge: true });
+    await db.collection("auditLogs").add({
+        action: "user.admin_created",
+        actorId: callerUid,
+        byUid: callerUid,
+        targetUid: uid,
+        detail: { username: handle }, // never the password
+        at: firestore_2.FieldValue.serverTimestamp(),
+    });
+    v2_1.logger.info("[createAdminAccount] created", { targetUid: uid, byUid: callerUid });
+    return { ok: true, uid, username: handle };
 });
 // ─────────────────────────────────────────────────────────────
 // 🆕 Round 28x.31 (founder: "สถานะบนหน้าเว็บไม่เปลี่ยน") — sync a

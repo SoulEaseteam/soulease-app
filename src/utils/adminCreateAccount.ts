@@ -47,6 +47,31 @@ export interface SetMemberAdminResult {
   isAdmin: boolean;
 }
 
+// 🆕 Round 28x.59 — mint a dedicated admin login whose credentials aren't
+//   derived from anything public (unlike a member account, where the username
+//   is the SRD- code and the password is the phone).
+export interface CreateAdminAccountResult {
+  ok: boolean;
+  uid: string;
+  username: string;
+}
+
+export async function adminCreateAdminAccount(args: {
+  /** 3-20 chars, starts with a letter. Must not look like an SRD- code. */
+  username: string;
+  /** Typed by the concierge — min 10 chars, not digits only. */
+  password: string;
+  name?: string;
+}): Promise<CreateAdminAccountResult> {
+  const functions = getFunctions(app, "asia-southeast1");
+  const fn = httpsCallable<typeof args, CreateAdminAccountResult>(
+    functions,
+    "createAdminAccount"
+  );
+  const res = await fn(args);
+  return res.data;
+}
+
 export async function adminSetMemberAdmin(args: {
   /** The member's phone — must already have a login account. */
   phone: string;
