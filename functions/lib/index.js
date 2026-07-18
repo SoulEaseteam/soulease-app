@@ -564,18 +564,30 @@ const formatBookingForTherapist = (bookingId, b) => {
         : b.address
             ? `🗺 Map: https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.address)}`
             : "";
+    // 🆕 Round 28x.63 (founder: "ขอภาษาไทยได้ไหม พนักงานบางคนอ่านไม่ออก") — the
+    //   practitioners are Thai, and this is the message they read at 2am on the
+    //   way to a stranger's hotel. English was the wrong default for the one
+    //   message where misreading the address or the time actually costs something.
+    //
+    //   Also removed here: "Reply ACCEPT or DECLINE within 5 min." The webhook
+    //   ignores all free-form text (it only handles /commands), so a practitioner
+    //   who replied ACCEPT got silence — while reasonably believing she had taken
+    //   the job. Promising an action the system doesn't implement is worse than
+    //   not offering it. The real workflow is View dispatching by hand, so the
+    //   message now says that. If ACCEPT/DECLINE is wanted for real it needs the
+    //   webhook to handle replies and write dispatchState — a separate round.
     const lines = [
-        `🔔 NEW JOB · ${refCode}`,
+        `🔔 งานใหม่ · ${refCode}`,
         "",
-        `🧖 ${b.serviceName ?? "—"} · ${b.duration ?? "?"} min`,
+        `🧖 ${b.serviceName ?? "—"} · ${b.duration ?? "?"} นาที`,
         `📅 ${b.date ?? "—"}  🕐 ${b.time ?? "—"}`,
         `📍 ${b.address ?? "—"}`,
-        mapLink,
-        `📞 Customer: ${b.phone ?? "—"}`,
-        `🌐 Lang: ${b.language ?? "—"}`,
+        mapLink ? mapLink.replace("🗺 Map:", "🗺 แผนที่:") : "",
+        `📞 เบอร์ลูกค้า: ${b.phone ?? "—"}`,
+        `🌐 ภาษาลูกค้า: ${(b.language ?? "—").toUpperCase()}`,
         "",
-        `Reply ACCEPT or DECLINE within 5 min.`,
-        `Or call admin if you can't read this message.`,
+        `ยืนยันรับงานกับแอดมินตามปกติ (บอทตัวนี้ส่งแจ้งเตือนอย่างเดียว`,
+        `ตอบกลับในแชทนี้ไม่ได้)`,
     ].filter((l) => l.length > 0);
     return lines.join("\n");
 };
@@ -911,55 +923,80 @@ exports.telegramWebhook = (0, https_1.onRequest)({
     // Greet by WORK name when we know it — the practitioner's personal
     // Telegram name is not the name she is known by here.
     const greetName = linkedName ?? fromName;
+    // 🆕 Round 28x.63 — Thai first, English underneath. Thai because that's who
+    //   reads these; English kept short because a practitioner who can read it
+    //   shouldn't have to scroll past a wall of text to find her chat ID.
     let reply;
     if (text === "/start") {
         reply = linkedName
             ? [
-                `Hi ${linkedName}! 👋`,
+                `สวัสดีค่ะ ${linkedName} 👋`,
                 "",
-                "You're already linked to SunRed dispatch.",
-                "You'll get a message here each time a booking is",
-                "assigned to you. Send /myid to check your link.",
+                "บัญชีนี้เชื่อมกับระบบจ่ายงาน SunRed แล้ว",
+                "มีงานเข้าเมื่อไหร่ จะแจ้งมาที่แชทนี้",
+                "พิมพ์ /myid เพื่อตรวจสอบการเชื่อมต่อได้ตลอด",
+                "",
+                "— You're linked to SunRed dispatch. Send /myid to check.",
             ].join("\n")
             : [
-                `Hi ${greetName}! 👋`,
+                `สวัสดีค่ะ ${greetName} 👋`,
                 "",
-                "I'm the SunRed booking bot.",
-                "Send /myid to get your chat ID — you'll need to give it",
-                "to the admin so they can route bookings to you.",
+                "นี่คือบอทแจ้งงานของ SunRed",
+                "พิมพ์ /myid เพื่อรับรหัสประจำตัว แล้วส่งรหัสนั้น",
+                "ให้แอดมิน เพื่อให้ระบบส่งงานมาหาคุณได้",
+                "",
+                "— Send /myid to get your chat ID, then give it to the admin.",
             ].join("\n");
     }
     else if (text === "/myid" || text === "/id") {
         reply = linkedName
             ? [
-                `✅ Linked as: ${linkedName}`,
+                `✅ เชื่อมต่อแล้ว · ${linkedName}`,
                 ``,
-                `Your chat ID is:`,
+                `รหัสประจำตัวของคุณ:`,
                 ``,
                 `${chatId}`,
                 ``,
-                `Dispatch is set up — you'll get a message here every`,
-                `time a customer books your service. Nothing else to do.`,
+                `ระบบพร้อมส่งงานแล้ว มีลูกค้าจองเมื่อไหร่`,
+                `จะแจ้งมาที่แชทนี้ ไม่ต้องทำอะไรเพิ่ม`,
+                "",
+                `— Linked as ${linkedName}. Dispatch is set up.`,
             ].join("\n")
             : [
-                `Your chat ID is:`,
+                `รหัสประจำตัวของคุณ:`,
                 ``,
                 `${chatId}`,
                 ``,
-                `Copy this number and send it to the SunRed admin.`,
-                `Once linked, you'll get a DM from this bot every time`,
-                `a customer books your service.`,
+                `ก๊อปเลขนี้ส่งให้แอดมิน SunRed`,
+                `พอแอดมินใส่ให้แล้ว จะมีงานแจ้งมาที่แชทนี้`,
                 ``,
-                `Send /myid again after the admin adds it — it will say`,
-                `"Linked" once dispatch is working.`,
+                `พิมพ์ /myid ซ้ำอีกครั้งหลังแอดมินใส่ให้`,
+                `ถ้าขึ้นว่า "เชื่อมต่อแล้ว" คือใช้งานได้จริง`,
+                "",
+                `— Copy this number and send it to the SunRed admin.`,
             ].join("\n");
     }
     else if (text.startsWith("/")) {
-        reply = "Unknown command. Try /myid to get your chat ID.";
+        reply = [
+            "ไม่รู้จักคำสั่งนี้ค่ะ",
+            "พิมพ์ /myid เพื่อดูรหัสประจำตัว",
+            "",
+            "— Unknown command. Try /myid.",
+        ].join("\n");
+    }
+    else if (update?.message?.chat?.type === "private") {
+        // 🆕 28x.63 — was silent. The old job DM told practitioners to "Reply
+        //   ACCEPT or DECLINE", so some will still try; silence let them believe
+        //   they had taken the job. One short line, private chats only.
+        reply = [
+            "บอทนี้ส่งแจ้งเตือนอย่างเดียวค่ะ ตอบกลับตรงนี้แอดมินไม่เห็น",
+            "ยืนยันรับงานกับแอดมินตามปกตินะคะ",
+            "",
+            "— This bot only sends alerts. Please confirm jobs with the admin.",
+        ].join("\n");
     }
     else {
-        // Free-form messages — ignore silently to avoid being a chatty
-        // bot. Therapist might be replying ACCEPT/DECLINE in future.
+        // Group chats: stay silent (see the note on `type` above).
         res.status(200).send("ok");
         return;
     }
