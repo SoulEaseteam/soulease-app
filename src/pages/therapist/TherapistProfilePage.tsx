@@ -35,6 +35,8 @@ import {
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import RoomRoundedIcon from "@mui/icons-material/RoomRounded";
 import MyLocationRoundedIcon from "@mui/icons-material/MyLocationRounded";
+import EventIcon from "@mui/icons-material/EventNoteRounded";
+import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
@@ -76,8 +78,8 @@ interface BookingDoc {
 const STATUS_PILL: Record<Avail, { bg: string; color: string; label: string }> = {
   available: { bg: "#16a34a", color: "#fff", label: "Available" },
   bookable: { bg: "#831843", color: "#F4F6F5", label: "In session" },
-  resting: { bg: "rgba(217,124,149,0.20)", color: "#F0C6D2", label: "Resting" },
-  holiday: { bg: "rgba(255,255,255,0.14)", color: "#F3F2F4", label: "On holiday" },
+  resting: { bg: "rgba(0,0,0,0.38)", color: "#FFFFFF", label: "Resting" },
+  holiday: { bg: "rgba(0,0,0,0.38)", color: "#FFFFFF", label: "On holiday" },
 };
 
 const TherapistProfilePage: React.FC = () => {
@@ -367,7 +369,7 @@ const TherapistProfilePage: React.FC = () => {
           sx={{
             fontFamily: SANS,
             fontSize: "13px",
-            color: "rgba(15, 23, 42,0.6)",
+            color: "var(--sr-muted)",
             marginBottom: 3,
           }}
         >
@@ -561,7 +563,7 @@ const TherapistProfilePage: React.FC = () => {
               sx={{
                 fontFamily: SANS,
                 fontSize: "10.5px",
-                color: "rgba(15, 23, 42,0.55)",
+                color: "var(--sr-muted)",
               }}
             >
               Live · customers see this
@@ -572,7 +574,7 @@ const TherapistProfilePage: React.FC = () => {
             sx={{
               fontFamily: SANS,
               fontSize: "11.5px",
-              color: "rgba(15, 23, 42,0.65)",
+              color: "var(--sr-body)",
               lineHeight: 1.45,
               marginBottom: 1.25,
             }}
@@ -661,7 +663,7 @@ const TherapistProfilePage: React.FC = () => {
                 sx={{
                   fontFamily: SANS,
                   fontSize: "10.5px",
-                  color: "rgba(15, 23, 42,0.6)",
+                  color: "var(--sr-body)",
                   lineHeight: 1.4,
                 }}
               >
@@ -716,6 +718,19 @@ const TherapistProfilePage: React.FC = () => {
           label="Update GPS"
           Icon={MyLocationRoundedIcon}
           onClick={() => navigate("/update-location")}
+        />
+        {/* 🆕 28x.77 — now that the PROFILE tab lands here instead of the
+            customer profile, this is the only remaining route to language and
+            password. Without it those settings became unreachable for staff. */}
+        <MenuTile
+          label="งานของฉัน · My Jobs"
+          Icon={EventIcon}
+          onClick={() => navigate("/therapist/jobs")}
+        />
+        <MenuTile
+          label="ตั้งค่าบัญชี · ภาษา / รหัสผ่าน"
+          Icon={SettingsRoundedIcon}
+          onClick={() => navigate("/profile")}
         />
       </Box>
 
@@ -843,7 +858,9 @@ const StatusChoice: React.FC<StatusChoiceProps> = ({
       textTransform: "none",
       textAlign: "left",
       background: active
-        ? `${accent}`
+        // 🆕 28x.77 — the accent alone put white text at 3.43:1. Darkening the
+        //   selected fill keeps the same hue and clears 4.5.
+        ? `linear-gradient(135deg, ${accent}, #7A3049)`
         : "var(--sr-panel)",
       border: active
         ? `1px solid ${accent}`

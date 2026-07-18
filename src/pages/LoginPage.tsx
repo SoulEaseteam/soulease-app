@@ -212,9 +212,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ staff = false }) => {
         // ถ้าถูก redirect มาจาก PrivateRoute ให้กลับหน้าเดิม
         if (fromPath && role !== "admin") return navigate(fromPath, { replace: true });
         if (role === "admin") return navigate("/admin/dashboard", { replace: true });
-        // 🆕 28x.76 — her work, not her profile. /therapist/jobs is the screen a
-        //   practitioner actually opens the app for; the profile page is settings.
-        if (role === "therapist") return navigate("/therapist/jobs", { replace: true });
+        // 🆕 28x.77 (founder: "อยากให้พนักงานล็อกอินเข้าหน้า therapist/profile
+        //   เลย ไม่ต้องกด Practitioner อีก") — straight into the practitioner
+        //   panel. 28x.76 sent her to /therapist/jobs, which still left the
+        //   customer-shaped /profile as the thing the PROFILE tab returned to.
+        if (role === "therapist") return navigate("/therapist/profile", { replace: true });
         // Signed in through the staff door but not staff — say so rather than
         // dropping her on a guest profile with no explanation.
         if (staff) {

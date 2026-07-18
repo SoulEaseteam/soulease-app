@@ -34,11 +34,16 @@ const TABS = [
 //   customer's own reservations. Her work lives at /therapist/jobs. Same slot,
 //   same icon; only the destination and label change, so the shell stays one
 //   app rather than two.
-const THERAPIST_TABS = TABS.map((t) =>
-  t.value === "/booking/history"
-    ? { ...t, label: "My Jobs", value: "/therapist/jobs" }
-    : t,
-) as unknown as typeof TABS;
+const THERAPIST_TABS = TABS.map((t) => {
+  if (t.value === "/booking/history")
+    return { ...t, label: "My Jobs", value: "/therapist/jobs" };
+  // 🆕 28x.77 — Profile means her practitioner panel. Pointing it at /profile
+  //   put the customer-shaped page between her and her own controls every time
+  //   she tapped the tab, which is the tap the founder asked to remove.
+  if (t.value === "/profile")
+    return { ...t, value: "/therapist/profile" };
+  return t;
+}) as unknown as typeof TABS;
 
 const N    = TABS.length;  // 4
 const INSET = 2;           // px gap pill ↔ track edge
@@ -79,7 +84,7 @@ const BottomNavGlass: React.FC = () => {
       location.pathname.startsWith("/user/")             ||
       location.pathname === "/login"                     ||
       location.pathname === "/register"
-    ) return "/profile";
+    ) return role === "therapist" ? "/therapist/profile" : "/profile";
     return "/";
   })();
 

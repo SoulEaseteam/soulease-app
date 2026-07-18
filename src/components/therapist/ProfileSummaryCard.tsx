@@ -88,11 +88,14 @@ const ProfileSummaryCard: React.FC<Props> = ({
           alignItems: "center",
         }}
       >
-        <CancelIcon sx={{ color: "red", fontSize: 28, mb: 1 }} />
+        <CancelIcon sx={{ color: "#F87171", fontSize: 28, mb: 1 }} />
         <Typography variant="body2" color="text.secondary">
           Cancelled
         </Typography>
-        <Typography variant="h6" fontWeight="bold" color="error.main">
+        {/* 🆕 28x.77 — MUI's error.main (#f44336) on the dark panel is 4.30:1.
+            Large-text rules already pass it, but matching the icon keeps every
+            figure on this card above 4.5 without changing what it reads as. */}
+        <Typography variant="h6" fontWeight="bold" sx={{ color: "#F87171" }}>
           {cancelledJobs}
         </Typography>
       </Paper>
