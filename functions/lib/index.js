@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -1019,6 +1019,65 @@ exports.recoverAbandonedBookings = (0, scheduler_1.onSchedule)({
 //
 // A decline sets `needsAdminReview` + `reviewReason`, which the Tonight board
 // already renders as a red banner — so the warning path is reused, not rebuilt.
+// 🆕 Round 28x.70 — redeem a one-time link code from the practitioner's side.
+//   Returns the exact text to reply with. Deliberately vague on failure: a
+//   distinguishable "expired" vs "wrong" vs "already used" would let someone
+//   brute-force the 5-character space and hijack a practitioner's dispatch.
+async function linkTherapistByCode(code, chatId, greetName) {
+    const bad = [
+        "รหัสเชื่อมไม่ถูกต้องหรือหมดอายุแล้วค่ะ",
+        "ขอรหัสใหม่จากแอดมินได้เลย",
+        "",
+        "— Invalid or expired code. Ask the admin for a new one.",
+    ].join("\n");
+    if (!/^[A-Z0-9]{4,8}$/.test(code))
+        return bad;
+    const db = (0, firestore_2.getFirestore)();
+    try {
+        const found = await db
+            .collection("therapists")
+            .where("linkCode", "==", code)
+            .limit(1)
+            .get();
+        if (found.empty)
+            return bad;
+        const tDoc = found.docs[0];
+        const t = tDoc.data();
+        const exp = t.linkCodeExpiresAt;
+        if (!exp || exp.toMillis() < Date.now())
+            return bad;
+        await tDoc.ref.set({
+            telegramChatId: String(chatId),
+            // Burn the code — single use, so a forwarded message can't be redeemed
+            // twice and quietly move dispatch to someone else's phone.
+            linkCode: firestore_2.FieldValue.delete(),
+            linkCodeExpiresAt: firestore_2.FieldValue.delete(),
+        }, { merge: true });
+        await db.collection("auditLogs").add({
+            action: "therapist.linked",
+            byUid: null,
+            detail: { therapistId: tDoc.id, chatId: String(chatId) },
+            at: firestore_2.FieldValue.serverTimestamp(),
+        });
+        v2_1.logger.info("[linkTherapistByCode] linked", {
+            therapistId: tDoc.id,
+            chatId,
+        });
+        const who = t.name ?? greetName;
+        return [
+            `✅ เชื่อมต่อแล้ว · ${who}`,
+            "",
+            "ระบบพร้อมส่งงานแล้ว มีลูกค้าจองเมื่อไหร่",
+            "จะแจ้งมาที่แชทนี้ ไม่ต้องทำอะไรเพิ่ม",
+            "",
+            `— Linked as ${who}. Dispatch is set up.`,
+        ].join("\n");
+    }
+    catch (err) {
+        v2_1.logger.error("[linkTherapistByCode] failed", err);
+        return bad;
+    }
+}
 async function handleJobCallback(q, token) {
     const data = q.data ?? "";
     const parts = data.split(":");
@@ -1223,6 +1282,13 @@ exports.telegramWebhook = (0, https_1.onRequest)({
                 "",
                 "— Send /myid to get your chat ID, then give it to the admin.",
             ].join("\n");
+    }
+    else if (text.toLowerCase().startsWith("/link")) {
+        // 🆕 28x.70 — self-service linking. Replaces the three-step /myid dance
+        //   where a 10-digit chat id was read off one screen and retyped into
+        //   another; a single wrong digit sent a guest's job to a stranger.
+        const code = text.slice(5).trim().toUpperCase();
+        reply = await linkTherapistByCode(code, chatId, greetName);
     }
     else if (text === "/myid" || text === "/id") {
         reply = linkedName
@@ -1581,6 +1647,73 @@ exports.setMemberAdmin = (0, https_1.onCall)({ region: "asia-southeast1" }, asyn
 //   system predates the field — so without this a practitioner opening her job
 //   list would see an empty screen and reasonably conclude the feature is
 //   broken. Admin-only, idempotent, safe to run repeatedly.
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.70 (founder: "รหัสเชื่อมบัญชี — DM เหมือนเดิม แต่ตั้งค่าง่าย
+//   เท่ากลุ่ม") — one-time codes so a practitioner links herself.
+//
+//   The old flow had three steps and two people: she sends /myid, reads a
+//   10-digit number off her screen, forwards it to View, View retypes it into
+//   the admin panel. A single mistyped digit fails silently — the job DM goes
+//   to a stranger's chat, or nowhere.
+//
+//   Now: View presses a button, sends her "/link XR7K2", and the bot does the
+//   rest. No number ever passes through a human's hands.
+//
+//   Codes are single-use and expire in 24h. The alphabet omits 0/O/1/I/L so a
+//   code read off a screen can't be mistyped into a different valid one.
+const LINK_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+function makeLinkCode() {
+    let out = "";
+    for (let i = 0; i < 5; i++) {
+        out += LINK_ALPHABET[Math.floor(Math.random() * LINK_ALPHABET.length)];
+    }
+    return out;
+}
+exports.createTherapistLinkCode = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = (0, firestore_2.getFirestore)();
+    if (!(await db.collection("admins").doc(request.auth.uid).get()).exists) {
+        throw new https_1.HttpsError("permission-denied", "Admin only.");
+    }
+    const therapistId = String(request.data?.therapistId ?? "").trim();
+    if (!therapistId) {
+        throw new https_1.HttpsError("invalid-argument", "therapistId is required.");
+    }
+    const tRef = db.collection("therapists").doc(therapistId);
+    if (!(await tRef.get()).exists) {
+        throw new https_1.HttpsError("not-found", "Therapist not found.");
+    }
+    // Retry on the (rare) chance of an active duplicate — two practitioners
+    // sharing a live code would link the wrong person to the wrong jobs.
+    let code = "";
+    for (let attempt = 0; attempt < 5; attempt++) {
+        const candidate = makeLinkCode();
+        const clash = await db
+            .collection("therapists")
+            .where("linkCode", "==", candidate)
+            .limit(1)
+            .get();
+        if (clash.empty) {
+            code = candidate;
+            break;
+        }
+    }
+    if (!code) {
+        throw new https_1.HttpsError("internal", "Could not allocate a code, try again.");
+    }
+    const expiresAt = firestore_2.Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
+    await tRef.set({ linkCode: code, linkCodeExpiresAt: expiresAt }, { merge: true });
+    await db.collection("auditLogs").add({
+        action: "therapist.link_code",
+        actorId: request.auth.uid,
+        byUid: request.auth.uid,
+        detail: { therapistId }, // never the code itself
+        at: firestore_2.FieldValue.serverTimestamp(),
+    });
+    return { ok: true, code, expiresAtMs: expiresAt.toMillis() };
+});
 exports.backfillTherapistUids = (0, https_1.onCall)({ region: "asia-southeast1", timeoutSeconds: 540 }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Sign in required.");

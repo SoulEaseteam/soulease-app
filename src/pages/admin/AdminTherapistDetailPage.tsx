@@ -35,7 +35,9 @@ import {
   onSnapshot,
   serverTimestamp,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { app, db } from "@/lib/firebase";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import {
   ArrowLeft, PencilSimple, FloppyDisk, X, Eye,
@@ -184,6 +186,27 @@ const AdminTherapistDetailPage: React.FC = () => {
   // 🆕 opening the roster's Pencil icon lands here with ?edit=1 pre-armed.
   const [editing, setEditing] = useState(() => searchParams.get("edit") === "1");
   const [formData, setFormData] = useState<FormState>(EMPTY_FORM);
+
+  // 🆕 28x.70 — one-time code so the practitioner links her own Telegram.
+  const [linking, setLinking] = useState(false);
+  const [linkCode, setLinkCode] = useState<string | null>(null);
+  const makeLinkCode = async () => {
+    if (!docId) return;
+    setLinking(true);
+    try {
+      const fn = httpsCallable<{ therapistId: string }, { ok: boolean; code: string }>(
+        getFunctions(app, "asia-southeast1"),
+        "createTherapistLinkCode"
+      );
+      const res = await fn({ therapistId: docId });
+      setLinkCode(res.data.code);
+    } catch (e) {
+      console.error("[therapist] link code failed", e);
+      toast.error("สร้างรหัสไม่สำเร็จ");
+    } finally {
+      setLinking(false);
+    }
+  };
   const originalRef = useRef<FormState>(EMPTY_FORM);
   // 🆕 Round 28s314 — bank details live in the ADMIN-ONLY `payoutAccounts`
   //   collection, NOT on the therapist doc (which is `allow read: if true`,
@@ -930,10 +953,63 @@ const AdminTherapistDetailPage: React.FC = () => {
                 label="Telegram Chat ID (for job DMs)" fullWidth size="small" sx={fieldSx}
                 value={formData.telegramChatId}
                 onChange={(e) => setFormData((f) => ({ ...f, telegramChatId: e.target.value }))}
-                helperText="Therapist sends /myid to @SunRed24hBot to get this number. Leave blank if not on Telegram."
+                helperText="กดปุ่มด้านล่างเพื่อสร้างรหัสเชื่อมบัญชี แล้วส่งให้พนักงาน · ช่องนี้จะเติมเองอัตโนมัติ"
                 placeholder="e.g. 123456789"
                 inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               />
+
+              {/* 🆕 28x.70 — self-service linking. The field above still works,
+                  but retyping a 10-digit id copied off someone else's screen is
+                  how dispatch silently ends up on the wrong phone. */}
+              <Box sx={{ mt: 1.25 }}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  disabled={linking}
+                  onClick={() => void makeLinkCode()}
+                  sx={{
+                    textTransform: "none", fontWeight: 700, fontSize: 12.5,
+                    borderRadius: "999px", color: adminColor.accent,
+                    borderColor: adminColor.line2,
+                  }}
+                >
+                  {linking ? <CircularProgress size={15} /> : "สร้างรหัสเชื่อมบัญชี"}
+                </Button>
+
+                {linkCode && (
+                  <Box
+                    sx={{
+                      mt: 1.25, p: 1.25, borderRadius: "10px",
+                      background: `${adminColor.green}14`,
+                      border: `1px solid ${adminColor.green}55`,
+                    }}
+                  >
+                    <Typography sx={{ fontFamily: adminFont.sans, fontSize: 11, color: adminColor.dim, mb: 0.5 }}>
+                      ส่งข้อความนี้ให้พนักงาน · ใช้ได้ครั้งเดียว หมดอายุใน 24 ชม.
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: adminFont.sans, fontSize: 13.5, fontWeight: 700,
+                        color: adminColor.text, wordBreak: "break-word",
+                      }}
+                    >
+                      ทักบอท @SunRed24hBot แล้วพิมพ์ /link {linkCode}
+                    </Typography>
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        void navigator.clipboard.writeText(
+                          `ทักบอท @SunRed24hBot แล้วพิมพ์ /link ${linkCode}`
+                        );
+                        toast.success("คัดลอกแล้ว");
+                      }}
+                      sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, color: adminColor.green, mt: 0.5, px: 0 }}
+                    >
+                      คัดลอกข้อความ
+                    </Button>
+                  </Box>
+                )}
+              </Box>
             </SectionCard>
 
             {/* 🆕 Round 28s314 — bank account for the Pay-Therapists transfer

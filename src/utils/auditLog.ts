@@ -118,7 +118,11 @@ export type AuditAction =
   //   and are listed here so the audit viewer can label them.
   | "user.admin_granted"
   | "user.admin_revoked"
-  | "user.admin_created";
+  | "user.admin_created"
+  // 🆕 28x.70 — issuing a link code and a practitioner redeeming it both change
+  //   who receives guest addresses, so both belong in the trail.
+  | "therapist.link_code"
+  | "therapist.linked";
 
 export async function logAdminAction(
   action: AuditAction,
@@ -154,6 +158,8 @@ export const ACTION_LABEL: Record<string, { label: string; color: string }> = {
   "user.admin_granted":      { label: "ให้สิทธิ์แอดมิน",        color: "#DC2626" },
   "user.admin_revoked":      { label: "ถอดสิทธิ์แอดมิน",       color: "#DC2626" },
   "user.admin_created":      { label: "สร้างบัญชีแอดมิน",      color: "#DC2626" },
+  "therapist.link_code":     { label: "ออกรหัสเชื่อมบัญชี",     color: "#4E7E8C" },
+  "therapist.linked":        { label: "พนักงานเชื่อมบัญชีแล้ว",  color: "#16A34A" },
   "booking.confirm":         { label: "ยืนยันออเดอร์",        color: adminColor.green },
   "booking.cancel":          { label: "ยกเลิกออเดอร์",        color: adminColor.red },
   "booking.complete":        { label: "ปิดงานเสร็จ",          color: adminColor.green },
