@@ -76,8 +76,8 @@ interface BookingDoc {
 const STATUS_PILL: Record<Avail, { bg: string; color: string; label: string }> = {
   available: { bg: "#16a34a", color: "#fff", label: "Available" },
   bookable: { bg: "#831843", color: "#F4F6F5", label: "In session" },
-  resting: { bg: "rgba(184,92,60,0.18)", color: "#831843", label: "Resting" },
-  holiday: { bg: "rgba(15, 23, 42, 0.10)", color: "#831843", label: "On holiday" },
+  resting: { bg: "rgba(217,124,149,0.20)", color: "#F0C6D2", label: "Resting" },
+  holiday: { bg: "rgba(255,255,255,0.14)", color: "#F3F2F4", label: "On holiday" },
 };
 
 const TherapistProfilePage: React.FC = () => {
@@ -337,7 +337,7 @@ const TherapistProfilePage: React.FC = () => {
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-        <CircularProgress sx={{ color: "#4B4B48" }} />
+        <CircularProgress sx={{ color: "#D97C95" }} />
       </Box>
     );
   }
@@ -357,7 +357,7 @@ const TherapistProfilePage: React.FC = () => {
             fontFamily: SERIF,
             fontSize: "18px",
             fontWeight: 600,
-            color: "#1A2B2E",
+            color: "var(--sr-ink)",
             marginBottom: 1,
           }}
         >
@@ -399,7 +399,7 @@ const TherapistProfilePage: React.FC = () => {
         //   desktop instead of pinning to 430.
         ...responsiveShell,
         minHeight: "100vh",
-        background: "#F4F6F5",
+        background: "var(--sr-bg)",
         paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
         fontFamily: SANS,
       }}
@@ -409,7 +409,7 @@ const TherapistProfilePage: React.FC = () => {
         sx={{
           position: "relative",
           padding: "24px 20px 28px",
-          background: "#8F8474",
+          background: "linear-gradient(160deg, #A34A67 0%, #7A3049 55%, #5A2733 100%)",
           borderBottomLeftRadius: 28,
           borderBottomRightRadius: 28,
           color: "#fff",
@@ -532,7 +532,7 @@ const TherapistProfilePage: React.FC = () => {
       <Box sx={{ paddingX: 2, marginTop: 2.5 }}>
         <Box
           sx={{
-            background: "rgba(255,255,255,0.85)",
+            background: "var(--sr-panel)",
             border: "1px solid rgba(184,92,60,0.18)",
             borderRadius: 3,
             padding: "14px 16px 16px",
@@ -552,7 +552,7 @@ const TherapistProfilePage: React.FC = () => {
                 fontFamily: SERIF,
                 fontWeight: 700,
                 fontSize: "15px",
-                color: "#1A2B2E",
+                color: "var(--sr-ink)",
               }}
             >
               Working Status
@@ -592,7 +592,7 @@ const TherapistProfilePage: React.FC = () => {
               label="Auto"
               hint="Engine decides"
               Icon={AutorenewRoundedIcon}
-              accent="#1A2B2E"
+              accent="#C96F89"
               active={
                 !therapist.statusOverride || therapist.statusOverride === "Auto"
               }
@@ -621,7 +621,7 @@ const TherapistProfilePage: React.FC = () => {
               label="Resting"
               hint="Hide from results"
               Icon={HotelRoundedIcon}
-              accent="#4A5568"
+              accent="var(--sr-muted)"
               active={therapist.statusOverride === "resting"}
               disabled={savingField === "statusOverride"}
               onClick={() => void updateOverride("resting")}
@@ -636,7 +636,7 @@ const TherapistProfilePage: React.FC = () => {
               borderRadius: 2,
               background: therapist.isHoliday
                 ? "rgba(45, 45, 43, 0.08)"
-                : "rgba(252,235,220,0.5)",
+                : "var(--sr-panel-2)",
               border: therapist.isHoliday
                 ? "1px solid rgba(15, 23, 42, 0.22)"
                 : "1px solid rgba(184,92,60,0.12)",
@@ -652,7 +652,7 @@ const TherapistProfilePage: React.FC = () => {
                   fontFamily: SANS,
                   fontWeight: 700,
                   fontSize: "12.5px",
-                  color: "#1A2B2E",
+                  color: "var(--sr-ink)",
                 }}
               >
                 Holiday mode
@@ -674,10 +674,10 @@ const TherapistProfilePage: React.FC = () => {
               onChange={(_, checked) => void updateHoliday(checked)}
               sx={{
                 "& .MuiSwitch-switchBase.Mui-checked": {
-                  color: "#8F8474",
+                  color: "#C96F89",
                 },
                 "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-                  backgroundColor: "#8F8474",
+                  backgroundColor: "#C96F89",
                 },
               }}
             />
@@ -764,13 +764,13 @@ const MenuTile: React.FC<MenuTileProps> = ({ label, Icon, onClick }) => (
       gap: "8px",
       padding: "16px 8px",
       borderRadius: "16px",
-      background: "rgba(255,255,255,0.7)",
+      background: "var(--sr-panel)",
       border: "1px solid rgba(184,92,60,0.15)",
       boxShadow: "0 4px 12px rgba(15, 23, 42,0.06)",
       textTransform: "none",
       transition: "transform 0.2s ease, box-shadow 0.2s ease",
       "&:hover": {
-        background: "rgba(255,255,255,0.9)",
+        background: "var(--sr-panel-2)",
         transform: "translateY(-2px)",
         boxShadow: "0 8px 20px rgba(15, 23, 42, 0.12)",
       },
@@ -781,7 +781,7 @@ const MenuTile: React.FC<MenuTileProps> = ({ label, Icon, onClick }) => (
         width: 40,
         height: 40,
         borderRadius: "50%",
-        background: "#8F8474",
+        background: "linear-gradient(160deg, #A34A67 0%, #7A3049 55%, #5A2733 100%)",
         color: "#fff",
         display: "flex",
         alignItems: "center",
@@ -796,7 +796,7 @@ const MenuTile: React.FC<MenuTileProps> = ({ label, Icon, onClick }) => (
         fontFamily: SANS,
         fontSize: "12px",
         fontWeight: 700,
-        color: "#1A2B2E",
+        color: "var(--sr-ink)",
         letterSpacing: "0.01em",
       }}
     >
@@ -844,26 +844,26 @@ const StatusChoice: React.FC<StatusChoiceProps> = ({
       textAlign: "left",
       background: active
         ? `${accent}`
-        : "rgba(255,255,255,0.85)",
+        : "var(--sr-panel)",
       border: active
         ? `1px solid ${accent}`
         : "1px solid rgba(184,92,60,0.18)",
       boxShadow: active
         ? `0 6px 14px ${accent}33`
         : "0 2px 6px rgba(15, 23, 42,0.04)",
-      color: active ? "#fff" : "#1A2B2E",
+      color: active ? "#fff" : "var(--sr-ink)",
       transition: "transform 0.15s ease, box-shadow 0.15s ease",
       "&:hover": !disabled
         ? {
             transform: "translateY(-1px)",
             background: active
               ? `linear-gradient(135deg, ${accent} 0%, ${accent} 100%)`
-              : "rgba(255,255,255,1)",
+              : "var(--sr-panel-2)",
           }
         : undefined,
       "&.Mui-disabled": {
         opacity: 0.55,
-        color: active ? "#fff" : "#1A2B2E",
+        color: active ? "#fff" : "var(--sr-ink)",
       },
     }}
   >

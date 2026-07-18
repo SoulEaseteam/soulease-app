@@ -16,14 +16,18 @@ const ProfileSummaryCard: React.FC<Props> = ({
   cancelledJobs,
 }) => (
   <Grid container spacing={2} mb={2}>
-    {/* Today’s Bookings */}
+    {/* 🆕 28x.75 — these three stat tiles kept a hardcoded #F4F6F5 from the
+   pre-Moko light palette. Once the practitioner page moved to the dark theme
+   their labels became grey-on-white at 2.85:1 — the counters a practitioner
+   checks at a glance were the least readable thing on her screen. */
+/* Today’s Bookings */}
     <Grid size={4}>
       <Paper
         sx={{
           p: 2,
           textAlign: "center",
           borderRadius: 5,
-          background: "#F4F6F5",
+          background: "var(--sr-panel)",
           boxShadow: "0 6px 14px rgba(0,0,0,0.08)",
           height: 120,
           display: "flex",
@@ -49,7 +53,7 @@ const ProfileSummaryCard: React.FC<Props> = ({
           p: 2,
           textAlign: "center",
           borderRadius: 5,
-          background: "#F4F6F5",
+          background: "var(--sr-panel)",
           boxShadow: "0 6px 14px rgba(0,0,0,0.08)",
           height: 120,
           display: "flex",
@@ -75,7 +79,7 @@ const ProfileSummaryCard: React.FC<Props> = ({
           p: 2,
           textAlign: "center",
           borderRadius: 5,
-          background: "#F4F6F5",
+          background: "var(--sr-panel)",
           boxShadow: "0 6px 14px rgba(0,0,0,0.08)",
           height: 120,
           display: "flex",

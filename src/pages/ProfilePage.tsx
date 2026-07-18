@@ -191,15 +191,24 @@ const ProfilePage: React.FC = () => {
   // pull total booking count for this user
   useEffect(() => {
     if (!user) return;
-    const q = query(
-      collection(db, "bookings"),
-      where("userId", "==", user.uid),
-      where("status", "in", ["confirmed", "completed"])
-    );
+    // 🆕 28x.75 — for a practitioner this counted bookings she had MADE as a
+    //   guest ("1"), sitting in her header as if it were her work. Count the
+    //   jobs assigned to her instead; the label switches to match.
+    const q = isTherapist
+      ? query(
+          collection(db, "bookings"),
+          where("therapistUid", "==", user.uid),
+          where("status", "in", ["confirmed", "completed"])
+        )
+      : query(
+          collection(db, "bookings"),
+          where("userId", "==", user.uid),
+          where("status", "in", ["confirmed", "completed"])
+        );
     getCountFromServer(q)
       .then((snap) => setBookingCount(snap.data().count))
       .catch(() => setBookingCount(null));
-  }, [user]);
+  }, [user, isTherapist]);
 
   // Round 28s369 — fetch therapist name from Firestore when Auth displayName is null
   useEffect(() => {
@@ -468,7 +477,7 @@ const ProfilePage: React.FC = () => {
                 value: bookingCount === null
                   ? <CircularProgress size={14} sx={{ color: "rgba(255,255,255,0.5)" }} />
                   : <>{bookingCount}</>,
-                label: "Bookings",
+                label: isTherapist ? "Jobs" : "Bookings",
               },
               // 🆕 28x.74 — "VIP status" is a guest loyalty tier; showing it to
               //   staff framed her own workplace as a shop she buys from.

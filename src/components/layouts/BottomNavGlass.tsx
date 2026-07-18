@@ -29,6 +29,17 @@ const TABS = [
   { label: "Profile",       value: "/profile",         icon: (a: boolean) => <UserCircle   size={20} color={a ? "#fff" : "#9AA0AC"} /> },
 ] as const;
 
+// 🆕 28x.75 (founder's screenshots) — for a practitioner the History tab led to
+//   "My Bookings · Browse therapists and book your next session", i.e. the
+//   customer's own reservations. Her work lives at /therapist/jobs. Same slot,
+//   same icon; only the destination and label change, so the shell stays one
+//   app rather than two.
+const THERAPIST_TABS = TABS.map((t) =>
+  t.value === "/booking/history"
+    ? { ...t, label: "My Jobs", value: "/therapist/jobs" }
+    : t,
+) as unknown as typeof TABS;
+
 const N    = TABS.length;  // 4
 const INSET = 2;           // px gap pill ↔ track edge
 
@@ -59,6 +70,8 @@ const BottomNavGlass: React.FC = () => {
   const currentTab = (() => {
     if (location.pathname.startsWith("/services"))        return "/services";
     if (location.pathname.startsWith("/booking/history")) return "/booking/history";
+    // 🆕 28x.75 — keep the pill lit on the practitioner's version of that slot.
+    if (location.pathname.startsWith("/therapist/jobs"))  return "/therapist/jobs";
     if (
       location.pathname.startsWith("/profile")           ||
       location.pathname.startsWith("/admin")             ||
@@ -70,7 +83,11 @@ const BottomNavGlass: React.FC = () => {
     return "/";
   })();
 
-  const activeIndex = TABS.findIndex((t) => t.value === currentTab);
+  // 🆕 28x.75 — index against the array actually rendered. A practitioner on
+  //   /therapist/jobs isn't in TABS, so this returned -1 and parked the
+  //   highlight pill off the first tab.
+  const navTabs = role === "therapist" ? THERAPIST_TABS : TABS;
+  const activeIndex = navTabs.findIndex((t) => t.value === currentTab);
 
   // ── scroll hide ──────────────────────────────────────────────────
   useEffect(() => {
@@ -163,7 +180,7 @@ const BottomNavGlass: React.FC = () => {
           )}
 
           {/* Tabs */}
-          {TABS.map((tab) => {
+          {navTabs.map((tab) => {
             const active = currentTab === tab.value;
             return (
               <motion.div

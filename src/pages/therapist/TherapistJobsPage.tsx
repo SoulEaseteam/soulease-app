@@ -292,7 +292,7 @@ const TherapistJobsPage: React.FC = () => {
               งานที่กำลังจะถึง · {upcoming.length}
             </Typography>
             {upcoming.length === 0 ? (
-              <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "var(--sr-dim)", mb: 3 }}>
+              <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "var(--sr-muted)", mb: 3 }}>
                 ไม่มีงานที่กำลังจะถึง
               </Typography>
             ) : (
