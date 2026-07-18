@@ -881,26 +881,78 @@ exports.telegramWebhook = (0, https_1.onRequest)({
         res.status(200).send("ok"); // ack but ignore
         return;
     }
+    // 🆕 Round 28x.62 (founder, during the XingXing pilot: her Telegram account
+    //   is named "view", her WORK name is XingXing) — look up whether this chat
+    //   is already linked to a practitioner, so the bot can answer with the work
+    //   name rather than whatever personal name Telegram reports.
+    //
+    //   The real value is verification: until now the only way to find out
+    //   whether the admin pasted the right chat ID was to wait for a live
+    //   booking and see if it arrived. A wrong digit failed silently — and
+    //   silently means a practitioner sitting there believing she's on call.
+    //   Now /myid answers "linked as X" the moment it's true.
+    let linkedName = null;
+    try {
+        const linked = await (0, firestore_2.getFirestore)()
+            .collection("therapists")
+            .where("telegramChatId", "in", [String(chatId), chatId])
+            .limit(1)
+            .get();
+        if (!linked.empty) {
+            const d = linked.docs[0].data();
+            linkedName = d.name ?? linked.docs[0].id;
+        }
+    }
+    catch (err) {
+        // Never let the lookup break the reply — an unlinked answer is still
+        // useful, a silent bot is not.
+        v2_1.logger.warn("[telegramWebhook] linked-therapist lookup failed", err);
+    }
+    // Greet by WORK name when we know it — the practitioner's personal
+    // Telegram name is not the name she is known by here.
+    const greetName = linkedName ?? fromName;
     let reply;
     if (text === "/start") {
-        reply = [
-            `Hi ${fromName}! 👋`,
-            "",
-            "I'm the SunRed booking bot.",
-            "Send /myid to get your chat ID — you'll need to give it",
-            "to the admin so they can route bookings to you.",
-        ].join("\n");
+        reply = linkedName
+            ? [
+                `Hi ${linkedName}! 👋`,
+                "",
+                "You're already linked to SunRed dispatch.",
+                "You'll get a message here each time a booking is",
+                "assigned to you. Send /myid to check your link.",
+            ].join("\n")
+            : [
+                `Hi ${greetName}! 👋`,
+                "",
+                "I'm the SunRed booking bot.",
+                "Send /myid to get your chat ID — you'll need to give it",
+                "to the admin so they can route bookings to you.",
+            ].join("\n");
     }
     else if (text === "/myid" || text === "/id") {
-        reply = [
-            `Your chat ID is:`,
-            ``,
-            `${chatId}`,
-            ``,
-            `Copy this number and send it to the SunRed admin.`,
-            `Once linked, you'll get a DM from this bot every time`,
-            `a customer books your service.`,
-        ].join("\n");
+        reply = linkedName
+            ? [
+                `✅ Linked as: ${linkedName}`,
+                ``,
+                `Your chat ID is:`,
+                ``,
+                `${chatId}`,
+                ``,
+                `Dispatch is set up — you'll get a message here every`,
+                `time a customer books your service. Nothing else to do.`,
+            ].join("\n")
+            : [
+                `Your chat ID is:`,
+                ``,
+                `${chatId}`,
+                ``,
+                `Copy this number and send it to the SunRed admin.`,
+                `Once linked, you'll get a DM from this bot every time`,
+                `a customer books your service.`,
+                ``,
+                `Send /myid again after the admin adds it — it will say`,
+                `"Linked" once dispatch is working.`,
+            ].join("\n");
     }
     else if (text.startsWith("/")) {
         reply = "Unknown command. Try /myid to get your chat ID.";
