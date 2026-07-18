@@ -24,6 +24,8 @@ import { Crown, MagnifyingGlass } from "phosphor-react";
 import { adminColor, adminFont, adminFieldSx } from "@/theme/adminTheme";
 import { logAdminAction } from "@/utils/auditLog";
 import { normPhone } from "@/utils/phoneCountry";
+// 🆕 28x.55 — mint the guest's login (username = SRD code, password = phone).
+import { adminCreateCustomerAccount } from "@/utils/adminCreateAccount";
 import { pointsFor, pointsValueTHB, sunPointEarnPerTHB } from "@/config/anniversary";
 import {
   membershipFor,
@@ -69,6 +71,11 @@ const AdminMembersPage: React.FC = () => {
   const [stats, setStats] = useState<Record<string, CustStat>>({});
   const [history, setHistory] = useState<Record<string, BookingLite[]>>({});
   const [openPhone, setOpenPhone] = useState<string | null>(null);
+  // 🆕 28x.55 — credentials just minted for a member, keyed by phone, so the
+  //   concierge can read them off the row and hand them to the guest.
+  const [createdCreds, setCreatedCreds] = useState<
+    Record<string, { username: string; password: string }>
+  >({});
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   // 🆕 28x.38 — a booking card links here as /admin/members?q=<phone>, so the
@@ -326,6 +333,30 @@ const AdminMembersPage: React.FC = () => {
     finally { setSaving(false); }
   };
 
+  // 🆕 28x.55 (founder: "ยูสเซอร์ลูกค้า SRD-… รหัส <เบอร์> ให้เข้าตามนี้") — mint the
+  //   guest's actual login so the membership we issued can be used: the SRD code
+  //   is the username, their phone is the password.
+  const createLogin = async (key: string) => {
+    const cur = members[key]; if (!cur) return;
+    setSaving(true);
+    try {
+      const res = await adminCreateCustomerAccount({
+        phone: key,
+        code: cur.code,
+        name: cur.name,
+      });
+      setCreatedCreds((p) => ({
+        ...p,
+        [key]: { username: res.username, password: res.password },
+      }));
+      toast.success(`สร้างบัญชีแล้ว · ${res.username} / ${res.password}`);
+    } catch (e) {
+      const msg = (e as { message?: string })?.message ?? "";
+      console.error("[members] createLogin failed", e);
+      toast.error(msg || "สร้างบัญชีไม่สำเร็จ");
+    } finally { setSaving(false); }
+  };
+
   const upgrade = async (key: string) => {
     const cur = members[key]; if (!cur) return;
     const to = autoTierFor(key);
@@ -579,6 +610,12 @@ const AdminMembersPage: React.FC = () => {
                           sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: adminColor.muted, borderColor: adminColor.line2 }}>
                           แก้ไข
                         </Button>
+                        {/* 🆕 28x.55 — mint the guest's login (SRD code + phone). */}
+                        <Button size="small" variant="outlined" disabled={saving}
+                          onClick={() => void createLogin(phone)}
+                          sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: adminColor.green, borderColor: adminColor.green }}>
+                          สร้างบัญชี
+                        </Button>
                         {/* 🆕 28w.96 — open this member's real reservations. */}
                         <Button size="small" variant="outlined"
                           onClick={() => setOpenPhone((p) => (p === phone ? null : phone))}
@@ -589,6 +626,40 @@ const AdminMembersPage: React.FC = () => {
                     )}
                   </Box>
                 </Box>
+
+                {/* 🆕 28x.55 — the credentials just minted, ready to hand over. */}
+                {createdCreds[phone] && (
+                  <Box
+                    sx={{
+                      mt: 1, p: "10px 12px", borderRadius: "10px",
+                      background: `${adminColor.green}14`,
+                      border: `1px solid ${adminColor.green}55`,
+                      display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1,
+                    }}
+                  >
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: adminColor.green }}>
+                        บัญชีลูกค้า · ส่งให้ลูกค้าได้เลย
+                      </Typography>
+                      <Typography sx={{ fontFamily: "ui-monospace, monospace", fontSize: 13, fontWeight: 800, color: adminColor.text, mt: 0.3 }}>
+                        ยูสเซอร์ {createdCreds[phone].username} · รหัส {createdCreds[phone].password}
+                      </Typography>
+                    </Box>
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        const c = createdCreds[phone];
+                        void navigator.clipboard?.writeText(
+                          `sunred.vip\nยูสเซอร์: ${c.username}\nรหัสผ่าน: ${c.password}`,
+                        );
+                        toast.success("คัดลอกแล้ว");
+                      }}
+                      sx={{ textTransform: "none", fontWeight: 800, fontSize: 12, color: adminColor.green, flexShrink: 0 }}
+                    >
+                      คัดลอก
+                    </Button>
+                  </Box>
+                )}
 
                 {/* 🆕 28w.96 (founder: "admin/members กดดูประวัติการจองได้ ยอดสะสม
                     เครดิตได้") — the reservations behind the numbers. Shown from the

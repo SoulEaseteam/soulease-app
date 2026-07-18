@@ -1209,6 +1209,127 @@ export const resetCustomerPassword = onCall(
 );
 
 // ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.55 (founder: "ยูสเซอร์ลูกค้า SRD-V9PN4H รหัส 0641185367
+//   ให้เข้าตามนี้") — the concierge enrols a member (SRD- code) but that only
+//   wrote a record; the guest still had to go register themselves, so most
+//   issued memberships were never used. This creates the login FOR them:
+//     username = their SRD- code   ·   password = their phone digits
+//   The synthetic auth address mirrors the client's resolveLoginId() username
+//   branch (`<handle>@user.sunred.vip`), so the guest can sign in by typing the
+//   SRD code on the normal login page. `users.phone` is stored in the SAME
+//   normalised form as the membership key, which is what links their tier /
+//   points / history to the account.
+// ─────────────────────────────────────────────────────────────
+const USERNAME_ALIAS_DOMAIN = "user.sunred.vip";
+
+/** Mirror of the client's normPhone() so the stored phone matches the member key. */
+function normPhoneServer(raw: string): string {
+  const digits = String(raw ?? "").replace(/\D/g, "");
+  if (digits.startsWith("66") && digits.length >= 11) return "0" + digits.slice(2);
+  return digits;
+}
+
+export const createCustomerAccount = onCall(
+  { region: "asia-southeast1" },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = getFirestore();
+    const adminDoc = await db.collection("admins").doc(request.auth.uid).get();
+    if (!adminDoc.exists) {
+      throw new HttpsError("permission-denied", "Admin only.");
+    }
+
+    const data = request.data as
+      | { phone?: string; code?: string; name?: string }
+      | undefined;
+    const phone = normPhoneServer(data?.phone ?? "");
+    const code = String(data?.code ?? "").trim().toUpperCase();
+    const name = String(data?.name ?? "").trim();
+
+    // Password = phone digits; Firebase needs ≥ 6 characters.
+    if (phone.length < 6) {
+      throw new HttpsError(
+        "invalid-argument",
+        "A valid phone number is required — it becomes the password."
+      );
+    }
+    // The code doubles as the username, so it must satisfy the client's
+    // USERNAME_RE (/^[a-z][a-z0-9._-]{2,19}$/) once lower-cased.
+    const handle = code.toLowerCase();
+    if (!/^[a-z][a-z0-9._-]{2,19}$/.test(handle)) {
+      throw new HttpsError(
+        "invalid-argument",
+        "A valid member code (SRD-…) is required."
+      );
+    }
+
+    // Don't mint a second account for someone who already has one on this phone.
+    const existing = await db
+      .collection("users")
+      .where("phone", "==", phone)
+      .limit(1)
+      .get();
+    if (!existing.empty) {
+      throw new HttpsError(
+        "already-exists",
+        "This phone already has an account. Use Reset password instead."
+      );
+    }
+
+    const authEmail = `${handle}@${USERNAME_ALIAS_DOMAIN}`;
+    let uid: string;
+    try {
+      const rec = await getAuth().createUser({
+        email: authEmail,
+        password: phone,
+        ...(name ? { displayName: name } : {}),
+      });
+      uid = rec.uid;
+    } catch (err) {
+      const errCode = (err as { code?: string }).code;
+      if (errCode === "auth/email-already-exists") {
+        throw new HttpsError(
+          "already-exists",
+          "This member code already has a login."
+        );
+      }
+      throw err;
+    }
+
+    await db.collection("users").doc(uid).set(
+      {
+        // Real identifiers under their real names (never the synthetic alias).
+        username: handle,
+        phone,
+        loginKind: "username",
+        role: "user",
+        ...(name ? { displayName: name } : {}),
+        createdAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    await db.collection("auditLogs").add({
+      action: "user.account_created",
+      byUid: request.auth.uid,
+      targetUid: uid,
+      detail: { code, phone },
+      at: FieldValue.serverTimestamp(),
+    });
+    logger.info("[createCustomerAccount] created", {
+      targetUid: uid,
+      code,
+      byUid: request.auth.uid,
+    });
+
+    // Return the exact credentials the concierge should hand to the guest.
+    return { ok: true, uid, username: code, password: phone };
+  }
+);
+
+// ─────────────────────────────────────────────────────────────
 // 🆕 Round 28x.31 (founder: "สถานะบนหน้าเว็บไม่เปลี่ยน") — sync a
 //   therapist's live BUSY status from her active jobs onto her doc.
 //
