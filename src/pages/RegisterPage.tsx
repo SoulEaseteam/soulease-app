@@ -16,6 +16,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from "../lib/firebase";
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+import { isReservedIdentity, RESERVED_IDENTITY_MESSAGE } from '@/config/reservedIdentity';
 import { getErrorMessage } from "@/utils/getErrorMessage";
 import { resolveLoginId } from "@/utils/loginId";
 import { useTranslation } from "react-i18next";
@@ -88,6 +89,17 @@ const RegisterPage: React.FC = () => {
     }
     if (password !== confirmPassword) {
       toast.error(t('auth.register.error.passwordMismatch', 'Passwords do not match.'));
+      return;
+    }
+
+    // 🆕 Round 28x.60 — refuse a signup that claims the shop's own identity.
+    //   Both branches matter: `phone` becomes the login alias AND is what
+    //   membership/bookings key on, and a `username` of "sunred" becomes the
+    //   public byline on reviews (ReviewPage derives userName from the account).
+    if (isReservedIdentity({ name: resolved.canonical, phone: resolved.canonical })) {
+      toast.error(
+        t('auth.register.error.reservedIdentity', RESERVED_IDENTITY_MESSAGE)
+      );
       return;
     }
 

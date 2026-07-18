@@ -45,6 +45,41 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // ── reserved shop identity (28x.60) ───────────────────────────
+    // Founder: "บล๊อค ชื่อ และเบอร์ นี้ ห้าม ใครแอบอ้าง" — nobody may write the
+    // shop's own name or number onto a booking, profile or review. A guest
+    // "SunRed" with the shop's number on a 2am dispatch card is the exact
+    // shape a social-engineering attempt takes against an outcall business.
+    //
+    // Rules-language has no phone normalisation, so this catches the
+    // CANONICAL forms only: any string containing the subscriber digits
+    // (covers 0634350987, +66634350987, 66634350987) and any casing of
+    // "sunred". Separator-laden variants ("063-435-0987") are caught by the
+    // client check in src/config/reservedIdentity.ts, which normalises
+    // properly. Coarse here, but unforgeable — the client check is not.
+    //
+    // ⚠️ KEEP IN SYNC with src/config/reservedIdentity.ts.
+    // Both are matches() — deliberately no anchors, so a substring hit is
+    // enough and a typo can't accidentally widen this into a deny-all.
+    function isReservedName(v) {
+      return v is string && v.lower().matches('.*sunred.*');
+    }
+    function isReservedPhone(v) {
+      return v is string && v.matches('.*634350987.*');
+    }
+    /** True when an incoming write claims the shop's identity. Admins are
+     *  exempt — View's own account legitimately carries both. */
+    function claimsReservedIdentity(d) {
+      return !isAdmin() && (
+        (('contactName'  in d) && isReservedName(d.contactName))
+        || (('customerName' in d) && isReservedName(d.customerName))
+        || (('displayName'  in d) && isReservedName(d.displayName))
+        || (('username'     in d) && isReservedName(d.username))
+        || (('userName'     in d) && isReservedName(d.userName))
+        || (('phone'        in d) && isReservedPhone(d.phone))
+      );
+    }
+
     /** True if the signed-in user owns this therapist doc.
      *  Matches by docId, by `uid` field, or by `email` field. */
     function isTherapistOwner(therapistId) {
@@ -126,12 +161,16 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId)
                     && (!('role' in request.resource.data)
-                        || request.resource.data.role == 'user');
+                        || request.resource.data.role == 'user')
+                    // 🆕 28x.60 — no signing up AS the shop.
+                    && !claimsReservedIdentity(request.resource.data);
       allow update: if isAdmin()
                     || (isOwner(userId)
                         && request.resource.data.diff(resource.data)
                              .affectedKeys()
-                             .hasOnly(userEditableKeys()));
+                             .hasOnly(userEditableKeys())
+                        // 🆕 28x.60 — nor renaming yourself into the shop later.
+                        && !claimsReservedIdentity(request.resource.data));
       allow delete: if isAdmin();
     }
 
@@ -215,7 +254,10 @@ service cloud.firestore {
       allow list: if isAdmin()
                   || (isSignedIn() && resource.data.userId == request.auth.uid)
                   || (isSignedIn() && resource.data.therapistId == request.auth.uid);
-      allow create: if request.resource.data.status in ['pending', 'confirmed'];
+      // 🆕 28x.60 — plus: may not claim the shop's own name/number. This is the
+      //   only unforgeable place to enforce it; the booking page's check is UX.
+      allow create: if request.resource.data.status in ['pending', 'confirmed']
+                    && !claimsReservedIdentity(request.resource.data);
       allow update: if isAdmin()
                     || (isSignedIn()
                         && resource.data.userId == request.auth.uid
@@ -248,7 +290,11 @@ service cloud.firestore {
                     && request.resource.data.status == 'pending'
                     && (!('comment' in request.resource.data)
                         || (request.resource.data.comment is string
-                            && request.resource.data.comment.size() <= 2000));
+                            && request.resource.data.comment.size() <= 2000))
+                    // 🆕 28x.60 — userName is the public byline on the review
+                    //   list; a review signed "SunRed" reads as the shop
+                    //   vouching for itself.
+                    && !claimsReservedIdentity(request.resource.data);
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
@@ -401,8 +447,12 @@ service cloud.firestore {
     // checkout-fill stage). Admin reads/lists for follow-up.
     match /abandoned_bookings/{cartId} {
       allow read: if isAdmin();
-      allow create: if true;
-      allow update: if true; // browser bumps lastActivityAt as user types
+      // 🆕 28x.60 — the cart snapshot carries the same free-text contactName
+      //   and phone as the booking, is written BEFORE submit, and is shown on
+      //   the admin follow-up screen. Same reserved-identity guard, or the
+      //   booking-create block is just a wall with a door beside it.
+      allow create: if !claimsReservedIdentity(request.resource.data);
+      allow update: if !claimsReservedIdentity(request.resource.data); // browser bumps lastActivityAt as user types
       allow delete: if isAdmin();
     }
 

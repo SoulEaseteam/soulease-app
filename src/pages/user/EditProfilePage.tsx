@@ -14,6 +14,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
+import { isReservedIdentity, RESERVED_IDENTITY_MESSAGE } from "@/config/reservedIdentity";
 // 🆕 Round 28r52 — Phase 3.1 responsive card cap. This is a narrow
 //   form card, not a phone-shell page — it stays comfortable at
 //   ~500px on tablet+ instead of the wider content column.
@@ -56,6 +57,15 @@ const EditProfilePage: React.FC = () => {
     if (!user?.uid) return;
     if (!displayName.trim() || !phone.trim()) {
       toast.warn("Please fill in all fields");
+      return;
+    }
+
+    // 🆕 Round 28x.60 — a guest can't rename themselves into the shop. This is
+    //   the quieter half of the impersonation surface: signup can't set a name,
+    //   but this page can, and the result shows up on dispatch cards and review
+    //   bylines. firestore.rules enforces it server-side too.
+    if (isReservedIdentity({ name: displayName, phone })) {
+      toast.error(RESERVED_IDENTITY_MESSAGE);
       return;
     }
 

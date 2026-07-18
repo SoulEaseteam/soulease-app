@@ -32,6 +32,7 @@ import {
   doc,
 } from "firebase/firestore";
 import { normPhone } from "@/utils/phoneCountry";
+import { isReservedIdentity, RESERVED_IDENTITY_MESSAGE } from "@/config/reservedIdentity";
 import { toast } from "react-toastify";
 // Round 28s4 — Direct `dayjs` import removed; all time math now goes
 // through `@/utils/time` helpers anchored at Asia/Bangkok.
@@ -1087,6 +1088,20 @@ const BookingFlowPage: React.FC = () => {
       //   uses). Admin-initiated bookings bypass, same as the other
       //   guards above — a founder coordinating an exception offline
       //   shouldn't be blocked by her own blocklist.
+      // 🆕 Round 28x.60 (founder: "บล๊อค ชื่อ และเบอร์ นี้ ห้าม ใครแอบอ้าง") — a guest
+      //   may not book under the shop's own name or number. Checked BEFORE the
+      //   blocklist read because this one needs no network and must not fail
+      //   open: unlike a blocklist hiccup, an impersonated dispatch card is the
+      //   failure we're actually trying to prevent. firestore.rules enforces the
+      //   same thing server-side for anyone bypassing this page.
+      if (!isAdminBooking && isReservedIdentity({ name: form.contactName, phone: form.customerPhone })) {
+        toast.error(
+          t("booking.error.reservedIdentity", RESERVED_IDENTITY_MESSAGE)
+        );
+        setSubmitting(false);
+        return;
+      }
+
       if (!isAdminBooking) {
         try {
           const blockSnap = await getDoc(
