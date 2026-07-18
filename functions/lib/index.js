@@ -85,7 +85,9 @@ function therapistDmEnabled(therapistId) {
 // ─────────────────────────────────────────────────────────────
 // Helper: ส่งข้อความเข้า Telegram (reuse ใน multiple functions)
 // ─────────────────────────────────────────────────────────────
-async function sendTelegram(token, chatId, text) {
+async function sendTelegram(token, chatId, text, 
+// 🆕 28x.64 — optional ACCEPT/DECLINE buttons on the dispatch DM.
+keyboard) {
     try {
         const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
             method: "POST",
@@ -93,6 +95,7 @@ async function sendTelegram(token, chatId, text) {
             body: JSON.stringify({
                 chat_id: chatId,
                 text: text.slice(0, 4000),
+                ...(keyboard ? { reply_markup: { inline_keyboard: keyboard } } : {}),
                 // 🆕 Round 28b56 (founder 2026-05-05) — Reverted Round 28b55.
                 //   Founder feedback: "ไม่เอา" preview card. Keep message
                 //   compact — URL stays clickable as plain blue link in
@@ -140,12 +143,48 @@ async function isTelegramEnabled() {
         return true; // fail open — never let a settings-read hiccup swallow a real alert
     }
 }
-async function sendTelegramIfEnabled(token, chatId, text) {
+async function sendTelegramIfEnabled(token, chatId, text, keyboard) {
     if (!(await isTelegramEnabled())) {
         v2_1.logger.info("[sendTelegramIfEnabled] skipped — telegramEnabled=false");
         return { ok: true, body: "skipped: telegramEnabled=false" };
     }
-    return sendTelegram(token, chatId, text);
+    return sendTelegram(token, chatId, text, keyboard);
+}
+/** Dismiss the button's loading spinner, optionally with a toast. */
+async function answerCallback(token, callbackQueryId, text) {
+    try {
+        await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                callback_query_id: callbackQueryId,
+                ...(text ? { text: text.slice(0, 200), show_alert: false } : {}),
+            }),
+        });
+    }
+    catch (err) {
+        v2_1.logger.warn("[answerCallback] failed", err);
+    }
+}
+/** Replace a sent message in place — used to swap the buttons for an outcome. */
+async function editTelegramMessage(token, chatId, messageId, text) {
+    try {
+        await fetch(`https://api.telegram.org/bot${token}/editMessageText`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                chat_id: chatId,
+                message_id: messageId,
+                text: text.slice(0, 4000),
+                disable_web_page_preview: true,
+                // No reply_markup → the buttons disappear, so a job can't be
+                // double-answered from an old message still on screen.
+            }),
+        });
+    }
+    catch (err) {
+        v2_1.logger.warn("[editTelegramMessage] failed", err);
+    }
 }
 exports.notifyBooking = (0, https_1.onCall)({
     secrets: [TELEGRAM_BOT_TOKEN],
@@ -586,11 +625,21 @@ const formatBookingForTherapist = (bookingId, b) => {
         `📞 เบอร์ลูกค้า: ${b.phone ?? "—"}`,
         `🌐 ภาษาลูกค้า: ${(b.language ?? "—").toUpperCase()}`,
         "",
-        `ยืนยันรับงานกับแอดมินตามปกติ (บอทตัวนี้ส่งแจ้งเตือนอย่างเดียว`,
-        `ตอบกลับในแชทนี้ไม่ได้)`,
+        // 🆕 28x.64 — replaces the 28x.63 line saying the bot can't be replied to.
+        //   That was true then and is false now; leaving it would tell her to
+        //   ignore the very buttons below it.
+        `กดปุ่มด้านล่างเพื่อตอบรับงานค่ะ · ตอบภายใน 5 นาที`,
+        `ถ้ากดไม่ได้ ติดต่อแอดมินตามปกติ`,
     ].filter((l) => l.length > 0);
     return lines.join("\n");
 };
+/** 🆕 28x.64 — the ACCEPT/DECLINE keyboard for a specific job. */
+const jobKeyboard = (bookingId) => [
+    [
+        { text: "✅ รับงาน", callback_data: `job:accept:${bookingId}` },
+        { text: "❌ ไม่รับ", callback_data: `job:decline:${bookingId}` },
+    ],
+];
 exports.onBookingCreate = (0, firestore_1.onDocumentCreated)({
     document: "bookings/{bookingId}",
     region: "asia-southeast1",
@@ -706,7 +755,7 @@ exports.onBookingCreate = (0, firestore_1.onDocumentCreated)({
             const chatId = therapist?.telegramChatId;
             if (chatId) {
                 const therapistText = formatBookingForTherapist(bookingId, data);
-                const therapistResult = await sendTelegramIfEnabled(token, String(chatId), therapistText);
+                const therapistResult = await sendTelegramIfEnabled(token, String(chatId), therapistText, jobKeyboard(bookingId));
                 await (0, firestore_2.getFirestore)()
                     .collection("telegramLogs")
                     .add({
@@ -717,6 +766,18 @@ exports.onBookingCreate = (0, firestore_1.onDocumentCreated)({
                     source: "onBookingCreate.therapist",
                     at: firestore_2.FieldValue.serverTimestamp(),
                 });
+                // 🆕 28x.64 — stamp the booking so the Tonight board can tell
+                //   "waiting for her answer" apart from "she was never asked".
+                //   Without this the board would show ⏳ on every assigned job,
+                //   including the majority that get no DM at all because their
+                //   practitioner isn't on the pilot — i.e. it would claim we're
+                //   waiting on an answer that can never arrive.
+                if (therapistResult.ok) {
+                    await (0, firestore_2.getFirestore)()
+                        .collection("bookings")
+                        .doc(bookingId)
+                        .update({ dispatchDmSentAt: firestore_2.FieldValue.serverTimestamp() });
+                }
             }
             else {
                 v2_1.logger.info("[onBookingCreate] therapist has no telegramChatId", {
@@ -868,6 +929,128 @@ exports.recoverAbandonedBookings = (0, scheduler_1.onSchedule)({
     }
     v2_1.logger.info("[recoverAbandonedBookings] alerted", { alerted });
 });
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.64 (founder: "ทำ ACCEPT/DECLINE เลย") — the practitioner
+//   answers a job from the DM, and View sees it on the Tonight board without
+//   phoning anyone.
+//
+// Design note — this does NOT touch `dispatchState`. That field drives
+// syncTherapistBusyStatus, onBookingDispatchChange, alertOverdueSessions and
+// the Tonight FLOW table, and its ACTIVE_STATES list is duplicated in two
+// places that already disagree (neither includes "enroute"). Adding members to
+// that enum to record an answer would risk a practitioner silently dropping out
+// of the busy calculation. `therapistResponse` is a parallel field: it records
+// who answered what, and changes nothing about the existing lifecycle.
+//
+// A decline sets `needsAdminReview` + `reviewReason`, which the Tonight board
+// already renders as a red banner — so the warning path is reused, not rebuilt.
+async function handleJobCallback(q, token) {
+    const data = q.data ?? "";
+    const parts = data.split(":");
+    if (parts[0] !== "job" || parts.length < 3) {
+        await answerCallback(token, q.id);
+        return;
+    }
+    const action = parts[1]; // accept | decline
+    const bookingId = parts.slice(2).join(":"); // ids don't contain ":", but be safe
+    const pressedBy = q.from?.id;
+    const msgChatId = q.message?.chat?.id;
+    const msgId = q.message?.message_id;
+    const db = (0, firestore_2.getFirestore)();
+    if (action !== "accept" && action !== "decline") {
+        await answerCallback(token, q.id);
+        return;
+    }
+    try {
+        const ref = db.collection("bookings").doc(bookingId);
+        const snap = await ref.get();
+        if (!snap.exists) {
+            await answerCallback(token, q.id, "ไม่พบงานนี้ในระบบ");
+            return;
+        }
+        const b = snap.data();
+        // ── Identity check. Without this, anyone who guessed a booking id could
+        //    accept another practitioner's job — the callback_data is not a secret,
+        //    it travels in a message we send. Verify the presser IS the assigned
+        //    practitioner, by her linked chat id.
+        let assignedChatId = null;
+        if (b.therapistId) {
+            const tSnap = await db.collection("therapists").doc(b.therapistId).get();
+            const t = tSnap.data();
+            // trim(): the chat id is pasted by hand into the admin form. A stray
+            // space would make this comparison fail and tell the right practitioner
+            // the job isn't hers — a confusing dead end at 2am.
+            assignedChatId =
+                t?.telegramChatId != null ? String(t.telegramChatId).trim() : null;
+        }
+        if (!assignedChatId || String(pressedBy).trim() !== assignedChatId) {
+            v2_1.logger.warn("[jobCallback] presser is not the assigned therapist", {
+                bookingId,
+                pressedBy,
+                therapistId: b.therapistId,
+            });
+            await answerCallback(token, q.id, "งานนี้ไม่ได้จ่ายให้คุณค่ะ");
+            return;
+        }
+        // ── Already answered → say so rather than silently overwriting. Telegram
+        //    can redeliver an update, and an old message may still be on screen.
+        if (b.therapistResponse) {
+            const wasAccepted = b.therapistResponse === "accepted";
+            await answerCallback(token, q.id, wasAccepted ? "งานนี้กดรับไปแล้วค่ะ" : "งานนี้กดไม่รับไปแล้วค่ะ");
+            if (msgChatId && msgId) {
+                await editTelegramMessage(token, msgChatId, msgId, `${wasAccepted ? "✅ รับงานแล้ว" : "❌ ไม่รับงาน"} · ตอบไปก่อนหน้านี้แล้ว`);
+            }
+            return;
+        }
+        // ── A cancelled job can't be accepted.
+        if (b.status === "cancelled" || b.status === "canceled") {
+            await answerCallback(token, q.id, "งานนี้ถูกยกเลิกไปแล้วค่ะ");
+            return;
+        }
+        const accepted = action === "accept";
+        await ref.update({
+            therapistResponse: accepted ? "accepted" : "declined",
+            therapistRespondedAt: firestore_2.FieldValue.serverTimestamp(),
+            // A decline needs View's attention NOW — reuse the existing red banner.
+            ...(accepted
+                ? {}
+                : {
+                    needsAdminReview: true,
+                    reviewReason: b.reviewReason
+                        ? `${b.reviewReason} · หมอนวดกดไม่รับงาน`
+                        : "หมอนวดกดไม่รับงาน",
+                }),
+        });
+        // ── Confirm to the practitioner, in place, buttons removed.
+        await answerCallback(token, q.id, accepted ? "รับงานแล้วค่ะ" : "แจ้งแอดมินแล้วค่ะ");
+        if (msgChatId && msgId) {
+            await editTelegramMessage(token, msgChatId, msgId, accepted
+                ? `✅ รับงานแล้ว · ${b.date ?? ""} ${b.time ?? ""}\n\nแอดมินเห็นแล้วว่าคุณรับงานนี้\nเดินทางได้เลยค่ะ`
+                : `❌ ไม่รับงาน\n\nแจ้งแอดมินเรียบร้อยแล้ว จะจ่ายงานให้คนอื่นต่อค่ะ`);
+        }
+        // ── Tell the admin group either way. An accept is reassurance; a decline
+        //    is the one that needs someone to act, so it says so loudly.
+        const who = b.therapistName ?? b.therapistId ?? "หมอนวด";
+        const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
+        await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, accepted
+            ? `✅ ${who} รับงานแล้ว · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}`
+            : `⚠️ ${who} กดไม่รับงาน · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}\nต้องจ่ายงานให้คนอื่น`);
+        await db.collection("telegramLogs").add({
+            bookingId,
+            therapistId: b.therapistId ?? null,
+            ok: true,
+            response: accepted ? "accepted" : "declined",
+            source: "jobCallback",
+            at: firestore_2.FieldValue.serverTimestamp(),
+        });
+        v2_1.logger.info("[jobCallback] recorded", { bookingId, action, pressedBy });
+    }
+    catch (err) {
+        v2_1.logger.error("[jobCallback] failed", err);
+        // Never leave the button spinning — she'd tap it again.
+        await answerCallback(token, q.id, "ระบบขัดข้อง ติดต่อแอดมินค่ะ");
+    }
+}
 exports.telegramWebhook = (0, https_1.onRequest)({
     region: "asia-southeast1",
     secrets: [TELEGRAM_BOT_TOKEN],
@@ -884,6 +1067,12 @@ exports.telegramWebhook = (0, https_1.onRequest)({
         return;
     }
     const update = req.body;
+    // 🆕 Round 28x.64 — ACCEPT / DECLINE button presses.
+    if (update?.callback_query) {
+        await handleJobCallback(update.callback_query, token);
+        res.status(200).send("ok");
+        return;
+    }
     const chatId = update?.message?.chat?.id;
     const text = (update?.message?.text ?? "").trim();
     const fromName = update?.message?.from?.first_name ??
@@ -988,11 +1177,14 @@ exports.telegramWebhook = (0, https_1.onRequest)({
         // 🆕 28x.63 — was silent. The old job DM told practitioners to "Reply
         //   ACCEPT or DECLINE", so some will still try; silence let them believe
         //   they had taken the job. One short line, private chats only.
+        // 🆕 28x.64 — the bot now DOES take an answer, but only via the buttons
+        //   on the job message. Point her there instead of at the admin.
         reply = [
-            "บอทนี้ส่งแจ้งเตือนอย่างเดียวค่ะ ตอบกลับตรงนี้แอดมินไม่เห็น",
-            "ยืนยันรับงานกับแอดมินตามปกตินะคะ",
+            "พิมพ์ตอบตรงนี้แอดมินไม่เห็นค่ะ",
+            "ถ้าจะรับงาน ให้กดปุ่ม ✅ รับงาน / ❌ ไม่รับ",
+            "ที่อยู่ในข้อความแจ้งงานนะคะ",
             "",
-            "— This bot only sends alerts. Please confirm jobs with the admin.",
+            "— Please use the buttons on the job message.",
         ].join("\n");
     }
     else {

@@ -95,6 +95,13 @@ interface Job {
   expectedEndAt?: Timestamp;
   needsAdminReview?: boolean;
   reviewReason?: string;
+  // 🆕 28x.64 — the practitioner's own answer from the Telegram job DM.
+  //   Deliberately separate from dispatchState: this records whether she
+  //   agreed to take the job, not where she is in the session lifecycle.
+  therapistResponse?: "accepted" | "declined";
+  therapistRespondedAt?: Timestamp;
+  /** Set only when the job DM actually reached her — see onBookingCreate. */
+  dispatchDmSentAt?: Timestamp;
 }
 
 const nameOf = (b: Job) => b.userName || b.contactName || b.customerName || "—";
@@ -305,6 +312,26 @@ const AdminTonightPage: React.FC = () => {
                       )}
                     </Typography>
                   </Box>
+                )}
+
+                {/* 🆕 28x.64 — did the practitioner answer the dispatch DM?
+                    Shown above the review banner because on a decline both
+                    appear, and "she said no" is the actionable half. */}
+                {b.therapistResponse === "accepted" && (
+                  <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: adminColor.green, mt: 0.5 }}>
+                    ✅ หมอนวดกดรับงานแล้ว{b.therapistRespondedAt ? ` · ${dayjs(b.therapistRespondedAt.toDate()).format("HH:mm")}` : ""}
+                  </Typography>
+                )}
+                {b.therapistResponse === "declined" && (
+                  <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 800, color: adminColor.red, mt: 0.5 }}>
+                    ❌ หมอนวดกดไม่รับงาน — ต้องจ่ายให้คนอื่น{b.therapistRespondedAt ? ` · ${dayjs(b.therapistRespondedAt.toDate()).format("HH:mm")}` : ""}
+                  </Typography>
+                )}
+                {/* 🆕 28x.64 — assigned to someone on the pilot, no answer yet. */}
+                {!b.therapistResponse && b.dispatchDmSentAt && (
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: adminColor.dim, mt: 0.5 }}>
+                    ⏳ ส่งแจ้งงานแล้ว · ยังไม่กดตอบรับ
+                  </Typography>
                 )}
 
                 {b.needsAdminReview && (
