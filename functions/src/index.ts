@@ -750,9 +750,57 @@ const formatBookingForAdmin = (
 };
 
 
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.69 (founder, on the CBODY model: "โดยที่ไม่ต้องเข้าถึงความเป็น
+//   ส่วนตัวของอีกฝ่าย") — coarse area instead of a guest's exact address.
+//
+//   Mirrors the AREAS list on the near-me page. Anything unrecognised falls
+//   back to "กรุงเทพฯ" — deliberately NOT a truncated address, because a
+//   fragment like "Marriott Sukhumvit ห้อง" leaks the very thing being hidden.
+const BKK_AREAS: [string, string][] = [
+  ["sukhumvit", "สุขุมวิท"],
+  ["silom", "สีลม"],
+  ["sathorn", "สาทร"],
+  ["asok", "อโศก"],
+  ["asoke", "อโศก"],
+  ["nana", "นานา"],
+  ["thonglor", "ทองหล่อ"],
+  ["thong lo", "ทองหล่อ"],
+  ["phrom phong", "พร้อมพงษ์"],
+  ["phromphong", "พร้อมพงษ์"],
+  ["ploenchit", "เพลินจิต"],
+  ["chidlom", "ชิดลม"],
+  ["ari", "อารีย์"],
+  ["riverside", "ริมแม่น้ำ"],
+  ["ratchada", "รัชดา"],
+  ["siam", "สยาม"],
+  ["ekkamai", "เอกมัย"],
+  ["on nut", "อ่อนนุช"],
+  ["onnut", "อ่อนนุช"],
+  ["bangna", "บางนา"],
+  ["rama", "พระราม"],
+  ["pratunam", "ประตูน้ำ"],
+  ["victory", "อนุสาวรีย์"],
+  ["ratchaprasong", "ราชประสงค์"],
+];
+
+function coarseArea(b: BookingDocLite): string {
+  const hay = `${b.locationName ?? ""} ${b.address ?? ""}`.toLowerCase();
+  for (const [needle, thai] of BKK_AREAS) {
+    if (hay.includes(needle)) return thai;
+  }
+  return "กรุงเทพฯ";
+}
+
 const formatBookingForTherapist = (
   bookingId: string,
-  b: BookingDocLite
+  b: BookingDocLite,
+  // 🆕 28x.69 — masked until she accepts. Before that a practitioner needs
+  //   enough to decide (what, when, roughly where, how much) and nothing more.
+  //   The guest's exact address, map pin and phone are the shop's to hold until
+  //   someone has actually taken the job — and a declined job must not leave a
+  //   guest's address sitting in a stranger's chat history forever.
+  masked = false
 ): string => {
   const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
   const mapLink = b.mapUrl
@@ -774,22 +822,42 @@ const formatBookingForTherapist = (
   //   not offering it. The real workflow is View dispatching by hand, so the
   //   message now says that. If ACCEPT/DECLINE is wanted for real it needs the
   //   webhook to handle replies and write dispatchState — a separate round.
-  const lines = [
-    `🔔 งานใหม่ · ${refCode}`,
-    "",
-    `🧖 ${b.serviceName ?? "—"} · ${b.duration ?? "?"} นาที`,
-    `📅 ${b.date ?? "—"}  🕐 ${b.time ?? "—"}`,
-    `📍 ${b.address ?? "—"}`,
-    mapLink ? mapLink.replace("🗺 Map:", "🗺 แผนที่:") : "",
-    `📞 เบอร์ลูกค้า: ${b.phone ?? "—"}`,
-    `🌐 ภาษาลูกค้า: ${(b.language ?? "—").toUpperCase()}`,
-    "",
-    // 🆕 28x.64 — replaces the 28x.63 line saying the bot can't be replied to.
-    //   That was true then and is false now; leaving it would tell her to
-    //   ignore the very buttons below it.
-    `กดปุ่มด้านล่างเพื่อตอบรับงานค่ะ · ตอบภายใน 5 นาที`,
-    `ถ้ากดไม่ได้ ติดต่อแอดมินตามปกติ`,
-  ].filter((l) => l.length > 0);
+  const money =
+    typeof b.totalPrice === "number"
+      ? `💰 รวม ${Math.round(b.totalPrice).toLocaleString()} ฿`
+      : "";
+
+  const lines = masked
+    ? [
+        `🔔 งานใหม่ · ${refCode}`,
+        "",
+        `🧖 ${b.serviceName ?? "—"} · ${b.duration ?? "?"} นาที`,
+        `📅 ${b.date ?? "—"}  🕐 ${b.time ?? "—"}`,
+        `📍 โซน: ${coarseArea(b)}`,
+        money,
+        `🌐 ภาษาลูกค้า: ${(b.language ?? "—").toUpperCase()}`,
+        "",
+        `กดปุ่มด้านล่างเพื่อตอบรับงานค่ะ · ตอบภายใน 5 นาที`,
+        `📍 ที่อยู่เต็ม แผนที่ และเบอร์ลูกค้า`,
+        `จะแสดงหลังกดรับงานค่ะ`,
+      ].filter((l) => l.length > 0)
+    : [
+        `🔔 งานใหม่ · ${refCode}`,
+        "",
+        `🧖 ${b.serviceName ?? "—"} · ${b.duration ?? "?"} นาที`,
+        `📅 ${b.date ?? "—"}  🕐 ${b.time ?? "—"}`,
+        `📍 ${b.address ?? "—"}`,
+        mapLink ? mapLink.replace("🗺 Map:", "🗺 แผนที่:") : "",
+        `📞 เบอร์ลูกค้า: ${b.phone ?? "—"}`,
+        `🌐 ภาษาลูกค้า: ${(b.language ?? "—").toUpperCase()}`,
+        money,
+        "",
+        // 🆕 28x.64 — replaces the 28x.63 line saying the bot can't be replied to.
+        //   That was true then and is false now; leaving it would tell her to
+        //   ignore the very buttons below it.
+        `กดปุ่มด้านล่างเพื่อตอบรับงานค่ะ · ตอบภายใน 5 นาที`,
+        `ถ้ากดไม่ได้ ติดต่อแอดมินตามปกติ`,
+      ].filter((l) => l.length > 0);
   return lines.join("\n");
 };
 
@@ -942,7 +1010,9 @@ export const onBookingCreate = onDocumentCreated(
           | undefined;
         const chatId = therapist?.telegramChatId;
         if (chatId) {
-          const therapistText = formatBookingForTherapist(bookingId, data);
+          // 🆕 28x.69 — masked: the address, map and phone are withheld until she
+          //   presses ✅. See formatBookingForTherapist.
+          const therapistText = formatBookingForTherapist(bookingId, data, true);
           const therapistResult = await sendTelegramIfEnabled(
             token,
             String(chatId),
@@ -1286,12 +1356,32 @@ async function handleJobCallback(
       accepted ? "รับงานแล้วค่ะ" : "แจ้งแอดมินแล้วค่ะ"
     );
     if (msgChatId && msgId) {
+      // 🆕 28x.69 — the reveal. Accepting swaps the masked card for the full
+      //   one: address, map pin and the guest's phone, in the same message she
+      //   is already looking at. Declining reveals nothing and leaves nothing
+      //   behind — the point of masking is that a job she turned down never
+      //   put a guest's address in her chat history.
+      const fullCard = formatBookingForTherapist(
+        bookingId,
+        snap.data() as BookingDocLite,
+        false
+      )
+        // Drop the two trailing prompt lines; the buttons are gone by now.
+        .split("\n")
+        .filter(
+          (l) =>
+            !l.startsWith("กดปุ่มด้านล่าง") && !l.startsWith("ถ้ากดไม่ได้")
+        )
+        .join("\n")
+        .replace(`🔔 งานใหม่ ·`, `✅ รับงานแล้ว ·`)
+        .trimEnd();
+
       await editTelegramMessage(
         token,
         msgChatId,
         msgId,
         accepted
-          ? `✅ รับงานแล้ว · ${b.date ?? ""} ${b.time ?? ""}\n\nแอดมินเห็นแล้วว่าคุณรับงานนี้\nเดินทางได้เลยค่ะ`
+          ? `${fullCard}\n\nแอดมินเห็นแล้วว่าคุณรับงานนี้ เดินทางได้เลยค่ะ`
           : `❌ ไม่รับงาน\n\nแจ้งแอดมินเรียบร้อยแล้ว จะจ่ายงานให้คนอื่นต่อค่ะ`
       );
     }
