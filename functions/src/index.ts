@@ -2412,6 +2412,92 @@ export const createTherapistLinkCode = onCall(
 //   authority, "/setjobchannel" there would silently redirect every unassigned
 //   job — zone, time, price — to a stranger's group. Same one-time-code shape
 //   as the practitioner link codes.
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.74 (founder: "My Bookings ก็ไม่ใช่งานของตัวเอง · ต้องกดทางเข้า
+//   Practitioner อีก") — accept/decline a job from the web app.
+//
+//   Mirrors the Telegram button. It's a callable rather than a client write
+//   because therapistBookingEditableKeys() in firestore.rules doesn't include
+//   therapistResponse, and widening that whitelist would let a practitioner
+//   write the field on any booking the rules let her read. Here the server
+//   checks she is the assigned practitioner and nobody else.
+export const respondToJob = onCall(
+  { region: "asia-southeast1" },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in required.");
+    }
+    const uid = request.auth.uid;
+    const data = request.data as
+      | { bookingId?: string; action?: string }
+      | undefined;
+    const bookingId = String(data?.bookingId ?? "").trim();
+    const action = String(data?.action ?? "").trim();
+    if (!bookingId || (action !== "accept" && action !== "decline")) {
+      throw new HttpsError("invalid-argument", "bookingId and action required.");
+    }
+
+    const db = getFirestore();
+    const ref = db.collection("bookings").doc(bookingId);
+    const snap = await ref.get();
+    if (!snap.exists) {
+      throw new HttpsError("not-found", "Booking not found.");
+    }
+    const b = snap.data() as {
+      therapistUid?: string;
+      therapistName?: string;
+      therapistResponse?: string;
+      status?: string;
+      date?: string;
+      time?: string;
+      reviewReason?: string;
+    };
+
+    if (b.therapistUid !== uid) {
+      throw new HttpsError("permission-denied", "This job isn't assigned to you.");
+    }
+    if (b.status === "cancelled" || b.status === "canceled") {
+      throw new HttpsError("failed-precondition", "This job was cancelled.");
+    }
+    if (b.therapistResponse) {
+      // Idempotent, same as the Telegram path — report, don't overwrite.
+      return { ok: true, already: true, response: b.therapistResponse };
+    }
+
+    const accepted = action === "accept";
+    await ref.update({
+      therapistResponse: accepted ? "accepted" : "declined",
+      therapistRespondedAt: FieldValue.serverTimestamp(),
+      ...(accepted
+        ? {}
+        : {
+            needsAdminReview: true,
+            reviewReason: b.reviewReason
+              ? `${b.reviewReason} · หมอนวดกดไม่รับงาน`
+              : "หมอนวดกดไม่รับงาน",
+          }),
+    });
+
+    // Same admin-group notice as the Telegram route, so View sees one stream
+    // regardless of which surface the practitioner used.
+    const token = TELEGRAM_BOT_TOKEN.value();
+    if (token) {
+      const who = b.therapistName ?? "หมอนวด";
+      const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
+      await sendTelegramIfEnabled(
+        token,
+        TELEGRAM_CHAT_ID,
+        accepted
+          ? `✅ ${who} รับงานแล้ว (จากแอป) · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}`
+          : `⚠️ ${who} กดไม่รับงาน (จากแอป) · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}\nต้องจ่ายงานให้คนอื่น`
+      );
+    }
+
+    logger.info("[respondToJob] recorded", { bookingId, action, uid });
+    return { ok: true, already: false, response: accepted ? "accepted" : "declined" };
+  }
+);
+
 export const createJobChannelCode = onCall(
   { region: "asia-southeast1" },
   async (request) => {

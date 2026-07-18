@@ -36,7 +36,7 @@ import {
   Key,
   Check,
 } from "phosphor-react";
-import { collection, query, where, getCountFromServer, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, getCountFromServer, doc, getDoc, getDocs, limit, query as fsQuery } from "firebase/firestore";
 import {
   signOut,
   updatePassword,
@@ -180,6 +180,9 @@ const ProfilePage: React.FC = () => {
   // 🆕 28w.88 — the guest's own Anniversary reward claims.
   const { claims: rewardClaims } = useAnniversaryClaim();
   const { user, role } = useAuth();
+  // 🆕 28x.74 — staff sign in through the same door as guests, so this page has
+  //   to know which product it is showing.
+  const isTherapist = role === "therapist";
   const navigate  = useNavigate();
   const [bookingCount, setBookingCount] = useState<number | null>(null);
   // Round 28s369 — therapist name from Firestore (Firebase Auth displayName is null for therapist accounts)
@@ -201,14 +204,22 @@ const ProfilePage: React.FC = () => {
   // Round 28s369 — fetch therapist name from Firestore when Auth displayName is null
   useEffect(() => {
     if (!user || role !== "therapist" || user.displayName) return;
-    getDoc(doc(db, "therapists", user.uid))
-      .then((snap) => {
-        if (snap.exists()) {
-          const data = snap.data() as { name?: string; displayName?: string };
-          setTherapistName(data.name || data.displayName || null);
-        }
-      })
-      .catch(() => { /* silent fallback */ });
+    // 🆕 28x.74 — was getDoc(therapists/{uid}). Therapist docs are keyed by a
+    //   slug ("XingXingSunRed"), never by the auth uid, so this always missed
+    //   and the header fell through to "Guest" — a practitioner being greeted
+    //   as a guest on her own workplace app. Look her up by the uid FIELD,
+    //   which 28x.67 now keeps populated.
+    void (async () => {
+      try {
+        const byUid = await getDocs(
+          fsQuery(collection(db, "therapists"), where("uid", "==", user.uid), limit(1))
+        );
+        const d = byUid.empty ? null : (byUid.docs[0].data() as { name?: string; displayName?: string });
+        if (d) setTherapistName(d.name || d.displayName || null);
+      } catch {
+        /* silent fallback — the header just shows the email */
+      }
+    })();
   }, [user, role]);
 
   const handleLogout = async () => {
@@ -414,17 +425,26 @@ const ProfilePage: React.FC = () => {
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.75 }}>
               <Typography sx={{ fontFamily: SERIF, fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
                 {/* Round 28s369 — therapistName fallback for null Firebase Auth displayName */}
-                {therapistName || user.displayName || "Guest"}
+                {therapistName || user.displayName || (isTherapist ? "Practitioner" : "Guest")}
               </Typography>
               <CheckCircle size={18} color="rgba(255,255,255,0.85)" weight="fill" />
             </Box>
             <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(255,255,255,0.50)", mt: 0.4 }}>
               {user.email}
             </Typography>
-            {since && (
-              <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "rgba(255,255,255,0.35)", mt: 0.6, letterSpacing: "0.04em" }}>
-                MEMBER SINCE {since.toUpperCase()}
+            {/* 🆕 28x.74 — a practitioner is not a member and has no join date
+                worth advertising to her. Signing in through the same door as
+                guests used to greet her as "Guest · MEMBER SINCE · VIP". */}
+            {isTherapist ? (
+              <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "rgba(255,255,255,0.45)", mt: 0.6, letterSpacing: "0.1em" }}>
+                PRACTITIONER
               </Typography>
+            ) : (
+              since && (
+                <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "rgba(255,255,255,0.35)", mt: 0.6, letterSpacing: "0.04em" }}>
+                  MEMBER SINCE {since.toUpperCase()}
+                </Typography>
+              )
             )}
           </Box>
         </motion.div>
@@ -450,7 +470,11 @@ const ProfilePage: React.FC = () => {
                   : <>{bookingCount}</>,
                 label: "Bookings",
               },
-              { value: "VIP", label: "Status" },
+              // 🆕 28x.74 — "VIP status" is a guest loyalty tier; showing it to
+              //   staff framed her own workplace as a shop she buys from.
+              isTherapist
+                ? { value: "ON", label: "Duty" }
+                : { value: "VIP", label: "Status" },
               { value: "24/7", label: "Support" },
             ].map((s, i) => (
               <Box
@@ -500,10 +524,18 @@ const ProfilePage: React.FC = () => {
               Practitioner
             </Typography>
             <Section>
+              {/* 🆕 28x.74 (founder: "My Bookings ก็ไม่ใช่งานของตัวเอง") — her
+                  work, first. The rows below this are the customer product. */}
+              <Row
+                icon={<ClockCounterClockwise size={18} weight="duotone" />}
+                label="งานของฉัน · My Jobs"
+                sub="งานที่จ่ายให้คุณ · กดรับ/ปฏิเสธได้ที่นี่"
+                onClick={() => navigate("/therapist/jobs")}
+              />
               <Row
                 icon={<IdentificationCard size={18} weight="duotone" />}
                 label="My Practitioner Profile"
-                sub="Availability · services · earnings"
+                sub="สถานะว่าง · ตำแหน่งยืน"
                 onClick={() => navigate("/therapist/profile")}
               />
             </Section>
@@ -518,6 +550,11 @@ const ProfilePage: React.FC = () => {
             detail (rewards · a code waiting at checkout · their referral code).
             Always shown, so a guest can find their codes even when they hold
             none — the page says so plainly rather than hiding the entrance. */}
+        {/* 🆕 28x.74 — hidden for staff. Discount codes, saved practitioners and
+            a "Booking History" that means bookings she MADE are the customer
+            product; on a practitioner's screen they read as her own work and
+            don't match it. Founder: "My Bookings ก็ไม่ใช่งานของตัวเอง". */}
+        {!isTherapist && (
         <motion.div {...fadeUp(0.14)}>
           <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "var(--sr-muted)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
             Rewards
@@ -535,8 +572,10 @@ const ProfilePage: React.FC = () => {
             />
           </Section>
         </motion.div>
+        )}
 
         {/* Bookings */}
+        {!isTherapist && (
         <motion.div {...fadeUp(0.15)}>
           <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "var(--sr-muted)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
             Reservations
@@ -556,6 +595,7 @@ const ProfilePage: React.FC = () => {
             />
           </Section>
         </motion.div>
+        )}
 
         {/* Account */}
         <motion.div {...fadeUp(0.2)}>

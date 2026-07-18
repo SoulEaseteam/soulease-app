@@ -149,6 +149,11 @@ const TherapistLocationPage = React.lazy(
 const TherapistProfilePage = React.lazy(
   () => import("@/pages/therapist/TherapistProfilePage")
 );
+// 🆕 28x.74 — her own job list. Until this existed, a practitioner's assigned
+//   work was visible only in Telegram.
+const TherapistJobsPage = React.lazy(
+  () => import("@/pages/therapist/TherapistJobsPage")
+);
 
 // Admin
 const AdminDashboardPage = React.lazy(
@@ -357,6 +362,7 @@ export default function App() {
             path="/therapist/profile"
             element={<TherapistProfilePage />}
           />
+          <Route path="/therapist/jobs" element={<TherapistJobsPage />} />
           {/* /therapist/status route removed Round 22b — TherapistStatusManager
               component was deleted in the merge cleanup. */}
           <Route path="/update-location" element={<UpdateLocationPage />} />

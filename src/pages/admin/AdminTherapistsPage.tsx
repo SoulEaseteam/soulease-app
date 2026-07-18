@@ -32,6 +32,8 @@ import {
   query,
   where,
   getCountFromServer,
+  setDoc,
+  deleteField,
 } from "firebase/firestore";
 
 import { app, db } from "@/lib/firebase";
@@ -553,6 +555,37 @@ const AdminTherapistsPage: React.FC = () => {
   // 🆕 28x.72 — see the button below.
   const [chanCoding, setChanCoding] = useState(false);
   const [chanCode, setChanCode] = useState<string | null>(null);
+
+  // 🆕 28x.73 (founder: "ฉันส่งผิดกลุ่ม แก้ไง") — show WHICH chat is currently
+  //   the job board. Without this the setting is invisible: point it at the
+  //   wrong group and open jobs quietly post somewhere nobody is watching,
+  //   with nothing on any screen looking wrong.
+  const [jobChan, setJobChan] = useState<{ id?: string; title?: string } | null>(null);
+  useEffect(() => {
+    const unsub = onSnapshot(
+      doc(db, "adminSettings", "advanced"),
+      (snap) => {
+        const d = snap.data() as { jobChannelId?: string; jobChannelTitle?: string } | undefined;
+        setJobChan(d?.jobChannelId ? { id: d.jobChannelId, title: d.jobChannelTitle } : null);
+      },
+      () => {},
+    );
+    return () => unsub();
+  }, []);
+
+  const clearJobChannel = async () => {
+    try {
+      await setDoc(
+        doc(db, "adminSettings", "advanced"),
+        { jobChannelId: deleteField(), jobChannelTitle: deleteField() },
+        { merge: true },
+      );
+      toast.success("ล้างช่องงานแล้ว · งานว่างจะไม่ถูกโพสต์ที่ไหนจนกว่าจะตั้งใหม่");
+    } catch (e) {
+      console.error("[therapists] clear job channel failed", e);
+      toast.error("ล้างไม่สำเร็จ");
+    }
+  };
   const makeChannelCode = async () => {
     setChanCoding(true);
     try {
@@ -872,6 +905,30 @@ const AdminTherapistsPage: React.FC = () => {
         >
           {chanCoding ? <CircularProgress size={16} /> : "รหัสตั้งช่องงาน"}
         </Button>
+      </Box>
+
+      {/* 🆕 28x.73 — current job board, always visible. */}
+      <Box sx={{ mb: 1.5, display: "flex", alignItems: "center", gap: 1.25, flexWrap: "wrap" }}>
+        <Typography sx={{ fontFamily: adminFont.sans, fontSize: 12, color: adminColor.dim }}>
+          ช่องงานปัจจุบัน:
+        </Typography>
+        <Typography
+          sx={{
+            fontFamily: adminFont.sans, fontSize: 12.5, fontWeight: 800,
+            color: jobChan ? adminColor.green : adminColor.amber,
+          }}
+        >
+          {jobChan ? `${jobChan.title ?? "(ไม่มีชื่อ)"} · ${jobChan.id}` : "ยังไม่ได้ตั้ง — งานว่างจะไม่ถูกโพสต์ที่ไหน"}
+        </Typography>
+        {jobChan && (
+          <Button
+            size="small"
+            onClick={() => void clearJobChannel()}
+            sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, color: adminColor.red, px: 0.5 }}
+          >
+            ล้างค่า
+          </Button>
+        )}
       </Box>
 
       {chanCode && (

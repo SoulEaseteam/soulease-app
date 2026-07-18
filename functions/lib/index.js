@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.createJobChannelCode = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.createJobChannelCode = exports.respondToJob = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -1956,6 +1956,69 @@ exports.createTherapistLinkCode = (0, https_1.onCall)({ region: "asia-southeast1
 //   authority, "/setjobchannel" there would silently redirect every unassigned
 //   job — zone, time, price — to a stranger's group. Same one-time-code shape
 //   as the practitioner link codes.
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.74 (founder: "My Bookings ก็ไม่ใช่งานของตัวเอง · ต้องกดทางเข้า
+//   Practitioner อีก") — accept/decline a job from the web app.
+//
+//   Mirrors the Telegram button. It's a callable rather than a client write
+//   because therapistBookingEditableKeys() in firestore.rules doesn't include
+//   therapistResponse, and widening that whitelist would let a practitioner
+//   write the field on any booking the rules let her read. Here the server
+//   checks she is the assigned practitioner and nobody else.
+exports.respondToJob = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Sign in required.");
+    }
+    const uid = request.auth.uid;
+    const data = request.data;
+    const bookingId = String(data?.bookingId ?? "").trim();
+    const action = String(data?.action ?? "").trim();
+    if (!bookingId || (action !== "accept" && action !== "decline")) {
+        throw new https_1.HttpsError("invalid-argument", "bookingId and action required.");
+    }
+    const db = (0, firestore_2.getFirestore)();
+    const ref = db.collection("bookings").doc(bookingId);
+    const snap = await ref.get();
+    if (!snap.exists) {
+        throw new https_1.HttpsError("not-found", "Booking not found.");
+    }
+    const b = snap.data();
+    if (b.therapistUid !== uid) {
+        throw new https_1.HttpsError("permission-denied", "This job isn't assigned to you.");
+    }
+    if (b.status === "cancelled" || b.status === "canceled") {
+        throw new https_1.HttpsError("failed-precondition", "This job was cancelled.");
+    }
+    if (b.therapistResponse) {
+        // Idempotent, same as the Telegram path — report, don't overwrite.
+        return { ok: true, already: true, response: b.therapistResponse };
+    }
+    const accepted = action === "accept";
+    await ref.update({
+        therapistResponse: accepted ? "accepted" : "declined",
+        therapistRespondedAt: firestore_2.FieldValue.serverTimestamp(),
+        ...(accepted
+            ? {}
+            : {
+                needsAdminReview: true,
+                reviewReason: b.reviewReason
+                    ? `${b.reviewReason} · หมอนวดกดไม่รับงาน`
+                    : "หมอนวดกดไม่รับงาน",
+            }),
+    });
+    // Same admin-group notice as the Telegram route, so View sees one stream
+    // regardless of which surface the practitioner used.
+    const token = TELEGRAM_BOT_TOKEN.value();
+    if (token) {
+        const who = b.therapistName ?? "หมอนวด";
+        const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
+        await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, accepted
+            ? `✅ ${who} รับงานแล้ว (จากแอป) · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}`
+            : `⚠️ ${who} กดไม่รับงาน (จากแอป) · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}\nต้องจ่ายงานให้คนอื่น`);
+    }
+    v2_1.logger.info("[respondToJob] recorded", { bookingId, action, uid });
+    return { ok: true, already: false, response: accepted ? "accepted" : "declined" };
+});
 exports.createJobChannelCode = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Sign in required.");
