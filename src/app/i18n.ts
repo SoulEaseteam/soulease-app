@@ -2,6 +2,7 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
+import { getLangPref } from "@/utils/langPref";
 
 // 🆕 Round 28b13 (perf) — locales are now lazy-imported per language.
 //   Previous: all 5 JSON files were eagerly bundled into main chunk
@@ -315,6 +316,16 @@ async function ensureLocale(lng: string) {
     // eslint-disable-next-line no-console
     console.warn("[i18n] failed to load locale", norm, e);
   }
+}
+
+// 🆕 Round 28x.57 — apply the guest's EXPLICIT language choice (Profile →
+//   Language). It has to happen here, after init, because the detection order
+//   above deliberately puts `navigator` ahead of localStorage (28s223), so
+//   i18next's own cache can never outrank the device locale. No explicit
+//   choice → nothing happens and the device locale still wins.
+const explicitLang = getLangPref();
+if (explicitLang && explicitLang !== i18n.language) {
+  void i18n.changeLanguage(explicitLang);
 }
 
 // Kick off active locale load (after init has resolved the language)

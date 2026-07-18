@@ -5,9 +5,22 @@
 //   Feels like Airbnb / Grab premium tier.
 
 import React, { useEffect, useState } from "react";
-import { Box, Avatar, Typography, CircularProgress } from "@mui/material";
+import {
+  Box,
+  Avatar,
+  Typography,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Alert,
+} from "@mui/material";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   ClockCounterClockwise,
   Heart,
@@ -20,9 +33,20 @@ import {
   Gauge,
   IdentificationCard,
   Ticket,
+  Key,
+  Check,
 } from "phosphor-react";
 import { collection, query, where, getCountFromServer, doc, getDoc } from "firebase/firestore";
-import { signOut } from "firebase/auth";
+import {
+  signOut,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+} from "firebase/auth";
+
+// 🆕 28x.57 — explicit language override (see src/utils/langPref.ts for why
+//   this can't just ride on i18next's own localStorage cache).
+import { SUPPORTED_LANGS, setLangPref, langLabel, type LangCode } from "@/utils/langPref";
 
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
@@ -35,6 +59,12 @@ import { responsiveShell } from "@/theme/breakpoints";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS  = '"Inter", system-ui, sans-serif';
+// 🆕 28x.57 (founder: "เปลี่ยนสีเข้าธีม") — the page was still on the pre-Moko
+//   slate/taupe palette (#1A2B2E hero, #F4F6F5 page, #8F8474 ring). Brand rose +
+//   theme vars from here on, so it matches the rest of the site day and night.
+const ROSE = "#D97C95";
+const ROSE_DEEP = "#C96F89";
+const DANGER = "#C0562E";
 
 // ── helpers ─────────────────────────────────────────────────────────
 function memberSince(creationTime?: string) {
@@ -63,8 +93,10 @@ interface RowProps {
   sub?: string;
   onClick?: () => void;
   danger?: boolean;
+  /** 🆕 28x.57 — right-aligned current value (e.g. the active language). */
+  value?: string;
 }
-const Row: React.FC<RowProps> = ({ icon, label, sub, onClick, danger }) => (
+const Row: React.FC<RowProps> = ({ icon, label, sub, onClick, danger, value }) => (
   <Box
     onClick={onClick}
     sx={{
@@ -76,7 +108,7 @@ const Row: React.FC<RowProps> = ({ icon, label, sub, onClick, danger }) => (
       cursor: onClick ? "pointer" : "default",
       userSelect: "none",
       WebkitTapHighlightColor: "transparent",
-      "&:active": onClick ? { background: "rgba(0,0,0,0.03)" } : {},
+      "&:active": onClick ? { background: "var(--sr-panel-2)" } : {},
     }}
   >
     <Box
@@ -84,12 +116,13 @@ const Row: React.FC<RowProps> = ({ icon, label, sub, onClick, danger }) => (
         width: 36,
         height: 36,
         borderRadius: "12px",
-        background: danger ? "rgba(45,45,43,0.08)" : "rgba(15, 23, 42,0.06)",
+        // 🆕 28x.57 — themed tiles (was a hardcoded slate tint from the old palette).
+        background: danger ? "rgba(192,86,46,0.12)" : "rgba(217,124,149,0.14)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         flexShrink: 0,
-        color: danger ? "#2D2D2B" : "rgba(15, 23, 42,0.75)",
+        color: danger ? DANGER : ROSE,
       }}
     >
       {icon}
@@ -100,20 +133,25 @@ const Row: React.FC<RowProps> = ({ icon, label, sub, onClick, danger }) => (
           fontFamily: SANS,
           fontSize: 14,
           fontWeight: 600,
-          color: danger ? "#2D2D2B" : "#2D2D2B",
+          color: danger ? DANGER : "var(--sr-ink)",
           lineHeight: 1.2,
         }}
       >
         {label}
       </Typography>
       {sub && (
-        <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "rgba(15, 23, 42,0.5)", mt: 0.2 }}>
+        <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "var(--sr-muted)", mt: 0.2 }}>
           {sub}
         </Typography>
       )}
     </Box>
+    {value && (
+      <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 600, color: "var(--sr-body)", flexShrink: 0 }}>
+        {value}
+      </Typography>
+    )}
     {onClick && (
-      <CaretRight size={16} color={danger ? "#2D2D2B" : "rgba(15, 23, 42,0.35)"} />
+      <CaretRight size={16} color={danger ? DANGER : "var(--sr-dim)"} />
     )}
   </Box>
 );
@@ -124,12 +162,12 @@ const Section: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     sx={{
       mx: 2,
       borderRadius: "18px",
-      background: "#fff",
-      border: "1px solid rgba(15,23,42,0.06)",
-      boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 4px 16px rgba(15,23,42,0.05)",
+      background: "var(--sr-panel)",
+      border: "1px solid var(--sr-hairline)",
+      boxShadow: "var(--sr-card-shadow)",
       overflow: "hidden",
       "& > *:not(:last-child)": {
-        borderBottom: "1px solid rgba(15,23,42,0.05)",
+        borderBottom: "1px solid var(--sr-hairline)",
       },
     }}
   >
@@ -176,6 +214,68 @@ const ProfilePage: React.FC = () => {
   const handleLogout = async () => {
     await signOut(auth);
     void navigate("/login");
+  };
+
+  // ── 🆕 28x.57 · Language (founder: "ตั้งค่าภาษาได้") ────────────────
+  const { i18n } = useTranslation();
+  const [langOpen, setLangOpen] = useState(false);
+  const activeLang = (i18n.language || "en").split("-")[0];
+
+  const pickLang = (code: LangCode) => {
+    setLangPref(code);          // survives reload — beats the device locale
+    void i18n.changeLanguage(code);
+    setLangOpen(false);
+  };
+
+  // ── 🆕 28x.57 · Change password (founder: "เปลี่ยนรหัส ได้") ────────
+  //   Guests sign in with an alias email (<phone>@phone.sunred.vip or
+  //   <srd-code>@user.sunred.vip), so re-auth uses that alias, not a
+  //   real inbox. Firebase requires a fresh re-auth before updatePassword.
+  const [pwOpen, setPwOpen]   = useState(false);
+  const [pwCur, setPwCur]     = useState("");
+  const [pwNew, setPwNew]     = useState("");
+  const [pwNew2, setPwNew2]   = useState("");
+  const [pwBusy, setPwBusy]   = useState(false);
+  const [pwErr, setPwErr]     = useState<string | null>(null);
+  const [pwDone, setPwDone]   = useState(false);
+
+  const closePw = () => {
+    if (pwBusy) return;
+    setPwOpen(false);
+    setPwCur(""); setPwNew(""); setPwNew2("");
+    setPwErr(null); setPwDone(false);
+  };
+
+  const submitPw = async () => {
+    setPwErr(null);
+    if (pwNew.length < 6)   { setPwErr("รหัสใหม่ต้องยาวอย่างน้อย 6 ตัว"); return; }
+    if (pwNew !== pwNew2)   { setPwErr("รหัสใหม่ทั้งสองช่องไม่ตรงกัน"); return; }
+    const current = auth.currentUser;
+    if (!current?.email)    { setPwErr("บัญชีนี้เปลี่ยนรหัสในหน้านี้ไม่ได้ — ติดต่อคอนเซียร์จ"); return; }
+
+    setPwBusy(true);
+    try {
+      await reauthenticateWithCredential(
+        current,
+        EmailAuthProvider.credential(current.email, pwCur)
+      );
+      await updatePassword(current, pwNew);
+      setPwDone(true);
+      setPwCur(""); setPwNew(""); setPwNew2("");
+    } catch (e) {
+      const code = (e as { code?: string }).code ?? "";
+      setPwErr(
+        code.includes("wrong-password") || code.includes("invalid-credential")
+          ? "รหัสผ่านปัจจุบันไม่ถูกต้อง"
+          : code.includes("weak-password")
+          ? "รหัสใหม่อ่อนเกินไป — ใช้อย่างน้อย 6 ตัว"
+          : code.includes("too-many-requests")
+          ? "ลองผิดหลายครั้งเกินไป — รอสักครู่แล้วลองใหม่"
+          : "เปลี่ยนรหัสไม่สำเร็จ — ลองใหม่อีกครั้ง"
+      );
+    } finally {
+      setPwBusy(false);
+    }
   };
 
   // ── Guest state ───────────────────────────────────────────────────
@@ -248,7 +348,7 @@ const ProfilePage: React.FC = () => {
         //   same shell as TopNav so the hero box lines up with the nav bar.
         ...responsiveShell,
         minHeight: "100vh",
-        background: "#F4F6F5",
+        background: "var(--sr-bg)",
         pb: 12,
         fontFamily: SANS,
       }}
@@ -256,7 +356,8 @@ const ProfilePage: React.FC = () => {
       {/* ── Hero ── */}
       <Box
         sx={{
-          background: "#1A2B2E",
+          // 🆕 28x.57 — brand rose→plum hero (was slate #1A2B2E, off-theme).
+          background: "linear-gradient(160deg, #A34A67 0%, #7A3049 55%, #5A2733 100%)",
           pt: 7,
           pb: 5,
           px: 3,
@@ -271,7 +372,7 @@ const ProfilePage: React.FC = () => {
             width: 280,
             height: 80,
             borderRadius: "50%",
-            background: "rgba(15, 23, 42, 0.12)",
+            background: "rgba(90, 39, 51, 0.25)",
             filter: "blur(30px)",
             pointerEvents: "none",
           },
@@ -285,9 +386,9 @@ const ProfilePage: React.FC = () => {
                 width: 90,
                 height: 90,
                 borderRadius: "50%",
-                background: "#8F8474",
+                background: `linear-gradient(135deg, ${ROSE}, ${ROSE_DEEP})`,
                 p: "2.5px",
-                boxShadow: "0 0 0 3px rgba(15, 23, 42, 0.18), 0 8px 32px rgba(0,0,0,0.35)",
+                boxShadow: "0 0 0 3px rgba(255,255,255,0.16), 0 8px 32px rgba(0,0,0,0.35)",
               }}
             >
               <Avatar
@@ -295,8 +396,8 @@ const ProfilePage: React.FC = () => {
                 sx={{
                   width: "100%",
                   height: "100%",
-                  // 🎨 Round 28r79 — Nordic sweep · was burgundy gradient.
-                  background: "linear-gradient(135deg, #4B4B48, #2D2D2B)",
+                  // 🆕 28x.57 — brand plum fill (was the Nordic grey sweep).
+                  background: "linear-gradient(135deg, #7A3049, #5A2733)",
                   fontSize: 30,
                   fontWeight: 700,
                   fontFamily: SERIF,
@@ -315,7 +416,7 @@ const ProfilePage: React.FC = () => {
                 {/* Round 28s369 — therapistName fallback for null Firebase Auth displayName */}
                 {therapistName || user.displayName || "Guest"}
               </Typography>
-              <CheckCircle size={18} color="#2D2D2B" weight="fill" />
+              <CheckCircle size={18} color="rgba(255,255,255,0.85)" weight="fill" />
             </Box>
             <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(255,255,255,0.50)", mt: 0.4 }}>
               {user.email}
@@ -378,7 +479,7 @@ const ProfilePage: React.FC = () => {
         {/* Admin Panel shortcut — only visible to admins */}
         {role === "admin" && (
           <motion.div {...fadeUp(0.12)}>
-            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "var(--sr-muted)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
               Admin
             </Typography>
             <Section>
@@ -395,7 +496,7 @@ const ProfilePage: React.FC = () => {
         {/* Round 28s369 — Therapist panel shortcut — only visible to therapists */}
         {role === "therapist" && (
           <motion.div {...fadeUp(0.12)}>
-            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "var(--sr-muted)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
               Practitioner
             </Typography>
             <Section>
@@ -418,7 +519,7 @@ const ProfilePage: React.FC = () => {
             Always shown, so a guest can find their codes even when they hold
             none — the page says so plainly rather than hiding the entrance. */}
         <motion.div {...fadeUp(0.14)}>
-          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "var(--sr-muted)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
             Rewards
           </Typography>
           <Section>
@@ -437,7 +538,7 @@ const ProfilePage: React.FC = () => {
 
         {/* Bookings */}
         <motion.div {...fadeUp(0.15)}>
-          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "var(--sr-muted)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
             Reservations
           </Typography>
           <Section>
@@ -458,7 +559,7 @@ const ProfilePage: React.FC = () => {
 
         {/* Account */}
         <motion.div {...fadeUp(0.2)}>
-          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "var(--sr-muted)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
             Account
           </Typography>
           <Section>
@@ -468,18 +569,26 @@ const ProfilePage: React.FC = () => {
               sub="Booking alerts & updates"
               onClick={() => navigate("/notifications")}
             />
+            {/* 🆕 28x.57 — this row used to be dead (`onClick={() => {}}`). */}
             <Row
               icon={<Translate size={18} />}
               label="Language"
               sub="EN · TH · ZH · JA · KO"
-              onClick={() => {}}
+              value={langLabel(activeLang)}
+              onClick={() => setLangOpen(true)}
+            />
+            <Row
+              icon={<Key size={18} />}
+              label="Change password"
+              sub="Update your sign-in password"
+              onClick={() => setPwOpen(true)}
             />
           </Section>
         </motion.div>
 
         {/* Support */}
         <motion.div {...fadeUp(0.25)}>
-          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "rgba(15, 23, 42,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: "var(--sr-muted)", letterSpacing: "0.1em", textTransform: "uppercase", px: 3, mb: 1 }}>
             Support
           </Typography>
           <Section>
@@ -505,11 +614,144 @@ const ProfilePage: React.FC = () => {
         </motion.div>
 
         <motion.div {...fadeUp(0.35)}>
-          <Typography sx={{ textAlign: "center", fontFamily: SANS, fontSize: 11, color: "rgba(15, 23, 42,0.3)", mt: 1 }}>
+          <Typography sx={{ textAlign: "center", fontFamily: SANS, fontSize: 11, color: "var(--sr-dim)", mt: 1 }}>
             SunRed · Bangkok · sunred.vip
           </Typography>
         </motion.div>
       </Box>
+
+      {/* ── 🆕 28x.57 · Language picker ─────────────────────────────── */}
+      <Dialog
+        open={langOpen}
+        onClose={() => setLangOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            background: "var(--sr-panel)",
+            border: "1px solid var(--sr-hairline)",
+            backgroundImage: "none",   // MUI dark-mode overlay would grey the panel
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontFamily: SERIF, fontSize: 20, color: "var(--sr-ink)", pb: 1 }}>
+          Language
+        </DialogTitle>
+        <DialogContent sx={{ px: 1.5, pb: 2 }}>
+          {SUPPORTED_LANGS.map((l) => {
+            const on = l.code === activeLang;
+            return (
+              <Box
+                key={l.code}
+                role="button"
+                tabIndex={0}
+                onClick={() => pickLang(l.code)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") pickLang(l.code); }}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 1.5,
+                  px: 2,
+                  py: 1.5,
+                  borderRadius: 3,
+                  cursor: "pointer",
+                  background: on ? "rgba(217,124,149,0.14)" : "transparent",
+                  transition: "background 160ms ease",
+                  "&:hover": { background: "rgba(217,124,149,0.10)" },
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: 15,
+                    fontWeight: on ? 700 : 500,
+                    color: on ? ROSE_DEEP : "var(--sr-body)",
+                  }}
+                >
+                  {l.label}
+                </Typography>
+                {on && <Check size={18} weight="bold" color={ROSE_DEEP} />}
+              </Box>
+            );
+          })}
+        </DialogContent>
+      </Dialog>
+
+      {/* ── 🆕 28x.57 · Change password ─────────────────────────────── */}
+      <Dialog
+        open={pwOpen}
+        onClose={closePw}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            background: "var(--sr-panel)",
+            border: "1px solid var(--sr-hairline)",
+            backgroundImage: "none",
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontFamily: SERIF, fontSize: 20, color: "var(--sr-ink)", pb: 1 }}>
+          Change password
+        </DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+          {pwDone ? (
+            <Alert severity="success" sx={{ borderRadius: 2 }}>
+              เปลี่ยนรหัสผ่านเรียบร้อยแล้ว ครั้งหน้าเข้าระบบด้วยรหัสใหม่
+            </Alert>
+          ) : (
+            <>
+              {pwErr && <Alert severity="error" sx={{ borderRadius: 2 }}>{pwErr}</Alert>}
+              {/* explicit input color — dark theme inherits white-on-white otherwise */}
+              {([
+                { label: "รหัสผ่านปัจจุบัน", v: pwCur,  set: setPwCur,  ac: "current-password" },
+                { label: "รหัสผ่านใหม่",     v: pwNew,  set: setPwNew,  ac: "new-password" },
+                { label: "ยืนยันรหัสใหม่",   v: pwNew2, set: setPwNew2, ac: "new-password" },
+              ] as const).map((f) => (
+                <TextField
+                  key={f.label}
+                  type="password"
+                  label={f.label}
+                  value={f.v}
+                  onChange={(e) => f.set(e.target.value)}
+                  autoComplete={f.ac}
+                  size="small"
+                  fullWidth
+                  disabled={pwBusy}
+                  InputProps={{ sx: { color: "var(--sr-ink)", borderRadius: 2 } }}
+                  InputLabelProps={{ sx: { color: "var(--sr-muted)" } }}
+                />
+              ))}
+            </>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={closePw} disabled={pwBusy} sx={{ color: "var(--sr-muted)", fontFamily: SANS }}>
+            {pwDone ? "ปิด" : "ยกเลิก"}
+          </Button>
+          {!pwDone && (
+            <Button
+              onClick={() => void submitPw()}
+              disabled={pwBusy || !pwCur || !pwNew || !pwNew2}
+              variant="contained"
+              sx={{
+                fontFamily: SANS,
+                fontWeight: 700,
+                borderRadius: 2,
+                px: 2.5,
+                background: `linear-gradient(135deg, ${ROSE}, ${ROSE_DEEP})`,
+                boxShadow: "none",
+                "&:hover": { background: `linear-gradient(135deg, ${ROSE_DEEP}, ${ROSE_DEEP})`, boxShadow: "none" },
+              }}
+            >
+              {pwBusy ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "บันทึก"}
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
