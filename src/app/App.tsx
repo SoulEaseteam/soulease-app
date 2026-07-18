@@ -272,6 +272,13 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/admin/login" element={<Navigate to="/login" replace />} />
+        {/* 🆕 28x.76 (founder: "ตั้งทางเข้าใหม่ ให้พนักงาน แยกออกจากทางเข้า
+            เดียวกับลูกค้า") — same component, staff framing, and it lands on
+            the work surface instead of the customer profile. No security
+            claim: Firebase accepts credentials at the API level regardless of
+            which page exists. /work is an alias so it's easy to say out loud. */}
+        <Route path="/staff" element={<LoginPage staff />} />
+        <Route path="/work" element={<Navigate to="/staff" replace />} />
         <Route path="/maintenance" element={<MaintenancePage />} />
         <Route path="/wechat-scan" element={<WeChatScanPage />} />
         {/* ================= MAIN LAYOUT ================= */}

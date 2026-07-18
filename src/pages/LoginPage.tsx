@@ -75,7 +75,25 @@ const fieldSx = {
 
 type LoginRole = "admin" | "therapist" | "user";
 
-const LoginPage: React.FC = () => {
+// 🆕 Round 28x.76 (founder: "ตั้งทางเข้าใหม่ ให้พนักงาน แยกออกจากทางเข้าเดียว
+//   กับลูกค้าได้ไหม") — /staff renders this same page with staff framing.
+//
+//   Reusing the component rather than writing a second login is deliberate: the
+//   subtle parts here — resolveLoginId's phone/username/email aliasing, and
+//   friendlyAuthError collapsing invalid-credential/wrong-password/user-not-found
+//   into one message so the form can't be used to test whether an account exists
+//   — would drift the moment there were two copies.
+//
+//   To be clear about what this is NOT: it adds no security. Firebase Auth
+//   accepts credentials at the API level, so anyone holding them can sign in
+//   from anywhere regardless of which page exists. What it buys is that a
+//   practitioner never lands on the customer storefront to reach her work.
+interface LoginPageProps {
+  /** Staff entrance: staff copy, and lands on the work surface, not /profile. */
+  staff?: boolean;
+}
+
+const LoginPage: React.FC<LoginPageProps> = ({ staff = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
   // redirect กลับหน้าเดิมถ้า PrivateRoute ส่งมา; default ไปหน้าโปรไฟล์
@@ -194,7 +212,22 @@ const LoginPage: React.FC = () => {
         // ถ้าถูก redirect มาจาก PrivateRoute ให้กลับหน้าเดิม
         if (fromPath && role !== "admin") return navigate(fromPath, { replace: true });
         if (role === "admin") return navigate("/admin/dashboard", { replace: true });
-        if (role === "therapist") return navigate("/therapist/profile", { replace: true });
+        // 🆕 28x.76 — her work, not her profile. /therapist/jobs is the screen a
+        //   practitioner actually opens the app for; the profile page is settings.
+        if (role === "therapist") return navigate("/therapist/jobs", { replace: true });
+        // Signed in through the staff door but not staff — say so rather than
+        // dropping her on a guest profile with no explanation.
+        if (staff) {
+          setSnackbar({
+            open: true,
+            message: t(
+              "auth.login.notStaff",
+              "บัญชีนี้ยังไม่ได้เป็นพนักงาน · ติดต่อแอดมิน",
+            ),
+            severity: "error",
+          });
+          return;
+        }
         return navigate("/profile", { replace: true });
       }, 300);
     } catch (err: unknown) {
@@ -269,8 +302,20 @@ const LoginPage: React.FC = () => {
               color: "var(--sr-ink)",
             }}
           >
-            {t("auth.login.title", "Login")}
+            {staff ? "SunRed Staff" : t("auth.login.title", "Login")}
           </Typography>
+          {/* 🆕 28x.76 — one line so a practitioner knows she's in the right
+              place. Deliberately says nothing about who works here. */}
+          {staff && (
+            <Typography
+              mt={-3}
+              mb={3}
+              fontSize={13}
+              sx={{ color: "var(--sr-muted)", fontFamily: '"Inter", system-ui, sans-serif' }}
+            >
+              เข้าสู่ระบบสำหรับพนักงาน
+            </Typography>
+          )}
 
           {/* Form — Enter submits */}
           <Box
@@ -328,13 +373,16 @@ const LoginPage: React.FC = () => {
             </Button>
           </Box>
 
-          {/* Register */}
+          {/* Register — 🆕 28x.76: staff accounts are issued by an admin, never
+              self-registered, so the staff door offers no sign-up. */}
+          {!staff && (
           <Typography mt={3} fontSize={14} sx={{ color: "var(--sr-body)" }}>
             {t("auth.login.noAccount", "Don't have an account?")}{" "}
             <Link to="/register" style={{ color: ROSE, fontWeight: "bold" }}>
               {t("auth.login.signUp", "Sign up")}
             </Link>
           </Typography>
+          )}
 
           {/* 🆕 28w.77 (founder "ใส่ ลืมรหัสผ่าน? แล้วให้ลิ้งไปที่แอดมิน") — no
               self-serve reset flow exists, so this hands the guest straight to
@@ -355,15 +403,21 @@ const LoginPage: React.FC = () => {
                 "&:hover": { color: ROSE_HOVER },
               }}
             >
-              {t("auth.login.forgot", "Forgot password?")}
+              {staff ? "ลืมรหัสผ่าน? ติดต่อแอดมิน" : t("auth.login.forgot", "Forgot password?")}
             </Box>
           </Typography>
         </Paper>
-        <Typography mt={4} fontSize={14} sx={{ color: "var(--sr-muted)" }} textAlign="center">
-          {t("auth.guestNote", "You may proceed with booking without an account.")}
-        </Typography>
+        {/* 🆕 28x.76 — "you can book without an account" is guidance for a
+            customer standing at a checkout. On the staff door it's noise. */}
+        {!staff && (
+          <Typography mt={4} fontSize={14} sx={{ color: "var(--sr-muted)" }} textAlign="center">
+            {t("auth.guestNote", "You may proceed with booking without an account.")}
+          </Typography>
+        )}
       </Box>
-      <BottomNav />
+      {/* 🆕 28x.76 — the customer tab bar (Practitioners · Services · History)
+          under a staff sign-in is the storefront leaking back in. */}
+      {!staff && <BottomNav />}
       {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
