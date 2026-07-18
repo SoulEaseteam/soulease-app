@@ -22,6 +22,7 @@ import {
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { Check } from "phosphor-react";
+import PasswordField from "@/components/common/PasswordField";
 import {
   updatePassword,
   reauthenticateWithCredential,
@@ -194,9 +195,8 @@ export function useAccountDialogs(): AccountDialogs {
                 { label: "รหัสผ่านใหม่",     v: pwNew,  set: setPwNew,  ac: "new-password" },
                 { label: "ยืนยันรหัสใหม่",   v: pwNew2, set: setPwNew2, ac: "new-password" },
               ] as const).map((f) => (
-                <TextField
+                <PasswordField
                   key={f.label}
-                  type="password"
                   label={f.label}
                   value={f.v}
                   onChange={(e) => f.set(e.target.value)}

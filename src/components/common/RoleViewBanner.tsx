@@ -61,7 +61,11 @@ const RoleViewBanner: React.FC = () => {
     if (isAdmin) {
       void navigate("/admin/dashboard");
     } else {
-      void navigate("/profile");
+      // 🆕 28x.79 — was /profile, the customer page. Third place this exact
+      // stale destination turned up (drawer shortcut, sign-out, and here) —
+      // one more reason the founder's "make it a genuinely separate app"
+      // direction is the right fix instead of chasing each occurrence.
+      void navigate("/therapist/profile");
     }
   };
 

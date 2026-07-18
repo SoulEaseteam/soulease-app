@@ -28,6 +28,11 @@ const PasswordField: React.FC<PasswordFieldProps> = ({ sx, InputProps, ...props 
               edge="end"
               size="small"
               tabIndex={-1}
+              // 🆕 28x.79 — without an explicit colour this inherited pure
+              //   white from MUI's IconButton default and vanished on every
+              //   light-panel password field in the app (login, register,
+              //   change-password) — invisible, not just low-contrast.
+              sx={{ color: "var(--sr-muted)" }}
             >
               {visible ? <EyeSlash size={18} /> : <Eye size={18} />}
             </IconButton>

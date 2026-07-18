@@ -25,13 +25,11 @@ import {
   Typography,
   CircularProgress,
   Chip,
-  IconButton,
   Button,
   Switch,
   Snackbar,
   Alert,
 } from "@mui/material";
-import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import RoomRoundedIcon from "@mui/icons-material/RoomRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
@@ -763,64 +761,9 @@ const TherapistProfilePage: React.FC = () => {
   );
 };
 
-/** Small reusable menu tile — keeps card body declarative + brand-consistent. */
-interface MenuTileProps {
-  label: string;
-  Icon: typeof RoomRoundedIcon;
-  onClick: () => void;
-}
-
-const MenuTile: React.FC<MenuTileProps> = ({ label, Icon, onClick }) => (
-  <Button
-    onClick={onClick}
-    sx={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: "8px",
-      padding: "16px 8px",
-      borderRadius: "16px",
-      background: "var(--sr-panel)",
-      border: "1px solid rgba(184,92,60,0.15)",
-      boxShadow: "0 4px 12px rgba(15, 23, 42,0.06)",
-      textTransform: "none",
-      transition: "transform 0.2s ease, box-shadow 0.2s ease",
-      "&:hover": {
-        background: "var(--sr-panel-2)",
-        transform: "translateY(-2px)",
-        boxShadow: "0 8px 20px rgba(15, 23, 42, 0.12)",
-      },
-    }}
-  >
-    <Box
-      sx={{
-        width: 40,
-        height: 40,
-        borderRadius: "50%",
-        background: "linear-gradient(160deg, #A34A67 0%, #7A3049 55%, #5A2733 100%)",
-        color: "#fff",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        boxShadow: "0 4px 10px rgba(15, 23, 42, 0.25)",
-      }}
-    >
-      <Icon sx={{ fontSize: 20 }} />
-    </Box>
-    <Typography
-      sx={{
-        fontFamily: SANS,
-        fontSize: "12px",
-        fontWeight: 700,
-        color: "var(--sr-ink)",
-        letterSpacing: "0.01em",
-      }}
-    >
-      {label}
-    </Typography>
-  </Button>
-);
+// 🆕 28x.79 — MenuTile removed: the grid it served (Standby Location / Update
+//   GPS / My Jobs / Settings) was merged into the Working Status card and a
+//   single Settings row in 28x.78-79. Nothing on this page renders it anymore.
 
 /** ------------------------------------------------------------------
  *  StatusChoice — single tile in the Working Status grid.
