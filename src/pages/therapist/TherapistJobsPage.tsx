@@ -11,9 +11,21 @@
 //
 //   Reading her own jobs became possible in 28x.66/67 (therapistUid + the rules
 //   that compare uid to uid). This is the screen that uses it.
+//
+// 🆕 Round 28x.79 (founder, pointing at BookingHistoryPage.tsx: "ให้ใช้การตกแต่ง
+//   และการใช้งานคล้ายเดียวกับหน้า booking/history ดูรายละเอียดการจองได้ แบบ
+//   ใบจอง") — restyled to match that page's rose-berry hero, glass stat strip,
+//   sliding pill tab switcher, and receipt-style card (the card itself IS the
+//   "booking slip" on the customer page too — there's no separate detail
+//   screen to open, everything relevant sits on the card).
+//
+//   What's carried over as-is, not restyled: the masking rule from 28x.69/74 —
+//   a guest's name, address and phone stay hidden until she has accepted the
+//   job, exactly like the Telegram card. The reference page has no equivalent
+//   because a customer already owns every booking she can see.
 
-import React, { useEffect, useMemo, useState } from "react";
-import { Box, Typography, CircularProgress, Button } from "@mui/material";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Box, Avatar, Typography, CircularProgress } from "@mui/material";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -26,23 +38,32 @@ import {
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { toast } from "react-toastify";
 import {
+  ArrowLeft,
   MapPin,
   Phone,
-  Clock,
-  CaretLeft,
+  CalendarBlank,
   CheckCircle,
   XCircle,
+  UserCircle,
 } from "phosphor-react";
 
 import { app, auth, db } from "@/lib/firebase";
 import { responsiveShell } from "@/theme/breakpoints";
+import { formatTHB } from "@/utils/servicePricing";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
-const SANS = '"Inter", system-ui, sans-serif';
-const ROSE = "#D97C95";
-const ROSE_DEEP = "#C96F89";
-const GREEN = "#16A34A";
-const DANGER = "#C0562E";
+const SANS  = '"Inter", system-ui, sans-serif';
+
+// ── brand accents — same values BookingHistoryPage uses, so the two pages
+//   read as one app rather than a customer half and a staff half. ─────────
+const ROSE          = "#D97C95";
+const ROSE_DEEP     = "#C96F89";
+const GREEN         = "#57B88B";
+const GREEN_TEXT    = "#2E7D57";
+const DANGER        = "#C0562E";
+const HERO_GRADIENT = "linear-gradient(160deg, #B8567F 0%, #8A3A57 100%)";
+
+type TabKey = "today" | "completed" | "cancelled";
 
 interface Job {
   id: string;
@@ -55,6 +76,7 @@ interface Job {
   locationName?: string;
   mapUrl?: string;
   phone?: string;
+  contactName?: string;
   status?: string;
   totalPrice?: number;
   therapistResponse?: "accepted" | "declined";
@@ -69,10 +91,54 @@ const toMs = (v: unknown): number => {
   return 0;
 };
 
+// 🆕 28x.79 — status → tab bucket. See the header comment on why this reads
+//   status rather than a calendar-day window: a confirmed job for tomorrow,
+//   or a past one an admin forgot to close out, must still land somewhere.
+const DONE_STATUSES = new Set(["completed", "done"]);
+const CANCELLED_STATUSES = new Set(["cancelled", "canceled", "no_show", "no-show"]);
+const bucketOf = (j: Job): TabKey => {
+  const s = j.status ?? "";
+  if (DONE_STATUSES.has(s)) return "completed";
+  if (CANCELLED_STATUSES.has(s)) return "cancelled";
+  return "today";
+};
+
+const TABS: { key: TabKey; label: string }[] = [
+  { key: "today",     label: "Today"     },
+  { key: "completed", label: "Completed" },
+  { key: "cancelled", label: "Cancelled" },
+];
+const N_TABS   = TABS.length;
+const PILL_GAP = 3;
+
+const fadeUp = (delay = 0) => ({
+  initial:    { opacity: 0, y: 16 },
+  animate:    { opacity: 1, y: 0  },
+  transition: { duration: 0.38, ease: "easeOut" as const, delay },
+});
+
 const TherapistJobsPage: React.FC = () => {
   const navigate = useNavigate();
   const [jobs, setJobs] = useState<Job[] | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [tab, setTab] = useState<TabKey>("today");
+
+  // ── sliding pill geometry — identical measurement approach to
+  //   BookingHistoryPage, so the motion feels like the same component. ────
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [tabPx, setTabPx] = useState(0);
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const measure = () => setTabPx(el.offsetWidth / N_TABS);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const activeIndex = TABS.findIndex((t) => t.key === tab);
+  const pillW = tabPx > PILL_GAP * 2 ? tabPx - PILL_GAP * 2 : 0;
+  const pillX = activeIndex * tabPx + PILL_GAP;
 
   useEffect(() => {
     const uid = auth.currentUser?.uid;
@@ -99,6 +165,7 @@ const TherapistJobsPage: React.FC = () => {
             locationName: b.locationName as string | undefined,
             mapUrl: b.mapUrl as string | undefined,
             phone: b.phone as string | undefined,
+            contactName: (b.contactName ?? b.customerName ?? b.userName) as string | undefined,
             status: b.status as string | undefined,
             totalPrice: b.totalPrice as number | undefined,
             therapistResponse: b.therapistResponse as Job["therapistResponse"],
@@ -115,44 +182,20 @@ const TherapistJobsPage: React.FC = () => {
     return () => unsub();
   }, []);
 
-  // 🆕 28x.79 (founder: "Today's Bookings, Completed, Cancelled แยกตาม
-  //   หมวดหมู่งาน คล้ายๆ หน้า booking/history ของเว็บ") — three tabs, same
-  //   shape as the customer booking/history page's Upcoming/Completed/
-  //   Cancelled switcher, using the SAME three labels already on the stat
-  //   strip so tile and tab agree.
-  //
-  //   Bucketed by STATUS, not by calendar day: the old "today" tile counted
-  //   only jobs starting within today's date bounds, so a confirmed job for
-  //   tomorrow — or a past-dated one an admin forgot to close out — belonged
-  //   to neither Today nor Completed nor Cancelled and fell out of every
-  //   view. "Today" here means "not yet resolved", which for this same-night
-  //   business is virtually always today anyway, and nothing disappears.
-  const DONE_STATUSES = new Set(["completed", "done"]);
-  const CANCELLED_STATUSES = new Set(["cancelled", "canceled", "no_show", "no-show"]);
-  const bucketOf = (j: Job): "today" | "completed" | "cancelled" => {
-    const s = j.status ?? "";
-    if (DONE_STATUSES.has(s)) return "completed";
-    if (CANCELLED_STATUSES.has(s)) return "cancelled";
-    return "today";
-  };
-
-  const [tab, setTab] = useState<"today" | "completed" | "cancelled">("today");
-
   const buckets = useMemo(() => {
     const all = jobs ?? [];
     return {
-      today: all.filter((j) => bucketOf(j) === "today"),
+      today:     all.filter((j) => bucketOf(j) === "today"),
       completed: all.filter((j) => bucketOf(j) === "completed"),
       cancelled: all.filter((j) => bucketOf(j) === "cancelled"),
     };
   }, [jobs]);
 
-  const stats = {
+  const counts = {
     today: buckets.today.length,
     completed: buckets.completed.length,
     cancelled: buckets.cancelled.length,
   };
-
   const shown = buckets[tab];
 
   const respond = async (jobId: string, action: "accept" | "decline") => {
@@ -176,226 +219,363 @@ const TherapistJobsPage: React.FC = () => {
     }
   };
 
-  const JobCard: React.FC<{ job: Job; live: boolean }> = ({ job, live }) => {
-    const answered = job.therapistResponse;
-    const mapHref =
-      job.mapUrl ||
-      (job.address
-        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`
-        : null);
-
-    return (
+  return (
+    <Box sx={{ ...responsiveShell, minHeight: "100vh", background: "var(--sr-bg)", pb: 12, fontFamily: SANS }}>
+      {/* ── Rose-berry hero — same gradient, same glow, same glass stat
+          strip as BookingHistoryPage's hero. ────────────────────────── */}
       <Box
         sx={{
-          p: 2,
-          borderRadius: "18px",
-          background: "var(--sr-panel)",
-          border: "1px solid var(--sr-hairline)",
-          boxShadow: "var(--sr-card-shadow)",
-          mb: 1.5,
+          background: HERO_GRADIENT,
+          pt: "env(safe-area-inset-top, 16px)",
+          pb: 3.5,
+          px: 2.5,
+          position: "relative",
+          overflow: "hidden",
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            bottom: -32,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 220,
+            height: 64,
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.14)",
+            filter: "blur(28px)",
+            pointerEvents: "none",
+          },
         }}
       >
-        <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1.5 }}>
-          <Box sx={{ minWidth: 0 }}>
-            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "var(--sr-muted)" }}>
+        <Box
+          component="button"
+          onClick={() => navigate("/therapist/profile")}
+          aria-label="Go back"
+          sx={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 36, height: 36, borderRadius: "50%",
+            background: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.22)",
+            color: "#fff", cursor: "pointer", mb: 2.5, p: 0,
+          }}
+        >
+          <ArrowLeft size={18} weight="bold" />
+        </Box>
+
+        <motion.div {...fadeUp(0)}>
+          <Typography sx={{ fontFamily: SERIF, fontSize: 26, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+            งานของฉัน
+          </Typography>
+          <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(255,255,255,0.72)", mt: 0.5 }}>
+            {counts.today > 0 ? `${counts.today} งานวันนี้` : "ไม่มีงานวันนี้"}
+          </Typography>
+        </motion.div>
+
+        <motion.div {...fadeUp(0.08)}>
+          <Box sx={{ display: "flex", gap: 1, mt: 2.5, p: 1.5, borderRadius: "16px", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.16)" }}>
+            {[
+              { value: counts.today, label: "Today" },
+              { value: counts.completed, label: "Completed" },
+              { value: counts.cancelled, label: "Cancelled" },
+            ].map((s, i) => (
+              <Box key={i} sx={{ flex: 1, textAlign: "center", borderRight: i < 2 ? "1px solid rgba(255,255,255,0.16)" : "none" }}>
+                <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1 }}>
+                  {s.value}
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "rgba(255,255,255,0.70)", mt: 0.4, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                  {s.label}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </motion.div>
+      </Box>
+
+      {/* ── Sliding pill tab switcher — same geometry + spring as the
+          reference page. ─────────────────────────────────────────────── */}
+      <Box sx={{ px: 2, pt: 2.5, pb: 0 }}>
+        <motion.div {...fadeUp(0.12)}>
+          <Box
+            ref={trackRef}
+            role="tablist"
+            aria-label="Job status"
+            sx={{ position: "relative", display: "flex", borderRadius: 999, background: "var(--sr-panel)", border: "1px solid var(--sr-hairline)", boxShadow: "var(--sr-card-shadow)", overflow: "hidden" }}
+          >
+            {pillW > 0 && (
+              <motion.div
+                initial={false}
+                animate={{ x: pillX }}
+                transition={{ type: "spring", stiffness: 500, damping: 42, mass: 0.9 }}
+                style={{ position: "absolute", top: PILL_GAP, bottom: PILL_GAP, left: 0, width: pillW, borderRadius: 999, background: ROSE, boxShadow: "0 4px 14px rgba(138, 58, 87, 0.30)", pointerEvents: "none", zIndex: 0 }}
+              />
+            )}
+            {TABS.map((t) => {
+              const active = tab === t.key;
+              return (
+                <motion.button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  whileTap={{ scale: 0.97 }}
+                  role="tab"
+                  aria-selected={active}
+                  aria-label={t.label}
+                  style={{ flex: 1, position: "relative", zIndex: 1, background: "none", border: "none", cursor: "pointer", padding: "10px 4px", display: "flex", flexDirection: "column", alignItems: "center", gap: 1, WebkitTapHighlightColor: "transparent" }}
+                >
+                  <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, letterSpacing: "0.03em", color: active ? "#fff" : "var(--sr-muted)", lineHeight: 1, transition: "color 0.15s ease" }}>
+                    {t.label}
+                  </Typography>
+                  {counts[t.key] > 0 && (
+                    <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: active ? "rgba(255,255,255,0.85)" : "var(--sr-dim)", lineHeight: 1, transition: "color 0.15s ease" }}>
+                      {counts[t.key]}
+                    </Typography>
+                  )}
+                </motion.button>
+              );
+            })}
+          </Box>
+        </motion.div>
+      </Box>
+
+      {/* ── Card list ───────────────────────────────────────────────────── */}
+      <Box sx={{ px: 2, pt: 2, display: "flex", flexDirection: "column", gap: 1.5 }}>
+        {jobs === null ? (
+          <LoadingShimmer />
+        ) : jobs.length === 0 ? (
+          <EmptySlate
+            icon={<CalendarBlank size={32} weight="duotone" />}
+            title="ยังไม่มีงาน"
+            body="งานที่แอดมินจ่ายให้คุณจะแสดงที่นี่"
+          />
+        ) : shown.length === 0 ? (
+          <EmptySlate
+            icon={
+              tab === "today"     ? <CalendarBlank size={32} weight="duotone" /> :
+              tab === "completed" ? <CheckCircle   size={32} weight="duotone" /> :
+                                     <XCircle       size={32} weight="duotone" />
+            }
+            title={
+              tab === "today"     ? "ไม่มีงานวันนี้" :
+              tab === "completed" ? "ยังไม่มีงานที่เสร็จ" :
+                                     "ไม่มีงานที่ยกเลิก"
+            }
+            body={
+              tab === "today"     ? "งานใหม่จะแสดงที่นี่เมื่อแอดมินจ่ายงานให้คุณ" :
+              tab === "completed" ? "งานที่ทำเสร็จแล้วจะแสดงที่นี่" :
+                                     "งานที่ยกเลิกจะแสดงที่นี่"
+            }
+          />
+        ) : (
+          shown.slice(0, 60).map((j, i) => (
+            <motion.div
+              key={j.id}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut", delay: Math.min(i, 8) * 0.05 }}
+            >
+              <JobCard job={j} tab={tab} busy={busyId === j.id} onRespond={respond} />
+            </motion.div>
+          ))
+        )}
+      </Box>
+    </Box>
+  );
+};
+
+// ──────────────────────────────────────────────────────────────────────
+// Job card — the "ใบจอง" (booking slip): everything she needs is right
+// here, same as BookingHistoryPage's card is the whole detail view for a
+// customer. No separate tap-to-expand screen on either side.
+// ──────────────────────────────────────────────────────────────────────
+const JobCard: React.FC<{
+  job: Job;
+  tab: TabKey;
+  busy: boolean;
+  onRespond: (id: string, action: "accept" | "decline") => void;
+}> = ({ job, tab, busy, onRespond }) => {
+  const answered = job.therapistResponse;
+  const accepted = answered === "accepted";
+  // 🆕 28x.69/74 — unchanged rule, just restyled: identity + address + phone
+  // stay hidden until she has accepted. A declined or unanswered job must
+  // never leave a guest's contact details on her screen.
+  const revealed = accepted;
+
+  const mapHref =
+    job.mapUrl ||
+    (job.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}` : null);
+
+  const stripeColor =
+    tab === "completed" ? GREEN : tab === "cancelled" ? "var(--sr-line)" : ROSE;
+
+  const statusPill = answered
+    ? {
+        label: accepted ? "รับแล้ว" : "ไม่รับ",
+        bg: accepted ? `${GREEN}1A` : `${DANGER}1A`,
+        fg: accepted ? GREEN_TEXT : DANGER,
+      }
+    : tab === "today"
+    ? { label: "รอตอบรับ", bg: "var(--sr-panel-2)", fg: "var(--sr-muted)" }
+    : null;
+
+  return (
+    <Box sx={{ borderRadius: "20px", background: "var(--sr-panel)", border: "1px solid var(--sr-hairline)", boxShadow: "var(--sr-card-shadow)", overflow: "hidden" }}>
+      <Box sx={{ height: 3, background: stripeColor }} />
+
+      <Box sx={{ p: "14px 16px" }}>
+        {/* top row: guest identity (masked until accepted) + status pill */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
+          <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: ROSE, p: "2px", flexShrink: 0, boxShadow: "0 4px 12px rgba(138, 58, 87, 0.20)" }}>
+            <Avatar sx={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #E8B7C6, #D97C95)", color: "#fff" }}>
+              {revealed && job.contactName ? job.contactName[0].toUpperCase() : <UserCircle size={22} weight="fill" />}
+            </Avatar>
+          </Box>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: "var(--sr-ink)", lineHeight: 1.2 }}>
+              {revealed ? job.contactName || "ลูกค้า" : "ลูกค้าใหม่"}
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "var(--sr-muted)", mt: 0.15 }}>
               {job.date || "—"} · {job.time || "—"}
             </Typography>
-            <Typography sx={{ fontFamily: SERIF, fontSize: 17, fontWeight: 700, color: "var(--sr-ink)", mt: 0.25 }}>
-              {job.serviceName || "—"}
-            </Typography>
-            <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: "var(--sr-body)", mt: 0.25 }}>
-              <Clock size={12} style={{ verticalAlign: -1 }} /> {job.duration ?? "?"} นาที
-              {typeof job.totalPrice === "number" && ` · ฿${Math.round(job.totalPrice).toLocaleString()}`}
-            </Typography>
           </Box>
-
-          {answered && (
-            <Box
-              sx={{
-                alignSelf: "flex-start",
-                px: 1, py: "3px", borderRadius: 999, whiteSpace: "nowrap",
-                background: answered === "accepted" ? `${GREEN}1A` : `${DANGER}1A`,
-                border: `1px solid ${answered === "accepted" ? GREEN : DANGER}55`,
-              }}
-            >
-              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color: answered === "accepted" ? GREEN : DANGER }}>
-                {answered === "accepted" ? "รับแล้ว" : "ไม่รับ"}
+          {statusPill && (
+            <Box sx={{ px: "10px", py: "4px", borderRadius: 999, background: statusPill.bg, flexShrink: 0 }}>
+              <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase", color: statusPill.fg }}>
+                {statusPill.label}
               </Typography>
             </Box>
           )}
         </Box>
 
-        {/* Address + phone are shown only once she has taken the job — the same
-            rule the Telegram card follows (28x.69). A job she declined, or has
-            not answered, must not leave a guest's address on her screen. */}
-        {answered === "accepted" ? (
-          <Box sx={{ mt: 1.25, display: "flex", flexDirection: "column", gap: 0.75 }}>
-            <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "var(--sr-body)" }}>
-              <MapPin size={13} style={{ verticalAlign: -2 }} /> {job.locationName || job.address || "—"}
-            </Typography>
-            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-              {mapHref && (
-                <Button
-                  size="small"
-                  href={mapHref}
-                  target="_blank"
-                  rel="noopener"
-                  sx={{ textTransform: "none", fontWeight: 700, fontSize: 12.5, borderRadius: 999, color: ROSE_DEEP, border: `1px solid ${ROSE}55` }}
-                >
-                  เปิดแผนที่
-                </Button>
-              )}
-              {job.phone && (
-                <Button
-                  size="small"
-                  href={`tel:${job.phone}`}
-                  sx={{ textTransform: "none", fontWeight: 700, fontSize: 12.5, borderRadius: 999, color: ROSE_DEEP, border: `1px solid ${ROSE}55` }}
-                >
-                  <Phone size={13} style={{ marginRight: 4 }} /> โทรหาลูกค้า
-                </Button>
-              )}
-            </Box>
-          </Box>
-        ) : live ? (
-          <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: "var(--sr-dim)", mt: 1 }}>
-            <MapPin size={12} style={{ verticalAlign: -1 }} /> ที่อยู่และเบอร์ลูกค้าจะแสดงหลังกดรับงาน
-          </Typography>
-        ) : null}
-
-        {live && !answered && (
-          <Box sx={{ display: "flex", gap: 1, mt: 1.5 }}>
-            <Button
-              fullWidth
-              disabled={busyId === job.id}
-              onClick={() => void respond(job.id, "accept")}
-              sx={{
-                textTransform: "none", fontWeight: 800, fontSize: 13.5, borderRadius: 999, py: 0.9,
-                background: `linear-gradient(135deg, ${ROSE}, ${ROSE_DEEP})`, color: "#fff",
-                "&:hover": { background: ROSE_DEEP },
-              }}
-            >
-              {busyId === job.id ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : <><CheckCircle size={16} weight="fill" style={{ marginRight: 6 }} /> รับงาน</>}
-            </Button>
-            <Button
-              disabled={busyId === job.id}
-              onClick={() => void respond(job.id, "decline")}
-              sx={{
-                textTransform: "none", fontWeight: 700, fontSize: 13.5, borderRadius: 999, px: 2.5,
-                color: DANGER, border: `1px solid ${DANGER}55`,
-              }}
-            >
-              <XCircle size={16} style={{ marginRight: 4 }} /> ไม่รับ
-            </Button>
-          </Box>
-        )}
-      </Box>
-    );
-  };
-
-  return (
-    <Box sx={{ ...responsiveShell, minHeight: "100vh", background: "var(--sr-bg)", px: 2, pt: 2, pb: 12 }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-        <Button
-          onClick={() => navigate("/therapist/profile")}
-          sx={{ minWidth: 0, p: 0.5, color: "var(--sr-muted)" }}
-        >
-          <CaretLeft size={20} />
-        </Button>
-        <Typography sx={{ fontFamily: SERIF, fontSize: 24, fontWeight: 700, color: "var(--sr-ink)" }}>
-          งานของฉัน
-        </Typography>
-      </Box>
-
-      {/* 🆕 28x.79 — the three tiles ARE the tab switcher now, mirroring the
-          customer booking/history page's Upcoming/Completed/Cancelled pills
-          with the same three labels the founder already had on this strip.
-          One row instead of a passive stat strip + a separate pill bar below
-          it — same behaviour, less chrome, which fits StaffLayout's brief. */}
-      {jobs !== null && (
-        <Box
-          role="tablist"
-          aria-label="Job status"
-          sx={{
-            display: "flex",
-            mb: 2.5,
-            borderRadius: "18px",
-            background: "var(--sr-panel)",
-            border: "1px solid var(--sr-hairline)",
-            boxShadow: "var(--sr-card-shadow)",
-            overflow: "hidden",
-          }}
-        >
-          {(
-            [
-              { key: "today", value: stats.today, label: "วันนี้ · Today", color: ROSE_DEEP },
-              { key: "completed", value: stats.completed, label: "เสร็จ · Done", color: "#22C55E" },
-              { key: "cancelled", value: stats.cancelled, label: "ยกเลิก · Cancelled", color: "#F87171" },
-            ] as const
-          ).map((s, i) => {
-            const active = tab === s.key;
-            return (
-              <Box
-                key={s.key}
-                component="button"
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setTab(s.key)}
-                sx={{
-                  flex: 1,
-                  textAlign: "center",
-                  py: 1.75,
-                  border: "none",
-                  cursor: "pointer",
-                  background: active ? "var(--sr-panel-2)" : "transparent",
-                  borderRight: i < 2 ? "1px solid var(--sr-hairline)" : "none",
-                  borderBottom: active ? `3px solid ${s.color}` : "3px solid transparent",
-                  transition: "background 120ms ease",
-                  WebkitTapHighlightColor: "transparent",
-                }}
-              >
-                <Typography sx={{ fontFamily: SERIF, fontSize: 24, fontWeight: 700, color: s.color, lineHeight: 1 }}>
-                  {s.value}
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: SANS,
-                    fontSize: 10.5,
-                    color: active ? "var(--sr-ink)" : "var(--sr-muted)",
-                    fontWeight: active ? 800 : 600,
-                    mt: 0.5,
-                    letterSpacing: "0.02em",
-                  }}
-                >
-                  {s.label}
-                </Typography>
+        {/* service + date + location — the booking-slip body */}
+        <Box sx={{ p: "10px 12px", borderRadius: "12px", background: "var(--sr-panel-2)", display: "flex", flexDirection: "column", gap: 0.6, mb: 1.5 }}>
+          <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 600, color: "var(--sr-ink)", lineHeight: 1.3 }}>
+            {job.serviceName || "—"}
+            {job.duration && (
+              <Box component="span" sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 500, color: "var(--sr-muted)", ml: 1 }}>
+                · {job.duration} นาที
               </Box>
-            );
-          })}
+            )}
+          </Typography>
+          {revealed ? (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <MapPin size={12} color="var(--sr-muted)" />
+              <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "var(--sr-body)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {job.locationName || job.address || "—"}
+              </Typography>
+            </Box>
+          ) : tab === "today" ? (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <MapPin size={12} color="var(--sr-dim)" />
+              <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "var(--sr-dim)" }}>
+                ที่อยู่และเบอร์ลูกค้าจะแสดงหลังกดรับงาน
+              </Typography>
+            </Box>
+          ) : null}
         </Box>
-      )}
 
-      {jobs === null ? (
-        <Box sx={{ textAlign: "center", mt: 6 }}>
-          <CircularProgress sx={{ color: ROSE }} />
+        {/* bottom row: total + actions */}
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+          <Box>
+            <Typography sx={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: "var(--sr-muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              Total
+            </Typography>
+            <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: "var(--sr-ink)", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+              {typeof job.totalPrice === "number" ? formatTHB(job.totalPrice) : "—"}
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: "flex", gap: 1 }}>
+            {tab === "today" && !answered && (
+              <>
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  disabled={busy}
+                  onClick={() => onRespond(job.id, "accept")}
+                  aria-label="รับงาน"
+                  style={{ height: 38, padding: "0 16px", borderRadius: 999, background: ROSE, color: "#fff", fontFamily: SANS, fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(138, 58, 87, 0.28)", display: "flex", alignItems: "center", gap: 6, opacity: busy ? 0.7 : 1 }}
+                >
+                  {busy ? <CircularProgress size={14} sx={{ color: "#fff" }} /> : <><CheckCircle size={14} weight="fill" /> รับงาน</>}
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  disabled={busy}
+                  onClick={() => onRespond(job.id, "decline")}
+                  aria-label="ไม่รับ"
+                  style={{ height: 38, padding: "0 14px", borderRadius: 999, background: "rgba(192,86,46,0.10)", color: DANGER, fontFamily: SANS, fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, opacity: busy ? 0.7 : 1 }}
+                >
+                  <XCircle size={14} /> ไม่รับ
+                </motion.button>
+              </>
+            )}
+            {tab === "today" && accepted && (
+              <>
+                {mapHref && (
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => window.open(mapHref, "_blank", "noopener")}
+                    aria-label="เปิดแผนที่"
+                    style={{ height: 38, padding: "0 14px", borderRadius: 999, background: "rgba(217, 124, 149, 0.12)", color: ROSE_DEEP, fontFamily: SANS, fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
+                  >
+                    เปิดแผนที่
+                  </motion.button>
+                )}
+                {job.phone && (
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => { window.location.href = `tel:${job.phone}`; }}
+                    aria-label="โทรหาลูกค้า"
+                    style={{ height: 38, padding: "0 14px", borderRadius: 999, background: ROSE, color: "#fff", fontFamily: SANS, fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, boxShadow: "0 4px 12px rgba(138, 58, 87, 0.28)" }}
+                  >
+                    <Phone size={13} weight="fill" /> โทร
+                  </motion.button>
+                )}
+              </>
+            )}
+          </Box>
         </Box>
-      ) : jobs.length === 0 ? (
-        <Typography sx={{ fontFamily: SANS, fontSize: 13.5, color: "var(--sr-muted)", textAlign: "center", mt: 6 }}>
-          ยังไม่มีงานที่จ่ายให้คุณค่ะ
-        </Typography>
-      ) : shown.length === 0 ? (
-        <Typography sx={{ fontFamily: SANS, fontSize: 13.5, color: "var(--sr-muted)", textAlign: "center", mt: 6 }}>
-          {tab === "today" ? "ไม่มีงานวันนี้" : tab === "completed" ? "ยังไม่มีงานที่เสร็จ" : "ไม่มีงานที่ยกเลิก"}
-        </Typography>
-      ) : (
-        <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-          {shown.slice(0, 60).map((j) => (
-            <JobCard key={j.id} job={j} live={tab === "today"} />
-          ))}
-        </motion.div>
-      )}
+      </Box>
     </Box>
   );
 };
+
+// ──────────────────────────────────────────────────────────────────────
+const EmptySlate: React.FC<{ icon: React.ReactNode; title: string; body: string }> = ({ icon, title, body }) => (
+  <Box sx={{ mt: 4, px: 2, py: 6, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 1.5 }}>
+    <Box sx={{ width: 64, height: 64, borderRadius: "50%", background: ROSE, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 24px rgba(138, 58, 87, 0.28)", mb: 0.5 }}>
+      {icon}
+    </Box>
+    <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: "var(--sr-ink)", letterSpacing: "-0.01em" }}>
+      {title}
+    </Typography>
+    <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "var(--sr-muted)", lineHeight: 1.6, maxWidth: 260 }}>
+      {body}
+    </Typography>
+  </Box>
+);
+
+const LoadingShimmer: React.FC = () => (
+  <>
+    {[0, 1, 2].map((i) => (
+      <Box key={i} sx={{ borderRadius: "20px", background: "var(--sr-panel)", border: "1px solid var(--sr-hairline)", overflow: "hidden", opacity: 1 - i * 0.2 }}>
+        <Box sx={{ height: 3, background: "var(--sr-line)" }} />
+        <Box sx={{ p: "14px 16px", display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: "var(--sr-panel-2)" }} />
+            <Box sx={{ flex: 1 }}>
+              <Box sx={{ height: 14, width: "55%", borderRadius: 6, background: "var(--sr-panel-2)", mb: 0.8 }} />
+              <Box sx={{ height: 10, width: "30%", borderRadius: 6, background: "var(--sr-panel-2)" }} />
+            </Box>
+            <Box sx={{ height: 22, width: 72, borderRadius: 999, background: "var(--sr-panel-2)" }} />
+          </Box>
+          <Box sx={{ height: 68, borderRadius: 12, background: "var(--sr-panel-2)" }} />
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Box>
+              <Box sx={{ height: 9, width: 32, borderRadius: 4, background: "var(--sr-panel-2)", mb: 0.6 }} />
+              <Box sx={{ height: 20, width: 64, borderRadius: 6, background: "var(--sr-panel-2)" }} />
+            </Box>
+            <Box sx={{ height: 38, width: 80, borderRadius: 999, background: "var(--sr-panel-2)" }} />
+          </Box>
+        </Box>
+      </Box>
+    ))}
+  </>
+);
 
 export default TherapistJobsPage;
