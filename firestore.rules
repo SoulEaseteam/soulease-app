@@ -45,6 +45,24 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // ── assigned practitioner (28x.66) ────────────────────────────
+    // A booking's `therapistId` is the therapist's DOC id ("XingXingSunRed"),
+    // written by the admin panel and treated as a doc id by every Cloud
+    // Function. The old rule compared it to `request.auth.uid` — two different
+    // identifiers — so a practitioner could never read her own jobs. Proven by
+    // tests/rules.test.mjs, which failed on exactly these two cases before this
+    // helper existed.
+    //
+    // The booking now carries `therapistUid` (stamped server-side on create and
+    // on reassignment) so the comparison is uid-to-uid, with no extra document
+    // read inside the rule — a get() here would run per document scanned in a
+    // list query and hit the rules read limit.
+    function isAssignedTherapist() {
+      return isSignedIn()
+             && resource.data.therapistUid is string
+             && resource.data.therapistUid == request.auth.uid;
+    }
+
     // ── reserved shop identity (28x.60) ───────────────────────────
     // Founder: "บล๊อค ชื่อ และเบอร์ นี้ ห้าม ใครแอบอ้าง" — nobody may write the
     // shop's own name or number onto a booking, profile or review. A guest
@@ -232,7 +250,7 @@ service cloud.firestore {
       //   can be reduced to real ownership.
       allow get: if isAdmin()
                  || (isSignedIn() && resource.data.userId == request.auth.uid)
-                 || (isSignedIn() && resource.data.therapistId == request.auth.uid);
+                 || isAssignedTherapist();
       // Round 28s6 (founder 2026-05-30) — the 28s1 rule denied public
       // review listeners. Reviews live on bookings (reviewText / rating
       // fields on the same doc as the original reservation). Allow
@@ -265,7 +283,7 @@ service cloud.firestore {
       //   below) — never from the reservation document.
       allow list: if isAdmin()
                   || (isSignedIn() && resource.data.userId == request.auth.uid)
-                  || (isSignedIn() && resource.data.therapistId == request.auth.uid);
+                  || isAssignedTherapist();
       // 🆕 28x.60 — plus: may not claim the shop's own name/number. This is the
       //   only unforgeable place to enforce it; the booking page's check is UX.
       allow create: if request.resource.data.status in ['pending', 'confirmed']

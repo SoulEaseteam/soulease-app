@@ -815,6 +815,13 @@ export const onBookingCreate = onDocumentCreated(
       logger.warn("[onBookingCreate] no data", { bookingId });
       return;
     }
+
+    // 🆕 28x.66 — stamp therapistUid first, before any Telegram work, so a
+    //   practitioner can read the job the moment she is notified about it.
+    //   Runs ahead of the token check on purpose: a missing bot token must not
+    //   also cost her access to her own booking.
+    await stampTherapistUid(bookingId, data.therapistId);
+
     const token = TELEGRAM_BOT_TOKEN.value();
     if (!token) {
       logger.error("[onBookingCreate] TELEGRAM_BOT_TOKEN missing");
@@ -2126,6 +2133,45 @@ export const syncTherapistBusyStatus = onSchedule(
 //   Loop-safe: it writes only `activeBooking` / `busyUntil` on therapist docs,
 //   both of which are in AUDIT_IGNORE_KEYS, so onTherapistUpdate treats the
 //   write as "no meaningful change" and does nothing — no cascade.
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.66 — stamp `therapistUid` onto a booking.
+//
+//   firestore.rules can only compare uid to uid. A booking stores the
+//   therapist's DOC id ("XingXingSunRed"), so the old rule
+//   `therapistId == request.auth.uid` never matched and a practitioner could
+//   not read her own jobs — proven by tests/rules.test.mjs.
+//
+//   Resolving the doc id inside the rule would need a get() per document
+//   scanned, which a list query blows past. So the uid is denormalised onto
+//   the booking here, server-side, where it can't be forged: this runs on
+//   create and on every reassignment.
+async function stampTherapistUid(
+  bookingId: string,
+  therapistId: string | undefined | null
+): Promise<void> {
+  const db = getFirestore();
+  try {
+    if (!therapistId) {
+      await db.collection("bookings").doc(bookingId).update({
+        therapistUid: FieldValue.delete(),
+      });
+      return;
+    }
+    const tSnap = await db.collection("therapists").doc(therapistId).get();
+    const uid = (tSnap.data() as { uid?: string } | undefined)?.uid;
+    await db
+      .collection("bookings")
+      .doc(bookingId)
+      .update({
+        // A practitioner with no linked login yet simply has no uid stamped;
+        // she sees nothing rather than everything.
+        therapistUid: typeof uid === "string" && uid ? uid : FieldValue.delete(),
+      });
+  } catch (err) {
+    logger.error("[stampTherapistUid] failed", { bookingId, therapistId, err });
+  }
+}
+
 export const onBookingDispatchChange = onDocumentUpdated(
   {
     document: "bookings/{bookingId}",
@@ -2144,6 +2190,14 @@ export const onBookingDispatchChange = onDocumentUpdated(
     // phone / time) that can't move a practitioner's live busy status.
     const idChanged = (before?.therapistId ?? null) !== (after.therapistId ?? null);
     const stateChanged = (before?.dispatchState ?? null) !== (after.dispatchState ?? null);
+
+    // 🆕 28x.66 — keep therapistUid in step with a reassignment, BEFORE the
+    //   early return below. Reassigning a job must also move who can read it:
+    //   the previous practitioner keeps the guest's address otherwise.
+    if (idChanged) {
+      await stampTherapistUid(event.params.bookingId, after.therapistId);
+    }
+
     if (!idChanged && !stateChanged) return;
 
     // Practitioners whose busy status may have moved: the one just assigned,
