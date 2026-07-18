@@ -154,6 +154,10 @@ const TherapistProfilePage = React.lazy(
 const TherapistJobsPage = React.lazy(
   () => import("@/pages/therapist/TherapistJobsPage")
 );
+// 🆕 28x.78 — practitioner account settings (Language · Change password · Sign out).
+const TherapistSettingsPage = React.lazy(
+  () => import("@/pages/therapist/TherapistSettingsPage")
+);
 
 // Admin
 const AdminDashboardPage = React.lazy(
@@ -370,6 +374,7 @@ export default function App() {
             element={<TherapistProfilePage />}
           />
           <Route path="/therapist/jobs" element={<TherapistJobsPage />} />
+          <Route path="/therapist/settings" element={<TherapistSettingsPage />} />
           {/* /therapist/status route removed Round 22b — TherapistStatusManager
               component was deleted in the merge cleanup. */}
           <Route path="/update-location" element={<UpdateLocationPage />} />

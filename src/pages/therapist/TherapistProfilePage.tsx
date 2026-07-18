@@ -26,7 +26,6 @@ import {
   CircularProgress,
   Chip,
   IconButton,
-  Divider,
   Button,
   Switch,
   Snackbar,
@@ -34,9 +33,8 @@ import {
 } from "@mui/material";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import RoomRoundedIcon from "@mui/icons-material/RoomRounded";
-import MyLocationRoundedIcon from "@mui/icons-material/MyLocationRounded";
-import EventIcon from "@mui/icons-material/EventNoteRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
+import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
@@ -57,7 +55,6 @@ import {
 } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 
-import ProfileSummaryCard from "@/components/therapist/ProfileSummaryCard";
 import type { Therapist, Avail, StatusOverride } from "@/types/therapist";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell.
 import { responsiveShell } from "@/theme/breakpoints";
@@ -684,54 +681,71 @@ const TherapistProfilePage: React.FC = () => {
               }}
             />
           </Box>
+
+          {/* 🆕 28x.78 (founder: "Location ทั้ง2อัน รวมกัน และเอาไปไว้ที่ Working
+              Status") — the two location tiles merged into one row inside the
+              status card. /location already captures GPS, so /update-location
+              was a duplicate entrance. */}
+          <Box
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate("/location")}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") void navigate("/location"); }}
+            sx={{
+              marginTop: 1.25,
+              padding: "10px 12px",
+              borderRadius: 2,
+              background: "var(--sr-panel-2)",
+              border: "1px solid rgba(184,92,60,0.12)",
+              display: "flex",
+              alignItems: "center",
+              gap: 1.25,
+              cursor: "pointer",
+              "&:active": { background: "var(--sr-panel)" },
+            }}
+          >
+            <RoomRoundedIcon sx={{ color: "#C96F89", fontSize: 22 }} />
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography sx={{ fontFamily: SANS, fontWeight: 700, fontSize: "12.5px", color: "var(--sr-ink)" }}>
+                ตำแหน่งที่ยืน · Standby location
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: "10.5px", color: "var(--sr-body)", lineHeight: 1.4 }}>
+                ตั้งจุดบนแผนที่ หรือใช้ GPS ปัจจุบัน
+              </Typography>
+            </Box>
+            <ChevronRightRoundedIcon sx={{ color: "var(--sr-dim)" }} />
+          </Box>
         </Box>
       </Box>
 
-      {/* Live stats card */}
+      {/* 🆕 28x.78 — stats moved to /therapist/jobs; the two location tiles are
+          merged into Working Status above. Only account settings remains here,
+          as a single entry to the new Settings page. */}
       <Box sx={{ paddingX: 2, marginTop: 2 }}>
-        <ProfileSummaryCard
-          todayBookings={todayBookings}
-          completedJobs={completedJobs}
-          cancelledJobs={cancelledJobs}
-        />
-      </Box>
-
-      <Divider sx={{ my: 2, mx: 2, borderColor: "rgba(184,92,60,0.15)" }} />
-
-      {/* Menu — only routes that actually exist (Round 22b removed
-          /therapist/status; /therapist/bookings was never wired in App.tsx).
-          Kept tight: Location + Update GPS. */}
-      <Box
-        sx={{
-          paddingX: 2,
-          display: "grid",
-          gridTemplateColumns: "repeat(2, 1fr)",
-          gap: 1.5,
-        }}
-      >
-        <MenuTile
-          label="Standby Location"
-          Icon={RoomRoundedIcon}
-          onClick={() => navigate("/location")}
-        />
-        <MenuTile
-          label="Update GPS"
-          Icon={MyLocationRoundedIcon}
-          onClick={() => navigate("/update-location")}
-        />
-        {/* 🆕 28x.77 — now that the PROFILE tab lands here instead of the
-            customer profile, this is the only remaining route to language and
-            password. Without it those settings became unreachable for staff. */}
-        <MenuTile
-          label="งานของฉัน · My Jobs"
-          Icon={EventIcon}
-          onClick={() => navigate("/therapist/jobs")}
-        />
-        <MenuTile
-          label="ตั้งค่าบัญชี · ภาษา / รหัสผ่าน"
-          Icon={SettingsRoundedIcon}
-          onClick={() => navigate("/profile")}
-        />
+        <Box
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate("/therapist/settings")}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") void navigate("/therapist/settings"); }}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            padding: "14px 16px",
+            borderRadius: 3,
+            background: "var(--sr-panel)",
+            border: "1px solid rgba(184,92,60,0.18)",
+            boxShadow: "0 6px 18px rgba(15, 23, 42,0.06)",
+            cursor: "pointer",
+            "&:active": { background: "var(--sr-panel-2)" },
+          }}
+        >
+          <SettingsRoundedIcon sx={{ color: "#C96F89" }} />
+          <Typography sx={{ flex: 1, fontFamily: SANS, fontWeight: 700, fontSize: "14px", color: "var(--sr-ink)" }}>
+            ตั้งค่า · Settings
+          </Typography>
+          <ChevronRightRoundedIcon sx={{ color: "var(--sr-dim)" }} />
+        </Box>
       </Box>
 
       {/* Toast for save success / failure */}

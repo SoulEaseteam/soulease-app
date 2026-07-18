@@ -126,6 +126,25 @@ const TherapistJobsPage: React.FC = () => {
     };
   }, [jobs]);
 
+  // 🆕 28x.78 (founder: "Today's/Completed/Cancelled ย้ายไปหน้า therapist/jobs
+  //   ทำให้สวยงาม") — the three counters used to sit on the profile page,
+  //   computed from a second bookings listener. This page already holds every
+  //   job, so it derives them directly — no extra read, and they can't disagree
+  //   with the list right below them.
+  const stats = useMemo(() => {
+    const all = jobs ?? [];
+    const now = new Date();
+    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+    const done = new Set(["completed", "done"]);
+    const cancelled = new Set(["cancelled", "canceled", "no_show", "no-show"]);
+    return {
+      today: all.filter((j) => j.startAtMs >= dayStart && j.startAtMs < dayEnd && !cancelled.has(j.status ?? "")).length,
+      completed: all.filter((j) => done.has(j.status ?? "")).length,
+      cancelled: all.filter((j) => cancelled.has(j.status ?? "")).length,
+    };
+  }, [jobs]);
+
   const respond = async (jobId: string, action: "accept" | "decline") => {
     setBusyId(jobId);
     try {
@@ -276,6 +295,46 @@ const TherapistJobsPage: React.FC = () => {
           งานของฉัน
         </Typography>
       </Box>
+
+      {/* 🆕 28x.78 — the three counters, moved here from the profile page and
+          rebuilt as one strip. Colour follows meaning: rose today, green done,
+          clay cancelled — all measured to clear 4.5:1 on the dark panel. */}
+      {jobs !== null && (
+        <Box
+          sx={{
+            display: "flex",
+            mb: 2.5,
+            borderRadius: "18px",
+            background: "var(--sr-panel)",
+            border: "1px solid var(--sr-hairline)",
+            boxShadow: "var(--sr-card-shadow)",
+            overflow: "hidden",
+          }}
+        >
+          {[
+            { value: stats.today, label: "วันนี้ · Today", color: ROSE_DEEP },
+            { value: stats.completed, label: "เสร็จ · Done", color: "#22C55E" },
+            { value: stats.cancelled, label: "ยกเลิก · Cancelled", color: "#F87171" },
+          ].map((s, i) => (
+            <Box
+              key={s.label}
+              sx={{
+                flex: 1,
+                textAlign: "center",
+                py: 1.75,
+                borderRight: i < 2 ? "1px solid var(--sr-hairline)" : "none",
+              }}
+            >
+              <Typography sx={{ fontFamily: SERIF, fontSize: 24, fontWeight: 700, color: s.color, lineHeight: 1 }}>
+                {s.value}
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "var(--sr-muted)", mt: 0.5, letterSpacing: "0.02em" }}>
+                {s.label}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+      )}
 
       {jobs === null ? (
         <Box sx={{ textAlign: "center", mt: 6 }}>
