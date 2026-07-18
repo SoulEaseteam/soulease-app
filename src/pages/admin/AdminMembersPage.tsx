@@ -20,7 +20,7 @@ import { Box, Typography, TextField, Button, MenuItem, CircularProgress } from "
 import { collection, doc, getDocs, onSnapshot, setDoc, query as fsQuery, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "react-toastify";
-import { Crown, MagnifyingGlass } from "phosphor-react";
+import { Crown, MagnifyingGlass, UserCircle } from "phosphor-react";
 import { adminColor, adminFont, adminFieldSx } from "@/theme/adminTheme";
 import { logAdminAction } from "@/utils/auditLog";
 import { normPhone } from "@/utils/phoneCountry";
@@ -76,6 +76,10 @@ const AdminMembersPage: React.FC = () => {
   const [createdCreds, setCreatedCreds] = useState<
     Record<string, { username: string; password: string }>
   >({});
+  // 🆕 28x.56 (founder: "สร้างบัญชีเสร็จ ให้ขึ้นป้ายเมมเบอร์") — phones that already
+  //   have a login, so each row can show a persistent "มีบัญชี" badge instead of
+  //   only the one-off box right after creating it.
+  const [accountPhones, setAccountPhones] = useState<Set<string>>(new Set());
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   // 🆕 28x.38 — a booking card links here as /admin/members?q=<phone>, so the
@@ -121,6 +125,18 @@ const AdminMembersPage: React.FC = () => {
   }, []);
 
   // lifetime per-phone aggregate from every booking
+  // 🆕 28x.56 — which phones already hold a login account.
+  useEffect(() => {
+    void getDocs(collection(db, "users")).then((snap) => {
+      const s = new Set<string>();
+      snap.forEach((d) => {
+        const p = normPhone(String((d.data() as { phone?: string }).phone ?? "").trim());
+        if (p) s.add(p);
+      });
+      setAccountPhones(s);
+    }).catch((e) => console.warn("[members] users read failed", e));
+  }, []);
+
   useEffect(() => {
     const SERVED = new Set(["completed", "done"]);
     const NOSHOW = new Set(["no_show", "no-show", "noshow"]);
@@ -349,6 +365,8 @@ const AdminMembersPage: React.FC = () => {
         ...p,
         [key]: { username: res.username, password: res.password },
       }));
+      // 🆕 28x.56 — light the "มีบัญชี" badge straight away, no reload needed.
+      setAccountPhones((p) => new Set(p).add(key));
       toast.success(`สร้างบัญชีแล้ว · ${res.username} / ${res.password}`);
     } catch (e) {
       const msg = (e as { message?: string })?.message ?? "";
@@ -564,6 +582,15 @@ const AdminMembersPage: React.FC = () => {
                         <Crown size={12} weight="fill" color={color} />
                         <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color }}>{rec.tier}</Typography>
                       </Box>
+                      {/* 🆕 28x.56 — persistent badge once the guest has a login. */}
+                      {accountPhones.has(phone) && (
+                        <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.4, px: 0.9, py: "2px", borderRadius: 999, background: `${adminColor.green}1A`, border: `1px solid ${adminColor.green}55` }}>
+                          <UserCircle size={12} weight="fill" color={adminColor.green} />
+                          <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color: adminColor.green }}>
+                            มีบัญชี
+                          </Typography>
+                        </Box>
+                      )}
                       <Typography sx={{ fontFamily: SANS, fontSize: 11, color: adminColor.dim }}>
                         {stat ? `${stat.served} ครั้ง · ${thb(stat.totalSpent)}` : "ยังไม่มีประวัติ"}
                         {stat && stat.noShowCount > 0 && ` · no-show ${stat.noShowCount}`}
@@ -610,12 +637,15 @@ const AdminMembersPage: React.FC = () => {
                           sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: adminColor.muted, borderColor: adminColor.line2 }}>
                           แก้ไข
                         </Button>
-                        {/* 🆕 28x.55 — mint the guest's login (SRD code + phone). */}
-                        <Button size="small" variant="outlined" disabled={saving}
-                          onClick={() => void createLogin(phone)}
-                          sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: adminColor.green, borderColor: adminColor.green }}>
-                          สร้างบัญชี
-                        </Button>
+                        {/* 🆕 28x.55 — mint the guest's login (SRD code + phone).
+                            🆕 28x.56 — hidden once they have one; the badge above says so. */}
+                        {!accountPhones.has(phone) && (
+                          <Button size="small" variant="outlined" disabled={saving}
+                            onClick={() => void createLogin(phone)}
+                            sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, borderRadius: "999px", color: adminColor.green, borderColor: adminColor.green }}>
+                            สร้างบัญชี
+                          </Button>
+                        )}
                         {/* 🆕 28w.96 — open this member's real reservations. */}
                         <Button size="small" variant="outlined"
                           onClick={() => setOpenPhone((p) => (p === phone ? null : phone))}
