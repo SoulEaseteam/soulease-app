@@ -1053,6 +1053,35 @@ export const onBookingCreate = onDocumentCreated(
         logger.error("[onBookingCreate] therapist notify failed", err);
       }
     }
+
+    // ── 3. Unassigned job → post it to the practitioner channel (28x.71) ──
+    //   A booking with nobody assigned previously sat in the admin group until
+    //   View phoned around. Masked card, first press takes it.
+    if (!data.therapistId) {
+      try {
+        const chan = await jobChannelId();
+        if (chan) {
+          const posted = await sendTelegramIfEnabled(
+            token,
+            chan,
+            formatOpenJob(bookingId, data),
+            openJobKeyboard(bookingId)
+          );
+          await getFirestore().collection("telegramLogs").add({
+            bookingId,
+            ok: posted.ok,
+            response: posted.body.slice(0, 500),
+            source: "onBookingCreate.openChannel",
+            at: FieldValue.serverTimestamp(),
+          });
+        } else {
+          logger.info("[onBookingCreate] no job channel configured");
+        }
+      } catch (err) {
+        // Same fail-open rule: the admin group already has the master copy.
+        logger.error("[onBookingCreate] open-job post failed", err);
+      }
+    }
   }
 );
 
@@ -1317,12 +1346,190 @@ async function linkTherapistByCode(
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.71 — open jobs posted to the practitioner channel.
+//
+//   A booking with no practitioner assigned used to sit in the admin group
+//   waiting for View to phone around. Now it also goes to the channel, masked,
+//   and whoever presses first takes it.
+//
+//   Channel, not group, on purpose: Telegram group members can see each other's
+//   personal accounts, so a roster of 13 would learn each other's real Telegram
+//   identities. Channel subscribers can't see each other at all, and inline
+//   buttons still work.
+async function jobChannelId(): Promise<string | null> {
+  try {
+    const snap = await getFirestore()
+      .collection("adminSettings")
+      .doc("advanced")
+      .get();
+    const v = snap.data()?.jobChannelId;
+    return typeof v === "string" && v ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The masked card the channel sees — no guest, no address, no phone. */
+function formatOpenJob(bookingId: string, b: BookingDocLite): string {
+  const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
+  return [
+    `🆕 งานว่าง · ${refCode}`,
+    "",
+    `🧖 ${b.serviceName ?? "—"} · ${b.duration ?? "?"} นาที`,
+    `📅 ${b.date ?? "—"}  🕐 ${b.time ?? "—"}`,
+    `📍 โซน: ${coarseArea(b)}`,
+    typeof b.totalPrice === "number"
+      ? `💰 รวม ${Math.round(b.totalPrice).toLocaleString()} ฿`
+      : "",
+    "",
+    "กดรับงานก่อนได้ก่อนค่ะ",
+    "รายละเอียดเต็มจะส่งเข้าแชทส่วนตัวของคนที่รับ",
+  ]
+    .filter((l) => l.length > 0)
+    .join("\n");
+}
+
+const openJobKeyboard = (bookingId: string): InlineKeyboard => [
+  [{ text: "🙋 รับงานนี้", callback_data: `open:claim:${bookingId}` }],
+];
+
+/**
+ * First-come-first-served claim from the channel.
+ *
+ * The whole risk here is two practitioners pressing within the same second, so
+ * the assignment runs in a transaction: whoever's write lands first owns the
+ * job, and the other is told it's gone rather than both being sent to the same
+ * hotel room.
+ */
+async function handleOpenJobClaim(
+  q: TelegramCallbackQuery,
+  bookingId: string,
+  token: string
+): Promise<void> {
+  const db = getFirestore();
+  const pressedBy = q.from?.id;
+  if (!pressedBy) {
+    await answerCallback(token, q.id);
+    return;
+  }
+
+  // Only a linked practitioner may claim — the channel could later include
+  // someone who isn't on the roster.
+  const tSnap = await db
+    .collection("therapists")
+    .where("telegramChatId", "in", [String(pressedBy), pressedBy])
+    .limit(1)
+    .get();
+  if (tSnap.empty) {
+    await answerCallback(token, q.id, "บัญชีนี้ยังไม่ได้เชื่อมกับระบบค่ะ");
+    return;
+  }
+  const therapistDoc = tSnap.docs[0];
+  const therapist = therapistDoc.data() as { name?: string; uid?: string };
+
+  const ref = db.collection("bookings").doc(bookingId);
+  type ClaimOutcome = "won" | "taken" | "gone";
+  let outcome: ClaimOutcome;
+  try {
+    // Return the outcome out of the transaction rather than assigning to an
+    // outer variable: the callback runs later, so TypeScript can't see the
+    // assignment and narrows the value to its initialiser.
+    outcome = await db.runTransaction<ClaimOutcome>(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) return "gone";
+      const b = snap.data() as {
+        therapistId?: string;
+        status?: string;
+      };
+      if (b.status === "cancelled" || b.status === "canceled") return "gone";
+      if (b.therapistId) return "taken";
+      tx.update(ref, {
+        therapistId: therapistDoc.id,
+        therapistName: therapist.name ?? therapistDoc.id,
+        ...(therapist.uid ? { therapistUid: therapist.uid } : {}),
+        therapistResponse: "accepted",
+        therapistRespondedAt: FieldValue.serverTimestamp(),
+        claimedFrom: "channel",
+      });
+      return "won";
+    });
+  } catch (err) {
+    logger.error("[openJobClaim] transaction failed", { bookingId, err });
+    await answerCallback(token, q.id, "ระบบขัดข้อง ลองใหม่อีกครั้งค่ะ");
+    return;
+  }
+
+  if (outcome === "taken") {
+    await answerCallback(token, q.id, "งานนี้มีคนรับไปแล้วค่ะ");
+    return;
+  }
+  if (outcome === "gone") {
+    await answerCallback(token, q.id, "งานนี้ไม่เปิดรับแล้วค่ะ");
+    return;
+  }
+
+  const who = therapist.name ?? therapistDoc.id;
+  await answerCallback(token, q.id, "รับงานแล้วค่ะ ดูรายละเอียดในแชทส่วนตัว");
+
+  // Close the channel post. No details, no winner's name — the channel is a
+  // shared surface and neither the guest nor the practitioner needs publishing.
+  const chanId = q.message?.chat?.id;
+  const msgId = q.message?.message_id;
+  if (chanId && msgId) {
+    await editTelegramMessage(
+      token,
+      chanId,
+      msgId,
+      `✅ งานนี้มีคนรับแล้ว · SR-${bookingId.slice(0, 8).toUpperCase()}`
+    );
+  }
+
+  // Full details go to the winner alone.
+  const fresh = await ref.get();
+  const full = fresh.data() as BookingDocLite;
+  await sendTelegramIfEnabled(
+    token,
+    String(pressedBy),
+    `${formatBookingForTherapist(bookingId, full, false)
+      .split("\n")
+      .filter(
+        (l) => !l.startsWith("กดปุ่มด้านล่าง") && !l.startsWith("ถ้ากดไม่ได้")
+      )
+      .join("\n")
+      .replace("🔔 งานใหม่ ·", "✅ รับงานแล้ว ·")
+      .trimEnd()}\n\nแอดมินเห็นแล้วว่าคุณรับงานนี้ เดินทางได้เลยค่ะ`
+  );
+
+  await sendTelegramIfEnabled(
+    token,
+    TELEGRAM_CHAT_ID,
+    `🙋 ${who} รับงานจากช่องงานแล้ว · SR-${bookingId.slice(0, 8).toUpperCase()} · ${full.date ?? ""} ${full.time ?? ""}`
+  );
+
+  await db.collection("telegramLogs").add({
+    bookingId,
+    therapistId: therapistDoc.id,
+    ok: true,
+    response: "claimed-from-channel",
+    source: "openJobClaim",
+    at: FieldValue.serverTimestamp(),
+  });
+  logger.info("[openJobClaim] claimed", { bookingId, therapistId: therapistDoc.id });
+}
+
 async function handleJobCallback(
   q: TelegramCallbackQuery,
   token: string
 ): Promise<void> {
   const data = q.data ?? "";
   const parts = data.split(":");
+  // 🆕 28x.71 — "open:claim:<id>" comes from the job channel, where nobody is
+  //   assigned yet, so it takes a different path (first-come, transactional).
+  if (parts[0] === "open" && parts[1] === "claim" && parts.length >= 3) {
+    await handleOpenJobClaim(q, parts.slice(2).join(":"), token);
+    return;
+  }
   if (parts[0] !== "job" || parts.length < 3) {
     await answerCallback(token, q.id);
     return;
@@ -1498,6 +1705,15 @@ interface TelegramUpdate {
   //   webhook must also be registered with allowed_updates including
   //   "callback_query" or Telegram never delivers these at all.
   callback_query?: TelegramCallbackQuery;
+  // 🆕 28x.71 — posts in the practitioner job CHANNEL arrive here, not as
+  //   `message`. Used once, so the bot can learn the channel's id itself
+  //   instead of the founder having to dig a negative 13-digit number out of
+  //   Telegram's internals.
+  channel_post?: {
+    chat?: { id?: number; title?: string; type?: string };
+    text?: string;
+    message_id?: number;
+  };
   message?: {
     // 🆕 28x.63 — `type` matters: with privacy mode on, the bot still receives
     //   REPLIES to its own messages in the admin group. Answering free-form text
@@ -1529,6 +1745,36 @@ export const telegramWebhook = onRequest(
     const update = req.body as TelegramUpdate;
 
     // 🆕 Round 28x.64 — ACCEPT / DECLINE button presses.
+    // 🆕 28x.71 — the bot learns its own job channel. The founder posts
+    //   /setjobchannel in the channel once; nothing else in the flow needs her
+    //   to find or copy an id anywhere.
+    if (update?.channel_post) {
+      const cp = update.channel_post;
+      const cid = cp.chat?.id;
+      if (cid && (cp.text ?? "").trim().toLowerCase() === "/setjobchannel") {
+        await getFirestore()
+          .collection("adminSettings")
+          .doc("advanced")
+          .set(
+            { jobChannelId: String(cid), jobChannelTitle: cp.chat?.title ?? null },
+            { merge: true }
+          );
+        logger.info("[telegramWebhook] job channel set", { cid });
+        await sendTelegram(
+          token,
+          String(cid),
+          [
+            "✅ ตั้งเป็นช่องงานเรียบร้อยแล้ว",
+            "",
+            "งานที่ยังไม่ได้จ่ายให้ใคร จะมาโพสต์ที่นี่",
+            "ใครกดรับก่อนได้ก่อน · รายละเอียดเต็มส่งเข้าแชทส่วนตัว",
+          ].join("\n")
+        );
+      }
+      res.status(200).send("ok");
+      return;
+    }
+
     if (update?.callback_query) {
       await handleJobCallback(update.callback_query, token);
       res.status(200).send("ok");
