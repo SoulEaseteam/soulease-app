@@ -69,12 +69,20 @@ View corrected the strategic framing during this session:
 - Marketing more is now reasonable — supply can flex up
 - **Rule: still match marketing to actual nightly availability**
 
-**Pricing (THB, base = 60min):**
-- `xSR-Thai` Thai Massage — 1,200
-- `SR-Aroma` Aromatherapy — 1,600
-- `SR-HJ2200` Gentleman's Signature (Aroma + HJ release) — 2,200
-- `SR-B2B3200` SunRed Therapeutic (B2B/nuru genre) — 3,200
-- 90min = base × 1.5 · 120min = base × 2.0
+**Pricing (THB) — Round 28w.36, explicit per-duration, NOT a multiplier:**
+- `xSR-Thai` Thai Massage — 1,200 / 1,600 / 2,000 (60 / 90 / 120min)
+- `SR-Aroma` Aromatherapy — 1,400 / 1,800 / 2,400 (60 / 90 / 120min)
+- `SR-HJ2200` Gentleman's Signature (Aroma + HJ release) — 2,200 / 3,000 (70 / 120min — no 60/90 tier)
+- `SR-B2B3200` SunRed Therapeutic (B2B/nuru genre) — 3,200 / 4,000 (70 / 120min — no 60/90 tier)
+- ⚠️ The old "90min = base × 1.5 · 120min = base × 2.0" multiplier rule
+  is DEAD — 28w.36 replaced it with the explicit numbers above. This
+  file listed the dead multiplier for weeks after the change, and
+  @SunRedGreeterBot's hardcoded FAQ copy silently drifted from real
+  pricing as a result (caught + fixed 28x.82 from a founder screenshot).
+  If you change prices again: update `src/utils/servicePricing.ts`
+  DURATION_PRICE_OVERRIDES, THIS block, AND
+  `functions/src/telegram-concierge-bot/faq.ts` PRICING — all three,
+  every time.
 - See `src/utils/servicePricing.ts` for canonical pricing
 - **Payment surcharge (Round 28s77):** WeChat Pay + Alipay carry a
   transfer fee = `round(total × 5%) + ฿200` (FX/processor markup +
