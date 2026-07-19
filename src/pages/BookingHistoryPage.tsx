@@ -45,6 +45,11 @@ import {
 
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
+// 🆕 28x.84 (founder: screenshot of this page's hero + "เอาไปแทนพื้นหลังชมพูนั้น",
+//   "replace that pink background") — the fixed rose-berry hero now matches
+//   her membership tier, same palette ProfilePage's hero card already used.
+import { useMemberTier } from "@/hooks/useMemberTier";
+import { TIER_META } from "@/components/membership/MembershipCard";
 import { formatTHB } from "@/utils/servicePricing";
 import { fmtBKK } from "@/utils/time";
 import { formatRating } from "@/utils/rating";
@@ -214,6 +219,26 @@ const BookingHistoryPage: React.FC = () => {
     [bookings, tab],
   );
 
+  // 🆕 28x.84 — a non-member (or a guest whose tier hasn't loaded yet) keeps
+  //   the original rose-berry hero exactly as before; a member's hero
+  //   recolors to her tier. Bronze/Silver/Gold are LIGHT gradients (the same
+  //   ones the membership card already uses, already contrast-verified in
+  //   28x.83), so their text/glass need dark tier ink, not white — BlackVIP
+  //   and the no-tier fallback are both dark backgrounds and keep the
+  //   light-glass, near-white treatment (BlackVIP's own ink is a warm gold,
+  //   not literal white, so its card still reads as its own finish).
+  const memberTier = useMemberTier(user?.uid ?? null);
+  const heroIsLight = memberTier === "Bronze" || memberTier === "Silver" || memberTier === "Gold";
+  const heroBg     = memberTier ? TIER_META[memberTier].gradient : HERO_GRADIENT;
+  const heroInk    = memberTier ? TIER_META[memberTier].ink   : "#fff";
+  const heroSub    = memberTier ? TIER_META[memberTier].sub   : "rgba(255,255,255,0.72)";
+  const heroLabel  = memberTier ? TIER_META[memberTier].sub   : "rgba(255,255,255,0.70)";
+  const heroBorder = memberTier ? TIER_META[memberTier].border : "rgba(255,255,255,0.16)";
+  const heroGlassBg   = heroIsLight ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.12)";
+  const heroBackBg     = heroIsLight ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.14)";
+  const heroBackBorder = memberTier ? TIER_META[memberTier].border : "rgba(255,255,255,0.22)";
+  const heroBlob        = memberTier ? TIER_META[memberTier].glow : "rgba(255,255,255,0.14)";
+
   return (
     <Box
       sx={{
@@ -231,10 +256,10 @@ const BookingHistoryPage: React.FC = () => {
       }}
     >
 
-      {/* ── Rose-berry hero header ───────────────────────────────── */}
+      {/* ── Hero header — rose-berry by default, tier-colored for a member ── */}
       <Box
         sx={{
-          background: HERO_GRADIENT,
+          background: heroBg,
           pt: "env(safe-area-inset-top, 16px)",
           pb: 3.5,
           px: 2.5,
@@ -249,7 +274,7 @@ const BookingHistoryPage: React.FC = () => {
             width: 220,
             height: 64,
             borderRadius: "50%",
-            background: "rgba(255,255,255,0.14)",
+            background: heroBlob,
             filter: "blur(28px)",
             pointerEvents: "none",
           },
@@ -267,9 +292,9 @@ const BookingHistoryPage: React.FC = () => {
             width: 36,
             height: 36,
             borderRadius: "50%",
-            background: "rgba(255,255,255,0.14)",
-            border: "1px solid rgba(255,255,255,0.22)",
-            color: "#fff",
+            background: heroBackBg,
+            border: `1px solid ${heroBackBorder}`,
+            color: heroInk,
             cursor: "pointer",
             mb: 2.5,
             p: 0,
@@ -279,10 +304,10 @@ const BookingHistoryPage: React.FC = () => {
         </Box>
 
         <motion.div {...fadeUp(0)}>
-          <Typography sx={{ fontFamily: SERIF, fontSize: 26, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+          <Typography sx={{ fontFamily: SERIF, fontSize: 26, fontWeight: 700, color: heroInk, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
             My Bookings
           </Typography>
-          <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(255,255,255,0.72)", mt: 0.5 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 13, color: heroSub, mt: 0.5 }}>
             {counts.upcoming > 0
               ? `${counts.upcoming} upcoming session${counts.upcoming > 1 ? "s" : ""}`
               : "No upcoming sessions"}
@@ -298,8 +323,8 @@ const BookingHistoryPage: React.FC = () => {
               mt: 2.5,
               p: 1.5,
               borderRadius: "16px",
-              background: "rgba(255,255,255,0.12)",
-              border: "1px solid rgba(255,255,255,0.16)",
+              background: heroGlassBg,
+              border: `1px solid ${heroBorder}`,
             }}
           >
             {[
@@ -312,13 +337,13 @@ const BookingHistoryPage: React.FC = () => {
                 sx={{
                   flex: 1,
                   textAlign: "center",
-                  borderRight: i < 2 ? "1px solid rgba(255,255,255,0.16)" : "none",
+                  borderRight: i < 2 ? `1px solid ${heroBorder}` : "none",
                 }}
               >
-                <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1 }}>
+                <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: heroInk, lineHeight: 1 }}>
                   {s.value}
                 </Typography>
-                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "rgba(255,255,255,0.70)", mt: 0.4, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: heroLabel, mt: 0.4, letterSpacing: "0.06em", textTransform: "uppercase" }}>
                   {s.label}
                 </Typography>
               </Box>

@@ -26,6 +26,8 @@ import { Ticket, Copy, ShareNetwork, Gift, ArrowLeft, Coins } from "phosphor-rea
 
 import { useAuth } from "@/providers/AuthProvider";
 import { useAnniversaryClaim } from "@/hooks/useAnniversaryClaim";
+import { MembershipCard } from "@/components/membership/MembershipCard";
+import type { MembershipTier } from "@/utils/membership";
 import { deriveReferralCode, getActiveReferralCode } from "@/utils/referral";
 import { anniversaryPeriodLabel, anniversaryIsLive, pointsValueTHB } from "@/config/anniversary";
 import { whatsappDeepLink } from "@/config/concierge";
@@ -69,8 +71,14 @@ const MyCodesPage: React.FC = () => {
   const {
     claims, loading, isMember, isReturning, eligibleRewards,
     activeClaim, submitting, claimReward,
-    points, totalSpentTHB, visits,
+    points, totalSpentTHB, visits, membership,
   } = useAnniversaryClaim();
+  // 🆕 28x.84 (founder: "ย้ายไปประกาศที่ Rewards โค้ดส่วนลดของฉัน") — the
+  //   membership card that used to live on the Profile hero now announces
+  //   her tier here instead. `membership` is the SAME users/{uid}.membership
+  //   mirror ProfilePage reads; trusted the same way (it's written only by
+  //   syncMembershipMirror, never by the client).
+  const memberTier = membership?.tier as MembershipTier | undefined;
   const { i18n } = useTranslation();
   const period = anniversaryPeriodLabel(i18n.language);
   const campaignLive = anniversaryIsLive();
@@ -128,7 +136,9 @@ const MyCodesPage: React.FC = () => {
           ? t("codes.status.used", "Already used")
           : t("codes.status.rejected", "Not approved");
 
-  const nothing = claims.length === 0 && !heldCode && !referralLive && points === 0;
+  // 🆕 28x.84 — a member with a tier card up top but no codes/points/referral
+  //   still has something on the page; only claim "empty" when even that's absent.
+  const nothing = claims.length === 0 && !heldCode && !referralLive && points === 0 && !memberTier;
 
   return (
     <Box sx={{ ...responsiveShell, minHeight: "100vh", background: "var(--sr-bg)", pb: 12 }}>
@@ -181,6 +191,18 @@ const MyCodesPage: React.FC = () => {
 
         {user && !loading && (
           <>
+            {/* 🆕 28x.84 (founder: "ย้ายไปประกาศที่ Rewards โค้ดส่วนลดของฉัน") — her
+                membership card, first thing on the page: this IS the "my
+                codes" page, and the tier card is the clearest single fact
+                about what she's entitled to. Hidden entirely for a
+                signed-in guest with no tier — same rule ProfilePage used. */}
+            {memberTier && (
+              <>
+                <Eyebrow>{t("codes.membership", "My membership")}</Eyebrow>
+                <MembershipCard tier={memberTier} />
+              </>
+            )}
+
             {/* 🆕 28w.95 (founder: "กันลูกค้าเก่าน้อยใจ · ยอดสะสมจากการจองครั้งก่อนหน้า
                 จะถูกเก็บเป็นเครดิตให้อัตโนมัติ หากยืนยันได้ว่ามีประวัติจริง") — SunPoints
                 back-credited from sessions we ACTUALLY delivered (status
