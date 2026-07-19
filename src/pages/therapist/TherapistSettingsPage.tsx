@@ -9,15 +9,16 @@
 //   a Contact-Concierge row — none of which is a practitioner's. This is why
 //   the PROFILE tab no longer routes staff through /profile at all.
 
-import React from "react";
-import { Box, Typography, Button } from "@mui/material";
+import React, { useState } from "react";
+import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
-import { Translate, Key, SignOut, CaretLeft, CaretRight } from "phosphor-react";
+import { Translate, Key, SignOut, CaretLeft, CaretRight, Warning } from "phosphor-react";
 
 import { auth } from "@/lib/firebase";
 import { responsiveShell } from "@/theme/breakpoints";
 import { useAccountDialogs } from "@/components/account/useAccountDialogs";
+import { whatsappDeepLink } from "@/config/concierge";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
@@ -62,6 +63,7 @@ const Row: React.FC<{
 const TherapistSettingsPage: React.FC = () => {
   const navigate = useNavigate();
   const { activeLangLabel, openLanguage, openPassword, dialogs } = useAccountDialogs();
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const logout = async () => {
     await signOut(auth);
@@ -127,6 +129,59 @@ const TherapistSettingsPage: React.FC = () => {
           Log Out · ออกจากระบบ
         </Button>
       </Box>
+
+      {/* 🆕 28x.82 (founder reference screenshot: "⚠ ลบบัญชี") — REQUEST, not
+          self-service. The reference app deletes instantly and irreversibly;
+          that's the wrong default here — a therapist's account carries
+          booking history, reviews and payout records that are business
+          records, not just hers to erase. Same pattern this codebase already
+          uses for "ลืมรหัสผ่าน" (28w.77): no self-serve flow, straight to the
+          concierge who actually performs it. */}
+      <Box sx={{ px: 2, mt: 3, textAlign: "center" }}>
+        <Button
+          onClick={() => setConfirmDelete(true)}
+          startIcon={<Warning size={15} weight="bold" />}
+          sx={{
+            textTransform: "none",
+            fontFamily: SANS,
+            fontWeight: 700,
+            fontSize: 13,
+            color: DANGER,
+            opacity: 0.85,
+          }}
+        >
+          ลบบัญชี · Delete account
+        </Button>
+      </Box>
+
+      <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontFamily: SERIF, fontSize: 19, color: "var(--sr-ink)" }}>
+          ลบบัญชี
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontFamily: SANS, fontSize: 13.5, color: "var(--sr-body)", lineHeight: 1.65 }}>
+            การลบบัญชีเป็นการถาวรและไม่สามารถย้อนกลับได้ ต้องให้แอดมินเป็นผู้ดำเนินการ
+            กดปุ่มด้านล่างเพื่อส่งคำขอผ่าน WhatsApp — แอดมินจะติดต่อกลับเพื่อยืนยันก่อนลบจริง
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={() => setConfirmDelete(false)} sx={{ color: "var(--sr-muted)", fontFamily: SANS }}>
+            ยกเลิก
+          </Button>
+          <Button
+            href={whatsappDeepLink("สวัสดีค่ะ ฉันต้องการขอลบบัญชีพนักงานของฉัน รบกวนดำเนินการให้ด้วยค่ะ")}
+            target="_blank"
+            rel="noopener"
+            onClick={() => setConfirmDelete(false)}
+            sx={{
+              textTransform: "none", fontWeight: 700, borderRadius: 2, px: 2.5,
+              background: DANGER, color: "#fff", "&:hover": { background: "#A8481F" },
+            }}
+          >
+            ส่งคำขอทาง WhatsApp
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {dialogs}
     </Box>
