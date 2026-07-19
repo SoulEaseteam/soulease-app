@@ -118,8 +118,20 @@ const CHAT_OPTIONS: ChatOption[] = [
     tint: "#07C160",
   },
   {
+    // 🆕 Round 28x.80 (founder: "ทั้งหมด ที่ติดต่อแอดมิน") — routed through
+    //   @SunRedGreeterBot instead of the personal DM. The bot answers
+    //   pricing/services/areas/availability/how-to instantly (24/7, no
+    //   wait for View) and its menu's last button still opens a direct
+    //   chat with @SunRedvip_bkk / @YuNiSpaBkk — so nobody who wants a
+    //   human is blocked, they're just FAQ-triaged first. This is safe
+    //   here (general "reach us" widget) but was deliberately NOT applied
+    //   to BookingSuccessPage's post-booking confirm CTA — that one sends
+    //   a prefilled `?text=` message with the booking ref, which bots
+    //   don't support the same way personal DMs do, and losing that ref
+    //   is the exact failure mode that cost 2 weeks of orders on
+    //   2026-06-09 (see CLAUDE-HISTORY.md).
     title: "Telegram",
-    href: "https://t.me/SunRedvip_bkk",
+    href: "https://t.me/SunRedGreeterBot",
     src: "/images/profli/telegram.png",
     tint: "#26A1E0",
   },
