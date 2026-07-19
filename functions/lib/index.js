@@ -1348,35 +1348,50 @@ async function parseOrderText(apiKey, text) {
             }),
         });
         if (!res.ok) {
-            v2_1.logger.error("[parseOrderText] OpenAI request failed", { status: res.status });
-            return null;
+            const body = await res.text().catch(() => "");
+            v2_1.logger.error("[parseOrderText] OpenAI request failed", {
+                status: res.status,
+                body: body.slice(0, 500),
+            });
+            return { parsed: null, error: `OpenAI HTTP ${res.status}: ${body.slice(0, 200)}` };
         }
         const json = (await res.json());
         const content = json.choices?.[0]?.message?.content;
-        if (!content)
-            return null;
+        if (!content) {
+            return { parsed: null, error: "OpenAI returned no content" };
+        }
         const parsed = JSON.parse(content);
         return {
-            looksLikeOrder: Boolean(parsed.looksLikeOrder),
-            customerName: parsed.customerName ?? null,
-            hotelText: parsed.hotelText ?? null,
-            serviceGuess: parsed.serviceGuess ?? null,
-            durationMinutes: typeof parsed.durationMinutes === "number" ? parsed.durationMinutes : null,
-            timeHHmm: typeof parsed.timeHHmm === "string" && /^\d{2}:\d{2}$/.test(parsed.timeHHmm)
-                ? parsed.timeHHmm
-                : null,
-            phone: typeof parsed.phone === "string" ? parsed.phone : null,
-            therapistNameGuess: typeof parsed.therapistNameGuess === "string" ? parsed.therapistNameGuess : null,
-            notes: typeof parsed.notes === "string" ? parsed.notes : null,
+            parsed: {
+                looksLikeOrder: Boolean(parsed.looksLikeOrder),
+                customerName: parsed.customerName ?? null,
+                hotelText: parsed.hotelText ?? null,
+                serviceGuess: parsed.serviceGuess ?? null,
+                durationMinutes: typeof parsed.durationMinutes === "number" ? parsed.durationMinutes : null,
+                timeHHmm: typeof parsed.timeHHmm === "string" && /^\d{2}:\d{2}$/.test(parsed.timeHHmm)
+                    ? parsed.timeHHmm
+                    : null,
+                phone: typeof parsed.phone === "string" ? parsed.phone : null,
+                therapistNameGuess: typeof parsed.therapistNameGuess === "string" ? parsed.therapistNameGuess : null,
+                notes: typeof parsed.notes === "string" ? parsed.notes : null,
+            },
+            error: null,
         };
     }
     catch (err) {
         v2_1.logger.error("[parseOrderText] failed", err);
-        return null;
+        return { parsed: null, error: err instanceof Error ? err.message : String(err) };
     }
 }
 async function handleOrderPaste(text, chatId, token, apiKey) {
-    const parsed = await parseOrderText(apiKey, text);
+    const { parsed, error } = await parseOrderText(apiKey, text);
+    if (error) {
+        // 🆕 28x.81b — surface the real reason instead of a generic "not found".
+        //   An OpenAI/config failure looks nothing like "your text was unclear",
+        //   and conflating them made this impossible to debug from the chat alone.
+        await sendTelegram(token, String(chatId), [`ระบบแกะข้อความไม่สำเร็จค่ะ (AI parsing error)`, error.slice(0, 300)].join("\n"));
+        return;
+    }
     if (!parsed || !parsed.looksLikeOrder) {
         await sendTelegram(token, String(chatId), [
             "ไม่เจอข้อมูลออเดอร์ในข้อความนี้ค่ะ",
