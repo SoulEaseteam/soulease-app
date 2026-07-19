@@ -239,6 +239,21 @@ const BookingHistoryPage: React.FC = () => {
   const heroBackBorder = memberTier ? TIER_META[memberTier].border : "rgba(255,255,255,0.22)";
   const heroBlob        = memberTier ? TIER_META[memberTier].glow : "rgba(255,255,255,0.14)";
 
+  // 🆕 28x.85 (founder screenshot: BlackVIP hero + a plain rose pill/CTA right
+  //   below it, "ปรับให้สวยขึ้น") — the rose brand accent below the hero read
+  //   as a clash once the hero itself went tier-colored. A member's active
+  //   tab pill and empty-state icon/button now pick up the SAME gradient/ink
+  //   the hero and card already use (contrast already verified for ink-on-
+  //   gradient above), so the whole page reads as one finish instead of
+  //   "fancy hero, generic pink chrome underneath". Non-members/guests keep
+  //   the original rose exactly as before.
+  const accentBg      = memberTier ? TIER_META[memberTier].gradient : ROSE;
+  const accentFg       = memberTier ? TIER_META[memberTier].ink : "#fff";
+  const accentFgDim    = memberTier ? TIER_META[memberTier].sub : "rgba(255,255,255,0.85)";
+  const accentShadowSm = memberTier ? `0 4px 14px ${TIER_META[memberTier].glow}` : "0 4px 14px rgba(138, 58, 87, 0.30)";
+  const accentShadowMd = memberTier ? `0 6px 20px ${TIER_META[memberTier].glow}` : "0 6px 20px rgba(138, 58, 87, 0.30)";
+  const accentShadowLg = memberTier ? `0 8px 24px ${TIER_META[memberTier].glow}` : "0 8px 24px rgba(138, 58, 87, 0.28)";
+
   return (
     <Box
       sx={{
@@ -382,8 +397,8 @@ const BookingHistoryPage: React.FC = () => {
                   left: 0,
                   width: pillW,
                   borderRadius: 999,
-                  background: ROSE,
-                  boxShadow: "0 4px 14px rgba(138, 58, 87, 0.30)",
+                  background: accentBg,
+                  boxShadow: accentShadowSm,
                   pointerEvents: "none",
                   zIndex: 0,
                 }}
@@ -420,7 +435,7 @@ const BookingHistoryPage: React.FC = () => {
                       fontSize: 12,
                       fontWeight: 700,
                       letterSpacing: "0.03em",
-                      color: active ? "#fff" : "var(--sr-muted)",
+                      color: active ? accentFg : "var(--sr-muted)",
                       lineHeight: 1,
                       transition: "color 0.15s ease",
                     }}
@@ -433,7 +448,7 @@ const BookingHistoryPage: React.FC = () => {
                         fontFamily: SANS,
                         fontSize: 10,
                         fontWeight: 700,
-                        color: active ? "rgba(255,255,255,0.85)" : "var(--sr-dim)",
+                        color: active ? accentFgDim : "var(--sr-dim)",
                         lineHeight: 1,
                         transition: "color 0.15s ease",
                       }}
@@ -479,6 +494,10 @@ const BookingHistoryPage: React.FC = () => {
             }
             cta={tab === "upcoming" ? "Browse therapists" : undefined}
             onCta={tab === "upcoming" ? () => void navigate("/") : undefined}
+            accentBg={accentBg}
+            accentFg={accentFg}
+            accentShadow={accentShadowLg}
+            accentShadowCta={accentShadowMd}
           />
         ) : (
           <AnimatePresence mode="popLayout">
@@ -740,7 +759,19 @@ const EmptySlate: React.FC<{
   body: string;
   cta?: string;
   onCta?: () => void;
-}> = ({ icon, title, body, cta, onCta }) => (
+  // 🆕 28x.85 — optional tier accent, defaults to the original rose so the
+  //   sign-in gate (no tier known yet) renders exactly as before.
+  accentBg?: string;
+  accentFg?: string;
+  accentShadow?: string;
+  accentShadowCta?: string;
+}> = ({
+  icon, title, body, cta, onCta,
+  accentBg = ROSE,
+  accentFg = "#fff",
+  accentShadow = "0 8px 24px rgba(138, 58, 87, 0.28)",
+  accentShadowCta = "0 6px 20px rgba(138, 58, 87, 0.30)",
+}) => (
   <Box
     sx={{
       mt: 4,
@@ -758,12 +789,12 @@ const EmptySlate: React.FC<{
         width: 64,
         height: 64,
         borderRadius: "50%",
-        background: ROSE,
-        color: "#fff",
+        background: accentBg,
+        color: accentFg,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        boxShadow: "0 8px 24px rgba(138, 58, 87, 0.28)",
+        boxShadow: accentShadow,
         mb: 0.5,
       }}
     >
@@ -784,14 +815,14 @@ const EmptySlate: React.FC<{
           height: 44,
           padding: "0 28px",
           borderRadius: 999,
-          background: ROSE,
-          color: "#fff",
+          background: accentBg,
+          color: accentFg,
           fontFamily: SANS,
           fontSize: 14,
           fontWeight: 700,
           border: "none",
           cursor: "pointer",
-          boxShadow: "0 6px 20px rgba(138, 58, 87, 0.30)",
+          boxShadow: accentShadowCta,
         }}
       >
         {cta}
