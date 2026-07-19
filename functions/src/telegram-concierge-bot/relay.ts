@@ -108,6 +108,7 @@ function buildMenuKeyboard(lang: Lang): InlineKeyboard {
     ],
     [
       { text: menuTitleFor("howto", lang), callback_data: "faq:howto" },
+      { text: menuTitleFor("membership", lang), callback_data: "faq:membership" },
     ],
     [
       { text: buttonLabelFor(lang), url: concierge.url },
@@ -234,6 +235,7 @@ export async function handleCallbackQuery(
     key === "services" ||
     key === "areas" ||
     key === "howto" ||
+    key === "membership" ||
     key === "available"
   ) {
     const body = await buildFaqDetailMessage(key as FaqKey | "available", lang);
