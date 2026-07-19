@@ -70,4 +70,4 @@ export const RESERVED_IDENTITY_MESSAGE =
   "This name or phone number can't be used for a reservation. Please use your own contact details, or message the concierge.";
 
 export const RESERVED_IDENTITY_MESSAGE_TH =
-  "ชื่อหรือเบอร์นี้ใช้จองไม่ได้ กรุณาใช้ข้อมูลติดต่อของคุณเอง หรือทักหาคอนเซียร์จ";
+  "ชื่อหรือเบอร์นี้ใช้จองไม่ได้ กรุณาใช้ข้อมูลติดต่อของคุณเอง หรือทักหาผู้ช่วยส่วนตัว";

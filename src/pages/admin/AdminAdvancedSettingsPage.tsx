@@ -241,7 +241,7 @@ const AdminAdvancedSettingsPage: React.FC = () => {
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.5 }}>
             ค่าเดินทาง = <b>เหมาตามระยะจริง (ระยะถนน)</b> · ไม่ใช่มิเตอร์ ไม่มี surge ไม่บวกค่าเรียกรถ ·
-            เกินระยะสูงสุดด้านล่าง → ให้ลูกค้าติดต่อคอนเซียร์จแทนคิดราคาอัตโนมัติ
+            เกินระยะสูงสุดด้านล่าง → ให้ลูกค้าติดต่อผู้ช่วยส่วนตัวแทนคิดราคาอัตโนมัติ
           </Typography>
 
           <Typography sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: adminColor.dim, mb: 0.75 }}>
@@ -296,7 +296,7 @@ const AdminAdvancedSettingsPage: React.FC = () => {
               const f = travelBudgetForKm(km);
               return (
                 <Box key={km} component="span" sx={{ mr: 1.25 }}>
-                  {km} กม. → <b style={{ color: adminColor.text }}>{f === null ? "คอนเซียร์จเสนอราคา" : `฿${f.toLocaleString()}`}</b>
+                  {km} กม. → <b style={{ color: adminColor.text }}>{f === null ? "ผู้ช่วยส่วนตัวเสนอราคา" : `฿${f.toLocaleString()}`}</b>
                 </Box>
               );
             })}
@@ -305,7 +305,7 @@ const AdminAdvancedSettingsPage: React.FC = () => {
           </Typography>
 
           <TextField label="ระยะทางสูงสุดก่อนต้องยืนยันกับแอดมิน (กม.)" fullWidth type="number" margin="dense" sx={fieldSx}
-            helperText="เกินระยะนี้ระบบให้ติดต่อคอนเซียร์จแทนคิดราคาอัตโนมัติ"
+            helperText="เกินระยะนี้ระบบให้ติดต่อผู้ช่วยส่วนตัวแทนคิดราคาอัตโนมัติ"
             value={rules.maxDistance} onChange={(e) => setRules((p) => ({ ...p, maxDistance: Math.max(1, Number(e.target.value)) }))} />
         </SectionCard>
 

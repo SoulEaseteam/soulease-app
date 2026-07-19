@@ -271,7 +271,7 @@ const ProfilePage: React.FC = () => {
     if (pwNew.length < 6)   { setPwErr("รหัสใหม่ต้องยาวอย่างน้อย 6 ตัว"); return; }
     if (pwNew !== pwNew2)   { setPwErr("รหัสใหม่ทั้งสองช่องไม่ตรงกัน"); return; }
     const current = auth.currentUser;
-    if (!current?.email)    { setPwErr("บัญชีนี้เปลี่ยนรหัสในหน้านี้ไม่ได้ — ติดต่อคอนเซียร์จ"); return; }
+    if (!current?.email)    { setPwErr("บัญชีนี้เปลี่ยนรหัสในหน้านี้ไม่ได้ — ติดต่อผู้ช่วยส่วนตัว"); return; }
 
     setPwBusy(true);
     try {

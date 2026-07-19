@@ -31,6 +31,7 @@ import {
   Alert,
 } from "@mui/material";
 import RoomRoundedIcon from "@mui/icons-material/RoomRounded";
+import NavigationRoundedIcon from "@mui/icons-material/NavigationRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
@@ -668,6 +669,34 @@ const TherapistProfilePage: React.FC = () => {
             />
           </Box>
 
+          {/* 🆕 28x.80 (founder, competitor reference screenshot) — a
+              read-only glance row so she can tell whether a standby location
+              is on file WITHOUT tapping through to the map. Purely a display
+              of `currentLocation`, already written by /location and
+              /update-location — no new write path, no new permission ask. */}
+          <Box
+            sx={{
+              marginTop: 1.25,
+              padding: "10px 12px",
+              borderRadius: 2,
+              background: "var(--sr-panel-2)",
+              border: "1px solid rgba(184,92,60,0.12)",
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            <NavigationRoundedIcon sx={{ color: therapist.currentLocation ? "#16a34a" : "var(--sr-dim)", fontSize: 18 }} />
+            <Typography sx={{ fontFamily: SANS, fontSize: "11.5px", color: "var(--sr-body)", flex: 1 }}>
+              ตำแหน่งปัจจุบัน:{" "}
+              <b style={{ color: "var(--sr-ink)" }}>
+                {therapist.currentLocation
+                  ? `${therapist.currentLocation.lat.toFixed(4)}, ${therapist.currentLocation.lng.toFixed(4)}`
+                  : "ยังไม่ได้ตั้ง"}
+              </b>
+            </Typography>
+          </Box>
+
           {/* 🆕 28x.78 (founder: "Location ทั้ง2อัน รวมกัน และเอาไปไว้ที่ Working
               Status") — the two location tiles merged into one row inside the
               status card. /location already captures GPS, so /update-location
@@ -678,7 +707,7 @@ const TherapistProfilePage: React.FC = () => {
             onClick={() => navigate("/location")}
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") void navigate("/location"); }}
             sx={{
-              marginTop: 1.25,
+              marginTop: 1,
               padding: "10px 12px",
               borderRadius: 2,
               background: "var(--sr-panel-2)",

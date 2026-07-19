@@ -45,7 +45,7 @@ interface Props {
 const MokoDiscoveryHeader: React.FC<Props> = ({ value, onChange, counts }) => {
   // 🆕 Round 28w.83 — every string here was hardcoded THAI, on the home page,
   //   above the fold. A Japanese or Chinese guest landed on "ทั้งหมด · All" /
-  //   "ว่างตอนนี้" / "คอนเซียร์จตอบใน 5 นาที". English is the source; the locale
+  //   "ว่างตอนนี้" / "ผู้ช่วยส่วนตัวตอบใน 5 นาที". English is the source; the locale
   //   files carry Thai like any other language.
   const { t } = useTranslation();
 
