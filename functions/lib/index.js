@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.createJobChannelCode = exports.respondToJob = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.createAdminLinkCode = exports.createJobChannelCode = exports.respondToJob = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -1144,6 +1144,414 @@ async function claimJobChannel(chatId, chatTitle, suppliedCode) {
         "ใครกดรับก่อนได้ก่อน · รายละเอียดเต็มส่งเข้าแชทส่วนตัว",
     ].join("\n");
 }
+// ─────────────────────────────────────────────────────────────
+// 🆕 Round 28x.81 (founder: pasted a real customer-chat snippet and asked
+//   "เราสามารถโยนออเดอร์จากแชทลูกค้า ... ให้บอทช่วยทำออเดอร์ได้ไหม") — she
+//   copy-pastes what a customer typed (plus her own shorthand, e.g. "yuri
+//   book 12.00 am") into @SunRed24hBot and the bot turns it into a real
+//   booking. OpenAI extracts the fields; the bot ALWAYS shows a draft with
+//   a single confirm tap before anything is written — free text is parsed
+//   wrong often enough (ambiguous "12.00 am", a misspelled nickname, the
+//   wrong hotel branch) that auto-creating straight from a guess is worse
+//   than one extra tap, and a bad auto-created booking would dispatch a
+//   real practitioner to a real address.
+//
+//   Deliberately v1-scoped:
+//     • No geocoding — locationText is stored as-is (mapUrl falls back to
+//       a Google "search by name" link, the same fallback buildMapUrl()
+//       already uses client-side when lat/lng is unset). She can still
+//       open the booking in AdminBookingAddPage-adjacent admin screens to
+//       add precise coordinates if a booking needs route-based taxi fare.
+//     • taxiFee/paymentFee default to 0 · payment defaults to "cash" — add
+//       taxi fee manually afterward if the trip needs one.
+//     • Price/commission-split tables below are duplicated (small, rarely
+//       edited) from src/data/services.ts + src/utils/servicePricing.ts +
+//       src/utils/commission.ts. They do NOT read the live admin-editable
+//       overrides (adminSettings/publicRules, adminSettings/earnings) —
+//       the draft always prints the price in plain Thai so a stale number
+//       gets caught before the confirm tap, not after.
+/** Which chat IDs are allowed to paste orders / are recognised as admin. */
+async function isAdminChatId(chatId) {
+    try {
+        const snap = await (0, firestore_2.getFirestore)()
+            .collection("adminSettings")
+            .doc("advanced")
+            .get();
+        const ids = snap.data()?.adminTelegramChatIds ?? [];
+        return ids.includes(String(chatId));
+    }
+    catch (err) {
+        v2_1.logger.warn("[isAdminChatId] lookup failed", err);
+        return false;
+    }
+}
+/**
+ * Link this chat as an admin order-intake chat. Mirrors claimJobChannel's
+ * code-gate: silent on a wrong/absent/expired code (this elevates to admin
+ * order-creation, a higher-stakes grant than the job-channel claim — a
+ * distinguishable "wrong code" reply would help a prober narrow it down).
+ */
+async function linkAdminByCode(code, chatId) {
+    const db = (0, firestore_2.getFirestore)();
+    const ref = db.collection("adminSettings").doc("advanced");
+    const snap = await ref.get();
+    const d = snap.data() ?? {};
+    const want = typeof d.adminLinkCode === "string" ? d.adminLinkCode : "";
+    const exp = d.adminLinkCodeExpiresAt;
+    if (!want || !exp || exp.toMillis() < Date.now())
+        return null;
+    if (code.toUpperCase() !== want.toUpperCase())
+        return null;
+    await ref.set({
+        adminTelegramChatIds: firestore_2.FieldValue.arrayUnion(String(chatId)),
+        adminLinkCode: firestore_2.FieldValue.delete(),
+        adminLinkCodeExpiresAt: firestore_2.FieldValue.delete(),
+    }, { merge: true });
+    v2_1.logger.info("[linkAdminByCode] linked", { chatId });
+    return [
+        "✅ เชื่อมบัญชีแอดมินแล้วค่ะ",
+        "",
+        "วางข้อความออเดอร์ลูกค้าที่นี่ได้เลย ระบบจะช่วยแกะข้อมูลให้",
+        "แล้วส่งร่างมาให้กดยืนยันอีกทีก่อนสร้างจริง",
+    ].join("\n");
+}
+function bkkTodayISO() {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(new Date());
+}
+// Duplicated (deliberately small, rarely-edited) from src/data/services.ts +
+// src/utils/servicePricing.ts DURATION_PRICE_OVERRIDES. Update both places
+// together if a price or duration tier changes.
+const ADMIN_ORDER_SERVICES = [
+    {
+        id: "xSR-Thai",
+        name: "Thai Massage",
+        keywords: ["thai", "ไทย"],
+        baseDuration: 60,
+        durations: { 60: 1200, 90: 1600, 120: 2000 },
+    },
+    {
+        id: "SR-Aroma",
+        name: "Aromatherapy Massage",
+        keywords: ["aroma", "oil", "อโรม่า", "อโรมา", "น้ำมัน"],
+        baseDuration: 60,
+        durations: { 60: 1400, 90: 1800, 120: 2400 },
+    },
+    {
+        id: "SR-HJ2200",
+        name: "Gentleman's Signature Therapy",
+        keywords: ["gentleman", "signature", "hj"],
+        baseDuration: 70,
+        durations: { 70: 2200, 120: 3000 },
+    },
+    {
+        id: "SR-B2B3200",
+        name: "SunRed Therapeutic Experience",
+        keywords: ["b2b", "therapeutic", "nuru"],
+        baseDuration: 70,
+        durations: { 70: 3200, 120: 4000 },
+    },
+];
+function resolveServiceGuess(guess) {
+    if (!guess)
+        return null;
+    const g = guess.toLowerCase();
+    const match = ADMIN_ORDER_SERVICES.find((s) => s.keywords.some((k) => g.includes(k)));
+    return match ? { id: match.id, name: match.name } : null;
+}
+/** Price for a (serviceId, duration), snapping to the nearest offered tier
+ *  when the requested duration isn't sold. */
+function priceForServiceDuration(serviceId, duration) {
+    const svc = ADMIN_ORDER_SERVICES.find((s) => s.id === serviceId);
+    if (!svc)
+        return { price: 0, duration };
+    if (svc.durations[duration] != null) {
+        return { price: svc.durations[duration], duration };
+    }
+    const tiers = Object.keys(svc.durations).map(Number);
+    const nearest = tiers.reduce((a, b) => Math.abs(b - duration) < Math.abs(a - duration) ? b : a);
+    return { price: svc.durations[nearest], duration: nearest };
+}
+// Mirrors src/utils/commission.ts stampSplit()'s fixed per-(service,duration)
+// table + flat 60% fallback. Does NOT read the live adminSettings/earnings
+// override — keep in sync with commission.ts if the split table changes.
+const SERVICE_SPLIT_DEFAULTS_SERVER = {
+    "xSR-Thai": { 60: 700, 90: 900, 120: 1200 },
+    "SR-Aroma": { 60: 800, 90: 1100, 120: 1500 },
+    "SR-HJ2200": { 70: 1300, 120: 1800 },
+    "SR-B2B3200": { 70: 2000, 120: 2500 },
+};
+function stampSplitServer(serviceId, servicePrice, duration) {
+    const fixed = serviceId
+        ? SERVICE_SPLIT_DEFAULTS_SERVER[serviceId]?.[duration]
+        : undefined;
+    const therapistShare = fixed ?? Math.round(servicePrice * 0.6);
+    const shopShare = Math.max(0, servicePrice - therapistShare);
+    return { therapistShare, shopShare };
+}
+async function resolveTherapistByName(nameGuess) {
+    if (!nameGuess)
+        return null;
+    const g = nameGuess.trim().toLowerCase();
+    if (!g)
+        return null;
+    const snap = await (0, firestore_2.getFirestore)().collection("therapists").get();
+    let substringHit = null;
+    for (const doc of snap.docs) {
+        const name = doc.data().name;
+        if (!name)
+            continue;
+        const n = name.trim().toLowerCase();
+        if (n === g)
+            return { id: doc.id, name };
+        if (!substringHit && (n.includes(g) || g.includes(n))) {
+            substringHit = { id: doc.id, name };
+        }
+    }
+    return substringHit;
+}
+async function parseOrderText(apiKey, text) {
+    try {
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+                model: "gpt-4o-mini",
+                temperature: 0,
+                response_format: { type: "json_object" },
+                messages: [
+                    {
+                        role: "system",
+                        content: [
+                            "You extract structured booking info from a raw chat snippet pasted by",
+                            "an admin at SunRed, a Bangkok outcall massage service. The snippet is",
+                            "usually what a CUSTOMER typed to request a booking, sometimes followed",
+                            "by the admin's own shorthand assigning a therapist and time (e.g.",
+                            "'yuri book 12.00 am' means therapist Yuri, booked for 12:00 AM).",
+                            "",
+                            "Return ONLY a JSON object with these exact keys:",
+                            "looksLikeOrder (boolean — true only if this text contains an actual",
+                            "booking request), customerName (string|null), hotelText (string|null —",
+                            "hotel/address exactly as given), serviceGuess (string|null — the",
+                            "massage/service type as given, e.g. 'thai massage'), durationMinutes",
+                            "(number|null), timeHHmm (string|null — 24h HH:mm best guess; '12.00 am'",
+                            "= '00:00', '12.00 pm' = '12:00'), phone (string|null — as given, keep +",
+                            "and digits), therapistNameGuess (string|null — a therapist name or",
+                            "nickname if one is mentioned), notes (string|null — anything else worth",
+                            "keeping, e.g. special requests).",
+                        ].join(" "),
+                    },
+                    { role: "user", content: text },
+                ],
+            }),
+        });
+        if (!res.ok) {
+            v2_1.logger.error("[parseOrderText] OpenAI request failed", { status: res.status });
+            return null;
+        }
+        const json = (await res.json());
+        const content = json.choices?.[0]?.message?.content;
+        if (!content)
+            return null;
+        const parsed = JSON.parse(content);
+        return {
+            looksLikeOrder: Boolean(parsed.looksLikeOrder),
+            customerName: parsed.customerName ?? null,
+            hotelText: parsed.hotelText ?? null,
+            serviceGuess: parsed.serviceGuess ?? null,
+            durationMinutes: typeof parsed.durationMinutes === "number" ? parsed.durationMinutes : null,
+            timeHHmm: typeof parsed.timeHHmm === "string" && /^\d{2}:\d{2}$/.test(parsed.timeHHmm)
+                ? parsed.timeHHmm
+                : null,
+            phone: typeof parsed.phone === "string" ? parsed.phone : null,
+            therapistNameGuess: typeof parsed.therapistNameGuess === "string" ? parsed.therapistNameGuess : null,
+            notes: typeof parsed.notes === "string" ? parsed.notes : null,
+        };
+    }
+    catch (err) {
+        v2_1.logger.error("[parseOrderText] failed", err);
+        return null;
+    }
+}
+async function handleOrderPaste(text, chatId, token, apiKey) {
+    const parsed = await parseOrderText(apiKey, text);
+    if (!parsed || !parsed.looksLikeOrder) {
+        await sendTelegram(token, String(chatId), [
+            "ไม่เจอข้อมูลออเดอร์ในข้อความนี้ค่ะ",
+            "ลองวางข้อความลูกค้าใหม่ ให้มีชื่อ/โรงแรม/บริการ/เวลา/เบอร์โทร",
+        ].join("\n"));
+        return;
+    }
+    const service = resolveServiceGuess(parsed.serviceGuess);
+    const resolvedPrice = service
+        ? priceForServiceDuration(service.id, parsed.durationMinutes ?? 0)
+        : null;
+    const therapist = await resolveTherapistByName(parsed.therapistNameGuess);
+    const customerName = (parsed.customerName ?? "").trim();
+    const phone = (parsed.phone ?? "").trim();
+    const locationText = (parsed.hotelText ?? "").trim();
+    const time = parsed.timeHHmm;
+    const date = bkkTodayISO(); // v1 — always today in Bangkok time
+    const missing = [];
+    if (!customerName)
+        missing.push("ชื่อลูกค้า");
+    if (!/^[0-9+\s-]{6,15}$/.test(phone))
+        missing.push("เบอร์โทร");
+    if (!locationText)
+        missing.push("สถานที่/โรงแรม");
+    if (!service)
+        missing.push("บริการ (พิมพ์ชื่อบริการให้ชัดเจนกว่านี้)");
+    if (!time)
+        missing.push("เวลา");
+    const db = (0, firestore_2.getFirestore)();
+    const draftRef = db.collection("orderDrafts").doc();
+    const draft = {
+        rawText: text,
+        chatId: String(chatId),
+        customerName,
+        phone,
+        locationText,
+        serviceId: service?.id ?? null,
+        serviceName: service?.name ?? null,
+        servicePrice: resolvedPrice?.price ?? 0,
+        duration: resolvedPrice?.duration ?? 60,
+        date,
+        time: time ?? "",
+        therapistId: therapist?.id ?? null,
+        therapistName: therapist?.name ?? null,
+        note: parsed.notes ?? null,
+        status: missing.length > 0 ? "cancelled" : "pending",
+        expiresAt: firestore_2.Timestamp.fromMillis(Date.now() + 30 * 60 * 1000),
+    };
+    await draftRef.set(draft);
+    const lines = [
+        "📝 ร่างออเดอร์จากข้อความที่วาง",
+        "",
+        `ลูกค้า: ${customerName || "⚠️ ไม่พบ"}`,
+        `โทร: ${phone || "⚠️ ไม่พบ"}`,
+        `สถานที่: ${locationText || "⚠️ ไม่พบ"}`,
+        `บริการ: ${service
+            ? `${service.name} · ${resolvedPrice?.duration} นาที · ฿${(resolvedPrice?.price ?? 0).toLocaleString()}`
+            : "⚠️ ไม่พบ"}`,
+        `เวลา: ${time ?? "⚠️ ไม่พบ"} · วันที่ ${date}`,
+        therapist
+            ? `พนักงาน: ${therapist.name}`
+            : parsed.therapistNameGuess
+                ? `พนักงาน: ⚠️ ไม่พบ "${parsed.therapistNameGuess}" — จะปล่อยเป็นงานเปิดให้ทีมแย่งรับแทน`
+                : `พนักงาน: (ไม่ระบุ — จะปล่อยเป็นงานเปิด)`,
+        parsed.notes ? `หมายเหตุ: ${parsed.notes}` : "",
+        "",
+        "⚠️ ราคาอ้างอิงตารางในระบบ ไม่รวมค่าแท็กซี่ — ใส่เพิ่มทีหลังได้ที่หน้ารายการจอง",
+    ].filter((l) => l.length > 0);
+    if (missing.length > 0) {
+        lines.push("", `❌ ข้อมูลไม่ครบ: ${missing.join(", ")}`, "พิมพ์ข้อความใหม่พร้อมข้อมูลที่ขาด แล้วส่งอีกครั้งค่ะ");
+        await sendTelegram(token, String(chatId), lines.join("\n"));
+        return;
+    }
+    lines.push("", "กดยืนยันเพื่อสร้างออเดอร์จริงค่ะ");
+    await sendTelegram(token, String(chatId), lines.join("\n"), [
+        [
+            { text: "✅ ยืนยันสร้างออเดอร์", callback_data: `order:confirm:${draftRef.id}` },
+            { text: "❌ ยกเลิก", callback_data: `order:cancel:${draftRef.id}` },
+        ],
+    ]);
+}
+async function handleOrderCallback(q, action, draftId, token) {
+    const db = (0, firestore_2.getFirestore)();
+    const pressedBy = q.from?.id;
+    const msgChatId = q.message?.chat?.id;
+    const msgId = q.message?.message_id;
+    if (!pressedBy || !(await isAdminChatId(pressedBy))) {
+        await answerCallback(token, q.id, "ไม่ได้รับสิทธิ์ค่ะ");
+        return;
+    }
+    const ref = db.collection("orderDrafts").doc(draftId);
+    const snap = await ref.get();
+    if (!snap.exists) {
+        await answerCallback(token, q.id, "ร่างนี้หมดอายุหรือถูกใช้ไปแล้วค่ะ");
+        return;
+    }
+    const draft = snap.data();
+    if (action === "cancel") {
+        if (draft.status === "pending")
+            await ref.update({ status: "cancelled" });
+        await answerCallback(token, q.id, "ยกเลิกแล้วค่ะ");
+        if (msgChatId && msgId) {
+            await editTelegramMessage(token, msgChatId, msgId, "❌ ยกเลิกร่างออเดอร์นี้แล้ว");
+        }
+        return;
+    }
+    if (action !== "confirm") {
+        await answerCallback(token, q.id);
+        return;
+    }
+    if (draft.status === "confirmed") {
+        await answerCallback(token, q.id, `สร้างไปแล้วค่ะ · ${draft.bookingCode ?? ""}`);
+        return;
+    }
+    if (draft.status === "cancelled" || draft.expiresAt.toMillis() < Date.now()) {
+        await answerCallback(token, q.id, "ร่างนี้หมดอายุแล้วค่ะ ส่งข้อความใหม่อีกครั้ง");
+        return;
+    }
+    try {
+        const startAt = new Date(`${draft.date}T${draft.time}:00+07:00`);
+        const endAt = new Date(startAt.getTime() + draft.duration * 60000);
+        const mapUrl = draft.locationText
+            ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(draft.locationText)}`
+            : null;
+        const { therapistShare, shopShare } = stampSplitServer(draft.serviceId, draft.servicePrice, draft.duration);
+        const bookingRef = await db.collection("bookings").add({
+            userId: null,
+            customerName: draft.customerName,
+            contactName: draft.customerName,
+            ...(draft.therapistId
+                ? { therapistId: draft.therapistId, therapistName: draft.therapistName }
+                : {}),
+            serviceName: draft.serviceName,
+            serviceId: draft.serviceId,
+            servicePrice: draft.servicePrice,
+            duration: draft.duration,
+            taxiFee: 0,
+            paymentFee: 0,
+            totalPrice: draft.servicePrice,
+            date: draft.date,
+            time: draft.time,
+            startAt: firestore_2.Timestamp.fromDate(startAt),
+            endAt: firestore_2.Timestamp.fromDate(endAt),
+            locationName: draft.locationText,
+            address: draft.locationText,
+            lat: null,
+            lng: null,
+            mapUrl,
+            phone: draft.phone,
+            note: draft.note ?? "",
+            status: "confirmed",
+            therapistShare,
+            shopShare,
+            payment: "cash",
+            createdAt: firestore_2.Timestamp.now(),
+            createdBy: "admin",
+            createdByUid: null,
+            createdByEmail: null,
+            createdByPhone: null,
+            createdByName: "แอดมิน (Telegram)",
+            sourceChannel: "telegram-order-paste",
+        });
+        const bookingCode = `SR-${bookingRef.id.slice(0, 8).toUpperCase()}`;
+        await bookingRef.update({ bookingCode });
+        await ref.update({ status: "confirmed", bookingId: bookingRef.id, bookingCode });
+        await answerCallback(token, q.id, `สร้างออเดอร์แล้วค่ะ · ${bookingCode}`);
+        if (msgChatId && msgId) {
+            await editTelegramMessage(token, msgChatId, msgId, `✅ สร้างออเดอร์แล้ว · ${bookingCode}\n${draft.customerName} · ${draft.serviceName} · ${draft.time}`);
+        }
+    }
+    catch (err) {
+        v2_1.logger.error("[handleOrderCallback] confirm failed", err);
+        await answerCallback(token, q.id, "สร้างออเดอร์ไม่สำเร็จ ลองใหม่อีกครั้งค่ะ");
+    }
+}
 async function jobChannelId() {
     try {
         const snap = await (0, firestore_2.getFirestore)()
@@ -1278,6 +1686,13 @@ async function handleOpenJobClaim(q, bookingId, token) {
 async function handleJobCallback(q, token) {
     const data = q.data ?? "";
     const parts = data.split(":");
+    // 🆕 28x.81 — "order:confirm:<draftId>" / "order:cancel:<draftId>" come from
+    //   the admin order-paste draft, a different flow entirely (creates a new
+    //   booking rather than answering one).
+    if (parts[0] === "order" && parts.length >= 3) {
+        await handleOrderCallback(q, parts[1], parts.slice(2).join(":"), token);
+        return;
+    }
     // 🆕 28x.71 — "open:claim:<id>" comes from the job channel, where nobody is
     //   assigned yet, so it takes a different path (first-come, transactional).
     if (parts[0] === "open" && parts[1] === "claim" && parts.length >= 3) {
@@ -1402,7 +1817,7 @@ async function handleJobCallback(q, token) {
 }
 exports.telegramWebhook = (0, https_1.onRequest)({
     region: "asia-southeast1",
-    secrets: [TELEGRAM_BOT_TOKEN],
+    secrets: [TELEGRAM_BOT_TOKEN, OPENAI_API_KEY],
     cors: false,
 }, async (req, res) => {
     if (req.method !== "POST") {
@@ -1512,6 +1927,18 @@ exports.telegramWebhook = (0, https_1.onRequest)({
         }
         reply = claimed;
     }
+    else if (/^\/linkadmin\b/i.test(text)) {
+        // 🆕 28x.81 — MUST be checked before the generic "/link" branch below,
+        //   since "/linkadmin".startsWith("/link") is true and would otherwise
+        //   get parsed as a (nonsense) therapist link code.
+        const code = text.replace(/^\/linkadmin/i, "").trim().toUpperCase();
+        const linked = await linkAdminByCode(code, chatId);
+        if (!linked) {
+            res.status(200).send("ok"); // wrong/absent code → stay silent
+            return;
+        }
+        reply = linked;
+    }
     else if (text.toLowerCase().startsWith("/link")) {
         // 🆕 28x.70 — self-service linking. Replaces the three-step /myid dance
         //   where a 10-digit chat id was read off one screen and retyped into
@@ -1561,6 +1988,21 @@ exports.telegramWebhook = (0, https_1.onRequest)({
             "",
             "— Unknown command. Try /myid.",
         ].join("\n");
+    }
+    else if (update?.message?.chat?.type === "private" &&
+        (await isAdminChatId(chatId))) {
+        // 🆕 28x.81 — a linked admin's free text is treated as a pasted order,
+        //   not a therapist's stray reply. Runs before the generic "use the
+        //   buttons" fallback below, which is aimed at therapists.
+        const apiKey = OPENAI_API_KEY.value().trim();
+        if (!apiKey) {
+            reply = "ระบบยังไม่ได้ตั้งค่า AI parsing ค่ะ (OPENAI_API_KEY ไม่มีค่า)";
+        }
+        else {
+            await handleOrderPaste(text, chatId, token, apiKey);
+            res.status(200).send("ok");
+            return;
+        }
     }
     else if (update?.message?.chat?.type === "private") {
         // 🆕 28x.63 — was silent. The old job DM told practitioners to "Reply
@@ -2037,6 +2479,31 @@ exports.createJobChannelCode = (0, https_1.onCall)({ region: "asia-southeast1" }
         action: "settings.update",
         actorId: request.auth.uid,
         detail: { what: "jobChannelCode issued" },
+        at: firestore_2.FieldValue.serverTimestamp(),
+    });
+    return { ok: true, code, expiresAtMs: expiresAt.toMillis() };
+});
+// 🆕 28x.81 — companion to createJobChannelCode, same code-gate pattern, but
+//   grants admin order-paste access on @SunRed24hBot instead of claiming the
+//   job board.
+exports.createAdminLinkCode = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = (0, firestore_2.getFirestore)();
+    if (!(await db.collection("admins").doc(request.auth.uid).get()).exists) {
+        throw new https_1.HttpsError("permission-denied", "Admin only.");
+    }
+    const code = makeLinkCode();
+    const expiresAt = firestore_2.Timestamp.fromMillis(Date.now() + 60 * 60 * 1000); // 1h
+    await db
+        .collection("adminSettings")
+        .doc("advanced")
+        .set({ adminLinkCode: code, adminLinkCodeExpiresAt: expiresAt }, { merge: true });
+    await db.collection("auditLogs").add({
+        action: "settings.update",
+        actorId: request.auth.uid,
+        detail: { what: "adminLinkCode issued" },
         at: firestore_2.FieldValue.serverTimestamp(),
     });
     return { ok: true, code, expiresAtMs: expiresAt.toMillis() };

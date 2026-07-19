@@ -555,6 +555,9 @@ const AdminTherapistsPage: React.FC = () => {
   // 🆕 28x.72 — see the button below.
   const [chanCoding, setChanCoding] = useState(false);
   const [chanCode, setChanCode] = useState<string | null>(null);
+  // 🆕 28x.81 — see the button below.
+  const [adminCoding, setAdminCoding] = useState(false);
+  const [adminCode, setAdminCode] = useState<string | null>(null);
 
   // 🆕 28x.73 (founder: "ฉันส่งผิดกลุ่ม แก้ไง") — show WHICH chat is currently
   //   the job board. Without this the setting is invisible: point it at the
@@ -600,6 +603,26 @@ const AdminTherapistsPage: React.FC = () => {
       toast.error("สร้างรหัสไม่สำเร็จ");
     } finally {
       setChanCoding(false);
+    }
+  };
+
+  // 🆕 28x.81 (founder: "เราสามารถโยนออเดอร์จากแชทลูกค้า ... ให้บอทช่วยทำ
+  //   ออเดอร์ได้ไหม") — one-time code so her own Telegram can paste raw
+  //   customer chat text into @SunRed24hBot and get a booking draft back.
+  const makeAdminCode = async () => {
+    setAdminCoding(true);
+    try {
+      const fn = httpsCallable<Record<string, never>, { ok: boolean; code: string }>(
+        getFunctions(app, "asia-southeast1"),
+        "createAdminLinkCode"
+      );
+      const res = await fn({});
+      setAdminCode(res.data.code);
+    } catch (e) {
+      console.error("[therapists] admin link code failed", e);
+      toast.error("สร้างรหัสไม่สำเร็จ");
+    } finally {
+      setAdminCoding(false);
     }
   };
 
@@ -905,6 +928,20 @@ const AdminTherapistsPage: React.FC = () => {
         >
           {chanCoding ? <CircularProgress size={16} /> : "รหัสตั้งช่องงาน"}
         </Button>
+
+        {/* 🆕 28x.81 — one-time code to link View's own Telegram as an
+            admin order-intake chat on @SunRed24hBot. Same code-gate as the
+            job-channel button above, but grants order-creation instead. */}
+        <Button
+          disabled={adminCoding}
+          onClick={() => void makeAdminCode()}
+          sx={{
+            textTransform: "none", fontWeight: 700, borderRadius: "11px",
+            color: adminColor.text, border: `1px solid ${adminColor.line2}`,
+          }}
+        >
+          {adminCoding ? <CircularProgress size={16} /> : "รหัสเชื่อมแอดมิน (โยนออเดอร์)"}
+        </Button>
       </Box>
 
       {/* 🆕 28x.73 — current job board, always visible. */}
@@ -944,6 +981,23 @@ const AdminTherapistsPage: React.FC = () => {
           </Typography>
           <Typography sx={{ fontFamily: adminFont.sans, fontSize: 15, fontWeight: 800, color: adminColor.text }}>
             /setjobchannel {chanCode}
+          </Typography>
+        </Box>
+      )}
+
+      {adminCode && (
+        <Box
+          sx={{
+            mb: 2, p: 1.5, borderRadius: "12px",
+            background: `${adminColor.green}14`,
+            border: `1px solid ${adminColor.green}55`,
+          }}
+        >
+          <Typography sx={{ fontFamily: adminFont.sans, fontSize: 11.5, color: adminColor.dim, mb: 0.5 }}>
+            พิมพ์ข้อความนี้หา @SunRed24hBot ในแชทส่วนตัว · ใช้ได้ครั้งเดียว หมดอายุใน 1 ชม.
+          </Typography>
+          <Typography sx={{ fontFamily: adminFont.sans, fontSize: 15, fontWeight: 800, color: adminColor.text }}>
+            /linkadmin {adminCode}
           </Typography>
         </Box>
       )}
