@@ -586,6 +586,38 @@ export function backLabel(lang: Lang): string {
 }
 
 // ─────────────────────────────────────────────────────────────
+// 🆕 28x.84 (founder: "กดแต่ละเมนู ลิ้งไปเว็บหน้านั้นๆ ได้ไหม") — each FAQ
+//   reply keeps its in-Telegram text (so the bot still answers instantly)
+//   but ALSO offers a button straight to the matching live page, for
+//   guests who want the full visual site. Routes verified against
+//   src/app/App.tsx; "membership" and "available" have no dedicated
+//   route (both live as sections on home), so they point at "/".
+// ─────────────────────────────────────────────────────────────
+export function websiteUrlFor(key: FaqKey | "available"): string {
+  const base = "https://sunred.vip";
+  const paths: Record<FaqKey | "available", string> = {
+    pricing: "/pricing",
+    services: "/services",
+    areas: "/near-me",
+    howto: "/services?tab=how",
+    membership: "/",
+    available: "/",
+  };
+  return `${base}${paths[key]}`;
+}
+
+export function websiteLabel(lang: Lang): string {
+  const m: Record<Lang, string> = {
+    en: "🌐 View on website",
+    th: "🌐 ดูบนเว็บ",
+    zh: "🌐 网站查看",
+    ja: "🌐 サイトで見る",
+    ko: "🌐 웹사이트에서 보기",
+  };
+  return m[lang] || m.en;
+}
+
+// ─────────────────────────────────────────────────────────────
 // AVAILABILITY — header text + empty state
 // ─────────────────────────────────────────────────────────────
 const AVAILABILITY_HEADERS: Record<Lang, string> = {

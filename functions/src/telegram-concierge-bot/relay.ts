@@ -31,6 +31,8 @@ import {
   faqEntry,
   menuTitleFor,
   backLabel,
+  websiteUrlFor,
+  websiteLabel,
   availabilityHeaderFor,
   availabilityEmptyFor,
   type FaqKey,
@@ -117,11 +119,14 @@ function buildMenuKeyboard(lang: Lang): InlineKeyboard {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Build a "single FAQ + back + concierge" keyboard.
+// Build a "single FAQ + website + back + concierge" keyboard.
+// 🆕 28x.84 — the website link is keyed to which FAQ is showing, so
+//   "Pricing" links to /pricing, "Services" to /services, etc.
 // ─────────────────────────────────────────────────────────────
-function buildFaqDetailKeyboard(lang: Lang): InlineKeyboard {
+function buildFaqDetailKeyboard(lang: Lang, key: FaqKey | "available"): InlineKeyboard {
   const concierge = conciergeHandleFor(lang);
   return [
+    [{ text: websiteLabel(lang), url: websiteUrlFor(key) }],
     [{ text: backLabel(lang), callback_data: "faq:menu" }],
     [{ text: buttonLabelFor(lang), url: concierge.url }],
   ];
@@ -240,7 +245,7 @@ export async function handleCallbackQuery(
   ) {
     const body = await buildFaqDetailMessage(key as FaqKey | "available", lang);
     await editMessageText(token, chatId, messageId, body, {
-      inlineKeyboard: buildFaqDetailKeyboard(lang),
+      inlineKeyboard: buildFaqDetailKeyboard(lang, key as FaqKey | "available"),
     });
     return;
   }
