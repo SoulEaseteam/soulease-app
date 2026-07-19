@@ -20,30 +20,34 @@ export interface FaqEntry {
 }
 
 // ─────────────────────────────────────────────────────────────
-// PRICING — base × duration multiplier (1.5x · 2.0x)
-//   Thai     1,200 / 1,800 / 2,400
-//   Aroma    1,600 / 2,400 / 3,200
-//   Gent     2,200 / 3,300 / 4,400
-//   Thrptc   3,200 / 4,800 / 6,400
+// PRICING — kept in sync with src/utils/servicePricing.ts
+//   DURATION_PRICE_OVERRIDES (Round 28w.36, replaced the old
+//   ×1.5/×2.0 multiplier — Thai & Aroma keep 60/90/120, Gentleman's
+//   & Therapeutic moved to 70/120 only, no 60/90 tier).
+//   🆕 28x.82 (founder screenshot: bot quoting stale ×1.5/×2.0
+//   prices) — this block had never been updated after 28w.36 shipped.
+//   Thai     1,200 / 1,600 / 2,000  (60 · 90 · 120)
+//   Aroma    1,400 / 1,800 / 2,400  (60 · 90 · 120)
+//   Gent     2,200 / 3,000          (70 · 120 — no 60/90)
+//   Thrptc   3,200 / 4,000          (70 · 120 — no 60/90)
 // ─────────────────────────────────────────────────────────────
 const PRICING: Record<Lang, FaqEntry> = {
   en: {
     title: "💰 Pricing",
     body:
       `<b>SunRed Pricing</b>\n` +
-      `(60 min · 90 min · 120 min)\n` +
       `\n` +
-      `🌿 Thai Massage\n` +
-      `฿1,200 · ฿1,800 · ฿2,400\n` +
+      `🌿 Thai Massage (60 · 90 · 120 min)\n` +
+      `฿1,200 · ฿1,600 · ฿2,000\n` +
       `\n` +
-      `🌸 Aromatherapy\n` +
-      `฿1,600 · ฿2,400 · ฿3,200\n` +
+      `🌸 Aromatherapy (60 · 90 · 120 min)\n` +
+      `฿1,400 · ฿1,800 · ฿2,400\n` +
       `\n` +
-      `💎 Gentleman's Signature\n` +
-      `฿2,200 · ฿3,300 · ฿4,400\n` +
+      `💎 Gentleman's Signature (70 · 120 min)\n` +
+      `฿2,200 · ฿3,000\n` +
       `\n` +
-      `✨ SunRed Therapeutic\n` +
-      `฿3,200 · ฿4,800 · ฿6,400\n` +
+      `✨ SunRed Therapeutic (70 · 120 min)\n` +
+      `฿3,200 · ฿4,000\n` +
       `\n` +
       `<i>Travel surcharge may apply for areas beyond central Bangkok.\n` +
       `Cash · PromptPay · WeChat Pay · Alipay accepted (+5%+฿200 surcharge for WeChat / Alipay).</i>`,
@@ -52,19 +56,18 @@ const PRICING: Record<Lang, FaqEntry> = {
     title: "💰 ราคา",
     body:
       `<b>ราคา SunRed</b>\n` +
-      `(60 นาที · 90 นาที · 120 นาที)\n` +
       `\n` +
-      `🌿 นวดไทย\n` +
-      `฿1,200 · ฿1,800 · ฿2,400\n` +
+      `🌿 นวดไทย (60 · 90 · 120 นาที)\n` +
+      `฿1,200 · ฿1,600 · ฿2,000\n` +
       `\n` +
-      `🌸 อโรมา\n` +
-      `฿1,600 · ฿2,400 · ฿3,200\n` +
+      `🌸 อโรมา (60 · 90 · 120 นาที)\n` +
+      `฿1,400 · ฿1,800 · ฿2,400\n` +
       `\n` +
-      `💎 Gentleman's Signature\n` +
-      `฿2,200 · ฿3,300 · ฿4,400\n` +
+      `💎 Gentleman's Signature (70 · 120 นาที)\n` +
+      `฿2,200 · ฿3,000\n` +
       `\n` +
-      `✨ SunRed Therapeutic\n` +
-      `฿3,200 · ฿4,800 · ฿6,400\n` +
+      `✨ SunRed Therapeutic (70 · 120 นาที)\n` +
+      `฿3,200 · ฿4,000\n` +
       `\n` +
       `<i>ค่าเดินทางอาจเพิ่มถ้านอกพื้นที่กลางกรุง\n` +
       `รับ เงินสด · PromptPay · WeChat Pay · Alipay (WeChat/Alipay +5%+฿200)</i>`,
@@ -73,19 +76,18 @@ const PRICING: Record<Lang, FaqEntry> = {
     title: "💰 价格",
     body:
       `<b>SunRed 价格</b>\n` +
-      `(60分钟 · 90分钟 · 120分钟)\n` +
       `\n` +
-      `🌿 泰式按摩\n` +
-      `฿1,200 · ฿1,800 · ฿2,400\n` +
+      `🌿 泰式按摩 (60 · 90 · 120分钟)\n` +
+      `฿1,200 · ฿1,600 · ฿2,000\n` +
       `\n` +
-      `🌸 芳香疗法\n` +
-      `฿1,600 · ฿2,400 · ฿3,200\n` +
+      `🌸 芳香疗法 (60 · 90 · 120分钟)\n` +
+      `฿1,400 · ฿1,800 · ฿2,400\n` +
       `\n` +
-      `💎 绅士尊享\n` +
-      `฿2,200 · ฿3,300 · ฿4,400\n` +
+      `💎 绅士尊享 (70 · 120分钟)\n` +
+      `฿2,200 · ฿3,000\n` +
       `\n` +
-      `✨ SunRed Therapeutic\n` +
-      `฿3,200 · ฿4,800 · ฿6,400\n` +
+      `✨ SunRed Therapeutic (70 · 120分钟)\n` +
+      `฿3,200 · ฿4,000\n` +
       `\n` +
       `<i>偏远地区可能加收交通费\n` +
       `现金 · PromptPay · 微信支付 · 支付宝 (微信/支付宝加收 5%+฿200 手续费)</i>`,
@@ -94,19 +96,18 @@ const PRICING: Record<Lang, FaqEntry> = {
     title: "💰 料金",
     body:
       `<b>SunRed 料金</b>\n` +
-      `(60分 · 90分 · 120分)\n` +
       `\n` +
-      `🌿 タイマッサージ\n` +
-      `฿1,200 · ฿1,800 · ฿2,400\n` +
+      `🌿 タイマッサージ (60分 · 90分 · 120分)\n` +
+      `฿1,200 · ฿1,600 · ฿2,000\n` +
       `\n` +
-      `🌸 アロマセラピー\n` +
-      `฿1,600 · ฿2,400 · ฿3,200\n` +
+      `🌸 アロマセラピー (60分 · 90分 · 120分)\n` +
+      `฿1,400 · ฿1,800 · ฿2,400\n` +
       `\n` +
-      `💎 ジェントルマンズ・シグネチャー\n` +
-      `฿2,200 · ฿3,300 · ฿4,400\n` +
+      `💎 ジェントルマンズ・シグネチャー (70分 · 120分)\n` +
+      `฿2,200 · ฿3,000\n` +
       `\n` +
-      `✨ SunRed セラピューティック\n` +
-      `฿3,200 · ฿4,800 · ฿6,400\n` +
+      `✨ SunRed セラピューティック (70分 · 120分)\n` +
+      `฿3,200 · ฿4,000\n` +
       `\n` +
       `<i>中心地以外は交通費別途\n` +
       `現金 · PromptPay · WeChat Pay · Alipay (WeChat/Alipay は +5%+฿200 手数料)</i>`,
@@ -115,19 +116,18 @@ const PRICING: Record<Lang, FaqEntry> = {
     title: "💰 가격",
     body:
       `<b>SunRed 가격</b>\n` +
-      `(60분 · 90분 · 120분)\n` +
       `\n` +
-      `🌿 타이 마사지\n` +
-      `฿1,200 · ฿1,800 · ฿2,400\n` +
+      `🌿 타이 마사지 (60분 · 90분 · 120분)\n` +
+      `฿1,200 · ฿1,600 · ฿2,000\n` +
       `\n` +
-      `🌸 아로마테라피\n` +
-      `฿1,600 · ฿2,400 · ฿3,200\n` +
+      `🌸 아로마테라피 (60분 · 90분 · 120분)\n` +
+      `฿1,400 · ฿1,800 · ฿2,400\n` +
       `\n` +
-      `💎 젠틀맨즈 시그니처\n` +
-      `฿2,200 · ฿3,300 · ฿4,400\n` +
+      `💎 젠틀맨즈 시그니처 (70분 · 120분)\n` +
+      `฿2,200 · ฿3,000\n` +
       `\n` +
-      `✨ SunRed 테라퓨틱\n` +
-      `฿3,200 · ฿4,800 · ฿6,400\n` +
+      `✨ SunRed 테라퓨틱 (70분 · 120분)\n` +
+      `฿3,200 · ฿4,000\n` +
       `\n` +
       `<i>중심부 외 지역 교통비 별도\n` +
       `현금 · PromptPay · 위챗페이 · 알리페이 (위챗/알리페이 5%+฿200 추가)</i>`,
