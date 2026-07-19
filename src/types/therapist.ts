@@ -86,6 +86,16 @@ export interface Therapist {
   todayBookings?: number;
   totalBookings?: number;
 
+  /** 🆕 28x.81 (founder: "บัญชียังไม่เปิดใช้งาน") — admin-only gate on the
+   *  STAFF APP (login → /staff), separate from statusOverride/isHoliday
+   *  which gate PUBLIC bookability. A brand-new therapist can be linked
+   *  (28x.70) and sync'd (backfillTherapistUids) while still `undefined`
+   *  here — she can sign in, but StaffLayout blocks every screen behind a
+   *  "contact admin" banner until an admin explicitly flips this true.
+   *  NOT in firestore.rules therapistEditableKeys(), so a therapist can
+   *  never self-activate. */
+  staffActive?: boolean;
+
   /** location and distance */
   homeLocation?: Location | null;      // ค่าเริ่มต้นของ therapist
   currentLocation?: Location | null;   // real-time location

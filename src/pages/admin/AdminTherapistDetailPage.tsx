@@ -43,7 +43,7 @@ import {
   ArrowLeft, PencilSimple, FloppyDisk, X, Eye,
   Star, ChatCircleText, Clock, MapPin, Medal, EyeSlash, Prohibit, Umbrella,
   Calendar, ChartBar, ClockCounterClockwise, TelegramLogo, IdentificationCard, Image as ImageIcon, Sparkle,
-  Check, Warning, Globe, Notebook, UserFocus, MapPinLine, Info, Bank,
+  Check, Warning, Globe, Notebook, UserFocus, MapPinLine, Info, Bank, ShieldCheck,
 } from "phosphor-react";
 import type { Credential, LanguageSkill } from "@/types/therapist";
 import { calculateTherapistStatus, isOverrideExpired } from "@/utils/calculateTherapistStatus";
@@ -83,6 +83,9 @@ interface FormState {
   currentLocation: string;
   hidden: boolean;
   blocked: boolean;
+  /** 🆕 28x.81 — staff-app access gate, separate from hidden/blocked
+   *  (which control PUBLIC bookability, not whether she can sign in). */
+  staffActive: boolean;
   telegramChatId: string;
   // 🆕 Round 28s278 — rich fields, now editable (were view-only in 28s277).
   area: string;
@@ -98,7 +101,7 @@ interface FormState {
 const EMPTY_FORM: FormState = {
   name: "", image: "", specialty: "",
   startTime: "", endTime: "", badge: "", statusOverride: "Auto", isHoliday: false,
-  currentLocation: "", hidden: false, blocked: false, telegramChatId: "",
+  currentLocation: "", hidden: false, blocked: false, staffActive: false, telegramChatId: "",
   area: "", homeAddress: "", features: {}, languageSkills: [], servicesAvailable: [],
   credentials: [], gallery: [], bios: {},
 };
@@ -145,6 +148,7 @@ function toFormState(data: Record<string, unknown>): FormState {
       loc && typeof loc === "object" ? `${(loc as { lat: number }).lat}, ${(loc as { lng: number }).lng}` : (loc as string) || "",
     hidden: !!data.hidden,
     blocked: !!data.blocked,
+    staffActive: !!data.staffActive,
     telegramChatId: (data.telegramChatId as string) || "",
     area: (data.area as string) || "",
     homeAddress: (data.homeAddress as string) || "",
@@ -490,6 +494,7 @@ const AdminTherapistDetailPage: React.FC = () => {
       currentLocation: locationValue,
       hidden: formData.hidden,
       blocked: formData.blocked,
+      staffActive: formData.staffActive,
       telegramChatId: formData.telegramChatId,
       // 🆕 Round 28s278 — the rich fields, now written back too.
       area: formData.area,
@@ -1009,6 +1014,34 @@ const AdminTherapistDetailPage: React.FC = () => {
                     </Button>
                   </Box>
                 )}
+              </Box>
+            </SectionCard>
+
+            {/* 🆕 28x.81 (founder: "บัญชียังไม่เปิดใช้งาน ... ให้ติดต่อมาขอให้
+                แอดมินซิงก์งาน กับตั้งค่าช่องงาน") — a deliberate activation step,
+                separate from linking. Linking (above) proves who she is;
+                activation is admin confirming the job sync + channel setup are
+                done before she can operate the staff app at all. Saved with
+                the rest of this form's Save button, same as every other field
+                here — not written immediately, so a half-finished onboarding
+                (link created, sync not yet run) can't accidentally go live. */}
+            <SectionCard icon={<ShieldCheck size={13} />} title="Staff Access · เปิดใช้งานบัญชีพนักงาน">
+              <Typography sx={{ fontFamily: adminFont.sans, fontSize: 11, color: adminColor.dim, mb: 1, lineHeight: 1.6 }}>
+                ปิดไว้จนกว่าจะซิงก์งาน (หน้ารายชื่อพนักงาน → ซิงก์สิทธิ์งานพนักงาน) และตั้งค่าช่องงานเรียบร้อย ·
+                ระหว่างนี้พนักงานล็อกอินได้แต่จะเห็นแค่หน้าจอ &quot;บัญชียังไม่เปิดใช้งาน&quot;
+              </Typography>
+              <Box
+                onClick={() => setFormData((f) => ({ ...f, staffActive: !f.staffActive }))}
+                sx={{
+                  display: "flex", alignItems: "center", gap: "8px", fontSize: 12.5, fontWeight: 700,
+                  cursor: "pointer", borderRadius: "10px", padding: "9px 14px",
+                  border: `1px solid ${formData.staffActive ? "rgba(22,163,74,0.30)" : adminColor.line}`,
+                  background: formData.staffActive ? "rgba(22,163,74,0.10)" : adminColor.panel,
+                  color: formData.staffActive ? "#16a34a" : adminColor.dim,
+                }}
+              >
+                <ShieldCheck size={14} weight={formData.staffActive ? "fill" : "regular"} />
+                {formData.staffActive ? "เปิดใช้งานแล้ว · Active" : "ยังไม่เปิดใช้งาน · Inactive"}
               </Box>
             </SectionCard>
 
