@@ -420,9 +420,18 @@ const ProfilePage: React.FC = () => {
                 width: 90,
                 height: 90,
                 borderRadius: "50%",
-                background: `linear-gradient(135deg, ${ROSE}, ${ROSE_DEEP})`,
+                // 🆕 28x.86 (founder screenshot: the BLACK card sitting under a
+                //   plain rose avatar, "แต่งหน้านี้ให้ดีขึ้น") — a member's own
+                //   bezel now picks up her tier's finish instead of always
+                //   being brand rose, so the identity block at the top of the
+                //   page previews the card before the eye even reaches it.
+                //   Purely decorative (not text), so no contrast constraint —
+                //   safe to use the tier hue directly even on the rose hero.
+                background: memberTier ? TIER_META[memberTier].gradient : `linear-gradient(135deg, ${ROSE}, ${ROSE_DEEP})`,
                 p: "2.5px",
-                boxShadow: "0 0 0 3px rgba(255,255,255,0.16), 0 8px 32px rgba(0,0,0,0.35)",
+                boxShadow: memberTier
+                  ? `0 0 0 3px ${TIER_META[memberTier].border}, 0 8px 32px rgba(0,0,0,0.35)`
+                  : "0 0 0 3px rgba(255,255,255,0.16), 0 8px 32px rgba(0,0,0,0.35)",
               }}
             >
               <Avatar
@@ -492,6 +501,7 @@ const ProfilePage: React.FC = () => {
                   ? <CircularProgress size={14} sx={{ color: "rgba(255,255,255,0.5)" }} />
                   : <>{bookingCount}</>,
                 label: isTherapist ? "Jobs" : "Bookings",
+                tier: null,
               },
               // 🆕 28x.74 — "VIP status" is a guest loyalty tier; showing it to
               //   staff framed her own workplace as a shop she buys from.
@@ -501,26 +511,48 @@ const ProfilePage: React.FC = () => {
               //   tier now, or a plain dash before she's enrolled — never a
               //   status she doesn't hold.
               isTherapist
-                ? { value: "ON", label: "Duty" }
-                : { value: memberTier ? TIER_META[memberTier].label : "—", label: "Status" },
-              { value: "24/7", label: "Support" },
-            ].map((s, i) => (
-              <Box
-                key={i}
-                sx={{
-                  flex: 1,
-                  textAlign: "center",
-                  borderRight: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none",
-                }}
-              >
-                <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1 }}>
-                  {s.value}
-                </Typography>
-                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "rgba(255,255,255,0.40)", mt: 0.4, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                  {s.label}
-                </Typography>
-              </Box>
-            ))}
+                ? { value: "ON", label: "Duty", tier: null }
+                // 🆕 28x.86 — the Status cell now sits in its own small tier
+                //   chip (own gradient + verified ink, same combo the card
+                //   below already passes contrast with) instead of plain
+                //   white text — the rose hero itself is the wrong backdrop
+                //   for tier-colored TEXT (checked: Bronze/Silver/Gold ink
+                //   fails contrast directly on the rose gradient), so the
+                //   chip carries its own safe background instead of fighting it.
+                : { value: memberTier ? TIER_META[memberTier].label : "—", label: "Status", tier: memberTier },
+              { value: "24/7", label: "Support", tier: null },
+            ].map((s, i) => {
+              const chip = s.tier;
+              return (
+                <Box
+                  key={i}
+                  sx={
+                    chip
+                      ? {
+                          flex: 1,
+                          textAlign: "center",
+                          borderRadius: "12px",
+                          background: TIER_META[chip].gradient,
+                          border: `1px solid ${TIER_META[chip].border}`,
+                          boxShadow: `0 4px 14px ${TIER_META[chip].glow}`,
+                          py: 0.4,
+                        }
+                      : {
+                          flex: 1,
+                          textAlign: "center",
+                          borderRight: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none",
+                        }
+                  }
+                >
+                  <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: chip ? TIER_META[chip].ink : "#fff", lineHeight: 1 }}>
+                    {s.value}
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: chip ? TIER_META[chip].sub : "rgba(255,255,255,0.40)", mt: 0.4, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                    {s.label}
+                  </Typography>
+                </Box>
+              );
+            })}
           </Box>
         </motion.div>
 
