@@ -8,7 +8,7 @@ import React, {
   useCallback,
 } from "react";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, limit, getDocs } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
 export type Role = "admin" | "therapist" | "user";
@@ -31,14 +31,24 @@ export const useAuth = () => useContext(AuthContext);
 
 async function resolveRole(uid: string): Promise<Role> {
   try {
-    const [adminSnap, therapistSnap, userSnap] = await Promise.all([
+    // 🆕 Round 28x.93 (founder screenshot: Yuri signing in through /staff kept
+    //   landing on the CUSTOMER profile) — `doc(db, "therapists", uid)` treats
+    //   the Firebase Auth uid as the therapist DOC ID, but therapist doc IDs
+    //   are slugs ("YuriSunRed"); `uid` only exists as a FIELD on that doc.
+    //   This lookup has never once matched a real therapist — PrivateRoute's
+    //   requiredRoles=["therapist"] check was silently failing for everyone,
+    //   every time, and falling through to whatever /users/{uid}.role happened
+    //   to hold (fragile, and in Yuri's case that mirror doc didn't exist at
+    //   all). Query by the uid FIELD instead — the same approach LoginPage's
+    //   own getUserRole already uses successfully for the post-login redirect.
+    const [adminSnap, therapistQuery, userSnap] = await Promise.all([
       getDoc(doc(db, "admins", uid)),
-      getDoc(doc(db, "therapists", uid)),
+      getDocs(query(collection(db, "therapists"), where("uid", "==", uid), limit(1))),
       getDoc(doc(db, "users", uid)),
     ]);
 
     if (adminSnap.exists()) return "admin";
-    if (therapistSnap.exists()) return "therapist";
+    if (!therapistQuery.empty) return "therapist";
 
     if (userSnap.exists()) {
       const r = userSnap.data().role as Role | undefined;

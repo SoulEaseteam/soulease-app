@@ -210,8 +210,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ staff = false }) => {
       });
 
       setTimeout(() => {
-        // ถ้าถูก redirect มาจาก PrivateRoute ให้กลับหน้าเดิม
-        if (fromPath && role !== "admin") return navigate(fromPath, { replace: true });
+        // 🆕 Round 28x.92 (founder screenshot: Yuri signed in through /staff
+        //   and landed on the CUSTOMER profile) — fromPath used to be checked
+        //   FIRST, ahead of role. Any leftover `location.state.from` (e.g. she'd
+        //   earlier been bounced off a guest-only page before switching to her
+        //   staff login on the same tab) silently overrode the role-based
+        //   redirect below it, even for a therapist. Role now always wins;
+        //   fromPath is only a fallback for the plain "user" case it was meant
+        //   for.
         if (role === "admin") return navigate("/admin/dashboard", { replace: true });
         // 🆕 28x.77 (founder: "อยากให้พนักงานล็อกอินเข้าหน้า therapist/profile
         //   เลย ไม่ต้องกด Practitioner อีก") — straight into the practitioner
@@ -231,6 +237,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ staff = false }) => {
           });
           return;
         }
+        // ถ้าถูก redirect มาจาก PrivateRoute ให้กลับหน้าเดิม
+        if (fromPath) return navigate(fromPath, { replace: true });
         return navigate("/profile", { replace: true });
       }, 300);
     } catch (err: unknown) {
