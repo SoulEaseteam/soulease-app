@@ -235,6 +235,27 @@ const AdminTherapistDetailPage: React.FC = () => {
       setCreatingAccount(false);
     }
   };
+
+  // 🆕 28x.91 — the credential card only shows once; this is the way back in
+  // if admin navigates away without copying it, or the therapist forgets it.
+  const [resettingPassword, setResettingPassword] = useState(false);
+  const resetPassword = async () => {
+    if (!docId) return;
+    setResettingPassword(true);
+    try {
+      const fn = httpsCallable<{ therapistId: string }, { ok: boolean; username: string; password: string }>(
+        getFunctions(app, "asia-southeast1"),
+        "resetTherapistPassword"
+      );
+      const res = await fn({ therapistId: docId });
+      setAccountCreds({ username: res.data.username, password: res.data.password });
+    } catch (e) {
+      console.error("[therapist] reset password failed", e);
+      toast.error("รีเซ็ตรหัสผ่านไม่สำเร็จ");
+    } finally {
+      setResettingPassword(false);
+    }
+  };
   const originalRef = useRef<FormState>(EMPTY_FORM);
   // 🆕 Round 28s314 — bank details live in the ADMIN-ONLY `payoutAccounts`
   //   collection, NOT on the therapist doc (which is `allow read: if true`,
@@ -1074,9 +1095,27 @@ const AdminTherapistDetailPage: React.FC = () => {
                   toggle alone means she can sign in. */}
               <Box sx={{ mt: 1.25 }}>
                 {rawDoc.uid ? (
-                  <Typography sx={{ fontFamily: adminFont.sans, fontSize: 11.5, color: adminColor.green, fontWeight: 700 }}>
-                    ✓ มีบัญชีเข้าใช้งานแล้ว
-                  </Typography>
+                  <>
+                    <Typography sx={{ fontFamily: adminFont.sans, fontSize: 11.5, color: adminColor.green, fontWeight: 700, mb: 0.75 }}>
+                      ✓ มีบัญชีเข้าใช้งานแล้ว
+                    </Typography>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      disabled={resettingPassword}
+                      onClick={() => void resetPassword()}
+                      sx={{
+                        textTransform: "none", fontWeight: 700, fontSize: 12.5,
+                        borderRadius: "999px", color: adminColor.accent,
+                        borderColor: adminColor.line2,
+                      }}
+                    >
+                      {resettingPassword ? <CircularProgress size={15} /> : "รีเซ็ตรหัสผ่าน"}
+                    </Button>
+                    <Typography sx={{ fontFamily: adminFont.sans, fontSize: 10.5, color: adminColor.dim, mt: 0.5 }}>
+                      ลืมรหัสผ่าน หรือดูข้อมูลไม่ทัน กดรีเซ็ตเพื่อออกรหัสใหม่ได้ตลอด
+                    </Typography>
+                  </>
                 ) : (
                   <>
                     <Button

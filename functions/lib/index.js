@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.createAdminLinkCode = exports.createJobChannelCode = exports.advanceJobStatus = exports.respondToJob = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.createAdminLinkCode = exports.createJobChannelCode = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -2644,6 +2644,46 @@ exports.createTherapistAccount = (0, https_1.onCall)({ region: "asia-southeast1"
         at: firestore_2.FieldValue.serverTimestamp(),
     });
     return { ok: true, username: handle, password };
+});
+// 🆕 Round 28x.91 (founder: "ถ้ามันดูได้ครั้งเดียว แล้วลืมคัดลอกทำไง") — the
+//   credential card only shows once (React state, gone on refresh/navigate),
+//   and there was no way back in. Unlike resetCustomerPassword — which resets
+//   to the customer's own phone number, something both sides already know —
+//   a therapist's password is random with nothing memorable to fall back to,
+//   so "reset" here means "generate a fresh one and show it again."
+exports.resetTherapistPassword = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = (0, firestore_2.getFirestore)();
+    if (!(await db.collection("admins").doc(request.auth.uid).get()).exists) {
+        throw new https_1.HttpsError("permission-denied", "Admin only.");
+    }
+    const therapistId = String(request.data?.therapistId ?? "").trim();
+    if (!therapistId) {
+        throw new https_1.HttpsError("invalid-argument", "therapistId is required.");
+    }
+    const tSnap = await db.collection("therapists").doc(therapistId).get();
+    if (!tSnap.exists) {
+        throw new https_1.HttpsError("not-found", "Therapist not found.");
+    }
+    const t = tSnap.data();
+    if (!t?.uid) {
+        throw new https_1.HttpsError("failed-precondition", "This therapist has no login yet — use Create account instead.");
+    }
+    let password = "";
+    for (let i = 0; i < 12; i++) {
+        password += LINK_ALPHABET[Math.floor(Math.random() * LINK_ALPHABET.length)];
+    }
+    await (0, auth_1.getAuth)().updateUser(t.uid, { password });
+    await db.collection("auditLogs").add({
+        action: "therapist.password_reset",
+        actorId: request.auth.uid,
+        byUid: request.auth.uid,
+        detail: { therapistId }, // never the password itself
+        at: firestore_2.FieldValue.serverTimestamp(),
+    });
+    return { ok: true, username: therapistId.toLowerCase(), password };
 });
 // 🆕 Round 28x.72 — a one-time code to claim the job board.
 //

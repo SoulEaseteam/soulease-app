@@ -3254,6 +3254,58 @@ export const createTherapistAccount = onCall(
   }
 );
 
+// 🆕 Round 28x.91 (founder: "ถ้ามันดูได้ครั้งเดียว แล้วลืมคัดลอกทำไง") — the
+//   credential card only shows once (React state, gone on refresh/navigate),
+//   and there was no way back in. Unlike resetCustomerPassword — which resets
+//   to the customer's own phone number, something both sides already know —
+//   a therapist's password is random with nothing memorable to fall back to,
+//   so "reset" here means "generate a fresh one and show it again."
+export const resetTherapistPassword = onCall(
+  { region: "asia-southeast1" },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = getFirestore();
+    if (!(await db.collection("admins").doc(request.auth.uid).get()).exists) {
+      throw new HttpsError("permission-denied", "Admin only.");
+    }
+    const therapistId = String(
+      (request.data as { therapistId?: string } | undefined)?.therapistId ?? ""
+    ).trim();
+    if (!therapistId) {
+      throw new HttpsError("invalid-argument", "therapistId is required.");
+    }
+    const tSnap = await db.collection("therapists").doc(therapistId).get();
+    if (!tSnap.exists) {
+      throw new HttpsError("not-found", "Therapist not found.");
+    }
+    const t = tSnap.data() as { uid?: string } | undefined;
+    if (!t?.uid) {
+      throw new HttpsError(
+        "failed-precondition",
+        "This therapist has no login yet — use Create account instead."
+      );
+    }
+
+    let password = "";
+    for (let i = 0; i < 12; i++) {
+      password += LINK_ALPHABET[Math.floor(Math.random() * LINK_ALPHABET.length)];
+    }
+    await getAuth().updateUser(t.uid, { password });
+
+    await db.collection("auditLogs").add({
+      action: "therapist.password_reset",
+      actorId: request.auth.uid,
+      byUid: request.auth.uid,
+      detail: { therapistId }, // never the password itself
+      at: FieldValue.serverTimestamp(),
+    });
+
+    return { ok: true, username: therapistId.toLowerCase(), password };
+  }
+);
+
 // 🆕 Round 28x.72 — a one-time code to claim the job board.
 //
 //   Anyone can add a public bot to their own Telegram group. Without proof of
