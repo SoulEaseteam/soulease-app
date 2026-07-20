@@ -623,6 +623,14 @@ interface BookingDocLite {
   meetingPoint?: string;
   note?: string;
   servicePrice?: number;
+  // 🆕 28x.86 (founder: "ตอนจองส่วนลด เทเลแกรมไม่ตัดโค้ด ส่งราคาเต็มมา") —
+  //   the discount WAS already correctly baked into totalPrice at booking
+  //   time (BookingFlowPage's effectiveTotalPrice); what was actually
+  //   missing is that formatBookingForAdmin never showed the discount
+  //   line, so "Price: 1,200" next to "Total: 1,000" with no line
+  //   explaining the gap read as "the code didn't apply."
+  discountCode?: string;
+  discountAmount?: number;
   taxiFee?: number;
   totalPrice?: number;
   language?: string;
@@ -695,18 +703,18 @@ const formatBookingForAdmin = (
   const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
   const divider = "────────────────────";
 
-  // Address: prefer the POI/place name, append the street address if it
-  //   differs (so the operator sees both "Rosewood Bangkok" and the road).
-  const norm = (s?: string) => (s ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+  // Address: just the POI/place name — no more.
+  // 🆕 28x.86 (founder: "Address ยาวมาก บอกหมด เกิน เอาแค่ชื่อ แต่ Map จริง") —
+  //   28x.68 appended the full street address whenever it differed from the
+  //   place name (to show both "Rosewood Bangkok" and the road), which for
+  //   a Google-Places-picked address meant the full formatted address —
+  //   soi, khwaeng, khet, postal code, country — got dumped into the chat
+  //   in full ("Somerset Sukhumvit Thonglor Bangkok, No 115 Sukhumvit, 55
+  //   ถ. ทองหล่อ แขวงคลองตันเหนือ เขตวัฒนา กรุงเทพมหานคร 10110, Thailand").
+  //   Dropped the append entirely — the Map link below still resolves to
+  //   the real, precise location regardless of how short this line is.
   const place = b.locationName?.trim() || b.address?.trim() || "—";
-  // 🆕 28x.68 — compare against `place`, not `locationName`. When a booking has
-  //   no locationName (most guest bookings — the field is only set when a POI
-  //   is picked), `place` already fell back to the address, but this check
-  //   compared the address to an EMPTY locationName, decided they differed, and
-  //   appended it again: "Asok, Asok" on every such dispatch card.
-  const extra =
-    b.address?.trim() && norm(b.address) !== norm(place) ? b.address.trim() : "";
-  const addressLine = [place, extra].filter(Boolean).join(", ");
+  const addressLine = place;
 
   // Map link: explicit mapUrl, else a Places search on name/address.
   const mapUrl =
@@ -730,6 +738,11 @@ const formatBookingForAdmin = (
     `Service: ${b.serviceName ?? "—"}`,
     `Duration: ${b.duration ?? "?"} min`,
     `Price: ${(b.servicePrice ?? 0).toLocaleString()} ฿`,
+    b.discountAmount && b.discountAmount > 0
+      ? `🎟️ Discount: -${b.discountAmount.toLocaleString()} ฿${
+          b.discountCode ? ` (${b.discountCode})` : ""
+        }`
+      : null,
     "",
     `🚖 Taxi: ${(b.taxiFee ?? 0).toLocaleString()} ฿`,
     // Payment method kept (cash vs WeChat/Alipay changes the operation).
