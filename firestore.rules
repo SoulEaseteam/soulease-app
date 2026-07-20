@@ -121,10 +121,18 @@ service cloud.firestore {
         // location
         'currentLocation', 'homeLocation', 'lat', 'lng', 'area',
         // media
-        'image', 'gallery',
+        'image',
         // soft profile
+        // 🆕 28x.96 — 'gallery' REMOVED from this whitelist. New photos now
+        //   go through galleryRequests (admin approval) per founder: "ทุกรูป
+        //   ที่อัปโหลดใหม่จะถูกตรวจสอบผ่านแอดมินก่อนเสมอ" — only an admin
+        //   (isAdmin() bypasses this whitelist entirely, see the `update`
+        //   rule below) can write the live `gallery` array now.
         'features', 'specialty', 'servicesAvailable', 'services',
         'bios', 'bioGeneratedAt',
+        // 🆕 28x.96 (founder Home quick-menu: "Languages · ภาษา") — was
+        //   admin-only; no self-service surface needed it before.
+        'languageSkills',
         // 🆕 Round 28b27 — Telegram notification opt-in. Therapist
         //   themselves DM the bot to register and updates this field.
         'telegramChatId',
@@ -139,6 +147,22 @@ service cloud.firestore {
         .diff(resource.data)
         .affectedKeys()
         .hasOnly(therapistEditableKeys());
+    }
+
+    // 🆕 Round 28x.96 — a therapist may remove her own gallery photos
+    //   instantly (no approval needed to take something DOWN), but may
+    //   never ADD one this way — new photos must go through
+    //   galleryRequests. "Shrinks" = every URL in the proposed array
+    //   already existed in the stored array; no new URL sneaks in.
+    function galleryOnlyShrinks() {
+      return resource.data.gallery is list &&
+        request.resource.data.gallery is list &&
+        resource.data.gallery.hasAll(request.resource.data.gallery);
+    }
+    function therapistGallerySelfRemoval() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['gallery', 'updatedAt', 'updatedBy']) &&
+        galleryOnlyShrinks();
     }
 
     // 🆕 28s387 — anonymous profile-view counter. Anyone may bump viewCount,
@@ -202,6 +226,8 @@ service cloud.firestore {
       allow update: if isAdmin() ||
                     (isTherapistOwner(therapistId) &&
                      therapistUpdateIsSelfEditable()) ||
+                    (isTherapistOwner(therapistId) &&
+                     therapistGallerySelfRemoval()) ||
                     isViewCountBump();
 
       allow delete: if isAdmin();
@@ -496,8 +522,54 @@ service cloud.firestore {
     //   bank/account numbers and must NEVER be world-readable like the
     //   `therapists` collection is (allow read: if true). Keyed by the
     //   therapist doc id.
+    // 🆕 Round 28x.96 (founder Home quick-menu: "Payout Account ·
+    //   บัญชีธนาคาร") — was strictly admin-only. Self-edit added so a
+    //   therapist can keep her own payout destination current; the doc ID
+    //   equals her `therapists` doc ID, so ownership is checked by reading
+    //   THAT doc's uid/email (payoutAccounts docs carry no identity fields
+    //   of their own). A Cloud Functions trigger
+    //   (notifyPayoutAccountChanged) alerts the admin Report channel on
+    //   every write here that wasn't made by an admin — bank-transfer
+    //   destination is sensitive enough that View should always know it
+    //   changed, even though the write itself is allowed.
+    function payoutAccountOwner(therapistId) {
+      let t = get(/databases/$(database)/documents/therapists/$(therapistId)).data;
+      return isSignedIn() && (
+        (t.uid is string && t.uid == request.auth.uid) ||
+        (t.email is string && request.auth.token.email is string &&
+         t.email == request.auth.token.email)
+      );
+    }
+    function payoutAccountEditableKeys() {
+      return ['bankName', 'bankAccount', 'bankAccountName', 'updatedAt', 'updatedBy'];
+    }
     match /payoutAccounts/{therapistId} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin() || payoutAccountOwner(therapistId);
+      allow create: if (isAdmin() || payoutAccountOwner(therapistId))
+                    && request.resource.data.keys().hasOnly(payoutAccountEditableKeys());
+      allow update: if isAdmin() ||
+                    (payoutAccountOwner(therapistId) &&
+                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(payoutAccountEditableKeys()));
+      allow delete: if isAdmin();
+    }
+
+    // 🆕 Round 28x.96 (founder: "ทุกรูปที่อัปโหลดใหม่จะถูกตรวจสอบผ่านแอดมิน
+    //   หลังบ้านก่อนเสมอ") — therapist self-service gallery uploads land
+    //   here as pending, never touching the live `gallery` array directly.
+    //   Admin approves via the "คำขอพนักงาน" panel, which writes the URL
+    //   into therapists/{id}.gallery (admin already has full write there).
+    match /galleryRequests/{requestId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.therapistUid == request.auth.uid);
+      allow create: if isSignedIn()
+                    && request.resource.data.therapistUid == request.auth.uid
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.imageUrl is string;
+      // Only admin resolves a request (approve/reject) — the therapist
+      // filed it and waits; she may still withdraw it herself below.
+      allow update: if isAdmin();
+      allow delete: if isAdmin() ||
+                    (isSignedIn() && resource.data.therapistUid == request.auth.uid &&
+                     resource.data.status == 'pending');
     }
 
     // 🆕 Round 28b21 (founder 2026-05-04) — Phase 3 of conversion plan.

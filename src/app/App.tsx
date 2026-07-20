@@ -168,6 +168,30 @@ const TherapistSettingsPage = React.lazy(
 const TherapistReportsPage = React.lazy(
   () => import("@/pages/therapist/TherapistReportsPage")
 );
+// 🆕 28x.96 (founder Home quick-menu additions) — self-service edit pages
+//   for the therapist's own public profile content, plus the reused
+//   Loyalty/benchmark panel and the gallery-with-moderation + payout pages.
+const TherapistPerformancePage = React.lazy(
+  () => import("@/pages/therapist/TherapistPerformancePage")
+);
+const TherapistServicesPage = React.lazy(
+  () => import("@/pages/therapist/TherapistServicesPage")
+);
+const TherapistFeaturesPage = React.lazy(
+  () => import("@/pages/therapist/TherapistFeaturesPage")
+);
+const TherapistLanguagesPage = React.lazy(
+  () => import("@/pages/therapist/TherapistLanguagesPage")
+);
+const TherapistBioPage = React.lazy(
+  () => import("@/pages/therapist/TherapistBioPage")
+);
+const TherapistGalleryPage = React.lazy(
+  () => import("@/pages/therapist/TherapistGalleryPage")
+);
+const TherapistPayoutPage = React.lazy(
+  () => import("@/pages/therapist/TherapistPayoutPage")
+);
 
 // Admin
 const AdminDashboardPage = React.lazy(
@@ -220,6 +244,10 @@ const AdminEarningsPage = React.lazy(
 //   🆕 28x.88 — now the consolidated home for every Telegram bot setting.
 const AdminTelegramPanelPage = React.lazy(
   () => import("@/pages/admin/AdminTelegramPanelPage")
+);
+// 🆕 28x.96 — review queue for therapist self-service gallery uploads.
+const AdminStaffRequestsPage = React.lazy(
+  () => import("@/pages/admin/AdminStaffRequestsPage")
 );
 // 🆕 28x.88 — LINE OA / WhatsApp placeholders under the new "SunRed Bot" nav
 //   group. Neither has a real bot integration yet.
@@ -395,6 +423,13 @@ export default function App() {
           <Route path="/therapist/jobs" element={<TherapistJobsPage />} />
           <Route path="/therapist/settings" element={<TherapistSettingsPage />} />
           <Route path="/therapist/reports" element={<TherapistReportsPage />} />
+          <Route path="/therapist/performance" element={<TherapistPerformancePage />} />
+          <Route path="/therapist/services" element={<TherapistServicesPage />} />
+          <Route path="/therapist/features" element={<TherapistFeaturesPage />} />
+          <Route path="/therapist/languages" element={<TherapistLanguagesPage />} />
+          <Route path="/therapist/bio" element={<TherapistBioPage />} />
+          <Route path="/therapist/gallery" element={<TherapistGalleryPage />} />
+          <Route path="/therapist/payout" element={<TherapistPayoutPage />} />
           {/* /therapist/status route removed Round 22b — TherapistStatusManager
               component was deleted in the merge cleanup. */}
           <Route path="/update-location" element={<UpdateLocationPage />} />
@@ -434,6 +469,7 @@ export default function App() {
           {/* 🆕 Round 28s313 — Pay-therapist queue (non-cash bookings) */}
           <Route path="pay-therapists" element={<AdminTherapistPayoutsPage />} />
           <Route path="telegram" element={<AdminTelegramPanelPage />} />
+          <Route path="staff-requests" element={<AdminStaffRequestsPage />} />
           {/* 🆕 28x.88 — SunRed Bot group: LINE OA / WhatsApp placeholders. */}
           <Route path="bot/line" element={<AdminBotComingSoonPage platform="LINE OA" />} />
           <Route path="bot/whatsapp" element={<AdminBotComingSoonPage platform="WhatsApp" />} />

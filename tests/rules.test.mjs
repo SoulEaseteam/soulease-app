@@ -31,6 +31,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   collection,
   query,
   where,
@@ -89,6 +90,21 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
     name: "XingXing",
     uid: THERAPIST_UID,
     telegramChatId: "5620102444",
+    // 🆕 28x.96 — seeded for the gallery-shrink-only tests below.
+    gallery: ["https://img/a.jpg", "https://img/b.jpg"],
+  });
+  // 🆕 28x.96 — seeded pending gallery requests for the galleryRequests tests.
+  await setDoc(doc(db, "galleryRequests", "req-pending-a"), {
+    therapistUid: THERAPIST_UID,
+    therapistDocId: THERAPIST_DOC_ID,
+    imageUrl: "https://img/pending-a.jpg",
+    status: "pending",
+  });
+  await setDoc(doc(db, "galleryRequests", "req-pending-b"), {
+    therapistUid: THERAPIST_UID,
+    therapistDocId: THERAPIST_DOC_ID,
+    imageUrl: "https://img/pending-b.jpg",
+    status: "pending",
   });
   await setDoc(doc(db, "bookings", "bk-owned"), {
     userId: OWNER_UID,
@@ -314,6 +330,130 @@ await check("the assigned therapist CANNOT edit the report message", () =>
       message: "rewritten by the therapist",
     })
   )
+);
+
+console.log("\ntherapists · self-edit additions (28x.96)");
+await check("therapist CAN self-edit languageSkills on her own doc", () =>
+  assertSucceeds(
+    updateDoc(doc(asUser(THERAPIST_UID), "therapists", THERAPIST_DOC_ID), {
+      languageSkills: [{ code: "en", level: "Fluent" }],
+    })
+  )
+);
+await check("a stranger CANNOT edit the therapist's languageSkills", () =>
+  assertFails(
+    updateDoc(doc(asUser(GUEST_UID), "therapists", THERAPIST_DOC_ID), {
+      languageSkills: [{ code: "en", level: "Native" }],
+    })
+  )
+);
+await check("therapist CAN remove a photo from her own gallery (shrink)", () =>
+  assertSucceeds(
+    updateDoc(doc(asUser(THERAPIST_UID), "therapists", THERAPIST_DOC_ID), {
+      gallery: ["https://img/a.jpg"],
+    })
+  )
+);
+await check("therapist CANNOT add a new photo directly to gallery", () =>
+  assertFails(
+    updateDoc(doc(asUser(THERAPIST_UID), "therapists", THERAPIST_DOC_ID), {
+      gallery: ["https://img/a.jpg", "https://img/NEW-UNAPPROVED.jpg"],
+    })
+  )
+);
+
+console.log("\npayoutAccounts · self-edit (28x.96)");
+await check("therapist CAN create her own payout account", () =>
+  assertSucceeds(
+    setDoc(doc(asUser(THERAPIST_UID), "payoutAccounts", THERAPIST_DOC_ID), {
+      bankName: "SCB",
+      bankAccount: "111-2-33333-4",
+      bankAccountName: "XingXing",
+    })
+  )
+);
+await check("therapist CAN read her own payout account", () =>
+  assertSucceeds(getDoc(doc(asUser(THERAPIST_UID), "payoutAccounts", THERAPIST_DOC_ID)))
+);
+await check("a stranger CANNOT read someone else's payout account", () =>
+  assertFails(getDoc(doc(asUser(GUEST_UID), "payoutAccounts", THERAPIST_DOC_ID)))
+);
+await check("a stranger CANNOT write someone else's payout account", () =>
+  assertFails(
+    setDoc(doc(asUser(GUEST_UID), "payoutAccounts", THERAPIST_DOC_ID), {
+      bankName: "Hacked",
+      bankAccount: "000-0-00000-0",
+      bankAccountName: "Attacker",
+    })
+  )
+);
+await check("therapist CANNOT inject an extra field into her payout account", () =>
+  assertFails(
+    setDoc(doc(asUser(THERAPIST_UID), "payoutAccounts", "some-other-doc-id"), {
+      bankName: "SCB",
+      bankAccount: "111-2-33333-4",
+      bankAccountName: "XingXing",
+      role: "admin",
+    })
+  )
+);
+await check("admin CAN read any payout account", () =>
+  assertSucceeds(getDoc(doc(asUser(ADMIN_UID), "payoutAccounts", THERAPIST_DOC_ID)))
+);
+
+console.log("\ngalleryRequests · self-service upload queue (28x.96)");
+await check("therapist CAN file her own pending gallery request", () =>
+  assertSucceeds(
+    setDoc(doc(asUser(THERAPIST_UID), "galleryRequests", "req-new-1"), {
+      therapistUid: THERAPIST_UID,
+      therapistDocId: THERAPIST_DOC_ID,
+      imageUrl: "https://img/new1.jpg",
+      status: "pending",
+    })
+  )
+);
+await check("therapist CANNOT file a request claiming someone else's uid", () =>
+  assertFails(
+    setDoc(doc(asUser(THERAPIST_UID), "galleryRequests", "req-new-2"), {
+      therapistUid: "other-therapist-uid",
+      therapistDocId: THERAPIST_DOC_ID,
+      imageUrl: "https://img/new2.jpg",
+      status: "pending",
+    })
+  )
+);
+await check("therapist CANNOT pre-mark her own request approved", () =>
+  assertFails(
+    setDoc(doc(asUser(THERAPIST_UID), "galleryRequests", "req-new-3"), {
+      therapistUid: THERAPIST_UID,
+      therapistDocId: THERAPIST_DOC_ID,
+      imageUrl: "https://img/new3.jpg",
+      status: "approved",
+    })
+  )
+);
+await check("therapist CAN read her own pending request", () =>
+  assertSucceeds(getDoc(doc(asUser(THERAPIST_UID), "galleryRequests", "req-pending-a")))
+);
+await check("a different therapist CANNOT read that request", () =>
+  assertFails(getDoc(doc(asUser("other-therapist-uid"), "galleryRequests", "req-pending-a")))
+);
+await check("therapist CANNOT approve her own request", () =>
+  assertFails(
+    updateDoc(doc(asUser(THERAPIST_UID), "galleryRequests", "req-pending-a"), {
+      status: "approved",
+    })
+  )
+);
+await check("admin CAN approve a pending request", () =>
+  assertSucceeds(
+    updateDoc(doc(asUser(ADMIN_UID), "galleryRequests", "req-pending-a"), {
+      status: "approved",
+    })
+  )
+);
+await check("therapist CAN withdraw her own still-pending request", () =>
+  assertSucceeds(deleteDoc(doc(asUser(THERAPIST_UID), "galleryRequests", "req-pending-b")))
 );
 
 await testEnv.cleanup();

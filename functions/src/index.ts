@@ -6,6 +6,7 @@ import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import {
   onDocumentCreated,
   onDocumentUpdated,
+  onDocumentWritten,
 } from "firebase-functions/v2/firestore";
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
 //   recoverAbandonedBookings).
@@ -621,6 +622,74 @@ export const onTherapistUpdate = onDocumentUpdated(
     } catch (err) {
       logger.error("[onTherapistUpdate] write failed", { therapistId, err });
     }
+  }
+);
+
+// 🆕 Round 28x.96 (founder Home quick-menu: "Payout Account · บัญชีธนาคาร")
+//   — payoutAccounts was strictly admin-only before this round; opening it
+//   to therapist self-edit means a compromised staff login could silently
+//   redirect her own payout destination. This is the safety net: alert the
+//   admin Report channel on every non-deletion write, always — cheap
+//   insurance on a collection that changes rarely. Account numbers are
+//   masked to the last 4 digits in the Telegram text (still plaintext in
+//   Firestore, same as AddTherapistPage always stored it).
+interface PayoutDocLite {
+  bankName?: string;
+  bankAccount?: string;
+  bankAccountName?: string;
+}
+function maskBankAccount(acc: string | undefined): string {
+  if (!acc) return "—";
+  return acc.length > 4 ? `••••${acc.slice(-4)}` : acc;
+}
+export const notifyPayoutAccountChanged = onDocumentWritten(
+  {
+    document: "payoutAccounts/{therapistId}",
+    region: "asia-southeast1",
+    secrets: [TELEGRAM_BOT_TOKEN],
+  },
+  async (event) => {
+    const before = event.data?.before?.exists ? (event.data.before.data() as PayoutDocLite) : null;
+    const after = event.data?.after?.exists ? (event.data.after.data() as PayoutDocLite) : null;
+    if (!after) return; // deletion — admin-only per firestore.rules, no alert needed
+
+    if (
+      before &&
+      before.bankName === after.bankName &&
+      before.bankAccount === after.bankAccount &&
+      before.bankAccountName === after.bankAccountName
+    ) {
+      return; // only bookkeeping fields (updatedAt/updatedBy) changed
+    }
+
+    const token = TELEGRAM_BOT_TOKEN.value();
+    if (!token) {
+      logger.error("[notifyPayoutAccountChanged] missing token");
+      return;
+    }
+
+    const therapistId = event.params.therapistId;
+    let therapistName = therapistId;
+    try {
+      const tSnap = await getFirestore().collection("therapists").doc(therapistId).get();
+      if (tSnap.exists) therapistName = (tSnap.data()?.name as string) || therapistId;
+    } catch {
+      // best-effort — fall back to the raw id
+    }
+
+    const text = [
+      `🏦 บัญชีธนาคารเปลี่ยน · ${therapistName}`,
+      "",
+      `${before ? "แก้ไขเป็น" : "ตั้งค่าใหม่"}: ${after.bankName ?? "—"} · ${maskBankAccount(after.bankAccount)}`,
+      `ชื่อบัญชี: ${after.bankAccountName ?? "—"}`,
+      before ? `เดิม: ${before.bankName ?? "—"} · ${maskBankAccount(before.bankAccount)}` : null,
+      "",
+      "ถ้าไม่ใช่คุณสั่งเอง ให้ตรวจสอบด่วน",
+    ]
+      .filter((line): line is string => line !== null)
+      .join("\n");
+
+    await sendTelegramIfEnabled(token, await getReportChatId(), text);
   }
 );
 
