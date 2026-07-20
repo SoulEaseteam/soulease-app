@@ -21,6 +21,13 @@ const TELEGRAM_CONCIERGE_BOT_TOKEN = defineSecret(
   "TELEGRAM_CONCIERGE_BOT_TOKEN",
 );
 
+// 🆕 28x.85 (founder: "เราจะรู้ได้ไงว่ามีลูกค้าทักหาเราบ้างไหม") — the
+//   dispatch bot's own token, used ONLY to post a "new customer" ping
+//   into the existing admin group (TELEGRAM_CHAT_ID in ../index.ts).
+//   @SunRedGreeterBot itself isn't a member of that group, so it can't
+//   post there with its own token.
+const TELEGRAM_BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
+
 /**
  * Telegram webhook receiver. Telegram POSTs an Update object per event.
  * We always reply 200 OK quickly to prevent Telegram from retrying —
@@ -28,7 +35,7 @@ const TELEGRAM_CONCIERGE_BOT_TOKEN = defineSecret(
  */
 export const telegramConciergeWebhook = onRequest(
   {
-    secrets: [TELEGRAM_CONCIERGE_BOT_TOKEN],
+    secrets: [TELEGRAM_CONCIERGE_BOT_TOKEN, TELEGRAM_BOT_TOKEN],
     // Region matches other concierge-bot functions (us-central1) so all
     // posting/relay infra clusters in one region.
     // 🆕 Round 28s124 — allow Telegram (anonymous) to invoke. Without
@@ -53,7 +60,7 @@ export const telegramConciergeWebhook = onRequest(
     }
 
     try {
-      await handleUpdate(req.body ?? {}, token);
+      await handleUpdate(req.body ?? {}, token, TELEGRAM_BOT_TOKEN.value().trim());
     } catch (err) {
       logger.error("[telegramConciergeWebhook] handleUpdate threw", {
         err,

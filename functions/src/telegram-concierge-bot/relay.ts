@@ -71,12 +71,21 @@ interface TelegramCallbackQuery {
 
 // ─────────────────────────────────────────────────────────────
 // Save customer metadata.
+// 🆕 28x.85 (founder: "เราจะรู้ได้ไงว่ามีลูกค้าทักหาเราบ้างไหม") — this used
+//   to stamp `firstSeenAt: serverTimestamp()` on EVERY message (merge
+//   write with no existence check), so it silently drifted into just
+//   another "last written" field — never actually "first seen". Fixed
+//   as a side effect of adding the isNew check the admin notification
+//   below needs anyway: only stamp firstSeenAt the first time the doc
+//   is created.
 // ─────────────────────────────────────────────────────────────
 async function upsertCustomerChat(
   from: TelegramUser,
-): Promise<Lang> {
+): Promise<{ lang: Lang; isNew: boolean }> {
   const lang = normalizeLang(from.language_code);
   const ref = getFirestore().collection(CHATS_COLLECTION).doc(String(from.id));
+  const existing = await ref.get();
+  const isNew = !existing.exists;
   await ref.set(
     {
       chatId: from.id,
@@ -87,11 +96,46 @@ async function upsertCustomerChat(
       username: from.username ?? null,
       lastMessageAt: FieldValue.serverTimestamp(),
       messageCount: FieldValue.increment(1),
-      firstSeenAt: FieldValue.serverTimestamp(),
+      ...(isNew ? { firstSeenAt: FieldValue.serverTimestamp() } : {}),
     },
     { merge: true },
   );
-  return lang;
+  return { lang, isNew };
+}
+
+// 🆕 28x.85 — ping the SAME admin group the booking bot already posts
+//   to (TELEGRAM_CHAT_ID, "SunRed Booking"), using the DISPATCH bot's
+//   token — @SunRedGreeterBot is not a member of that group, only
+//   @SunRed24hBot is, so posting as the concierge bot would silently
+//   fail. Fires once per customer (on their first-ever message), not
+//   per message, so a customer working through the FAQ menu doesn't
+//   spam the group.
+const ADMIN_GROUP_CHAT_ID = "-1002962073895";
+
+async function notifyAdminNewConciergeCustomer(
+  adminToken: string,
+  lang: Lang,
+  from: TelegramUser,
+): Promise<void> {
+  if (!adminToken) return;
+  const who = from.first_name ?? from.username ?? "ลูกค้าใหม่";
+  const text = [
+    `🔔 ลูกค้าใหม่ทัก concierge bot ครั้งแรก`,
+    `${who} · ภาษา: ${lang.toUpperCase()}`,
+  ].join("\n");
+  try {
+    await fetch(`https://api.telegram.org/bot${adminToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: ADMIN_GROUP_CHAT_ID,
+        text,
+        disable_web_page_preview: true,
+      }),
+    });
+  } catch (err) {
+    logger.error("[concierge-bot] notifyAdminNewConciergeCustomer failed", { err });
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -151,9 +195,13 @@ async function sendWelcomeWithMenu(
 export async function handleCustomerMessage(
   msg: TelegramMessage,
   token: string,
+  adminToken: string,
 ): Promise<void> {
   if (!msg.from) return;
-  const lang = await upsertCustomerChat(msg.from);
+  const { lang, isNew } = await upsertCustomerChat(msg.from);
+  if (isNew) {
+    await notifyAdminNewConciergeCustomer(adminToken, lang, msg.from);
+  }
 
   // /start → fresh welcome with menu
   if (msg.text?.trim() === "/start") {
@@ -260,6 +308,7 @@ export async function handleUpdate(
     callback_query?: TelegramCallbackQuery;
   },
   token: string,
+  adminToken: string,
 ): Promise<void> {
   if (update.callback_query) {
     try {
@@ -275,7 +324,7 @@ export async function handleUpdate(
   if (!msg.from) return;
 
   try {
-    await handleCustomerMessage(msg, token);
+    await handleCustomerMessage(msg, token, adminToken);
   } catch (err) {
     logger.error("[concierge-bot] message handler threw", { err });
   }
