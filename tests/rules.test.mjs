@@ -107,6 +107,14 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
     address: "Another hotel",
     accessToken: "tok-def",
   });
+  // 🆕 28x.87 — a pre-existing open report, for the read/update cases below.
+  await setDoc(doc(db, "reports", "rep-open"), {
+    bookingId: "bk-owned",
+    userId: OWNER_UID,
+    therapistUid: THERAPIST_UID,
+    message: "seeded report",
+    status: "open",
+  });
 });
 
 console.log("\nbookings · single-doc read (28x.65)");
@@ -212,6 +220,99 @@ console.log("\nadmins · the authority collection");
 await check("nobody can write an admins doc from a client", () =>
   assertFails(
     setDoc(doc(asUser(GUEST_UID), "admins", GUEST_UID), { self: true })
+  )
+);
+
+console.log("\nreports · customer report-an-issue (28x.87)");
+await check("signed-out visitor CANNOT create a report", () =>
+  assertFails(
+    setDoc(doc(anon(), "reports", "rep-anon"), {
+      bookingId: "bk-owned",
+      userId: OWNER_UID,
+      therapistUid: THERAPIST_UID,
+      message: "hello",
+      status: "open",
+    })
+  )
+);
+await check("booking owner CAN report her own completed session", () =>
+  assertSucceeds(
+    setDoc(doc(asUser(OWNER_UID), "reports", "rep-new-1"), {
+      bookingId: "bk-owned",
+      userId: OWNER_UID,
+      therapistUid: THERAPIST_UID,
+      message: "arrived 40 minutes late",
+      status: "open",
+    })
+  )
+);
+await check("a stranger CANNOT file a report claiming someone else's booking", () =>
+  assertFails(
+    setDoc(doc(asUser(GUEST_UID), "reports", "rep-new-2"), {
+      bookingId: "bk-owned",
+      userId: GUEST_UID,
+      therapistUid: THERAPIST_UID,
+      message: "not my booking",
+      status: "open",
+    })
+  )
+);
+await check("owner CANNOT spoof a therapistUid different from the booking's real one", () =>
+  assertFails(
+    setDoc(doc(asUser(OWNER_UID), "reports", "rep-new-3"), {
+      bookingId: "bk-owned",
+      userId: OWNER_UID,
+      therapistUid: "some-other-therapist-uid",
+      message: "wrong target",
+      status: "open",
+    })
+  )
+);
+await check("owner CANNOT create a report already marked acknowledged", () =>
+  assertFails(
+    setDoc(doc(asUser(OWNER_UID), "reports", "rep-new-4"), {
+      bookingId: "bk-owned",
+      userId: OWNER_UID,
+      therapistUid: THERAPIST_UID,
+      message: "sneaky",
+      status: "acknowledged",
+    })
+  )
+);
+
+console.log("\nreports · therapist + admin access (28x.87)");
+await check("the assigned therapist CAN read a report about her", () =>
+  assertSucceeds(getDoc(doc(asUser(THERAPIST_UID), "reports", "rep-open")))
+);
+await check("a DIFFERENT therapist CANNOT read that report", () =>
+  assertFails(getDoc(doc(asUser("other-therapist-uid"), "reports", "rep-open")))
+);
+await check("the reporting customer CANNOT read her own report back", () =>
+  assertFails(getDoc(doc(asUser(OWNER_UID), "reports", "rep-open")))
+);
+await check("admin CAN read any report", () =>
+  assertSucceeds(getDoc(doc(asUser(ADMIN_UID), "reports", "rep-open")))
+);
+await check("the assigned therapist CAN acknowledge her own report", () =>
+  assertSucceeds(
+    updateDoc(doc(asUser(THERAPIST_UID), "reports", "rep-open"), {
+      status: "acknowledged",
+      acknowledgedAt: Date.now(),
+    })
+  )
+);
+await check("a DIFFERENT therapist CANNOT acknowledge someone else's report", () =>
+  assertFails(
+    updateDoc(doc(asUser("other-therapist-uid"), "reports", "rep-open"), {
+      status: "acknowledged",
+    })
+  )
+);
+await check("the assigned therapist CANNOT edit the report message", () =>
+  assertFails(
+    updateDoc(doc(asUser(THERAPIST_UID), "reports", "rep-open"), {
+      message: "rewritten by the therapist",
+    })
   )
 );
 

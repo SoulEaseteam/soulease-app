@@ -147,6 +147,11 @@ const TherapistLocationPage = React.lazy(
   () => import("@/pages/therapist/TherapistLocationPage")
 );
 const StaffLayout = React.lazy(() => import("@/components/layouts/StaffLayout"));
+// 🆕 28x.87 — the new landing dashboard (Working Status + quick menu),
+//   split out of TherapistProfilePage so Profile stays identity + Settings.
+const TherapistHomePage = React.lazy(
+  () => import("@/pages/therapist/TherapistHomePage")
+);
 const TherapistProfilePage = React.lazy(
   () => import("@/pages/therapist/TherapistProfilePage")
 );
@@ -158,6 +163,10 @@ const TherapistJobsPage = React.lazy(
 // 🆕 28x.78 — practitioner account settings (Language · Change password · Sign out).
 const TherapistSettingsPage = React.lazy(
   () => import("@/pages/therapist/TherapistSettingsPage")
+);
+// 🆕 28x.87 — customer "report an issue" alerts, filed on BookingHistoryPage.
+const TherapistReportsPage = React.lazy(
+  () => import("@/pages/therapist/TherapistReportsPage")
 );
 
 // Admin
@@ -378,12 +387,14 @@ export default function App() {
             </PrivateRoute>
           }
         >
+          <Route path="/therapist/home" element={<TherapistHomePage />} />
           <Route
             path="/therapist/profile"
             element={<TherapistProfilePage />}
           />
           <Route path="/therapist/jobs" element={<TherapistJobsPage />} />
           <Route path="/therapist/settings" element={<TherapistSettingsPage />} />
+          <Route path="/therapist/reports" element={<TherapistReportsPage />} />
           {/* /therapist/status route removed Round 22b — TherapistStatusManager
               component was deleted in the merge cleanup. */}
           <Route path="/update-location" element={<UpdateLocationPage />} />

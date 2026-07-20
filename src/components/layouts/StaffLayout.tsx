@@ -15,16 +15,19 @@
 //   the whack-a-mole the founder called out — every fix found a new gap.
 //
 //   StaffLayout has no dependency on TopNav or BottomNavGlass at all, so
-//   there is no shared surface left to leak through. It renders only what a
-//   practitioner needs: a light top bar (wordmark + sign out) and a 2-tab
-//   bottom bar (My Jobs · Profile). Settings lives one tap inside Profile.
+//   there is no shared surface left to leak through.
+//
+// 🆕 Round 28x.87 (founder reference screenshots of a competitor's staff app,
+//   "อยากได้ 3 แท็บแบบภาพอ้างอิง") — grew from 2 tabs to 3: หน้าทำงาน (Home,
+//   new landing) · My Jobs · Profile. The reference's 4th tab (chat) stays
+//   out — declined earlier this session as a big, separate feature.
 
 import React, { useEffect, useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Box, IconButton, CircularProgress, Typography, Button } from "@mui/material";
 import { signOut } from "firebase/auth";
 import { collection, onSnapshot, query, where, limit } from "firebase/firestore";
-import { Briefcase, UserCircle, SignOut, ShieldWarning } from "phosphor-react";
+import { SquaresFour, Briefcase, UserCircle, SignOut, ShieldWarning } from "phosphor-react";
 
 import { auth, db } from "@/lib/firebase";
 import { responsiveShell } from "@/theme/breakpoints";
@@ -35,6 +38,7 @@ const SANS = '"Inter", system-ui, sans-serif';
 const ROSE = "#D97C95";
 
 const TABS = [
+  { label: "หน้าทำงาน", value: "/therapist/home", icon: SquaresFour },
   { label: "My Jobs", value: "/therapist/jobs", icon: Briefcase },
   { label: "Profile", value: "/therapist/profile", icon: UserCircle },
 ] as const;
@@ -131,7 +135,9 @@ const StaffLayout: React.FC = () => {
 
   const currentTab = location.pathname.startsWith("/therapist/jobs")
     ? "/therapist/jobs"
-    : "/therapist/profile"; // profile, settings, location, update-location
+    : location.pathname.startsWith("/therapist/home")
+    ? "/therapist/home"
+    : "/therapist/profile"; // profile, settings, reports, location, update-location
 
   const logout = async () => {
     await signOut(auth);
@@ -171,7 +177,7 @@ const StaffLayout: React.FC = () => {
         <Box
           component="button"
           type="button"
-          onClick={() => navigate("/therapist/profile")}
+          onClick={() => navigate("/therapist/home")}
           sx={{
             background: "none",
             border: "none",
@@ -200,7 +206,8 @@ const StaffLayout: React.FC = () => {
 
       <Outlet />
 
-      {/* Bottom bar — 2 tabs. Settings is a tap inside Profile, not a third tab. */}
+      {/* Bottom bar — 3 tabs (28x.87). Settings is a tap inside Profile, not
+          its own tab; Reports is a tap inside Home, same reasoning. */}
       <Box
         sx={{
           position: "fixed",

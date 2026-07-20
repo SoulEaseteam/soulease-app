@@ -283,7 +283,7 @@ const TherapistJobsPage: React.FC = () => {
       >
         <Box
           component="button"
-          onClick={() => navigate("/therapist/profile")}
+          onClick={() => navigate("/therapist/home")}
           aria-label="Go back"
           sx={{
             display: "flex", alignItems: "center", justifyContent: "center",

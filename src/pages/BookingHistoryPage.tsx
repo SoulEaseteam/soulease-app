@@ -18,7 +18,17 @@
 //     aria-selected on the pill tabs.
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Box, Avatar, Typography } from "@mui/material";
+import {
+  Box,
+  Avatar,
+  Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+} from "@mui/material";
 // 🆕 Round 28w.21 (founder: "แถบบาร์ ไม่เสมอ กล่องล่าง") — page was full-bleed
 //   while the TopNav is capped by responsiveShell, so on tablet/desktop the
 //   maroon hero ran edge-to-edge past the centered nav. Cap the page to the
@@ -26,18 +36,22 @@ import { Box, Avatar, Typography } from "@mui/material";
 import { responsiveShell } from "@/theme/breakpoints";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import {
+  addDoc,
   collection,
   onSnapshot,
   query,
   where,
   orderBy,
+  serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
 import {
   ArrowLeft,
   CalendarBlank,
   CheckCircle,
+  Flag,
   XCircle,
   Star,
   MapPin,
@@ -112,6 +126,11 @@ interface Booking {
   reviewed?: boolean;
   createdAt?: Timestamp;
   userId?: string;
+  // 🆕 28x.87 — stamped server-side (functions/src/index.ts) once the
+  //   therapist's Auth account is linked; may be absent on very old or
+  //   never-linked bookings. Used to route a "report an issue" straight to
+  //   the therapist it's about.
+  therapistUid?: string;
 }
 
 // 🆕 28w.1 — every status the app actually writes to `bookings` is
@@ -511,6 +530,7 @@ const BookingHistoryPage: React.FC = () => {
               >
                 <BookingCard
                   booking={b}
+                  userId={user?.uid ?? null}
                   onRebook={() => void navigate(`/therapists/${b.therapistId}`)}
                   onReview={() => void navigate(`/review/${b.id}`)}
                 />
@@ -528,9 +548,10 @@ const BookingHistoryPage: React.FC = () => {
 // ──────────────────────────────────────────────────────────────────────
 const BookingCard: React.FC<{
   booking: Booking;
+  userId: string | null;
   onRebook: () => void;
   onReview: () => void;
-}> = ({ booking, onRebook, onReview }) => {
+}> = ({ booking, userId, onRebook, onReview }) => {
   const status     = STATUS_META[booking.status] ?? STATUS_META.pending;
   // 🆕 Round 28r79 — r68 Firestore fallback for admin-added therapists.
   //   Sync fast-path for the 12 originals (zero I/O); Firestore falls
@@ -555,6 +576,40 @@ const BookingCard: React.FC<{
   const total      = booking.totalPrice ?? booking.total ?? 0;
   const isUpcoming = status.bucket === "upcoming";
   const isCompleted = status.bucket === "completed";
+
+  // 🆕 28x.87 (founder: "รายการรีพอร์ต — ให้ฝั่งลูกค้าคอมเพลนมาได้แล้วมาขึ้น
+  //   เตือนพนักงาน") — a completed session can be reported straight to the
+  //   practitioner it's about. No customer identity is stamped into the
+  //   report beyond the uid the write rule requires; the therapist only ever
+  //   sees the booking date/service + the message, same privacy stance as
+  //   the masked-until-accepted guest identity on her Jobs list.
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportMsg, setReportMsg] = useState("");
+  const [reportBusy, setReportBusy] = useState(false);
+
+  const submitReport = async () => {
+    if (!userId || !reportMsg.trim()) return;
+    setReportBusy(true);
+    try {
+      await addDoc(collection(db, "reports"), {
+        bookingId: booking.id,
+        therapistId: booking.therapistId,
+        therapistUid: booking.therapistUid ?? null,
+        userId,
+        message: reportMsg.trim(),
+        status: "open",
+        createdAt: serverTimestamp(),
+      });
+      toast.success("ส่งรีพอร์ตแล้ว ขอบคุณที่แจ้งให้ทราบ");
+      setReportOpen(false);
+      setReportMsg("");
+    } catch (err) {
+      console.error("[BookingHistory] report submit failed:", err);
+      toast.error("ส่งรีพอร์ตไม่สำเร็จ ลองใหม่อีกครั้ง");
+    } finally {
+      setReportBusy(false);
+    }
+  };
 
   const dateLabel = booking.startAt?.toDate
     ? fmtBKK(booking.startAt.toDate(), "ddd D MMM")
@@ -696,6 +751,28 @@ const BookingCard: React.FC<{
           </Box>
 
           <Box sx={{ display: "flex", gap: 1 }}>
+            {isCompleted && userId && (
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setReportOpen(true)}
+                aria-label="Report an issue with this session"
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 999,
+                  background: "var(--sr-panel-2)",
+                  color: "var(--sr-muted)",
+                  border: "1px solid var(--sr-hairline)",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Flag size={15} weight="bold" />
+              </motion.button>
+            )}
             {isCompleted && !booking.reviewed && (
               <motion.button
                 whileTap={{ scale: 0.97 }}
@@ -746,6 +823,47 @@ const BookingCard: React.FC<{
           </Box>
         </Box>
       </Box>
+
+      {/* 🆕 28x.87 — report-an-issue dialog */}
+      <Dialog
+        open={reportOpen}
+        onClose={() => { if (!reportBusy) setReportOpen(false); }}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{ sx: { borderRadius: 4, background: "var(--sr-panel)", border: "1px solid var(--sr-hairline)", backgroundImage: "none" } }}
+      >
+        <DialogTitle sx={{ fontFamily: SERIF, fontSize: 18, color: "var(--sr-ink)", pb: 0.5 }}>
+          แจ้งปัญหา · Report an issue
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: "var(--sr-muted)", mb: 1.5, lineHeight: 1.5 }}>
+            บอกเราว่าเกิดอะไรขึ้นกับการจองนี้ ({dateLabel}) — ข้อความจะส่งตรงถึงพนักงานที่เกี่ยวข้อง
+          </Typography>
+          <TextField
+            multiline
+            minRows={3}
+            fullWidth
+            placeholder="เล่าให้ฟังหน่อยค่ะ..."
+            value={reportMsg}
+            onChange={(e) => setReportMsg(e.target.value)}
+            disabled={reportBusy}
+            InputProps={{ sx: { color: "var(--sr-ink)", borderRadius: 2 } }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={() => setReportOpen(false)} disabled={reportBusy} sx={{ color: "var(--sr-muted)", fontFamily: SANS }}>
+            ยกเลิก
+          </Button>
+          <Button
+            onClick={() => void submitReport()}
+            disabled={reportBusy || !reportMsg.trim()}
+            variant="contained"
+            sx={{ fontFamily: SANS, fontWeight: 700, borderRadius: 2, px: 2.5, background: ROSE, boxShadow: "none", "&:hover": { background: "#C96F89", boxShadow: "none" } }}
+          >
+            ส่งรีพอร์ต
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

@@ -223,7 +223,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ staff = false }) => {
         //   เลย ไม่ต้องกด Practitioner อีก") — straight into the practitioner
         //   panel. 28x.76 sent her to /therapist/jobs, which still left the
         //   customer-shaped /profile as the thing the PROFILE tab returned to.
-        if (role === "therapist") return navigate("/therapist/profile", { replace: true });
+        // 🆕 28x.87 — StaffLayout grew a Home tab (Working Status + quick
+        //   menu); that's the landing dashboard now, same role /therapist/profile
+        //   played before Working Status moved off of it.
+        if (role === "therapist") return navigate("/therapist/home", { replace: true });
         // Signed in through the staff door but not staff — say so rather than
         // dropping her on a guest profile with no explanation.
         if (staff) {

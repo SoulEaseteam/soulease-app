@@ -428,6 +428,49 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // ── reports (28x.87 — founder: "รายการรีพอร์ต ... ให้ฝั่งลูกค้าคอมเพลนมาได้
+    //   แล้วมาขึ้นเตือนพนักงาน") — a customer reporting an issue on a completed
+    //   session, routed straight to the practitioner it's about.
+    //   • CREATE: signed-in customer only, must stamp their own uid and start
+    //     status 'open' (rewardClaims pattern above). Also verified against
+    //     the booking itself — bookingId must be a booking the caller OWNS,
+    //     and the claimed therapistUid must match that booking's real
+    //     therapistUid — otherwise nothing stops a customer from filing a
+    //     report against an unrelated therapist she never booked.
+    //   • READ: admin, or the therapist it's about. The reporting customer
+    //     gets no read-back — there's no "my reports" list, and no reason to
+    //     expose the therapist's read/ack state to her.
+    //   • UPDATE: the therapist may only flip her OWN report from open to
+    //     acknowledged — can't edit the message, can't touch anyone else's.
+    //   • DELETE: admin only — reports are a permanent record.
+    function reportBooking() {
+      return get(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data;
+    }
+    function reportMatchesOwnBooking() {
+      return request.resource.data.bookingId is string
+        && reportBooking().userId == request.auth.uid
+        && reportBooking().get('therapistUid', null) == request.resource.data.get('therapistUid', null);
+    }
+    function reportTherapistEditableKeys() {
+      return ['status', 'acknowledgedAt'];
+    }
+    match /reports/{reportId} {
+      allow read: if isAdmin()
+                  || (isSignedIn() && resource.data.therapistUid is string
+                      && resource.data.therapistUid == request.auth.uid);
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.status == 'open'
+                    && reportMatchesOwnBooking();
+      allow update: if isAdmin()
+                    || (isSignedIn()
+                        && resource.data.therapistUid is string
+                        && resource.data.therapistUid == request.auth.uid
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(reportTherapistEditableKeys())
+                        && request.resource.data.status == 'acknowledged');
+      allow delete: if isAdmin();
+    }
+
     // ── audit log ───────────────────────────────────────────────────
     // 🆕 Round 28s234 (Phase 4) — was write:false ("Cloud Functions only")
     // but nothing server-side ever wrote it, so the collection was

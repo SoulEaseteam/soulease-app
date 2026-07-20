@@ -417,7 +417,8 @@ const TopNav: React.FC = () => {
           type="button"
           // 🆕 28x.79 — the logo was a second door back into the customer
           //   storefront from a therapist's own pages. Home means her panel now.
-          onClick={() => goto(isTherapist ? "/therapist/profile" : "/")}
+          // 🆕 28x.87 — points at the new Home dashboard, not Profile.
+          onClick={() => goto(isTherapist ? "/therapist/home" : "/")}
           aria-label={t("nav.brandHome", "SunRed home")}
           sx={{
             background: "transparent",
@@ -662,7 +663,8 @@ const TopNav: React.FC = () => {
                 //   pointing at: opening this drawer FROM her own therapist
                 //   panel and having its own shortcut send her back to the
                 //   guest profile.
-                void navigate("/therapist/profile");
+                // 🆕 28x.87 — points at the new Home dashboard now.
+                void navigate("/therapist/home");
               }
             }}
             aria-label={

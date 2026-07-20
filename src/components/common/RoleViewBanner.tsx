@@ -65,7 +65,8 @@ const RoleViewBanner: React.FC = () => {
       // stale destination turned up (drawer shortcut, sign-out, and here) —
       // one more reason the founder's "make it a genuinely separate app"
       // direction is the right fix instead of chasing each occurrence.
-      void navigate("/therapist/profile");
+      // 🆕 28x.87 — points at the new Home dashboard now.
+      void navigate("/therapist/home");
     }
   };
 
