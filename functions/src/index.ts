@@ -1200,6 +1200,118 @@ export const alertOverdueSessions = onSchedule(
   }
 );
 
+// 🆕 Round 28x.87 (founder: "ให้บอทส่งรายงานประจำวันได้ไหม Funnel Analytics
+//   กับ Bookings") — a once-daily digest into the same admin group,
+//   covering the last 24h. Funnel numbers mirror AdminAnalyticsPage's own
+//   method exactly (unique SESSIONS with home_view → unique sessions with
+//   booking_complete, not raw event counts) so this never disagrees with
+//   what View sees in the dashboard. Fires at 10:00 Bangkok — after the
+//   prime-time (22:00-04:00) business night has wrapped and settled.
+//
+//   Scope note: this reads analytics_events + bookings directly, NOT the
+//   Dashboard's own date-bucketed query — "last 24h" here vs. "today by
+//   calendar date" there can disagree by a booking or two near midnight.
+//   Good enough for a pulse-check digest; go to the Dashboard for the
+//   authoritative number.
+export const dailyAdminDigest = onSchedule(
+  {
+    schedule: "0 10 * * *",
+    region: "asia-southeast1",
+    timeZone: "Asia/Bangkok",
+    secrets: [TELEGRAM_BOT_TOKEN],
+  },
+  async () => {
+    const db = getFirestore();
+    const token = TELEGRAM_BOT_TOKEN.value();
+    if (!token) {
+      logger.error("[dailyAdminDigest] missing token");
+      return;
+    }
+
+    const cutoff = Timestamp.fromMillis(Date.now() - 24 * 60 * 60 * 1000);
+
+    // ── Funnel (analytics_events, last 24h) ──────────────────────
+    const eventsSnap = await db
+      .collection("analytics_events")
+      .where("ts", ">=", cutoff)
+      .get();
+
+    const eventCounts: Record<string, number> = {};
+    const sessionsWithEvent: Record<string, Set<string>> = {};
+    for (const doc of eventsSnap.docs) {
+      const d = doc.data() as { event?: string; sid?: string };
+      const ev = d.event;
+      if (!ev) continue;
+      eventCounts[ev] = (eventCounts[ev] ?? 0) + 1;
+      if (d.sid) {
+        (sessionsWithEvent[ev] ??= new Set<string>()).add(d.sid);
+      }
+    }
+    const sessionsHome = sessionsWithEvent.home_view?.size ?? 0;
+    const sessionsBooked = sessionsWithEvent.booking_complete?.size ?? 0;
+    const conversionRate =
+      sessionsHome > 0 ? (sessionsBooked / sessionsHome) * 100 : 0;
+
+    // ── Bookings created in the last 24h ──────────────────────────
+    const bookingsSnap = await db
+      .collection("bookings")
+      .where("createdAt", ">=", cutoff)
+      .get();
+
+    // Same EXCLUDED set as the booking data model rule in CLAUDE.md §4.
+    const EXCLUDED_STATUSES = new Set([
+      "cancelled",
+      "canceled",
+      "refunded",
+      "failed",
+      "rejected",
+      "no_show",
+      "pending",
+    ]);
+    let totalBookings = 0;
+    let cancelledCount = 0;
+    let grossRevenue = 0;
+    for (const doc of bookingsSnap.docs) {
+      const b = doc.data() as { status?: string; totalPrice?: number };
+      totalBookings += 1;
+      const status = (b.status ?? "").toLowerCase();
+      if (status === "cancelled" || status === "canceled") cancelledCount += 1;
+      if (!EXCLUDED_STATUSES.has(status)) {
+        grossRevenue += b.totalPrice ?? 0;
+      }
+    }
+
+    const dateLabel = new Intl.DateTimeFormat("th-TH", {
+      timeZone: "Asia/Bangkok",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(new Date());
+
+    const text = [
+      `📊 รายงานประจำวัน · SunRed`,
+      `${dateLabel} · ย้อนหลัง 24 ชม.`,
+      ``,
+      `🧭 Funnel`,
+      `เข้าเว็บ (home_view): ${eventCounts.home_view ?? 0}`,
+      `ดูบริการ (service_view): ${eventCounts.service_view ?? 0}`,
+      `ดูโปรไฟล์หมอนวด (therapist_view): ${eventCounts.therapist_view ?? 0}`,
+      `เริ่มจอง (booking_start): ${eventCounts.booking_start ?? 0}`,
+      `จองสำเร็จ (booking_complete): ${eventCounts.booking_complete ?? 0}`,
+      `ทักคอนเซียร์จ (concierge_chat_open): ${eventCounts.concierge_chat_open ?? 0}`,
+      `Conversion (เข้าเว็บ → จองสำเร็จ): ${conversionRate.toFixed(1)}%`,
+      ``,
+      `📅 Bookings`,
+      `จองทั้งหมด: ${totalBookings}`,
+      `ยกเลิก: ${cancelledCount}`,
+      `รายได้รวม (ไม่รวมยกเลิก/คืนเงิน): ${grossRevenue.toLocaleString()} ฿`,
+    ].join("\n");
+
+    const res = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, text);
+    logger.info("[dailyAdminDigest] sent", { ok: res.ok });
+  }
+);
+
 
 interface AbandonedBookingLite {
   status?: string;
