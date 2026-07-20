@@ -387,13 +387,19 @@ const ProfilePage: React.FC = () => {
         fontFamily: SANS,
       }}
     >
-      {/* ── Hero ── */}
+      {/* ── Hero (r128 · Approach 8 · Split ID Badge · Wallet-style) ──
+          🆕 28r128 (founder pick: "Split ID Badge · Wallet-style ·
+          sectioned") — landscape hero row (avatar left + name/email/tier
+          right), a compact 3-cell stats strip with vertical dividers,
+          a "◆ Member Card" section label above the tier PNG artwork,
+          then a "◆ Member Perks" section label + 3 icon-tile perks.
+          Rebuilds the r28x.86 centered stack into a wallet-style layout
+          that reads as an ID badge + benefits. */}
       <Box
         sx={{
-          // 🆕 28x.57 — brand rose→plum hero (was slate #1A2B2E, off-theme).
           background: "linear-gradient(160deg, #A34A67 0%, #7A3049 55%, #5A2733 100%)",
-          pt: 7,
-          pb: 5,
+          pt: 5,
+          pb: 4,
           px: 3,
           position: "relative",
           overflow: "hidden",
@@ -412,26 +418,22 @@ const ProfilePage: React.FC = () => {
           },
         }}
       >
-        <motion.div {...fadeUp(0)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-          {/* Avatar with gradient ring */}
-          <Box sx={{ position: "relative" }}>
+        {/* Landscape identity row · avatar LEFT + name/email/tier RIGHT */}
+        <motion.div {...fadeUp(0)}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2.25, mb: 2.5 }}>
             <Box
               sx={{
-                width: 90,
-                height: 90,
+                flexShrink: 0,
+                width: 78,
+                height: 78,
                 borderRadius: "50%",
-                // 🆕 28x.86 (founder screenshot: the BLACK card sitting under a
-                //   plain rose avatar, "แต่งหน้านี้ให้ดีขึ้น") — a member's own
-                //   bezel now picks up her tier's finish instead of always
-                //   being brand rose, so the identity block at the top of the
-                //   page previews the card before the eye even reaches it.
-                //   Purely decorative (not text), so no contrast constraint —
-                //   safe to use the tier hue directly even on the rose hero.
-                background: memberTier ? TIER_META[memberTier].gradient : `linear-gradient(135deg, ${ROSE}, ${ROSE_DEEP})`,
-                p: "2.5px",
+                background: memberTier
+                  ? TIER_META[memberTier].gradient
+                  : `linear-gradient(135deg, ${ROSE}, ${ROSE_DEEP})`,
+                p: "2px",
                 boxShadow: memberTier
-                  ? `0 0 0 3px ${TIER_META[memberTier].border}, 0 8px 32px rgba(0,0,0,0.35)`
-                  : "0 0 0 3px rgba(255,255,255,0.16), 0 8px 32px rgba(0,0,0,0.35)",
+                  ? `0 0 0 2px ${TIER_META[memberTier].border}, 0 8px 22px rgba(0,0,0,0.35)`
+                  : "0 0 0 2px rgba(255,255,255,0.16), 0 8px 22px rgba(0,0,0,0.35)",
               }}
             >
               <Avatar
@@ -439,9 +441,8 @@ const ProfilePage: React.FC = () => {
                 sx={{
                   width: "100%",
                   height: "100%",
-                  // 🆕 28x.57 — brand plum fill (was the Nordic grey sweep).
                   background: "linear-gradient(135deg, #7A3049, #5A2733)",
-                  fontSize: 30,
+                  fontSize: 28,
                   fontWeight: 700,
                   fontFamily: SERIF,
                   color: "#fff",
@@ -450,48 +451,99 @@ const ProfilePage: React.FC = () => {
                 {!user.photoURL && initials(therapistName || user.displayName, user.email)}
               </Avatar>
             </Box>
-          </Box>
 
-          {/* Name + verified */}
-          <Box sx={{ textAlign: "center" }}>
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.75 }}>
-              <Typography sx={{ fontFamily: SERIF, fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
-                {/* Round 28s369 — therapistName fallback for null Firebase Auth displayName */}
-                {therapistName || user.displayName || (isTherapist ? "Practitioner" : "Guest")}
-              </Typography>
-              <CheckCircle size={18} color="rgba(255,255,255,0.85)" weight="fill" />
-            </Box>
-            <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(255,255,255,0.50)", mt: 0.4 }}>
-              {user.email}
-            </Typography>
-            {/* 🆕 28x.74 — a practitioner is not a member and has no join date
-                worth advertising to her. Signing in through the same door as
-                guests used to greet her as "Guest · MEMBER SINCE · VIP". */}
-            {isTherapist ? (
-              <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "rgba(255,255,255,0.45)", mt: 0.6, letterSpacing: "0.1em" }}>
-                PRACTITIONER
-              </Typography>
-            ) : (
-              since && (
-                <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "rgba(255,255,255,0.35)", mt: 0.6, letterSpacing: "0.04em" }}>
-                  MEMBER SINCE {since.toUpperCase()}
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.4 }}>
+                <Typography
+                  sx={{
+                    fontFamily: SERIF,
+                    fontSize: 22,
+                    fontWeight: 700,
+                    color: "#fff",
+                    letterSpacing: "-0.01em",
+                    lineHeight: 1.1,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {therapistName || user.displayName || (isTherapist ? "Practitioner" : "Guest")}
                 </Typography>
-              )
-            )}
+                <CheckCircle size={16} color="rgba(255,255,255,0.85)" weight="fill" />
+              </Box>
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: 12,
+                  color: "rgba(255,255,255,0.55)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  mb: 0.8,
+                }}
+              >
+                {user.email}
+              </Typography>
+              {isTherapist ? (
+                <Box
+                  sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    px: "10px",
+                    py: "3px",
+                    borderRadius: 999,
+                    background: "rgba(255,255,255,0.14)",
+                    border: "1px solid rgba(255,255,255,0.20)",
+                    fontFamily: SANS,
+                    fontSize: 9.5,
+                    fontWeight: 800,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.85)",
+                  }}
+                >
+                  Practitioner
+                </Box>
+              ) : (
+                memberTier && (
+                  <Box
+                    sx={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 0.5,
+                      px: "10px",
+                      py: "3px",
+                      borderRadius: 999,
+                      background: TIER_META[memberTier].gradient,
+                      border: `1px solid ${TIER_META[memberTier].border}`,
+                      fontFamily: SANS,
+                      fontSize: 9.5,
+                      fontWeight: 800,
+                      letterSpacing: "0.18em",
+                      textTransform: "uppercase",
+                      color: TIER_META[memberTier].ink,
+                    }}
+                  >
+                    ★ {TIER_META[memberTier].label} · Member
+                  </Box>
+                )
+              )}
+            </Box>
           </Box>
         </motion.div>
 
-        {/* Stat strip */}
-        <motion.div {...fadeUp(0.1)}>
+        {/* Stats strip · 3 cells · vertical dividers */}
+        <motion.div {...fadeUp(0.08)}>
           <Box
             sx={{
               display: "flex",
-              gap: 1,
-              mt: 3.5,
-              p: 1.75,
-              borderRadius: "18px",
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              justifyContent: "space-between",
+              alignItems: "center",
+              px: 2.5,
+              py: 1.5,
+              borderRadius: "16px",
+              background: "rgba(20, 9, 15, 0.35)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
               backdropFilter: "blur(10px)",
             }}
           >
@@ -501,86 +553,158 @@ const ProfilePage: React.FC = () => {
                   ? <CircularProgress size={14} sx={{ color: "rgba(255,255,255,0.5)" }} />
                   : <>{bookingCount}</>,
                 label: isTherapist ? "Jobs" : "Bookings",
-                tier: null,
               },
-              // 🆕 28x.74 — "VIP status" is a guest loyalty tier; showing it to
-              //   staff framed her own workplace as a shop she buys from.
-              // 🆕 28x.83 — was a hardcoded "VIP" string regardless of her
-              //   actual tier, which would sit directly above a real Bronze/
-              //   Silver/Gold/Black card and contradict it. Shows her real
-              //   tier now, or a plain dash before she's enrolled — never a
-              //   status she doesn't hold.
-              isTherapist
-                ? { value: "ON", label: "Duty", tier: null }
-                // 🆕 28x.86 — the Status cell now sits in its own small tier
-                //   chip (own gradient + verified ink, same combo the card
-                //   below already passes contrast with) instead of plain
-                //   white text — the rose hero itself is the wrong backdrop
-                //   for tier-colored TEXT (checked: Bronze/Silver/Gold ink
-                //   fails contrast directly on the rose gradient), so the
-                //   chip carries its own safe background instead of fighting it.
-                : { value: memberTier ? TIER_META[memberTier].label : "—", label: "Status", tier: memberTier },
-              { value: "24/7", label: "Support", tier: null },
-            ].map((s, i) => {
-              const chip = s.tier;
-              return (
-                <Box
-                  key={i}
-                  sx={
-                    chip
-                      ? {
-                          flex: 1,
-                          textAlign: "center",
-                          borderRadius: "12px",
-                          background: TIER_META[chip].gradient,
-                          border: `1px solid ${TIER_META[chip].border}`,
-                          boxShadow: `0 4px 14px ${TIER_META[chip].glow}`,
-                          py: 0.4,
-                        }
-                      : {
-                          flex: 1,
-                          textAlign: "center",
-                          borderRight: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none",
-                        }
-                  }
-                >
-                  <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: chip ? TIER_META[chip].ink : "#fff", lineHeight: 1 }}>
+              { value: since ? since.split(" ")[0].slice(0,3) + " '" + since.split(" ")[1].slice(-2) : "—", label: "Since" },
+              { value: "24/7", label: "Support" },
+            ].map((s, i, arr) => (
+              <React.Fragment key={i}>
+                <Box sx={{ flex: 1, textAlign: "center" }}>
+                  <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 600, color: "#fff", lineHeight: 1 }}>
                     {s.value}
                   </Typography>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: chip ? TIER_META[chip].sub : "rgba(255,255,255,0.40)", mt: 0.4, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 9.5, color: "rgba(255,255,255,0.45)", mt: 0.5, letterSpacing: "0.14em", textTransform: "uppercase" }}>
                     {s.label}
                   </Typography>
                 </Box>
-              );
-            })}
+                {i < arr.length - 1 && (
+                  <Box aria-hidden sx={{ width: "1px", height: 30, background: "rgba(255,255,255,0.14)" }} />
+                )}
+              </React.Fragment>
+            ))}
           </Box>
         </motion.div>
 
-        {/* 🆕 28x.83 (founder reference images) — the membership card, in the
-            hero as asked. Hidden entirely for a guest with no tier yet: a
-            "not a member" card would be a worse look than no card, and
-            pushing enrolment is a concierge conversation, not UI chrome.
-            🆕 28x.84 (founder: real PNG assets saved, "เอา SunRed Membership
-            ใหม่ไปแทน") — the finished designed artwork replaces the CSS card
-            here; the CSS card itself moved to the Rewards page. */}
+        {/* ◆ Member Card section label */}
         {!isTherapist && memberTier && (
-          <motion.div {...fadeUp(0.16)} style={{ marginTop: 16 }}>
-            <Box
-              component="img"
-              src={TIER_IMAGE[memberTier]}
-              alt={`SunRed ${TIER_META[memberTier].label} membership`}
-              loading="lazy"
-              decoding="async"
-              sx={{
-                display: "block",
-                width: "100%",
-                maxWidth: 380,
-                mx: "auto",
-                borderRadius: "18px",
-                boxShadow: `0 10px 30px ${TIER_META[memberTier].glow}`,
-              }}
-            />
-          </motion.div>
+          <>
+            <motion.div {...fadeUp(0.14)} style={{ marginTop: 22 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.25,
+                  mb: 1.25,
+                  px: "4px",
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: 10.5,
+                    fontWeight: 800,
+                    letterSpacing: "0.22em",
+                    textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.65)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <Box component="span" sx={{ color: "rgba(255,255,255,0.5)" }}>◆</Box>
+                  Member Card
+                </Typography>
+                <Box aria-hidden sx={{ flex: 1, height: 1, background: "linear-gradient(90deg, rgba(255,255,255,0.20), transparent)" }} />
+              </Box>
+            </motion.div>
+
+            <motion.div {...fadeUp(0.18)}>
+              <Box
+                component="img"
+                src={TIER_IMAGE[memberTier]}
+                alt={`SunRed ${TIER_META[memberTier].label} membership`}
+                loading="lazy"
+                decoding="async"
+                sx={{
+                  display: "block",
+                  width: "100%",
+                  maxWidth: 380,
+                  mx: "auto",
+                  borderRadius: "18px",
+                  boxShadow: `0 10px 30px ${TIER_META[memberTier].glow}`,
+                }}
+              />
+            </motion.div>
+
+            {/* ◆ Member Perks section */}
+            <motion.div {...fadeUp(0.24)} style={{ marginTop: 22 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.25,
+                  mb: 1.25,
+                  px: "4px",
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: 10.5,
+                    fontWeight: 800,
+                    letterSpacing: "0.22em",
+                    textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.65)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <Box component="span" sx={{ color: "rgba(255,255,255,0.5)" }}>◆</Box>
+                  Member Perks
+                </Typography>
+                <Box aria-hidden sx={{ flex: 1, height: 1, background: "linear-gradient(90deg, rgba(255,255,255,0.20), transparent)" }} />
+              </Box>
+
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                {[
+                  { icon: "✧", text: "Priority concierge on WhatsApp · LINE · Telegram" },
+                  { icon: "↻", text: "Complimentary rebook credits available" },
+                  { icon: "★", text: "Ritual upgrade on your milestone booking" },
+                ].map((perk, i) => (
+                  <Box
+                    key={i}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.25,
+                      p: "10px 12px",
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      borderRadius: "12px",
+                    }}
+                  >
+                    <Box
+                      aria-hidden
+                      sx={{
+                        width: 26,
+                        height: 26,
+                        borderRadius: "50%",
+                        background: "rgba(255,255,255,0.10)",
+                        color: "rgba(255,255,255,0.85)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 12,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {perk.icon}
+                    </Box>
+                    <Typography
+                      sx={{
+                        fontFamily: SANS,
+                        fontSize: 12.5,
+                        color: "rgba(255,255,255,0.85)",
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {perk.text}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </motion.div>
+          </>
         )}
       </Box>
 
