@@ -32,13 +32,9 @@ import {
   query,
   where,
   getCountFromServer,
-  setDoc,
-  deleteField,
 } from "firebase/firestore";
 
-import { app, db } from "@/lib/firebase";
-import { getFunctions, httpsCallable } from "firebase/functions";
-import { toast } from "react-toastify";
+import { db } from "@/lib/firebase";
 import { useNavigate } from "react-router-dom";
 // 🆕 Round 28s230 (FIX B) — use the SAME Bangkok-anchored engine the public
 //   site uses (calculateTherapistStatus), not the legacy device-clock
@@ -550,101 +546,6 @@ const AdminTherapistsPage: React.FC = () => {
   // ==========================================================
   // FILTERED LIST
   // ==========================================================
-  // 🆕 28x.67 — see the button below.
-  const [backfilling, setBackfilling] = useState(false);
-  // 🆕 28x.72 — see the button below.
-  const [chanCoding, setChanCoding] = useState(false);
-  const [chanCode, setChanCode] = useState<string | null>(null);
-  // 🆕 28x.81 — see the button below.
-  const [adminCoding, setAdminCoding] = useState(false);
-  const [adminCode, setAdminCode] = useState<string | null>(null);
-
-  // 🆕 28x.73 (founder: "ฉันส่งผิดกลุ่ม แก้ไง") — show WHICH chat is currently
-  //   the job board. Without this the setting is invisible: point it at the
-  //   wrong group and open jobs quietly post somewhere nobody is watching,
-  //   with nothing on any screen looking wrong.
-  const [jobChan, setJobChan] = useState<{ id?: string; title?: string } | null>(null);
-  useEffect(() => {
-    const unsub = onSnapshot(
-      doc(db, "adminSettings", "advanced"),
-      (snap) => {
-        const d = snap.data() as { jobChannelId?: string; jobChannelTitle?: string } | undefined;
-        setJobChan(d?.jobChannelId ? { id: d.jobChannelId, title: d.jobChannelTitle } : null);
-      },
-      () => {},
-    );
-    return () => unsub();
-  }, []);
-
-  const clearJobChannel = async () => {
-    try {
-      await setDoc(
-        doc(db, "adminSettings", "advanced"),
-        { jobChannelId: deleteField(), jobChannelTitle: deleteField() },
-        { merge: true },
-      );
-      toast.success("ล้างช่องงานแล้ว · งานว่างจะไม่ถูกโพสต์ที่ไหนจนกว่าจะตั้งใหม่");
-    } catch (e) {
-      console.error("[therapists] clear job channel failed", e);
-      toast.error("ล้างไม่สำเร็จ");
-    }
-  };
-  const makeChannelCode = async () => {
-    setChanCoding(true);
-    try {
-      const fn = httpsCallable<Record<string, never>, { ok: boolean; code: string }>(
-        getFunctions(app, "asia-southeast1"),
-        "createJobChannelCode"
-      );
-      const res = await fn({});
-      setChanCode(res.data.code);
-    } catch (e) {
-      console.error("[therapists] channel code failed", e);
-      toast.error("สร้างรหัสไม่สำเร็จ");
-    } finally {
-      setChanCoding(false);
-    }
-  };
-
-  // 🆕 28x.81 (founder: "เราสามารถโยนออเดอร์จากแชทลูกค้า ... ให้บอทช่วยทำ
-  //   ออเดอร์ได้ไหม") — one-time code so her own Telegram can paste raw
-  //   customer chat text into @SunRed24hBot and get a booking draft back.
-  const makeAdminCode = async () => {
-    setAdminCoding(true);
-    try {
-      const fn = httpsCallable<Record<string, never>, { ok: boolean; code: string }>(
-        getFunctions(app, "asia-southeast1"),
-        "createAdminLinkCode"
-      );
-      const res = await fn({});
-      setAdminCode(res.data.code);
-    } catch (e) {
-      console.error("[therapists] admin link code failed", e);
-      toast.error("สร้างรหัสไม่สำเร็จ");
-    } finally {
-      setAdminCoding(false);
-    }
-  };
-
-  const runBackfill = async () => {
-    setBackfilling(true);
-    try {
-      const fn = httpsCallable<
-        Record<string, never>,
-        { ok: boolean; stamped: number; skipped: number; therapistsWithLogin: number; therapistsTotal: number }
-      >(getFunctions(app, "asia-southeast1"), "backfillTherapistUids");
-      const res = await fn({});
-      const d = res.data;
-      toast.success(
-        `ซิงก์แล้ว · อัปเดต ${d.stamped} ใบ · พนักงานที่มีบัญชี ${d.therapistsWithLogin}/${d.therapistsTotal} คน`
-      );
-    } catch (e) {
-      console.error("[therapists] backfill failed", e);
-      toast.error("ซิงก์ไม่สำเร็จ");
-    } finally {
-      setBackfilling(false);
-    }
-  };
 
   const filtered = useMemo(() => {
     return therapists
@@ -899,108 +800,32 @@ const AdminTherapistsPage: React.FC = () => {
           Add Therapist · เพิ่มพนักงาน
         </Button>
 
-        {/* 🆕 28x.67 — link every practitioner's profile to her login and stamp
-            therapistUid onto existing bookings. Without it a practitioner's job
-            list only ever shows work booked after this round, which reads as
-            "the feature is broken" rather than "history isn't migrated". */}
-        <Button
-          disabled={backfilling}
-          onClick={() => void runBackfill()}
-          sx={{
-            textTransform: "none", fontWeight: 700, borderRadius: "11px",
-            color: adminColor.text, border: `1px solid ${adminColor.line2}`,
-          }}
-        >
-          {backfilling ? <CircularProgress size={16} /> : "ซิงก์สิทธิ์งานพนักงาน"}
-        </Button>
-
-        {/* 🆕 28x.72 — claim a Telegram group/channel as the open-job board.
-            Code-gated because anyone can add a public bot to their own group;
-            without proof of authority "/setjobchannel" there would redirect
-            every unassigned job to a stranger. */}
-        <Button
-          disabled={chanCoding}
-          onClick={() => void makeChannelCode()}
-          sx={{
-            textTransform: "none", fontWeight: 700, borderRadius: "11px",
-            color: adminColor.text, border: `1px solid ${adminColor.line2}`,
-          }}
-        >
-          {chanCoding ? <CircularProgress size={16} /> : "รหัสตั้งช่องงาน"}
-        </Button>
-
-        {/* 🆕 28x.81 — one-time code to link View's own Telegram as an
-            admin order-intake chat on @SunRed24hBot. Same code-gate as the
-            job-channel button above, but grants order-creation instead. */}
-        <Button
-          disabled={adminCoding}
-          onClick={() => void makeAdminCode()}
-          sx={{
-            textTransform: "none", fontWeight: 700, borderRadius: "11px",
-            color: adminColor.text, border: `1px solid ${adminColor.line2}`,
-          }}
-        >
-          {adminCoding ? <CircularProgress size={16} /> : "รหัสเชื่อมแอดมิน (โยนออเดอร์)"}
-        </Button>
       </Box>
 
-      {/* 🆕 28x.73 — current job board, always visible. */}
-      <Box sx={{ mb: 1.5, display: "flex", alignItems: "center", gap: 1.25, flexWrap: "wrap" }}>
+      {/* 🆕 28x.88 (founder: "สร้างเมนู SunRed bot ... เอาทุกอย่างที่เชื่อมต่อ
+          เกี่ยวกับ Telegram ไป Settings หน้านั้น") — sync/job-channel-code/
+          admin-link-code buttons (+ job-board display, +code reveal boxes)
+          moved to SunRed Bot → Telegram Bot, alongside every other Telegram
+          control instead of scattered across this page. */}
+      <Box
+        sx={{
+          mb: 2, p: 1.25, borderRadius: "11px",
+          background: `${adminColor.accent}0F`,
+          border: `1px solid ${adminColor.line2}`,
+          display: "flex", alignItems: "center", gap: 1,
+        }}
+      >
         <Typography sx={{ fontFamily: adminFont.sans, fontSize: 12, color: adminColor.dim }}>
-          ช่องงานปัจจุบัน:
+          ตั้งค่า Telegram (ซิงก์สิทธิ์งาน / ช่องงาน / รหัสเชื่อมแอดมิน) ย้ายไปที่
         </Typography>
-        <Typography
-          sx={{
-            fontFamily: adminFont.sans, fontSize: 12.5, fontWeight: 800,
-            color: jobChan ? adminColor.green : adminColor.amber,
-          }}
+        <Button
+          size="small"
+          onClick={() => navigate("/admin/telegram")}
+          sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, color: adminColor.accent, px: 0.5 }}
         >
-          {jobChan ? `${jobChan.title ?? "(ไม่มีชื่อ)"} · ${jobChan.id}` : "ยังไม่ได้ตั้ง — งานว่างจะไม่ถูกโพสต์ที่ไหน"}
-        </Typography>
-        {jobChan && (
-          <Button
-            size="small"
-            onClick={() => void clearJobChannel()}
-            sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, color: adminColor.red, px: 0.5 }}
-          >
-            ล้างค่า
-          </Button>
-        )}
+          SunRed Bot → Telegram Bot
+        </Button>
       </Box>
-
-      {chanCode && (
-        <Box
-          sx={{
-            mb: 2, p: 1.5, borderRadius: "12px",
-            background: `${adminColor.green}14`,
-            border: `1px solid ${adminColor.green}55`,
-          }}
-        >
-          <Typography sx={{ fontFamily: adminFont.sans, fontSize: 11.5, color: adminColor.dim, mb: 0.5 }}>
-            พิมพ์ข้อความนี้ในกลุ่ม/ช่องงาน · ใช้ได้ครั้งเดียว หมดอายุใน 1 ชม.
-          </Typography>
-          <Typography sx={{ fontFamily: adminFont.sans, fontSize: 15, fontWeight: 800, color: adminColor.text }}>
-            /setjobchannel {chanCode}
-          </Typography>
-        </Box>
-      )}
-
-      {adminCode && (
-        <Box
-          sx={{
-            mb: 2, p: 1.5, borderRadius: "12px",
-            background: `${adminColor.green}14`,
-            border: `1px solid ${adminColor.green}55`,
-          }}
-        >
-          <Typography sx={{ fontFamily: adminFont.sans, fontSize: 11.5, color: adminColor.dim, mb: 0.5 }}>
-            พิมพ์ข้อความนี้หา @SunRed24hBot ในแชทส่วนตัว · ใช้ได้ครั้งเดียว หมดอายุใน 1 ชม.
-          </Typography>
-          <Typography sx={{ fontFamily: adminFont.sans, fontSize: 15, fontWeight: 800, color: adminColor.text }}>
-            /linkadmin {adminCode}
-          </Typography>
-        </Box>
-      )}
 
       {loading ? (
         <Box textAlign="center" mt={5}>

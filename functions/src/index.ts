@@ -1288,8 +1288,24 @@ export const dailyAdminDigest = onSchedule(
       year: "numeric",
     }).format(new Date());
 
+    // 🆕 28x.88 (founder: "เข้าไปเปลี่ยนข้อความเองที่ไหน") — header/footer are
+    //   now admin-editable from SunRed Bot → Telegram Bot → Daily Digest
+    //   (adminSettings/telegramBot). The data rows themselves stay
+    //   code-generated — only the bookend copy is hers to write, so a typo
+    //   in Firestore can't corrupt the numbers.
+    let digestHeader = "📊 รายงานประจำวัน · SunRed";
+    let digestFooter = "";
+    try {
+      const botSettingsSnap = await db.collection("adminSettings").doc("telegramBot").get();
+      const bs = botSettingsSnap.data();
+      if (bs?.dailyDigestHeader) digestHeader = String(bs.dailyDigestHeader);
+      if (bs?.dailyDigestFooter) digestFooter = String(bs.dailyDigestFooter);
+    } catch (err) {
+      logger.warn("[dailyAdminDigest] failed to load custom copy, using default", err);
+    }
+
     const text = [
-      `📊 รายงานประจำวัน · SunRed`,
+      digestHeader,
       `${dateLabel} · ย้อนหลัง 24 ชม.`,
       ``,
       `🧭 Funnel`,
@@ -1305,7 +1321,9 @@ export const dailyAdminDigest = onSchedule(
       `จองทั้งหมด: ${totalBookings}`,
       `ยกเลิก: ${cancelledCount}`,
       `รายได้รวม (ไม่รวมยกเลิก/คืนเงิน): ${grossRevenue.toLocaleString()} ฿`,
-    ].join("\n");
+      digestFooter ? `` : null,
+      digestFooter ? digestFooter : null,
+    ].filter((l): l is string => l !== null).join("\n");
 
     const res = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, text);
     logger.info("[dailyAdminDigest] sent", { ok: res.ok });

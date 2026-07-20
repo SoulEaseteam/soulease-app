@@ -49,6 +49,10 @@ import PaymentsIcon from "@mui/icons-material/Payments";
 import RateReviewIcon from "@mui/icons-material/RateReview";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import CardMembershipIcon from "@mui/icons-material/CardMembership";
+// 🆕 28x.88 — SunRed Bot nav group (Telegram live; LINE/WhatsApp placeholders).
+import TelegramIcon from "@mui/icons-material/Telegram";
+import ForumIcon from "@mui/icons-material/Forum";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 // 🆕 Round 28w.80 — Members (sign-up) and Membership (rules) shared ONE icon,
 //   so the two rows were visually identical. Give the rules page its own.
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
@@ -127,6 +131,18 @@ const NAV_GROUPS: NavGroup[] = [
       // 🆕 Round 28s213 — backfill anon reviews onto completed bookings.
       { label: "Seed Reviews", th: "เติมรีวิวย้อนหลัง", path: "/admin/seed-reviews", icon: <RateReviewIcon /> },
       { label: "Pages",        th: "หน้าเว็บทั้งหมด", path: "/admin/pages-list",   icon: <ListAltIcon /> },
+    ],
+  },
+  {
+    // 🆕 Round 28x.88 (founder: "สร้างเมนูใน หลังบ้านแอดมิน ว่า SunRed bot
+    //   ... จะมีเมนูแยก line OA bot / WhatsApp bot / Telegram bot") —
+    //   Telegram Bot is live (consolidated AdminTelegramPanelPage); LINE OA
+    //   and WhatsApp are placeholders until those integrations exist.
+    title: "SunRed Bot", th: "บอท SunRed",
+    items: [
+      { label: "Telegram Bot", th: "บอท Telegram",  path: "/admin/telegram",     icon: <TelegramIcon /> },
+      { label: "LINE OA Bot",  th: "บอท LINE OA",    path: "/admin/bot/line",     icon: <ForumIcon /> },
+      { label: "WhatsApp Bot", th: "บอท WhatsApp",   path: "/admin/bot/whatsapp", icon: <WhatsAppIcon /> },
     ],
   },
   {

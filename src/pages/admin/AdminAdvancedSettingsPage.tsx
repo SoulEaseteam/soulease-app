@@ -44,7 +44,7 @@ import { Box, Typography, Switch, TextField, Button, Snackbar, Alert, CircularPr
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { DEFAULT_TRAVEL_BANDS, travelBudgetForKm, type TravelBand } from "@/utils/taxiFare";
-import { Clock, BellRinging, CreditCard, Wallet, FloppyDisk, Warning, CheckCircle, MoonStars } from "phosphor-react";
+import { Clock, CreditCard, Wallet, FloppyDisk, Warning, CheckCircle, MoonStars } from "phosphor-react";
 import { adminColor, adminFont } from "@/theme/adminTheme";
 import { SectionCard, fieldSx } from "./therapistFormKit";
 import { logAdminAction } from "@/utils/auditLog";
@@ -78,15 +78,15 @@ const defaultPublicRules: PublicRules = {
   travelBands: DEFAULT_TRAVEL_BANDS,
 };
 
-// telegramEnabled is real (see functions/src/index.ts). The rest is
-// saved but NOT yet read by anything — see header comment.
+// 🆕 28x.88 — telegramEnabled moved to SunRed Bot → Telegram Bot (still the
+//   same adminSettings/advanced.telegramEnabled field, just edited from
+//   there now so every Telegram control lives in one place). The two
+//   fields below are saved but NOT yet read by anything — see header comment.
 interface AdvancedSettings {
-  telegramEnabled: boolean;
   promptPayEnabled: boolean;
   stripeEnabled: boolean;
 }
 const defaultSettings: AdvancedSettings = {
-  telegramEnabled: true,
   promptPayEnabled: true,
   stripeEnabled: false,
 };
@@ -151,7 +151,6 @@ const AdminAdvancedSettingsPage: React.FC = () => {
           `grabBookingFee: ${rules.grabBookingFee}`,
           `rushSurgePct: ${rules.rushSurgePct}`,
           `peakSurgePct: ${rules.peakSurgePct}`,
-          `telegramEnabled: ${settings.telegramEnabled}`,
         ].filter((v): v is string => !!v),
       });
       setSnackbar({ open: true, message: "บันทึกการตั้งค่าแล้ว", severity: "success" });
@@ -181,7 +180,7 @@ const AdminAdvancedSettingsPage: React.FC = () => {
         <SectionCard icon={<MoonStars size={13} weight="bold" />} title="Maintenance Mode · โหมดปิดปรับปรุง">
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
-            เปิดแล้วลูกค้าทั่วไปจะเห็นหน้า "ปิดปรับปรุงชั่วคราว" ทันที (ไม่ต้องรีเฟรช) — แอดมิน/หมอนวดยังเข้าใช้งานได้ตามปกติ
+            เปิดแล้วลูกค้าทั่วไปจะเห็นหน้า &ldquo;ปิดปรับปรุงชั่วคราว&rdquo; ทันที (ไม่ต้องรีเฟรช) — แอดมิน/หมอนวดยังเข้าใช้งานได้ตามปกติ
           </Typography>
           <Row>
             <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>Enable maintenance mode · เปิดโหมดปิดปรับปรุง</Typography>
@@ -213,18 +212,6 @@ const AdminAdvancedSettingsPage: React.FC = () => {
             helperText="0 = ไม่จำกัด"
             onChange={(e) => setRules((prev) => ({ ...prev, maxFutureDays: Math.max(0, Number(e.target.value)) }))}
           />
-        </SectionCard>
-
-        {/* 🔔 Notifications — Telegram REAL, LINE removed */}
-        <SectionCard icon={<BellRinging size={13} weight="bold" />} title="Notifications · การแจ้งเตือน">
-          <Box sx={{ mb: 1 }}><LiveBadge /></Box>
-          <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1 }}>
-            Token เก็บใน Firebase Secret Manager (แก้ตรงนี้ไม่ได้ และไม่ควรเก็บใน Firestore เพื่อความปลอดภัย) — สวิตช์นี้แค่หยุด/เปิดการส่งข้อความจริง
-          </Typography>
-          <Row>
-            <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>Enable Telegram Notifications</Typography>
-            <Switch checked={settings.telegramEnabled} onChange={(e) => setSettings((p) => ({ ...p, telegramEnabled: e.target.checked }))} sx={switchSx} />
-          </Row>
         </SectionCard>
 
         {/* 📍 Travel fee — 🆕 28x.6 (founder: "เทคซี่ละ")

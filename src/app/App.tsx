@@ -208,8 +208,14 @@ const AdminEarningsPage = React.lazy(
   () => import("@/pages/admin/AdminEarningsPage")
 );
 // 🆕 Round 28s116 — Admin panel for the @SunRedPostBot Telegram channel.
+//   🆕 28x.88 — now the consolidated home for every Telegram bot setting.
 const AdminTelegramPanelPage = React.lazy(
   () => import("@/pages/admin/AdminTelegramPanelPage")
+);
+// 🆕 28x.88 — LINE OA / WhatsApp placeholders under the new "SunRed Bot" nav
+//   group. Neither has a real bot integration yet.
+const AdminBotComingSoonPage = React.lazy(
+  () => import("@/pages/admin/AdminBotComingSoonPage")
 );
 // 🆕 Round 28s213 — Backfill rating + reviewText on completed bookings
 //   that never got a guest comment (so they surface as real reviews).
@@ -417,6 +423,9 @@ export default function App() {
           {/* 🆕 Round 28s313 — Pay-therapist queue (non-cash bookings) */}
           <Route path="pay-therapists" element={<AdminTherapistPayoutsPage />} />
           <Route path="telegram" element={<AdminTelegramPanelPage />} />
+          {/* 🆕 28x.88 — SunRed Bot group: LINE OA / WhatsApp placeholders. */}
+          <Route path="bot/line" element={<AdminBotComingSoonPage platform="LINE OA" />} />
+          <Route path="bot/whatsapp" element={<AdminBotComingSoonPage platform="WhatsApp" />} />
           {/* 🆕 Round 28s213 — Seed anonymous reviews onto bookings. */}
           <Route path="seed-reviews" element={<AdminSeedReviewsPage />} />
           <Route
