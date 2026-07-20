@@ -20,8 +20,8 @@
 //   not silently building a business-model change. Only รายการรีพอร์ต
 //   ("build it now") is real.
 
-import React, { useEffect, useState } from "react";
-import { Box, Typography, CircularProgress, Button, Switch, Snackbar, Alert } from "@mui/material";
+import React, { useEffect, useMemo, useState } from "react";
+import { Box, Typography, CircularProgress, Button, Switch, TextField, Snackbar, Alert } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import RoomRoundedIcon from "@mui/icons-material/RoomRounded";
 import NavigationRoundedIcon from "@mui/icons-material/NavigationRounded";
@@ -30,13 +30,26 @@ import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
 import EventBusyRoundedIcon from "@mui/icons-material/EventBusyRounded";
-import { Flag } from "phosphor-react";
+import LockRoundedIcon from "@mui/icons-material/LockRounded";
+import { Flag, ClockCounterClockwise } from "phosphor-react";
 import { collection, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
+import dayjs from "dayjs";
 
 import { auth, db } from "@/lib/firebase";
 import { responsiveShell } from "@/theme/breakpoints";
 import { useTherapistSelf } from "@/hooks/useTherapistSelf";
+import { SUNRED_TZ } from "@/utils/time";
 import type { StatusOverride } from "@/types/therapist";
+
+// 🆕 28x.88 (founder: "เพิ่มให้ปรับเปลี่ยนเวลางานได้ แต่ต้องเปลี่ยนใหม่ได้
+//   เฉพาะวันพุธและวันอาทิตย์") — startTime/endTime are already in
+//   therapistEditableKeys() (firestore.rules), so the WRITE was always
+//   allowed; there was just no UI for it. The Wed/Sun-only gate is a
+//   scheduling-predictability rule, not a security boundary — enforced
+//   here in the UI (button locked outside those two days), not in
+//   firestore.rules. dayjs .day(): 0=Sunday, 3=Wednesday.
+const HOURS_EDITABLE_DAYS = [0, 3];
+const DAY_NAMES_TH = ["วันอาทิตย์", "วันจันทร์", "วันอังคาร", "วันพุธ", "วันพฤหัสบดี", "วันศุกร์", "วันเสาร์"];
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -97,6 +110,52 @@ const TherapistHomePage: React.FC = () => {
       setToast({ msg: "Couldn't update holiday mode. Please try again.", severity: "error" });
     } finally {
       setSavingField(null);
+    }
+  };
+
+  // ── 28x.88 · Working hours (Wed/Sun only) ────────────────────────────
+  const todayBKK = useMemo(() => dayjs().tz(SUNRED_TZ), []);
+  const canEditHoursToday = HOURS_EDITABLE_DAYS.includes(todayBKK.day());
+  const nextHoursWindowLabel = useMemo(() => {
+    if (canEditHoursToday) return null;
+    for (let i = 1; i <= 7; i++) {
+      const d = todayBKK.add(i, "day");
+      if (HOURS_EDITABLE_DAYS.includes(d.day())) return `${DAY_NAMES_TH[d.day()]}ที่ ${d.format("D MMM")}`;
+    }
+    return null;
+  }, [todayBKK, canEditHoursToday]);
+
+  const [hoursStart, setHoursStart] = useState("");
+  const [hoursEnd, setHoursEnd] = useState("");
+  const [hoursBusy, setHoursBusy] = useState(false);
+  // Deliberately NOT depending on the whole `therapist` object below:
+  // onSnapshot hands back a new reference on every field change (e.g. a
+  // status toggle), which would wipe an in-progress, unsaved hours edit.
+  // Only start/endTime should resync the draft.
+  useEffect(() => {
+    if (!therapist) return;
+    setHoursStart(therapist.startTime ?? "");
+    setHoursEnd(therapist.endTime ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [therapist?.startTime, therapist?.endTime]);
+  const hoursDirty = therapist && (hoursStart !== (therapist.startTime ?? "") || hoursEnd !== (therapist.endTime ?? ""));
+
+  const updateHours = async () => {
+    if (!therapistDocId || !hoursStart || !hoursEnd) return;
+    setHoursBusy(true);
+    try {
+      await updateDoc(doc(db, "therapists", therapistDocId), {
+        startTime: hoursStart,
+        endTime: hoursEnd,
+        updatedAt: serverTimestamp(),
+        updatedBy: auth.currentUser?.uid ?? null,
+      });
+      setToast({ msg: `Working hours updated to ${hoursStart}–${hoursEnd}`, severity: "success" });
+    } catch (err) {
+      console.error("[TherapistHome] updateHours failed:", err);
+      setToast({ msg: "Couldn't update working hours. Please try again.", severity: "error" });
+    } finally {
+      setHoursBusy(false);
     }
   };
 
@@ -286,6 +345,90 @@ const TherapistHomePage: React.FC = () => {
             </Box>
             <ChevronRightRoundedIcon sx={{ color: "var(--sr-dim)" }} />
           </Box>
+        </Box>
+      </Box>
+
+      {/* 🆕 28x.88 (founder: "เพิ่มให้ปรับเปลี่ยนเวลางานได้ แต่ต้องเปลี่ยนใหม่ได้
+          เฉพาะวันพุธและวันอาทิตย์") — working hours, self-editable ONLY on
+          Wednesday + Sunday. Locked the other 5 days, with a note for when
+          it next opens so this doesn't read as just broken. */}
+      <Box sx={{ paddingX: 2, marginTop: 1.5 }}>
+        <Box
+          sx={{
+            background: "var(--sr-panel)",
+            border: "1px solid rgba(184,92,60,0.18)",
+            borderRadius: 3,
+            padding: "14px 16px 16px",
+            boxShadow: "0 6px 18px rgba(15, 23, 42,0.06)",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: canEditHoursToday ? 1.25 : 0.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <ClockCounterClockwise size={16} color="#C96F89" />
+              <Typography sx={{ fontFamily: SERIF, fontWeight: 700, fontSize: "15px", color: "var(--sr-ink)" }}>
+                เวลาทำงาน · Working Hours
+              </Typography>
+            </Box>
+            {!canEditHoursToday && <LockRoundedIcon sx={{ fontSize: 16, color: "var(--sr-dim)" }} />}
+          </Box>
+
+          {canEditHoursToday ? (
+            <>
+              <Typography sx={{ fontFamily: SANS, fontSize: "11.5px", color: "var(--sr-body)", lineHeight: 1.45, marginBottom: 1.25 }}>
+                วันนี้เป็น{DAY_NAMES_TH[todayBKK.day()]} — แก้ไขเวลาทำงานได้
+              </Typography>
+              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, mb: 1.25 }}>
+                <TextField
+                  label="เริ่มงาน"
+                  type="time"
+                  size="small"
+                  fullWidth
+                  value={hoursStart}
+                  onChange={(e) => setHoursStart(e.target.value)}
+                  disabled={hoursBusy}
+                  InputLabelProps={{ shrink: true }}
+                  InputProps={{ sx: { color: "var(--sr-ink)" } }}
+                />
+                <TextField
+                  label="เลิกงาน"
+                  type="time"
+                  size="small"
+                  fullWidth
+                  value={hoursEnd}
+                  onChange={(e) => setHoursEnd(e.target.value)}
+                  disabled={hoursBusy}
+                  InputLabelProps={{ shrink: true }}
+                  InputProps={{ sx: { color: "var(--sr-ink)" } }}
+                />
+              </Box>
+              <Button
+                onClick={() => void updateHours()}
+                disabled={!hoursDirty || hoursBusy || !hoursStart || !hoursEnd}
+                fullWidth
+                variant="contained"
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderRadius: 2,
+                  background: "linear-gradient(135deg, #C96F89, #7A3049)",
+                  boxShadow: "none",
+                  "&:hover": { boxShadow: "none" },
+                }}
+              >
+                {hoursBusy ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "บันทึกเวลาทำงาน"}
+              </Button>
+            </>
+          ) : (
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+              <Typography sx={{ fontFamily: SANS, fontSize: "12.5px", color: "var(--sr-body)" }}>
+                {therapist.startTime ?? "--:--"} – {therapist.endTime ?? "--:--"}
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: "11px", color: "var(--sr-muted)", textAlign: "right" }}>
+                แก้ไขได้เฉพาะวันพุธและวันอาทิตย์
+                {nextHoursWindowLabel && <><br />ครั้งถัดไป: {nextHoursWindowLabel}</>}
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Box>
 
