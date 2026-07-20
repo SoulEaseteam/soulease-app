@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.getTelegramBotCopyPreview = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -47,6 +47,13 @@ const functionsV1 = __importStar(require("firebase-functions/v1"));
 const app_1 = require("firebase-admin/app");
 const auth_1 = require("firebase-admin/auth");
 const firestore_2 = require("firebase-admin/firestore");
+// 🆕 Round 28x.95 — pure content lookups for getTelegramBotCopyPreview.
+//   Importing the SAME functions the bots use to render outbound
+//   messages (not a hand-copied mirror) so the admin-panel preview can
+//   never silently drift the way the FAQ pricing block once did (28x.82).
+const greetings_1 = require("./telegram-concierge-bot/greetings");
+const faq_1 = require("./telegram-concierge-bot/faq");
+const templates_1 = require("./telegram-post-bot/templates");
 (0, app_1.initializeApp)();
 // 🔑 Secrets
 const TELEGRAM_BOT_TOKEN = (0, params_1.defineSecret)("TELEGRAM_BOT_TOKEN");
@@ -2960,6 +2967,59 @@ exports.createAdminLinkCode = (0, https_1.onCall)({ region: "asia-southeast1" },
         at: firestore_2.FieldValue.serverTimestamp(),
     });
     return { ok: true, code, expiresAtMs: expiresAt.toMillis() };
+});
+// 🆕 Round 28x.95 (founder: "ทำไมไม่เอาไปโชว์จริง ใน Telegram Bot หน้า
+//   แอดมินหลังบ้าน") — surfaces the ACTUAL live copy for all 3 Telegram
+//   bots inside AdminTelegramPanelPage, so View can review what to
+//   add/remove without leaving the real admin she already uses. Reads
+//   straight from welcomeFor/faqEntry/renderPrimeTime — the exact
+//   functions the bots call to build outbound messages — so this can
+//   never drift out of sync with what's actually sent.
+//   Promo body previews use one fixed non-holiday week (2026-07-06 to
+//   07-12) + each holiday's real calendar date; only the "prime" slot
+//   is rendered per day since the header is the only thing that
+//   changes across evening/prime/late (see templates.ts file header).
+exports.getTelegramBotCopyPreview = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = (0, firestore_2.getFirestore)();
+    if (!(await db.collection("admins").doc(request.auth.uid).get()).exists) {
+        throw new https_1.HttpsError("permission-denied", "Admin only.");
+    }
+    const LANGS = ["en", "th", "zh", "ja", "ko"];
+    const FAQ_KEYS = ["pricing", "services", "areas", "howto", "membership"];
+    const byLang = (fn) => Object.fromEntries(LANGS.map((l) => [l, fn(l)]));
+    const greeter = {
+        welcome: byLang(greetings_1.welcomeFor),
+        button: byLang(greetings_1.buttonLabelFor),
+        nudge: byLang(greetings_1.nudgeFor),
+        faq: FAQ_KEYS.map((key) => ({
+            key,
+            title: byLang((l) => (0, faq_1.faqEntry)(key, l).title),
+            body: byLang((l) => (0, faq_1.faqEntry)(key, l).body),
+        })),
+    };
+    const WEEK_ANCHOR_MS = Date.UTC(2026, 6, 6); // holiday-free week, see comment above
+    const days = Array.from({ length: 7 }, (_, i) => new Date(WEEK_ANCHOR_MS + i * 86400000));
+    const HOLIDAY_DATES = {
+        valentine: Date.UTC(2026, 1, 14),
+        songkran: Date.UTC(2026, 3, 13),
+        halloween: Date.UTC(2026, 9, 31),
+        christmas: Date.UTC(2026, 11, 25),
+        newyear: Date.UTC(2026, 0, 1),
+    };
+    const promo = {
+        days: days.map((date) => ({
+            day: (0, templates_1.dayKey)(date),
+            text: byLang((l) => (0, templates_1.renderPrimeTime)(date, l)),
+        })),
+        holidays: Object.entries(HOLIDAY_DATES).map(([key, ms]) => ({
+            key,
+            text: byLang((l) => (0, templates_1.renderPrimeTime)(new Date(ms), l)),
+        })),
+    };
+    return { greeter, promo };
 });
 exports.backfillTherapistUids = (0, https_1.onCall)({ region: "asia-southeast1", timeoutSeconds: 540 }, async (request) => {
     if (!request.auth) {

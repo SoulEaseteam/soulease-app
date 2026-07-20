@@ -36,6 +36,7 @@ import {
   PaperPlaneTilt,
   FloppyDisk,
   Newspaper,
+  BookOpen,
 } from "phosphor-react";
 import { doc, getDoc, setDoc, onSnapshot, deleteField, arrayRemove, serverTimestamp } from "firebase/firestore";
 import { app, db } from "@/lib/firebase";
@@ -65,6 +66,52 @@ const LiveBadge: React.FC = () => (
     Live · ใช้งานจริง
   </Box>
 );
+
+// 🆕 Round 28x.95 (founder: "ทำไมไม่เอาไปโชว์จริง ใน Telegram Bot หน้าแอดมิน
+//   หลังบ้าน") — one raw-text block per message, tags left literal (exactly
+//   the payload sent to Telegram's sendMessage) so an editing decision can
+//   be made straight from what's on screen.
+const MsgBlock: React.FC<{ label: string; children: string }> = ({ label, children }) => (
+  <Box sx={{ mb: 1.25 }}>
+    <Typography sx={{ fontSize: 11, fontWeight: 800, color: adminColor.dim, mb: "4px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+      {label}
+    </Typography>
+    <Box sx={{ background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "10px", p: "10px 12px" }}>
+      <Typography sx={{ fontSize: 12.5, color: adminColor.text, whiteSpace: "pre-wrap", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", lineHeight: 1.55 }}>
+        {children}
+      </Typography>
+    </Box>
+  </Box>
+);
+
+const subheaderSx = {
+  fontSize: 12.5, fontWeight: 800, color: adminColor.text, mb: "8px", pb: "6px",
+  borderBottom: `1px solid ${adminColor.line}`,
+} as const;
+
+const FAQ_LABEL_TH: Record<string, string> = {
+  pricing: "ราคา", services: "บริการ", areas: "พื้นที่บริการ", howto: "วิธีจอง", membership: "สมาชิก",
+};
+const DAY_LABEL_TH: Record<string, string> = {
+  mon: "จันทร์", tue: "อังคาร", wed: "พุธ", thu: "พฤหัสบดี", fri: "ศุกร์", sat: "เสาร์", sun: "อาทิตย์",
+};
+const HOLIDAY_LABEL_TH: Record<string, string> = {
+  valentine: "วาเลนไทน์ · 13-14 ก.พ.", songkran: "สงกรานต์ · 12-16 เม.ย.",
+  halloween: "ฮาโลวีน · 30-31 ต.ค.", christmas: "คริสต์มาส · 23-26 ธ.ค.", newyear: "ปีใหม่ · 30 ธ.ค.-2 ม.ค.",
+};
+
+interface BotCopyPreview {
+  greeter: {
+    welcome: Record<PostLang, string>;
+    button: Record<PostLang, string>;
+    nudge: Record<PostLang, string>;
+    faq: { key: string; title: Record<PostLang, string>; body: Record<PostLang, string> }[];
+  };
+  promo: {
+    days: { day: string; text: Record<PostLang, string> }[];
+    holidays: { key: string; text: Record<PostLang, string> }[];
+  };
+}
 
 const PROMO_KINDS: { value: PostKind; label: string; sub: string; time: string }[] = [
   { value: "evening", label: "Evening Opening · เย็นนี้", sub: "Warm-up / planning hour · เปิดบริการเย็นนี้", time: "Auto 18:00 BKK" },
@@ -102,6 +149,28 @@ const AdminTelegramPanelPage: React.FC = () => {
       setTelegramEnabled(!checked);
     }
   };
+
+  // ── 1b. Bot Copy library — live template preview (all 3 bots) ──
+  const [botCopy, setBotCopy] = useState<BotCopyPreview | null>(null);
+  const [botCopyLoading, setBotCopyLoading] = useState(true);
+  const [botCopyError, setBotCopyError] = useState(false);
+  const [contentLang, setContentLang] = useState<PostLang>("th");
+  useEffect(() => {
+    void (async () => {
+      try {
+        const fn = httpsCallable<Record<string, never>, BotCopyPreview>(
+          getFunctions(app, "asia-southeast1"), "getTelegramBotCopyPreview",
+        );
+        const res = await fn({});
+        setBotCopy(res.data);
+      } catch (e) {
+        console.error("[telegram-bot] copy preview failed", e);
+        setBotCopyError(true);
+      } finally {
+        setBotCopyLoading(false);
+      }
+    })();
+  }, []);
 
   // ── 2. Daily Digest header/footer (adminSettings/telegramBot) ──
   const DEFAULT_DIGEST_HEADER = "📊 รายงานประจำวัน · SunRed";
@@ -321,6 +390,82 @@ const AdminTelegramPanelPage: React.FC = () => {
             <Typography sx={{ fontSize: 13.5, color: adminColor.text }}>Enable Telegram Notifications</Typography>
             <Switch checked={telegramEnabled} onChange={(e) => void saveTelegramEnabled(e.target.checked)} sx={switchSx} />
           </Row>
+        </SectionCard>
+
+        {/* ── Bot Copy library ── */}
+        {/* 🆕 Round 28x.95 (founder: "ช่วยโชว์ข้อความเก่าด้วยที่เคยส่งไป ...
+            แล้วทำไมไม่เอาไปโชว์จริง ใน Telegram Bot หน้าแอดมินหลังบ้าน") —
+            View wanted the actual live wording of all 3 bots reviewable
+            right here, not on a separate one-off link. Pulled from
+            getTelegramBotCopyPreview, which calls the exact same
+            welcomeFor/faqEntry/renderPrimeTime functions the bots use to
+            build outbound messages — never a hand-copied mirror. */}
+        <SectionCard icon={<BookOpen size={13} weight="bold" />} title="Bot Copy · ข้อความบอททั้งหมด" collapsible defaultCollapsed>
+          <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.25 }}>
+            เนื้อหาจริงจากโค้ด ณ ตอนนี้ — ไม่ใช่ log ประวัติ (ระบบไม่ได้เก็บข้อความที่เคยส่งจริงไว้ที่ไหนแบบคำต่อคำ ทั้ง Daily Digest และ Promo Bot) ดูตรงนี้แทนเพื่อตัดสินใจว่าจะเพิ่ม/ลบ/แก้ตรงไหน
+          </Typography>
+
+          <ToggleButtonGroup
+            value={contentLang} exclusive onChange={(_, v: PostLang | null) => v && setContentLang(v)}
+            sx={{
+              mb: 1.75,
+              "& .MuiToggleButton-root": {
+                fontFamily: SANS, fontSize: 12, fontWeight: 700, textTransform: "none",
+                border: `1px solid ${adminColor.line2}`, color: adminColor.text, padding: "6px 14px",
+                "&.Mui-selected": { background: adminColor.accent, color: "#fff", "&:hover": { background: adminColor.accentDeep } },
+              },
+            }}
+          >
+            {LANG_OPTIONS.map((o) => <ToggleButton key={o.value} value={o.value}>{o.label}</ToggleButton>)}
+          </ToggleButtonGroup>
+
+          {botCopyLoading && (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}><CircularProgress size={20} /></Box>
+          )}
+          {botCopyError && (
+            <Typography sx={{ fontSize: 12.5, color: adminColor.red, fontWeight: 700 }}>โหลดเนื้อหาไม่สำเร็จ ลองรีเฟรชหน้านี้</Typography>
+          )}
+
+          {botCopy && (
+            <Stack spacing={2.5}>
+              <Box>
+                <Typography sx={subheaderSx}>SunRed Greeter · @SunRedGreeterBot</Typography>
+                <MsgBlock label="ข้อความต้อนรับ">{botCopy.greeter.welcome[contentLang]}</MsgBlock>
+                <MsgBlock label="ปุ่ม">{botCopy.greeter.button[contentLang]}</MsgBlock>
+                <MsgBlock label="ข้อความเตือน ถ้าลูกค้าพิมพ์แทนกดปุ่ม">{botCopy.greeter.nudge[contentLang]}</MsgBlock>
+                {botCopy.greeter.faq.map((f) => (
+                  <MsgBlock key={f.key} label={`FAQ · ${FAQ_LABEL_TH[f.key] ?? f.key}`}>{f.body[contentLang]}</MsgBlock>
+                ))}
+              </Box>
+
+              <Box>
+                <Typography sx={subheaderSx}>Daily Digest · ตัวอย่างเต็ม</Typography>
+                <MsgBlock label="โครงข้อความ (ตัวเลขคำนวณสดทุกครั้ง)">
+                  {`${digestHeader}\n\n[ Funnel Analytics + Bookings ย้อนหลัง 24 ชม. ]\n\n${digestFooter || "(ไม่มีข้อความท้ายรายงาน)"}`}
+                </MsgBlock>
+              </Box>
+
+              <Box>
+                <Typography sx={subheaderSx}>Promo Bot · หมุนเวียน 7 วัน</Typography>
+                <Typography sx={{ fontSize: 11.5, color: adminColor.dim, mb: 1 }}>
+                  ตัวอย่างช่วง Prime Time (22:00) — หัวข้อเปลี่ยนตามรอบเย็น/คืน/ดึก แต่เนื้อหาเหมือนกันทั้งวัน
+                </Typography>
+                {botCopy.promo.days.map((d) => (
+                  <MsgBlock key={d.day} label={DAY_LABEL_TH[d.day] ?? d.day}>{d.text[contentLang]}</MsgBlock>
+                ))}
+              </Box>
+
+              <Box>
+                <Typography sx={subheaderSx}>Promo Bot · ธีมวันสำคัญ</Typography>
+                <Typography sx={{ fontSize: 11.5, color: adminColor.dim, mb: 1 }}>
+                  แทนที่เนื้อหาประจำวันทั้งวันตามช่วงปฏิทินจริง
+                </Typography>
+                {botCopy.promo.holidays.map((h) => (
+                  <MsgBlock key={h.key} label={HOLIDAY_LABEL_TH[h.key] ?? h.key}>{h.text[contentLang]}</MsgBlock>
+                ))}
+              </Box>
+            </Stack>
+          )}
         </SectionCard>
 
         {/* ── Daily Digest ── */}

@@ -20,6 +20,13 @@ import {
   FieldValue,
   Timestamp,
 } from "firebase-admin/firestore";
+// 🆕 Round 28x.95 — pure content lookups for getTelegramBotCopyPreview.
+//   Importing the SAME functions the bots use to render outbound
+//   messages (not a hand-copied mirror) so the admin-panel preview can
+//   never silently drift the way the FAQ pricing block once did (28x.82).
+import { welcomeFor, buttonLabelFor, nudgeFor, type Lang } from "./telegram-concierge-bot/greetings";
+import { faqEntry, type FaqKey } from "./telegram-concierge-bot/faq";
+import { renderPrimeTime, dayKey, type DayKey, type Holiday } from "./telegram-post-bot/templates";
 
 initializeApp();
 
@@ -3659,6 +3666,69 @@ export const createAdminLinkCode = onCall(
       at: FieldValue.serverTimestamp(),
     });
     return { ok: true, code, expiresAtMs: expiresAt.toMillis() };
+  }
+);
+
+// 🆕 Round 28x.95 (founder: "ทำไมไม่เอาไปโชว์จริง ใน Telegram Bot หน้า
+//   แอดมินหลังบ้าน") — surfaces the ACTUAL live copy for all 3 Telegram
+//   bots inside AdminTelegramPanelPage, so View can review what to
+//   add/remove without leaving the real admin she already uses. Reads
+//   straight from welcomeFor/faqEntry/renderPrimeTime — the exact
+//   functions the bots call to build outbound messages — so this can
+//   never drift out of sync with what's actually sent.
+//   Promo body previews use one fixed non-holiday week (2026-07-06 to
+//   07-12) + each holiday's real calendar date; only the "prime" slot
+//   is rendered per day since the header is the only thing that
+//   changes across evening/prime/late (see templates.ts file header).
+export const getTelegramBotCopyPreview = onCall(
+  { region: "asia-southeast1" },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = getFirestore();
+    if (!(await db.collection("admins").doc(request.auth.uid).get()).exists) {
+      throw new HttpsError("permission-denied", "Admin only.");
+    }
+
+    const LANGS: Lang[] = ["en", "th", "zh", "ja", "ko"];
+    const FAQ_KEYS: FaqKey[] = ["pricing", "services", "areas", "howto", "membership"];
+    const byLang = <T,>(fn: (l: Lang) => T): Record<Lang, T> =>
+      Object.fromEntries(LANGS.map((l) => [l, fn(l)])) as Record<Lang, T>;
+
+    const greeter = {
+      welcome: byLang(welcomeFor),
+      button: byLang(buttonLabelFor),
+      nudge: byLang(nudgeFor),
+      faq: FAQ_KEYS.map((key) => ({
+        key,
+        title: byLang((l) => faqEntry(key, l).title),
+        body: byLang((l) => faqEntry(key, l).body),
+      })),
+    };
+
+    const WEEK_ANCHOR_MS = Date.UTC(2026, 6, 6); // holiday-free week, see comment above
+    const days = Array.from({ length: 7 }, (_, i) => new Date(WEEK_ANCHOR_MS + i * 86_400_000));
+    const HOLIDAY_DATES: Record<Holiday, number> = {
+      valentine: Date.UTC(2026, 1, 14),
+      songkran: Date.UTC(2026, 3, 13),
+      halloween: Date.UTC(2026, 9, 31),
+      christmas: Date.UTC(2026, 11, 25),
+      newyear: Date.UTC(2026, 0, 1),
+    };
+
+    const promo = {
+      days: days.map((date) => ({
+        day: dayKey(date) as DayKey,
+        text: byLang((l) => renderPrimeTime(date, l)),
+      })),
+      holidays: (Object.entries(HOLIDAY_DATES) as [Holiday, number][]).map(([key, ms]) => ({
+        key,
+        text: byLang((l) => renderPrimeTime(new Date(ms), l)),
+      })),
+    };
+
+    return { greeter, promo };
   }
 );
 
