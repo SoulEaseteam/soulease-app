@@ -397,7 +397,13 @@ const ProfilePage: React.FC = () => {
           that reads as an ID badge + benefits. */}
       <Box
         sx={{
-          background: "linear-gradient(160deg, #A34A67 0%, #7A3049 55%, #5A2733 100%)",
+          // 🆕 28r129 (founder "สีละการแก้ไขยังไม่ ตรง · ดู mockup") —
+          //   dropped rose-tint palette (was #A34A67 → #5A2733, too pink)
+          //   for the darker maroon-to-black wash from the Approach 8
+          //   mockup.  Deeper hue reads more premium + gives the gold
+          //   card + gold hairlines proper contrast.
+          background:
+            "radial-gradient(140% 100% at 0% 0%, #6B2A3E 0%, #331020 50%, #14090F 100%)",
           pt: 5,
           pb: 4,
           px: 3,
@@ -412,7 +418,7 @@ const ProfilePage: React.FC = () => {
             width: 280,
             height: 80,
             borderRadius: "50%",
-            background: "rgba(90, 39, 51, 0.25)",
+            background: "rgba(20, 9, 15, 0.4)",
             filter: "blur(30px)",
             pointerEvents: "none",
           },
@@ -441,11 +447,13 @@ const ProfilePage: React.FC = () => {
                 sx={{
                   width: "100%",
                   height: "100%",
-                  background: "linear-gradient(135deg, #7A3049, #5A2733)",
+                  // 🆕 28r129 — deep maroon fill (was rose #7A3049→#5A2733,
+                  //   too pink against the new darker hero bg).
+                  background: "linear-gradient(135deg, #4B1B2C, #14090F)",
                   fontSize: 28,
                   fontWeight: 700,
                   fontFamily: SERIF,
-                  color: "#fff",
+                  color: "#F5E9D5",
                 }}
               >
                 {!user.photoURL && initials(therapistName || user.displayName, user.email)}
