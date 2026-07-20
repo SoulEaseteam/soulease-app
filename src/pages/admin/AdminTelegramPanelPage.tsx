@@ -36,7 +36,7 @@ import {
   PaperPlaneTilt,
   FloppyDisk,
 } from "phosphor-react";
-import { doc, getDoc, setDoc, onSnapshot, deleteField, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot, deleteField, arrayRemove, serverTimestamp } from "firebase/firestore";
 import { app, db } from "@/lib/firebase";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { adminColor, adminFont } from "@/theme/adminTheme";
@@ -143,18 +143,42 @@ const AdminTelegramPanelPage: React.FC = () => {
   const [adminCoding, setAdminCoding] = useState(false);
   const [adminCode, setAdminCode] = useState<string | null>(null);
   const [jobChan, setJobChan] = useState<{ id?: string; title?: string } | null>(null);
+  // 🆕 28x.89 (founder: "ก็ต้องมีสิ่งที่ทำไว้แล้วด้วยสิ งั้นเราจะรู้ได้ไง ว่า
+  //   แก้หรือลบอันไหน") — "รหัสเชื่อมแอดมิน" only ever showed a freshly-minted
+  //   code, never who's actually linked. This is the one Telegram control
+  //   in the whole page with genuinely no "what's already set up" view.
+  const [adminChatIds, setAdminChatIds] = useState<string[]>([]);
 
   useEffect(() => {
     const unsub = onSnapshot(
       doc(db, "adminSettings", "advanced"),
       (snap) => {
-        const d = snap.data() as { jobChannelId?: string; jobChannelTitle?: string } | undefined;
+        const d = snap.data() as {
+          jobChannelId?: string;
+          jobChannelTitle?: string;
+          adminTelegramChatIds?: string[];
+        } | undefined;
         setJobChan(d?.jobChannelId ? { id: d.jobChannelId, title: d.jobChannelTitle } : null);
+        setAdminChatIds(d?.adminTelegramChatIds ?? []);
       },
       () => {},
     );
     return () => unsub();
   }, []);
+
+  const removeAdminChatId = async (chatId: string) => {
+    try {
+      await setDoc(
+        doc(db, "adminSettings", "advanced"),
+        { adminTelegramChatIds: arrayRemove(chatId) },
+        { merge: true },
+      );
+      notify("success", `เอา ${chatId} ออกจากแอดมินที่โยนออเดอร์ได้แล้ว`);
+    } catch (e) {
+      console.error("[telegram-bot] remove admin chat id failed", e);
+      notify("error", "ลบไม่สำเร็จ");
+    }
+  };
 
   const clearJobChannel = async () => {
     try {
@@ -327,13 +351,47 @@ const AdminTelegramPanelPage: React.FC = () => {
             </Box>
           )}
           {adminCode && (
-            <Box sx={{ p: 1.5, borderRadius: "12px", background: `${adminColor.green}14`, border: `1px solid ${adminColor.green}55` }}>
+            <Box sx={{ mb: 1.25, p: 1.5, borderRadius: "12px", background: `${adminColor.green}14`, border: `1px solid ${adminColor.green}55` }}>
               <Typography sx={{ fontSize: 11.5, color: adminColor.dim, mb: 0.5 }}>
                 พิมพ์ข้อความนี้หา @SunRed24hBot ในแชทส่วนตัว · ใช้ได้ครั้งเดียว หมดอายุใน 1 ชม.
               </Typography>
               <Typography sx={{ fontSize: 15, fontWeight: 800, color: adminColor.text }}>/linkadmin {adminCode}</Typography>
             </Box>
           )}
+
+          {/* 🆕 28x.89 — who's actually linked to paste orders right now. */}
+          <Box sx={{ pt: 0.5, borderTop: `1px solid ${adminColor.line}` }}>
+            <Typography sx={{ fontSize: 12, color: adminColor.dim, mt: 1, mb: 0.75 }}>
+              แอดมินที่โยนออเดอร์ได้ตอนนี้:
+            </Typography>
+            {adminChatIds.length === 0 ? (
+              <Typography sx={{ fontSize: 12.5, color: adminColor.amber, fontWeight: 700 }}>
+                ยังไม่มีใครเชื่อม — กด &ldquo;รหัสเชื่อมแอดมิน&rdquo; ด้านบนแล้วส่งรหัสให้ @SunRed24hBot
+              </Typography>
+            ) : (
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {adminChatIds.map((id) => (
+                  <Box
+                    key={id}
+                    sx={{
+                      display: "flex", alignItems: "center", gap: 0.75,
+                      background: adminColor.panel, border: `1px solid ${adminColor.line2}`,
+                      borderRadius: "9px", pl: 1.25, pr: 0.5, py: 0.5,
+                    }}
+                  >
+                    <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: adminColor.text }}>{id}</Typography>
+                    <Button
+                      size="small"
+                      onClick={() => void removeAdminChatId(id)}
+                      sx={{ minWidth: "auto", p: "2px 6px", fontSize: 11, fontWeight: 700, textTransform: "none", color: adminColor.red }}
+                    >
+                      ลบ
+                    </Button>
+                  </Box>
+                ))}
+              </Stack>
+            )}
+          </Box>
         </SectionCard>
 
         {/* ── Promo / Channel Bot ── */}
