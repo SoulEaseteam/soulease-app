@@ -35,6 +35,7 @@ import {
   Broadcast,
   PaperPlaneTilt,
   FloppyDisk,
+  Newspaper,
 } from "phosphor-react";
 import { doc, getDoc, setDoc, onSnapshot, deleteField, arrayRemove, serverTimestamp } from "firebase/firestore";
 import { app, db } from "@/lib/firebase";
@@ -148,6 +149,11 @@ const AdminTelegramPanelPage: React.FC = () => {
   //   code, never who's actually linked. This is the one Telegram control
   //   in the whole page with genuinely no "what's already set up" view.
   const [adminChatIds, setAdminChatIds] = useState<string[]>([]);
+  // 🆕 28x.94 — second destination for everything that isn't the raw new-
+  //   booking announcement (digest, review alerts, dispatch status chatter).
+  const [reportChanCoding, setReportChanCoding] = useState(false);
+  const [reportChanCode, setReportChanCode] = useState<string | null>(null);
+  const [reportChan, setReportChan] = useState<{ id?: string; title?: string } | null>(null);
 
   useEffect(() => {
     const unsub = onSnapshot(
@@ -157,14 +163,46 @@ const AdminTelegramPanelPage: React.FC = () => {
           jobChannelId?: string;
           jobChannelTitle?: string;
           adminTelegramChatIds?: string[];
+          reportChatId?: string;
+          reportChannelTitle?: string;
         } | undefined;
         setJobChan(d?.jobChannelId ? { id: d.jobChannelId, title: d.jobChannelTitle } : null);
         setAdminChatIds(d?.adminTelegramChatIds ?? []);
+        setReportChan(d?.reportChatId ? { id: d.reportChatId, title: d.reportChannelTitle } : null);
       },
       () => {},
     );
     return () => unsub();
   }, []);
+
+  const clearReportChannel = async () => {
+    try {
+      await setDoc(
+        doc(db, "adminSettings", "advanced"),
+        { reportChatId: deleteField(), reportChannelTitle: deleteField() },
+        { merge: true },
+      );
+      notify("success", "ล้างช่อง Report แล้ว · รายงานจะกลับไปเข้ากลุ่ม SunRed Booking จนกว่าจะตั้งใหม่");
+    } catch (e) {
+      console.error("[telegram-bot] clear report channel failed", e);
+      notify("error", "ล้างไม่สำเร็จ");
+    }
+  };
+  const makeReportChannelCode = async () => {
+    setReportChanCoding(true);
+    try {
+      const fn = httpsCallable<Record<string, never>, { ok: boolean; code: string }>(
+        getFunctions(app, "asia-southeast1"), "createReportChannelCode",
+      );
+      const res = await fn({});
+      setReportChanCode(res.data.code);
+    } catch (e) {
+      console.error("[telegram-bot] report channel code failed", e);
+      notify("error", "สร้างรหัสไม่สำเร็จ");
+    } finally {
+      setReportChanCoding(false);
+    }
+  };
 
   const removeAdminChatId = async (chatId: string) => {
     try {
@@ -289,7 +327,7 @@ const AdminTelegramPanelPage: React.FC = () => {
         <SectionCard icon={<ChatCircleText size={13} weight="bold" />} title="Daily Digest · รายงานประจำวัน">
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.25 }}>
-            ส่งอัตโนมัติทุกวัน 10:00 น. เข้ากลุ่ม SunRed Booking (Funnel Analytics + Bookings ย้อนหลัง 24 ชม.) —
+            ส่งอัตโนมัติทุกวัน 10:00 น. เข้ากลุ่ม SunRed Report (Funnel Analytics + Bookings ย้อนหลัง 24 ชม.) —
             ตัวเลขคำนวณจากระบบ แก้เองไม่ได้ แต่หัวข้อ/ท้ายข้อความแก้ได้ตรงนี้
           </Typography>
           <TextField
@@ -309,6 +347,48 @@ const AdminTelegramPanelPage: React.FC = () => {
           >
             บันทึกข้อความรายงาน
           </Button>
+        </SectionCard>
+
+        {/* ── Report Channel ── */}
+        {/* 🆕 Round 28x.94 (founder: "ให้รายงานทุกอย่างไปไว้ SunRed Report ·
+            SunRed Booking มี แค่ Booking จากลูกค้า ก็พอ") — a second group so
+            SunRed Booking only ever carries the raw new-booking announcement.
+            Everything else (this Daily Digest, review alerts, overdue-session
+            alerts, abandoned-booking nudges, and accept/decline/claim/status
+            chatter) posts here instead. Same one-time-code claim shape as the
+            Dispatch Bot's job-channel setup below. */}
+        <SectionCard icon={<Newspaper size={13} weight="bold" />} title="Report Channel · SunRed Report">
+          <Box sx={{ mb: 1 }}><LiveBadge /></Box>
+          <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.25 }}>
+            ปลายทางของรายงานประจำวัน / แจ้งรีวิวคะแนนต่ำ / เซสชันเกินเวลา / ตะกร้าค้าง / สถานะรับ-ไม่รับงาน — ทุกอย่างยกเว้นข้อความแจ้งออเดอร์ใหม่ (ยังเข้า SunRed Booking เหมือนเดิม)
+          </Typography>
+
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
+            <Button disabled={reportChanCoding} onClick={() => void makeReportChannelCode()} sx={outlineBtnSx}>
+              {reportChanCoding ? <CircularProgress size={16} /> : "รหัสตั้งช่อง Report"}
+            </Button>
+          </Stack>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexWrap: "wrap", mb: reportChanCode ? 1.5 : 0 }}>
+            <Typography sx={{ fontSize: 12, color: adminColor.dim }}>ช่อง Report ปัจจุบัน:</Typography>
+            <Typography sx={{ fontSize: 12.5, fontWeight: 800, color: reportChan ? adminColor.green : adminColor.amber }}>
+              {reportChan ? `${reportChan.title ?? "(ไม่มีชื่อ)"} · ${reportChan.id}` : "ยังไม่ได้ตั้ง — รายงานจะเข้ากลุ่ม SunRed Booking ไปก่อน"}
+            </Typography>
+            {reportChan && (
+              <Button size="small" onClick={() => void clearReportChannel()} sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, color: adminColor.red, px: 0.5 }}>
+                ล้างค่า
+              </Button>
+            )}
+          </Box>
+
+          {reportChanCode && (
+            <Box sx={{ mt: 1.25, p: 1.5, borderRadius: "12px", background: `${adminColor.green}14`, border: `1px solid ${adminColor.green}55` }}>
+              <Typography sx={{ fontSize: 11.5, color: adminColor.dim, mb: 0.5 }}>
+                พิมพ์ข้อความนี้ในกลุ่ม SunRed Report · ใช้ได้ครั้งเดียว หมดอายุใน 1 ชม.
+              </Typography>
+              <Typography sx={{ fontSize: 15, fontWeight: 800, color: adminColor.text }}>/setreportchannel {reportChanCode}</Typography>
+            </Box>
+          )}
         </SectionCard>
 
         {/* ── Dispatch Bot ── */}

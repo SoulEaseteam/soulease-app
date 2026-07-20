@@ -322,7 +322,7 @@ export const onReviewCreate = onDocumentCreated(
       `⚠️ จัดการก่อน user post Google review!`,
     ].join("\n");
 
-    const { ok, body } = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, message);
+    const { ok, body } = await sendTelegramIfEnabled(token, await getReportChatId(), message);
     if (!ok) {
       logger.error("[onReviewCreate] Telegram error", { body: body.slice(0, 500) });
     } else {
@@ -764,7 +764,6 @@ const formatBookingForAdmin = (
     `📞 Phone: ${b.phone ?? "—"}`,
     `👤 Name: ${b.contactName ?? "—"}`,
     `Note: ${b.note?.trim() ? b.note.trim() : "-"}`,
-    attributionLine(b),
     divider,
     `🗺️ Map: ${mapUrl || "—"}`,
   ];
@@ -1026,6 +1025,15 @@ export const onBookingCreate = onDocumentCreated(
       logger.error("[onBookingCreate] admin log write failed", err);
     }
 
+    // 🆕 Round 28x.94 (founder: "ให้บอทส่ง Booking 1 ข้อความ และลูกค้ามาจาก
+    //   ประเทศอะไร 🌐 Source: อีก 1 ข้อความ") — the source/country line used
+    //   to be the last line of the booking card; now a separate follow-up
+    //   message, same destination.
+    const sourceLine = attributionLine(data);
+    if (sourceLine) {
+      await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, sourceLine);
+    }
+
     // ── 2. Send to THERAPIST personal chat (Round 28b27) ──────────
     //   Each therapist may have a `telegramChatId` field set on their
     //   doc. If present, we DM them the job notification too. The
@@ -1214,7 +1222,7 @@ export const alertOverdueSessions = onSchedule(
         `โทรเช็กความปลอดภัยหมอนวด 🙏`,
       ].join("\n");
 
-      const r = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, text);
+      const r = await sendTelegramIfEnabled(token, await getReportChatId(), text);
       if (r.ok) {
         await d.ref.update({ overdueAlertedAt: FieldValue.serverTimestamp() });
         sent += 1;
@@ -1349,7 +1357,7 @@ export const dailyAdminDigest = onSchedule(
       digestFooter ? digestFooter : null,
     ].filter((l): l is string => l !== null).join("\n");
 
-    const res = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, text);
+    const res = await sendTelegramIfEnabled(token, await getReportChatId(), text);
     logger.info("[dailyAdminDigest] sent", { ok: res.ok });
   }
 );
@@ -1414,7 +1422,7 @@ export const recoverAbandonedBookings = onSchedule(
         `Customer started checkout 15+ min ago and never confirmed.`,
         `Consider sending a gentle LINE/WhatsApp follow-up.`,
       ].join("\n");
-      const r = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, text);
+      const r = await sendTelegramIfEnabled(token, await getReportChatId(), text);
       await d.ref.update({
         status: r.ok ? "alerted" : "alert-failed",
         alertedAt: FieldValue.serverTimestamp(),
@@ -1560,6 +1568,60 @@ async function claimJobChannel(
     "งานที่ยังไม่ได้จ่ายให้ใคร จะมาโพสต์ที่นี่",
     "ใครกดรับก่อนได้ก่อน · รายละเอียดเต็มส่งเข้าแชทส่วนตัว",
   ].join("\n");
+}
+
+// 🆕 Round 28x.94 (founder: "ให้รายงานทุกอย่างไปไว้ SunRed Report ·
+//   SunRed Booking มี แค่ Booking จากลูกค้า ก็พอ") — a second, separate
+//   destination for everything that ISN'T the original new-booking
+//   announcement: daily digest, low-rating review alerts, overdue-session
+//   alerts, abandoned-booking recovery nudges, and dispatch status chatter
+//   (accept/decline/claim/en-route/arrived/done). Same one-time-code claim
+//   shape as claimJobChannel above, so setup is "post one message in the
+//   group", not "find and paste a raw chat ID".
+async function claimReportChannel(
+  chatId: number,
+  chatTitle: string | undefined,
+  suppliedCode: string
+): Promise<string | null> {
+  const db = getFirestore();
+  const ref = db.collection("adminSettings").doc("advanced");
+  const snap = await ref.get();
+  const d = snap.data() ?? {};
+  const want = typeof d.reportChannelCode === "string" ? d.reportChannelCode : "";
+  const exp = d.reportChannelCodeExpiresAt as Timestamp | undefined;
+
+  if (!want || !exp || exp.toMillis() < Date.now()) return null;
+  if (suppliedCode.toUpperCase() !== want.toUpperCase()) return null;
+
+  await ref.set(
+    {
+      reportChatId: String(chatId),
+      reportChannelTitle: chatTitle ?? null,
+      reportChannelCode: FieldValue.delete(),
+      reportChannelCodeExpiresAt: FieldValue.delete(),
+    },
+    { merge: true }
+  );
+  logger.info("[claimReportChannel] report channel set", { chatId, chatTitle });
+  return [
+    "✅ ตั้งเป็นช่อง Report เรียบร้อยแล้ว",
+    "",
+    "รายงานประจำวัน / แจ้งรีวิว / สถานะรับ-ไม่รับงาน ฯลฯ",
+    "จะมาโพสต์ที่นี่ แทนกลุ่ม SunRed Booking",
+  ].join("\n");
+}
+
+/** Where "report" messages (digest, review alerts, dispatch status chatter)
+ *  go — falls back to the booking group until a report channel is claimed,
+ *  so nothing silently stops sending mid-migration. */
+async function getReportChatId(): Promise<string> {
+  try {
+    const snap = await getFirestore().collection("adminSettings").doc("advanced").get();
+    const id = snap.data()?.reportChatId as string | undefined;
+    return id || TELEGRAM_CHAT_ID;
+  } catch {
+    return TELEGRAM_CHAT_ID;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -2241,7 +2303,7 @@ async function handleOpenJobClaim(
 
   await sendTelegramIfEnabled(
     token,
-    TELEGRAM_CHAT_ID,
+    await getReportChatId(),
     `🙋 ${who} รับงานจากช่องงานแล้ว · SR-${bookingId.slice(0, 8).toUpperCase()} · ${full.date ?? ""} ${full.time ?? ""}`
   );
 
@@ -2428,7 +2490,7 @@ async function handleJobCallback(
     const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
     await sendTelegramIfEnabled(
       token,
-      TELEGRAM_CHAT_ID,
+      await getReportChatId(),
       accepted
         ? `✅ ${who} รับงานแล้ว · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}`
         : `⚠️ ${who} กดไม่รับงาน · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}\nต้องจ่ายงานให้คนอื่น`
@@ -2514,6 +2576,13 @@ export const telegramWebhook = onRequest(
           cid,
           cp.chat?.title,
           t.replace(/^\/setjobchannel(@\w+)?/i, "").trim()
+        );
+        if (reply) await sendTelegram(token, String(cid), reply);
+      } else if (cid && /^\/setreportchannel(@\w+)?\b/i.test(t)) {
+        const reply = await claimReportChannel(
+          cid,
+          cp.chat?.title,
+          t.replace(/^\/setreportchannel(@\w+)?/i, "").trim()
         );
         if (reply) await sendTelegram(token, String(cid), reply);
       }
@@ -2605,6 +2674,20 @@ export const telegramWebhook = onRequest(
       );
       if (!claimed) {
         res.status(200).send("ok");   // wrong/absent code → stay silent
+        return;
+      }
+      reply = claimed;
+    } else if (/^\/setreportchannel(@\w+)?\b/i.test(text)) {
+      // 🆕 Round 28x.94 (founder: "ให้รายงานทุกอย่างไปไว้ SunRed Report ·
+      //   SunRed Booking มี แค่ Booking จากลูกค้า ก็พอ") — same one-time-code
+      //   claim shape as /setjobchannel above, for a second group.
+      const claimed = await claimReportChannel(
+        chatId,
+        update?.message?.chat?.title,
+        text.replace(/^\/setreportchannel(@\w+)?/i, "").trim()
+      );
+      if (!claimed) {
+        res.status(200).send("ok");
         return;
       }
       reply = claimed;
@@ -3386,7 +3469,7 @@ export const respondToJob = onCall(
       const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
       await sendTelegramIfEnabled(
         token,
-        TELEGRAM_CHAT_ID,
+        await getReportChatId(),
         accepted
           ? `✅ ${who} รับงานแล้ว (จากแอป) · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}`
           : `⚠️ ${who} กดไม่รับงาน (จากแอป) · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}\nต้องจ่ายงานให้คนอื่น`
@@ -3486,7 +3569,7 @@ export const advanceJobStatus = onCall(
       const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
       await sendTelegramIfEnabled(
         token,
-        TELEGRAM_CHAT_ID,
+        await getReportChatId(),
         `📍 ${who} · ${DISPATCH_LABEL[next]} (จากแอป) · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}`
       );
     }
@@ -3516,6 +3599,34 @@ export const createJobChannelCode = onCall(
       action: "settings.update",
       actorId: request.auth.uid,
       detail: { what: "jobChannelCode issued" },
+      at: FieldValue.serverTimestamp(),
+    });
+    return { ok: true, code, expiresAtMs: expiresAt.toMillis() };
+  }
+);
+
+// 🆕 28x.94 — companion to createJobChannelCode, same code-gate pattern, but
+//   claims the "SunRed Report" group instead of the job board.
+export const createReportChannelCode = onCall(
+  { region: "asia-southeast1" },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = getFirestore();
+    if (!(await db.collection("admins").doc(request.auth.uid).get()).exists) {
+      throw new HttpsError("permission-denied", "Admin only.");
+    }
+    const code = makeLinkCode();
+    const expiresAt = Timestamp.fromMillis(Date.now() + 60 * 60 * 1000); // 1h
+    await db
+      .collection("adminSettings")
+      .doc("advanced")
+      .set({ reportChannelCode: code, reportChannelCodeExpiresAt: expiresAt }, { merge: true });
+    await db.collection("auditLogs").add({
+      action: "settings.update",
+      actorId: request.auth.uid,
+      detail: { what: "reportChannelCode issued" },
       at: FieldValue.serverTimestamp(),
     });
     return { ok: true, code, expiresAtMs: expiresAt.toMillis() };

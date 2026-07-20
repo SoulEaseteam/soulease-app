@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.createAdminLinkCode = exports.createJobChannelCode = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -267,7 +267,7 @@ exports.onReviewCreate = (0, firestore_1.onDocumentCreated)({
         "",
         `⚠️ จัดการก่อน user post Google review!`,
     ].join("\n");
-    const { ok, body } = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, message);
+    const { ok, body } = await sendTelegramIfEnabled(token, await getReportChatId(), message);
     if (!ok) {
         v2_1.logger.error("[onReviewCreate] Telegram error", { body: body.slice(0, 500) });
     }
@@ -606,7 +606,6 @@ const formatBookingForAdmin = (bookingId, b) => {
         `📞 Phone: ${b.phone ?? "—"}`,
         `👤 Name: ${b.contactName ?? "—"}`,
         `Note: ${b.note?.trim() ? b.note.trim() : "-"}`,
-        attributionLine(b),
         divider,
         `🗺️ Map: ${mapUrl || "—"}`,
     ];
@@ -835,6 +834,14 @@ exports.onBookingCreate = (0, firestore_1.onDocumentCreated)({
     catch (err) {
         v2_1.logger.error("[onBookingCreate] admin log write failed", err);
     }
+    // 🆕 Round 28x.94 (founder: "ให้บอทส่ง Booking 1 ข้อความ และลูกค้ามาจาก
+    //   ประเทศอะไร 🌐 Source: อีก 1 ข้อความ") — the source/country line used
+    //   to be the last line of the booking card; now a separate follow-up
+    //   message, same destination.
+    const sourceLine = attributionLine(data);
+    if (sourceLine) {
+        await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, sourceLine);
+    }
     // ── 2. Send to THERAPIST personal chat (Round 28b27) ──────────
     //   Each therapist may have a `telegramChatId` field set on their
     //   doc. If present, we DM them the job notification too. The
@@ -997,7 +1004,7 @@ exports.alertOverdueSessions = (0, scheduler_1.onSchedule)({
             `เริ่มนวดแล้วและเลยเวลาคาดจบเกิน 20 นาที — ยังไม่กด "จบงาน".`,
             `โทรเช็กความปลอดภัยหมอนวด 🙏`,
         ].join("\n");
-        const r = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, text);
+        const r = await sendTelegramIfEnabled(token, await getReportChatId(), text);
         if (r.ok) {
             await d.ref.update({ overdueAlertedAt: firestore_2.FieldValue.serverTimestamp() });
             sent += 1;
@@ -1123,7 +1130,7 @@ exports.dailyAdminDigest = (0, scheduler_1.onSchedule)({
         digestFooter ? `` : null,
         digestFooter ? digestFooter : null,
     ].filter((l) => l !== null).join("\n");
-    const res = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, text);
+    const res = await sendTelegramIfEnabled(token, await getReportChatId(), text);
     v2_1.logger.info("[dailyAdminDigest] sent", { ok: res.ok });
 });
 exports.recoverAbandonedBookings = (0, scheduler_1.onSchedule)({
@@ -1168,7 +1175,7 @@ exports.recoverAbandonedBookings = (0, scheduler_1.onSchedule)({
             `Customer started checkout 15+ min ago and never confirmed.`,
             `Consider sending a gentle LINE/WhatsApp follow-up.`,
         ].join("\n");
-        const r = await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, text);
+        const r = await sendTelegramIfEnabled(token, await getReportChatId(), text);
         await d.ref.update({
             status: r.ok ? "alerted" : "alert-failed",
             alertedAt: firestore_2.FieldValue.serverTimestamp(),
@@ -1291,6 +1298,52 @@ async function claimJobChannel(chatId, chatTitle, suppliedCode) {
         "งานที่ยังไม่ได้จ่ายให้ใคร จะมาโพสต์ที่นี่",
         "ใครกดรับก่อนได้ก่อน · รายละเอียดเต็มส่งเข้าแชทส่วนตัว",
     ].join("\n");
+}
+// 🆕 Round 28x.94 (founder: "ให้รายงานทุกอย่างไปไว้ SunRed Report ·
+//   SunRed Booking มี แค่ Booking จากลูกค้า ก็พอ") — a second, separate
+//   destination for everything that ISN'T the original new-booking
+//   announcement: daily digest, low-rating review alerts, overdue-session
+//   alerts, abandoned-booking recovery nudges, and dispatch status chatter
+//   (accept/decline/claim/en-route/arrived/done). Same one-time-code claim
+//   shape as claimJobChannel above, so setup is "post one message in the
+//   group", not "find and paste a raw chat ID".
+async function claimReportChannel(chatId, chatTitle, suppliedCode) {
+    const db = (0, firestore_2.getFirestore)();
+    const ref = db.collection("adminSettings").doc("advanced");
+    const snap = await ref.get();
+    const d = snap.data() ?? {};
+    const want = typeof d.reportChannelCode === "string" ? d.reportChannelCode : "";
+    const exp = d.reportChannelCodeExpiresAt;
+    if (!want || !exp || exp.toMillis() < Date.now())
+        return null;
+    if (suppliedCode.toUpperCase() !== want.toUpperCase())
+        return null;
+    await ref.set({
+        reportChatId: String(chatId),
+        reportChannelTitle: chatTitle ?? null,
+        reportChannelCode: firestore_2.FieldValue.delete(),
+        reportChannelCodeExpiresAt: firestore_2.FieldValue.delete(),
+    }, { merge: true });
+    v2_1.logger.info("[claimReportChannel] report channel set", { chatId, chatTitle });
+    return [
+        "✅ ตั้งเป็นช่อง Report เรียบร้อยแล้ว",
+        "",
+        "รายงานประจำวัน / แจ้งรีวิว / สถานะรับ-ไม่รับงาน ฯลฯ",
+        "จะมาโพสต์ที่นี่ แทนกลุ่ม SunRed Booking",
+    ].join("\n");
+}
+/** Where "report" messages (digest, review alerts, dispatch status chatter)
+ *  go — falls back to the booking group until a report channel is claimed,
+ *  so nothing silently stops sending mid-migration. */
+async function getReportChatId() {
+    try {
+        const snap = await (0, firestore_2.getFirestore)().collection("adminSettings").doc("advanced").get();
+        const id = snap.data()?.reportChatId;
+        return id || TELEGRAM_CHAT_ID;
+    }
+    catch {
+        return TELEGRAM_CHAT_ID;
+    }
 }
 // ─────────────────────────────────────────────────────────────
 // 🆕 Round 28x.81 (founder: pasted a real customer-chat snippet and asked
@@ -1834,7 +1887,7 @@ async function handleOpenJobClaim(q, bookingId, token) {
         [{ text: "📱 เปิดหน้างานของฉัน · แจ้งสถานะที่นี่", url: "https://sunred.vip/therapist/jobs" }],
         ...(claimMapUrl ? [[{ text: "📍 เปิดแผนที่", url: claimMapUrl }]] : []),
     ]);
-    await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, `🙋 ${who} รับงานจากช่องงานแล้ว · SR-${bookingId.slice(0, 8).toUpperCase()} · ${full.date ?? ""} ${full.time ?? ""}`);
+    await sendTelegramIfEnabled(token, await getReportChatId(), `🙋 ${who} รับงานจากช่องงานแล้ว · SR-${bookingId.slice(0, 8).toUpperCase()} · ${full.date ?? ""} ${full.time ?? ""}`);
     await db.collection("telegramLogs").add({
         bookingId,
         therapistId: therapistDoc.id,
@@ -1972,7 +2025,7 @@ async function handleJobCallback(q, token) {
         //    is the one that needs someone to act, so it says so loudly.
         const who = b.therapistName ?? b.therapistId ?? "หมอนวด";
         const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
-        await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, accepted
+        await sendTelegramIfEnabled(token, await getReportChatId(), accepted
             ? `✅ ${who} รับงานแล้ว · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}`
             : `⚠️ ${who} กดไม่รับงาน · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}\nต้องจ่ายงานให้คนอื่น`);
         await db.collection("telegramLogs").add({
@@ -2017,6 +2070,11 @@ exports.telegramWebhook = (0, https_1.onRequest)({
         const t = (cp.text ?? "").trim();
         if (cid && /^\/setjobchannel(@\w+)?\b/i.test(t)) {
             const reply = await claimJobChannel(cid, cp.chat?.title, t.replace(/^\/setjobchannel(@\w+)?/i, "").trim());
+            if (reply)
+                await sendTelegram(token, String(cid), reply);
+        }
+        else if (cid && /^\/setreportchannel(@\w+)?\b/i.test(t)) {
+            const reply = await claimReportChannel(cid, cp.chat?.title, t.replace(/^\/setreportchannel(@\w+)?/i, "").trim());
             if (reply)
                 await sendTelegram(token, String(cid), reply);
         }
@@ -2099,6 +2157,17 @@ exports.telegramWebhook = (0, https_1.onRequest)({
         const claimed = await claimJobChannel(chatId, update?.message?.chat?.title, text.replace(/^\/setjobchannel(@\w+)?/i, "").trim());
         if (!claimed) {
             res.status(200).send("ok"); // wrong/absent code → stay silent
+            return;
+        }
+        reply = claimed;
+    }
+    else if (/^\/setreportchannel(@\w+)?\b/i.test(text)) {
+        // 🆕 Round 28x.94 (founder: "ให้รายงานทุกอย่างไปไว้ SunRed Report ·
+        //   SunRed Booking มี แค่ Booking จากลูกค้า ก็พอ") — same one-time-code
+        //   claim shape as /setjobchannel above, for a second group.
+        const claimed = await claimReportChannel(chatId, update?.message?.chat?.title, text.replace(/^\/setreportchannel(@\w+)?/i, "").trim());
+        if (!claimed) {
+            res.status(200).send("ok");
             return;
         }
         reply = claimed;
@@ -2747,7 +2816,7 @@ exports.respondToJob = (0, https_1.onCall)({ region: "asia-southeast1" }, async 
     if (token) {
         const who = b.therapistName ?? "หมอนวด";
         const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
-        await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, accepted
+        await sendTelegramIfEnabled(token, await getReportChatId(), accepted
             ? `✅ ${who} รับงานแล้ว (จากแอป) · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}`
             : `⚠️ ${who} กดไม่รับงาน (จากแอป) · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}\nต้องจ่ายงานให้คนอื่น`);
     }
@@ -2816,7 +2885,7 @@ exports.advanceJobStatus = (0, https_1.onCall)({ region: "asia-southeast1", secr
     if (token) {
         const who = b.therapistName ?? "หมอนวด";
         const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
-        await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, `📍 ${who} · ${DISPATCH_LABEL[next]} (จากแอป) · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}`);
+        await sendTelegramIfEnabled(token, await getReportChatId(), `📍 ${who} · ${DISPATCH_LABEL[next]} (จากแอป) · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}`);
     }
     v2_1.logger.info("[advanceJobStatus] recorded", { bookingId, next, uid });
     return { ok: true, already: false, dispatchState: next };
@@ -2839,6 +2908,30 @@ exports.createJobChannelCode = (0, https_1.onCall)({ region: "asia-southeast1" }
         action: "settings.update",
         actorId: request.auth.uid,
         detail: { what: "jobChannelCode issued" },
+        at: firestore_2.FieldValue.serverTimestamp(),
+    });
+    return { ok: true, code, expiresAtMs: expiresAt.toMillis() };
+});
+// 🆕 28x.94 — companion to createJobChannelCode, same code-gate pattern, but
+//   claims the "SunRed Report" group instead of the job board.
+exports.createReportChannelCode = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = (0, firestore_2.getFirestore)();
+    if (!(await db.collection("admins").doc(request.auth.uid).get()).exists) {
+        throw new https_1.HttpsError("permission-denied", "Admin only.");
+    }
+    const code = makeLinkCode();
+    const expiresAt = firestore_2.Timestamp.fromMillis(Date.now() + 60 * 60 * 1000); // 1h
+    await db
+        .collection("adminSettings")
+        .doc("advanced")
+        .set({ reportChannelCode: code, reportChannelCodeExpiresAt: expiresAt }, { merge: true });
+    await db.collection("auditLogs").add({
+        action: "settings.update",
+        actorId: request.auth.uid,
+        detail: { what: "reportChannelCode issued" },
         at: firestore_2.FieldValue.serverTimestamp(),
     });
     return { ok: true, code, expiresAtMs: expiresAt.toMillis() };
