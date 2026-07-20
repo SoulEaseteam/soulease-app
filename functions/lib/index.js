@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.createAdminLinkCode = exports.createJobChannelCode = exports.advanceJobStatus = exports.respondToJob = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.createAdminLinkCode = exports.createJobChannelCode = exports.advanceJobStatus = exports.respondToJob = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -1947,7 +1947,14 @@ async function handleJobCallback(q, token) {
                 : "❌ ไม่รับงาน\n\nแจ้งแอดมินเรียบร้อยแล้ว จะจ่ายงานให้คนอื่นต่อค่ะ");
         }
         if (accepted && msgChatId) {
-            await sendTelegramIfEnabled(token, String(msgChatId), `${fullCard}\n\nแอดมินเห็นแล้วว่าคุณรับงานนี้ เดินทางได้เลยค่ะ`);
+            // 🆕 Round 28x.89 (founder: "แล้วพนักงานจะเข้าระบบยังไง ต้องกดรับแล้วพา
+            //   เข้าหน้าโปรไฟล์ไหม") — accept/decline stays in Telegram (fast, zero
+            //   friction), but advancing enroute/arrived/in_session/done only exists
+            //   on /therapist/jobs (28x.85). Without a link there, that screen is
+            //   effectively unreachable for anyone who lives in the Telegram chat.
+            //   One tap here opens it — she's already signed in from her staff
+            //   login, so the browser session carries over.
+            await sendTelegramIfEnabled(token, String(msgChatId), `${fullCard}\n\nแอดมินเห็นแล้วว่าคุณรับงานนี้ เดินทางได้เลยค่ะ`, [[{ text: "📱 เปิดหน้างานของฉัน · แจ้งสถานะที่นี่", url: "https://sunred.vip/therapist/jobs" }]]);
         }
         // ── Tell the admin group either way. An accept is reassurance; a decline
         //    is the one that needs someone to act, so it says so loudly.
@@ -2548,6 +2555,83 @@ exports.createTherapistLinkCode = (0, https_1.onCall)({ region: "asia-southeast1
         at: firestore_2.FieldValue.serverTimestamp(),
     });
     return { ok: true, code, expiresAtMs: expiresAt.toMillis() };
+});
+// 🆕 Round 28x.88 (founder: "สมัคร Profile พนักงาน") — provision a real staff
+//   login directly, rather than relying on a therapist to self-sign-up with
+//   an email that happens to match therapists/{id}.email (setRoleOnSignup,
+//   ~line 428) — a fragile precondition nobody had actually set for
+//   Yuri/Vivian/Nicky, so their staffActive toggle was live but toothless:
+//   no uid on file for the rule to match against. Mirrors createCustomerAccount's
+//   shape: mint the Auth user directly, write uid + email onto the therapist
+//   doc in the SAME call. Deliberately does NOT touch staffActive — per
+//   28x.81 above, that's a separate admin decision (job sync + channel setup
+//   confirmed done), not implied by an account merely existing.
+exports.createTherapistAccount = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = (0, firestore_2.getFirestore)();
+    if (!(await db.collection("admins").doc(request.auth.uid).get()).exists) {
+        throw new https_1.HttpsError("permission-denied", "Admin only.");
+    }
+    const therapistId = String(request.data?.therapistId ?? "").trim();
+    if (!therapistId) {
+        throw new https_1.HttpsError("invalid-argument", "therapistId is required.");
+    }
+    const tRef = db.collection("therapists").doc(therapistId);
+    const tSnap = await tRef.get();
+    if (!tSnap.exists) {
+        throw new https_1.HttpsError("not-found", "Therapist not found.");
+    }
+    const t = tSnap.data();
+    if (t?.uid) {
+        throw new https_1.HttpsError("already-exists", "This therapist already has a login.");
+    }
+    const handle = therapistId.toLowerCase();
+    if (!/^[a-z][a-z0-9._-]{2,19}$/.test(handle)) {
+        throw new https_1.HttpsError("internal", "Therapist doc id isn't a valid username shape.");
+    }
+    const authEmail = `${handle}@${USERNAME_ALIAS_DOMAIN}`;
+    // Random 12-char password from the same no-ambiguous-characters alphabet
+    // as link codes — easy to read aloud/relay over Telegram, long enough to
+    // satisfy Firebase Auth's minimum.
+    let password = "";
+    for (let i = 0; i < 12; i++) {
+        password += LINK_ALPHABET[Math.floor(Math.random() * LINK_ALPHABET.length)];
+    }
+    let uid;
+    try {
+        const rec = await (0, auth_1.getAuth)().createUser({
+            email: authEmail,
+            password,
+            ...(t?.name ? { displayName: t.name } : {}),
+        });
+        uid = rec.uid;
+    }
+    catch (err) {
+        const errCode = err.code;
+        if (errCode === "auth/email-already-exists") {
+            throw new https_1.HttpsError("already-exists", "A login already exists for this therapist id.");
+        }
+        throw err;
+    }
+    await (0, auth_1.getAuth)().setCustomUserClaims(uid, { role: "therapist" });
+    await db.collection("users").doc(uid).set({
+        username: handle,
+        loginKind: "username",
+        role: "therapist",
+        ...(t?.name ? { displayName: t.name } : {}),
+        createdAt: firestore_2.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    await tRef.set({ uid, email: authEmail, updatedAt: firestore_2.FieldValue.serverTimestamp() }, { merge: true });
+    await db.collection("auditLogs").add({
+        action: "therapist.create_account",
+        actorId: request.auth.uid,
+        byUid: request.auth.uid,
+        detail: { therapistId }, // never the password itself
+        at: firestore_2.FieldValue.serverTimestamp(),
+    });
+    return { ok: true, username: handle, password };
 });
 // 🆕 Round 28x.72 — a one-time code to claim the job board.
 //

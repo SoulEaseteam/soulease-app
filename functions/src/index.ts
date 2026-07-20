@@ -159,7 +159,7 @@ async function sendTelegramIfEnabled(
 //   guest's address typed by hand. A single "&" or "<" in an address would make
 //   Telegram reject the whole message with a 400 — i.e. the practitioner never
 //   learns she has a job. Plain text can't fail that way.
-type InlineButton = { text: string; callback_data: string };
+type InlineButton = { text: string } & ({ callback_data: string } | { url: string });
 type InlineKeyboard = InlineButton[][];
 
 /** Dismiss the button's loading spinner, optionally with a toast. */
@@ -2401,10 +2401,18 @@ async function handleJobCallback(
       );
     }
     if (accepted && msgChatId) {
+      // 🆕 Round 28x.89 (founder: "แล้วพนักงานจะเข้าระบบยังไง ต้องกดรับแล้วพา
+      //   เข้าหน้าโปรไฟล์ไหม") — accept/decline stays in Telegram (fast, zero
+      //   friction), but advancing enroute/arrived/in_session/done only exists
+      //   on /therapist/jobs (28x.85). Without a link there, that screen is
+      //   effectively unreachable for anyone who lives in the Telegram chat.
+      //   One tap here opens it — she's already signed in from her staff
+      //   login, so the browser session carries over.
       await sendTelegramIfEnabled(
         token,
         String(msgChatId),
-        `${fullCard}\n\nแอดมินเห็นแล้วว่าคุณรับงานนี้ เดินทางได้เลยค่ะ`
+        `${fullCard}\n\nแอดมินเห็นแล้วว่าคุณรับงานนี้ เดินทางได้เลยค่ะ`,
+        [[{ text: "📱 เปิดหน้างานของฉัน · แจ้งสถานะที่นี่", url: "https://sunred.vip/therapist/jobs" }]]
       );
     }
 
@@ -3134,6 +3142,109 @@ export const createTherapistLinkCode = onCall(
     });
 
     return { ok: true, code, expiresAtMs: expiresAt.toMillis() };
+  }
+);
+
+// 🆕 Round 28x.88 (founder: "สมัคร Profile พนักงาน") — provision a real staff
+//   login directly, rather than relying on a therapist to self-sign-up with
+//   an email that happens to match therapists/{id}.email (setRoleOnSignup,
+//   ~line 428) — a fragile precondition nobody had actually set for
+//   Yuri/Vivian/Nicky, so their staffActive toggle was live but toothless:
+//   no uid on file for the rule to match against. Mirrors createCustomerAccount's
+//   shape: mint the Auth user directly, write uid + email onto the therapist
+//   doc in the SAME call. Deliberately does NOT touch staffActive — per
+//   28x.81 above, that's a separate admin decision (job sync + channel setup
+//   confirmed done), not implied by an account merely existing.
+export const createTherapistAccount = onCall(
+  { region: "asia-southeast1" },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in required.");
+    }
+    const db = getFirestore();
+    if (!(await db.collection("admins").doc(request.auth.uid).get()).exists) {
+      throw new HttpsError("permission-denied", "Admin only.");
+    }
+    const therapistId = String(
+      (request.data as { therapistId?: string } | undefined)?.therapistId ?? ""
+    ).trim();
+    if (!therapistId) {
+      throw new HttpsError("invalid-argument", "therapistId is required.");
+    }
+    const tRef = db.collection("therapists").doc(therapistId);
+    const tSnap = await tRef.get();
+    if (!tSnap.exists) {
+      throw new HttpsError("not-found", "Therapist not found.");
+    }
+    const t = tSnap.data() as { uid?: string; name?: string } | undefined;
+    if (t?.uid) {
+      throw new HttpsError(
+        "already-exists",
+        "This therapist already has a login."
+      );
+    }
+
+    const handle = therapistId.toLowerCase();
+    if (!/^[a-z][a-z0-9._-]{2,19}$/.test(handle)) {
+      throw new HttpsError(
+        "internal",
+        "Therapist doc id isn't a valid username shape."
+      );
+    }
+    const authEmail = `${handle}@${USERNAME_ALIAS_DOMAIN}`;
+
+    // Random 12-char password from the same no-ambiguous-characters alphabet
+    // as link codes — easy to read aloud/relay over Telegram, long enough to
+    // satisfy Firebase Auth's minimum.
+    let password = "";
+    for (let i = 0; i < 12; i++) {
+      password += LINK_ALPHABET[Math.floor(Math.random() * LINK_ALPHABET.length)];
+    }
+
+    let uid: string;
+    try {
+      const rec = await getAuth().createUser({
+        email: authEmail,
+        password,
+        ...(t?.name ? { displayName: t.name } : {}),
+      });
+      uid = rec.uid;
+    } catch (err) {
+      const errCode = (err as { code?: string }).code;
+      if (errCode === "auth/email-already-exists") {
+        throw new HttpsError(
+          "already-exists",
+          "A login already exists for this therapist id."
+        );
+      }
+      throw err;
+    }
+
+    await getAuth().setCustomUserClaims(uid, { role: "therapist" });
+    await db.collection("users").doc(uid).set(
+      {
+        username: handle,
+        loginKind: "username",
+        role: "therapist",
+        ...(t?.name ? { displayName: t.name } : {}),
+        createdAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+    await tRef.set(
+      { uid, email: authEmail, updatedAt: FieldValue.serverTimestamp() },
+      { merge: true }
+    );
+
+    await db.collection("auditLogs").add({
+      action: "therapist.create_account",
+      actorId: request.auth.uid,
+      byUid: request.auth.uid,
+      detail: { therapistId }, // never the password itself
+      at: FieldValue.serverTimestamp(),
+    });
+
+    return { ok: true, username: handle, password };
   }
 );
 

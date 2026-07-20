@@ -211,6 +211,30 @@ const AdminTherapistDetailPage: React.FC = () => {
       setLinking(false);
     }
   };
+
+  // 🆕 28x.88 — mint a real staff-app login (uid + email on the therapist
+  //   doc) in one click, instead of depending on her to self-sign-up with a
+  //   matching email nobody actually set. See createTherapistAccount.
+  const [creatingAccount, setCreatingAccount] = useState(false);
+  const [accountCreds, setAccountCreds] = useState<{ username: string; password: string } | null>(null);
+  const createAccount = async () => {
+    if (!docId) return;
+    setCreatingAccount(true);
+    try {
+      const fn = httpsCallable<{ therapistId: string }, { ok: boolean; username: string; password: string }>(
+        getFunctions(app, "asia-southeast1"),
+        "createTherapistAccount"
+      );
+      const res = await fn({ therapistId: docId });
+      setAccountCreds({ username: res.data.username, password: res.data.password });
+    } catch (e) {
+      console.error("[therapist] create account failed", e);
+      const msg = (e as { message?: string })?.message ?? "";
+      toast.error(msg.includes("already") ? "พนักงานคนนี้มีบัญชีอยู่แล้ว" : "สร้างบัญชีไม่สำเร็จ");
+    } finally {
+      setCreatingAccount(false);
+    }
+  };
   const originalRef = useRef<FormState>(EMPTY_FORM);
   // 🆕 Round 28s314 — bank details live in the ADMIN-ONLY `payoutAccounts`
   //   collection, NOT on the therapist doc (which is `allow read: if true`,
@@ -1042,6 +1066,68 @@ const AdminTherapistDetailPage: React.FC = () => {
               >
                 <ShieldCheck size={14} weight={formData.staffActive ? "fill" : "regular"} />
                 {formData.staffActive ? "เปิดใช้งานแล้ว · Active" : "ยังไม่เปิดใช้งาน · Inactive"}
+              </Box>
+
+              {/* 🆕 28x.88 — the toggle above only means anything once she has
+                  an actual login (uid on the doc). Surface that gap here and
+                  let admin close it in one click, rather than assuming the
+                  toggle alone means she can sign in. */}
+              <Box sx={{ mt: 1.25 }}>
+                {rawDoc.uid ? (
+                  <Typography sx={{ fontFamily: adminFont.sans, fontSize: 11.5, color: adminColor.green, fontWeight: 700 }}>
+                    ✓ มีบัญชีเข้าใช้งานแล้ว
+                  </Typography>
+                ) : (
+                  <>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      disabled={creatingAccount}
+                      onClick={() => void createAccount()}
+                      sx={{
+                        textTransform: "none", fontWeight: 700, fontSize: 12.5,
+                        borderRadius: "999px", color: adminColor.accent,
+                        borderColor: adminColor.line2,
+                      }}
+                    >
+                      {creatingAccount ? <CircularProgress size={15} /> : "สร้างบัญชีเข้าใช้งาน"}
+                    </Button>
+                    <Typography sx={{ fontFamily: adminFont.sans, fontSize: 10.5, color: adminColor.dim, mt: 0.5 }}>
+                      ยังไม่มีบัญชีล็อกอิน — พนักงานยังเข้าแอปไม่ได้แม้เปิดใช้งานด้านบนแล้ว
+                    </Typography>
+                  </>
+                )}
+
+                {accountCreds && (
+                  <Box
+                    sx={{
+                      mt: 1.25, p: 1.25, borderRadius: "10px",
+                      background: `${adminColor.green}14`,
+                      border: `1px solid ${adminColor.green}55`,
+                    }}
+                  >
+                    <Typography sx={{ fontFamily: adminFont.sans, fontSize: 11, color: adminColor.dim, mb: 0.5 }}>
+                      ส่งข้อมูลนี้ให้พนักงาน · แสดงครั้งเดียว จดไว้ให้ดี
+                    </Typography>
+                    <Typography sx={{ fontFamily: adminFont.sans, fontSize: 13.5, fontWeight: 700, color: adminColor.text }}>
+                      Username: {accountCreds.username}
+                      <br />
+                      Password: {accountCreds.password}
+                    </Typography>
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        void navigator.clipboard.writeText(
+                          `ล็อกอินเข้าแอป SunRed ได้ที่ sunred.vip ค่ะ\nUsername: ${accountCreds.username}\nPassword: ${accountCreds.password}`
+                        );
+                        toast.success("คัดลอกแล้ว");
+                      }}
+                      sx={{ textTransform: "none", fontWeight: 700, fontSize: 12, color: adminColor.green, mt: 0.5, px: 0 }}
+                    >
+                      คัดลอกข้อความ
+                    </Button>
+                  </Box>
+                )}
               </Box>
             </SectionCard>
 
