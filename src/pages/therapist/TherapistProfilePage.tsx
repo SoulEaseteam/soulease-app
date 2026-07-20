@@ -20,7 +20,7 @@
 //   reference screenshots more closely than the 28x.87 version did).
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Box, Typography, CircularProgress, Chip, Button, Switch, TextField, Snackbar, Alert } from "@mui/material";
+import { Box, Typography, CircularProgress, Button, Switch, TextField, Snackbar, Alert } from "@mui/material";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import RoomRoundedIcon from "@mui/icons-material/RoomRounded";
@@ -33,16 +33,16 @@ import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import { ClockCounterClockwise } from "phosphor-react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
-import { collection, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
+import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import dayjs from "dayjs";
 
-import type { Avail, StatusOverride } from "@/types/therapist";
+import type { StatusOverride } from "@/types/therapist";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell.
 import { responsiveShell } from "@/theme/breakpoints";
-import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
-import { enhanceImage } from "@/utils/cloudinary";
 import { useTherapistSelf } from "@/hooks/useTherapistSelf";
+import { useTherapistIdentityStats } from "@/hooks/useTherapistIdentityStats";
+import TherapistIdentityCard from "@/components/therapist/TherapistIdentityCard";
 import { SUNRED_TZ } from "@/utils/time";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
@@ -54,58 +54,10 @@ const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 const HOURS_EDITABLE_DAYS = [0, 3];
 const DAY_NAMES_TH = ["วันอาทิตย์", "วันจันทร์", "วันอังคาร", "วันพุธ", "วันพฤหัสบดี", "วันศุกร์", "วันเสาร์"];
 
-/** Narrow shape of a booking record we read from Firestore. */
-interface BookingDoc {
-  reviewText?: string;
-  status?: string;
-}
-
-/** Status pill colors — brand-consistent, no salmon. */
-const STATUS_PILL: Record<Avail, { bg: string; color: string; label: string }> = {
-  available: { bg: "#16a34a", color: "#fff", label: "Available" },
-  bookable: { bg: "#831843", color: "#F4F6F5", label: "In session" },
-  resting: { bg: "rgba(0,0,0,0.38)", color: "#FFFFFF", label: "Resting" },
-  holiday: { bg: "rgba(0,0,0,0.38)", color: "#FFFFFF", label: "On holiday" },
-};
-
 const TherapistProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { therapist, therapistDocId, loading } = useTherapistSelf();
-
-  // Live review count — completed bookings with a non-empty reviewText.
-  const [reviewCount, setReviewCount] = useState(0);
-  useEffect(() => {
-    const myUid = auth.currentUser?.uid;
-    if (!myUid) return;
-    const q = query(collection(db, "bookings"), where("therapistUid", "==", myUid));
-    const unsub = onSnapshot(q, (snap) => {
-      let reviewed = 0;
-      snap.forEach((d) => {
-        const b = d.data() as BookingDoc;
-        const status = (b.status ?? "").toLowerCase();
-        if (
-          ["completed", "done"].includes(status) &&
-          typeof b.reviewText === "string" &&
-          b.reviewText.trim().length > 0
-        ) {
-          reviewed += 1;
-        }
-      });
-      setReviewCount(reviewed);
-    });
-    return () => unsub();
-  }, [therapistDocId]); // re-subscribes after auth resolves the profile
-
-  // Computed status via canonical engine — one source of truth.
-  const computedStatus: Avail = useMemo(() => {
-    if (!therapist) return "resting";
-    const { status } = calculateTherapistStatus(therapist);
-    /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-    return status === "available" || status === "bookable" || status === "resting"
-      ? status
-      : "resting";
-    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-  }, [therapist]);
+  const { reviewCount, computedStatus } = useTherapistIdentityStats(therapist);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -226,16 +178,6 @@ const TherapistProfilePage: React.FC = () => {
     );
   }
 
-  const rawImage = therapist.image || "placeholder.jpg";
-  const resolvedImage =
-    rawImage.startsWith("http") || rawImage.startsWith("/")
-      ? rawImage
-      : `/images/${rawImage}`;
-
-  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-  const ratingNum = (Number(therapist.rating) || 0).toFixed(1);
-  const pill = STATUS_PILL[computedStatus];
-
   return (
     <Box
       sx={{
@@ -246,111 +188,10 @@ const TherapistProfilePage: React.FC = () => {
         fontFamily: SANS,
       }}
     >
-      {/* Header — brand red→coral gradient (replaces legacy salmon) */}
-      <Box
-        sx={{
-          position: "relative",
-          padding: "24px 20px 28px",
-          background: "linear-gradient(160deg, #A34A67 0%, #7A3049 55%, #5A2733 100%)",
-          borderBottomLeftRadius: 28,
-          borderBottomRightRadius: 28,
-          color: "#fff",
-          boxShadow: "0 12px 30px rgba(15, 23, 42, 0.22)",
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Box
-            component="img"
-            src={enhanceImage(resolvedImage, { variant: "card" })}
-            alt={therapist.name}
-            width={96}
-            height={96}
-            loading="lazy"
-            decoding="async"
-            sx={{
-              width: 96,
-              height: 96,
-              borderRadius: "50%",
-              objectFit: "cover",
-              border: "3px solid rgba(255,255,255,0.85)",
-              boxShadow: "0 6px 16px rgba(15, 23, 42, 0.14)",
-              flexShrink: 0,
-            }}
-          />
-
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography
-              sx={{
-                fontFamily: SERIF,
-                fontWeight: 600,
-                fontSize: "20px",
-                lineHeight: 1.1,
-                letterSpacing: "-0.01em",
-              }}
-            >
-              {therapist.name}
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: SANS,
-                fontSize: "11px",
-                opacity: 0.85,
-                marginTop: "2px",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {(therapist as { email?: string }).email ?? ""}
-            </Typography>
-
-            <Box
-              sx={{
-                marginTop: "6px",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                flexWrap: "wrap",
-              }}
-            >
-              <Chip
-                size="small"
-                label={pill.label}
-                sx={{
-                  height: 22,
-                  background: pill.bg,
-                  color: pill.color,
-                  fontWeight: 700,
-                  fontSize: "10px",
-                  letterSpacing: "0.04em",
-                }}
-              />
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: "10.5px",
-                  opacity: 0.85,
-                  fontWeight: 600,
-                }}
-              >
-                ★ {ratingNum} · {reviewCount} review
-                {reviewCount === 1 ? "" : "s"}
-              </Typography>
-            </Box>
-
-            <Typography
-              sx={{
-                fontFamily: SANS,
-                fontSize: "10.5px",
-                opacity: 0.78,
-                marginTop: "4px",
-              }}
-            >
-              Hours · {therapist.startTime ?? "—"} – {therapist.endTime ?? "—"}
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
+      {/* 🆕 28x.96 — extracted to TherapistIdentityCard so Home can render
+          the exact same photo/name/status/rating/hours card (founder:
+          "เอาไปใส่หน้าทำงาน ให้มีเหมือนหน้าโปรไฟล์"). */}
+      <TherapistIdentityCard therapist={therapist} computedStatus={computedStatus} reviewCount={reviewCount} />
 
       {/* Working Status — moved back here from Home (28x.96). Firestore
           rules whitelist statusOverride + isHoliday on therapist docs, so

@@ -35,6 +35,8 @@ import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { responsiveShell } from "@/theme/breakpoints";
 import { useTherapistSelf } from "@/hooks/useTherapistSelf";
+import { useTherapistIdentityStats } from "@/hooks/useTherapistIdentityStats";
+import TherapistIdentityCard from "@/components/therapist/TherapistIdentityCard";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -105,6 +107,9 @@ const QuickTile: React.FC<QuickTileDef & { onClick: () => void }> = ({ label, su
 const TherapistHomePage: React.FC = () => {
   const navigate = useNavigate();
   const { therapist, loading } = useTherapistSelf();
+  // 🆕 28x.96 (founder: "เอาไปใส่หน้าทำงาน ให้มีเหมือนหน้าโปรไฟล์") — same
+  // identity card as Profile, same shared hook, so the two can't disagree.
+  const { reviewCount, computedStatus } = useTherapistIdentityStats(therapist);
 
   // 🆕 28x.87 — live count of her OPEN reports, for the Reports tile badge.
   const [openReportCount, setOpenReportCount] = useState(0);
@@ -207,6 +212,8 @@ const TherapistHomePage: React.FC = () => {
 
   return (
     <Box sx={{ ...responsiveShell, minHeight: "100vh", background: "var(--sr-bg)", paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))", fontFamily: SANS }}>
+      <TherapistIdentityCard therapist={therapist} computedStatus={computedStatus} reviewCount={reviewCount} />
+
       <Box sx={{ paddingX: 2, paddingTop: 2.5 }}>
         <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 1.25 }}>
           {tiles.map((tile) => (
