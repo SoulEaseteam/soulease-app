@@ -65,6 +65,20 @@ const HERO_GRADIENT = "linear-gradient(160deg, #B8567F 0%, #8A3A57 100%)";
 
 type TabKey = "today" | "completed" | "cancelled";
 
+// 🆕 Round 28x.85 — dispatch lifecycle, mirrored from AdminTonightPage.tsx's
+//   FLOW so a practitioner can advance her own job instead of only ever
+//   being moved by an admin tapping buttons on the ops screen.
+type DispatchState = "assigned" | "enroute" | "arrived" | "in_session" | "done";
+const DISPATCH_FLOW: { key: DispatchState; label: string; next: DispatchState | null; btn: string | null }[] = [
+  { key: "assigned",   label: "รับงานแล้ว",     next: "enroute",    btn: "🚗 ออกเดินทาง" },
+  { key: "enroute",    label: "กำลังเดินทาง",   next: "arrived",    btn: "📍 ถึงแล้ว" },
+  { key: "arrived",    label: "ถึงที่หมายแล้ว", next: "in_session", btn: "▶️ เริ่มนวด" },
+  { key: "in_session", label: "กำลังนวด",       next: "done",       btn: "✅ จบงาน" },
+  { key: "done",       label: "จบงานแล้ว",      next: null,         btn: null },
+];
+const dispatchStep = (s?: string) =>
+  DISPATCH_FLOW.find((f) => f.key === (s as DispatchState)) ?? DISPATCH_FLOW[0];
+
 interface Job {
   id: string;
   startAtMs: number;
@@ -80,6 +94,7 @@ interface Job {
   status?: string;
   totalPrice?: number;
   therapistResponse?: "accepted" | "declined";
+  dispatchState?: DispatchState;
 }
 
 const toMs = (v: unknown): number => {
@@ -169,6 +184,7 @@ const TherapistJobsPage: React.FC = () => {
             status: b.status as string | undefined,
             totalPrice: b.totalPrice as number | undefined,
             therapistResponse: b.therapistResponse as Job["therapistResponse"],
+            dispatchState: b.dispatchState as DispatchState | undefined,
           };
         });
         rows.sort((a, b) => b.startAtMs - a.startAtMs);
@@ -214,6 +230,25 @@ const TherapistJobsPage: React.FC = () => {
     } catch (e) {
       console.error("[jobs] respond failed", e);
       toast.error("ไม่สำเร็จ ลองใหม่อีกครั้ง");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const advanceStatus = async (jobId: string) => {
+    setBusyId(jobId);
+    try {
+      const fn = httpsCallable<
+        { bookingId: string },
+        { ok: boolean; already: boolean; dispatchState: DispatchState }
+      >(getFunctions(app, "asia-southeast1"), "advanceJobStatus");
+      const res = await fn({ bookingId: jobId });
+      if (!res.data.already) {
+        toast.success(dispatchStep(res.data.dispatchState).label);
+      }
+    } catch (e) {
+      console.error("[jobs] advance failed", e);
+      toast.error("อัปเดตไม่สำเร็จ ลองใหม่");
     } finally {
       setBusyId(null);
     }
@@ -370,7 +405,7 @@ const TherapistJobsPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, ease: "easeOut", delay: Math.min(i, 8) * 0.05 }}
             >
-              <JobCard job={j} tab={tab} busy={busyId === j.id} onRespond={respond} />
+              <JobCard job={j} tab={tab} busy={busyId === j.id} onRespond={respond} onAdvance={advanceStatus} />
             </motion.div>
           ))
         )}
@@ -389,7 +424,8 @@ const JobCard: React.FC<{
   tab: TabKey;
   busy: boolean;
   onRespond: (id: string, action: "accept" | "decline") => void;
-}> = ({ job, tab, busy, onRespond }) => {
+  onAdvance: (id: string) => void;
+}> = ({ job, tab, busy, onRespond, onAdvance }) => {
   const answered = job.therapistResponse;
   const accepted = answered === "accepted";
   // 🆕 28x.69/74 — unchanged rule, just restyled: identity + address + phone
@@ -470,6 +506,16 @@ const JobCard: React.FC<{
           ) : null}
         </Box>
 
+        {/* dispatch status stepper — only once she's accepted; before that,
+            "accept/decline" is the only decision that matters. */}
+        {tab === "today" && accepted && (
+          <DispatchStepper
+            state={job.dispatchState ?? "assigned"}
+            busy={busy}
+            onAdvance={() => onAdvance(job.id)}
+          />
+        )}
+
         {/* bottom row: total + actions */}
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
           <Box>
@@ -531,6 +577,44 @@ const JobCard: React.FC<{
           </Box>
         </Box>
       </Box>
+    </Box>
+  );
+};
+
+// ──────────────────────────────────────────────────────────────────────
+// Dispatch stepper — the practitioner's own version of AdminTonightPage's
+// FLOW buttons: current stage as a pill, one button to move to the next.
+// ──────────────────────────────────────────────────────────────────────
+const DispatchStepper: React.FC<{
+  state: DispatchState;
+  busy: boolean;
+  onAdvance: () => void;
+}> = ({ state, busy, onAdvance }) => {
+  const step = dispatchStep(state);
+  const done = state === "done";
+  return (
+    <Box
+      sx={{
+        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1,
+        p: "10px 12px", borderRadius: "12px", mb: 1.5,
+        background: done ? `${GREEN}14` : "rgba(217, 124, 149, 0.08)",
+        border: `1px solid ${done ? `${GREEN}33` : "rgba(217, 124, 149, 0.20)"}`,
+      }}
+    >
+      <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: done ? GREEN_TEXT : ROSE_DEEP }}>
+        {step.label}
+      </Typography>
+      {step.btn && (
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          disabled={busy}
+          onClick={onAdvance}
+          aria-label={step.btn}
+          style={{ height: 32, padding: "0 14px", borderRadius: 999, background: ROSE, color: "#fff", fontFamily: SANS, fontSize: 12.5, fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, opacity: busy ? 0.7 : 1 }}
+        >
+          {busy ? <CircularProgress size={12} sx={{ color: "#fff" }} /> : step.btn}
+        </motion.button>
+      )}
     </Box>
   );
 };

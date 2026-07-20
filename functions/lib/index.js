@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.createAdminLinkCode = exports.createJobChannelCode = exports.respondToJob = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.createAdminLinkCode = exports.createJobChannelCode = exports.advanceJobStatus = exports.respondToJob = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -73,7 +73,16 @@ const DISPATCH_THERAPIST_DM = false;
 //
 //   To expand: add doc IDs here and redeploy onBookingCreate. To go fully
 //   live: set DISPATCH_THERAPIST_DM = true (the allowlist then stops mattering).
-const THERAPIST_DM_PILOT = ["XingXingSunRed"];
+//
+//   🆕 Round 28x.86 (founder: linked Yuri/Vivian/Nicky's Telegram tonight,
+//   then asked to re-test dispatch on a real booking) — XingXing's pilot
+//   proved out, so the three practitioners just onboarded join the trial.
+const THERAPIST_DM_PILOT = [
+    "XingXingSunRed",
+    "YuriSunRed",
+    "VivianSunRed",
+    "NickySunRed",
+];
 /** True if this practitioner should receive job DMs right now. */
 function therapistDmEnabled(therapistId) {
     if (DISPATCH_THERAPIST_DM)
@@ -1915,22 +1924,30 @@ async function handleJobCallback(q, token) {
         });
         // ── Confirm to the practitioner, in place, buttons removed.
         await answerCallback(token, q.id, accepted ? "รับงานแล้วค่ะ" : "แจ้งแอดมินแล้วค่ะ");
+        // 🆕 28x.69 — the reveal. Accepting unmasks the full card: address, map
+        //   pin, the guest's phone. Declining reveals nothing — the point of
+        //   masking is that a job she turned down never put a guest's address
+        //   in her chat history.
+        const fullCard = formatBookingForTherapist(bookingId, snap.data(), false)
+            // Drop the two trailing prompt lines; the buttons are gone by now.
+            .split("\n")
+            .filter((l) => !l.startsWith("กดปุ่มด้านล่าง") && !l.startsWith("ถ้ากดไม่ได้"))
+            .join("\n")
+            .replace(`🔔 งานใหม่ ·`, `✅ รับงานแล้ว ·`)
+            .trimEnd();
         if (msgChatId && msgId) {
-            // 🆕 28x.69 — the reveal. Accepting swaps the masked card for the full
-            //   one: address, map pin and the guest's phone, in the same message she
-            //   is already looking at. Declining reveals nothing and leaves nothing
-            //   behind — the point of masking is that a job she turned down never
-            //   put a guest's address in her chat history.
-            const fullCard = formatBookingForTherapist(bookingId, snap.data(), false)
-                // Drop the two trailing prompt lines; the buttons are gone by now.
-                .split("\n")
-                .filter((l) => !l.startsWith("กดปุ่มด้านล่าง") && !l.startsWith("ถ้ากดไม่ได้"))
-                .join("\n")
-                .replace(`🔔 งานใหม่ ·`, `✅ รับงานแล้ว ·`)
-                .trimEnd();
+            // 🆕 Round 28x.87 (founder: "ถ้ารับงาน ให้ส่งคำสั่งใบออเดอร์เต็มซ้ำไปที่
+            //   ยูริ") — editing the original masked card in place is easy to scroll
+            //   past; the practitioner may not notice it changed. Close out the
+            //   original card with a short line, then send the full unmasked card
+            //   as a NEW message below so it lands as its own notification and
+            //   stays easy to find/reference while she's en route.
             await editTelegramMessage(token, msgChatId, msgId, accepted
-                ? `${fullCard}\n\nแอดมินเห็นแล้วว่าคุณรับงานนี้ เดินทางได้เลยค่ะ`
-                : `❌ ไม่รับงาน\n\nแจ้งแอดมินเรียบร้อยแล้ว จะจ่ายงานให้คนอื่นต่อค่ะ`);
+                ? "✅ รับงานแล้ว · รายละเอียดเต็มอยู่ข้อความถัดไปค่ะ"
+                : "❌ ไม่รับงาน\n\nแจ้งแอดมินเรียบร้อยแล้ว จะจ่ายงานให้คนอื่นต่อค่ะ");
+        }
+        if (accepted && msgChatId) {
+            await sendTelegramIfEnabled(token, String(msgChatId), `${fullCard}\n\nแอดมินเห็นแล้วว่าคุณรับงานนี้ เดินทางได้เลยค่ะ`);
         }
         // ── Tell the admin group either way. An accept is reassurance; a decline
         //    is the one that needs someone to act, so it says so loudly.
@@ -2600,6 +2617,73 @@ exports.respondToJob = (0, https_1.onCall)({ region: "asia-southeast1" }, async 
     }
     v2_1.logger.info("[respondToJob] recorded", { bookingId, action, uid });
     return { ok: true, already: false, response: accepted ? "accepted" : "declined" };
+});
+const DISPATCH_NEXT = {
+    assigned: "enroute",
+    enroute: "arrived",
+    arrived: "in_session",
+    in_session: "done",
+    done: null,
+};
+const DISPATCH_LABEL = {
+    assigned: "รับงานแล้ว",
+    enroute: "กำลังเดินทาง",
+    arrived: "ถึงที่หมายแล้ว",
+    in_session: "เริ่มบริการแล้ว",
+    done: "จบงานแล้ว",
+};
+exports.advanceJobStatus = (0, https_1.onCall)({ region: "asia-southeast1", secrets: [TELEGRAM_BOT_TOKEN] }, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Sign in required.");
+    }
+    const uid = request.auth.uid;
+    const data = request.data;
+    const bookingId = String(data?.bookingId ?? "").trim();
+    if (!bookingId) {
+        throw new https_1.HttpsError("invalid-argument", "bookingId required.");
+    }
+    const db = (0, firestore_2.getFirestore)();
+    const ref = db.collection("bookings").doc(bookingId);
+    const snap = await ref.get();
+    if (!snap.exists) {
+        throw new https_1.HttpsError("not-found", "Booking not found.");
+    }
+    const b = snap.data();
+    if (b.therapistUid !== uid) {
+        throw new https_1.HttpsError("permission-denied", "This job isn't assigned to you.");
+    }
+    if (b.therapistResponse !== "accepted") {
+        throw new https_1.HttpsError("failed-precondition", "Accept the job before updating status.");
+    }
+    if (b.status === "cancelled" || b.status === "canceled") {
+        throw new https_1.HttpsError("failed-precondition", "This job was cancelled.");
+    }
+    const current = b.dispatchState ?? "assigned";
+    const next = DISPATCH_NEXT[current];
+    if (!next) {
+        return { ok: true, already: true, dispatchState: current };
+    }
+    const patch = {
+        dispatchState: next,
+        [`${next}At`]: firestore_2.FieldValue.serverTimestamp(),
+    };
+    if (next === "in_session") {
+        const mins = b.duration ?? 60;
+        patch.expectedEndAt = firestore_2.Timestamp.fromMillis(Date.now() + mins * 60000);
+    }
+    if (next === "done") {
+        patch.status = "completed";
+        patch.sessionEndAt = firestore_2.FieldValue.serverTimestamp();
+    }
+    await ref.update(patch);
+    const token = TELEGRAM_BOT_TOKEN.value();
+    if (token) {
+        const who = b.therapistName ?? "หมอนวด";
+        const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
+        await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, `📍 ${who} · ${DISPATCH_LABEL[next]} (จากแอป) · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}`);
+    }
+    v2_1.logger.info("[advanceJobStatus] recorded", { bookingId, next, uid });
+    return { ok: true, already: false, dispatchState: next };
 });
 exports.createJobChannelCode = (0, https_1.onCall)({ region: "asia-southeast1" }, async (request) => {
     if (!request.auth) {

@@ -51,7 +51,16 @@ const DISPATCH_THERAPIST_DM = false;
 //
 //   To expand: add doc IDs here and redeploy onBookingCreate. To go fully
 //   live: set DISPATCH_THERAPIST_DM = true (the allowlist then stops mattering).
-const THERAPIST_DM_PILOT: string[] = ["XingXingSunRed"];
+//
+//   🆕 Round 28x.86 (founder: linked Yuri/Vivian/Nicky's Telegram tonight,
+//   then asked to re-test dispatch on a real booking) — XingXing's pilot
+//   proved out, so the three practitioners just onboarded join the trial.
+const THERAPIST_DM_PILOT: string[] = [
+  "XingXingSunRed",
+  "YuriSunRed",
+  "VivianSunRed",
+  "NickySunRed",
+];
 
 /** True if this practitioner should receive job DMs right now. */
 function therapistDmEnabled(therapistId: string | undefined): boolean {
@@ -2357,34 +2366,45 @@ async function handleJobCallback(
       q.id,
       accepted ? "รับงานแล้วค่ะ" : "แจ้งแอดมินแล้วค่ะ"
     );
-    if (msgChatId && msgId) {
-      // 🆕 28x.69 — the reveal. Accepting swaps the masked card for the full
-      //   one: address, map pin and the guest's phone, in the same message she
-      //   is already looking at. Declining reveals nothing and leaves nothing
-      //   behind — the point of masking is that a job she turned down never
-      //   put a guest's address in her chat history.
-      const fullCard = formatBookingForTherapist(
-        bookingId,
-        snap.data() as BookingDocLite,
-        false
+    // 🆕 28x.69 — the reveal. Accepting unmasks the full card: address, map
+    //   pin, the guest's phone. Declining reveals nothing — the point of
+    //   masking is that a job she turned down never put a guest's address
+    //   in her chat history.
+    const fullCard = formatBookingForTherapist(
+      bookingId,
+      snap.data() as BookingDocLite,
+      false
+    )
+      // Drop the two trailing prompt lines; the buttons are gone by now.
+      .split("\n")
+      .filter(
+        (l) => !l.startsWith("กดปุ่มด้านล่าง") && !l.startsWith("ถ้ากดไม่ได้")
       )
-        // Drop the two trailing prompt lines; the buttons are gone by now.
-        .split("\n")
-        .filter(
-          (l) =>
-            !l.startsWith("กดปุ่มด้านล่าง") && !l.startsWith("ถ้ากดไม่ได้")
-        )
-        .join("\n")
-        .replace(`🔔 งานใหม่ ·`, `✅ รับงานแล้ว ·`)
-        .trimEnd();
+      .join("\n")
+      .replace(`🔔 งานใหม่ ·`, `✅ รับงานแล้ว ·`)
+      .trimEnd();
 
+    if (msgChatId && msgId) {
+      // 🆕 Round 28x.87 (founder: "ถ้ารับงาน ให้ส่งคำสั่งใบออเดอร์เต็มซ้ำไปที่
+      //   ยูริ") — editing the original masked card in place is easy to scroll
+      //   past; the practitioner may not notice it changed. Close out the
+      //   original card with a short line, then send the full unmasked card
+      //   as a NEW message below so it lands as its own notification and
+      //   stays easy to find/reference while she's en route.
       await editTelegramMessage(
         token,
         msgChatId,
         msgId,
         accepted
-          ? `${fullCard}\n\nแอดมินเห็นแล้วว่าคุณรับงานนี้ เดินทางได้เลยค่ะ`
-          : `❌ ไม่รับงาน\n\nแจ้งแอดมินเรียบร้อยแล้ว จะจ่ายงานให้คนอื่นต่อค่ะ`
+          ? "✅ รับงานแล้ว · รายละเอียดเต็มอยู่ข้อความถัดไปค่ะ"
+          : "❌ ไม่รับงาน\n\nแจ้งแอดมินเรียบร้อยแล้ว จะจ่ายงานให้คนอื่นต่อค่ะ"
+      );
+    }
+    if (accepted && msgChatId) {
+      await sendTelegramIfEnabled(
+        token,
+        String(msgChatId),
+        `${fullCard}\n\nแอดมินเห็นแล้วว่าคุณรับงานนี้ เดินทางได้เลยค่ะ`
       );
     }
 
@@ -3206,6 +3226,104 @@ export const respondToJob = onCall(
 
     logger.info("[respondToJob] recorded", { bookingId, action, uid });
     return { ok: true, already: false, response: accepted ? "accepted" : "declined" };
+  }
+);
+
+// 🆕 Round 28x.85 (founder gap table: "แจ้ง ออกเดินทาง/ถึงแล้ว/จบงาน — กฎเปิด
+//   ทางไว้แล้ว แต่ไม่มีหน้าจอ") — let a practitioner advance her OWN job
+//   through the same assigned → enroute → arrived → in_session → done
+//   lifecycle AdminTonightPage.tsx already drives. Mirrors respondToJob's
+//   shape exactly, for the same reason: therapistBookingEditableKeys() in
+//   firestore.rules doesn't (and shouldn't) include dispatchState, so this
+//   stays a callable rather than a widened client write.
+type DispatchState = "assigned" | "enroute" | "arrived" | "in_session" | "done";
+const DISPATCH_NEXT: Record<DispatchState, DispatchState | null> = {
+  assigned: "enroute",
+  enroute: "arrived",
+  arrived: "in_session",
+  in_session: "done",
+  done: null,
+};
+const DISPATCH_LABEL: Record<DispatchState, string> = {
+  assigned: "รับงานแล้ว",
+  enroute: "กำลังเดินทาง",
+  arrived: "ถึงที่หมายแล้ว",
+  in_session: "เริ่มบริการแล้ว",
+  done: "จบงานแล้ว",
+};
+export const advanceJobStatus = onCall(
+  { region: "asia-southeast1", secrets: [TELEGRAM_BOT_TOKEN] },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in required.");
+    }
+    const uid = request.auth.uid;
+    const data = request.data as { bookingId?: string } | undefined;
+    const bookingId = String(data?.bookingId ?? "").trim();
+    if (!bookingId) {
+      throw new HttpsError("invalid-argument", "bookingId required.");
+    }
+
+    const db = getFirestore();
+    const ref = db.collection("bookings").doc(bookingId);
+    const snap = await ref.get();
+    if (!snap.exists) {
+      throw new HttpsError("not-found", "Booking not found.");
+    }
+    const b = snap.data() as {
+      therapistUid?: string;
+      therapistName?: string;
+      therapistResponse?: string;
+      dispatchState?: DispatchState;
+      status?: string;
+      duration?: number;
+      date?: string;
+      time?: string;
+    };
+
+    if (b.therapistUid !== uid) {
+      throw new HttpsError("permission-denied", "This job isn't assigned to you.");
+    }
+    if (b.therapistResponse !== "accepted") {
+      throw new HttpsError("failed-precondition", "Accept the job before updating status.");
+    }
+    if (b.status === "cancelled" || b.status === "canceled") {
+      throw new HttpsError("failed-precondition", "This job was cancelled.");
+    }
+
+    const current: DispatchState = b.dispatchState ?? "assigned";
+    const next = DISPATCH_NEXT[current];
+    if (!next) {
+      return { ok: true, already: true, dispatchState: current };
+    }
+
+    const patch: Record<string, unknown> = {
+      dispatchState: next,
+      [`${next}At`]: FieldValue.serverTimestamp(),
+    };
+    if (next === "in_session") {
+      const mins = b.duration ?? 60;
+      patch.expectedEndAt = Timestamp.fromMillis(Date.now() + mins * 60_000);
+    }
+    if (next === "done") {
+      patch.status = "completed";
+      patch.sessionEndAt = FieldValue.serverTimestamp();
+    }
+    await ref.update(patch);
+
+    const token = TELEGRAM_BOT_TOKEN.value();
+    if (token) {
+      const who = b.therapistName ?? "หมอนวด";
+      const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
+      await sendTelegramIfEnabled(
+        token,
+        TELEGRAM_CHAT_ID,
+        `📍 ${who} · ${DISPATCH_LABEL[next]} (จากแอป) · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}`
+      );
+    }
+
+    logger.info("[advanceJobStatus] recorded", { bookingId, next, uid });
+    return { ok: true, already: false, dispatchState: next };
   }
 );
 
