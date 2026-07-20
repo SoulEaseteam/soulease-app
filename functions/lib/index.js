@@ -653,6 +653,20 @@ function coarseArea(b) {
     }
     return "กรุงเทพฯ";
 }
+const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/** "2026-07-20" → "20 Jul". Falls back to the raw string on anything unexpected. */
+function shortDate(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso ?? "");
+    if (!m)
+        return iso ?? "—";
+    const month = MONTH_ABBR[parseInt(m[2], 10) - 1] ?? m[2];
+    return `${parseInt(m[3], 10)} ${month}`;
+}
+// 🆕 Round 28x.90 (founder, drafting off her own screenshots of this exact
+//   flow) — rebuilt to mirror formatBookingForAdmin's field set once she has
+//   accepted (Meeting point and Note existed for admin but never reached the
+//   practitioner even after taking the job), and to pack price/duration/
+//   payment onto one line pre-accept, CBODY-style, instead of three.
 const formatBookingForTherapist = (bookingId, b, 
 // 🆕 28x.69 — masked until she accepts. Before that a practitioner needs
 //   enough to decide (what, when, roughly where, how much) and nothing more.
@@ -661,59 +675,59 @@ const formatBookingForTherapist = (bookingId, b,
 //   guest's address sitting in a stranger's chat history forever.
 masked = false) => {
     const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
-    const mapLink = b.mapUrl
-        ? `🗺 Map: ${b.mapUrl}`
-        : b.address
-            ? `🗺 Map: https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.address)}`
-            : "";
-    // 🆕 Round 28x.63 (founder: "ขอภาษาไทยได้ไหม พนักงานบางคนอ่านไม่ออก") — the
-    //   practitioners are Thai, and this is the message they read at 2am on the
-    //   way to a stranger's hotel. English was the wrong default for the one
-    //   message where misreading the address or the time actually costs something.
-    //
-    //   Also removed here: "Reply ACCEPT or DECLINE within 5 min." The webhook
-    //   ignores all free-form text (it only handles /commands), so a practitioner
-    //   who replied ACCEPT got silence — while reasonably believing she had taken
-    //   the job. Promising an action the system doesn't implement is worse than
-    //   not offering it. The real workflow is View dispatching by hand, so the
-    //   message now says that. If ACCEPT/DECLINE is wanted for real it needs the
-    //   webhook to handle replies and write dispatchState — a separate round.
-    const money = typeof b.totalPrice === "number"
-        ? `💰 รวม ${Math.round(b.totalPrice).toLocaleString()} ฿`
-        : "";
-    const lines = masked
-        ? [
+    const divider = "━━━━━━━━━━";
+    if (masked) {
+        const priceLine = `Duration: ${(b.servicePrice ?? 0).toLocaleString()}/${b.duration ?? "?"} min | ${(b.payment ?? "cash").toLowerCase()}`;
+        return [
             `🔔 งานใหม่ · ${refCode}`,
             "",
-            `🧖 ${b.serviceName ?? "—"} · ${b.duration ?? "?"} นาที`,
-            `📅 ${b.date ?? "—"}  🕐 ${b.time ?? "—"}`,
-            `📍 โซน: ${coarseArea(b)}`,
-            money,
-            `🌐 ภาษาลูกค้า: ${(b.language ?? "—").toUpperCase()}`,
+            `Therapist: ${b.therapistName ?? "—"}`,
+            `📅 ${shortDate(b.date)}  ⏰ ${b.time ?? "—"}`,
+            divider,
+            // 🆕 28x.69 — coarse district only (see coarseArea below), NOT the road/
+            //   soi — a fragment that specific is most of the way to the real address.
+            `📍 โซนทำงาน  ${coarseArea(b)}`,
             "",
+            `Service: ${b.serviceName ?? "—"}`,
+            priceLine,
+            `🚖 Taxi: ${(b.taxiFee ?? 0).toLocaleString()} ฿`,
+            divider,
             `กดปุ่มด้านล่างเพื่อตอบรับงานค่ะ · ตอบภายใน 5 นาที`,
             `📍 ที่อยู่เต็ม แผนที่ และเบอร์ลูกค้า`,
             `จะแสดงหลังกดรับงานค่ะ`,
-        ].filter((l) => l.length > 0)
-        : [
-            `🔔 งานใหม่ · ${refCode}`,
-            "",
-            `🧖 ${b.serviceName ?? "—"} · ${b.duration ?? "?"} นาที`,
-            `📅 ${b.date ?? "—"}  🕐 ${b.time ?? "—"}`,
-            `📍 ${b.address ?? "—"}`,
-            mapLink ? mapLink.replace("🗺 Map:", "🗺 แผนที่:") : "",
-            `📞 เบอร์ลูกค้า: ${b.phone ?? "—"}`,
-            `🌐 ภาษาลูกค้า: ${(b.language ?? "—").toUpperCase()}`,
-            money,
-            "",
-            // 🆕 28x.64 — replaces the 28x.63 line saying the bot can't be replied to.
-            //   That was true then and is false now; leaving it would tell her to
-            //   ignore the very buttons below it.
-            `กดปุ่มด้านล่างเพื่อตอบรับงานค่ะ · ตอบภายใน 5 นาที`,
-            `ถ้ากดไม่ได้ ติดต่อแอดมินตามปกติ`,
-        ].filter((l) => l.length > 0);
-    return lines.join("\n");
+        ].join("\n");
+    }
+    const place = b.locationName?.trim() || b.address?.trim() || "—";
+    return [
+        `✅ รับงานแล้ว · ${refCode}`,
+        divider,
+        `Therapist: ${b.therapistName ?? "—"}`,
+        `Time: ${b.time ?? "—"}`,
+        divider,
+        `📍 Address: ${place}`,
+        b.meetingPoint?.trim() ? `Meeting: 👉🏻 ${b.meetingPoint.trim()}` : null,
+        "",
+        `Service: ${b.serviceName ?? "—"}`,
+        `Duration: ${b.duration ?? "?"} min`,
+        `Price: ${(b.servicePrice ?? 0).toLocaleString()} ฿`,
+        "",
+        `🚖 Taxi: ${(b.taxiFee ?? 0).toLocaleString()} ฿`,
+        `💳 Payment: ${b.payment ?? "Cash"}`,
+        `💰 Total: ${(b.totalPrice ?? 0).toLocaleString()} ฿`,
+        "",
+        `📞 Phone: ${b.phone ?? "—"}`,
+        `👤 Name: ${b.contactName ?? "—"}`,
+        `Note: ${b.note?.trim() ? b.note.trim() : "-"}`,
+    ]
+        .filter((l) => l !== null)
+        .join("\n");
 };
+/** Resolves the same place/mapUrl formatBookingForAdmin uses, for the map button. */
+function therapistMapUrl(b) {
+    const place = b.locationName?.trim() || b.address?.trim() || "";
+    return (b.mapUrl?.trim() ||
+        (place ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place)}` : ""));
+}
 /** 🆕 28x.64 — the ACCEPT/DECLINE keyboard for a specific job. */
 const jobKeyboard = (bookingId) => [
     [
@@ -1815,12 +1829,11 @@ async function handleOpenJobClaim(q, bookingId, token) {
     // Full details go to the winner alone.
     const fresh = await ref.get();
     const full = fresh.data();
-    await sendTelegramIfEnabled(token, String(pressedBy), `${formatBookingForTherapist(bookingId, full, false)
-        .split("\n")
-        .filter((l) => !l.startsWith("กดปุ่มด้านล่าง") && !l.startsWith("ถ้ากดไม่ได้"))
-        .join("\n")
-        .replace("🔔 งานใหม่ ·", "✅ รับงานแล้ว ·")
-        .trimEnd()}\n\nแอดมินเห็นแล้วว่าคุณรับงานนี้ เดินทางได้เลยค่ะ`);
+    const claimMapUrl = therapistMapUrl(full);
+    await sendTelegramIfEnabled(token, String(pressedBy), `${formatBookingForTherapist(bookingId, full, false)}\n\nแอดมินเห็นแล้วว่าคุณรับงานนี้ เดินทางได้เลยค่ะ`, [
+        [{ text: "📱 เปิดหน้างานของฉัน · แจ้งสถานะที่นี่", url: "https://sunred.vip/therapist/jobs" }],
+        ...(claimMapUrl ? [[{ text: "📍 เปิดแผนที่", url: claimMapUrl }]] : []),
+    ]);
     await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, `🙋 ${who} รับงานจากช่องงานแล้ว · SR-${bookingId.slice(0, 8).toUpperCase()} · ${full.date ?? ""} ${full.time ?? ""}`);
     await db.collection("telegramLogs").add({
         bookingId,
@@ -1928,13 +1941,9 @@ async function handleJobCallback(q, token) {
         //   pin, the guest's phone. Declining reveals nothing — the point of
         //   masking is that a job she turned down never put a guest's address
         //   in her chat history.
-        const fullCard = formatBookingForTherapist(bookingId, snap.data(), false)
-            // Drop the two trailing prompt lines; the buttons are gone by now.
-            .split("\n")
-            .filter((l) => !l.startsWith("กดปุ่มด้านล่าง") && !l.startsWith("ถ้ากดไม่ได้"))
-            .join("\n")
-            .replace(`🔔 งานใหม่ ·`, `✅ รับงานแล้ว ·`)
-            .trimEnd();
+        const freshBooking = snap.data();
+        const fullCard = formatBookingForTherapist(bookingId, freshBooking, false);
+        const acceptMapUrl = therapistMapUrl(freshBooking);
         if (msgChatId && msgId) {
             // 🆕 Round 28x.87 (founder: "ถ้ารับงาน ให้ส่งคำสั่งใบออเดอร์เต็มซ้ำไปที่
             //   ยูริ") — editing the original masked card in place is easy to scroll
@@ -1954,7 +1963,10 @@ async function handleJobCallback(q, token) {
             //   effectively unreachable for anyone who lives in the Telegram chat.
             //   One tap here opens it — she's already signed in from her staff
             //   login, so the browser session carries over.
-            await sendTelegramIfEnabled(token, String(msgChatId), `${fullCard}\n\nแอดมินเห็นแล้วว่าคุณรับงานนี้ เดินทางได้เลยค่ะ`, [[{ text: "📱 เปิดหน้างานของฉัน · แจ้งสถานะที่นี่", url: "https://sunred.vip/therapist/jobs" }]]);
+            await sendTelegramIfEnabled(token, String(msgChatId), `${fullCard}\n\nแอดมินเห็นแล้วว่าคุณรับงานนี้ เดินทางได้เลยค่ะ`, [
+                [{ text: "📱 เปิดหน้างานของฉัน · แจ้งสถานะที่นี่", url: "https://sunred.vip/therapist/jobs" }],
+                ...(acceptMapUrl ? [[{ text: "📍 เปิดแผนที่", url: acceptMapUrl }]] : []),
+            ]);
         }
         // ── Tell the admin group either way. An accept is reassurance; a decline
         //    is the one that needs someone to act, so it says so loudly.
