@@ -148,6 +148,35 @@ const ActivationGate: React.FC<{ onSignOut: () => void }> = ({ onSignOut }) => (
 
       <Box sx={{ width: "1px", my: 1.75, background: "var(--sr-hairline)" }} />
 
+      {/* 🆕 Round 28x.99 (founder: "บัญชียังไม่เปิดใช้งาน เพิ่ม Telegram") —
+          @SunRed24hBot is the same bot she just linked to get here, so this
+          is a channel she's already inside rather than a new one to add. */}
+      <Box
+        component="a"
+        href="https://t.me/SunRed24hBot"
+        target="_blank"
+        rel="noopener"
+        aria-label="ทัก Telegram แอดมิน"
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 0.7,
+          py: 2,
+          textDecoration: "none",
+          transition: "background 0.15s ease",
+          "&:active": { background: "var(--sr-panel-2)" },
+        }}
+      >
+        <Box component="img" src="/images/profli/telegram.png" alt="" width={28} height={28} sx={{ width: 28, height: 28, objectFit: "contain" }} />
+        <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: "var(--sr-ink)" }}>
+          Telegram
+        </Typography>
+      </Box>
+
+      <Box sx={{ width: "1px", my: 1.75, background: "var(--sr-hairline)" }} />
+
       <Box
         component="a"
         href={CONCIERGE.lineUrl}
