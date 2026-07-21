@@ -47,9 +47,18 @@ const ROSE = "#E0708F";
 // 🆕 Round 28x.107 (founder: "กดแล้วเด้งมาหน้าทางเข้าลูกค้า ไม่ใช่พนักงาน") —
 //   the first version navigated in-app, which swapped the ENTIRE staff shell
 //   for the customer one (its own nav, its own Profile page) — confusing,
-//   and she has to find her way back. This one tab (`value === "/"`) opens
-//   in a NEW tab instead (see the render below) — she never actually leaves
-//   the staff app.
+//   and she has to find her way back. Tried `window.open(url, "_blank")` —
+//   verified LIVE that a script-triggered popup does not reliably open a
+//   real new tab (this preview's own browser coerced it back into the same
+//   tab); tried a real `<a target="_blank">` next — same result, verified
+//   live again. Both are genuine "should usually work" browser behaviors
+//   that are too unreliable to bet a founder-visible fix on a third time.
+//
+// 🆕 Round 28x.108 — settled on an in-app overlay instead: tapping
+//   "Practitioners" opens a full-screen modal with the live public site in
+//   an iframe (see `practitionerPreviewOpen` state below), never navigating
+//   the staff shell away at all. Zero dependency on any browser's popup/
+//   new-tab policy — the URL bar never even changes.
 const TABS = [
   { label: "Practitioners", value: "/", icon: Heart },
   { label: "หน้าทำงาน", value: "/therapist/home", icon: SquaresFour },
@@ -225,6 +234,7 @@ const StaffLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const activation = useStaffActivation();
+  const [practitionerPreviewOpen, setPractitionerPreviewOpen] = useState(false);
 
   const currentTab = location.pathname.startsWith("/therapist/jobs")
     ? "/therapist/jobs"
@@ -315,15 +325,10 @@ const StaffLayout: React.FC = () => {
         }}
       >
         {TABS.map((tab) => {
-          const active = currentTab === tab.value;
+          // "Practitioners" isn't a route match — its whole job is to open
+          // the preview overlay, never to become the active tab.
+          const active = tab.value !== "/" && currentTab === tab.value;
           const Icon = tab.icon;
-          // 🆕 Round 28x.107 (founder: "กดแล้วเด้งมาหน้าทางเข้าลูกค้า ไม่ใช่
-          //   พนักงาน") — navigating in-app to "/" replaced the ENTIRE staff
-          //   shell with the customer experience (its own nav, its own
-          //   Profile page) — she loses the staff app in the same tab, has
-          //   to find her way back. Opening it in a new tab instead means
-          //   she never actually leaves the staff app; the public site is
-          //   just something she can glance at alongside it.
           const isExternalPeek = tab.value === "/";
           return (
             <Box
@@ -331,7 +336,7 @@ const StaffLayout: React.FC = () => {
               component="button"
               type="button"
               onClick={() => {
-                if (isExternalPeek) window.open("/", "_blank", "noopener");
+                if (isExternalPeek) setPractitionerPreviewOpen(true);
                 else void navigate(tab.value);
               }}
               sx={{
@@ -358,6 +363,52 @@ const StaffLayout: React.FC = () => {
           );
         })}
       </Box>
+
+      {/* 🆕 Round 28x.108 — Practitioners preview: the live public site in an
+          iframe, overlaid on top of the staff app. Never navigates the
+          staff shell away — closing it just unmounts the overlay, she's
+          exactly where she left off underneath. */}
+      {practitionerPreviewOpen && (
+        <Box
+          sx={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 300,
+            background: "var(--sr-bg)",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              px: 2,
+              py: 1.5,
+              background: "var(--sr-panel)",
+              borderBottom: "1px solid var(--sr-hairline)",
+              flexShrink: 0,
+            }}
+          >
+            <Typography sx={{ fontFamily: SERIF, fontSize: 16, fontWeight: 700, color: "var(--sr-ink)" }}>
+              Practitioners · หน้าเว็บลูกค้า
+            </Typography>
+            <Button
+              onClick={() => setPractitionerPreviewOpen(false)}
+              sx={{ minWidth: 0, px: 1.5, py: 0.5, borderRadius: 999, textTransform: "none", fontWeight: 700, fontSize: 13, background: "linear-gradient(135deg, #E0708F, #C2185B)", color: "#fff" }}
+            >
+              ปิด
+            </Button>
+          </Box>
+          <Box
+            component="iframe"
+            src="/"
+            title="Practitioners preview"
+            sx={{ flex: 1, border: "none", width: "100%" }}
+          />
+        </Box>
+      )}
 
       {/* Spacer so content doesn't sit under the fixed bottom bar. */}
       <Box sx={{ height: "calc(64px + env(safe-area-inset-bottom, 0px))" }} />
