@@ -263,9 +263,9 @@ const TherapistJobsPage: React.FC = () => {
       <Box
         sx={{
           background: HERO_GRADIENT,
-          pt: "env(safe-area-inset-top, 16px)",
-          pb: 3.5,
-          px: 2.5,
+          pt: "env(safe-area-inset-top, 14px)",
+          pb: 2.5,
+          px: 2.25,
           position: "relative",
           overflow: "hidden",
           "&::after": {
@@ -289,35 +289,35 @@ const TherapistJobsPage: React.FC = () => {
           aria-label="Go back"
           sx={{
             display: "flex", alignItems: "center", justifyContent: "center",
-            width: 36, height: 36, borderRadius: "50%",
+            width: 32, height: 32, borderRadius: "50%",
             background: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.22)",
-            color: "#fff", cursor: "pointer", mb: 2.5, p: 0,
+            color: "#fff", cursor: "pointer", mb: 2, p: 0,
           }}
         >
-          <ArrowLeft size={18} weight="bold" />
+          <ArrowLeft size={17} weight="bold" />
         </Box>
 
         <motion.div {...fadeUp(0)}>
-          <Typography sx={{ fontFamily: SERIF, fontSize: 26, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+          <Typography sx={{ fontFamily: SERIF, fontSize: 23, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
             งานของฉัน
           </Typography>
-          <Typography sx={{ fontFamily: SANS, fontSize: 13, color: "rgba(255,255,255,0.72)", mt: 0.5 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: "rgba(255,255,255,0.72)", mt: 0.4 }}>
             {counts.today > 0 ? `${counts.today} งานวันนี้` : "ไม่มีงานวันนี้"}
           </Typography>
         </motion.div>
 
         <motion.div {...fadeUp(0.08)}>
-          <Box sx={{ display: "flex", gap: 1, mt: 2.5, p: 1.5, borderRadius: "16px", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.16)" }}>
+          <Box sx={{ display: "flex", gap: 1, mt: 2, p: 1.25, borderRadius: "14px", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.16)" }}>
             {[
               { value: counts.today, label: "Today" },
               { value: counts.completed, label: "Completed" },
               { value: counts.cancelled, label: "Cancelled" },
             ].map((s, i) => (
               <Box key={i} sx={{ flex: 1, textAlign: "center", borderRight: i < 2 ? "1px solid rgba(255,255,255,0.16)" : "none" }}>
-                <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1 }}>
+                <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: "#fff", lineHeight: 1 }}>
                   {s.value}
                 </Typography>
-                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "rgba(255,255,255,0.70)", mt: 0.4, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 10, color: "rgba(255,255,255,0.70)", mt: 0.35, letterSpacing: "0.06em", textTransform: "uppercase" }}>
                   {s.label}
                 </Typography>
               </Box>
@@ -328,7 +328,7 @@ const TherapistJobsPage: React.FC = () => {
 
       {/* ── Sliding pill tab switcher — same geometry + spring as the
           reference page. ─────────────────────────────────────────────── */}
-      <Box sx={{ px: 2, pt: 2.5, pb: 0 }}>
+      <Box sx={{ px: 2, pt: 2, pb: 0 }}>
         <motion.div {...fadeUp(0.12)}>
           <Box
             ref={trackRef}
@@ -354,7 +354,7 @@ const TherapistJobsPage: React.FC = () => {
                   role="tab"
                   aria-selected={active}
                   aria-label={t.label}
-                  style={{ flex: 1, position: "relative", zIndex: 1, background: "none", border: "none", cursor: "pointer", padding: "10px 4px", display: "flex", flexDirection: "column", alignItems: "center", gap: 1, WebkitTapHighlightColor: "transparent" }}
+                  style={{ flex: 1, position: "relative", zIndex: 1, background: "none", border: "none", outline: "none", cursor: "pointer", padding: "9px 4px", display: "flex", flexDirection: "column", alignItems: "center", gap: 1, WebkitTapHighlightColor: "transparent" }}
                 >
                   <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, letterSpacing: "0.03em", color: active ? "#fff" : "var(--sr-muted)", lineHeight: 1, transition: "color 0.15s ease" }}>
                     {t.label}
@@ -435,6 +435,13 @@ const JobCard: React.FC<{
   // never leave a guest's contact details on her screen.
   const revealed = accepted;
 
+  // 🆕 Round 28x.105 (founder: "เปลี่ยนชื่อลูกค้าเป็น Booking ID") — the
+  // guest's real name used to show here once she accepted; a reference
+  // code identifies the same job without keeping a stranger's name sitting
+  // on her phone screen after the fact. Same "SR-XXXXXXXX" format the
+  // Telegram dispatch card already uses (formatBookingForTherapist).
+  const refCode = `SR-${job.id.slice(0, 8).toUpperCase()}`;
+
   const mapHref =
     job.mapUrl ||
     (job.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}` : null);
@@ -456,19 +463,19 @@ const JobCard: React.FC<{
     <Box sx={{ borderRadius: "20px", background: "var(--sr-panel)", border: "1px solid var(--sr-hairline)", boxShadow: "var(--sr-card-shadow)", overflow: "hidden" }}>
       <Box sx={{ height: 3, background: stripeColor }} />
 
-      <Box sx={{ p: "14px 16px" }}>
+      <Box sx={{ p: "12px 14px" }}>
         {/* top row: guest identity (masked until accepted) + status pill */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
-          <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: ROSE, p: "2px", flexShrink: 0, boxShadow: "0 4px 12px rgba(194, 24, 91, 0.20)" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 1.25 }}>
+          <Box sx={{ width: 42, height: 42, borderRadius: "50%", background: ROSE, p: "2px", flexShrink: 0, boxShadow: "0 4px 12px rgba(194, 24, 91, 0.20)" }}>
             <Avatar sx={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #F0A8BE, #E0708F)", color: "#fff" }}>
-              {revealed && job.contactName ? job.contactName[0].toUpperCase() : <UserCircle size={22} weight="fill" />}
+              <UserCircle size={21} weight="fill" />
             </Avatar>
           </Box>
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: "var(--sr-ink)", lineHeight: 1.2 }}>
-              {revealed ? job.contactName || "ลูกค้า" : "ลูกค้าใหม่"}
+            <Typography sx={{ fontFamily: SERIF, fontSize: 14.5, fontWeight: 700, color: "var(--sr-ink)", lineHeight: 1.2 }}>
+              {revealed ? refCode : "ลูกค้าใหม่"}
             </Typography>
-            <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "var(--sr-muted)", mt: 0.15 }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "var(--sr-muted)", mt: 0.15 }}>
               {job.date || "—"} · {job.time || "—"}
             </Typography>
           </Box>
@@ -482,19 +489,23 @@ const JobCard: React.FC<{
         </Box>
 
         {/* service + date + location — the booking-slip body */}
-        <Box sx={{ p: "10px 12px", borderRadius: "12px", background: "var(--sr-panel-2)", display: "flex", flexDirection: "column", gap: 0.6, mb: 1.5 }}>
-          <Typography sx={{ fontFamily: SERIF, fontSize: 14, fontWeight: 600, color: "var(--sr-ink)", lineHeight: 1.3 }}>
+        <Box sx={{ p: "10px 12px", borderRadius: "12px", background: "var(--sr-panel-2)", display: "flex", flexDirection: "column", gap: 0.5, mb: 1.25 }}>
+          <Typography sx={{ fontFamily: SERIF, fontSize: 13.5, fontWeight: 600, color: "var(--sr-ink)", lineHeight: 1.3 }}>
             {job.serviceName || "—"}
             {job.duration && (
-              <Box component="span" sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 500, color: "var(--sr-muted)", ml: 1 }}>
+              <Box component="span" sx={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 500, color: "var(--sr-muted)", ml: 1 }}>
                 · {job.duration} นาที
               </Box>
             )}
           </Typography>
           {revealed ? (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <MapPin size={12} color="var(--sr-muted)" />
-              <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "var(--sr-body)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            // 🆕 Round 28x.105 (founder: "ดูออเดอได้ทั้งหมด") — was
+            // single-line ellipsis, silently cutting off longer addresses
+            // (proven by her own screenshot). Now wraps in full instead of
+            // truncating — the whole address is always visible.
+            <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5 }}>
+              <MapPin size={12} color="var(--sr-muted)" style={{ marginTop: 2, flexShrink: 0 }} />
+              <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "var(--sr-body)", lineHeight: 1.35 }}>
                 {job.locationName || job.address || "—"}
               </Typography>
             </Box>

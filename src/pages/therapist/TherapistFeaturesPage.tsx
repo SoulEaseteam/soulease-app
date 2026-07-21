@@ -1,19 +1,59 @@
 // src/pages/therapist/TherapistFeaturesPage.tsx
 //
 // 🆕 Round 28x.96 (founder Home quick-menu: "Features · ลักษณะเฉพาะตัว") —
-// self-service edit for `features` on her own therapist doc. Reuses
-// FeaturesEditor from therapistFormKit — same field set + labels as the
-// admin Add/Edit Therapist form. `features` is written as a plain
-// Record<string,string> (matches AddTherapistPage's own save shape, not
-// the stricter Features interface — Firestore doesn't enforce it either
-// way).
+// self-service edit for `features` on her own therapist doc. `features` is
+// written as a plain Record<string,string> (matches AddTherapistPage's own
+// save shape, not the stricter Features interface — Firestore doesn't
+// enforce it either way).
+//
+// 🆕 Round 28x.105 (founder: "ปรับให้สวยขึ้น เป็นสัดส่วน ดูง่าย กระชับขึ้น") —
+// was rendering admin's shared FeaturesEditor, which hardcodes
+// `adminColor.panel` (stark white boxes) on top of this page's dark/rose
+// staff theme, and stacked all 15 fields in a single column on mobile — a
+// long scroll of oversized inputs. This page now has its own compact field
+// GRID (2 columns at every width, not just sm+) styled with the staff
+// app's own rose accent, while still reading the field list from admin's
+// FEATURE_ROWS constant — so admin's Add/Edit Therapist form (which still
+// uses FeaturesEditor directly) and this page can never offer a different
+// set of fields, only a different presentation of the same ones.
 
 import React, { useEffect, useRef, useState } from "react";
+import { Box, TextField } from "@mui/material";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useTherapistSelf } from "@/hooks/useTherapistSelf";
-import { FeaturesEditor } from "@/pages/admin/therapistFormKit";
+import { FEATURE_ROWS } from "@/pages/admin/therapistFormKit";
 import { SelfEditShell } from "./selfEditKit";
+
+const fieldSx = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "10px",
+    background: "var(--sr-panel-2)",
+    fontSize: 13.5,
+    "& fieldset": { borderColor: "var(--sr-hairline)" },
+    "&:hover fieldset": { borderColor: "rgba(194,24,91,0.35)" },
+    "&.Mui-focused fieldset": { borderColor: "#C2185B", borderWidth: "1.5px" },
+  },
+  "& .MuiInputLabel-root": { fontSize: 12.5, color: "var(--sr-muted)" },
+  "& .MuiInputLabel-root.Mui-focused": { color: "#C2185B" },
+  "& .MuiOutlinedInput-input": { color: "var(--sr-ink)" },
+} as const;
+
+const TherapistFeatureGrid: React.FC<{ value: Record<string, string>; onChange: (k: string, v: string) => void }> = ({ value, onChange }) => (
+  <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
+    {FEATURE_ROWS.map(([k, label]) => (
+      <TextField
+        key={k}
+        label={label}
+        fullWidth
+        size="small"
+        sx={fieldSx}
+        value={value[k] ?? ""}
+        onChange={(e) => onChange(k, e.target.value)}
+      />
+    ))}
+  </Box>
+);
 
 const TherapistFeaturesPage: React.FC = () => {
   const { therapist, therapistDocId, loading } = useTherapistSelf();
@@ -65,7 +105,7 @@ const TherapistFeaturesPage: React.FC = () => {
       toast={toast}
       onToastClose={() => setToast(null)}
     >
-      <FeaturesEditor value={value} onChange={(k, v) => setValue((prev) => ({ ...prev, [k]: v }))} />
+      <TherapistFeatureGrid value={value} onChange={(k, v) => setValue((prev) => ({ ...prev, [k]: v }))} />
     </SelfEditShell>
   );
 };
