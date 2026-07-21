@@ -140,12 +140,22 @@
     />
 
     <!-- Hreflang — Asia foreign-customer focus. Path-based to match the
-         localized /zh /ja /ko home shells + /services pages (prerender-routes.mjs
-         homeHreflang). th is auto-detected client-side, not a crawl target. -->
+         localized /zh /zh-tw /ja /ko home shells + /services pages
+         (prerender-routes.mjs homeHreflang). th is auto-detected
+         client-side, not a crawl target.
+         🆕 Round 28x.99j (audit finding) — this is the RAW template; only
+         routes listed in prerender-routes.mjs's ROUTES array get their
+         <head> block replaced at build time. Every other route (including
+         /near-me, /profile, any client-only page) ships this block
+         byte-for-byte. Fixing prerender-routes.mjs's hreflangBlock()/
+         homeHreflang() generator functions for zh-TW (28x.99f) did NOT
+         fix this file — it's a separate, hand-maintained copy that has to
+         be updated in the SAME round every time the cluster shape changes. -->
     <link rel="alternate" hreflang="en" href="https://sunred.vip/" />
     <link rel="alternate" hreflang="zh" href="https://sunred.vip/zh" />
     <link rel="alternate" hreflang="zh-CN" href="https://sunred.vip/zh" />
-    <link rel="alternate" hreflang="zh-TW" href="https://sunred.vip/zh" />
+    <link rel="alternate" hreflang="zh-TW" href="https://sunred.vip/zh-tw" />
+    <link rel="alternate" hreflang="zh-HK" href="https://sunred.vip/zh-tw" />
     <link rel="alternate" hreflang="ja" href="https://sunred.vip/ja" />
     <link rel="alternate" hreflang="ko" href="https://sunred.vip/ko" />
     <link rel="alternate" hreflang="x-default" href="https://sunred.vip/" />
