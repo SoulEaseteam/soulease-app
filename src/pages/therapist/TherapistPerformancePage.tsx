@@ -18,6 +18,7 @@ import { responsiveShell } from "@/theme/breakpoints";
 import { useTherapistSelf } from "@/hooks/useTherapistSelf";
 import { useTherapistBookingStats } from "@/hooks/useTherapistBookingStats";
 import { LoyaltyTab } from "@/components/therapist/detail/TherapistProfileTabs";
+import { RevenueDashboard } from "@/components/therapist/RevenueDashboard";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
@@ -50,6 +51,19 @@ const TherapistPerformancePage: React.FC = () => {
         </Box>
       ) : (
         <Box sx={{ px: 2 }}>
+          {/* 🆕 Round 28x.98 (founder: "แถบ Dashboard เพิ่ม Lifetime Revenue...") —
+              her own revenue dashboard sits above Loyalty: what she earned
+              matters more than what guests think of her, and it's the first
+              money figure she should see on open, same as View's own
+              Dashboard leads with Lifetime Revenue. */}
+          <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: "var(--sr-ink)", mb: 1.5 }}>
+            Dashboard · แดชบอร์ดรายได้
+          </Typography>
+          <RevenueDashboard therapistId={therapistDocId} />
+
+          <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: "var(--sr-ink)", mt: 3.5, mb: 1.5 }}>
+            Loyalty · ความภักดีของลูกค้า
+          </Typography>
           <LoyaltyTab
             rebookPct={therapist.rebookRate ?? 0}
             totalSessions={stats.totalCompleted}
