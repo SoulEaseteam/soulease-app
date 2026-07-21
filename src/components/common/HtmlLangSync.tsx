@@ -21,8 +21,12 @@ const HtmlLangSync: React.FC = () => {
   const { i18n } = useTranslation();
 
   useEffect(() => {
+    // 🆕 Round 28x.99f — same zh-TW fix as main.tsx's setLang: check the
+    // full code before stripping the region, or Traditional-Chinese pages
+    // report <html lang="zh"> (Simplified) instead of "zh-TW".
     const apply = (lng: string | undefined) => {
-      const code = (lng ?? "en").split("-")[0].toLowerCase();
+      const full = (lng ?? "en").toLowerCase();
+      const code = full === "zh-tw" ? "zh-TW" : full.split("-")[0];
       if (document.documentElement.lang !== code) {
         document.documentElement.lang = code;
       }

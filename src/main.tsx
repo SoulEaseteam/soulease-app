@@ -94,8 +94,13 @@ const Root = () => {
 
   // sync <html lang="">
   useEffect(() => {
+    // 🆕 Round 28x.99f — zh-TW is its own bundle now; a blind split("-")[0]
+    // reported <html lang="zh"> (Simplified's signal) for Traditional-
+    // Chinese pages, which is wrong for both SEO hreflang matching and
+    // screen-reader pronunciation.
     const setLang = (lng: string) => {
-      document.documentElement.lang = (lng || "en").split("-")[0];
+      const full = (lng || "en").toLowerCase();
+      document.documentElement.lang = full === "zh-tw" ? "zh-TW" : full.split("-")[0];
     };
 
     setLang(i18n.language);
