@@ -590,6 +590,85 @@ function countryFromPhone(phone) {
     }
     return null;
 }
+// ─────────────────────────────────────────────────────────────
+// Customer history / membership line — 3rd admin follow-up message
+// (Round 28x.99l, founder: "ลูกค้าคนนี้ เป็นลูกค้าใหม่หรือมีประวัติ...
+// ถ้ามีประวัติหรือสมาชิก อยู่เลเวลอะไร").
+//
+// ⚠️ Threshold values are a DUPLICATE of MEMBERSHIP_DEFAULTS in
+// src/utils/membership.ts — functions/ has its own tsconfig rootDir
+// ("src") so it can't import across into the frontend's src/. If tiers
+// change there, update the numbers below too (same manual-sync burden
+// already documented for pricing in CLAUDE.md §2 — same class of drift
+// risk, not a new one). This mirrors the SIMPLE case only (visits OR
+// spend, no demotion, no live adminSettings/membership override) — good
+// enough for an informational Telegram line, not a billing calculation.
+// ─────────────────────────────────────────────────────────────
+const HISTORY_SERVED = new Set(["completed", "done"]);
+const HISTORY_NOSHOW = new Set(["no_show", "no-show", "noshow"]);
+const HISTORY_TIER_THRESHOLDS = [
+    { emoji: "⚫", label: "Black VIP", visits: 12, spend: 40000 },
+    { emoji: "🥇", label: "Gold", visits: 6, spend: 15000 },
+    { emoji: "🥈", label: "Silver", visits: 3, spend: 6000 },
+    { emoji: "🥉", label: "Bronze", visits: 1, spend: 1000 },
+];
+/** Mirrors src/utils/phoneCountry.ts normPhone() — must stay identical. */
+function normPhoneForHistory(raw) {
+    const digits = raw.replace(/\D/g, "");
+    if (digits.startsWith("66") && digits.length >= 11)
+        return "0" + digits.slice(2);
+    return digits;
+}
+async function customerHistoryLine(phone, excludeBookingId) {
+    const target = normPhoneForHistory((phone ?? "").trim());
+    if (!target)
+        return null;
+    // Full-collection scan, matching AdminBookingListPage's own customer-
+    // stats pass exactly (same phone-format inconsistency problem — stored
+    // numbers mix +66/0-prefix/raw — so a targeted `where("phone","==",…)`
+    // query would silently under-count). Acceptable cost at this business's
+    // scale; the admin dashboard already does this same full scan on every
+    // page load, more often than "once per new booking".
+    let served = 0;
+    let totalSpent = 0;
+    let lastVisitMs = 0;
+    let noShowCount = 0;
+    try {
+        const snap = await (0, firestore_2.getFirestore)().collection("bookings").get();
+        snap.forEach((d) => {
+            if (d.id === excludeBookingId)
+                return; // history BEFORE this booking
+            const bk = d.data();
+            if (normPhoneForHistory((bk.phone ?? "").trim()) !== target)
+                return;
+            const st = bk.status ?? "";
+            if (HISTORY_NOSHOW.has(st))
+                noShowCount++;
+            if (HISTORY_SERVED.has(st)) {
+                served++;
+                totalSpent += bk.totalPrice ?? bk.servicePrice ?? 0;
+                const t = bk.createdAt ?? bk.startAt;
+                const ms = t?.toMillis ? t.toMillis() : 0;
+                if (ms > lastVisitMs)
+                    lastVisitMs = ms;
+            }
+        });
+    }
+    catch (err) {
+        v2_1.logger.error("[customerHistoryLine] scan failed", err);
+        return null;
+    }
+    if (served === 0) {
+        return `👤 Customer history\n🆕 New customer — first booking with SunRed`;
+    }
+    const tier = HISTORY_TIER_THRESHOLDS.find((t) => served >= t.visits || totalSpent >= t.spend);
+    const tierLine = tier ? `\n${tier.emoji} ${tier.label} member` : "";
+    const noShowLine = noShowCount > 0 ? `\n⚠️ ${noShowCount} prior no-show` : "";
+    return (`👤 Customer history\n` +
+        `🔁 Returning · ${served} visit${served === 1 ? "" : "s"} · ฿${totalSpent.toLocaleString()} total` +
+        tierLine +
+        noShowLine);
+}
 // Build the "🌐 Source: …" line — channel · country · landing page.
 function attributionLine(b) {
     const parts = [];
@@ -896,6 +975,20 @@ exports.onBookingCreate = (0, firestore_1.onDocumentCreated)({
     const sourceLine = attributionLine(data);
     if (sourceLine) {
         await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, sourceLine);
+    }
+    // 🆕 Round 28x.99l (founder: "ส่งข้อความที่3 ไป SunRed Booking ว่าลูกค้า
+    //   คนนี้ เป็นลูกค้าใหม่หรือมีประวัติ...ถ้ามีประวัติหรือสมาชิก อยู่เลเวล
+    //   อะไร") — 3rd follow-up message: new vs. returning + membership tier.
+    try {
+        const historyLine = await customerHistoryLine(data.phone, bookingId);
+        if (historyLine) {
+            await sendTelegramIfEnabled(token, TELEGRAM_CHAT_ID, historyLine);
+        }
+    }
+    catch (err) {
+        // Never let a history-lookup failure block the booking notification
+        // flow that already succeeded above.
+        v2_1.logger.error("[onBookingCreate] customerHistoryLine failed", err);
     }
     // ── 2. Send to THERAPIST personal chat (Round 28b27) ──────────
     //   Each therapist may have a `telegramChatId` field set on their
