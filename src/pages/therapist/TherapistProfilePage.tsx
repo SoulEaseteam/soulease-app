@@ -21,16 +21,25 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Box, Typography, CircularProgress, Button, Switch, TextField, Snackbar, Alert } from "@mui/material";
-import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
-import RoomRoundedIcon from "@mui/icons-material/RoomRounded";
-import NavigationRoundedIcon from "@mui/icons-material/NavigationRounded";
-import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
-import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
-import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
-import EventBusyRoundedIcon from "@mui/icons-material/EventBusyRounded";
-import LockRoundedIcon from "@mui/icons-material/LockRounded";
-import { ClockCounterClockwise } from "phosphor-react";
+// 🆕 Round 28x.102 (founder: "เอาอีโมจิออก ใหหมด เปลี่ยนเป็นไอคอน น่ารักๆ") —
+//   swapped the flat single-tone MUI Material icons for Phosphor duotone
+//   ones (soft two-tone fill, rounder silhouettes) — same icon family
+//   TherapistJobsPage/TherapistHomePage already use, so Profile stops being
+//   the one page still on the old Material set.
+import {
+  ClockCounterClockwise,
+  ArrowsClockwise,
+  CheckCircle,
+  Timer,
+  Bed,
+  MapPin,
+  NavigationArrow,
+  Gear,
+  CaretRight,
+  Lock,
+  CalendarX,
+  type Icon as PhosphorIcon,
+} from "phosphor-react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
@@ -210,7 +219,7 @@ const TherapistProfilePage: React.FC = () => {
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 1 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
               <Box sx={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg, #E0708F, #C2185B)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <AutorenewRoundedIcon sx={{ fontSize: 15, color: "#fff" }} />
+                <ArrowsClockwise size={15} weight="duotone" color="#fff" />
               </Box>
               <Typography sx={{ fontFamily: SERIF, fontWeight: 700, fontSize: "15px", color: "var(--sr-ink)" }}>
                 Working Status
@@ -229,7 +238,7 @@ const TherapistProfilePage: React.FC = () => {
             <StatusChoice
               label="Auto"
               hint="Engine decides"
-              Icon={AutorenewRoundedIcon}
+              Icon={ArrowsClockwise}
               accent="#E0708F"
               accentTo="#B23A63"
               active={!therapist.statusOverride || therapist.statusOverride === "Auto"}
@@ -239,7 +248,7 @@ const TherapistProfilePage: React.FC = () => {
             <StatusChoice
               label="Available"
               hint="Open for bookings"
-              Icon={CheckCircleRoundedIcon}
+              Icon={CheckCircle}
               accent="#22C55E"
               accentTo="#15803D"
               active={therapist.statusOverride === "available"}
@@ -249,7 +258,7 @@ const TherapistProfilePage: React.FC = () => {
             <StatusChoice
               label="In session"
               hint="Currently with a client"
-              Icon={EventBusyRoundedIcon}
+              Icon={Timer}
               accent="#EC4899"
               accentTo="#9D174D"
               active={therapist.statusOverride === "bookable"}
@@ -259,7 +268,7 @@ const TherapistProfilePage: React.FC = () => {
             <StatusChoice
               label="Resting"
               hint="Hide from results"
-              Icon={HotelRoundedIcon}
+              Icon={Bed}
               accent="#8B7CA6"
               accentTo="#4A3B63"
               active={therapist.statusOverride === "resting"}
@@ -284,8 +293,8 @@ const TherapistProfilePage: React.FC = () => {
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
-              <Box sx={{ width: 26, height: 26, borderRadius: "50%", background: therapist.isHoliday ? "rgba(255,255,255,0.22)" : "rgba(245,166,35,0.20)", color: therapist.isHoliday ? "#fff" : "#B45309", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <EventBusyRoundedIcon sx={{ fontSize: 15 }} />
+              <Box sx={{ width: 26, height: 26, borderRadius: "50%", background: therapist.isHoliday ? "rgba(255,255,255,0.22)" : "rgba(245,166,35,0.20)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <CalendarX size={15} weight="duotone" color={therapist.isHoliday ? "#fff" : "#B45309"} />
               </Box>
               <Box sx={{ minWidth: 0 }}>
                 <Typography sx={{ fontFamily: SANS, fontWeight: 700, fontSize: "12.5px", color: therapist.isHoliday ? "#fff" : "var(--sr-ink)" }}>
@@ -321,8 +330,8 @@ const TherapistProfilePage: React.FC = () => {
               gap: 1,
             }}
           >
-            <Box sx={{ width: 26, height: 26, borderRadius: "50%", background: therapist.currentLocation ? "rgba(34,197,94,0.18)" : "var(--sr-panel)", color: therapist.currentLocation ? "#16A34A" : "var(--sr-dim)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <NavigationRoundedIcon sx={{ fontSize: 15 }} />
+            <Box sx={{ width: 26, height: 26, borderRadius: "50%", background: therapist.currentLocation ? "rgba(34,197,94,0.18)" : "var(--sr-panel)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <NavigationArrow size={15} weight="duotone" color={therapist.currentLocation ? "#16A34A" : "var(--sr-dim)"} />
             </Box>
             <Typography sx={{ fontFamily: SANS, fontSize: "11.5px", color: "var(--sr-body)", flex: 1 }}>
               ตำแหน่งปัจจุบัน:{" "}
@@ -354,7 +363,7 @@ const TherapistProfilePage: React.FC = () => {
             }}
           >
             <Box sx={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, #E0708F, #C2185B)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <RoomRoundedIcon sx={{ color: "#fff", fontSize: 19 }} />
+              <MapPin size={19} weight="duotone" color="#fff" />
             </Box>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography sx={{ fontFamily: SANS, fontWeight: 700, fontSize: "12.5px", color: "var(--sr-ink)" }}>
@@ -364,7 +373,7 @@ const TherapistProfilePage: React.FC = () => {
                 ตั้งจุดบนแผนที่ หรือใช้ GPS ปัจจุบัน
               </Typography>
             </Box>
-            <ChevronRightRoundedIcon sx={{ color: "var(--sr-dim)" }} />
+            <CaretRight size={16} color="var(--sr-dim)" />
           </Box>
         </Box>
       </Box>
@@ -384,13 +393,13 @@ const TherapistProfilePage: React.FC = () => {
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: canEditHoursToday ? 1.25 : 0.5 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
               <Box sx={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg, #E0708F, #C2185B)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <ClockCounterClockwise size={14} color="#fff" />
+                <ClockCounterClockwise size={14} weight="duotone" color="#fff" />
               </Box>
               <Typography sx={{ fontFamily: SERIF, fontWeight: 700, fontSize: "15px", color: "var(--sr-ink)" }}>
                 เวลาทำงาน · Working Hours
               </Typography>
             </Box>
-            {!canEditHoursToday && <LockRoundedIcon sx={{ fontSize: 16, color: "var(--sr-dim)" }} />}
+            {!canEditHoursToday && <Lock size={16} weight="duotone" color="var(--sr-dim)" />}
           </Box>
 
           {canEditHoursToday ? (
@@ -475,12 +484,12 @@ const TherapistProfilePage: React.FC = () => {
           }}
         >
           <Box sx={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, #E0708F, #C2185B)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <SettingsRoundedIcon sx={{ color: "#fff", fontSize: 19 }} />
+            <Gear size={19} weight="duotone" color="#fff" />
           </Box>
           <Typography sx={{ flex: 1, fontFamily: SANS, fontWeight: 700, fontSize: "14px", color: "var(--sr-ink)" }}>
             ตั้งค่า · Settings
           </Typography>
-          <ChevronRightRoundedIcon sx={{ color: "var(--sr-dim)" }} />
+          <CaretRight size={16} color="var(--sr-dim)" />
         </Box>
       </Box>
 
@@ -504,7 +513,7 @@ const TherapistProfilePage: React.FC = () => {
 interface StatusChoiceProps {
   label: string;
   hint: string;
-  Icon: typeof RoomRoundedIcon;
+  Icon: PhosphorIcon;
   accent: string;
   accentTo: string;
   active: boolean;
@@ -549,7 +558,7 @@ const StatusChoice: React.FC<StatusChoiceProps> = ({ label, hint, Icon, accent, 
         flexShrink: 0,
       }}
     >
-      <Icon sx={{ fontSize: 17 }} />
+      <Icon size={17} weight="duotone" />
     </Box>
     <Box sx={{ minWidth: 0 }}>
       <Typography sx={{ fontFamily: SANS, fontSize: "12px", fontWeight: 700, lineHeight: 1.15, color: "inherit" }}>
