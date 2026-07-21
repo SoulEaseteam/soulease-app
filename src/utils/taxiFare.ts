@@ -347,7 +347,14 @@ export function motoRoundTripFare(distanceKm: number): number {
     const [x1, y1] = pts[i];
     if (distanceKm <= x1) {
       const [x0, y0] = pts[i - 1];
-      return Math.round(y0 + ((y1 - y0) * (distanceKm - x0)) / (x1 - x0));
+      const raw = y0 + ((y1 - y0) * (distanceKm - x0)) / (x1 - x0);
+      // 🆕 Round 28x.99o (founder: "ถ้าอยู่ในราคากลาง...ก็ขยับทีละ 10 20
+      // ตามสมควร") — a real Grab quote is always a round number; smooth
+      // interpolation between checkpoints was landing on odd figures like
+      // ฿133/฿157/฿203 for the in-between km values. Round to the nearest
+      // ฿10 so every distance quotes a clean number, same granularity as
+      // the checkpoints themselves (all multiples of 10).
+      return Math.round(raw / 10) * 10;
     }
   }
   return pts[pts.length - 1][1];
