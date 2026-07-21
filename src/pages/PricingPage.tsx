@@ -42,7 +42,18 @@ import BestsellerRibbon from "@/components/common/BestsellerRibbon";
 //   Pricing "Areas & Timing" block matches the richer Services-page card.
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+// 🆕 28x.99s (founder: "เปลี่ยนและเพิ่มเป็นไอคอนแทนอีโมจิ") — Enhancements
+//   used raw emoji glyphs; Payment methods had no icon at all. Both now use
+//   the same MUI Rounded icon set as Areas & Timing above, for one
+//   consistent icon language across the page instead of emoji + nothing.
+import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
+import HourglassTopRoundedIcon from "@mui/icons-material/HourglassTopRounded";
+import DiamondRoundedIcon from "@mui/icons-material/DiamondRounded";
+import PeopleRoundedIcon from "@mui/icons-material/PeopleRounded";
+import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
+import QrCode2RoundedIcon from "@mui/icons-material/QrCode2Rounded";
 import { FaLine, FaTelegramPlane, FaWeixin, FaWhatsapp } from "react-icons/fa";
+import { SiWechat, SiAlipay } from "react-icons/si";
 
 import services from "@/data/services";
 import {
@@ -149,25 +160,25 @@ const SERVICE_ORDER = [
 // Kept intentionally light — this menu page is not the booking form.
 const ENHANCEMENTS = [
   {
-    icon: "🚗",
+    icon: DirectionsCarRoundedIcon,
     labelKey: "pricing.addons.travel",
     label: "Beyond-central travel",
     hint: "Extra travel fare quoted for areas beyond central Bangkok.",
   },
   {
-    icon: "⏳",
+    icon: HourglassTopRoundedIcon,
     labelKey: "pricing.addons.extend",
     label: "Extend session",
     hint: "Add 30 or 60 minutes on request · tier-priced.",
   },
   {
-    icon: "💎",
+    icon: DiamondRoundedIcon,
     labelKey: "pricing.addons.oil",
     label: "Premium aromatic oil",
     hint: "Small upgrade for a signature scent · ask concierge.",
   },
   {
-    icon: "👥",
+    icon: PeopleRoundedIcon,
     labelKey: "pricing.addons.duo",
     label: "Duo experience",
     hint: "Two practitioners for two guests · quoted per session.",
@@ -176,9 +187,12 @@ const ENHANCEMENTS = [
 
 
 const PAYMENT_METHODS = [
-  { label: "Cash on arrival", note: "" },
-  { label: "PromptPay", note: "" },
+  { icon: PaymentsRoundedIcon, label: "Cash on arrival", note: "" },
+  { icon: QrCode2RoundedIcon, label: "PromptPay", note: "" },
   {
+    // 🆕 28x.99s — real brand marks (react-icons/si) instead of a generic
+    //   icon, since this row bundles two distinct payment platforms.
+    icon: null,
     label: "WeChat Pay · Alipay",
     // 🆕 28r121 — Surcharge simplified to flat 7% (see paymentSurcharge.ts).
     note: "+ 7% handling",
@@ -640,12 +654,17 @@ const PricingPage: React.FC = () => {
               <Box
                 aria-hidden
                 sx={{
-                  fontSize: 22,
-                  lineHeight: 1,
+                  width: 40,
+                  height: 40,
+                  borderRadius: "12px",
+                  background: "rgba(217,124,149,0.12)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   flexShrink: 0,
                 }}
               >
-                {a.icon}
+                <a.icon sx={{ fontSize: 20, color: ROSE }} />
               </Box>
               <Box sx={{ minWidth: 0 }}>
                 <Box
@@ -752,21 +771,32 @@ const PricingPage: React.FC = () => {
               sx={{
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "baseline",
+                alignItems: "center",
                 padding: "6px 0",
                 borderTop: idx === 0 ? "none" : `1px solid ${neutrals.n200}`,
               }}
             >
-              <Box
-                component="span"
-                sx={{
-                  fontFamily: fonts.body,
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: grays.g900,
-                }}
-              >
-                {p.label}
+              <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                {p.icon ? (
+                  <p.icon aria-hidden sx={{ fontSize: 18, color: ROSE }} />
+                ) : (
+                  // WeChat Pay · Alipay — real brand marks, own brand colours.
+                  <Box aria-hidden sx={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <SiWechat size={15} color="#07C160" />
+                    <SiAlipay size={15} color="#1677FF" />
+                  </Box>
+                )}
+                <Box
+                  component="span"
+                  sx={{
+                    fontFamily: fonts.body,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: grays.g900,
+                  }}
+                >
+                  {p.label}
+                </Box>
               </Box>
               {p.note && (
                 <Box
