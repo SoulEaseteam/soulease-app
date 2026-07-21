@@ -41,6 +41,7 @@ import { useServiceConfigVersion } from "@/hooks/useServiceConfigVersion";
 import HowItWorks from "@/components/home/HowItWorks";
 import BundleSection from "@/components/common/BundleSection";
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
+import { enhanceImage } from "@/utils/cloudinary";
 import { responsiveShell } from "@/theme/breakpoints";
 import { CONCIERGE } from "@/config/concierge";
 import { accents, gradients } from "@/theme";
@@ -593,9 +594,11 @@ const ServicesPage: React.FC = () => {
                     <Box sx={{ position: "relative", width: "100%", overflow: "hidden" }}>
                       <Box
                         component="img"
-                        src={bestseller.image}
+                        src={enhanceImage(bestseller.image, { variant: "hero" })}
                         alt=""
                         data-sr-fx="hero"
+                        loading="eager"
+                        fetchPriority="high"
                         sx={{
                           display: "block",
                           width: "100%",
@@ -785,8 +788,9 @@ const ServicesPage: React.FC = () => {
                         <Box sx={{ position: "relative", width: "100%", overflow: "hidden" }}>
                           <Box
                             component="img"
-                            src={svc.image}
+                            src={enhanceImage(svc.image, { variant: "hero" })}
                             alt=""
+                            loading="lazy"
                             sx={{
                               display: "block",
                               width: "100%",

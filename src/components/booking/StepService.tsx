@@ -27,6 +27,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import services, { type MassageService } from "@/data/services";
+import { enhanceImage } from "@/utils/cloudinary";
 // 🆕 Round 28r79 — r68 pattern (hardcoded fast-path + Firestore
 //   fallback) so admin-added therapists show the services they
 //   actually offer, not the fallback catalog.
@@ -291,8 +292,9 @@ const StepService: React.FC<Props> = ({
               >
                 <Box
                   component="img"
-                  src={s.image}
+                  src={enhanceImage(s.image, { variant: "thumb" })}
                   alt=""
+                  loading="lazy"
                   sx={{
                     display: "block",
                     width: "100%",

@@ -47,6 +47,7 @@ import { useTranslation } from "react-i18next";
 
 import services from "@/data/services";
 import { getAllServices } from "@/utils/serviceCatalog";
+import { enhanceImage } from "@/utils/cloudinary";
 import { formatTHB } from "@/utils/servicePricing";
 import { bundleSavingsPreview, type Bundle } from "@/utils/bundles";
 import { useActivePromos } from "@/hooks/useActivePromos";
@@ -297,7 +298,7 @@ const BundleSection: React.FC = () => {
                 >
                   <Box
                     component="img"
-                    src={b.imageUrl}
+                    src={enhanceImage(b.imageUrl, { variant: "card" })}
                     alt=""
                     loading="lazy"
                     onError={() => markImageBroken(b.id)}

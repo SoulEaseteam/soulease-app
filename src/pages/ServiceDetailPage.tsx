@@ -75,6 +75,7 @@ import { trackServiceView, trackConciergeOpen } from "@/utils/analytics";
 import { db } from "@/lib/firebase";
 import { brand, fonts, accents, gradients } from "@/theme";
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
+import { enhanceImage } from "@/utils/cloudinary";
 // 🆕 Round 28r52 — Phase 3.1 responsive shell.
 // 🆕 Round 28r54 (Phase 3.3) — responsiveType scales the h1 name +
 //   description with viewport width.
@@ -402,9 +403,10 @@ const ServiceDetailPage: React.FC = () => {
                       <Box
                         key={img}
                         component="img"
-                        src={img}
+                        src={enhanceImage(img, { variant: "hero" })}
                         alt={`${service.name} — ${i + 1}`}
                         loading={i === 0 ? "eager" : "lazy"}
+                        fetchPriority={i === 0 ? "high" : undefined}
                         draggable={false}
                         sx={{
                           flex: "0 0 100%",
@@ -440,8 +442,10 @@ const ServiceDetailPage: React.FC = () => {
                 // Single photo → keep the r119 full, uncropped natural display.
                 <Box
                   component="img"
-                  src={heroImages[0]}
+                  src={enhanceImage(heroImages[0], { variant: "hero" })}
                   alt={service.name}
+                  loading="eager"
+                  fetchPriority="high"
                   sx={{
                     display: "block",
                     width: "100%",
@@ -986,7 +990,7 @@ const ServiceDetailPage: React.FC = () => {
                   {svc.image && (
                     <Box
                       component="img"
-                      src={svc.image}
+                      src={enhanceImage(svc.image, { variant: "card" })}
                       alt={svc.name}
                       loading="lazy"
                       sx={{
