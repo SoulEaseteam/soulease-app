@@ -9,14 +9,17 @@ import i18n from "i18next";
 //   the SPA here: we switch i18n to that language and redirect to the
 //   working de-prefixed route. Purely additive — these prefixes 404'd
 //   before, so existing routes are untouched.
-const LocaleEntryRedirect: React.FC<{ lng: "zh" | "ja" | "ko" }> = ({
+const LocaleEntryRedirect: React.FC<{ lng: "zh" | "zh-TW" | "ja" | "ko" }> = ({
   lng,
 }) => {
   const location = useLocation();
   React.useEffect(() => {
     void i18n.changeLanguage(lng);
   }, [lng]);
-  const stripped = location.pathname.replace(/^\/(zh|ja|ko)(?=\/|$)/, "");
+  // 🆕 Round 28x.99f — "zh-tw" must be tried before "zh" in the
+  // alternation so /zh-tw/services doesn't get its own prefix
+  // half-stripped into "-tw/services".
+  const stripped = location.pathname.replace(/^\/(zh-tw|zh|ja|ko)(?=\/|$)/, "");
   const to = `${stripped || "/"}${location.search}${location.hash}`;
   return <Navigate to={to} replace />;
 };
@@ -314,6 +317,7 @@ export default function App() {
       <Routes>
         {/* ===== Round 28s109: localized crawler entry points ===== */}
         <Route path="/zh/*" element={<LocaleEntryRedirect lng="zh" />} />
+        <Route path="/zh-tw/*" element={<LocaleEntryRedirect lng="zh-TW" />} />
         <Route path="/ja/*" element={<LocaleEntryRedirect lng="ja" />} />
         <Route path="/ko/*" element={<LocaleEntryRedirect lng="ko" />} />
         {/* ================= PUBLIC ================= */}

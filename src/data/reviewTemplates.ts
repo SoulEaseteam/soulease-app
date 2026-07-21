@@ -16,7 +16,7 @@
 // Each template is < 30 words to stay scannable in InfoSheet review
 // list. No customer names. No locations. No identifying details.
 
-export type ReviewLang = "en" | "th" | "zh" | "ja" | "ko";
+export type ReviewLang = "en" | "th" | "zh" | "zh-TW" | "ja" | "ko";
 export type ReviewServiceKey =
   | "xSR-Thai"
   | "SR-Aroma"
@@ -55,6 +55,13 @@ export const REVIEW_TEMPLATES: Record<
       "深度伸展 · 身体感觉轻盈",
       "准时到达 · 服务态度好",
       "经典手法 · 体验非常舒适",
+    ],
+    "zh-TW": [
+      "正宗泰式按摩 · 力道恰到好處",
+      "技師手法專業 · 抓準每個痠痛點",
+      "深度伸展 · 身體感覺輕盈",
+      "準時抵達 · 服務態度好",
+      "經典手法 · 體驗非常舒適",
     ],
     ja: [
       "本格的なタイ古式 · 圧加減が絶妙でした",
@@ -95,6 +102,13 @@ export const REVIEW_TEMPLATES: Record<
       "手法专业 · 力度适中",
       "曼谷最好的香薰按摩",
     ],
+    "zh-TW": [
+      "香氛按摩非常放鬆 · 精油品質很好",
+      "服務體貼入微 · 整個過程都很享受",
+      "氛圍安靜 · 選香有品味",
+      "手法專業 · 力道適中",
+      "曼谷最好的香氛按摩",
+    ],
     ja: [
       "アロマの香りが上品 · 完全にリラックスできました",
       "オイルの質が高く · 心地よい時間でした",
@@ -133,6 +147,13 @@ export const REVIEW_TEMPLATES: Record<
       "技师非常用心 · 强烈推荐",
       "物超所值 · 礼宾服务一流",
       "私密 · 专业 · 周到 · 五星推荐",
+    ],
+    "zh-TW": [
+      "專業又私密 · 體驗完全符合預期",
+      "全程順暢 · 高端體驗",
+      "技師非常用心 · 強烈推薦",
+      "物超所值 · 禮賓服務一流",
+      "私密 · 專業 · 周到 · 五星推薦",
     ],
     ja: [
       "プロフェッショナルで丁寧 · 期待通りの体験",
@@ -173,6 +194,13 @@ export const REVIEW_TEMPLATES: Record<
       "物有所值 · 仪式品质遥遥领先",
       "礼宾推荐非常准 · 下次出差还会预约",
     ],
+    "zh-TW": [
+      "高端儀式 · 真正的奢華體驗",
+      "技師水準極高 · 這種儀式獨一無二",
+      "亞洲體驗過最好的全身精油按摩",
+      "物有所值 · 儀式品質遙遙領先",
+      "禮賓推薦非常準 · 下次出差還會預約",
+    ],
     ja: [
       "プレミアムな儀式 · 本物の贅沢体験",
       "セラピストが素晴らしく · 唯一無二の体験",
@@ -193,8 +221,8 @@ export const REVIEW_TEMPLATES: Record<
 /**
  * Best-effort language inference from phone country code.
  *   +66    → th
- *   +86    → zh
- *   +852/+853/+886 → zh
+ *   +86    → zh (mainland — Simplified)
+ *   +852/+853/+886 → zh-TW (HK/Macau/Taiwan — Traditional)
  *   +81    → ja
  *   +82    → ko
  *   else   → en
@@ -203,14 +231,15 @@ export function inferLangFromPhone(phone?: string | null): ReviewLang {
   if (!phone) return "en";
   const p = phone.replace(/\s|-/g, "");
   if (p.startsWith("+66") || p.startsWith("66")) return "th";
+  if (p.startsWith("+86") || p.startsWith("86")) return "zh";
+  // 🆕 Round 28x.99f — HK/Macau/Taiwan read Traditional, not Simplified;
+  // previously lumped in with +86 and served the wrong script.
   if (
-    p.startsWith("+86") ||
     p.startsWith("+852") ||
     p.startsWith("+853") ||
-    p.startsWith("+886") ||
-    p.startsWith("86")
+    p.startsWith("+886")
   )
-    return "zh";
+    return "zh-TW";
   if (p.startsWith("+81") || p.startsWith("81")) return "ja";
   if (p.startsWith("+82") || p.startsWith("82")) return "ko";
   return "en";
@@ -246,7 +275,8 @@ export function templatesFor(
 export const LANG_LABELS: Record<ReviewLang, string> = {
   en: "EN · English",
   th: "TH · ไทย",
-  zh: "ZH · 中文",
+  zh: "ZH · 中文（简体）",
+  "zh-TW": "ZH-TW · 中文（繁體）",
   ja: "JA · 日本語",
   ko: "KO · 한국어",
 };

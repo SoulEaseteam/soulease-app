@@ -141,7 +141,11 @@ View corrected the strategic framing during this session:
 - **Backend**: Firebase (Firestore + Auth + Hosting)
 - **Booking flow**: BookingFlowPage + PaymentMethodsPage + concierge
   chat confirmation
-- **i18n**: 5 languages (en, th, zh, ja, ko) in `src/locales/`
+- **i18n**: 6 languages (en, th, zh, zh-TW, ja, ko) in `src/locales/` —
+  zh-TW (Traditional, Taiwan/HK/Macau) added 28x.99f as its own bundle,
+  not an alias of zh (Simplified). URL prefix `/zh-tw`. The promo/
+  broadcast Telegram bot (scheduled channel posts) deliberately does
+  NOT support zh-TW — see §9.
 - **Hosting**: Vercel (Hobby tier), domain via Porkbun
 - **Repo**: `/Users/varissarahirunto/sunred-vite/`
 
@@ -242,7 +246,56 @@ of changelog were costing tokens on every run with no daily-operational value. R
 CLAUDE-HISTORY.md or `git log` for detail. Durable design decisions & "don't-redo"
 lessons stay in §12 below.
 
-## 9. Current state (2026-07-21)
+## 9. Current state (2026-07-21, updated Round 28x.99f)
+
+**zh-TW (Traditional Chinese) locale shipped.** Founder asked for a real
+market-data-backed target ("หาตลาดคนจีนกำลังจ่ายสูง") — research showed
+China is the clear #1 target (already fully built: zh locale + WeChat
+Pay) but flagged that Taiwan/HK/Macau (zh-TW device locale) was silently
+falling back to Simplified content the whole time, per a deliberate
+28-something decision documented in i18n.ts ("covers tw users via
+i18next fallback"). Founder chose the full build over the cheaper
+"homepage-only" option, so it now touches EVERY layer:
+- `src/locales/zh-TW/translation.json` — full 677-key Traditional
+  translation (not a character conversion — 上门→到府 etc, Taiwan
+  register)
+- `src/data/districts.ts` + `scripts/prerender-routes.mjs` — zh-TW
+  district/service/pricing copy, kept in sync per the file's own
+  comment
+- `src/data/reviewTemplates.ts` — zh-TW review templates + phone-prefix
+  detection (+886/+852/+853 now route to zh-TW, not zh)
+- Concierge bot (`functions/src/telegram-concierge-bot/*`) — zh-TW
+  greetings/FAQ, routes to the same `@YuNiSpaBkk` handle as zh
+- `public/sitemap.xml` — 22 new zh-TW URLs + hreflang entries
+- i18n.ts detection: `load` switched from `"languageOnly"` to
+  `"currentOnly"` + `nonExplicitSupportedLngs` — this was a REQUIRED
+  change, not cosmetic; `"languageOnly"` unconditionally strips every
+  region code including zh-TW's, so it would have kept silently
+  collapsing to zh no matter what else shipped
+
+**Deliberately NOT done — a real decision, not an oversight:**
+- The promo/broadcast Telegram bot (`telegram-post-bot/*`, scheduled
+  channel posts) does NOT support zh-TW. `@manguyujianniSPA` is a
+  dedicated mainland-CN sub-brand channel — posting Traditional Chinese
+  there would mismatch its actual subscriber base. A Taiwan/HK channel
+  is a real new acquisition-channel decision for the founder to make,
+  not a code default. `GREETER_LANGS` (6, concierge) and `PROMO_LANGS`
+  (5, broadcast) are intentionally separate lists in
+  `getTelegramBotCopyPreview` (functions/src/index.ts) — don't merge
+  them without that decision being made explicitly first.
+- The 32-vs-14 therapist-bios task from the original brief **could not
+  be completed — the premise didn't match live data**. The live
+  `therapists` Firestore collection has 14 docs (matches CLAUDE.md's
+  "12 on roster" note more than "32"), and **none of them have any
+  `bios.*` field populated** (all null or `{}`). `generate-bios.ts`
+  (the Gemini-based multi-language bio generator) appears to have
+  never actually been run against production, or its output was never
+  written back. There is no Simplified-Chinese bio text anywhere to
+  translate zh-TW FROM. Nothing was written to Firestore. If bios are
+  wanted, `generate-bios.ts` needs to run first for all 5 original
+  languages, THEN a zh-TW pass can genuinely translate from real
+  `bios.zh` content — flag this to the founder, don't just re-attempt
+  it silently next session.
 
 **Staff app** now has 3 tabs (Home · Jobs · Profile). Home is a quick-menu
 grid (Reports, Performance, Gallery, Services, Features, Languages, Bio,

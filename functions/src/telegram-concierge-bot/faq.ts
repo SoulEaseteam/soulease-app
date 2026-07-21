@@ -11,6 +11,8 @@
 // src/utils/servicePricing.ts. When prices change, update both.
 
 import type { Lang } from "./greetings";
+// NOTE: Lang now includes "zh-TW" (Round 28x.99f) — every Record<Lang, …>
+// below needs a "zh-TW" entry or this file won't typecheck.
 import { getBotCopyField } from "../botCopyStore";
 
 export type FaqKey = "pricing" | "services" | "areas" | "howto" | "membership";
@@ -92,6 +94,26 @@ const PRICING: Record<Lang, FaqEntry> = {
       `\n` +
       `<i>偏远地区可能加收交通费\n` +
       `现金 · PromptPay · 微信支付 · 支付宝 (微信/支付宝加收 5%+฿200 手续费)</i>`,
+  },
+  "zh-TW": {
+    title: "💰 價格",
+    body:
+      `<b>SunRed 價格</b>\n` +
+      `\n` +
+      `🌿 泰式按摩 (60 · 90 · 120分鐘)\n` +
+      `฿1,200 · ฿1,600 · ฿2,000\n` +
+      `\n` +
+      `🌸 芳香療法 (60 · 90 · 120分鐘)\n` +
+      `฿1,400 · ฿1,800 · ฿2,400\n` +
+      `\n` +
+      `💎 紳士尊享 (70 · 120分鐘)\n` +
+      `฿2,200 · ฿3,000\n` +
+      `\n` +
+      `✨ SunRed Therapeutic (70 · 120分鐘)\n` +
+      `฿3,200 · ฿4,000\n` +
+      `\n` +
+      `<i>偏遠地區可能加收交通費\n` +
+      `現金 · PromptPay · 微信支付 · 支付寶 (微信/支付寶加收 5%+฿200 手續費)</i>`,
   },
   ja: {
     title: "💰 料金",
@@ -196,6 +218,25 @@ const SERVICES: Record<Lang, FaqEntry> = {
       `\n` +
       `查看所有治疗师: <a href="https://sunred.vip">sunred.vip</a>`,
   },
+  "zh-TW": {
+    title: "📋 服務",
+    body:
+      `<b>SunRed 服務</b>\n` +
+      `\n` +
+      `✓ 高端到府按摩 (送達飯店/住所)\n` +
+      `✓ 60 · 90 · 120 分鐘\n` +
+      `✓ 僅認證女性治療師\n` +
+      `✓ 5 種語言: 中文 · EN · 日本語 · 한국어 · ไทย\n` +
+      `✓ 24/7 管家服務\n` +
+      `\n` +
+      `<b>4 項療法:</b>\n` +
+      `🌿 泰式按摩 — 深層肌肉舒緩\n` +
+      `🌸 芳香療法 — 放鬆精油\n` +
+      `💎 紳士尊享 — 男士專屬芳香儀式\n` +
+      `✨ SunRed Therapeutic — 招牌全身精油儀式\n` +
+      `\n` +
+      `查看所有治療師: <a href="https://sunred.vip">sunred.vip</a>`,
+  },
   ja: {
     title: "📋 サービス",
     body:
@@ -284,6 +325,21 @@ const AREAS: Record<Lang, FaqEntry> = {
       `\n` +
       `到达时间: 中心地区 <b>30-60 分钟</b>\n` +
       `偏远地区可能加收交通费`,
+  },
+  "zh-TW": {
+    title: "📍 服務區域",
+    body:
+      `<b>曼谷涵蓋範圍</b>\n` +
+      `\n` +
+      `中心區:\n` +
+      `• 蘇坤蔚 · 阿索克 · 帕蓬 · 通羅 · 艾卡邁\n` +
+      `• 是隆 · 沙吞 · 蘇里翁\n` +
+      `• 暹羅 · 帕圖南 · 拉差達\n` +
+      `• 華伊街 · 迪丹丁 · RCA\n` +
+      `• 拉瑪四世 · 拉瑪九世 · 拉拋\n` +
+      `\n` +
+      `到達時間: 中心地區 <b>30-60 分鐘</b>\n` +
+      `偏遠地區可能加收交通費`,
   },
   ja: {
     title: "📍 対応エリア",
@@ -374,6 +430,24 @@ const HOW_TO_BOOK: Record<Lang, FaqEntry> = {
       `5. 服务后付款 (现金 · 微信支付 等)\n` +
       `\n` +
       `先浏览治疗师? <a href="https://sunred.vip">sunred.vip</a>`,
+  },
+  "zh-TW": {
+    title: "📖 預約流程",
+    body:
+      `<b>預約步驟</b>\n` +
+      `\n` +
+      `1. 點擊下方 <b>💬 聯繫管家</b>\n` +
+      `2. 告訴我們:\n` +
+      `   • 服務 (泰式 · 芳香 · 紳士尊享 · Therapeutic)\n` +
+      `   • 時長 (60 · 90 · 120 分鐘)\n` +
+      `   • 治療師 (或「任何」)\n` +
+      `   • 您的飯店/地址\n` +
+      `   • 今晚的時間\n` +
+      `3. 管家確認可預約\n` +
+      `4. 治療師 30-60 分鐘內到達\n` +
+      `5. 服務後付款 (現金 · 微信支付 等)\n` +
+      `\n` +
+      `先瀏覽治療師? <a href="https://sunred.vip">sunred.vip</a>`,
   },
   ja: {
     title: "📖 予約方法",
@@ -470,6 +544,22 @@ const MEMBERSHIP: Record<Lang, FaqEntry> = {
       `<i>优先预约 · 积分兑换礼品\n` +
       `礼宾会在确认预约时为您使用等级折扣</i>`,
   },
+  "zh-TW": {
+    title: "👑 會員",
+    body:
+      `<b>SunRed 會員</b>\n` +
+      `\n` +
+      `會員等級根據帳戶的到訪次數+消費金額自動計算\n` +
+      `(需要帳戶，非訪客預約) 無需另外申請\n` +
+      `\n` +
+      `🥉 青銅 — 優惠5% · 1次或฿1,000起\n` +
+      `🥈 白銀 — 優惠10% · 3次或฿6,000起\n` +
+      `🥇 黃金 — 優惠15% · 6次或฿15,000起\n` +
+      `⚫ 黑金VIP — 優惠20% · 12次或฿40,000起\n` +
+      `\n` +
+      `<i>優先預約 · 積分兌換禮品\n` +
+      `禮賓會在確認預約時為您使用等級折扣</i>`,
+  },
   ja: {
     title: "👑 メンバーシップ",
     body:
@@ -532,6 +622,7 @@ export function menuTitleFor(key: FaqKey | "available" | "concierge", lang: Lang
       en: "💰 Pricing",
       th: "💰 ราคา",
       zh: "💰 价格",
+      "zh-TW": "💰 價格",
       ja: "💰 料金",
       ko: "💰 가격",
     },
@@ -539,6 +630,7 @@ export function menuTitleFor(key: FaqKey | "available" | "concierge", lang: Lang
       en: "📋 Services",
       th: "📋 บริการ",
       zh: "📋 服务",
+      "zh-TW": "📋 服務",
       ja: "📋 サービス",
       ko: "📋 서비스",
     },
@@ -546,6 +638,7 @@ export function menuTitleFor(key: FaqKey | "available" | "concierge", lang: Lang
       en: "📍 Area",
       th: "📍 พื้นที่",
       zh: "📍 区域",
+      "zh-TW": "📍 區域",
       ja: "📍 エリア",
       ko: "📍 지역",
     },
@@ -553,6 +646,7 @@ export function menuTitleFor(key: FaqKey | "available" | "concierge", lang: Lang
       en: "📖 How to book",
       th: "📖 ขั้นตอนจอง",
       zh: "📖 预约流程",
+      "zh-TW": "📖 預約流程",
       ja: "📖 予約方法",
       ko: "📖 예약 방법",
     },
@@ -560,6 +654,7 @@ export function menuTitleFor(key: FaqKey | "available" | "concierge", lang: Lang
       en: "👑 Membership",
       th: "👑 สมาชิก",
       zh: "👑 会员",
+      "zh-TW": "👑 會員",
       ja: "👑 メンバーシップ",
       ko: "👑 멤버십",
     },
@@ -567,6 +662,7 @@ export function menuTitleFor(key: FaqKey | "available" | "concierge", lang: Lang
       en: "🌙 Available now",
       th: "🌙 ว่างตอนนี้",
       zh: "🌙 现在可预约",
+      "zh-TW": "🌙 現在可預約",
       ja: "🌙 今すぐ対応可",
       ko: "🌙 지금 가능",
     },
@@ -574,6 +670,7 @@ export function menuTitleFor(key: FaqKey | "available" | "concierge", lang: Lang
       en: "💬 Chat with concierge",
       th: "💬 คุยกับ concierge",
       zh: "💬 联系管家",
+      "zh-TW": "💬 聯繫管家",
       ja: "💬 コンシェルジュへ",
       ko: "💬 컨시어지와 채팅",
     },
@@ -586,6 +683,7 @@ export function backLabel(lang: Lang): string {
     en: "◀ Back to menu",
     th: "◀ กลับเมนู",
     zh: "◀ 返回菜单",
+    "zh-TW": "◀ 返回選單",
     ja: "◀ メニューに戻る",
     ko: "◀ 메뉴로",
   };
@@ -618,6 +716,7 @@ export function websiteLabel(lang: Lang): string {
     en: "🌐 View on website",
     th: "🌐 ดูบนเว็บ",
     zh: "🌐 网站查看",
+    "zh-TW": "🌐 網站查看",
     ja: "🌐 サイトで見る",
     ko: "🌐 웹사이트에서 보기",
   };
@@ -631,6 +730,7 @@ const AVAILABILITY_HEADERS: Record<Lang, string> = {
   en: "<b>🌙 Available right now</b>",
   th: "<b>🌙 ว่างตอนนี้</b>",
   zh: "<b>🌙 现在可预约</b>",
+  "zh-TW": "<b>🌙 現在可預約</b>",
   ja: "<b>🌙 今すぐ対応可</b>",
   ko: "<b>🌙 지금 가능</b>",
 };
@@ -646,6 +746,9 @@ const AVAILABILITY_EMPTY: Record<Lang, string> = {
   zh:
     "<b>🌙 目前没人 standby</b>\n\n" +
     "点击下方 <b>💬 联系管家</b> 询问今晚或之后的安排",
+  "zh-TW":
+    "<b>🌙 目前沒人 standby</b>\n\n" +
+    "點擊下方 <b>💬 聯繫管家</b> 詢問今晚或之後的安排",
   ja:
     "<b>🌙 現在スタンバイ中のセラピストはいません</b>\n\n" +
     "下の <b>💬 コンシェルジュとチャット</b> から本日の予定をご相談ください",

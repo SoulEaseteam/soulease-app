@@ -11,11 +11,13 @@
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://sunred.vip/zh-tw"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja"/>
     <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/"/>
   </url>
   <url><loc>https://sunred.vip/zh</loc><lastmod>2026-06-02</lastmod><changefreq>daily</changefreq><priority>0.95</priority><xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/"/><xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh"/><xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja"/><xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko"/><xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/"/></url>
+  <url><loc>https://sunred.vip/zh-tw</loc><lastmod>2026-06-02</lastmod><changefreq>daily</changefreq><priority>0.95</priority><xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/"/><xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh"/><xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja"/><xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko"/><xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/"/></url>
   <url><loc>https://sunred.vip/ja</loc><lastmod>2026-06-02</lastmod><changefreq>daily</changefreq><priority>0.95</priority><xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/"/><xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh"/><xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja"/><xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko"/><xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/"/></url>
   <url><loc>https://sunred.vip/ko</loc><lastmod>2026-06-02</lastmod><changefreq>daily</changefreq><priority>0.95</priority><xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/"/><xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh"/><xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja"/><xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko"/><xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/"/></url>
 
@@ -28,11 +30,13 @@
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/services"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/services"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://sunred.vip/zh-tw/services"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/services"/>
     <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/services"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/services"/>
   </url>
   <url><loc>https://sunred.vip/zh/services</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.85</priority><xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/services"/><xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/services"/><xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/services"/><xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/services"/><xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/services"/></url>
+  <url><loc>https://sunred.vip/zh-tw/services</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.85</priority><xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/services"/><xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/services"/><xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/services"/><xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/services"/><xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/services"/></url>
   <url><loc>https://sunred.vip/ja/services</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.85</priority><xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/services"/><xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/services"/><xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/services"/><xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/services"/><xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/services"/></url>
   <url><loc>https://sunred.vip/ko/services</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.85</priority><xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/services"/><xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/services"/><xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/services"/><xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/services"/><xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/services"/></url>
 
@@ -44,11 +48,13 @@
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/services/xSR-Thai"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/services/xSR-Thai"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://sunred.vip/zh-tw/services/xSR-Thai"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/services/xSR-Thai"/>
     <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/services/xSR-Thai"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/services/xSR-Thai"/>
   </url>
   <url><loc>https://sunred.vip/zh/services/xSR-Thai</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
+  <url><loc>https://sunred.vip/zh-tw/services/xSR-Thai</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
   <url><loc>https://sunred.vip/ja/services/xSR-Thai</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
   <url><loc>https://sunred.vip/ko/services/xSR-Thai</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
   <url>
@@ -58,11 +64,13 @@
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/services/SR-Aroma"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/services/SR-Aroma"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://sunred.vip/zh-tw/services/SR-Aroma"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/services/SR-Aroma"/>
     <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/services/SR-Aroma"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/services/SR-Aroma"/>
   </url>
   <url><loc>https://sunred.vip/zh/services/SR-Aroma</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
+  <url><loc>https://sunred.vip/zh-tw/services/SR-Aroma</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
   <url><loc>https://sunred.vip/ja/services/SR-Aroma</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
   <url><loc>https://sunred.vip/ko/services/SR-Aroma</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
   <url>
@@ -72,11 +80,13 @@
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/services/SR-HJ2200"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/services/SR-HJ2200"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://sunred.vip/zh-tw/services/SR-HJ2200"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/services/SR-HJ2200"/>
     <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/services/SR-HJ2200"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/services/SR-HJ2200"/>
   </url>
   <url><loc>https://sunred.vip/zh/services/SR-HJ2200</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
+  <url><loc>https://sunred.vip/zh-tw/services/SR-HJ2200</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
   <url><loc>https://sunred.vip/ja/services/SR-HJ2200</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
   <url><loc>https://sunred.vip/ko/services/SR-HJ2200</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
   <url>
@@ -86,11 +96,13 @@
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/services/SR-B2B3200"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/services/SR-B2B3200"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://sunred.vip/zh-tw/services/SR-B2B3200"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/services/SR-B2B3200"/>
     <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/services/SR-B2B3200"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/services/SR-B2B3200"/>
   </url>
   <url><loc>https://sunred.vip/zh/services/SR-B2B3200</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
+  <url><loc>https://sunred.vip/zh-tw/services/SR-B2B3200</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
   <url><loc>https://sunred.vip/ja/services/SR-B2B3200</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
   <url><loc>https://sunred.vip/ko/services/SR-B2B3200</loc><lastmod>2026-05-31</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
 
@@ -106,11 +118,13 @@
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/outcall-massage-sukhumvit"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/outcall-massage-sukhumvit"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://sunred.vip/zh-tw/outcall-massage-sukhumvit"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/outcall-massage-sukhumvit"/>
     <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/outcall-massage-sukhumvit"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/outcall-massage-sukhumvit"/>
   </url>
   <url><loc>https://sunred.vip/zh/outcall-massage-sukhumvit</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://sunred.vip/zh-tw/outcall-massage-sukhumvit</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
   <url><loc>https://sunred.vip/ja/outcall-massage-sukhumvit</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
   <url><loc>https://sunred.vip/ko/outcall-massage-sukhumvit</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
 
@@ -121,11 +135,13 @@
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/outcall-massage-silom"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/outcall-massage-silom"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://sunred.vip/zh-tw/outcall-massage-silom"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/outcall-massage-silom"/>
     <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/outcall-massage-silom"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/outcall-massage-silom"/>
   </url>
   <url><loc>https://sunred.vip/zh/outcall-massage-silom</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://sunred.vip/zh-tw/outcall-massage-silom</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
   <url><loc>https://sunred.vip/ja/outcall-massage-silom</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
   <url><loc>https://sunred.vip/ko/outcall-massage-silom</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
 
@@ -136,11 +152,13 @@
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/outcall-massage-asok"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/outcall-massage-asok"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://sunred.vip/zh-tw/outcall-massage-asok"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/outcall-massage-asok"/>
     <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/outcall-massage-asok"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/outcall-massage-asok"/>
   </url>
   <url><loc>https://sunred.vip/zh/outcall-massage-asok</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://sunred.vip/zh-tw/outcall-massage-asok</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
   <url><loc>https://sunred.vip/ja/outcall-massage-asok</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
   <url><loc>https://sunred.vip/ko/outcall-massage-asok</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
 
@@ -151,11 +169,13 @@
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/outcall-massage-thonglor"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/outcall-massage-thonglor"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://sunred.vip/zh-tw/outcall-massage-thonglor"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/outcall-massage-thonglor"/>
     <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/outcall-massage-thonglor"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/outcall-massage-thonglor"/>
   </url>
   <url><loc>https://sunred.vip/zh/outcall-massage-thonglor</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://sunred.vip/zh-tw/outcall-massage-thonglor</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
   <url><loc>https://sunred.vip/ja/outcall-massage-thonglor</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
   <url><loc>https://sunred.vip/ko/outcall-massage-thonglor</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
 
@@ -166,11 +186,13 @@
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sunred.vip/outcall-massage-near-me"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://sunred.vip/zh/outcall-massage-near-me"/>
+    <xhtml:link rel="alternate" hreflang="zh-TW" href="https://sunred.vip/zh-tw/outcall-massage-near-me"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://sunred.vip/ja/outcall-massage-near-me"/>
     <xhtml:link rel="alternate" hreflang="ko" href="https://sunred.vip/ko/outcall-massage-near-me"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://sunred.vip/outcall-massage-near-me"/>
   </url>
   <url><loc>https://sunred.vip/zh/outcall-massage-near-me</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://sunred.vip/zh-tw/outcall-massage-near-me</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
   <url><loc>https://sunred.vip/ja/outcall-massage-near-me</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
   <url><loc>https://sunred.vip/ko/outcall-massage-near-me</loc><lastmod>2026-06-02</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
 

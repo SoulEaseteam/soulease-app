@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.getTelegramBotCopyPreview = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
+exports.onBookingDispatchChange = exports.syncTherapistBusyStatus = exports.createAdminAccount = exports.getBookingPublic = exports.backfillTherapistUids = exports.getTelegramBotCopyPreview = exports.createAdminLinkCode = exports.createReportChannelCode = exports.createJobChannelCode = exports.advanceJobStatus = exports.respondToJob = exports.resetTherapistPassword = exports.createTherapistAccount = exports.createTherapistLinkCode = exports.setMemberAdmin = exports.createCustomerAccount = exports.resetCustomerPassword = exports.telegramConciergeWebhook = exports.postToChannelManual = exports.scheduledChannelLate = exports.scheduledChannelPrime = exports.scheduledChannelEvening = exports.telegramWebhook = exports.recoverAbandonedBookings = exports.dailyAdminDigest = exports.alertOverdueSessions = exports.releaseExpiredHolds = exports.onBookingCreate = exports.notifyPayoutAccountChanged = exports.onTherapistUpdate = exports.setRoleOnSignup = exports.moderateText = exports.onReviewCreate = exports.notifyBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 // 🆕 Round 28b21 — scheduled functions for Phases 2 + 4 (releaseExpiredHolds,
@@ -515,6 +515,54 @@ exports.onTherapistUpdate = (0, firestore_1.onDocumentUpdated)({
     catch (err) {
         v2_1.logger.error("[onTherapistUpdate] write failed", { therapistId, err });
     }
+});
+function maskBankAccount(acc) {
+    if (!acc)
+        return "—";
+    return acc.length > 4 ? `••••${acc.slice(-4)}` : acc;
+}
+exports.notifyPayoutAccountChanged = (0, firestore_1.onDocumentWritten)({
+    document: "payoutAccounts/{therapistId}",
+    region: "asia-southeast1",
+    secrets: [TELEGRAM_BOT_TOKEN],
+}, async (event) => {
+    const before = event.data?.before?.exists ? event.data.before.data() : null;
+    const after = event.data?.after?.exists ? event.data.after.data() : null;
+    if (!after)
+        return; // deletion — admin-only per firestore.rules, no alert needed
+    if (before &&
+        before.bankName === after.bankName &&
+        before.bankAccount === after.bankAccount &&
+        before.bankAccountName === after.bankAccountName) {
+        return; // only bookkeeping fields (updatedAt/updatedBy) changed
+    }
+    const token = TELEGRAM_BOT_TOKEN.value();
+    if (!token) {
+        v2_1.logger.error("[notifyPayoutAccountChanged] missing token");
+        return;
+    }
+    const therapistId = event.params.therapistId;
+    let therapistName = therapistId;
+    try {
+        const tSnap = await (0, firestore_2.getFirestore)().collection("therapists").doc(therapistId).get();
+        if (tSnap.exists)
+            therapistName = tSnap.data()?.name || therapistId;
+    }
+    catch {
+        // best-effort — fall back to the raw id
+    }
+    const text = [
+        `🏦 บัญชีธนาคารเปลี่ยน · ${therapistName}`,
+        "",
+        `${before ? "แก้ไขเป็น" : "ตั้งค่าใหม่"}: ${after.bankName ?? "—"} · ${maskBankAccount(after.bankAccount)}`,
+        `ชื่อบัญชี: ${after.bankAccountName ?? "—"}`,
+        before ? `เดิม: ${before.bankName ?? "—"} · ${maskBankAccount(before.bankAccount)}` : null,
+        "",
+        "ถ้าไม่ใช่คุณสั่งเอง ให้ตรวจสอบด่วน",
+    ]
+        .filter((line) => line !== null)
+        .join("\n");
+    await sendTelegramIfEnabled(token, await getReportChatId(), text);
 });
 // 🆕 Round 28s229 — country from E.164 phone dial code (the markets that
 //   matter for SunRed). Longest code wins. Returns null when the number has
@@ -2987,36 +3035,59 @@ exports.getTelegramBotCopyPreview = (0, https_1.onCall)({ region: "asia-southeas
     if (!(await db.collection("admins").doc(request.auth.uid).get()).exists) {
         throw new https_1.HttpsError("permission-denied", "Admin only.");
     }
-    const LANGS = ["en", "th", "zh", "ja", "ko"];
+    // 🆕 Round 28x.99f — GREETER_LANGS (concierge bot, reactive 1:1) now
+    //   carries zh-TW; PROMO_LANGS (scheduled broadcast bot) deliberately
+    //   does NOT — there's no Traditional-Chinese channel to route a
+    //   scheduled post to (@manguyujianniSPA is a mainland-CN sub-brand),
+    //   and standing up one is a real acquisition-channel decision, not a
+    //   code default. See channelForLang() in telegram-post-bot/client.ts.
+    const GREETER_LANGS = ["en", "th", "zh", "zh-TW", "ja", "ko"];
+    const PROMO_LANGS = ["en", "th", "zh", "ja", "ko"];
     const FAQ_KEYS = ["pricing", "services", "areas", "howto", "membership"];
-    const byLang = (fn) => Object.fromEntries(LANGS.map((l) => [l, fn(l)]));
-    const greeter = {
-        welcome: byLang(greetings_1.welcomeFor),
-        button: byLang(greetings_1.buttonLabelFor),
-        nudge: byLang(greetings_1.nudgeFor),
-        faq: FAQ_KEYS.map((key) => ({
-            key,
-            title: byLang((l) => (0, faq_1.faqEntry)(key, l).title),
-            body: byLang((l) => (0, faq_1.faqEntry)(key, l).body),
-        })),
+    // 🆕 Round 28x.97 — byLang is now async since welcomeFor/faqEntry/
+    //   renderPrimeTime all check Firestore botCopy/* first (see
+    //   functions/src/botCopyStore.ts) so this preview always reflects the
+    //   CURRENT EFFECTIVE content — override if one's been saved, code
+    //   default otherwise — never a stale, code-only snapshot.
+    // Generic over the lang-list type so the same helper serves both the
+    // 6-language greeter and the 5-language promo bot without either
+    // silently coercing the other's language set.
+    const byLang = async (langs, fn) => {
+        const entries = await Promise.all(langs.map(async (l) => [l, await fn(l)]));
+        return Object.fromEntries(entries);
     };
-    const WEEK_ANCHOR_MS = Date.UTC(2026, 6, 6); // holiday-free week, see comment above
-    const days = Array.from({ length: 7 }, (_, i) => new Date(WEEK_ANCHOR_MS + i * 86400000));
-    const HOLIDAY_DATES = {
-        valentine: Date.UTC(2026, 1, 14),
-        songkran: Date.UTC(2026, 3, 13),
-        halloween: Date.UTC(2026, 9, 31),
-        christmas: Date.UTC(2026, 11, 25),
-        newyear: Date.UTC(2026, 0, 1),
+    const faqByLang = async (key) => {
+        const entries = await Promise.all(GREETER_LANGS.map(async (l) => [l, await (0, faq_1.faqEntry)(key, l)]));
+        return {
+            title: Object.fromEntries(entries.map(([l, e]) => [l, e.title])),
+            body: Object.fromEntries(entries.map(([l, e]) => [l, e.body])),
+        };
     };
+    const [welcome, button, nudge, faqEntries] = await Promise.all([
+        byLang(GREETER_LANGS, greetings_1.welcomeFor),
+        byLang(GREETER_LANGS, greetings_1.buttonLabelFor),
+        byLang(GREETER_LANGS, greetings_1.nudgeFor),
+        Promise.all(FAQ_KEYS.map(async (key) => ({ key, ...(await faqByLang(key)) }))),
+    ]);
+    const greeter = { welcome, button, nudge, faq: faqEntries };
+    // 🆕 Round 28x.97 — reads the STORED unit directly (day/holiday key →
+    //   body), not a composed message built from a guessed reference date.
+    //   `preview` still shows the full composed message (header+body+
+    //   footer+reserve) for context, but `body` is what actually gets
+    //   read/written for editing.
+    const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+    const HOLIDAY_KEYS = ["valentine", "songkran", "halloween", "christmas", "newyear"];
     const promo = {
-        days: days.map((date) => ({
-            day: (0, templates_1.dayKey)(date),
-            text: byLang((l) => (0, templates_1.renderPrimeTime)(date, l)),
+        footer: await byLang(PROMO_LANGS, templates_1.rawFooter),
+        days: await Promise.all(DAY_KEYS.map(async (day) => {
+            const body = await byLang(PROMO_LANGS, (l) => (0, templates_1.rawDailyBody)(day, l));
+            const preview = await byLang(PROMO_LANGS, async (l) => (0, templates_1.previewPromoMessage)(body[l], l));
+            return { day, body, preview };
         })),
-        holidays: Object.entries(HOLIDAY_DATES).map(([key, ms]) => ({
-            key,
-            text: byLang((l) => (0, templates_1.renderPrimeTime)(new Date(ms), l)),
+        holidays: await Promise.all(HOLIDAY_KEYS.map(async (key) => {
+            const body = await byLang(PROMO_LANGS, (l) => (0, templates_1.rawHolidayBody)(key, l));
+            const preview = await byLang(PROMO_LANGS, async (l) => (0, templates_1.previewPromoMessage)(body[l], l));
+            return { key, body, preview };
         })),
     };
     return { greeter, promo };

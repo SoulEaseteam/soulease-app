@@ -63,6 +63,11 @@ const SERVICES = [
       blurb:
         "正宗泰式按摩上门服务，送达您在曼谷的酒店、公寓或别墅。专业持证女性技师融合指压、深度伸展与节奏手法，缓解旅途疲劳、舒缓肌肉、恢复身体平衡——在您私密的房间内进行。",
     },
+    "zh-TW": {
+      name: "泰式按摩",
+      blurb:
+        "正宗泰式按摩到府服務，送達您在曼谷的飯店、公寓或別墅。專業持證女性技師融合指壓、深度伸展與節奏手法，緩解旅途疲勞、舒緩肌肉、恢復身體平衡——在您私密的房間內進行。",
+    },
     ja: {
       name: "タイ古式マッサージ",
       blurb:
@@ -86,6 +91,11 @@ const SERVICES = [
       name: "芳香精油按摩",
       blurb:
         "温和的芳香精油按摩，上门送达您在曼谷的房间。薰衣草、橙花或檀香高级精油，配合舒缓稳定的手法，安抚神经、助您深度放松入眠。",
+    },
+    "zh-TW": {
+      name: "芳香精油按摩",
+      blurb:
+        "溫和的芳香精油按摩，到府送達您在曼谷的房間。薰衣草、橙花或檀香高級精油，配合舒緩穩定的手法，安撫神經、助您深度放鬆入眠。",
     },
     ja: {
       name: "アロマオイルマッサージ",
@@ -111,6 +121,11 @@ const SERVICES = [
       blurb:
         "专为男士打造的温热精油理疗，由训练有素的女性技师上门服务。温和芳疗结合细致的舒压手法，节奏完全依您偏好，私密、专注、不受打扰。",
     },
+    "zh-TW": {
+      name: "尊榮男士理療",
+      blurb:
+        "專為男士打造的溫熱精油理療，由訓練有素的女性技師到府服務。溫和芳療結合細緻的紓壓手法，節奏完全依您偏好，私密、專注、不受打擾。",
+    },
     ja: {
       name: "メンズ・シグネチャートリートメント",
       blurb:
@@ -134,6 +149,11 @@ const SERVICES = [
       name: "SunRed 尊享理疗体验",
       blurb:
         "SunRed 最精致的理疗仪式——流畅的全身精油护理，融合高级芳香精油与轻柔的泰式伸展，仅由资深专属技师呈现。私密、从容，上门送达您在曼谷的住所。",
+    },
+    "zh-TW": {
+      name: "SunRed 尊榮理療體驗",
+      blurb:
+        "SunRed 最精緻的理療儀式——流暢的全身精油護理，融合高級芳香精油與輕柔的泰式伸展，僅由資深專屬技師呈現。私密、從容，到府送達您在曼谷的住所。",
     },
     ja: {
       name: "SunRed セラピー・エクスペリエンス",
@@ -208,6 +228,34 @@ const LOC = {
     deliveredLine: (p) =>
       `฿${fmt(p)} 起 · 60/90/120 分钟 · 上门送达您在曼谷市中心的酒店、公寓或别墅（Sukhumvit、Silom、Asok、Thonglor 等）。已认证技师、私密上门、多语言礼宾、全天候24小时。`,
   },
+  "zh-TW": {
+    htmlLang: "zh-TW",
+    ogLocale: "zh_TW",
+    durations: "60 / 90 / 120 分鐘",
+    fromPrice: (p) => `฿${fmt(p)} 起`,
+    brand: "SunRed",
+    servicesTitle: "曼谷到府按摩服務與價格 — 泰式 / 芳療 / 尊榮理療 | SunRed",
+    servicesDesc:
+      "SunRed 曼谷到府按摩菜單，送達您的飯店：泰式按摩（฿1,200）、芳香精油按摩（฿1,600）、尊榮男士理療（฿2,200）及尊榮理療體驗（฿3,200）。60/90/120 分鐘，全天候24小時，支援現金、PromptPay、微信支付與支付寶。",
+    servicesOgTitle: "SunRed 曼谷 — 到府按摩服務與價格",
+    servicesOgDesc:
+      "泰式、芳療、男士理療與尊榮體驗，到府送達您的曼谷飯店。已認證技師、即時空閒、全天候24小時。",
+    serviceTitle: (n, p) => `${n}（到府）曼谷 — ฿${fmt(p)} 起 | SunRed`,
+    serviceOgTitle: (n) => `${n} — 曼谷到府按摩 | SunRed`,
+    serviceOgDesc: (n, p) =>
+      `${n}，฿${fmt(p)} 起，到府送達飯店。已認證、私密、全天候24小時。`,
+    descTail: (p) =>
+      ` 60/90/120 分鐘，฿${fmt(p)} 起。支援現金/PromptPay/微信/支付寶，全天候24小時禮賓服務。`,
+    servicesH1: "曼谷到府按摩服務 — SunRed",
+    servicesIntro:
+      "SunRed 所有服務均到府送達您在曼谷市中心的飯店、公寓或別墅——Sukhumvit、Silom、Asok、Thonglor、Sathorn、Phrom Phong、Ekkamai、Ratchada 等區域。已認證技師、私密到府、多語言禮賓（English、中文、日本語、한국어），全天候24小時。",
+    menuHeading: "服務菜單與價格",
+    reserveHeading: "預訂或諮詢禮賓",
+    allServices: "全部服務",
+    homeLink: "首頁 — 即時空閒",
+    deliveredLine: (p) =>
+      `฿${fmt(p)} 起 · 60/90/120 分鐘 · 到府送達您在曼谷市中心的飯店、公寓或別墅（Sukhumvit、Silom、Asok、Thonglor 等）。已認證技師、私密到府、多語言禮賓、全天候24小時。`,
+  },
   ja: {
     htmlLang: "ja",
     ogLocale: "ja_JP",
@@ -267,8 +315,11 @@ const LOC = {
   },
 };
 
-const LOCALES = ["en", "zh", "ja", "ko"];
-const localePrefix = (lang) => (lang === "en" ? "" : `/${lang}`);
+const LOCALES = ["en", "zh", "zh-TW", "ja", "ko"];
+// 🆕 Round 28x.99f — zh-TW's URL prefix is /zh-tw (lowercase, matches the
+// route registered in App.tsx), NOT /zh-TW.
+const localePrefix = (lang) =>
+  lang === "en" ? "" : lang === "zh-TW" ? "/zh-tw" : `/${lang}`;
 
 // ── JSON-LD ────────────────────────────────────────────────────────────────
 function serviceJsonLd(s, lang, locPath) {
@@ -471,6 +522,15 @@ const HOME_COPY = {
     h1: "曼谷上门按摩 — 送达您的酒店、公寓或别墅",
     crumb: "首页",
   },
+  "zh-TW": {
+    title: "曼谷到府按摩 24小時 · 送達飯店 — 泰式 / 精油 / 尊榮理療 | SunRed",
+    desc: "SunRed 曼谷高端到府按摩，認證女性技師送達您的飯店、公寓或別墅 — Sukhumvit、Silom、Asok、Thonglor 等核心地段。泰式、芳香精油、尊榮男士理療。即時空閒、全天候24小時、支援現金、PromptPay、微信支付與支付寶。",
+    ogTitle: "SunRed 曼谷 — 24小時到府按摩",
+    ogDesc:
+      "認證技師送達您的曼谷飯店、公寓或別墅。泰式·精油·尊榮理療。即時空閒、全天候24小時。",
+    h1: "曼谷到府按摩 — 送達您的飯店、公寓或別墅",
+    crumb: "首頁",
+  },
   ja: {
     title:
       "バンコク出張マッサージ 24時間 · ホテルへお届け — タイ古式 / アロマ / メンズ | SunRed",
@@ -494,10 +554,10 @@ const HOME_COPY = {
 };
 
 function homeRoutes() {
-  return ["zh", "ja", "ko"].map((lang) => {
+  return ["zh", "zh-TW", "ja", "ko"].map((lang) => {
     const L = LOC[lang];
     const H = HOME_COPY[lang];
-    const pfx = `/${lang}`;
+    const pfx = localePrefix(lang);
     return {
       path: pfx,
       canonicalPath: pfx,
@@ -573,6 +633,14 @@ const DISTRICTS = [
       extra:
         "认证泰国女性技师通常在 30–45 分钟内抵达素坤逸任何位置，系统会自动为您匹配距离最近的技师。",
     },
+    "zh-TW": {
+      name: "蘇坤蔚",
+      nearby: "阿索克、彭蓬、通羅、伊卡邁",
+      intro:
+        "高端到府按摩送達您在蘇坤蔚的飯店、公寓或別墅——涵蓋 BTS 沿線的 Nana、阿索克、彭蓬、通羅、伊卡邁整條走廊。",
+      extra:
+        "認證泰國女性技師通常在 30–45 分鐘內抵達蘇坤蔚任何位置，系統會自動為您配對距離最近的技師。",
+    },
     ja: {
       name: "スクンビット",
       nearby: "アソーク、プロンポン、トンロー、エカマイ",
@@ -607,6 +675,14 @@ const DISTRICTS = [
         "高端上门按摩送达您在是隆或沙吞的酒店——覆盖 MRT/BTS 莎拉当交汇点、苏拉萨与沿河崇农席整条 CBD 走廊。",
       extra:
         "认证泰国女性技师通常在 30–45 分钟内抵达是隆—沙吞 CBD 任何位置，支持现金、PromptPay、微信支付与支付宝。",
+    },
+    "zh-TW": {
+      name: "是隆",
+      nearby: "沙吞、莎拉當、蘇拉薩、崇農席",
+      intro:
+        "高端到府按摩送達您在是隆或沙吞的飯店——涵蓋 MRT/BTS 莎拉當轉乘站、蘇拉薩與沿河崇農席整條 CBD 走廊。",
+      extra:
+        "認證泰國女性技師通常在 30–45 分鐘內抵達是隆—沙吞 CBD 任何位置，支援現金、PromptPay、微信支付與支付寶。",
     },
     ja: {
       name: "シーロム",
@@ -643,6 +719,14 @@ const DISTRICTS = [
       extra:
         "认证泰国女性技师通常在 20–40 分钟内抵达阿索克周边，全天候 24 小时多语言客服。",
     },
+    "zh-TW": {
+      name: "阿索克",
+      nearby: "Nana、彭蓬、蘇坤蔚、拉差達",
+      intro:
+        "高端到府按摩送達您在阿索克的飯店或公寓——BTS/MRT 交會點及周邊蘇坤蔚區，從 Nana 至彭蓬。",
+      extra:
+        "認證泰國女性技師通常在 20–40 分鐘內抵達阿索克周邊，全天候 24 小時多語言客服。",
+    },
     ja: {
       name: "アソーク",
       nearby: "ナナ、プロンポン、スクンビット、ラチャダー",
@@ -677,6 +761,14 @@ const DISTRICTS = [
         "高端上门按摩送达您在通罗的酒店、公寓或 condo——包括 Soi 38 餐饮街、伊卡迈与素坤逸上段走廊。",
       extra:
         "认证泰国女性技师通常在 25–45 分钟内抵达通罗与伊卡迈，支持到付现金或转账。",
+    },
+    "zh-TW": {
+      name: "通羅",
+      nearby: "伊卡邁、彭蓬、蘇坤蔚、帕卡農",
+      intro:
+        "高端到府按摩送達您在通羅的飯店、公寓或社區大樓——包括 Soi 38 餐飲街、伊卡邁與蘇坤蔚上段走廊。",
+      extra:
+        "認證泰國女性技師通常在 25–45 分鐘內抵達通羅與伊卡邁，支援到付現金或轉帳。",
     },
     ja: {
       name: "トンロー",
@@ -713,6 +805,14 @@ const DISTRICTS = [
         "高端上门按摩送达曼谷市中心任何位置——系统自动为您匹配距离最近的技师。首页实时显示当下可订状态。",
       extra:
         "认证泰国女性技师通常在 30–60 分钟内抵达曼谷市中心。多语言客服（English / 中文 / 日本語 / 한국어），全天候 24 小时。",
+    },
+    "zh-TW": {
+      name: "曼谷（離您最近）",
+      nearby: "蘇坤蔚、是隆、阿索克、通羅、沙吞、彭蓬、伊卡邁、拉差達",
+      intro:
+        "高端到府按摩送達曼谷市中心任何位置——系統自動為您配對距離最近的技師。首頁即時顯示當下可訂狀態。",
+      extra:
+        "認證泰國女性技師通常在 30–60 分鐘內抵達曼谷市中心。多語言客服（English / 中文 / 日本語 / 한국어），全天候 24 小時。",
     },
     ja: {
       name: "バンコク（お近く）",
@@ -764,6 +864,21 @@ const DISTRICT_COPY = {
     homeLink: "首页 — 实时空闲",
     allServices: "全部服务",
     minutesLabel: "分钟",
+    fromLabel: (p) => `฿${fmt(p)} 起`,
+  },
+  "zh-TW": {
+    title: (name) => `${name}到府按摩 24小時 · 送達飯店 | SunRed`,
+    ogTitle: (name) => `${name}到府按摩 · 送達飯店 | SunRed`,
+    description: (name, nearby) =>
+      `${name}（曼谷）高端到府按摩送達您的飯店——認證泰國女性技師、全天候 24 小時即時空閒、多語言客服。涵蓋 ${nearby}。`,
+    ogDescription: (name) =>
+      `${name}高端到府按摩，送達您的飯店——認證技師，24小時即時可訂。SunRed。`,
+    h1: (name) => `${name}到府按摩 — 送達您的飯店`,
+    menuHeading: "服務菜單與價格",
+    reserveHeading: "預訂或諮詢禮賓",
+    homeLink: "首頁 — 即時空閒",
+    allServices: "全部服務",
+    minutesLabel: "分鐘",
     fromLabel: (p) => `฿${fmt(p)} 起`,
   },
   ja: {
@@ -916,6 +1031,23 @@ const PRICING_COPY = {
     contactLine:
       "完整的价目表将随 SunRed 品牌焕新一并推出。如需咨询服务、时长与价格，我们的礼宾团队通常在几分钟内回复。",
   },
+  "zh-TW": {
+    title: "尊榮體驗 · 曼谷到府按摩價格 | SunRed",
+    description:
+      "SunRed 尊榮體驗 — 曼谷到府按摩全套服務與價格（泰式、芳療、尊榮男士理療、尊榮理療體驗）。認證技師、到府送達飯店、全天候24小時多語言客服。",
+    ogTitle: "尊榮體驗 — 到府按摩價格 | SunRed",
+    ogDescription:
+      "SunRed 曼谷到府按摩全套服務與價格。認證技師、到府送達、24 小時客服。",
+    h1: "尊榮體驗 · 服務價格",
+    intro:
+      "SunRed 尊榮體驗菜單，將全套到府按摩服務送達您在曼谷的飯店、公寓或別墅——認證泰國女性技師、私密到府、多語言客服（English / 中文 / 日本語 / 한국어），全天候24小時。",
+    menuHeading: "服務菜單與起始價格",
+    reserveHeading: "諮詢禮賓",
+    homeLink: "首頁 — 即時空閒",
+    allServices: "全部服務",
+    contactLine:
+      "完整的價目表將隨 SunRed 品牌煥新一併推出。如需諮詢服務、時長與價格，我們的禮賓團隊通常在幾分鐘內回覆。",
+  },
   ja: {
     title:
       "コア・エクスペリエンス · バンコク出張マッサージ料金 | SunRed",
@@ -1056,7 +1188,11 @@ function hreflangBlock(base) {
     `<link rel="alternate" hreflang="en" href="${ORIGIN}${base}" />`,
     `<link rel="alternate" hreflang="zh" href="${ORIGIN}/zh${base}" />`,
     `<link rel="alternate" hreflang="zh-CN" href="${ORIGIN}/zh${base}" />`,
-    `<link rel="alternate" hreflang="zh-TW" href="${ORIGIN}/zh${base}" />`,
+    // 🆕 Round 28x.99f — zh-TW now has its own real page at /zh-tw, so it
+    // gets its own hreflang entry instead of pointing at the Simplified
+    // /zh URL (previously an intentional alias — see i18n.ts history).
+    `<link rel="alternate" hreflang="zh-TW" href="${ORIGIN}/zh-tw${base}" />`,
+    `<link rel="alternate" hreflang="zh-HK" href="${ORIGIN}/zh-tw${base}" />`,
     `<link rel="alternate" hreflang="ja" href="${ORIGIN}/ja${base}" />`,
     `<link rel="alternate" hreflang="ko" href="${ORIGIN}/ko${base}" />`,
     `<link rel="alternate" hreflang="x-default" href="${ORIGIN}${base}" />`,
@@ -1078,7 +1214,8 @@ function homeHreflang() {
     `<link rel="alternate" hreflang="en" href="${ORIGIN}/" />`,
     `<link rel="alternate" hreflang="zh" href="${ORIGIN}/zh" />`,
     `<link rel="alternate" hreflang="zh-CN" href="${ORIGIN}/zh" />`,
-    `<link rel="alternate" hreflang="zh-TW" href="${ORIGIN}/zh" />`,
+    `<link rel="alternate" hreflang="zh-TW" href="${ORIGIN}/zh-tw" />`,
+    `<link rel="alternate" hreflang="zh-HK" href="${ORIGIN}/zh-tw" />`,
     `<link rel="alternate" hreflang="ja" href="${ORIGIN}/ja" />`,
     `<link rel="alternate" hreflang="ko" href="${ORIGIN}/ko" />`,
     `<link rel="alternate" hreflang="x-default" href="${ORIGIN}/" />`,

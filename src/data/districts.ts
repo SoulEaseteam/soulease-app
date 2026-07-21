@@ -20,7 +20,7 @@
 //   DISTRICT_COPY). Same names/intro/extra + same title/description
 //   builders, so the static shell and the hydrated SPA never disagree.
 
-export type DistrictLang = "en" | "zh" | "ja" | "ko";
+export type DistrictLang = "en" | "zh" | "zh-TW" | "ja" | "ko";
 
 export interface DistrictContent {
   name: string;
@@ -36,6 +36,7 @@ export interface District {
   slug: string;
   en: DistrictContent;
   zh: DistrictContent;
+  "zh-TW": DistrictContent;
   ja: DistrictContent;
   ko: DistrictContent;
 }
@@ -59,6 +60,14 @@ export const DISTRICTS: District[] = [
         "高端上门按摩送达您在素坤逸的酒店、公寓或别墅——覆盖 BTS 沿线的 Nana、阿索克、彭蓬、通罗、伊卡迈整条走廊。",
       extra:
         "认证泰国女性技师通常在 30–45 分钟内抵达素坤逸任何位置，系统会自动为您匹配距离最近的技师。",
+    },
+    "zh-TW": {
+      name: "蘇坤蔚",
+      nearby: "阿索克、彭蓬、通羅、伊卡邁",
+      intro:
+        "高端到府按摩送達您在蘇坤蔚的飯店、公寓或別墅——涵蓋 BTS 沿線的 Nana、阿索克、彭蓬、通羅、伊卡邁整條走廊。",
+      extra:
+        "認證泰國女性技師通常在 30–45 分鐘內抵達蘇坤蔚任何位置，系統會自動為您配對距離最近的技師。",
     },
     ja: {
       name: "スクンビット",
@@ -96,6 +105,14 @@ export const DISTRICTS: District[] = [
       extra:
         "认证泰国女性技师通常在 30–45 分钟内抵达是隆—沙吞 CBD 任何位置，支持现金、PromptPay、微信支付与支付宝。",
     },
+    "zh-TW": {
+      name: "是隆",
+      nearby: "沙吞、莎拉當、蘇拉薩、崇農席",
+      intro:
+        "高端到府按摩送達您在是隆或沙吞的飯店——涵蓋 MRT/BTS 莎拉當轉乘站、蘇拉薩與沿河崇農席整條 CBD 走廊。",
+      extra:
+        "認證泰國女性技師通常在 30–45 分鐘內抵達是隆—沙吞 CBD 任何位置，支援現金、PromptPay、微信支付與支付寶。",
+    },
     ja: {
       name: "シーロム",
       nearby: "サトーン、サラデーン、スラサック、チョンノンシー",
@@ -132,6 +149,14 @@ export const DISTRICTS: District[] = [
       extra:
         "认证泰国女性技师通常在 20–40 分钟内抵达阿索克周边，全天候 24 小时多语言客服。",
     },
+    "zh-TW": {
+      name: "阿索克",
+      nearby: "Nana、彭蓬、蘇坤蔚、拉差達",
+      intro:
+        "高端到府按摩送達您在阿索克的飯店或公寓——BTS/MRT 交會點及周邊蘇坤蔚區，從 Nana 至彭蓬。",
+      extra:
+        "認證泰國女性技師通常在 20–40 分鐘內抵達阿索克周邊，全天候 24 小時多語言客服。",
+    },
     ja: {
       name: "アソーク",
       nearby: "ナナ、プロンポン、スクンビット、ラチャダー",
@@ -167,6 +192,14 @@ export const DISTRICTS: District[] = [
         "高端上门按摩送达您在通罗的酒店、公寓或 condo——包括 Soi 38 餐饮街、伊卡迈与素坤逸上段走廊。",
       extra:
         "认证泰国女性技师通常在 25–45 分钟内抵达通罗与伊卡迈，支持到付现金或转账。",
+    },
+    "zh-TW": {
+      name: "通羅",
+      nearby: "伊卡邁、彭蓬、蘇坤蔚、帕卡農",
+      intro:
+        "高端到府按摩送達您在通羅的飯店、公寓或社區大樓——包括 Soi 38 餐飲街、伊卡邁與蘇坤蔚上段走廊。",
+      extra:
+        "認證泰國女性技師通常在 25–45 分鐘內抵達通羅與伊卡邁，支援到付現金或轉帳。",
     },
     ja: {
       name: "トンロー",
@@ -205,6 +238,14 @@ export const DISTRICTS: District[] = [
       extra:
         "认证泰国女性技师通常在 30–60 分钟内抵达曼谷市中心。多语言客服（English / 中文 / 日本語 / 한국어），全天候 24 小时。",
     },
+    "zh-TW": {
+      name: "曼谷（離您最近）",
+      nearby: "蘇坤蔚、是隆、阿索克、通羅、沙吞、彭蓬、伊卡邁、拉差達",
+      intro:
+        "高端到府按摩送達曼谷市中心任何位置——系統自動為您配對距離最近的技師。下方即時顯示當下可訂狀態。",
+      extra:
+        "認證泰國女性技師通常在 30–60 分鐘內抵達曼谷市中心。多語言客服（English / 中文 / 日本語 / 한국어），全天候 24 小時。",
+    },
     ja: {
       name: "バンコク（お近く）",
       nearby:
@@ -232,17 +273,22 @@ export function districtByArea(area: string): District | undefined {
 
 /** Pick the best language block for a district given the active i18n lang. */
 export function districtContent(d: District, lang: string): DistrictContent {
-  const base = (lang || "en").split("-")[0];
+  const full = (lang || "en").toLowerCase();
+  // zh-TW must resolve before the split("-")[0] fallback, or it collapses
+  // to "zh" and a Traditional-Chinese guest reads Simplified copy.
+  if (full === "zh-tw") return d["zh-TW"];
+  const base = full.split("-")[0];
   if (base === "zh" || base === "ja" || base === "ko") return d[base];
   return d.en; // th visitors + everything else read the English district copy
 }
 
 // ── SEO title/description builders — mirror DISTRICT_COPY in prerender ──
-type CopyLang = "en" | "zh" | "ja" | "ko";
+type CopyLang = "en" | "zh" | "zh-TW" | "ja" | "ko";
 
 const TITLE: Record<CopyLang, (name: string) => string> = {
   en: (n) => `Outcall Massage ${n} — Delivered to Your Hotel 24/7 | SunRed`,
   zh: (n) => `${n}上门按摩 24小时 · 送达酒店 | SunRed`,
+  "zh-TW": (n) => `${n}到府按摩 24小時 · 送達飯店 | SunRed`,
   ja: (n) => `${n}出張マッサージ 24時間 · ホテルへお届け | SunRed`,
   ko: (n) => `${n} 출장 마사지 24시간 · 호텔로 방문 | SunRed`,
 };
@@ -252,6 +298,8 @@ const DESCRIPTION: Record<CopyLang, (name: string, nearby: string) => string> = 
     `Premium outcall massage in ${n}, Bangkok, delivered to your hotel — verified Thai practitioners, live 24/7 availability, multilingual concierge. Covering ${nb}.`,
   zh: (n, nb) =>
     `${n}（曼谷）高端上门按摩送达您的酒店——认证泰国女性技师、全天候 24 小时实时空闲、多语言客服。覆盖 ${nb}。`,
+  "zh-TW": (n, nb) =>
+    `${n}（曼谷）高端到府按摩送達您的飯店——認證泰國女性技師、全天候 24 小時即時空閒、多語言客服。涵蓋 ${nb}。`,
   ja: (n, nb) =>
     `${n}（バンコク）の高級出張マッサージをホテルへお届け——認定タイ人女性セラピスト、24 時間リアルタイム予約、多言語コンシェルジュ。${nb} に対応。`,
   ko: (n, nb) =>
@@ -261,12 +309,15 @@ const DESCRIPTION: Record<CopyLang, (name: string, nearby: string) => string> = 
 const H1: Record<CopyLang, (name: string) => string> = {
   en: (n) => `Outcall Massage in ${n} — Delivered to Your Hotel`,
   zh: (n) => `${n}上门按摩 — 送达您的酒店`,
+  "zh-TW": (n) => `${n}到府按摩 — 送達您的飯店`,
   ja: (n) => `${n}出張マッサージ — ホテルへお届け`,
   ko: (n) => `${n} 출장 마사지 — 호텔로 방문`,
 };
 
 function copyLang(lang: string): CopyLang {
-  const base = (lang || "en").split("-")[0];
+  const full = (lang || "en").toLowerCase();
+  if (full === "zh-tw") return "zh-TW";
+  const base = full.split("-")[0];
   return base === "zh" || base === "ja" || base === "ko" ? base : "en";
 }
 

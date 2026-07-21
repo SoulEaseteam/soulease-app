@@ -27,7 +27,7 @@ export const LANG_LEVEL_TH: Record<string, string> = { Native: "เจ้าข�
 export const LANG_CODES = ["th", "en", "zh", "ja", "ko"] as const;
 export const LANG_LEVELS: LanguageSkill["level"][] = ["Native", "Fluent", "Conversational", "Basic"];
 export const CRED_TYPES: Credential["type"][] = ["license", "diploma", "background", "certification"];
-export const BIO_LANGS: Array<[string, string]> = [["th", "ไทย"], ["en", "อังกฤษ"], ["zh", "จีน"], ["ja", "ญี่ปุ่น"], ["ko", "เกาหลี"]];
+export const BIO_LANGS: Array<[string, string]> = [["th", "ไทย"], ["en", "อังกฤษ"], ["zh", "จีนตัวย่อ"], ["zh-TW", "จีนตัวเต็ม"], ["ja", "ญี่ปุ่น"], ["ko", "เกาหลี"]];
 export const SERVICE_OPTIONS = services.map((s) => ({ id: s.id, name: s.name }));
 
 export const selectMenuProps = {
@@ -178,7 +178,7 @@ export const LocationPicker: React.FC<{
     const reverseGeocode = (lat: number, lng: number) => {
       const geocoder = new G.Geocoder();
       geocoder.geocode({ location: { lat, lng } }, (results: any[], status: string) => {
-        const addr = status === "OK" && results?.length ? (results[0].formatted_address ?? "") : "";
+        const addr = status === "OK" && results.length ? (results[0].formatted_address ?? "") : "";
         onPickRef.current({ area: "", address: addr, lat, lng });
       });
     };
@@ -324,7 +324,7 @@ export const GalleryEditor: React.FC<{ value: string[]; onChange: (next: string[
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const onUploadFiles = async (files: FileList | null) => {
-    if (!files || !files.length) return;
+    if (!files?.length) return;
     if (!docId.trim()) { setUploadError("ใส่ ID ของหมอนวดก่อน แล้วค่อยอัปโหลดรูป"); return; }
     setUploadError(null);
     setUploading(files.length);
@@ -343,7 +343,7 @@ export const GalleryEditor: React.FC<{ value: string[]; onChange: (next: string[
       if (urls.length) onChange([...value, ...urls]);
     } catch (err) {
       console.error("[gallery upload] failed", err);
-      const msg = String((err as { code?: string })?.code ?? err ?? "");
+      const msg = String((err as { code?: string }).code ?? err ?? "");
       setUploadError(
         msg.includes("unauthorized") || msg.includes("unauthenticated")
           ? "อัปโหลดไม่ได้ — สิทธิ์ไม่พอ (ยังไม่ได้ล็อกอิน หรือ storage.rules ยังไม่อัปเดต)"
@@ -417,7 +417,7 @@ export const AvatarUploader: React.FC<{
       onChange(await getDownloadURL(snap.ref));
     } catch (e) {
       console.error("[avatar upload] failed", e);
-      const msg = String((e as { code?: string })?.code ?? e ?? "");
+      const msg = String((e as { code?: string }).code ?? e ?? "");
       setErr(msg.includes("unauthorized") ? "อัปโหลดไม่ได้ — สิทธิ์ไม่พอ" : "อัปโหลดรูปไม่สำเร็จ ลองใหม่");
     } finally {
       setUploading(false);

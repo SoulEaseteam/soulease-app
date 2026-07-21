@@ -18,20 +18,34 @@
 
 import { getBotCopyField } from "../botCopyStore";
 
-export type Lang = "en" | "th" | "zh" | "ja" | "ko";
+export type Lang = "en" | "th" | "zh" | "zh-TW" | "ja" | "ko";
 
-const SUPPORTED: Lang[] = ["en", "th", "zh", "ja", "ko"];
+const SUPPORTED: Lang[] = ["en", "th", "zh", "zh-TW", "ja", "ko"];
 
-/** Telegram passes ISO 639-1 codes (e.g., "zh-hans"). Normalize to 2-char. */
+/**
+ * Telegram passes ISO 639-1/BCP-47 codes (e.g., "zh-hans", "zh-tw",
+ * "zh-hant"). Round 28x.99f — Taiwan/HK devices report a "zh-*" variant
+ * that reads Traditional; check those BEFORE the generic 2-char slice
+ * or they'd collapse into Simplified "zh" like everything else did.
+ */
 export function normalizeLang(input: string | undefined): Lang {
   if (!input) return "en";
-  const v = input.toLowerCase().slice(0, 2) as Lang;
+  const lower = input.toLowerCase();
+  if (
+    lower === "zh-tw" ||
+    lower === "zh-hant" ||
+    lower === "zh-hk" ||
+    lower === "zh-mo"
+  ) {
+    return "zh-TW";
+  }
+  const v = lower.slice(0, 2) as Lang;
   return SUPPORTED.includes(v) ? v : "en";
 }
 
-/** Where to route each language. ZH → 曼谷遇你SPA · others → main. */
+/** Where to route each language. ZH/ZH-TW → 曼谷遇你SPA · others → main. */
 export function conciergeHandleFor(lang: Lang): { handle: string; url: string } {
-  if (lang === "zh") {
+  if (lang === "zh" || lang === "zh-TW") {
     return { handle: "@YuNiSpaBkk", url: "https://t.me/YuNiSpaBkk" };
   }
   return { handle: "@SunRedvip_bkk", url: "https://t.me/SunRedvip_bkk" };
@@ -69,6 +83,14 @@ const WELCOME: Record<Lang, string> = {
     `预约 · 价格 · 今夜可预约 — 点击下方按钮直接联系管家\n` +
     `\n` +
     `sunred.vip`,
+  "zh-TW":
+    `<b>歡迎來到 SunRed 🌙</b>\n` +
+    `\n` +
+    `曼谷高端到府按摩 · 24/7 管家服務\n` +
+    `\n` +
+    `預約 · 價格 · 今夜可訂 — 點擊下方按鈕直接聯繫管家\n` +
+    `\n` +
+    `sunred.vip`,
   ja:
     `<b>SunRed へようこそ 🌙</b>\n` +
     `\n` +
@@ -103,6 +125,7 @@ const BUTTON_LABELS: Record<Lang, string> = {
   en: "💬 Open concierge chat",
   th: "💬 เปิดแชท concierge",
   zh: "💬 联系管家 (中文)",
+  "zh-TW": "💬 聯繫管家 (中文)",
   ja: "💬 コンシェルジュとチャット",
   ko: "💬 컨시어지와 채팅",
 };
@@ -120,6 +143,7 @@ const NUDGE: Record<Lang, string> = {
   en: "For a faster reply, please tap the button above to reach our concierge directly.",
   th: "เพื่อให้ตอบเร็วขึ้น · แตะปุ่มด้านบนเพื่อคุยกับ concierge ได้ตรงๆ",
   zh: "为了更快回复 · 请点击上方按钮直接联系管家",
+  "zh-TW": "為了更快回覆 · 請點擊上方按鈕直接聯繫管家",
   ja: "より早くお返事するため · 上のボタンをタップしてコンシェルジュと直接お話しください",
   ko: "더 빠른 답변을 위해 위의 버튼을 눌러 컨시어지와 직접 채팅해주세요",
 };

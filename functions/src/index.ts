@@ -35,6 +35,10 @@ import {
   type DayKey,
   type Holiday,
 } from "./telegram-post-bot/templates";
+// Aliased: the promo/broadcast bot's Lang (5 languages, no zh-TW — see
+// GREETER_LANGS/PROMO_LANGS split in getTelegramBotCopyPreview below) is a
+// separate, narrower type from the concierge bot's Lang above.
+import type { Lang as PromoLang } from "./telegram-post-bot/rotation";
 
 initializeApp();
 
@@ -3767,20 +3771,33 @@ export const getTelegramBotCopyPreview = onCall(
       throw new HttpsError("permission-denied", "Admin only.");
     }
 
-    const LANGS: Lang[] = ["en", "th", "zh", "ja", "ko"];
+    // 🆕 Round 28x.99f — GREETER_LANGS (concierge bot, reactive 1:1) now
+    //   carries zh-TW; PROMO_LANGS (scheduled broadcast bot) deliberately
+    //   does NOT — there's no Traditional-Chinese channel to route a
+    //   scheduled post to (@manguyujianniSPA is a mainland-CN sub-brand),
+    //   and standing up one is a real acquisition-channel decision, not a
+    //   code default. See channelForLang() in telegram-post-bot/client.ts.
+    const GREETER_LANGS: Lang[] = ["en", "th", "zh", "zh-TW", "ja", "ko"];
+    const PROMO_LANGS: PromoLang[] = ["en", "th", "zh", "ja", "ko"];
     const FAQ_KEYS: FaqKey[] = ["pricing", "services", "areas", "howto", "membership"];
     // 🆕 Round 28x.97 — byLang is now async since welcomeFor/faqEntry/
     //   renderPrimeTime all check Firestore botCopy/* first (see
     //   functions/src/botCopyStore.ts) so this preview always reflects the
     //   CURRENT EFFECTIVE content — override if one's been saved, code
     //   default otherwise — never a stale, code-only snapshot.
-    const byLang = async <T,>(fn: (l: Lang) => Promise<T>): Promise<Record<Lang, T>> => {
-      const entries = await Promise.all(LANGS.map(async (l) => [l, await fn(l)] as const));
-      return Object.fromEntries(entries) as Record<Lang, T>;
+    // Generic over the lang-list type so the same helper serves both the
+    // 6-language greeter and the 5-language promo bot without either
+    // silently coercing the other's language set.
+    const byLang = async <L extends string, T,>(
+      langs: L[],
+      fn: (l: L) => Promise<T>,
+    ): Promise<Record<L, T>> => {
+      const entries = await Promise.all(langs.map(async (l) => [l, await fn(l)] as const));
+      return Object.fromEntries(entries) as Record<L, T>;
     };
 
     const faqByLang = async (key: FaqKey) => {
-      const entries = await Promise.all(LANGS.map(async (l) => [l, await faqEntry(key, l)] as const));
+      const entries = await Promise.all(GREETER_LANGS.map(async (l) => [l, await faqEntry(key, l)] as const));
       return {
         title: Object.fromEntries(entries.map(([l, e]) => [l, e.title])) as Record<Lang, string>,
         body: Object.fromEntries(entries.map(([l, e]) => [l, e.body])) as Record<Lang, string>,
@@ -3788,9 +3805,9 @@ export const getTelegramBotCopyPreview = onCall(
     };
 
     const [welcome, button, nudge, faqEntries] = await Promise.all([
-      byLang(welcomeFor),
-      byLang(buttonLabelFor),
-      byLang(nudgeFor),
+      byLang(GREETER_LANGS, welcomeFor),
+      byLang(GREETER_LANGS, buttonLabelFor),
+      byLang(GREETER_LANGS, nudgeFor),
       Promise.all(FAQ_KEYS.map(async (key) => ({ key, ...(await faqByLang(key)) }))),
     ]);
     const greeter = { welcome, button, nudge, faq: faqEntries };
@@ -3804,15 +3821,15 @@ export const getTelegramBotCopyPreview = onCall(
     const HOLIDAY_KEYS: Holiday[] = ["valentine", "songkran", "halloween", "christmas", "newyear"];
 
     const promo = {
-      footer: await byLang(rawFooter),
+      footer: await byLang(PROMO_LANGS, rawFooter),
       days: await Promise.all(DAY_KEYS.map(async (day) => {
-        const body = await byLang((l) => rawDailyBody(day, l));
-        const preview = await byLang(async (l) => previewPromoMessage(body[l], l));
+        const body = await byLang(PROMO_LANGS, (l) => rawDailyBody(day, l));
+        const preview = await byLang(PROMO_LANGS, async (l) => previewPromoMessage(body[l], l));
         return { day, body, preview };
       })),
       holidays: await Promise.all(HOLIDAY_KEYS.map(async (key) => {
-        const body = await byLang((l) => rawHolidayBody(key, l));
-        const preview = await byLang(async (l) => previewPromoMessage(body[l], l));
+        const body = await byLang(PROMO_LANGS, (l) => rawHolidayBody(key, l));
+        const preview = await byLang(PROMO_LANGS, async (l) => previewPromoMessage(body[l], l));
         return { key, body, preview };
       })),
     };

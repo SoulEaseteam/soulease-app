@@ -39,7 +39,8 @@ interface LangOption {
 export const LANGS: LangOption[] = [
   { code: "en", label: "English", flag: "🇬🇧", short: "EN" },
   { code: "th", label: "ไทย", flag: "🇹🇭", short: "TH" },
-  { code: "zh", label: "中文", flag: "🇨🇳", short: "中" },
+  { code: "zh", label: "中文（简体）", flag: "🇨🇳", short: "中" },
+  { code: "zh-TW", label: "中文（繁體）", flag: "🇹🇼", short: "繁" },
   { code: "ja", label: "日本語", flag: "🇯🇵", short: "日" },
   { code: "ko", label: "한국어", flag: "🇰🇷", short: "한" },
 ];
@@ -61,7 +62,15 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   const { i18n, t } = useTranslation();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 
-  const langCode = (i18n.language || "en").split("-")[0].toLowerCase();
+  // 🆕 Round 28x.99f — zh-TW is now its own bundle, not an alias of zh.
+  // A blind `.split("-")[0]` would turn "zh-TW" into "zh" and show the
+  // Simplified pill for a Traditional-Chinese guest. Match the full code
+  // against LANGS first; only strip the region for codes we don't carry
+  // as their own entry (en-US, ja-JP, ko-KR, …).
+  const rawLang = (i18n.language || "en").toLowerCase();
+  const langCode =
+    LANGS.find((l) => l.code.toLowerCase() === rawLang)?.code ??
+    rawLang.split("-")[0];
   const cur = LANGS.find((l) => l.code === langCode) ?? LANGS[0];
 
   // Whether the current language was auto-detected (no manual choice
@@ -88,10 +97,17 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
       window.localStorage.removeItem(I18N_LS_KEY);
     }
     // Detect device language inline so the pill flips immediately.
-    const navLang =
+    // Mirrors i18n.ts's convertDetectedLanguage: zh-HK/zh-MO/zh-TW all
+    // read Traditional Chinese, so they resolve to the zh-TW bundle
+    // instead of falling through to Simplified.
+    const navRaw =
       typeof navigator !== "undefined"
-        ? (navigator.language || "en").split("-")[0].toLowerCase()
+        ? (navigator.language || "en").toLowerCase()
         : "en";
+    const navLang =
+      navRaw === "zh-hk" || navRaw === "zh-mo" || navRaw === "zh-tw"
+        ? "zh-TW"
+        : navRaw.split("-")[0];
     const supported = LANGS.find((l) => l.code === navLang)?.code ?? "en";
     if (supported !== langCode) {
       await i18n.changeLanguage(supported);

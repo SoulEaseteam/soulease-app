@@ -193,10 +193,13 @@ interface BotCopyPreview {
     nudge: Record<PostLang, string>;
     faq: { key: string; title: Record<PostLang, string>; body: Record<PostLang, string> }[];
   };
+  // Partial: the promo bot's Firestore doc genuinely has no "zh-TW" key
+  // (GREETER_LANGS/PROMO_LANGS split in getTelegramBotCopyPreview) — see
+  // promoVal() below, which is why every read of these goes through it.
   promo: {
-    footer: Record<PostLang, string>;
-    days: { day: string; body: Record<PostLang, string>; preview: Record<PostLang, string> }[];
-    holidays: { key: string; body: Record<PostLang, string>; preview: Record<PostLang, string> }[];
+    footer: Partial<Record<PostLang, string>>;
+    days: { day: string; body: Partial<Record<PostLang, string>>; preview: Partial<Record<PostLang, string>> }[];
+    holidays: { key: string; body: Partial<Record<PostLang, string>>; preview: Partial<Record<PostLang, string>> }[];
   };
 }
 
@@ -206,8 +209,33 @@ const PROMO_KINDS: { value: PostKind; label: string; sub: string; time: string }
   { value: "late", label: "Late Night · ดึก", sub: "Still-open / last-call · ยังเปิดอยู่ดึก", time: "Auto 01:00 BKK" },
 ];
 const LANG_OPTIONS: { value: PostLang; label: string }[] = [
+  { value: "en", label: "EN" }, { value: "th", label: "TH" }, { value: "zh", label: "ZH" }, { value: "zh-TW", label: "ZH-TW" }, { value: "ja", label: "JA" }, { value: "ko", label: "KO" },
+];
+// 🆕 Round 28x.99f — the manual-send toggle below MUST stay restricted to
+// what the promo bot server actually understands. Its normalizeLang()
+// does input.slice(0,2), so "zh-TW" silently becomes "zh" server-side —
+// if this toggle offered ZH-TW, the success toast (built from the
+// client's channelForLang, which sends zh-TW to the EN channel) would
+// disagree with where the message actually landed (server normalizes to
+// "zh" → posts Simplified content to the ZH channel instead). Keeping
+// this list separate from LANG_OPTIONS (which is fine — it only drives
+// the read/edit preview above, never a live send) closes that gap.
+const PROMO_SEND_LANG_OPTIONS: { value: PostLang; label: string }[] = [
   { value: "en", label: "EN" }, { value: "th", label: "TH" }, { value: "zh", label: "ZH" }, { value: "ja", label: "JA" }, { value: "ko", label: "KO" },
 ];
+
+/**
+ * 🆕 Round 28x.99f — the Promo bot deliberately does NOT support zh-TW
+ * (no Traditional-Chinese broadcast channel exists — see channelForLang()
+ * in telegramPostBot.ts), so `getTelegramBotCopyPreview` never returns a
+ * "zh-TW" key for any `promo.*` record. Reading `record["zh-TW"]` directly
+ * would render `undefined` in these fields — falls back to the Simplified
+ * content instead so the panel shows real text with a clear reason, never
+ * a blank box that looks broken.
+ */
+function promoVal(record: Partial<Record<PostLang, string>>, lang: PostLang): string {
+  return record[lang] ?? record.zh ?? record.en ?? "";
+}
 
 const AdminTelegramPanelPage: React.FC = () => {
   // ── shared toast ──────────────────────────────────────────────
@@ -582,7 +610,7 @@ const AdminTelegramPanelPage: React.FC = () => {
                 <EditableMsgBlock
                   key={`promo_footer-text-${contentLang}`} label="พื้นที่บริการ + ราคาเริ่มต้น"
                   docId="promo_footer" field="text" lang={contentLang}
-                  value={botCopy.promo.footer[contentLang]} onSaved={handleBotCopySaved}
+                  value={promoVal(botCopy.promo.footer, contentLang)} onSaved={handleBotCopySaved}
                 />
               </Box>
 
@@ -596,9 +624,9 @@ const AdminTelegramPanelPage: React.FC = () => {
                     <EditableMsgBlock
                       key={`promo_${d.day}-body-${contentLang}`} label={DAY_LABEL_TH[d.day] ?? d.day}
                       docId={`promo_${d.day}`} field="body" lang={contentLang}
-                      value={d.body[contentLang]} onSaved={handleBotCopySaved}
+                      value={promoVal(d.body, contentLang)} onSaved={handleBotCopySaved}
                     />
-                    <MsgPreview label="ตัวอย่างเต็ม" collapsible>{d.preview[contentLang]}</MsgPreview>
+                    <MsgPreview label="ตัวอย่างเต็ม" collapsible>{promoVal(d.preview, contentLang)}</MsgPreview>
                   </Box>
                 ))}
               </Box>
@@ -613,9 +641,9 @@ const AdminTelegramPanelPage: React.FC = () => {
                     <EditableMsgBlock
                       key={`promo_${h.key}-body-${contentLang}`} label={HOLIDAY_LABEL_TH[h.key] ?? h.key}
                       docId={`promo_${h.key}`} field="body" lang={contentLang}
-                      value={h.body[contentLang]} onSaved={handleBotCopySaved}
+                      value={promoVal(h.body, contentLang)} onSaved={handleBotCopySaved}
                     />
-                    <MsgPreview label="ตัวอย่างเต็ม" collapsible>{h.preview[contentLang]}</MsgPreview>
+                    <MsgPreview label="ตัวอย่างเต็ม" collapsible>{promoVal(h.preview, contentLang)}</MsgPreview>
                   </Box>
                 ))}
               </Box>
@@ -795,7 +823,7 @@ const AdminTelegramPanelPage: React.FC = () => {
               },
             }}
           >
-            {LANG_OPTIONS.map((o) => <ToggleButton key={o.value} value={o.value}>{o.label}</ToggleButton>)}
+            {PROMO_SEND_LANG_OPTIONS.map((o) => <ToggleButton key={o.value} value={o.value}>{o.label}</ToggleButton>)}
           </ToggleButtonGroup>
 
           <Stack spacing={1.25}>

@@ -14,7 +14,7 @@
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { app as firebaseApp } from "@/lib/firebase";
 
-export type PostLang = "en" | "th" | "zh" | "ja" | "ko";
+export type PostLang = "en" | "th" | "zh" | "zh-TW" | "ja" | "ko";
 
 export type PostKind = "evening" | "prime" | "late";
 
@@ -32,7 +32,12 @@ export interface PostResult {
 }
 
 /** Display-only mapping that mirrors the server-side channelForLang().
- *  Keep in sync with functions/src/telegram-post-bot/client.ts. */
+ *  Keep in sync with functions/src/telegram-post-bot/client.ts.
+ *  🆕 Round 28x.99f — zh-TW intentionally routes to the EN channel, NOT
+ *  @manguyujianniSPA — that channel is a dedicated mainland-CN sub-brand
+ *  (曼谷遇你SPA), and its existing subscriber base didn't sign up for
+ *  Traditional-Chinese posts. A Taiwan/HK channel would be a real new
+ *  acquisition-channel decision, not a code default — see CLAUDE.md. */
 export function channelForLang(lang: PostLang): string {
   return lang === "zh" ? "@manguyujianniSPA" : "@SunRed_BKK";
 }

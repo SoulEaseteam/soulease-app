@@ -47,7 +47,12 @@ export interface AccountDialogs {
 export function useAccountDialogs(): AccountDialogs {
   const { i18n } = useTranslation();
   const [langOpen, setLangOpen] = useState(false);
-  const activeLang = (i18n.language || "en").split("-")[0];
+  // 🆕 Round 28x.99f — zh-TW is its own bundle now; a blind split("-")[0]
+  // would collapse it to "zh" and highlight the wrong row in this list.
+  const rawLang = (i18n.language || "en").toLowerCase();
+  const activeLang =
+    SUPPORTED_LANGS.find((l) => l.code.toLowerCase() === rawLang)?.code ??
+    rawLang.split("-")[0];
 
   const pickLang = (code: LangCode) => {
     setLangPref(code);

@@ -17,7 +17,8 @@ export const LANG_PREF_KEY = "sunred.lang";
 export const SUPPORTED_LANGS = [
   { code: "en", label: "English" },
   { code: "th", label: "ไทย" },
-  { code: "zh", label: "中文" },
+  { code: "zh", label: "中文（简体）" },
+  { code: "zh-TW", label: "中文（繁體）" },
   { code: "ja", label: "日本語" },
   { code: "ko", label: "한국어" },
 ] as const;

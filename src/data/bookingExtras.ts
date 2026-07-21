@@ -59,7 +59,8 @@ export interface LanguageOption {
 }
 
 export const LANGUAGE_OPTIONS: LanguageOption[] = [
-  { code: "zh", flag: "🇨🇳", label: "中文" },
+  { code: "zh", flag: "🇨🇳", label: "中文（简体）" },
+  { code: "zh-TW", flag: "🇹🇼", label: "中文（繁體）" },
   { code: "en", flag: "🇬🇧", label: "English" },
   { code: "ja", flag: "🇯🇵", label: "日本語" },
   { code: "ko", flag: "🇰🇷", label: "한국어" },

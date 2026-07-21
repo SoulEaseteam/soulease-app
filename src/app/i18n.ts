@@ -12,7 +12,7 @@ import { getLangPref } from "@/utils/langPref";
 //
 // Vite parses these dynamic-import expressions and creates one chunk
 // per locale automatically, with HTTP cache hashes.
-type SupportedLocale = "en" | "th" | "zh" | "ja" | "ko";
+type SupportedLocale = "en" | "th" | "zh" | "zh-TW" | "ja" | "ko";
 
 async function loadLocaleBundle(lng: SupportedLocale) {
   switch (lng) {
@@ -22,6 +22,8 @@ async function loadLocaleBundle(lng: SupportedLocale) {
       return (await import("@/locales/th/translation.json")).default;
     case "zh":
       return (await import("@/locales/zh/translation.json")).default;
+    case "zh-TW":
+      return (await import("@/locales/zh-TW/translation.json")).default;
     case "ja":
       return (await import("@/locales/ja/translation.json")).default;
     case "ko":
@@ -36,16 +38,23 @@ void i18n
   .use(initReactI18next)
   .init({
     fallbackLng: "en",
-    supportedLngs: ["en", "th", "zh", "ja", "ko"],
+    supportedLngs: ["en", "th", "zh", "zh-TW", "ja", "ko"],
     // Round 28s63 (founder: auto-switch to the visitor's device
     // language) — device locales carry a region ("zh-CN", "zh-TW",
-    // "ja-JP", "ko-KR", "en-US", "th-TH"). Our bundles are base
-    // codes only. `load: "languageOnly"` strips the region so a
-    // Chinese tourist on zh-CN/zh-TW lands on the zh bundle instead
-    // of falling through to English; same for ja-JP → ja, ko-KR → ko.
-    // `nonExplicitSupportedLngs` is the belt-and-suspenders: it lets
-    // a region-coded detection resolve via its base language too.
-    load: "languageOnly",
+    // "ja-JP", "ko-KR", "en-US", "th-TH"). Round 28x.99f (founder:
+    // real Traditional Chinese for Taiwan/HK guests) — `zh-TW` is now
+    // its own supported bundle, so blanket `load: "languageOnly"`
+    // (which unconditionally strips EVERY region, "zh-TW" included)
+    // would have collapsed Taiwanese visitors back into Simplified
+    // every time. Switched to `load: "currentOnly"` (keep the full
+    // requested code) + `nonExplicitSupportedLngs: true`, which lets
+    // i18next fall back to the base language ONLY when the full code
+    // isn't itself supported — "zh-TW" is supported → matches exactly;
+    // "zh-CN"/"ja-JP"/"ko-KR"/"en-US" aren't → fall back to their base
+    // "zh"/"ja"/"ko"/"en" same as before. Net effect: identical
+    // behaviour for every existing language, zh-TW finally gets its
+    // own bundle instead of being silently merged into zh.
+    load: "currentOnly",
     nonExplicitSupportedLngs: true,
     debug: false,
 
@@ -70,6 +79,17 @@ void i18n
       caches: ["localStorage", "cookie"],
       lookupQuerystring: "lang",
       lookupLocalStorage: "i18nextLng_v2",
+      // 🆕 Round 28x.99f — Hong Kong/Macau devices report zh-HK/zh-MO,
+      // which don't exact-match the "zh-TW" bundle key. Both read
+      // Traditional Chinese, so route them onto the same bundle as
+      // Taiwan instead of falling back to Simplified "zh".
+      convertDetectedLanguage: (lng: string) => {
+        const lower = lng.toLowerCase();
+        if (lower === "zh-hk" || lower === "zh-mo" || lower === "zh-tw") {
+          return "zh-TW";
+        }
+        return lng;
+      },
     },
 
     interpolation: {
@@ -204,6 +224,48 @@ void i18n
         },
       },
 
+      // 🆕 Round 28x.99f — Traditional Chinese (Taiwan/HK), its own bundle
+      // now instead of silently falling back to Simplified. Not a character
+      // conversion of the zh block above — "上門" (Taiwan term for outcall/
+      // delivered-to-you service) replaces "上门" throughout, which mainland
+      // Simplified copy doesn't use.
+      "zh-TW": {
+        translation: {
+          bookNow: "立即預訂",
+          viewDetails: "查看詳情",
+          hot: "🔥 熱門",
+          top: "👑 頂級",
+          new: "🚀 新品",
+          distance: "距離",
+          rating: "評分",
+          reviews: "評價",
+          image: "圖片",
+          available: "可預約",
+          bookable: "可預訂",
+          resting: "休息中",
+          holiday: "休假",
+          offline: "暫停接單",
+          "hero.title": "曼谷到府按摩",
+          "hero.subtitle":
+            "認證技師 • 即時可訂 • 支援英語 / 中文 / 日本語 / 한국어",
+          "hero.badge.verified": "已認證",
+          "hero.badge.always": "24 小時",
+          "filter.all": "全部",
+          "filter.thai": "泰式",
+          "filter.aroma": "精油",
+          "therapistCard.startingFrom": "起價",
+          "therapistCard.bookNow": "立即預訂",
+          "home.escorts": "技師",
+          "home.search": "搜尋技師…",
+          "home.subtitle": "曼谷到府按摩",
+          "home.noResults": "沒有符合條件的技師。",
+          "meta.home.title":
+            "曼谷到府按摩 24小時 · 送達飯店 — 泰式 / 精油 / 尊榮理療 | SunRed",
+          "meta.home.description":
+            "SunRed 曼谷到府按摩，認證女性技師送達飯店 — 蘇坤蔚、是隆、阿索克、通羅等核心地段。泰式、芳香精油、尊榮理療。即時空閒、24小時可訂、支援現金、PromptPay、微信支付與支付寶。",
+        },
+      },
+
       // ───────── Japanese ─────────
       ja: {
         translation: {
@@ -293,6 +355,7 @@ const SUPPORTED: ReadonlySet<SupportedLocale> = new Set([
   "en",
   "th",
   "zh",
+  "zh-TW",
   "ja",
   "ko",
 ]);

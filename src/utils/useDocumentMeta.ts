@@ -158,7 +158,12 @@ export function useDocumentMeta(meta: DocumentMetaInput) {
 
 /** Helper: map i18n short code → og:locale */
 export function langToLocale(lang: string): string {
-  const code = (lang || "en").split("-")[0].toLowerCase();
+  const full = (lang || "en").toLowerCase();
+  // zh-TW must be checked BEFORE the split("-")[0] fallback below, or it
+  // collapses to "zh" and reports Simplified (zh_CN) og:locale for a
+  // Traditional-Chinese page (Round 28x.99f).
+  if (full === "zh-tw") return "zh_TW";
+  const code = full.split("-")[0];
   const map: Record<string, string> = {
     en: "en_US",
     th: "th_TH",

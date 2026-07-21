@@ -73,7 +73,7 @@ interface AnalyticsEvent {
 
 type Range = "7d" | "30d" | "custom";
 
-const LANG_OPTIONS = ["en", "th", "zh", "ja", "ko"] as const;
+const LANG_OPTIONS = ["en", "th", "zh", "zh-TW", "ja", "ko"] as const;
 const MODE_OPTIONS = ["prime", "evening", "day", "off"] as const;
 const MODE_FILTER_LABEL: Record<(typeof MODE_OPTIONS)[number], string> = {
   prime: "🌙 Prime (22:00–04:00)",
