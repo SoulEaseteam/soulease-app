@@ -35,6 +35,43 @@ const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
 const ROSE = "#D97C95";
 
+// 🆕 Round 28x.99k (founder: "ปรับ...ให้บาลานซ์หน่อย") — the taxi-estimate
+// map always rendered Google's default WHITE basemap, even at night when
+// the whole page (and the practitioner map above it) wears the dark
+// "espresso" palette (index.css `:root`). A stark white rectangle sitting
+// inside a dark card read as visually broken, not just off-brand. These
+// two style arrays recolor the basemap to match --sr-bg/--sr-panel-2/
+// --sr-body/--sr-hairline exactly (see index.css), selected at map-init
+// time from the `sr-day` class DayNightSync.tsx toggles on <html>. POI +
+// transit layers are hidden — this is a tap-to-drop-a-pin utility map, not
+// a general navigator, so decluttering keeps it legible at 118px tall.
+const NIGHT_MAP_STYLE: google.maps.MapTypeStyle[] = [
+  { elementType: "geometry", stylers: [{ color: "#20222B" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#17181D" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#8B8F9C" }] },
+  { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#31343F" }] },
+  { featureType: "poi", stylers: [{ visibility: "off" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#2A2D38" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#17181D" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#6E7280" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#31343F" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#121319" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#5A5E6B" }] },
+];
+const DAY_MAP_STYLE: google.maps.MapTypeStyle[] = [
+  { elementType: "geometry", stylers: [{ color: "#FFFFFF" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#5C6573" }] },
+  { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#EFE3E8" }] },
+  { featureType: "poi", stylers: [{ visibility: "off" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#FCEBF1" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#8A8F9A" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#F8EEF2" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#FBF7F9" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#C9CDD6" }] },
+];
+
 const AREAS = [
   "Sukhumvit", "Silom", "Sathorn", "Asok", "Nana", "Thonglor",
   "Phrom Phong", "Ploenchit", "Chidlom", "Ari", "Riverside", "Ratchada",
@@ -252,6 +289,11 @@ const TaxiEstimator: React.FC = () => {
       //   opened its own low-contrast info card over our pin. Turn POI clicks off so
       //   every tap just drops the pin, and that dim popup never appears.
       clickableIcons: false,
+      // 🆕 28x.99k — match the page's day/night theme instead of always
+      // showing Google's default white basemap.
+      styles: document.documentElement.classList.contains("sr-day")
+        ? DAY_MAP_STYLE
+        : NIGHT_MAP_STYLE,
     });
     mapRef.current = map;
     map.addListener("click", (e) => {
