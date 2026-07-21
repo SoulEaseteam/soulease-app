@@ -3,13 +3,19 @@
 // 🆕 Round 28x.98 (founder: "แถบ Dashboard เพิ่ม Lifetime Revenue · Period
 //   Summary กรองวันที่และสถานะงานได้ · Monthly Revenue เรียงมาแล้ว 6 เดือน
 //   หรือกรองรายวันเดือนปี · By Service") — raw booking rows for a single
-//   therapist's OWN revenue dashboard, mirroring the query
-//   useTherapistBookingStats already uses (`where therapistId == id`, no
-//   orderBy — pairing it with orderBy would need a composite index and a
-//   missing index fails the whole listener). Aggregation (lifetime total,
-//   period filter, monthly/day/year buckets, by-service) happens in the
-//   dashboard component so the same raw rows serve every widget without a
-//   second Firestore read per filter change.
+//   therapist's OWN revenue dashboard. Aggregation (lifetime total, period
+//   filter, monthly/day/year buckets, by-service) happens in the dashboard
+//   component so the same raw rows serve every widget without a second
+//   Firestore read per filter change.
+//
+// 🆕 Round 28x.100 — queries by `therapistUid`, NOT the therapist doc's slug
+//   id. firestore.rules' isAssignedTherapist() only ever compares
+//   `resource.data.therapistUid == request.auth.uid`; a LIST query filtered
+//   on any other field can't be proven safe by the rules engine and gets
+//   denied outright, regardless of who's asking. This hook originally
+//   queried by slug (mirroring useTherapistBookingStats) and silently
+//   returned zero rows for every real, signed-in therapist — see
+//   useTherapistOwnBookingStats.ts's header comment for the full story.
 //
 // "Revenue" here is HER commission — therapistPayoutFor() / noShowCompFor(),
 // the exact same shared util AdminEarningsPage and AdminDashboardPage use for
@@ -60,18 +66,18 @@ function toMs(v: FirestoreDateLike): number {
   return 0;
 }
 
-export function useTherapistRevenueRows(therapistId: string | null | undefined) {
+export function useTherapistRevenueRows(uid: string | null | undefined) {
   const [rows, setRows] = useState<TherapistRevenueRow[]>([]);
-  const [loading, setLoading] = useState(!!therapistId);
+  const [loading, setLoading] = useState(!!uid);
 
   useEffect(() => {
-    if (!therapistId) {
+    if (!uid) {
       setRows([]);
       setLoading(false);
       return;
     }
     setLoading(true);
-    const q = query(collection(db, "bookings"), where("therapistId", "==", therapistId));
+    const q = query(collection(db, "bookings"), where("therapistUid", "==", uid));
     const unsub = onSnapshot(
       q,
       (snap) => {
@@ -94,16 +100,14 @@ export function useTherapistRevenueRows(therapistId: string | null | undefined) 
         setLoading(false);
       },
       (err) => {
-        if ((err as { code?: string })?.code !== "permission-denied") {
-          // eslint-disable-next-line no-console
-          console.warn("[useTherapistRevenueRows] snapshot error:", err);
-        }
+        // eslint-disable-next-line no-console
+        console.warn("[useTherapistRevenueRows] snapshot error:", err);
         setRows([]);
         setLoading(false);
       },
     );
     return () => unsub();
-  }, [therapistId]);
+  }, [uid]);
 
   return { rows, loading };
 }

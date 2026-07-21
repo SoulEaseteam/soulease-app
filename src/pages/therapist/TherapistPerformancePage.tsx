@@ -4,19 +4,30 @@
 //   Rebook timing เหมือนรูป2 หน้าเว็บ") — the founder's "รูป 2" is the public
 //   website's own Loyalty tab (src/components/therapist/detail/
 //   TherapistProfileTabs.tsx → LoyaltyTab), already live on every therapist's
-//   public detail page. Reused verbatim here — same component, same real
-//   Firestore aggregates (useTherapistBookingStats), just scoped to HER OWN
-//   id instead of a route param — so this can never drift from what
-//   customers actually see.
+//   public detail page. Reused verbatim here — same UI component — so this
+//   can never LOOK different from what customers see.
+//
+// 🆕 Round 28x.100 (founder: "Loyalty ไม่ขึ้นจ่ะ") — the stats FEEDING that
+//   component are deliberately NOT the same hook the public page uses.
+//   useTherapistBookingStats queries `where("therapistId", "==", <slug>)`;
+//   firestore.rules can only grant a therapist access to her own bookings via
+//   `therapistUid == request.auth.uid`, so that query silently permission-
+//   denied for a real signed-in therapist too (same wall the public page
+//   hits for anonymous visitors — expected THERE, a bug HERE) and always
+//   rendered the empty "coming soon" state, even for a therapist with 90+
+//   real unique guests. useTherapistOwnBookingStats queries by therapistUid
+//   instead — same computeBookingStats math, a query the rules actually
+//   permit for her own session. See that hook's header for the full story.
 
 import React from "react";
 import { Box, Typography, CircularProgress, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { CaretLeft } from "phosphor-react";
 
+import { auth } from "@/lib/firebase";
 import { responsiveShell } from "@/theme/breakpoints";
 import { useTherapistSelf } from "@/hooks/useTherapistSelf";
-import { useTherapistBookingStats } from "@/hooks/useTherapistBookingStats";
+import { useTherapistOwnBookingStats } from "@/hooks/useTherapistOwnBookingStats";
 import { LoyaltyTab } from "@/components/therapist/detail/TherapistProfileTabs";
 import { RevenueDashboard } from "@/components/therapist/RevenueDashboard";
 
@@ -25,8 +36,9 @@ const SANS = '"Inter", system-ui, sans-serif';
 
 const TherapistPerformancePage: React.FC = () => {
   const navigate = useNavigate();
-  const { therapist, therapistDocId, loading } = useTherapistSelf();
-  const stats = useTherapistBookingStats(therapistDocId);
+  const { therapist, loading } = useTherapistSelf();
+  const uid = auth.currentUser?.uid;
+  const stats = useTherapistOwnBookingStats(uid);
 
   return (
     <Box sx={{ ...responsiveShell, minHeight: "100vh", background: "var(--sr-bg)", pb: 8 }}>
@@ -59,7 +71,7 @@ const TherapistPerformancePage: React.FC = () => {
           <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: "var(--sr-ink)", mb: 1.5 }}>
             Dashboard · แดชบอร์ดรายได้
           </Typography>
-          <RevenueDashboard therapistId={therapistDocId} />
+          <RevenueDashboard uid={uid} />
 
           <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: "var(--sr-ink)", mt: 3.5, mb: 1.5 }}>
             Loyalty · ความภักดีของลูกค้า

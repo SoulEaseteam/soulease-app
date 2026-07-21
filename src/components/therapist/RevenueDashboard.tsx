@@ -76,8 +76,8 @@ const rowMatchesStatus = (r: TherapistRevenueRow, f: StatusFilter) => {
 
 const sectionHeaderSx = { fontFamily: SANS, fontSize: 11, fontWeight: 800, color: "var(--sr-muted)", letterSpacing: "0.1em", textTransform: "uppercase" as const, lineHeight: 1 };
 
-export const RevenueDashboard: React.FC<{ therapistId: string | null }> = ({ therapistId }) => {
-  const { rows, loading } = useTherapistRevenueRows(therapistId);
+export const RevenueDashboard: React.FC<{ uid: string | null | undefined }> = ({ uid }) => {
+  const { rows, loading } = useTherapistRevenueRows(uid);
 
   const [range, setRange] = useState<RangePreset>("thismonth");
   const [customStart, setCustomStart] = useState<Dayjs>(() => dayjs().subtract(30, "day").startOf("day"));
