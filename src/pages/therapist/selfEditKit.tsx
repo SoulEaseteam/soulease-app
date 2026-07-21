@@ -45,7 +45,7 @@ export const SelfEditShell: React.FC<{
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-          <CircularProgress sx={{ color: "#D97C95" }} />
+          <CircularProgress sx={{ color: "#E0708F" }} />
         </Box>
       ) : (
         <Box sx={{ px: 2 }}>
@@ -56,11 +56,11 @@ export const SelfEditShell: React.FC<{
           )}
           <Box
             sx={{
-              background: "var(--sr-panel)",
-              border: "1px solid rgba(184,92,60,0.18)",
+              background: "linear-gradient(160deg, rgba(224,112,143,0.10) 0%, var(--sr-panel) 45%, var(--sr-panel) 100%)",
+              border: "1px solid rgba(194,24,91,0.20)",
               borderRadius: 3,
               padding: "16px",
-              boxShadow: "0 6px 18px rgba(15, 23, 42,0.06)",
+              boxShadow: "0 8px 22px rgba(194,24,91,0.10)",
             }}
           >
             {children}
@@ -77,10 +77,10 @@ export const SelfEditShell: React.FC<{
               textTransform: "none",
               fontWeight: 700,
               borderRadius: 2,
-              background: "linear-gradient(135deg, #C96F89, #7A3049)",
-              boxShadow: "none",
-              "&:hover": { boxShadow: "none" },
-              "&.Mui-disabled": { background: "var(--sr-panel-2)", color: "var(--sr-dim)" },
+              background: "linear-gradient(135deg, #E0708F, #B23A63)",
+              boxShadow: "0 6px 16px rgba(194,24,91,0.30)",
+              "&:hover": { boxShadow: "0 6px 16px rgba(194,24,91,0.30)" },
+              "&.Mui-disabled": { background: "var(--sr-panel-2)", color: "var(--sr-dim)", boxShadow: "none" },
             }}
           >
             {saving ? "กำลังบันทึก…" : "บันทึก"}
