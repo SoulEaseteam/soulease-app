@@ -1374,6 +1374,19 @@ const BookingFlowPage: React.FC = () => {
         taxiBaseFee: taxiResult?.baseFareBeforeRain ?? taxiFare,
         rainTier: taxiResult?.rain.tier ?? "none",
         rainSurchargePct: taxiResult?.rain.surchargePct ?? 0,
+        // 🆕 Round 28x.99p (founder: "ทุกอย่างที่ปรากฏ ใน Confirm Reservation
+        //   ก็ใส่มาในใบจอง ด้วย") — the Pricing panel shows Distance/Live
+        //   route/ETA and the travel-fee before/after online-booking
+        //   saving, but none of it was actually persisted on the booking
+        //   doc — only the FINAL numbers were. Now the full breakdown
+        //   survives past this screen (booking list, Telegram, disputes).
+        taxiVehicle: taxiResult?.vehicle ?? null, // "moto" | "car" (car = rain)
+        taxiOriginal: taxiOriginal ?? null, // struck-through fare before the online-booking saving
+        taxiSave, // "You save ฿{{n}} booking online" — the delta shown
+        etaMinutes,
+        isLiveRoute: !!(route && route.source !== "haversine"), // Google route resolved vs haversine estimate
+        routeSource: route?.source ?? "haversine",
+        originalTotalPrice: hasSavings && originalPrice > total + 0.5 ? Math.round(originalPrice) : null,
         distanceKm,
         totalPrice: effectiveTotalPrice,
         // 🆕 Round 28s227 (FIX — orders were invisible) — customer bookings
