@@ -810,7 +810,7 @@ const ProfilePage: React.FC = () => {
               icon={<Heart size={18} />}
               label="Saved Therapists"
               sub="Your favourite practitioners"
-              onClick={() => navigate("/user/saved")}
+              onClick={() => navigate("/saved")}
             />
           </Section>
         </motion.div>
@@ -832,7 +832,7 @@ const ProfilePage: React.FC = () => {
             <Row
               icon={<Translate size={18} />}
               label="Language"
-              sub="EN · TH · ZH · JA · KO"
+              sub="EN · TH · ZH · ZH-TW · JA · KO"
               value={langLabel(activeLang)}
               onClick={() => setLangOpen(true)}
             />

@@ -216,6 +216,16 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ── users/{uid}/favorites ────────────────────────────────────────
+    // Saved-therapists list (src/pages/user/SavedTherapistsPage.tsx).
+    // Owner-only subcollection — a rule on the parent /users/{userId}
+    // doc does NOT cascade to subcollections, so this was previously
+    // unreachable (read denied) even though the page and its query
+    // already existed.
+    match /users/{userId}/favorites/{favoriteId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // ── therapists ─────────────────────────────────────────────────
     // Public read (catalog). Self-service updates are limited to a
     // whitelist of fields; everything else is admin-only.

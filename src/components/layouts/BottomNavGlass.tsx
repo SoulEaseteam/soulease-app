@@ -65,10 +65,13 @@ const BottomNavGlass: React.FC = () => {
     if (location.pathname.startsWith("/services"))        return "/services";
     if (location.pathname.startsWith("/booking/history")) return "/booking/history";
     if (
-      location.pathname.startsWith("/profile")  ||
-      location.pathname.startsWith("/admin")    ||
-      location.pathname.startsWith("/user/")    ||
-      location.pathname === "/login"            ||
+      location.pathname.startsWith("/profile")     ||
+      location.pathname.startsWith("/admin")       ||
+      location.pathname.startsWith("/user/")       ||
+      location.pathname.startsWith("/my-codes")    ||
+      location.pathname.startsWith("/notifications") ||
+      location.pathname.startsWith("/saved")       ||
+      location.pathname === "/login"               ||
       location.pathname === "/register"
     ) return "/profile";
     return "/";
