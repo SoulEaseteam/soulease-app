@@ -1742,6 +1742,28 @@ const DetailPanel: React.FC<{
   const computedTotal    = Math.max(0, editServicePrice + editTaxiFee + editSurcharge - editDiscountAmount);
   const editTotal        = Number(editForm.total) || 0;
 
+  // 🆕 Round 28x.99l (founder: "ยอด ไม่ตัด ส่วนลด") — a valid discount code
+  // used to only ever surface as a "Use computed" suggestion the admin had
+  // to click separately (28s262's "Total is a free number" design). Enter
+  // the code, see "−฿100 off", save without that extra click → the
+  // UNDISCOUNTED total silently persisted, and the Telegram admin message
+  // (formatBookingForAdmin) just reports whatever's saved, so it broadcast
+  // the wrong total too. Auto-sync Total to the computed figure whenever a
+  // discount code is actively resolving valid — this only fires on
+  // discountAmount/computedTotal changes (not on every Total keystroke), so
+  // a manual override typed AFTER the code is applied is still respected;
+  // it only re-syncs if service/taxi/duration changes again afterward.
+  // The no-discount case (a manually-agreed custom price) keeps full free
+  // editability, unchanged.
+  useEffect(() => {
+    if (editDiscountAmount > 0) {
+      setEditForm((f) =>
+        f.total === String(computedTotal) ? f : { ...f, total: String(computedTotal) }
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editDiscountAmount, computedTotal]);
+
   const saveEdit = () => {
     const startAt = Timestamp.fromDate(dayjs(`${editForm.date} ${editForm.time}`, "YYYY-MM-DD HH:mm").toDate());
     const newTherapist = therapists.find((t) => t.id === editForm.therapistId);
