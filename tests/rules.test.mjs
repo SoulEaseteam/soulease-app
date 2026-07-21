@@ -456,6 +456,31 @@ await check("therapist CAN withdraw her own still-pending request", () =>
   assertSucceeds(deleteDoc(doc(asUser(THERAPIST_UID), "galleryRequests", "req-pending-b")))
 );
 
+console.log("\nbotCopy · Telegram bot message content (28x.97)");
+await check("admin CAN write botCopy", () =>
+  assertSucceeds(
+    setDoc(doc(asUser(ADMIN_UID), "botCopy", "greeter"), {
+      welcome: { th: "ทดสอบ" },
+    })
+  )
+);
+await check("admin CAN read botCopy", () =>
+  assertSucceeds(getDoc(doc(asUser(ADMIN_UID), "botCopy", "greeter")))
+);
+await check("a non-admin therapist CANNOT write botCopy", () =>
+  assertFails(
+    setDoc(doc(asUser(THERAPIST_UID), "botCopy", "greeter"), {
+      welcome: { th: "hacked" },
+    })
+  )
+);
+await check("a non-admin therapist CANNOT read botCopy", () =>
+  assertFails(getDoc(doc(asUser(THERAPIST_UID), "botCopy", "greeter")))
+);
+await check("logged-out visitor CANNOT read botCopy", () =>
+  assertFails(getDoc(doc(anon(), "botCopy", "greeter")))
+);
+
 await testEnv.cleanup();
 
 console.log(`\n${passed} passed · ${failed} failed`);

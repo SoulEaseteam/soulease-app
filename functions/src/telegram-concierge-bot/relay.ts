@@ -141,8 +141,9 @@ async function notifyAdminNewConciergeCustomer(
 // ─────────────────────────────────────────────────────────────
 // Build the 6-button menu keyboard.
 // ─────────────────────────────────────────────────────────────
-function buildMenuKeyboard(lang: Lang): InlineKeyboard {
+async function buildMenuKeyboard(lang: Lang): Promise<InlineKeyboard> {
   const concierge = conciergeHandleFor(lang);
+  const button = await buttonLabelFor(lang);
   return [
     [
       { text: menuTitleFor("pricing", lang), callback_data: "faq:pricing" },
@@ -157,7 +158,7 @@ function buildMenuKeyboard(lang: Lang): InlineKeyboard {
       { text: menuTitleFor("membership", lang), callback_data: "faq:membership" },
     ],
     [
-      { text: buttonLabelFor(lang), url: concierge.url },
+      { text: button, url: concierge.url },
     ],
   ];
 }
@@ -167,12 +168,13 @@ function buildMenuKeyboard(lang: Lang): InlineKeyboard {
 // 🆕 28x.84 — the website link is keyed to which FAQ is showing, so
 //   "Pricing" links to /pricing, "Services" to /services, etc.
 // ─────────────────────────────────────────────────────────────
-function buildFaqDetailKeyboard(lang: Lang, key: FaqKey | "available"): InlineKeyboard {
+async function buildFaqDetailKeyboard(lang: Lang, key: FaqKey | "available"): Promise<InlineKeyboard> {
   const concierge = conciergeHandleFor(lang);
+  const button = await buttonLabelFor(lang);
   return [
     [{ text: websiteLabel(lang), url: websiteUrlFor(key) }],
     [{ text: backLabel(lang), callback_data: "faq:menu" }],
-    [{ text: buttonLabelFor(lang), url: concierge.url }],
+    [{ text: button, url: concierge.url }],
   ];
 }
 
@@ -184,8 +186,9 @@ async function sendWelcomeWithMenu(
   chatId: number,
   lang: Lang,
 ): Promise<void> {
-  await sendMessage(token, chatId, welcomeFor(lang), {
-    inlineKeyboard: buildMenuKeyboard(lang),
+  const [welcome, keyboard] = await Promise.all([welcomeFor(lang), buildMenuKeyboard(lang)]);
+  await sendMessage(token, chatId, welcome, {
+    inlineKeyboard: keyboard,
   });
 }
 
@@ -248,7 +251,7 @@ async function buildFaqDetailMessage(
       .join("\n\n");
     return `${availabilityHeaderFor(lang)}\n\n${lines}`;
   }
-  return faqEntry(key, lang).body;
+  return (await faqEntry(key, lang)).body;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -277,8 +280,9 @@ export async function handleCallbackQuery(
 
   if (key === "menu") {
     // Back to main menu — replace message with welcome + menu.
-    await editMessageText(token, chatId, messageId, welcomeFor(lang), {
-      inlineKeyboard: buildMenuKeyboard(lang),
+    const [welcome, keyboard] = await Promise.all([welcomeFor(lang), buildMenuKeyboard(lang)]);
+    await editMessageText(token, chatId, messageId, welcome, {
+      inlineKeyboard: keyboard,
     });
     return;
   }
@@ -291,9 +295,12 @@ export async function handleCallbackQuery(
     key === "membership" ||
     key === "available"
   ) {
-    const body = await buildFaqDetailMessage(key as FaqKey | "available", lang);
+    const [body, keyboard] = await Promise.all([
+      buildFaqDetailMessage(key as FaqKey | "available", lang),
+      buildFaqDetailKeyboard(lang, key as FaqKey | "available"),
+    ]);
     await editMessageText(token, chatId, messageId, body, {
-      inlineKeyboard: buildFaqDetailKeyboard(lang, key as FaqKey | "available"),
+      inlineKeyboard: keyboard,
     });
     return;
   }

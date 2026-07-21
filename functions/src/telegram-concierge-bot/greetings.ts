@@ -16,6 +16,8 @@
 //   This keeps View on her familiar 2-account flow but adds a 24/7
 //   instant auto-greet that the personal accounts can't provide.
 
+import { getBotCopyField } from "../botCopyStore";
+
 export type Lang = "en" | "th" | "zh" | "ja" | "ko";
 
 const SUPPORTED: Lang[] = ["en", "th", "zh", "ja", "ko"];
@@ -87,8 +89,11 @@ const WELCOME: Record<Lang, string> = {
     `sunred.vip`,
 };
 
-export function welcomeFor(lang: Lang): string {
-  return WELCOME[lang] || WELCOME.en;
+// 🆕 Round 28x.97 — Firestore override layer (botCopy/greeter.welcome.{lang}),
+//   checked first so an admin edit takes effect immediately with no redeploy.
+export async function welcomeFor(lang: Lang): Promise<string> {
+  const override = await getBotCopyField("greeter", "welcome", lang);
+  return override ?? WELCOME[lang] ?? WELCOME.en;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -102,8 +107,9 @@ const BUTTON_LABELS: Record<Lang, string> = {
   ko: "💬 컨시어지와 채팅",
 };
 
-export function buttonLabelFor(lang: Lang): string {
-  return BUTTON_LABELS[lang] || BUTTON_LABELS.en;
+export async function buttonLabelFor(lang: Lang): Promise<string> {
+  const override = await getBotCopyField("greeter", "button", lang);
+  return override ?? BUTTON_LABELS[lang] ?? BUTTON_LABELS.en;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -118,6 +124,7 @@ const NUDGE: Record<Lang, string> = {
   ko: "더 빠른 답변을 위해 위의 버튼을 눌러 컨시어지와 직접 채팅해주세요",
 };
 
-export function nudgeFor(lang: Lang): string {
-  return NUDGE[lang] || NUDGE.en;
+export async function nudgeFor(lang: Lang): Promise<string> {
+  const override = await getBotCopyField("greeter", "nudge", lang);
+  return override ?? NUDGE[lang] ?? NUDGE.en;
 }

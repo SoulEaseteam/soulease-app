@@ -11,6 +11,7 @@
 // src/utils/servicePricing.ts. When prices change, update both.
 
 import type { Lang } from "./greetings";
+import { getBotCopyField } from "../botCopyStore";
 
 export type FaqKey = "pricing" | "services" | "areas" | "howto" | "membership";
 
@@ -511,9 +512,15 @@ const ENTRIES: Record<FaqKey, Record<Lang, FaqEntry>> = {
   membership: MEMBERSHIP,
 };
 
-export function faqEntry(key: FaqKey, lang: Lang): FaqEntry {
+// 🆕 Round 28x.97 — Firestore override layer (botCopy/faq_{key}.{title,body}.{lang}).
+export async function faqEntry(key: FaqKey, lang: Lang): Promise<FaqEntry> {
   const langs = ENTRIES[key];
-  return langs[lang] || langs.en;
+  const fallback = langs[lang] || langs.en;
+  const [title, body] = await Promise.all([
+    getBotCopyField(`faq_${key}`, "title", lang),
+    getBotCopyField(`faq_${key}`, "body", lang),
+  ]);
+  return { title: title ?? fallback.title, body: body ?? fallback.body };
 }
 
 // ─────────────────────────────────────────────────────────────

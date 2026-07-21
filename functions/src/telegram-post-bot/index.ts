@@ -72,7 +72,7 @@ async function recordPost(payload: {
 // ─────────────────────────────────────────────────────────────
 type PromoKind = "evening" | "prime" | "late";
 
-function renderByKind(kind: PromoKind, lang: Lang, date: Date = new Date()): string {
+async function renderByKind(kind: PromoKind, lang: Lang, date: Date = new Date()): Promise<string> {
   switch (kind) {
     case "evening":
       return renderEveningOpen(date, lang);
@@ -90,7 +90,7 @@ async function broadcastPromo(kind: PromoKind, token: string): Promise<void> {
     { lang: "zh", channel: CHANNELS.ZH },
   ];
   for (const target of targets) {
-    const text = renderByKind(kind, target.lang);
+    const text = await renderByKind(kind, target.lang);
     const res = await sendChannelMessage(token, text, target.channel);
     if (res.ok) {
       logger.info(`[promo:${kind}] posted`, {
@@ -218,7 +218,7 @@ export const postToChannelManual = onCall(
       );
     }
 
-    const text = renderByKind(kind, lang);
+    const text = await renderByKind(kind, lang);
     const channel = channelForLang(lang);
     const res = await sendChannelMessage(token, text, channel);
     await recordPost({

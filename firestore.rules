@@ -572,6 +572,15 @@ service cloud.firestore {
                      resource.data.status == 'pending');
     }
 
+    // 🆕 Round 28x.97 (founder: "สนใจ" — self-service edit of Telegram bot
+    //   message content) — admin-only from the CLIENT side. Cloud Functions
+    //   read this via firebase-admin (functions/src/botCopyStore.ts), which
+    //   bypasses these rules entirely — this block only gates the admin
+    //   panel's own read/write, not the bots' ability to read their copy.
+    match /botCopy/{docId} {
+      allow read, write: if isAdmin();
+    }
+
     // 🆕 Round 28b21 (founder 2026-05-04) — Phase 3 of conversion plan.
     // ── adminPresence (heartbeat doc for "Admin online" badge) ────
     // Single doc `adminPresence/global` written by AdminLayout every

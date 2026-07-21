@@ -27,7 +27,14 @@ import {
 //   never silently drift the way the FAQ pricing block once did (28x.82).
 import { welcomeFor, buttonLabelFor, nudgeFor, type Lang } from "./telegram-concierge-bot/greetings";
 import { faqEntry, type FaqKey } from "./telegram-concierge-bot/faq";
-import { renderPrimeTime, dayKey, type DayKey, type Holiday } from "./telegram-post-bot/templates";
+import {
+  rawDailyBody,
+  rawHolidayBody,
+  rawFooter,
+  previewPromoMessage,
+  type DayKey,
+  type Holiday,
+} from "./telegram-post-bot/templates";
 
 initializeApp();
 
@@ -3762,38 +3769,51 @@ export const getTelegramBotCopyPreview = onCall(
 
     const LANGS: Lang[] = ["en", "th", "zh", "ja", "ko"];
     const FAQ_KEYS: FaqKey[] = ["pricing", "services", "areas", "howto", "membership"];
-    const byLang = <T,>(fn: (l: Lang) => T): Record<Lang, T> =>
-      Object.fromEntries(LANGS.map((l) => [l, fn(l)])) as Record<Lang, T>;
-
-    const greeter = {
-      welcome: byLang(welcomeFor),
-      button: byLang(buttonLabelFor),
-      nudge: byLang(nudgeFor),
-      faq: FAQ_KEYS.map((key) => ({
-        key,
-        title: byLang((l) => faqEntry(key, l).title),
-        body: byLang((l) => faqEntry(key, l).body),
-      })),
+    // 🆕 Round 28x.97 — byLang is now async since welcomeFor/faqEntry/
+    //   renderPrimeTime all check Firestore botCopy/* first (see
+    //   functions/src/botCopyStore.ts) so this preview always reflects the
+    //   CURRENT EFFECTIVE content — override if one's been saved, code
+    //   default otherwise — never a stale, code-only snapshot.
+    const byLang = async <T,>(fn: (l: Lang) => Promise<T>): Promise<Record<Lang, T>> => {
+      const entries = await Promise.all(LANGS.map(async (l) => [l, await fn(l)] as const));
+      return Object.fromEntries(entries) as Record<Lang, T>;
     };
 
-    const WEEK_ANCHOR_MS = Date.UTC(2026, 6, 6); // holiday-free week, see comment above
-    const days = Array.from({ length: 7 }, (_, i) => new Date(WEEK_ANCHOR_MS + i * 86_400_000));
-    const HOLIDAY_DATES: Record<Holiday, number> = {
-      valentine: Date.UTC(2026, 1, 14),
-      songkran: Date.UTC(2026, 3, 13),
-      halloween: Date.UTC(2026, 9, 31),
-      christmas: Date.UTC(2026, 11, 25),
-      newyear: Date.UTC(2026, 0, 1),
+    const faqByLang = async (key: FaqKey) => {
+      const entries = await Promise.all(LANGS.map(async (l) => [l, await faqEntry(key, l)] as const));
+      return {
+        title: Object.fromEntries(entries.map(([l, e]) => [l, e.title])) as Record<Lang, string>,
+        body: Object.fromEntries(entries.map(([l, e]) => [l, e.body])) as Record<Lang, string>,
+      };
     };
+
+    const [welcome, button, nudge, faqEntries] = await Promise.all([
+      byLang(welcomeFor),
+      byLang(buttonLabelFor),
+      byLang(nudgeFor),
+      Promise.all(FAQ_KEYS.map(async (key) => ({ key, ...(await faqByLang(key)) }))),
+    ]);
+    const greeter = { welcome, button, nudge, faq: faqEntries };
+
+    // 🆕 Round 28x.97 — reads the STORED unit directly (day/holiday key →
+    //   body), not a composed message built from a guessed reference date.
+    //   `preview` still shows the full composed message (header+body+
+    //   footer+reserve) for context, but `body` is what actually gets
+    //   read/written for editing.
+    const DAY_KEYS: DayKey[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+    const HOLIDAY_KEYS: Holiday[] = ["valentine", "songkran", "halloween", "christmas", "newyear"];
 
     const promo = {
-      days: days.map((date) => ({
-        day: dayKey(date) as DayKey,
-        text: byLang((l) => renderPrimeTime(date, l)),
+      footer: await byLang(rawFooter),
+      days: await Promise.all(DAY_KEYS.map(async (day) => {
+        const body = await byLang((l) => rawDailyBody(day, l));
+        const preview = await byLang(async (l) => previewPromoMessage(body[l], l));
+        return { day, body, preview };
       })),
-      holidays: (Object.entries(HOLIDAY_DATES) as [Holiday, number][]).map(([key, ms]) => ({
-        key,
-        text: byLang((l) => renderPrimeTime(new Date(ms), l)),
+      holidays: await Promise.all(HOLIDAY_KEYS.map(async (key) => {
+        const body = await byLang((l) => rawHolidayBody(key, l));
+        const preview = await byLang(async (l) => previewPromoMessage(body[l], l));
+        return { key, body, preview };
       })),
     };
 

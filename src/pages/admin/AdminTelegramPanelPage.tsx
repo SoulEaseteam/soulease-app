@@ -68,16 +68,82 @@ const LiveBadge: React.FC = () => (
 );
 
 // 🆕 Round 28x.95 (founder: "ทำไมไม่เอาไปโชว์จริง ใน Telegram Bot หน้าแอดมิน
-//   หลังบ้าน") — one raw-text block per message, tags left literal (exactly
-//   the payload sent to Telegram's sendMessage) so an editing decision can
-//   be made straight from what's on screen.
-const MsgBlock: React.FC<{ label: string; children: string }> = ({ label, children }) => (
+//   หลังบ้าน") — raw-text block, tags left literal (exactly the payload
+//   sent to Telegram's sendMessage).
+// 🆕 Round 28x.97 (founder: "สนใจ" — self-service edit, no code/redeploy
+//   per change) — now an editable TextField + its own Save button, writing
+//   straight to Firestore botCopy/{docId}.{field}.{lang}. The bots read the
+//   SAME doc first (functions/src/botCopyStore.ts) before falling back to
+//   the hardcoded code default, so a save here takes effect on the very
+//   next message the bot sends — no deploy needed.
+// Keyed by the caller as `${docId}-${field}-${lang}` so switching language
+// remounts this with a fresh draft (an unsaved edit in one language is
+// discarded when you switch away — mirrors every other per-language editor
+// in this app, e.g. BiosEditor).
+const EditableMsgBlock: React.FC<{
+  label: string;
+  docId: string;
+  field: string;
+  lang: PostLang;
+  value: string;
+  onSaved: (docId: string, field: string, lang: PostLang, value: string) => void;
+}> = ({ label, docId, field, lang, value, onSaved }) => {
+  const [draft, setDraft] = useState(value);
+  const [saving, setSaving] = useState(false);
+  const dirty = draft !== value;
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const trimmed = draft.trim();
+      await setDoc(
+        doc(db, "botCopy", docId),
+        { [field]: { [lang]: trimmed }, updatedAt: serverTimestamp() },
+        { merge: true },
+      );
+      setDraft(trimmed);
+      onSaved(docId, field, lang, trimmed);
+    } catch (e) {
+      console.error("[bot-copy] save failed", e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Box sx={{ mb: 1.25 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: "4px", gap: 1 }}>
+        <Typography sx={{ fontSize: 11, fontWeight: 800, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+          {label}
+        </Typography>
+        <Button
+          size="small" disabled={!dirty || saving} onClick={() => void save()}
+          startIcon={saving ? <CircularProgress size={11} /> : <FloppyDisk size={11} weight="bold" />}
+          sx={{ minWidth: "auto", fontSize: 11, fontWeight: 700, textTransform: "none", color: dirty ? adminColor.accent : adminColor.dim, px: "6px", py: "2px" }}
+        >
+          บันทึก
+        </Button>
+      </Box>
+      <TextField
+        fullWidth multiline minRows={2} value={draft} onChange={(e) => setDraft(e.target.value)}
+        sx={{
+          ...fieldSx,
+          "& .MuiOutlinedInput-root": { ...fieldSx["& .MuiOutlinedInput-root"], fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 12.5, lineHeight: 1.55 },
+        }}
+      />
+    </Box>
+  );
+};
+
+/** Read-only variant — used for the composed "ตัวอย่างเต็ม" preview, which
+ *  is never itself editable (it's header+body+footer+reserve joined). */
+const MsgPreview: React.FC<{ label: string; children: string }> = ({ label, children }) => (
   <Box sx={{ mb: 1.25 }}>
-    <Typography sx={{ fontSize: 11, fontWeight: 800, color: adminColor.dim, mb: "4px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+    <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: adminColor.dim, mb: "4px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
       {label}
     </Typography>
-    <Box sx={{ background: adminColor.panel, border: `1px solid ${adminColor.line}`, borderRadius: "10px", p: "10px 12px" }}>
-      <Typography sx={{ fontSize: 12.5, color: adminColor.text, whiteSpace: "pre-wrap", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", lineHeight: 1.55 }}>
+    <Box sx={{ background: adminColor.panel3, border: `1px solid ${adminColor.line}`, borderRadius: "10px", p: "10px 12px" }}>
+      <Typography sx={{ fontSize: 12, color: adminColor.muted, whiteSpace: "pre-wrap", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", lineHeight: 1.5 }}>
         {children}
       </Typography>
     </Box>
@@ -108,8 +174,9 @@ interface BotCopyPreview {
     faq: { key: string; title: Record<PostLang, string>; body: Record<PostLang, string> }[];
   };
   promo: {
-    days: { day: string; text: Record<PostLang, string> }[];
-    holidays: { key: string; text: Record<PostLang, string> }[];
+    footer: Record<PostLang, string>;
+    days: { day: string; body: Record<PostLang, string>; preview: Record<PostLang, string> }[];
+    holidays: { key: string; body: Record<PostLang, string>; preview: Record<PostLang, string> }[];
   };
 }
 
@@ -171,6 +238,35 @@ const AdminTelegramPanelPage: React.FC = () => {
       }
     })();
   }, []);
+
+  // 🆕 Round 28x.97 — patch local state after a successful field save so
+  // the panel reflects the edit immediately without a full reload. Promo
+  // day/holiday `preview` fields are NOT recomputed here (that's a server-
+  // side composed string) — they go stale until the next reload, which is
+  // cosmetic only; the stored `body` (what the bot actually reads) is
+  // always correct right after save.
+  const handleBotCopySaved = (docId: string, field: string, lang: PostLang, value: string) => {
+    setBotCopy((prev) => {
+      if (!prev) return prev;
+      const next: BotCopyPreview = structuredClone(prev);
+      if (docId === "greeter" && (field === "welcome" || field === "button" || field === "nudge")) {
+        next.greeter[field][lang] = value;
+      } else if (docId.startsWith("faq_") && field === "body") {
+        const key = docId.slice(4);
+        const entry = next.greeter.faq.find((f) => f.key === key);
+        if (entry) entry.body[lang] = value;
+      } else if (docId === "promo_footer" && field === "text") {
+        next.promo.footer[lang] = value;
+      } else if (docId.startsWith("promo_") && field === "body") {
+        const key = docId.slice(6);
+        const day = next.promo.days.find((d) => d.day === key);
+        if (day) day.body[lang] = value;
+        const holiday = next.promo.holidays.find((h) => h.key === key);
+        if (holiday) holiday.body[lang] = value;
+      }
+      return next;
+    });
+  };
 
   // ── 2. Daily Digest header/footer (adminSettings/telegramBot) ──
   const DEFAULT_DIGEST_HEADER = "📊 รายงานประจำวัน · SunRed";
@@ -428,30 +524,66 @@ const AdminTelegramPanelPage: React.FC = () => {
 
           {botCopy && (
             <Stack spacing={2.5}>
+              <Typography sx={{ fontSize: 11.5, color: adminColor.accent, fontWeight: 700, background: `${adminColor.accent}14`, borderRadius: "8px", p: "8px 10px" }}>
+                แก้ตรงนี้แล้วกด &ldquo;บันทึก&rdquo; มีผลทันที ไม่ต้องรอ deploy — บอทอ่านค่านี้ก่อนเสมอ ถ้าไม่เคยแก้จะใช้ค่าเดิมในโค้ด
+              </Typography>
+
               <Box>
                 <Typography sx={subheaderSx}>SunRed Greeter · @SunRedGreeterBot</Typography>
-                <MsgBlock label="ข้อความต้อนรับ">{botCopy.greeter.welcome[contentLang]}</MsgBlock>
-                <MsgBlock label="ปุ่ม">{botCopy.greeter.button[contentLang]}</MsgBlock>
-                <MsgBlock label="ข้อความเตือน ถ้าลูกค้าพิมพ์แทนกดปุ่ม">{botCopy.greeter.nudge[contentLang]}</MsgBlock>
+                <EditableMsgBlock
+                  key={`greeter-welcome-${contentLang}`} label="ข้อความต้อนรับ"
+                  docId="greeter" field="welcome" lang={contentLang}
+                  value={botCopy.greeter.welcome[contentLang]} onSaved={handleBotCopySaved}
+                />
+                <EditableMsgBlock
+                  key={`greeter-button-${contentLang}`} label="ปุ่ม"
+                  docId="greeter" field="button" lang={contentLang}
+                  value={botCopy.greeter.button[contentLang]} onSaved={handleBotCopySaved}
+                />
+                <EditableMsgBlock
+                  key={`greeter-nudge-${contentLang}`} label="ข้อความเตือน ถ้าลูกค้าพิมพ์แทนกดปุ่ม"
+                  docId="greeter" field="nudge" lang={contentLang}
+                  value={botCopy.greeter.nudge[contentLang]} onSaved={handleBotCopySaved}
+                />
                 {botCopy.greeter.faq.map((f) => (
-                  <MsgBlock key={f.key} label={`FAQ · ${FAQ_LABEL_TH[f.key] ?? f.key}`}>{f.body[contentLang]}</MsgBlock>
+                  <EditableMsgBlock
+                    key={`faq_${f.key}-body-${contentLang}`} label={`FAQ · ${FAQ_LABEL_TH[f.key] ?? f.key}`}
+                    docId={`faq_${f.key}`} field="body" lang={contentLang}
+                    value={f.body[contentLang]} onSaved={handleBotCopySaved}
+                  />
                 ))}
               </Box>
 
               <Box>
                 <Typography sx={subheaderSx}>Daily Digest · ตัวอย่างเต็ม</Typography>
-                <MsgBlock label="โครงข้อความ (ตัวเลขคำนวณสดทุกครั้ง)">
+                <MsgPreview label="โครงข้อความ (ตัวเลขคำนวณสดทุกครั้ง) — แก้หัวข้อ/ท้ายข้อความได้ในการ์ด Daily Digest ด้านล่าง">
                   {`${digestHeader}\n\n[ Funnel Analytics + Bookings ย้อนหลัง 24 ชม. ]\n\n${digestFooter || "(ไม่มีข้อความท้ายรายงาน)"}`}
-                </MsgBlock>
+                </MsgPreview>
+              </Box>
+
+              <Box>
+                <Typography sx={subheaderSx}>Promo Bot · ท้ายข้อความ (ทุกโพสต์)</Typography>
+                <EditableMsgBlock
+                  key={`promo_footer-text-${contentLang}`} label="พื้นที่บริการ + ราคาเริ่มต้น"
+                  docId="promo_footer" field="text" lang={contentLang}
+                  value={botCopy.promo.footer[contentLang]} onSaved={handleBotCopySaved}
+                />
               </Box>
 
               <Box>
                 <Typography sx={subheaderSx}>Promo Bot · หมุนเวียน 7 วัน</Typography>
                 <Typography sx={{ fontSize: 11.5, color: adminColor.dim, mb: 1 }}>
-                  ตัวอย่างช่วง Prime Time (22:00) — หัวข้อเปลี่ยนตามรอบเย็น/คืน/ดึก แต่เนื้อหาเหมือนกันทั้งวัน
+                  เนื้อหาต่อวัน — หัวข้อ/ท้ายข้อความคำนวณแยกต่างหาก ไม่ต้องพิมพ์ซ้ำ ตัวอย่างเต็มด้านล่างแต่ละวัน (อาจไม่อัปเดตทันทีถ้าเพิ่งแก้ท้ายข้อความด้านบน — รีเฟรชหน้าเพื่อดูล่าสุด)
                 </Typography>
                 {botCopy.promo.days.map((d) => (
-                  <MsgBlock key={d.day} label={DAY_LABEL_TH[d.day] ?? d.day}>{d.text[contentLang]}</MsgBlock>
+                  <Box key={d.day} sx={{ mb: 1.75 }}>
+                    <EditableMsgBlock
+                      key={`promo_${d.day}-body-${contentLang}`} label={DAY_LABEL_TH[d.day] ?? d.day}
+                      docId={`promo_${d.day}`} field="body" lang={contentLang}
+                      value={d.body[contentLang]} onSaved={handleBotCopySaved}
+                    />
+                    <MsgPreview label="ตัวอย่างเต็ม (ช่วง Prime Time)">{d.preview[contentLang]}</MsgPreview>
+                  </Box>
                 ))}
               </Box>
 
@@ -461,7 +593,14 @@ const AdminTelegramPanelPage: React.FC = () => {
                   แทนที่เนื้อหาประจำวันทั้งวันตามช่วงปฏิทินจริง
                 </Typography>
                 {botCopy.promo.holidays.map((h) => (
-                  <MsgBlock key={h.key} label={HOLIDAY_LABEL_TH[h.key] ?? h.key}>{h.text[contentLang]}</MsgBlock>
+                  <Box key={h.key} sx={{ mb: 1.75 }}>
+                    <EditableMsgBlock
+                      key={`promo_${h.key}-body-${contentLang}`} label={HOLIDAY_LABEL_TH[h.key] ?? h.key}
+                      docId={`promo_${h.key}`} field="body" lang={contentLang}
+                      value={h.body[contentLang]} onSaved={handleBotCopySaved}
+                    />
+                    <MsgPreview label="ตัวอย่างเต็ม (ช่วง Prime Time)">{h.preview[contentLang]}</MsgPreview>
+                  </Box>
                 ))}
               </Box>
             </Stack>

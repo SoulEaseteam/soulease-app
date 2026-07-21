@@ -18,6 +18,7 @@
 
 import type { Lang } from "./rotation";
 import { activeHoliday, dayKey, type DayKey, type Holiday } from "./calendar";
+import { getBotCopyField } from "../botCopyStore";
 
 export type Slot = "evening" | "prime" | "late";
 
@@ -386,14 +387,17 @@ const FOOTER: Record<Lang, string> = {
 // Composer — picks header + body + footer + reserve and joins.
 // ─────────────────────────────────────────────────────────────
 
-function compose(
+// 🆕 Round 28x.97 — Firestore override layer: promo_{dayKey|holiday}.body
+//   and promo_footer.text, checked first so an admin edit takes effect on
+//   the very next scheduled post with no redeploy.
+async function compose(
   slot: Slot,
   body: string,
   lang: Lang,
   includeWebsite: boolean,
-): string {
+): Promise<string> {
   const header = SLOT_HEADERS[slot][lang] || SLOT_HEADERS[slot].en;
-  const footer = FOOTER[lang] || FOOTER.en;
+  const footer = await rawFooter(lang);
   const lines = [
     `<b>${header}</b>`,
     "",
@@ -407,31 +411,56 @@ function compose(
   return lines.join("\n");
 }
 
-function pickBody(date: Date, lang: Lang): string {
-  const holiday = activeHoliday(date);
-  if (holiday) {
-    const map = HOLIDAY_BODIES[holiday];
-    return map[lang] || map.en;
-  }
-  const dk = dayKey(date);
+// 🆕 Round 28x.97 — raw per-key lookups (Firestore-first, code fallback),
+//   exported so the admin edit UI can read/save exactly the stored unit
+//   (one day/holiday's body, or the shared footer) instead of a fully
+//   composed message that bundles header+body+footer+reserve together.
+export async function rawDailyBody(dk: DayKey, lang: Lang): Promise<string> {
+  const override = await getBotCopyField(`promo_${dk}`, "body", lang);
+  if (override) return override;
   const map = DAILY_BODIES[dk];
   return map[lang] || map.en;
+}
+
+export async function rawHolidayBody(holiday: Holiday, lang: Lang): Promise<string> {
+  const override = await getBotCopyField(`promo_${holiday}`, "body", lang);
+  if (override) return override;
+  const map = HOLIDAY_BODIES[holiday];
+  return map[lang] || map.en;
+}
+
+export async function rawFooter(lang: Lang): Promise<string> {
+  const override = await getBotCopyField("promo_footer", "text", lang);
+  return override ?? (FOOTER[lang] || FOOTER.en);
+}
+
+async function pickBody(date: Date, lang: Lang): Promise<string> {
+  const holiday = activeHoliday(date);
+  if (holiday) return rawHolidayBody(holiday, lang);
+  return rawDailyBody(dayKey(date), lang);
+}
+
+/** Compose a full preview message from a raw body — same header/footer/
+ *  reserve wrapping as the live "prime" slot, for the admin edit UI to
+ *  show "here's what this will actually look like when sent". */
+export async function previewPromoMessage(body: string, lang: Lang): Promise<string> {
+  return compose("prime", body, lang, /* website */ false);
 }
 
 // ─────────────────────────────────────────────────────────────
 // Public renderers — take a Date (BKK-aware) + Lang.
 // ─────────────────────────────────────────────────────────────
 
-export function renderEveningOpen(date: Date, lang: Lang = "en"): string {
-  return compose("evening", pickBody(date, lang), lang, /* website */ false);
+export async function renderEveningOpen(date: Date, lang: Lang = "en"): Promise<string> {
+  return compose("evening", await pickBody(date, lang), lang, /* website */ false);
 }
 
-export function renderPrimeTime(date: Date, lang: Lang = "en"): string {
-  return compose("prime", pickBody(date, lang), lang, /* website */ false);
+export async function renderPrimeTime(date: Date, lang: Lang = "en"): Promise<string> {
+  return compose("prime", await pickBody(date, lang), lang, /* website */ false);
 }
 
-export function renderLateNight(date: Date, lang: Lang = "en"): string {
-  return compose("late", pickBody(date, lang), lang, /* website */ true);
+export async function renderLateNight(date: Date, lang: Lang = "en"): Promise<string> {
+  return compose("late", await pickBody(date, lang), lang, /* website */ true);
 }
 
 // Re-exports so callers (admin panel preview) can branch on the routing
