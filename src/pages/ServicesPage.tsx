@@ -40,7 +40,7 @@ import {
 import { useServiceConfigVersion } from "@/hooks/useServiceConfigVersion";
 import HowItWorks from "@/components/home/HowItWorks";
 import BundleSection from "@/components/common/BundleSection";
-import { useDocumentMeta } from "@/utils/useDocumentMeta";
+import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 import { responsiveShell } from "@/theme/breakpoints";
 import { CONCIERGE } from "@/config/concierge";
 import { accents, gradients } from "@/theme";
@@ -171,12 +171,25 @@ const ServicesPage: React.FC = () => {
         : "services";
   const [section, setSection] = React.useState<"services" | "about" | "how">(initialTab);
 
+  // 🆕 Round 28x.99h — audit finding: this used to hardcode an English-only
+  //   generic title/description, so hydration overwrote the localized,
+  //   keyword-rich prerendered <title> from scripts/prerender-routes.mjs
+  //   on EVERY locale's /services shell (zh, zh-TW, ja, ko included), not
+  //   just English. Now sourced from the SAME copy via i18n.ts's
+  //   meta.services.* keys — keep those in sync with prerender-routes.mjs
+  //   LOC.servicesTitle/servicesDesc.
   useDocumentMeta({
-    title: "Services · SunRed Bangkok Outcall Massage",
-    description:
-      "Choose your outcall massage in Bangkok: Thai, Aromatherapy, Gentleman's Signature, and SunRed Therapeutic. From ฿1,200, delivered to your hotel or residence.",
+    title: t(
+      "meta.services.title",
+      "Outcall Massage Services in Bangkok · Thai, Aromatherapy & More | SunRed"
+    ),
+    description: t(
+      "meta.services.description",
+      "Browse SunRed's outcall massage menu delivered to your Bangkok hotel — Traditional Thai (฿1,200), Aromatherapy (฿1,600), Gentleman's Signature (฿2,200) and the premium Therapeutic Experience (฿3,200). 60/90/120 min. EN/中文/日本語/한국어, 24/7."
+    ),
     url: "https://sunred.vip/services",
     type: "website",
+    locale: langToLocale(i18n.language),
   });
 
   // 🆕 Round 28r90 (r89 audit finding #1) — Live-config wired:

@@ -224,11 +224,22 @@ const ServiceDetailPage: React.FC = () => {
     return () => unsub();
   }, [service]);
 
+  // 🆕 Round 28x.99h — audit finding (same class as ServicesPage/
+  //   PricingPage): the previous "{{name}} · SunRed Bangkok" template
+  //   was weaker than what scripts/prerender-routes.mjs already writes
+  //   for the SAME URL (serviceTitle: "${n} (Outcall) in Bangkok — from
+  //   ฿${p} | SunRed") — hydration was downgrading the SEO title. Only
+  //   fixed the English default here (Search Console data from earlier
+  //   this session — Round 28s224 — showed every top-traffic query on
+  //   this vertical is English); a full per-language pass matching
+  //   prerender's localized serviceTitle() functions is future work.
   useDocumentMeta({
     title: service
-      ? t("meta.serviceDetail.title", "{{name}} · SunRed Bangkok", {
-          name: service.name,
-        })
+      ? t(
+          "meta.serviceDetail.title",
+          "{{name}} (Outcall) in Bangkok — from ฿{{price}} | SunRed",
+          { name: service.name, price: priceForDuration(service, 60).toLocaleString("en-US") }
+        )
       : t("meta.serviceDetail.fallback", "SunRed Services"),
     description: service ? service.desc : undefined,
     locale: langToLocale(i18n.language),

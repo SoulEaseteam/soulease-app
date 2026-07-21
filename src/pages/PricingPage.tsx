@@ -86,7 +86,7 @@ const BESTSELLER_ID = "SR-HJ2200";
 //   Therapeutic") — only these two carry the premium CTA wording.
 const PREMIUM_BENEFITS_IDS = new Set(["SR-HJ2200", "SR-B2B3200"]);
 import { responsiveShell } from "@/theme/breakpoints";
-import { useDocumentMeta } from "@/utils/useDocumentMeta";
+import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 import { CONCIERGE } from "@/config/concierge";
 
 // 🆕 28w.28 — concierge channels (ported from ServicesPage) for the Reach us grid.
@@ -256,15 +256,26 @@ const SectionTitle: React.FC<{
 // ─── Page ─────────────────────────────────────────────────────────────
 
 const PricingPage: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
+  // 🆕 Round 28x.99h — same audit finding as ServicesPage: hardcoded
+  //   English-only title/description was overwriting the localized
+  //   prerendered <title> on every locale's /pricing shell after
+  //   hydration. Sourced from i18n.ts's meta.pricing.* keys now — keep
+  //   those in sync with scripts/prerender-routes.mjs PRICING_COPY.
   useDocumentMeta({
-    title: "Core Experiences · Service Pricing | SunRed",
-    description:
-      "SunRed Core Experiences — full service pricing menu. Verified practitioners delivered to your Bangkok hotel. Aromatherapy, Traditional Thai, Gentleman's Signature, and SunRed Therapeutic — 60/90/120 min tiers with transparent rates.",
+    title: t(
+      "meta.pricing.title",
+      "Core Experiences · Outcall Massage Pricing in Bangkok | SunRed"
+    ),
+    description: t(
+      "meta.pricing.description",
+      "SunRed Core Experiences — full pricing for our Bangkok outcall massage menu (Traditional Thai, Aromatherapy, Gentleman's Signature, Therapeutic). Verified practitioners, delivered to your hotel. 24/7 concierge in EN/中文/日本語/한국어."
+    ),
     url: "https://sunred.vip/pricing",
     type: "website",
+    locale: langToLocale(i18n.language),
   });
 
   // Ordered list of services (falls back to catalog order if a SKU is
