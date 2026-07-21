@@ -27,7 +27,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { fonts } from "@/theme";
 import { CONCIERGE } from "@/config/concierge";
 
@@ -35,6 +35,16 @@ type FooterLink = {
   label: string;
   onClick?: () => void;
   href?: string;
+  /** 🆕 Round 28x.99d (founder: "ทำให้คำค้นหาติดอันดับหน่อย") — internal
+   *  route link. Renders a real react-router <Link>, which outputs a real
+   *  <a href> in the DOM (unlike onClick + navigate(), which is invisible
+   *  to Googlebot's link-discovery crawler — confirmed via URL Inspection:
+   *  the 5 district SEO pages showed "Referring page: None detected" even
+   *  though they're real, unique, content-rich pages (fixed 28x.7) — sitting
+   *  in the sitemap alone is a much weaker crawl-priority signal than an
+   *  actual internal link. Footer renders on every page, so this is the
+   *  single highest-leverage place to add one. */
+  to?: string;
 };
 
 const HomeFooterV2: React.FC = () => {
@@ -50,22 +60,37 @@ const HomeFooterV2: React.FC = () => {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
       // Not on home page — navigate home then scroll
-      navigate("/");
+      void navigate("/");
     }
   };
 
   const menuLinks: FooterLink[] = [
-    { label: t("footer.home", "Home"), onClick: () => navigate("/") },
-    { label: t("footer.services", "Services"), onClick: () => navigate("/services") },
+    { label: t("footer.home", "Home"), to: "/" },
+    { label: t("footer.services", "Services"), to: "/services" },
     { label: t("footer.practitioners", "Practitioners"), onClick: scrollToTherapistGrid },
-    { label: t("footer.nearMe", "Near me"), onClick: () => navigate("/near-me") },
-    { label: t("footer.pricing", "Pricing"), onClick: () => navigate("/pricing") },
+    { label: t("footer.nearMe", "Near me"), to: "/near-me" },
+    { label: t("footer.pricing", "Pricing"), to: "/pricing" },
+  ];
+
+  // 🆕 Round 28x.99d — the 5 district SEO landing pages (App.tsx →
+  //   KeywordLanding, real unique content per 28x.7) had ZERO internal
+  //   links pointing to them anywhere on the site — only reachable via
+  //   the sitemap, which Google Search Console confirmed is a weak crawl
+  //   signal ("Referring page: None detected" on every one of them).
+  //   Footer renders site-wide, so this single column now gives Googlebot
+  //   a real <a href> path to all 5 from every page.
+  const areaLinks: FooterLink[] = [
+    { label: "Sukhumvit", to: "/outcall-massage-sukhumvit" },
+    { label: "Silom", to: "/outcall-massage-silom" },
+    { label: "Asok", to: "/outcall-massage-asok" },
+    { label: "Thonglor", to: "/outcall-massage-thonglor" },
+    { label: t("footer.outcallNearMe", "Outcall near me"), to: "/outcall-massage-near-me" },
   ];
 
   const helpLinks: FooterLink[] = [
-    { label: t("footer.howToBook", "How to book"), onClick: () => navigate("/services?tab=how") },
-    { label: t("footer.payment", "Payment"), onClick: () => navigate("/services?tab=how") },
-    { label: t("footer.faq", "FAQ"), onClick: () => navigate("/services?tab=how") },
+    { label: t("footer.howToBook", "How to book"), to: "/services?tab=how" },
+    { label: t("footer.payment", "Payment"), to: "/services?tab=how" },
+    { label: t("footer.faq", "FAQ"), to: "/services?tab=how" },
     {
       label: t("footer.contact", "Contact us"),
       href: CONCIERGE.whatsappUrl,
@@ -89,6 +114,7 @@ const HomeFooterV2: React.FC = () => {
 
   const columns: { title: string; links: FooterLink[] }[] = [
     { title: t("footer.col.menu", "Menu"), links: menuLinks },
+    { title: t("footer.col.areas", "Areas"), links: areaLinks },
     { title: t("footer.col.help", "Help"), links: helpLinks },
     { title: t("footer.col.contact", "Contact us"), links: contactLinks },
   ];
@@ -180,7 +206,7 @@ const HomeFooterV2: React.FC = () => {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(3, 1fr)" },
+          gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(4, 1fr)" },
           gap: { xs: "18px 16px", md: "20px" },
           paddingTop: "20px",
           borderTop: "1px solid var(--sr-line)", // subtle divider on dark
@@ -222,7 +248,25 @@ const HomeFooterV2: React.FC = () => {
                     lineHeight: 1.5,
                   }}
                 >
-                  {link.href ? (
+                  {link.to ? (
+                    <Box
+                      component={RouterLink}
+                      to={link.to}
+                      sx={{
+                        color: "inherit",
+                        textDecoration: "none",
+                        transition: "color 0.16s ease",
+                        "&:hover": { color: "#D97C95" }, // ROSE — link hover
+                        "&:focus-visible": {
+                          outline: "2px solid #D97C95", // ROSE focus ring
+                          outlineOffset: 2,
+                          borderRadius: "3px",
+                        },
+                      }}
+                    >
+                      {link.label}
+                    </Box>
+                  ) : link.href ? (
                     <Box
                       component="a"
                       href={link.href}
