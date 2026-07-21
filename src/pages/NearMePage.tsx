@@ -421,9 +421,17 @@ const TaxiEstimator: React.FC = () => {
   if (roster.length === 0) return null;
 
   return (
-    // 🆕 28w.16 — narrow the price-check widget only (founder clarified
-    //   "ลดความกว้าง" = just the estimator, not the whole near-me page).
-    <Box sx={{ mt: 3.5, px: 0.5, maxWidth: 360, mx: "auto" }}>
+    // 🆕 28x.99r (founder: "ให้มันเป็นอันเดียวกัน ... ย้ายเช็กโลเคชั่นขึ้นไปด้านบน
+    //   พร้อมอัปเดตราคาที่ตั้งใหม่") — 28w.16 deliberately narrowed this widget to
+    //   360px on its own; next to the full-width map/Areas-we-cover sections above
+    //   and below it, that read as a disconnected form floating in a wide dark
+    //   page. Dropped the extra cap so it shares the page's own responsiveShell
+    //   width, and split the card into a Location column (search/map/current-
+    //   location — now first, so desktop reads it left-to-right in that order
+    //   and mobile stacks it on top) and a Practitioner-and-price column, so the
+    //   reclaimed width is used by an actual two-up layout instead of a single
+    //   stretched-out form.
+    <Box sx={{ mt: 3.5, px: 0.5 }}>
       <SectionHeader label={t("nearme.taxi.title", "Estimate taxi to your place")} center />
 
       <Box
@@ -433,301 +441,308 @@ const TaxiEstimator: React.FC = () => {
           background: "var(--sr-panel)",
           border: "1px solid var(--sr-hairline)",
           boxShadow: "var(--sr-card-shadow)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 0.75,
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+          gap: { xs: 0.75, md: 2 },
+          alignItems: "start",
         }}
       >
-        {/* Practitioner picker */}
-        <Box>
-          {/* 🆕 28w.68 (founder "เปลี่ยนเป็นข้อความว่าเลือกชื่อพนักงาน ภาษาอังกฤษ") */}
-          <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 800, color: "var(--sr-body)", mb: 0.5 }}>
-            {t("nearme.taxi.practitioner", "Select practitioner")}
-          </Typography>
+        {/* ── Location column (search / map / drop-a-pin / current location) ── */}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+          {/* Search box (Google Places autocomplete) */}
           <Box
-            component="select"
-            value={selectedId}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedId(e.target.value)}
-            aria-label={t("nearme.taxi.practitioner", "Select practitioner")}
+            component="input"
+            ref={searchInputRef}
+            placeholder={t("nearme.taxi.search", "Search your address or place…")}
+            aria-label={t("nearme.taxi.search", "Search your address or place…")}
             sx={{
               width: "100%",
-              appearance: "none",
+              boxSizing: "border-box",
               fontFamily: SANS,
               fontSize: 14,
-              fontWeight: 600,
               color: "var(--sr-ink)",
               background: "var(--sr-panel-2)",
               border: "1px solid var(--sr-hairline)",
               borderRadius: "12px",
-              padding: "11px 14px",
-              cursor: "pointer",
+              padding: "9px 12px",
+              "&::placeholder": { color: "var(--sr-muted)" },
+              "&:focus": { outline: "none", borderColor: ROSE },
+            }}
+          />
+
+          {/* The map */}
+          <Box
+            sx={{
+              position: "relative",
+              borderRadius: "14px",
+              overflow: "hidden",
+              border: "1px solid var(--sr-hairline)",
+              height: 118,
+              background: "var(--sr-panel-2)",
             }}
           >
-            {/* 🆕 28x.44 — placeholder shown until the guest picks; no name pre-filled. */}
-            <option value="">{t("nearme.taxi.pickPrompt", "Select practitioner…")}</option>
-            {roster.map((p) => {
-              // 🆕 28w.11 — founder: drop the area names, show the real
-              //   road distance from each practitioner to the picked location.
-              const km =
-                coords && p.lat != null && p.lng != null
-                  ? haversineKm(p.lat, p.lng, coords.lat, coords.lng) * BKK_ROAD_FACTOR
-                  : null;
-              return (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                  {km != null ? ` · ${km.toFixed(1)} km` : ""}
-                </option>
-              );
-            })}
+            <Box ref={mapContainerRef} sx={{ position: "absolute", inset: 0 }} />
+            {!coords && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  left: "50%",
+                  bottom: 10,
+                  transform: "translateX(-50%)",
+                  px: "12px",
+                  py: "6px",
+                  borderRadius: "999px",
+                  background: "rgba(0,0,0,0.55)",
+                  color: "#fff",
+                  fontFamily: SANS,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  pointerEvents: "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {t("nearme.taxi.tapHint", "Tap the map to drop a pin")}
+              </Box>
+            )}
           </Box>
-        </Box>
 
-        {/* Search box (Google Places autocomplete) */}
-        <Box
-          component="input"
-          ref={searchInputRef}
-          placeholder={t("nearme.taxi.search", "Search your address or place…")}
-          aria-label={t("nearme.taxi.search", "Search your address or place…")}
-          sx={{
-            width: "100%",
-            boxSizing: "border-box",
-            fontFamily: SANS,
-            fontSize: 14,
-            color: "var(--sr-ink)",
-            background: "var(--sr-panel-2)",
-            border: "1px solid var(--sr-hairline)",
-            borderRadius: "12px",
-            padding: "9px 12px",
-            "&::placeholder": { color: "var(--sr-muted)" },
-            "&:focus": { outline: "none", borderColor: ROSE },
-          }}
-        />
-
-        {/* The map */}
-        <Box
-          sx={{
-            position: "relative",
-            borderRadius: "14px",
-            overflow: "hidden",
-            border: "1px solid var(--sr-hairline)",
-            height: 118,
-            background: "var(--sr-panel-2)",
-          }}
-        >
-          <Box ref={mapContainerRef} sx={{ position: "absolute", inset: 0 }} />
-          {!coords && (
+          {/* 🆕 28x.45 — resolved place name + drag-to-adjust hint once a pin is set. */}
+          {coords && (
             <Box
               sx={{
-                position: "absolute",
-                left: "50%",
-                bottom: 10,
-                transform: "translateX(-50%)",
-                px: "12px",
-                py: "6px",
-                borderRadius: "999px",
-                background: "rgba(0,0,0,0.55)",
-                color: "#fff",
-                fontFamily: SANS,
-                fontSize: 11,
-                fontWeight: 600,
-                pointerEvents: "none",
-                whiteSpace: "nowrap",
+                display: "flex", alignItems: "flex-start", gap: 0.75,
+                px: "12px", py: "9px", borderRadius: "12px",
+                background: "var(--sr-panel-2)", border: "1px solid var(--sr-hairline)",
               }}
             >
-              {t("nearme.taxi.tapHint", "Tap the map to drop a pin")}
+              <Box sx={{ fontSize: 14, lineHeight: 1.4, flexShrink: 0 }}>📍</Box>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: "var(--sr-ink)", lineHeight: 1.35 }}>
+                  {placeName ?? t("nearme.taxi.pinDropped", "Pin dropped on the map")}
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "var(--sr-body)", mt: 0.2, lineHeight: 1.45 }}>
+                  {t("nearme.taxi.dragHint", "Not right? Drag the pin on the map to adjust.")}
+                </Typography>
+              </Box>
+            </Box>
+          )}
+
+          {/* Use my current location */}
+          <Box
+            component="button"
+            type="button"
+            onClick={locate}
+            disabled={status === "locating"}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1,
+              width: "100%",
+              padding: "10px 14px",
+              borderRadius: "12px",
+              border: "none",
+              background: "linear-gradient(135deg, #D97C95 0%, #C96F89 100%)",
+              color: "#fff",
+              fontFamily: SANS,
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: status === "locating" ? "default" : "pointer",
+              opacity: status === "locating" ? 0.8 : 1,
+              boxShadow: "0 6px 16px rgba(138, 58, 87, 0.28)",
+            }}
+          >
+            {status === "locating"
+              ? t("nearme.taxi.locating", "Locating…")
+              : t("nearme.taxi.useLocation", "Use my current location")}
+          </Box>
+
+          {status === "error" && (
+            <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "#C0562E", lineHeight: 1.45 }}>
+              {errMsg}
+            </Typography>
+          )}
+
+          {/* 🆕 28x.52 (idea #6) — send the exact pin to the concierge. */}
+          {coords && (
+            <Box
+              component="button"
+              type="button"
+              onClick={sharePin}
+              sx={{
+                width: "100%", py: "9px", borderRadius: "12px", cursor: "pointer",
+                background: "transparent", border: "1px solid var(--sr-hairline)",
+                color: "var(--sr-body)", fontFamily: SANS, fontSize: 12.5, fontWeight: 700,
+                display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px",
+              }}
+            >
+              <MapPin size={14} weight="fill" color={ROSE} />
+              {t("nearme.taxi.sharePin", "Send my location to the concierge")}
             </Box>
           )}
         </Box>
 
-        {/* 🆕 28x.45 — resolved place name + drag-to-adjust hint once a pin is set. */}
-        {coords && (
-          <Box
-            sx={{
-              display: "flex", alignItems: "flex-start", gap: 0.75,
-              px: "12px", py: "9px", borderRadius: "12px",
-              background: "var(--sr-panel-2)", border: "1px solid var(--sr-hairline)",
-            }}
-          >
-            <Box sx={{ fontSize: 14, lineHeight: 1.4, flexShrink: 0 }}>📍</Box>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography sx={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: "var(--sr-ink)", lineHeight: 1.35 }}>
-                {placeName ?? t("nearme.taxi.pinDropped", "Pin dropped on the map")}
-              </Typography>
-              <Typography sx={{ fontFamily: SANS, fontSize: 11.5, color: "var(--sr-body)", mt: 0.2, lineHeight: 1.45 }}>
-                {t("nearme.taxi.dragHint", "Not right? Drag the pin on the map to adjust.")}
-              </Typography>
-            </Box>
-          </Box>
-        )}
-
-        {/* Use my current location */}
-        <Box
-          component="button"
-          type="button"
-          onClick={locate}
-          disabled={status === "locating"}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 1,
-            width: "100%",
-            padding: "10px 14px",
-            borderRadius: "12px",
-            border: "none",
-            background: "linear-gradient(135deg, #D97C95 0%, #C96F89 100%)",
-            color: "#fff",
-            fontFamily: SANS,
-            fontSize: 14,
-            fontWeight: 700,
-            cursor: status === "locating" ? "default" : "pointer",
-            opacity: status === "locating" ? 0.8 : 1,
-            boxShadow: "0 6px 16px rgba(138, 58, 87, 0.28)",
-          }}
-        >
-          {status === "locating"
-            ? t("nearme.taxi.locating", "Locating…")
-            : t("nearme.taxi.useLocation", "Use my current location")}
-        </Box>
-
-        {status === "error" && (
-          <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "#C0562E", lineHeight: 1.45 }}>
-            {errMsg}
-          </Typography>
-        )}
-
-        {/* 🆕 28x.46 — route-source badge: "Live route" when the real Google
-            driving route resolved, "Estimated" while we're on the haversine
-            fallback. Same signal the booking page shows, for transparency. */}
-        {estimate && (
-          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+        {/* ── Practitioner + price column ── */}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+          {/* Practitioner picker */}
+          <Box>
+            {/* 🆕 28w.68 (founder "เปลี่ยนเป็นข้อความว่าเลือกชื่อพนักงาน ภาษาอังกฤษ") */}
+            <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 800, color: "var(--sr-body)", mb: 0.5 }}>
+              {t("nearme.taxi.practitioner", "Select practitioner")}
+            </Typography>
             <Box
+              component="select"
+              value={selectedId}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedId(e.target.value)}
+              aria-label={t("nearme.taxi.practitioner", "Select practitioner")}
               sx={{
-                display: "inline-flex", alignItems: "center", gap: "5px",
-                px: "9px", py: "3px", borderRadius: "999px",
-                background: estimate.isLive ? "rgba(22,163,74,0.14)" : "var(--sr-panel-2)",
-                border: `1px solid ${estimate.isLive ? "rgba(22,163,74,0.45)" : "var(--sr-hairline)"}`,
+                width: "100%",
+                appearance: "none",
+                fontFamily: SANS,
+                fontSize: 14,
+                fontWeight: 600,
+                color: "var(--sr-ink)",
+                background: "var(--sr-panel-2)",
+                border: "1px solid var(--sr-hairline)",
+                borderRadius: "12px",
+                padding: "11px 14px",
+                cursor: "pointer",
               }}
             >
-              <Box sx={{ width: 6, height: 6, borderRadius: "50%", background: estimate.isLive ? "#16A34A" : "var(--sr-muted)" }} />
-              <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, letterSpacing: "0.03em", color: estimate.isLive ? "#16A34A" : "var(--sr-muted)" }}>
-                {estimate.isLive ? t("nearme.taxi.liveRoute", "Live route") : t("nearme.taxi.estimated", "Estimated")}
-              </Typography>
+              {/* 🆕 28x.44 — placeholder shown until the guest picks; no name pre-filled. */}
+              <option value="">{t("nearme.taxi.pickPrompt", "Select practitioner…")}</option>
+              {roster.map((p) => {
+                // 🆕 28w.11 — founder: drop the area names, show the real
+                //   road distance from each practitioner to the picked location.
+                const km =
+                  coords && p.lat != null && p.lng != null
+                    ? haversineKm(p.lat, p.lng, coords.lat, coords.lng) * BKK_ROAD_FACTOR
+                    : null;
+                return (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                    {km != null ? ` · ${km.toFixed(1)} km` : ""}
+                  </option>
+                );
+              })}
             </Box>
           </Box>
-        )}
 
-        {/* Result */}
-        {estimate && (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "stretch",
-              borderRadius: "14px",
-              overflow: "hidden",
-              border: "1px solid var(--sr-hairline)",
-            }}
-          >
-            <ResultCell
-              label={t("nearme.taxi.distance", "Distance")}
-              value={`${estimate.distanceKm.toFixed(1)} km`}
-            />
-            <ResultCell
-              label={t("nearme.taxi.fare", "Travel budget")}
-              value={estimate.fare != null ? formatTHB(Math.round(tweenedFare)) : "—"}
-              strike={estimate.fare != null && estimate.save > 0 && estimate.original != null ? formatTHB(estimate.original) : undefined}
-              accent
-              divider
-            />
-            {estimate.etaMin != null && (
-              <ResultCell
-                label={t("nearme.taxi.eta", "Arrival")}
-                value={`~${Math.round(estimate.etaMin)} min`}
-                divider
-              />
-            )}
-          </Box>
-        )}
-
-        {/* 🆕 28x.47 — "you saved" chip (Grab-style), only when the online fare
-            actually undercuts the band. */}
-        {estimate?.fare != null && estimate.save > 0 && (
-          <Box sx={{ display: "flex", justifyContent: "center" }}>
-            <Box
-              sx={{
-                display: "inline-flex", alignItems: "center", gap: "6px",
-                px: "12px", py: "5px", borderRadius: "999px",
-                background: "rgba(230,25,126,0.10)",
-                border: "1px solid rgba(230,25,126,0.30)",
-              }}
-            >
-              <Box component="span" sx={{ width: 7, height: 7, borderRadius: "50%", background: "#E6197E" }} />
-              <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 800, color: "#C2185B" }}>
-                {t("nearme.taxi.saved", "You save ฿{{n}} booking online", { n: estimate.save })}
-              </Typography>
-            </Box>
-          </Box>
-        )}
-
-        {/* 🆕 28x.52 (idea #3) — all-in "from" price + one-tap book. */}
-        {allIn != null && selected && (
-          <Box
-            sx={{
-              mt: 0.5, p: "12px 14px", borderRadius: "14px",
-              background: "var(--sr-panel-2)", border: "1px solid var(--sr-hairline)",
-              display: "flex", flexDirection: "column", gap: 1,
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 1 }}>
-              <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "var(--sr-body)" }}>
-                {t("nearme.taxi.allInLabel", "From, with {{name}}", { name: selected.name })}
-              </Typography>
-              <Box sx={{ textAlign: "right" }}>
-                <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "var(--sr-ink)", lineHeight: 1 }}>
-                  {formatTHB(allIn)}
-                </Typography>
-                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "var(--sr-body)", mt: 0.3 }}>
-                  {t("nearme.taxi.allInBreak", "service from {{svc}} + travel {{taxi}}", {
-                    svc: formatTHB(startingPrice), taxi: formatTHB(allIn - startingPrice),
-                  })}
+          {/* 🆕 28x.46 — route-source badge: "Live route" when the real Google
+              driving route resolved, "Estimated" while we're on the haversine
+              fallback. Same signal the booking page shows, for transparency. */}
+          {estimate && (
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Box
+                sx={{
+                  display: "inline-flex", alignItems: "center", gap: "5px",
+                  px: "9px", py: "3px", borderRadius: "999px",
+                  background: estimate.isLive ? "rgba(22,163,74,0.14)" : "var(--sr-panel-2)",
+                  border: `1px solid ${estimate.isLive ? "rgba(22,163,74,0.45)" : "var(--sr-hairline)"}`,
+                }}
+              >
+                <Box sx={{ width: 6, height: 6, borderRadius: "50%", background: estimate.isLive ? "#16A34A" : "var(--sr-muted)" }} />
+                <Typography sx={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, letterSpacing: "0.03em", color: estimate.isLive ? "#16A34A" : "var(--sr-muted)" }}>
+                  {estimate.isLive ? t("nearme.taxi.liveRoute", "Live route") : t("nearme.taxi.estimated", "Estimated")}
                 </Typography>
               </Box>
             </Box>
+          )}
+
+          {/* Result */}
+          {estimate && (
             <Box
-              component="button"
-              type="button"
-              onClick={bookNow}
               sx={{
-                width: "100%", py: "11px", borderRadius: "12px", border: "none", cursor: "pointer",
-                background: "linear-gradient(135deg, #D97C95 0%, #C96F89 100%)",
-                color: "#fff", fontFamily: SANS, fontSize: 14, fontWeight: 800,
-                boxShadow: "0 6px 16px rgba(138,58,87,0.28)",
+                display: "flex",
+                alignItems: "stretch",
+                borderRadius: "14px",
+                overflow: "hidden",
+                border: "1px solid var(--sr-hairline)",
               }}
             >
-              {t("nearme.taxi.bookNow", "Book {{name}} now", { name: selected.name })}
+              <ResultCell
+                label={t("nearme.taxi.distance", "Distance")}
+                value={`${estimate.distanceKm.toFixed(1)} km`}
+              />
+              <ResultCell
+                label={t("nearme.taxi.fare", "Travel budget")}
+                value={estimate.fare != null ? formatTHB(Math.round(tweenedFare)) : "—"}
+                strike={estimate.fare != null && estimate.save > 0 && estimate.original != null ? formatTHB(estimate.original) : undefined}
+                accent
+                divider
+              />
+              {estimate.etaMin != null && (
+                <ResultCell
+                  label={t("nearme.taxi.eta", "Arrival")}
+                  value={`~${Math.round(estimate.etaMin)} min`}
+                  divider
+                />
+              )}
             </Box>
-          </Box>
-        )}
+          )}
 
-        {/* 🆕 28x.52 (idea #6) — send the exact pin to the concierge. */}
-        {coords && (
-          <Box
-            component="button"
-            type="button"
-            onClick={sharePin}
-            sx={{
-              width: "100%", py: "9px", borderRadius: "12px", cursor: "pointer",
-              background: "transparent", border: "1px solid var(--sr-hairline)",
-              color: "var(--sr-body)", fontFamily: SANS, fontSize: 12.5, fontWeight: 700,
-              display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px",
-            }}
-          >
-            <MapPin size={14} weight="fill" color={ROSE} />
-            {t("nearme.taxi.sharePin", "Send my location to the concierge")}
-          </Box>
-        )}
+          {/* 🆕 28x.47 — "you saved" chip (Grab-style), only when the online fare
+              actually undercuts the band. */}
+          {estimate?.fare != null && estimate.save > 0 && (
+            <Box sx={{ display: "flex", justifyContent: "center" }}>
+              <Box
+                sx={{
+                  display: "inline-flex", alignItems: "center", gap: "6px",
+                  px: "12px", py: "5px", borderRadius: "999px",
+                  background: "rgba(230,25,126,0.10)",
+                  border: "1px solid rgba(230,25,126,0.30)",
+                }}
+              >
+                <Box component="span" sx={{ width: 7, height: 7, borderRadius: "50%", background: "#E6197E" }} />
+                <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 800, color: "#C2185B" }}>
+                  {t("nearme.taxi.saved", "You save ฿{{n}} booking online", { n: estimate.save })}
+                </Typography>
+              </Box>
+            </Box>
+          )}
 
-        <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "var(--sr-body)", lineHeight: 1.55 }}>
+          {/* 🆕 28x.52 (idea #3) — all-in "from" price + one-tap book. */}
+          {allIn != null && selected && (
+            <Box
+              sx={{
+                mt: 0.5, p: "12px 14px", borderRadius: "14px",
+                background: "var(--sr-panel-2)", border: "1px solid var(--sr-hairline)",
+                display: "flex", flexDirection: "column", gap: 1,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 1 }}>
+                <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "var(--sr-body)" }}>
+                  {t("nearme.taxi.allInLabel", "From, with {{name}}", { name: selected.name })}
+                </Typography>
+                <Box sx={{ textAlign: "right" }}>
+                  <Typography sx={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "var(--sr-ink)", lineHeight: 1 }}>
+                    {formatTHB(allIn)}
+                  </Typography>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "var(--sr-body)", mt: 0.3 }}>
+                    {t("nearme.taxi.allInBreak", "service from {{svc}} + travel {{taxi}}", {
+                      svc: formatTHB(startingPrice), taxi: formatTHB(allIn - startingPrice),
+                    })}
+                  </Typography>
+                </Box>
+              </Box>
+              <Box
+                component="button"
+                type="button"
+                onClick={bookNow}
+                sx={{
+                  width: "100%", py: "11px", borderRadius: "12px", border: "none", cursor: "pointer",
+                  background: "linear-gradient(135deg, #D97C95 0%, #C96F89 100%)",
+                  color: "#fff", fontFamily: SANS, fontSize: 14, fontWeight: 800,
+                  boxShadow: "0 6px 16px rgba(138,58,87,0.28)",
+                }}
+              >
+                {t("nearme.taxi.bookNow", "Book {{name}} now", { name: selected.name })}
+              </Box>
+            </Box>
+          )}
+        </Box>
+
+        <Typography sx={{ gridColumn: { md: "1 / -1" }, fontFamily: SANS, fontSize: 12, color: "var(--sr-body)", lineHeight: 1.55 }}>
           {!estimate
             ? t("nearme.taxi.hint", "Pick a practitioner, then search, tap the map, or use your location for a taxi estimate.")
             : estimate.fare == null
