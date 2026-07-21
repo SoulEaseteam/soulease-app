@@ -196,6 +196,7 @@ interface Booking {
   discountAmount?: number;  // 🆕 28s258 — needed for the shared commission calc
   discountCode?: string;    // 🆕 28w.58 — promo code applied at booking (e.g. FREETAXI)
   discountLabel?: string;   // 🆕 28w.58 — human-readable promo label
+  attributionSource?: string; // 🆕 28x.99t — which channel the guest came from
   taxiFee?: number;
   paymentFee?: number;      // 🆕 28s260 — WeChat/Alipay surcharge, recomputed if payment method is edited
   totalPrice?: number;
@@ -1566,6 +1567,25 @@ const PAYMENT_METHOD_OPTIONS = [
 const paymentMethodLabel = (v?: string): string =>
   PAYMENT_METHOD_OPTIONS.find((o) => o.value === v)?.label ?? (v || "—");
 
+// 🆕 28x.99t — mirrors AdminBookingAddPage.tsx's SOURCE_OPTIONS (same
+//   `attributionSource` field, kept as two literals since the files don't
+//   share a module — update both together if this list changes).
+const SOURCE_OPTIONS = [
+  { value: "",              label: "ไม่ระบุ (Unknown)" },
+  { value: "telegram",      label: "Telegram (@SunRed_BKK)" },
+  { value: "wechat",        label: "WeChat" },
+  { value: "line",          label: "LINE OA" },
+  { value: "sammyboy",      label: "Sammyboy / Samsguide" },
+  { value: "referral",      label: "Referral (แนะนำจากลูกค้าเก่า)" },
+  { value: "repeat",        label: "Repeat guest (ลูกค้าประจำ)" },
+  { value: "word_of_mouth", label: "Word of mouth / คนขับแท็กซี่" },
+  { value: "google",        label: "Google" },
+  { value: "direct",        label: "Direct" },
+  { value: "other",         label: "Other · อื่นๆ" },
+];
+const sourceLabel = (v?: string | null): string =>
+  SOURCE_OPTIONS.find((o) => o.value === v)?.label ?? (v || "ไม่ระบุ (Unknown)");
+
 // 🆕 Round 28s264 (founder: "ปรับให้หน้าแก้ไข มันสวยขึ้นและใช้งานง่าย") —
 //   shared field styling for every editable control in the edit form
 //   (TextField AND Select alike), so focus/hover always reads as "this
@@ -1665,6 +1685,7 @@ const DetailPanel: React.FC<{
       taxiFee: String(b.taxiFee ?? 0),
       total: String(b.totalPrice ?? b.total ?? 0),
       discountCode: b.discountCode ?? "",
+      attributionSource: b.attributionSource ?? "",
     });
     setEditing(true);
   };
@@ -1682,6 +1703,9 @@ const DetailPanel: React.FC<{
     taxiFee: String(b.taxiFee ?? 0),
     total: String(b.totalPrice ?? b.total ?? 0),
     discountCode: b.discountCode ?? "",
+    // 🆕 28x.99t — most bookings (admin-created) never captured this;
+    //   lets the operator tag it after the fact, from memory.
+    attributionSource: b.attributionSource ?? "",
   });
 
   // 🆕 28s263 — changing Service or Duration re-fills Service price with the
@@ -1795,6 +1819,9 @@ const DetailPanel: React.FC<{
         discountCode: editForm.discountCode.trim().toUpperCase(),
         discountAmount: editDiscountAmount,
         discountLabel: editDiscountAmount > 0 ? editDiscount.label : "",
+        // 🆕 28x.99t — lets the operator backfill/correct the channel from
+        //   memory on bookings that never captured it automatically.
+        attributionSource: editForm.attributionSource || null,
         ...(editForm.therapistId && editForm.therapistId !== b.therapistId
           ? { therapistId: editForm.therapistId, therapistName: newTherapist?.name ?? b.therapistName }
           : {}),
@@ -2106,6 +2133,20 @@ const DetailPanel: React.FC<{
                   </Typography>
                 )}
 
+                {/* 🆕 28x.99t — most existing bookings never captured this;
+                    lets the operator backfill it from memory. */}
+                <TextField
+                  select label="ลูกค้ารู้จักจากไหน · Source" size="small" fullWidth
+                  value={editForm.attributionSource}
+                  onChange={(e) => setEditForm((f) => ({ ...f, attributionSource: e.target.value }))}
+                  sx={{ ...editFieldSx, mt: 1.25 }}
+                  SelectProps={editSelectProps}
+                >
+                  {SOURCE_OPTIONS.map((o) => (
+                    <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+                  ))}
+                </TextField>
+
                 {/* 🆕 28x.38 — discount code straight on the slip. Same validator
                     the customer flow uses (menu amount, premium-tier rules, min
                     spend). Feeds the computed Total via editDiscountAmount. */}
@@ -2267,6 +2308,11 @@ const DetailPanel: React.FC<{
                   label="Payment method · วิธีจ่าย"
                   value={`${paymentMethodLabel(b.payment)}${b.paymentFee ? ` (+${formatTHB(b.paymentFee)} surcharge)` : ""}`}
                 />
+                {/* 🆕 28x.99t — visible without opening Edit, so scanning the
+                    list for "which bookings still need a source tagged" is
+                    fast. */}
+                <Divider sx={{ opacity: 0.4 }} />
+                <Row label="Source · ที่มา" value={sourceLabel(b.attributionSource)} />
               </Box>
             </Box>
           </>

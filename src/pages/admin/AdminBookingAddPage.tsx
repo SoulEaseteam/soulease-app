@@ -73,6 +73,25 @@ const PAYMENT_OPTIONS = [
   { value: "alipay",    label: "Alipay (+ค่าธรรมเนียม)" },
 ];
 
+// 🆕 28x.99t (founder: "แก้ tracking ก่อน" — admin-created bookings never
+//   captured attributionSource at all, since getAttribution() only runs in
+//   the customer-facing BookingFlowPage. Only 32/615 bookings had ANY
+//   attribution before this fix, all from that one path. This lets admin
+//   self-report the channel when she knows it (guest tells her, or she
+//   recognizes the contact channel) — reuses the same `attributionSource`
+//   field the customer flow writes, so both paths land in one place.
+const SOURCE_OPTIONS = [
+  { value: "",             label: "ไม่ระบุ (Unknown)" },
+  { value: "telegram",     label: "Telegram (@SunRed_BKK)" },
+  { value: "wechat",       label: "WeChat" },
+  { value: "line",         label: "LINE OA" },
+  { value: "sammyboy",     label: "Sammyboy / Samsguide" },
+  { value: "referral",     label: "Referral (แนะนำจากลูกค้าเก่า)" },
+  { value: "repeat",       label: "Repeat guest (ลูกค้าประจำ)" },
+  { value: "word_of_mouth",label: "Word of mouth / คนขับแท็กซี่" },
+  { value: "other",        label: "Other · อื่นๆ" },
+];
+
 const MENU_PROPS = {
   PaperProps: {
     sx: {
@@ -215,6 +234,7 @@ const AdminBookingAddPage: React.FC = () => {
   const [taxiFee, setTaxiFee] = useState<number | "">("");
   const [taxiAuto, setTaxiAuto] = useState<number>(0); // computed value
   const [payment, setPayment] = useState("cash");
+  const [source,  setSource]  = useState("");
 
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
@@ -368,6 +388,9 @@ const AdminBookingAddPage: React.FC = () => {
         mapUrl,
         phone:         phone.trim(),
         note:          note.trim(),
+        // 🆕 28x.99t — admin-selected, since this booking never passed
+        //   through the customer flow's client-side capture.
+        attributionSource: source || null,
         status:        "confirmed",
         // 🆕 28w.43 — born confirmed → freeze the split now (from the current
         //   split table). No discount on admin-add, so base = servicePrice.
@@ -739,6 +762,22 @@ const AdminBookingAddPage: React.FC = () => {
               + Transfer fee {formatTHB(paymentFee)} (7%) · WeChat/Alipay
             </Typography>
           )}
+
+          {/* 🆕 28x.99t — optional channel tag, so ROI on paid/marketing
+              channels is actually measurable instead of invisible. */}
+          <Field label="ลูกค้ารู้จักจากไหน · Source" icon={<MagnifyingGlass size={14} />}>
+            <FormControl size="small" sx={{ ...inputSx(), minWidth: 240 }}>
+              <Select
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                MenuProps={MENU_PROPS}
+              >
+                {SOURCE_OPTIONS.map((o) => (
+                  <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Field>
         </Section>
 
         {/* 6 — หมายเหตุ */}

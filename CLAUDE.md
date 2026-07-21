@@ -212,8 +212,13 @@ they prefer.
 - **WeChat** — Chinese tourists are huge market, mini-program +
   account for groups
 - **LINE Official Account** — Japanese/Korean/Thai
-- **Niche directories** — Stickman Bangkok, lookpasi, secretthai,
-  bangkok101.net, eros directory
+- **Niche directories** — secretthai, bangkok101.net, eros directory
+  (⚠️ founder confirmed 2026-07-22 — **Stickman Bangkok and Lookpasi
+  were never actually used**: they were a research suggestion in this
+  file's own §🔐 playbook, never real marketing history. Don't cite
+  them as "used" channels again. **Sammyboy/Samsguide WAS real** —
+  paid ฿7,500/mo, cancelled on cost. As of this date SunRed has no
+  active directory-listing channel beyond the three above.)
 - **X/Twitter** — less Meta restrictions
 - **Reddit r/Bangkok / r/ThailandTourism** — soft community engagement
 - **Referral program** — existing customers get free upgrade
@@ -222,6 +227,27 @@ they prefer.
 ### Failed channel (cancel ASAP)
 - ❌ Singapore website ad — ฿7,500/mo × 10 months = ฿75,000 burnt, 0
   ROI, audience too narrow
+
+### Paused channel — likely worth revisiting (2026-07-22)
+- ⏸️ **Sammyboy/Samsguide network** (samsguide.living/.services,
+  sammyboyforum.com, sbf.net.nz, samsforum.com — same forum family) —
+  cancelled by founder for cost (฿7,500/mo), NOT confirmed dead like
+  the Singapore ad above. A read-only audit of `analytics_events` +
+  `bookings` (28x.99t) found real signal while it ran: **213 unique
+  sessions**, `samsguide.living` alone was the site's **#2 referrer**
+  (163 hits, behind only Google, ahead of Instagram+Telegram+Twitter
+  combined), **27 sessions (12.7%) opened the concierge chat**, 5
+  reached `booking_start`, 1 confirmed `booking_complete`. The true
+  booking count is very likely higher — most guests close via direct
+  Telegram/WhatsApp with the concierge rather than the tracked
+  in-app booking flow, and **only 32 of 615 total booking docs carry
+  ANY attribution field at all** (`attributionSource`/`utmSource`/
+  `referrerHost` mostly empty) — so this channel's real ROI was
+  probably invisible at cancellation time, not actually zero. If
+  budget allows, worth relisting — but fix booking-level attribution
+  capture first so a second ฿7,500/mo spend is actually measurable
+  this time instead of repeating the same "can't see if it's working"
+  problem.
 
 ---
 
@@ -472,10 +498,14 @@ matches outcall-vertical norms.
      `Anonymous · 2 days ago · ⭐⭐⭐⭐⭐ "Yuri was punctual…"`
    - Cadence target: 1-2/week → 8-16 reviews in 2 months
    - All identities masked, never first names from real guests
-2. **Anon-friendly directory listings** — `Stickman Bangkok` (forum
-   + weekly column pitch), `Lookpasi`, `Sammyboy / Samsguide`,
-   `secretthai`, `bangkok101.net`, `eros guide`. Reviewers are
-   anon nicks by convention in these spaces.
+2. **Anon-friendly directory listings** — `secretthai`, `bangkok101.net`,
+   `eros guide`. Reviewers are anon nicks by convention in these
+   spaces. (⚠️ Confirmed 2026-07-22: `Stickman Bangkok` and `Lookpasi`
+   were never actually used — this list was a research suggestion,
+   not real history, don't cite them as tried tactics. `Sammyboy /
+   Samsguide` WAS real — paid ฿7,500/mo, paused on cost, see §6
+   "Paused channel" for real performance data before deciding
+   whether to relist. Treat #7 below the same way.)
 3. **Reddit soft engagement** — `r/Bangkok`, `r/ThailandTourism`,
    `r/asia_travel_buddy`. Answer real travel questions; when a
    "anyone know outcall in BKK?" thread appears, DM the OP from
@@ -495,9 +525,10 @@ matches outcall-vertical norms.
 
 **🟢 Long-term (1-3 months)**
 
-7. **Stickman weekly column pitch** — Stickman writes anon reviews of
-   BKK services. Email pitch + complimentary trial. One mention =
-   lasting authority because his audience trusts him.
+7. ~~**Stickman weekly column pitch**~~ — founder confirmed 2026-07-22
+   she has never used or heard of Stickman Bangkok; this was an
+   untested research suggestion, not a real tactic in progress. Drop
+   it from active planning unless picked up fresh.
 8. **Niche blog mentions** — Bangkok expat + travel bloggers. Pitch
    "discreet outcall service". Backlinks + brand mentions = SEO +
    trust without exposing guests.
