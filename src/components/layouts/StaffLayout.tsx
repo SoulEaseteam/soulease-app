@@ -38,13 +38,18 @@ const SANS = '"Inter", system-ui, sans-serif';
 const ROSE = "#E0708F";
 
 // 🆕 Round 28x.106 (founder: "แถบบาร์เพิ่มหน้าเว็บ Practitioners เอาไว้ก่อน
-//   หน้าทำงาน") — a quick way out to the live customer site (the public
+//   หน้าทำงาน") — a quick way to peek at the live customer site (the public
 //   practitioners grid at "/"), same label + heart icon language as the
 //   customer app's own bottom nav (BottomNavGlass) first tab, so it reads
 //   as "the same tab, one level up" rather than a new concept. Placed
-//   first, ahead of the 3 staff-only tabs. Navigating there leaves
-//   StaffLayout's route tree entirely (expected — MainLayout takes over,
-//   same as tapping any other external-feeling link).
+//   first, ahead of the 3 staff-only tabs.
+//
+// 🆕 Round 28x.107 (founder: "กดแล้วเด้งมาหน้าทางเข้าลูกค้า ไม่ใช่พนักงาน") —
+//   the first version navigated in-app, which swapped the ENTIRE staff shell
+//   for the customer one (its own nav, its own Profile page) — confusing,
+//   and she has to find her way back. This one tab (`value === "/"`) opens
+//   in a NEW tab instead (see the render below) — she never actually leaves
+//   the staff app.
 const TABS = [
   { label: "Practitioners", value: "/", icon: Heart },
   { label: "หน้าทำงาน", value: "/therapist/home", icon: SquaresFour },
@@ -312,12 +317,23 @@ const StaffLayout: React.FC = () => {
         {TABS.map((tab) => {
           const active = currentTab === tab.value;
           const Icon = tab.icon;
+          // 🆕 Round 28x.107 (founder: "กดแล้วเด้งมาหน้าทางเข้าลูกค้า ไม่ใช่
+          //   พนักงาน") — navigating in-app to "/" replaced the ENTIRE staff
+          //   shell with the customer experience (its own nav, its own
+          //   Profile page) — she loses the staff app in the same tab, has
+          //   to find her way back. Opening it in a new tab instead means
+          //   she never actually leaves the staff app; the public site is
+          //   just something she can glance at alongside it.
+          const isExternalPeek = tab.value === "/";
           return (
             <Box
               key={tab.value}
               component="button"
               type="button"
-              onClick={() => navigate(tab.value)}
+              onClick={() => {
+                if (isExternalPeek) window.open("/", "_blank", "noopener");
+                else void navigate(tab.value);
+              }}
               sx={{
                 flex: 1,
                 display: "flex",
