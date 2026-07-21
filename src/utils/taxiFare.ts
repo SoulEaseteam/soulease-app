@@ -159,32 +159,44 @@ const TIER_3_PER_KM = 7;     // applies to km 6 → 40
 const TIER_3_END_KM = 40;
 const TIER_4_PER_KM = 10;    // applies to km 40+
 
-// ─── Motorcycle taxi (วินมอเตอร์ไซค์) Bangkok rate card ────────────────
+// ─── Motorcycle taxi (GrabBike) round-trip fare curve ─────────────────
 //
 // 🆕 Round 28x.99m (founder: "นับตามจริงของมอไซต์ ยกเว้น ฝนตก เป็นรถยน") —
-//   the dispatch fare now defaults to a MOTORCYCLE taxi, not a car — this
-//   is how a therapist actually gets sent out for most trips (cheaper,
+//   the dispatch fare defaults to a MOTORCYCLE taxi, not a car — this is
+//   how a therapist actually gets sent out for most trips (cheaper,
 //   faster through Bangkok traffic). Car (the GrabCar meter above) only
 //   applies when it's raining (getCachedRainStatus().tier !== "none") —
 //   a motorcycle isn't a safe or practical dispatch in the rain.
 //
-//   Rates are the Department of Land Transport's (กรมการขนส่งทางบก)
-//   legally-regulated MAXIMUM motorcycle-taxi fares for Bangkok, not an
-//   app estimate (GrabBike's own published range is too wide/informal
-//   to price a fixed quote off):
-//     • First 2 km  : not exceeding ฿25
-//     • km 2 → 5    : not exceeding ฿5/km
-//     • km 5 → 15   : not exceeding ฿10/km
-//     • km 15+      : negotiable, but capped at ฿10/km throughout if no
-//                     agreement is made — so tier 4 continues at ฿10/km.
-//   Reference: https://www.mangozero.com/price-rates-for-motorcycle-service/
-const MOTO_BASE_FARE = 25;       // first 2 km flag-fall
-const MOTO_BASE_KM = 2;
-const MOTO_TIER_2_PER_KM = 5;    // applies to km 2 → 5
-const MOTO_TIER_2_END_KM = 5;
-const MOTO_TIER_3_PER_KM = 10;   // applies to km 5 → 15
-const MOTO_TIER_3_END_KM = 15;
-const MOTO_TIER_4_PER_KM = 10;   // applies to km 15+ (same capped rate)
+// 🆕 Round 28x.99n (founder: "ฉันจะกดแกรป แล้วบอกว่าตรงไหม") — the first
+//   pass used the Department of Land Transport's regulated วินมอเตอร์ไซค์
+//   MAX rates (a real official source, but not what GrabBike actually
+//   charges — it undershot badly past ~10 km). Founder spot-checked
+//   REAL GrabBike round-trip quotes in the app from the dispatch base to
+//   5 real, previously-booked addresses and reported these back:
+//     < 3 km → ฿100 (floor)   ·   3 km → ฿110   ·   6 km → ฿180
+//     10 km → ฿270            ·  15 km → ฿450   ·  ~20 km → ฿800
+//   These are CHECKPOINTS, not a formula — GrabBike's real pricing curve
+//   isn't a clean per-km meter (it steepens noticeably past ~10 km,
+//   almost certainly demand/distance-based dynamic pricing that a fixed
+//   per-km rate can't reproduce). motoRoundTripFare() below linearly
+//   interpolates between these checkpoints instead of using stepped
+//   flat bands — CLAUDE.md's own history flagged the OLD flat-band
+//   system (28w.11, now dead code below at calcTravelBudgetResult) as
+//   "cliffy", so a smooth ramp between real checkpoints is deliberately
+//   used here instead of reintroducing that same complaint.
+//
+//   If founder re-checks Grab again later, update these checkpoints —
+//   they're real spot-checks with a shelf life, not a permanent rate
+//   card the way the DLT numbers were.
+let MOTO_FARE_CHECKPOINTS: [km: number, roundTripTHB: number][] = [
+  [0, 100],
+  [3, 110],
+  [6, 180],
+  [10, 270],
+  [15, 450],
+  [20, 800],
+];
 
 /**
  * Round-trip multiplier. 2.0 = outbound full + return full (both legs at
@@ -320,41 +332,35 @@ export function grabCarRoundTripFare(distanceKm: number): number {
 }
 
 /**
- * Compute the motorcycle-taxi (วิน) one-way fare for any distance (km),
- * using the DLT-regulated Bangkok rate tiers above. Rounded to the
- * nearest baht. Returns MOTO_BASE_FARE (฿25) for any distance ≤ 2 km.
- */
-export function motoOneWayFare(distanceKm: number): number {
-  if (!Number.isFinite(distanceKm) || distanceKm <= 0) return MOTO_BASE_FARE;
-  let fare = MOTO_BASE_FARE;
-  if (distanceKm <= MOTO_BASE_KM) return Math.round(fare);
-
-  let remaining = distanceKm - MOTO_BASE_KM;
-
-  // Tier 2 — km 2 → 5 (max 3 paid km in this band)
-  const tier2Km = Math.min(remaining, MOTO_TIER_2_END_KM - MOTO_BASE_KM);
-  fare += tier2Km * MOTO_TIER_2_PER_KM;
-  remaining -= tier2Km;
-  if (remaining <= 0) return Math.round(fare);
-
-  // Tier 3 — km 5 → 15 (max 10 paid km in this band)
-  const tier3Km = Math.min(remaining, MOTO_TIER_3_END_KM - MOTO_TIER_2_END_KM);
-  fare += tier3Km * MOTO_TIER_3_PER_KM;
-  remaining -= tier3Km;
-  if (remaining <= 0) return Math.round(fare);
-
-  // Tier 4 — km 15+ (open-ended, same capped rate)
-  fare += remaining * MOTO_TIER_4_PER_KM;
-  return Math.round(fare);
-}
-
-/**
- * Round-trip motorcycle fare = one-way × ROUND_TRIP_MULTIPLIER (two
- * separate one-way rides — there and back), same round-trip convention
- * as the car meter.
+ * Round-trip GrabBike fare for any distance (km) — linear interpolation
+ * between MOTO_FARE_CHECKPOINTS (real spot-checked round-trip quotes,
+ * not a one-way-meter × 2 formula; see the comment on the checkpoints
+ * table above for why). Distances at or beyond the last checkpoint hold
+ * at that checkpoint's fare — in practice this never matters, since
+ * ADMIN_QUOTE_KM (20) routes anything past the last checkpoint to a
+ * manual admin quote before this function would need to extrapolate.
  */
 export function motoRoundTripFare(distanceKm: number): number {
-  return Math.round(motoOneWayFare(distanceKm) * ROUND_TRIP_MULTIPLIER);
+  const pts = MOTO_FARE_CHECKPOINTS;
+  if (!Number.isFinite(distanceKm) || distanceKm <= pts[0][0]) return pts[0][1];
+  for (let i = 1; i < pts.length; i++) {
+    const [x1, y1] = pts[i];
+    if (distanceKm <= x1) {
+      const [x0, y0] = pts[i - 1];
+      return Math.round(y0 + ((y1 - y0) * (distanceKm - x0)) / (x1 - x0));
+    }
+  }
+  return pts[pts.length - 1][1];
+}
+
+/** Apply a new set of real spot-checked checkpoints (see
+ *  MOTO_FARE_CHECKPOINTS comment) — sorted + validated so a bad write
+ *  can't invert the curve or leave it unpriced. */
+export function setMotoFareCheckpoints(points: [number, number][]): void {
+  const clean = points
+    .filter((p) => Array.isArray(p) && p.length === 2 && Number.isFinite(p[0]) && Number.isFinite(p[1]) && p[0] >= 0 && p[1] > 0)
+    .sort((a, b) => a[0] - b[0]);
+  if (clean.length >= 2) MOTO_FARE_CHECKPOINTS = clean;
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -417,14 +423,22 @@ function resolveTier(
 /**
  * Compute the customer-facing travel fare for a distance.
  *
- * 🆕 Round 28x.99m (founder: "นับตามจริงของมอไซต์ ยกเว้น ฝนตก เป็นรถยน") —
- *   dispatch defaults to a MOTORCYCLE taxi meter; switches to the GrabCar
- *   meter only when it's actually raining (rain.tier !== "none") — a
- *   motorcycle isn't a safe/practical dispatch in the rain, so the fare
- *   (and the vehicle it's based on) both flip together.
+ * 🆕 Round 28x.99m/n (founder: "นับตามจริงของมอไซต์ ยกเว้น ฝนตก เป็นรถยน" +
+ *   real spot-checked GrabBike quotes) — dispatch defaults to a
+ *   MOTORCYCLE taxi; switches to the GrabCar meter only when it's
+ *   actually raining (rain.tier !== "none") — a motorcycle isn't a
+ *   safe/practical dispatch in the rain, so the fare (and the vehicle
+ *   it's based on) both flip together.
  *
- *   base   = round-trip meter (one-way × 2.0) + Grab booking fee × 2 legs
- *   fare   = base × (1 + surge% + rain%)
+ *   Car:  base = round-trip GrabCar meter (one-way × 2.0) + Grab
+ *         booking fee × 2 legs — a real metered formula, so the
+ *         booking-fee add-on is legitimate.
+ *   Moto: base = motoRoundTripFare(distanceKm) directly — this is
+ *         already the real, all-in round-trip figure founder spot-
+ *         checked in the Grab app, so NO separate booking fee is added
+ *         on top (that would double-count whatever Grab already bakes
+ *         into its own quote).
+ *   fare (both) = base × (1 + surge% + rain%)
  *
  * `bkkHour` is the booking's scheduled hour (0–23, Bangkok) used for the
  * time-of-day surge; omit it for no surge.
@@ -437,8 +451,6 @@ export function calcTaxiFare(
   const rain = rainOverride ?? getCachedRainStatus();
   const vehicle: TaxiVehicle = rain.tier !== "none" ? "car" : "moto";
   const { tier, label } = resolveTier(distanceKm, vehicle);
-  const oneWayFare =
-    vehicle === "car" ? grabCarOneWayFare(distanceKm) : motoOneWayFare(distanceKm);
   const surgePct = surgePctForHour(bkkHour);
 
   if (tier === "admin") {
@@ -449,17 +461,26 @@ export function calcTaxiFare(
       distanceKm,
       baseFareBeforeRain: 0,
       rain,
-      oneWayFare,
+      oneWayFare: 0,
       bookingFee: 0,
       surgePct,
       vehicle,
     };
   }
 
-  const roundTripMeter =
-    vehicle === "car" ? grabCarRoundTripFare(distanceKm) : motoRoundTripFare(distanceKm); // one-way × 2.0
-  const bookingFee = Math.round(GRAB_BOOKING_FEE * 2); // one call fee per leg, 2 legs
-  const base = roundTripMeter + bookingFee;
+  let base: number;
+  let oneWayFare: number;
+  let bookingFee: number;
+  if (vehicle === "car") {
+    oneWayFare = grabCarOneWayFare(distanceKm);
+    bookingFee = Math.round(GRAB_BOOKING_FEE * 2); // one call fee per leg, 2 legs
+    base = grabCarRoundTripFare(distanceKm) + bookingFee;
+  } else {
+    const roundTrip = motoRoundTripFare(distanceKm);
+    oneWayFare = Math.round(roundTrip / 2); // display/analytics only — the real number is the round-trip quote, not a doubled one-way meter
+    bookingFee = 0; // already baked into the spot-checked round-trip figure
+    base = roundTrip;
+  }
   // Surge (traffic/idle + peak demand) and rain stack additively so the
   // combined bump stays predictable and legible.
   const fare = Math.round(base * (1 + surgePct + rain.surchargePct));
