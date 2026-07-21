@@ -242,16 +242,42 @@ of changelog were costing tokens on every run with no daily-operational value. R
 CLAUDE-HISTORY.md or `git log` for detail. Durable design decisions & "don't-redo"
 lessons stay in §12 below.
 
-## 9. Current state (2026-07-08)
+## 9. Current state (2026-07-21)
 
-Customer **home page** redesigned around a warm cream spa hero (full-bleed
-founder-supplied photo, headline "Bangkok Outcall Massage · Delivered to Your
-Hotel", single Book Now CTA, gentle CSS "breathing" motion), a **transparent-on-home
-top nav** with a two-tone **SUN·RED** wordmark, a floating quick-nav card
-(Massage · Therapists · Near Me · Reviews), a new **/near-me** map page, and a warm
-**taupe Membership** section — all live on sunred.vip. Open **PR #5** brings GitHub
-`main` up to date. Firestore "INTERNAL ASSERTION FAILED" still reproduces in **dev
-only** (React StrictMode double-subscribes listeners); production is unaffected.
+**Staff app** now has 3 tabs (Home · Jobs · Profile). Home is a quick-menu
+grid (Reports, Performance, Gallery, Services, Features, Languages, Bio,
+Payout) topped by a shared identity card (`TherapistIdentityCard` +
+`useTherapistIdentityStats`, also used on Profile — same source, can't
+drift). Working Status + Working Hours (Wed/Sun-only, UI-enforced not
+rules-enforced) live on Profile. New self-service surfaces: gallery
+uploads go through a `galleryRequests` moderation queue reviewed at
+`/admin/staff-requests`; Payout Account is self-editable (was admin-only)
+with a Telegram alert to admin on every change as a safety net.
+
+**Telegram bot copy** (Greeter welcome/button/nudge/FAQ, Promo Bot's 7-day
+rotation + 5 holiday themes + shared footer) is now Firestore-backed and
+self-editable from `/admin/telegram` → "Bot Copy" — Firestore is an
+override layer the bots check first, code is the fallback, so an empty
+`botCopy` collection sends byte-identical messages to before. Full-message
+previews are collapsed by default there (keep it that way — see 28x.98).
+
+**Analytics** (`/admin/analytics`) no longer counts admin/therapist
+sessions browsing the real site (was counting founder's own testing +
+"Viewing as Customer" mode as guest traffic). Traffic-source attribution
+now prefers an explicit `?utm_source=`/`?src=` tag over referrer-guessing
+— use it for any TikTok/LINE/Telegram link since those in-app browsers
+often don't send a usable `document.referrer`.
+
+**Open / not done:**
+- GitHub PR #12 (`claude/bot-copy-and-staff-self-service`) is a few
+  commits behind local `main` — not required (she deploys direct via
+  vercel/firebase), just not fully synced if anyone goes looking there.
+- Google Search Console — offered for real search-query data (referrer
+  can't carry it, Google-side limitation). Needs View's own Google account
+  to verify the domain; not started.
+- `/admin/staff-requests` (gallery photo approval queue) shipped and
+  passed typecheck/build/rules-tests, but was never visually confirmed
+  live in an actual admin browser session — worth a first real look.
 
 ## 10. How to start each session
 
@@ -346,6 +372,19 @@ You'll have ALL context. No re-explanation needed.
   Firestore listener registry and surfaces as "INTERNAL ASSERTION
   FAILED"). Prefer `item.labelKey` or a UUID that's guaranteed
   unique regardless of downstream edits to the array.
+- **A new enum value in code isn't live until every allow-list that
+  gates it is updated too (28x.99).** `analytics.ts`'s `FunnelEvent`
+  type grew `therapist_view`/`bundle_view`/`bundle_reserve_click`/
+  `referral_tier_applied` over several rounds, but `firestore.rules`'
+  `analytics_events` create rule — a separate hardcoded list — never
+  did. Every write for those four event types silently permission-
+  denied from the day each shipped (swallowed by `trackEvent`'s
+  `.catch()`), so a dashboard card read a confident "0 · no data yet"
+  for months instead of an error. When a type/enum is added anywhere
+  that firestore.rules also validates by exact value (event names,
+  status enums, etc.), grep the rules file for that list and update it
+  in the SAME round — don't trust "it'll show empty until data arrives"
+  as proof nothing's wrong.
 
 ### 🚫 Google Business Profile — DO NOT verify
 
