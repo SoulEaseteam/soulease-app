@@ -159,6 +159,33 @@ const TIER_3_PER_KM = 7;     // applies to km 6 → 40
 const TIER_3_END_KM = 40;
 const TIER_4_PER_KM = 10;    // applies to km 40+
 
+// ─── Motorcycle taxi (วินมอเตอร์ไซค์) Bangkok rate card ────────────────
+//
+// 🆕 Round 28x.99m (founder: "นับตามจริงของมอไซต์ ยกเว้น ฝนตก เป็นรถยน") —
+//   the dispatch fare now defaults to a MOTORCYCLE taxi, not a car — this
+//   is how a therapist actually gets sent out for most trips (cheaper,
+//   faster through Bangkok traffic). Car (the GrabCar meter above) only
+//   applies when it's raining (getCachedRainStatus().tier !== "none") —
+//   a motorcycle isn't a safe or practical dispatch in the rain.
+//
+//   Rates are the Department of Land Transport's (กรมการขนส่งทางบก)
+//   legally-regulated MAXIMUM motorcycle-taxi fares for Bangkok, not an
+//   app estimate (GrabBike's own published range is too wide/informal
+//   to price a fixed quote off):
+//     • First 2 km  : not exceeding ฿25
+//     • km 2 → 5    : not exceeding ฿5/km
+//     • km 5 → 15   : not exceeding ฿10/km
+//     • km 15+      : negotiable, but capped at ฿10/km throughout if no
+//                     agreement is made — so tier 4 continues at ฿10/km.
+//   Reference: https://www.mangozero.com/price-rates-for-motorcycle-service/
+const MOTO_BASE_FARE = 25;       // first 2 km flag-fall
+const MOTO_BASE_KM = 2;
+const MOTO_TIER_2_PER_KM = 5;    // applies to km 2 → 5
+const MOTO_TIER_2_END_KM = 5;
+const MOTO_TIER_3_PER_KM = 10;   // applies to km 5 → 15
+const MOTO_TIER_3_END_KM = 15;
+const MOTO_TIER_4_PER_KM = 10;   // applies to km 15+ (same capped rate)
+
 /**
  * Round-trip multiplier. 2.0 = outbound full + return full (both legs at
  * the real meter) — the honest cost of the therapist's round trip.
@@ -292,6 +319,44 @@ export function grabCarRoundTripFare(distanceKm: number): number {
   return Math.round(grabCarOneWayFare(distanceKm) * ROUND_TRIP_MULTIPLIER);
 }
 
+/**
+ * Compute the motorcycle-taxi (วิน) one-way fare for any distance (km),
+ * using the DLT-regulated Bangkok rate tiers above. Rounded to the
+ * nearest baht. Returns MOTO_BASE_FARE (฿25) for any distance ≤ 2 km.
+ */
+export function motoOneWayFare(distanceKm: number): number {
+  if (!Number.isFinite(distanceKm) || distanceKm <= 0) return MOTO_BASE_FARE;
+  let fare = MOTO_BASE_FARE;
+  if (distanceKm <= MOTO_BASE_KM) return Math.round(fare);
+
+  let remaining = distanceKm - MOTO_BASE_KM;
+
+  // Tier 2 — km 2 → 5 (max 3 paid km in this band)
+  const tier2Km = Math.min(remaining, MOTO_TIER_2_END_KM - MOTO_BASE_KM);
+  fare += tier2Km * MOTO_TIER_2_PER_KM;
+  remaining -= tier2Km;
+  if (remaining <= 0) return Math.round(fare);
+
+  // Tier 3 — km 5 → 15 (max 10 paid km in this band)
+  const tier3Km = Math.min(remaining, MOTO_TIER_3_END_KM - MOTO_TIER_2_END_KM);
+  fare += tier3Km * MOTO_TIER_3_PER_KM;
+  remaining -= tier3Km;
+  if (remaining <= 0) return Math.round(fare);
+
+  // Tier 4 — km 15+ (open-ended, same capped rate)
+  fare += remaining * MOTO_TIER_4_PER_KM;
+  return Math.round(fare);
+}
+
+/**
+ * Round-trip motorcycle fare = one-way × ROUND_TRIP_MULTIPLIER (two
+ * separate one-way rides — there and back), same round-trip convention
+ * as the car meter.
+ */
+export function motoRoundTripFare(distanceKm: number): number {
+  return Math.round(motoOneWayFare(distanceKm) * ROUND_TRIP_MULTIPLIER);
+}
+
 // ─────────────────────────────────────────────────────────────────────
 // TaxiFareResult — UI-facing shape
 // ─────────────────────────────────────────────────────────────────────
@@ -300,6 +365,10 @@ export function grabCarRoundTripFare(distanceKm: number): number {
  *  underlying calculation no longer uses flat tiers. Drives chip
  *  styling in BookingFlowPage. */
 export type TaxiTier = "free" | "base" | "short" | "standard" | "long" | "admin";
+
+/** Which vehicle the fare was metered on — moto by default, car in the
+ *  rain (see calcTaxiFare). Round 28x.99m. */
+export type TaxiVehicle = "moto" | "car";
 
 export interface TaxiFareResult {
   /** Customer-facing fare. `null` means the booking needs an admin quote. */
@@ -314,16 +383,22 @@ export interface TaxiFareResult {
   baseFareBeforeRain: number;
   /** Active rain status pulled from `weather.ts` cache. */
   rain: RainStatus;
-  /** GrabCar one-way fare (for breakdown / analytics). */
+  /** One-way meter fare for the chosen vehicle (for breakdown / analytics). */
   oneWayFare: number;
   /** 🆕 28s309 — Grab per-ride booking fee × 2 legs (baht). */
   bookingFee: number;
   /** 🆕 28s309 — time-of-day surge fraction applied (0 = none). */
   surgePct: number;
+  /** 🆕 28x.99m — "moto" unless it's raining, then "car" (see calcTaxiFare). */
+  vehicle: TaxiVehicle;
 }
 
 /** Resolve tier label band from distance (UI-only, doesn't affect price). */
-function resolveTier(distanceKm: number): { tier: TaxiTier; label: string } {
+function resolveTier(
+  distanceKm: number,
+  vehicle: TaxiVehicle
+): { tier: TaxiTier; label: string } {
+  const vLabel = vehicle === "car" ? "Car (rain)" : "Moto";
   if (distanceKm > ADMIN_QUOTE_KM) {
     return {
       tier: "admin",
@@ -331,16 +406,22 @@ function resolveTier(distanceKm: number): { tier: TaxiTier; label: string } {
     };
   }
   if (distanceKm <= 1) {
-    return { tier: "base", label: `Base fare · ${distanceKm.toFixed(1)} km` };
+    return { tier: "base", label: `${vLabel} · Base fare · ${distanceKm.toFixed(1)} km` };
   }
   if (distanceKm <= TIER_2_END_KM) {
-    return { tier: "short", label: `Short trip · ${distanceKm.toFixed(1)} km` };
+    return { tier: "short", label: `${vLabel} · Short trip · ${distanceKm.toFixed(1)} km` };
   }
-  return { tier: "standard", label: `Standard · ${distanceKm.toFixed(1)} km` };
+  return { tier: "standard", label: `${vLabel} · Standard · ${distanceKm.toFixed(1)} km` };
 }
 
 /**
  * Compute the customer-facing travel fare for a distance.
+ *
+ * 🆕 Round 28x.99m (founder: "นับตามจริงของมอไซต์ ยกเว้น ฝนตก เป็นรถยน") —
+ *   dispatch defaults to a MOTORCYCLE taxi meter; switches to the GrabCar
+ *   meter only when it's actually raining (rain.tier !== "none") — a
+ *   motorcycle isn't a safe/practical dispatch in the rain, so the fare
+ *   (and the vehicle it's based on) both flip together.
  *
  *   base   = round-trip meter (one-way × 2.0) + Grab booking fee × 2 legs
  *   fare   = base × (1 + surge% + rain%)
@@ -353,9 +434,11 @@ export function calcTaxiFare(
   rainOverride?: RainStatus,
   bkkHour?: number | null
 ): TaxiFareResult {
-  const { tier, label } = resolveTier(distanceKm);
   const rain = rainOverride ?? getCachedRainStatus();
-  const oneWayFare = grabCarOneWayFare(distanceKm);
+  const vehicle: TaxiVehicle = rain.tier !== "none" ? "car" : "moto";
+  const { tier, label } = resolveTier(distanceKm, vehicle);
+  const oneWayFare =
+    vehicle === "car" ? grabCarOneWayFare(distanceKm) : motoOneWayFare(distanceKm);
   const surgePct = surgePctForHour(bkkHour);
 
   if (tier === "admin") {
@@ -369,10 +452,12 @@ export function calcTaxiFare(
       oneWayFare,
       bookingFee: 0,
       surgePct,
+      vehicle,
     };
   }
 
-  const roundTripMeter = grabCarRoundTripFare(distanceKm); // one-way × 2.0
+  const roundTripMeter =
+    vehicle === "car" ? grabCarRoundTripFare(distanceKm) : motoRoundTripFare(distanceKm); // one-way × 2.0
   const bookingFee = Math.round(GRAB_BOOKING_FEE * 2); // one call fee per leg, 2 legs
   const base = roundTripMeter + bookingFee;
   // Surge (traffic/idle + peak demand) and rain stack additively so the
@@ -389,6 +474,7 @@ export function calcTaxiFare(
     oneWayFare,
     bookingFee,
     surgePct,
+    vehicle,
   };
 }
 
@@ -461,6 +547,7 @@ export function calcTravelBudgetResult(distanceKm: number): TaxiFareResult {
       oneWayFare: 0,
       bookingFee: 0,
       surgePct: 0,
+      vehicle: "moto",
     };
   }
   return {
@@ -473,5 +560,6 @@ export function calcTravelBudgetResult(distanceKm: number): TaxiFareResult {
     oneWayFare: budget,
     bookingFee: 0,
     surgePct: 0,
+    vehicle: "moto",
   };
 }
