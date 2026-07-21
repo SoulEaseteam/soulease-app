@@ -19,6 +19,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Box, Typography, CircularProgress } from "@mui/material";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   Flag,
@@ -48,60 +49,72 @@ interface QuickTileDef {
   Icon: React.ElementType;
   to: string;
   accent: string;
+  accentTo: string;
   badge?: number;
 }
 
-const QuickTile: React.FC<QuickTileDef & { onClick: () => void }> = ({ label, sub, Icon, accent, badge, onClick }) => (
-  <Box
-    role="button"
-    tabIndex={0}
-    onClick={onClick}
-    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick(); }}
-    sx={{
-      position: "relative",
-      display: "flex",
-      flexDirection: "column",
-      gap: "10px",
-      padding: "14px 14px 13px",
-      borderRadius: 3,
-      background: "var(--sr-panel)",
-      border: "1px solid rgba(184,92,60,0.18)",
-      boxShadow: "0 6px 18px rgba(15, 23, 42,0.06)",
-      cursor: "pointer",
-      "&:active": { background: "var(--sr-panel-2)" },
-    }}
-  >
-    {badge !== undefined && badge > 0 && (
-      <Box
-        sx={{
-          position: "absolute", top: 10, right: 10,
-          minWidth: 20, height: 20, px: "5px", borderRadius: "10px",
-          background: "#C0562E", color: "#fff",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontFamily: SANS, fontSize: 11, fontWeight: 800,
-        }}
-      >
-        {badge}
-      </Box>
-    )}
+// 🆕 Round 28x.103 (founder: "ปรับ 2 หน้าที่เหลือ...ให้สวยงามเหมือนใช้ในไอโฟน") —
+// the icon badge is now a "squircle" (continuous-corner rounded square) filled
+// with the tile's own gradient, exactly the visual language iOS Settings /
+// the Home Screen use for app icons — instantly reads as "native app", not
+// "web page". Card itself now carries a faint wash of the same accent
+// instead of every tile being identical flat white, and a spring tap-scale
+// (framer-motion, matches the press feel already used on Jobs/Booking).
+const QuickTile: React.FC<QuickTileDef & { onClick: () => void }> = ({ label, sub, Icon, accent, accentTo, badge, onClick }) => (
+  <motion.div whileTap={{ scale: 0.96 }} transition={{ type: "spring", stiffness: 500, damping: 30 }}>
     <Box
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick(); }}
       sx={{
-        width: 36, height: 36, borderRadius: "10px", flexShrink: 0,
-        background: `${accent}24`, color: accent,
-        display: "flex", alignItems: "center", justifyContent: "center",
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+        padding: "14px 14px 13px",
+        borderRadius: 3,
+        background: `linear-gradient(160deg, ${accent}14 0%, var(--sr-panel) 55%, var(--sr-panel) 100%)`,
+        border: `1px solid ${accent}30`,
+        boxShadow: `0 8px 18px ${accent}12`,
+        cursor: "pointer",
       }}
     >
-      <Icon size={18} weight="duotone" />
+      {badge !== undefined && badge > 0 && (
+        <Box
+          sx={{
+            position: "absolute", top: 10, right: 10,
+            minWidth: 20, height: 20, px: "5px", borderRadius: "10px",
+            background: "#DC2626", color: "#fff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontFamily: SANS, fontSize: 11, fontWeight: 800,
+            boxShadow: "0 3px 8px rgba(220,38,38,0.40)",
+          }}
+        >
+          {badge}
+        </Box>
+      )}
+      <Box
+        sx={{
+          width: 38, height: 38, borderRadius: "11px", flexShrink: 0,
+          background: `linear-gradient(135deg, ${accent}, ${accentTo})`,
+          boxShadow: `0 4px 10px ${accent}4D`,
+          color: "#fff",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}
+      >
+        <Icon size={19} weight="duotone" />
+      </Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography sx={{ fontFamily: SANS, fontWeight: 700, fontSize: "13.5px", color: "var(--sr-ink)", lineHeight: 1.2 }}>
+          {label}
+        </Typography>
+        <Typography sx={{ fontFamily: SANS, fontSize: "10px", color: "var(--sr-body)", mt: "2px", lineHeight: 1.3 }}>
+          {sub}
+        </Typography>
+      </Box>
     </Box>
-    <Box sx={{ minWidth: 0 }}>
-      <Typography sx={{ fontFamily: SANS, fontWeight: 700, fontSize: "13.5px", color: "var(--sr-ink)", lineHeight: 1.2 }}>
-        {label}
-      </Typography>
-      <Typography sx={{ fontFamily: SANS, fontSize: "10px", color: "var(--sr-body)", mt: "2px", lineHeight: 1.3 }}>
-        {sub}
-      </Typography>
-    </Box>
-  </Box>
+  </motion.div>
 );
 
 const TherapistHomePage: React.FC = () => {
@@ -142,6 +155,9 @@ const TherapistHomePage: React.FC = () => {
     );
   }
 
+  // 🆕 Round 28x.103 — each tile gets its own true 2-stop gradient (accent →
+  //   accentTo) instead of a single flat hex, 8 genuinely distinct vivid
+  //   hues instead of 8 shades converging on the same dusty rose/maroon.
   const tiles: QuickTileDef[] = [
     {
       id: "reports",
@@ -149,7 +165,8 @@ const TherapistHomePage: React.FC = () => {
       sub: openReportCount > 0 ? `${openReportCount} รายการยังไม่ได้อ่าน` : "แจ้งจากลูกค้าจะขึ้นที่นี่",
       Icon: Flag,
       to: "/therapist/reports",
-      accent: "#D97C95",
+      accent: "#F0576B",
+      accentTo: "#C81E3A",
       badge: openReportCount,
     },
     {
@@ -158,7 +175,8 @@ const TherapistHomePage: React.FC = () => {
       sub: "Industry benchmark · Rebook timing",
       Icon: ChartLineUp,
       to: "/therapist/performance",
-      accent: "#4E7E8C",
+      accent: "#0EA5C4",
+      accentTo: "#0369A1",
     },
     {
       id: "gallery",
@@ -166,7 +184,8 @@ const TherapistHomePage: React.FC = () => {
       sub: "สูงสุด 9 รูป · รอแอดมินตรวจก่อนขึ้นจริง",
       Icon: GalleryTileIcon,
       to: "/therapist/gallery",
-      accent: "#C96F89",
+      accent: "#EC4899",
+      accentTo: "#9D174D",
     },
     {
       id: "services",
@@ -174,7 +193,8 @@ const TherapistHomePage: React.FC = () => {
       sub: "เลือกบริการที่เปิดรับ",
       Icon: ListChecks,
       to: "/therapist/services",
-      accent: "#16a34a",
+      accent: "#22C55E",
+      accentTo: "#15803D",
     },
     {
       id: "features",
@@ -182,7 +202,8 @@ const TherapistHomePage: React.FC = () => {
       sub: "ส่วนสูง น้ำหนัก รูปร่าง ฯลฯ",
       Icon: Fingerprint,
       to: "/therapist/features",
-      accent: "#7A3049",
+      accent: "#C2185B",
+      accentTo: "#6B1541",
     },
     {
       id: "languages",
@@ -190,7 +211,8 @@ const TherapistHomePage: React.FC = () => {
       sub: "ภาษาที่พูดได้ + ระดับ",
       Icon: Translate,
       to: "/therapist/languages",
-      accent: "#5A8998",
+      accent: "#6366F1",
+      accentTo: "#4338CA",
     },
     {
       id: "bio",
@@ -198,7 +220,8 @@ const TherapistHomePage: React.FC = () => {
       sub: "เขียนแนะนำตัว ทีละภาษา",
       Icon: Notebook,
       to: "/therapist/bio",
-      accent: "#B8823C",
+      accent: "#F0A020",
+      accentTo: "#B45309",
     },
     {
       id: "payout",
@@ -206,7 +229,8 @@ const TherapistHomePage: React.FC = () => {
       sub: "บัญชีรับเงินสำหรับโอน",
       Icon: Bank,
       to: "/therapist/payout",
-      accent: "#831843",
+      accent: "#14B8A6",
+      accentTo: "#0F766E",
     },
   ];
 

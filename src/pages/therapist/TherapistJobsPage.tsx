@@ -54,14 +54,16 @@ import { formatTHB } from "@/utils/servicePricing";
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS  = '"Inter", system-ui, sans-serif';
 
-// ── brand accents — same values BookingHistoryPage uses, so the two pages
-//   read as one app rather than a customer half and a staff half. ─────────
-const ROSE          = "#D97C95";
-const ROSE_DEEP     = "#C96F89";
-const GREEN         = "#57B88B";
-const GREEN_TEXT    = "#2E7D57";
-const DANGER        = "#C0562E";
-const HERO_GRADIENT = "linear-gradient(160deg, #B8567F 0%, #8A3A57 100%)";
+// ── brand accents — 🆕 Round 28x.103 (founder: "ปรับ 2 หน้าที่เหลือ...
+//   ให้สวยงามเหมือนใช้ในไอโฟน") bumped to the same vivid rose→magenta→plum
+//   family as TherapistIdentityCard/Profile (28x.101), so Jobs stops being
+//   the one screen still on the old muted dusty-rose. ─────────────────────
+const ROSE          = "#E0708F";
+const ROSE_DEEP     = "#C2185B";
+const GREEN         = "#22C55E";
+const GREEN_TEXT    = "#15803D";
+const DANGER        = "#DC2626";
+const HERO_GRADIENT = "linear-gradient(160deg, #E0708F 0%, #C2185B 55%, #6B1541 100%)";
 
 type TabKey = "today" | "completed" | "cancelled";
 
@@ -339,7 +341,7 @@ const TherapistJobsPage: React.FC = () => {
                 initial={false}
                 animate={{ x: pillX }}
                 transition={{ type: "spring", stiffness: 500, damping: 42, mass: 0.9 }}
-                style={{ position: "absolute", top: PILL_GAP, bottom: PILL_GAP, left: 0, width: pillW, borderRadius: 999, background: ROSE, boxShadow: "0 4px 14px rgba(138, 58, 87, 0.30)", pointerEvents: "none", zIndex: 0 }}
+                style={{ position: "absolute", top: PILL_GAP, bottom: PILL_GAP, left: 0, width: pillW, borderRadius: 999, background: ROSE, boxShadow: "0 4px 14px rgba(194, 24, 91, 0.30)", pointerEvents: "none", zIndex: 0 }}
               />
             )}
             {TABS.map((t) => {
@@ -457,8 +459,8 @@ const JobCard: React.FC<{
       <Box sx={{ p: "14px 16px" }}>
         {/* top row: guest identity (masked until accepted) + status pill */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
-          <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: ROSE, p: "2px", flexShrink: 0, boxShadow: "0 4px 12px rgba(138, 58, 87, 0.20)" }}>
-            <Avatar sx={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #E8B7C6, #D97C95)", color: "#fff" }}>
+          <Box sx={{ width: 46, height: 46, borderRadius: "50%", background: ROSE, p: "2px", flexShrink: 0, boxShadow: "0 4px 12px rgba(194, 24, 91, 0.20)" }}>
+            <Avatar sx={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #F0A8BE, #E0708F)", color: "#fff" }}>
               {revealed && job.contactName ? job.contactName[0].toUpperCase() : <UserCircle size={22} weight="fill" />}
             </Avatar>
           </Box>
@@ -535,7 +537,7 @@ const JobCard: React.FC<{
                   disabled={busy}
                   onClick={() => onRespond(job.id, "accept")}
                   aria-label="รับงาน"
-                  style={{ height: 38, padding: "0 16px", borderRadius: 999, background: ROSE, color: "#fff", fontFamily: SANS, fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(138, 58, 87, 0.28)", display: "flex", alignItems: "center", gap: 6, opacity: busy ? 0.7 : 1 }}
+                  style={{ height: 38, padding: "0 16px", borderRadius: 999, background: ROSE, color: "#fff", fontFamily: SANS, fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(194, 24, 91, 0.28)", display: "flex", alignItems: "center", gap: 6, opacity: busy ? 0.7 : 1 }}
                 >
                   {busy ? <CircularProgress size={14} sx={{ color: "#fff" }} /> : <><CheckCircle size={14} weight="fill" /> รับงาน</>}
                 </motion.button>
@@ -557,7 +559,7 @@ const JobCard: React.FC<{
                     whileTap={{ scale: 0.97 }}
                     onClick={() => window.open(mapHref, "_blank", "noopener")}
                     aria-label="เปิดแผนที่"
-                    style={{ height: 38, padding: "0 14px", borderRadius: 999, background: "rgba(217, 124, 149, 0.12)", color: ROSE_DEEP, fontFamily: SANS, fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
+                    style={{ height: 38, padding: "0 14px", borderRadius: 999, background: "rgba(224, 112, 143, 0.12)", color: ROSE_DEEP, fontFamily: SANS, fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
                   >
                     เปิดแผนที่
                   </motion.button>
@@ -567,7 +569,7 @@ const JobCard: React.FC<{
                     whileTap={{ scale: 0.97 }}
                     onClick={() => { window.location.href = `tel:${job.phone}`; }}
                     aria-label="โทรหาลูกค้า"
-                    style={{ height: 38, padding: "0 14px", borderRadius: 999, background: ROSE, color: "#fff", fontFamily: SANS, fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, boxShadow: "0 4px 12px rgba(138, 58, 87, 0.28)" }}
+                    style={{ height: 38, padding: "0 14px", borderRadius: 999, background: ROSE, color: "#fff", fontFamily: SANS, fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, boxShadow: "0 4px 12px rgba(194, 24, 91, 0.28)" }}
                   >
                     <Phone size={13} weight="fill" /> โทร
                   </motion.button>
@@ -597,8 +599,8 @@ const DispatchStepper: React.FC<{
       sx={{
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1,
         p: "10px 12px", borderRadius: "12px", mb: 1.5,
-        background: done ? `${GREEN}14` : "rgba(217, 124, 149, 0.08)",
-        border: `1px solid ${done ? `${GREEN}33` : "rgba(217, 124, 149, 0.20)"}`,
+        background: done ? `${GREEN}14` : "rgba(224, 112, 143, 0.08)",
+        border: `1px solid ${done ? `${GREEN}33` : "rgba(224, 112, 143, 0.20)"}`,
       }}
     >
       <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: done ? GREEN_TEXT : ROSE_DEEP }}>
@@ -622,7 +624,7 @@ const DispatchStepper: React.FC<{
 // ──────────────────────────────────────────────────────────────────────
 const EmptySlate: React.FC<{ icon: React.ReactNode; title: string; body: string }> = ({ icon, title, body }) => (
   <Box sx={{ mt: 4, px: 2, py: 6, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 1.5 }}>
-    <Box sx={{ width: 64, height: 64, borderRadius: "50%", background: ROSE, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 24px rgba(138, 58, 87, 0.28)", mb: 0.5 }}>
+    <Box sx={{ width: 64, height: 64, borderRadius: "50%", background: ROSE, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 24px rgba(194, 24, 91, 0.28)", mb: 0.5 }}>
       {icon}
     </Box>
     <Typography sx={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: "var(--sr-ink)", letterSpacing: "-0.01em" }}>
