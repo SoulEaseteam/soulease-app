@@ -21,7 +21,7 @@
 import { useEffect } from "react";
 import { nowBKK } from "@/utils/time";
 
-type ThemeChoice = "day" | "night" | "auto";
+export type ThemeChoice = "day" | "night" | "auto";
 const STORAGE_KEY = "sr-theme";
 const DAY_START = 6; // 06:00 BKK
 const DAY_END = 18; // 18:00 BKK (night from 18:00 to 05:59)
@@ -52,6 +52,32 @@ function applyMode() {
   const choice = readChoice();
   const day = choice === "auto" ? isDaytimeBKK() : choice === "day";
   document.documentElement.classList.toggle("sr-day", day);
+}
+
+/** Current manual override, for a settings UI to show as selected. */
+export function getThemeChoice(): ThemeChoice {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === "day" || stored === "night" || stored === "auto") return stored;
+  } catch {
+    /* private-mode / SSR-safe no-op */
+  }
+  return "auto";
+}
+
+// 🆕 Round 28x.106 (founder: "หน้าโปรไฟล์เพิ่มโหมดมืดสว่าง เผื่อพนักงานอยาก
+//   เปลี่ยนเอง") — the day/night switch always supported a manual override
+//   (`?theme=`/localStorage), but nothing in the app ever exposed it as a
+//   real control. This is that control's write path: persist the choice and
+//   re-apply the `html.sr-day` class immediately, rather than waiting for
+//   DayNightSync's own 5-minute interval to notice the storage changed.
+export function setThemeChoice(choice: ThemeChoice): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, choice);
+  } catch {
+    /* private-mode / SSR-safe no-op */
+  }
+  applyMode();
 }
 
 const DayNightSync: React.FC = () => {

@@ -3,9 +3,15 @@
 // 🆕 Round 28x.96 (founder: "เพิ่ม สรุปผลงาน กดเข้าไปดู Industry benchmark
 //   Rebook timing เหมือนรูป2 หน้าเว็บ") — the founder's "รูป 2" is the public
 //   website's own Loyalty tab (src/components/therapist/detail/
-//   TherapistProfileTabs.tsx → LoyaltyTab), already live on every therapist's
-//   public detail page. Reused verbatim here — same UI component — so this
-//   can never LOOK different from what customers see.
+//   TherapistProfileTabs.tsx → LoyaltyTab). Originally reused verbatim here.
+//
+// 🆕 Round 28x.106 (founder: "Loyalty ปรับให้เข้ากับสไตล์ของ Performance") —
+//   swapped for TherapistLoyaltyCard, a page-local component with the SAME
+//   data + math as LoyaltyTab (copied deliberately, see that file's header)
+//   but restyled to match the vivid rose treatment RevenueDashboard uses,
+//   instead of LoyaltyTab's own olive/plain-ink accents. LoyaltyTab itself
+//   is untouched — it's still what customers see on the public detail page,
+//   and that page's design wasn't asked to change.
 //
 // 🆕 Round 28x.100 (founder: "Loyalty ไม่ขึ้นจ่ะ") — the stats FEEDING that
 //   component are deliberately NOT the same hook the public page uses.
@@ -28,7 +34,7 @@ import { auth } from "@/lib/firebase";
 import { responsiveShell } from "@/theme/breakpoints";
 import { useTherapistSelf } from "@/hooks/useTherapistSelf";
 import { useTherapistOwnBookingStats } from "@/hooks/useTherapistOwnBookingStats";
-import { LoyaltyTab } from "@/components/therapist/detail/TherapistProfileTabs";
+import { TherapistLoyaltyCard } from "@/components/therapist/TherapistLoyaltyCard";
 import { RevenueDashboard } from "@/components/therapist/RevenueDashboard";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
@@ -76,7 +82,7 @@ const TherapistPerformancePage: React.FC = () => {
           <Typography sx={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: "var(--sr-ink)", mt: 3.5, mb: 1.5 }}>
             Loyalty · ความภักดีของลูกค้า
           </Typography>
-          <LoyaltyTab
+          <TherapistLoyaltyCard
             rebookPct={therapist.rebookRate ?? 0}
             totalSessions={stats.totalCompleted}
             loyaltyStats={{

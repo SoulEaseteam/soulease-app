@@ -27,7 +27,7 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Box, IconButton, CircularProgress, Typography, Button } from "@mui/material";
 import { signOut } from "firebase/auth";
 import { collection, onSnapshot, query, where, limit } from "firebase/firestore";
-import { SquaresFour, Briefcase, UserCircle, SignOut, ShieldWarning } from "phosphor-react";
+import { SquaresFour, Briefcase, UserCircle, SignOut, ShieldWarning, Heart } from "phosphor-react";
 
 import { auth, db } from "@/lib/firebase";
 import { responsiveShell } from "@/theme/breakpoints";
@@ -35,9 +35,18 @@ import { CONCIERGE, whatsappDeepLink } from "@/config/concierge";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
-const ROSE = "#D97C95";
+const ROSE = "#E0708F";
 
+// 🆕 Round 28x.106 (founder: "แถบบาร์เพิ่มหน้าเว็บ Practitioners เอาไว้ก่อน
+//   หน้าทำงาน") — a quick way out to the live customer site (the public
+//   practitioners grid at "/"), same label + heart icon language as the
+//   customer app's own bottom nav (BottomNavGlass) first tab, so it reads
+//   as "the same tab, one level up" rather than a new concept. Placed
+//   first, ahead of the 3 staff-only tabs. Navigating there leaves
+//   StaffLayout's route tree entirely (expected — MainLayout takes over,
+//   same as tapping any other external-feeling link).
 const TABS = [
+  { label: "Practitioners", value: "/", icon: Heart },
   { label: "หน้าทำงาน", value: "/therapist/home", icon: SquaresFour },
   { label: "My Jobs", value: "/therapist/jobs", icon: Briefcase },
   { label: "Profile", value: "/therapist/profile", icon: UserCircle },
