@@ -200,19 +200,24 @@ const TherapistProfilePage: React.FC = () => {
       <Box sx={{ paddingX: 2, marginTop: 2 }}>
         <Box
           sx={{
-            background: "var(--sr-panel)",
-            border: "1px solid rgba(184,92,60,0.18)",
+            background: "linear-gradient(160deg, rgba(224,112,143,0.12) 0%, var(--sr-panel) 42%, var(--sr-panel) 100%)",
+            border: "1px solid rgba(194,24,91,0.20)",
             borderRadius: 3,
             padding: "14px 16px 16px",
-            boxShadow: "0 6px 18px rgba(15, 23, 42,0.06)",
+            boxShadow: "0 8px 22px rgba(194,24,91,0.10)",
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 1 }}>
-            <Typography sx={{ fontFamily: SERIF, fontWeight: 700, fontSize: "15px", color: "var(--sr-ink)" }}>
-              Working Status
-            </Typography>
-            <Typography sx={{ fontFamily: SANS, fontSize: "10.5px", color: "var(--sr-muted)" }}>
-              Live · customers see this
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
+              <Box sx={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg, #E0708F, #C2185B)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <AutorenewRoundedIcon sx={{ fontSize: 15, color: "#fff" }} />
+              </Box>
+              <Typography sx={{ fontFamily: SERIF, fontWeight: 700, fontSize: "15px", color: "var(--sr-ink)" }}>
+                Working Status
+              </Typography>
+            </Box>
+            <Typography sx={{ fontFamily: SANS, fontSize: "10.5px", fontWeight: 700, color: "#22C55E" }}>
+              ● Live · customers see this
             </Typography>
           </Box>
 
@@ -225,7 +230,8 @@ const TherapistProfilePage: React.FC = () => {
               label="Auto"
               hint="Engine decides"
               Icon={AutorenewRoundedIcon}
-              accent="#C96F89"
+              accent="#E0708F"
+              accentTo="#B23A63"
               active={!therapist.statusOverride || therapist.statusOverride === "Auto"}
               disabled={savingField === "statusOverride"}
               onClick={() => void updateOverride("Auto")}
@@ -234,7 +240,8 @@ const TherapistProfilePage: React.FC = () => {
               label="Available"
               hint="Open for bookings"
               Icon={CheckCircleRoundedIcon}
-              accent="#16a34a"
+              accent="#22C55E"
+              accentTo="#15803D"
               active={therapist.statusOverride === "available"}
               disabled={savingField === "statusOverride"}
               onClick={() => void updateOverride("available")}
@@ -243,7 +250,8 @@ const TherapistProfilePage: React.FC = () => {
               label="In session"
               hint="Currently with a client"
               Icon={EventBusyRoundedIcon}
-              accent="#831843"
+              accent="#EC4899"
+              accentTo="#9D174D"
               active={therapist.statusOverride === "bookable"}
               disabled={savingField === "statusOverride"}
               onClick={() => void updateOverride("bookable")}
@@ -252,7 +260,8 @@ const TherapistProfilePage: React.FC = () => {
               label="Resting"
               hint="Hide from results"
               Icon={HotelRoundedIcon}
-              accent="var(--sr-muted)"
+              accent="#8B7CA6"
+              accentTo="#4A3B63"
               active={therapist.statusOverride === "resting"}
               disabled={savingField === "statusOverride"}
               onClick={() => void updateOverride("resting")}
@@ -265,29 +274,36 @@ const TherapistProfilePage: React.FC = () => {
               marginTop: 1.5,
               padding: "10px 12px",
               borderRadius: 2,
-              background: therapist.isHoliday ? "rgba(45, 45, 43, 0.08)" : "var(--sr-panel-2)",
-              border: therapist.isHoliday ? "1px solid rgba(15, 23, 42, 0.22)" : "1px solid rgba(184,92,60,0.12)",
+              background: therapist.isHoliday ? "linear-gradient(135deg, #F5A623, #B45309)" : "rgba(245,166,35,0.08)",
+              border: therapist.isHoliday ? "1px solid #B45309" : "1px solid rgba(245,166,35,0.28)",
+              boxShadow: therapist.isHoliday ? "0 6px 16px rgba(180,83,9,0.35)" : "none",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
               gap: 1,
             }}
           >
-            <Box sx={{ minWidth: 0 }}>
-              <Typography sx={{ fontFamily: SANS, fontWeight: 700, fontSize: "12.5px", color: "var(--sr-ink)" }}>
-                Holiday mode
-              </Typography>
-              <Typography sx={{ fontFamily: SANS, fontSize: "10.5px", color: "var(--sr-body)", lineHeight: 1.4 }}>
-                Force-rest the whole day, override Auto + working hours.
-              </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+              <Box sx={{ width: 26, height: 26, borderRadius: "50%", background: therapist.isHoliday ? "rgba(255,255,255,0.22)" : "rgba(245,166,35,0.20)", color: therapist.isHoliday ? "#fff" : "#B45309", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <EventBusyRoundedIcon sx={{ fontSize: 15 }} />
+              </Box>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography sx={{ fontFamily: SANS, fontWeight: 700, fontSize: "12.5px", color: therapist.isHoliday ? "#fff" : "var(--sr-ink)" }}>
+                  Holiday mode
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: "10.5px", color: therapist.isHoliday ? "rgba(255,255,255,0.85)" : "var(--sr-body)", lineHeight: 1.4 }}>
+                  Force-rest the whole day, override Auto + working hours.
+                </Typography>
+              </Box>
             </Box>
             <Switch
               checked={Boolean(therapist.isHoliday)}
               disabled={savingField === "isHoliday"}
               onChange={(_, checked) => void updateHoliday(checked)}
               sx={{
-                "& .MuiSwitch-switchBase.Mui-checked": { color: "#C96F89" },
-                "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "#C96F89" },
+                "& .MuiSwitch-switchBase.Mui-checked": { color: "#fff" },
+                "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "rgba(255,255,255,0.6) !important" },
+                "& .MuiSwitch-track": { backgroundColor: "rgba(180,83,9,0.35)" },
               }}
             />
           </Box>
@@ -298,14 +314,16 @@ const TherapistProfilePage: React.FC = () => {
               marginTop: 1.25,
               padding: "10px 12px",
               borderRadius: 2,
-              background: "var(--sr-panel-2)",
-              border: "1px solid rgba(184,92,60,0.12)",
+              background: therapist.currentLocation ? "rgba(34,197,94,0.08)" : "var(--sr-panel-2)",
+              border: therapist.currentLocation ? "1px solid rgba(34,197,94,0.28)" : "1px solid rgba(184,92,60,0.12)",
               display: "flex",
               alignItems: "center",
               gap: 1,
             }}
           >
-            <NavigationRoundedIcon sx={{ color: therapist.currentLocation ? "#16a34a" : "var(--sr-dim)", fontSize: 18 }} />
+            <Box sx={{ width: 26, height: 26, borderRadius: "50%", background: therapist.currentLocation ? "rgba(34,197,94,0.18)" : "var(--sr-panel)", color: therapist.currentLocation ? "#16A34A" : "var(--sr-dim)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <NavigationRoundedIcon sx={{ fontSize: 15 }} />
+            </Box>
             <Typography sx={{ fontFamily: SANS, fontSize: "11.5px", color: "var(--sr-body)", flex: 1 }}>
               ตำแหน่งปัจจุบัน:{" "}
               <b style={{ color: "var(--sr-ink)" }}>
@@ -326,16 +344,18 @@ const TherapistProfilePage: React.FC = () => {
               marginTop: 1,
               padding: "10px 12px",
               borderRadius: 2,
-              background: "var(--sr-panel-2)",
-              border: "1px solid rgba(184,92,60,0.12)",
+              background: "rgba(194,24,91,0.06)",
+              border: "1px solid rgba(194,24,91,0.20)",
               display: "flex",
               alignItems: "center",
               gap: 1.25,
               cursor: "pointer",
-              "&:active": { background: "var(--sr-panel)" },
+              "&:active": { background: "rgba(194,24,91,0.12)" },
             }}
           >
-            <RoomRoundedIcon sx={{ color: "#C96F89", fontSize: 22 }} />
+            <Box sx={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, #E0708F, #C2185B)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <RoomRoundedIcon sx={{ color: "#fff", fontSize: 19 }} />
+            </Box>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography sx={{ fontFamily: SANS, fontWeight: 700, fontSize: "12.5px", color: "var(--sr-ink)" }}>
                 ตำแหน่งที่ยืน · Standby location
@@ -354,16 +374,18 @@ const TherapistProfilePage: React.FC = () => {
       <Box sx={{ paddingX: 2, marginTop: 1.5 }}>
         <Box
           sx={{
-            background: "var(--sr-panel)",
-            border: "1px solid rgba(184,92,60,0.18)",
+            background: "linear-gradient(160deg, rgba(224,112,143,0.12) 0%, var(--sr-panel) 42%, var(--sr-panel) 100%)",
+            border: "1px solid rgba(194,24,91,0.20)",
             borderRadius: 3,
             padding: "14px 16px 16px",
-            boxShadow: "0 6px 18px rgba(15, 23, 42,0.06)",
+            boxShadow: "0 8px 22px rgba(194,24,91,0.10)",
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: canEditHoursToday ? 1.25 : 0.5 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              <ClockCounterClockwise size={16} color="#C96F89" />
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
+              <Box sx={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg, #E0708F, #C2185B)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <ClockCounterClockwise size={14} color="#fff" />
+              </Box>
               <Typography sx={{ fontFamily: SERIF, fontWeight: 700, fontSize: "15px", color: "var(--sr-ink)" }}>
                 เวลาทำงาน · Working Hours
               </Typography>
@@ -409,9 +431,9 @@ const TherapistProfilePage: React.FC = () => {
                   textTransform: "none",
                   fontWeight: 700,
                   borderRadius: 2,
-                  background: "linear-gradient(135deg, #C96F89, #7A3049)",
-                  boxShadow: "none",
-                  "&:hover": { boxShadow: "none" },
+                  background: "linear-gradient(135deg, #E0708F, #B23A63)",
+                  boxShadow: "0 6px 16px rgba(194,24,91,0.30)",
+                  "&:hover": { boxShadow: "0 6px 16px rgba(194,24,91,0.30)" },
                 }}
               >
                 {hoursBusy ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "บันทึกเวลาทำงาน"}
@@ -445,14 +467,16 @@ const TherapistProfilePage: React.FC = () => {
             gap: 1.5,
             padding: "14px 16px",
             borderRadius: 3,
-            background: "var(--sr-panel)",
-            border: "1px solid rgba(184,92,60,0.18)",
-            boxShadow: "0 6px 18px rgba(15, 23, 42,0.06)",
+            background: "linear-gradient(160deg, rgba(224,112,143,0.10) 0%, var(--sr-panel) 55%, var(--sr-panel) 100%)",
+            border: "1px solid rgba(194,24,91,0.20)",
+            boxShadow: "0 8px 20px rgba(194,24,91,0.10)",
             cursor: "pointer",
-            "&:active": { background: "var(--sr-panel-2)" },
+            "&:active": { background: "rgba(194,24,91,0.08)" },
           }}
         >
-          <SettingsRoundedIcon sx={{ color: "#C96F89" }} />
+          <Box sx={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, #E0708F, #C2185B)", boxShadow: "0 3px 8px rgba(194,24,91,0.35)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <SettingsRoundedIcon sx={{ color: "#fff", fontSize: 19 }} />
+          </Box>
           <Typography sx={{ flex: 1, fontFamily: SANS, fontWeight: 700, fontSize: "14px", color: "var(--sr-ink)" }}>
             ตั้งค่า · Settings
           </Typography>
@@ -471,18 +495,24 @@ const TherapistProfilePage: React.FC = () => {
   );
 };
 
-/** Same StatusChoice tile as before (moved back from TherapistHomePage, 28x.96). */
+/** Status tile — 🆕 Round 28x.101 (founder: "ปรับให้สวยขึ้น สีสดสวยขึ้น") each
+ *  status now carries its OWN true gradient (accent → accentTo) instead of
+ *  every tile fading into the same shared maroon end-stop, so Available/In
+ *  session/Resting read as genuinely different colors, not four shades of
+ *  the same one. Inactive tiles also got a visible colored tint + ring
+ *  instead of a near-invisible 10%-opacity wash. */
 interface StatusChoiceProps {
   label: string;
   hint: string;
   Icon: typeof RoomRoundedIcon;
   accent: string;
+  accentTo: string;
   active: boolean;
   disabled?: boolean;
   onClick: () => void;
 }
 
-const StatusChoice: React.FC<StatusChoiceProps> = ({ label, hint, Icon, accent, active, disabled, onClick }) => (
+const StatusChoice: React.FC<StatusChoiceProps> = ({ label, hint, Icon, accent, accentTo, active, disabled, onClick }) => (
   <Button
     onClick={onClick}
     disabled={disabled}
@@ -496,15 +526,15 @@ const StatusChoice: React.FC<StatusChoiceProps> = ({ label, hint, Icon, accent, 
       borderRadius: "12px",
       textTransform: "none",
       textAlign: "left",
-      background: active ? `linear-gradient(135deg, ${accent}, #7A3049)` : "var(--sr-panel)",
-      border: active ? `1px solid ${accent}` : "1px solid rgba(184,92,60,0.18)",
-      boxShadow: active ? `0 6px 14px ${accent}33` : "0 2px 6px rgba(15, 23, 42,0.04)",
+      background: active ? `linear-gradient(135deg, ${accent}, ${accentTo})` : `${accent}12`,
+      border: active ? `1px solid ${accentTo}` : `1px solid ${accent}40`,
+      boxShadow: active ? `0 6px 14px ${accent}40` : "none",
       color: active ? "#fff" : "var(--sr-ink)",
       transition: "transform 0.15s ease, box-shadow 0.15s ease",
       "&:hover": !disabled
         ? {
             transform: "translateY(-1px)",
-            background: active ? `linear-gradient(135deg, ${accent} 0%, ${accent} 100%)` : "var(--sr-panel-2)",
+            background: active ? `linear-gradient(135deg, ${accent}, ${accentTo})` : `${accent}1F`,
           }
         : undefined,
       "&.Mui-disabled": { opacity: 0.55, color: active ? "#fff" : "var(--sr-ink)" },
@@ -513,7 +543,7 @@ const StatusChoice: React.FC<StatusChoiceProps> = ({ label, hint, Icon, accent, 
     <Box
       sx={{
         width: 30, height: 30, borderRadius: "50%",
-        background: active ? "rgba(255,255,255,0.18)" : `${accent}1A`,
+        background: active ? "rgba(255,255,255,0.22)" : `${accent}26`,
         color: active ? "#fff" : accent,
         display: "flex", alignItems: "center", justifyContent: "center",
         flexShrink: 0,
@@ -525,7 +555,7 @@ const StatusChoice: React.FC<StatusChoiceProps> = ({ label, hint, Icon, accent, 
       <Typography sx={{ fontFamily: SANS, fontSize: "12px", fontWeight: 700, lineHeight: 1.15, color: "inherit" }}>
         {label}
       </Typography>
-      <Typography sx={{ fontFamily: SANS, fontSize: "9.5px", fontWeight: 500, opacity: active ? 0.85 : 0.6, color: "inherit", lineHeight: 1.25 }}>
+      <Typography sx={{ fontFamily: SANS, fontSize: "9.5px", fontWeight: 500, opacity: active ? 0.85 : 0.7, color: "inherit", lineHeight: 1.25 }}>
         {hint}
       </Typography>
     </Box>

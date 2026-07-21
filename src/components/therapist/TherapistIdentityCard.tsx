@@ -15,11 +15,14 @@ import { enhanceImage } from "@/utils/cloudinary";
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
+// 🆕 Round 28x.101 (founder: "ปรับให้สวยขึ้น สีสดสวยขึ้น") — each status gets
+// its own true, saturated color instead of green/black-wash/black-wash; the
+// pill should read at a glance, not just by its label text.
 const STATUS_PILL: Record<Avail, { bg: string; color: string; label: string }> = {
-  available: { bg: "#16a34a", color: "#fff", label: "Available" },
-  bookable: { bg: "#831843", color: "#F4F6F5", label: "In session" },
-  resting: { bg: "rgba(0,0,0,0.38)", color: "#FFFFFF", label: "Resting" },
-  holiday: { bg: "rgba(0,0,0,0.38)", color: "#FFFFFF", label: "On holiday" },
+  available: { bg: "#22C55E", color: "#fff", label: "Available" },
+  bookable: { bg: "#DB2777", color: "#fff", label: "In session" },
+  resting: { bg: "#5B4470", color: "#F4F6F5", label: "Resting" },
+  holiday: { bg: "#B45309", color: "#FFFFFF", label: "On holiday" },
 };
 
 const TherapistIdentityCard: React.FC<{
@@ -42,14 +45,19 @@ const TherapistIdentityCard: React.FC<{
       sx={{
         position: "relative",
         padding: "24px 20px 28px",
-        background: "linear-gradient(160deg, #A34A67 0%, #7A3049 55%, #5A2733 100%)",
+        background: "linear-gradient(160deg, #E0708F 0%, #C2185B 55%, #6B1541 100%)",
         borderBottomLeftRadius: 28,
         borderBottomRightRadius: 28,
         color: "#fff",
-        boxShadow: "0 12px 30px rgba(15, 23, 42, 0.22)",
+        boxShadow: "0 14px 34px rgba(194, 24, 91, 0.32)",
+        overflow: "hidden",
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+      {/* soft glow — same corner-glow language as the Dashboard hero cards,
+          so the hero reads as one design system with the rest of the app. */}
+      <Box aria-hidden sx={{ position: "absolute", top: -50, right: -40, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.20) 0%, transparent 70%)", pointerEvents: "none" }} />
+
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2, position: "relative" }}>
         <Box
           component="img"
           src={enhanceImage(resolvedImage, { variant: "card" })}
@@ -63,8 +71,8 @@ const TherapistIdentityCard: React.FC<{
             height: 96,
             borderRadius: "50%",
             objectFit: "cover",
-            border: "3px solid rgba(255,255,255,0.85)",
-            boxShadow: "0 6px 16px rgba(15, 23, 42, 0.14)",
+            border: "3px solid rgba(255,255,255,0.9)",
+            boxShadow: "0 6px 18px rgba(107, 21, 65, 0.35)",
             flexShrink: 0,
           }}
         />
