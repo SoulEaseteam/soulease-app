@@ -37,6 +37,7 @@ import {
   FloppyDisk,
   Newspaper,
   BookOpen,
+  CaretDown,
 } from "phosphor-react";
 import { doc, getDoc, setDoc, onSnapshot, deleteField, arrayRemove, serverTimestamp } from "firebase/firestore";
 import { app, db } from "@/lib/firebase";
@@ -111,44 +112,63 @@ const EditableMsgBlock: React.FC<{
   };
 
   return (
-    <Box sx={{ mb: 1.25 }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: "4px", gap: 1 }}>
-        <Typography sx={{ fontSize: 11, fontWeight: 800, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+    <Box sx={{ mb: "10px" }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: "3px", gap: 1 }}>
+        <Typography sx={{ fontSize: 10.5, fontWeight: 800, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.04em" }}>
           {label}
         </Typography>
         <Button
           size="small" disabled={!dirty || saving} onClick={() => void save()}
           startIcon={saving ? <CircularProgress size={11} /> : <FloppyDisk size={11} weight="bold" />}
-          sx={{ minWidth: "auto", fontSize: 11, fontWeight: 700, textTransform: "none", color: dirty ? adminColor.accent : adminColor.dim, px: "6px", py: "2px" }}
+          sx={{ minWidth: "auto", fontSize: 11, fontWeight: 700, textTransform: "none", color: dirty ? adminColor.accent : adminColor.dim, px: "6px", py: "1px" }}
         >
           บันทึก
         </Button>
       </Box>
       <TextField
-        fullWidth multiline minRows={2} value={draft} onChange={(e) => setDraft(e.target.value)}
+        fullWidth multiline minRows={1} maxRows={4} value={draft} onChange={(e) => setDraft(e.target.value)}
         sx={{
           ...fieldSx,
-          "& .MuiOutlinedInput-root": { ...fieldSx["& .MuiOutlinedInput-root"], fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 12.5, lineHeight: 1.55 },
+          "& .MuiOutlinedInput-root": { ...fieldSx["& .MuiOutlinedInput-root"], fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 12, lineHeight: 1.45, padding: "6px 8px" },
         }}
       />
     </Box>
   );
 };
 
-/** Read-only variant — used for the composed "ตัวอย่างเต็ม" preview, which
- *  is never itself editable (it's header+body+footer+reserve joined). */
-const MsgPreview: React.FC<{ label: string; children: string }> = ({ label, children }) => (
-  <Box sx={{ mb: 1.25 }}>
-    <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: adminColor.dim, mb: "4px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-      {label}
-    </Typography>
-    <Box sx={{ background: adminColor.panel3, border: `1px solid ${adminColor.line}`, borderRadius: "10px", p: "10px 12px" }}>
-      <Typography sx={{ fontSize: 12, color: adminColor.muted, whiteSpace: "pre-wrap", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", lineHeight: 1.5 }}>
-        {children}
-      </Typography>
+/** Read-only "ตัวอย่างเต็ม" preview (header+body+footer+reserve composed) —
+ *  collapsed by default (28x.98, founder: "ช่วยกระชับพื้นที่หน่อย") so 12
+ *  always-open preview blocks don't double the Promo section's height;
+ *  tap the label to expand one at a time. */
+const MsgPreview: React.FC<{ label: string; children: string; collapsible?: boolean }> = ({ label, children, collapsible }) => {
+  const [open, setOpen] = useState(!collapsible);
+  return (
+    <Box sx={{ mb: "6px" }}>
+      <Box
+        {...(collapsible ? {
+          role: "button", tabIndex: 0,
+          onClick: () => setOpen((v) => !v),
+          onKeyDown: (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen((v) => !v); } },
+        } : {})}
+        sx={{ display: "inline-flex", alignItems: "center", gap: "3px", mb: "3px", cursor: collapsible ? "pointer" : "default", userSelect: "none" }}
+      >
+        <Typography sx={{ fontSize: 10, fontWeight: 700, color: adminColor.dim, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+          {label}
+        </Typography>
+        {collapsible && (
+          <CaretDown size={9} weight="bold" style={{ color: adminColor.dim, transition: "transform 0.15s ease", transform: open ? "rotate(180deg)" : "rotate(0deg)" }} />
+        )}
+      </Box>
+      {open && (
+        <Box sx={{ background: adminColor.panel3, border: `1px solid ${adminColor.line}`, borderRadius: "9px", p: "8px 10px" }}>
+          <Typography sx={{ fontSize: 11.5, color: adminColor.muted, whiteSpace: "pre-wrap", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", lineHeight: 1.45 }}>
+            {children}
+          </Typography>
+        </Box>
+      )}
     </Box>
-  </Box>
-);
+  );
+};
 
 const subheaderSx = {
   fontSize: 12.5, fontWeight: 800, color: adminColor.text, mb: "8px", pb: "6px",
@@ -475,7 +495,7 @@ const AdminTelegramPanelPage: React.FC = () => {
         SunRed Bot → Telegram · ทุกการตั้งค่าที่เกี่ยวกับ Telegram อยู่ในหน้านี้ที่เดียว
       </Typography>
 
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
         {/* ── Notifications ── */}
         <SectionCard icon={<BellRinging size={13} weight="bold" />} title="Notifications · การแจ้งเตือน">
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
@@ -497,17 +517,17 @@ const AdminTelegramPanelPage: React.FC = () => {
             welcomeFor/faqEntry/renderPrimeTime functions the bots use to
             build outbound messages — never a hand-copied mirror. */}
         <SectionCard icon={<BookOpen size={13} weight="bold" />} title="Bot Copy · ข้อความบอททั้งหมด" collapsible defaultCollapsed>
-          <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.25 }}>
-            เนื้อหาจริงจากโค้ด ณ ตอนนี้ — ไม่ใช่ log ประวัติ (ระบบไม่ได้เก็บข้อความที่เคยส่งจริงไว้ที่ไหนแบบคำต่อคำ ทั้ง Daily Digest และ Promo Bot) ดูตรงนี้แทนเพื่อตัดสินใจว่าจะเพิ่ม/ลบ/แก้ตรงไหน
+          <Typography sx={{ fontSize: 11, color: adminColor.muted, mb: 1 }}>
+            แก้แล้วกด &ldquo;บันทึก&rdquo; มีผลทันที ไม่ต้องรอ deploy — ถ้าไม่เคยแก้ ใช้ค่าเดิมในโค้ด
           </Typography>
 
           <ToggleButtonGroup
             value={contentLang} exclusive onChange={(_, v: PostLang | null) => v && setContentLang(v)}
             sx={{
-              mb: 1.75,
+              mb: 1.25,
               "& .MuiToggleButton-root": {
-                fontFamily: SANS, fontSize: 12, fontWeight: 700, textTransform: "none",
-                border: `1px solid ${adminColor.line2}`, color: adminColor.text, padding: "6px 14px",
+                fontFamily: SANS, fontSize: 11.5, fontWeight: 700, textTransform: "none",
+                border: `1px solid ${adminColor.line2}`, color: adminColor.text, padding: "4px 11px",
                 "&.Mui-selected": { background: adminColor.accent, color: "#fff", "&:hover": { background: adminColor.accentDeep } },
               },
             }}
@@ -516,18 +536,14 @@ const AdminTelegramPanelPage: React.FC = () => {
           </ToggleButtonGroup>
 
           {botCopyLoading && (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}><CircularProgress size={20} /></Box>
+            <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}><CircularProgress size={18} /></Box>
           )}
           {botCopyError && (
-            <Typography sx={{ fontSize: 12.5, color: adminColor.red, fontWeight: 700 }}>โหลดเนื้อหาไม่สำเร็จ ลองรีเฟรชหน้านี้</Typography>
+            <Typography sx={{ fontSize: 12, color: adminColor.red, fontWeight: 700 }}>โหลดเนื้อหาไม่สำเร็จ ลองรีเฟรชหน้านี้</Typography>
           )}
 
           {botCopy && (
-            <Stack spacing={2.5}>
-              <Typography sx={{ fontSize: 11.5, color: adminColor.accent, fontWeight: 700, background: `${adminColor.accent}14`, borderRadius: "8px", p: "8px 10px" }}>
-                แก้ตรงนี้แล้วกด &ldquo;บันทึก&rdquo; มีผลทันที ไม่ต้องรอ deploy — บอทอ่านค่านี้ก่อนเสมอ ถ้าไม่เคยแก้จะใช้ค่าเดิมในโค้ด
-              </Typography>
-
+            <Stack spacing={1.5}>
               <Box>
                 <Typography sx={subheaderSx}>SunRed Greeter · @SunRedGreeterBot</Typography>
                 <EditableMsgBlock
@@ -541,7 +557,7 @@ const AdminTelegramPanelPage: React.FC = () => {
                   value={botCopy.greeter.button[contentLang]} onSaved={handleBotCopySaved}
                 />
                 <EditableMsgBlock
-                  key={`greeter-nudge-${contentLang}`} label="ข้อความเตือน ถ้าลูกค้าพิมพ์แทนกดปุ่ม"
+                  key={`greeter-nudge-${contentLang}`} label="ข้อความเตือน (พิมพ์แทนกดปุ่ม)"
                   docId="greeter" field="nudge" lang={contentLang}
                   value={botCopy.greeter.nudge[contentLang]} onSaved={handleBotCopySaved}
                 />
@@ -556,7 +572,7 @@ const AdminTelegramPanelPage: React.FC = () => {
 
               <Box>
                 <Typography sx={subheaderSx}>Daily Digest · ตัวอย่างเต็ม</Typography>
-                <MsgPreview label="โครงข้อความ (ตัวเลขคำนวณสดทุกครั้ง) — แก้หัวข้อ/ท้ายข้อความได้ในการ์ด Daily Digest ด้านล่าง">
+                <MsgPreview label="โครงข้อความ · แก้หัวข้อ/ท้ายข้อความได้ที่การ์ด Daily Digest ด้านล่าง" collapsible>
                   {`${digestHeader}\n\n[ Funnel Analytics + Bookings ย้อนหลัง 24 ชม. ]\n\n${digestFooter || "(ไม่มีข้อความท้ายรายงาน)"}`}
                 </MsgPreview>
               </Box>
@@ -572,34 +588,34 @@ const AdminTelegramPanelPage: React.FC = () => {
 
               <Box>
                 <Typography sx={subheaderSx}>Promo Bot · หมุนเวียน 7 วัน</Typography>
-                <Typography sx={{ fontSize: 11.5, color: adminColor.dim, mb: 1 }}>
-                  เนื้อหาต่อวัน — หัวข้อ/ท้ายข้อความคำนวณแยกต่างหาก ไม่ต้องพิมพ์ซ้ำ ตัวอย่างเต็มด้านล่างแต่ละวัน (อาจไม่อัปเดตทันทีถ้าเพิ่งแก้ท้ายข้อความด้านบน — รีเฟรชหน้าเพื่อดูล่าสุด)
+                <Typography sx={{ fontSize: 10.5, color: adminColor.dim, mb: "6px" }}>
+                  หัวข้อ/ท้ายข้อความคำนวณแยก ไม่ต้องพิมพ์ซ้ำ — กด &ldquo;ตัวอย่างเต็ม&rdquo; ดูรูปแบบจริง
                 </Typography>
                 {botCopy.promo.days.map((d) => (
-                  <Box key={d.day} sx={{ mb: 1.75 }}>
+                  <Box key={d.day} sx={{ mb: "10px" }}>
                     <EditableMsgBlock
                       key={`promo_${d.day}-body-${contentLang}`} label={DAY_LABEL_TH[d.day] ?? d.day}
                       docId={`promo_${d.day}`} field="body" lang={contentLang}
                       value={d.body[contentLang]} onSaved={handleBotCopySaved}
                     />
-                    <MsgPreview label="ตัวอย่างเต็ม (ช่วง Prime Time)">{d.preview[contentLang]}</MsgPreview>
+                    <MsgPreview label="ตัวอย่างเต็ม" collapsible>{d.preview[contentLang]}</MsgPreview>
                   </Box>
                 ))}
               </Box>
 
               <Box>
                 <Typography sx={subheaderSx}>Promo Bot · ธีมวันสำคัญ</Typography>
-                <Typography sx={{ fontSize: 11.5, color: adminColor.dim, mb: 1 }}>
+                <Typography sx={{ fontSize: 10.5, color: adminColor.dim, mb: "6px" }}>
                   แทนที่เนื้อหาประจำวันทั้งวันตามช่วงปฏิทินจริง
                 </Typography>
                 {botCopy.promo.holidays.map((h) => (
-                  <Box key={h.key} sx={{ mb: 1.75 }}>
+                  <Box key={h.key} sx={{ mb: "10px" }}>
                     <EditableMsgBlock
                       key={`promo_${h.key}-body-${contentLang}`} label={HOLIDAY_LABEL_TH[h.key] ?? h.key}
                       docId={`promo_${h.key}`} field="body" lang={contentLang}
                       value={h.body[contentLang]} onSaved={handleBotCopySaved}
                     />
-                    <MsgPreview label="ตัวอย่างเต็ม (ช่วง Prime Time)">{h.preview[contentLang]}</MsgPreview>
+                    <MsgPreview label="ตัวอย่างเต็ม" collapsible>{h.preview[contentLang]}</MsgPreview>
                   </Box>
                 ))}
               </Box>
