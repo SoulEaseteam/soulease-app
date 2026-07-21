@@ -104,23 +104,73 @@ const ActivationGate: React.FC<{ onSignOut: () => void }> = ({ onSignOut }) => (
       บัญชีของคุณเชื่อมต่อแล้ว แต่แอดมินยังไม่ได้เปิดใช้งาน
       กรุณาติดต่อแอดมินเพื่อขอให้ซิงก์งานและตั้งค่าช่องงานให้คุณก่อนเริ่มใช้งาน
     </Typography>
-    <Box sx={{ display: "flex", gap: 1, mt: 1, flexWrap: "wrap", justifyContent: "center" }}>
-      <Button
+    {/* 🆕 Round 28x.97 (founder, ref. WhatsApp's own tab bar: "ให้กล่องส่งข้อความ
+        สวยแบบภาพ2") — one grouped capsule instead of two loose pill buttons:
+        icon-over-label items sharing a single rounded card, divided by a
+        hairline, same shape language as the reference screenshot. */}
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "stretch",
+        width: "100%",
+        maxWidth: 300,
+        mt: 1.5,
+        borderRadius: "22px",
+        background: "var(--sr-panel)",
+        border: "1px solid var(--sr-hairline)",
+        boxShadow: "0 10px 28px rgba(138, 58, 87, 0.12)",
+        overflow: "hidden",
+      }}
+    >
+      <Box
+        component="a"
         href={whatsappDeepLink("สวัสดีค่ะ บัญชีพนักงานของฉันยังไม่เปิดใช้งาน รบกวนเปิดให้ด้วยค่ะ")}
         target="_blank"
         rel="noopener"
-        sx={{ textTransform: "none", fontWeight: 700, borderRadius: 999, px: 2.5, background: "#D97C95", color: "#fff", "&:hover": { background: "#C96F89" } }}
+        aria-label="ทัก WhatsApp แอดมิน"
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 0.7,
+          py: 2,
+          textDecoration: "none",
+          transition: "background 0.15s ease",
+          "&:active": { background: "var(--sr-panel-2)" },
+        }}
       >
-        ทัก WhatsApp แอดมิน
-      </Button>
-      <Button
+        <Box component="img" src="/images/profli/whatsapp.png" alt="" width={28} height={28} sx={{ width: 28, height: 28, objectFit: "contain" }} />
+        <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: "var(--sr-ink)" }}>
+          WhatsApp
+        </Typography>
+      </Box>
+
+      <Box sx={{ width: "1px", my: 1.75, background: "var(--sr-hairline)" }} />
+
+      <Box
+        component="a"
         href={CONCIERGE.lineUrl}
         target="_blank"
         rel="noopener"
-        sx={{ textTransform: "none", fontWeight: 700, borderRadius: 999, px: 2.5, color: "var(--sr-ink)", border: "1px solid var(--sr-hairline)" }}
+        aria-label="ทัก LINE"
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 0.7,
+          py: 2,
+          textDecoration: "none",
+          transition: "background 0.15s ease",
+          "&:active": { background: "var(--sr-panel-2)" },
+        }}
       >
-        ทัก LINE
-      </Button>
+        <Box component="img" src="/images/profli/line.png" alt="" width={28} height={28} sx={{ width: 28, height: 28, objectFit: "contain" }} />
+        <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: "var(--sr-ink)" }}>
+          LINE
+        </Typography>
+      </Box>
     </Box>
     <Button onClick={onSignOut} sx={{ mt: 2, textTransform: "none", fontSize: 12.5, color: "var(--sr-dim)" }}>
       ออกจากระบบ
