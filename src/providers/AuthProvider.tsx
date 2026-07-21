@@ -10,6 +10,7 @@ import React, {
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { doc, getDoc, collection, query, where, limit, getDocs } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { setCachedRole } from "@/utils/currentRole";
 
 export type Role = "admin" | "therapist" | "user";
 
@@ -74,8 +75,12 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       if (firebaseUser) {
         const detectedRole = await resolveRole(firebaseUser.uid);
         setRole(detectedRole);
+        // 🆕 28x.99 — mirror into the module-level cache so analytics.ts
+        // (a plain util, not a component) can skip tracking staff sessions.
+        setCachedRole(detectedRole);
       } else {
         setRole(null);
+        setCachedRole(null);
       }
 
       setLoading(false);
@@ -92,6 +97,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     await signOut(auth);
     setUser(null);
     setRole(null);
+    setCachedRole(null);
   }, []);
 
   const value = useMemo<AuthContextType>(

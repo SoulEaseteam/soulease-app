@@ -64,6 +64,7 @@ interface AnalyticsEvent {
   sid?: string | null;
   mode?: string | null;
   referrer?: string | null;
+  utmSource?: string | null;
   lang?: string | null;
   path?: string | null;
   props?: Record<string, unknown> | null;
@@ -104,6 +105,28 @@ function classifyReferrer(ref?: string | null): string {
   if (h.includes("youtube")) return "YouTube";
   if (h.includes("reddit")) return "Reddit";
   return ref; // unknown → keep raw hostname
+}
+
+// 🆕 Round 28x.99 (founder: "เพิ่มจาก tiktok ด้วย") — classify the explicit
+//   ?utm_source=/?src= tag (analytics.ts) into the SAME buckets as
+//   classifyReferrer, so a UTM-tagged link and a plain referrer both land
+//   in one row instead of splitting "TikTok" from "tiktok" as two entries.
+//   Reuses REF_LABEL below for display, same as referrer buckets.
+function classifyUtm(src: string): string {
+  const s = src.toLowerCase();
+  if (s.includes("tiktok")) return "TikTok";
+  if (s.includes("line")) return "LINE";
+  if (s.includes("telegram") || s === "tg") return "Telegram";
+  if (s.includes("instagram") || s === "ig") return "Instagram";
+  if (s.includes("facebook") || s === "fb") return "Facebook";
+  if (s.includes("whatsapp") || s === "wa") return "WhatsApp";
+  if (s.includes("twitter") || s === "x") return "X / Twitter";
+  if (s.includes("google")) return "Google";
+  if (s.includes("reddit")) return "Reddit";
+  if (s.includes("youtube")) return "YouTube";
+  // Unknown tag → title-case it so "sammyboyforum" reads as a real label,
+  // not a lowercase code fragment.
+  return src.charAt(0).toUpperCase() + src.slice(1);
 }
 
 const REF_LABEL: Record<string, string> = {
@@ -183,6 +206,7 @@ const AdminAnalyticsPage: React.FC = () => {
             sid: d.sid ?? null,
             mode: d.mode ?? null,
             referrer: d.referrer ?? null,
+            utmSource: d.utmSource ?? null,
             lang: d.lang ?? null,
             path: d.path ?? null,
             props: d.props ?? null,
@@ -245,8 +269,12 @@ const AdminAnalyticsPage: React.FC = () => {
       // Traffic source per session: first seen wins, but a known source
       // always upgrades a "Direct" placeholder (a visitor who arrived via
       // LINE then navigated internally still counts as LINE).
+      // 🆕 Round 28x.99 — an explicit ?utm_source=/?src= tag always wins
+      //   over the referrer guess: it's what she deliberately put on the
+      //   link, and it survives in-app browsers (TikTok, LINE, Telegram)
+      //   that strip or mangle document.referrer.
       if (ev.sid) {
-        const cat = classifyReferrer(ev.referrer);
+        const cat = ev.utmSource ? classifyUtm(ev.utmSource) : classifyReferrer(ev.referrer);
         if (sessionRef[ev.sid] === undefined) sessionRef[ev.sid] = cat;
         else if (sessionRef[ev.sid] === "Direct" && cat !== "Direct") sessionRef[ev.sid] = cat;
       }

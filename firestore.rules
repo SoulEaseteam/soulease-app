@@ -632,21 +632,32 @@ service cloud.firestore {
 
     // 🆕 Round 28r13 (founder 2026-05-06) — funnel analytics.
     // ── analytics_events (self-hosted funnel tracking) ────────────
-    // Five-event funnel: home_view / service_view / booking_start /
-    // booking_complete / concierge_chat_open. Public CREATE so guest
-    // sessions can fire events without auth. Validates the event name
-    // against the allow-list to keep the collection clean. Immutable
-    // (no update/delete) so the audit trail can't be tampered with.
-    // Only admins read — funnel queries should aggregate on the
-    // admin side, never expose event timeline to customers.
+    // Public CREATE so guest sessions can fire events without auth.
+    // Validates the event name against the allow-list to keep the
+    // collection clean. Immutable (no update/delete) so the audit trail
+    // can't be tampered with. Only admins read — funnel queries should
+    // aggregate on the admin side, never expose event timeline to
+    // customers.
+    // 🆕 Round 28x.99 — allow-list was stuck at the original 5 events;
+    //   therapist_view (28t.14), bundle_view/bundle_reserve_click (28r58),
+    //   and referral_tier_applied (28r63) were added to analytics.ts's
+    //   FunnelEvent type since, but never here — every create for those
+    //   four event types has been silently permission-denied (swallowed
+    //   by trackEvent's .catch()) since the day each shipped. This is why
+    //   "Top practitioners viewed" has read 0 the whole time, not just
+    //   "forward-only, no history yet" as the dashboard caption assumed.
     match /analytics_events/{eventId} {
       allow read: if isAdmin();
       allow create: if request.resource.data.event in [
         'home_view',
         'service_view',
+        'therapist_view',
         'booking_start',
         'booking_complete',
-        'concierge_chat_open'
+        'concierge_chat_open',
+        'bundle_view',
+        'bundle_reserve_click',
+        'referral_tier_applied'
       ];
       allow update, delete: if false;
     }

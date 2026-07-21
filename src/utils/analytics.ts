@@ -32,6 +32,7 @@
 
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { getCachedRole } from "@/utils/currentRole";
 
 export type FunnelEvent =
   | "home_view"
@@ -111,6 +112,43 @@ function isLocalOrDev(): boolean {
   );
 }
 
+// 🆕 Round 28x.99 (founder: "แล้วเราจะกดเข้าเองนับไหม" → "ทั้งหมด") —
+//   isLocalOrDev only ever filtered OUT dev/preview hosts; a founder or
+//   staff member browsing the REAL sunred.vip (to check a page, or via
+//   "Viewing as Customer") fired events identical to a real guest. Skips
+//   at the trackEvent level so it's automatic for every event type, not
+//   something each call site has to remember.
+function isStaffSession(): boolean {
+  const role = getCachedRole();
+  return role === "admin" || role === "therapist";
+}
+
+// 🆕 Round 28x.99 (founder: "เพิ่มจาก tiktok ด้วย") — explicit UTM
+//   attribution, for channels whose in-app browser (TikTok, LINE,
+//   Telegram, Instagram) often strips or mangles document.referrer.
+//   Put ?utm_source=tiktok (or the shorter ?src=tiktok) on any link she
+//   shares and it survives for the whole session, overriding the
+//   referrer-guess in the admin dashboard. Captured once, on whichever
+//   page the visitor actually lands on — not just Home, since a shared
+//   link might point straight at a service or practitioner page.
+const UTM_SOURCE_KEY = "sunred.analytics.utmSource";
+
+function getUtmSource(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const fresh = params.get("utm_source") || params.get("src");
+    if (fresh) {
+      const normalized = fresh.toLowerCase().trim();
+      window.sessionStorage.setItem(UTM_SOURCE_KEY, normalized);
+      return normalized;
+    }
+    return window.sessionStorage.getItem(UTM_SOURCE_KEY);
+  } catch {
+    return null;
+  }
+}
+
 /** Per-session dedup gate. Returns true if this exact key already
  *  fired this session, false (and records it) otherwise. */
 function alreadyFired(key: string): boolean {
@@ -184,6 +222,10 @@ export function trackEvent(
   //   Production-only tracking from here on.
   if (isLocalOrDev()) return;
 
+  // 🆕 Round 28x.99 — skip the founder's own / any staff member's real
+  //   browsing on production (see isStaffSession above).
+  if (isStaffSession()) return;
+
   // 🆕 Round 28r13b — Dedupe within session for navigation events
   //   (home_view, service_view by id, booking_start by id). Real
   //   conversion signals (booking_complete, concierge_chat_open)
@@ -217,12 +259,15 @@ export function trackEvent(
       ? navigator.language.split("-")[0]
       : null;
 
+  const utmSource = getUtmSource();
+
   // Fire-and-forget — never await.
   void addDoc(collection(db, "analytics_events"), {
     event,
     sid,
     mode,
     referrer,
+    utmSource,
     lang,
     path: typeof window !== "undefined" ? window.location.pathname : null,
     props: props ?? null,

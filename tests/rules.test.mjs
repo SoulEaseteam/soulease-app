@@ -481,6 +481,44 @@ await check("logged-out visitor CANNOT read botCopy", () =>
   assertFails(getDoc(doc(anon(), "botCopy", "greeter")))
 );
 
+console.log("\nanalytics_events · funnel tracking allow-list (28x.99)");
+await check("guest CAN create a home_view event", () =>
+  assertSucceeds(
+    setDoc(doc(anon(), "analytics_events", "ev-1"), { event: "home_view" })
+  )
+);
+await check("guest CAN create a therapist_view event (was missing from the allow-list)", () =>
+  assertSucceeds(
+    setDoc(doc(anon(), "analytics_events", "ev-2"), { event: "therapist_view" })
+  )
+);
+await check("guest CAN create a bundle_view event (was missing from the allow-list)", () =>
+  assertSucceeds(
+    setDoc(doc(anon(), "analytics_events", "ev-3"), { event: "bundle_view" })
+  )
+);
+await check("guest CAN create a bundle_reserve_click event (was missing from the allow-list)", () =>
+  assertSucceeds(
+    setDoc(doc(anon(), "analytics_events", "ev-4"), { event: "bundle_reserve_click" })
+  )
+);
+await check("guest CAN create a referral_tier_applied event (was missing from the allow-list)", () =>
+  assertSucceeds(
+    setDoc(doc(anon(), "analytics_events", "ev-5"), { event: "referral_tier_applied" })
+  )
+);
+await check("guest CANNOT create an event with a bogus name", () =>
+  assertFails(
+    setDoc(doc(anon(), "analytics_events", "ev-6"), { event: "totally_made_up" })
+  )
+);
+await check("a stranger CANNOT read analytics_events", () =>
+  assertFails(getDoc(doc(asUser(GUEST_UID), "analytics_events", "ev-1")))
+);
+await check("admin CAN read analytics_events", () =>
+  assertSucceeds(getDoc(doc(asUser(ADMIN_UID), "analytics_events", "ev-1")))
+);
+
 await testEnv.cleanup();
 
 console.log(`\n${passed} passed · ${failed} failed`);
