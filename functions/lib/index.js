@@ -729,13 +729,20 @@ const formatBookingForAdmin = (bookingId, b) => {
             ? `🎟️ Discount: -${b.discountAmount.toLocaleString()} ฿${b.discountCode ? ` (${b.discountCode})` : ""}`
             : null,
         "",
-        `🚖 Taxi: ${(b.taxiFee ?? 0).toLocaleString()} ฿`,
+        b.distanceKm
+            ? `Distance: ${b.distanceKm.toFixed(1)} km  •  ${b.isLiveRoute ? "Live route" : "Estimated"}${b.etaMinutes ? `  •  ETA: ${b.etaMinutes} min` : ""}`
+            : null,
+        b.taxiSave && b.taxiSave > 0 && b.taxiOriginal != null
+            ? `🚖 Taxi: ${(b.taxiFee ?? 0).toLocaleString()} ฿  (was ${b.taxiOriginal.toLocaleString()} ฿ · saved ${b.taxiSave.toLocaleString()} ฿ booking online)`
+            : `🚖 Taxi: ${(b.taxiFee ?? 0).toLocaleString()} ฿`,
         // Payment method kept (cash vs WeChat/Alipay changes the operation).
         `💳 Payment: ${b.payment ?? "Cash"}`,
         b.paymentFee && b.paymentFee > 0
             ? `   ↳ incl. service charge ${b.paymentFee.toLocaleString()} ฿`
             : null,
-        `💰 Total: ${(b.totalPrice ?? 0).toLocaleString()} ฿`,
+        b.originalTotalPrice
+            ? `💰 Total: ${(b.totalPrice ?? 0).toLocaleString()} ฿  (was ${b.originalTotalPrice.toLocaleString()} ฿)`
+            : `💰 Total: ${(b.totalPrice ?? 0).toLocaleString()} ฿`,
         "",
         `📞 Phone: ${b.phone ?? "—"}`,
         `👤 Name: ${b.contactName ?? "—"}`,

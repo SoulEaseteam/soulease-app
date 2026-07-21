@@ -728,6 +728,16 @@ interface BookingDocLite {
   discountCode?: string;
   discountAmount?: number;
   taxiFee?: number;
+  // 🆕 Round 28x.99p/q — the Confirm Reservation Pricing panel's fields
+  // (Distance / Live route / ETA / online-booking saving) were computed
+  // and shown to the guest but never reached View's own booking record
+  // or this Telegram message — she asked for both.
+  distanceKm?: number;
+  isLiveRoute?: boolean;
+  etaMinutes?: number;
+  taxiOriginal?: number | null;
+  taxiSave?: number;
+  originalTotalPrice?: number | null;
   totalPrice?: number;
   language?: string;
   payment?: string;
@@ -930,13 +940,22 @@ const formatBookingForAdmin = (
         }`
       : null,
     "",
-    `🚖 Taxi: ${(b.taxiFee ?? 0).toLocaleString()} ฿`,
+    b.distanceKm
+      ? `Distance: ${b.distanceKm.toFixed(1)} km  •  ${
+          b.isLiveRoute ? "Live route" : "Estimated"
+        }${b.etaMinutes ? `  •  ETA: ${b.etaMinutes} min` : ""}`
+      : null,
+    b.taxiSave && b.taxiSave > 0 && b.taxiOriginal != null
+      ? `🚖 Taxi: ${(b.taxiFee ?? 0).toLocaleString()} ฿  (was ${b.taxiOriginal.toLocaleString()} ฿ · saved ${b.taxiSave.toLocaleString()} ฿ booking online)`
+      : `🚖 Taxi: ${(b.taxiFee ?? 0).toLocaleString()} ฿`,
     // Payment method kept (cash vs WeChat/Alipay changes the operation).
     `💳 Payment: ${b.payment ?? "Cash"}`,
     b.paymentFee && b.paymentFee > 0
       ? `   ↳ incl. service charge ${b.paymentFee.toLocaleString()} ฿`
       : null,
-    `💰 Total: ${(b.totalPrice ?? 0).toLocaleString()} ฿`,
+    b.originalTotalPrice
+      ? `💰 Total: ${(b.totalPrice ?? 0).toLocaleString()} ฿  (was ${b.originalTotalPrice.toLocaleString()} ฿)`
+      : `💰 Total: ${(b.totalPrice ?? 0).toLocaleString()} ฿`,
     "",
     `📞 Phone: ${b.phone ?? "—"}`,
     `👤 Name: ${b.contactName ?? "—"}`,
