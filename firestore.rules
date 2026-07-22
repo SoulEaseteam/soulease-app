@@ -136,6 +136,12 @@ service cloud.firestore {
         // 🆕 Round 28b27 — Telegram notification opt-in. Therapist
         //   themselves DM the bot to register and updates this field.
         'telegramChatId',
+        // 🆕 Round 28x.122 (founder: "Therapists แจ้งสถานะพนักงานเข้าสู่ระบบ")
+        //   — presence heartbeat written by StaffLayout while she has the
+        //   staff app open. Throttled client-side to one write / 5 min, and
+        //   in AUDIT_IGNORE_KEYS so it never reaches the audit log or the
+        //   Telegram staff-activity feed.
+        'lastSeenAt',
         // bookkeeping (audit metadata — read by Functions trigger)
         'updatedAt', 'updatedBy'
       ];

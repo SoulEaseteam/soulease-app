@@ -32,9 +32,15 @@
 //   its query field would not fix those callers (they have no uid to pass)
 //   and risks regressing behavior nobody asked to change.
 
-import { useEffect, useState } from "react";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+//
+// 🆕 Round 28x.123 (staff-app performance audit) — the query itself moved to
+//   the shared listener in useOwnBookingsSnapshot. This hook opened its own
+//   onSnapshot on exactly the same query as useTherapistRevenueRows, and both
+//   mount together on /therapist/performance, so ~250 booking docs were
+//   downloaded and parsed twice per open. Same math, same result — one
+//   transport instead of two.
+
+import { useOwnBookingsSnapshot } from "@/hooks/useOwnBookingsSnapshot";
 import {
   computeBookingStats,
   EMPTY_BOOKING_STATS,
@@ -44,27 +50,14 @@ import {
 export function useTherapistOwnBookingStats(
   uid: string | null | undefined,
 ): TherapistBookingStats {
-  const [stats, setStats] = useState<TherapistBookingStats>(
+  return useOwnBookingsSnapshot<TherapistBookingStats>(
+    uid,
+    computeBookingStats,
     uid ? { ...EMPTY_BOOKING_STATS, loading: true } : EMPTY_BOOKING_STATS,
+    (err) => {
+      // eslint-disable-next-line no-console
+      console.warn("[useTherapistOwnBookingStats] snapshot error:", err);
+      return { ...EMPTY_BOOKING_STATS, loading: false };
+    },
   );
-
-  useEffect(() => {
-    if (!uid) {
-      setStats(EMPTY_BOOKING_STATS);
-      return;
-    }
-    const q = query(collection(db, "bookings"), where("therapistUid", "==", uid));
-    const unsub = onSnapshot(
-      q,
-      (snap) => setStats(computeBookingStats(snap)),
-      (err) => {
-        // eslint-disable-next-line no-console
-        console.warn("[useTherapistOwnBookingStats] snapshot error:", err);
-        setStats({ ...EMPTY_BOOKING_STATS, loading: false });
-      },
-    );
-    return () => unsub();
-  }, [uid]);
-
-  return stats;
 }

@@ -530,6 +530,10 @@ const AUDIT_IGNORE_KEYS = new Set([
   "lng",
   "area",
   "lastSeen",
+  // 🆕 28x.122 — StaffLayout's presence heartbeat. Must stay ignored or every
+  //   therapist with the app open would emit an audit row (and, since 28x.122,
+  //   a Telegram staff-activity message) every few minutes.
+  "lastSeenAt",
   "lastActiveAt",
   "online",
   // auto-maintained by the booking flow, not a human action
@@ -566,12 +570,49 @@ function truncateValue(v: unknown): unknown {
 interface TherapistDocLite {
   [key: string]: unknown;
   updatedBy?: string;
+  uid?: string;
+  name?: string;
+}
+
+// 🆕 Round 28x.122 (founder: "Telegram bot แจ้งเตือนทุกการกระทำของพนักงาน
+//   เข้าหน้ารีพอต") — human-readable Thai labels for the therapist-doc fields
+//   a practitioner can change herself. Only these are announced: a key with no
+//   entry here is either admin-only (so not a "staff action") or already in
+//   AUDIT_IGNORE_KEYS. Keep in sync with therapistEditableKeys() in
+//   firestore.rules — if a new self-editable field is whitelisted there and
+//   not added here, its edits go unannounced.
+const STAFF_FIELD_LABELS: Record<string, string> = {
+  statusOverride: "สถานะการทำงาน",
+  isHoliday: "โหมดวันหยุด",
+  startTime: "เวลาเริ่มงาน",
+  endTime: "เวลาเลิกงาน",
+  homeLocation: "ตำแหน่งที่ยืน",
+  image: "รูปโปรไฟล์",
+  gallery: "แกลเลอรี",
+  features: "ลักษณะเฉพาะตัว",
+  specialty: "ความถนัด",
+  servicesAvailable: "บริการที่ทำได้",
+  services: "บริการ",
+  bios: "ประวัติแนะนำ",
+  languageSkills: "ภาษา",
+  telegramChatId: "การเชื่อม Telegram",
+};
+
+/** Compact, readable rendering of a changed value for the Telegram line. */
+function staffChangeValue(v: unknown): string {
+  if (v === null || v === undefined || v === "") return "—";
+  if (typeof v === "boolean") return v ? "เปิด" : "ปิด";
+  if (Array.isArray(v)) return `${v.length} รายการ`;
+  if (typeof v === "object") return "อัปเดตแล้ว";
+  const s = String(v);
+  return s.length > 40 ? `${s.slice(0, 40)}…` : s;
 }
 
 export const onTherapistUpdate = onDocumentUpdated(
   {
     document: "therapists/{therapistId}",
     region: "asia-southeast1",
+    secrets: [TELEGRAM_BOT_TOKEN],
   },
   async (event) => {
     const before = (event.data?.before.data() ?? {}) as TherapistDocLite;
@@ -632,6 +673,73 @@ export const onTherapistUpdate = onDocumentUpdated(
       });
     } catch (err) {
       logger.error("[onTherapistUpdate] write failed", { therapistId, err });
+    }
+
+    // 🆕 Round 28x.122 — mirror SELF-edits to the admin Report channel.
+    //   Scoped to self-edits on purpose: `updatedBy` is the acting uid and
+    //   the doc's own `uid` is the practitioner's, so admin edits (made from
+    //   the Control Room, where View already sees what she did) never echo
+    //   back at her. Fields with no STAFF_FIELD_LABELS entry are skipped, so
+    //   admin-only columns changed in the same write stay quiet too.
+    try {
+      const isSelfEdit =
+        typeof updatedBy === "string" &&
+        typeof after.uid === "string" &&
+        updatedBy === after.uid;
+      if (!isSelfEdit) return;
+
+      const announced = Object.keys(changes).filter((k) => k in STAFF_FIELD_LABELS);
+      if (announced.length === 0) return;
+
+      const token = TELEGRAM_BOT_TOKEN.value();
+      if (!token) return;
+
+      const who = typeof after.name === "string" && after.name ? after.name : therapistId;
+      const lines = announced.map((k) => {
+        const label = STAFF_FIELD_LABELS[k];
+        const to = staffChangeValue(changes[k].after);
+        return `• ${label}: ${to}`;
+      });
+      await sendTelegramIfEnabled(
+        token,
+        await getReportChatId(),
+        `👩‍⚕️ ${who} แก้ไขข้อมูลตัวเอง (จากแอปพนักงาน)\n${lines.join("\n")}`
+      );
+    } catch (err) {
+      // Never let the notifier break the audit write above.
+      logger.error("[onTherapistUpdate] staff-activity notify failed", { therapistId, err });
+    }
+  }
+);
+
+// 🆕 Round 28x.122 (founder: "Telegram bot แจ้งเตือนทุกการกระทำของพนักงาน") —
+//   a gallery upload never touches the therapist doc (28x.96 routed new photos
+//   through the galleryRequests moderation queue instead), so it would be
+//   invisible to onTherapistUpdate's staff-activity feed. This is that gap:
+//   announce the request the moment she files it, so View knows there's
+//   something waiting at /admin/staff-requests without opening the panel.
+export const notifyGalleryRequest = onDocumentCreated(
+  {
+    document: "galleryRequests/{requestId}",
+    region: "asia-southeast1",
+    secrets: [TELEGRAM_BOT_TOKEN],
+  },
+  async (event) => {
+    const d = event.data?.data() as
+      | { therapistName?: string; therapistDocId?: string; status?: string }
+      | undefined;
+    if (!d || d.status !== "pending") return;
+    const token = TELEGRAM_BOT_TOKEN.value();
+    if (!token) return;
+    const who = d.therapistName ?? d.therapistDocId ?? "หมอนวด";
+    try {
+      await sendTelegramIfEnabled(
+        token,
+        await getReportChatId(),
+        `🖼 ${who} ส่งรูปใหม่เข้าแกลเลอรี (รออนุมัติ)\nตรวจได้ที่ /admin/staff-requests`
+      );
+    } catch (err) {
+      logger.error("[notifyGalleryRequest] failed", { err });
     }
   }
 );

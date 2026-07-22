@@ -26,11 +26,12 @@ import React, { useEffect, useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Box, IconButton, CircularProgress, Typography, Button } from "@mui/material";
 import { signOut } from "firebase/auth";
-import { collection, onSnapshot, query, where, limit } from "firebase/firestore";
+import { collection, doc, onSnapshot, query, serverTimestamp, updateDoc, where, limit } from "firebase/firestore";
 import { SquaresFour, Briefcase, UserCircle, SignOut, ShieldWarning, Heart } from "phosphor-react";
 
 import { auth, db } from "@/lib/firebase";
 import { responsiveShell } from "@/theme/breakpoints";
+import { clearTherapistSelfCache } from "@/hooks/useTherapistSelf";
 import { CONCIERGE, whatsappDeepLink } from "@/config/concierge";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
@@ -98,12 +99,38 @@ function useStaffActivation(): Activation {
         }
         const d = snap.docs[0].data() as { staffActive?: boolean };
         setState(d.staffActive === true ? "active" : "inactive");
+        // 🆕 Round 28x.122 (founder: "Therapists แจ้งสถานะพนักงานเข้าสู่ระบบ") —
+        //   presence heartbeat, piggybacked on the activation listener this
+        //   shell already holds so it costs no extra read. Throttled to one
+        //   write / 5 min per browser: without that, every snapshot (and every
+        //   staff route change) would write, and each write re-triggers this
+        //   very listener — a self-feeding loop. `lastSeenAt` is in
+        //   AUDIT_IGNORE_KEYS + therapistEditableKeys, so it neither spams the
+        //   audit log nor needs admin rights.
+        void touchLastSeen(snap.docs[0].id);
       },
       () => setState("not-found"),
     );
     return () => unsub();
   }, []);
   return state;
+}
+
+const HEARTBEAT_MS = 5 * 60 * 1000;
+async function touchLastSeen(therapistDocId: string): Promise<void> {
+  const key = `sr_lastseen_${therapistDocId}`;
+  try {
+    const last = Number(localStorage.getItem(key) || 0);
+    const now = Date.now();
+    if (last && now - last < HEARTBEAT_MS) return;
+    // Stamp BEFORE the await so the write this triggers can't re-enter here.
+    localStorage.setItem(key, String(now));
+    await updateDoc(doc(db, "therapists", therapistDocId), {
+      lastSeenAt: serverTimestamp(),
+    });
+  } catch {
+    // Presence is best-effort — never block or break the staff shell.
+  }
 }
 
 const ActivationGate: React.FC<{ onSignOut: () => void }> = ({ onSignOut }) => (
@@ -243,6 +270,9 @@ const StaffLayout: React.FC = () => {
     : "/therapist/profile"; // profile, settings, reports, location, update-location
 
   const logout = async () => {
+    // 🆕 28x.123 — drop the memoised therapist-doc resolution, or the next
+    //   practitioner to sign in on this device would inherit hers.
+    clearTherapistSelfCache();
     await signOut(auth);
     void navigate("/staff");
   };

@@ -22,9 +22,8 @@
 // the shop's payroll math — so a number she sees here can never drift from
 // what View sees on the admin side.
 
-import { useEffect, useState } from "react";
-import { collection, onSnapshot, query, where, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { Timestamp } from "firebase/firestore";
+import { useOwnBookingsSnapshot } from "@/hooks/useOwnBookingsSnapshot";
 
 export interface TherapistRevenueRow {
   id: string;
@@ -66,48 +65,43 @@ function toMs(v: FirestoreDateLike): number {
   return 0;
 }
 
-export function useTherapistRevenueRows(uid: string | null | undefined) {
-  const [rows, setRows] = useState<TherapistRevenueRow[]>([]);
-  const [loading, setLoading] = useState(!!uid);
+// 🆕 Round 28x.123 (staff-app performance audit) — shares one Firestore
+//   listener with useTherapistOwnBookingStats via useOwnBookingsSnapshot;
+//   both mount together on /therapist/performance and used to stream the
+//   same ~250 docs twice. See that module's header.
+interface RevenueRowsState {
+  rows: TherapistRevenueRow[];
+  loading: boolean;
+}
 
-  useEffect(() => {
-    if (!uid) {
-      setRows([]);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    const q = query(collection(db, "bookings"), where("therapistUid", "==", uid));
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const out: TherapistRevenueRow[] = snap.docs.map((d) => {
-          const b = d.data() as RevenueBookingDoc;
-          return {
-            id: d.id,
-            status: (b.status ?? "").toLowerCase(),
-            createdAt: toMs(b.createdAt ?? b.startAt),
-            serviceId: b.serviceId ?? null,
-            serviceName: b.serviceName ?? null,
-            servicePrice: b.servicePrice ?? null,
-            discountAmount: b.discountAmount ?? null,
-            duration: b.duration ?? null,
-            therapistShare: b.therapistShare ?? null,
-            taxiFee: b.taxiFee ?? null,
-          };
-        });
-        setRows(out);
-        setLoading(false);
-      },
-      (err) => {
-        // eslint-disable-next-line no-console
-        console.warn("[useTherapistRevenueRows] snapshot error:", err);
-        setRows([]);
-        setLoading(false);
-      },
-    );
-    return () => unsub();
-  }, [uid]);
+const EMPTY_ROWS: RevenueRowsState = { rows: [], loading: false };
 
-  return { rows, loading };
+export function useTherapistRevenueRows(uid: string | null | undefined): RevenueRowsState {
+  return useOwnBookingsSnapshot<RevenueRowsState>(
+    uid,
+    (snap) => ({
+      rows: snap.docs.map((d) => {
+        const b = d.data() as RevenueBookingDoc;
+        return {
+          id: d.id,
+          status: (b.status ?? "").toLowerCase(),
+          createdAt: toMs(b.createdAt ?? b.startAt),
+          serviceId: b.serviceId ?? null,
+          serviceName: b.serviceName ?? null,
+          servicePrice: b.servicePrice ?? null,
+          discountAmount: b.discountAmount ?? null,
+          duration: b.duration ?? null,
+          therapistShare: b.therapistShare ?? null,
+          taxiFee: b.taxiFee ?? null,
+        };
+      }),
+      loading: false,
+    }),
+    uid ? { rows: [], loading: true } : EMPTY_ROWS,
+    (err) => {
+      // eslint-disable-next-line no-console
+      console.warn("[useTherapistRevenueRows] snapshot error:", err);
+      return EMPTY_ROWS;
+    },
+  );
 }

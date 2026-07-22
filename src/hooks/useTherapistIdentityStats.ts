@@ -4,11 +4,18 @@
 // can render the same TherapistIdentityCard (live review count + computed
 // Avail status) without a second, possibly-drifting copy of this logic.
 
-import { useEffect, useMemo, useState } from "react";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+//
+// 🆕 Round 28x.123 (staff-app performance audit) — the review-count listener
+// now shares the one bookings subscription in useOwnBookingsSnapshot instead
+// of opening its own. This hook mounts on BOTH Home and Profile, so tapping
+// between tabs used to re-stream all ~250 booking docs each time just to
+// recount reviews.
+
+import { useMemo } from "react";
+import { auth } from "@/lib/firebase";
 import type { Avail, Therapist } from "@/types/therapist";
 import { calculateTherapistStatus } from "@/utils/calculateTherapistStatus";
+import { useOwnBookingsSnapshot } from "@/hooks/useOwnBookingsSnapshot";
 
 interface BookingDoc {
   reviewText?: string;
@@ -17,12 +24,9 @@ interface BookingDoc {
 
 export function useTherapistIdentityStats(therapist: Therapist | null) {
   // Live review count — completed bookings with a non-empty reviewText.
-  const [reviewCount, setReviewCount] = useState(0);
-  useEffect(() => {
-    const myUid = auth.currentUser?.uid;
-    if (!myUid) return;
-    const q = query(collection(db, "bookings"), where("therapistUid", "==", myUid));
-    const unsub = onSnapshot(q, (snap) => {
+  const reviewCount = useOwnBookingsSnapshot<number>(
+    auth.currentUser?.uid,
+    (snap) => {
       let reviewed = 0;
       snap.forEach((d) => {
         const b = d.data() as BookingDoc;
@@ -35,10 +39,10 @@ export function useTherapistIdentityStats(therapist: Therapist | null) {
           reviewed += 1;
         }
       });
-      setReviewCount(reviewed);
-    });
-    return () => unsub();
-  }, []);
+      return reviewed;
+    },
+    0,
+  );
 
   // Computed status via the canonical engine — one source of truth.
   const computedStatus: Avail = useMemo(() => {

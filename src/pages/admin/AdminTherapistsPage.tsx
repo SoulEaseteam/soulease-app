@@ -77,8 +77,38 @@ type RawTherapistDoc = {
   isBooked?: boolean;
   statusOverride?: TherapistStatusOverride;
   overrideUntil?: unknown;
+  /** 🆕 28x.122 — staff-app presence heartbeat (StaffLayout). */
+  lastSeenAt?: unknown;
   [key: string]: any;
 };
+
+// 🆕 Round 28x.122 (founder: "Therapists แจ้งสถานะพนักงานเข้าสู่ระบบ") — a
+//   practitioner counts as ONLINE if her staff app wrote a presence heartbeat
+//   within this window. StaffLayout writes at most one per 5 min, so the
+//   window has to be comfortably wider than that or someone actively using
+//   the app would flicker offline between beats.
+const ONLINE_WINDOW_MS = 12 * 60 * 1000;
+
+/** ms since her last staff-app heartbeat, or null if she's never opened it. */
+function lastSeenMs(raw: { lastSeenAt?: unknown }): number | null {
+  const v = raw.lastSeenAt as { toDate?: () => Date; seconds?: number } | undefined;
+  if (!v) return null;
+  if (typeof v.toDate === "function") return v.toDate().getTime();
+  if (typeof v.seconds === "number") return v.seconds * 1000;
+  return null;
+}
+
+/** "ออนไลน์" / "5 นาทีที่แล้ว" / "2 ชม.ที่แล้ว" / "3 วันที่แล้ว" / null. */
+function presenceLabel(ms: number | null, nowMs: number): { text: string; online: boolean } | null {
+  if (ms == null) return null;
+  const diff = Math.max(0, nowMs - ms);
+  if (diff < ONLINE_WINDOW_MS) return { text: "ออนไลน์", online: true };
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return { text: `${mins} นาทีที่แล้ว`, online: false };
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return { text: `${hrs} ชม.ที่แล้ว`, online: false };
+  return { text: `${Math.floor(hrs / 24)} วันที่แล้ว`, online: false };
+}
 
 type TherapistRow = RawTherapistDoc & {
   computedStatus: TherapistStatus;
@@ -168,6 +198,10 @@ const TherapistCard: React.FC<{
   const ringColor = row.computedStatus === "resting" ? adminColor.line2 : color;
   const StatusIcon = STATUS_ICON[row.computedStatus];
   const cardBg = recede ? adminColor.panel2 : adminColor.panel;
+  // 🆕 28x.122 — read at render rather than from a ticking clock: this page
+  // already re-renders on every therapists-collection snapshot, which is
+  // often enough for a presence label measured in minutes.
+  const presence = presenceLabel(lastSeenMs(row), Date.now());
 
   return (
     <Box sx={{ background: `linear-gradient(155deg, ${CARD_FRAME_BG}, #D6E5EA)`, borderRadius: "24px", p: "8px" }}>
@@ -217,6 +251,22 @@ const TherapistCard: React.FC<{
               <StatusIcon size={12} weight="bold" />
               {statusLine(row)}
             </Box>
+            {/* 🆕 Round 28x.122 — staff-app presence, deliberately a SEPARATE
+                line from the status above: that one is availability she sets
+                (or the engine computes), this one is whether she actually has
+                the app open. A therapist can be "available" to customers and
+                not have opened the app in three days — worth seeing. */}
+            {presence && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: "4px", mt: "3px", fontSize: 10.5, fontWeight: 600, color: presence.online ? adminColor.green : adminColor.dim }}>
+                <Box
+                  sx={{
+                    width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+                    background: presence.online ? adminColor.green : adminColor.line2,
+                  }}
+                />
+                {presence.online ? "ออนไลน์ในแอป" : `เข้าแอปล่าสุด ${presence.text}`}
+              </Box>
+            )}
           </Box>
         </Box>
 

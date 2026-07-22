@@ -24,17 +24,11 @@
 //   job, exactly like the Telegram card. The reference page has no equivalent
 //   because a customer already owns every booking she can see.
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Avatar, Typography, CircularProgress } from "@mui/material";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import {
-  collection,
-  onSnapshot,
-  query,
-  where,
-  Timestamp,
-} from "firebase/firestore";
+import { Timestamp } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { toast } from "react-toastify";
 import {
@@ -47,9 +41,10 @@ import {
   UserCircle,
 } from "phosphor-react";
 
-import { app, auth, db } from "@/lib/firebase";
+import { app, auth } from "@/lib/firebase";
 import { responsiveShell } from "@/theme/breakpoints";
 import { formatTHB } from "@/utils/servicePricing";
+import { useOwnBookingsSnapshot } from "@/hooks/useOwnBookingsSnapshot";
 import { MEMBERSHIP_COLORS, MEMBERSHIP_LABELS_TH, type MembershipTier } from "@/utils/membership";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
@@ -130,6 +125,11 @@ const TABS: { key: TabKey; label: string }[] = [
 const N_TABS   = TABS.length;
 const PILL_GAP = 3;
 
+// 🆕 Round 28x.123 — how many cards get an entry animation (see the render
+// comment), and how many rows render before "ดูเพิ่ม".
+const ANIMATED_CARDS = 6;
+const PAGE_SIZE = 20;
+
 const fadeUp = (delay = 0) => ({
   initial:    { opacity: 0, y: 16 },
   animate:    { opacity: 1, y: 0  },
@@ -138,9 +138,11 @@ const fadeUp = (delay = 0) => ({
 
 const TherapistJobsPage: React.FC = () => {
   const navigate = useNavigate();
-  const [jobs, setJobs] = useState<Job[] | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [tab, setTab] = useState<TabKey>("today");
+  // 🆕 28x.123 — windowed list; resets whenever she switches tab.
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [tab]);
 
   // ── sliding pill geometry — identical measurement approach to
   //   BookingHistoryPage, so the motion feels like the same component. ────
@@ -159,49 +161,43 @@ const TherapistJobsPage: React.FC = () => {
   const pillW = tabPx > PILL_GAP * 2 ? tabPx - PILL_GAP * 2 : 0;
   const pillX = activeIndex * tabPx + PILL_GAP;
 
-  useEffect(() => {
-    const uid = auth.currentUser?.uid;
-    if (!uid) {
-      setJobs([]);
-      return;
-    }
-    // No orderBy: combining it with the where() would need a composite index,
-    // and a missing index fails the whole listener rather than degrading.
-    const q = query(collection(db, "bookings"), where("therapistUid", "==", uid));
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const rows: Job[] = snap.docs.map((d) => {
-          const b = d.data() as Record<string, unknown>;
-          return {
-            id: d.id,
-            startAtMs: toMs(b.startAt ?? b.createdAt),
-            date: b.date as string | undefined,
-            time: b.time as string | undefined,
-            serviceName: b.serviceName as string | undefined,
-            duration: b.duration as number | undefined,
-            address: b.address as string | undefined,
-            locationName: b.locationName as string | undefined,
-            mapUrl: b.mapUrl as string | undefined,
-            phone: b.phone as string | undefined,
-            contactName: (b.contactName ?? b.customerName ?? b.userName) as string | undefined,
-            userId: b.userId as string | undefined,
-            status: b.status as string | undefined,
-            totalPrice: b.totalPrice as number | undefined,
-            therapistResponse: b.therapistResponse as Job["therapistResponse"],
-            dispatchState: b.dispatchState as DispatchState | undefined,
-          };
-        });
-        rows.sort((a, b) => b.startAtMs - a.startAtMs);
-        setJobs(rows);
-      },
-      (err) => {
-        console.warn("[jobs] listener failed", err.code);
-        setJobs([]);
-      },
-    );
-    return () => unsub();
-  }, []);
+  // 🆕 Round 28x.123 (staff-app performance audit) — shares the one bookings
+  //   listener with Home/Profile's identity card and the Performance page
+  //   instead of opening a fourth copy of the identical query. No orderBy:
+  //   combining it with the where() would need a composite index, and a
+  //   missing index fails the whole listener rather than degrading — so the
+  //   sort stays client-side, as before.
+  const uid = auth.currentUser?.uid;
+  const jobs = useOwnBookingsSnapshot<Job[] | null>(
+    uid,
+    (snap) => {
+      const rows: Job[] = snap.docs.map((d) => {
+        const b = d.data() as Record<string, unknown>;
+        return {
+          id: d.id,
+          startAtMs: toMs(b.startAt ?? b.createdAt),
+          date: b.date as string | undefined,
+          time: b.time as string | undefined,
+          serviceName: b.serviceName as string | undefined,
+          duration: b.duration as number | undefined,
+          address: b.address as string | undefined,
+          locationName: b.locationName as string | undefined,
+          mapUrl: b.mapUrl as string | undefined,
+          phone: b.phone as string | undefined,
+          contactName: (b.contactName ?? b.customerName ?? b.userName) as string | undefined,
+          userId: b.userId as string | undefined,
+          status: b.status as string | undefined,
+          totalPrice: b.totalPrice as number | undefined,
+          therapistResponse: b.therapistResponse as Job["therapistResponse"],
+          dispatchState: b.dispatchState as DispatchState | undefined,
+        };
+      });
+      rows.sort((a, b) => b.startAtMs - a.startAtMs);
+      return rows;
+    },
+    null,
+    () => [],
+  );
 
   const buckets = useMemo(() => {
     const all = jobs ?? [];
@@ -219,7 +215,9 @@ const TherapistJobsPage: React.FC = () => {
   };
   const shown = buckets[tab];
 
-  const respond = async (jobId: string, action: "accept" | "decline") => {
+  // 🆕 28x.123 — useCallback so the memoised JobCard isn't invalidated on
+  //   every render by a freshly-declared arrow function.
+  const respond = useCallback(async (jobId: string, action: "accept" | "decline") => {
     setBusyId(jobId);
     try {
       const fn = httpsCallable<
@@ -238,9 +236,9 @@ const TherapistJobsPage: React.FC = () => {
     } finally {
       setBusyId(null);
     }
-  };
+  }, []);
 
-  const advanceStatus = async (jobId: string) => {
+  const advanceStatus = useCallback(async (jobId: string) => {
     setBusyId(jobId);
     try {
       const fn = httpsCallable<
@@ -257,7 +255,7 @@ const TherapistJobsPage: React.FC = () => {
     } finally {
       setBusyId(null);
     }
-  };
+  }, []);
 
   return (
     <Box sx={{ ...responsiveShell, minHeight: "100vh", background: "var(--sr-bg)", pb: 12, fontFamily: SANS }}>
@@ -403,16 +401,42 @@ const TherapistJobsPage: React.FC = () => {
             }
           />
         ) : (
-          shown.slice(0, 60).map((j, i) => (
-            <motion.div
-              key={j.id}
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, ease: "easeOut", delay: Math.min(i, 8) * 0.05 }}
-            >
-              <JobCard job={j} tab={tab} busy={busyId === j.id} onRespond={respond} onAdvance={advanceStatus} />
-            </motion.div>
-          ))
+          // 🆕 Round 28x.123 (staff-app performance audit) — this used to wrap
+          //   all 60 rendered cards in a `motion.div` with a staggered entry.
+          //   60 simultaneous framer-motion instances (each containing more
+          //   motion.buttons) was a direct cause of the scroll jank the founder
+          //   reported. Only the first few animate now; everything below the
+          //   fold renders as plain markup, which looks identical (you can't
+          //   see an entry animation on a card that's off-screen) and costs
+          //   nothing. Completed/Cancelled can run to hundreds of rows, so the
+          //   list is also windowed rather than capped at a flat 60.
+          shown.slice(0, visibleCount).map((j, i) =>
+            i < ANIMATED_CARDS ? (
+              <motion.div
+                key={j.id}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, ease: "easeOut", delay: i * 0.05 }}
+              >
+                <JobCard job={j} tab={tab} busy={busyId === j.id} onRespond={respond} onAdvance={advanceStatus} />
+              </motion.div>
+            ) : (
+              <JobCard key={j.id} job={j} tab={tab} busy={busyId === j.id} onRespond={respond} onAdvance={advanceStatus} />
+            ),
+          )
+        )}
+        {shown.length > visibleCount && (
+          <Box
+            component="button"
+            onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+            sx={{
+              mt: 0.5, py: 1.3, borderRadius: 999, cursor: "pointer",
+              background: "var(--sr-panel)", border: "1px solid var(--sr-hairline)",
+              fontFamily: SANS, fontSize: 13, fontWeight: 700, color: ROSE_DEEP,
+            }}
+          >
+            ดูเพิ่ม ({shown.length - visibleCount} งาน)
+          </Box>
         )}
       </Box>
     </Box>
@@ -424,13 +448,20 @@ const TherapistJobsPage: React.FC = () => {
 // here, same as BookingHistoryPage's card is the whole detail view for a
 // customer. No separate tap-to-expand screen on either side.
 // ──────────────────────────────────────────────────────────────────────
-const JobCard: React.FC<{
+// 🆕 Round 28x.123 (staff-app performance audit) — memoised. The audit found
+// ZERO React.memo anywhere in the staff app: every `setBusyId` and every
+// bookings snapshot re-rendered all ~60 cards and their nested motion.buttons
+// at once. Its `onRespond`/`onAdvance` props are useCallback'd by the parent
+// so this memo actually holds.
+interface JobCardProps {
   job: Job;
   tab: TabKey;
   busy: boolean;
   onRespond: (id: string, action: "accept" | "decline") => void;
   onAdvance: (id: string) => void;
-}> = ({ job, tab, busy, onRespond, onAdvance }) => {
+}
+
+const JobCard = React.memo(function JobCard({ job, tab, busy, onRespond, onAdvance }: JobCardProps) {
   const answered = job.therapistResponse;
   const accepted = answered === "accepted";
   // 🆕 28x.69/74 — identity + address + phone stay hidden until she has
@@ -639,7 +670,7 @@ const JobCard: React.FC<{
       </Box>
     </Box>
   );
-};
+});
 
 // ──────────────────────────────────────────────────────────────────────
 // Dispatch stepper — the practitioner's own version of AdminTonightPage's
