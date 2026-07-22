@@ -142,6 +142,11 @@ service cloud.firestore {
         //   in AUDIT_IGNORE_KEYS so it never reaches the audit log or the
         //   Telegram staff-activity feed.
         'lastSeenAt',
+        // 🆕 Round 28x.127 (founder: "ให้แจ้ง 2 อันนี้ด้วย") — stamped once by
+        //   LoginPage on a successful staff sign-in. Unlike lastSeenAt this is
+        //   NOT in AUDIT_IGNORE_KEYS: a login is worth an audit row, and the
+        //   Functions trigger turns it into the "เข้าสู่ระบบ" Telegram notice.
+        'lastLoginAt',
         // bookkeeping (audit metadata — read by Functions trigger)
         'updatedAt', 'updatedBy'
       ];

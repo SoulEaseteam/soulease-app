@@ -32,6 +32,8 @@ import {
   getDocs,
   doc,
   getDoc,
+  updateDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import BottomNav from '../components/layouts/BottomNavGlass';
@@ -239,7 +241,19 @@ const LoginPage: React.FC<LoginPageProps> = ({ staff = false }) => {
     ]);
 
     if (adminDoc.exists()) return "admin";
-    if (!tSnap.empty) return "therapist";
+    if (!tSnap.empty) {
+      // 🆕 Round 28x.127 (founder: "ให้แจ้ง 2 อันนี้ด้วย") — stamp the sign-in
+      //   so onTherapistUpdate can post "เข้าสู่ระบบ" to the Report channel.
+      //   Done HERE, not from the staff shell's heartbeat: the heartbeat fires
+      //   every 5 minutes while the app is open, this fires once, at the
+      //   moment she actually enters her password. Fire-and-forget — a failed
+      //   notification must never block someone from getting to work.
+      void updateDoc(doc(db, "therapists", tSnap.docs[0].id), {
+        lastLoginAt: serverTimestamp(),
+        updatedBy: uid,
+      }).catch(() => undefined);
+      return "therapist";
+    }
 
     if (uDoc.exists()) {
       const r = uDoc.data().role as string | undefined;

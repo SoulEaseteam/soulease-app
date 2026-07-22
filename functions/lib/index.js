@@ -517,6 +517,22 @@ const STAFF_FIELD_LABELS = {
     languageSkills: "ภาษา",
     telegramChatId: "การเชื่อม Telegram",
 };
+/** 🆕 Round 28x.127 (founder: "ให้แจ้ง 2 อันนี้ด้วย") — the gallery line used
+ *  to render as the generic "แกลเลอรี: 9 รายการ", which tells View the count
+ *  but not whether a photo was ADDED or DELETED. Removal is the case she
+ *  actually wants to see (an upload already announces itself separately via
+ *  notifyGalleryRequest, since new photos go through the approval queue and
+ *  never touch this array directly — so in practice a `gallery` change here
+ *  is almost always a deletion). */
+function galleryChangeLine(before, after) {
+    const b = Array.isArray(before) ? before.length : 0;
+    const a = Array.isArray(after) ? after.length : 0;
+    if (a < b)
+        return `ลบรูป ${b - a} รูป · เหลือ ${a} รูป`;
+    if (a > b)
+        return `เพิ่มรูป ${a - b} รูป · รวม ${a} รูป`;
+    return `${a} รูป (สลับลำดับ)`;
+}
 /** Compact, readable rendering of a changed value for the Telegram line. */
 function staffChangeValue(v) {
     if (v === null || v === undefined || v === "")
@@ -604,16 +620,28 @@ exports.onTherapistUpdate = (0, firestore_1.onDocumentUpdated)({
             updatedBy === after.uid;
         if (!isSelfEdit)
             return;
-        const announced = Object.keys(changes).filter((k) => k in STAFF_FIELD_LABELS);
-        if (announced.length === 0)
-            return;
         const token = TELEGRAM_BOT_TOKEN.value();
         if (!token)
             return;
         const who = typeof after.name === "string" && after.name ? after.name : therapistId;
+        // 🆕 Round 28x.127 (founder: "ให้แจ้ง 2 อันนี้ด้วย" — login + gallery
+        //   deletion) — a sign-in is its own event, not a profile edit, so it
+        //   gets its own message rather than being listed as a changed field.
+        //   Written by LoginPage on a successful therapist sign-in. Note this is
+        //   deliberately NOT the `lastSeenAt` heartbeat (which stays in
+        //   AUDIT_IGNORE_KEYS): that fires every 5 minutes while the app is
+        //   open, whereas this fires once, when she actually enters her password.
+        if ("lastLoginAt" in changes) {
+            await sendTelegramIfEnabled(token, await getReportChatId(), `🔓 ${who} เข้าสู่ระบบแอปพนักงานแล้ว`);
+        }
+        const announced = Object.keys(changes).filter((k) => k in STAFF_FIELD_LABELS);
+        if (announced.length === 0)
+            return;
         const lines = announced.map((k) => {
             const label = STAFF_FIELD_LABELS[k];
-            const to = staffChangeValue(changes[k].after);
+            const to = k === "gallery"
+                ? galleryChangeLine(before.gallery, after.gallery)
+                : staffChangeValue(changes[k].after);
             return `• ${label}: ${to}`;
         });
         await sendTelegramIfEnabled(token, await getReportChatId(), `👩‍⚕️ ${who} แก้ไขข้อมูลตัวเอง (จากแอปพนักงาน)\n${lines.join("\n")}`);
