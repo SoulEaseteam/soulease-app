@@ -47,6 +47,7 @@ import staticServices from "@/data/services";
 import type { MassageService } from "@/data/services";
 import { brand, fonts, accents } from "@/theme";
 import type { LiveLocation } from "@/hooks/useUserLocation";
+import { canonicalServiceIds } from "@/utils/serviceCatalog";
 
 /** ---------------- Utility ---------------- */
 
@@ -222,7 +223,9 @@ function startingPriceForTherapist(
   t: Therapist,
   servicesById: Map<string, MassageService>
 ): number | null {
-  const ids = ((t.servicesAvailable ?? t.services ?? [])) || [];
+  // 🆕 28x.129 — legacy slugs miss `servicesById` entirely, so a therapist
+  //   whose doc predates the SKU rename showed no starting price at all.
+  const ids = canonicalServiceIds(t.servicesAvailable ?? t.services);
   let min: number | null = null;
   for (const id of ids) {
     const svc = servicesById.get(id);

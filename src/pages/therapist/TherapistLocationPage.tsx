@@ -45,7 +45,7 @@ import {
   Alert,
   CircularProgress,
 } from "@mui/material";
-import { CaretLeft, NavigationArrow, House } from "phosphor-react";
+import { CaretLeft, NavigationArrow, House, MapPinLine } from "phosphor-react";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { auth, db } from "@/lib/firebase";
 import {
@@ -182,7 +182,7 @@ const TherapistLocationPage: React.FC = () => {
             });
             setSnackbar({
               open: true,
-              msg: "Current location updated",
+              msg: "อัปเดตตำแหน่งปัจจุบันแล้ว",
               severity: "success",
             });
           })();
@@ -191,15 +191,53 @@ const TherapistLocationPage: React.FC = () => {
       () =>
         setSnackbar({
           open: true,
-          msg: "Cannot access device location",
+          msg: "เข้าถึงตำแหน่งของเครื่องไม่ได้ — เปิดสิทธิ์ Location ให้เบราว์เซอร์ก่อน",
           severity: "error",
         })
     );
   };
 
+  /**
+   * 🆕 Round 28x.129 (founder: "return to standby ต้องระบุหรือจดจำตำแหน่ง
+   * จุดสแตนด์บายก่อน") — until now there was NO way for a practitioner to set
+   * her own standby point. `homeLocation` was admin-only in practice, so for
+   * anyone whose admin never filled it in, "Return to standby" hit the
+   * `if (!homeCoords) return` guard below and did nothing at all: no error, no
+   * toast, no movement. A button that silently does nothing is worse than a
+   * missing one — she pressed it and reasonably concluded the page was broken.
+   *
+   * This saves wherever she is standing right now AS the standby point, which
+   * is the natural way to record it (she's at her usual spot when she sets it).
+   * `homeLocation` is already whitelisted in therapistEditableKeys(), so no
+   * rules change is needed.
+   */
+  const handleSaveStandby = async () => {
+    if (!coords || !therapistId) return;
+    setHomeCoords(coords);
+    await updateDoc(doc(db, "therapists", therapistId), {
+      homeLocation: coords,
+      updatedAt: Timestamp.fromDate(new Date()),
+      updatedBy: auth.currentUser?.uid ?? null,
+    });
+    setSnackbar({
+      open: true,
+      msg: "บันทึกจุดสแตนด์บายแล้ว",
+      severity: "success",
+    });
+  };
+
   /** Snap therapist back to standby (home) location. */
   const handleReturnHome = async () => {
-    if (!homeCoords || !therapistId) return;
+    if (!therapistId) return;
+    // Explicit, not silent: the guard above used to swallow this case.
+    if (!homeCoords) {
+      setSnackbar({
+        open: true,
+        msg: "ยังไม่ได้ตั้งจุดสแตนด์บาย — กดปุ่มด้านล่างที่จุดประจำของคุณก่อน",
+        severity: "error",
+      });
+      return;
+    }
     setCoords(homeCoords);
     await updateDoc(doc(db, "therapists", therapistId), {
       currentLocation: homeCoords,
@@ -207,7 +245,7 @@ const TherapistLocationPage: React.FC = () => {
     });
     setSnackbar({
       open: true,
-      msg: "Returned to standby location",
+      msg: "กลับไปที่จุดสแตนด์บายแล้ว",
       severity: "success",
     });
   };
@@ -253,6 +291,24 @@ const TherapistLocationPage: React.FC = () => {
           </Typography>
         </Box>
 
+        {/* 🆕 28x.129 — standby readout. Whether a standby point EXISTS was
+            previously invisible, which is why a dead "Return to standby"
+            button looked like a bug rather than an unset value. */}
+        <Box
+          sx={{
+            display: "flex", alignItems: "center", gap: 1,
+            mb: 1.5, p: "10px 14px", borderRadius: "14px",
+            background: "var(--sr-panel-2)", border: "1px solid var(--sr-hairline)",
+          }}
+        >
+          <House size={15} weight="duotone" color={homeCoords ? "#C2185B" : "var(--sr-dim)"} />
+          <Typography sx={{ fontFamily: SANS, fontSize: 12, color: homeCoords ? "var(--sr-body)" : "var(--sr-muted)" }}>
+            {homeCoords
+              ? `จุดสแตนด์บาย · ${homeCoords.lat.toFixed(4)}, ${homeCoords.lng.toFixed(4)}`
+              : "ยังไม่ได้ตั้งจุดสแตนด์บาย"}
+          </Typography>
+        </Box>
+
         {/* Map — a fixed-height card instead of the whole viewport, so the
             page scrolls normally like every other staff screen. */}
         <Box
@@ -293,12 +349,13 @@ const TherapistLocationPage: React.FC = () => {
               "&:hover": { boxShadow: "0 6px 16px rgba(194,24,91,0.32)" },
             }}
           >
-            Update current GPS
+            อัปเดตตำแหน่ง GPS · Update location
           </Button>
 
           <Button
             variant="contained"
             fullWidth
+            disabled={!homeCoords}
             onClick={() => void handleReturnHome()}
             startIcon={<House size={16} weight="bold" />}
             sx={{
@@ -312,10 +369,44 @@ const TherapistLocationPage: React.FC = () => {
               boxShadow: "0 4px 12px rgba(15, 23, 42, 0.10)",
               textTransform: "none",
               "&:hover": { background: "var(--sr-panel-2)" },
+              "&.Mui-disabled": {
+                background: "var(--sr-panel)",
+                color: "var(--sr-dim)",
+                border: "1px solid var(--sr-hairline)",
+                boxShadow: "none",
+              },
             }}
           >
-            Return to standby
+            กลับจุดสแตนด์บาย · Return to standby
           </Button>
+
+          {/* 🆕 28x.129 — the missing half of this screen. Setting the standby
+              point is a rare, deliberate act (once, at her usual spot), so it
+              sits below the two daily buttons rather than competing with them,
+              and it states plainly what it will overwrite. */}
+          <Button
+            fullWidth
+            onClick={() => void handleSaveStandby()}
+            disabled={!coords}
+            startIcon={<MapPinLine size={16} weight="bold" />}
+            sx={{
+              mt: 0.5,
+              color: "var(--sr-body)",
+              fontSize: 13,
+              fontWeight: 700,
+              borderRadius: 999,
+              py: 1.1,
+              textTransform: "none",
+              border: "1px dashed var(--sr-hairline)",
+              "&:hover": { background: "var(--sr-panel-2)" },
+            }}
+          >
+            {homeCoords ? "ตั้งจุดนี้เป็นจุดสแตนด์บายใหม่" : "ตั้งจุดนี้เป็นจุดสแตนด์บาย"}
+          </Button>
+          <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "var(--sr-muted)", lineHeight: 1.5, mt: 0.5, px: 0.5 }}>
+            จุดสแตนด์บายคือจุดประจำที่คุณรอรับงาน — ระบบใช้คำนวณค่าเดินทางให้ลูกค้า
+            และจะพาคุณกลับมาที่จุดนี้ให้เองทุกวัน
+          </Typography>
         </Box>
       </Box>
 

@@ -115,6 +115,7 @@ import { useTherapistReviews } from "@/hooks/useTherapistReviews";
 
 import { useDocumentMeta, langToLocale } from "@/utils/useDocumentMeta";
 import therapistsData from "@/data/therapists";
+import { canonicalServiceIds } from "@/utils/serviceCatalog";
 import type { Therapist } from "@/types/therapist";
 // 🚨 Round 28r66 HOTFIX — Firestore fallback for admin-added
 //   therapists that never got hardcoded into src/data/therapists.ts.
@@ -342,8 +343,10 @@ function buildFromReal(real: Therapist, lang?: string): DemoTherapist {
   //    counts removed in Strategy B). When `serviceExperience` is set
   //    by admin in the future (with verified counts), we'll opt back
   //    in. For now, just render the service catalog.
-  const serviceIds =
-    ((real.servicesAvailable ?? real.services ?? [])) || [];
+  // 🆕 28x.129 — through canonicalServiceIds(): docs holding a legacy slug
+  //   ALONGSIDE its renamed SKU used to render the same service twice (once
+  //   properly, once as a raw unmatched id with a generic icon).
+  const serviceIds = canonicalServiceIds(real.servicesAvailable ?? real.services);
   const realSpecs: DemoTherapist["specs"] = serviceIds
     .map((sid) => {
       // Round 28s54 — SERVICE_DISPLAY was trimmed to 4 SKUs in 28s34;

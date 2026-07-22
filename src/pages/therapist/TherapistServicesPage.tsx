@@ -20,6 +20,7 @@ import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useTherapistSelf } from "@/hooks/useTherapistSelf";
 import { SERVICE_OPTIONS } from "@/pages/admin/therapistFormKit";
+import { resolveServiceId } from "@/utils/serviceCatalog";
 import { SelfEditShell } from "./selfEditKit";
 import services from "@/data/services";
 import { durationsFor, priceForDuration, formatTHB } from "@/utils/servicePricing";
@@ -28,7 +29,29 @@ import { motoFareCheckpoints, ADMIN_QUOTE_KM, RUSH_SURGE_PCT, PEAK_SURGE_PCT } f
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
-const ROSE_DEEP = "#C2185B";
+
+// 🆕 Round 28x.129 (founder: "ตัวเลข ข้อความหนาทึบ จนดูไม่ออก") — the money
+// columns were Playfair Display 700 at 13.5px. Playfair is a high-contrast
+// display serif: at that size its bold numerals collapse into thick blobs,
+// and on the dark panel the thin strokes disappear entirely, so "฿1,200"
+// reads as a smudge. It's the wrong tool for small figures — a display serif
+// is for headlines, not a rate table she scans on a phone.
+//
+// Inter 700 keeps the weight (these ARE the numbers that matter to her) while
+// staying legible at 13.5px, and `tabular-nums` locks every digit to the same
+// advance width so the ฿ column actually aligns down the table instead of
+// ragging. The colour was the hardcoded #C2185B — a 2.6:1 blur on the dark
+// panel — and is now the theme-aware --sr-money token (index.css), which
+// clears AA in BOTH themes for the same reason the tier tokens moved to CSS
+// this round: one fixed hex cannot serve two grounds.
+const ROSE = "var(--sr-money)";
+const MONEY_SX = {
+  fontFamily: SANS,
+  fontWeight: 700,
+  fontSize: 13.5,
+  fontVariantNumeric: "tabular-nums",
+  letterSpacing: "-0.01em",
+} as const;
 
 const TherapistServiceList: React.FC<{ value: string[]; onChange: (next: string[]) => void }> = ({ value, onChange }) => (
   <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
@@ -120,7 +143,7 @@ const ServiceSplitTable: React.FC = () => (
                 <Typography sx={{ width: 60, textAlign: "right", fontFamily: SANS, fontSize: 12.5, color: "var(--sr-muted)" }}>
                   {formatTHB(price)}
                 </Typography>
-                <Typography sx={{ width: 66, textAlign: "right", fontFamily: SERIF, fontWeight: 700, fontSize: 13.5, color: ROSE_DEEP }}>
+                <Typography sx={{ width: 66, textAlign: "right", ...MONEY_SX, color: ROSE }}>
                   {formatTHB(cut)}
                 </Typography>
                 <Typography sx={{ width: 60, textAlign: "right", fontFamily: SANS, fontSize: 12, color: "var(--sr-dim)" }}>
@@ -158,7 +181,7 @@ const TaxiFareTable: React.FC = () => {
           <Typography sx={{ flex: 1, fontFamily: SANS, fontSize: 13, color: "var(--sr-body)" }}>
             {km === 0 ? "0–3 กม." : `~${km} กม.`}
           </Typography>
-          <Typography sx={{ width: 90, textAlign: "right", fontFamily: SERIF, fontWeight: 700, fontSize: 14, color: ROSE_DEEP }}>
+          <Typography sx={{ width: 90, textAlign: "right", ...MONEY_SX, color: ROSE }}>
             {formatTHB(fare)}
           </Typography>
         </Box>
@@ -182,11 +205,34 @@ const TherapistServicesPage: React.FC = () => {
   const [toast, setToast] = useState<{ msg: string; severity: "success" | "error" } | null>(null);
   const initialRef = useRef<string>("[]");
 
+  // 🆕 Round 28x.129 (founder: "Services กดใช้งานจริงไม่ได้ ไม่โชว์หรือซ้อนบนเว็บ")
+  //   — this page compared the STORED strings against SERVICE_OPTIONS ids
+  //   verbatim. Plenty of therapist docs still hold LEGACY SLUGS from before
+  //   the SKU rename ("aromatherapy-massage" rather than "SR-Aroma"), which is
+  //   precisely why AdminTherapistDetailPage runs every value through
+  //   resolveServiceId() on load — this page was the one surface that didn't.
+  //
+  //   Both symptoms she reported fall straight out of that:
+  //     • "กดใช้งานจริงไม่ได้" — a legacy slug matches no option, so every row
+  //       rendered OFF even though she was already offering those services.
+  //       Toggling looked like it did nothing because the truth was never
+  //       displayed in the first place.
+  //     • "ไม่โชว์หรือซ้อนบนเว็บ" — switching one ON then appended the CANONICAL
+  //       id next to the legacy slug it duplicates. The public profile maps ids
+  //       through SERVICE_DISPLAY, so the pair rendered as one proper card plus
+  //       one unmapped raw-id card: the same service listed twice.
+  //
+  //   Normalising on load fixes the display immediately, and because `dirty`
+  //   compares against the RAW stored value, an unclean doc lights up the Save
+  //   button on arrival — one tap rewrites it in canonical form for good.
   useEffect(() => {
     if (!therapist) return;
-    const list = therapist.servicesAvailable ?? [];
-    setValue(list);
-    initialRef.current = JSON.stringify(list);
+    const raw = therapist.servicesAvailable ?? [];
+    const normalized = Array.from(
+      new Set(raw.map((s) => resolveServiceId(s) ?? s).filter(Boolean))
+    );
+    setValue(normalized);
+    initialRef.current = JSON.stringify(raw);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(therapist?.servicesAvailable ?? [])]);
 

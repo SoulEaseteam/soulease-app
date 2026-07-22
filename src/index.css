@@ -108,6 +108,22 @@ button,
   --sr-hero-vignette: linear-gradient(180deg, rgba(23,24,29,0) 38%, rgba(23,24,29,0.62) 100%);
   --sr-hero-scrim-xs: linear-gradient(90deg, rgba(23,24,29,0.95) 0%, rgba(23,24,29,0.88) 48%, rgba(23,24,29,0.58) 72%, rgba(23,24,29,0.34) 100%);
   --sr-hero-scrim-md: linear-gradient(90deg, rgba(23,24,29,0.93) 0%, rgba(23,24,29,0.74) 38%, rgba(23,24,29,0.42) 60%, rgba(23,24,29,0.18) 100%);
+  /* 🆕 Round 28x.129 (founder: "(บรอนซ์ / ซิลเวอร์ / โกลด์ / แบล็ค VIP) โหมดมืด
+     ไม่เห็นเลย") — membership tier ink. MEMBERSHIP_COLORS in membership.ts is a
+     single fixed set built for the LIGHT admin console: BlackVIP is #1F2530,
+     i.e. near-black text on the near-black staff panel — 1.1:1, invisible, and
+     Silver (#8A8F98) was barely better. Tier ink has to invert with the theme
+     like every other token here, so it lives in CSS, not in a TS constant.
+     NIGHT: light metals, VIP brightest (pure white = top of the hierarchy). */
+  --sr-tier-bronze: #D9A273;
+  --sr-tier-silver: #C3C9D4;
+  --sr-tier-gold:   #E7C55A;
+  --sr-tier-vip:    #FFFFFF;
+  /* Money ink — the one accent that must stay readable at 13px BOLD in both
+     themes. The existing --sr-gold-text (#D97C95) is a single value shared by
+     day and night and only clears ~2.9:1 on the white day panel, so rate
+     tables using it were the "ตัวเลขหนาทึบจนดูไม่ออก" complaint. */
+  --sr-money: #E8899F;       /* bright rose on charcoal */
 }
 
 /* ☀️ DAY — High-Key Korean Wellness (Apple / Aesop / Laneige / Sulwhasoo).
@@ -131,4 +147,29 @@ html.sr-day {
   --sr-hero-vignette: none;
   --sr-hero-scrim-xs: linear-gradient(90deg, rgba(251,247,249,0.96) 0%, rgba(251,247,249,0.90) 48%, rgba(251,247,249,0.55) 72%, rgba(251,247,249,0) 100%);
   --sr-hero-scrim-md: linear-gradient(90deg, rgba(251,247,249,0.95) 0%, rgba(251,247,249,0.74) 38%, rgba(251,247,249,0.34) 60%, rgba(251,247,249,0) 78%);
+  /* DAY: dark metals, VIP near-black (top of the hierarchy on a light card). */
+  --sr-tier-bronze: #8C5A2B;
+  --sr-tier-silver: #5F6773;
+  --sr-tier-gold:   #856300;  /* #9A7400 was 4.31:1 on white — under AA */
+  --sr-tier-vip:    #1F2530;
+  --sr-money: #B0295A;       /* deep rose on white */
+}
+
+/* 🆕 Round 28x.129 (founder: "ปุ่มลอยแอดมิน เพราะกระตุก") — the concierge FAB's
+   attention rings used to be two framer-motion `repeat: Infinity` springs, and
+   the button itself a third infinite `scale` loop. framer-motion drives every
+   frame from JS on the main thread, so that was 3 permanent rAF loops writing
+   styles forever, on every page, competing with scrolling a 250-row job list.
+   As plain CSS keyframes on transform+opacity ONLY, the compositor owns them
+   and the main thread does nothing. Same look, no jank.
+   Kept here rather than in an sx `@keyframes` so emotion doesn't re-serialize
+   the animation on every render of the widget. */
+@keyframes sr-fab-ring {
+  0%   { transform: scale(0.6); opacity: 0.55; }
+  55%  { transform: scale(1.6); opacity: 0.15; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sr-fab-ring { animation: none !important; opacity: 0 !important; }
 }

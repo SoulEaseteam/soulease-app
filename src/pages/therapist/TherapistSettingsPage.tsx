@@ -10,15 +10,14 @@
 //   the PROFILE tab no longer routes staff through /profile at all.
 
 import React, { useState } from "react";
-import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
+import { Box, Typography, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
-import { Translate, Key, SignOut, CaretLeft, CaretRight, Warning, Sun, Moon, CircleHalf, BookOpen } from "phosphor-react";
+import { Key, SignOut, CaretLeft, CaretRight, Sun, Moon, CircleHalf, BookOpen } from "phosphor-react";
 
 import { auth } from "@/lib/firebase";
 import { responsiveShell } from "@/theme/breakpoints";
 import { useAccountDialogs } from "@/components/account/useAccountDialogs";
-import { whatsappDeepLink } from "@/config/concierge";
 import { getThemeChoice, setThemeChoice, type ThemeChoice } from "@/components/common/DayNightSync";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
@@ -63,8 +62,7 @@ const Row: React.FC<{
 
 const TherapistSettingsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { activeLangLabel, openLanguage, openPassword, dialogs } = useAccountDialogs();
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const { openPassword, dialogs } = useAccountDialogs();
 
   // 🆕 Round 28x.106 (founder: "หน้าโปรไฟล์เพิ่มโหมดมืดสว่าง เผื่อพนักงานอยาก
   //   เปลี่ยนเอง") — DayNightSync already supported a manual override via
@@ -110,12 +108,16 @@ const TherapistSettingsPage: React.FC = () => {
           "& > *:not(:last-child)": { borderBottom: "1px solid var(--sr-hairline)" },
         }}
       >
-        <Row
-          icon={<Translate size={20} weight="duotone" />}
-          label="Language · ภาษา"
-          value={activeLangLabel}
-          onClick={openLanguage}
-        />
+        {/* 🆕 Round 28x.129 (founder: "Language ไม่แปลทั้งระบบ เหมือนแปลแค่หน้าเว็บ")
+            — the Language row is GONE, and that's the honest fix rather than a
+            retreat. It drove i18next, which only the CUSTOMER site is wired to;
+            every string in the staff app is hardcoded Thai (or the bilingual
+            "ไทย · English" labels you see on these rows). So switching it here
+            changed the storefront a practitioner never opens and left her own
+            app in Thai — a control that visibly does nothing is worse than no
+            control. Translating the staff app for real is ~15 pages of copy
+            extraction; that's a separate decision for the founder to make, not
+            something to fake with a switch that lies. */}
         <Row
           icon={<Key size={20} weight="duotone" />}
           label="Change password · เปลี่ยนรหัสผ่าน"
@@ -208,59 +210,15 @@ const TherapistSettingsPage: React.FC = () => {
         </Button>
       </Box>
 
-      {/* 🆕 28x.82 (founder reference screenshot: "⚠ ลบบัญชี") — REQUEST, not
-          self-service. The reference app deletes instantly and irreversibly;
-          that's the wrong default here — a therapist's account carries
-          booking history, reviews and payout records that are business
-          records, not just hers to erase. Same pattern this codebase already
-          uses for "ลืมรหัสผ่าน" (28w.77): no self-serve flow, straight to the
-          concierge who actually performs it. */}
-      <Box sx={{ px: 2, mt: 3, textAlign: "center" }}>
-        <Button
-          onClick={() => setConfirmDelete(true)}
-          startIcon={<Warning size={15} weight="bold" />}
-          sx={{
-            textTransform: "none",
-            fontFamily: SANS,
-            fontWeight: 700,
-            fontSize: 13,
-            color: DANGER,
-            opacity: 0.85,
-          }}
-        >
-          ลบบัญชี · Delete account
-        </Button>
-      </Box>
-
-      <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontFamily: SERIF, fontSize: 19, color: "var(--sr-ink)" }}>
-          ลบบัญชี
-        </DialogTitle>
-        <DialogContent>
-          <Typography sx={{ fontFamily: SANS, fontSize: 13.5, color: "var(--sr-body)", lineHeight: 1.65 }}>
-            การลบบัญชีเป็นการถาวรและไม่สามารถย้อนกลับได้ ต้องให้แอดมินเป็นผู้ดำเนินการ
-            กดปุ่มด้านล่างเพื่อส่งคำขอผ่าน WhatsApp — แอดมินจะติดต่อกลับเพื่อยืนยันก่อนลบจริง
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2.5 }}>
-          <Button onClick={() => setConfirmDelete(false)} sx={{ color: "var(--sr-muted)", fontFamily: SANS }}>
-            ยกเลิก
-          </Button>
-          <Button
-            href={whatsappDeepLink("สวัสดีค่ะ ฉันต้องการขอลบบัญชีพนักงานของฉัน รบกวนดำเนินการให้ด้วยค่ะ")}
-            target="_blank"
-            rel="noopener"
-            onClick={() => setConfirmDelete(false)}
-            sx={{
-              textTransform: "none", fontWeight: 700, borderRadius: 2, px: 2.5,
-              background: DANGER, color: "#fff", "&:hover": { background: "#A8481F" },
-            }}
-          >
-            ส่งคำขอทาง WhatsApp
-          </Button>
-        </DialogActions>
-      </Dialog>
-
+      {/* 🆕 Round 28x.129 (founder: "ลบ — ออกจากระบบ ทั้งหมด ดูไม่สมเหตุสมผล") —
+          the "ลบบัญชี · Delete account" request button (28x.82) is REMOVED.
+          It was modelled on a consumer app's settings screen, and that premise
+          was wrong for this app: a practitioner does not own her staff account.
+          The shop issues it, and it anchors booking history, reviews and payout
+          records that are the business's records. Offering "delete my account"
+          under a Log Out button implied a self-service right that never existed
+          — every real case (she leaves the roster) is an admin action, and she
+          already has the concierge channels for that conversation. */}
       {dialogs}
     </Box>
   );

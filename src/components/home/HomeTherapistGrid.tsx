@@ -38,6 +38,7 @@ import { useConciergeMode } from "@/utils/conciergeMode";
 import { nowBKK } from "@/utils/time";
 // 🆕 Round 28r71 — shared concierge endpoints (r71 rebrand phase 2).
 import { whatsappDeepLink } from "@/config/concierge";
+import { canonicalServiceIds } from "@/utils/serviceCatalog";
 
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
 
@@ -392,7 +393,8 @@ const HomeTherapistGrid: React.FC<{ mapOnly?: boolean }> = ({
   const priceById = useMemo(() => {
     const m = new Map<string, number>();
     for (const t of visible) {
-      const ids = ((t.servicesAvailable ?? t.services ?? [])) || [];
+      // 🆕 28x.129 — see TherapistProfileCard: legacy slugs priced as nothing.
+      const ids = canonicalServiceIds(t.servicesAvailable ?? t.services);
       let min: number | null = null;
       for (const id of ids) {
         const svc = servicesById.get(id);

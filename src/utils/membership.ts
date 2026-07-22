@@ -29,6 +29,44 @@ export const MEMBERSHIP_COLORS: Record<MembershipTier, string> = {
   BlackVIP: "#1F2530", // near-black
 };
 
+/**
+ * 🆕 Round 28x.129 (founder: "(บรอนซ์ / ซิลเวอร์ / โกลด์ / แบล็ค VIP) โหมดมืด
+ * ไม่เห็นเลย") — theme-aware tier ink for any surface that flips light/dark.
+ *
+ * MEMBERSHIP_COLORS above is ONE fixed set, chosen for the light admin console,
+ * and it stays that way — the admin Control Room has no dark mode to serve. But
+ * the staff app does, and there `BlackVIP: #1F2530` painted near-black text on
+ * the near-black panel: ~1.1:1 contrast, i.e. the badge was simply not there.
+ * Silver was nearly as bad. These resolve to `--sr-tier-*` in index.css, which
+ * inverts with the theme like every other token.
+ *
+ * Pair with membershipChipSx() so the pill's fill and border track the ink.
+ */
+export const MEMBERSHIP_INK: Record<MembershipTier, string> = {
+  Bronze:   "var(--sr-tier-bronze)",
+  Silver:   "var(--sr-tier-silver)",
+  Gold:     "var(--sr-tier-gold)",
+  BlackVIP: "var(--sr-tier-vip)",
+};
+
+/**
+ * Pill styling for a tier badge on a theme-aware surface.
+ *
+ * `color-mix` derives the 14% fill and 42% border from the same token, so a
+ * tier can never drift into a mismatched fill. Browsers without color-mix
+ * (pre-2023) drop both to transparent, which is a SAFE degradation here: the
+ * label keeps its high-contrast ink and just loses the pill — never the
+ * unreadable-text failure this replaces.
+ */
+export function membershipChipSx(tier: MembershipTier) {
+  const ink = MEMBERSHIP_INK[tier];
+  return {
+    color: ink,
+    background: `color-mix(in srgb, ${ink} 14%, transparent)`,
+    border: `1px solid color-mix(in srgb, ${ink} 42%, transparent)`,
+  } as const;
+}
+
 export const MEMBERSHIP_LABELS_TH: Record<MembershipTier, string> = {
   Bronze:   "บรอนซ์",
   Silver:   "ซิลเวอร์",

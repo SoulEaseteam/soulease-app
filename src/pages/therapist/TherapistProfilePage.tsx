@@ -367,10 +367,10 @@ const TherapistProfilePage: React.FC = () => {
             </Box>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography sx={{ fontFamily: SANS, fontWeight: 700, fontSize: "12.5px", color: "var(--sr-ink)" }}>
-                ตำแหน่งที่ยืน · Standby location
+                ตำแหน่งปัจจุบัน · Current location
               </Typography>
               <Typography sx={{ fontFamily: SANS, fontSize: "10.5px", color: "var(--sr-body)", lineHeight: 1.4 }}>
-                ตั้งจุดบนแผนที่ หรือใช้ GPS ปัจจุบัน
+                อัปเดตด้วย GPS · ตั้งจุดสแตนด์บายประจำ
               </Typography>
             </Box>
             <CaretRight size={16} color="var(--sr-dim)" />

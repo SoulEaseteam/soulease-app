@@ -687,20 +687,23 @@ const AdminFloatingChat: React.FC = () => {
           disable during expanded / reduced-motion. */}
       {!isExpanded && !prefersReducedMotion && concierge.mode !== "off" && (
         <>
+          {/* 🆕 Round 28x.129 (founder: "ปุ่มลอยแอดมิน เพราะกระตุก") — was two
+              framer-motion springs with `repeat: Infinity`. framer drives each
+              frame from JS, so these were permanent main-thread rAF loops on
+              EVERY page of the app, fighting the staff job list for frame
+              budget. Now a compositor-only CSS keyframe (see index.css
+              @keyframes sr-fab-ring) — identical motion, zero main-thread
+              cost. `willChange` promotes the layer once instead of thrashing
+              it. The reduced-motion opt-out moved to CSS with it. */}
           {[0, 0.7].map((delay, i) => (
             <Box
               key={i}
-              component={motion.span}
+              className="sr-fab-ring"
               aria-hidden
-              initial={{ scale: 0.6, opacity: 0.55 }}
-              animate={{ scale: [0.6, 1.6, 1.9], opacity: [0.55, 0.15, 0] }}
-              transition={{
-                duration: 2.0,
-                delay,
-                repeat: Infinity,
-                ease: "easeOut",
-              }}
+              style={{ animationDelay: `${delay}s` }}
               sx={{
+                animation: "sr-fab-ring 2s ease-out infinite",
+                willChange: "transform, opacity",
                 position: "fixed",
                 bottom: 96,
                 right: 18,
@@ -723,7 +726,13 @@ const AdminFloatingChat: React.FC = () => {
         </>
       )}
 
-      {/* Main FAB — gradient brand button with chat icon + live dot */}
+      {/* Main FAB — gradient brand button with chat icon + live dot.
+          🆕 Round 28x.129 — the third permanent rAF loop lived on this button:
+          an infinite `scale: [1, 1.04, 1]` breathe. Dropped, not ported to CSS.
+          It was never doing work the two rings above weren't already doing, and
+          a 1.04 pulse on a 60px button is barely perceptible next to them. What
+          remains is purely event-driven (rotate on open, hover, tap), so an idle
+          page now runs ZERO JS animation frames for this widget. */}
       <Box
         component={motion.button}
         ref={buttonRef}
@@ -736,29 +745,11 @@ const AdminFloatingChat: React.FC = () => {
         }}
         whileHover={prefersReducedMotion ? undefined : { scale: 1.08 }}
         whileTap={prefersReducedMotion ? undefined : { scale: 0.94 }}
-        animate={
-          prefersReducedMotion
-            ? undefined
-            : isExpanded
-              ? { rotate: 90, scale: 1 }
-              : {
-                  rotate: 0,
-                  scale: [1, 1.04, 1],
-                }
-        }
+        animate={prefersReducedMotion ? undefined : { rotate: isExpanded ? 90 : 0 }}
         transition={
           prefersReducedMotion
             ? undefined
-            : isExpanded
-              ? { type: "spring", stiffness: 260, damping: 20 }
-              : {
-                  rotate: { type: "spring", stiffness: 260, damping: 20 },
-                  scale: {
-                    duration: 2.6,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  },
-                }
+            : { type: "spring", stiffness: 260, damping: 20 }
         }
         sx={{
           position: "fixed",

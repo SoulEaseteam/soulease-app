@@ -33,6 +33,23 @@ interface EnhanceOptions {
   enhance?: boolean;
   /** crop mode: 'limit' = ไม่บังคับขยาย / 'fill' = บังคับสัดส่วน */
   crop?: "limit" | "fill" | "thumb";
+  /**
+   * 🆕 Round 28x.129 (founder: "รูปพนักงานซูมเข้าให้เห็นใบหน้า เพราะหลุดขอบ")
+   *
+   * Square face-centred crop, for round avatars. The roster photos are
+   * full-body studio portraits, so a CSS `object-fit: cover` circle centres on
+   * the torso and slices the head off at the top — which is what she's seeing.
+   * `c_thumb,g_face` asks Cloudinary to find the face and crop around it, so
+   * the framing follows the subject instead of a fixed guess; every photo is
+   * already proxied through Cloudinary fetch, so this needs no re-upload.
+   *
+   * `zoom` is how tight: 0.7 ≈ head and shoulders (default), lower = wider.
+   * When Cloudinary detects no face it falls back to a centred thumb crop —
+   * no worse than the current behaviour, never a broken URL.
+   */
+  face?: boolean;
+  /** Face-crop tightness (Cloudinary z_). Only read when `face` is true. */
+  zoom?: number;
 }
 
 // 🆕 Round 28b30 (founder 2026-05-04, perf #66) — PageSpeed flagged
@@ -98,7 +115,7 @@ export function enhanceImage(
     return url;
   }
 
-  const { variant = "card", enhance = true, crop = "limit" } = options;
+  const { variant = "card", enhance = true, crop = "limit", face = false, zoom = 0.7 } = options;
   const w = widthByVariant[variant];
 
   // build transformations chain
@@ -115,7 +132,11 @@ export function enhanceImage(
     "q_auto:good",
     "f_auto", // auto format (WebP/AVIF when supported)
     `w_${w}`,
-    `c_${crop}`,
+    // Face mode forces a SQUARE (h_ = w_) so the circle mask has no spare
+    // pixels to crop away on its own — the framing is decided server-side by
+    // g_face, not by whatever object-fit happens to do with the aspect ratio.
+    face ? `h_${w}` : null,
+    face ? `c_thumb,g_face,z_${zoom}` : `c_${crop}`,
     "dpr_auto", // retina-aware
   ]
     .filter(Boolean)

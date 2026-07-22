@@ -76,6 +76,37 @@ export const LEGACY_SERVICE_SLUG_MAP: Record<string, string> = {
 };
 
 /**
+ * 🆕 Round 28x.129 (founder: "Services ... ไม่โชว์หรือซ้อนบนเว็บ") — map a
+ * stored `servicesAvailable` array to canonical SKU ids, de-duplicated.
+ *
+ * Confirmed against production this round: 4 of 14 therapist docs (Hami,
+ * Jimmy, Nanny, Richie) still hold ONLY the pre-rename slugs
+ * ["thai-massage","aromatherapy","gentlemans-recovery","sunred-signature"].
+ *
+ * Therapist docs are a mix: some hold current SKUs, some still hold the
+ * pre-rename slugs, and a doc that has been edited since can hold BOTH for the
+ * same service. Rendering that array verbatim shows the service twice (once
+ * mapped, once as a raw unmatched id) — which is the duplication she reported.
+ *
+ * Every surface that renders or prices a therapist's services should read
+ * through here, so an unclean doc looks correct to customers immediately
+ * rather than only after that therapist happens to re-save her profile.
+ * Unresolvable entries are dropped, not passed through: an id no catalog
+ * entry matches can't be priced or labelled, so showing it helps nobody.
+ */
+export function canonicalServiceIds(
+  list: readonly (string | null | undefined)[] | null | undefined
+): string[] {
+  if (!list?.length) return [];
+  const out: string[] = [];
+  for (const raw of list) {
+    const id = resolveServiceId(raw);
+    if (id && !out.includes(id)) out.push(id);
+  }
+  return out;
+}
+
+/**
  * Resolve any user-supplied identifier (URL slug, SKU id, even a name)
  * to a canonical SKU id. Returns `null` if no match.
  */

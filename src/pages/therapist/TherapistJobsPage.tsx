@@ -45,7 +45,7 @@ import { app, auth } from "@/lib/firebase";
 import { responsiveShell } from "@/theme/breakpoints";
 import { formatTHB } from "@/utils/servicePricing";
 import { useOwnBookingsSnapshot } from "@/hooks/useOwnBookingsSnapshot";
-import { MEMBERSHIP_COLORS, MEMBERSHIP_LABELS_TH, type MembershipTier } from "@/utils/membership";
+import { membershipChipSx, MEMBERSHIP_LABELS_TH, type MembershipTier } from "@/utils/membership";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS  = '"Inter", system-ui, sans-serif';
@@ -549,8 +549,12 @@ const JobCard = React.memo(function JobCard({ job, tab, busy, onRespond, onAdvan
                 {revealed ? refCode : "ลูกค้าใหม่"}
               </Typography>
               {revealed && tier && (
-                <Box sx={{ px: "7px", py: "1px", borderRadius: 999, background: `${MEMBERSHIP_COLORS[tier]}22`, border: `1px solid ${MEMBERSHIP_COLORS[tier]}55` }}>
-                  <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 800, letterSpacing: "0.04em", color: MEMBERSHIP_COLORS[tier] }}>
+                // 🆕 28x.129 — was MEMBERSHIP_COLORS, the light-console set:
+                //   "แบล็ค VIP" rendered #1F2530 on the near-black dark panel
+                //   and simply vanished. membershipChipSx() resolves through
+                //   the theme-aware --sr-tier-* tokens instead.
+                <Box sx={{ px: "7px", py: "1px", borderRadius: 999, ...membershipChipSx(tier) }}>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 800, letterSpacing: "0.04em", color: "inherit" }}>
                     {MEMBERSHIP_LABELS_TH[tier]}
                   </Typography>
                 </Box>

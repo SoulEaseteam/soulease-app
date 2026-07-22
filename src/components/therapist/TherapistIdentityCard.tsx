@@ -11,6 +11,7 @@ import React from "react";
 import { Box, Typography, Chip } from "@mui/material";
 import type { Avail, Therapist } from "@/types/therapist";
 import { enhanceImage } from "@/utils/cloudinary";
+import { prettyHHMM } from "@/utils/time";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -60,7 +61,7 @@ const TherapistIdentityCard: React.FC<{
       <Box sx={{ display: "flex", alignItems: "center", gap: 2, position: "relative" }}>
         <Box
           component="img"
-          src={enhanceImage(resolvedImage, { variant: "card" })}
+          src={enhanceImage(resolvedImage, { variant: "thumb", face: true })}
           alt={therapist.name}
           width={96}
           height={96}
@@ -71,6 +72,13 @@ const TherapistIdentityCard: React.FC<{
             height: 96,
             borderRadius: "50%",
             objectFit: "cover",
+            // 🆕 28x.129 — Cloudinary's g_face already returns a square framed
+            //   on the face, so cover has nothing left to trim. This bias only
+            //   matters on localhost, where enhanceImage returns the raw URL
+            //   untransformed (Cloudinary fetch can't reach localhost): without
+            //   it, dev shows the decapitated crop the founder reported and
+            //   prod doesn't, which is exactly how this went unnoticed.
+            objectPosition: "50% 22%",
             border: "3px solid rgba(255,255,255,0.9)",
             boxShadow: "0 6px 18px rgba(107, 21, 65, 0.35)",
             flexShrink: 0,
@@ -145,7 +153,12 @@ const TherapistIdentityCard: React.FC<{
               marginTop: "4px",
             }}
           >
-            Hours · {therapist.startTime ?? "—"} – {therapist.endTime ?? "—"}
+            {/* 🆕 Round 28x.129 (founder: "Hours · 19:00 – 05:00 ใส่ PM AM") —
+                was the raw 24h HH:mm straight off the doc. Reuses prettyHHMM,
+                the canonical user-facing time format (utils/time.ts, 28b42),
+                so this card can't drift from the public profile and the
+                booking flow, which already render hours through it. */}
+            Hours · {prettyHHMM(therapist.startTime) || "—"} – {prettyHHMM(therapist.endTime) || "—"}
           </Typography>
         </Box>
       </Box>
