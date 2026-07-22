@@ -122,6 +122,8 @@ import type { Therapist } from "@/types/therapist";
 import { db } from "@/lib/firebase";
 import { doc as fsDoc, getDoc as fsGetDoc } from "firebase/firestore";
 import { recordTherapistView } from "@/utils/therapistViews";
+import { recordPhotoView } from "@/utils/photoViews";
+import { usePhotoViews } from "@/hooks/usePhotoViews";
 import { trackTherapistView } from "@/utils/analytics";
 import { enhanceImage } from "@/utils/cloudinary";
 // Round 28s53 — real GPS distance. The DetailHero "Allow location"
@@ -898,6 +900,14 @@ const TherapistDetailPage: React.FC = () => {
   //   practitioners (Milo, Pare) now populate here too; the 12 static ones
   //   still fall back to @/data only if they're missing from Firestore.
   const realRecord = realRow ?? null;
+
+  // 🆕 Round 28x.113 (founder: "การนับคนเข้าดูรูปมันนับยังไงหรอ นับรวมทุกรูป
+  //   ต่อ 1 คนดูหรอ") — she caught that the eye-icon count under every photo
+  //   was really `realRecord.viewCount` (the whole-PROFILE counter, 28s387)
+  //   duplicated identically under EVERY photo — same number everywhere, not
+  //   a per-photo count. This is a REAL per-photo count instead; see
+  //   utils/photoViews.ts + hooks/usePhotoViews.ts for the write/read path.
+  const photoViews = usePhotoViews(id);
 
   // Round 28s53 — Real GPS distance. autoStart:false so we never
   // prompt without a user gesture; the DetailHero "Allow location"
@@ -2033,7 +2043,10 @@ const TherapistDetailPage: React.FC = () => {
                 key={`${src}-${idx}`}
                 component="button"
                 type="button"
-                onClick={() => setGalleryIdx(idx)}
+                onClick={() => {
+                  setGalleryIdx(idx);
+                  void recordPhotoView(id, src);
+                }}
                 aria-label={t(
                   "detail.gallery.tileAria",
                   "Open photo {{n}} of {{total}}",
@@ -2076,8 +2089,10 @@ const TherapistDetailPage: React.FC = () => {
                     display: "block",
                   }}
                 />
-                {/* 🆕 28t.12 — 👁 view count over each photo (founder ref). */}
-                {(realRecord?.viewCount ?? 0) > 0 && (
+                {/* 🆕 28t.12 — 👁 view count over each photo (founder ref).
+                    🆕 28x.113 — now a REAL per-photo count (photoViews[src]),
+                    not the whole-profile counter duplicated under every tile. */}
+                {(photoViews[src] ?? 0) > 0 && (
                   <Box
                     sx={{
                       position: "absolute",
@@ -2104,7 +2119,7 @@ const TherapistDetailPage: React.FC = () => {
                         lineHeight: 1,
                       }}
                     >
-                      {formatViews(realRecord?.viewCount ?? 0)}
+                      {formatViews(photoViews[src] ?? 0)}
                     </Box>
                   </Box>
                 )}

@@ -175,6 +175,23 @@ service cloud.firestore {
         && request.resource.data.viewCount == resource.data.get('viewCount', 0) + 1;
     }
 
+    // 🆕 Round 28x.113 (founder: "ทำระบบนับวิวแยกรายรูปจริงๆ") — per-photo view
+    // counters, one doc per photo in therapists/{id}/photoViews/{photoKey}.
+    // Same shape as isViewCountBump() above, just split into create (first
+    // view of a photo — doc doesn't exist yet) and update (every view after)
+    // since a subcollection doc can't rely on `resource.data.get(...)`
+    // defaulting for a field that has never existed on ANY doc at that path.
+    function isPhotoViewCreate() {
+      return request.resource.data.keys().hasOnly(['src', 'views', 'updatedAt'])
+        && request.resource.data.src is string
+        && request.resource.data.views == 1;
+    }
+    function isPhotoViewBump() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views', 'updatedAt'])
+        && request.resource.data.views is int
+        && request.resource.data.views == resource.data.get('views', 0) + 1;
+    }
+
     // ── admins ─────────────────────────────────────────────────────
     // Self-read is allowed (so LoginPage can check isAdmin via direct
     // doc read without leaking other admins' info), peer-admin can
@@ -240,6 +257,22 @@ service cloud.firestore {
                      therapistGallerySelfRemoval()) ||
                     isViewCountBump();
 
+      allow delete: if isAdmin();
+    }
+
+    // ── therapists/{id}/photoViews ───────────────────────────────────
+    // 🆕 Round 28x.113 — per-photo view counters (see isPhotoViewCreate/Bump
+    // above). Public read (the count is shown on the public Photos tab,
+    // same visibility as the photos themselves); anonymous visitors may
+    // create the first-view doc or bump an existing one by exactly +1 —
+    // same anonymous-write shape isViewCountBump() already allows on the
+    // parent doc, just scoped per photo. A subcollection rule does NOT
+    // inherit from its parent match block (see the /users/{uid}/favorites
+    // comment above), so this needs its own explicit block.
+    match /therapists/{therapistId}/photoViews/{photoKey} {
+      allow read: if true;
+      allow create: if isPhotoViewCreate();
+      allow update: if isPhotoViewBump();
       allow delete: if isAdmin();
     }
 

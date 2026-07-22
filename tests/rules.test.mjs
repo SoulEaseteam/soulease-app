@@ -519,6 +519,69 @@ await check("admin CAN read analytics_events", () =>
   assertSucceeds(getDoc(doc(asUser(ADMIN_UID), "analytics_events", "ev-1")))
 );
 
+console.log("\ntherapists/{id}/photoViews · per-photo view counters (28x.113)");
+await check("guest CAN create a photo's first view doc (views=1)", () =>
+  assertSucceeds(
+    setDoc(doc(anon(), "therapists", THERAPIST_DOC_ID, "photoViews", "photo-a"), {
+      src: "https://img/a.jpg",
+      views: 1,
+      updatedAt: Date.now(),
+    })
+  )
+);
+await check("guest CANNOT create a photo view doc starting above 1", () =>
+  assertFails(
+    setDoc(doc(anon(), "therapists", THERAPIST_DOC_ID, "photoViews", "photo-b"), {
+      src: "https://img/b.jpg",
+      views: 5,
+      updatedAt: Date.now(),
+    })
+  )
+);
+await check("guest CANNOT create a photo view doc with an extra field", () =>
+  assertFails(
+    setDoc(doc(anon(), "therapists", THERAPIST_DOC_ID, "photoViews", "photo-c"), {
+      src: "https://img/c.jpg",
+      views: 1,
+      updatedAt: Date.now(),
+      hacked: true,
+    })
+  )
+);
+await check("guest CAN bump an existing photo's views by exactly +1", () =>
+  assertSucceeds(
+    updateDoc(doc(anon(), "therapists", THERAPIST_DOC_ID, "photoViews", "photo-a"), {
+      views: 2,
+      updatedAt: Date.now(),
+    })
+  )
+);
+await check("guest CANNOT jump a photo's views by more than +1", () =>
+  assertFails(
+    updateDoc(doc(anon(), "therapists", THERAPIST_DOC_ID, "photoViews", "photo-a"), {
+      views: 99,
+      updatedAt: Date.now(),
+    })
+  )
+);
+await check("guest CANNOT touch another field while bumping views", () =>
+  assertFails(
+    updateDoc(doc(anon(), "therapists", THERAPIST_DOC_ID, "photoViews", "photo-a"), {
+      views: 3,
+      src: "https://img/swapped.jpg",
+    })
+  )
+);
+await check("anyone CAN read photoViews (public, same visibility as the photos)", () =>
+  assertSucceeds(getDoc(doc(anon(), "therapists", THERAPIST_DOC_ID, "photoViews", "photo-a")))
+);
+await check("a non-admin therapist CANNOT delete a photoViews doc", () =>
+  assertFails(deleteDoc(doc(asUser(THERAPIST_UID), "therapists", THERAPIST_DOC_ID, "photoViews", "photo-a")))
+);
+await check("admin CAN delete a photoViews doc", () =>
+  assertSucceeds(deleteDoc(doc(asUser(ADMIN_UID), "therapists", THERAPIST_DOC_ID, "photoViews", "photo-a")))
+);
+
 await testEnv.cleanup();
 
 console.log(`\n${passed} passed · ${failed} failed`);
