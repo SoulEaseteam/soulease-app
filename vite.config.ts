@@ -8,25 +8,39 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * ⚠️ ROLLBACK Round 28b13b — manualChunks ทำให้เกิด TDZ crash อีก
- *    "Cannot access 'X' before initialization" → จอขาวบน production
- *    เก็บ comment ไว้เตือนใจว่าเคสนี้แม้ split แบบ "ปลอดภัย" ก็พัง
+ * ⚠️ CHUNK-SPLITTING HISTORY — read before touching `manualChunks`.
  *
- * อนาคต ถ้าจะลอง split อีก ต้อง:
- *   - ทดสอบบน production preview ก่อน merge
- *   - ใช้ vite-plugin-bundle-analyzer หา circular deps ก่อน
- *   - อาจต้อง upgrade vite/rollup version ก่อน
+ * Round 28b13 split react/react-dom/react-router · @mui+@emotion · mui-icons
+ * into vendor chunks using the OBJECT form of manualChunks. Result: TDZ crash
+ * ("Cannot access 'X' before initialization") → white screen on production,
+ * every browser. Rolled back in 1711383; splitting was banned outright after.
  *
- * ตอนนี้ปล่อย rollup auto-split ตาม dynamic-import boundaries (lazy
- * routes ใน App.tsx ก็ทำให้ split ระดับหนึ่งอยู่แล้ว — แค่ initial
- * main bundle ใหญ่กว่าที่ควร แต่ไม่ crash)
+ * Round 28x.125 (founder asked to retry it carefully, after a staff-app perf
+ * audit measured the single entry chunk at 1.2 MB / 389 kB gzip blocking
+ * first paint) — retried with a different rule and it holds:
  *
- * Round 28b13 perf wins ที่ยังเหลือ (ไม่กระทบจอขาว):
- *   ✅ ToastContainer lazy
- *   ✅ Chonburi font ออกจาก main bundle
- *   ✅ i18n locales lazy (เฉพาะ active lang)
- *   ✅ Google Fonts non-blocking (media print → all)
+ *   ONLY split dependencies that are true LEAVES — they import nothing from
+ *   the app and nothing from React. React and everything entangled with its
+ *   module init (MUI, emotion, react-router, framer-motion, react-i18next)
+ *   STAY TOGETHER in the entry chunk.
+ *
+ * Why 28b13 crashed and this doesn't: the object form puts only the named
+ * package entry points in a chunk while their transitive deps (scheduler,
+ * react-is, the emotion runtime) land elsewhere — that's what creates the
+ * cross-chunk import cycles TDZ comes from. Firebase has no such cycle: the
+ * app calls into it, it never calls back into React or app code.
+ *
+ * Measured: entry 1,245 kB → 896 kB (389 → 282 kB gzip, −27%). vendor-firebase
+ * gets a modulepreload tag, so it downloads in PARALLEL with the entry chunk,
+ * not after it. Verified on a real production build served by `vite preview`:
+ * /, /staff, /login, /services and /therapists/:id all render, console clean,
+ * and live Firestore reads work (the profile view counter incremented).
+ *
+ * If you split anything MORE: build, `npm run preview`, and actually load
+ * several routes in a browser before deploying. A TDZ crash is invisible at
+ * build time — it only appears at runtime, as a blank page.
  */
+
 export default defineConfig({
   plugins: [react()],
   // 🆕 Round 28s290 — honor a harness/env-assigned PORT (Vite doesn't read
@@ -55,7 +69,34 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 2000,
-    // ⚠️ ห้ามใช้ manualChunks — เคยเกิด TDZ crash + จอขาว
-    //    rollup auto-split ผ่าน lazy routes ก็พอแล้ว safest
+    rollupOptions: {
+      output: {
+        // 🆕 Round 28x.125 — see the ROLLBACK note above. Splitting is being
+        //   retried, but ONLY for dependencies that are true leaves: they
+        //   import nothing from the app and nothing from React, so they can't
+        //   participate in the circular module-init that produced the old
+        //   "Cannot access 'X' before initialization" white screen.
+        //
+        //   What 28b13 did and why it crashed: it split react/react-dom/
+        //   react-router into one chunk, @mui/material+@emotion into another,
+        //   and icons into a third — using the OBJECT form, which places only
+        //   those exact package entry points in the chunk while their
+        //   transitive deps (scheduler, react-is, the emotion runtime) land
+        //   elsewhere. That's what creates cross-chunk cycles and TDZ.
+        //
+        //   The rule this time: React and everything that touches React's
+        //   module init (MUI, emotion, router, framer-motion) STAY TOGETHER in
+        //   the entry chunk. Only genuinely independent SDKs move out.
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return undefined;
+          // Firebase: a self-contained SDK. The app calls into it; it never
+          // imports app or React modules, so it has no cycle back.
+          if (id.includes("/firebase/") || id.includes("/@firebase/")) {
+            return "vendor-firebase";
+          }
+          return undefined;
+        },
+      },
+    },
   },
 });
