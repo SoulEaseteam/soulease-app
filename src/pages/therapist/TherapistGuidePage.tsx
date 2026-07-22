@@ -28,12 +28,11 @@ import {
   Briefcase,
   UserCircle,
   Gear,
-  ChatCircleText,
   type Icon as PhosphorIcon,
 } from "phosphor-react";
 
 import { responsiveShell } from "@/theme/breakpoints";
-import { whatsappDeepLink } from "@/config/concierge";
+import ConciergeChannels from "@/components/common/ConciergeChannels";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
@@ -112,11 +111,15 @@ const SECTIONS: GuideSection[] = [
       },
       {
         title: "อัปเดตสถานะระหว่างทำงาน",
-        body: "หลังกดรับงานแล้ว จะมีปุ่มให้กดไล่ตามลำดับ: ออกเดินทาง → ถึงแล้ว → เริ่มนวด → จบงาน ทุกครั้งที่กด แอดมินจะเห็นทันที ไม่ต้องโทรบอก และตอนกด “จบงาน” ระบบจะปิดงานให้เป็นเสร็จสิ้นอัตโนมัติ",
+        body: "หลังกดรับงานแล้ว จะมีปุ่มให้กดไล่ตามลำดับ: ออกเดินทาง → ถึงแล้ว (ถ่ายรูปจุดนัดพบส่งแอดมิน) → เริ่มนวด → จบงาน ทุกครั้งที่กด แอดมินจะเห็นทันที ไม่ต้องโทรบอก และตอนกด “จบงาน” ระบบจะปิดงานให้เป็นเสร็จสิ้นอัตโนมัติ พร้อมเปลี่ยนสถานะบนหน้าเว็บให้เอง",
+      },
+      {
+        title: "ถึงแล้ว — ต้องถ่ายรูปจุดรอพบ",
+        body: "พอถึงที่หมาย กดปุ่ม “ถึงแล้ว · ถ่ายรูป” กล้องจะเปิดขึ้นมาให้ถ่ายจุดที่รอลูกค้า รูปจะส่งเข้าแชทแอดมินพร้อมแจ้งว่าคุณถึงแล้ว ตรงนี้ใช้แทนการโทร เพราะตอนรออยู่หน้างานมักไม่สะดวกโทร",
       },
       {
         title: "เปิดแผนที่ / โทรหาลูกค้า",
-        body: "หลังรับงานจะมีปุ่มเปิดแผนที่นำทางไปที่หมาย และปุ่มโทรหาลูกค้าโดยตรง ไม่ต้องก๊อปเบอร์เอง",
+        body: "หลังรับงานจะมีปุ่มเปิดแผนที่นำทางไปที่หมาย และปุ่มโทรหาลูกค้าโดยตรง ไม่ต้องก๊อปเบอร์เอง — ยกเว้นตอนถึงที่หมายแล้ว ให้ถ่ายรูปจุดนัดพบส่งแอดมินแทนการโทร",
       },
       {
         title: "รหัสการจอง (SR-XXXXXXXX)",
@@ -306,7 +309,11 @@ const TherapistGuidePage: React.FC = () => {
         </Box>
 
         {/* Escape hatch — a guide can't cover everything, and a practitioner
-            stuck at 2am needs the concierge, not more reading. */}
+            stuck at 2am needs the concierge, not more reading.
+            🆕 Round 28x.124 (founder: "อันนี้ให้เปลี่ยนเป็นรูป2") — was a
+            single WhatsApp button; now the same three-channel capsule the
+            activation screen uses, so she picks the app she actually has.
+            Extracted to ConciergeChannels so the two can't drift. */}
         <Box
           sx={{
             mt: 2.5, p: "16px", borderRadius: 3,
@@ -318,21 +325,7 @@ const TherapistGuidePage: React.FC = () => {
           <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: "var(--sr-body)", lineHeight: 1.6, mb: 1.5 }}>
             มีอะไรไม่เข้าใจ หรือแอปมีปัญหา ทักแอดมินได้ตลอด 24 ชม.
           </Typography>
-          <Button
-            component="a"
-            href={whatsappDeepLink("สวัสดีค่ะ ฉันเป็นพนักงาน มีเรื่องอยากสอบถามเกี่ยวกับการใช้งานแอปค่ะ")}
-            target="_blank"
-            rel="noopener noreferrer"
-            startIcon={<ChatCircleText size={16} weight="fill" />}
-            sx={{
-              py: 1.1, px: 3, borderRadius: 999, textTransform: "none", fontWeight: 700, fontSize: 13.5,
-              background: `linear-gradient(135deg, ${ROSE}, #B23A63)`, color: "#fff",
-              boxShadow: "0 6px 16px rgba(194,24,91,0.30)",
-              "&:hover": { boxShadow: "0 6px 16px rgba(194,24,91,0.30)" },
-            }}
-          >
-            ติดต่อแอดมิน
-          </Button>
+          <ConciergeChannels message="สวัสดีค่ะ ฉันเป็นพนักงาน มีเรื่องอยากสอบถามเกี่ยวกับการใช้งานแอปค่ะ" />
         </Box>
       </Box>
     </Box>

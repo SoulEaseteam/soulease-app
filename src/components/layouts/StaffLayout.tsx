@@ -32,6 +32,7 @@ import { SquaresFour, Briefcase, UserCircle, SignOut, ShieldWarning, Heart } fro
 import { auth, db } from "@/lib/firebase";
 import { responsiveShell } from "@/theme/breakpoints";
 import { clearTherapistSelfCache } from "@/hooks/useTherapistSelf";
+import ConciergeChannels from "@/components/common/ConciergeChannels";
 import { CONCIERGE, whatsappDeepLink } from "@/config/concierge";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
@@ -155,102 +156,15 @@ const ActivationGate: React.FC<{ onSignOut: () => void }> = ({ onSignOut }) => (
       บัญชีของคุณเชื่อมต่อแล้ว แต่แอดมินยังไม่ได้เปิดใช้งาน
       กรุณาติดต่อแอดมินเพื่อขอให้ซิงก์งานและตั้งค่าช่องงานให้คุณก่อนเริ่มใช้งาน
     </Typography>
-    {/* 🆕 Round 28x.97 (founder, ref. WhatsApp's own tab bar: "ให้กล่องส่งข้อความ
-        สวยแบบภาพ2") — one grouped capsule instead of two loose pill buttons:
-        icon-over-label items sharing a single rounded card, divided by a
-        hairline, same shape language as the reference screenshot. */}
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "stretch",
-        width: "100%",
-        maxWidth: 300,
-        mt: 1.5,
-        borderRadius: "22px",
-        background: "var(--sr-panel)",
-        border: "1px solid var(--sr-hairline)",
-        boxShadow: "0 10px 28px rgba(138, 58, 87, 0.12)",
-        overflow: "hidden",
-      }}
-    >
-      <Box
-        component="a"
-        href={whatsappDeepLink("สวัสดีค่ะ บัญชีพนักงานของฉันยังไม่เปิดใช้งาน รบกวนเปิดให้ด้วยค่ะ")}
-        target="_blank"
-        rel="noopener"
-        aria-label="ทัก WhatsApp แอดมิน"
-        sx={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 0.7,
-          py: 2,
-          textDecoration: "none",
-          transition: "background 0.15s ease",
-          "&:active": { background: "var(--sr-panel-2)" },
-        }}
-      >
-        <Box component="img" src="/images/profli/whatsapp.png" alt="" width={28} height={28} sx={{ width: 28, height: 28, objectFit: "contain" }} />
-        <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: "var(--sr-ink)" }}>
-          WhatsApp
-        </Typography>
-      </Box>
-
-      <Box sx={{ width: "1px", my: 1.75, background: "var(--sr-hairline)" }} />
-
-      {/* 🆕 Round 28x.99 (founder: "บัญชียังไม่เปิดใช้งาน เพิ่ม Telegram") —
-          @SunRed24hBot is the same bot she just linked to get here, so this
-          is a channel she's already inside rather than a new one to add. */}
-      <Box
-        component="a"
-        href="https://t.me/SunRed24hBot"
-        target="_blank"
-        rel="noopener"
-        aria-label="ทัก Telegram แอดมิน"
-        sx={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 0.7,
-          py: 2,
-          textDecoration: "none",
-          transition: "background 0.15s ease",
-          "&:active": { background: "var(--sr-panel-2)" },
-        }}
-      >
-        <Box component="img" src="/images/profli/telegram.png" alt="" width={28} height={28} sx={{ width: 28, height: 28, objectFit: "contain" }} />
-        <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: "var(--sr-ink)" }}>
-          Telegram
-        </Typography>
-      </Box>
-
-      <Box sx={{ width: "1px", my: 1.75, background: "var(--sr-hairline)" }} />
-
-      <Box
-        component="a"
-        href={CONCIERGE.lineUrl}
-        target="_blank"
-        rel="noopener"
-        aria-label="ทัก LINE"
-        sx={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 0.7,
-          py: 2,
-          textDecoration: "none",
-          transition: "background 0.15s ease",
-          "&:active": { background: "var(--sr-panel-2)" },
-        }}
-      >
-        <Box component="img" src="/images/profli/line.png" alt="" width={28} height={28} sx={{ width: 28, height: 28, objectFit: "contain" }} />
-        <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: "var(--sr-ink)" }}>
-          LINE
-        </Typography>
-      </Box>
+    {/* 🆕 Round 28x.97/99 — grouped capsule with WhatsApp · Telegram · LINE.
+        🆕 28x.124 — extracted to ConciergeChannels; the guide page shows the
+        same capsule, and two inline copies would drift on the next handle
+        change. */}
+    <Box sx={{ width: "100%", maxWidth: 300, mt: 1.5 }}>
+      <ConciergeChannels
+        message="สวัสดีค่ะ บัญชีพนักงานของฉันยังไม่เปิดใช้งาน รบกวนเปิดให้ด้วยค่ะ"
+        maxWidth={300}
+      />
     </Box>
     <Button onClick={onSignOut} sx={{ mt: 2, textTransform: "none", fontSize: 12.5, color: "var(--sr-dim)" }}>
       ออกจากระบบ

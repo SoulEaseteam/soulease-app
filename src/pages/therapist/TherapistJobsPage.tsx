@@ -238,14 +238,17 @@ const TherapistJobsPage: React.FC = () => {
     }
   }, []);
 
-  const advanceStatus = useCallback(async (jobId: string) => {
+  // 🆕 Round 28x.124 (founder: "ถึงแล้ว — ให้พนักงานถ่ายรูปจุดที่รอลูกค้า
+  //   ส่งแอดมิน ... ถึงแล้วไม่สะดวกโทร") — arriving is the one step where
+  //   calling isn't practical, so the proof is a photo instead.
+  const advanceStatus = useCallback(async (jobId: string, arrivalPhotoUrl?: string) => {
     setBusyId(jobId);
     try {
       const fn = httpsCallable<
-        { bookingId: string },
+        { bookingId: string; arrivalPhotoUrl?: string },
         { ok: boolean; already: boolean; dispatchState: DispatchState }
       >(getFunctions(app, "asia-southeast1"), "advanceJobStatus");
-      const res = await fn({ bookingId: jobId });
+      const res = await fn({ bookingId: jobId, ...(arrivalPhotoUrl ? { arrivalPhotoUrl } : {}) });
       if (!res.data.already) {
         toast.success(dispatchStep(res.data.dispatchState).label);
       }
@@ -458,7 +461,7 @@ interface JobCardProps {
   tab: TabKey;
   busy: boolean;
   onRespond: (id: string, action: "accept" | "decline") => void;
-  onAdvance: (id: string) => void;
+  onAdvance: (id: string, arrivalPhotoUrl?: string) => void;
 }
 
 const JobCard = React.memo(function JobCard({ job, tab, busy, onRespond, onAdvance }: JobCardProps) {
@@ -601,9 +604,10 @@ const JobCard = React.memo(function JobCard({ job, tab, busy, onRespond, onAdvan
             "accept/decline" is the only decision that matters. */}
         {tab === "today" && accepted && (
           <DispatchStepper
+            jobId={job.id}
             state={job.dispatchState ?? "assigned"}
             busy={busy}
-            onAdvance={() => onAdvance(job.id)}
+            onAdvance={(photoUrl) => onAdvance(job.id, photoUrl)}
           />
         )}
 
@@ -677,34 +681,85 @@ const JobCard = React.memo(function JobCard({ job, tab, busy, onRespond, onAdvan
 // FLOW buttons: current stage as a pill, one button to move to the next.
 // ──────────────────────────────────────────────────────────────────────
 const DispatchStepper: React.FC<{
+  jobId: string;
   state: DispatchState;
   busy: boolean;
-  onAdvance: () => void;
-}> = ({ state, busy, onAdvance }) => {
+  onAdvance: (arrivalPhotoUrl?: string) => void;
+}> = ({ jobId, state, busy, onAdvance }) => {
   const step = dispatchStep(state);
   const done = state === "done";
+  // 🆕 Round 28x.124 — the "ถึงแล้ว" step is gated on a meeting-point photo.
+  //   `capture="environment"` opens the rear camera straight away on a phone
+  //   instead of the photo library: she is standing at the spot, the point is
+  //   to shoot it now, not attach an older picture.
+  const needsPhoto = step.next === "arrived";
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const onPickPhoto = async (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file?.type.startsWith("image/")) return;
+    setUploading(true);
+    try {
+      const { getStorage, ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
+      const { downscaleImage } = await import("@/pages/admin/therapistFormKit");
+      const blob = await downscaleImage(file);
+      const storage = getStorage(app);
+      const path = `jobArrivals/${jobId}/${Date.now()}.jpg`;
+      const snap = await uploadBytes(ref(storage, path), blob, { contentType: "image/jpeg" });
+      const url = await getDownloadURL(snap.ref);
+      onAdvance(url);
+    } catch (err) {
+      console.error("[jobs] arrival photo upload failed", err);
+      toast.error("ส่งรูปไม่สำเร็จ ลองใหม่อีกครั้ง");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const busyNow = busy || uploading;
+
   return (
     <Box
       sx={{
-        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1,
         p: "10px 12px", borderRadius: "12px", mb: 1.5,
         background: done ? `${GREEN}14` : "rgba(224, 112, 143, 0.08)",
         border: `1px solid ${done ? `${GREEN}33` : "rgba(224, 112, 143, 0.20)"}`,
       }}
     >
-      <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: done ? GREEN_TEXT : ROSE_DEEP }}>
-        {step.label}
-      </Typography>
-      {step.btn && (
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          disabled={busy}
-          onClick={onAdvance}
-          aria-label={step.btn}
-          style={{ height: 32, padding: "0 14px", borderRadius: 999, background: ROSE, color: "#fff", fontFamily: SANS, fontSize: 12.5, fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, opacity: busy ? 0.7 : 1 }}
-        >
-          {busy ? <CircularProgress size={12} sx={{ color: "#fff" }} /> : step.btn}
-        </motion.button>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+        <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: done ? GREEN_TEXT : ROSE_DEEP }}>
+          {step.label}
+        </Typography>
+        {step.btn && (
+          <>
+            {needsPhoto && (
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                style={{ display: "none" }}
+                onChange={(e) => void onPickPhoto(e.target.files)}
+              />
+            )}
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              disabled={busyNow}
+              onClick={() => (needsPhoto ? fileRef.current?.click() : onAdvance())}
+              aria-label={needsPhoto ? "ถ่ายรูปจุดรอพบแล้วแจ้งถึงที่หมาย" : step.btn}
+              style={{ height: 32, padding: "0 14px", borderRadius: 999, background: ROSE, color: "#fff", fontFamily: SANS, fontSize: 12.5, fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, opacity: busyNow ? 0.7 : 1, flexShrink: 0 }}
+            >
+              {busyNow ? <CircularProgress size={12} sx={{ color: "#fff" }} /> : needsPhoto ? "📷 ถึงแล้ว · ถ่ายรูป" : step.btn}
+            </motion.button>
+          </>
+        )}
+      </Box>
+      {needsPhoto && (
+        <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "var(--sr-muted)", mt: 0.75, lineHeight: 1.5 }}>
+          ถ่ายรูปจุดที่รอลูกค้าเพื่อส่งให้แอดมิน — ไม่ต้องโทรแจ้ง
+        </Typography>
       )}
     </Box>
   );

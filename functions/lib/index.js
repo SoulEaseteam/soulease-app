@@ -166,6 +166,42 @@ async function sendTelegramIfEnabled(token, chatId, text, keyboard) {
     }
     return sendTelegram(token, chatId, text, keyboard);
 }
+// 🆕 Round 28x.124 (founder: "ถึงแล้ว — ให้พนักงานถ่ายรูปจุดที่รอลูกค้า ... บอท
+//   จะแจ้งเจ้าของว่าพนักงานถึงแล้ว พร้อมรูปจุดรอพบ") — sendPhoto, so the
+//   arrival proof lands in the Report channel as an actual image with the
+//   status line as its caption, instead of a bare link View has to tap.
+//   `photoUrl` is a Firebase Storage download URL: its token grants Telegram's
+//   servers access without the object being publicly listable (see
+//   storage.rules' jobArrivals path). Falls back to a plain text message with
+//   the link if sendPhoto fails, so a photo problem can never swallow the
+//   "she has arrived" notice itself.
+async function sendTelegramPhotoIfEnabled(token, chatId, photoUrl, caption) {
+    if (!(await isTelegramEnabled())) {
+        v2_1.logger.info("[sendTelegramPhotoIfEnabled] skipped — telegramEnabled=false");
+        return;
+    }
+    try {
+        const res = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                chat_id: chatId,
+                photo: photoUrl,
+                caption: caption.slice(0, 1024),
+            }),
+        });
+        if (res.ok)
+            return;
+        v2_1.logger.warn("[sendTelegramPhotoIfEnabled] sendPhoto failed, falling back", {
+            status: res.status,
+            body: (await res.text()).slice(0, 300),
+        });
+    }
+    catch (err) {
+        v2_1.logger.warn("[sendTelegramPhotoIfEnabled] sendPhoto threw, falling back", { err });
+    }
+    await sendTelegram(token, chatId, `${caption}\n${photoUrl}`);
+}
 /** Dismiss the button's loading spinner, optionally with a toast. */
 async function answerCallback(token, callbackQueryId, text) {
     try {
@@ -3093,8 +3129,13 @@ exports.advanceJobStatus = (0, https_1.onCall)({ region: "asia-southeast1", secr
         throw new https_1.HttpsError("unauthenticated", "Sign in required.");
     }
     const uid = request.auth.uid;
+    // 🆕 Round 28x.124 — `arrivalPhotoUrl` is the meeting-point photo the app
+    //   makes her take on the "ถึงแล้ว" step. Optional in the signature so an
+    //   older client (or the Telegram button path) can still advance without
+    //   one; the client is what enforces "photo required to arrive".
     const data = request.data;
     const bookingId = String(data?.bookingId ?? "").trim();
+    const arrivalPhotoUrl = String(data?.arrivalPhotoUrl ?? "").trim();
     if (!bookingId) {
         throw new https_1.HttpsError("invalid-argument", "bookingId required.");
     }
@@ -3131,12 +3172,27 @@ exports.advanceJobStatus = (0, https_1.onCall)({ region: "asia-southeast1", secr
         patch.status = "completed";
         patch.sessionEndAt = firestore_2.FieldValue.serverTimestamp();
     }
+    // Keep the proof on the booking, so it's still reviewable later from the
+    // admin panel rather than only existing as a Telegram message.
+    if (next === "arrived" && arrivalPhotoUrl) {
+        patch.arrivalPhotoUrl = arrivalPhotoUrl;
+    }
     await ref.update(patch);
     const token = TELEGRAM_BOT_TOKEN.value();
     if (token) {
         const who = b.therapistName ?? "หมอนวด";
         const refCode = `SR-${bookingId.slice(0, 8).toUpperCase()}`;
-        await sendTelegramIfEnabled(token, await getReportChatId(), `📍 ${who} · ${DISPATCH_LABEL[next]} (จากแอป) · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}`);
+        const line = `📍 ${who} · ${DISPATCH_LABEL[next]} (จากแอป) · ${refCode} · ${b.date ?? ""} ${b.time ?? ""}`;
+        const chatId = await getReportChatId();
+        // 🆕 28x.124 — on arrival, the status line becomes the caption of the
+        //   meeting-point photo instead of a separate message, so View sees
+        //   "she's there" and "here's where" as one item in the channel.
+        if (next === "arrived" && arrivalPhotoUrl) {
+            await sendTelegramPhotoIfEnabled(token, chatId, arrivalPhotoUrl, `${line}\n🖼 จุดรอพบลูกค้า`);
+        }
+        else {
+            await sendTelegramIfEnabled(token, chatId, line);
+        }
     }
     v2_1.logger.info("[advanceJobStatus] recorded", { bookingId, next, uid });
     return { ok: true, already: false, dispatchState: next };
