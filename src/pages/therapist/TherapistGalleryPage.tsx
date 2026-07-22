@@ -12,11 +12,22 @@
 //
 // 🆕 Round 28x.111 (founder: "แกลเลอรี แก้ไขเป็นเพิ่มได้ 12 รูป") — bumped
 //   9 → 12.
-
+//
+// 🆕 Round 28x.112 (founder: "กดค้างเรียงลำดับรูปได้") — long-press any live
+//   photo to enter a reorderable list (framer-motion's Reorder, the only
+//   drag library already in this app — no new dependency). A grid doesn't
+//   have a well-supported drag-reorder story in Reorder (it hit-tests along
+//   ONE axis, which breaks across grid rows/columns), so reordering switches
+//   to a single-column list for the duration, then returns to the normal
+//   3-col grid. Saves by rewriting the therapist's `gallery` array in the
+//   new order — firestore.rules' galleryOnlyShrinks() only checks that every
+//   URL in the new array already existed in the old one (hasAll), which a
+//   same-set reorder always satisfies; no rules change needed.
 import React, { useEffect, useRef, useState } from "react";
 import { Box, Typography, Button, CircularProgress, IconButton, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { CaretLeft, UploadSimple, X, CircleNotch, Clock, Image, Trash } from "phosphor-react";
+import { Reorder } from "framer-motion";
+import { CaretLeft, UploadSimple, X, CircleNotch, Clock, Image, Trash, DotsSixVertical } from "phosphor-react";
 import {
   addDoc,
   collection,
@@ -55,6 +66,17 @@ const TherapistGalleryPage: React.FC = () => {
   // delete instantly; now it just opens a confirm dialog, same for a live
   // photo or a still-pending request.
   const [confirmTarget, setConfirmTarget] = useState<{ kind: "live" | "pending"; key: string } | null>(null);
+
+  // 🆕 Round 28x.112 — long-press-to-reorder state. `orderDraft` is a working
+  // copy of the live gallery order edited by Reorder.Group; the real
+  // `gallery` array on the therapist doc is untouched until "บันทึกลำดับ".
+  const [reordering, setReordering] = useState(false);
+  const [orderDraft, setOrderDraft] = useState<string[]>([]);
+  const [savingOrder, setSavingOrder] = useState(false);
+  const pressTimer = useRef<number | null>(null);
+  const pressStart = useRef<{ x: number; y: number } | null>(null);
+  const LONG_PRESS_MS = 450;
+  const MOVE_CANCEL_PX = 8;
 
   useEffect(() => {
     const uid = auth.currentUser?.uid;
@@ -107,6 +129,60 @@ const TherapistGalleryPage: React.FC = () => {
     setConfirmTarget(null);
     if (kind === "live") await removeLivePhoto(key);
     else await withdrawPending(key);
+  };
+
+  // ── Long-press to reorder (28x.112) ────────────────────────────────────
+  const clearPressTimer = () => {
+    if (pressTimer.current != null) {
+      window.clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+    pressStart.current = null;
+  };
+
+  const onTilePointerDown = (e: React.PointerEvent) => {
+    pressStart.current = { x: e.clientX, y: e.clientY };
+    pressTimer.current = window.setTimeout(() => {
+      setOrderDraft(live);
+      setReordering(true);
+      clearPressTimer();
+    }, LONG_PRESS_MS);
+  };
+
+  const onTilePointerMove = (e: React.PointerEvent) => {
+    if (!pressStart.current) return;
+    const dx = Math.abs(e.clientX - pressStart.current.x);
+    const dy = Math.abs(e.clientY - pressStart.current.y);
+    if (dx > MOVE_CANCEL_PX || dy > MOVE_CANCEL_PX) clearPressTimer();
+  };
+
+  const orderDirty = JSON.stringify(orderDraft) !== JSON.stringify(live);
+
+  const cancelReorder = () => {
+    setReordering(false);
+    setOrderDraft([]);
+  };
+
+  const saveOrder = async () => {
+    if (!therapistDocId || !orderDirty) {
+      setReordering(false);
+      return;
+    }
+    setSavingOrder(true);
+    try {
+      await updateDoc(doc(db, "therapists", therapistDocId), {
+        gallery: orderDraft,
+        updatedAt: serverTimestamp(),
+        updatedBy: auth.currentUser?.uid ?? null,
+      });
+      setToast({ msg: "บันทึกลำดับรูปแล้ว", severity: "success" });
+      setReordering(false);
+    } catch (err) {
+      console.error("[TherapistGallery] reorder save failed:", err);
+      setToast({ msg: "บันทึกลำดับไม่สำเร็จ ลองใหม่อีกครั้ง", severity: "error" });
+    } finally {
+      setSavingOrder(false);
+    }
   };
 
   const onUploadFiles = async (files: FileList | null) => {
@@ -183,88 +259,175 @@ const TherapistGalleryPage: React.FC = () => {
             </Box>
           </Box>
 
-          {pending.length > 0 && (
+          {reordering ? (
             <>
-              <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: "var(--sr-muted)", letterSpacing: "0.08em", textTransform: "uppercase", mb: 1 }}>
-                รอแอดมินตรวจสอบ
-              </Typography>
-              <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1, mb: 2.5 }}>
-                {pending.map((p) => (
-                  <Box key={p.id} sx={{ position: "relative", aspectRatio: "1", borderRadius: "14px", overflow: "hidden", border: "1px solid rgba(194,24,91,0.20)", boxShadow: "0 4px 12px rgba(194,24,91,0.10)" }}>
-                    <Box component="img" src={p.imageUrl} alt="" sx={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.55 }} />
-                    <Box sx={{ position: "absolute", top: 5, left: 5, display: "flex", alignItems: "center", gap: "3px", background: "rgba(0,0,0,0.55)", borderRadius: "8px", px: "6px", py: "2px" }}>
-                      <Clock size={10} color="#fff" />
-                      <Typography sx={{ fontSize: 8.5, color: "#fff", fontWeight: 700 }}>รอตรวจ</Typography>
-                    </Box>
-                    <IconButton
-                      size="small"
-                      onClick={() => setConfirmTarget({ kind: "pending", key: p.id })}
-                      disabled={busyUrl === p.id}
-                      sx={{ position: "absolute", top: 5, right: 5, width: 24, height: 24, background: "rgba(220,38,38,0.85)", color: "#fff", "&:hover": { background: "#DC2626" } }}
-                    >
-                      <X size={12} weight="bold" />
-                    </IconButton>
-                  </Box>
-                ))}
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
+                <Typography sx={{ fontFamily: SERIF, fontWeight: 700, fontSize: 15, color: "var(--sr-ink)" }}>
+                  จัดเรียงรูป · Reorder
+                </Typography>
+                <Typography sx={{ fontFamily: SANS, fontSize: 11, color: "var(--sr-muted)" }}>
+                  ลากขึ้น/ลง แล้วกดบันทึก
+                </Typography>
               </Box>
+              <Reorder.Group
+                axis="y"
+                values={orderDraft}
+                onReorder={setOrderDraft}
+                style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 8 }}
+              >
+                {orderDraft.map((url, i) => (
+                  <Reorder.Item key={url} value={url} style={{ listStyle: "none" }}>
+                    <Box
+                      sx={{
+                        display: "flex", alignItems: "center", gap: 1.25,
+                        p: "8px 10px", borderRadius: "14px",
+                        background: "var(--sr-panel)", border: "1px solid var(--sr-hairline)",
+                        boxShadow: "var(--sr-card-shadow)",
+                      }}
+                    >
+                      <DotsSixVertical size={18} color="var(--sr-dim)" style={{ cursor: "grab", flexShrink: 0 }} />
+                      <Box component="img" src={url} alt="" sx={{ width: 48, height: 48, borderRadius: "10px", objectFit: "cover", flexShrink: 0 }} />
+                      <Typography sx={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: "var(--sr-muted)" }}>
+                        รูปที่ {i + 1}
+                      </Typography>
+                    </Box>
+                  </Reorder.Item>
+                ))}
+              </Reorder.Group>
+              <Box sx={{ display: "flex", gap: 1, mt: 2, mb: 2.5 }}>
+                <Button
+                  onClick={cancelReorder}
+                  disabled={savingOrder}
+                  fullWidth
+                  sx={{ py: 1.2, borderRadius: 2, textTransform: "none", fontWeight: 700, color: "var(--sr-muted)", background: "var(--sr-panel-2)" }}
+                >
+                  ยกเลิก
+                </Button>
+                <Button
+                  onClick={() => void saveOrder()}
+                  disabled={!orderDirty || savingOrder}
+                  fullWidth
+                  variant="contained"
+                  sx={{
+                    py: 1.2, borderRadius: 2, textTransform: "none", fontWeight: 700,
+                    background: "linear-gradient(135deg, #E0708F, #B23A63)", boxShadow: "0 6px 16px rgba(194,24,91,0.30)",
+                    "&.Mui-disabled": { background: "var(--sr-panel-2)", color: "var(--sr-dim)", boxShadow: "none" },
+                  }}
+                >
+                  {savingOrder ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : "บันทึกลำดับ"}
+                </Button>
+              </Box>
+            </>
+          ) : (
+            <>
+              {pending.length > 0 && (
+                <>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: "var(--sr-muted)", letterSpacing: "0.08em", textTransform: "uppercase", mb: 1 }}>
+                    รอแอดมินตรวจสอบ
+                  </Typography>
+                  <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1, mb: 2.5 }}>
+                    {pending.map((p) => (
+                      <Box key={p.id} sx={{ position: "relative", aspectRatio: "1", borderRadius: "14px", overflow: "hidden", border: "1px solid rgba(194,24,91,0.20)", boxShadow: "0 4px 12px rgba(194,24,91,0.10)" }}>
+                        <Box component="img" src={p.imageUrl} alt="" sx={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.55 }} />
+                        <Box sx={{ position: "absolute", top: 5, left: 5, display: "flex", alignItems: "center", gap: "3px", background: "rgba(0,0,0,0.55)", borderRadius: "8px", px: "6px", py: "2px" }}>
+                          <Clock size={10} color="#fff" />
+                          <Typography sx={{ fontSize: 8.5, color: "#fff", fontWeight: 700 }}>รอตรวจ</Typography>
+                        </Box>
+                        <IconButton
+                          size="small"
+                          onClick={() => setConfirmTarget({ kind: "pending", key: p.id })}
+                          disabled={busyUrl === p.id}
+                          sx={{ position: "absolute", top: 5, right: 5, width: 24, height: 24, background: "rgba(220,38,38,0.85)", color: "#fff", "&:hover": { background: "#DC2626" } }}
+                        >
+                          <X size={12} weight="bold" />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Box>
+                </>
+              )}
+
+              <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: "var(--sr-muted)", letterSpacing: "0.08em", textTransform: "uppercase", mb: 1 }}>
+                รูปที่ขึ้นจริงตอนนี้
+              </Typography>
+              {live.length === 0 ? (
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 1.25, py: 5 }}>
+                  <Box sx={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg, #E0708F, #C2185B)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px rgba(194,24,91,0.28)" }}>
+                    <Image size={26} weight="duotone" />
+                  </Box>
+                  <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: "var(--sr-muted)" }}>
+                    ยังไม่มีรูปในแกลเลอรี
+                  </Typography>
+                </Box>
+              ) : (
+                <>
+                  <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1, mb: live.length > 1 ? 1 : 2.5 }}>
+                    {live.map((url) => (
+                      <Box
+                        key={url}
+                        onPointerDown={live.length > 1 ? onTilePointerDown : undefined}
+                        onPointerMove={live.length > 1 ? onTilePointerMove : undefined}
+                        onPointerUp={live.length > 1 ? clearPressTimer : undefined}
+                        onPointerLeave={live.length > 1 ? clearPressTimer : undefined}
+                        onContextMenu={(e) => e.preventDefault()}
+                        sx={{
+                          position: "relative", aspectRatio: "1", borderRadius: "14px", overflow: "hidden",
+                          border: "1px solid rgba(194,24,91,0.20)", boxShadow: "0 4px 12px rgba(194,24,91,0.10)",
+                          userSelect: "none", WebkitTouchCallout: "none", touchAction: "manipulation",
+                        }}
+                      >
+                        <Box component="img" src={url} alt="" sx={{ width: "100%", height: "100%", objectFit: "cover" }} draggable={false} />
+                        <IconButton
+                          size="small"
+                          onClick={() => setConfirmTarget({ kind: "live", key: url })}
+                          disabled={busyUrl === url}
+                          sx={{ position: "absolute", top: 5, right: 5, width: 24, height: 24, background: "rgba(220,38,38,0.85)", color: "#fff", "&:hover": { background: "#DC2626" } }}
+                        >
+                          <X size={12} weight="bold" />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Box>
+                  {live.length > 1 && (
+                    <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "var(--sr-dim)", mb: 2.5, textAlign: "center" }}>
+                      กดค้างรูปเพื่อจัดเรียงใหม่
+                    </Typography>
+                  )}
+                </>
+              )}
             </>
           )}
 
-          <Typography sx={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: "var(--sr-muted)", letterSpacing: "0.08em", textTransform: "uppercase", mb: 1 }}>
-            รูปที่ขึ้นจริงตอนนี้
-          </Typography>
-          {live.length === 0 ? (
-            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 1.25, py: 5 }}>
-              <Box sx={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg, #E0708F, #C2185B)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px rgba(194,24,91,0.28)" }}>
-                <Image size={26} weight="duotone" />
-              </Box>
-              <Typography sx={{ fontFamily: SANS, fontSize: 12.5, color: "var(--sr-muted)" }}>
-                ยังไม่มีรูปในแกลเลอรี
-              </Typography>
-            </Box>
-          ) : (
-            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1, mb: 2.5 }}>
-              {live.map((url) => (
-                <Box key={url} sx={{ position: "relative", aspectRatio: "1", borderRadius: "14px", overflow: "hidden", border: "1px solid rgba(194,24,91,0.20)", boxShadow: "0 4px 12px rgba(194,24,91,0.10)" }}>
-                  <Box component="img" src={url} alt="" sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  <IconButton
-                    size="small"
-                    onClick={() => setConfirmTarget({ kind: "live", key: url })}
-                    disabled={busyUrl === url}
-                    sx={{ position: "absolute", top: 5, right: 5, width: 24, height: 24, background: "rgba(220,38,38,0.85)", color: "#fff", "&:hover": { background: "#DC2626" } }}
-                  >
-                    <X size={12} weight="bold" />
-                  </IconButton>
-                </Box>
-              ))}
-            </Box>
-          )}
-
           {/* 🆕 Round 28x.104 (founder: "เอาปุ่มอัปโหลดไว้ข้างล่าง") — moved
-              from above both grids to below them. */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            style={{ display: "none" }}
-            onChange={(e) => void onUploadFiles(e.target.files)}
-          />
-          <Button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading || atCap}
-            fullWidth
-            startIcon={uploading ? <CircleNotch size={16} className="sr-spin" /> : <UploadSimple size={16} weight="bold" />}
-            sx={{
-              mt: 1, py: 1.4, textTransform: "none", fontWeight: 700, borderRadius: 2,
-              background: "linear-gradient(135deg, #E0708F, #B23A63)", color: "#fff", boxShadow: "0 6px 16px rgba(194,24,91,0.30)",
-              "&:hover": { boxShadow: "0 6px 16px rgba(194,24,91,0.30)" },
-              "&.Mui-disabled": { background: "var(--sr-panel-2)", color: "var(--sr-dim)", boxShadow: "none" },
-              "& .sr-spin": { animation: "srspin 0.8s linear infinite" },
-              "@keyframes srspin": { to: { transform: "rotate(360deg)" } },
-            }}
-          >
-            {atCap ? `ครบ ${GALLERY_CAP} รูปแล้ว` : uploading ? "กำลังอัปโหลด…" : "อัปโหลดรูปใหม่"}
-          </Button>
+              from above both grids to below them. Hidden while reordering
+              (28x.112) — nothing to upload mid-drag. */}
+          {!reordering && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={(e) => void onUploadFiles(e.target.files)}
+              />
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading || atCap}
+                fullWidth
+                startIcon={uploading ? <CircleNotch size={16} className="sr-spin" /> : <UploadSimple size={16} weight="bold" />}
+                sx={{
+                  mt: 1, py: 1.4, textTransform: "none", fontWeight: 700, borderRadius: 2,
+                  background: "linear-gradient(135deg, #E0708F, #B23A63)", color: "#fff", boxShadow: "0 6px 16px rgba(194,24,91,0.30)",
+                  "&:hover": { boxShadow: "0 6px 16px rgba(194,24,91,0.30)" },
+                  "&.Mui-disabled": { background: "var(--sr-panel-2)", color: "var(--sr-dim)", boxShadow: "none" },
+                  "& .sr-spin": { animation: "srspin 0.8s linear infinite" },
+                  "@keyframes srspin": { to: { transform: "rotate(360deg)" } },
+                }}
+              >
+                {atCap ? `ครบ ${GALLERY_CAP} รูปแล้ว` : uploading ? "กำลังอัปโหลด…" : "อัปโหลดรูปใหม่"}
+              </Button>
+            </>
+          )}
         </Box>
       )}
 
