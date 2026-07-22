@@ -75,7 +75,6 @@ import {
   query,
   where,
   orderBy,
-  limit,
   Timestamp,
 } from "firebase/firestore";
 import { useSearchParams, Link as RouterLink } from "react-router-dom";
@@ -111,7 +110,7 @@ import { validateDiscount } from "@/utils/discount";
 // 🆕 28w.59 — customer membership tiers (Bronze/Silver/Gold/BlackVIP) + no-show
 //   flag, badged on each order. Full-history per-phone aggregate, tier from the
 //   shared membership util (same config as the Membership admin page).
-import { membershipFor, applyMembershipConfig, MEMBERSHIP_COLORS, type MembershipThresholds, type MembershipResult } from "@/utils/membership";
+import { membershipFor, menuSpendForBooking, isReservedShopBooking, applyMembershipConfig, MEMBERSHIP_COLORS, type MembershipThresholds, type MembershipResult } from "@/utils/membership";
 import { bookingAuthorLabel } from "@/utils/bookingAuthor";
 import { normPhone } from "@/utils/phoneCountry";
 import {
@@ -347,17 +346,26 @@ const AdminBookingListPage: React.FC = () => {
       snap.forEach((d) => {
         const b = d.data() as {
           phone?: string; status?: string; totalPrice?: number; servicePrice?: number;
+          taxiFee?: number; paymentFee?: number;
+          contactName?: string; customerName?: string;
           createdAt?: { toDate?: () => Date; seconds?: number };
           startAt?: { toDate?: () => Date; seconds?: number };
         };
         const phone = normPhone((b.phone ?? "").trim());
         if (!phone) return;
+        // 🆕 28x.99u — admin's own placeholder-phone bookings aren't a real
+        //   customer identity; skip so this can't show as a top-spend guest.
+        if (isReservedShopBooking(b)) return;
         const row = (map[phone] ??= { served: 0, totalSpent: 0, lastVisitMs: 0, noShowCount: 0 });
         const st = b.status ?? "";
         if (NOSHOW.has(st)) row.noShowCount++;
         if (SERVED.has(st)) {
           row.served++;
-          row.totalSpent += b.totalPrice ?? b.servicePrice ?? 0;
+          // 🆕 28x.99u — was `b.totalPrice ?? b.servicePrice ?? 0` (includes
+          //   taxi/surcharge); menuSpendForBooking() matches the canonical
+          //   28x.38 formula AdminMembersPage uses, so a booking's tier
+          //   badge here can't disagree with the real roster.
+          row.totalSpent += menuSpendForBooking(b);
           const t = b.createdAt ?? b.startAt;
           const ms = t?.toDate ? t.toDate().getTime() : (typeof t?.seconds === "number" ? t.seconds * 1000 : 0);
           if (ms > row.lastVisitMs) row.lastVisitMs = ms;

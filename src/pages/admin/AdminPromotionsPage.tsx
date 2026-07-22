@@ -74,7 +74,7 @@ import {
 } from "@/config/anniversary";
 // 🆕 Round 28r50 (Promotions Phase 1) — Bundle Packages helpers.
 // 🆕 Round 28r60 — + BUNDLE_CATEGORY_TAGS for the Autocomplete freeSolo picker.
-import { bundleSavings, BUNDLE_CATEGORY_TAGS, type Bundle } from "@/utils/bundles";
+import { bundleSavings, BUNDLE_CATEGORY_TAGS } from "@/utils/bundles";
 // 🆕 Round 28r59 (Phase 4 feature #5 "Discount validator preview") — debug
 //   variant of the discount validator + tier helper for feature #6 UI.
 import { validateDiscountDebug, type ReferralTier } from "@/utils/discount";
@@ -82,7 +82,6 @@ import { validateDiscountDebug, type ReferralTier } from "@/utils/discount";
 const BADGE_OPTIONS: MassageService["badge"][] = ["SIGNATURE", "POPULAR", "RECOMMEND", "EXCLUSIVE"];
 
 const SANS = adminFont.sans;
-const thb = (n: number) => `฿${Math.round(n || 0).toLocaleString()}`;
 
 // Kept in sync BY HAND with src/utils/discount.ts's hardcoded branches —
 // this page can't introspect that file's conditional logic as data, so

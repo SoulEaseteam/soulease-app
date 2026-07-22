@@ -137,3 +137,52 @@ export function membershipFor(
 
   return { tier: idx >= 0 ? MEMBERSHIP_TIERS[idx] : null, demoted, hasNoShow };
 }
+
+/**
+ * 🆕 28x.99u (audit "Audit หน้าเว็บ แอดมินปัจจุบัน แบบเจาะลึก") — the ONE
+ * correct way to turn a booking doc into membership-eligible spend. Round
+ * 28x.38 (founder: "ยอดสะสมคือยอดตามเมนู ไม่รวมค่าเทกซี่") decided tier +
+ * SunPoints accrue on the MENU amount only, excluding taxi and the
+ * WeChat/Alipay surcharge — but that formula was only ever written inline in
+ * AdminMembersPage.tsx. Three other surfaces (AdminBookingListPage's booking
+ * badges, AdminMembershipPage's live threshold preview, AdminUsersPage's
+ * suggested-tier column) each re-typed `b.totalPrice ?? b.servicePrice ?? 0`
+ * instead — which INCLUDES taxi/surcharge, so a guest with a lot of taxi
+ * spend could show a higher tier on those three pages than what
+ * AdminMembersPage (the real roster) actually enrolls them at. Every call
+ * site should use this function instead of re-deriving spend inline.
+ */
+export function menuSpendForBooking(b: {
+  servicePrice?: number;
+  totalPrice?: number;
+  taxiFee?: number;
+  paymentFee?: number;
+}): number {
+  return typeof b.servicePrice === "number"
+    ? b.servicePrice
+    : Math.max(0, (b.totalPrice ?? 0) - (b.taxiFee ?? 0) - (b.paymentFee ?? 0));
+}
+
+/**
+ * 🆕 28x.99u (audit) — mirrors firestore.rules' isReservedName()/
+ * isReservedPhone() (contactName/customerName containing "sunred", or phone
+ * containing admin's own "634350987"). Those rules already treat this as
+ * "not a real customer identity" on WRITE; nothing mirrored that on READ.
+ * Root cause: when a guest's real phone isn't bookable (foreign number,
+ * contact via Telegram/WhatsApp only), admin has long typed her own phone
+ * as a placeholder and put the guest's real contact in the booking note —
+ * a real, ~1-year-old operational pattern, not test data (126 real bookings
+ * found in an audit, Aug 2025–Jul 2026, real revenue). Every guest-stats
+ * aggregation (Customer Insights, Members roster, Membership preview,
+ * booking-card tier badge) must skip these or the shop's own placeholder
+ * identity shows up as a fake top-spending "VIP customer".
+ */
+export function isReservedShopBooking(b: {
+  contactName?: string | null;
+  customerName?: string | null;
+  phone?: string | null;
+}): boolean {
+  const name = (b.contactName ?? b.customerName ?? "").toLowerCase();
+  const phone = b.phone ?? "";
+  return name.includes("sunred") || phone.includes("634350987");
+}

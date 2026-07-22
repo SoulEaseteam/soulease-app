@@ -41,7 +41,7 @@ import { Crown, Warning, MagnifyingGlass, UsersThree, Repeat, CurrencyCircleDoll
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 // 🆕 28w.60 — membership enrollment (SRD- codes) on the customer insights drawer.
 import {
-  membershipFor, applyMembershipConfig, generateMemberCode, tierRank,
+  membershipFor, menuSpendForBooking, isReservedShopBooking, applyMembershipConfig, generateMemberCode, tierRank,
   MEMBERSHIP_COLORS, MEMBERSHIP_TIERS, type MembershipTier, type MembershipThresholds,
 } from "@/utils/membership";
 import { countryFromPhone, normPhone, type PhoneCountry } from "@/utils/phoneCountry";
@@ -205,6 +205,7 @@ const AdminUsersPage: React.FC = () => {
           const b = d.data() as {
             phone?: string; contactName?: string; customerName?: string;
             status?: string; totalPrice?: number; servicePrice?: number;
+            taxiFee?: number; paymentFee?: number;
             startAt?: { toDate?: () => Date }; date?: string;
             serviceName?: string; therapistName?: string;
           };
@@ -212,6 +213,11 @@ const AdminUsersPage: React.FC = () => {
           if (!raw) return;
           const phone = normPhone(raw);
           if (!phone) return;
+          // 🆕 28x.99u — admin's own placeholder-phone bookings (guest's real
+          //   number wasn't bookable, put in the note instead) aren't a real
+          //   customer — 126 real bookings, Aug 2025-Jul 2026, were showing
+          //   up here as a fake top-spending "SUNRED" VIP guest.
+          if (isReservedShopBooking(b)) return;
           if (!byPhone[phone]) {
             byPhone[phone] = {
               phone,
@@ -229,6 +235,9 @@ const AdminUsersPage: React.FC = () => {
           if (nm && (row.name === row.phone || !row.name)) row.name = nm;
 
           const status = b.status ?? "";
+          // Real amount paid (incl. taxi/surcharge) — for the per-booking
+          // receipt list below, same as AdminUsersPage's own single-booking
+          // "ยอดรวม" line elsewhere in this file.
           const amount = b.totalPrice ?? b.servicePrice ?? 0;
           const visit = serviceDate(b);
           row.orders += 1;
@@ -243,7 +252,12 @@ const AdminUsersPage: React.FC = () => {
           if (NO_SHOW_STATUSES.has(status)) row.noShowCount += 1;
           if (SERVED_STATUSES.has(status)) {
             row.served += 1;
-            row.totalSpent += amount;
+            // 🆕 28x.99u — was `+= amount` (includes taxi/surcharge); the
+            //   suggested tier shown here must use the same menu-only
+            //   formula AdminMembersPage enrolls on, or a guest with heavy
+            //   taxi spend could show a higher suggested tier here than
+            //   what she'd actually be enrolled at.
+            row.totalSpent += menuSpendForBooking(b);
             if (visit && (!row.lastVisit || visit > row.lastVisit)) row.lastVisit = visit;
           }
         });

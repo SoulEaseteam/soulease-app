@@ -85,7 +85,7 @@ import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 //   before, so Earnings behaviour is unchanged.
 import {
   therapistPctFor, therapistPayoutFor, commissionBaseFor, applyServiceSplitConfig,
-  PAYROLL_EXCLUDED_STATUSES as EXCLUDED_STATUSES, noShowCompFor,
+  PAYROLL_EXCLUDED_STATUSES as EXCLUDED_STATUSES, noShowCompFor, isCashPayment,
 } from "@/utils/commission";
 
 // 🆕 Round 28s245 — this page predates adminTheme.ts and still carried its
@@ -122,14 +122,6 @@ const DEFAULT_EARN: EarnConfig = {
   goal: 0,
 };
 
-// 🆕 Round 28s317 — same messy `payment` field as the Pay-Therapists page:
-// customer flow writes a LABEL, admin writes a raw VALUE. Cash = collected in
-// hand by the therapist (shop owes nothing); anything else = money with shop.
-function isCashPayment(payment?: string | null, methodId?: string | null): boolean {
-  const p = (payment ?? "").trim().toLowerCase();
-  const m = (methodId ?? "").trim().toLowerCase();
-  return m === "cash" || p === "cash" || p.startsWith("เงินสด");
-}
 // Customer has paid: the admin `paid` flag if set, else the customer-flow
 // `paymentStatus === "paid"` (mirrors AdminBookingListPage's isPaid).
 function isCustomerPaid(b: BookingRow): boolean {

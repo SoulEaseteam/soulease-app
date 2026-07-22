@@ -118,6 +118,22 @@ export const isPayrollExcluded = (status: string | null | undefined): boolean =>
   !!status && PAYROLL_EXCLUDED_STATUSES.has(status);
 
 /**
+ * 🆕 28x.99u (audit) — was defined byte-for-byte identically in both
+ * AdminEarningsPage.tsx and AdminTherapistPayoutsPage.tsx (the second file's
+ * own comment already admitted it: "same messy `payment` field as the
+ * Pay-Therapists page"). Copy-pasted rather than shared, so it was in sync
+ * only by luck — same latent-drift shape as the pricing-drift lesson in
+ * CLAUDE.md. Cash = collected in hand by the therapist (shop owes nothing);
+ * anything else = money with shop. Customer flow writes a LABEL to
+ * `payment`, admin-add writes a raw VALUE — check both.
+ */
+export function isCashPayment(payment?: string | null, methodId?: string | null): boolean {
+  const p = (payment ?? "").trim().toLowerCase();
+  const m = (methodId ?? "").trim().toLowerCase();
+  return m === "cash" || p === "cash" || p.startsWith("เงินสด");
+}
+
+/**
  * 🆕 28w.52 (founder policy 2026-07-14) — a NO-SHOW (customer didn't come,
  * but the therapist already travelled) earns ฿0 service revenue but still owes
  * the therapist a taxi compensation. Every other excluded status (cancelled /

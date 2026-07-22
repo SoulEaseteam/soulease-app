@@ -4,7 +4,7 @@
 //   Dark hero + today strip + period cards + pending quick-confirm +
 //   responsive charts + quick-link tiles. Matches Bookings/Reports style.
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Typography,
@@ -50,7 +50,6 @@ import {
   XCircle,
   ChartBar,
   Buildings,
-  Taxi,
   Users,
   UserCircle,
   Sparkle,
@@ -64,7 +63,6 @@ import {
   Wallet,
   Coins,
   Crown,
-  Storefront,
 } from "phosphor-react";
 import { fmtBKK } from "@/utils/time";
 import { formatTHB } from "@/utils/servicePricing";
@@ -81,7 +79,6 @@ import { logAdminAction } from "@/utils/auditLog";
 dayjs.extend(relativeTime);
 
 const SANS  = adminFont.sans;
-const SERIF = adminFont.serif;
 
 
 /** Lightweight CSS conic-gradient ring — no chart-library overhead for a single %. */

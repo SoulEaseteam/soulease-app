@@ -56,7 +56,7 @@ import { formatTHB } from "@/utils/servicePricing";
 import { getServiceLabel } from "@/utils/serviceCatalog";
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 import { logAdminAction } from "@/utils/auditLog";
-import { therapistPayoutFor, isPayrollExcluded } from "@/utils/commission";
+import { therapistPayoutFor, isPayrollExcluded, isCashPayment } from "@/utils/commission";
 import { therapistKey, buildRosterIndex, type RosterEntry } from "@/utils/therapistIdentity";
 
 const SERIF = adminFont.serif;
@@ -104,18 +104,6 @@ interface Job {
 }
 
 type UnpaidGroup = { id: string; name: string; subtotal: number; jobs: Job[] };
-
-// The booking `payment` field is written inconsistently across surfaces:
-//   • customer flow  → a LABEL   ("Cash", "PromptPay", "WeChat Pay", …)
-//   • admin add/edit → a raw VALUE ("cash", "transfer", "promptpay", …)
-// Customer docs also carry `paymentMethodId` (the raw id). Cash is the ONLY
-// method the therapist collects in hand, so treat anything NOT identifiably
-// cash as non-cash (money that landed with the shop).
-function isCashPayment(payment?: string | null, methodId?: string | null): boolean {
-  const p = (payment ?? "").trim().toLowerCase();
-  const m = (methodId ?? "").trim().toLowerCase();
-  return m === "cash" || p === "cash" || p.startsWith("เงินสด");
-}
 
 const millis = (t?: Timestamp | null): number =>
   t && typeof t.toMillis === "function" ? t.toMillis() : 0;

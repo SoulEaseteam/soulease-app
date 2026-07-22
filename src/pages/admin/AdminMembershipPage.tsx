@@ -24,7 +24,7 @@ import {
 } from "@/config/anniversary";
 import {
   MEMBERSHIP_TIERS, MEMBERSHIP_COLORS, MEMBERSHIP_LABELS_TH, MEMBERSHIP_DEFAULTS,
-  applyMembershipConfig, effectiveMembershipConfig, membershipFor,
+  applyMembershipConfig, effectiveMembershipConfig, membershipFor, menuSpendForBooking, isReservedShopBooking,
   type MembershipThresholds, type MembershipTier,
 } from "@/utils/membership";
 import { Crown, Prohibit, Coins } from "phosphor-react";
@@ -86,6 +86,8 @@ const AdminMembershipPage: React.FC = () => {
       snap.forEach((d) => {
         const b = d.data() as {
           phone?: string; status?: string; totalPrice?: number; servicePrice?: number;
+          taxiFee?: number; paymentFee?: number;
+          contactName?: string; customerName?: string;
           therapistId?: string; therapistName?: string;
           createdAt?: { toDate?: () => Date; seconds?: number };
           startAt?: { toDate?: () => Date; seconds?: number };
@@ -102,11 +104,17 @@ const AdminMembershipPage: React.FC = () => {
         }
         const phone = normPhone((b.phone ?? "").trim());
         if (!phone) return;
+        // 🆕 28x.99u — admin's own placeholder-phone bookings aren't a real
+        //   customer identity; skip so this can't inflate the tier preview.
+        if (isReservedShopBooking(b)) return;
         const row = (map[phone] ??= { served: 0, totalSpent: 0, lastVisitMs: 0, noShowCount: 0 });
         if (NOSHOW.has(st)) row.noShowCount++;
         if (SERVED.has(st)) {
           row.served++;
-          row.totalSpent += b.totalPrice ?? b.servicePrice ?? 0;
+          // 🆕 28x.99u — was `b.totalPrice ?? b.servicePrice ?? 0`; matches
+          //   AdminMembersPage's canonical 28x.38 menu-only formula now, so
+          //   this live threshold preview can't disagree with the real roster.
+          row.totalSpent += menuSpendForBooking(b);
           const t = b.createdAt ?? b.startAt;
           const ms = t?.toDate ? t.toDate().getTime() : (typeof t?.seconds === "number" ? t.seconds * 1000 : 0);
           if (ms > row.lastVisitMs) row.lastVisitMs = ms;

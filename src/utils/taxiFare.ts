@@ -60,61 +60,6 @@ export const DISPATCH_BASE = { lat: 13.7548, lng: 100.5656 } as const;
  *  distance" never triggers; every trip is a paid trip. */
 export const FREE_DISTANCE_KM = 0;
 
-/**
- * 🆕 Round 28w.11 (founder 2026-07-13) — SunRed's fixed dispatch TRAVEL
- * BUDGET by real (road) distance. Founder-set flat bands, deliberately
- * EXCLUDING weather + peak-traffic surcharges (the concierge quotes those
- * live at booking). Used by the near-me taxi estimator instead of the
- * GrabCar meter maths below. Returns null beyond 30 km (out of the standard
- * table → concierge quotes the fare).
- *
- *   ≤5 km → ฿100 · ≤10 km → ฿200 · ≤15 km → ฿350 · ≤20 km → ฿600 · ≤30 km → ฿800
- */
-export interface TravelBand {
-  /** Upper bound of the band, in km (inclusive). */
-  maxKm: number;
-  /** What the guest pays for travel inside this band, in THB. */
-  fareTHB: number;
-}
-
-/**
- * 🆕 Round 28x.6 (founder: "เทคซี่ละ") — the bands are ADMIN-EDITABLE now.
- *
- * They used to be hardcoded here, which meant the ONE number a guest actually
- * pays for travel was the only fare value she could not change: applyLiveFareConfig
- * already exposed the surge %, the booking fee, the round-trip multiplier and the
- * quote cutoff — every knob EXCEPT the fare itself. Same shape of bug as the dead
- * price editor in 28w.79.
- *
- * The values below stay as the DEFAULTS, so an absent or unusable config falls
- * back to the founder's current table rather than leaving travel unpriced.
- */
-export const DEFAULT_TRAVEL_BANDS: TravelBand[] = [
-  { maxKm: 5,  fareTHB: 100 },
-  { maxKm: 10, fareTHB: 200 },
-  { maxKm: 15, fareTHB: 350 },
-  { maxKm: 20, fareTHB: 600 },
-  { maxKm: 30, fareTHB: 800 },
-];
-
-let liveTravelBands: TravelBand[] = DEFAULT_TRAVEL_BANDS;
-
-/** The live table — what the admin has configured, or the defaults. */
-export function travelBands(): TravelBand[] {
-  return liveTravelBands;
-}
-
-export function travelBudgetForKm(km: number): number | null {
-  if (!Number.isFinite(km) || km < 0) return null;
-  // Bands are sorted ascending, so the first one we fit inside is the right one.
-  for (const b of liveTravelBands) {
-    if (km <= b.maxKm) return b.fareTHB;
-  }
-  // Beyond the last band the concierge quotes it — returning a number here would
-  // invent a fare for a trip nobody has priced.
-  return null;
-}
-
 // 🆕 Round 28x.47 (founder: "ปัดเศษลง แล้วขึ้นข้อความ ประหยัด ค่าเดินทางแบบแกรปทำ") —
 //   an online-booking saving on the travel fee, presented Grab-style: the band
 //   fare is the struck "original", and the guest actually pays a slightly lower,
@@ -247,20 +192,16 @@ export function applyLiveFareConfig(cfg: {
   grabBookingFee?: number;
   rushSurgePct?: number;
   peakSurgePct?: number;
-  travelBands?: TravelBand[];
+  motoFareCheckpoints?: [number, number][];
 }): void {
-  // 🆕 28x.6 — the travel table. Guarded hard: a half-typed row, a zero fare, or
-  //   an emptied list falls back to the defaults rather than pricing travel at 0
-  //   or leaving it unpriced. Sorted, because travelBudgetForKm returns the first
-  //   band the distance fits and an out-of-order table would hand out the wrong one.
-  if (Array.isArray(cfg.travelBands)) {
-    const clean = cfg.travelBands
-      .filter((b) => b && typeof b.maxKm === "number" && b.maxKm > 0
-                       && typeof b.fareTHB === "number" && b.fareTHB > 0)
-      .map((b) => ({ maxKm: b.maxKm, fareTHB: Math.round(b.fareTHB) }))
-      .sort((a, b) => a.maxKm - b.maxKm);
-    liveTravelBands = clean.length ? clean : DEFAULT_TRAVEL_BANDS;
-  }
+  // 🆕 28x.99u — was `travelBands` (TravelBand[] flat-band shape), which fed
+  //   the dead `travelBudgetForKm()`/`calcTravelBudgetResult()` pair: nothing
+  //   in the live fare path (calcTaxiFare → motoRoundTripFare) had called
+  //   those since the 28x.99n checkpoint-interpolation rewrite, so admin's
+  //   edits here silently stopped affecting any real fare. Reconnected to
+  //   the checkpoint model that's actually live now — setMotoFareCheckpoints
+  //   already validates/sorts/no-ops on bad input, same guarantee as before.
+  if (Array.isArray(cfg.motoFareCheckpoints)) setMotoFareCheckpoints(cfg.motoFareCheckpoints);
   if (typeof cfg.adminQuoteKm === "number" && cfg.adminQuoteKm > 0) ADMIN_QUOTE_KM = cfg.adminQuoteKm;
   if (typeof cfg.roundTripMultiplier === "number" && cfg.roundTripMultiplier > 1) ROUND_TRIP_MULTIPLIER = cfg.roundTripMultiplier;
   if (typeof cfg.grabBookingFee === "number" && cfg.grabBookingFee >= 0) GRAB_BOOKING_FEE = cfg.grabBookingFee;
@@ -368,6 +309,12 @@ export function setMotoFareCheckpoints(points: [number, number][]): void {
     .filter((p) => Array.isArray(p) && p.length === 2 && Number.isFinite(p[0]) && Number.isFinite(p[1]) && p[0] >= 0 && p[1] > 0)
     .sort((a, b) => a[0] - b[0]);
   if (clean.length >= 2) MOTO_FARE_CHECKPOINTS = clean;
+}
+
+/** The live checkpoint table — what admin has configured, or the
+ *  spot-checked defaults. For the Advanced Settings editor (28x.99u). */
+export function motoFareCheckpoints(): [number, number][] {
+  return MOTO_FARE_CHECKPOINTS;
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -554,40 +501,3 @@ export function estimateTaxiFare(
   };
 }
 
-/**
- * 🆕 Round 28w.11 (founder 2026-07-13) — booking-flow taxi fee from the SAME
- * fixed travel-budget bands as the near-me estimator (travelBudgetForKm),
- * packaged as a TaxiFareResult so BookingFlowPage's fare summary keeps
- * rendering. Flat by real distance — NO weather / peak-traffic surge (rain is
- * forced to "none"). Beyond 30 km → tier "admin" (fare null → concierge quotes).
- */
-export function calcTravelBudgetResult(distanceKm: number): TaxiFareResult {
-  const noRain: RainStatus = { tier: "none", surchargePct: 0, label: "Clear", fetchedAt: 0 };
-  const budget = travelBudgetForKm(distanceKm);
-  if (budget == null) {
-    return {
-      fare: null,
-      tier: "admin",
-      label: `Over 30 km · ${distanceKm.toFixed(1)} km`,
-      distanceKm,
-      baseFareBeforeRain: 0,
-      rain: noRain,
-      oneWayFare: 0,
-      bookingFee: 0,
-      surgePct: 0,
-      vehicle: "moto",
-    };
-  }
-  return {
-    fare: budget,
-    tier: "standard",
-    label: `Travel budget · ${distanceKm.toFixed(1)} km`,
-    distanceKm,
-    baseFareBeforeRain: budget,
-    rain: noRain,
-    oneWayFare: budget,
-    bookingFee: 0,
-    surgePct: 0,
-    vehicle: "moto",
-  };
-}

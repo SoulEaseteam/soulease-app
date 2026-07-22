@@ -43,7 +43,7 @@ import React, { useEffect, useState } from "react";
 import { Box, Typography, Switch, TextField, Button, Snackbar, Alert, CircularProgress } from "@mui/material";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { DEFAULT_TRAVEL_BANDS, travelBudgetForKm, type TravelBand } from "@/utils/taxiFare";
+import { motoFareCheckpoints, motoRoundTripFare } from "@/utils/taxiFare";
 import { Clock, CreditCard, Wallet, FloppyDisk, Warning, CheckCircle, MoonStars } from "phosphor-react";
 import { adminColor, adminFont } from "@/theme/adminTheme";
 import { SectionCard, fieldSx } from "./therapistFormKit";
@@ -64,7 +64,13 @@ interface PublicRules {
   peakSurgePct: number;
   // 🆕 28x.6 (founder: "เทคซี่ละ") — the travel-fee table. Every other fare knob
   //   was already editable here; the ONE number the guest actually pays was not.
-  travelBands: TravelBand[];
+  // 🆕 28x.99u — was `travelBands` (TravelBand[], flat "up to X km" shape),
+  //   which fed the dead travelBudgetForKm()/calcTravelBudgetResult() pair —
+  //   the live moto fare (calcTaxiFare → motoRoundTripFare) hasn't read that
+  //   since the 28x.99n checkpoint-interpolation rewrite, so this editor was
+  //   saving successfully and changing nothing. Reconnected to the model
+  //   that's actually live: [km, round-trip ฿][] checkpoints, interpolated.
+  motoFareCheckpoints: [number, number][];
 }
 const defaultPublicRules: PublicRules = {
   maintenanceMode: false,
@@ -75,7 +81,9 @@ const defaultPublicRules: PublicRules = {
   grabBookingFee: 20,
   rushSurgePct: 25,
   peakSurgePct: 15,
-  travelBands: DEFAULT_TRAVEL_BANDS,
+  // Seeded from the live module value so the form's fallback always matches
+  // today's real fare, not a second hardcoded copy that can drift from it.
+  motoFareCheckpoints: motoFareCheckpoints(),
 };
 
 // 🆕 28x.88 — telegramEnabled moved to SunRed Bot → Telegram Bot (still the
@@ -214,50 +222,56 @@ const AdminAdvancedSettingsPage: React.FC = () => {
           />
         </SectionCard>
 
-        {/* 📍 Travel fee — 🆕 28x.6 (founder: "เทคซี่ละ")
-             REWRITTEN. This section used to explain a GrabCar meter formula
-             (meter x round-trip multiplier + booking fee x surge) and offer four
-             fields to tune it. Since 28w.11 the booking charges a FLAT BAND TABLE
-             and ignores all of that: roundTripMultiplier, rushSurgePct and
-             peakSurgePct are referenced nowhere outside taxiFare.ts, and
-             grabBookingFee only ever appeared in a customer tooltip — it was never
-             added to a bill. So the page described a formula we do not use, let her
-             tune knobs that changed nothing, and did NOT let her edit the one number
-             a guest actually pays. Those four fields are gone; the table is here. */}
+        {/* 📍 Travel fee — 🆕 28x.6 (founder: "เทคซี่ละ") introduced this
+             editable table. 🆕 28x.99u (audit "Audit หน้าเว็บ แอดมินปัจจุบัน
+             แบบเจาะลึก") — that table went silently dead when 28x.99n
+             rewrote the fare model to interpolate between real spot-checked
+             GrabBike checkpoints instead of flat bands: it kept saving to
+             Firestore and this card kept showing "Live", but nothing in the
+             real fare path (calcTaxiFare → motoRoundTripFare) read the saved
+             value anymore. Reconnected — this now edits the actual
+             checkpoint table motoRoundTripFare() interpolates between. */}
         <SectionCard icon={<CreditCard size={13} weight="bold" />} title="Travel Fee · ค่าเดินทาง">
           <Box sx={{ mb: 1 }}><LiveBadge /></Box>
           <Typography sx={{ fontSize: 12, color: adminColor.muted, mb: 1.5 }}>
-            ค่าเดินทาง = <b>เหมาตามระยะจริง (ระยะถนน)</b> · ไม่ใช่มิเตอร์ ไม่มี surge ไม่บวกค่าเรียกรถ ·
-            เกินระยะสูงสุดด้านล่าง → ให้ลูกค้าติดต่อผู้ช่วยส่วนตัวแทนคิดราคาอัตโนมัติ
+            ค่าเดินทาง (รถมอเตอร์ไซค์ · ใช้ตอนไม่มีฝน) = <b>เทียบเคียงจากจุดอ้างอิงราคาจริง</b> แล้วปัดเศษเป็นสิบบาท ·
+            ระหว่างจุดจะไล่ราคาขึ้นแบบเนียน ไม่ใช่ขั้นบันได · เกินระยะสูงสุดด้านล่าง → ให้ลูกค้าติดต่อผู้ช่วยส่วนตัวแทนคิดราคาอัตโนมัติ ·
+            (วันฝนตกใช้รถยนต์แทน คิดตามมิเตอร์จริง ไม่ใช่ตารางนี้)
           </Typography>
 
           <Typography sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: adminColor.dim, mb: 0.75 }}>
-            ตารางค่าเดินทาง
+            จุดอ้างอิงราคา (มอเตอร์ไซค์ ไป-กลับ)
           </Typography>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 1.5 }}>
-            {rules.travelBands.map((b, i) => (
+            {rules.motoFareCheckpoints.map(([km, thb], i) => (
               <Box key={i} sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                <Typography sx={{ fontSize: 12, color: adminColor.dim, width: 34, flexShrink: 0 }}>ไม่เกิน</Typography>
+                <Typography sx={{ fontSize: 12, color: adminColor.dim, width: 34, flexShrink: 0 }}>ที่</Typography>
                 <TextField
                   type="number" size="small" label="กม." sx={{ ...fieldSx, width: 100 }}
-                  value={b.maxKm}
+                  value={km}
                   onChange={(e) => {
-                    const v = Math.max(1, Number(e.target.value));
-                    setRules((p) => ({ ...p, travelBands: p.travelBands.map((x, j) => j === i ? { ...x, maxKm: v } : x) }));
+                    const v = Math.max(0, Number(e.target.value));
+                    setRules((p) => ({
+                      ...p,
+                      motoFareCheckpoints: p.motoFareCheckpoints.map((pt, j) => j === i ? [v, pt[1]] : pt),
+                    }));
                   }}
                 />
                 <Typography sx={{ fontSize: 12, color: adminColor.dim, flexShrink: 0 }}>→</Typography>
                 <TextField
-                  type="number" size="small" label="ค่าเดินทาง (฿)" sx={{ ...fieldSx, width: 140 }}
-                  value={b.fareTHB}
+                  type="number" size="small" label="ไป-กลับ (฿)" sx={{ ...fieldSx, width: 140 }}
+                  value={thb}
                   onChange={(e) => {
                     const v = Math.max(1, Number(e.target.value));
-                    setRules((p) => ({ ...p, travelBands: p.travelBands.map((x, j) => j === i ? { ...x, fareTHB: v } : x) }));
+                    setRules((p) => ({
+                      ...p,
+                      motoFareCheckpoints: p.motoFareCheckpoints.map((pt, j) => j === i ? [pt[0], v] : pt),
+                    }));
                   }}
                 />
                 <Button
                   size="small" variant="text"
-                  onClick={() => setRules((p) => ({ ...p, travelBands: p.travelBands.filter((_, j) => j !== i) }))}
+                  onClick={() => setRules((p) => ({ ...p, motoFareCheckpoints: p.motoFareCheckpoints.filter((_, j) => j !== i) }))}
                   sx={{ minWidth: "auto", color: adminColor.red, textTransform: "none", fontWeight: 700, fontSize: 12 }}
                 >
                   ลบ
@@ -268,19 +282,23 @@ const AdminAdvancedSettingsPage: React.FC = () => {
               size="small" variant="text"
               onClick={() => setRules((p) => ({
                 ...p,
-                travelBands: [...p.travelBands, { maxKm: (p.travelBands.at(-1)?.maxKm ?? 0) + 5, fareTHB: (p.travelBands.at(-1)?.fareTHB ?? 0) + 100 }],
+                motoFareCheckpoints: [
+                  ...p.motoFareCheckpoints,
+                  [(p.motoFareCheckpoints.at(-1)?.[0] ?? 0) + 5, (p.motoFareCheckpoints.at(-1)?.[1] ?? 0) + 100],
+                ],
               }))}
               sx={{ alignSelf: "flex-start", color: adminColor.accent, textTransform: "none", fontWeight: 700, fontSize: 12.5 }}
             >
-              + เพิ่มช่วง
+              + เพิ่มจุด
             </Button>
           </Box>
 
-          {/* Live preview — a wrong band is far easier to see as a fare than as a table. */}
+          {/* Live preview — a wrong checkpoint is far easier to see as a fare than as a table. */}
           <Typography sx={{ fontSize: 11, color: adminColor.dim, mb: 1.5, lineHeight: 1.7 }}>
             ลองคิดจริง:{" "}
             {[3, 8, 12, 18, 25].map((km) => {
-              const f = travelBudgetForKm(km);
+              const overQuote = km > rules.maxDistance;
+              const f = overQuote ? null : motoRoundTripFare(km);
               return (
                 <Box key={km} component="span" sx={{ mr: 1.25 }}>
                   {km} กม. → <b style={{ color: adminColor.text }}>{f === null ? "ผู้ช่วยส่วนตัวเสนอราคา" : `฿${f.toLocaleString()}`}</b>

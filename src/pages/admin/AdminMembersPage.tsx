@@ -29,6 +29,8 @@ import { adminCreateCustomerAccount, adminSetMemberAdmin } from "@/utils/adminCr
 import { pointsFor, pointsValueTHB, sunPointEarnPerTHB } from "@/config/anniversary";
 import {
   membershipFor,
+  menuSpendForBooking,
+  isReservedShopBooking,
   applyMembershipConfig,
   generateMemberCode,
   tierRank,
@@ -164,16 +166,14 @@ const AdminMembersPage: React.FC = () => {
         };
         const phone = normPhone((b.phone ?? "").trim());
         if (!phone) return;
+        // 🆕 28x.99u — admin's own placeholder-phone bookings (guest's real
+        //   number wasn't bookable) aren't a real customer identity.
+        if (isReservedShopBooking(b)) return;
         // 🆕 Round 28x.38 (founder: "ยอดสะสมคือยอดตามเมนู ไม่รวมค่าเทกซี่") —
         //   membership tier + SunPoints accrue on the MENU amount only, not
-        //   the paid total. `servicePrice` is the menu (service + add-ons),
-        //   which already excludes taxi and the WeChat/Alipay payment
-        //   surcharge. Old bookings without servicePrice fall back to
-        //   totalPrice minus those two non-menu fees.
-        const menuTHB =
-          typeof b.servicePrice === "number"
-            ? b.servicePrice
-            : Math.max(0, (b.totalPrice ?? 0) - (b.taxiFee ?? 0) - (b.paymentFee ?? 0));
+        //   the paid total. See membership.ts's menuSpendForBooking() for
+        //   the shared formula — every surface must use the same one.
+        const menuTHB = menuSpendForBooking(b);
         const tAny = b.startAt ?? b.createdAt;
         const whenMs = tAny?.toDate ? tAny.toDate().getTime() : (typeof tAny?.seconds === "number" ? tAny.seconds * 1000 : 0);
         (hist[phone] ??= []).push({
