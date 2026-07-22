@@ -230,30 +230,44 @@ they prefer.
 - ❌ Singapore website ad — ฿7,500/mo × 10 months = ฿75,000 burnt, 0
   ROI, audience too narrow
 
-### Paused channel — likely worth revisiting (2026-07-22)
+### Paused channel — cost AND customer-quality, not just cost (2026-07-22)
 - ⏸️ **Sammyboy/Samsguide network** (samsguide.living/.services,
   sammyboyforum.com, sbf.net.nz, samsforum.com — same forum family) —
-  cancelled by founder for cost (billed every 2 months at ฿15,200,
-  ~฿7,600/mo effective), NOT confirmed dead like
-  the Singapore ad above. A read-only audit of `analytics_events` +
-  `bookings` (28x.99t) found real signal while it ran: **213 unique
-  sessions**, `samsguide.living` alone was the site's **#2 referrer**
-  (163 hits, behind only Google, ahead of Instagram+Telegram+Twitter
-  combined), **27 sessions (12.7%) opened the concierge chat**, 5
-  reached `booking_start`, 1 confirmed `booking_complete`. The true
-  booking count is very likely higher — most guests close via direct
-  Telegram/WhatsApp with the concierge rather than the tracked
-  in-app booking flow, and **only 32 of 615 total booking docs carry
-  ANY attribution field at all** (`attributionSource`/`utmSource`/
-  `referrerHost` mostly empty) — so this channel's real ROI was
-  probably invisible at cancellation time, not actually zero.
-  Booking-level attribution capture (the actual gap) was fixed the
-  same night, Round 28x.99t: `attributionSource` dropdown on New
-  Booking + the edit drawer (AdminBookingAddPage.tsx /
-  AdminBookingListPage.tsx). A one-time scheduled reminder
-  (`sammyboy-attribution-checkin`, fires 2026-08-05) will pull ~2
-  weeks of real attribution data and re-surface this decision — if
-  that's already happened by the time you're reading this, check
+  cancelled by founder, confirmed 2026-07-22 real bank slips (billed
+  every 2 months, ~฿15,000-15,200/cycle, ~฿7,500-7,600/mo effective;
+  the shifting recipient name/bank across payments is just how this
+  informally-run forum collects money, not a red flag — founder
+  confirmed). TWO reasons she stopped, not one:
+  1. **Cost** — didn't feel worth it at the time (couldn't see if it
+     converted — see attribution gap below).
+  2. **Customer quality** (founder, 2026-07-22: "ลูกค้าจร ที่มาไทย
+     ไม่ใช่ ลค ในไทย") — Sammyboy mostly brings ONE-TIME transient
+     foreign tourists passing through Thailand, not repeat local
+     customers. This matters MORE than reason #1: even if traffic/
+     ROI numbers look good, that doesn't override a real customer-mix
+     concern. Don't recommend resuming based on traffic data alone —
+     the founder needs to independently decide whether one-time
+     tourist volume is worth it, separate from whether it "worked."
+  A read-only audit of `analytics_events` + `bookings` (28x.99t) found
+  real signal while it ran: **213 unique sessions**, `samsguide.living`
+  alone was the site's **#2 referrer** (163 hits, behind only Google,
+  ahead of Instagram+Telegram+Twitter combined), **27 sessions (12.7%)
+  opened the concierge chat**, 5 reached `booking_start`, 1 confirmed
+  `booking_complete`. The true booking count is very likely higher —
+  most guests close via direct Telegram/WhatsApp with the concierge
+  rather than the tracked in-app booking flow, and **only 32 of 615
+  total booking docs carry ANY attribution field at all**
+  (`attributionSource`/`utmSource`/`referrerHost` mostly empty) — so
+  reason #1 (cost/ROI-visibility) was probably a real, fixable gap.
+  Reason #2 (customer mix) is a separate, harder call that data alone
+  won't resolve. Booking-level attribution capture was fixed the same
+  night, Round 28x.99t: `attributionSource` dropdown on New Booking +
+  the edit drawer (AdminBookingAddPage.tsx / AdminBookingListPage.tsx).
+  A one-time scheduled reminder (`sammyboy-attribution-checkin`, fires
+  2026-08-05) will pull ~2 weeks of real attribution data — its job is
+  to answer reason #1 with real numbers, NOT to recommend resuming on
+  its own; reason #2 is View's call to make, present both. If that
+  reminder has already fired by the time you're reading this, check
   whether View acted on it before repeating the analysis.
 
 ---
