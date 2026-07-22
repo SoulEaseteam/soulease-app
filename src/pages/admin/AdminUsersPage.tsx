@@ -41,7 +41,7 @@ import { Crown, Warning, MagnifyingGlass, UsersThree, Repeat, CurrencyCircleDoll
 import { adminColor, adminFont, adminFigureSx } from "@/theme/adminTheme";
 // 🆕 28w.60 — membership enrollment (SRD- codes) on the customer insights drawer.
 import {
-  membershipFor, menuSpendForBooking, isReservedShopBooking, applyMembershipConfig, generateMemberCode, tierRank,
+  membershipFor, menuSpendForBooking, isReservedShopBooking, isTestLocationBooking, applyMembershipConfig, generateMemberCode, tierRank,
   MEMBERSHIP_COLORS, MEMBERSHIP_TIERS, type MembershipTier, type MembershipThresholds,
 } from "@/utils/membership";
 import { countryFromPhone, normPhone, type PhoneCountry } from "@/utils/phoneCountry";
@@ -206,6 +206,7 @@ const AdminUsersPage: React.FC = () => {
             phone?: string; contactName?: string; customerName?: string;
             status?: string; totalPrice?: number; servicePrice?: number;
             taxiFee?: number; paymentFee?: number;
+            locationName?: string; address?: string;
             startAt?: { toDate?: () => Date }; date?: string;
             serviceName?: string; therapistName?: string;
           };
@@ -217,7 +218,8 @@ const AdminUsersPage: React.FC = () => {
           //   number wasn't bookable, put in the note instead) aren't a real
           //   customer — 126 real bookings, Aug 2025-Jul 2026, were showing
           //   up here as a fake top-spending "SUNRED" VIP guest.
-          if (isReservedShopBooking(b)) return;
+          // 🆕 28x.99v — plus known QA test addresses (see isTestLocationBooking).
+          if (isReservedShopBooking(b) || isTestLocationBooking(b)) return;
           if (!byPhone[phone]) {
             byPhone[phone] = {
               phone,

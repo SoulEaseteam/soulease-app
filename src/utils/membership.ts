@@ -186,3 +186,28 @@ export function isReservedShopBooking(b: {
   const phone = b.phone ?? "";
   return name.includes("sunred") || phone.includes("634350987");
 }
+
+/**
+ * 🆕 28x.99v (founder "Aspire อโศก-รัชดา ... ดูออเดอที่ยุประมารนี้ คือเทส
+ * ระบบหมด") — a second, address-based test-data pattern the name/phone check
+ * above never caught. QA/founder booking-flow tests have used this one condo
+ * (Aspire Asoke-Ratchada / 779 & 70ค. Soi Prompan / the QH86+45P plus-code)
+ * as the go-to test address since Sep 2025, cycling through dozens of
+ * throwaway phone numbers and even the founder's own name ("View") instead
+ * of "SUNRED" — so the identity check above misses them, but the address
+ * never changes. Matched on the building/soi identifiers, NOT the "Din
+ * Daeng" district name — the district is large and has real guests (e.g. a
+ * guest named "Amphon" at a different Din Daeng condo is a genuine booking
+ * and must not be swept in here).
+ */
+export function isTestLocationBooking(b: {
+  locationName?: string | null;
+  address?: string | null;
+}): boolean {
+  const loc = `${b.locationName ?? ""} ${b.address ?? ""}`.toLowerCase();
+  return (
+    loc.includes("aspire") ||
+    loc.includes("ซอย พร้อมพันธ์") ||
+    loc.includes("qh86+45p")
+  );
+}

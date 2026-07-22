@@ -31,6 +31,7 @@ import {
   membershipFor,
   menuSpendForBooking,
   isReservedShopBooking,
+  isTestLocationBooking,
   applyMembershipConfig,
   generateMemberCode,
   tierRank,
@@ -160,6 +161,7 @@ const AdminMembersPage: React.FC = () => {
           phone?: string; status?: string; totalPrice?: number; servicePrice?: number;
           taxiFee?: number; paymentFee?: number;
           contactName?: string; customerName?: string;
+          locationName?: string; address?: string;
           serviceName?: string; therapistName?: string;
           createdAt?: { toDate?: () => Date; seconds?: number };
           startAt?: { toDate?: () => Date; seconds?: number };
@@ -168,7 +170,8 @@ const AdminMembersPage: React.FC = () => {
         if (!phone) return;
         // 🆕 28x.99u — admin's own placeholder-phone bookings (guest's real
         //   number wasn't bookable) aren't a real customer identity.
-        if (isReservedShopBooking(b)) return;
+        // 🆕 28x.99v — plus known QA test addresses (see isTestLocationBooking).
+        if (isReservedShopBooking(b) || isTestLocationBooking(b)) return;
         // 🆕 Round 28x.38 (founder: "ยอดสะสมคือยอดตามเมนู ไม่รวมค่าเทกซี่") —
         //   membership tier + SunPoints accrue on the MENU amount only, not
         //   the paid total. See membership.ts's menuSpendForBooking() for

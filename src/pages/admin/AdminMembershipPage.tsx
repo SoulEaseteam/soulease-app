@@ -24,7 +24,7 @@ import {
 } from "@/config/anniversary";
 import {
   MEMBERSHIP_TIERS, MEMBERSHIP_COLORS, MEMBERSHIP_LABELS_TH, MEMBERSHIP_DEFAULTS,
-  applyMembershipConfig, effectiveMembershipConfig, membershipFor, menuSpendForBooking, isReservedShopBooking,
+  applyMembershipConfig, effectiveMembershipConfig, membershipFor, menuSpendForBooking, isReservedShopBooking, isTestLocationBooking,
   type MembershipThresholds, type MembershipTier,
 } from "@/utils/membership";
 import { Crown, Prohibit, Coins } from "phosphor-react";
@@ -88,6 +88,7 @@ const AdminMembershipPage: React.FC = () => {
           phone?: string; status?: string; totalPrice?: number; servicePrice?: number;
           taxiFee?: number; paymentFee?: number;
           contactName?: string; customerName?: string;
+          locationName?: string; address?: string;
           therapistId?: string; therapistName?: string;
           createdAt?: { toDate?: () => Date; seconds?: number };
           startAt?: { toDate?: () => Date; seconds?: number };
@@ -106,7 +107,8 @@ const AdminMembershipPage: React.FC = () => {
         if (!phone) return;
         // 🆕 28x.99u — admin's own placeholder-phone bookings aren't a real
         //   customer identity; skip so this can't inflate the tier preview.
-        if (isReservedShopBooking(b)) return;
+        // 🆕 28x.99v — plus known QA test addresses (see isTestLocationBooking).
+        if (isReservedShopBooking(b) || isTestLocationBooking(b)) return;
         const row = (map[phone] ??= { served: 0, totalSpent: 0, lastVisitMs: 0, noShowCount: 0 });
         if (NOSHOW.has(st)) row.noShowCount++;
         if (SERVED.has(st)) {

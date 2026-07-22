@@ -110,7 +110,7 @@ import { validateDiscount } from "@/utils/discount";
 // 🆕 28w.59 — customer membership tiers (Bronze/Silver/Gold/BlackVIP) + no-show
 //   flag, badged on each order. Full-history per-phone aggregate, tier from the
 //   shared membership util (same config as the Membership admin page).
-import { membershipFor, menuSpendForBooking, isReservedShopBooking, applyMembershipConfig, MEMBERSHIP_COLORS, type MembershipThresholds, type MembershipResult } from "@/utils/membership";
+import { membershipFor, menuSpendForBooking, isReservedShopBooking, isTestLocationBooking, applyMembershipConfig, MEMBERSHIP_COLORS, type MembershipThresholds, type MembershipResult } from "@/utils/membership";
 import { bookingAuthorLabel } from "@/utils/bookingAuthor";
 import { normPhone } from "@/utils/phoneCountry";
 import {
@@ -348,6 +348,7 @@ const AdminBookingListPage: React.FC = () => {
           phone?: string; status?: string; totalPrice?: number; servicePrice?: number;
           taxiFee?: number; paymentFee?: number;
           contactName?: string; customerName?: string;
+          locationName?: string; address?: string;
           createdAt?: { toDate?: () => Date; seconds?: number };
           startAt?: { toDate?: () => Date; seconds?: number };
         };
@@ -355,7 +356,8 @@ const AdminBookingListPage: React.FC = () => {
         if (!phone) return;
         // 🆕 28x.99u — admin's own placeholder-phone bookings aren't a real
         //   customer identity; skip so this can't show as a top-spend guest.
-        if (isReservedShopBooking(b)) return;
+        // 🆕 28x.99v — plus known QA test addresses (see isTestLocationBooking).
+        if (isReservedShopBooking(b) || isTestLocationBooking(b)) return;
         const row = (map[phone] ??= { served: 0, totalSpent: 0, lastVisitMs: 0, noShowCount: 0 });
         const st = b.status ?? "";
         if (NOSHOW.has(st)) row.noShowCount++;
