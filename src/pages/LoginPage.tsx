@@ -10,7 +10,7 @@
 //   • a11y / password-manager: labelled fields + type="email" +
 //     autoComplete="email" / "current-password".
 //   • Avatar (LCP image) → loading="eager".
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   TextField,
@@ -21,6 +21,7 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
+import { DeviceMobile, Export, DotsThreeVertical, Download } from "phosphor-react";
 import PasswordField from "@/components/common/PasswordField";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
@@ -76,6 +77,14 @@ const fieldSx = {
 
 type LoginRole = "admin" | "therapist" | "user";
 
+// 🆕 Round 28x.119 — `beforeinstallprompt` is Chromium-only and not part of
+// TypeScript's DOM lib, so it needs a local type. Shape per the (nonstandard)
+// spec Chrome/Edge/Samsung Internet implement.
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
 // 🆕 Round 28x.76 (founder: "ตั้งทางเข้าใหม่ ให้พนักงาน แยกออกจากทางเข้าเดียว
 //   กับลูกค้าได้ไหม") — /staff renders this same page with staff framing.
 //
@@ -122,6 +131,74 @@ const LoginPage: React.FC<LoginPageProps> = ({ staff = false }) => {
     message: "",
     severity: "success" as "success" | "error",
   });
+
+  // 🆕 Round 28x.119 (founder: "ทำหน้าทางเข้าให้พนักงานโหลดลงเครื่องได้") —
+  // let a practitioner add /staff to her home screen like a real app icon.
+  // No service worker / full PWA here — just a manifest + the platform's
+  // native install affordances:
+  //   • Android/Chrome fires `beforeinstallprompt`, which we capture and
+  //     trigger from a real button (one tap, no browser menu-hunting).
+  //   • iOS Safari has NO install API at all — Apple never shipped one —
+  //     so that path is always manual instructions (Share → Add to Home
+  //     Screen), OS-detected via user agent.
+  // Skipped entirely if already running installed (display-mode: standalone
+  // / iOS's `navigator.standalone`), or if this isn't the staff door.
+  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
+  const [alreadyInstalled, setAlreadyInstalled] = useState(false);
+  useEffect(() => {
+    if (!staff) return;
+    const nav = navigator as Navigator & { standalone?: boolean };
+    if (window.matchMedia("(display-mode: standalone)").matches || nav.standalone) {
+      setAlreadyInstalled(true);
+    }
+
+    const onBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setInstallEvent(e as BeforeInstallPromptEvent);
+    };
+    const onInstalled = () => {
+      setAlreadyInstalled(true);
+      setInstallEvent(null);
+    };
+    window.addEventListener("beforeinstallprompt", onBeforeInstall);
+    window.addEventListener("appinstalled", onInstalled);
+
+    // Manifest + iOS home-screen meta tags — only linked on the staff door,
+    // so a customer browsing the storefront never sees a "SunRed Staff"
+    // install offer. Removed on unmount so it can't leak onto whatever page
+    // she lands on right after logging in.
+    const manifestLink = document.createElement("link");
+    manifestLink.rel = "manifest";
+    manifestLink.href = "/staff-manifest.webmanifest";
+    document.head.appendChild(manifestLink);
+    const appleTitle = document.createElement("meta");
+    appleTitle.name = "apple-mobile-web-app-title";
+    appleTitle.content = "SunRed Staff";
+    document.head.appendChild(appleTitle);
+    const appleCapable = document.createElement("meta");
+    appleCapable.name = "apple-mobile-web-app-capable";
+    appleCapable.content = "yes";
+    document.head.appendChild(appleCapable);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
+      window.removeEventListener("appinstalled", onInstalled);
+      manifestLink.remove();
+      appleTitle.remove();
+      appleCapable.remove();
+    };
+  }, [staff]);
+
+  const handleInstallTap = async () => {
+    if (!installEvent) return;
+    await installEvent.prompt();
+    await installEvent.userChoice;
+    setInstallEvent(null);
+  };
+
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && "ontouchend" in document);
+  const isAndroid = /Android/.test(ua);
 
   // 🆕 Round 28w.81 — a failed sign-in used to surface the raw SDK string
   //   ("Login failed: Firebase: Error (auth/invalid-credential)."), which tells
@@ -426,6 +503,60 @@ const LoginPage: React.FC<LoginPageProps> = ({ staff = false }) => {
           <Typography mt={4} fontSize={14} sx={{ color: "var(--sr-muted)" }} textAlign="center">
             {t("auth.guestNote", "You may proceed with booking without an account.")}
           </Typography>
+        )}
+
+        {/* 🆕 Round 28x.119 (founder: "ทำหน้าทางเข้าให้พนักงานโหลดลงเครื่องได้") —
+            add-to-home-screen card. Hidden once already installed. */}
+        {staff && !alreadyInstalled && (
+          <Box
+            sx={{
+              mt: 3,
+              p: "16px",
+              borderRadius: 3,
+              background: "var(--sr-panel)",
+              border: "1px solid var(--sr-hairline)",
+              boxShadow: "var(--sr-card-shadow)",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+              <Box sx={{ width: 30, height: 30, borderRadius: "50%", background: "linear-gradient(135deg, #E0708F, #C2185B)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <DeviceMobile size={16} weight="duotone" color="#fff" />
+              </Box>
+              <Typography sx={{ fontFamily: '"Inter", system-ui, sans-serif', fontWeight: 700, fontSize: 14, color: "var(--sr-ink)" }}>
+                ติดตั้งแอปลงเครื่อง · Add to Home Screen
+              </Typography>
+            </Box>
+
+            {installEvent ? (
+              <Button
+                fullWidth
+                onClick={() => void handleInstallTap()}
+                startIcon={<Download size={16} weight="bold" />}
+                sx={{
+                  mt: 0.5, py: 1.1, borderRadius: 999, textTransform: "none", fontWeight: 700,
+                  background: "linear-gradient(135deg, #E0708F, #B23A63)", color: "#fff",
+                  boxShadow: "0 6px 16px rgba(194,24,91,0.30)",
+                  "&:hover": { boxShadow: "0 6px 16px rgba(194,24,91,0.30)" },
+                }}
+              >
+                ติดตั้งเลย
+              </Button>
+            ) : isIOS ? (
+              <Typography sx={{ fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12.5, color: "var(--sr-body)", lineHeight: 1.6 }}>
+                แตะไอคอนแชร์ <Export size={13} weight="bold" style={{ verticalAlign: "-2px" }} /> ที่แถบด้านล่างของ Safari
+                แล้วเลือก <b>&ldquo;เพิ่มไปยังหน้าจอโฮม&rdquo;</b> (Add to Home Screen)
+              </Typography>
+            ) : isAndroid ? (
+              <Typography sx={{ fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12.5, color: "var(--sr-body)", lineHeight: 1.6 }}>
+                แตะเมนู <DotsThreeVertical size={15} weight="bold" style={{ verticalAlign: "-3px" }} /> มุมขวาบนของเบราว์เซอร์
+                แล้วเลือก <b>&ldquo;ติดตั้งแอป&rdquo;</b> หรือ <b>&ldquo;เพิ่มไปยังหน้าจอโฮม&rdquo;</b>
+              </Typography>
+            ) : (
+              <Typography sx={{ fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12.5, color: "var(--sr-body)", lineHeight: 1.6 }}>
+                เปิดหน้านี้บนมือถือ แล้วเพิ่มไปยังหน้าจอโฮมจากเมนูเบราว์เซอร์ เพื่อเข้าแอปได้เร็วเหมือนแอปจริง
+              </Typography>
+            )}
+          </Box>
         )}
       </Box>
       {/* 🆕 28x.76 — the customer tab bar (Practitioners · Services · History)
