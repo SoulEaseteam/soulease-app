@@ -26,6 +26,16 @@
 //   The floating button rail's old `bottom: 220` was a magic number sized
 //   for the (wrong, taller) customer nav — now anchored relative to
 //   StaffLayout's actual ~64px + safe-area tab bar instead of a guess.
+//
+// 🆕 Round 28x.114 (founder: "ตำแหน่ง · Location ทำให้มันกระชับจอมือถือขึ้น
+//   เข้าที่เข้าทางตกแต่งใหม่ ให้เป็นสัดส่วน") — the map used to fill the
+//   ENTIRE viewport (`height: 100vh` flex column, map as the `flex: 1`
+//   filler) with the two buttons floating absolutely on top of it near the
+//   bottom, covering whatever map was underneath them. Rebuilt as a normal
+//   scrollable page matching every other self-edit screen: a compact
+//   coordinates row, the map in a fixed-height rounded card (not the whole
+//   screen), then the two buttons in normal flow below it — no more
+//   floating overlay, no more TAB_BAR_CLEARANCE math.
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -57,9 +67,6 @@ const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
 const containerStyle = { width: "100%", height: "100%" };
 const defaultCenter = { lat: 13.736717, lng: 100.523186 };
-// Same ~64px + safe-area the staff tab bar reserves (StaffLayout.tsx) — the
-// button rail floats just above it instead of guessing a pixel offset.
-const TAB_BAR_CLEARANCE = "calc(76px + env(safe-area-inset-bottom, 0px))";
 
 interface BookingDoc {
   location?: TherapistLocation;
@@ -217,19 +224,10 @@ const TherapistLocationPage: React.FC = () => {
   }
 
   return (
-    <Box
-      sx={{
-        ...responsiveShell,
-        width: "100%",
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        position: "relative",
-      }}
-    >
+    <Box sx={{ ...responsiveShell, minHeight: "100vh", background: "var(--sr-bg)", pb: 6 }}>
       {/* Header — same transparent back+title row every self-edit page uses,
           no second colored bar duplicating StaffLayout's own. */}
-      <Box sx={{ display: "flex", alignItems: "center", px: 1, pt: 2, pb: 1.5, flexShrink: 0, background: "var(--sr-bg)" }}>
+      <Box sx={{ display: "flex", alignItems: "center", px: 1, pt: 2, pb: 1.5 }}>
         <Button onClick={() => navigate(-1)} sx={{ minWidth: 0, p: 1, color: "var(--sr-ink)" }}>
           <CaretLeft size={22} />
         </Button>
@@ -238,72 +236,87 @@ const TherapistLocationPage: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* Map */}
-      <Box sx={{ flex: 1, position: "relative", minHeight: 0 }}>
-        <GoogleMap
-          mapContainerStyle={containerStyle}
-          center={coords ?? defaultCenter}
-          zoom={14}
-        >
-          {coords && <Marker position={coords} />}
-        </GoogleMap>
-      </Box>
-
-      {/* Buttons — floats just above StaffLayout's own tab bar instead of a
-          magic pixel offset sized for the (removed) wrong nav bar. */}
-      <Box
-        sx={{
-          position: "absolute",
-          bottom: TAB_BAR_CLEARANCE,
-          left: 0,
-          right: 0,
-          ...responsiveShell,
-          display: "flex",
-          flexDirection: "column",
-          gap: 1,
-          zIndex: 10,
-        }}
-      >
-        <Button
-          variant="contained"
-          fullWidth
-          onClick={handleUpdateCurrentLocation}
-          startIcon={<NavigationArrow size={16} weight="bold" />}
+      <Box sx={{ px: 2 }}>
+        {/* Compact coordinates row — replaces guessing from a full-bleed map
+            with an at-a-glance readout, same "location glance" pattern
+            Profile's Working Status card already uses. */}
+        <Box
           sx={{
-            background: "linear-gradient(135deg, #E0708F, #B23A63)",
-            color: "#fff",
-            fontSize: 14,
-            fontWeight: 700,
-            borderRadius: 999,
-            py: 1.25,
-            boxShadow: "0 6px 16px rgba(194,24,91,0.32)",
-            textTransform: "none",
-            "&:hover": { boxShadow: "0 6px 16px rgba(194,24,91,0.32)" },
+            display: "flex", alignItems: "center", gap: 1,
+            mb: 1.5, p: "10px 14px", borderRadius: "14px",
+            background: "var(--sr-panel-2)", border: "1px solid var(--sr-hairline)",
           }}
         >
-          Update current GPS
-        </Button>
+          <NavigationArrow size={15} weight="duotone" color="#C2185B" />
+          <Typography sx={{ fontFamily: SANS, fontSize: 12, color: "var(--sr-body)" }}>
+            {coords ? `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` : "กำลังโหลดตำแหน่ง…"}
+          </Typography>
+        </Box>
 
-        <Button
-          variant="contained"
-          fullWidth
-          onClick={() => void handleReturnHome()}
-          startIcon={<House size={16} weight="bold" />}
+        {/* Map — a fixed-height card instead of the whole viewport, so the
+            page scrolls normally like every other staff screen. */}
+        <Box
           sx={{
-            background: "var(--sr-panel)",
-            color: "#C2185B",
-            fontSize: 14,
-            fontWeight: 700,
-            borderRadius: 999,
-            py: 1.25,
-            border: "1px solid rgba(194,24,91,0.28)",
-            boxShadow: "0 4px 12px rgba(15, 23, 42, 0.10)",
-            textTransform: "none",
-            "&:hover": { background: "var(--sr-panel-2)" },
+            height: "42vh",
+            borderRadius: "20px",
+            overflow: "hidden",
+            border: "1px solid var(--sr-hairline)",
+            boxShadow: "var(--sr-card-shadow)",
+            mb: 2,
           }}
         >
-          Return to standby
-        </Button>
+          <GoogleMap
+            mapContainerStyle={containerStyle}
+            center={coords ?? defaultCenter}
+            zoom={14}
+          >
+            {coords && <Marker position={coords} />}
+          </GoogleMap>
+        </Box>
+
+        {/* Buttons — normal document flow now, same pill styling as before. */}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={handleUpdateCurrentLocation}
+            startIcon={<NavigationArrow size={16} weight="bold" />}
+            sx={{
+              background: "linear-gradient(135deg, #E0708F, #B23A63)",
+              color: "#fff",
+              fontSize: 14,
+              fontWeight: 700,
+              borderRadius: 999,
+              py: 1.25,
+              boxShadow: "0 6px 16px rgba(194,24,91,0.32)",
+              textTransform: "none",
+              "&:hover": { boxShadow: "0 6px 16px rgba(194,24,91,0.32)" },
+            }}
+          >
+            Update current GPS
+          </Button>
+
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={() => void handleReturnHome()}
+            startIcon={<House size={16} weight="bold" />}
+            sx={{
+              background: "var(--sr-panel)",
+              color: "#C2185B",
+              fontSize: 14,
+              fontWeight: 700,
+              borderRadius: 999,
+              py: 1.25,
+              border: "1px solid rgba(194,24,91,0.28)",
+              boxShadow: "0 4px 12px rgba(15, 23, 42, 0.10)",
+              textTransform: "none",
+              "&:hover": { background: "var(--sr-panel-2)" },
+            }}
+          >
+            Return to standby
+          </Button>
+        </Box>
       </Box>
 
       {/* Feedback */}
