@@ -23,7 +23,7 @@ import {
 } from "@mui/material";
 import { DeviceMobile, Export, DotsThreeVertical, Download } from "phosphor-react";
 import PasswordField from "@/components/common/PasswordField";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link, Navigate } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import {
   collection,
@@ -42,6 +42,7 @@ import { resolveLoginId } from "@/utils/loginId";
 import { useTranslation } from "react-i18next";
 // 🆕 28w.77 — "ลืมรหัสผ่าน?" hands the guest to the concierge (no self-serve reset).
 import { whatsappDeepLink } from "@/config/concierge";
+import { useAuth } from "@/providers/AuthProvider";
 
 const SERIF = '"Fraunces", "Playfair Display", Georgia, serif';
 const ROSE = "#D97C95";
@@ -127,6 +128,21 @@ const LoginPage: React.FC<LoginPageProps> = ({ staff = false }) => {
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // 🆕 Round 28x.128 (founder: "ล็อกอินเข้าแอปที่ติดตั้งลงเครื่องแล้ว เวลาปิดแอป
+  //   และกลับเข้าไปเปิดใหม่ต้องล็อกอินตลอดเลย เครื่องไม่จำ") — the session was
+  //   never being lost. `/staff` IS this login page (App.tsx), and the staff
+  //   manifest's `start_url` is "/staff", so every single launch of the
+  //   installed app opened the password form — while her Firebase session sat
+  //   there, alive, in storage. This page had no `useAuth` at all: it could not
+  //   tell a signed-in practitioner from a signed-out one. Same reason she
+  //   reported the browser "asking for the password every time" in 28x.126 —
+  //   that round's persistence hardening was real, but it was NOT this bug.
+  //   Guard the staff door only: `/login` is a customer surface where landing
+  //   on the form is the expected way to switch accounts. Signing in is still
+  //   reachable after signing out, and if the session really HAS expired,
+  //   PrivateRoute bounces straight back here — so this can't lock anyone out.
+  const { user: signedInUser, role: signedInRole } = useAuth();
 
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -349,6 +365,19 @@ const LoginPage: React.FC<LoginPageProps> = ({ staff = false }) => {
   // =============================================================
   // UI
   // =============================================================
+
+  // 🆕 28x.128 — already signed in and already staff? Go straight to work.
+  //   AuthProvider renders nothing until it has resolved BOTH user and role,
+  //   so by the time this component mounts these values are final — no flash
+  //   of the password form, and no effect/timer needed. A signed-in guest
+  //   (role "user") deliberately still gets the form: she's at the staff door
+  //   precisely because she needs to sign in with her staff account, which is
+  //   the same case handleLogin() below refuses with "บัญชีนี้ยังไม่ได้เป็นพนักงาน".
+  if (staff && signedInUser) {
+    if (signedInRole === "admin") return <Navigate to="/admin/dashboard" replace />;
+    if (signedInRole === "therapist") return <Navigate to="/therapist/home" replace />;
+  }
+
   return (
     <>
       <Box

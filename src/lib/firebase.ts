@@ -70,6 +70,15 @@ export const db = makeDb();
 //   the app less than weekly WILL be asked to sign in again on iPhone. The
 //   real remedy there is installing it to the home screen (Round 28x.119) —
 //   Apple exempts installed web apps from that 7-day eviction.
+//
+//   ⚠️ CORRECTION (Round 28x.128) — everything above is sound hardening and
+//   stays, but it was NOT the cause of the founder's "ต้องล็อกอินทุกครั้ง"
+//   report, and it did not fix it. The session was never being lost: `/staff`
+//   IS the login page, and the staff manifest's `start_url` points at it, so
+//   every launch of the installed app opened the password form while a
+//   perfectly valid session sat in storage. LoginPage simply never checked.
+//   Fixed there, not here. If someone reports this symptom again, check the
+//   ROUTE before touching persistence again.
 function makeAuth(): Auth {
   try {
     return initializeAuth(app, {
