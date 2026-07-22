@@ -183,6 +183,14 @@ const AdminTherapistDetailPage: React.FC = () => {
   // therapist doc via "Sync Stats" so the public detail page can read
   // them without a restricted bookings query.
   const [computedStats, setComputedStats] = useState<TherapistBookingStats>(EMPTY_BOOKING_STATS);
+  // 🆕 Round 28x.118 (founder: "ยกเลิกออเดอร์ แต่ยังแจกยอดจองให้พนักงานอยู่") —
+  // cancelled bookings an admin explicitly flagged `countsAsSession: true`
+  // (from AdminBookingListPage's cancel flow) on top of computedStats.
+  // Deliberately NOT folded into computeBookingStats() itself — that shared
+  // function also backs the therapist's own private Performance stats and
+  // this same page's raw totals, both of which must stay the TRUE count;
+  // only the public totalSessions this page syncs should include the bonus.
+  const [bonusSessions, setBonusSessions] = useState(0);
   const [syncing, setSyncing] = useState(false);
   const [syncedAt, setSyncedAt] = useState<Date | null>(null);
   const [saving, setSaving] = useState(false);
@@ -370,6 +378,12 @@ const AdminTherapistDetailPage: React.FC = () => {
           // public listeners). Admin already has full list access via
           // isAdmin(), so this page isn't bound by that same constraint.
           const ratings: number[] = [];
+          // 🆕 Round 28x.118 — cancelled bookings flagged countsAsSession
+          //   (only "cancelled" can carry this flag today — see
+          //   AdminBookingListPage's cancelBooking()) shouldn't double-count
+          //   if computeBookingStats ever changes to include them itself;
+          //   checking the status here keeps this additive and independent.
+          let bonus = 0;
           snap.forEach((d) => {
             const b = d.data();
             if (b.date === today) todayCount++;
@@ -379,12 +393,14 @@ const AdminTherapistDetailPage: React.FC = () => {
             }
             const text = typeof b.reviewText === "string" ? b.reviewText.trim() : "";
             if (text) ratings.push(typeof b.rating === "number" ? b.rating : 5);
+            if (b.status === "cancelled" && b.countsAsSession === true) bonus++;
           });
           setTodayBookings(todayCount);
           setTotalBookings(snap.size);
           setLastBookingAt(last);
           setReviewCount(ratings.length);
           setAvgRating(ratings.length ? ratings.reduce((s, r) => s + r, 0) / ratings.length : 0);
+          setBonusSessions(bonus);
           // Round 28s372 — derive loyalty stats for the Sync Stats button.
           setComputedStats(computeBookingStats(snap));
         }
@@ -440,18 +456,21 @@ const AdminTherapistDetailPage: React.FC = () => {
 
   // Round 28s372 — Sync computed booking stats to the therapist doc so the
   // public detail page (which can't query bookings directly) can show chips.
+  // 🆕 Round 28x.118 — totalSessions includes bonusSessions (admin-flagged
+  // cancelled bookings that still count publicly) on top of the true count.
   const handleSyncStats = async () => {
     if (!docId || computedStats.loading) return;
     setSyncing(true);
     try {
+      const totalSessions = computedStats.totalCompleted + bonusSessions;
       await updateDoc(doc(db, "therapists", docId), {
-        totalSessions: computedStats.totalCompleted,
+        totalSessions,
         rebookRate: computedStats.repeatPct,
         statsUpdatedAt: serverTimestamp(),
       });
       await logAdminAction("sync_therapist_stats" as Parameters<typeof logAdminAction>[0], {
         therapistId: docId,
-        totalSessions: computedStats.totalCompleted,
+        totalSessions,
         rebookRate: computedStats.repeatPct,
       });
       setSyncedAt(new Date());
@@ -744,7 +763,12 @@ const AdminTherapistDetailPage: React.FC = () => {
                   "&:disabled": { opacity: 0.5 },
                 }}
               >
-                {syncing ? "Syncing…" : syncedAt ? `Synced ✓ (${computedStats.totalCompleted} sessions · ${computedStats.repeatPct}% rebook)` : `Sync Stats (${computedStats.totalCompleted} sessions · ${computedStats.repeatPct}% rebook)`}
+                {(() => {
+                  const total = computedStats.totalCompleted + bonusSessions;
+                  const bonusNote = bonusSessions > 0 ? ` incl. +${bonusSessions} cancelled` : "";
+                  const label = `${total} sessions${bonusNote} · ${computedStats.repeatPct}% rebook`;
+                  return syncing ? "Syncing…" : syncedAt ? `Synced ✓ (${label})` : `Sync Stats (${label})`;
+                })()}
               </Button>
             </Box>
           </Tooltip>

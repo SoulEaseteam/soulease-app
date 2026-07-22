@@ -206,6 +206,12 @@ interface Booking {
   paid?: boolean;
   paymentStatus?: string;   // 🆕 28s252 — customer-flow field, now kept in sync
   cancelReason?: string;    // 🆕 28s252 — captured on cancel
+  // 🆕 Round 28x.118 (founder: "ยกเลิกออเดอร์ แต่ยังแจกยอดจองให้พนักงานอยู่")
+  //   — an admin-chosen exception: this booking is cancelled (the true
+  //   status everyone internal sees — Jobs page, this list, Reports), but
+  //   still counts toward the PUBLIC session total customers see on her
+  //   profile. Only ever set alongside a cancelReason — see cancelBooking().
+  countsAsSession?: boolean;
   adminNote?: string;
   reviewed?: boolean;
 }
@@ -541,7 +547,7 @@ const AdminBookingListPage: React.FC = () => {
   }, [faceted, tab, search]);
 
   // ── write helpers ─────────────────────────────────────────────────
-  const setStatus = async (id: string, status: string, reason?: string) => {
+  const setStatus = async (id: string, status: string, reason?: string, countsAsSession?: boolean) => {
     try {
       // 🆕 Round 28s230 (FIX D) — confirming settles the 10-min hold so
       //   releaseExpiredHolds can't later stamp it "expired".
@@ -558,7 +564,10 @@ const AdminBookingListPage: React.FC = () => {
               return { status, holdState: "confirmed", holdExpiresAt: null, ...split };
             })()
           : status === "cancelled"
-          ? { status, ...(reason ? { cancelReason: reason } : {}) }
+          // 🆕 Round 28x.118 — always write countsAsSession explicitly (not
+          //   just when true) so re-cancelling with a different answer
+          //   overwrites any earlier value instead of leaving it stale.
+          ? { status, ...(reason ? { cancelReason: reason } : {}), countsAsSession: Boolean(countsAsSession) }
           : { status };
       await updateDoc(doc(db, "bookings", id), patch);
       // 🆕 28s259 — "booking.status_change" is the fallback for transitions
@@ -578,13 +587,28 @@ const AdminBookingListPage: React.FC = () => {
   };
 
   // 🆕 28s252 (fix #2) — confirm + capture a reason before cancelling.
+  //
+  // 🆕 Round 28x.118 (founder: "ยกเลิกออเดอร์ แต่ยังแจกยอดจองให้พนักงานอยู่
+  //   เพราะถ้าไม่มียอดจองเลยพนักงานจะขายไม่ได้") — a therapist who gets
+  //   assigned real jobs that then fall through (customer no-show, etc.)
+  //   still shouldn't look inactive to browsing customers. Only offered
+  //   when a real reason was typed, so there's always an audit trail for
+  //   why the exception was made; staff/shop-facing numbers (this list,
+  //   her Jobs page, Reports) are UNCHANGED — this only affects the public
+  //   session total synced from AdminTherapistDetailPage's "Sync Stats".
   const cancelBooking = (id: string) => {
     const reason = window.prompt(
       "ยกเลิกการจองนี้?\nใส่เหตุผล (เว้นว่างได้) — กด Cancel เพื่อไม่ยกเลิก:",
       ""
     );
     if (reason === null) return; // operator backed out
-    void setStatus(id, "cancelled", reason.trim() || undefined);
+    const trimmedReason = reason.trim();
+    const countsAsSession = trimmedReason
+      ? window.confirm(
+          "ยังนับยอดนี้เป็นเซสชันให้พนักงานไหม?\nลูกค้าจะยังเห็นยอดนี้ในโปรไฟล์สาธารณะ ถึงแม้สถานะจะเป็นยกเลิก"
+        )
+      : false;
+    void setStatus(id, "cancelled", trimmedReason || undefined, countsAsSession);
   };
 
   // 🆕 28s259 — full status-override dropdown (DetailPanel). Routes through
@@ -2331,6 +2355,19 @@ const DetailPanel: React.FC<{
         {b.cancelReason && (
           <Box sx={{ mb: 2, borderRadius: "14px", background: `${adminColor.red}0D`, border: `1px solid ${adminColor.red}33`, px: 1.75, py: 1 }}>
             <Row label="Cancel reason · เหตุผลที่ยกเลิก" value={b.cancelReason} />
+            {/* 🆕 Round 28x.118 — visible confirmation that this cancelled
+                booking is still counted in her public session total, so a
+                later admin looking at this record understands why. */}
+            {b.countsAsSession && (
+              <Row
+                label="Session credit · นับยอดจอง"
+                value={
+                  <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: "4px", color: adminColor.green, fontWeight: 700 }}>
+                    ✓ ยังนับเป็นเซสชันให้พนักงาน
+                  </Box>
+                }
+              />
+            )}
           </Box>
         )}
 
