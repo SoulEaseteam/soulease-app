@@ -217,8 +217,10 @@ they prefer.
   were never actually used**: they were a research suggestion in this
   file's own §🔐 playbook, never real marketing history. Don't cite
   them as "used" channels again. **Sammyboy/Samsguide WAS real** —
-  paid ฿7,500/mo, cancelled on cost. As of this date SunRed has no
-  active directory-listing channel beyond the three above.)
+  billed every 2 months at ฿15,200 (~฿7,600/mo effective, confirmed
+  2026-07-22 — not a flat ฿7,500/mo), cancelled on cost. As of this
+  date SunRed has no active directory-listing channel beyond the
+  three above.)
 - **X/Twitter** — less Meta restrictions
 - **Reddit r/Bangkok / r/ThailandTourism** — soft community engagement
 - **Referral program** — existing customers get free upgrade
@@ -231,7 +233,8 @@ they prefer.
 ### Paused channel — likely worth revisiting (2026-07-22)
 - ⏸️ **Sammyboy/Samsguide network** (samsguide.living/.services,
   sammyboyforum.com, sbf.net.nz, samsforum.com — same forum family) —
-  cancelled by founder for cost (฿7,500/mo), NOT confirmed dead like
+  cancelled by founder for cost (billed every 2 months at ฿15,200,
+  ~฿7,600/mo effective), NOT confirmed dead like
   the Singapore ad above. A read-only audit of `analytics_events` +
   `bookings` (28x.99t) found real signal while it ran: **213 unique
   sessions**, `samsguide.living` alone was the site's **#2 referrer**
@@ -243,11 +246,15 @@ they prefer.
   in-app booking flow, and **only 32 of 615 total booking docs carry
   ANY attribution field at all** (`attributionSource`/`utmSource`/
   `referrerHost` mostly empty) — so this channel's real ROI was
-  probably invisible at cancellation time, not actually zero. If
-  budget allows, worth relisting — but fix booking-level attribution
-  capture first so a second ฿7,500/mo spend is actually measurable
-  this time instead of repeating the same "can't see if it's working"
-  problem.
+  probably invisible at cancellation time, not actually zero.
+  Booking-level attribution capture (the actual gap) was fixed the
+  same night, Round 28x.99t: `attributionSource` dropdown on New
+  Booking + the edit drawer (AdminBookingAddPage.tsx /
+  AdminBookingListPage.tsx). A one-time scheduled reminder
+  (`sammyboy-attribution-checkin`, fires 2026-08-05) will pull ~2
+  weeks of real attribution data and re-surface this decision — if
+  that's already happened by the time you're reading this, check
+  whether View acted on it before repeating the analysis.
 
 ---
 
@@ -503,7 +510,8 @@ matches outcall-vertical norms.
    spaces. (⚠️ Confirmed 2026-07-22: `Stickman Bangkok` and `Lookpasi`
    were never actually used — this list was a research suggestion,
    not real history, don't cite them as tried tactics. `Sammyboy /
-   Samsguide` WAS real — paid ฿7,500/mo, paused on cost, see §6
+   Samsguide` WAS real — billed every 2 months at ฿15,200, paused on
+   cost, see §6
    "Paused channel" for real performance data before deciding
    whether to relist. Treat #7 below the same way.)
 3. **Reddit soft engagement** — `r/Bangkok`, `r/ThailandTourism`,
