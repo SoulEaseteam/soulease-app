@@ -179,6 +179,25 @@ View corrected the strategic framing during this session:
   - EXCLUDED: `cancelled`, `canceled`, `refunded`, `failed`,
     `rejected`, `no_show`, `pending`
 
+**Test/placeholder bookings — exclude from any customer-facing stat**
+(revenue totals, top-spender/VIP lists, membership tiers). Two
+independent signals, both live in `src/utils/membership.ts`, both
+wired into AdminMembersPage/AdminBookingListPage/AdminMembershipPage/
+AdminUsersPage — any new stats surface must call both:
+- `isReservedShopBooking(b)` — `contactName`/`customerName` contains
+  "sunred" (any case) OR `phone` contains admin's own "634350987".
+  Real ~1yr-old workaround (guest's real phone unbookable → admin
+  used her own as placeholder), not test data — 126 real bookings.
+- `isTestLocationBooking(b)` — `locationName`/`address` matches the
+  Aspire Asoke-Ratchada condo (Din Daeng) used as the QA test address
+  since Sep 2025: "aspire", "ซอย พร้อมพันธ์" (Soi Prompan, both the
+  779 and 70ค. building-number variants), or the "QH86+45P" plus-code.
+  Testers cycle through dozens of throwaway phone numbers AND
+  sometimes the founder's own name "View" instead of "SUNRED", so the
+  identity check above doesn't catch these — must match on address.
+  Matched on the building/soi identifiers, NOT the "Din Daeng"
+  district name — the district is large and has real guests.
+
 ---
 
 ## 5. Customer flow (real)
