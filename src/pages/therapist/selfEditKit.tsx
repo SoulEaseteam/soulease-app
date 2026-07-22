@@ -29,7 +29,12 @@ export const SelfEditShell: React.FC<{
   note?: string;
   toast: { msg: string; severity: "success" | "error" } | null;
   onToastClose: () => void;
-}> = ({ title, loading, children, onSave, saving, dirty, note, toast, onToastClose }) => {
+  // 🆕 Round 28x.111 (founder: "Services เพิ่มตารางราคา แบ่งรายได้ต่อเมนู") —
+  // read-only content rendered AFTER the Save button, outside the editable
+  // card — for a reference section (like a price/split table) that isn't
+  // part of what `onSave` writes and shouldn't look editable or tappable.
+  footer?: React.ReactNode;
+}> = ({ title, loading, children, onSave, saving, dirty, note, toast, onToastClose, footer }) => {
   const navigate = useNavigate();
 
   return (
@@ -85,6 +90,7 @@ export const SelfEditShell: React.FC<{
           >
             {saving ? "กำลังบันทึก…" : "บันทึก"}
           </Button>
+          {footer}
         </Box>
       )}
 

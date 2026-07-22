@@ -38,9 +38,6 @@ import {
   CaretRight,
   Lock,
   CalendarX,
-  Sun,
-  Moon,
-  CircleHalf,
   type Icon as PhosphorIcon,
 } from "phosphor-react";
 import { useNavigate } from "react-router-dom";
@@ -56,7 +53,6 @@ import { useTherapistSelf } from "@/hooks/useTherapistSelf";
 import { useTherapistIdentityStats } from "@/hooks/useTherapistIdentityStats";
 import TherapistIdentityCard from "@/components/therapist/TherapistIdentityCard";
 import { SUNRED_TZ } from "@/utils/time";
-import { getThemeChoice, setThemeChoice, type ThemeChoice } from "@/components/common/DayNightSync";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif';
 const SANS = '"Inter", system-ui, -apple-system, sans-serif';
@@ -75,16 +71,6 @@ const TherapistProfilePage: React.FC = () => {
   const handleLogout = async () => {
     await signOut(auth);
     void navigate("/login");
-  };
-
-  // 🆕 Round 28x.106 (founder: "หน้าโปรไฟล์เพิ่มโหมดมืดสว่าง เผื่อพนักงานอยาก
-  //   เปลี่ยนเอง") — DayNightSync already supported a manual override via
-  //   ?theme=/localStorage, nothing in the app ever exposed it as a real
-  //   control. This is that control.
-  const [themeChoice, setThemeChoiceState] = useState<ThemeChoice>(() => getThemeChoice());
-  const applyTheme = (choice: ThemeChoice) => {
-    setThemeChoice(choice);
-    setThemeChoiceState(choice);
   };
 
   // ── Working Status + Working Hours (moved here from Home, 28x.96) ─────
@@ -473,60 +459,6 @@ const TherapistProfilePage: React.FC = () => {
               </Typography>
             </Box>
           )}
-        </Box>
-      </Box>
-
-      {/* 🆕 Round 28x.106 — manual light/dark override. Auto follows the
-          Bangkok clock (06:00–17:59 = day) same as everywhere else; Light/
-          Dark pin it regardless of time. */}
-      <Box sx={{ paddingX: 2, marginTop: 2 }}>
-        <Box
-          sx={{
-            background: "linear-gradient(160deg, rgba(224,112,143,0.10) 0%, var(--sr-panel) 55%, var(--sr-panel) 100%)",
-            border: "1px solid rgba(194,24,91,0.20)",
-            borderRadius: 3,
-            padding: "14px 16px 16px",
-            boxShadow: "0 8px 20px rgba(194,24,91,0.10)",
-          }}
-        >
-          <Typography sx={{ fontFamily: SERIF, fontWeight: 700, fontSize: "15px", color: "var(--sr-ink)", mb: 1.25 }}>
-            ธีมหน้าจอ · Display
-          </Typography>
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1 }}>
-            {(
-              [
-                { key: "auto" as ThemeChoice, label: "Auto", Icon: CircleHalf },
-                { key: "day" as ThemeChoice, label: "Light", Icon: Sun },
-                { key: "night" as ThemeChoice, label: "Dark", Icon: Moon },
-              ]
-            ).map(({ key, label, Icon }) => {
-              const active = themeChoice === key;
-              return (
-                <Box
-                  key={key}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => applyTheme(key)}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") applyTheme(key); }}
-                  sx={{
-                    display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5,
-                    py: 1.25, borderRadius: "12px", cursor: "pointer",
-                    background: active ? "linear-gradient(135deg, #E0708F, #B23A63)" : "#E0708F12",
-                    border: active ? "1px solid #B23A63" : "1px solid #E0708F40",
-                    color: active ? "#fff" : "var(--sr-ink)",
-                  }}
-                >
-                  <Icon size={19} weight={active ? "fill" : "regular"} />
-                  <Typography sx={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: "inherit" }}>
-                    {label}
-                  </Typography>
-                </Box>
-              );
-            })}
-          </Box>
-          <Typography sx={{ fontFamily: SANS, fontSize: 10.5, color: "var(--sr-muted)", mt: 1.25, lineHeight: 1.4 }}>
-            Auto เปลี่ยนตามเวลากรุงเทพ (06:00–18:00 = สว่าง) — เลือก Light/Dark เพื่อล็อกไว้เอง
-          </Typography>
         </Box>
       </Box>
 

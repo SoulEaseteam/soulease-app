@@ -7,8 +7,11 @@
 //   that self-write), reviewed on the admin "คำขอพนักงาน" page. Removing an
 //   already-live photo is instant self-service (firestore.rules'
 //   therapistGallerySelfRemoval only permits the array to shrink).
-//   9-photo cap (live + pending combined) is a UI guard, not a rules
-//   boundary — matches the Wed/Sun working-hours precedent (28x.88).
+//   Cap (live + pending combined) is a UI guard, not a rules boundary —
+//   matches the Wed/Sun working-hours precedent (28x.88).
+//
+// 🆕 Round 28x.111 (founder: "แกลเลอรี แก้ไขเป็นเพิ่มได้ 12 รูป") — bumped
+//   9 → 12.
 
 import React, { useEffect, useRef, useState } from "react";
 import { Box, Typography, Button, CircularProgress, IconButton, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
@@ -33,7 +36,7 @@ import { downscaleImage } from "@/pages/admin/therapistFormKit";
 
 const SERIF = '"Playfair Display", "Fraunces", Georgia, serif';
 const SANS = '"Inter", system-ui, sans-serif';
-const GALLERY_CAP = 9;
+const GALLERY_CAP = 12;
 
 interface PendingRequest {
   id: string;
