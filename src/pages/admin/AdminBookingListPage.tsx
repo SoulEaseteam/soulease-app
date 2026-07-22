@@ -1847,6 +1847,37 @@ const DetailPanel: React.FC<{
     const startAt = Timestamp.fromDate(dayjs(`${editForm.date} ${editForm.time}`, "YYYY-MM-DD HH:mm").toDate());
     const newTherapist = therapists.find((t) => t.id === editForm.therapistId);
     const oldTotal = b.totalPrice ?? b.total ?? 0;
+
+    // 🆕 Round 28x.131 (founder: "Date & Time กับ Booked ต้องตรงกัน เมื่อแก้
+    //   Date & Time") — moving a booking's appointment now moves `createdAt`
+    //   with it.
+    //
+    //   This looks cosmetic and isn't. THIS WHOLE PAGE is keyed on createdAt,
+    //   not startAt: the custom date-range filter queries
+    //   `where("createdAt", ">=" ...)` and the feed is `orderBy("createdAt")`.
+    //   So a booking whose job she moves to 5 May kept sorting — and
+    //   filtering — by the day she happened to type it in. Search "May" and
+    //   the 5 May job simply would not come back. The customer's "last visit"
+    //   (which drives membership tier demotion, line ~378) reads createdAt
+    //   first for the same reason.
+    //
+    //   Only synced when the schedule ACTUALLY changed, so editing a phone
+    //   number or a price leaves a genuine lead time alone — a same-day
+    //   booking taken at 18:32 for 20:00 is real information worth keeping.
+    //   The superseded value goes into the audit log below, not the bin.
+    const prevStartMs = b.startAt?.toDate ? b.startAt.toDate().getTime() : null;
+    const scheduleChanged = prevStartMs === null || prevStartMs !== startAt.toMillis();
+    const prevCreatedMs = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : null;
+
+    const audit: Record<string, unknown> = {};
+    if (editTotal !== oldTotal) {
+      audit.priceChangedFrom = oldTotal;
+      audit.priceChangedTo = editTotal;
+    }
+    if (scheduleChanged && prevCreatedMs !== null) {
+      audit.createdAtChangedFrom = fmtBKK(new Date(prevCreatedMs), "YYYY-MM-DD HH:mm");
+      audit.createdAtChangedTo = fmtBKK(startAt.toDate(), "YYYY-MM-DD HH:mm");
+    }
     // 🆕 28s261 — audit detail is a SEPARATE object from the Firestore patch
     //   (a prior draft of this accidentally put priceChangedFrom/To INTO the
     //   patch, which would have written those as real fields on the booking
@@ -1865,6 +1896,9 @@ const DetailPanel: React.FC<{
         paymentFee: editSurcharge,
         totalPrice: editTotal,
         startAt,
+        // 28x.131 — see the note above saveEdit's guard: keeps the list's
+        // own sort/filter key pointing at the job, not at the typing session.
+        ...(scheduleChanged ? { createdAt: startAt } : {}),
         locationName: editForm.location.trim(),
         // 🆕 28x.38 — persist the discount the concierge keyed on the slip.
         //   Storing discountCode IS the redemption memory: the booking list
@@ -1886,7 +1920,7 @@ const DetailPanel: React.FC<{
           ? { serviceId: editForm.serviceId, serviceName: editSelectedService?.name ?? b.serviceName }
           : {}),
       },
-      editTotal !== oldTotal ? { priceChangedFrom: oldTotal, priceChangedTo: editTotal } : undefined
+      Object.keys(audit).length > 0 ? audit : undefined
     );
     setEditing(false);
   };
